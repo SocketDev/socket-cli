@@ -15,6 +15,7 @@ permissions:
 
 jobs:
   test:
+    # FIXME Replace with socket.dev one
     uses: voxpelli/ghatemplates/.github/workflows/test.yml@main
     with:
       node-versions: '14,16,18'

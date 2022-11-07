@@ -13,6 +13,8 @@ on:
 permissions:
   contents: read
 
+# FIXME Replace with socketr.dev one
 jobs:
   lint:
+    # FIXME Replace with socket.dev one
     uses: voxpelli/ghatemplates/.github/workflows/lint.yml@main
