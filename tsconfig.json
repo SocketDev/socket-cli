@@ -1,5 +1,5 @@
 {
-  "extends": "@voxpelli/tsconfig/node14.json",
+  "extends": "@tsconfig/node14/tsconfig.json",
   "files": [
     "cli.js"
   ],
@@ -8,6 +8,10 @@
     "test/**/*",
   ],
   "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
     "module": "es2022",
     "moduleResolution": "node"
   }

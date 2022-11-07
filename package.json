@@ -40,13 +40,13 @@
   },
   "devDependencies": {
     "@socketsecurity/eslint-config": "^1.0.0",
+    "@tsconfig/node14": "^1.0.3",
     "@types/chai": "^4.3.3",
     "@types/mocha": "^10.0.0",
     "@types/node": "^14.18.31",
     "@types/prompts": "^2.4.1",
     "@typescript-eslint/eslint-plugin": "^5.36.2",
     "@typescript-eslint/parser": "^5.36.2",
-    "@voxpelli/tsconfig": "^4.0.0",
     "c8": "^7.12.0",
     "chai": "^4.3.6",
     "dependency-check": "^5.0.0-7",
@@ -65,7 +65,7 @@
     "mocha": "^10.0.0",
     "npm-run-all2": "^6.0.2",
     "type-coverage": "^2.21.2",
-    "typescript": "~4.6.0"
+    "typescript": "~4.8.4"
   },
   "dependencies": {
     "@socketsecurity/sdk": "^0.3.1",
