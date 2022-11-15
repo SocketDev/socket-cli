@@ -20,13 +20,31 @@ socket report create package.json
 
 ## Commands
 
-* `info <package@version>` - looks up issues for a package
-* `report create` - creates a report
+* `socket info <package@version>` - looks up issues for a package
+* `socket report create` - uploads the specified `package.json` and/or `package-lock.json` to create a report on [socket.dev](https://socket.dev/). If only one of a `package.json`/`package-lock.json` has been specified, the other will be automatically found and uploaded if it exists
+
+## Flags
+
+### Action flags
+
+* `--dry-run` - the `socket report create` supports running the command without actually uploading anything. All CLI tools that perform an action should have a dry run flag
+
+### Output flags
+
+* `--json` - outputs result as json which you can then pipe into [`jq`](https://stedolan.github.io/jq/) and other tools
+* `--markdown` - outputs result as markdown which you can then copy into an issue, PR or even chat
+
+### Other flags
+
+* `--debug` - outputs additional debug output. Great for debugging, geeks and us who develop. Hopefully you will never _need_ it, but it can still be fun, right?
+* `--help` - prints the help for the current command. All CLI tools should have this flag
+* `--version` - prints the version of the tool. All CLI tools should have this flag
 
 ## Environment variables
 
 * `SOCKET_SECURITY_API_KEY` - if set, this will be used as the API-key
 
+## Contributing
 ### Environment variables for development
 
 * `SOCKET_SECURITY_API_BASE_URL` - if set, this will be the base for all API-calls. Defaults to `https://api.socket.dev/v0/`

@@ -2,10 +2,10 @@
   "name": "@socketsecurity/cli",
   "version": "0.1.1",
   "description": "CLI tool for Socket.dev",
-  "homepage": "http://github.com/SocketDev/socket-commando",
+  "homepage": "http://github.com/SocketDev/socket-cli-js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/SocketDev/socket-commando.git"
+    "url": "git://github.com/SocketDev/socket-cli-js.git"
   },
   "keywords": [],
   "author": {
