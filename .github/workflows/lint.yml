@@ -3,18 +3,24 @@ name: Linting
 on:
   push:
     branches:
-      - main
+      - master
     tags:
       - '*'
   pull_request:
     branches:
-      - main
+      - master
 
 permissions:
   contents: read
 
-# FIXME Replace with socketr.dev one
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
-  lint:
-    # FIXME Replace with socket.dev one
-    uses: voxpelli/ghatemplates/.github/workflows/lint.yml@main
+  linting:
+    name: "Linting"
+    uses: SocketDev/workflows/.github/workflows/reusable-base.yml@master
+    with:
+      no-lockfile: true
+      npm-test-script: 'check'
