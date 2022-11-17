@@ -50,8 +50,12 @@ socket report create package.json
 * `SOCKET_SECURITY_API_BASE_URL` - if set, this will be the base for all API-calls. Defaults to `https://api.socket.dev/v0/`
 * `SOCKET_SECURITY_API_PROXY` - if set to something like [`http://127.0.0.1:9090`](https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries), then all request will be proxied through that proxy
 
+## Similar projects
+
+* [`@socketsecurity/sdk`](https://github.com/SocketDev/socket-sdk-js) - the SDK used in this CLI
+
 ## See also
 
-* [`@socketsecurity/sdk`]('https://github.com/SocketDev/socket-sdk-js") - the SDK used in this CLI
+* [Announcement blog post](https://socket.dev/blog/announcing-socket-cli-preview)
 * [Socket API Reference](https://docs.socket.dev/reference) - the API used in this CLI
 * [Socket GitHub App](https://github.com/apps/socket-security) - the plug-and-play GitHub App
