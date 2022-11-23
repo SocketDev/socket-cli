@@ -8,8 +8,11 @@ import * as cliCommands from './lib/commands/index.js'
 import { logSymbols } from './lib/utils/chalk-markdown.js'
 import { AuthError, InputError } from './lib/utils/errors.js'
 import { meowWithSubcommands } from './lib/utils/meow-with-subcommands.js'
+import { initUpdateNotifier } from './lib/utils/update-notifier.js'
 
 // TODO: Add autocompletion using https://www.npmjs.com/package/omelette
+
+initUpdateNotifier()
 
 try {
   await meowWithSubcommands(
