@@ -15,19 +15,21 @@ npm install -g @socketsecurity/cli
 ```bash
 socket --help
 socket info webtorrent@1.9.1
-socket report create package.json
+socket report create package.json --view
+socket report view QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
 ```
 
 ## Commands
 
 * `socket info <package@version>` - looks up issues for a package
-* `socket report create` - uploads the specified `package.json` and/or `package-lock.json` to create a report on [socket.dev](https://socket.dev/). If only one of a `package.json`/`package-lock.json` has been specified, the other will be automatically found and uploaded if it exists
+* `socket report create <path(s)-to-folder-or-file>` - uploads the specified `package.json` and/or `package-lock.json` to create a report on [socket.dev](https://socket.dev/). If only one of a `package.json`/`package-lock.json` has been specified, the other will be automatically found and uploaded if it exists
+* `socket report view <report-id>` - looks up issues and scores from a report
 
 ## Flags
 
-### Action flags
+### Command specific flags
 
-* `--dry-run` - the `socket report create` supports running the command without actually uploading anything. All CLI tools that perform an action should have a dry run flag
+* `--view` - when set on `socket report create` the command will immediately do a `socket report view` style view of the created report, waiting for the server to complete it
 
 ### Output flags
 
@@ -36,6 +38,7 @@ socket report create package.json
 
 ### Other flags
 
+* `--dry-run` - like all CLI tools that perform an action should have, we have a dry run flag. Eg. `socket report create` supports running the command without actually uploading anything
 * `--debug` - outputs additional debug output. Great for debugging, geeks and us who develop. Hopefully you will never _need_ it, but it can still be fun, right?
 * `--help` - prints the help for the current command. All CLI tools should have this flag
 * `--version` - prints the version of the tool. All CLI tools should have this flag
@@ -45,6 +48,7 @@ socket report create package.json
 * `SOCKET_SECURITY_API_KEY` - if set, this will be used as the API-key
 
 ## Contributing
+
 ### Environment variables for development
 
 * `SOCKET_SECURITY_API_BASE_URL` - if set, this will be the base for all API-calls. Defaults to `https://api.socket.dev/v0/`
