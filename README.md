@@ -36,6 +36,11 @@ socket report view QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
 * `--json` - outputs result as json which you can then pipe into [`jq`](https://stedolan.github.io/jq/) and other tools
 * `--markdown` - outputs result as markdown which you can then copy into an issue, PR or even chat
 
+## Strictness flags
+
+* `--all` - by default only `high` and `critical` issues are included, by setting this flag all issues will be included
+* `--strict` - when set, exits with an error code if any issues were found
+
 ### Other flags
 
 * `--dry-run` - like all CLI tools that perform an action should have, we have a dry run flag. Eg. `socket report create` supports running the command without actually uploading anything
