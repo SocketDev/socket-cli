@@ -13,6 +13,18 @@
     "noEmit": true,
     "resolveJsonModule": true,
     "module": "es2022",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+
+    /* New checks being tried out */
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+
+    /* Additional checks */
+    "forceConsistentCasingInFileNames": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   }
 }
