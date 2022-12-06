@@ -3,7 +3,7 @@
     "mocha": true
   },
   "rules": {
-    "no-unused-expressions": 0,
+    "@typescript-eslint/no-unused-expressions": 0,
     "node/no-unpublished-require": 0,
     "promise/prefer-await-to-then": 0
   }
