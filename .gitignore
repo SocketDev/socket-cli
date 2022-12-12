@@ -4,6 +4,7 @@
 /node_modules
 /.env
 /.nyc_output
+/.vscode
 
 # We're a library, so please, no lock files
 /package-lock.json
@@ -15,3 +16,4 @@
 !/lib/types/**/*.d.ts
 
 # Library specific ones
+!/.vscode/extensions.json

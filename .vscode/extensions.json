@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "ryanluker.vscode-coverage-gutters",
+    "hbenl.vscode-test-explorer",
+    "hbenl.vscode-mocha-test-adapter",
+    "dbaeumer.vscode-eslint",
+    "gruntfuggly.todo-tree",
+    "editorconfig.editorconfig"
+  ]
+}
