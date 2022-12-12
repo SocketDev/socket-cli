@@ -257,9 +257,95 @@ describe('Path Resolve', () => {
       ])
     })
 
-    it('should respect .gitignore')
-    it('should always ignore some paths')
-    it('should respect ignore in socket config')
-    it('should ignore irrelevant matches')
+    it('should respect ignores from socket config', async () => {
+      mockFs({
+        '/bar/package-lock.json': '{}',
+        '/bar/package.json': '{}',
+        '/foo/package-lock.json': '{}',
+        '/foo/package.json': '{}',
+      })
+
+      await getPackageFiles(
+        '/',
+        ['**/*'],
+        {
+          version: 2,
+          projectIgnorePaths: [
+            '/bar/*',
+            '!/bar/package.json',
+          ]
+        },
+        () => {}
+      ).should.eventually.become([
+        '/bar/package.json',
+        '/foo/package.json',
+        '/foo/package-lock.json',
+      ])
+    })
+
+    it('should respect .gitignore', async () => {
+      mockFs({
+        '/.gitignore': '/bar\n!/bar/package.json',
+        '/bar/package-lock.json': '{}',
+        '/bar/package.json': '{}',
+        '/foo/package-lock.json': '{}',
+        '/foo/package.json': '{}',
+      })
+
+      await getPackageFiles(
+        '/',
+        ['**/*'],
+        undefined,
+        () => {}
+      ).should.eventually.become([
+        '/foo/package.json',
+        '/foo/package-lock.json',
+      ])
+    })
+
+    it('should always ignore some paths', async () => {
+      mockFs({
+        // Mirrors the used list form https://github.com/novemberborn/ignore-by-default
+        '/.git/some/dir/package.json': {},
+        '/.log/some/dir/package.json': {},
+        '/.nyc_output/some/dir/package.json': {},
+        '/.sass-cache/some/dir/package.json': {},
+        '/.yarn/some/dir/package.json': {},
+        '/bower_components/some/dir/package.json': {},
+        '/coverage/some/dir/package.json': {},
+        '/node_modules/@socketsecurity/cli/package.json': '{}',
+        '/foo/package-lock.json': '{}',
+        '/foo/package.json': '{}',
+      })
+
+      await getPackageFiles(
+        '/',
+        ['**/*'],
+        undefined,
+        () => {}
+      ).should.eventually.become([
+        '/foo/package.json',
+        '/foo/package-lock.json',
+      ])
+    })
+
+    it('should ignore irrelevant matches', async () => {
+      mockFs({
+        '/foo/package-foo.json': '{}',
+        '/foo/package-lock.json': '{}',
+        '/foo/package.json': '{}',
+        '/foo/random.json': '{}',
+      })
+
+      await getPackageFiles(
+        '/',
+        ['**/*'],
+        undefined,
+        () => {}
+      ).should.eventually.become([
+        '/foo/package.json',
+        '/foo/package-lock.json',
+      ])
+    })
   })
 })
