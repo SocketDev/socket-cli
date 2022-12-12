@@ -22,7 +22,15 @@ socket report view QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
 ## Commands
 
 * `socket info <package@version>` - looks up issues for a package
-* `socket report create <path(s)-to-folder-or-file>` - uploads the specified `package.json` and/or `package-lock.json` to create a report on [socket.dev](https://socket.dev/). If only one of a `package.json`/`package-lock.json` has been specified, the other will be automatically found and uploaded if it exists
+
+* `socket report create <path(s)-to-folder-or-file>` - creates a report on [socket.dev](https://socket.dev/)
+
+  Uploads the specified `package.json` and lock files and, if any folder is specified, the ones found in there. Also includes the complementary `package.json` and lock file to any specified. Currently `package-lock.json` and `yarn.lock` are supported.
+
+  Supports globbing such as `**/package.json`.
+
+  Ignores any file specified in your project's `.gitignore`, the `projectIgnorePaths` in your project's [`socket.yml`](https://docs.socket.dev/docs/socket-yml) and on top of that has a sensible set of [default ignores](https://www.npmjs.com/package/ignore-by-default)
+
 * `socket report view <report-id>` - looks up issues and scores from a report
 
 ## Flags
@@ -47,6 +55,10 @@ socket report view QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
 * `--debug` - outputs additional debug output. Great for debugging, geeks and us who develop. Hopefully you will never _need_ it, but it can still be fun, right?
 * `--help` - prints the help for the current command. All CLI tools should have this flag
 * `--version` - prints the version of the tool. All CLI tools should have this flag
+
+## Configuration files
+
+The CLI reads and uses data from a [`socket.yml` file](https://docs.socket.dev/docs/socket-yml) in the folder you run it in. It supports the version 2 of the `socket.yml` file format and makes use of the `projectIgnorePaths` to excludes files when creating a report.
 
 ## Environment variables
 
