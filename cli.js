@@ -37,6 +37,7 @@ try {
   } else if (err instanceof InputError) {
     errorTitle = 'Invalid input'
     errorMessage = err.message
+    errorBody = err.body
   } else if (err instanceof Error) {
     errorTitle = 'Unexpected error'
     errorMessage = messageWithCauses(err)
