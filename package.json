@@ -32,7 +32,6 @@
     "check:tsc": "tsc",
     "check:type-coverage": "type-coverage --detail --strict --at-least 95 --ignore-files 'test/*'",
     "check": "run-p -c --aggregate-output check:*",
-    "generate-types": "node lib/utils/generate-types.js > lib/types/api.d.ts",
     "prepare": "husky install",
     "test:mocha": "c8 --reporter=lcov --reporter text mocha 'test/**/*.spec.js'",
     "test-ci": "run-s test:*",
