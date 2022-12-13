@@ -75,7 +75,7 @@
   },
   "dependencies": {
     "@apideck/better-ajv-errors": "^0.3.6",
-    "@socketsecurity/config": "^1.1.0",
+    "@socketsecurity/config": "^1.2.0",
     "@socketsecurity/sdk": "^0.4.0",
     "chalk": "^5.1.2",
     "globby": "^13.1.3",
