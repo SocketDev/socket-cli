@@ -273,7 +273,9 @@ describe('Path Resolve', () => {
           projectIgnorePaths: [
             '/bar/*',
             '!/bar/package.json',
-          ]
+          ],
+          issueRules: {},
+          githubApp: {}
         },
         () => {}
       ).should.eventually.become([
