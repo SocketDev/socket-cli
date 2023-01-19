@@ -48,7 +48,7 @@ socket report view QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
 ## Strictness flags
 
 * `--all` - by default only `high` and `critical` issues are included, by setting this flag all issues will be included
-* `--strict` - when set, exits with an error code if any issues were found
+* `--strict` - when set, exits with an error code if report result is deemed unhealthy
 
 ### Other flags
 
