@@ -1,6 +1,6 @@
 # Socket CLI
 
-[![Socket Badge](https://socket.dev/api/badge/npm/pkg/@socketsecurity/cli)](https://socket.dev/npm/package/@socketsecurity/cli)
+[![Socket Badge](https://socket.dev/api/badge/npm/package/@socketsecurity/cli)](https://socket.dev/npm/package/@socketsecurity/cli)
 [![npm version](https://img.shields.io/npm/v/@socketsecurity/cli.svg?style=flat)](https://www.npmjs.com/package/@socketsecurity/cli)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](https://github.com/SocketDev/eslint-config)
 [![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
