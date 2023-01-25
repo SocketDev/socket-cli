@@ -18,6 +18,12 @@ try {
   await meowWithSubcommands(
     cliCommands,
     {
+      aliases: {
+        ci: {
+          description: 'Alias for "report create --view --strict"',
+          argv: ['report', 'create', '--view', '--strict']
+        },
+      },
       argv: process.argv.slice(2),
       name: 'socket',
       importMeta: import.meta
