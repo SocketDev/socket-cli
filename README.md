@@ -34,6 +34,12 @@ socket report view QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
 
 * `socket report view <report-id>` - looks up issues and scores from a report
 
+## Aliases
+
+All aliases supports flags and arguments of the commands they alias.
+
+* `socket ci` - alias for `socket report create --view --strict` which creates a report and quits with an exit code if the result is unhealthy. Use like eg. `socket ci .` for a report for the current folder
+
 ## Flags
 
 ### Command specific flags
