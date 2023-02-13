@@ -5,7 +5,7 @@
   ],
   "include": [
     "lib/**/*",
-    "test/**/*",
+    "test/**/*"
   ],
   "compilerOptions": {
     "allowJs": true,
