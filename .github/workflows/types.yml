@@ -19,5 +19,6 @@ jobs:
   type-check:
     uses: SocketDev/workflows/.github/workflows/type-check.yml@master
     with:
+      no-lockfile: true
       ts-versions: ${{ github.event.schedule && 'next' || '4.9,next' }}
       ts-libs: 'es2020;esnext'
