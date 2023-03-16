@@ -6,6 +6,9 @@
   "parserOptions": {
     "project": "./tsconfig.json"
   },
+  "ignorePatterns": [
+    "lib/shadow/bin"
+  ],
   "rules": {
     "@typescript-eslint/quotes": ["error", "single", { "avoidEscape": true, "allowTemplateLiterals": false }],
     "no-console": "warn"
