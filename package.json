@@ -1,6 +1,6 @@
 {
   "name": "@socketsecurity/cli",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "description": "CLI tool for Socket.dev",
   "homepage": "http://github.com/SocketDev/socket-cli-js",
   "repository": {
@@ -31,7 +31,6 @@
     "lib/shadow/**"
   ],
   "scripts": {
-    "echo": "echo $PATH",
     "check:dependency-check": "dependency-check '*.js' 'lib/shadow/*.cjs' '*.mjs' 'test/**/*.js' --no-dev",
     "check:installed-check": "installed-check -i eslint-plugin-jsdoc",
     "check:lint": "eslint --report-unused-disable-directives .",
