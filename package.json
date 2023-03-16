@@ -1,6 +1,6 @@
 {
   "name": "@socketsecurity/cli",
-  "version": "0.5.0",
+  "version": "0.5.2",
   "description": "CLI tool for Socket.dev",
   "homepage": "http://github.com/SocketDev/socket-cli-js",
   "repository": {
@@ -25,7 +25,10 @@
   },
   "files": [
     "cli.js",
-    "lib/**/*.js"
+    "lib/**/*.js",
+    "lib/**/*.json",
+    "lib/**/*.cjs",
+    "lib/shadow/**"
   ],
   "scripts": {
     "echo": "echo $PATH",
