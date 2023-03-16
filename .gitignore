@@ -6,6 +6,8 @@
 /.nyc_output
 /.vscode
 
+/lib/shadow/bin
+
 # We're a library, so please, no lock files
 /package-lock.json
 /yarn.lock
