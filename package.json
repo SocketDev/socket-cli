@@ -31,7 +31,6 @@
     "lib/shadow/**"
   ],
   "scripts": {
-    "echo": "echo $PATH",
     "check:dependency-check": "dependency-check '*.js' 'lib/shadow/*.cjs' '*.mjs' 'test/**/*.js' --no-dev",
     "check:installed-check": "installed-check -i eslint-plugin-jsdoc",
     "check:lint": "eslint --report-unused-disable-directives .",
