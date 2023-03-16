@@ -15,18 +15,21 @@
   },
   "license": "MIT",
   "engines": {
-    "node": "^14.18.0 || >=16.0.0"
+    "node": "^14.18.0 || ^16.13.0 || >=18.0.0"
   },
   "type": "module",
   "bin": {
-    "socket": "cli.js"
+    "socket": "cli.js",
+    "socket-npm": "lib/shadow/npm-cli.cjs",
+    "socket-npx": "lib/shadow/npx-cli.cjs"
   },
   "files": [
     "cli.js",
     "lib/**/*.js"
   ],
   "scripts": {
-    "check:dependency-check": "dependency-check '*.js' 'test/**/*.js' --no-dev",
+    "echo": "echo $PATH",
+    "check:dependency-check": "dependency-check '*.js' 'lib/shadow/*.cjs' '*.mjs' 'test/**/*.js' --no-dev",
     "check:installed-check": "installed-check -i eslint-plugin-jsdoc",
     "check:lint": "eslint --report-unused-disable-directives .",
     "check:tsc": "tsc",
@@ -45,8 +48,11 @@
     "@types/mocha": "^10.0.0",
     "@types/mock-fs": "^4.13.1",
     "@types/node": "^14.18.31",
+    "@types/npm": "^7.19.0",
+    "@types/npmcli__arborist": "^5.6.1",
     "@types/prompts": "^2.4.1",
     "@types/update-notifier": "^6.0.2",
+    "@types/which": "^2.0.2",
     "@typescript-eslint/eslint-plugin": "^5.51.0",
     "@typescript-eslint/parser": "^5.51.0",
     "c8": "^7.12.0",
@@ -89,6 +95,7 @@
     "pony-cause": "^2.1.8",
     "prompts": "^2.4.2",
     "terminal-link": "^3.0.0",
-    "update-notifier": "^6.0.2"
+    "update-notifier": "^6.0.2",
+    "which": "^3.0.0"
   }
 }
