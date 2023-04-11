@@ -7,6 +7,9 @@
     "lib/**/*",
     "test/**/*"
   ],
+  "exclude": [
+    "lib/shadow/**"
+  ],
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
@@ -15,6 +18,7 @@
     "module": "es2022",
     "moduleResolution": "node",
     "target": "ESNext",
+    "types": ["node"],
 
     /* New checks being tried out */
     "exactOptionalPropertyTypes": true,
