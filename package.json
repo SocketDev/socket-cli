@@ -43,7 +43,7 @@
     "test": "run-s check test:*"
   },
   "devDependencies": {
-    "@socketsecurity/eslint-config": "^2.0.0",
+    "@socketsecurity/eslint-config": "^3.0.1",
     "@tsconfig/node14": "^1.0.3",
     "@types/chai": "^4.3.3",
     "@types/chai-as-promised": "^7.1.5",
