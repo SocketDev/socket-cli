@@ -15,6 +15,70 @@ import {
 chai.use(chaiAsPromised)
 chai.should()
 
+// TODO: after #46 merged, use:
+// const globPatternsPromise = setupSdk(FREE_API_KEY)
+//   .then(sdk => sdk.getReportSupportedFiles())
+//   .then(res => {
+//     if (!res.success) throw new Error('failed to get API supported files')
+//     return res.data
+//   })
+
+const globPatternsPromise = Promise.resolve({
+  general: {
+    readme: {
+      pattern: '*readme*'
+    },
+    notice: {
+      pattern: '*notice*'
+    },
+    license: {
+      pattern: '{licen{s,c}e{,-*},copying}'
+    }
+  },
+  npm: {
+    packagejson: {
+      pattern: 'package.json'
+    },
+    packagelockjson: {
+      pattern: 'package-lock.json'
+    },
+    npmshrinkwrap: {
+      pattern: 'npm-shrinkwrap.json'
+    },
+    yarnlock: {
+      pattern: 'yarn.lock'
+    },
+    pnpmlock: {
+      pattern: 'pnpm-lock.yaml'
+    },
+    pnpmworkspace: {
+      pattern: 'pnpm-workspace.yaml'
+    }
+  },
+  pypi: {
+    pipfile: {
+      pattern: 'pipfile'
+    },
+    pyproject: {
+      pattern: 'pyproject.toml'
+    },
+    requirements: {
+      pattern:
+        '{*requirements.txt,requirements/*.txt,requirements-*.txt,requirements.frozen}'
+    },
+    setuppy: {
+      pattern: 'setup.py'
+    }
+  }
+})
+
+/**
+ * @param {string} file
+ * @returns {Promise<string[]>}
+ */
+const mapGlobEntry = async (file) =>
+  mapGlobEntryToFiles(file, await globPatternsPromise)
+
 describe('Path Resolve', () => {
   beforeEach(() => {
     nock.cleanAll()
@@ -56,14 +120,14 @@ describe('Path Resolve', () => {
         mockFs({
           '/foo.txt': 'some content',
         })
-        await mapGlobEntryToFiles('/foo.txt').should.eventually.become([])
+        await mapGlobEntry('/foo.txt').should.eventually.become([])
       })
 
       it('should throw on errors', async () => {
         mockFs({
           '/package.json': { /* Empty directory */ },
         })
-        await mapGlobEntryToFiles('/')
+        await mapGlobEntry('/')
           .should.eventually.be.rejectedWith(InputError, 'Expected \'/package.json\' to be a file')
       })
     })
@@ -74,7 +138,7 @@ describe('Path Resolve', () => {
           '/package-lock.json': '{}',
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/').should.eventually.become([
+        await mapGlobEntry('/').should.eventually.become([
           '/package.json',
           '/package-lock.json'
         ])
@@ -84,14 +148,14 @@ describe('Path Resolve', () => {
         mockFs({
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/').should.eventually.become(['/package.json'])
+        await mapGlobEntry('/').should.eventually.become(['/package.json'])
       })
 
       it('should not resolve lock file without package', async () => {
         mockFs({
           '/package-lock.json': '{}',
         })
-        await mapGlobEntryToFiles('/').should.eventually.become([])
+        await mapGlobEntry('/').should.eventually.become([])
       })
 
       it('should support alternative lock files', async () => {
@@ -99,7 +163,7 @@ describe('Path Resolve', () => {
           '/yarn.lock': '{}',
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/').should.eventually.become([
+        await mapGlobEntry('/').should.eventually.become([
           '/package.json',
           '/yarn.lock'
         ])
@@ -112,7 +176,7 @@ describe('Path Resolve', () => {
           '/package-lock.json': '{}',
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/package.json').should.eventually.become([
+        await mapGlobEntry('/package.json').should.eventually.become([
           '/package.json',
           '/package-lock.json'
         ])
@@ -122,19 +186,19 @@ describe('Path Resolve', () => {
         mockFs({
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/package.json').should.eventually.become(['/package.json'])
+        await mapGlobEntry('/package.json').should.eventually.become(['/package.json'])
       })
 
       it('should not validate the input file', async () => {
         mockFs({})
-        await mapGlobEntryToFiles('/package.json').should.eventually.become(['/package.json'])
+        await mapGlobEntry('/package.json').should.eventually.become(['/package.json'])
       })
 
       it('should not validate the input file, but still add a complementary lock file', async () => {
         mockFs({
           '/package-lock.json': '{}',
         })
-        await mapGlobEntryToFiles('/package.json').should.eventually.become([
+        await mapGlobEntry('/package.json').should.eventually.become([
           '/package.json',
           '/package-lock.json'
         ])
@@ -145,7 +209,7 @@ describe('Path Resolve', () => {
           '/yarn.lock': '{}',
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/package.json').should.eventually.become([
+        await mapGlobEntry('/package.json').should.eventually.become([
           '/package.json',
           '/yarn.lock'
         ])
@@ -158,7 +222,7 @@ describe('Path Resolve', () => {
           '/package-lock.json': '{}',
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/package-lock.json').should.eventually.become([
+        await mapGlobEntry('/package-lock.json').should.eventually.become([
           '/package.json',
           '/package-lock.json'
         ])
@@ -166,7 +230,7 @@ describe('Path Resolve', () => {
 
       it('should assume input is correct and paired with package file', async () => {
         mockFs({})
-        await mapGlobEntryToFiles('/package-lock.json').should.eventually.become([
+        await mapGlobEntry('/package-lock.json').should.eventually.become([
           '/package.json',
           '/package-lock.json'
         ])
@@ -177,7 +241,7 @@ describe('Path Resolve', () => {
           '/yarn.lock': '{}',
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/yarn.lock').should.eventually.become([
+        await mapGlobEntry('/yarn.lock').should.eventually.become([
           '/package.json',
           '/yarn.lock'
         ])
