@@ -1,6 +1,6 @@
 {
   "name": "@socketsecurity/cli",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "CLI tool for Socket.dev",
   "homepage": "http://github.com/SocketDev/socket-cli-js",
   "repository": {
