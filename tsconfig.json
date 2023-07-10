@@ -7,9 +7,6 @@
     "lib/**/*",
     "test/**/*"
   ],
-  "exclude": [
-    "lib/shadow/**"
-  ],
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
