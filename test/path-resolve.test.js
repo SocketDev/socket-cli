@@ -1,6 +1,6 @@
-/// <reference types="mocha" />
-import chai from 'chai'
-import chaiAsPromised from 'chai-as-promised'
+import assert from 'node:assert/strict'
+import { afterEach, beforeEach, describe, it } from 'node:test'
+
 import mockFs from 'mock-fs'
 import nock from 'nock'
 
@@ -11,9 +11,6 @@ import {
   mapGlobEntryToFiles,
   mapGlobResultToFiles,
 } from '../lib/utils/path-resolve.js'
-
-chai.use(chaiAsPromised)
-chai.should()
 
 const globPatterns = {
   general: {
@@ -104,16 +101,17 @@ describe('Path Resolve', () => {
     })
 
     it('should handle found files', async () => {
-      await fileExists('foo.txt').should.eventually.be.true
+      assert.equal(await fileExists('foo.txt'), true)
     })
 
     it('should handle missing files', async () => {
-      await fileExists('missing.txt').should.eventually.be.false
+      assert.equal(await fileExists('missing.txt'), false)
     })
 
     it('should throw when finding a folder', async () => {
-      await fileExists('some-dir')
-        .should.be.rejectedWith(InputError, 'Expected \'some-dir\' to be a file')
+      await assert.rejects(fileExists('some-dir'), (e) => {
+        return e instanceof InputError && e.message.includes('Expected \'some-dir\' to be a file')
+      })
     })
   })
 
@@ -123,15 +121,16 @@ describe('Path Resolve', () => {
         mockFs({
           '/foo.txt': 'some content',
         })
-        await sortedMapGlobEntry('/foo.txt', globPatterns).should.eventually.become([])
+        assert.deepEqual(await sortedMapGlobEntry('/foo.txt', globPatterns), [])
       })
 
       it('should throw on errors', async () => {
         mockFs({
           '/package.json': { /* Empty directory */ },
         })
-        await sortedMapGlobEntry('/', globPatterns)
-          .should.eventually.be.rejectedWith(InputError, 'Expected \'/package.json\' to be a file')
+        await assert.rejects(sortedMapGlobEntry('/', globPatterns), (e) => {
+          return e instanceof InputError && e.message.includes('Expected \'/package.json\' to be a file')
+        })
       })
     })
 
@@ -141,7 +140,7 @@ describe('Path Resolve', () => {
           '/package-lock.json': '{}',
           '/package.json': '{}',
         })
-        await sortedMapGlobEntry('/', globPatterns).should.eventually.become([
+        assert.deepEqual(await sortedMapGlobEntry('/', globPatterns), [
           '/package-lock.json',
           '/package.json'
         ])
@@ -151,14 +150,14 @@ describe('Path Resolve', () => {
         mockFs({
           '/package.json': '{}',
         })
-        await sortedMapGlobEntry('/', globPatterns).should.eventually.become(['/package.json'])
+        assert.deepEqual(await sortedMapGlobEntry('/', globPatterns), ['/package.json'])
       })
 
       it('should not resolve lock file without package', async () => {
         mockFs({
           '/package-lock.json': '{}',
         })
-        await sortedMapGlobEntry('/', globPatterns).should.eventually.become([])
+        assert.deepEqual(await sortedMapGlobEntry('/', globPatterns), [])
       })
 
       it('should support alternative lock files', async () => {
@@ -166,7 +165,7 @@ describe('Path Resolve', () => {
           '/yarn.lock': '{}',
           '/package.json': '{}',
         })
-        await sortedMapGlobEntry('/', globPatterns).should.eventually.become([
+        assert.deepEqual(await sortedMapGlobEntry('/', globPatterns), [
           '/package.json',
           '/yarn.lock'
         ])
@@ -179,7 +178,7 @@ describe('Path Resolve', () => {
           '/package-lock.json': '{}',
           '/package.json': '{}',
         })
-        await sortedMapGlobEntry('/package.json', globPatterns).should.eventually.become([
+        assert.deepEqual(await sortedMapGlobEntry('/package.json', globPatterns), [
           '/package-lock.json',
           '/package.json'
         ])
@@ -189,19 +188,19 @@ describe('Path Resolve', () => {
         mockFs({
           '/package.json': '{}',
         })
-        await sortedMapGlobEntry('/package.json', globPatterns).should.eventually.become(['/package.json'])
+        assert.strict.deepEqual(await sortedMapGlobEntry('/package.json', globPatterns), ['/package.json'])
       })
 
       it('should not validate the input file', async () => {
         mockFs({})
-        await sortedMapGlobEntry('/package.json', globPatterns).should.eventually.become(['/package.json'])
+        assert.deepEqual(await sortedMapGlobEntry('/package.json', globPatterns), ['/package.json'])
       })
 
       it('should not validate the input file, but still add a complementary lock file', async () => {
         mockFs({
           '/package-lock.json': '{}',
         })
-        await sortedMapGlobEntry('/package.json', globPatterns).should.eventually.become([
+        assert.deepEqual(await sortedMapGlobEntry('/package.json', globPatterns), [
           '/package-lock.json',
           '/package.json'
         ])
@@ -212,7 +211,7 @@ describe('Path Resolve', () => {
           '/yarn.lock': '{}',
           '/package.json': '{}',
         })
-        await sortedMapGlobEntry('/package.json', globPatterns).should.eventually.become([
+        assert.deepEqual(await sortedMapGlobEntry('/package.json', globPatterns), [
           '/package.json',
           '/yarn.lock'
         ])
@@ -225,7 +224,7 @@ describe('Path Resolve', () => {
           '/package-lock.json': '{}',
           '/package.json': '{}',
         })
-        await sortedMapGlobEntry('/package-lock.json', globPatterns).should.eventually.become([
+        assert.deepEqual(await sortedMapGlobEntry('/package-lock.json', globPatterns), [
           '/package-lock.json',
           '/package.json'
         ])
@@ -236,7 +235,7 @@ describe('Path Resolve', () => {
           '/yarn.lock': '{}',
           '/package.json': '{}',
         })
-        await sortedMapGlobEntry('/yarn.lock', globPatterns).should.eventually.become([
+        assert.deepEqual(await sortedMapGlobEntry('/yarn.lock', globPatterns), [
           '/package.json',
           '/yarn.lock'
         ])
@@ -256,13 +255,13 @@ describe('Path Resolve', () => {
         '/abc/package.json': '{}',
       })
 
-      await sortedMapGlobResult([
+      assert.deepEqual(await sortedMapGlobResult([
         '/',
         '/foo/package-lock.json',
         '/bar/package.json',
         '/abc/',
         '/abc/package.json'
-      ], globPatterns).should.eventually.become([
+      ], globPatterns), [
         '/abc/package.json',
         '/bar/package.json',
         '/bar/yarn.lock',
@@ -286,13 +285,13 @@ describe('Path Resolve', () => {
         '/abc/package.json': '{}',
       })
 
-      await sortedGetPackageFiles(
+      assert.deepEqual(await sortedGetPackageFiles(
         '/',
         ['**/*'],
         undefined,
         globPatterns,
         () => {}
-      ).should.eventually.become([
+      ), [
         '/abc/package.json',
         '/bar/package.json',
         '/bar/yarn.lock',
@@ -308,13 +307,13 @@ describe('Path Resolve', () => {
         '/package.json': '{}',
       })
 
-      await sortedGetPackageFiles(
+      assert.deepEqual(await sortedGetPackageFiles(
         '/',
         ['.'],
         undefined,
         globPatterns,
         () => {}
-      ).should.eventually.become([
+      ), [
         '/package.json',
       ])
     })
@@ -327,7 +326,7 @@ describe('Path Resolve', () => {
         '/foo/package.json': '{}',
       })
 
-      await sortedGetPackageFiles(
+      assert.deepEqual(await sortedGetPackageFiles(
         '/',
         ['**/*'],
         {
@@ -341,7 +340,7 @@ describe('Path Resolve', () => {
         },
         globPatterns,
         () => {}
-      ).should.eventually.become([
+      ), [
         '/bar/package.json',
         '/foo/package-lock.json',
         '/foo/package.json'
@@ -357,13 +356,13 @@ describe('Path Resolve', () => {
         '/foo/package.json': '{}',
       })
 
-      await sortedGetPackageFiles(
+      assert.deepEqual(await sortedGetPackageFiles(
         '/',
         ['**/*'],
         undefined,
         globPatterns,
         () => {}
-      ).should.eventually.become([
+      ), [
         '/foo/package-lock.json',
         '/foo/package.json'
       ])
@@ -384,13 +383,13 @@ describe('Path Resolve', () => {
         '/foo/package.json': '{}',
       })
 
-      await sortedGetPackageFiles(
+      assert.deepEqual(await sortedGetPackageFiles(
         '/',
         ['**/*'],
         undefined,
         globPatterns,
         () => {}
-      ).should.eventually.become([
+      ), [
         '/foo/package-lock.json',
         '/foo/package.json'
       ])
@@ -404,13 +403,13 @@ describe('Path Resolve', () => {
         '/foo/random.json': '{}',
       })
 
-      await sortedGetPackageFiles(
+      assert.deepEqual(await sortedGetPackageFiles(
         '/',
         ['**/*'],
         undefined,
         globPatterns,
         () => {}
-      ).should.eventually.become([
+      ), [
         '/foo/package-lock.json',
         '/foo/package.json'
       ])
