@@ -26,9 +26,10 @@ socket report view QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
 
 * `socket report create <path(s)-to-folder-or-file>` - creates a report on [socket.dev](https://socket.dev/)
 
-  Uploads the specified `package.json` and lock files and, if any folder is specified, the ones found in there. Also includes the complementary `package.json` and lock file to any specified. Currently `package-lock.json` and `yarn.lock` are supported.
+  Uploads the specified `package.json` and lock files for JavaScript and Python dependency manifests.
+  If any folder is specified, the ones found in there recursively are uploaded.
 
-  Supports globbing such as `**/package.json`.
+  Supports globbing such as `**/package.json`, `**/requirements.txt`, and `**/pyproject.toml`.
 
   Ignores any file specified in your project's `.gitignore`, the `projectIgnorePaths` in your project's [`socket.yml`](https://docs.socket.dev/docs/socket-yml) and on top of that has a sensible set of [default ignores](https://www.npmjs.com/package/ignore-by-default)
 
