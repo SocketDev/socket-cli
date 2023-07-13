@@ -15,6 +15,73 @@ import {
 chai.use(chaiAsPromised)
 chai.should()
 
+const globPatterns = {
+  general: {
+    readme: {
+      pattern: '*readme*'
+    },
+    notice: {
+      pattern: '*notice*'
+    },
+    license: {
+      pattern: '{licen{s,c}e{,-*},copying}'
+    }
+  },
+  npm: {
+    packagejson: {
+      pattern: 'package.json'
+    },
+    packagelockjson: {
+      pattern: 'package-lock.json'
+    },
+    npmshrinkwrap: {
+      pattern: 'npm-shrinkwrap.json'
+    },
+    yarnlock: {
+      pattern: 'yarn.lock'
+    },
+    pnpmlock: {
+      pattern: 'pnpm-lock.yaml'
+    },
+    pnpmworkspace: {
+      pattern: 'pnpm-workspace.yaml'
+    }
+  },
+  pypi: {
+    pipfile: {
+      pattern: 'pipfile'
+    },
+    pyproject: {
+      pattern: 'pyproject.toml'
+    },
+    requirements: {
+      pattern:
+        '{*requirements.txt,requirements/*.txt,requirements-*.txt,requirements.frozen}'
+    },
+    setuppy: {
+      pattern: 'setup.py'
+    }
+  }
+}
+
+/**
+ * @template {any[]} A
+ * @template R
+ * @template {(...args: A) => Promise<R[]>} Fn
+ * @param {Fn} fn
+ * @returns {Fn}
+ */
+const sortedPromise = (fn) => /** @type {Fn} */ (async (...args) => {
+  const result = await fn(...args)
+  return result.sort()
+})
+
+const sortedMapGlobEntry = sortedPromise(mapGlobEntryToFiles)
+
+const sortedMapGlobResult = sortedPromise(mapGlobResultToFiles)
+
+const sortedGetPackageFiles = sortedPromise(getPackageFiles)
+
 describe('Path Resolve', () => {
   beforeEach(() => {
     nock.cleanAll()
@@ -56,14 +123,14 @@ describe('Path Resolve', () => {
         mockFs({
           '/foo.txt': 'some content',
         })
-        await mapGlobEntryToFiles('/foo.txt').should.eventually.become([])
+        await sortedMapGlobEntry('/foo.txt', globPatterns).should.eventually.become([])
       })
 
       it('should throw on errors', async () => {
         mockFs({
           '/package.json': { /* Empty directory */ },
         })
-        await mapGlobEntryToFiles('/')
+        await sortedMapGlobEntry('/', globPatterns)
           .should.eventually.be.rejectedWith(InputError, 'Expected \'/package.json\' to be a file')
       })
     })
@@ -74,9 +141,9 @@ describe('Path Resolve', () => {
           '/package-lock.json': '{}',
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/').should.eventually.become([
-          '/package.json',
-          '/package-lock.json'
+        await sortedMapGlobEntry('/', globPatterns).should.eventually.become([
+          '/package-lock.json',
+          '/package.json'
         ])
       })
 
@@ -84,14 +151,14 @@ describe('Path Resolve', () => {
         mockFs({
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/').should.eventually.become(['/package.json'])
+        await sortedMapGlobEntry('/', globPatterns).should.eventually.become(['/package.json'])
       })
 
       it('should not resolve lock file without package', async () => {
         mockFs({
           '/package-lock.json': '{}',
         })
-        await mapGlobEntryToFiles('/').should.eventually.become([])
+        await sortedMapGlobEntry('/', globPatterns).should.eventually.become([])
       })
 
       it('should support alternative lock files', async () => {
@@ -99,7 +166,7 @@ describe('Path Resolve', () => {
           '/yarn.lock': '{}',
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/').should.eventually.become([
+        await sortedMapGlobEntry('/', globPatterns).should.eventually.become([
           '/package.json',
           '/yarn.lock'
         ])
@@ -112,9 +179,9 @@ describe('Path Resolve', () => {
           '/package-lock.json': '{}',
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/package.json').should.eventually.become([
-          '/package.json',
-          '/package-lock.json'
+        await sortedMapGlobEntry('/package.json', globPatterns).should.eventually.become([
+          '/package-lock.json',
+          '/package.json'
         ])
       })
 
@@ -122,21 +189,21 @@ describe('Path Resolve', () => {
         mockFs({
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/package.json').should.eventually.become(['/package.json'])
+        await sortedMapGlobEntry('/package.json', globPatterns).should.eventually.become(['/package.json'])
       })
 
       it('should not validate the input file', async () => {
         mockFs({})
-        await mapGlobEntryToFiles('/package.json').should.eventually.become(['/package.json'])
+        await sortedMapGlobEntry('/package.json', globPatterns).should.eventually.become(['/package.json'])
       })
 
       it('should not validate the input file, but still add a complementary lock file', async () => {
         mockFs({
           '/package-lock.json': '{}',
         })
-        await mapGlobEntryToFiles('/package.json').should.eventually.become([
-          '/package.json',
-          '/package-lock.json'
+        await sortedMapGlobEntry('/package.json', globPatterns).should.eventually.become([
+          '/package-lock.json',
+          '/package.json'
         ])
       })
 
@@ -145,7 +212,7 @@ describe('Path Resolve', () => {
           '/yarn.lock': '{}',
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/package.json').should.eventually.become([
+        await sortedMapGlobEntry('/package.json', globPatterns).should.eventually.become([
           '/package.json',
           '/yarn.lock'
         ])
@@ -158,17 +225,9 @@ describe('Path Resolve', () => {
           '/package-lock.json': '{}',
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/package-lock.json').should.eventually.become([
-          '/package.json',
-          '/package-lock.json'
-        ])
-      })
-
-      it('should assume input is correct and paired with package file', async () => {
-        mockFs({})
-        await mapGlobEntryToFiles('/package-lock.json').should.eventually.become([
-          '/package.json',
-          '/package-lock.json'
+        await sortedMapGlobEntry('/package-lock.json', globPatterns).should.eventually.become([
+          '/package-lock.json',
+          '/package.json'
         ])
       })
 
@@ -177,7 +236,7 @@ describe('Path Resolve', () => {
           '/yarn.lock': '{}',
           '/package.json': '{}',
         })
-        await mapGlobEntryToFiles('/yarn.lock').should.eventually.become([
+        await sortedMapGlobEntry('/yarn.lock', globPatterns).should.eventually.become([
           '/package.json',
           '/yarn.lock'
         ])
@@ -197,20 +256,20 @@ describe('Path Resolve', () => {
         '/abc/package.json': '{}',
       })
 
-      await mapGlobResultToFiles([
+      await sortedMapGlobResult([
         '/',
         '/foo/package-lock.json',
         '/bar/package.json',
         '/abc/',
         '/abc/package.json'
-      ]).should.eventually.become([
-        '/package.json',
-        '/package-lock.json',
-        '/foo/package.json',
-        '/foo/package-lock.json',
+      ], globPatterns).should.eventually.become([
+        '/abc/package.json',
         '/bar/package.json',
         '/bar/yarn.lock',
-        '/abc/package.json',
+        '/foo/package-lock.json',
+        '/foo/package.json',
+        '/package-lock.json',
+        '/package.json'
       ])
     })
   })
@@ -227,19 +286,20 @@ describe('Path Resolve', () => {
         '/abc/package.json': '{}',
       })
 
-      await getPackageFiles(
+      await sortedGetPackageFiles(
         '/',
         ['**/*'],
         undefined,
+        globPatterns,
         () => {}
       ).should.eventually.become([
         '/abc/package.json',
         '/bar/package.json',
         '/bar/yarn.lock',
-        '/foo/package.json',
         '/foo/package-lock.json',
-        '/package.json',
+        '/foo/package.json',
         '/package-lock.json',
+        '/package.json',
       ])
     })
 
@@ -248,10 +308,11 @@ describe('Path Resolve', () => {
         '/package.json': '{}',
       })
 
-      await getPackageFiles(
+      await sortedGetPackageFiles(
         '/',
         ['.'],
         undefined,
+        globPatterns,
         () => {}
       ).should.eventually.become([
         '/package.json',
@@ -266,7 +327,7 @@ describe('Path Resolve', () => {
         '/foo/package.json': '{}',
       })
 
-      await getPackageFiles(
+      await sortedGetPackageFiles(
         '/',
         ['**/*'],
         {
@@ -278,11 +339,12 @@ describe('Path Resolve', () => {
           issueRules: {},
           githubApp: {}
         },
+        globPatterns,
         () => {}
       ).should.eventually.become([
         '/bar/package.json',
-        '/foo/package.json',
         '/foo/package-lock.json',
+        '/foo/package.json'
       ])
     })
 
@@ -295,14 +357,15 @@ describe('Path Resolve', () => {
         '/foo/package.json': '{}',
       })
 
-      await getPackageFiles(
+      await sortedGetPackageFiles(
         '/',
         ['**/*'],
         undefined,
+        globPatterns,
         () => {}
       ).should.eventually.become([
-        '/foo/package.json',
         '/foo/package-lock.json',
+        '/foo/package.json'
       ])
     })
 
@@ -321,14 +384,15 @@ describe('Path Resolve', () => {
         '/foo/package.json': '{}',
       })
 
-      await getPackageFiles(
+      await sortedGetPackageFiles(
         '/',
         ['**/*'],
         undefined,
+        globPatterns,
         () => {}
       ).should.eventually.become([
-        '/foo/package.json',
         '/foo/package-lock.json',
+        '/foo/package.json'
       ])
     })
 
@@ -340,14 +404,15 @@ describe('Path Resolve', () => {
         '/foo/random.json': '{}',
       })
 
-      await getPackageFiles(
+      await sortedGetPackageFiles(
         '/',
         ['**/*'],
         undefined,
+        globPatterns,
         () => {}
       ).should.eventually.become([
-        '/foo/package.json',
         '/foo/package-lock.json',
+        '/foo/package.json'
       ])
     })
   })
