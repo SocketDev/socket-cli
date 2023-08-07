@@ -80,7 +80,7 @@
     "nock": "^13.3.0",
     "npm-run-all2": "^6.0.2",
     "type-coverage": "^2.24.1",
-    "typescript": "~5.0.4"
+    "typescript": "~5.1.6"
   },
   "dependencies": {
     "@apideck/better-ajv-errors": "^0.3.6",
