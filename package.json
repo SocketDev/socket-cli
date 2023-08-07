@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@socketsecurity/eslint-config": "^3.0.1",
-    "@tsconfig/node14": "^1.0.3",
+    "@tsconfig/node14": "^14.1.0",
     "@types/chai": "^4.3.3",
     "@types/chai-as-promised": "^7.1.5",
     "@types/micromatch": "^4.0.2",
