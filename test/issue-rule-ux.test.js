@@ -35,10 +35,12 @@ describe('Issue Rule UX', () => {
             deferTo: 'repository',
             issueRules: {
               fromDeferString: { action: 'defer' },
-              frumUndefinedAction: { }
+              // @ts-ignore paranoia
+              fromUndefinedAction: { }
             }
           },
           repository: {
+            deferTo: null,
             issueRules: {
               fromMiddleConfig: {
                 action: 'warn'
@@ -291,6 +293,7 @@ describe('Issue Rule UX', () => {
         start: 'organization',
         settings: {
           organization: {
+            deferTo: null,
             issueRules: {
               willWarn: {
                 action: 'ignore'
