@@ -4,6 +4,7 @@
     "cli.js"
   ],
   "include": [
+    "lib/utils/issue-rules.cjs",
     "lib/**/*",
     "test/**/*"
   ],
