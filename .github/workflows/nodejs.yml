@@ -24,7 +24,8 @@ jobs:
     with:
       no-lockfile: true
       npm-test-script: 'test-ci'
-      node-versions: '14,16,18,19'
+      # Node 16 has a SegFault from C8 when using --test
+      node-versions: '18,19'
       # We currently have some issues on Windows that will have to wait to be fixed
       # os: 'ubuntu-latest,windows-latest'
       os: 'ubuntu-latest'
