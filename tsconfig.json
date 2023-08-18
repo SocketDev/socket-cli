@@ -9,16 +9,17 @@
     "test/**/*"
   ],
   "exclude": [
-    "lib/shadow/**"
+    "alib/shadow/**"
   ],
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
     "noEmit": true,
     "resolveJsonModule": true,
-    "module": "es2022",
+    "module": "NodeNext",
     "moduleResolution": "node",
-    "target": "ESNext",
+    "lib": ["ES2022"],
+    "target": "es2022",
     "types": ["node"],
 
     /* New checks being tried out */
