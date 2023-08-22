@@ -124,13 +124,11 @@ describe('Path Resolve', () => {
         assert.deepEqual(await sortedMapGlobEntry('/foo.txt', globPatterns), [])
       })
 
-      it('should throw on errors', async () => {
+      it('should be lenient on oddities', async () => {
         mockFs({
           '/package.json': { /* Empty directory */ },
         })
-        await assert.rejects(sortedMapGlobEntry('/', globPatterns), (e) => {
-          return e instanceof InputError && e.message.includes('Expected \'/package.json\' to be a file')
-        })
+        await assert.deepEqual(await sortedMapGlobEntry('/', globPatterns), [])
       })
     })
 
@@ -157,7 +155,7 @@ describe('Path Resolve', () => {
         mockFs({
           '/package-lock.json': '{}',
         })
-        assert.deepEqual(await sortedMapGlobEntry('/', globPatterns), [])
+        assert.deepEqual(await sortedMapGlobEntry('/', globPatterns), ['/package-lock.json'])
       })
 
       it('should support alternative lock files', async () => {
@@ -191,19 +189,11 @@ describe('Path Resolve', () => {
         assert.strict.deepEqual(await sortedMapGlobEntry('/package.json', globPatterns), ['/package.json'])
       })
 
-      it('should not validate the input file', async () => {
+      it('should validate the input file', async () => {
         mockFs({})
-        assert.deepEqual(await sortedMapGlobEntry('/package.json', globPatterns), ['/package.json'])
-      })
-
-      it('should not validate the input file, but still add a complementary lock file', async () => {
-        mockFs({
-          '/package-lock.json': '{}',
+        return assert.rejects(sortedMapGlobEntry('/package.json', globPatterns), (err) => {
+          return err instanceof Error && err.message.includes('ENOENT')
         })
-        assert.deepEqual(await sortedMapGlobEntry('/package.json', globPatterns), [
-          '/package-lock.json',
-          '/package.json'
-        ])
       })
 
       it('should support alternative lock files', async () => {
