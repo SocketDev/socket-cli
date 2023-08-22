@@ -35,6 +35,6 @@ describe('Socket npm wrapper', () => {
       args: ['i', 'bowserify']
     })
     assert.equal(ret.status, 1)
-    assert.match(ret.stderr, /Unable to prompt/)
+    assert.equal(/Unable to prompt/.test(ret.stderr), true)
   })
 })
