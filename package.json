@@ -40,7 +40,8 @@
     "prepare": "husky install",
     "test:unit": "c8 --reporter=lcov --reporter text node --test",
     "test-ci": "run-s test:*",
-    "test": "run-s check test:*"
+    "test": "run-s check test:*",
+    "postinstall": "node lib/utils/safe-npm.js"
   },
   "devDependencies": {
     "@socketsecurity/eslint-config": "^3.0.1",
