@@ -41,7 +41,7 @@
     "test:unit": "c8 --reporter=lcov --reporter text node --test",
     "test-ci": "run-s test:*",
     "test": "run-s check test:*",
-    "postinstall": "node lib/utils/safe-npm.js"
+    "postinstall": "node ./cli.js wrapper --postinstall"
   },
   "devDependencies": {
     "@socketsecurity/eslint-config": "^3.0.1",
