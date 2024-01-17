@@ -18,6 +18,7 @@ socket --help
 socket info webtorrent@1.9.1
 socket report create package.json --view
 socket report view QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
+socket wrapper --enable
 ```
 
 ## Commands
@@ -34,6 +35,10 @@ socket report view QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
   Ignores any file specified in your project's `.gitignore`, the `projectIgnorePaths` in your project's [`socket.yml`](https://docs.socket.dev/docs/socket-yml) and on top of that has a sensible set of [default ignores](https://www.npmjs.com/package/ignore-by-default)
 
 * `socket report view <report-id>` - looks up issues and scores from a report
+
+* `socket wrapper --enable` and `socket wrapper --disable` - Enables and disables the Socket 'safe-npm' wrapper.
+
+* `socket raw-npm` and `socket raw-npx` - Temporarily disables the Socket 'safe-npm' wrapper.
 
 ## Aliases
 
