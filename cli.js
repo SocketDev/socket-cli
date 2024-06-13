@@ -21,7 +21,7 @@ try {
     } else if (entry[0] === 'rawNpx') {
       entry[0] = 'raw-npx'
     } else if (entry[0] === 'fullscans') {
-      entry[0] = 'full-scans'
+      entry[0] = 'scan'
     }
     return entry
   }))
