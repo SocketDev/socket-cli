@@ -20,6 +20,8 @@ try {
       entry[0] = 'raw-npm'
     } else if (entry[0] === 'rawNpx') {
       entry[0] = 'raw-npx'
+    } else if (entry[0] === 'auditlog') {
+      entry[0] = 'audit-log'
     }
     return entry
   }))
