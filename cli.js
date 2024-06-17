@@ -15,8 +15,17 @@ import { initUpdateNotifier } from './lib/utils/update-notifier.js'
 initUpdateNotifier()
 
 try {
+  const formattedCliCommands = Object.fromEntries(Object.entries(cliCommands).map((entry) => {
+    if (entry[0] === 'rawNpm') {
+      entry[0] = 'raw-npm'
+    } else if (entry[0] === 'rawNpx') {
+      entry[0] = 'raw-npx'
+    }
+    return entry
+  }))
+
   await meowWithSubcommands(
-    cliCommands,
+    formattedCliCommands,
     {
       aliases: {
         ci: {
