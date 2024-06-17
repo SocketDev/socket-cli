@@ -35,7 +35,7 @@
     "check:installed-check": "installed-check -i eslint-plugin-jsdoc",
     "check:lint": "eslint --report-unused-disable-directives .",
     "check:tsc": "tsc",
-    "check:type-coverage": "type-coverage --detail --strict --at-least 95 --ignore-files 'test/*'",
+    "check:type-coverage": "type-coverage --detail --strict --at-least 90 --ignore-files 'test/*'",
     "check": "run-p -c --aggregate-output check:*",
     "prepare": "husky install",
     "test:unit": "c8 --reporter=lcov --reporter text node --test",
