@@ -7,7 +7,6 @@ const entryPath = fileURLToPath(new URL('../cli.js', import.meta.url))
 
 /**
  * Run relative to current file
- *
  * @param {object} param0
  * @param {string} param0.cwd
  * @param {string[]} [param0.args]
