@@ -2,6 +2,7 @@
 /coverage
 /coverage-ts
 /node_modules
+/.DS_Store
 /.env
 /.nyc_output
 /.vscode
