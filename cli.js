@@ -20,8 +20,6 @@ try {
       entry[0] = 'raw-npm'
     } else if (entry[0] === 'rawNpx') {
       entry[0] = 'raw-npx'
-    } else if (entry[0] === 'fullscans') {
-      entry[0] = 'scan'
     }
     return entry
   }))
