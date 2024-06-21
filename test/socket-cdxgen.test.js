@@ -9,19 +9,19 @@ const cwd = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 // Use `node: true` instead of `preferLocal: true` to make Ubuntu CI tests happy.
 const localOpts = { cwd, node: true, reject: false }
 
-describe('Socket cyclonedx command', async () => {
+describe('Socket cdxgen command', async () => {
   it('should forwards known commands to cdxgen', async () => {
     for (const command of ['-h', '--help']) {
-      const ret = await $(localOpts)`cli.js cyclonedx ${command}`
+      const ret = await $(localOpts)`cli.js cdxgen ${command}`
       assert(ret.stdout.startsWith('cdxgen'), 'forwards commands to cdxgen')
     }
   })
   it('should not forward unknown commands to cdxgen', async () => {
     for (const command of ['-u', '--unknown']) {
-      const ret = await $(localOpts)`cli.js cyclonedx ${command}`
+      const ret = await $(localOpts)`cli.js cdxgen ${command}`
       assert(ret.stderr.startsWith(`Unknown argument: ${command}`), 'singular')
     }
-    const ret = await $(localOpts)`cli.js cyclonedx -u -h --unknown`
+    const ret = await $(localOpts)`cli.js cdxgen -u -h --unknown`
     assert(ret.stderr.startsWith('Unknown arguments: -u, --unknown'), 'plural')
   })
 })
