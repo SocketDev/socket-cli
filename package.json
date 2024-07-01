@@ -14,9 +14,6 @@
     "url": "https://socket.dev"
   },
   "license": "MIT",
-  "engines": {
-    "node": "^20.9.0 || >=21.1.0"
-  },
   "type": "module",
   "bin": {
     "socket": "cli.js",
@@ -30,18 +27,32 @@
     "lib/**/*.cjs",
     "lib/shadow/**"
   ],
-  "scripts": {
-    "check:dependency-check": "dependency-check '*.js' 'lib/shadow/*.cjs' '*.mjs' 'test/**/*.js' --no-dev --ignore-module node:* --ignore-module @cyclonedx/* --ignore-module synp",
-    "check:installed-check": "installed-check -i eslint-plugin-jsdoc",
-    "check:lint": "eslint --report-unused-disable-directives .",
-    "check:tsc": "tsc",
-    "check:type-coverage": "type-coverage --detail --strict --at-least 95 --ignore-files 'test/*'",
-    "check": "run-p -c --aggregate-output check:*",
-    "prepare": "husky install",
-    "test:unit": "c8 --reporter=lcov --reporter text node --test",
-    "test-ci": "run-s test:*",
-    "test": "run-s check test:*",
-    "//postinstall": "node ./cli.js wrapper --postinstall"
+  "dependencies": {
+    "@apideck/better-ajv-errors": "^0.3.6",
+    "@cyclonedx/cdxgen": "^10.7.0",
+    "@inquirer/select": "^2.3.5",
+    "@socketsecurity/config": "^2.1.3",
+    "@socketsecurity/sdk": "^1.2.0",
+    "chalk": "^5.3.0",
+    "chalk-table": "^1.0.2",
+    "execa": "^9.1.0",
+    "globby": "^14.0.1",
+    "hpagent": "^1.2.0",
+    "ignore": "^5.3.1",
+    "ignore-by-default": "^2.1.0",
+    "inquirer": "^9.2.23",
+    "is-interactive": "^2.0.0",
+    "is-unicode-supported": "^2.0.0",
+    "meow": "^13.2.0",
+    "open": "^10.1.0",
+    "ora": "^8.0.1",
+    "pony-cause": "^2.1.11",
+    "prompts": "^2.4.2",
+    "synp": "^1.9.13",
+    "terminal-link": "^3.0.0",
+    "update-notifier": "^7.0.0",
+    "which": "^4.0.0",
+    "yargs-parser": "^21.1.1"
   },
   "devDependencies": {
     "@socketsecurity/eslint-config": "^5.0.1",
@@ -82,31 +93,26 @@
     "type-coverage": "^2.29.0",
     "typescript": "~5.5.2"
   },
-  "dependencies": {
-    "@apideck/better-ajv-errors": "^0.3.6",
-    "@cyclonedx/cdxgen": "^10.7.0",
-    "@inquirer/select": "^2.3.5",
-    "@socketsecurity/config": "^2.1.3",
-    "@socketsecurity/sdk": "^1.2.0",
-    "chalk": "^5.3.0",
-    "chalk-table": "^1.0.2",
-    "execa": "^9.1.0",
-    "globby": "^14.0.1",
-    "hpagent": "^1.2.0",
-    "ignore": "^5.3.1",
-    "ignore-by-default": "^2.1.0",
-    "inquirer": "^9.2.23",
-    "is-interactive": "^2.0.0",
-    "is-unicode-supported": "^2.0.0",
-    "meow": "^13.2.0",
-    "open": "^10.1.0",
-    "ora": "^8.0.1",
-    "pony-cause": "^2.1.11",
-    "prompts": "^2.4.2",
-    "synp": "^1.9.13",
-    "terminal-link": "^3.0.0",
-    "update-notifier": "^7.0.0",
-    "which": "^4.0.0",
-    "yargs-parser": "^21.1.1"
+  "overrides": {
+    "@cyclonedx/cdxgen": {
+      "packageurl-js": "https://registry.npmjs.org/@jdalton/packageurl-js/-/packageurl-js-1.2.7.tgz"
+    }
+  },
+  "engines": {
+    "node": "^20.9.0 || >=21.1.0"
+  },
+
+  "scripts": {
+    "check:dependency-check": "dependency-check '*.js' 'lib/shadow/*.cjs' '*.mjs' 'test/**/*.js' --no-dev --ignore-module node:* --ignore-module @cyclonedx/* --ignore-module synp",
+    "check:installed-check": "installed-check -i eslint-plugin-jsdoc",
+    "check:lint": "eslint --report-unused-disable-directives .",
+    "check:tsc": "tsc",
+    "check:type-coverage": "type-coverage --detail --strict --at-least 95 --ignore-files 'test/*'",
+    "check": "run-p -c --aggregate-output check:*",
+    "prepare": "husky install",
+    "test:unit": "c8 --reporter=lcov --reporter text node --test",
+    "test-ci": "run-s test:*",
+    "test": "run-s check test:*",
+    "//postinstall": "node ./cli.js wrapper --postinstall"
   }
 }
