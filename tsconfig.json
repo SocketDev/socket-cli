@@ -1,37 +1,4 @@
 {
-  "extends": "@tsconfig/node20/tsconfig.json",
-  "files": [
-    "cli.js"
-  ],
-  "include": [
-    "lib/utils/issue-rules.cjs",
-    "lib/**/*",
-    "test/**/*"
-  ],
-  "exclude": [
-    "lib/shadow/**"
-  ],
-  "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
-    "noEmit": true,
-    "resolveJsonModule": true,
-    "module": "NodeNext",
-    "moduleResolution": "nodenext",
-    "lib": ["ES2022"],
-    "target": "es2022",
-    "types": ["node"],
-
-    /* New checks being tried out */
-    "exactOptionalPropertyTypes": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true,
-
-    /* Additional checks */
-    "forceConsistentCasingInFileNames": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
-  }
+  "extends": "./.config/tsconfig.rollup.json",
+  "include": ["src/**/*.ts"]
 }
