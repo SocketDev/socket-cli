@@ -1,13 +1,13 @@
 # Basic ones
-/coverage
-/coverage-ts
-/node_modules
-/.DS_Store
+.DS_Store
+/.eslintcache
 /.env
-/.nyc_output
+/.tap
 /.vscode
-
-/lib/shadow/bin
+/coverage
+**/dist
+**/node_modules
+/*.tsbuildinfo
 
 # We're a library, so please, no lock files
 /yarn.lock

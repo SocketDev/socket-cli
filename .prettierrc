@@ -1,1 +1,8 @@
-"prettier-config-x-standard"
+{
+  "arrowParens": "avoid",
+  "semi": false,
+  "singleQuote": true,
+  "jsxSingleQuote": true,
+  "trailingComma": "none",
+  "printWidth": 80
+}
