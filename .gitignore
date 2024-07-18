@@ -18,3 +18,4 @@
 
 # Library specific ones
 !/.vscode/extensions.json
+/test/socket-npm-fixtures/**/node_modules/
