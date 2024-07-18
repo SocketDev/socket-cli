@@ -103,7 +103,7 @@
   },
 
   "scripts": {
-    "check:dependency-check": "dependency-check '*.js' 'lib/shadow/*.cjs' '*.mjs' 'test/**/*.js' --no-dev --ignore-module node:* --ignore-module @cyclonedx/* --ignore-module synp",
+    "check:dependency-check": "dependency-check '*.js' 'lib/shadow/*.cjs' '*.mjs' 'test/*.js' --no-dev --ignore-module node:* --ignore-module @cyclonedx/* --ignore-module synp",
     "check:installed-check": "installed-check -i eslint-plugin-jsdoc",
     "check:lint": "eslint --report-unused-disable-directives .",
     "check:tsc": "tsc",
