@@ -1,0 +1,17 @@
+{
+  "name": "npm10",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "npm": "^10.8.2"
+  },
+  "devDependencies": {},
+  "description": ""
+}
