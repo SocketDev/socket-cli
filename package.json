@@ -1,6 +1,6 @@
 {
   "name": "@socketsecurity/cli",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "CLI tool for Socket.dev",
   "homepage": "http://github.com/SocketDev/socket-cli-js",
   "repository": {
@@ -101,7 +101,6 @@
   "engines": {
     "node": "^20.9.0 || >=21.1.0"
   },
-
   "scripts": {
     "check:dependency-check": "dependency-check '*.js' 'lib/shadow/*.cjs' '*.mjs' 'test/*.js' --no-dev --ignore-module node:* --ignore-module @cyclonedx/* --ignore-module synp",
     "check:installed-check": "installed-check -i eslint-plugin-jsdoc",
@@ -109,7 +108,7 @@
     "check:tsc": "tsc",
     "check:type-coverage": "type-coverage --detail --strict --at-least 95 --ignore-files 'test/*'",
     "check": "run-p -c --aggregate-output check:*",
-    "prepare": "husky install",
+    "prepare": "husky",
     "test:unit": "c8 --reporter=lcov --reporter text node --test",
     "test-ci": "run-s test:*",
     "test": "run-s check test:*",
