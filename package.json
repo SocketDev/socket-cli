@@ -122,7 +122,7 @@
   },
   "overrides": {
     "@cyclonedx/cdxgen": {
-      "packageurl-js": "https://registry.npmjs.org/@jdalton/packageurl-js/-/packageurl-js-1.4.7.tgz"
+      "packageurl-js": "https://registry.npmjs.org/@jdalton/packageurl-js/-/packageurl-js-1.4.9.tgz"
     }
   },
   "engines": {
