@@ -35,7 +35,7 @@
     "cli-boxes": "^3.0.0",
     "cli-spinners": "^2.9.2",
     "cross-spawn": "^7.0.3",
-    "dot-prop": "^6.0.1",
+    "dot-prop": "^9.0.0",
     "eastasianwidth": "^0.2.0",
     "emoji-regex": "^10.3.0",
     "fast-glob": "^3.3.2",
