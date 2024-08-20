@@ -13,7 +13,7 @@ function socketModifyPlugin({
   const filter = createFilter(include, exclude)
   return {
     name: 'socket-modify',
-    renderChunk: (code, { fileName }) => {
+    renderChunk(code, { fileName }) {
       if (!filter(fileName)) return null
       const s = new MagicString(code)
       find.lastIndex = 0

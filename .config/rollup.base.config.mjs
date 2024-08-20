@@ -7,6 +7,7 @@ import replace from '@rollup/plugin-replace'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import rangesIntersect from 'semver/ranges/intersects.js'
 import { readPackageUpSync } from 'read-package-up'
+import { purgePolyfills } from 'unplugin-purge-polyfills'
 
 import { loadJSON } from '../scripts/files.js'
 import {
@@ -136,6 +137,9 @@ export default (extendConfig = {}) => {
         exclude: ['**/*.json'],
         babelConfig,
         tsconfig: tsconfigPath
+      }),
+      purgePolyfills.rollup({
+        replacements: {}
       }),
       // Convert un-prefixed built-in imports into "node:"" prefixed forms.
       replace({
