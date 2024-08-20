@@ -3,22 +3,21 @@ import path from 'node:path'
 
 import { globby } from 'globby'
 import ignore from 'ignore'
-// @ts-ignore
-import { directories } from 'ignore-by-default'
+
+import { arrayUnique } from './arrays'
+import { directoryPatterns } from './ignore-by-default'
 
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { Options as GlobbyOptions } from 'globby'
 
-// There are a lot of possible folders that we should not be looking in and "ignore-by-default" helps us with defining those
-const ignoreByDefault: readonly string[] = directories()
-
 const BASE_GLOBBY_OPTS: GlobbyOptions = {
   absolute: true,
   expandDirectories: false,
   gitignore: true,
-  ignore: [...ignoreByDefault.map(item => '**/' + item)],
+  ignore: directoryPatterns(),
   markDirectories: true,
+  onlyFiles: true,
   unique: true
 }
 
@@ -97,10 +96,7 @@ export async function mapGlobResultToFiles(
   const packageFiles = await Promise.all(
     entries.map(entry => mapGlobEntryToFiles(entry, supportedFiles))
   )
-
-  const uniquePackageFiles = [...new Set(packageFiles.flat())]
-
-  return uniquePackageFiles
+  return arrayUnique(packageFiles.flat())
 }
 
 export async function mapGlobEntryToFiles(
@@ -111,28 +107,25 @@ export async function mapGlobEntryToFiles(
   const jsLockFilePatterns = Object.values(jsSupported).map(
     p => `**/${(p as { pattern: string }).pattern}`
   )
-
   const pyFilePatterns = Object.values(supportedFiles['pypi'] ?? {}).map(
     p => `**/${(p as { pattern: string }).pattern}`
   )
-
   const goSupported = supportedFiles['golang'] ?? {}
   const goSupplementalPatterns = Object.values(goSupported).map(
     p => `**/${(p as { pattern: string }).pattern}`
   )
-
-  const files = await globby(
-    [...jsLockFilePatterns, ...pyFilePatterns, ...goSupplementalPatterns],
-    {
-      ...BASE_GLOBBY_OPTS,
-      onlyFiles: true,
-      cwd: path.resolve(
-        (await stat(entry)).isDirectory() ? entry : path.dirname(entry)
-      )
-    }
+  return <string[]>(
+    await globby(
+      [...jsLockFilePatterns, ...pyFilePatterns, ...goSupplementalPatterns],
+      {
+        ...BASE_GLOBBY_OPTS,
+        onlyFiles: true,
+        cwd: path.resolve(
+          (await stat(entry)).isDirectory() ? entry : path.dirname(entry)
+        )
+      }
+    )
   )
-
-  return files
 }
 
 export function findRoot(filepath: string): string | undefined {
