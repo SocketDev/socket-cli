@@ -8,7 +8,12 @@ const { ignores } = includeIgnoreFile(path.join(__dirname, '.gitignore'))
 
 module.exports = {
   ignorePatterns: ignores,
-  extends: ['@socketsecurity', 'plugin:import/typescript', 'prettier'],
+  extends: [
+    '@socketsecurity',
+    'plugin:import/typescript',
+    'plugin:depend/recommended',
+    'prettier'
+  ],
   parserOptions: {
     project: ['./tsconfig.json'],
     EXPERIMENTAL_useProjectService: {
@@ -20,11 +25,10 @@ module.exports = {
     '@typescript-eslint/no-floating-promises': [
       'error',
       {
-        ignoreVoid: true,
-        ignoreIIFE: true
+        ignoreIIFE: true,
+        ignoreVoid: true
       }
     ],
-    'no-warning-comments': ['warn', { terms: ['fixme'] }],
     // Returning unawaited promises in a try/catch/finally is dangerous
     // (the `catch` won't catch if the promise is rejected, and the `finally`
     // won't wait for the promise to resolve). Returning unawaited promises
@@ -33,6 +37,13 @@ module.exports = {
     // not awaiting promises *outside* of try/catch/finally, which is not what
     // we want), and it's nice to await before returning anyways, since you get
     // a slightly more comprehensive stack trace upon promise rejection.
-    '@typescript-eslint/return-await': ['error', 'always']
+    '@typescript-eslint/return-await': ['error', 'always'],
+    'depend/ban-dependencies': [
+      'warn',
+      {
+        allowed: ['globby']
+      }
+    ],
+    'no-warning-comments': ['warn', { terms: ['fixme'] }]
   }
 }
