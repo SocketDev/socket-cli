@@ -13,7 +13,7 @@ import { printFlagList } from '../utils/formatting'
 import { getDefaultKey, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
-import type { Ora } from 'ora'
+import { AuthError } from '../utils/errors'
 
 export const dependencies: CliSubcommand = {
   description:
@@ -23,9 +23,7 @@ export const dependencies: CliSubcommand = {
 
     const input = setupCommand(name, dependencies.description, argv, importMeta)
     if (input) {
-      const spinnerText = 'Searching dependencies...'
-      const spinner = ora(spinnerText).start()
-      await searchDeps(input, spinner)
+      await searchDeps(input)
     }
   }
 }
@@ -100,10 +98,17 @@ function setupCommand(
 }
 
 async function searchDeps(
-  { limit, offset, outputJson }: CommandContext,
-  spinner: Ora
+  { limit, offset, outputJson }: CommandContext
 ): Promise<void> {
-  const socketSdk = await setupSdk(getDefaultKey())
+  const apiKey = getDefaultKey()
+  if(!apiKey){
+    throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+  }
+  const spinnerText = 'Searching dependencies...'
+  const spinner = ora(spinnerText).start()
+  
+  const socketSdk = await setupSdk(apiKey)
+
   const result = await handleApiCall(
     socketSdk.searchDependencies({ limit, offset }),
     'Searching dependencies'
