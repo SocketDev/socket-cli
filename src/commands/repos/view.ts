@@ -14,6 +14,7 @@ import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
+import { AuthError } from '../../utils/errors'
 
 export const view: CliSubcommand = {
   description: 'View repositories in an organization',
@@ -21,9 +22,13 @@ export const view: CliSubcommand = {
     const name = `${parentName} view`
     const input = setupCommand(name, view.description, argv, importMeta)
     if (input) {
+      const apiKey = getDefaultKey()
+      if(!apiKey){
+        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      }
       const spinnerText = 'Fetching repository... \n'
       const spinner = ora(spinnerText).start()
-      await viewRepository(input.orgSlug, input.repositoryName, spinner)
+      await viewRepository(input.orgSlug, input.repositoryName, spinner, apiKey)
     }
   }
 }
@@ -89,9 +94,10 @@ function setupCommand(
 async function viewRepository(
   orgSlug: string,
   repoName: string,
-  spinner: Ora
+  spinner: Ora,
+  apiKey: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(getDefaultKey())
+  const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(
     socketSdk.getOrgRepo(orgSlug, repoName),
     'fetching repository'
