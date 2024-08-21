@@ -1,17 +1,17 @@
-/* eslint-disable no-console */
-
 import chalk from 'chalk'
 import meow from 'meow'
 import ora from 'ora'
 
-import { outputFlags, validationFlags } from '../../flags/index.js'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api-helpers.js'
-import { InputError } from '../../utils/errors.js'
-import { printFlagList } from '../../utils/formatting.js'
-import { getDefaultKey, setupSdk } from '../../utils/sdk.js'
+import { outputFlags, validationFlags } from '../flags'
+import { handleApiCall, handleUnsuccessfulApiResponse } from '../utils/api-helpers'
+import { InputError } from '../utils/errors'
+import { printFlagList } from '../utils/formatting'
+import { getDefaultKey, setupSdk } from '../utils/sdk'
 
-/** @type {import('../../utils/meow-with-subcommands').CliSubcommand} */
-export const analytics = {
+import type { CliSubcommand } from '../utils/meow-with-subcommands'
+import type { Ora } from "ora"
+
+export const analytics: CliSubcommand = {
   description: 'Look up analytics data',
   async run (argv, importMeta, { parentName }) {
     const name = parentName + ' analytics'
@@ -32,22 +32,14 @@ export const analytics = {
 
 // Internal functions
 
-/**
- * @typedef CommandContext
- * @property {string} scope
- * @property {string} time
- * @property {string|undefined} repo
- */
+type CommandContext = {
+  scope: string
+  time: string
+  repo: string | undefined
+}
 
-/**
- * @param {string} name
- * @param {string} description
- * @param {readonly string[]} argv
- * @param {ImportMeta} importMeta
- * @returns {void|CommandContext}
- */
-function setupCommand (name, description, argv, importMeta) {
-  const flags = {
+function setupCommand (name: string, description: string, argv: readonly string[], importMeta: ImportMeta): void|CommandContext {
+  const flags: { [key: string]: any } = {
     ...outputFlags,
     ...validationFlags,
   }
@@ -100,17 +92,7 @@ function setupCommand (name, description, argv, importMeta) {
   }
 }
 
-/**
- * @typedef OrgAnalyticsData
- * @property {import('@socketsecurity/sdk').SocketSdkReturnType<'getOrgAnalytics'>["data"]} data
- */
-
-/**
- * @param {string} time
- * @param {import('ora').Ora} spinner
- * @returns {Promise<void>}
- */
-async function fetchOrgAnalyticsData (time, spinner) {
+async function fetchOrgAnalyticsData (time: string, spinner: Ora): Promise<void> {
   const socketSdk = await setupSdk(getDefaultKey())
   const result = await handleApiCall(socketSdk.getOrgAnalytics(time), 'fetching analytics data')
 
@@ -120,7 +102,7 @@ async function fetchOrgAnalyticsData (time, spinner) {
 
   spinner.stop()
 
-  const data = result.data.reduce((/** @type {{ [key: string]: any }} */ acc, current) => {
+  const data = result.data.reduce((acc: { [key: string]: any }, current) => {
     const formattedDate = new Date(current.created_at).toLocaleDateString()
 
     if (acc[formattedDate]) {
@@ -147,18 +129,7 @@ async function fetchOrgAnalyticsData (time, spinner) {
   console.table(data, ['repository_name', 'total_critical_prevented', 'total_high_prevented', 'total_medium_prevented', 'total_low_prevented'])
 }
 
-/**
- * @typedef RepoAnalyticsData
- * @property {import('@socketsecurity/sdk').SocketSdkReturnType<'getRepoAnalytics'>["data"]} data
- */
-
-/**
- * @param {string} repo
- * @param {string} time
- * @param {import('ora').Ora} spinner
- * @returns {Promise<void>}
- */
-async function fetchRepoAnalyticsData (repo, time, spinner) {
+async function fetchRepoAnalyticsData (repo: string, time: string, spinner: Ora): Promise<void> {
   const socketSdk = await setupSdk(getDefaultKey())
   const result = await handleApiCall(socketSdk.getRepoAnalytics(repo, time), 'fetching analytics data')
 
