@@ -12,6 +12,7 @@ import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
+import { AuthError } from '../../utils/errors'
 
 export const update: CliSubcommand = {
   description: 'Update a repository in an organization',
@@ -19,9 +20,13 @@ export const update: CliSubcommand = {
     const name = `${parentName} update`
     const input = setupCommand(name, update.description, argv, importMeta)
     if (input) {
+      const apiKey = getDefaultKey()
+      if(!apiKey){
+        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      }
       const spinnerText = 'Updating repository... \n'
       const spinner = ora(spinnerText).start()
-      await updateRepository(input.orgSlug, input, spinner)
+      await updateRepository(input.orgSlug, input, spinner, apiKey)
     }
   }
 }
@@ -145,9 +150,10 @@ function setupCommand(
 async function updateRepository(
   orgSlug: string,
   input: CommandContext,
-  spinner: Ora
+  spinner: Ora,
+  apiKey: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(getDefaultKey())
+  const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(
     socketSdk.updateOrgRepo(orgSlug, input.name, input),
     'updating repository'

@@ -12,6 +12,7 @@ import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
+import { AuthError } from '../../utils/errors'
 
 export const del: CliSubcommand = {
   description: 'Delete a scan',
@@ -19,9 +20,13 @@ export const del: CliSubcommand = {
     const name = `${parentName} del`
     const input = setupCommand(name, del.description, argv, importMeta)
     if (input) {
+      const apiKey = getDefaultKey()
+      if(!apiKey){
+        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      }
       const spinnerText = 'Deleting scan...'
       const spinner = ora(spinnerText).start()
-      await deleteOrgFullScan(input.orgSlug, input.fullScanId, spinner)
+      await deleteOrgFullScan(input.orgSlug, input.fullScanId, spinner, apiKey)
     }
   }
 }
@@ -87,9 +92,10 @@ function setupCommand(
 async function deleteOrgFullScan(
   orgSlug: string,
   fullScanId: string,
-  spinner: Ora
+  spinner: Ora,
+  apiKey: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(getDefaultKey())
+  const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(
     socketSdk.deleteOrgFullScan(orgSlug, fullScanId),
     'Deleting scan'

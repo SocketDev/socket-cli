@@ -18,6 +18,7 @@ import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
+import { AuthError } from '../../utils/errors'
 
 export const create: CliSubcommand = {
   description: 'Create a scan',
@@ -25,9 +26,13 @@ export const create: CliSubcommand = {
     const name = `${parentName} create`
     const input = await setupCommand(name, create.description, argv, importMeta)
     if (input) {
+      const apiKey = getDefaultKey()
+      if(!apiKey){
+        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      }
       const spinnerText = 'Creating a scan... \n'
       const spinner = ora(spinnerText).start()
-      await createFullScan(input, spinner)
+      await createFullScan(input, spinner, apiKey)
     }
   }
 }
@@ -203,9 +208,10 @@ async function setupCommand(
 
 async function createFullScan(
   input: CommandContext,
-  spinner: Ora
+  spinner: Ora,
+  apiKey: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(getDefaultKey())
+  const socketSdk = await setupSdk(apiKey)
   const {
     orgSlug,
     repoName,

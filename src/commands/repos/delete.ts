@@ -10,6 +10,7 @@ import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
+import { AuthError } from '../../utils/errors'
 
 export const del: CliSubcommand = {
   description: 'Delete a repository in an organization',
@@ -17,9 +18,13 @@ export const del: CliSubcommand = {
     const name = `${parentName} del`
     const input = setupCommand(name, del.description, argv, importMeta)
     if (input) {
+      const apiKey = getDefaultKey()
+      if(!apiKey){
+        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      }
       const spinnerText = 'Deleting repository... \n'
       const spinner = ora(spinnerText).start()
-      await deleteRepository(input.orgSlug, input.repoName, spinner)
+      await deleteRepository(input.orgSlug, input.repoName, spinner, apiKey)
     }
   }
 }
@@ -71,9 +76,10 @@ function setupCommand(
 async function deleteRepository(
   orgSlug: string,
   repoName: string,
-  spinner: Ora
+  spinner: Ora,
+  apiKey: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(getDefaultKey())
+  const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(
     socketSdk.deleteOrgRepo(orgSlug, repoName),
     'deleting repository'
