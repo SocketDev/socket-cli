@@ -27,6 +27,7 @@ import type {
 } from '@npmcli/arborist'
 import type { Writable } from 'node:stream'
 import type { Options as OraOptions } from 'ora'
+import { findRoot } from '../utils/path-resolve'
 
 type ArboristClass = typeof BaseArborist & {
   new (...args: any): any
@@ -172,20 +173,6 @@ async function* batchScan(
   const rli = rl.createInterface(res)
   for await (const line of rli) {
     yield JSON.parse(line)
-  }
-}
-
-function findRoot(filepath: string): string | undefined {
-  let curPath = filepath
-  while (true) {
-    if (path.basename(curPath) === 'npm') {
-      return curPath
-    }
-    const parent = path.dirname(curPath)
-    if (parent === curPath) {
-      return undefined
-    }
-    curPath = parent
   }
 }
 
