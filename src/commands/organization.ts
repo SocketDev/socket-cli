@@ -9,6 +9,7 @@ import {
 import { getDefaultKey, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
+import { AuthError } from '../utils/errors'
 
 export const organizations: CliSubcommand = {
   description: 'List organizations associated with the API key used',
@@ -42,6 +43,9 @@ function setupCommand(
 
 async function fetchOrganizations(): Promise<void> {
   const apiKey = getDefaultKey()
+  if(!apiKey){
+    throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+  }
   const socketSdk = await setupSdk(apiKey)
   const spinner = ora('Fetching organizations...').start()
 
@@ -57,13 +61,10 @@ async function fetchOrganizations(): Promise<void> {
   spinner.stop()
 
   const organizations = Object.values(result.data.organizations)
-  if (apiKey) {
-    console.log(
-      `List of organizations associated with your API key: ${chalk.italic(apiKey)}`
-    )
-  } else {
-    console.log('List of organizations associated with your API key.')
-  }
+  
+  console.log(
+    `List of organizations associated with your API key: ${chalk.italic(apiKey)}`
+  )
 
   for (const o of organizations) {
     console.log(`

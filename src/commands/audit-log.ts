@@ -9,10 +9,11 @@ import {
   handleUnsuccessfulApiResponse
 } from '../utils/api-helpers'
 import { printFlagList } from '../utils/formatting'
-import { FREE_API_KEY, getDefaultKey, setupSdk } from '../utils/sdk'
+import { getDefaultKey, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
+import { AuthError } from '../utils/errors'
 
 export const auditLog: CliSubcommand = {
   description: 'Look up the audit log for an organization',
@@ -21,8 +22,12 @@ export const auditLog: CliSubcommand = {
 
     const input = setupCommand(name, auditLog.description, argv, importMeta)
     if (input) {
+      const apiKey = getDefaultKey()
+      if(!apiKey){
+        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      }
       const spinner = ora(`Looking up audit log for ${input.orgSlug}\n`).start()
-      await fetchOrgAuditLog(input.orgSlug, input, spinner)
+      await fetchOrgAuditLog(input.orgSlug, input, spinner, apiKey)
     }
   }
 }
@@ -132,9 +137,10 @@ type AuditChoices = (Separator | AuditChoice)[]
 async function fetchOrgAuditLog(
   orgSlug: string,
   input: CommandContext,
-  spinner: Ora
+  spinner: Ora,
+  apiKey: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(getDefaultKey() || FREE_API_KEY)
+  const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(
     socketSdk.getAuditLogEvents(orgSlug, input),
     `Looking up audit log for ${orgSlug}\n`
