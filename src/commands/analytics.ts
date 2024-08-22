@@ -1,8 +1,12 @@
+// @ts-nocheck
+// @ts-ignore
+import blessed from 'blessed'
+import contrib from 'blessed-contrib'
 import chalk from 'chalk'
-import meow from 'meow'
-import ora from 'ora'
 // @ts-ignore
 import chalkTable from 'chalk-table'
+import meow from 'meow'
+import ora from 'ora'
 
 import { outputFlags, validationFlags } from '../flags'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../utils/api-helpers'
@@ -108,43 +112,71 @@ async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string
 
   spinner.stop()
 
-  const data = result.data.reduce((acc: { [key: string]: any }, current) => {
-    const formattedDate = new Date(current.created_at).toLocaleDateString()
+  // const data = result.data.reduce((acc: { [key: string]: any }, current) => {
+  //   const formattedDate = new Date(current.created_at).toLocaleDateString()
 
-    if (acc[formattedDate]) {
-      acc[formattedDate].total_critical_alerts += current.total_critical_alerts
-      acc[formattedDate].total_high_alerts += current.total_high_alerts
-      acc[formattedDate].total_critical_added += current.total_critical_added
-      acc[formattedDate].total_high_added += current.total_high_added
-      acc[formattedDate].total_critical_prevented += current.total_critical_prevented
-      acc[formattedDate].total_high_prevented += current.total_high_prevented
-      acc[formattedDate].total_medium_prevented += current.total_medium_prevented
-      acc[formattedDate].total_low_prevented += current.total_low_prevented
-      // acc[formattedDate].top_five_alert_types += current.top_five_alert_types
-    } else {
-      acc[formattedDate] = current
-      acc[formattedDate].created_at = formattedDate
-    }
+  //   if (acc[formattedDate]) {
+  //     acc[formattedDate].total_critical_alerts += current.total_critical_alerts
+  //     acc[formattedDate].total_high_alerts += current.total_high_alerts
+  //     acc[formattedDate].total_critical_added += current.total_critical_added
+  //     acc[formattedDate].total_high_added += current.total_high_added
+  //     acc[formattedDate].total_critical_prevented += current.total_critical_prevented
+  //     acc[formattedDate].total_high_prevented += current.total_high_prevented
+  //     acc[formattedDate].total_medium_prevented += current.total_medium_prevented
+  //     acc[formattedDate].total_low_prevented += current.total_low_prevented
+  //     // acc[formattedDate].top_five_alert_types += current.top_five_alert_types
+  //   } else {
+  //     acc[formattedDate] = current
+  //     acc[formattedDate].created_at = formattedDate
+  //   }
 
-    return acc
-  }, {})
+  //   return acc
+  // }, {})
 
 
-  const options = {
-    columns: [
-      { field: 'created_at', name: chalk.cyan('Date') },
-      { field: 'total_critical_alerts', name: chalk.cyan('Critical alerts') },
-      { field: 'total_high_alerts', name: chalk.cyan('High alerts') },
-      { field: 'total_critical_added', name: chalk.cyan('Critical alerts added') },
-      { field: 'total_high_added', name: chalk.cyan('High alerts added') },
-      { field: 'total_critical_prevented', name: chalk.cyan('Critical alerts prevented') },
-      { field: 'total_medium_prevented', name: chalk.cyan('Medium alerts prevented') },
-      { field: 'total_low_prevented', name: chalk.cyan('Low alerts prevented') },
-    ]
+  // const options = {
+  //   columns: [
+  //     { field: 'created_at', name: chalk.cyan('Date') },
+  //     { field: 'total_critical_alerts', name: chalk.cyan('Critical alerts') },
+  //     { field: 'total_high_alerts', name: chalk.cyan('High alerts') },
+  //     { field: 'total_critical_added', name: chalk.cyan('Critical alerts added') },
+  //     { field: 'total_high_added', name: chalk.cyan('High alerts added') },
+  //     { field: 'total_critical_prevented', name: chalk.cyan('Critical alerts prevented') },
+  //     { field: 'total_medium_prevented', name: chalk.cyan('Medium alerts prevented') },
+  //     { field: 'total_low_prevented', name: chalk.cyan('Low alerts prevented') },
+  //   ]
+  // }
+
+  // console.log(chalk.bgMagenta.white.bold(`\n Analytics data at the organization level over the last ${time} days (indicated in total amount): \n`))
+  // console.log(`${chalkTable(options, Object.values(data))}\n`)
+
+  const screen = blessed.screen()
+  // eslint-disable-next-line
+  const grid = new contrib.grid({rows: 1, cols: 2, screen})
+
+  const line = grid.set(0, 0, 1, 1, contrib.line,
+    { style:
+      { line: "yellow"
+      , text: "green"
+      , baseline: "black"}
+    , xLabelPadding: 3
+    , xPadding: 5
+    , label: 'Stocks'})
+
+  // const map = grid.set(0, 1, 1, 1, contrib.map, {label: 'Servers Location'})
+
+  const lineData = {
+    x: ['t1', 't2', 't3', 't4'],
+    y: [5, 1, 7, 5]
   }
 
-  console.log(chalk.bgMagenta.white.bold(`\n Analytics data at the organization level over the last ${time} days (indicated in total amount): \n`))
-  console.log(`${chalkTable(options, Object.values(data))}\n`)
+  line.setData([lineData])
+
+  screen.key(['escape', 'q', 'C-c'], function(ch, key) {
+    return process.exit(0);
+  });
+
+  screen.render()
 }
 
 async function fetchRepoAnalyticsData (repo: string, time: string, spinner: Ora, apiKey: string): Promise<void> {
