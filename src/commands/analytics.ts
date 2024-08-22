@@ -1,10 +1,12 @@
 import chalk from 'chalk'
 import meow from 'meow'
 import ora from 'ora'
+// @ts-ignore
+import chalkTable from 'chalk-table'
 
 import { outputFlags, validationFlags } from '../flags'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../utils/api-helpers'
-import { InputError } from '../utils/errors'
+import { AuthError, InputError } from '../utils/errors'
 import { printFlagList } from '../utils/formatting'
 import { getDefaultKey, setupSdk } from '../utils/sdk'
 
@@ -18,12 +20,16 @@ export const analytics: CliSubcommand = {
 
     const input = setupCommand(name, analytics.description, argv, importMeta)
     if (input) {
+      const apiKey = getDefaultKey()
+      if(!apiKey){
+        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      }
       const spinner = ora('Fetching analytics data').start()
       if (input.scope === 'org') {
-        await fetchOrgAnalyticsData(input.time, spinner)
+        await fetchOrgAnalyticsData(input.time, spinner, apiKey)
       } else {
         if (input.repo) {
-          await fetchRepoAnalyticsData(input.repo, input.time, spinner)
+          await fetchRepoAnalyticsData(input.repo, input.time, spinner, apiKey)
         }
       }
     }
@@ -92,8 +98,8 @@ function setupCommand (name: string, description: string, argv: readonly string[
   }
 }
 
-async function fetchOrgAnalyticsData (time: string, spinner: Ora): Promise<void> {
-  const socketSdk = await setupSdk(getDefaultKey())
+async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string): Promise<void> {
+  const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(socketSdk.getOrgAnalytics(time), 'fetching analytics data')
 
   if (result.success === false) {
@@ -123,14 +129,26 @@ async function fetchOrgAnalyticsData (time: string, spinner: Ora): Promise<void>
     return acc
   }, {})
 
-  console.log(chalk.bgMagenta.white.bold(`\n Analytics data for the organization over the last ${time} days: \n`))
-  console.table(data, ['repository_name', 'total_critical_alerts', 'total_high_alerts', 'top_five_alert_types'])
-  console.table(data, ['repository_name', 'total_critical_added', 'total_high_added'])
-  console.table(data, ['repository_name', 'total_critical_prevented', 'total_high_prevented', 'total_medium_prevented', 'total_low_prevented'])
+
+  const options = {
+    columns: [
+      { field: 'created_at', name: chalk.cyan('Date') },
+      { field: 'total_critical_alerts', name: chalk.cyan('Critical alerts') },
+      { field: 'total_high_alerts', name: chalk.cyan('High alerts') },
+      { field: 'total_critical_added', name: chalk.cyan('Critical alerts added') },
+      { field: 'total_high_added', name: chalk.cyan('High alerts added') },
+      { field: 'total_critical_prevented', name: chalk.cyan('Critical alerts prevented') },
+      { field: 'total_medium_prevented', name: chalk.cyan('Medium alerts prevented') },
+      { field: 'total_low_prevented', name: chalk.cyan('Low alerts prevented') },
+    ]
+  }
+
+  console.log(chalk.bgMagenta.white.bold(`\n Analytics data at the organization level over the last ${time} days (indicated in total amount): \n`))
+  console.log(`${chalkTable(options, Object.values(data))}\n`)
 }
 
-async function fetchRepoAnalyticsData (repo: string, time: string, spinner: Ora): Promise<void> {
-  const socketSdk = await setupSdk(getDefaultKey())
+async function fetchRepoAnalyticsData (repo: string, time: string, spinner: Ora, apiKey: string): Promise<void> {
+  const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(socketSdk.getRepoAnalytics(repo, time), 'fetching analytics data')
 
   if (result.success === false) {
@@ -147,8 +165,19 @@ async function fetchRepoAnalyticsData (repo: string, time: string, spinner: Ora)
   })
   const data = { ...formattedData.flat(1) }
 
+  const options = {
+    columns: [
+      { field: 'created_at', name: chalk.cyan('Date') },
+      { field: 'total_critical_alerts', name: chalk.cyan('Critical alerts') },
+      { field: 'total_high_alerts', name: chalk.cyan('High alerts') },
+      { field: 'total_critical_added', name: chalk.cyan('Critical alerts added') },
+      { field: 'total_high_added', name: chalk.cyan('High alerts added') },
+      { field: 'total_critical_prevented', name: chalk.cyan('Critical alerts prevented') },
+      { field: 'total_medium_prevented', name: chalk.cyan('Medium alerts prevented') },
+      { field: 'total_low_prevented', name: chalk.cyan('Low alerts prevented') },
+    ]
+  }
+
   console.log(chalk.bgMagenta.white.bold(`\n Analytics data for ${repo} over the last ${time} days: \n`))
-  console.table(data, ['created_at', 'total_critical_alerts', 'total_high_alerts', 'top_five_alert_types'])
-  console.table(data, ['created_at', 'total_critical_added', 'total_high_added'])
-  console.table(data, ['created_at', 'total_critical_prevented', 'total_high_prevented', 'total_medium_prevented', 'total_low_prevented'])
+  console.log(`${chalkTable(options, Object.values(data))}\n`)
 }
