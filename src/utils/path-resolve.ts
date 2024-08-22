@@ -134,3 +134,17 @@ export async function mapGlobEntryToFiles(
 
   return files
 }
+
+export function findRoot(filepath: string): string | undefined {
+  let curPath = filepath
+  while (true) {
+    if (path.basename(curPath) === 'npm') {
+      return curPath
+    }
+    const parent = path.dirname(curPath)
+    if (parent === curPath) {
+      return undefined
+    }
+    curPath = parent
+  }
+}
