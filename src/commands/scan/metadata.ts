@@ -12,6 +12,7 @@ import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
+import { AuthError } from '../../utils/errors'
 
 export const metadata: CliSubcommand = {
   description: "Get a scan's metadata",
@@ -19,9 +20,13 @@ export const metadata: CliSubcommand = {
     const name = `${parentName} metadata`
     const input = setupCommand(name, metadata.description, argv, importMeta)
     if (input) {
+      const apiKey = getDefaultKey()
+      if(!apiKey){
+        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      }
       const spinnerText = "Getting scan's metadata... \n"
       const spinner = ora(spinnerText).start()
-      await getOrgScanMetadata(input.orgSlug, input.scanID, spinner)
+      await getOrgScanMetadata(input.orgSlug, input.scanID, spinner, apiKey)
     }
   }
 }
@@ -87,9 +92,10 @@ function setupCommand(
 async function getOrgScanMetadata(
   orgSlug: string,
   scanId: string,
-  spinner: Ora
+  spinner: Ora, 
+  apiKey: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(getDefaultKey())
+  const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(
     socketSdk.getOrgFullScanMetadata(orgSlug, scanId),
     'Listing scans'

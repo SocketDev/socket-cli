@@ -4,7 +4,7 @@ import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
-const description = 'Project report related commands'
+const description = '[Deprecated] Project report related commands'
 
 export const report: CliSubcommand = {
   description,

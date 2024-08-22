@@ -12,6 +12,7 @@ import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
+import { AuthError } from '../../utils/errors'
 
 export const stream: CliSubcommand = {
   description: 'Stream the output of a scan',
@@ -19,9 +20,13 @@ export const stream: CliSubcommand = {
     const name = `${parentName} stream`
     const input = setupCommand(name, stream.description, argv, importMeta)
     if (input) {
+      const apiKey = getDefaultKey()
+      if(!apiKey){
+        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      }
       const spinnerText = 'Streaming scan...\n'
       const spinner = ora(spinnerText).start()
-      await getOrgFullScan(input.orgSlug, input.fullScanId, input.file, spinner)
+      await getOrgFullScan(input.orgSlug, input.fullScanId, input.file, spinner, apiKey)
     }
   }
 }
@@ -90,9 +95,10 @@ async function getOrgFullScan(
   orgSlug: string,
   fullScanId: string,
   file: string | undefined,
-  spinner: Ora
+  spinner: Ora,
+  apiKey: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(getDefaultKey())
+  const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(
     socketSdk.getOrgFullScan(orgSlug, fullScanId, file),
     'Streaming a scan'
