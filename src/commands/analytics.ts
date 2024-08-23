@@ -112,27 +112,28 @@ async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string
 
   spinner.stop()
 
-  // const data = result.data.reduce((acc: { [key: string]: any }, current) => {
-  //   const formattedDate = new Date(current.created_at).toLocaleDateString()
+  const data = result.data.reduce((acc: { [key: string]: any }, current) => {
+    const formattedDate = new Date(current.created_at).toLocaleDateString()
 
-  //   if (acc[formattedDate]) {
-  //     acc[formattedDate].total_critical_alerts += current.total_critical_alerts
-  //     acc[formattedDate].total_high_alerts += current.total_high_alerts
-  //     acc[formattedDate].total_critical_added += current.total_critical_added
-  //     acc[formattedDate].total_high_added += current.total_high_added
-  //     acc[formattedDate].total_critical_prevented += current.total_critical_prevented
-  //     acc[formattedDate].total_high_prevented += current.total_high_prevented
-  //     acc[formattedDate].total_medium_prevented += current.total_medium_prevented
-  //     acc[formattedDate].total_low_prevented += current.total_low_prevented
-  //     // acc[formattedDate].top_five_alert_types += current.top_five_alert_types
-  //   } else {
-  //     acc[formattedDate] = current
-  //     acc[formattedDate].created_at = formattedDate
-  //   }
+    if (acc[formattedDate]) {
+      acc[formattedDate].total_critical_alerts += current.total_critical_alerts
+      acc[formattedDate].total_high_alerts += current.total_high_alerts
+      acc[formattedDate].total_critical_added += current.total_critical_added
+      acc[formattedDate].total_high_added += current.total_high_added
+      acc[formattedDate].total_critical_prevented += current.total_critical_prevented
+      acc[formattedDate].total_high_prevented += current.total_high_prevented
+      acc[formattedDate].total_medium_prevented += current.total_medium_prevented
+      acc[formattedDate].total_low_prevented += current.total_low_prevented
+      // acc[formattedDate].top_five_alert_types += current.top_five_alert_types
+    } else {
+      acc[formattedDate] = current
+      acc[formattedDate].created_at = formattedDate
+    }
 
-  //   return acc
-  // }, {})
+    return acc
+  }, {})
 
+  // console.log(data)
 
   // const options = {
   //   columns: [
@@ -152,31 +153,33 @@ async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string
 
   const screen = blessed.screen()
   // eslint-disable-next-line
-  const grid = new contrib.grid({rows: 1, cols: 2, screen})
+  const grid = new contrib.grid({rows: 4, cols: 4, screen})
 
-  const line = grid.set(0, 0, 1, 1, contrib.line,
-    { style:
-      { line: "yellow"
-      , text: "green"
-      , baseline: "black"}
-    , xLabelPadding: 3
-    , xPadding: 5
-    , label: 'Stocks'})
+  renderLineCharts(grid, screen, 'Critical alerts', [0,0,1,1.5])
+  renderLineCharts(grid, screen, 'High alerts', [0,1.5,1,1.5])
+  renderLineCharts(grid, screen, 'Critical alerts added to main', [1,0,1,2])
+  renderLineCharts(grid, screen, 'High alerts added to main', [1,2,1,2])
+  renderLineCharts(grid, screen, 'Critical alerts prevented from main', [2,0,1,2])
+  renderLineCharts(grid, screen, 'High alerts prevented to main', [2,2,1,2])
 
-  // const map = grid.set(0, 1, 1, 1, contrib.map, {label: 'Servers Location'})
+  const bar = grid.set(3, 0, 1, 1, contrib.bar,
+      { label: 'Top 5 alert types'
+      , barWidth: 4
+      , barSpacing: 6
+      , xOffset: 0
+      , maxHeight: 9})
 
-  const lineData = {
-    x: ['t1', 't2', 't3', 't4'],
-    y: [5, 1, 7, 5]
-  }
+   screen.append(bar) //must append before setting data
 
-  line.setData([lineData])
-
-  screen.key(['escape', 'q', 'C-c'], function(ch, key) {
-    return process.exit(0);
-  });
+   bar.setData(
+      { titles: ['Env vars', 'stuff']
+      , data: [5, 10]})
 
   screen.render()
+    
+  screen.key(['escape', 'q', 'C-c'], function(ch, key) {
+    return process.exit(0);
+  })
 }
 
 async function fetchRepoAnalyticsData (repo: string, time: string, spinner: Ora, apiKey: string): Promise<void> {
@@ -212,4 +215,28 @@ async function fetchRepoAnalyticsData (repo: string, time: string, spinner: Ora,
 
   console.log(chalk.bgMagenta.white.bold(`\n Analytics data for ${repo} over the last ${time} days: \n`))
   console.log(`${chalkTable(options, Object.values(data))}\n`)
+}
+
+
+const renderLineCharts = (grid, screen, title, coords) => {
+  const line = grid.set(...coords, contrib.line,
+    { style:
+      { line: "cyan"
+      , text: "cyan"
+      , baseline: "black"}
+    , xLabelPadding: 0
+    , xPadding: 0,
+    xOffset: 0,
+    legend: {width: 1}
+    , label: title})
+
+  screen.append(line)
+
+  const lineData = {
+    // x: Object.keys(data),
+    x: ['8/22', '8/21', '8/20', '8/19', '8/18', '8/17', '8/16'].reverse(),
+    y: [0, 0, 0, 0, 0, 12, 50]
+  }
+
+  line.setData([lineData])
 }
