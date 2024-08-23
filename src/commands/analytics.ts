@@ -112,26 +112,26 @@ async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string
 
   spinner.stop()
 
-  const data = result.data.reduce((acc: { [key: string]: any }, current) => {
-    const formattedDate = new Date(current.created_at).toLocaleDateString()
+  // const data = result.data.reduce((acc: { [key: string]: any }, current) => {
+  //   const formattedDate = new Date(current.created_at).toLocaleDateString()
 
-    if (acc[formattedDate]) {
-      acc[formattedDate].total_critical_alerts += current.total_critical_alerts
-      acc[formattedDate].total_high_alerts += current.total_high_alerts
-      acc[formattedDate].total_critical_added += current.total_critical_added
-      acc[formattedDate].total_high_added += current.total_high_added
-      acc[formattedDate].total_critical_prevented += current.total_critical_prevented
-      acc[formattedDate].total_high_prevented += current.total_high_prevented
-      acc[formattedDate].total_medium_prevented += current.total_medium_prevented
-      acc[formattedDate].total_low_prevented += current.total_low_prevented
-      // acc[formattedDate].top_five_alert_types += current.top_five_alert_types
-    } else {
-      acc[formattedDate] = current
-      acc[formattedDate].created_at = formattedDate
-    }
+  //   if (acc[formattedDate]) {
+  //     acc[formattedDate].total_critical_alerts += current.total_critical_alerts
+  //     acc[formattedDate].total_high_alerts += current.total_high_alerts
+  //     acc[formattedDate].total_critical_added += current.total_critical_added
+  //     acc[formattedDate].total_high_added += current.total_high_added
+  //     acc[formattedDate].total_critical_prevented += current.total_critical_prevented
+  //     acc[formattedDate].total_high_prevented += current.total_high_prevented
+  //     acc[formattedDate].total_medium_prevented += current.total_medium_prevented
+  //     acc[formattedDate].total_low_prevented += current.total_low_prevented
+  //     // acc[formattedDate].top_five_alert_types += current.top_five_alert_types
+  //   } else {
+  //     acc[formattedDate] = current
+  //     acc[formattedDate].created_at = formattedDate
+  //   }
 
-    return acc
-  }, {})
+  //   return acc
+  // }, {})
 
   // console.log(data)
 
