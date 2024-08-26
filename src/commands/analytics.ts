@@ -26,10 +26,10 @@ export const analytics: CliSubcommand = {
       }
       const spinner = ora('Fetching analytics data').start()
       if (input.scope === 'org') {
-        await fetchOrgAnalyticsData(input.time, spinner, apiKey)
+        await fetchOrgAnalyticsData(input.time, spinner, apiKey, input.outputJson)
       } else {
         if (input.repo) {
-          await fetchRepoAnalyticsData(input.repo, input.time, spinner, apiKey)
+          await fetchRepoAnalyticsData(input.repo, input.time, spinner, apiKey, input.outputJson)
         }
       }
     }
@@ -42,6 +42,7 @@ type CommandContext = {
   scope: string
   time: string
   repo: string | undefined
+  outputJson: boolean
 }
 
 function setupCommand (name: string, description: string, argv: readonly string[], importMeta: ImportMeta): void|CommandContext {
@@ -66,6 +67,10 @@ function setupCommand (name: string, description: string, argv: readonly string[
     importMeta,
     flags
   })
+
+  const {
+    json: outputJson
+  } = cli.flags
 
   const scope = cli.input[0]
 
@@ -93,12 +98,12 @@ function setupCommand (name: string, description: string, argv: readonly string[
     throw new InputError('The time filter must either be 7, 30 or 60')
   }
 
-  return {
-      scope, time, repo
+  return <CommandContext>{
+      scope, time, repo, outputJson
   }
 }
 
-async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string): Promise<void> {
+async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string, outputJson: boolean): Promise<void> {
   const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(socketSdk.getOrgAnalytics(time), 'fetching analytics data')
 
@@ -127,6 +132,10 @@ async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string
 
     return acc
   }, {})
+
+  if(outputJson){
+    return console.log(data)
+  }
 
   const screen = blessed.screen()
   // eslint-disable-next-line
@@ -161,7 +170,7 @@ async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string
   })
 }
 
-async function fetchRepoAnalyticsData (repo: string, time: string, spinner: Ora, apiKey: string): Promise<void> {
+async function fetchRepoAnalyticsData (repo: string, time: string, spinner: Ora, apiKey: string, outputJson: boolean): Promise<void> {
   const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(socketSdk.getRepoAnalytics(repo, time), 'fetching analytics data')
 
@@ -189,6 +198,10 @@ async function fetchRepoAnalyticsData (repo: string, time: string, spinner: Ora,
 
     return acc
   }, {})
+
+  if(outputJson){
+    return console.log(data)
+  }
 
   const screen = blessed.screen()
   // eslint-disable-next-line
