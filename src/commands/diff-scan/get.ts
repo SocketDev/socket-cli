@@ -1,16 +1,15 @@
 import chalk from 'chalk'
-// @ts-ignore
-import chalkTable from 'chalk-table'
 import meow from 'meow'
 import ora from 'ora'
+import fetch from 'node-fetch'
 
 import { outputFlags } from '../../flags'
-import {
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../../utils/api-helpers'
+// import {
+//   handleApiCall,
+//   handleUnsuccessfulApiResponse
+// } from '../../utils/api-helpers'
 import { printFlagList } from '../../utils/formatting'
-import { getDefaultKey, setupSdk } from '../../utils/sdk'
+import { getDefaultKey } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
@@ -26,51 +25,32 @@ export const get: CliSubcommand = {
       if(!apiKey){
         throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
       }
-      const spinnerText = 'Listing scans... \n'
+      const spinnerText = 'Getting diff scan... \n'
       const spinner = ora(spinnerText).start()
-      await listOrgFullScan(input.orgSlug, input, spinner, apiKey)
+      await getDiffScan(input.before, input.after, spinner, apiKey)
     }
   }
 }
 
-const listFullScanFlags: { [key: string]: any } = {
-  sort: {
+const getDiffScanFlags: { [key: string]: any } = {
+  before: {
     type: 'string',
-    shortFlag: 's',
-    default: 'created_at',
-    description:
-      'Sorting option (`name` or `created_at`) - default is `created_at`'
+    shortFlag: 'b',
+    default: '',
+    description: 'The full scan ID of the base scan'
   },
-  direction: {
+  after: {
     type: 'string',
-    shortFlag: 'd',
-    default: 'desc',
-    description: 'Direction option (`desc` or `asc`) - Default is `desc`'
+    shortFlag: 'a',
+    default: '',
+    description: 'The full scan ID of the head scan'
   },
-  perPage: {
-    type: 'number',
-    shortFlag: 'pp',
-    default: 30,
-    description: 'Results per page - Default is 30'
-  },
-  page: {
-    type: 'number',
+  preview: {
+    type: 'boolean',
     shortFlag: 'p',
-    default: 1,
-    description: 'Page number - Default is 1'
+    default: true,
+    description: 'A boolean flag to persist or not the diff scan result'
   },
-  fromTime: {
-    type: 'string',
-    shortFlag: 'f',
-    default: '',
-    description: 'From time - as a unix timestamp'
-  },
-  untilTime: {
-    type: 'string',
-    shortFlag: 'u',
-    default: '',
-    description: 'Until time - as a unix timestamp'
-  }
 }
 
 // Internal functions
@@ -78,13 +58,9 @@ const listFullScanFlags: { [key: string]: any } = {
 type CommandContext = {
   outputJson: boolean
   outputMarkdown: boolean
-  orgSlug: string
-  sort: string
-  direction: string
-  per_page: number
-  page: number
-  from_time: string
-  until_time: string
+  before: string
+  after: string
+  preview: boolean
 }
 
 function setupCommand(
@@ -95,19 +71,19 @@ function setupCommand(
 ): CommandContext | undefined {
   const flags: { [key: string]: any } = {
     ...outputFlags,
-    ...listFullScanFlags
+    ...getDiffScanFlags
   }
 
   const cli = meow(
     `
     Usage
-      $ ${name} <org slug>
+      $ ${name}
 
     Options
       ${printFlagList(flags, 6)}
 
     Examples
-      $ ${name} FakeOrg
+      $ ${name}
   `,
     {
       argv,
@@ -120,80 +96,57 @@ function setupCommand(
   const {
     json: outputJson,
     markdown: outputMarkdown,
-    sort,
-    direction,
-    perPage,
-    page,
-    fromTime,
-    untilTime
+    before,
+    after,
+    preview,
   } = cli.flags
 
-  if (!cli.input[0]) {
+  if (!before || !after) {
     console.error(
-      `${chalk.bgRed('Input error')}: Please specify an organization slug.\n`
+      `${chalk.bgRed('Input error')}: Please specify a before and after full scan ID.\n`
     )
     cli.showHelp()
     return
   }
 
-  const { 0: orgSlug = '' } = cli.input
-
   return <CommandContext>{
     outputJson,
     outputMarkdown,
-    orgSlug,
-    sort,
-    direction,
-    per_page: perPage,
-    page,
-    from_time: fromTime,
-    until_time: untilTime
+    before,
+    after,
+    preview
   }
 }
 
-async function listOrgFullScan(
-  orgSlug: string,
-  input: CommandContext,
+async function getDiffScan(
+  before: string,
+  after: string,
   spinner: Ora, 
   apiKey: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
-  const result = await handleApiCall(
-    socketSdk.getOrgFullScanList(orgSlug, input),
-    'Listing scans'
-  )
+//   const socketSdk = await setupSdk(apiKey)
+//   const result = await handleApiCall(
+//     socketSdk.getOrgFullScanList(orgSlug, input),
+//     'Listing scans'
+//   )
 
-  if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrgFullScanList', result, spinner)
-    return
-  }
+  const response = await fetch(`https://api.socket.dev/v0/orgs/SocketDev/full-scans/diff?before=${before}&after=${after}&preview`, {
+    method: 'GET', 
+    headers: {
+        'Authorization': 'Basic ' + btoa(`${apiKey}:${apiKey}`)
+    }
+  });
+  const data = await response.json();
+
+//   if (!result.success) {
+//     handleUnsuccessfulApiResponse('getOrgFullScanList', result, spinner)
+//     return
+//   }
   spinner.stop()
 
-  console.log(`\n Listing scans for: ${orgSlug}\n`)
+  // before: dfc4cf0c-aefd-4081-9e4e-7385257f26e2
+  // after: 922e45f5-8a7b-4b16-95a5-e98ad00470f1
 
-  const options = {
-    columns: [
-      { field: 'id', name: chalk.magenta('ID') },
-      { field: 'report_url', name: chalk.magenta('Scan URL') },
-      { field: 'branch', name: chalk.magenta('Branch') },
-      { field: 'created_at', name: chalk.magenta('Created at') }
-    ]
-  }
-
-  const formattedResults = result.data.results.map(d => {
-    return {
-      id: d.id,
-      report_url: chalk.underline(`${d.html_report_url}`),
-      created_at: d.created_at
-        ? new Date(d.created_at).toLocaleDateString('en-us', {
-            year: 'numeric',
-            month: 'numeric',
-            day: 'numeric'
-          })
-        : '',
-      branch: d.branch
-    }
-  })
-
-  console.log(`${chalkTable(options, formattedResults)}\n`)
+  console.log(`\n Diff scan result: \n`)
+  console.log(data);
 }
