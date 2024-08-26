@@ -191,7 +191,7 @@ const renderLineCharts = (grid: any, screen: any, title: string, coords: number[
   screen.append(line)
 
   const lineData = {
-    x: formattedDates.reverse(),
+    x: formattedDates,
     y: alertsCounts
   }
 
@@ -250,16 +250,18 @@ const formatData = (data: AnalyticsData[]) => {
 const displayAnalyticsScreen = (data: FormattedAnalyticsData) => {
   const screen = blessed.screen()
   // eslint-disable-next-line
-  const grid = new contrib.grid({rows: 4, cols: 4, screen})
+  const grid = new contrib.grid({rows: 5, cols: 4, screen})
 
   renderLineCharts(grid, screen, 'Total critical alerts', [0,0,1,2], data, 'total_critical_alerts')
   renderLineCharts(grid, screen, 'Total high alerts', [0,2,1,2], data, 'total_high_alerts')
-  renderLineCharts(grid, screen, 'Total critical alerts added to main', [1,0,1,2], data, 'total_critical_added')
-  renderLineCharts(grid, screen, 'Total high alerts added to main', [1,2,1,2], data, 'total_high_added')
-  renderLineCharts(grid, screen, 'Total critical alerts prevented from main', [2,0,1,2], data, 'total_critical_prevented')
-  renderLineCharts(grid, screen, 'Total high alerts prevented from main', [2,2,1,2], data, 'total_high_prevented')
+  renderLineCharts(grid, screen, 'Total critical alerts added to the main branch', [1,0,1,2], data, 'total_critical_added')
+  renderLineCharts(grid, screen, 'Total high alerts added to the main branch', [1,2,1,2], data, 'total_high_added')
+  renderLineCharts(grid, screen, 'Total critical alerts prevented from the main branch', [2,0,1,2], data, 'total_critical_prevented')
+  renderLineCharts(grid, screen, 'Total high alerts prevented from the main branch', [2,2,1,2], data, 'total_high_prevented')
+  renderLineCharts(grid, screen, 'Total medium alerts prevented from the main branch', [3,0,1,2], data, 'total_medium_prevented')
+  renderLineCharts(grid, screen, 'Total low alerts prevented from the main branch', [3,2,1,2], data, 'total_low_prevented')
 
-  const bar = grid.set(3, 0, 1, 2, contrib.bar,
+  const bar = grid.set(4, 0, 1, 2, contrib.bar,
       { label: 'Top 5 alert types'
       , barWidth: 10
       , barSpacing: 17
