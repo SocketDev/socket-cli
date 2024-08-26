@@ -2,6 +2,7 @@ import chalk from 'chalk'
 import meow from 'meow'
 import ora from 'ora'
 import fetch from 'node-fetch'
+import util from 'util'
 
 import { outputFlags } from '../../flags'
 // import {
@@ -148,5 +149,7 @@ async function getDiffScan(
   // after: 922e45f5-8a7b-4b16-95a5-e98ad00470f1
 
   console.log(`\n Diff scan result: \n`)
-  console.log(data);
+//   console.log(data);
+
+  console.log(util.inspect(data, {showHidden: false, depth: null, colors: true}))
 }
