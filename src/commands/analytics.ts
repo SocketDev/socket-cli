@@ -1,9 +1,6 @@
 // @ts-ignore
 import blessed from 'blessed'
 import contrib from 'blessed-contrib'
-import chalk from 'chalk'
-// @ts-ignore
-import chalkTable from 'chalk-table'
 import meow from 'meow'
 import ora from 'ora'
 
@@ -123,7 +120,6 @@ async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string
       acc[formattedDate].total_high_prevented += current.total_high_prevented
       acc[formattedDate].total_medium_prevented += current.total_medium_prevented
       acc[formattedDate].total_low_prevented += current.total_low_prevented
-      // acc[formattedDate].top_five_alert_types += current.top_five_alert_types
     } else {
       acc[formattedDate] = current
       acc[formattedDate].created_at = formattedDate
@@ -132,39 +128,21 @@ async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string
     return acc
   }, {})
 
-  // console.log(data)
-
-  // const options = {
-  //   columns: [
-  //     { field: 'created_at', name: chalk.cyan('Date') },
-  //     { field: 'total_critical_alerts', name: chalk.cyan('Critical alerts') },
-  //     { field: 'total_high_alerts', name: chalk.cyan('High alerts') },
-  //     { field: 'total_critical_added', name: chalk.cyan('Critical alerts added') },
-  //     { field: 'total_high_added', name: chalk.cyan('High alerts added') },
-  //     { field: 'total_critical_prevented', name: chalk.cyan('Critical alerts prevented') },
-  //     { field: 'total_medium_prevented', name: chalk.cyan('Medium alerts prevented') },
-  //     { field: 'total_low_prevented', name: chalk.cyan('Low alerts prevented') },
-  //   ]
-  // }
-
-  // console.log(chalk.bgMagenta.white.bold(`\n Analytics data at the organization level over the last ${time} days (indicated in total amount): \n`))
-  // console.log(`${chalkTable(options, Object.values(data))}\n`)
-
   const screen = blessed.screen()
   // eslint-disable-next-line
   const grid = new contrib.grid({rows: 4, cols: 4, screen})
 
-  renderLineCharts(grid, screen, 'Critical alerts', [0,0,1,1.5], data, 'total_critical_alerts')
-  renderLineCharts(grid, screen, 'High alerts', [0,1.5,1,1.5], data, 'total_high_alerts')
-  renderLineCharts(grid, screen, 'Critical alerts added to main', [1,0,1,2], data, 'total_critical_added')
-  renderLineCharts(grid, screen, 'High alerts added to main', [1,2,1,2], data, 'total_high_added')
-  renderLineCharts(grid, screen, 'Critical alerts prevented from main', [2,0,1,2], data, 'total_critical_prevented')
-  renderLineCharts(grid, screen, 'High alerts prevented to main', [2,2,1,2], data, 'total_high_prevented')
+  renderLineCharts(grid, screen, 'Total critical alerts', [0,0,1,2], data, 'total_critical_alerts')
+  renderLineCharts(grid, screen, 'Total high alerts', [0,2,1,2], data, 'total_high_alerts')
+  renderLineCharts(grid, screen, 'Total critical alerts added to main', [1,0,1,2], data, 'total_critical_added')
+  renderLineCharts(grid, screen, 'Total high alerts added to main', [1,2,1,2], data, 'total_high_added')
+  renderLineCharts(grid, screen, 'Total critical alerts prevented from main', [2,0,1,2], data, 'total_critical_prevented')
+  renderLineCharts(grid, screen, 'Total high alerts prevented from main', [2,2,1,2], data, 'total_high_prevented')
 
   const bar = grid.set(3, 0, 1, 2, contrib.bar,
       { label: 'Top 5 alert types'
       , barWidth: 10
-      , barSpacing: 20
+      , barSpacing: 17
       , xOffset: 0
       , maxHeight: 9, barBgColor: 'magenta' })
 
@@ -192,48 +170,80 @@ async function fetchRepoAnalyticsData (repo: string, time: string, spinner: Ora,
   }
   spinner.stop()
 
-  const formattedData = result.data.map(d => {
-    const formattedDate = new Date(d.created_at).toLocaleDateString()
-    return {
-      ...d,
-      created_at: formattedDate,
+  const data = result.data.reduce((acc: { [key: string]: any }, current) => {
+    const formattedDate = new Date(current.created_at).toLocaleDateString()
+
+    if (acc[formattedDate]) {
+      acc[formattedDate].total_critical_alerts += current.total_critical_alerts
+      acc[formattedDate].total_high_alerts += current.total_high_alerts
+      acc[formattedDate].total_critical_added += current.total_critical_added
+      acc[formattedDate].total_high_added += current.total_high_added
+      acc[formattedDate].total_critical_prevented += current.total_critical_prevented
+      acc[formattedDate].total_high_prevented += current.total_high_prevented
+      acc[formattedDate].total_medium_prevented += current.total_medium_prevented
+      acc[formattedDate].total_low_prevented += current.total_low_prevented
+    } else {
+      acc[formattedDate] = current
+      acc[formattedDate].created_at = formattedDate
     }
+
+    return acc
+  }, {})
+
+  const screen = blessed.screen()
+  // eslint-disable-next-line
+  const grid = new contrib.grid({rows: 4, cols: 4, screen})
+
+  renderLineCharts(grid, screen, 'Total critical alerts', [0,0,1,2], data, 'total_critical_alerts')
+  renderLineCharts(grid, screen, 'Total high alerts', [0,2,1,2], data, 'total_high_alerts')
+  renderLineCharts(grid, screen, 'Total critical alerts added to main', [1,0,1,2], data, 'total_critical_added')
+  renderLineCharts(grid, screen, 'Total high alerts added to main', [1,2,1,2], data, 'total_high_added')
+  renderLineCharts(grid, screen, 'Total critical alerts prevented from main', [2,0,1,2], data, 'total_critical_prevented')
+  renderLineCharts(grid, screen, 'Total high alerts prevented from main', [2,2,1,2], data, 'total_high_prevented')
+
+  const bar = grid.set(3, 0, 1, 2, contrib.bar,
+      { label: 'Top 5 alert types'
+      , barWidth: 10
+      , barSpacing: 17
+      , xOffset: 0
+      , maxHeight: 9, barBgColor: 'magenta' })
+
+   screen.append(bar) //must append before setting data
+
+   const top5AlertTypes = Object.values(data)[0].top_five_alert_types
+   
+   bar.setData(
+      { titles: Object.keys(top5AlertTypes)
+      , data: Object.values(top5AlertTypes)})
+
+  screen.render()
+    
+  screen.key(['escape', 'q', 'C-c'], function() {
+    return process.exit(0);
   })
-  const data = { ...formattedData.flat(1) }
-
-  const options = {
-    columns: [
-      { field: 'created_at', name: chalk.cyan('Date') },
-      { field: 'total_critical_alerts', name: chalk.cyan('Critical alerts') },
-      { field: 'total_high_alerts', name: chalk.cyan('High alerts') },
-      { field: 'total_critical_added', name: chalk.cyan('Critical alerts added') },
-      { field: 'total_high_added', name: chalk.cyan('High alerts added') },
-      { field: 'total_critical_prevented', name: chalk.cyan('Critical alerts prevented') },
-      { field: 'total_medium_prevented', name: chalk.cyan('Medium alerts prevented') },
-      { field: 'total_low_prevented', name: chalk.cyan('Low alerts prevented') },
-    ]
-  }
-
-  console.log(chalk.bgMagenta.white.bold(`\n Analytics data for ${repo} over the last ${time} days: \n`))
-  console.log(`${chalkTable(options, Object.values(data))}\n`)
 }
 
-
-const renderLineCharts = (grid: any, screen: any, title: string, coords: number[], data: {[key: string]: {[key: string]: number | {}}}, label: string) => {
+const renderLineCharts = (grid: any, screen: any, title: string, coords: number[], data: {[key: string]: {[key: string]: number}}, label: string) => {
   const formattedDates = Object.keys(data).map(d => `${new Date(d).getMonth()+1}/${new Date(d).getDate()}`)
 
   const alertsCounts = Object.values(data).map(d => d[label])
   
   const line = grid.set(...coords, contrib.line,
     { style:
-      { line: "cyan"
-      , text: "cyan"
-      , baseline: "black"}
-    , xLabelPadding: 0
-    , xPadding: 0,
-    xOffset: 0,
-    legend: {width: 1}
-    , label: title})
+      { line: "cyan", 
+        text: "cyan", 
+        baseline: "black"
+      }, 
+      xLabelPadding: 0, 
+      xPadding: 0,
+      xOffset: 0,
+      wholeNumbersOnly: true,
+      legend: {
+        width: 1
+      }, 
+      label: title
+    }
+  )
 
   screen.append(line)
 
