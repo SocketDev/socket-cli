@@ -1,4 +1,3 @@
-// @ts-nocheck
 // @ts-ignore
 import blessed from 'blessed'
 import contrib from 'blessed-contrib'
@@ -112,26 +111,26 @@ async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string
 
   spinner.stop()
 
-  // const data = result.data.reduce((acc: { [key: string]: any }, current) => {
-  //   const formattedDate = new Date(current.created_at).toLocaleDateString()
+  const data = result.data.reduce((acc: { [key: string]: any }, current) => {
+    const formattedDate = new Date(current.created_at).toLocaleDateString()
 
-  //   if (acc[formattedDate]) {
-  //     acc[formattedDate].total_critical_alerts += current.total_critical_alerts
-  //     acc[formattedDate].total_high_alerts += current.total_high_alerts
-  //     acc[formattedDate].total_critical_added += current.total_critical_added
-  //     acc[formattedDate].total_high_added += current.total_high_added
-  //     acc[formattedDate].total_critical_prevented += current.total_critical_prevented
-  //     acc[formattedDate].total_high_prevented += current.total_high_prevented
-  //     acc[formattedDate].total_medium_prevented += current.total_medium_prevented
-  //     acc[formattedDate].total_low_prevented += current.total_low_prevented
-  //     // acc[formattedDate].top_five_alert_types += current.top_five_alert_types
-  //   } else {
-  //     acc[formattedDate] = current
-  //     acc[formattedDate].created_at = formattedDate
-  //   }
+    if (acc[formattedDate]) {
+      acc[formattedDate].total_critical_alerts += current.total_critical_alerts
+      acc[formattedDate].total_high_alerts += current.total_high_alerts
+      acc[formattedDate].total_critical_added += current.total_critical_added
+      acc[formattedDate].total_high_added += current.total_high_added
+      acc[formattedDate].total_critical_prevented += current.total_critical_prevented
+      acc[formattedDate].total_high_prevented += current.total_high_prevented
+      acc[formattedDate].total_medium_prevented += current.total_medium_prevented
+      acc[formattedDate].total_low_prevented += current.total_low_prevented
+      // acc[formattedDate].top_five_alert_types += current.top_five_alert_types
+    } else {
+      acc[formattedDate] = current
+      acc[formattedDate].created_at = formattedDate
+    }
 
-  //   return acc
-  // }, {})
+    return acc
+  }, {})
 
   // console.log(data)
 
@@ -155,29 +154,31 @@ async function fetchOrgAnalyticsData (time: string, spinner: Ora, apiKey: string
   // eslint-disable-next-line
   const grid = new contrib.grid({rows: 4, cols: 4, screen})
 
-  renderLineCharts(grid, screen, 'Critical alerts', [0,0,1,1.5])
-  renderLineCharts(grid, screen, 'High alerts', [0,1.5,1,1.5])
-  renderLineCharts(grid, screen, 'Critical alerts added to main', [1,0,1,2])
-  renderLineCharts(grid, screen, 'High alerts added to main', [1,2,1,2])
-  renderLineCharts(grid, screen, 'Critical alerts prevented from main', [2,0,1,2])
-  renderLineCharts(grid, screen, 'High alerts prevented to main', [2,2,1,2])
+  renderLineCharts(grid, screen, 'Critical alerts', [0,0,1,1.5], data, 'total_critical_alerts')
+  renderLineCharts(grid, screen, 'High alerts', [0,1.5,1,1.5], data, 'total_high_alerts')
+  renderLineCharts(grid, screen, 'Critical alerts added to main', [1,0,1,2], data, 'total_critical_added')
+  renderLineCharts(grid, screen, 'High alerts added to main', [1,2,1,2], data, 'total_high_added')
+  renderLineCharts(grid, screen, 'Critical alerts prevented from main', [2,0,1,2], data, 'total_critical_prevented')
+  renderLineCharts(grid, screen, 'High alerts prevented to main', [2,2,1,2], data, 'total_high_prevented')
 
-  const bar = grid.set(3, 0, 1, 1, contrib.bar,
+  const bar = grid.set(3, 0, 1, 2, contrib.bar,
       { label: 'Top 5 alert types'
-      , barWidth: 4
-      , barSpacing: 6
+      , barWidth: 10
+      , barSpacing: 20
       , xOffset: 0
-      , maxHeight: 9})
+      , maxHeight: 9, barBgColor: 'magenta' })
 
    screen.append(bar) //must append before setting data
 
+   const top5AlertTypes = Object.values(data)[0].top_five_alert_types
+   
    bar.setData(
-      { titles: ['Env vars', 'stuff']
-      , data: [5, 10]})
+      { titles: Object.keys(top5AlertTypes)
+      , data: Object.values(top5AlertTypes)})
 
   screen.render()
     
-  screen.key(['escape', 'q', 'C-c'], function(ch, key) {
+  screen.key(['escape', 'q', 'C-c'], function() {
     return process.exit(0);
   })
 }
@@ -218,7 +219,11 @@ async function fetchRepoAnalyticsData (repo: string, time: string, spinner: Ora,
 }
 
 
-const renderLineCharts = (grid, screen, title, coords) => {
+const renderLineCharts = (grid: any, screen: any, title: string, coords: number[], data: {[key: string]: {[key: string]: number | {}}}, label: string) => {
+  const formattedDates = Object.keys(data).map(d => `${new Date(d).getMonth()+1}/${new Date(d).getDate()}`)
+
+  const alertsCounts = Object.values(data).map(d => d[label])
+  
   const line = grid.set(...coords, contrib.line,
     { style:
       { line: "cyan"
@@ -233,9 +238,8 @@ const renderLineCharts = (grid, screen, title, coords) => {
   screen.append(line)
 
   const lineData = {
-    // x: Object.keys(data),
-    x: ['8/22', '8/21', '8/20', '8/19', '8/18', '8/17', '8/16'].reverse(),
-    y: [0, 0, 0, 0, 0, 12, 50]
+    x: formattedDates.reverse(),
+    y: alertsCounts
   }
 
   line.setData([lineData])
