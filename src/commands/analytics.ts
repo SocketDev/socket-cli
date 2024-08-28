@@ -1,6 +1,7 @@
 // @ts-ignore
 import blessed from 'blessed'
 import contrib from 'blessed-contrib'
+import fs from 'fs'
 import meow from 'meow'
 import ora from 'ora'
 
@@ -28,10 +29,10 @@ export const analytics: CliSubcommand = {
       }
       const spinner = ora('Fetching analytics data').start()
       if (input.scope === 'org') {
-        await fetchOrgAnalyticsData(input.time, spinner, apiKey, input.outputJson)
+        await fetchOrgAnalyticsData(input.time, spinner, apiKey, input.outputJson, input.file)
       } else {
         if (input.repo) {
-          await fetchRepoAnalyticsData(input.repo, input.time, spinner, apiKey, input.outputJson)
+          await fetchRepoAnalyticsData(input.repo, input.time, spinner, apiKey, input.outputJson, input.file)
         }
       }
     }
@@ -57,6 +58,12 @@ const analyticsFlags = {
     default: '',
     description: "Name of the repository"
   },
+  file: {
+    type: 'string',
+    shortFlag: 'f',
+    default: '',
+    description: "Path to a local file to save the output"
+  }
 }
 
 // Internal functions
@@ -66,6 +73,7 @@ type CommandContext = {
   time: number
   repo: string
   outputJson: boolean
+  file: string
 }
 
 function setupCommand (name: string, description: string, argv: readonly string[], importMeta: ImportMeta): void|CommandContext {
@@ -96,7 +104,8 @@ function setupCommand (name: string, description: string, argv: readonly string[
     json: outputJson,
     scope, 
     time,
-    repo
+    repo, 
+    file
   } = cli.flags
 
   if (scope !== 'org' && scope !== 'repo') {
@@ -116,7 +125,7 @@ function setupCommand (name: string, description: string, argv: readonly string[
   }
 
   return <CommandContext>{
-    scope, time, repo, outputJson
+    scope, time, repo, outputJson, file
   }
 }
 
@@ -135,7 +144,7 @@ const METRICS = [
   'total_low_prevented'
 ]
 
-async function fetchOrgAnalyticsData (time: number, spinner: Ora, apiKey: string, outputJson: boolean): Promise<void> {
+async function fetchOrgAnalyticsData (time: number, spinner: Ora, apiKey: string, outputJson: boolean, filePath: string): Promise<void> {
   const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(socketSdk.getOrgAnalytics(time.toString()), 'fetching analytics data')
 
@@ -151,8 +160,15 @@ async function fetchOrgAnalyticsData (time: number, spinner: Ora, apiKey: string
 
   const data = formatData(result.data, 'org')
 
-  if(outputJson){
+  if(outputJson && !filePath){
     return console.log(result.data)
+  }
+
+  if(filePath){
+    fs.writeFile(filePath, JSON.stringify(result.data), err => {
+      err ? console.error(err) : console.log(`Data successfully written to ${filePath}`)
+    })
+    return
   }
 
   return displayAnalyticsScreen(data)
@@ -256,7 +272,7 @@ const formatData = (data: any, scope: string) => {
   return {...formattedData, top_five_alert_types: sortedTopFivealerts}
 }
 
-async function fetchRepoAnalyticsData (repo: string, time: number, spinner: Ora, apiKey: string, outputJson: boolean): Promise<void> {
+async function fetchRepoAnalyticsData (repo: string, time: number, spinner: Ora, apiKey: string, outputJson: boolean, filePath: string): Promise<void> {
   const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(socketSdk.getRepoAnalytics(repo, time.toString()), 'fetching analytics data')
 
@@ -271,8 +287,15 @@ async function fetchRepoAnalyticsData (repo: string, time: number, spinner: Ora,
 
   const data = formatData(result.data, 'repo')
 
-  if(outputJson){
+  if(outputJson && !filePath){
     return console.log(result.data)
+  }
+
+  if(filePath){
+    fs.writeFile(filePath, JSON.stringify(result.data), err => {
+      err ? console.error(err) : console.log(`Data successfully written to ${filePath}`)
+    })
+    return
   }
 
   return displayAnalyticsScreen(data)
