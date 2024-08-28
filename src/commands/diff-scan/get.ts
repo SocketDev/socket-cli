@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import fs from 'fs'
 import meow from 'meow'
 import ora from 'ora'
 import util from 'util'
@@ -24,7 +25,7 @@ export const get: CliSubcommand = {
       }
       const spinnerText = 'Getting diff scan... \n'
       const spinner = ora(spinnerText).start()
-      await getDiffScan(input.before, input.after, spinner, apiKey, input.orgSlug)
+      await getDiffScan(input, spinner, apiKey)
     }
   }
 }
@@ -48,6 +49,12 @@ const getDiffScanFlags: { [key: string]: any } = {
     default: true,
     description: 'A boolean flag to persist or not the diff scan result'
   },
+  file: {
+    type: 'string',
+    shortFlag: 'f',
+    default: '',
+    description: 'Path to a local file where the output should be saved'
+  }
 }
 
 // Internal functions
@@ -59,6 +66,7 @@ type CommandContext = {
   after: string
   preview: boolean
   orgSlug: string
+  file: string
 }
 
 function setupCommand(
@@ -75,13 +83,13 @@ function setupCommand(
   const cli = meow(
     `
     Usage
-      $ ${name}
+      $ ${name} <org slug> --before=<before> --after=<after>
 
     Options
       ${printFlagList(flags, 6)}
 
     Examples
-      $ ${name}
+      $ ${name} FakeCorp --before=aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 --after=aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
   `,
     {
       argv,
@@ -97,6 +105,7 @@ function setupCommand(
     before,
     after,
     preview,
+    file
   } = cli.flags
 
   if (!before || !after) {
@@ -123,34 +132,37 @@ function setupCommand(
     before,
     after,
     preview,
-    orgSlug
+    orgSlug,
+    file
   }
 }
 
 async function getDiffScan(
-  before: string,
-  after: string,
+  { before, after, orgSlug, file }: CommandContext,
   spinner: Ora, 
   apiKey: string,
-  orgSlug: string
 ): Promise<void> {
   const response = await queryAPI(`${orgSlug}/full-scans/diff?before=${before}&after=${after}&preview`, apiKey)
   const data = await response.json();
 
-  if(response.status !== 200){
+  if(!response.ok){
     spinner.stop()
     const err = await handleAPIError(response.status)
-    console.error(err)
+    console.error(
+      `${chalk.bgRed.white(response.statusText)}: ${err} \n`
+    )
     return
   }
 
   spinner.stop()
 
-  // before: dfc4cf0c-aefd-4081-9e4e-7385257f26e2
-  // after: 922e45f5-8a7b-4b16-95a5-e98ad00470f1
+  if(file){
+    fs.writeFile(file, JSON.stringify(data), err => {
+      err ? console.error(err) : console.log(`Data successfully written to ${file}`)
+    })
+    return
+  }
 
   console.log(`\n Diff scan result: \n`)
-//   console.log(data);
-
   console.log(util.inspect(data, {showHidden: false, depth: null, colors: true}))
 }
