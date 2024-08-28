@@ -52,7 +52,7 @@
     "registry-auth-token": "^5.0.2",
     "semver": "^7.6.2",
     "signal-exit": "^4.1.0",
-    "supports-hyperlinks": "^2.2.0",
+    "supports-hyperlinks": "^3.1.0",
     "synp": "^1.9.13",
     "which": "^4.0.0",
     "write-file-atomic": "^5.0.1",
