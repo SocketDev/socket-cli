@@ -1,5 +1,6 @@
 // @ts-ignore
 import blessed from 'blessed'
+// @ts-ignore
 import contrib from 'blessed-contrib'
 import fs from 'fs'
 import meow from 'meow'
