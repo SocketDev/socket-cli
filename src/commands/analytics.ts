@@ -135,35 +135,6 @@ const METRICS = [
   'total_low_prevented'
 ]
 
-type AnalyticsData = {
-  id: number,
-  created_at: string
-  repository_id: string
-  organization_id: number
-  repository_name: string
-  total_critical_alerts: number
-  total_high_alerts: number
-  total_medium_alerts: number
-  total_low_alerts: number
-  total_critical_added: number
-  total_high_added: number
-  total_medium_added: number
-  total_low_added: number
-  total_critical_prevented: number
-  total_high_prevented: number
-  total_medium_prevented: number
-  total_low_prevented: number
-  top_five_alert_types: {
-    [key: string]: number
-  }
-}
-
-type FormattedAnalyticsData = {
-  [key: string]: {
-    [key: string]: number
-  }
-}
-
 async function fetchOrgAnalyticsData (time: number, spinner: Ora, apiKey: string, outputJson: boolean): Promise<void> {
   const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(socketSdk.getOrgAnalytics(time.toString()), 'fetching analytics data')
