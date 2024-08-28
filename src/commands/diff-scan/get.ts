@@ -1,22 +1,16 @@
-// @ts-nocheck
-/* eslint-disable */
 import chalk from 'chalk'
 import meow from 'meow'
 import ora from 'ora'
-import fetch from 'node-fetch'
 import util from 'util'
 
 import { outputFlags } from '../../flags'
-// import {
-//   handleApiCall,
-//   handleUnsuccessfulApiResponse
-// } from '../../utils/api-helpers'
 import { printFlagList } from '../../utils/formatting'
 import { getDefaultKey } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
 import { AuthError } from '../../utils/errors'
+import { handleAPIError, queryAPI } from '../../utils/api-helpers'
 
 export const get: CliSubcommand = {
   description: 'Get a diff scan for an organization',
@@ -30,7 +24,7 @@ export const get: CliSubcommand = {
       }
       const spinnerText = 'Getting diff scan... \n'
       const spinner = ora(spinnerText).start()
-      await getDiffScan(input.before, input.after, spinner, apiKey)
+      await getDiffScan(input.before, input.after, spinner, apiKey, input.orgSlug)
     }
   }
 }
@@ -64,6 +58,7 @@ type CommandContext = {
   before: string
   after: string
   preview: boolean
+  orgSlug: string
 }
 
 function setupCommand(
@@ -112,12 +107,23 @@ function setupCommand(
     return
   }
 
+  if(cli.input.length < 1){
+    console.error(
+      `${chalk.bgRed.white('Input error')}: Please provide an organization slug \n`
+    )
+    cli.showHelp()
+    return
+  }
+
+  const [orgSlug = ''] = cli.input
+
   return <CommandContext>{
     outputJson,
     outputMarkdown,
     before,
     after,
-    preview
+    preview,
+    orgSlug
   }
 }
 
@@ -125,26 +131,19 @@ async function getDiffScan(
   before: string,
   after: string,
   spinner: Ora, 
-  apiKey: string
+  apiKey: string,
+  orgSlug: string
 ): Promise<void> {
-//   const socketSdk = await setupSdk(apiKey)
-//   const result = await handleApiCall(
-//     socketSdk.getOrgFullScanList(orgSlug, input),
-//     'Listing scans'
-//   )
-
-  const response = await fetch(`https://api.socket.dev/v0/orgs/SocketDev/full-scans/diff?before=${before}&after=${after}&preview`, {
-    method: 'GET', 
-    headers: {
-        'Authorization': 'Basic ' + btoa(`${apiKey}:${apiKey}`)
-    }
-  });
+  const response = await queryAPI(`${orgSlug}/full-scans/diff?before=${before}&after=${after}&preview`, apiKey)
   const data = await response.json();
 
-//   if (!result.success) {
-//     handleUnsuccessfulApiResponse('getOrgFullScanList', result, spinner)
-//     return
-//   }
+  if(response.status !== 200){
+    spinner.stop()
+    const err = await handleAPIError(response.status)
+    console.error(err)
+    return
+  }
+
   spinner.stop()
 
   // before: dfc4cf0c-aefd-4081-9e4e-7385257f26e2
