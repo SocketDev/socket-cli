@@ -24,13 +24,13 @@ export const get: CliSubcommand = {
     const name = `${parentName} get`
     const input = setupCommand(name, get.description, argv, importMeta)
     if (input) {
-      // const apiKey = getDefaultKey()
-      // if(!apiKey){
-      //   throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
-      // }
-      // const spinnerText = 'Getting diff scan... \n'
-      // const spinner = ora(spinnerText).start()
-      // await getDiffScan(input.before, input.after, spinner, apiKey)
+      const apiKey = getDefaultKey()
+      if(!apiKey){
+        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      }
+      const spinnerText = 'Getting diff scan... \n'
+      const spinner = ora(spinnerText).start()
+      await getDiffScan(input.before, input.after, spinner, apiKey)
     }
   }
 }
