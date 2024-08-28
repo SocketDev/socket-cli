@@ -1,3 +1,4 @@
+// @ts-nocheck
 // @ts-ignore
 import blessed from 'blessed'
 import contrib from 'blessed-contrib'
@@ -120,83 +121,20 @@ function setupCommand (name: string, description: string, argv: readonly string[
   }
 }
 
-async function fetchOrgAnalyticsData (time: number, spinner: Ora, apiKey: string, outputJson: boolean): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
-  const result = await handleApiCall(socketSdk.getOrgAnalytics(time.toString()), 'fetching analytics data')
-
-  if (result.success === false) {
-    return handleUnsuccessfulApiResponse('getOrgAnalytics', result, spinner)
-  }
-
-  spinner.stop()
-
-  if(!result.data.length){
-    return console.log('No analytics data is available for this organization yet.')
-  }
-
-  const data = formatData(result.data)
-
-  if(outputJson){
-    return console.log(data)
-  }
-
-  return displayAnalyticsScreen(data)
-}
-
-async function fetchRepoAnalyticsData (repo: string, time: number, spinner: Ora, apiKey: string, outputJson: boolean): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
-  const result = await handleApiCall(socketSdk.getRepoAnalytics(repo, time.toString()), 'fetching analytics data')
-
-  if (result.success === false) {
-    return handleUnsuccessfulApiResponse('getRepoAnalytics', result, spinner)
-  }
-  spinner.stop()
-
-  if(!result.data.length){
-    return console.log('No analytics data is available for this organization yet.')
-  }
-
-  const data = formatData(result.data)
-
-  if(outputJson){
-    return console.log(data)
-  }
-
-  return displayAnalyticsScreen(data)
-}
-
-const renderLineCharts = (grid: any, screen: any, title: string, coords: number[], data: FormattedAnalyticsData, label: string) => {
-  const formattedDates = Object.keys(data).map(d => `${new Date(d).getMonth()+1}/${new Date(d).getDate()}`)
-
-  // @ts-ignore
-  const alertsCounts = Object.values(data).map(d => d[label])
-  
-  const line = grid.set(...coords, contrib.line,
-    { style:
-      { line: "cyan", 
-        text: "cyan", 
-        baseline: "black"
-      }, 
-      xLabelPadding: 0, 
-      xPadding: 0,
-      xOffset: 0,
-      wholeNumbersOnly: true,
-      legend: {
-        width: 1
-      }, 
-      label: title
-    }
-  )
-
-  screen.append(line)
-
-  const lineData = {
-    x: formattedDates,
-    y: alertsCounts
-  }
-
-  line.setData([lineData])
-}
+const METRICS = [
+  'total_critical_alerts',
+  'total_high_alerts',
+  'total_medium_alerts',
+  'total_low_alerts',
+  'total_critical_added',
+  'total_medium_added',
+  'total_low_added',
+  'total_high_added',
+  'total_critical_prevented',
+  'total_high_prevented',
+  'total_medium_prevented',
+  'total_low_prevented'
+]
 
 type AnalyticsData = {
   id: number,
@@ -222,29 +160,156 @@ type AnalyticsData = {
 }
 
 type FormattedAnalyticsData = {
-  [key: string]: AnalyticsData
+  [key: string]: {
+    [key: string]: number | {
+      [key: string]: number
+    }
+  }
 }
 
-const formatData = (data: AnalyticsData[]) => {
-  return data.reduce((acc: { [key: string]: any }, current) => {
-    const formattedDate = new Date(current.created_at).toLocaleDateString()
+async function fetchOrgAnalyticsData (time: number, spinner: Ora, apiKey: string, outputJson: boolean): Promise<void> {
+  const socketSdk = await setupSdk(apiKey)
+  const result = await handleApiCall(socketSdk.getOrgAnalytics(time.toString()), 'fetching analytics data')
 
-    if (acc[formattedDate]) {
-      acc[formattedDate].total_critical_alerts += current.total_critical_alerts
-      acc[formattedDate].total_high_alerts += current.total_high_alerts
-      acc[formattedDate].total_critical_added += current.total_critical_added
-      acc[formattedDate].total_high_added += current.total_high_added
-      acc[formattedDate].total_critical_prevented += current.total_critical_prevented
-      acc[formattedDate].total_high_prevented += current.total_high_prevented
-      acc[formattedDate].total_medium_prevented += current.total_medium_prevented
-      acc[formattedDate].total_low_prevented += current.total_low_prevented
-    } else {
-      acc[formattedDate] = current
-      acc[formattedDate].created_at = formattedDate
+  if (result.success === false) {
+    return handleUnsuccessfulApiResponse('getOrgAnalytics', result, spinner)
+  }
+
+  spinner.stop()
+
+  if(!result.data.length){
+    return console.log('No analytics data is available for this organization yet.')
+  }
+
+  const data = formatData(result.data, 'org')
+
+  console.log(data)
+
+  if(outputJson){
+    return console.log(result.data)
+  }
+
+  return displayAnalyticsScreen(data)
+}
+
+const months = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec'
+]
+
+const formatDate = (date: string) => {
+  return `${months[new Date(date).getMonth()]} ${new Date(date).getDate()}`
+}
+
+const formatData = (data: AnalyticsData[], scope: string) => {
+  let formattedData, sortedTopFivealerts
+
+  if(scope === 'org'){
+    const topFiveAlerts = data.map(d => d.top_five_alert_types || {})
+
+    const totalTopAlerts = topFiveAlerts.reduce((acc, current: {[key: string]: number}) => {
+      const alertTypes = Object.keys(current)
+      alertTypes.map((type: string) => {
+        if (!acc[type]) {
+          acc[type] = current[type]
+        } else {
+          acc[type] += current[type]
+        }
+        return acc
+      })
+      return acc
+    }, {} as { [k: string]: any })
+
+  
+    sortedTopFivealerts = Object.entries(totalTopAlerts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .reduce((r, [k, v]) => ({ ...r, [k]: v }), {})
+  
+    const formatData = (label: string) => {
+      return data.reduce((acc, current) => {
+        const date: string = formatDate(current.created_at)
+        if (!acc[date]) {
+          acc[date] = current[label]
+        } else {
+          acc[date] += current[label]
+        }
+        return acc
+      }, {} as { [k: string]: number })
     }
+  
+    formattedData = METRICS.reduce((acc, current: string) => {
+      acc[current] = formatData(current)
+      return acc
+    }, {} as { [k: string]: any })
 
+  } else if (scope === 'repo'){
+
+    const topAlerts = data.reduce((acc, current) => {
+      const alertTypes = Object.keys(current.top_five_alert_types)
+      alertTypes.map(type => {
+        if (!acc[type]) {
+          acc[type] = current.top_five_alert_types[type]
+        } else {
+          if (current.top_five_alert_types[type] > acc[type]) {
+            acc[type] = current.top_five_alert_types[type]
+          }
+        }
+        return acc
+      })
+      return acc
+    }, {} as {[key: string]: number})
+
+    sortedTopFivealerts = Object.entries(topAlerts)
+    .sort(([, a]: [string, number], [, b]: [string, number]) => b - a)
+    .slice(0, 5)
+    .reduce((r, [k, v]) => ({ ...r, [k]: v }), {})
+
+  formattedData = data.reduce((acc, current) => {
+    METRICS.forEach((m: string) => {
+      if (!acc[m]) {
+        acc[m] = {}
+      }
+      acc[m][formatDate(current.created_at)] = current[m]
+      return acc
+    })
     return acc
-  }, {})
+  }, {} as { [k: string]: any })
+  }
+
+  return {...formattedData, top_five_alert_types: sortedTopFivealerts}
+}
+
+async function fetchRepoAnalyticsData (repo: string, time: number, spinner: Ora, apiKey: string, outputJson: boolean): Promise<void> {
+  const socketSdk = await setupSdk(apiKey)
+  const result = await handleApiCall(socketSdk.getRepoAnalytics(repo, time.toString()), 'fetching analytics data')
+
+  if (result.success === false) {
+    return handleUnsuccessfulApiResponse('getRepoAnalytics', result, spinner)
+  }
+  spinner.stop()
+
+  if(!result.data.length){
+    return console.log('No analytics data is available for this organization yet.')
+  }
+
+  const data = formatData(result.data, 'repo')
+
+  if(outputJson){
+    return console.log(result.data)
+  }
+
+  return displayAnalyticsScreen(data)
 }
 
 const displayAnalyticsScreen = (data: FormattedAnalyticsData) => {
@@ -252,14 +317,14 @@ const displayAnalyticsScreen = (data: FormattedAnalyticsData) => {
   // eslint-disable-next-line
   const grid = new contrib.grid({rows: 5, cols: 4, screen})
 
-  renderLineCharts(grid, screen, 'Total critical alerts', [0,0,1,2], data, 'total_critical_alerts')
-  renderLineCharts(grid, screen, 'Total high alerts', [0,2,1,2], data, 'total_high_alerts')
-  renderLineCharts(grid, screen, 'Total critical alerts added to the main branch', [1,0,1,2], data, 'total_critical_added')
-  renderLineCharts(grid, screen, 'Total high alerts added to the main branch', [1,2,1,2], data, 'total_high_added')
-  renderLineCharts(grid, screen, 'Total critical alerts prevented from the main branch', [2,0,1,2], data, 'total_critical_prevented')
-  renderLineCharts(grid, screen, 'Total high alerts prevented from the main branch', [2,2,1,2], data, 'total_high_prevented')
-  renderLineCharts(grid, screen, 'Total medium alerts prevented from the main branch', [3,0,1,2], data, 'total_medium_prevented')
-  renderLineCharts(grid, screen, 'Total low alerts prevented from the main branch', [3,2,1,2], data, 'total_low_prevented')
+  renderLineCharts(grid, screen, 'Total critical alerts', [0,0,1,2], data['total_critical_alerts'])
+  renderLineCharts(grid, screen, 'Total high alerts', [0,2,1,2], data['total_high_alerts'])
+  renderLineCharts(grid, screen, 'Total critical alerts added to the main branch', [1,0,1,2], data['total_critical_added'])
+  renderLineCharts(grid, screen, 'Total high alerts added to the main branch', [1,2,1,2], data['total_high_added'])
+  renderLineCharts(grid, screen, 'Total critical alerts prevented from the main branch', [2,0,1,2], data['total_critical_prevented'])
+  renderLineCharts(grid, screen, 'Total high alerts prevented from the main branch', [2,2,1,2], data['total_high_prevented'])
+  renderLineCharts(grid, screen, 'Total medium alerts prevented from the main branch', [3,0,1,2], data['total_medium_prevented'])
+  renderLineCharts(grid, screen, 'Total low alerts prevented from the main branch', [3,2,1,2], data['total_low_prevented'])
 
   const bar = grid.set(4, 0, 1, 2, contrib.bar,
       { label: 'Top 5 alert types'
@@ -269,39 +334,40 @@ const displayAnalyticsScreen = (data: FormattedAnalyticsData) => {
       , maxHeight: 9, barBgColor: 'magenta' })
 
    screen.append(bar) //must append before setting data
- 
-   const top5 = extractTop5Alerts(data)
    
    bar.setData(
-      { titles: Object.keys(top5)
-      , data: Object.values(top5)})
+      { titles: Object.keys(data.top_five_alert_types)
+      , data: Object.values(data.top_five_alert_types)})
 
   screen.render()
     
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 }
 
-const extractTop5Alerts = (data: FormattedAnalyticsData) => {
-  const allTop5Alerts = Object.values(data).map(d => d.top_five_alert_types)
-  
-  const aggTop5Alerts = allTop5Alerts.reduce((acc, current) => {
-   const alertTypes = Object.keys(current)
+const renderLineCharts = (grid: any, screen: any, title: string, coords: number[], data: {[key: string]: number}) => {  
+  const line = grid.set(...coords, contrib.line,
+    { style:
+      { line: "cyan", 
+        text: "cyan", 
+        baseline: "black"
+      }, 
+      xLabelPadding: 0, 
+      xPadding: 0,
+      xOffset: 0,
+      wholeNumbersOnly: true,
+      legend: {
+        width: 1
+      }, 
+      label: title
+    }
+  )
 
-   alertTypes.forEach(type => {
-     if(!acc[type]){
-      // @ts-ignore
-       acc[type] = current[type]
-     } else {
-      // @ts-ignore
-       if(acc[type] < current[type]){
-        // @ts-ignore
-         acc[type] = current[type]
-       }
-     }
-   })
-   
-   return acc
-  }, {})
+  screen.append(line)
 
-  return Object.fromEntries(Object.entries(aggTop5Alerts).sort((a: [string, number], b: [string, number]) => b[1] - a[1]).slice(0,5))
+  const lineData = {
+    x: Object.keys(data),
+    y: Object.values(data)
+  }
+
+  line.setData([lineData])
 }
