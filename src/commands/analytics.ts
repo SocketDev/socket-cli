@@ -1,4 +1,3 @@
-// @ts-nocheck
 // @ts-ignore
 import blessed from 'blessed'
 import contrib from 'blessed-contrib'
@@ -39,7 +38,7 @@ export const analytics: CliSubcommand = {
   }
 }
 
-const analyticsFlags: { [key: string]: any } = {
+const analyticsFlags = {
   scope: {
     type: 'string',
     shortFlag: 's',
@@ -161,9 +160,7 @@ type AnalyticsData = {
 
 type FormattedAnalyticsData = {
   [key: string]: {
-    [key: string]: number | {
-      [key: string]: number
-    }
+    [key: string]: number
   }
 }
 
@@ -182,8 +179,6 @@ async function fetchOrgAnalyticsData (time: number, spinner: Ora, apiKey: string
   }
 
   const data = formatData(result.data, 'org')
-
-  console.log(data)
 
   if(outputJson){
     return console.log(result.data)
@@ -211,24 +206,24 @@ const formatDate = (date: string) => {
   return `${months[new Date(date).getMonth()]} ${new Date(date).getDate()}`
 }
 
-const formatData = (data: AnalyticsData[], scope: string) => {
+const formatData = (data: any, scope: string) => {
   let formattedData, sortedTopFivealerts
 
   if(scope === 'org'){
-    const topFiveAlerts = data.map(d => d.top_five_alert_types || {})
+    const topFiveAlerts = data.map((d: { [k: string]: any }) => d['top_five_alert_types'])
 
-    const totalTopAlerts = topFiveAlerts.reduce((acc, current: {[key: string]: number}) => {
+    const totalTopAlerts: {[key: string]: number} = topFiveAlerts.reduce((acc: { [k: string]: number }, current: {[key: string]: number}) => {
       const alertTypes = Object.keys(current)
       alertTypes.map((type: string) => {
         if (!acc[type]) {
-          acc[type] = current[type]
+          acc[type] = current[type]!
         } else {
-          acc[type] += current[type]
+          acc[type] += current[type]!
         }
         return acc
       })
       return acc
-    }, {} as { [k: string]: any })
+    }, {} as { [k: string]: number })
 
   
     sortedTopFivealerts = Object.entries(totalTopAlerts)
@@ -237,32 +232,32 @@ const formatData = (data: AnalyticsData[], scope: string) => {
       .reduce((r, [k, v]) => ({ ...r, [k]: v }), {})
   
     const formatData = (label: string) => {
-      return data.reduce((acc, current) => {
-        const date: string = formatDate(current.created_at)
+      return data.reduce((acc: { [k: string]: number }, current: {[key: string]: any}) => {
+        const date: string = formatDate(current['created_at'])
         if (!acc[date]) {
-          acc[date] = current[label]
+          acc[date] = current[label]!
         } else {
-          acc[date] += current[label]
+          acc[date] += current[label]!
         }
         return acc
-      }, {} as { [k: string]: number })
+      }, {})
     }
   
     formattedData = METRICS.reduce((acc, current: string) => {
       acc[current] = formatData(current)
       return acc
-    }, {} as { [k: string]: any })
+    }, {} as { [k: string]: number })
 
   } else if (scope === 'repo'){
 
-    const topAlerts = data.reduce((acc, current) => {
-      const alertTypes = Object.keys(current.top_five_alert_types)
+    const topAlerts: {[key: string]: number} = data.reduce((acc:  {[key: string]: number}, current: {[key: string]: any}) => {
+      const alertTypes = Object.keys(current['top_five_alert_types'])
       alertTypes.map(type => {
         if (!acc[type]) {
-          acc[type] = current.top_five_alert_types[type]
+          acc[type] = current['top_five_alert_types'][type]
         } else {
-          if (current.top_five_alert_types[type] > acc[type]) {
-            acc[type] = current.top_five_alert_types[type]
+          if (current['top_five_alert_types'][type] > (acc[type] || 0)) {
+            acc[type] = current['top_five_alert_types'][type]
           }
         }
         return acc
@@ -271,20 +266,20 @@ const formatData = (data: AnalyticsData[], scope: string) => {
     }, {} as {[key: string]: number})
 
     sortedTopFivealerts = Object.entries(topAlerts)
-    .sort(([, a]: [string, number], [, b]: [string, number]) => b - a)
+    .sort(([, a], [, b]) => b - a)
     .slice(0, 5)
     .reduce((r, [k, v]) => ({ ...r, [k]: v }), {})
 
-  formattedData = data.reduce((acc, current) => {
-    METRICS.forEach((m: string) => {
-      if (!acc[m]) {
-        acc[m] = {}
-      }
-      acc[m][formatDate(current.created_at)] = current[m]
+    formattedData = data.reduce((acc: any, current: {[key: string]: any}) => {
+      METRICS.forEach((m: string) => {
+        if (!acc[m]) {
+          acc[m] = {}
+        }
+        acc[m][formatDate(current['created_at'])] = current[m]
+        return acc
+      })
       return acc
-    })
-    return acc
-  }, {} as { [k: string]: any })
+    }, {} as { [k: string]: number })
   }
 
   return {...formattedData, top_five_alert_types: sortedTopFivealerts}
@@ -312,7 +307,7 @@ async function fetchRepoAnalyticsData (repo: string, time: number, spinner: Ora,
   return displayAnalyticsScreen(data)
 }
 
-const displayAnalyticsScreen = (data: FormattedAnalyticsData) => {
+const displayAnalyticsScreen = (data: any) => {
   const screen = blessed.screen()
   // eslint-disable-next-line
   const grid = new contrib.grid({rows: 5, cols: 4, screen})
