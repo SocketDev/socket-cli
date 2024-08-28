@@ -56,7 +56,6 @@
     "latest-version": "^9.0.0",
     "log-symbols": "^6.0.0",
     "meow": "^13.2.0",
-    "node-fetch": "3.3.2",
     "npm-run-path": "^5.2.0",
     "open": "^10.1.0",
     "ora": "^8.0.1",
