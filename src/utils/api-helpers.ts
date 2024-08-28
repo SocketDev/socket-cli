@@ -48,7 +48,9 @@ export async function handleApiCall<T>(
 
 export async function handleAPIError(code: number) {
   if(code === 400){
-    return `Bad request`
+    return `One of the options passed might be incorrect.`
+  } else if (code === 403){
+    return `You might be trying to access an organization that is not linked to the API key you are logged in with.`
   }
 }
 
