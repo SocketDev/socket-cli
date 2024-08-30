@@ -45,3 +45,22 @@ export async function handleApiCall<T>(
 
   return result
 }
+
+export async function handleAPIError(code: number) {
+  if(code === 400){
+    return `One of the options passed might be incorrect.`
+  } else if (code === 403){
+    return `You might be trying to access an organization that is not linked to the API key you are logged in with.`
+  }
+}
+
+const API_V0_URL = 'https://api.socket.dev/v0'
+
+export async function queryAPI(path: string, apiKey: string) {
+  return await fetch(`${API_V0_URL}/orgs/${path}`, {
+    method: 'GET', 
+    headers: {
+      'Authorization': 'Basic ' + btoa(`${apiKey}:${apiKey}`)
+    }
+  });
+}
