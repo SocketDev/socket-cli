@@ -138,7 +138,7 @@ function setupCommand(
 }
 
 async function getDiffScan(
-  { before, after, orgSlug, file }: CommandContext,
+  { before, after, orgSlug, file, outputJson }: CommandContext,
   spinner: Ora, 
   apiKey: string,
 ): Promise<void> {
@@ -156,13 +156,24 @@ async function getDiffScan(
 
   spinner.stop()
 
-  if(file){
+  if(file && !outputJson){
     fs.writeFile(file, JSON.stringify(data), err => {
       err ? console.error(err) : console.log(`Data successfully written to ${file}`)
     })
     return
   }
 
-  console.log(`\n Diff scan result: \n`)
-  console.log(util.inspect(data, {showHidden: false, depth: null, colors: true}))
+  if(outputJson){
+    console.log(`\n Diff scan result: \n`)
+    console.log(util.inspect(data, {showHidden: false, depth: null, colors: true}))
+    // @ts-ignore
+    console.log(`\n View this diff scan in the Socket dashboard: ${chalk.cyan(data.diff_report_url)} \n`)
+    return
+  }
+
+  console.log("Diff scan result: ")
+  console.log(data)
+  console.log(`\n 📝 To display the detailed report in the terminal, use the --json flag \n`)
+  // @ts-ignore
+  console.log(`\n View this diff scan in the Socket dashboard: ${chalk.cyan(data.diff_report_url)} \n`)
 }
