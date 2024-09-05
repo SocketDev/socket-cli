@@ -1,3 +1,8 @@
+//@ts-nocheck
+// @ts-ignore
+import blessed from 'blessed'
+// @ts-ignore
+import contrib from 'blessed-contrib'
 import meow from 'meow'
 import ora from 'ora'
 
@@ -114,6 +119,17 @@ function setupCommand(
   }
 }
 
+type ThreatResult =     {
+  createdAt: string
+  description: string
+  id: number,
+  locationHtmlUrl: string
+  packageHtmlUrl: string
+  purl: string
+  removedAt: string
+  threatType: string
+}
+
 async function fetchThreatFeed(
   { per_page, page, direction, filter }: CommandContext,
   spinner: Ora,
@@ -122,10 +138,48 @@ async function fetchThreatFeed(
   const formattedQueryParams = formatQueryParams({ per_page, page, direction, filter }).join('&')
   
   const response = await queryAPI(`threat-feed?${formattedQueryParams}`, apiKey)
-  const data = await response.json();
+  const data: {results: ThreatResult[], nextPage: string} = await response.json();
 
   spinner.stop()
-  console.log(data)
+
+  const screen = blessed.screen()
+
+  var table = contrib.table(
+    { keys: 'true'
+    , fg: 'white'
+    , selectedFg: 'white'
+    , selectedBg: 'magenta'
+    , interactive: 'true'
+    , label: 'Threat feed'
+    , width: '100%'
+    , height: '100%'
+    , border: {type: "line", fg: "cyan"}
+    , columnSpacing: 10 //in chars
+    , columnWidth: [20, 20, 20, 20, 20] /*in chars*/ })
+
+  //allow control the table with the keyboard
+  table.focus()
+
+  screen.append(table)
+
+  const formattedOutput = formatResults(data.results)
+
+  table.setData(
+  { headers: ['Ecosystem', 'Threat type', 'Name', 'Version', 'Detected at'], data: formattedOutput})
+
+  screen.render()
+
+  screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
+}
+
+const formatResults = (data: ThreatResult[]) => {
+  return data.map(d => {
+    const ecosystem = d.purl.split('pkg:')[1].split('/')[0]
+    const name = d.purl.split('/')[1].split('@')[0]
+    const version = d.purl.split('@')[1]
+ 
+    return [ecosystem, d.threatType, name, version, d.createdAt]
+  })
 }
 
 const formatQueryParams = (params: any) => {
