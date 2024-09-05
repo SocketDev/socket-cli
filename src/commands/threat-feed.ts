@@ -1,4 +1,8 @@
-//@ts-nocheck
+/* Not a fan of adding this, mainly doing it because 
+  the types associated with the blessed packages 
+  create some type errors 
+*/
+// @ts-nocheck
 // @ts-ignore
 import blessed from 'blessed'
 // @ts-ignore
@@ -154,18 +158,18 @@ async function fetchThreatFeed(
     , width: '100%'
     , height: '100%'
     , border: {type: "line", fg: "cyan"}
-    , columnSpacing: 10 //in chars
-    , columnWidth: [20, 20, 20, 20, 20] /*in chars*/ })
+    , columnSpacing: 5 //in chars
+    , columnWidth: [10, 25, 10, 20, 20] /*in chars*/ })
 
-  //allow control the table with the keyboard
+  // allow control the table with the keyboard
   table.focus()
 
   screen.append(table)
-
+  
   const formattedOutput = formatResults(data.results)
 
   table.setData(
-  { headers: ['Ecosystem', 'Threat type', 'Name', 'Version', 'Detected at'], data: formattedOutput})
+  { headers: ['Ecosystem', 'Name', 'Version', 'Threat type', 'Detected at'], data: formattedOutput})
 
   screen.render()
 
@@ -177,11 +181,19 @@ const formatResults = (data: ThreatResult[]) => {
     const ecosystem = d.purl.split('pkg:')[1].split('/')[0]
     const name = d.purl.split('/')[1].split('@')[0]
     const version = d.purl.split('@')[1]
- 
-    return [ecosystem, d.threatType, name, version, d.createdAt]
+
+    const timeStart = new Date(d.createdAt);
+    const timeEnd = new Date()
+
+    const diff = getHourDiff(timeStart, timeEnd)
+    const hourDiff = diff > 0 ? `${diff} hours ago` : `${getMinDiff(timeStart, timeEnd)} minutes ago`
+  
+    return [ecosystem, decodeURIComponent(name), version, d.threatType, hourDiff]
   })
 }
 
-const formatQueryParams = (params: any) => {
-  return Object.entries(params).map(entry => `${entry[0]}=${entry[1]}`)
-}
+const formatQueryParams = (params: any) => Object.entries(params).map(entry => `${entry[0]}=${entry[1]}`)
+
+const getHourDiff = (start, end) => Math.floor((end - start) / 3600000)
+
+const getMinDiff = (start, end) => Math.floor((end - start) / 60000)
