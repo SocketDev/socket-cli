@@ -88,13 +88,14 @@ function setupCommand(
   const cli = meow(
     `
     Usage
-      $ ${name} <org slug>
+      $ ${name}
 
     Options
       ${printFlagList(flags, 6)}
 
     Examples
-      $ ${name} FakeOrg
+      $ ${name}
+      $ ${name} --perPage=5 --page=2 --direction=asc --filter=joke
   `,
     {
       argv,
@@ -135,7 +136,7 @@ type ThreatResult =     {
 }
 
 async function fetchThreatFeed(
-  { per_page, page, direction, filter }: CommandContext,
+  { per_page, page, direction, filter, outputJson }: CommandContext,
   spinner: Ora,
   apiKey: string
 ): Promise<void> {
@@ -145,6 +146,10 @@ async function fetchThreatFeed(
   const data: {results: ThreatResult[], nextPage: string} = await response.json();
 
   spinner.stop()
+
+  if(outputJson){
+    return console.log(data)
+  }
 
   const screen = blessed.screen()
 
@@ -159,7 +164,7 @@ async function fetchThreatFeed(
     , height: '100%'
     , border: {type: "line", fg: "cyan"}
     , columnSpacing: 5 //in chars
-    , columnWidth: [10, 25, 10, 20, 20] /*in chars*/ })
+    , columnWidth: [10, 30, 10, 20, 20] /*in chars*/ })
 
   // allow control the table with the keyboard
   table.focus()
