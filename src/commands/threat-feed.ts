@@ -1,4 +1,4 @@
-/* Not a fan of adding this, mainly doing it because 
+/* Not a fan of adding the no-check, mainly doing it because 
   the types associated with the blessed packages 
   create some type errors 
 */
@@ -153,18 +153,22 @@ async function fetchThreatFeed(
 
   const screen = blessed.screen()
 
-  var table = contrib.table(
-    { keys: 'true'
-    , fg: 'white'
-    , selectedFg: 'white'
-    , selectedBg: 'magenta'
-    , interactive: 'true'
-    , label: 'Threat feed'
-    , width: '100%'
-    , height: '100%'
-    , border: {type: "line", fg: "cyan"}
-    , columnSpacing: 5 //in chars
-    , columnWidth: [10, 30, 10, 20, 20] /*in chars*/ })
+  var table = contrib.table({ 
+    keys: 'true', 
+    fg: 'white', 
+    selectedFg: 'white', 
+    selectedBg: 'magenta',
+    interactive: 'true', 
+    label: 'Threat feed', 
+    width: '100%', 
+    height: '100%', 
+    border: {
+      type: "line", 
+      fg: "cyan"
+    }, 
+    columnSpacing: 5, //in chars 
+    columnWidth: [10, 30, 8, 20, 16, 50] /*in chars*/ 
+  })
 
   // allow control the table with the keyboard
   table.focus()
@@ -173,8 +177,7 @@ async function fetchThreatFeed(
   
   const formattedOutput = formatResults(data.results)
 
-  table.setData(
-  { headers: ['Ecosystem', 'Name', 'Version', 'Threat type', 'Detected at'], data: formattedOutput})
+  table.setData({ headers: ['Ecosystem', 'Name', 'Version', 'Threat type', 'Detected at', 'Details'], data: formattedOutput })
 
   screen.render()
 
@@ -193,7 +196,7 @@ const formatResults = (data: ThreatResult[]) => {
     const diff = getHourDiff(timeStart, timeEnd)
     const hourDiff = diff > 0 ? `${diff} hours ago` : `${getMinDiff(timeStart, timeEnd)} minutes ago`
   
-    return [ecosystem, decodeURIComponent(name), version, d.threatType, hourDiff]
+    return [ecosystem, decodeURIComponent(name), version, d.threatType, hourDiff, d.locationHtmlUrl]
   })
 }
 
