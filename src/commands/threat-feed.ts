@@ -8,6 +8,7 @@ import { getDefaultKey } from '../utils/sdk'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
 import { AuthError } from '../utils/errors'
+import { queryAPI } from '../utils/api-helpers'
 
 export const threatFeed: CliSubcommand = {
   description: 'Look up the threat feed',
@@ -21,7 +22,7 @@ export const threatFeed: CliSubcommand = {
         throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
       }
       const spinner = ora(`Looking up the threat feed \n`).start()
-      await fetchThreatFeed(input, spinner)
+      await fetchThreatFeed(spinner, apiKey)
     }
   }
 }
@@ -74,10 +75,12 @@ function setupCommand(
 }
 
 async function fetchThreatFeed(
-  input: CommandContext,
-  spinner: Ora
+  spinner: Ora,
+  apiKey: string
 ): Promise<void> {
-//   const socketSdk = await setupSdk(apiKey)
+  const response = await queryAPI(`threat-feed`, apiKey)
+  const data = await response.json();
+
   spinner.stop()
-  console.log(input)
+  console.log(data)
 }
