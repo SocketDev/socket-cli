@@ -56,8 +56,17 @@ export async function handleAPIError(code: number) {
 
 const API_V0_URL = 'https://api.socket.dev/v0'
 
-export async function queryAPI(path: string, apiKey: string) {
+export async function queryOrgsAPI(path: string, apiKey: string) {
   return await fetch(`${API_V0_URL}/orgs/${path}`, {
+    method: 'GET', 
+    headers: {
+      'Authorization': 'Basic ' + btoa(`${apiKey}:${apiKey}`)
+    }
+  });
+}
+
+export async function queryAPI(path: string, apiKey: string) {
+  return await fetch(`${API_V0_URL}/${path}`, {
     method: 'GET', 
     headers: {
       'Authorization': 'Basic ' + btoa(`${apiKey}:${apiKey}`)
