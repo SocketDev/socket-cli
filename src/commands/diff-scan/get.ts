@@ -11,7 +11,7 @@ import { getDefaultKey } from '../../utils/sdk'
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
 import { AuthError } from '../../utils/errors'
-import { handleAPIError, queryAPI } from '../../utils/api-helpers'
+import { handleAPIError, queryOrgsAPI } from '../../utils/api-helpers'
 
 export const get: CliSubcommand = {
   description: 'Get a diff scan for an organization',
@@ -142,7 +142,7 @@ async function getDiffScan(
   spinner: Ora, 
   apiKey: string,
 ): Promise<void> {
-  const response = await queryAPI(`${orgSlug}/full-scans/diff?before=${before}&after=${after}&preview`, apiKey)
+  const response = await queryOrgsAPI(`${orgSlug}/full-scans/diff?before=${before}&after=${after}&preview`, apiKey)
   const data = await response.json();
 
   if(!response.ok){
