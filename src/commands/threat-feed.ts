@@ -166,8 +166,8 @@ async function fetchThreatFeed(
       type: "line", 
       fg: "cyan"
     }, 
-    columnSpacing: 5, //in chars 
-    columnWidth: [10, 30, 8, 20, 16, 50] /*in chars*/ 
+    columnSpacing: 3, //in chars 
+    columnWidth: [9, 30, 10, 17, 13, 100] /*in chars*/ 
   })
 
   // allow control the table with the keyboard
