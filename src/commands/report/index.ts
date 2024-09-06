@@ -8,7 +8,7 @@ const description = '[Deprecated] Project report related commands'
 
 export const report: CliSubcommand = {
   description,
-  run: async (argv, importMeta, { parentName }) => {
+  async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
         create,

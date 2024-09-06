@@ -9,7 +9,7 @@ const description = 'Socket API logout'
 
 export const logout: CliSubcommand = {
   description,
-  run: async (argv, importMeta, { parentName }) => {
+  async run(argv, importMeta, { parentName }) {
     const name = `${parentName} logout`
     const cli = meow(
       `

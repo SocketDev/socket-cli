@@ -5,6 +5,22 @@ type HelpListOptions = {
   padName: number
 }
 
+export function printFlagList(
+  list: Record<string, ListDescription>,
+  indent: number,
+  { keyPrefix = '--', padName } = <HelpListOptions>{}
+): string {
+  return printHelpList(
+    {
+      help: 'Print this help and exits.',
+      version: 'Prints current version and exits.',
+      ...list
+    },
+    indent,
+    { keyPrefix, padName }
+  )
+}
+
 export function printHelpList(
   list: Record<string, ListDescription>,
   indent: number,
@@ -29,20 +45,4 @@ export function printHelpList(
   }
 
   return result.trim()
-}
-
-export function printFlagList(
-  list: Record<string, ListDescription>,
-  indent: number,
-  { keyPrefix = '--', padName } = <HelpListOptions>{}
-): string {
-  return printHelpList(
-    {
-      help: 'Print this help and exits.',
-      version: 'Prints current version and exits.',
-      ...list
-    },
-    indent,
-    { keyPrefix, padName }
-  )
 }

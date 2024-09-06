@@ -9,12 +9,12 @@ import {
   handleApiCall,
   handleUnsuccessfulApiResponse
 } from '../../utils/api-helpers'
+import { AuthError } from '../../utils/errors'
 import { printFlagList } from '../../utils/formatting'
 import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
-import { AuthError } from '../../utils/errors'
 
 export const list: CliSubcommand = {
   description: 'List scans for an organization',
@@ -23,8 +23,10 @@ export const list: CliSubcommand = {
     const input = setupCommand(name, list.description, argv, importMeta)
     if (input) {
       const apiKey = getDefaultKey()
-      if(!apiKey){
-        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      if (!apiKey) {
+        throw new AuthError(
+          'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+        )
       }
       const spinnerText = 'Listing scans... \n'
       const spinner = ora(spinnerText).start()
@@ -130,7 +132,7 @@ function setupCommand(
 
   if (!cli.input[0]) {
     console.error(
-      `${chalk.bgRed('Input error')}: Please specify an organization slug.\n`
+      `${chalk.white.bgRed('Input error')}: Please specify an organization slug.\n`
     )
     cli.showHelp()
     return
@@ -154,7 +156,7 @@ function setupCommand(
 async function listOrgFullScan(
   orgSlug: string,
   input: CommandContext,
-  spinner: Ora, 
+  spinner: Ora,
   apiKey: string
 ): Promise<void> {
   const socketSdk = await setupSdk(apiKey)

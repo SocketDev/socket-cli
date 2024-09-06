@@ -27,20 +27,20 @@ type OrgChoices = (Separator | OrgChoice)[]
 
 const description = 'Socket API login'
 
+const flags: { [key: string]: any } = {
+  apiBaseUrl: {
+    type: 'string',
+    description: 'API server to connect to for login'
+  },
+  apiProxy: {
+    type: 'string',
+    description: 'Proxy to use when making connection to API server'
+  }
+}
+
 export const login: CliSubcommand = {
   description,
-  run: async (argv, importMeta, { parentName }) => {
-    const flags: { [key: string]: any } = {
-      apiBaseUrl: {
-        type: 'string',
-        description: 'API server to connect to for login'
-      },
-      apiProxy: {
-        type: 'string',
-        description: 'Proxy to use when making connection to API server'
-      }
-    }
-
+  async run(argv, importMeta, { parentName }) {
     const name = `${parentName} login`
     const cli = meow(
       `

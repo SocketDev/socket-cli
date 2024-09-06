@@ -11,7 +11,7 @@ import { ChalkOrMarkdown } from '../utils/chalk-markdown'
 import { InputError } from '../utils/errors'
 import { getSeverityCount, formatSeverityCount } from '../utils/format-issues'
 import { printFlagList } from '../utils/formatting'
-import { objectSome } from '../utils/misc'
+import { objectSome } from '../utils/objects'
 import { FREE_API_KEY, getDefaultKey, setupSdk } from '../utils/sdk'
 
 import type { SocketIssue } from '../utils/format-issues'
@@ -24,21 +24,30 @@ export const info: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     const name = parentName + ' info'
 
-    const input = setupCommand(name, info.description, argv, importMeta)
-    if (input) {
+    const commandContext = setupCommand(
+      name,
+      info.description,
+      argv,
+      importMeta
+    )
+    if (commandContext) {
       const spinnerText =
-        input.pkgVersion === 'latest'
-          ? `Looking up data for the latest version of ${input.pkgName}\n`
-          : `Looking up data for version ${input.pkgVersion} of ${input.pkgName}\n`
+        commandContext.pkgVersion === 'latest'
+          ? `Looking up data for the latest version of ${commandContext.pkgName}\n`
+          : `Looking up data for version ${commandContext.pkgVersion} of ${commandContext.pkgName}\n`
       const spinner = ora(spinnerText).start()
       const packageData = await fetchPackageData(
-        input.pkgName,
-        input.pkgVersion,
-        input,
+        commandContext.pkgName,
+        commandContext.pkgVersion,
+        commandContext,
         spinner
       )
       if (packageData) {
-        formatPackageDataOutput(packageData, { name, ...input }, spinner)
+        formatPackageDataOutput(
+          packageData,
+          { name, ...commandContext },
+          spinner
+        )
       }
     }
   }
@@ -97,7 +106,7 @@ function setupCommand(
     throw new InputError('Only one package lookup supported at once')
   }
 
-  const [rawPkgName = ''] = cli.input
+  const { 0: rawPkgName = '' } = cli.input
 
   if (!rawPkgName) {
     cli.showHelp()

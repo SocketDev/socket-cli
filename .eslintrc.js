@@ -41,7 +41,7 @@ module.exports = {
     'depend/ban-dependencies': [
       'warn',
       {
-        allowed: ['globby']
+        allowed: ['globby', 'ora']
       }
     ],
     'no-warning-comments': ['warn', { terms: ['fixme'] }]

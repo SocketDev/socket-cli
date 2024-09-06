@@ -15,9 +15,10 @@ import { installLinks } from './link'
 import { createTTYServer } from './tty-server'
 import { ChalkOrMarkdown } from '../utils/chalk-markdown'
 import { createIssueUXLookup } from '../utils/issue-rules'
+import { isErrnoException } from '../utils/misc'
+import { findRoot } from '../utils/path-resolve'
 import { getDefaultKey, FREE_API_KEY, setupSdk } from '../utils/sdk'
 import { getSetting } from '../utils/settings'
-import { isErrnoException } from '../utils/type-helpers'
 
 import type {
   Arborist as BaseArborist,
@@ -27,7 +28,6 @@ import type {
 } from '@npmcli/arborist'
 import type { Writable } from 'node:stream'
 import type { Options as OraOptions } from 'ora'
-import { findRoot } from '../utils/path-resolve'
 
 type ArboristClass = typeof BaseArborist & {
   new (...args: any): any
@@ -533,8 +533,8 @@ async function main() {
 
   const remoteSettings = await (async () => {
     try {
-      const sdk = await setupSdk(pubToken)
-      const orgResult = await sdk.getOrganizations()
+      const socketSdk = await setupSdk(pubToken)
+      const orgResult = await socketSdk.getOrganizations()
       if (!orgResult.success) {
         throw new Error(
           'Failed to fetch Socket organization info: ' + orgResult.error.message
@@ -550,7 +550,7 @@ async function main() {
           orgs.push(org)
         }
       }
-      const result = await sdk.postSettings(
+      const result = await socketSdk.postSettings(
         orgs.map(org => {
           return {
             organization: org.id

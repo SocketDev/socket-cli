@@ -16,10 +16,6 @@ const ignoredDirs = [
 
 const ignoredDirPatterns = ignoredDirs.map(i => `**/${i}`)
 
-export function directories() {
-  return [...ignoredDirs]
-}
-
 export function directoryPatterns() {
   return [...ignoredDirPatterns]
 }

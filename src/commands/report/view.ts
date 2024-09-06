@@ -31,12 +31,20 @@ export const view: CliSubcommand = {
     { parentName }: { parentName: string }
   ) {
     const name = `${parentName} view`
-    const input = setupCommand(name, view.description, argv, importMeta)
-    const result = input
-      ? await fetchReportData(input.reportId, input)
+    const commandContext = setupCommand(
+      name,
+      view.description,
+      argv,
+      importMeta
+    )
+    const result = commandContext
+      ? await fetchReportData(commandContext.reportId, commandContext)
       : undefined
     if (result) {
-      formatReportDataOutput(result, { name, ...input! })
+      formatReportDataOutput(result, {
+        name,
+        ...(<CommandContext>(commandContext ?? {}))
+      })
     }
   }
 }
@@ -56,7 +64,7 @@ function setupCommand(
   description: string,
   argv: readonly string[],
   importMeta: ImportMeta
-): void | CommandContext {
+): CommandContext | undefined {
   const flags: { [key: string]: any } = {
     ...outputFlags,
     ...validationFlags

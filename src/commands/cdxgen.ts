@@ -1,14 +1,18 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import spawn from '@npmcli/promise-spawn'
 import chalk from 'chalk'
-import { $ } from 'execa'
 import yargsParse from 'yargs-parser'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
 const distPath = __dirname
+const { execPath } = process
 const rootPath = path.resolve(distPath, '..')
+const binPath = path.join(rootPath, 'node_modules/.bin')
+const cdxgenBinPath = path.join(binPath, 'cdxgen')
+const synpBinPath = path.join(binPath, 'synp')
 
 const {
   SBOM_SIGN_ALGORITHM, // Algorithm. Example: RS512
@@ -18,11 +22,6 @@ const {
 
 const toLower = (arg: string) => arg.toLowerCase()
 const arrayToLower = (arg: string[]) => arg.map(toLower)
-
-const execaConfig = {
-  env: { NODE_ENV: '' },
-  localDir: path.join(rootPath, 'node_modules')
-}
 
 const nodejsPlatformTypes = [
   'javascript',
@@ -173,7 +172,11 @@ export const cdxgen: CliSubcommand = {
         // Use synp to create a package-lock.json from the yarn.lock,
         // based on the node_modules folder, for a more accurate SBOM.
         try {
-          await $(execaConfig)`synp --source-file ./yarn.lock`
+          await spawn(
+            execPath,
+            [await fs.realpath(synpBinPath), '--source-file', './yarn.lock'],
+            { shell: true }
+          )
           yargv.type = 'npm'
           cleanupPackageLock = true
         } catch {}
@@ -184,16 +187,20 @@ export const cdxgen: CliSubcommand = {
       yargv.output = 'socket-cdx.json'
     }
 
-    await $({
-      ...execaConfig,
-      env: {
-        NODE_ENV: '',
-        SBOM_SIGN_ALGORITHM,
-        SBOM_SIGN_PRIVATE_KEY,
-        SBOM_SIGN_PUBLIC_KEY
-      },
-      stdout: 'inherit'
-    })`cdxgen ${argvToArray(yargv)}`
+    await spawn(
+      execPath,
+      [await fs.realpath(cdxgenBinPath), ...argvToArray(yargv)],
+      {
+        env: {
+          NODE_ENV: '',
+          SBOM_SIGN_ALGORITHM,
+          SBOM_SIGN_PRIVATE_KEY,
+          SBOM_SIGN_PUBLIC_KEY
+        },
+        shell: true,
+        stdio: 'inherit'
+      }
+    )
 
     if (cleanupPackageLock) {
       try {

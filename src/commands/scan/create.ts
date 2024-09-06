@@ -11,6 +11,7 @@ import {
   handleApiCall,
   handleUnsuccessfulApiResponse
 } from '../../utils/api-helpers'
+import { AuthError } from '../../utils/errors'
 import { printFlagList } from '../../utils/formatting'
 import { createDebugLogger } from '../../utils/misc'
 import { getPackageFilesFullScans } from '../../utils/path-resolve'
@@ -18,7 +19,6 @@ import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
-import { AuthError } from '../../utils/errors'
 
 export const create: CliSubcommand = {
   description: 'Create a scan',
@@ -27,8 +27,10 @@ export const create: CliSubcommand = {
     const input = await setupCommand(name, create.description, argv, importMeta)
     if (input) {
       const apiKey = getDefaultKey()
-      if(!apiKey){
-        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      if (!apiKey) {
+        throw new AuthError(
+          'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+        )
       }
       const spinnerText = 'Creating a scan... \n'
       const spinner = ora(spinnerText).start()
@@ -183,7 +185,7 @@ async function setupCommand(
   )
 
   if (!repoName || !branchName || !packagePaths.length) {
-    console.error(`${chalk.bgRed('Input error')}: Please provide the required fields:\n
+    console.error(`${chalk.white.bgRed('Input error')}: Please provide the required fields:\n
 - Repository name using --repo,\n
 - Branch name using --branch\n
 - At least one file path (e.g. ./package.json).\n`)
