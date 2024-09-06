@@ -11,6 +11,7 @@ const srcPath = path.join(rootPath, 'src')
 export default () =>
   baseConfig({
     input: {
+      misc: `${srcPath}/utils/misc.ts`,
       'path-resolve': `${srcPath}/utils/path-resolve.ts`
     },
     output: [

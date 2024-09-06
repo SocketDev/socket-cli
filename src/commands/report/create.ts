@@ -185,7 +185,8 @@ async function setupCommand(
         typeof cause === 'object' &&
         cause instanceof SocketValidationError
       ) {
-        // Inspired by workbox-build: https://github.com/GoogleChrome/workbox/blob/95f97a207fd51efb3f8a653f6e3e58224183a778/packages/workbox-build/src/lib/validate-options.ts#L68-L71
+        // Inspired by workbox-build:
+        // https://github.com/GoogleChrome/workbox/blob/95f97a207fd51efb3f8a653f6e3e58224183a778/packages/workbox-build/src/lib/validate-options.ts#L68-L71
         const betterErrors = betterAjvErrors({
           basePath: 'config',
           data: cause.data,

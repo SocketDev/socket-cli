@@ -19,8 +19,7 @@ export const wrapper: CliSubcommand = {
     importMeta: ImportMeta,
     { parentName }: { parentName: string }
   ) {
-    const name = `${parentName} wrapper`
-    setupCommand(name, wrapper.description, argv, importMeta)
+    setupCommand(`${parentName} wrapper`, wrapper.description, argv, importMeta)
   }
 }
 

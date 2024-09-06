@@ -8,39 +8,23 @@ export function createDebugLogger(
     : () => {}
 }
 
+export function isErrnoException(
+  value: unknown
+): value is NodeJS.ErrnoException {
+  if (!(value instanceof Error)) {
+    return false
+  }
+  return (value as NodeJS.ErrnoException).code !== undefined
+}
+
 export function stringJoinWithSeparateFinalSeparator(
   list: (string | undefined)[],
   separator: string = ' and '
 ): string {
   const values = list.filter(value => !!value)
-
   if (values.length < 2) {
     return values[0] || ''
   }
-
   const finalValue = values.pop()
-
   return values.join(', ') + separator + finalValue
-}
-
-export function pick<T extends Record<string, any>, K extends keyof T>(
-  input: T,
-  keys: K[] | ReadonlyArray<K>
-): Pick<T, K> {
-  const result: Partial<Pick<T, K>> = {}
-
-  for (const key of keys) {
-    result[key] = input[key]
-  }
-
-  return result as Pick<T, K>
-}
-
-export function objectSome(obj: Record<string, any>): boolean {
-  for (const key in obj) {
-    if (obj[key]) {
-      return true
-    }
-  }
-  return false
 }

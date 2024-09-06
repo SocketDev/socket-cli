@@ -1,6 +1,7 @@
 import meow from 'meow'
 
 import { printFlagList, printHelpList } from './formatting'
+import { toSortedObject } from './sorts'
 
 import type { Options } from 'meow'
 
@@ -26,14 +27,6 @@ interface MeowOptions extends Options<any> {
   aliases?: CliAliases
   argv: readonly string[]
   name: string
-}
-
-function sortKeys<T extends { [key: string]: any }>(object: T): T {
-  return <T>Object.fromEntries(
-    Object.keys(object)
-      .sort()
-      .map(k => [k, object[k]])
-  )
 }
 
 export async function meowWithSubcommands(
@@ -73,8 +66,8 @@ export async function meowWithSubcommands(
     Commands
       ${printHelpList(
         {
-          ...sortKeys(subcommands),
-          ...sortKeys(aliases)
+          ...toSortedObject(subcommands),
+          ...toSortedObject(aliases)
         },
         6
       )}

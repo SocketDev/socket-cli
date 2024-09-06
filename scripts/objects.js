@@ -1,5 +1,11 @@
 'use strict'
 
+const { toSortedObject } = require('./sorts')
+
+function formatObject(object, space = 2) {
+  return JSON.stringify(toSortedObject(object), null, space)
+}
+
 function hasKeys(obj) {
   for (const key in obj) {
     if (hasOwn(obj, key)) return true
@@ -13,6 +19,7 @@ function hasOwn(obj, propKey) {
 }
 
 module.exports = {
+  formatObject,
   hasKeys,
   hasOwn
 }

@@ -11,7 +11,8 @@ import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { Options as GlobbyOptions } from 'globby'
 
-const BASE_GLOBBY_OPTS: GlobbyOptions = {
+const BASE_GLOBBY_OPTS = <GlobbyOptions>{
+  __proto__: null,
   absolute: true,
   expandDirectories: false,
   gitignore: true,

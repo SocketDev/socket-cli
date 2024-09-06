@@ -8,12 +8,12 @@ import {
   handleApiCall,
   handleUnsuccessfulApiResponse
 } from '../utils/api-helpers'
+import { AuthError } from '../utils/errors'
 import { printFlagList } from '../utils/formatting'
 import { getDefaultKey, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
-import { AuthError } from '../utils/errors'
 
 export const auditLog: CliSubcommand = {
   description: 'Look up the audit log for an organization',
@@ -23,8 +23,10 @@ export const auditLog: CliSubcommand = {
     const input = setupCommand(name, auditLog.description, argv, importMeta)
     if (input) {
       const apiKey = getDefaultKey()
-      if(!apiKey){
-        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      if (!apiKey) {
+        throw new AuthError(
+          'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+        )
       }
       const spinner = ora(`Looking up audit log for ${input.orgSlug}\n`).start()
       await fetchOrgAuditLog(input.orgSlug, input, spinner, apiKey)
@@ -105,12 +107,12 @@ function setupCommand(
 
   if (cli.input.length < 1) {
     console.error(
-      `${chalk.bgRed('Input error')}: Please provide an organization slug \n`
+      `${chalk.white.bgRed('Input error')}: Please provide an organization slug\n`
     )
     cli.showHelp()
     return
   }
-  const [orgSlug = ''] = cli.input
+  const { 0: orgSlug = '' } = cli.input
 
   return <CommandContext>{
     outputJson,
@@ -168,8 +170,8 @@ async function fetchOrgAuditLog(
     logDetails[
       (await select({
         message: input.type
-          ? `\n Audit log for: ${orgSlug} with type: ${input.type} \n`
-          : `\n Audit log for: ${orgSlug} \n`,
+          ? `\n Audit log for: ${orgSlug} with type: ${input.type}\n`
+          : `\n Audit log for: ${orgSlug}\n`,
         choices: data,
         pageSize: 30
       })) as any

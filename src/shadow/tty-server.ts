@@ -6,7 +6,7 @@ import readline from 'node:readline'
 import { PassThrough } from 'node:stream'
 
 import { version as ipc_version } from '../../package.json'
-import { isErrnoException } from '../utils/type-helpers'
+import { isErrnoException } from '../utils/misc'
 
 import type { ColorSupportLevel } from 'chalk'
 import type { Server } from 'node:net'

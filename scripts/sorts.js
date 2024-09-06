@@ -2,11 +2,10 @@
 
 const { compare: localCompare } = new Intl.Collator()
 
-function toSortedObject(object) {
-  const entries = Object.entries(object).sort((a, b) =>
-    localCompare(a[0], b[0])
+function toSortedObject(object, comparator = localCompare) {
+  return Object.fromEntries(
+    Object.entries(object).sort((a, b) => comparator(a[0], b[0]))
   )
-  return Object.fromEntries(entries)
 }
 
 module.exports = {

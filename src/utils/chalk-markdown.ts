@@ -4,6 +4,7 @@ import terminalLink from 'terminal-link'
 
 // From the 'log-symbols' module
 const unicodeLogSymbols = {
+  __proto__: null,
   info: chalk.blue('ℹ'),
   success: chalk.green('✔'),
   warning: chalk.yellow('⚠'),
@@ -12,6 +13,7 @@ const unicodeLogSymbols = {
 
 // From the 'log-symbols' module
 const fallbackLogSymbols = {
+  __proto__: null,
   info: chalk.blue('i'),
   success: chalk.green('√'),
   warning: chalk.yellow('‼'),
@@ -24,6 +26,7 @@ export const logSymbols = isUnicodeSupported()
   : fallbackLogSymbols
 
 const markdownLogSymbols = {
+  __proto__: null,
   info: ':information_source:',
   error: ':stop_sign:',
   success: ':white_check_mark:',
@@ -73,8 +76,8 @@ export class ChalkOrMarkdown {
   list(items: string[]): string {
     const indentedContent = items.map(item => this.indent(item).trimStart())
     return this.useMarkdown
-      ? '* ' + indentedContent.join('\n* ') + '\n'
-      : indentedContent.join('\n') + '\n'
+      ? `* ${indentedContent.join('\n* ')}\n`
+      : `${indentedContent.join('\n')}\n`
   }
 
   get logSymbols(): typeof logSymbols {

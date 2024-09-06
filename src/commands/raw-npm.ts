@@ -1,5 +1,4 @@
-import { spawn } from 'node:child_process'
-
+import spawn from '@npmcli/promise-spawn'
 import meow from 'meow'
 
 import { validationFlags } from '../flags'
@@ -10,17 +9,21 @@ import type { CliSubcommand } from '../utils/meow-with-subcommands'
 export const rawNpm: CliSubcommand = {
   description: 'Temporarily disable the Socket npm wrapper',
   async run(argv, importMeta, { parentName }) {
-    const name = `${parentName} raw-npm`
-    setupCommand(name, rawNpm.description, argv, importMeta)
+    await setupCommand(
+      `${parentName} raw-npm`,
+      rawNpm.description,
+      argv,
+      importMeta
+    )
   }
 }
 
-function setupCommand(
+async function setupCommand(
   name: string,
   description: string,
   argv: readonly string[],
   importMeta: ImportMeta
-): void {
+): Promise<void> {
   const flags: { [key: string]: any } = validationFlags
 
   const cli = meow(
@@ -47,14 +50,15 @@ function setupCommand(
     return
   }
 
-  spawn('npm', [argv.join(' ')], {
-    stdio: 'inherit',
-    shell: true
-  }).on('exit', (code, signal) => {
+  const spawnPromise = spawn('npm', [argv.join(' ')], {
+    stdio: 'inherit'
+  })
+  spawnPromise.process.on('exit', (code, signal) => {
     if (signal) {
       process.kill(process.pid, signal)
     } else if (code !== null) {
       process.exit(code)
     }
   })
+  await spawnPromise
 }

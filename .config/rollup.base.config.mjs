@@ -19,7 +19,7 @@ import {
   isBuiltin,
   resolveId
 } from '../scripts/packages.js'
-import { escapeRegExp } from '../scripts/strings.js'
+import { escapeRegExp } from '../scripts/regexps.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))

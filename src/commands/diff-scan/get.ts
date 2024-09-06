@@ -1,17 +1,18 @@
+import fs from 'node:fs'
+import util from 'node:util'
+
 import chalk from 'chalk'
-import fs from 'fs'
 import meow from 'meow'
 import ora from 'ora'
-import util from 'util'
 
 import { outputFlags } from '../../flags'
+import { handleAPIError, queryAPI } from '../../utils/api-helpers'
+import { AuthError } from '../../utils/errors'
 import { printFlagList } from '../../utils/formatting'
 import { getDefaultKey } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
-import { AuthError } from '../../utils/errors'
-import { handleAPIError, queryOrgsAPI } from '../../utils/api-helpers'
 
 export const get: CliSubcommand = {
   description: 'Get a diff scan for an organization',
@@ -20,8 +21,10 @@ export const get: CliSubcommand = {
     const input = setupCommand(name, get.description, argv, importMeta)
     if (input) {
       const apiKey = getDefaultKey()
-      if(!apiKey){
-        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      if (!apiKey) {
+        throw new AuthError(
+          'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+        )
       }
       const spinnerText = 'Getting diff scan... \n'
       const spinner = ora(spinnerText).start()
@@ -110,15 +113,15 @@ function setupCommand(
 
   if (!before || !after) {
     console.error(
-      `${chalk.bgRed.white('Input error')}: Please specify a before and after full scan ID. To get full scans IDs, you can run the command "socket scan list <your org slug>". \n`
+      `${chalk.bgRed.white('Input error')}: Please specify a before and after full scan ID. To get full scans IDs, you can run the command "socket scan list <your org slug>".\n`
     )
     cli.showHelp()
     return
   }
 
-  if(cli.input.length < 1){
+  if (cli.input.length < 1) {
     console.error(
-      `${chalk.bgRed.white('Input error')}: Please provide an organization slug \n`
+      `${chalk.bgRed.white('Input error')}: Please provide an organization slug\n`
     )
     cli.showHelp()
     return
@@ -139,41 +142,52 @@ function setupCommand(
 
 async function getDiffScan(
   { before, after, orgSlug, file, outputJson }: CommandContext,
-  spinner: Ora, 
-  apiKey: string,
+  spinner: Ora,
+  apiKey: string
 ): Promise<void> {
-  const response = await queryOrgsAPI(`${orgSlug}/full-scans/diff?before=${before}&after=${after}&preview`, apiKey)
-  const data = await response.json();
+  const response = await queryAPI(
+    `${orgSlug}/full-scans/diff?before=${before}&after=${after}&preview`,
+    apiKey
+  )
+  const data = await response.json()
 
-  if(!response.ok){
+  if (!response.ok) {
     spinner.stop()
     const err = await handleAPIError(response.status)
-    console.error(
-      `${chalk.bgRed.white(response.statusText)}: ${err} \n`
-    )
+    console.error(`${chalk.bgRed.white(response.statusText)}: ${err}\n`)
     return
   }
 
   spinner.stop()
 
-  if(file && !outputJson){
+  if (file && !outputJson) {
     fs.writeFile(file, JSON.stringify(data), err => {
-      err ? console.error(err) : console.log(`Data successfully written to ${file}`)
+      err
+        ? console.error(err)
+        : console.log(`Data successfully written to ${file}`)
     })
     return
   }
 
-  if(outputJson){
+  if (outputJson) {
     console.log(`\n Diff scan result: \n`)
-    console.log(util.inspect(data, {showHidden: false, depth: null, colors: true}))
+    console.log(
+      util.inspect(data, { showHidden: false, depth: null, colors: true })
+    )
     // @ts-ignore
-    console.log(`\n View this diff scan in the Socket dashboard: ${chalk.cyan(data.diff_report_url)} \n`)
+    console.log(
+      `\n View this diff scan in the Socket dashboard: ${chalk.cyan((data as any)?.['diff_report_url'])}\n`
+    )
     return
   }
 
-  console.log("Diff scan result: ")
+  console.log('Diff scan result: ')
   console.log(data)
-  console.log(`\n 📝 To display the detailed report in the terminal, use the --json flag \n`)
+  console.log(
+    `\n 📝 To display the detailed report in the terminal, use the --json flag \n`
+  )
   // @ts-ignore
-  console.log(`\n View this diff scan in the Socket dashboard: ${chalk.cyan(data.diff_report_url)} \n`)
+  console.log(
+    `\n View this diff scan in the Socket dashboard: ${chalk.cyan((data as any)?.['diff_report_url'])}\n`
+  )
 }

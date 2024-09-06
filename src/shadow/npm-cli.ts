@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
-import { spawn } from 'node:child_process'
 import { realpathSync } from 'node:fs'
 import path from 'node:path'
+
+import spawn from '@npmcli/promise-spawn'
 
 import { installLinks } from './link'
 import { findRoot } from '../utils/path-resolve'
@@ -19,9 +20,9 @@ process.exitCode = 1
   Adding the `--quiet` and `--no-progress` flags when the `proc-log` module 
   is found to fix a UX issue when running the command with recent versions of npm
   (input swallowed by the standard npm spinner) 
-*/ 
+*/
 let npmArgs: string[] = []
-if(process.argv.slice(2).includes('install')){
+if (process.argv.slice(2).includes('install')) {
   const npmEntrypoint = realpathSync(npmPath)
   const npmRootPath = findRoot(path.dirname(npmEntrypoint))
   if (npmRootPath === undefined) {
@@ -35,8 +36,8 @@ if(process.argv.slice(2).includes('install')){
   } catch {}
   if (npmlog) {
     npmArgs = ['--quiet', '--no-progress']
-  } 
-} 
+  }
+}
 
 spawn(
   process.execPath,
@@ -44,7 +45,7 @@ spawn(
   {
     stdio: 'inherit'
   }
-).on('exit', (code, signal) => {
+).process.on('exit', (code, signal) => {
   if (signal) {
     process.kill(process.pid, signal)
   } else if (code !== null) {

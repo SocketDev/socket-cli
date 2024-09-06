@@ -1,9 +1,3 @@
-/* Not a fan of adding the no-check, mainly doing it because 
-  the types associated with the blessed packages 
-  create some type errors 
-*/
-// @ts-nocheck
-// @ts-ignore
 import blessed from 'blessed'
 // @ts-ignore
 import contrib from 'blessed-contrib'
@@ -11,13 +5,13 @@ import meow from 'meow'
 import ora from 'ora'
 
 import { outputFlags } from '../flags'
+import { queryAPI } from '../utils/api-helpers'
+import { AuthError } from '../utils/errors'
 import { printFlagList } from '../utils/formatting'
 import { getDefaultKey } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type { Ora } from 'ora'
-import { AuthError } from '../utils/errors'
-import { queryAPI } from '../utils/api-helpers'
 
 export const threatFeed: CliSubcommand = {
   description: 'Look up the threat feed',
@@ -27,8 +21,10 @@ export const threatFeed: CliSubcommand = {
     const input = setupCommand(name, threatFeed.description, argv, importMeta)
     if (input) {
       const apiKey = getDefaultKey()
-      if(!apiKey){
-        throw new AuthError("User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.")
+      if (!apiKey) {
+        throw new AuthError(
+          'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+        )
       }
       const spinner = ora(`Looking up the threat feed \n`).start()
       await fetchThreatFeed(input, spinner, apiKey)
@@ -124,10 +120,10 @@ function setupCommand(
   }
 }
 
-type ThreatResult =     {
+type ThreatResult = {
   createdAt: string
   description: string
-  id: number,
+  id: number
   locationHtmlUrl: string
   packageHtmlUrl: string
   purl: string
@@ -140,44 +136,61 @@ async function fetchThreatFeed(
   spinner: Ora,
   apiKey: string
 ): Promise<void> {
-  const formattedQueryParams = formatQueryParams({ per_page, page, direction, filter }).join('&')
-  
+  const formattedQueryParams = formatQueryParams({
+    per_page,
+    page,
+    direction,
+    filter
+  }).join('&')
+
   const response = await queryAPI(`threat-feed?${formattedQueryParams}`, apiKey)
-  const data: {results: ThreatResult[], nextPage: string} = await response.json();
+  const data = <{ results: ThreatResult[]; nextPage: string }>(
+    await response.json()
+  )
 
   spinner.stop()
 
-  if(outputJson){
+  if (outputJson) {
     return console.log(data)
   }
 
   const screen = blessed.screen()
 
-  var table = contrib.table({ 
-    keys: 'true', 
-    fg: 'white', 
-    selectedFg: 'white', 
+  const table = contrib.table({
+    keys: 'true',
+    fg: 'white',
+    selectedFg: 'white',
     selectedBg: 'magenta',
-    interactive: 'true', 
-    label: 'Threat feed', 
-    width: '100%', 
-    height: '100%', 
+    interactive: 'true',
+    label: 'Threat feed',
+    width: '100%',
+    height: '100%',
     border: {
-      type: "line", 
-      fg: "cyan"
-    }, 
-    columnSpacing: 3, //in chars 
-    columnWidth: [9, 30, 10, 17, 13, 100] /*in chars*/ 
+      type: 'line',
+      fg: 'cyan'
+    },
+    columnSpacing: 3, //in chars
+    columnWidth: [9, 30, 10, 17, 13, 100] /*in chars*/
   })
 
   // allow control the table with the keyboard
   table.focus()
 
   screen.append(table)
-  
+
   const formattedOutput = formatResults(data.results)
 
-  table.setData({ headers: ['Ecosystem', 'Name', 'Version', 'Threat type', 'Detected at', 'Details'], data: formattedOutput })
+  table.setData({
+    headers: [
+      'Ecosystem',
+      'Name',
+      'Version',
+      'Threat type',
+      'Detected at',
+      'Details'
+    ],
+    data: formattedOutput
+  })
 
   screen.render()
 
@@ -186,22 +199,35 @@ async function fetchThreatFeed(
 
 const formatResults = (data: ThreatResult[]) => {
   return data.map(d => {
-    const ecosystem = d.purl.split('pkg:')[1].split('/')[0]
-    const name = d.purl.split('/')[1].split('@')[0]
-    const version = d.purl.split('@')[1]
+    const ecosystem = d.purl.split('pkg:')[1]!.split('/')[0]!
+    const name = d.purl.split('/')[1]!.split('@')[0]!
+    const version = d.purl.split('@')[1]!
 
-    const timeStart = new Date(d.createdAt);
-    const timeEnd = new Date()
+    const timeStart = new Date(d.createdAt).getMilliseconds()
+    const timeEnd = Date.now()
 
     const diff = getHourDiff(timeStart, timeEnd)
-    const hourDiff = diff > 0 ? `${diff} hours ago` : `${getMinDiff(timeStart, timeEnd)} minutes ago`
-  
-    return [ecosystem, decodeURIComponent(name), version, d.threatType, hourDiff, d.locationHtmlUrl]
+    const hourDiff =
+      diff > 0
+        ? `${diff} hours ago`
+        : `${getMinDiff(timeStart, timeEnd)} minutes ago`
+
+    return [
+      ecosystem,
+      decodeURIComponent(name),
+      version,
+      d.threatType,
+      hourDiff,
+      d.locationHtmlUrl
+    ]
   })
 }
 
-const formatQueryParams = (params: any) => Object.entries(params).map(entry => `${entry[0]}=${entry[1]}`)
+const formatQueryParams = (params: object) =>
+  Object.entries(params).map(entry => `${entry[0]}=${entry[1]}`)
 
-const getHourDiff = (start, end) => Math.floor((end - start) / 3600000)
+const getHourDiff = (start: number, end: number) =>
+  Math.floor((end - start) / 3600000)
 
-const getMinDiff = (start, end) => Math.floor((end - start) / 60000)
+const getMinDiff = (start: number, end: number) =>
+  Math.floor((end - start) / 60000)

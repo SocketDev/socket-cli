@@ -11,7 +11,7 @@ const description = 'Scans related commands'
 
 export const scan: CliSubcommand = {
   description,
-  run: async (argv, importMeta, { parentName }) => {
+  async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
         create,

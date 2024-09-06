@@ -41,13 +41,9 @@ type NonNormalizedResolvedIssueRule =
   | boolean
 
 /**
- * Iterates over all entries with ordered issue rule for deferral
- * Iterates over all issue rules and finds the first defined value that does not defer otherwise uses the defaultValue
- * Takes the value and converts into a UX workflow
- *
- * @param {Iterable<Iterable<NonNormalizedIssueRule>>} entriesOrderedIssueRules
- * @param {NonNormalizedResolvedIssueRule} defaultValue
- * @returns {RuleActionUX}
+ * Iterates over all entries with ordered issue rule for deferral.  Iterates over
+ * all issue rules and finds the first defined value that does not defer otherwise
+ * uses the defaultValue. Takes the value and converts into a UX workflow
  */
 function resolveIssueRuleUX(
   entriesOrderedIssueRules: Iterable<Iterable<NonNormalizedIssueRule>>,

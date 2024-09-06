@@ -1,4 +1,5 @@
-import { pick, stringJoinWithSeparateFinalSeparator } from './misc'
+import { stringJoinWithSeparateFinalSeparator } from './misc'
+import { pick } from './objects'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
@@ -32,6 +33,20 @@ function getDesiredSeverities(
   return result
 }
 
+export function formatSeverityCount(
+  severityCount: Record<SocketIssue['severity'], number>
+): string {
+  const summary: string[] = []
+
+  for (const severity of SEVERITIES_BY_ORDER) {
+    if (severityCount[severity]) {
+      summary.push(`${severityCount[severity]} ${severity}`)
+    }
+  }
+
+  return stringJoinWithSeparateFinalSeparator(summary)
+}
+
 export function getSeverityCount(
   issues: SocketIssueList,
   lowestToInclude: SocketIssue['severity'] | undefined
@@ -54,18 +69,4 @@ export function getSeverityCount(
   }
 
   return severityCount
-}
-
-export function formatSeverityCount(
-  severityCount: Record<SocketIssue['severity'], number>
-): string {
-  const summary: string[] = []
-
-  for (const severity of SEVERITIES_BY_ORDER) {
-    if (severityCount[severity]) {
-      summary.push(`${severityCount[severity]} ${severity}`)
-    }
-  }
-
-  return stringJoinWithSeparateFinalSeparator(summary)
 }

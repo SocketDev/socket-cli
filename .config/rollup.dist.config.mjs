@@ -3,9 +3,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { loadJSON } from '../scripts/files.js'
-import { hasKeys } from '../scripts/objects.js'
+import { formatObject, hasKeys } from '../scripts/objects.js'
 import { toSortedObject } from '../scripts/sorts.js'
-import { formatObject } from '../scripts/strings.js'
 
 import baseConfig from './rollup.base.config.mjs'
 

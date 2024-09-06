@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, it } from 'node:test'
 
-import * as helpers from '../src/utils/type-helpers'
+import { isErrnoException } from './dist/misc'
 
 const testPath = __dirname
 
@@ -12,11 +12,11 @@ describe('Error Narrowing', () => {
     try {
       readFileSync(path.join(testPath, './enoent'))
     } catch (e) {
-      assert.equal(helpers.isErrnoException(e), true)
+      assert.equal(isErrnoException(e), true)
     }
   })
   it('should properly only detect node errors', () => {
-    assert.equal(helpers.isErrnoException(new Error()), false)
-    assert.equal(helpers.isErrnoException({ ...new Error() }), false)
+    assert.equal(isErrnoException(new Error()), false)
+    assert.equal(isErrnoException({ ...new Error() }), false)
   })
 })
