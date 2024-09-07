@@ -1,0 +1,15 @@
+{
+  "settings": {},
+  "rules": {
+    "consistent-function-scoping": "allow",
+    "no-async-endpoint-handlers": "allow",
+    "no-await-in-loop": "allow",
+    "no-control-regex": "allow",
+    "no-empty-file": "allow",
+    "no-extraneous-class": "allow",
+    "no-new": "allow",
+    "no-new-array": "allow",
+    "no-this-alias": ["deny"],
+    "no-unused-vars": "allow"
+  }
+}

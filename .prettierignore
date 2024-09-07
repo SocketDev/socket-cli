@@ -1,5 +1,4 @@
 .github/
 coverage/
 **/dist
-scripts/
 package-lock.json

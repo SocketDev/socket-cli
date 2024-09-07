@@ -4,7 +4,7 @@ color: true
 include:
   - test/**/*.test.ts
 exclude:
-  - dist/**
+  - test/dist/**
 tsconfig: .config/tsconfig.tap.json
 typecheck: false
 allow-incomplete-coverage: true

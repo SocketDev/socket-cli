@@ -28,7 +28,7 @@ function camelToHyphen(str: string): string {
 }
 
 // TODO: Add autocompletion using https://www.npmjs.com/package/omelette
-;(async () => {
+void (async () => {
   try {
     updateNotifier({
       pkg: JSON.parse(readFileSync(path.join(rootPath, 'package.json'), 'utf8'))

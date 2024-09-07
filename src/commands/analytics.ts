@@ -232,7 +232,7 @@ const formatDate = (date: string) => {
 }
 
 const formatData = (data: any, scope: string) => {
-  let formattedData, sortedTopFivealerts
+  let formattedData, sortedTopFiveAlerts
 
   if (scope === 'org') {
     const topFiveAlerts = data.map(
@@ -255,10 +255,16 @@ const formatData = (data: any, scope: string) => {
       {} as { [k: string]: number }
     )
 
-    sortedTopFivealerts = Object.entries(totalTopAlerts)
-      .sort(([, a], [, b]) => b - a)
+    sortedTopFiveAlerts = Object.entries(totalTopAlerts)
+      .sort(({ 1: a }, { 1: b }) => b - a)
       .slice(0, 5)
-      .reduce((r, [k, v]) => ({ ...r, [k]: v }), {})
+      .reduce(
+        (r, { 0: k, 1: v }) => {
+          r[k] = v
+          return r
+        },
+        {} as typeof totalTopAlerts
+      )
 
     const formatData = (label: string) => {
       return data.reduce(
@@ -301,10 +307,16 @@ const formatData = (data: any, scope: string) => {
       {} as { [key: string]: number }
     )
 
-    sortedTopFivealerts = Object.entries(topAlerts)
-      .sort(([, a], [, b]) => b - a)
+    sortedTopFiveAlerts = Object.entries(topAlerts)
+      .sort(({ 1: a }, { 1: b }) => b - a)
       .slice(0, 5)
-      .reduce((r, [k, v]) => ({ ...r, [k]: v }), {})
+      .reduce(
+        (r, { 0: k, 1: v }) => {
+          r[k] = v
+          return r
+        },
+        {} as typeof topAlerts
+      )
 
     formattedData = data.reduce(
       (acc: any, current: { [key: string]: any }) => {
@@ -321,7 +333,7 @@ const formatData = (data: any, scope: string) => {
     )
   }
 
-  return { ...formattedData, top_five_alert_types: sortedTopFivealerts }
+  return { ...formattedData, top_five_alert_types: sortedTopFiveAlerts }
 }
 
 async function fetchRepoAnalyticsData(
@@ -369,7 +381,6 @@ async function fetchRepoAnalyticsData(
 
 const displayAnalyticsScreen = (data: any) => {
   const screen = blessed.screen()
-  // eslint-disable-next-line
   const grid = new contrib.grid({ rows: 5, cols: 4, screen })
 
   renderLineCharts(
