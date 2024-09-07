@@ -1,9 +1,0 @@
-{
-  "rules": {
-    "@typescript-eslint/no-floating-promises": 0,
-    "@typescript-eslint/no-misused-promises": 0,
-    "@typescript-eslint/no-unused-expressions": 0,
-    "node/no-unpublished-require": 0,
-    "promise/prefer-await-to-then": 0
-  }
-}

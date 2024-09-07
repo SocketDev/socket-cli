@@ -27,6 +27,7 @@
     "noUncheckedIndexedAccess": true,
 
     /* Additional checks */
+    "importsNotUsedAsValues": "remove",
     "noUnusedLocals": true,
     "noUnusedParameters": true
   }

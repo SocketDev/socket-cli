@@ -10,7 +10,6 @@ const { normalizePath } = require('./paths')
 
 const { createRequire, isBuiltin } = Module
 
-// eslint-disable-next-line no-control-regex
 const cjsPluginPrefixRegExp = /^\x00/
 const cjsPluginSuffixRegExp =
   /\?commonjs-(?:entry|es-import|exports|external|module|proxy|wrapped)$/
@@ -86,7 +85,6 @@ function isEsmId(id_, parentId_) {
     !resolvedId.endsWith('.ts')
   ) {
     try {
-      // eslint-disable-next-line no-new
       new vm.Script(fs.readFileSync(resolvedId, 'utf8'))
     } catch (e) {
       if (e instanceof SyntaxError) {

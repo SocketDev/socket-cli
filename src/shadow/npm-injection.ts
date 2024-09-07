@@ -83,7 +83,6 @@ const arboristClassPath = path.join(
 
 const Arborist: ArboristClass = require(arboristClassPath)
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 let tarball: typeof import('pacote').tarball
 try {
   tarball = require(path.join(npmDepPath, 'pacote')).tarball
@@ -91,7 +90,6 @@ try {
   tarball = require('pacote').tarball
 }
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 let npmlog: typeof import('npmlog') | undefined
 try {
   npmlog = require(path.join(npmDepPath, 'proc-log/lib/index.js')).log
@@ -129,7 +127,6 @@ let _uxLookup: IssueUXLookup | undefined
 async function uxLookup(
   settings: IssueUXLookupSettings
 ): Promise<IssueUXLookupResult> {
-  // eslint-disable-next-line no-unmodified-loop-condition
   while (_uxLookup === undefined) {
     await wait(1, { signal: abortSignal })
   }
@@ -414,7 +411,7 @@ class SafeArborist extends Arborist {
   constructor(...ctorArgs: ConstructorParameters<ArboristClass>) {
     const mutedArguments = [
       {
-        ...(ctorArgs[0] ?? {}),
+        ...ctorArgs[0],
         audit: true,
         dryRun: true,
         ignoreScripts: true,

@@ -24,7 +24,7 @@ type CaptureState = {
 }
 
 type TTYSeverResult = {
-  captureTTY<RET extends any>(
+  captureTTY<RET>(
     mutexFn: (
       colorLevel: ColorSupportLevel,
       input?: Readable | undefined,
@@ -119,7 +119,6 @@ function createNonStandardTTYServer(): TTYSeverResult {
 function createIPCServer(
   colorLevel: ColorSupportLevel,
   captureState: CaptureState,
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   npmlog: typeof import('npmlog')
 ): Promise<Server> {
   const input = process.stdin
@@ -193,7 +192,6 @@ function createIPCServer(
 function createStandardTTYServer(
   colorLevel: ColorSupportLevel,
   isInteractive: boolean,
-  // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   npmlog: typeof import('npmlog')
 ): TTYSeverResult {
   const captureState: CaptureState = {

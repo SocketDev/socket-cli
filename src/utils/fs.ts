@@ -44,7 +44,7 @@ export async function readFileBinary(
   options?: ReadFileOptions
 ): Promise<Buffer> {
   return <Buffer>await fs.readFile(filepath, <ReadFileOptions>{
-    ...(options ?? {}),
+    ...options,
     encoding: 'binary'
   })
 }
@@ -54,7 +54,7 @@ export async function readFileUTF8(
   options?: ReadFileOptions
 ): Promise<string> {
   return <string>await fs.readFile(filepath, <ReadFileOptions>{
-    ...(options ?? {}),
+    ...options,
     encoding: 'utf8'
   })
 }
@@ -73,7 +73,7 @@ export async function writeFileUTF8(
   options?: WriteFileOptions
 ): Promise<void> {
   await fs.writeFile(filepath, data, <WriteFileOptions>{
-    ...(options ?? {}),
+    ...options,
     encoding: 'utf8'
   })
 }
