@@ -4,7 +4,7 @@ import meow from 'meow'
 
 //import ora from 'ora'
 import { printFlagList } from '../utils/formatting'
-import { writeFileUTF8 } from '../utils/fs'
+import { writeFileUtf8 } from '../utils/fs'
 import { indentedStringify, isParsableJSON } from '../utils/json'
 import { hasOwn } from '../utils/objects'
 import { detect } from '../utils/package-manager-detector'
@@ -160,15 +160,15 @@ type GetManifestOverrides = (pkg: PackageJSONObject) => Overrides | undefined
 const getManifestOverridesByAgent: Record<Agent, GetManifestOverrides> = {
   // npm overrides documentation:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
-  npm: (pkgJSON: PackageJSONObject) => (pkgJSON as any)?.overrides ?? undefined,
+  npm: (pkgJson: PackageJSONObject) => (pkgJson as any)?.overrides ?? undefined,
   // pnpm overrides documentation:
   // https://pnpm.io/package_json#pnpmoverrides
-  pnpm: (pkgJSON: PackageJSONObject) =>
-    (pkgJSON as any)?.pnpm?.overrides ?? undefined,
+  pnpm: (pkgJson: PackageJSONObject) =>
+    (pkgJson as any)?.pnpm?.overrides ?? undefined,
   // Yarn resolutions documentation:
   // https://yarnpkg.com/configuration/manifest#resolutions
-  yarn: (pkgJSON: PackageJSONObject) =>
-    (pkgJSON as any)?.resolutions ?? undefined
+  yarn: (pkgJson: PackageJSONObject) =>
+    (pkgJson as any)?.resolutions ?? undefined
 }
 
 type CreateManifest = (
@@ -191,15 +191,15 @@ const createManifestByAgent: Record<Agent, CreateManifest> = {
     <PackageJSONObject>{ ...ref, resolutions: overrides }
 } as const
 
-type LockIncludes = (lockUTF: string, name: string) => boolean
+type LockIncludes = (lockSrc: string, name: string) => boolean
 
 const lockIncludesByAgent: Record<Agent, LockIncludes> = {
-  npm: (lockUTF: string, name: string) => {
+  npm: (lockSrc: string, name: string) => {
     // Detects the package name in the following cases:
     //   "name":
-    return lockUTF.includes(`"${name}":`)
+    return lockSrc.includes(`"${name}":`)
   },
-  pnpm: (lockUTF: string, name: string) => {
+  pnpm: (lockSrc: string, name: string) => {
     const escapedName = escapeRegExp(name)
     return new RegExp(
       // Detects the package name in the following cases:
@@ -208,9 +208,9 @@ const lockIncludesByAgent: Record<Agent, LockIncludes> = {
       //   name: version
       `(?<=^\\s*)(?:(['/])${escapedName}\\1|${escapedName}(?=:))`,
       'm'
-    ).test(lockUTF)
+    ).test(lockSrc)
   },
-  yarn: (lockUTF: string, name: string) => {
+  yarn: (lockSrc: string, name: string) => {
     const escapedName = escapeRegExp(name)
     return new RegExp(
       // Detects the package name in the following cases:
@@ -220,7 +220,7 @@ const lockIncludesByAgent: Record<Agent, LockIncludes> = {
       //   , name@
       `(?<=(?:^\\s*|,\\s*)"?)${escapedName}(?=@)`,
       'm'
-    ).test(lockUTF)
+    ).test(lockSrc)
   }
 }
 
@@ -347,11 +347,11 @@ const modifyManifestByAgent: Record<Agent, ModifyManifest> = (() => {
 
 type AddOverridesConfig = {
   agent: Agent
-  lockUTF: string
+  lockSrc: string
   lockIncludes: LockIncludes
   pkgPath: string
-  pkgUTF: string
-  pkgJSON: PackageJSONObject
+  pkgJson: PackageJSONObject
+  pkgJsonStr: string
   overrides?: Overrides | undefined
 }
 
@@ -363,10 +363,10 @@ type AddOverridesState = {
 async function addOverrides(
   {
     agent,
-    lockUTF,
+    lockSrc,
     lockIncludes,
     pkgPath,
-    pkgJSON,
+    pkgJson,
     overrides
   }: AddOverridesConfig,
   aoState: AddOverridesState
@@ -375,7 +375,7 @@ async function addOverrides(
   let addedCount = 0
   let clonedOverrides: Overrides | undefined
   for (const name of allPackages) {
-    if (!hasOwn(overrides, name) && lockIncludes(lockUTF, name)) {
+    if (!hasOwn(overrides, name) && lockIncludes(lockSrc, name)) {
       if (clonedOverrides === undefined) {
         clonedOverrides = { ...overrides }
       }
@@ -394,11 +394,11 @@ async function addOverrides(
     aoState.output = modState.modified
       ? modState.output
       : JSON.stringify(
-          createManifestByAgent[agent](pkgJSON, sortedOverrides),
+          createManifestByAgent[agent](pkgJson, sortedOverrides),
           null,
           2
         )
-    await writeFileUTF8(pkgPath, aoState.output)
+    await writeFileUtf8(pkgPath, aoState.output)
   }
   return aoState
 }
@@ -416,7 +416,7 @@ export const cleanup: CliSubcommand = {
     if (commandContext) {
       //const spinnerText = 'Searching dependencies...'
       //const spinner = ora(spinnerText).start()
-      const { agent, lockUTF, pkgJSON, pkgPath, pkgUTF, supported } =
+      const { agent, lockSrc, pkgJson, pkgPath, pkgJsonStr, supported } =
         await detect({
           cwd: process.cwd(),
           onUnknown: (pkgManager: string | undefined) => {
@@ -429,15 +429,15 @@ export const cleanup: CliSubcommand = {
         console.log('The engines.node range is not supported.')
         return
       }
-      if (pkgJSON === undefined) {
+      if (pkgJson === undefined) {
         console.log('No package.json found.')
         return
       }
       const aoState: AddOverridesState = {
-        output: pkgUTF!,
+        output: pkgJsonStr!,
         packageNames: new Set()
       }
-      if (lockUTF) {
+      if (lockSrc) {
         const configs: {
           agent: Agent
           lockIncludes: LockIncludes
@@ -448,29 +448,29 @@ export const cleanup: CliSubcommand = {
                 {
                   agent: 'npm',
                   lockIncludes: lockIncludesByAgent.yarn,
-                  overrides: getManifestOverridesByAgent.npm(pkgJSON)
+                  overrides: getManifestOverridesByAgent.npm(pkgJson)
                 },
                 {
                   agent: 'yarn',
                   lockIncludes: lockIncludesByAgent.yarn,
-                  overrides: getManifestOverridesByAgent.yarn(pkgJSON)
+                  overrides: getManifestOverridesByAgent.yarn(pkgJson)
                 }
               ]
             : [
                 {
                   agent,
                   lockIncludes: lockIncludesByAgent[agent],
-                  overrides: getManifestOverridesByAgent[agent](pkgJSON)
+                  overrides: getManifestOverridesByAgent[agent](pkgJson)
                 }
               ]
 
         for (const config of configs) {
           await addOverrides(
             <AddOverridesConfig>{
+              lockSrc,
               pkgPath,
-              pkgUTF,
-              pkgJSON,
-              lockUTF,
+              pkgJson,
+              pkgJsonStr,
               ...config
             },
             aoState

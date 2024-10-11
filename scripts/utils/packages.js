@@ -4,9 +4,10 @@ const fs = require('node:fs')
 const Module = require('node:module')
 const vm = require('node:vm')
 
+const normalizePackageData = require('normalize-package-data')
 const validatePackageName = require('validate-npm-package-name')
 
-const { normalizePath } = require('./paths')
+const { normalizePath } = require('./path')
 
 const { createRequire, isBuiltin } = Module
 
@@ -102,6 +103,11 @@ function normalizeId(id) {
     .replace(cjsPluginSuffixRegExp, '')
 }
 
+function normalizePackageJson(pkgJson) {
+  normalizePackageData(pkgJson)
+  return pkgJson
+}
+
 module.exports = {
   isBuiltin,
   isEsmId,
@@ -109,5 +115,6 @@ module.exports = {
   getPackageName,
   getPackageNameEnd,
   normalizeId,
+  normalizePackageJson,
   resolveId
 }

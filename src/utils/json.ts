@@ -22,17 +22,17 @@ export function indentedStringify(
   )
 }
 
-export function isParsableJSON(jsonUTF: string): boolean {
+export function isParsableJSON(jsonStr: string): boolean {
   try {
-    JSON.parse(jsonUTF)
+    JSON.parse(jsonStr)
     return true
   } catch {}
   return false
 }
 
-export function parseJSONObject(jsonUTF: string): JSONObject | null {
+export function parseJSONObject(jsonStr: string): JSONObject | null {
   try {
-    const value = JSON.parse(jsonUTF)
+    const value = JSON.parse(jsonStr)
     if (isObjectObject(value)) {
       return value
     }

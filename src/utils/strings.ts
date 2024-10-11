@@ -1,6 +1,6 @@
 // Inspired by "balanced-match":
 // https://www.npmjs.com/package/balanced-match/v/3.0.1
-// MIT Licenced
+// MIT License
 // Copyright (c) 2013 Julian Gruber <julian@juliangruber.com>
 export function isBalanced(
   startPattern: string,

@@ -49,7 +49,7 @@ export async function readFileBinary(
   })
 }
 
-export async function readFileUTF8(
+export async function readFileUtf8(
   filepath: PathLike | FileHandle,
   options?: ReadFileOptions
 ): Promise<string> {
@@ -67,7 +67,7 @@ export type WriteFileOptions = ObjectEncodingOptions & {
   flush?: boolean | undefined
 } & Abortable
 
-export async function writeFileUTF8(
+export async function writeFileUtf8(
   filepath: PathLike | FileHandle,
   data: WriteFileData,
   options?: WriteFileOptions

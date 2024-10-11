@@ -1,8 +1,8 @@
-export const { compare: localCompare } = new Intl.Collator()
+export const { compare: localeCompare } = new Intl.Collator()
 
 export function toSortedObject<T extends { [key: string]: any }>(
   object: T,
-  comparator = localCompare
+  comparator = localeCompare
 ): T {
   return <T>(
     Object.fromEntries(

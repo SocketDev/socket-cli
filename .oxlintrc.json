@@ -6,10 +6,12 @@
     "no-await-in-loop": "allow",
     "no-control-regex": "allow",
     "no-empty-file": "allow",
+    "no-extend-native": "allow",
     "no-extraneous-class": "allow",
     "no-new": "allow",
     "no-new-array": "allow",
     "no-this-alias": ["deny"],
+    "no-self-assign": "allow",
     "no-unused-vars": "allow"
   }
 }
