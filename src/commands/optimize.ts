@@ -283,8 +283,7 @@ async function addOverrides(
 }
 
 export const optimize: CliSubcommand = {
-  description:
-    'Optimize dependencies with @socketregistry overrides',
+  description: 'Optimize dependencies with @socketregistry overrides',
   async run(argv, importMeta, { parentName }) {
     const commandContext = setupCommand(
       `${parentName} dependency optimize`,

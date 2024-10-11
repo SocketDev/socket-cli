@@ -1,5 +1,5 @@
 {
-  "entry": ["scripts/**/*.js", "src/**/*.ts","test/**/*.test.ts"],
+  "entry": ["scripts/**/*.js", "src/**/*.ts", "test/**/*.test.ts"],
   "project": ["scripts/**/*", "src/**/*", "test/**/*"],
   "ignore": ["dist/**/*"]
 }
