@@ -27,7 +27,7 @@ function camelToHyphen(str: string): string {
   return str.replace(/[A-Z]+/g, '-$&').toLowerCase()
 }
 
-// TODO: Add autocompletion using https://www.npmjs.com/package/omelette
+// TODO: Add autocompletion using https://socket.dev/npm/package/omelette
 void (async () => {
   try {
     updateNotifier({
