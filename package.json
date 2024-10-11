@@ -141,13 +141,21 @@
       "packageurl-js": "https://registry.npmjs.org/packageurl-js/-/packageurl-js-2.0.1.tgz"
     },
     "aggregate-error": "npm:@socketregistry/aggregate-error@^1",
+    "es-define-property": "npm:@socketregistry/es-define-property@^1",
+    "function-bind": "npm:@socketregistry/function-bind@^1",
     "globalthis": "npm:@socketregistry/globalthis@^1",
+    "gopd": "npm:@socketregistry/gopd@^1",
+    "has-property-descriptors": "npm:@socketregistry/has-property-descriptors@^1",
+    "has-proto": "npm:@socketregistry/has-proto@^1",
+    "has-symbols": "npm:@socketregistry/has-symbols@^1",
+    "hasown": "npm:@socketregistry/hasown@^1",
     "indent-string": "npm:@socketregistry/indent-string@^1",
     "is-core-module": "npm:@socketregistry/is-core-module@^1",
     "isarray": "npm:@socketregistry/isarray@^1",
     "path-parse": "npm:@socketregistry/path-parse@^1",
     "safe-buffer": "npm:@socketregistry/safe-buffer@^1",
     "safer-buffer": "npm:@socketregistry/safer-buffer@^1",
+    "set-function-length": "npm:@socketregistry/set-function-length@^1",
     "side-channel": "npm:@socketregistry/side-channel@^1"
   },
   "engines": {
