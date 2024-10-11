@@ -5,7 +5,7 @@
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](https://github.com/SocketDev/eslint-config)
 [![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
 
-CLI tool for [Socket.dev](https://socket.dev/)
+> CLI tool for [Socket.dev](https://socket.dev/)
 
 ## Usage
 
