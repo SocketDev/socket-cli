@@ -403,13 +403,13 @@ async function addOverrides(
   return aoState
 }
 
-export const cleanup: CliSubcommand = {
+export const optimize: CliSubcommand = {
   description:
-    'Cleanup the dependency graph by removing dependencies or swapping them out for simpler alternatives',
+    'Optimize dependencies with @socketregistry overrides',
   async run(argv, importMeta, { parentName }) {
     const commandContext = setupCommand(
-      `${parentName} dependency cleanup`,
-      cleanup.description,
+      `${parentName} dependency optimize`,
+      optimize.description,
       argv,
       importMeta
     )
@@ -481,7 +481,7 @@ export const cleanup: CliSubcommand = {
       if (count) {
         console.log(`Added ${count} overrides!`)
       } else {
-        console.log('Congratulations! No cleanup needed 🚀')
+        console.log('Congratulations! No override optimizations needed 🚀')
       }
     }
   }
