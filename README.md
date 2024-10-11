@@ -23,14 +23,20 @@ socket wrapper --enable
 
 ## Commands
 
-- `socket info <package@version>` - looks up issues for a package
+- `socket info <package@version>` - Look up issues for a package.
+
+- `socket optimize` - Optimize dependencies with
+  [`@socketregistry`](https://github.com/SocketDev/socket-registry-js) overrides
+
+- `socket raw-npm` and `socket raw-npx` - Temporarily disable the Socket
+  'safe-npm' wrapper.
 
 - `socket report create <path(s)-to-folder-or-file>` - creates a report on
   [socket.dev](https://socket.dev/)
 
-  Uploads the specified `package.json` and lock files for JavaScript, Python,
-  and Go dependency manifests. If any folder is specified, the ones found in
-  there recursively are uploaded.
+  Upload the specified `package.json` and lock files for JavaScript, Python, and
+  Go dependency manifests. If any folder is specified, the ones found in there
+  recursively are uploaded.
 
   Supports globbing such as `**/package.json`, `**/requirements.txt`,
   `**/pyproject.toml`, and `**/go.mod`.
@@ -41,13 +47,10 @@ socket wrapper --enable
   a sensible set of
   [default ignores](https://socket.dev/npm/package/ignore-by-default)
 
-- `socket report view <report-id>` - looks up issues and scores from a report
+- `socket report view <report-id>` - Look up issues and scores from a report.
 
-- `socket wrapper --enable` and `socket wrapper --disable` - Enables and
-  disables the Socket 'safe-npm' wrapper.
-
-- `socket raw-npm` and `socket raw-npx` - Temporarily disables the Socket
-  'safe-npm' wrapper.
+- `socket wrapper --enable` and `socket wrapper --disable` - Enable and disable
+  the Socket 'safe-npm' wrapper.
 
 ## Aliases
 
