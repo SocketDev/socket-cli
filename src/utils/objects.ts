@@ -9,7 +9,7 @@ export function hasOwn(obj: any, propKey: PropertyKey): boolean {
 }
 
 export function isObjectObject(value: any): value is { [key: string]: any } {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
 export function objectSome(obj: Record<string, any>): boolean {

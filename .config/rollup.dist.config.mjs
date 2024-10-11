@@ -2,9 +2,9 @@ import { chmodSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { loadJSON } from '../scripts/files.js'
-import { formatObject, hasKeys } from '../scripts/objects.js'
-import { toSortedObject } from '../scripts/sorts.js'
+import { readJsonSync, readPackageJsonSync } from '../scripts/utils/fs.js'
+import { formatObject, hasKeys } from '../scripts/utils/objects.js'
+import { toSortedObject } from '../scripts/utils/sorts.js'
 
 import baseConfig from './rollup.base.config.mjs'
 
@@ -15,8 +15,8 @@ const depStatsPath = path.join(rootPath, '.dep-stats.json')
 const distPath = path.join(rootPath, 'dist')
 const srcPath = path.join(rootPath, 'src')
 
-const pkgJSONPath = path.resolve(rootPath, 'package.json')
-const pkgJSON = loadJSON(pkgJSONPath)
+const pkgJsonPath = path.resolve(rootPath, 'package.json')
+const pkgJson = readPackageJsonSync(pkgJsonPath)
 
 export default () => {
   const config = baseConfig({
@@ -40,7 +40,7 @@ export default () => {
       {
         writeBundle() {
           const { '@cyclonedx/cdxgen': cdxgenRange, synp: synpRange } =
-            pkgJSON.dependencies
+            pkgJson.dependencies
           const { depStats } = config.meta
 
           // Manually add @cyclonedx/cdxgen and synp as they are not directly
@@ -52,11 +52,11 @@ export default () => {
 
           try {
             // Remove transitives from dependencies
-            const oldDepStats = loadJSON(depStatsPath)
+            const oldDepStats = readJsonSync(depStatsPath)
             for (const key of Object.keys(oldDepStats.transitives)) {
-              if (pkgJSON.dependencies[key]) {
-                depStats.transitives[key] = pkgJSON.dependencies[key]
-                depStats.external[key] = pkgJSON.dependencies[key]
+              if (pkgJson.dependencies[key]) {
+                depStats.transitives[key] = pkgJson.dependencies[key]
+                depStats.external[key] = pkgJson.dependencies[key]
                 delete depStats.dependencies[key]
               }
             }
@@ -78,8 +78,8 @@ export default () => {
 
           // Update dependencies with additional inlined modules
           writeFileSync(
-            pkgJSONPath,
-            readFileSync(pkgJSONPath, 'utf8').replace(
+            pkgJsonPath,
+            readFileSync(pkgJsonPath, 'utf8').replace(
               /(?<="dependencies":\s*)\{[^\}]*\}/,
               () => {
                 const deps = {

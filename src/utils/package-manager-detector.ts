@@ -1,12 +1,11 @@
 import path from 'node:path'
 
-// @ts-ignore
-import { parse as parseBunLockb } from '@hyrious/bun.lockb'
+import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb'
 import spawn from '@npmcli/promise-spawn'
 import browserslist from 'browserslist'
 import semver from 'semver'
 
-import { existsSync, findUp, readFileBinary, readFileUTF8 } from './fs'
+import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
 import { parseJSONObject } from './json'
 import { getOwn, isObjectObject } from './objects'
 import { isNonEmptyString } from './strings'
@@ -55,10 +54,10 @@ export type DetectResult = Readonly<{
   agent: AgentPlusBun
   agentVersion: string | undefined
   lockPath: string | undefined
-  lockUTF: string | undefined
-  pkgJSON: PackageJSONObject | undefined
+  lockSrc: string | undefined
+  pkgJson: PackageJSONObject | undefined
   pkgPath: string | undefined
-  pkgUTF: string | undefined
+  pkgJsonStr: string | undefined
   supported: boolean
   targets: {
     browser: boolean
@@ -92,9 +91,9 @@ const readLockFileByAgent: Record<AgentPlusBun, ReadLockFile> = (() => {
       // https://bun.sh/guides/install/yarnlock
       return (await spawn('bun', [lockPath])).stdout
     }),
-    npm: wrapReader(async (lockPath: string) => await readFileUTF8(lockPath)),
-    pnpm: wrapReader(async (lockPath: string) => await readFileUTF8(lockPath)),
-    yarn: wrapReader(async (lockPath: string) => await readFileUTF8(lockPath))
+    npm: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath)),
+    pnpm: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath)),
+    yarn: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath))
   }
 })()
 
@@ -111,16 +110,18 @@ export async function detect({
 
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
-  const pkgUTF = existsSync(pkgPath) ? await readFileUTF8(pkgPath) : undefined
+  const pkgJsonStr = existsSync(pkgPath)
+    ? await readFileUtf8(pkgPath)
+    : undefined
 
-  const pkgJSON =
-    typeof pkgUTF === 'string'
-      ? (parseJSONObject(pkgUTF) ?? undefined)
+  const pkgJson =
+    typeof pkgJsonStr === 'string'
+      ? (parseJSONObject(pkgJsonStr) ?? undefined)
       : undefined
 
   const pkgManager = <string | undefined>(
-    (isNonEmptyString(getOwn(pkgJSON, 'packageManager'))
-      ? pkgJSON?.['packageManager']
+    (isNonEmptyString(getOwn(pkgJson, 'packageManager'))
+      ? pkgJson?.['packageManager']
       : undefined)
   )
 
@@ -147,24 +148,24 @@ export async function detect({
     onUnknown?.(pkgManager)
   }
 
-  let lockUTF: string | undefined
+  let lockSrc: string | undefined
   const targets = {
     browser: false,
     node: true
   }
 
-  if (pkgJSON) {
+  if (pkgJson) {
     let browser: boolean | undefined
     let node: boolean | undefined
-    const browserField = getOwn(pkgJSON, 'browser')
+    const browserField = getOwn(pkgJson, 'browser')
     if (isNonEmptyString(browserField) || isObjectObject(browserField)) {
       browser = true
     }
-    const nodeRange = getOwn(pkgJSON['engines'], 'node')
+    const nodeRange = getOwn(pkgJson['engines'], 'node')
     if (isNonEmptyString(nodeRange)) {
       node = MAINTAINED_NODE_VERSIONS.some(v => semver.satisfies(v, nodeRange))
     }
-    const browserslistQuery = getOwn(pkgJSON, 'browserslist')
+    const browserslistQuery = getOwn(pkgJson, 'browserslist')
     if (Array.isArray(browserslistQuery)) {
       const browserslistTargets = browserslist(browserslistQuery)
       const browserslistNodeTargets = browserslistTargets
@@ -185,7 +186,7 @@ export async function detect({
     if (node !== undefined) {
       targets.node = node
     }
-    lockUTF =
+    lockSrc =
       typeof lockPath === 'string'
         ? await readLockFileByAgent[agent](lockPath)
         : undefined
@@ -195,10 +196,10 @@ export async function detect({
     agent,
     agentVersion,
     lockPath,
-    lockUTF,
-    pkgJSON,
+    lockSrc,
+    pkgJson,
     pkgPath,
-    pkgUTF,
+    pkgJsonStr,
     supported: targets.browser || targets.node,
     targets
   }

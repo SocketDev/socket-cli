@@ -1,6 +1,6 @@
 'use strict'
 
-const { isEsmId } = require('../scripts/packages')
+const { isEsmId } = require('../scripts/utils/packages')
 
 module.exports = {
   plugins: [
@@ -13,7 +13,7 @@ module.exports = {
         corejs: false,
         helpers: true,
         regenerator: false,
-        version: '^7.24.6'
+        version: '^7.25.7'
       }
     ],
     [

@@ -1,15 +1,13 @@
 # vim: set filetype=yaml :
-timeout: 1200
-color: true
-include:
-  - test/**/*.test.ts
-exclude:
-  - test/dist/**
-tsconfig: .config/tsconfig.tap.json
-typecheck: false
 allow-incomplete-coverage: true
+color: true
 coverage-report:
   - none
-plugin:
-  - "!@tapjs/spawn"
-  - "!@tapjs/stdin"
+exclude:
+  - test/dist/**
+include:
+  - test/**/*.test.ts
+passes: false
+reporter: base
+timeout: 600 # 600 seconds is 10 minutes
+tsconfig: .config/tsconfig.tap.json

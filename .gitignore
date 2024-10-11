@@ -1,21 +1,18 @@
-# Basic ones
 .DS_Store
-/.eslintcache
+._.DS_Store
+Thumbs.db
 /.env
+/.eslintcache
+/.nvm
 /.tap
 /.vscode
 /coverage
+/npm-debug.log
 **/dist
 **/node_modules
 /*.tsbuildinfo
-
-# We're a library, so please, no lock files
-/yarn.lock
-
-# Generated types
 *.d.ts
 *.d.ts.map
 
-# Library specific ones
 !/.vscode/extensions.json
 /test/socket-npm-fixtures/**/node_modules/

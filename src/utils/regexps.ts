@@ -1,6 +1,6 @@
 // Inlined "escape-string-regexp":
 // https://www.npmjs.com/package/escape-string-regexp/v/5.0.0
-// MIT Licenced
+// MIT License
 // Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 export function escapeRegExp(string: string): string {
   // Escape characters with special meaning either inside or outside character sets.

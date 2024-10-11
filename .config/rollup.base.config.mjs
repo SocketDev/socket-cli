@@ -9,7 +9,7 @@ import rangesIntersect from 'semver/ranges/intersects.js'
 import { readPackageUpSync } from 'read-package-up'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
-import { loadJSON } from '../scripts/files.js'
+import { readPackageJsonSync } from '../scripts/utils/fs.js'
 import {
   getPackageName,
   getPackageNameEnd,
@@ -18,8 +18,8 @@ import {
   isPackageName,
   isBuiltin,
   resolveId
-} from '../scripts/packages.js'
-import { escapeRegExp } from '../scripts/regexps.js'
+} from '../scripts/utils/packages.js'
+import { escapeRegExp } from '../scripts/utils/regexps.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
@@ -40,9 +40,8 @@ const babelConfigPath = path.join(__dirname, 'babel.config.js')
 const tsconfigPath = path.join(__dirname, 'tsconfig.rollup.json')
 
 const babelConfig = require(babelConfigPath)
-const { dependencies: pkgDeps, devDependencies: pkgDevDeps } = loadJSON(
-  path.resolve(rootPath, 'package.json')
-)
+const { dependencies: pkgDeps, devDependencies: pkgDevDeps } =
+  readPackageJsonSync(rootPath)
 
 const customResolver = nodeResolve({
   exportConditions: ['node'],
@@ -107,7 +106,9 @@ export default (extendConfig = {}) => {
           dependencies = {},
           optionalDependencies = {},
           peerDependencies = {}
-        } = loadJSON(`${parentId.slice(0, parentNameEnd)}/package.json`)
+        } = readPackageJsonSync(
+          `${parentId.slice(0, parentNameEnd)}/package.json`
+        )
         const curRange =
           dependencies[name] ??
           optionalDependencies[name] ??
@@ -184,6 +185,7 @@ export default (extendConfig = {}) => {
         ignoreGlobal: true,
         ignoreTryCatch: true,
         defaultIsModuleExports: true,
+        strictRequires: 'auto',
         transformMixedEsModules: true,
         extensions: ['.cjs', '.js', '.ts', `.ts${ENTRY_SUFFIX}`]
       }),
