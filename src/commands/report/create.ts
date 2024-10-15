@@ -95,6 +95,7 @@ async function setupCommand(
   importMeta: ImportMeta
 ): Promise<void | CommandContext> {
   const flags: { [key: string]: any } = {
+    __proto__: null,
     ...outputFlags,
     ...validationFlags,
     debug: {

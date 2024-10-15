@@ -71,6 +71,7 @@ function setupCommand(
   importMeta: ImportMeta
 ): void | CommandContext {
   const flags: { [key: string]: any } = {
+    __proto__: null,
     ...outputFlags,
     ...validationFlags
   }

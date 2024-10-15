@@ -200,6 +200,7 @@ export default (extendConfig = {}) => {
         ? [config.output]
         : []
   ).map(o => ({
+    __proto__: null,
     ...o,
     chunkFileNames: '[name].js',
     manualChunks(id) {
