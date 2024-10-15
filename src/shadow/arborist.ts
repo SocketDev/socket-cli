@@ -29,7 +29,7 @@ import type {
 } from '@npmcli/arborist'
 import type { Writable } from 'node:stream'
 import type { Options as OraOptions } from 'ora'
-import { API_V0_URL } from '../constants'
+import { API_V0_URL, ENV } from '../constants'
 
 type ArboristClass = typeof BaseArborist & {
   new (...args: any): typeof BaseArborist
@@ -894,53 +894,56 @@ export class SafeArborist extends Arborist {
     ) {
       return await this[kRiskyReify](...args)
     }
-    const proceed = await ttyServer.captureTTY(
-      async (colorLevel, input, output) => {
-        chalk.level = colorLevel
-        if (input && output) {
-          const risky = await packagesHaveRiskyIssues(
-            this,
-            this['registry'],
-            diff,
-            output
-          )
-          if (!risky) {
-            return true
-          }
-          const rlin = new PassThrough()
-          input.pipe(rlin)
-          const rlout = new PassThrough()
-          rlout.pipe(output, { end: false })
-          const rli = rl.createInterface(rlin, rlout)
-          try {
-            while (true) {
-              const answer: string = await new Promise(resolve => {
-                rli.question(
-                  'Accept risks of installing these packages (y/N)?\n',
-                  { signal: abortSignal },
-                  resolve
-                )
-              })
-              if (/^\s*y(?:es)?\s*$/i.test(answer)) {
-                return true
-              }
-              if (/^(?:\s*no?\s*|)$/i.test(answer)) {
-                return false
-              }
+    let proceed = ENV.UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE
+    if (!proceed) {
+      proceed = await ttyServer.captureTTY(
+        async (colorLevel, input, output) => {
+          chalk.level = colorLevel
+          if (input && output) {
+            const risky = await packagesHaveRiskyIssues(
+              this,
+              this['registry'],
+              diff,
+              output
+            )
+            if (!risky) {
+              return true
             }
-          } finally {
-            rli.close()
+            const rlin = new PassThrough()
+            input.pipe(rlin)
+            const rlout = new PassThrough()
+            rlout.pipe(output, { end: false })
+            const rli = rl.createInterface(rlin, rlout)
+            try {
+              while (true) {
+                const answer: string = await new Promise(resolve => {
+                  rli.question(
+                    'Accept risks of installing these packages (y/N)?\n',
+                    { signal: abortSignal },
+                    resolve
+                  )
+                })
+                if (/^\s*y(?:es)?\s*$/i.test(answer)) {
+                  return true
+                }
+                if (/^(?:\s*no?\s*|)$/i.test(answer)) {
+                  return false
+                }
+              }
+            } finally {
+              rli.close()
+            }
+          } else if (
+            await packagesHaveRiskyIssues(this, this['registry'], diff, output)
+          ) {
+            throw new Error(
+              'Socket npm Unable to prompt to accept risk, need TTY to do so'
+            )
           }
-        } else if (
-          await packagesHaveRiskyIssues(this, this['registry'], diff, output)
-        ) {
-          throw new Error(
-            'Socket npm Unable to prompt to accept risk, need TTY to do so'
-          )
+          return true
         }
-        return true
-      }
-    )
+      )
+    }
     if (proceed) {
       return await this[kRiskyReify](...args)
     } else {

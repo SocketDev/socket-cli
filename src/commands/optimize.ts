@@ -1,5 +1,8 @@
-import meow from 'meow'
+import path from 'node:path'
+
+import spawn from '@npmcli/promise-spawn'
 import { getManifestData } from '@socketsecurity/registry'
+import meow from 'meow'
 
 import { printFlagList } from '../utils/formatting'
 import { writeFileUtf8 } from '../utils/fs'
@@ -16,6 +19,8 @@ import type {
   PackageJSONObject,
   StringKeyValueObject
 } from '../utils/package-manager-detector'
+
+const distPath = __dirname
 
 const OVERRIDES_FIELD_NAME = 'overrides'
 
@@ -54,17 +59,22 @@ type CreateManifest = (
 
 const createManifestByAgent: Record<Agent, CreateManifest> = {
   npm: (ref: PackageJSONObject, overrides: Overrides) =>
-    <PackageJSONObject>{ ...ref, overrides },
+    (<unknown>{ __proto__: null, ...ref, overrides }) as PackageJSONObject,
   pnpm: (ref: PackageJSONObject, overrides: Overrides) =>
-    <PackageJSONObject>{
+    (<unknown>{
+      __proto__: null,
       ...ref,
       pnpm: <PackageJSONObject>{
         ...(<StringKeyValueObject>(ref['pnpm'] ?? {})),
         overrides
       }
-    },
+    }) as PackageJSONObject,
   yarn: (ref: PackageJSONObject, overrides: Overrides) =>
-    <PackageJSONObject>{ ...ref, resolutions: overrides }
+    (<unknown>{
+      __proto__: null,
+      ...ref,
+      resolutions: overrides
+    }) as PackageJSONObject
 } as const
 
 type LockIncludes = (lockSrc: string, name: string) => boolean
@@ -253,7 +263,10 @@ async function addOverrides(
   for (const name of allPackages) {
     if (!hasOwn(overrides, name) && lockIncludes(lockSrc, name)) {
       if (clonedOverrides === undefined) {
-        clonedOverrides = { ...overrides }
+        clonedOverrides = (<unknown>{
+          __proto__: null,
+          ...overrides
+        }) as Overrides
       }
       addedCount += 1
       packageNames.add(name)
@@ -289,8 +302,6 @@ export const optimize: CliSubcommand = {
       importMeta
     )
     if (commandContext) {
-      //const spinnerText = 'Searching dependencies...'
-      //const spinner = ora(spinnerText).start()
       const { agent, lockSrc, pkgJson, pkgPath, pkgJsonStr, supported } =
         await detect({
           cwd: process.cwd(),
@@ -342,6 +353,7 @@ export const optimize: CliSubcommand = {
         for (const config of configs) {
           await addOverrides(
             <AddOverridesConfig>{
+              __proto__: null,
               lockSrc,
               pkgPath,
               pkgJson,
@@ -350,6 +362,17 @@ export const optimize: CliSubcommand = {
             },
             aoState
           )
+        }
+        if (agent === 'npm') {
+          const wrapperPath = path.join(distPath, 'npm-cli.js')
+          await spawn(process.execPath, [wrapperPath, ...argv], {
+            stdio: 'inherit',
+            env: (<unknown>{
+              __proto__: null,
+              ...process.env,
+              UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: '1'
+            }) as NodeJS.ProcessEnv
+          })
         }
       }
       const { size: count } = aoState.packageNames
