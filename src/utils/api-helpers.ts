@@ -8,6 +8,7 @@ import type {
   SocketSdkErrorType
 } from '@socketsecurity/sdk'
 import type { Ora } from 'ora'
+import { API_V0_URL } from '../constants'
 
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
@@ -53,8 +54,6 @@ export async function handleAPIError(code: number) {
     return `You might be trying to access an organization that is not linked to the API key you are logged in with.`
   }
 }
-
-const API_V0_URL = 'https://api.socket.dev/v0'
 
 export async function queryAPI(path: string, apiKey: string) {
   return await fetch(`${API_V0_URL}/${path}`, {
