@@ -83,6 +83,7 @@ export default () => {
               /(?<="dependencies":\s*)\{[^\}]*\}/,
               () => {
                 const deps = {
+                  __proto__: null,
                   ...depStats.dependencies,
                   ...depStats.transitives
                 }
