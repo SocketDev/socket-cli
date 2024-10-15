@@ -3,6 +3,7 @@ import path from 'node:path'
 import spawn from '@npmcli/promise-spawn'
 import { getManifestData } from '@socketsecurity/registry'
 import meow from 'meow'
+import ora from 'ora'
 
 import { printFlagList } from '../utils/formatting'
 import { writeFileUtf8 } from '../utils/fs'
@@ -363,21 +364,29 @@ export const optimize: CliSubcommand = {
             aoState
           )
         }
-        if (agent === 'npm') {
-          const wrapperPath = path.join(distPath, 'npm-cli.js')
-          await spawn(process.execPath, [wrapperPath, ...argv], {
-            stdio: 'inherit',
-            env: (<unknown>{
-              __proto__: null,
-              ...process.env,
-              UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: '1'
-            }) as NodeJS.ProcessEnv
-          })
-        }
       }
       const { size: count } = aoState.packageNames
       if (count) {
         console.log(`Added ${count} Socket.dev optimized overrides 🚀`)
+        if (agent === 'npm') {
+          const spinner = ora('Updating package-lock.json...').start()
+          const wrapperPath = path.join(distPath, 'npm-cli.js')
+          try {
+            await spawn(process.execPath, [wrapperPath, 'install'], {
+              stdio: 'pipe',
+              env: (<unknown>{
+                __proto__: null,
+                ...process.env,
+                UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: '1'
+              }) as NodeJS.ProcessEnv
+            })
+          } catch {
+            console.log(
+              '✘ socket npm install: Failed to update package-lock.json'
+            )
+          }
+          spinner.stop()
+        }
       } else {
         console.log('Congratulations! Already Socket.dev optimized 🎉')
       }
