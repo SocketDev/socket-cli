@@ -1,9 +1,6 @@
-// import chalk from 'chalk'
-// import chalkTable from 'chalk-table'
 import meow from 'meow'
 import { getManifestData } from '@socketsecurity/registry'
 
-//import ora from 'ora'
 import { printFlagList } from '../utils/formatting'
 import { writeFileUtf8 } from '../utils/fs'
 import { indentedStringify, isParsableJSON } from '../utils/json'
@@ -299,16 +296,16 @@ export const optimize: CliSubcommand = {
           cwd: process.cwd(),
           onUnknown: (pkgManager: string | undefined) => {
             console.log(
-              `Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}: Defaulting to npm`
+              `⚠️ Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}: Defaulting to npm`
             )
           }
         })
       if (!supported) {
-        console.log('The engines.node range is not supported.')
+        console.log('✘ The engines.node range is not supported.')
         return
       }
       if (pkgJson === undefined) {
-        console.log('No package.json found.')
+        console.log('✘ No package.json found.')
         return
       }
       const aoState: AddOverridesState = {
@@ -357,9 +354,9 @@ export const optimize: CliSubcommand = {
       }
       const { size: count } = aoState.packageNames
       if (count) {
-        console.log(`Added ${count} overrides!`)
+        console.log(`Added ${count} Socket.dev optimized overrides 🚀`)
       } else {
-        console.log('Congratulations! No override optimizations needed 🚀')
+        console.log('Congratulations! Already Socket.dev optimized 🎉')
       }
     }
   }
