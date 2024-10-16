@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import commonjs from '@rollup/plugin-commonjs'
+import json from '@rollup/plugin-json'
 import replace from '@rollup/plugin-replace'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import rangesIntersect from 'semver/ranges/intersects.js'
@@ -68,10 +69,11 @@ export default (extendConfig = {}) => {
         return true
       }
       const id = normalizeId(id_)
-      if (id.endsWith('.cjs') || id.endsWith('.json')) {
+      if (id.endsWith('.cjs')) {
         return true
       }
       if (
+        id.endsWith('.json') ||
         id.endsWith('.mjs') ||
         id.endsWith('.mts') ||
         id.endsWith('.ts') ||
@@ -131,6 +133,7 @@ export default (extendConfig = {}) => {
     ...extendConfig,
     plugins: [
       customResolver,
+      json(),
       ts({
         transpiler: 'babel',
         browserslist: false,
