@@ -12,24 +12,6 @@ export type JSONValue =
   | JSONArray
   | JSONObject
 
-export function indentedStringify(
-  jsonValue: JSONValue,
-  indent: string
-): string {
-  return JSON.stringify(jsonValue, null, 2).replace(
-    /(?<=\n)\s*/g,
-    `$&${indent}`
-  )
-}
-
-export function isParsableJSON(jsonStr: string): boolean {
-  try {
-    JSON.parse(jsonStr)
-    return true
-  } catch {}
-  return false
-}
-
 export function parseJSONObject(jsonStr: string): JSONObject | null {
   try {
     const value = JSON.parse(jsonStr)

@@ -1,19 +1,18 @@
 import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
+import EditablePackageJson from '@npmcli/package-json'
 import { getManifestData } from '@socketsecurity/registry'
 import meow from 'meow'
 import ora from 'ora'
 
 import { printFlagList } from '../utils/formatting'
-import { writeFileUtf8 } from '../utils/fs'
-import { indentedStringify, isParsableJSON } from '../utils/json'
-import { hasOwn } from '../utils/objects'
+import { hasOwn, isObjectObject } from '../utils/objects'
 import { detect } from '../utils/package-manager-detector'
 import { escapeRegExp } from '../utils/regexps'
 import { toSortedObject } from '../utils/sorts'
-import { isBalanced } from '../utils/strings'
 
+import type { Content as PackageJsonContentType } from '@npmcli/package-json'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type {
   Agent,
@@ -33,9 +32,9 @@ const SOCKET_REGISTRY_MAJOR_VERSION = '^1'
 
 const allPackages = getManifestData('npm')!.map(({ 1: d }) => d.package)
 
-type Overrides = { [key: string]: string | StringKeyValueObject }
-
-type OverridesFieldName = 'overrides' | 'resolutions'
+type NpmOverrides = { [key: string]: string | StringKeyValueObject }
+type PnpmOrYarnOverrides = { [key: string]: string }
+type Overrides = NpmOverrides | PnpmOrYarnOverrides
 
 type GetManifestOverrides = (pkg: PackageJSONObject) => Overrides | undefined
 
@@ -52,31 +51,6 @@ const getManifestOverridesByAgent: Record<Agent, GetManifestOverrides> = {
   yarn: (pkgJson: PackageJSONObject) =>
     (pkgJson as any)?.resolutions ?? undefined
 }
-
-type CreateManifest = (
-  ref: PackageJSONObject,
-  overrides: Overrides
-) => PackageJSONObject
-
-const createManifestByAgent: Record<Agent, CreateManifest> = {
-  npm: (ref: PackageJSONObject, overrides: Overrides) =>
-    (<unknown>{ __proto__: null, ...ref, overrides }) as PackageJSONObject,
-  pnpm: (ref: PackageJSONObject, overrides: Overrides) =>
-    (<unknown>{
-      __proto__: null,
-      ...ref,
-      pnpm: <PackageJSONObject>{
-        ...(<StringKeyValueObject>(ref['pnpm'] ?? {})),
-        overrides
-      }
-    }) as PackageJSONObject,
-  yarn: (ref: PackageJSONObject, overrides: Overrides) =>
-    (<unknown>{
-      __proto__: null,
-      ...ref,
-      resolutions: overrides
-    }) as PackageJSONObject
-} as const
 
 type LockIncludes = (lockSrc: string, name: string) => boolean
 
@@ -111,126 +85,29 @@ const lockIncludesByAgent: Record<Agent, LockIncludes> = {
   }
 }
 
-type ModifyManifest = (content: string, overrides: Overrides) => ModifierState
-type ModifierState = { output: string; modified?: boolean }
+type ModifyManifest = (
+  editablePkgJson: EditablePackageJson,
+  overrides: Overrides
+) => void
 
-const modifyManifestByAgent: Record<Agent, ModifyManifest> = (() => {
-  const makeAddOverridesFieldPattern = (fieldName: string) =>
-    new RegExp(
-      // Dependencies fields are objects of type: { [key: string]: string }
-      // Overrides fields are objects of type: { [key: string]: string | ({ [key: string]: string }) }
-      `(?<=\\n)(?<indent>\\s*)"${fieldName}":\\s*(?<block>\\{[\\s\\S]*?\\n\\1\\})(?<comma>,?)`
-    )
-  const dependenciesPattern = makeAddOverridesFieldPattern('dependencies')
-  const devDependenciesPattern = makeAddOverridesFieldPattern('devDependencies')
-  const optionalDependenciesPattern = makeAddOverridesFieldPattern(
-    'optionalDependencies'
-  )
-  const peerDependenciesPattern =
-    makeAddOverridesFieldPattern('peerDependencies')
-  const afterOverridesPattern =
-    makeAddOverridesFieldPattern(OVERRIDES_FIELD_NAME)
-
-  const makeModifier = (fieldName: OverridesFieldName) => {
-    const overridesFieldPattern = new RegExp(
-      // Overrides fields are objects of type: { [key: string]: string | ({ [key: string]: string }) }
-      `(?<=\\n)(?<before>(?<indent>\\s*)"${fieldName}":\\s*)(?<block>\\{[\\s\\S]*?\\n\\2\\})`
-    )
-    return (content: string, overrides: Overrides, modState: ModifierState) => {
-      let modified = false
-      const output = content.replace(
-        overridesFieldPattern,
-        (match: string, before: string, indent: string, block: string) => {
-          modified = isBalanced('{', '}', block) && isParsableJSON(block)
-          return modified
-            ? `${before}${indentedStringify(overrides, indent)}`
-            : match
-        }
-      )
-      modState.modified = modified
-      modState.output = modified ? output : content
-      return modState
-    }
-  }
-
-  const wrapModifier =
-    ({
-      modifier,
-      fieldName
-    }: {
-      modifier: ReturnType<typeof makeModifier>
-      fieldName: OverridesFieldName
-    }) =>
-    (content: string, overrides: Overrides) => {
-      const modState: ModifierState = { output: content, modified: false }
-      modifier(content, overrides, modState)
-      if (modState.modified) {
-        return modState
-      }
-      const addOverridesFieldReplacement = (
-        match: string,
-        indent: string,
-        block: string,
-        comma?: string
-      ) => {
-        modState.modified = isBalanced('{', '}', block) && isParsableJSON(block)
-        return modState.modified
-          ? `${match}${comma ? '' : ','}\n${indent}"${fieldName}": ${indentedStringify(overrides, indent)}${comma || ''}`
-          : match
-      }
-      let output = modState.output
-
-      if (fieldName !== OVERRIDES_FIELD_NAME) {
-        output = modState.output.replace(
-          afterOverridesPattern,
-          addOverridesFieldReplacement
-        )
-      }
-      if (!modState.modified) {
-        output = modState.output.replace(
-          peerDependenciesPattern,
-          addOverridesFieldReplacement
-        )
-      }
-      if (!modState.modified) {
-        output = output.replace(
-          optionalDependenciesPattern,
-          addOverridesFieldReplacement
-        )
-      }
-      if (!modState.modified) {
-        output = output.replace(
-          devDependenciesPattern,
-          addOverridesFieldReplacement
-        )
-      }
-      if (!modState.modified) {
-        output = output.replace(
-          dependenciesPattern,
-          addOverridesFieldReplacement
-        )
-      }
-      modState.output = output
-      return modState
-    }
-
-  const overridesModifier = makeModifier(OVERRIDES_FIELD_NAME)
-  const resolutionsModifier = makeModifier(RESOLUTIONS_FIELD_NAME)
-  return {
-    npm: wrapModifier({
-      modifier: overridesModifier,
-      fieldName: OVERRIDES_FIELD_NAME
-    }),
-    pnpm: wrapModifier({
-      modifier: overridesModifier,
-      fieldName: OVERRIDES_FIELD_NAME
-    }),
-    yarn: wrapModifier({
-      modifier: resolutionsModifier,
-      fieldName: RESOLUTIONS_FIELD_NAME
+const updateManifestByAgent: Record<Agent, ModifyManifest> = (<any>{
+  __proto__: null,
+  npm(editablePkgJson: EditablePackageJson, overrides: Overrides) {
+    editablePkgJson.update({
+      [OVERRIDES_FIELD_NAME]: overrides
+    })
+  },
+  pnpm(editablePkgJson: EditablePackageJson, overrides: Overrides) {
+    editablePkgJson.update({
+      [OVERRIDES_FIELD_NAME]: overrides
+    })
+  },
+  yarn(editablePkgJson: EditablePackageJson, overrides: PnpmOrYarnOverrides) {
+    editablePkgJson.update({
+      [RESOLUTIONS_FIELD_NAME]: overrides
     })
   }
-})()
+}) as Record<Agent, ModifyManifest>
 
 type AddOverridesConfig = {
   agent: Agent
@@ -257,7 +134,6 @@ async function addOverrides(
     lockSrc,
     lockIncludes,
     pkgJsonPath,
-    pkgJson,
     overrides
   }: AddOverridesConfig,
   aoState: AddOverridesState
@@ -280,21 +156,34 @@ async function addOverrides(
     }
   }
   if (addedCount) {
-    const sortedOverrides = toSortedObject(clonedOverrides!)
-    const modState = modifyManifestByAgent[agent](
-      aoState.output,
-      sortedOverrides
+    const editablePkgJson = await EditablePackageJson.load(
+      path.dirname(pkgJsonPath)
     )
-    aoState.output = modState.modified
-      ? modState.output
-      : JSON.stringify(
-          createManifestByAgent[agent](pkgJson, sortedOverrides),
-          null,
-          2
-        )
+    const sortedOverrides = toSortedObject(clonedOverrides!)
+    updateManifestByAgent[agent](editablePkgJson, sortedOverrides)
     if (!isPrivate && !isWorkspace) {
+      if (
+        hasOwn(editablePkgJson.content, 'pnpm') &&
+        isObjectObject(editablePkgJson.content['pnpm'])
+      ) {
+        const pnpmKeys = Object.keys(editablePkgJson.content['pnpm'])
+        editablePkgJson.update(
+          (<unknown>(pnpmKeys.length === 1 && pnpmKeys[0] === 'overrides'
+            ? // Properties with undefined values are omitted when saved as JSON.
+              { pnpm: undefined }
+            : {
+                pnpm: {
+                  __proto__: null,
+                  ...(<object>editablePkgJson.content['pnpm']),
+                  overrides: undefined
+                }
+              })) as PackageJsonContentType
+        )
+      }
+      updateManifestByAgent.npm(editablePkgJson, sortedOverrides)
+      updateManifestByAgent.yarn(editablePkgJson, sortedOverrides)
     }
-    await writeFileUtf8(pkgJsonPath, aoState.output)
+    await editablePkgJson.save()
   }
   return aoState
 }
