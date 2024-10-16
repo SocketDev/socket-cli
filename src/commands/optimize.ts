@@ -234,11 +234,13 @@ const modifyManifestByAgent: Record<Agent, ModifyManifest> = (() => {
 
 type AddOverridesConfig = {
   agent: Agent
+  isPrivate: boolean
+  isWorkspace: boolean
   lockSrc: string
   lockIncludes: LockIncludes
-  pkgPath: string
-  pkgJson: PackageJSONObject
+  pkgJsonPath: string
   pkgJsonStr: string
+  pkgJson: PackageJSONObject
   overrides?: Overrides | undefined
 }
 
@@ -250,9 +252,11 @@ type AddOverridesState = {
 async function addOverrides(
   {
     agent,
+    isPrivate,
+    isWorkspace,
     lockSrc,
     lockIncludes,
-    pkgPath,
+    pkgJsonPath,
     pkgJson,
     overrides
   }: AddOverridesConfig,
@@ -288,7 +292,9 @@ async function addOverrides(
           null,
           2
         )
-    await writeFileUtf8(pkgPath, aoState.output)
+    if (!isPrivate && !isWorkspace) {
+    }
+    await writeFileUtf8(pkgJsonPath, aoState.output)
   }
   return aoState
 }
@@ -303,15 +309,23 @@ export const optimize: CliSubcommand = {
       importMeta
     )
     if (commandContext) {
-      const { agent, lockSrc, pkgJson, pkgPath, pkgJsonStr, supported } =
-        await detect({
-          cwd: process.cwd(),
-          onUnknown: (pkgManager: string | undefined) => {
-            console.log(
-              `⚠️ Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}: Defaulting to npm`
-            )
-          }
-        })
+      const {
+        agent,
+        isPrivate,
+        isWorkspace,
+        lockSrc,
+        pkgJsonPath,
+        pkgJsonStr,
+        pkgJson,
+        supported
+      } = await detect({
+        cwd: process.cwd(),
+        onUnknown(pkgManager: string | undefined) {
+          console.log(
+            `⚠️ Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}: Defaulting to npm`
+          )
+        }
+      })
       if (!supported) {
         console.log('✘ The engines.node range is not supported.')
         return
@@ -355,10 +369,12 @@ export const optimize: CliSubcommand = {
           await addOverrides(
             <AddOverridesConfig>{
               __proto__: null,
+              isPrivate,
+              isWorkspace,
               lockSrc,
-              pkgPath,
-              pkgJson,
+              pkgJsonPath,
               pkgJsonStr,
+              pkgJson,
               ...config
             },
             aoState
