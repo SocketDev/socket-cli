@@ -200,9 +200,11 @@ export const optimize: CliSubcommand = {
     if (commandContext) {
       const {
         agent,
+        agentExecPath,
         isPrivate,
         isWorkspace,
         lockSrc,
+        lockPath,
         pkgJsonPath,
         pkgJsonStr,
         pkgJson,
@@ -273,10 +275,19 @@ export const optimize: CliSubcommand = {
       const { size: count } = aoState.packageNames
       if (count) {
         console.log(`Added ${count} Socket.dev optimized overrides 🚀`)
-        if (agent === 'npm') {
-          const spinner = ora('Updating package-lock.json...').start()
-          const wrapperPath = path.join(distPath, 'npm-cli.js')
-          try {
+      } else {
+        console.log('Congratulations! Already Socket.dev optimized 🎉')
+      }
+
+      const lockName = lockPath ? path.basename(lockPath) : 'lock file'
+      const isNpm = agent === 'npm'
+      if (isNpm || count) {
+        // Always update package-lock.json until the npm overrides PR lands:
+        // https://github.com/npm/cli/pull/7025
+        const spinner = ora(`Updating ${lockName}...`).start()
+        try {
+          if (isNpm) {
+            const wrapperPath = path.join(distPath, 'npm-cli.js')
             await spawn(process.execPath, [wrapperPath, 'install'], {
               stdio: 'pipe',
               env: (<unknown>{
@@ -285,15 +296,14 @@ export const optimize: CliSubcommand = {
                 UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: '1'
               }) as NodeJS.ProcessEnv
             })
-          } catch {
-            console.log(
-              '✘ socket npm install: Failed to update package-lock.json'
-            )
+          } else {
+            await spawn(agentExecPath, ['install'], { stdio: 'pipe' })
           }
           spinner.stop()
+        } catch {
+          spinner.stop()
+          console.log(`✘ socket ${agent} install: Failed to update ${lockName}`)
         }
-      } else {
-        console.log('Congratulations! Already Socket.dev optimized 🎉')
       }
     }
   }
