@@ -4,6 +4,7 @@ import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb'
 import spawn from '@npmcli/promise-spawn'
 import browserslist from 'browserslist'
 import semver from 'semver'
+import which from 'which'
 
 import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
 import { parseJSONObject } from './json'
@@ -52,6 +53,7 @@ export type DetectOptions = {
 
 export type DetectResult = Readonly<{
   agent: AgentPlusBun
+  agentExecPath: string
   agentVersion: string | undefined
   isPrivate: boolean
   isWorkspace: boolean
@@ -67,19 +69,27 @@ export type DetectResult = Readonly<{
   }
 }>
 
-type ReadLockFile = (lockPath: string) => Promise<string | undefined>
+type ReadLockFile = (
+  lockPath: string,
+  agentExecPath?: string
+) => Promise<string | undefined>
 
 const readLockFileByAgent: Record<AgentPlusBun, ReadLockFile> = (() => {
   const wrapReader =
-    (reader: (lockPath: string) => Promise<string | undefined>): ReadLockFile =>
-    async (lockPath: string) => {
+    (
+      reader: (
+        lockPath: string,
+        agentExecPath?: string
+      ) => Promise<string | undefined>
+    ): ReadLockFile =>
+    async (lockPath: string, agentExecPath?: string) => {
       try {
-        return await reader(lockPath)
+        return await reader(lockPath, agentExecPath)
       } catch {}
       return undefined
     }
   return {
-    bun: wrapReader(async (lockPath: string) => {
+    bun: wrapReader(async (lockPath: string, agentExecPath?: string) => {
       let lockBuffer: Buffer | undefined
       try {
         lockBuffer = <Buffer>await readFileBinary(lockPath)
@@ -91,7 +101,7 @@ const readLockFileByAgent: Record<AgentPlusBun, ReadLockFile> = (() => {
       } catch {}
       // To print a Yarn lockfile to your console without writing it to disk use `bun bun.lockb`.
       // https://bun.sh/guides/install/yarnlock
-      return (await spawn('bun', [lockPath])).stdout
+      return (await spawn(agentExecPath ?? 'bun', [lockPath])).stdout
     }),
     npm: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath)),
     pnpm: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath)),
@@ -151,6 +161,7 @@ export async function detect({
     agent = 'npm'
     onUnknown?.(pkgManager)
   }
+  const agentExecPath = (await which(agent, { nothrow: true })) ?? agent
 
   let lockSrc: string | undefined
   const targets = {
@@ -167,7 +178,6 @@ export async function detect({
       !!pkgJson['workspaces'] ||
       (agent === 'pnpm' &&
         existsSync(path.join(pkgPath, 'pnpm-workspace.yaml')))
-
     let browser: boolean | undefined
     let node: boolean | undefined
     const browserField = getOwn(pkgJson, 'browser')
@@ -201,12 +211,12 @@ export async function detect({
     }
     lockSrc =
       typeof lockPath === 'string'
-        ? await readLockFileByAgent[agent](lockPath)
+        ? await readLockFileByAgent[agent](lockPath, agentExecPath)
         : undefined
   }
-
   return <DetectResult>{
     agent,
+    agentExecPath,
     agentVersion,
     isPrivate,
     isWorkspace,
