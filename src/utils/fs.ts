@@ -2,7 +2,7 @@ import { existsSync as existsSync_, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import type { Abortable } from 'node:events'
-import type { Mode, ObjectEncodingOptions, OpenMode, PathLike } from 'node:fs'
+import type { ObjectEncodingOptions, OpenMode, PathLike } from 'node:fs'
 import type { FileHandle } from 'node:fs/promises'
 
 export function existsSync(filepath: any): filepath is PathLike {
@@ -54,25 +54,6 @@ export async function readFileUtf8(
   options?: ReadFileOptions
 ): Promise<string> {
   return <string>await fs.readFile(filepath, <ReadFileOptions>{
-    ...options,
-    encoding: 'utf8'
-  })
-}
-
-export type WriteFileData = Parameters<typeof fs.writeFile>[1]
-
-export type WriteFileOptions = ObjectEncodingOptions & {
-  mode?: Mode | undefined
-  flag?: OpenMode | undefined
-  flush?: boolean | undefined
-} & Abortable
-
-export async function writeFileUtf8(
-  filepath: PathLike | FileHandle,
-  data: WriteFileData,
-  options?: WriteFileOptions
-): Promise<void> {
-  await fs.writeFile(filepath, data, <WriteFileOptions>{
     ...options,
     encoding: 'utf8'
   })
