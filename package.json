@@ -95,7 +95,6 @@
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-replace": "^6.0.1",
     "@rollup/pluginutils": "^5.1.2",
-    "@socketregistry/hyrious__bun.lockb": "^1.0.0",
     "@types/blessed": "^0.1.25",
     "@types/micromatch": "^4.0.9",
     "@types/mocha": "^10.0.9",
