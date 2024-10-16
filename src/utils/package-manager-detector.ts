@@ -53,10 +53,12 @@ export type DetectOptions = {
 export type DetectResult = Readonly<{
   agent: AgentPlusBun
   agentVersion: string | undefined
+  isPrivate: boolean
+  isWorkspace: boolean
   lockPath: string | undefined
   lockSrc: string | undefined
   pkgJson: PackageJSONObject | undefined
-  pkgPath: string | undefined
+  pkgJsonPath: string | undefined
   pkgJsonStr: string | undefined
   supported: boolean
   targets: {
@@ -104,14 +106,14 @@ export async function detect({
   const lockPath = await findUp(Object.keys(LOCKS), { cwd })
   const isHiddenLockFile = lockPath?.endsWith('.package-lock.json') ?? false
 
-  const pkgPath = lockPath
+  const pkgJsonPath = lockPath
     ? path.resolve(lockPath, `${isHiddenLockFile ? '../' : ''}../package.json`)
     : await findUp('package.json', { cwd })
 
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
-  const pkgJsonStr = existsSync(pkgPath)
-    ? await readFileUtf8(pkgPath)
+  const pkgJsonStr = existsSync(pkgJsonPath)
+    ? await readFileUtf8(pkgJsonPath)
     : undefined
 
   const pkgJson =
@@ -128,12 +130,14 @@ export async function detect({
   let agent: AgentPlusBun | undefined
   let agentVersion: string | undefined
   if (pkgManager) {
-    const parts = pkgManager.split('@')
-    const name = <AgentPlusBun>parts[0]
-    const maybeVersion = parts.length > 1 ? parts[1] : undefined
-    if (maybeVersion && AGENTS.includes(name)) {
-      agent = name
-      agentVersion = maybeVersion
+    const atSignIndex = pkgManager.lastIndexOf('@')
+    if (atSignIndex !== -1) {
+      const name = <AgentPlusBun>pkgManager.slice(0, atSignIndex)
+      const version = pkgManager.slice(atSignIndex + 1)
+      if (version && AGENTS.includes(name)) {
+        agent = name
+        agentVersion = version
+      }
     }
   }
   if (
@@ -154,7 +158,16 @@ export async function detect({
     node: true
   }
 
+  let isPrivate = false
+  let isWorkspace = false
   if (pkgJson) {
+    const pkgPath = path.dirname(pkgJsonPath!)
+    isPrivate = !!pkgJson['private']
+    isWorkspace =
+      !!pkgJson['workspaces'] ||
+      (agent === 'pnpm' &&
+        existsSync(path.join(pkgPath, 'pnpm-workspace.yaml')))
+
     let browser: boolean | undefined
     let node: boolean | undefined
     const browserField = getOwn(pkgJson, 'browser')
@@ -195,10 +208,12 @@ export async function detect({
   return <DetectResult>{
     agent,
     agentVersion,
+    isPrivate,
+    isWorkspace,
     lockPath,
     lockSrc,
     pkgJson,
-    pkgPath,
+    pkgJsonPath,
     pkgJsonStr,
     supported: targets.browser || targets.node,
     targets
