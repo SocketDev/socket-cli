@@ -2,8 +2,9 @@ import { chmodSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { readJsonSync, readPackageJsonSync } from '../scripts/utils/fs.js'
+import { readJsonSync } from '../scripts/utils/fs.js'
 import { formatObject, hasKeys } from '../scripts/utils/objects.js'
+import { readPackageJsonSync } from '../scripts/utils/packages.js'
 import { toSortedObject } from '../scripts/utils/sorts.js'
 
 import baseConfig from './rollup.base.config.mjs'

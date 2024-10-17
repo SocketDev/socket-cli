@@ -2,14 +2,18 @@
 
 const fs = require('node:fs')
 const Module = require('node:module')
+const path = require('node:path')
 const vm = require('node:vm')
 
 const normalizePackageData = require('normalize-package-data')
 const validatePackageName = require('validate-npm-package-name')
 
-const { normalizePath } = require('./path')
+const { normalizePath, isRelative } = require('./path')
+const { findUpSync } = require('./fs')
 
 const { createRequire, isBuiltin } = Module
+
+const PACKAGE_JSON = 'package.json'
 
 const cjsPluginPrefixRegExp = /^\x00/
 const cjsPluginSuffixRegExp =
@@ -38,12 +42,12 @@ function resolveId(id_, req = require) {
   }
   if (req !== require) {
     try {
-      resolvedId = req.resolve(id)
+      resolvedId = normalizePath(req.resolve(id))
     } catch {}
   }
   if (resolvedId === undefined) {
     try {
-      resolvedId = require.resolve(id)
+      resolvedId = normalizePath(require.resolve(id))
     } catch {}
   }
   if (resolvedId === undefined) {
@@ -56,17 +60,9 @@ function resolveId(id_, req = require) {
   return fs.existsSync(tsId) ? tsId : resolvedId
 }
 
-const memoizeIsPackageName = new Map()
-
 function isPackageName(id) {
-  const memResult = memoizeIsPackageName.get(id)
-  if (memResult !== undefined) return memResult
-  const result = validatePackageName(id).validForOldPackages
-  memoizeIsPackageName.set(id, result)
-  return result
+  return validatePackageName(id).validForOldPackages
 }
-
-const memoizeIsEsmId = new Map()
 
 function isEsmId(id_, parentId_) {
   if (isBuiltin(id_)) {
@@ -74,9 +70,6 @@ function isEsmId(id_, parentId_) {
   }
   const parentId = parentId_ ? resolveId(parentId_) : undefined
   const resolvedId = resolveId(id_, parentId)
-  const memKey = `${resolvedId}|${parentId}`
-  const memResult = memoizeIsEsmId.get(memKey)
-  if (memResult !== undefined) return memResult
   let result = false
   if (resolvedId.endsWith('.mjs')) {
     result = true
@@ -85,15 +78,28 @@ function isEsmId(id_, parentId_) {
     !resolvedId.endsWith('.json') &&
     !resolvedId.endsWith('.ts')
   ) {
-    try {
-      new vm.Script(fs.readFileSync(resolvedId, 'utf8'))
-    } catch (e) {
-      if (e instanceof SyntaxError) {
-        result = true
+    let filepath
+    if (path.isAbsolute(resolvedId)) {
+      filepath = resolvedId
+    } else if (parentId && isRelative(resolvedId)) {
+      filepath = path.join(path.dirname(parentId), resolvedId)
+    }
+    if (filepath) {
+      const pkgJsonPath = findUpSync('package.json', {
+        cwd: path.dirname(resolvedId)
+      })
+      if (pkgJsonPath && require(pkgJsonPath)?.type === 'module') {
+        return true
+      }
+      try {
+        new vm.Script(fs.readFileSync(resolvedId, 'utf8'))
+      } catch (e) {
+        if (e instanceof SyntaxError) {
+          result = true
+        }
       }
     }
   }
-  memoizeIsEsmId.set(memKey, result)
   return result
 }
 
@@ -108,6 +114,13 @@ function normalizePackageJson(pkgJson) {
   return pkgJson
 }
 
+function readPackageJsonSync(filepath_) {
+  const filepath = filepath_.endsWith(PACKAGE_JSON)
+    ? filepath_
+    : path.join(filepath_, PACKAGE_JSON)
+  return normalizePackageJson(JSON.parse(fs.readFileSync(filepath, 'utf8')))
+}
+
 module.exports = {
   isBuiltin,
   isEsmId,
@@ -116,5 +129,6 @@ module.exports = {
   getPackageNameEnd,
   normalizeId,
   normalizePackageJson,
+  readPackageJsonSync,
   resolveId
 }
