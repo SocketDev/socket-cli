@@ -10,7 +10,7 @@ import rangesIntersect from 'semver/ranges/intersects.js'
 import { readPackageUpSync } from 'read-package-up'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
-import { readPackageJsonSync } from '../scripts/utils/fs.js'
+import { findUpSync } from '../scripts/utils/fs.js'
 import {
   getPackageName,
   getPackageNameEnd,
@@ -18,9 +18,11 @@ import {
   normalizeId,
   isPackageName,
   isBuiltin,
+  readPackageJsonSync,
   resolveId
 } from '../scripts/utils/packages.js'
 import { escapeRegExp } from '../scripts/utils/regexps.js'
+import { normalizePath } from '../scripts/utils/path.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
@@ -30,6 +32,7 @@ const ts = require('rollup-plugin-ts')
 
 const ENTRY_SUFFIX = '?commonjs-entry'
 const EXTERNAL_SUFFIX = '?commonjs-external'
+const SLASH_NODE_MODULES_SLASH = '/node_modules/'
 
 const builtinAliases = builtinModules.reduce((o, n) => {
   o[n] = `node:${n}`
@@ -72,18 +75,33 @@ export default (extendConfig = {}) => {
       if (id.endsWith('.cjs')) {
         return true
       }
-      if (
-        id.endsWith('.json') ||
-        id.endsWith('.mjs') ||
-        id.endsWith('.mts') ||
-        id.endsWith('.ts') ||
-        !isPackageName(id)
-      ) {
+      if (id.endsWith('.mjs') || id.endsWith('.mts') || id.endsWith('.ts')) {
+        return false
+      }
+      const parentId = parentId_ ? resolveId(parentId_) : undefined
+      const resolvedId = resolveId(id, parentId)
+      if (resolvedId.endsWith('.json')) {
+        let currNmIndex = resolvedId.indexOf(SLASH_NODE_MODULES_SLASH)
+        while (currNmIndex !== -1) {
+          const nextNmIndex = resolvedId.indexOf(
+            SLASH_NODE_MODULES_SLASH,
+            currNmIndex + 1
+          )
+          const currPkgName = resolvedId.slice(
+            currNmIndex + SLASH_NODE_MODULES_SLASH.length,
+            nextNmIndex === -1 ? resolvedId.length : nextNmIndex
+          )
+          if (isEsmId(currPkgName, parentId)) {
+            return false
+          }
+          currNmIndex = nextNmIndex
+        }
+        return true
+      }
+      if (!isPackageName(id)) {
         return false
       }
       const name = getPackageName(id)
-      const parentId = parentId_ ? resolveId(parentId_) : undefined
-      const resolvedId = resolveId(id, parentId)
       if (isEsmId(resolvedId, parentId)) {
         const parentPkg = parentId
           ? readPackageUpSync({ cwd: path.dirname(parentId) })?.packageJson
@@ -171,7 +189,7 @@ export default (extendConfig = {}) => {
         replace: ''
       }),
       // Fix incorrectly set "spinners" binding caused by a transpilation bug
-      // https://github.com/sindresorhus/ora/blob/main/index.js#L416C2-L416C50
+      // https://github.com/sindresorhus/ora/blob/v8.1.0/index.js#L415
       // export {default as spinners} from 'cli-spinners'
       socketModifyPlugin({
         find: /(?<=ora[^.]+\.spinners\s*=\s*)[$\w]+/g,
