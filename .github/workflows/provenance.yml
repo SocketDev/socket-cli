@@ -21,6 +21,7 @@ jobs:
           scope: "@socketsecurity"
       - run: npm install -g npm@latest
       - run: npm ci
+      - run: npm run build:dist
       - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
