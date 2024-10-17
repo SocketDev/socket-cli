@@ -70,37 +70,46 @@ function isEsmId(id_, parentId_) {
   }
   const parentId = parentId_ ? resolveId(parentId_) : undefined
   const resolvedId = resolveId(id_, parentId)
-  let result = false
   if (resolvedId.endsWith('.mjs')) {
-    result = true
-  } else if (
-    !resolvedId.endsWith('.cjs') &&
-    !resolvedId.endsWith('.json') &&
-    !resolvedId.endsWith('.ts')
+    return true
+  }
+  if (
+    resolvedId.endsWith('.cjs') ||
+    resolvedId.endsWith('.json') ||
+    resolvedId.endsWith('.ts')
   ) {
-    let filepath
-    if (path.isAbsolute(resolvedId)) {
-      filepath = resolvedId
-    } else if (parentId && isRelative(resolvedId)) {
-      filepath = path.join(path.dirname(parentId), resolvedId)
-    }
-    if (filepath) {
-      const pkgJsonPath = findUpSync('package.json', {
-        cwd: path.dirname(resolvedId)
-      })
-      if (pkgJsonPath && require(pkgJsonPath)?.type === 'module') {
+    return false
+  }
+  let filepath
+  if (path.isAbsolute(resolvedId)) {
+    filepath = resolvedId
+  } else if (parentId && isRelative(resolvedId)) {
+    filepath = path.join(path.dirname(parentId), resolvedId)
+  }
+  if (filepath) {
+    const pkgJsonPath = findUpSync('package.json', {
+      cwd: path.dirname(resolvedId)
+    })
+    if (pkgJsonPath) {
+      const pkgJson = require(pkgJsonPath)
+      const { exports: entryExports } = pkgJson
+      if (
+        pkgJson.type === 'module' &&
+        !entryExports?.require &&
+        !entryExports?.node?.default?.endsWith('.cjs')
+      ) {
         return true
       }
-      try {
-        new vm.Script(fs.readFileSync(resolvedId, 'utf8'))
-      } catch (e) {
-        if (e instanceof SyntaxError) {
-          result = true
-        }
+    }
+    try {
+      new vm.Script(fs.readFileSync(resolvedId, 'utf8'))
+    } catch (e) {
+      if (e instanceof SyntaxError) {
+        return true
       }
     }
   }
-  return result
+  return false
 }
 
 function normalizeId(id) {
