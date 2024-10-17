@@ -30,7 +30,9 @@ const SOCKET_REGISTRY_NAME = '@socketregistry'
 
 const SOCKET_REGISTRY_MAJOR_VERSION = '^1'
 
-const allPackages = getManifestData('npm')!.map(({ 1: d }) => d.package)
+const allPackages = getManifestData('npm')!
+  .filter(({ 1: d }) => d.engines?.node?.startsWith('>=18'))
+  .map(({ 1: d }) => d.package)
 
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
