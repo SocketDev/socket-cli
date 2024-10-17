@@ -302,6 +302,11 @@ export const optimize: CliSubcommand = {
             await spawn(agentExecPath, ['install'], { stdio: 'pipe' })
           }
           spinner.stop()
+          if (isNpm) {
+            console.log(
+              `💡 Re-run Socket Optimize whenever ${lockName} changes.\n  This can be skipped once npm ships https://github.com/npm/cli/pull/7025.`
+            )
+          }
         } catch {
           spinner.stop()
           console.log(`✘ socket ${agent} install: Failed to update ${lockName}`)
