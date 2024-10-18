@@ -311,7 +311,7 @@ export const optimize: CliSubcommand = {
           spinner.stop()
           if (isNpm) {
             console.log(
-              `💡 Re-run Socket Optimize whenever ${lockName} changes.\n  This can be skipped once npm ships https://github.com/npm/cli/pull/7025.`
+              `💡 Re-run Socket Optimize whenever ${lockName} changes.\n   This can be skipped once npm ships https://github.com/npm/cli/pull/7025.`
             )
           }
         } catch {
