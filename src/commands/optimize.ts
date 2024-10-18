@@ -22,6 +22,7 @@ import type {
 
 const distPath = __dirname
 
+const COMMAND_TITLE = 'Socket Optimize'
 const OVERRIDES_FIELD_NAME = 'overrides'
 const RESOLUTIONS_FIELD_NAME = 'resolutions'
 
@@ -230,6 +231,7 @@ export const optimize: CliSubcommand = {
       importMeta
     )
     if (commandContext) {
+      const cwd = process.cwd()
       const {
         agent,
         agentExecPath,
@@ -242,21 +244,30 @@ export const optimize: CliSubcommand = {
         pkgJson,
         supported
       } = await detect({
-        cwd: process.cwd(),
+        cwd,
         onUnknown(pkgManager: string | undefined) {
           console.log(
-            `⚠️ Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}: Defaulting to npm`
+            `⚠️ ${COMMAND_TITLE}: Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}, defaulting to npm`
           )
         }
       })
       if (!supported) {
-        console.log('✘ The engines.node range is not supported.')
+        console.log(`✘ ${COMMAND_TITLE}: Package engines.node range is not supported`)
+        return
+      }
+      const lockName = lockPath ? path.basename(lockPath) : 'lock file'
+      if (lockSrc === undefined) {
+        console.log(`✘ ${COMMAND_TITLE}: No ${lockName} found`)
         return
       }
       if (pkgJson === undefined) {
-        console.log('✘ No package.json found.')
+        console.log(`✘ ${COMMAND_TITLE}: No package.json found`)
         return
       }
+      if (lockPath && path.relative(cwd, lockPath).startsWith('.')) {
+        console.log(`⚠️ ${COMMAND_TITLE}: Package ${lockName} found at ${lockPath}`)
+      }
+
       const aoState: AddOverridesState = {
         output: pkgJsonStr!,
         packageNames: new Set()
@@ -288,7 +299,6 @@ export const optimize: CliSubcommand = {
         console.log('Congratulations! Already Socket.dev optimized 🎉')
       }
 
-      const lockName = lockPath ? path.basename(lockPath) : 'lock file'
       const isNpm = agent === 'npm'
       if (isNpm || count) {
         // Always update package-lock.json until the npm overrides PR lands:
@@ -311,12 +321,12 @@ export const optimize: CliSubcommand = {
           spinner.stop()
           if (isNpm) {
             console.log(
-              `💡 Re-run Socket Optimize whenever ${lockName} changes.\n   This can be skipped once npm ships https://github.com/npm/cli/pull/7025.`
+              `💡 Re-run ${COMMAND_TITLE} whenever ${lockName} changes.\n   This can be skipped once npm ships https://github.com/npm/cli/pull/7025.`
             )
           }
         } catch {
           spinner.stop()
-          console.log(`✘ socket ${agent} install: Failed to update ${lockName}`)
+          console.log(`✘ ${COMMAND_TITLE}: ${agent} install failed to update ${lockName}`)
         }
       }
     }

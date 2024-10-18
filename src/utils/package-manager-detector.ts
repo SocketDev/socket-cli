@@ -108,27 +108,23 @@ const readLockFileByAgent: Record<AgentPlusBun, ReadLockFile> = (() => {
 })()
 
 export async function detect({
-  cwd,
+  cwd = process.cwd(),
   onUnknown
 }: DetectOptions = {}): Promise<DetectResult> {
-  const lockPath = await findUp(Object.keys(LOCKS), { cwd })
+  let lockPath = await findUp(Object.keys(LOCKS), { cwd })
   const isHiddenLockFile = lockPath?.endsWith('.package-lock.json') ?? false
-
   const pkgJsonPath = lockPath
     ? path.resolve(lockPath, `${isHiddenLockFile ? '../' : ''}../package.json`)
     : await findUp('package.json', { cwd })
-
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
   const pkgJsonStr = existsSync(pkgJsonPath)
     ? await readFileUtf8(pkgJsonPath)
     : undefined
-
   const pkgJson =
     typeof pkgJsonStr === 'string'
       ? (parseJSONObject(pkgJsonStr) ?? undefined)
       : undefined
-
   const pkgManager = <string | undefined>(
     (isNonEmptyString(getOwn(pkgJson, 'packageManager'))
       ? pkgJson?.['packageManager']
@@ -151,6 +147,7 @@ export async function detect({
   if (
     agent === undefined &&
     !isHiddenLockFile &&
+    typeof pkgJsonPath === 'string' &&
     typeof lockPath === 'string'
   ) {
     agent = <AgentPlusBun>LOCKS[path.basename(lockPath)]
@@ -211,6 +208,8 @@ export async function detect({
       typeof lockPath === 'string'
         ? await readLockFileByAgent[agent](lockPath, agentExecPath)
         : undefined
+  } else {
+    lockPath = undefined
   }
   return <DetectResult>{
     agent,
