@@ -11,17 +11,15 @@ import { parseJSONObject } from './json'
 import { getOwn, isObjectObject } from './objects'
 import { isNonEmptyString } from './strings'
 
+import type { Content as PackageJsonContent } from '@npmcli/package-json'
+
+const PNPM_WORKSPACE = 'pnpm-workspace'
+
 export const AGENTS = ['bun', 'npm', 'pnpm', 'yarn'] as const
 
 export type AgentPlusBun = (typeof AGENTS)[number]
-
 export type Agent = Exclude<AgentPlusBun, 'bun'>
-
 export type StringKeyValueObject = { [key: string]: string }
-
-export type PackageJSONObject = {
-  [key: string]: string | StringKeyValueObject | StringKeyValueObject[]
-}
 
 export const LOCKS: Record<string, string> = {
   'bun.lockb': 'bun',
@@ -59,7 +57,7 @@ export type DetectResult = Readonly<{
   isWorkspace: boolean
   lockPath: string | undefined
   lockSrc: string | undefined
-  pkgJson: PackageJSONObject | undefined
+  pkgJson: PackageJsonContent | undefined
   pkgJsonPath: string | undefined
   pkgJsonStr: string | undefined
   supported: boolean
@@ -176,8 +174,8 @@ export async function detect({
     isPrivate = !!pkgJson['private']
     isWorkspace =
       !!pkgJson['workspaces'] ||
-      (agent === 'pnpm' &&
-        existsSync(path.join(pkgPath, 'pnpm-workspace.yaml')))
+      existsSync(path.join(pkgPath, `${PNPM_WORKSPACE}.yaml`)) ||
+      existsSync(path.join(pkgPath, `${PNPM_WORKSPACE}.yml`))
     let browser: boolean | undefined
     let node: boolean | undefined
     const browserField = getOwn(pkgJson, 'browser')

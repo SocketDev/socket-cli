@@ -5,53 +5,55 @@ import EditablePackageJson from '@npmcli/package-json'
 import { getManifestData } from '@socketsecurity/registry'
 import meow from 'meow'
 import ora from 'ora'
+import semver from 'semver'
 
 import { printFlagList } from '../utils/formatting'
-import { hasOwn, isObjectObject } from '../utils/objects'
+import { hasOwn } from '../utils/objects'
 import { detect } from '../utils/package-manager-detector'
 import { escapeRegExp } from '../utils/regexps'
 import { toSortedObject } from '../utils/sorts'
 
-import type { Content as PackageJsonContentType } from '@npmcli/package-json'
+import type { Content as PackageJsonContent } from '@npmcli/package-json'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type {
   Agent,
-  PackageJSONObject,
   StringKeyValueObject
 } from '../utils/package-manager-detector'
 
 const distPath = __dirname
 
 const OVERRIDES_FIELD_NAME = 'overrides'
-
 const RESOLUTIONS_FIELD_NAME = 'resolutions'
 
-const SOCKET_REGISTRY_NAME = '@socketregistry'
-
-const SOCKET_REGISTRY_MAJOR_VERSION = '^1'
-
-const allPackages = getManifestData('npm')!
-  .filter(({ 1: d }) => d.engines?.node?.startsWith('>=18'))
-  .map(({ 1: d }) => d.package)
+const availableOverrides = getManifestData('npm')!.filter(({ 1: d }) =>
+  d.engines?.node?.startsWith('>=18')
+)
 
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
 type Overrides = NpmOverrides | PnpmOrYarnOverrides
+type GetOverrides = (pkg: PackageJsonContent) => GetOverridesResult | undefined
+type GetOverridesResult = { type: Agent; overrides: Overrides }
 
-type GetManifestOverrides = (pkg: PackageJSONObject) => Overrides | undefined
-
-const getManifestOverridesByAgent: Record<Agent, GetManifestOverrides> = {
+const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
   // npm overrides documentation:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
-  npm: (pkgJson: PackageJSONObject) => (pkgJson as any)?.overrides ?? undefined,
+  npm: (pkgJson: PackageJsonContent) => {
+    const overrides = (pkgJson as any)?.overrides ?? {}
+    return { type: 'npm', overrides }
+  },
   // pnpm overrides documentation:
   // https://pnpm.io/package_json#pnpmoverrides
-  pnpm: (pkgJson: PackageJSONObject) =>
-    (pkgJson as any)?.pnpm?.overrides ?? undefined,
+  pnpm: (pkgJson: PackageJsonContent) => {
+    const overrides = (pkgJson as any)?.pnpm?.overrides ?? undefined
+    return overrides ? { type: 'pnpm', overrides } : undefined
+  },
   // Yarn resolutions documentation:
   // https://yarnpkg.com/configuration/manifest#resolutions
-  yarn: (pkgJson: PackageJSONObject) =>
-    (pkgJson as any)?.resolutions ?? undefined
+  yarn: (pkgJson: PackageJsonContent) => {
+    const overrides = (pkgJson as any)?.resolutions ?? {}
+    return { type: 'yarn', overrides }
+  }
 }
 
 type LockIncludes = (lockSrc: string, name: string) => boolean
@@ -96,16 +98,22 @@ const updateManifestByAgent: Record<Agent, ModifyManifest> = (<any>{
   __proto__: null,
   npm(editablePkgJson: EditablePackageJson, overrides: Overrides) {
     editablePkgJson.update({
+      __proto__: null,
       [OVERRIDES_FIELD_NAME]: overrides
     })
   },
   pnpm(editablePkgJson: EditablePackageJson, overrides: Overrides) {
     editablePkgJson.update({
-      [OVERRIDES_FIELD_NAME]: overrides
+      pnpm: {
+        __proto__: null,
+        ...(<object>editablePkgJson.content['pnpm']),
+        [OVERRIDES_FIELD_NAME]: overrides
+      }
     })
   },
   yarn(editablePkgJson: EditablePackageJson, overrides: PnpmOrYarnOverrides) {
     editablePkgJson.update({
+      __proto__: null,
       [RESOLUTIONS_FIELD_NAME]: overrides
     })
   }
@@ -119,7 +127,7 @@ type AddOverridesConfig = {
   lockIncludes: LockIncludes
   pkgJsonPath: string
   pkgJsonStr: string
-  pkgJson: PackageJSONObject
+  pkgJson: PackageJsonContent
   overrides?: Overrides | undefined
 }
 
@@ -135,55 +143,77 @@ async function addOverrides(
     isWorkspace,
     lockSrc,
     lockIncludes,
-    pkgJsonPath,
-    overrides
+    pkgJsonPath
   }: AddOverridesConfig,
   aoState: AddOverridesState
 ): Promise<AddOverridesState> {
   const { packageNames } = aoState
-  let addedCount = 0
-  let clonedOverrides: Overrides | undefined
-  for (const name of allPackages) {
-    if (!hasOwn(overrides, name) && lockIncludes(lockSrc, name)) {
-      if (clonedOverrides === undefined) {
-        clonedOverrides = (<unknown>{
-          __proto__: null,
-          ...overrides
-        }) as Overrides
+  const editablePkgJson = await EditablePackageJson.load(
+    path.dirname(pkgJsonPath)
+  )
+  const {
+    dependencies,
+    devDependencies,
+    peerDependencies,
+    optionalDependencies
+  } = editablePkgJson.content
+  const depEntries = <[string, NonNullable<typeof dependencies>][]>[
+    [
+      'dependencies',
+      dependencies ? { __proto__: null, ...dependencies } : undefined
+    ],
+    [
+      'devDependencies',
+      devDependencies ? { __proto__: null, ...devDependencies } : undefined
+    ],
+    [
+      'peerDependencies',
+      peerDependencies ? { __proto__: null, ...peerDependencies } : undefined
+    ],
+    [
+      'optionalDependencies',
+      optionalDependencies
+        ? { __proto__: null, ...optionalDependencies }
+        : undefined
+    ]
+  ].filter(({ 1: o }) => o)
+  const overridesDataObjects = <GetOverridesResult[]>[
+    getOverridesDataByAgent['npm'](editablePkgJson.content)
+  ]
+  const isApp = isPrivate || isWorkspace
+  const overridesData =
+    !isApp || agent !== 'npm'
+      ? getOverridesDataByAgent[isApp ? agent : 'yarn'](editablePkgJson.content)
+      : undefined
+  if (overridesData) {
+    overridesDataObjects.push(overridesData)
+  }
+  for (const { 1: data } of availableOverrides) {
+    const { name: regPkgName, package: origPkgName, version } = data
+    for (const { 1: depObj } of depEntries) {
+      const pkgSpec = depObj[origPkgName]
+      if (pkgSpec) {
+        if (!pkgSpec.startsWith(`npm:${regPkgName}@`)) {
+          packageNames.add(regPkgName)
+          depObj[origPkgName] = `npm:${regPkgName}@^${version}`
+        }
       }
-      addedCount += 1
-      packageNames.add(name)
-      clonedOverrides[name] =
-        `npm:${SOCKET_REGISTRY_NAME}/${name}@${SOCKET_REGISTRY_MAJOR_VERSION}`
+    }
+    for (const { overrides } of overridesDataObjects) {
+      if (
+        overrides &&
+        !hasOwn(overrides, origPkgName) &&
+        lockIncludes(lockSrc, origPkgName)
+      ) {
+        packageNames.add(regPkgName)
+        overrides[origPkgName] = `npm:${regPkgName}@^${semver.major(version)}`
+      }
     }
   }
-  if (addedCount) {
-    const editablePkgJson = await EditablePackageJson.load(
-      path.dirname(pkgJsonPath)
-    )
-    const sortedOverrides = toSortedObject(clonedOverrides!)
-    updateManifestByAgent[agent](editablePkgJson, sortedOverrides)
-    if (!isPrivate && !isWorkspace) {
-      if (
-        hasOwn(editablePkgJson.content, 'pnpm') &&
-        isObjectObject(editablePkgJson.content['pnpm'])
-      ) {
-        const pnpmKeys = Object.keys(editablePkgJson.content['pnpm'])
-        editablePkgJson.update(
-          (<unknown>(pnpmKeys.length === 1 && pnpmKeys[0] === 'overrides'
-            ? // Properties with undefined values are omitted when saved as JSON.
-              { pnpm: undefined }
-            : {
-                pnpm: {
-                  __proto__: null,
-                  ...(<object>editablePkgJson.content['pnpm']),
-                  overrides: undefined
-                }
-              })) as PackageJsonContentType
-        )
-      }
-      updateManifestByAgent.npm(editablePkgJson, sortedOverrides)
-      updateManifestByAgent.yarn(editablePkgJson, sortedOverrides)
+  if (packageNames.size) {
+    editablePkgJson.update(<PackageJsonContent>Object.fromEntries(depEntries))
+    for (const { type, overrides } of overridesDataObjects) {
+      updateManifestByAgent[type](editablePkgJson, toSortedObject(overrides))
     }
     await editablePkgJson.save()
   }
@@ -232,47 +262,24 @@ export const optimize: CliSubcommand = {
         packageNames: new Set()
       }
       if (lockSrc) {
-        const configs: {
-          agent: Agent
-          lockIncludes: LockIncludes
-          overrides: Overrides | undefined
-        }[] =
+        const lockIncludes =
           agent === 'bun'
-            ? [
-                {
-                  agent: 'npm',
-                  lockIncludes: lockIncludesByAgent.yarn,
-                  overrides: getManifestOverridesByAgent.npm(pkgJson)
-                },
-                {
-                  agent: 'yarn',
-                  lockIncludes: lockIncludesByAgent.yarn,
-                  overrides: getManifestOverridesByAgent.yarn(pkgJson)
-                }
-              ]
-            : [
-                {
-                  agent,
-                  lockIncludes: lockIncludesByAgent[agent],
-                  overrides: getManifestOverridesByAgent[agent](pkgJson)
-                }
-              ]
-
-        for (const config of configs) {
-          await addOverrides(
-            <AddOverridesConfig>{
-              __proto__: null,
-              isPrivate,
-              isWorkspace,
-              lockSrc,
-              pkgJsonPath,
-              pkgJsonStr,
-              pkgJson,
-              ...config
-            },
-            aoState
-          )
-        }
+            ? lockIncludesByAgent.yarn
+            : lockIncludesByAgent[agent]
+        await addOverrides(
+          <AddOverridesConfig>{
+            __proto__: null,
+            agent: agent === 'bun' ? 'yarn' : agent,
+            isPrivate,
+            isWorkspace,
+            lockIncludes,
+            lockSrc,
+            pkgJsonPath,
+            pkgJsonStr,
+            pkgJson
+          },
+          aoState
+        )
       }
       const { size: count } = aoState.packageNames
       if (count) {
