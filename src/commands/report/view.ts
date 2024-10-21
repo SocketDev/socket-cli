@@ -143,6 +143,7 @@ export async function fetchReportData(
   let result: SocketSdkResultType<'getReport'> | undefined
   for (let retry = 1; !result; ++retry) {
     try {
+      // eslint-disable-next-line no-await-in-loop
       result = await handleApiCall(
         socketSdk.getReport(reportId),
         'fetching report'

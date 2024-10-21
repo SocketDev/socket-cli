@@ -201,6 +201,7 @@ async function uxLookup(
   settings: IssueUXLookupSettings
 ): Promise<IssueUXLookupResult> {
   while (_uxLookup === undefined) {
+    // eslint-disable-next-line no-await-in-loop
     await wait(1, { signal: abortSignal })
   }
   return _uxLookup(settings)
@@ -405,6 +406,7 @@ async function packagesHaveRiskyIssues(
       } else {
         let blocked = false
         for (const failure of pkgData.value.issues) {
+          // eslint-disable-next-line no-await-in-loop
           const ux = await uxLookup({
             package: { name, version },
             issue: { type: failure.type }
@@ -417,6 +419,7 @@ async function packagesHaveRiskyIssues(
               pkg => pkg.pkgid === id && pkg.existing?.startsWith(`${name}@`)
             )
             if (pkg?.existing) {
+              // eslint-disable-next-line no-await-in-loop
               for await (const oldPkgData of batchScan([pkg.existing])) {
                 if (oldPkgData.type === 'success') {
                   failures = failures.filter(
@@ -916,6 +919,7 @@ export class SafeArborist extends Arborist {
             const rli = rl.createInterface(rlin, rlout)
             try {
               while (true) {
+                // eslint-disable-next-line no-await-in-loop
                 const answer: string = await new Promise(resolve => {
                   rli.question(
                     'Accept risks of installing these packages (y/N)?\n',
