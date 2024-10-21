@@ -189,25 +189,42 @@ async function addOverrides(
   if (overridesData) {
     overridesDataObjects.push(overridesData)
   }
+  const aliasMap = new Map<string, string>()
   for (const { 1: data } of availableOverrides) {
     const { name: regPkgName, package: origPkgName, version } = data
     for (const { 1: depObj } of depEntries) {
-      const pkgSpec = depObj[origPkgName]
+      let pkgSpec = depObj[origPkgName]
       if (pkgSpec) {
-        if (!pkgSpec.startsWith(`npm:${regPkgName}@`)) {
+        // Add package aliases for direct dependencies to avoid npm EOVERRIDE errors.
+        // https://docs.npmjs.com/cli/v8/using-npm/package-spec#aliases
+        const overrideSpecPrefix = `npm:${regPkgName}@`
+        if (!pkgSpec.startsWith(overrideSpecPrefix)) {
+          aliasMap.set(regPkgName, pkgSpec)
+        } else {
           packageNames.add(regPkgName)
-          depObj[origPkgName] = `npm:${regPkgName}@^${version}`
+          pkgSpec = `${overrideSpecPrefix}^${version}`
+          depObj[origPkgName] = pkgSpec
         }
+        aliasMap.set(origPkgName, pkgSpec)
       }
     }
-    for (const { overrides } of overridesDataObjects) {
+    for (const { type, overrides } of overridesDataObjects) {
       if (
         overrides &&
         !hasOwn(overrides, origPkgName) &&
         lockIncludes(lockSrc, origPkgName)
       ) {
         packageNames.add(regPkgName)
-        overrides[origPkgName] = `npm:${regPkgName}@^${semver.major(version)}`
+        overrides[origPkgName] =
+          // With npm you may not set an override for a package that you directly
+          // depend on unless both the dependency and the override itself share
+          // the exact same spec. To make this limitation easier to deal with,
+          // overrides may also be defined as a reference to a spec for a direct
+          // dependency by prefixing the name of the package you wish the version
+          // to match with a $.
+          // https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides
+          (type === 'npm' && aliasMap.has(origPkgName) && `$${origPkgName}`) ||
+          `npm:${regPkgName}@^${semver.major(version)}`
       }
     }
   }
@@ -252,7 +269,9 @@ export const optimize: CliSubcommand = {
         }
       })
       if (!supported) {
-        console.log(`✘ ${COMMAND_TITLE}: Package engines.node range is not supported`)
+        console.log(
+          `✘ ${COMMAND_TITLE}: Package engines.node range is not supported`
+        )
         return
       }
       const lockName = lockPath ? path.basename(lockPath) : 'lock file'
@@ -265,7 +284,9 @@ export const optimize: CliSubcommand = {
         return
       }
       if (lockPath && path.relative(cwd, lockPath).startsWith('.')) {
-        console.log(`⚠️ ${COMMAND_TITLE}: Package ${lockName} found at ${lockPath}`)
+        console.log(
+          `⚠️ ${COMMAND_TITLE}: Package ${lockName} found at ${lockPath}`
+        )
       }
 
       const aoState: AddOverridesState = {
@@ -326,7 +347,9 @@ export const optimize: CliSubcommand = {
           }
         } catch {
           spinner.stop()
-          console.log(`✘ ${COMMAND_TITLE}: ${agent} install failed to update ${lockName}`)
+          console.log(
+            `✘ ${COMMAND_TITLE}: ${agent} install failed to update ${lockName}`
+          )
         }
       }
     }
