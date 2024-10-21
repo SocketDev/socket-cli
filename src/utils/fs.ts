@@ -23,6 +23,7 @@ export async function findUp(
     for (const name of names) {
       const filePath = path.join(dir, name)
       try {
+        // eslint-disable-next-line no-await-in-loop
         const stats = await fs.stat(filePath)
         if (stats.isFile()) {
           return filePath
