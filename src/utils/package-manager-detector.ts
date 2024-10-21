@@ -181,7 +181,10 @@ export async function detect({
     }
     const nodeRange = getOwn(pkgJson['engines'], 'node')
     if (isNonEmptyString(nodeRange)) {
-      node = MAINTAINED_NODE_VERSIONS.some(v => semver.satisfies(v, nodeRange))
+      node = MAINTAINED_NODE_VERSIONS.some(v => {
+        const coerced = semver.coerce(nodeRange)
+        coerced && semver.satisfies(coerced, `^${v}`)
+      })
     }
     const browserslistQuery = getOwn(pkgJson, 'browserslist')
     if (Array.isArray(browserslistQuery)) {
@@ -193,8 +196,11 @@ export async function detect({
         browser = browserslistTargets.length !== browserslistNodeTargets.length
       }
       if (node === undefined && browserslistNodeTargets.length) {
-        node = MAINTAINED_NODE_VERSIONS.some(r =>
-          browserslistNodeTargets.some(v => semver.satisfies(v, `^${r}`))
+        node = MAINTAINED_NODE_VERSIONS.some(v =>
+          browserslistNodeTargets.some(t => {
+            const coerced = semver.coerce(t)
+            return coerced && semver.satisfies(coerced, `^${v}`)
+          })
         )
       }
     }
