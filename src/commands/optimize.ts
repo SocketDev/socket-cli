@@ -33,10 +33,20 @@ const availableOverrides = getManifestData('npm')!.filter(({ 1: d }) =>
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
 type Overrides = NpmOverrides | PnpmOrYarnOverrides
-type GetOverrides = (pkg: PackageJsonContent) => GetOverridesResult | undefined
-type GetOverridesResult = { type: Agent; overrides: Overrides }
+type GetOverrides = (
+  pkgJson: PackageJsonContent
+) => GetOverridesResult | undefined
+type GetOverridesResult = {
+  type: Agent
+  overrides: Overrides
+}
 
-const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
+const getOverridesDataByAgent: {
+  npm: (pkgJson: PackageJsonContent) => GetOverridesResult
+  yarn: (pkgJson: PackageJsonContent) => GetOverridesResult
+} & {
+  [key in Exclude<Agent, 'npm' | 'yarn'>]: GetOverrides
+} = {
   // npm overrides documentation:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
   npm: (pkgJson: PackageJsonContent) => {
@@ -178,16 +188,17 @@ async function addOverrides(
         : undefined
     ]
   ].filter(({ 1: o }) => o)
-  const overridesDataObjects = <GetOverridesResult[]>[
-    getOverridesDataByAgent['npm'](editablePkgJson.content)
-  ]
-  const isApp = isPrivate || isWorkspace
-  const overridesData =
-    !isApp || agent !== 'npm'
-      ? getOverridesDataByAgent[isApp ? agent : 'yarn'](editablePkgJson.content)
-      : undefined
-  if (overridesData) {
-    overridesDataObjects.push(overridesData)
+  const overridesDataObjects = <GetOverridesResult[]>[]
+  if (isPrivate || isWorkspace) {
+    const data = getOverridesDataByAgent[agent](editablePkgJson.content)
+    if (data) {
+      overridesDataObjects.push(data)
+    }
+  } else {
+    overridesDataObjects.push(
+      getOverridesDataByAgent['npm'](editablePkgJson.content),
+      getOverridesDataByAgent['yarn'](editablePkgJson.content)
+    )
   }
   const aliasMap = new Map<string, string>()
   for (const { 1: data } of availableOverrides) {
@@ -210,7 +221,6 @@ async function addOverrides(
     }
     for (const { type, overrides } of overridesDataObjects) {
       if (
-        overrides &&
         !hasOwn(overrides, origPkgName) &&
         lockIncludes(lockSrc, origPkgName)
       ) {
