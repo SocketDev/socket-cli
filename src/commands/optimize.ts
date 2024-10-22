@@ -33,20 +33,13 @@ const availableOverrides = getManifestData('npm')!.filter(({ 1: d }) =>
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
 type Overrides = NpmOverrides | PnpmOrYarnOverrides
-type GetOverrides = (
-  pkgJson: PackageJsonContent
-) => GetOverridesResult | undefined
+type GetOverrides = (pkgJson: PackageJsonContent) => GetOverridesResult
 type GetOverridesResult = {
   type: Agent
   overrides: Overrides
 }
 
-const getOverridesDataByAgent: {
-  npm: (pkgJson: PackageJsonContent) => GetOverridesResult
-  yarn: (pkgJson: PackageJsonContent) => GetOverridesResult
-} & {
-  [key in Exclude<Agent, 'npm' | 'yarn'>]: GetOverrides
-} = {
+const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
   // npm overrides documentation:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
   npm: (pkgJson: PackageJsonContent) => {
@@ -56,8 +49,8 @@ const getOverridesDataByAgent: {
   // pnpm overrides documentation:
   // https://pnpm.io/package_json#pnpmoverrides
   pnpm: (pkgJson: PackageJsonContent) => {
-    const overrides = (pkgJson as any)?.pnpm?.overrides ?? undefined
-    return overrides ? { type: 'pnpm', overrides } : undefined
+    const overrides = (pkgJson as any)?.pnpm?.overrides ?? {}
+    return { type: 'pnpm', overrides }
   },
   // Yarn resolutions documentation:
   // https://yarnpkg.com/configuration/manifest#resolutions
@@ -79,10 +72,11 @@ const lockIncludesByAgent: Record<Agent, LockIncludes> = {
     const escapedName = escapeRegExp(name)
     return new RegExp(
       // Detects the package name in the following cases:
-      //   /name/version:
-      //   'name': version
-      //   name: version
-      `(?<=^\\s*)(?:(['/])${escapedName}\\1|${escapedName}(?=:))`,
+      //   /name/
+      //   'name'
+      //   name:
+      //   name@
+      `(?<=^\\s*)(?:(['/])${escapedName}\\1|${escapedName}(?=[:@]))`,
       'm'
     ).test(lockSrc)
   },
@@ -190,10 +184,9 @@ async function addOverrides(
   ].filter(({ 1: o }) => o)
   const overridesDataObjects = <GetOverridesResult[]>[]
   if (isPrivate || isWorkspace) {
-    const data = getOverridesDataByAgent[agent](editablePkgJson.content)
-    if (data) {
-      overridesDataObjects.push(data)
-    }
+    overridesDataObjects.push(
+      getOverridesDataByAgent[agent](editablePkgJson.content)
+    )
   } else {
     overridesDataObjects.push(
       getOverridesDataByAgent['npm'](editablePkgJson.content),
