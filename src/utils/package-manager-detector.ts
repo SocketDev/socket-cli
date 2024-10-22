@@ -183,7 +183,7 @@ export async function detect({
     if (isNonEmptyString(nodeRange)) {
       node = MAINTAINED_NODE_VERSIONS.some(v => {
         const coerced = semver.coerce(nodeRange)
-        coerced && semver.satisfies(coerced, `^${v}`)
+        return coerced && semver.satisfies(coerced, `^${v}`)
       })
     }
     const browserslistQuery = getOwn(pkgJson, 'browserslist')
