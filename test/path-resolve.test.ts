@@ -348,14 +348,15 @@ describe('Path Resolve', () => {
 
     it('should always ignore some paths', async () => {
       mockFs({
-        // Mirrors the used list form https://github.com/novemberborn/ignore-by-default
-        '/.git/some/dir/package.json': {},
-        '/.log/some/dir/package.json': {},
-        '/.nyc_output/some/dir/package.json': {},
-        '/.sass-cache/some/dir/package.json': {},
-        '/.yarn/some/dir/package.json': {},
-        '/bower_components/some/dir/package.json': {},
-        '/coverage/some/dir/package.json': {},
+        // Mirrors the list from
+        // https://github.com/novemberborn/ignore-by-default/blob/v2.1.0/index.js
+        '/.git/some/dir/package.json': '{}',
+        '/.log/some/dir/package.json': '{}',
+        '/.nyc_output/some/dir/package.json': '{}',
+        '/.sass-cache/some/dir/package.json': '{}',
+        '/.yarn/some/dir/package.json': '{}',
+        '/bower_components/some/dir/package.json': '{}',
+        '/coverage/some/dir/package.json': '{}',
         '/node_modules/socket/package.json': '{}',
         '/foo/package-lock.json': '{}',
         '/foo/package.json': '{}'
