@@ -183,7 +183,7 @@ export async function detect({
     if (isNonEmptyString(nodeRange)) {
       node = MAINTAINED_NODE_VERSIONS.some(v => {
         const coerced = semver.coerce(nodeRange)
-        return coerced && semver.satisfies(coerced, `^${v}`)
+        return coerced && semver.satisfies(coerced, `^${semver.major(v)}`)
       })
     }
     const browserslistQuery = getOwn(pkgJson, 'browserslist')
@@ -199,7 +199,7 @@ export async function detect({
         node = MAINTAINED_NODE_VERSIONS.some(v =>
           browserslistNodeTargets.some(t => {
             const coerced = semver.coerce(t)
-            return coerced && semver.satisfies(coerced, `^${v}`)
+            return coerced && semver.satisfies(coerced, `^${semver.major(v)}`)
           })
         )
       }
