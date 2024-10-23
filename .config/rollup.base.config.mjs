@@ -10,7 +10,6 @@ import rangesIntersect from 'semver/ranges/intersects.js'
 import { readPackageUpSync } from 'read-package-up'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
-import { findUpSync } from '../scripts/utils/fs.js'
 import {
   getPackageName,
   getPackageNameEnd,
@@ -22,7 +21,6 @@ import {
   resolveId
 } from '../scripts/utils/packages.js'
 import { escapeRegExp } from '../scripts/utils/regexps.js'
-import { normalizePath } from '../scripts/utils/path.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))

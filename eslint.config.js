@@ -5,6 +5,7 @@ const path = require('node:path')
 const eslintPluginUnicorn = require('eslint-plugin-unicorn')
 const { includeIgnoreFile } = require('@eslint/compat')
 const js = require('@eslint/js')
+const nodePlugin = require('eslint-plugin-n')
 const tsEslint = require('typescript-eslint')
 const tsParser = require('@typescript-eslint/parser')
 
@@ -12,19 +13,14 @@ const gitignorePath = path.resolve(__dirname, '.gitignore')
 const prettierignorePath = path.resolve(__dirname, '.prettierignore')
 
 const sharedPlugins = {
-  __proto__: null,
   unicorn: eslintPluginUnicorn
 }
 
 const sharedRules = {
-  __proto__: null,
-  ...js.configs.recommended.rules,
   'no-await-in-loop': ['error'],
   'no-empty': ['error', { allowEmptyCatch: true }],
   'no-control-regex': ['error'],
   'no-new': ['error'],
-  'no-undef': 'off',
-  'no-unused-vars': 'off',
   'no-warning-comments': ['warn', { terms: ['fixme'] }],
   'unicorn/consistent-function-scoping': 'off'
 }
@@ -45,7 +41,6 @@ module.exports = [
       }
     },
     plugins: {
-      __proto__: null,
       ...sharedPlugins,
       '@typescript-eslint': tsEslint.plugin
     },
@@ -53,7 +48,6 @@ module.exports = [
       reportUnusedDisableDirectives: 'off'
     },
     rules: {
-      __proto__: null,
       ...sharedRules,
       '@typescript-eslint/no-floating-promises': ['error'],
       '@typescript-eslint/no-misused-promises': ['error'],
@@ -80,13 +74,20 @@ module.exports = [
   },
   {
     files: ['scripts/**/*.js', 'test/**/*.cjs'],
+    ...nodePlugin.configs['flat/recommended-script']
+  },
+  {
+    files: ['scripts/**/*.js', 'test/**/*.cjs'],
     plugins: {
-      __proto__: null,
       ...sharedPlugins
     },
     rules: {
-      __proto__: null,
-      ...sharedRules
+      ...js.configs.recommended.rules,
+      ...sharedRules,
+      'no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_|^this$', ignoreRestSiblings: true }
+      ]
     }
   }
 ]
