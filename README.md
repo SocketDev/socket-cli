@@ -1,6 +1,6 @@
 # Socket CLI
 
-[![Socket Badge](https://socket.dev/api/badge/npm/package/@socketsecurity/cli)](https://socket.dev/npm/package/@socketsecurity/cli)
+[![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
 [![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
 
 > CLI tool for [Socket.dev](https://socket.dev/)
@@ -8,7 +8,7 @@
 ## Usage
 
 ```bash
-npm install -g @socketsecurity/cli
+npm install -g socket
 ```
 
 ```bash

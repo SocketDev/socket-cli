@@ -356,7 +356,7 @@ describe('Path Resolve', () => {
         '/.yarn/some/dir/package.json': {},
         '/bower_components/some/dir/package.json': {},
         '/coverage/some/dir/package.json': {},
-        '/node_modules/@socketsecurity/cli/package.json': '{}',
+        '/node_modules/socket/package.json': '{}',
         '/foo/package-lock.json': '{}',
         '/foo/package.json': '{}'
       })
