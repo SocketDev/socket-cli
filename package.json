@@ -1,5 +1,5 @@
 {
-  "name": "@socketsecurity/cli",
+  "name": "socket",
   "version": "0.14.11",
   "description": "CLI tool for Socket.dev",
   "homepage": "http://github.com/SocketDev/socket-cli-js",
@@ -14,7 +14,6 @@
     "url": "https://socket.dev"
   },
   "bin": {
-    "cli": "dist/cli.js",
     "socket": "dist/cli.js",
     "socket-npm": "dist/npm-cli.js",
     "socket-npx": "dist/npx-cli.js"
