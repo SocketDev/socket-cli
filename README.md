@@ -24,7 +24,7 @@ socket wrapper --enable
 - `socket info <package@version>` - Look up issues for a package.
 
 - `socket optimize` - Optimize dependencies with
-  [`@socketregistry`](https://github.com/SocketDev/socket-registry-js) overrides
+  [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides
 
 - `socket raw-npm` and `socket raw-npx` - Temporarily disable the Socket
   'safe-npm' wrapper.
