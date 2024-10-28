@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import fs from 'node:fs/promises'
 
 import blessed from 'blessed'
 // @ts-ignore
@@ -186,7 +186,6 @@ async function fetchOrgAnalyticsData(
   if (result.success === false) {
     return handleUnsuccessfulApiResponse('getOrgAnalytics', result, spinner)
   }
-
   spinner.stop()
 
   if (!result.data.length) {
@@ -194,22 +193,19 @@ async function fetchOrgAnalyticsData(
       'No analytics data is available for this organization yet.'
     )
   }
-
   const data = formatData(result.data, 'org')
-
   if (outputJson && !filePath) {
     return console.log(result.data)
   }
-
   if (filePath) {
-    fs.writeFile(filePath, JSON.stringify(result.data), err => {
-      err
-        ? console.error(err)
-        : console.log(`Data successfully written to ${filePath}`)
-    })
+    try {
+      await fs.writeFile(filePath, JSON.stringify(result.data), 'utf8')
+      console.log(`Data successfully written to ${filePath}`)
+    } catch (e: any) {
+      console.error(e)
+    }
     return
   }
-
   return displayAnalyticsScreen(data)
 }
 
@@ -361,22 +357,19 @@ async function fetchRepoAnalyticsData(
       'No analytics data is available for this organization yet.'
     )
   }
-
   const data = formatData(result.data, 'repo')
-
   if (outputJson && !filePath) {
     return console.log(result.data)
   }
-
   if (filePath) {
-    fs.writeFile(filePath, JSON.stringify(result.data), err => {
-      err
-        ? console.error(err)
-        : console.log(`Data successfully written to ${filePath}`)
-    })
+    try {
+      await fs.writeFile(filePath, JSON.stringify(result.data), 'utf8')
+      console.log(`Data successfully written to ${filePath}`)
+    } catch (e: any) {
+      console.error(e)
+    }
     return
   }
-
   return displayAnalyticsScreen(data)
 }
 

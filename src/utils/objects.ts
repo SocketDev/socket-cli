@@ -1,8 +1,3 @@
-export function getOwn(obj: any, propKey: PropertyKey): any {
-  if (obj === null || obj === undefined) return undefined
-  return Object.hasOwn(obj, propKey) ? obj[propKey] : undefined
-}
-
 export function hasOwn(obj: any, propKey: PropertyKey): boolean {
   if (obj === null || obj === undefined) return false
   return Object.hasOwn(obj, propKey)
