@@ -1,14 +1,15 @@
 import assert from 'node:assert/strict'
+import path from 'node:path'
 import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import mockFs from 'mock-fs'
 import nock from 'nock'
 
-import {
-  getPackageFiles,
-  mapGlobEntryToFiles,
-  mapGlobResultToFiles
-} from './dist/path-resolve'
+import { getPackageFiles } from './dist/path-resolve'
+
+const testPath = __dirname
+const rootPath = path.resolve(__dirname, '..')
+const mockPath = path.join(testPath, 'mock')
 
 const globPatterns = {
   general: {
@@ -67,11 +68,6 @@ const sortedPromise =
     const result = await fn(...args)
     return result.sort()
   }
-
-const sortedMapGlobEntry = sortedPromise(mapGlobEntryToFiles)
-
-const sortedMapGlobResult = sortedPromise(mapGlobResultToFiles)
-
 const sortedGetPackageFiles = sortedPromise(getPackageFiles)
 
 describe('Path Resolve', () => {
@@ -83,266 +79,71 @@ describe('Path Resolve', () => {
   afterEach(() => {
     mockFs.restore()
     if (!nock.isDone()) {
-      throw new Error('pending nock mocks: ' + nock.pendingMocks())
+      throw new Error(`pending nock mocks: ${nock.pendingMocks()}`)
     }
   })
 
-  describe('mapGlobEntryToFiles()', () => {
-    describe('basic', () => {
-      it('should skip irrelevant input', async () => {
-        mockFs({
-          '/foo.txt': 'some content'
-        })
-        assert.deepEqual(await sortedMapGlobEntry('/foo.txt', globPatterns), [])
-      })
-
-      it('should be lenient on oddities', async () => {
-        mockFs({
-          '/package.json': {
-            /* Empty directory */
-          }
-        })
-        await assert.deepEqual(await sortedMapGlobEntry('/', globPatterns), [])
-      })
-    })
-
-    describe('from folder input', () => {
-      it('should resolve package and lock file', async () => {
-        mockFs({
-          '/package-lock.json': '{}',
-          '/package.json': '{}'
-        })
-        assert.deepEqual(await sortedMapGlobEntry('/', globPatterns), [
-          '/package-lock.json',
-          '/package.json'
-        ])
-      })
-
-      it('should resolve package without lock file', async () => {
-        mockFs({
-          '/package.json': '{}'
-        })
-        assert.deepEqual(await sortedMapGlobEntry('/', globPatterns), [
-          '/package.json'
-        ])
-      })
-
-      it('should not resolve lock file without package', async () => {
-        mockFs({
-          '/package-lock.json': '{}'
-        })
-        assert.deepEqual(await sortedMapGlobEntry('/', globPatterns), [
-          '/package-lock.json'
-        ])
-      })
-
-      it('should support alternative lock files', async () => {
-        mockFs({
-          '/yarn.lock': '{}',
-          '/package.json': '{}'
-        })
-        assert.deepEqual(await sortedMapGlobEntry('/', globPatterns), [
-          '/package.json',
-          '/yarn.lock'
-        ])
-      })
-    })
-
-    describe('from package file path', () => {
-      it('should resolve package and lock file', async () => {
-        mockFs({
-          '/package-lock.json': '{}',
-          '/package.json': '{}'
-        })
-        assert.deepEqual(
-          await sortedMapGlobEntry('/package.json', globPatterns),
-          ['/package-lock.json', '/package.json']
-        )
-      })
-
-      it('should resolve package without lock file', async () => {
-        mockFs({
-          '/package.json': '{}'
-        })
-        assert.strict.deepEqual(
-          await sortedMapGlobEntry('/package.json', globPatterns),
-          ['/package.json']
-        )
-      })
-
-      it('should validate the input file', async () => {
-        mockFs({})
-        return await (assert.rejects(
-          sortedMapGlobEntry('/package.json', globPatterns),
-          (e: any) => e instanceof Error && e.message.includes('ENOENT')
-        ) as Promise<void>)
-      })
-
-      it('should support alternative lock files', async () => {
-        mockFs({
-          '/yarn.lock': '{}',
-          '/package.json': '{}'
-        })
-        assert.deepEqual(
-          await sortedMapGlobEntry('/package.json', globPatterns),
-          ['/package.json', '/yarn.lock']
-        )
-      })
-    })
-
-    describe('from lock file path', () => {
-      it('should resolve package and lock file', async () => {
-        mockFs({
-          '/package-lock.json': '{}',
-          '/package.json': '{}'
-        })
-        assert.deepEqual(
-          await sortedMapGlobEntry('/package-lock.json', globPatterns),
-          ['/package-lock.json', '/package.json']
-        )
-      })
-
-      it('should support alternative lock files', async () => {
-        mockFs({
-          '/yarn.lock': '{}',
-          '/package.json': '{}'
-        })
-        assert.deepEqual(await sortedMapGlobEntry('/yarn.lock', globPatterns), [
-          '/package.json',
-          '/yarn.lock'
-        ])
-      })
-    })
-  })
-
-  describe('mapGlobResultToFiles()', () => {
-    it('should handle all variations', async () => {
-      mockFs({
-        '/package-lock.json': '{}',
-        '/package.json': '{}',
-        '/foo/package-lock.json': '{}',
-        '/foo/package.json': '{}',
-        '/bar/yarn.lock': '{}',
-        '/bar/package.json': '{}',
-        '/abc/package.json': '{}'
-      })
-
-      assert.deepEqual(
-        await sortedMapGlobResult(
-          [
-            '/',
-            '/foo/package-lock.json',
-            '/bar/package.json',
-            '/abc/',
-            '/abc/package.json'
-          ],
-          globPatterns
-        ),
-        [
-          '/abc/package.json',
-          '/bar/package.json',
-          '/bar/yarn.lock',
-          '/foo/package-lock.json',
-          '/foo/package.json',
-          '/package-lock.json',
-          '/package.json'
-        ]
-      )
-    })
-  })
-
   describe('getPackageFiles()', () => {
-    it('should handle all variations', async () => {
-      mockFs({
-        '/package-lock.json': '{}',
-        '/package.json': '{}',
-        '/foo/package-lock.json': '{}',
-        '/foo/package.json': '{}',
-        '/bar/yarn.lock': '{}',
-        '/bar/package.json': '{}',
-        '/abc/package.json': '{}'
-      })
-
-      assert.deepEqual(
-        await sortedGetPackageFiles(
-          '/',
-          ['**/*'],
-          undefined,
-          globPatterns,
-          () => {}
-        ),
-        [
-          '/abc/package.json',
-          '/bar/package.json',
-          '/bar/yarn.lock',
-          '/foo/package-lock.json',
-          '/foo/package.json',
-          '/package-lock.json',
-          '/package.json'
-        ]
-      )
-    })
-
     it('should handle a "." inputPath', async () => {
       mockFs({
-        '/package.json': '{}'
+        [`${mockPath}/package.json`]: '{}'
       })
 
       assert.deepEqual(
-        await sortedGetPackageFiles(
-          '/',
-          ['.'],
-          undefined,
-          globPatterns,
-          () => {}
-        ),
-        ['/package.json']
+        await sortedGetPackageFiles(mockPath, ['.'], undefined, globPatterns),
+        [`${mockPath}/package.json`]
       )
     })
 
     it('should respect ignores from socket config', async () => {
       mockFs({
-        '/bar/package-lock.json': '{}',
-        '/bar/package.json': '{}',
-        '/foo/package-lock.json': '{}',
-        '/foo/package.json': '{}'
+        [`${mockPath}/bar/package-lock.json`]: '{}',
+        [`${mockPath}/bar/package.json`]: '{}',
+        [`${mockPath}/foo/package-lock.json`]: '{}',
+        [`${mockPath}/foo/package.json`]: '{}'
       })
 
       assert.deepEqual(
         await sortedGetPackageFiles(
-          '/',
+          mockPath,
           ['**/*'],
           {
             version: 2,
-            projectIgnorePaths: ['/bar/*', '!/bar/package.json'],
+            projectIgnorePaths: ['bar/*', '!bar/package.json'],
             issueRules: {},
             githubApp: {}
           },
-          globPatterns,
-          () => {}
+          globPatterns
         ),
-        ['/bar/package.json', '/foo/package-lock.json', '/foo/package.json']
+        [
+          `${mockPath}/bar/package.json`,
+          `${mockPath}/foo/package-lock.json`,
+          `${mockPath}/foo/package.json`
+        ]
       )
     })
 
     it('should respect .gitignore', async () => {
       mockFs({
-        '/.gitignore': '/bar\n!/bar/package.json',
-        '/bar/package-lock.json': '{}',
-        '/bar/package.json': '{}',
-        '/foo/package-lock.json': '{}',
-        '/foo/package.json': '{}'
+        [`${mockPath}/.gitignore`]: 'bar/*\n!bar/package.json',
+        [`${mockPath}/bar/package-lock.json`]: '{}',
+        [`${mockPath}/bar/package.json`]: '{}',
+        [`${mockPath}/foo/package-lock.json`]: '{}',
+        [`${mockPath}/foo/package.json`]: '{}'
       })
 
       assert.deepEqual(
         await sortedGetPackageFiles(
-          '/',
+          mockPath,
           ['**/*'],
           undefined,
-          globPatterns,
-          () => {}
+          globPatterns
         ),
-        ['/foo/package-lock.json', '/foo/package.json']
+        [
+          `${mockPath}/bar/package.json`,
+          `${mockPath}/foo/package-lock.json`,
+          `${mockPath}/foo/package.json`
+        ]
       )
     })
 
@@ -350,47 +151,143 @@ describe('Path Resolve', () => {
       mockFs({
         // Mirrors the list from
         // https://github.com/novemberborn/ignore-by-default/blob/v2.1.0/index.js
-        '/.git/some/dir/package.json': '{}',
-        '/.log/some/dir/package.json': '{}',
-        '/.nyc_output/some/dir/package.json': '{}',
-        '/.sass-cache/some/dir/package.json': '{}',
-        '/.yarn/some/dir/package.json': '{}',
-        '/bower_components/some/dir/package.json': '{}',
-        '/coverage/some/dir/package.json': '{}',
-        '/node_modules/socket/package.json': '{}',
-        '/foo/package-lock.json': '{}',
-        '/foo/package.json': '{}'
+        [`${mockPath}/.git/some/dir/package.json`]: '{}',
+        [`${mockPath}/.log/some/dir/package.json`]: '{}',
+        [`${mockPath}/.nyc_output/some/dir/package.json`]: '{}',
+        [`${mockPath}/.sass-cache/some/dir/package.json`]: '{}',
+        [`${mockPath}/.yarn/some/dir/package.json`]: '{}',
+        [`${mockPath}/bower_components/some/dir/package.json`]: '{}',
+        [`${mockPath}/coverage/some/dir/package.json`]: '{}',
+        [`${mockPath}/node_modules/socket/package.json`]: '{}',
+        [`${mockPath}/foo/package-lock.json`]: '{}',
+        [`${mockPath}/foo/package.json`]: '{}'
       })
 
       assert.deepEqual(
         await sortedGetPackageFiles(
-          '/',
+          mockPath,
           ['**/*'],
           undefined,
-          globPatterns,
-          () => {}
+          globPatterns
         ),
-        ['/foo/package-lock.json', '/foo/package.json']
+        [`${mockPath}/foo/package-lock.json`, `${mockPath}/foo/package.json`]
       )
     })
 
     it('should ignore irrelevant matches', async () => {
       mockFs({
-        '/foo/package-foo.json': '{}',
-        '/foo/package-lock.json': '{}',
-        '/foo/package.json': '{}',
-        '/foo/random.json': '{}'
+        [`${mockPath}/foo/package-foo.json`]: '{}',
+        [`${mockPath}/foo/package-lock.json`]: '{}',
+        [`${mockPath}/foo/package.json`]: '{}',
+        [`${mockPath}/foo/random.json`]: '{}'
       })
 
       assert.deepEqual(
         await sortedGetPackageFiles(
-          '/',
+          mockPath,
           ['**/*'],
           undefined,
-          globPatterns,
-          () => {}
+          globPatterns
         ),
-        ['/foo/package-lock.json', '/foo/package.json']
+        [`${mockPath}/foo/package-lock.json`, `${mockPath}/foo/package.json`]
+      )
+    })
+
+    it('should be lenient on oddities', async () => {
+      mockFs({
+        [`${mockPath}/package.json`]: {
+          /* Empty directory */
+        }
+      })
+
+      assert.deepEqual(
+        await sortedGetPackageFiles(
+          mockPath,
+          ['**/*'],
+          undefined,
+          globPatterns
+        ),
+        []
+      )
+    })
+
+    it('should resolve package and lock file', async () => {
+      mockFs({
+        [`${mockPath}/package-lock.json`]: '{}',
+        [`${mockPath}/package.json`]: '{}'
+      })
+
+      assert.deepEqual(
+        await sortedGetPackageFiles(
+          mockPath,
+          ['**/*'],
+          undefined,
+          globPatterns
+        ),
+        [`${mockPath}/package-lock.json`, `${mockPath}/package.json`]
+      )
+    })
+
+    it('should resolve package without lock file', async () => {
+      mockFs({
+        [`${mockPath}/package.json`]: '{}'
+      })
+
+      assert.deepEqual(
+        await sortedGetPackageFiles(
+          mockPath,
+          ['**/*'],
+          undefined,
+          globPatterns
+        ),
+        [`${mockPath}/package.json`]
+      )
+    })
+
+    it('should support alternative lock files', async () => {
+      mockFs({
+        [`${mockPath}/yarn.lock`]: '{}',
+        [`${mockPath}/package.json`]: '{}'
+      })
+
+      assert.deepEqual(
+        await sortedGetPackageFiles(
+          mockPath,
+          ['**/*'],
+          undefined,
+          globPatterns
+        ),
+        [`${mockPath}/package.json`, `${mockPath}/yarn.lock`]
+      )
+    })
+
+    it('should handle all variations', async () => {
+      mockFs({
+        [`${mockPath}/package-lock.json`]: '{}',
+        [`${mockPath}/package.json`]: '{}',
+        [`${mockPath}/foo/package-lock.json`]: '{}',
+        [`${mockPath}/foo/package.json`]: '{}',
+        [`${mockPath}/bar/yarn.lock`]: '{}',
+        [`${mockPath}/bar/package.json`]: '{}',
+        [`${mockPath}/abc/package.json`]: '{}'
+      })
+
+      assert.deepEqual(
+        await sortedGetPackageFiles(
+          mockPath,
+          ['**/*'],
+          undefined,
+          globPatterns
+        ),
+        [
+          `${mockPath}/abc/package.json`,
+          `${mockPath}/bar/package.json`,
+          `${mockPath}/bar/yarn.lock`,
+          `${mockPath}/foo/package-lock.json`,
+          `${mockPath}/foo/package.json`,
+          `${mockPath}/package-lock.json`,
+          `${mockPath}/package.json`
+        ]
       )
     })
   })
