@@ -14,6 +14,7 @@ import { escapeRegExp } from '../utils/regexps'
 import { toSortedObject } from '../utils/sorts'
 
 import type { Content as PackageJsonContent } from '@npmcli/package-json'
+import type { ManifestEntry } from '@socketsecurity/registry'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type {
   Agent,
@@ -26,9 +27,7 @@ const COMMAND_TITLE = 'Socket Optimize'
 const OVERRIDES_FIELD_NAME = 'overrides'
 const RESOLUTIONS_FIELD_NAME = 'resolutions'
 
-const availableOverrides = getManifestData('npm')!.filter(({ 1: d }) =>
-  d.engines?.node?.startsWith('>=18')
-)
+const manifestNpmOverrides = getManifestData('npm')!
 
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
@@ -130,10 +129,10 @@ type AddOverridesConfig = {
   isWorkspace: boolean
   lockSrc: string
   lockIncludes: LockIncludes
+  manifestEntries: ManifestEntry[]
   pkgJsonPath: string
   pkgJsonStr: string
   pkgJson: PackageJsonContent
-  overrides?: Overrides | undefined
 }
 
 type AddOverridesState = {
@@ -148,6 +147,7 @@ async function addOverrides(
     isWorkspace,
     lockSrc,
     lockIncludes,
+    manifestEntries,
     pkgJsonPath
   }: AddOverridesConfig,
   aoState: AddOverridesState
@@ -194,7 +194,7 @@ async function addOverrides(
     )
   }
   const aliasMap = new Map<string, string>()
-  for (const { 1: data } of availableOverrides) {
+  for (const { 1: data } of manifestEntries) {
     const { name: regPkgName, package: origPkgName, version } = data
     for (const { 1: depObj } of depEntries) {
       let pkgSpec = depObj[origPkgName]
@@ -212,7 +212,7 @@ async function addOverrides(
         aliasMap.set(origPkgName, pkgSpec)
       }
     }
-    for (const { type, overrides } of overridesDataObjects) {
+    for (const { overrides, type } of overridesDataObjects) {
       if (
         !hasOwn(overrides, origPkgName) &&
         lockIncludes(lockSrc, origPkgName)
@@ -233,7 +233,7 @@ async function addOverrides(
   }
   if (packageNames.size) {
     editablePkgJson.update(<PackageJsonContent>Object.fromEntries(depEntries))
-    for (const { type, overrides } of overridesDataObjects) {
+    for (const { overrides, type } of overridesDataObjects) {
       updateManifestByAgent[type](editablePkgJson, toSortedObject(overrides))
     }
     await editablePkgJson.save()
@@ -259,6 +259,7 @@ export const optimize: CliSubcommand = {
         isWorkspace,
         lockSrc,
         lockPath,
+        minimumNodeVersion,
         pkgJsonPath,
         pkgJsonStr,
         pkgJson,
@@ -273,7 +274,7 @@ export const optimize: CliSubcommand = {
       })
       if (!supported) {
         console.log(
-          `✘ ${COMMAND_TITLE}: Package engines.node range is not supported`
+          `✘ ${COMMAND_TITLE}: No supported Node or browser range detected`
         )
         return
       }
@@ -301,6 +302,10 @@ export const optimize: CliSubcommand = {
           agent === 'bun'
             ? lockIncludesByAgent.yarn
             : lockIncludesByAgent[agent]
+        const nodeRange = `>=${minimumNodeVersion}`
+        const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
+          semver.satisfies(semver.coerce(data.engines.node)!, nodeRange)
+        )
         await addOverrides(
           <AddOverridesConfig>{
             __proto__: null,
@@ -309,6 +314,7 @@ export const optimize: CliSubcommand = {
             isWorkspace,
             lockIncludes,
             lockSrc,
+            manifestEntries,
             pkgJsonPath,
             pkgJsonStr,
             pkgJson
