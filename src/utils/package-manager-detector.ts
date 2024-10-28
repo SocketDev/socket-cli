@@ -13,32 +13,10 @@ import { isNonEmptyString } from './strings'
 
 import type { Content as PackageJsonContent } from '@npmcli/package-json'
 
-const PNPM_WORKSPACE = 'pnpm-workspace'
-
 export const AGENTS = ['bun', 'npm', 'pnpm', 'yarn'] as const
-
 export type AgentPlusBun = (typeof AGENTS)[number]
 export type Agent = Exclude<AgentPlusBun, 'bun'>
 export type StringKeyValueObject = { [key: string]: string }
-
-export const LOCKS: Record<string, string> = {
-  'bun.lockb': 'bun',
-  'pnpm-lock.yaml': 'pnpm',
-  'pnpm-lock.yml': 'pnpm',
-  'yarn.lock': 'yarn',
-  // If both package-lock.json and npm-shrinkwrap.json are present in the root
-  // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
-  // will be ignored.
-  // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#package-lockjson-vs-npm-shrinkwrapjson
-  'npm-shrinkwrap.json': 'npm',
-  'package-lock.json': 'npm',
-  // Look for a hidden lock file if .npmrc has package-lock=false:
-  // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
-  //
-  // Unlike the other LOCKS keys this key contains a directory AND filename so
-  // it has to be handled differently.
-  'node_modules/.package-lock.json': 'npm'
-}
 
 const numericCollator = new Intl.Collator(undefined, {
   numeric: true,
@@ -85,29 +63,26 @@ const maintainedNodeVersions = (() => {
   )
 })()
 
-export type DetectOptions = {
-  cwd?: string
-  onUnknown?: (pkgManager: string | undefined) => void
+const LOCKS: Record<string, string> = {
+  'bun.lockb': 'bun',
+  'pnpm-lock.yaml': 'pnpm',
+  'pnpm-lock.yml': 'pnpm',
+  'yarn.lock': 'yarn',
+  // If both package-lock.json and npm-shrinkwrap.json are present in the root
+  // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
+  // will be ignored.
+  // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#package-lockjson-vs-npm-shrinkwrapjson
+  'npm-shrinkwrap.json': 'npm',
+  'package-lock.json': 'npm',
+  // Look for a hidden lock file if .npmrc has package-lock=false:
+  // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
+  //
+  // Unlike the other LOCKS keys this key contains a directory AND filename so
+  // it has to be handled differently.
+  'node_modules/.package-lock.json': 'npm'
 }
 
-export type DetectResult = Readonly<{
-  agent: AgentPlusBun
-  agentExecPath: string
-  agentVersion: string | undefined
-  isPrivate: boolean
-  isWorkspace: boolean
-  lockPath: string | undefined
-  lockSrc: string | undefined
-  minimumNodeVersion: string
-  pkgJson: PackageJsonContent | undefined
-  pkgJsonPath: string | undefined
-  pkgJsonStr: string | undefined
-  supported: boolean
-  targets: {
-    browser: boolean
-    node: boolean
-  }
-}>
+const PNPM_WORKSPACE = 'pnpm-workspace'
 
 type ReadLockFile = (
   lockPath: string,
@@ -148,6 +123,30 @@ const readLockFileByAgent: Record<AgentPlusBun, ReadLockFile> = (() => {
     yarn: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath))
   }
 })()
+
+export type DetectOptions = {
+  cwd?: string
+  onUnknown?: (pkgManager: string | undefined) => void
+}
+
+export type DetectResult = Readonly<{
+  agent: AgentPlusBun
+  agentExecPath: string
+  agentVersion: string | undefined
+  isPrivate: boolean
+  isWorkspace: boolean
+  lockPath: string | undefined
+  lockSrc: string | undefined
+  minimumNodeVersion: string
+  pkgJson: PackageJsonContent | undefined
+  pkgJsonPath: string | undefined
+  pkgJsonStr: string | undefined
+  supported: boolean
+  targets: {
+    browser: boolean
+    node: boolean
+  }
+}>
 
 export async function detect({
   cwd = process.cwd(),
@@ -222,7 +221,7 @@ export async function detect({
     const nodeRange = (pkgJson as any)['engines']?.['node']
     if (isNonEmptyString(nodeRange)) {
       const coerced = semver.coerce(nodeRange)
-      if (coerced) {
+      if (coerced && semver.lt(coerced, minimumNodeVersion)) {
         minimumNodeVersion = coerced.version
       }
     }
