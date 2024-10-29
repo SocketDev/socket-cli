@@ -90,19 +90,19 @@ type ReadLockFile = (
 ) => Promise<string | undefined>
 
 const readLockFileByAgent: Record<AgentPlusBun, ReadLockFile> = (() => {
-  const wrapReader =
-    (
-      reader: (
-        lockPath: string,
-        agentExecPath: string
-      ) => Promise<string | undefined>
-    ): ReadLockFile =>
-    async (lockPath: string, agentExecPath: string) => {
+  function wrapReader(
+    reader: (
+      lockPath: string,
+      agentExecPath: string
+    ) => Promise<string | undefined>
+  ): ReadLockFile {
+    return async (lockPath: string, agentExecPath: string) => {
       try {
         return await reader(lockPath, agentExecPath)
       } catch {}
       return undefined
     }
+  }
   return {
     bun: wrapReader(async (lockPath: string, agentExecPath: string) => {
       let lockBuffer: Buffer | undefined

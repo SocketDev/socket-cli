@@ -38,6 +38,10 @@ const flags: { [key: string]: any } = {
   }
 }
 
+function nonNullish<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined
+}
+
 export const login: CliSubcommand = {
   description,
   async run(argv, importMeta, { parentName }) {
@@ -109,9 +113,6 @@ export const login: CliSubcommand = {
       spinner.fail('Invalid API key')
       return
     }
-
-    const nonNullish = <T>(value: T | null | undefined): value is T =>
-      value != null
 
     const enforcedChoices: OrgChoices = Object.values(orgs.organizations)
       .filter(nonNullish)
