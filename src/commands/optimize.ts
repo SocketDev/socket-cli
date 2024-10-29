@@ -4,17 +4,22 @@ import spawn from '@npmcli/promise-spawn'
 import EditablePackageJson from '@npmcli/package-json'
 import { getManifestData } from '@socketsecurity/registry'
 import meow from 'meow'
+import npmPackageArg from 'npm-package-arg'
 import ora from 'ora'
+import pacote from 'pacote'
 import semver from 'semver'
 
 import { printFlagList } from '../utils/formatting'
 import { hasOwn } from '../utils/objects'
 import { detect } from '../utils/package-manager-detector'
+import { pEach } from '../utils/promises'
 import { escapeRegExp } from '../utils/regexps'
 import { toSortedObject } from '../utils/sorts'
+import { isNonEmptyString } from '../utils/strings'
 
 import type { Content as PackageJsonContent } from '@npmcli/package-json'
 import type { ManifestEntry } from '@socketsecurity/registry'
+import type { PacoteOptions } from 'pacote'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type {
   Agent,
@@ -28,6 +33,7 @@ const OVERRIDES_FIELD_NAME = 'overrides'
 const RESOLUTIONS_FIELD_NAME = 'resolutions'
 
 const manifestNpmOverrides = getManifestData('npm')!
+const packumentCache = new Map()
 
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
@@ -127,17 +133,16 @@ type AddOverridesConfig = {
   agent: Agent
   isPrivate: boolean
   isWorkspace: boolean
-  lockSrc: string
   lockIncludes: LockIncludes
+  lockSrc: string
   manifestEntries: ManifestEntry[]
   pkgJsonPath: string
-  pkgJsonStr: string
-  pkgJson: PackageJsonContent
+  pin: boolean
 }
 
 type AddOverridesState = {
-  output: string
-  packageNames: Set<string>
+  added: Set<string>
+  updated: Set<string>
 }
 
 async function addOverrides(
@@ -148,11 +153,11 @@ async function addOverrides(
     lockSrc,
     lockIncludes,
     manifestEntries,
-    pkgJsonPath
+    pkgJsonPath,
+    pin
   }: AddOverridesConfig,
-  aoState: AddOverridesState
+  state: AddOverridesState
 ): Promise<AddOverridesState> {
-  const { packageNames } = aoState
   const editablePkgJson = await EditablePackageJson.load(
     path.dirname(pkgJsonPath)
   )
@@ -193,52 +198,107 @@ async function addOverrides(
       getOverridesDataByAgent['yarn'](editablePkgJson.content)
     )
   }
-  const aliasMap = new Map<string, string>()
-  for (const { 1: data } of manifestEntries) {
+  const depAliasMap = new Map<string, { id: string; version: string }>()
+  const spinner = ora(`Fetching override manifests...`).start()
+  // Chunk package names to process them in parallel 3 at a time.
+  await pEach(manifestEntries, 3, async ({ 1: data }) => {
     const { name: regPkgName, package: origPkgName, version } = data
     for (const { 1: depObj } of depEntries) {
       let pkgSpec = depObj[origPkgName]
       if (pkgSpec) {
+        let thisVersion = version
         // Add package aliases for direct dependencies to avoid npm EOVERRIDE errors.
         // https://docs.npmjs.com/cli/v8/using-npm/package-spec#aliases
-        const overrideSpecPrefix = `npm:${regPkgName}@`
-        if (!pkgSpec.startsWith(overrideSpecPrefix)) {
-          aliasMap.set(regPkgName, pkgSpec)
+        const specStartsWith = `npm:${regPkgName}@`
+        const existingVersion = pkgSpec.startsWith(specStartsWith)
+          ? (semver.coerce(npmPackageArg(pkgSpec).rawSpec)?.version ?? '')
+          : ''
+        if (existingVersion) {
+          thisVersion = existingVersion
         } else {
-          packageNames.add(regPkgName)
-          pkgSpec = `${overrideSpecPrefix}^${version}`
+          pkgSpec = `${specStartsWith}^${version}`
           depObj[origPkgName] = pkgSpec
+          state.added.add(regPkgName)
         }
-        aliasMap.set(origPkgName, pkgSpec)
+        depAliasMap.set(origPkgName, {
+          id: pkgSpec,
+          version: thisVersion
+        })
       }
     }
-    for (const { overrides, type } of overridesDataObjects) {
-      if (
-        !hasOwn(overrides, origPkgName) &&
-        lockIncludes(lockSrc, origPkgName)
-      ) {
-        packageNames.add(regPkgName)
-        overrides[origPkgName] =
-          // With npm you may not set an override for a package that you directly
-          // depend on unless both the dependency and the override itself share
-          // the exact same spec. To make this limitation easier to deal with,
-          // overrides may also be defined as a reference to a spec for a direct
-          // dependency by prefixing the name of the package you wish the version
-          // to match with a $.
-          // https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides
-          (type === 'npm' && aliasMap.has(origPkgName) && `$${origPkgName}`) ||
-          `npm:${regPkgName}@^${semver.major(version)}`
+    // Chunk package names to process them in parallel 3 at a time.
+    await pEach(overridesDataObjects, 3, async ({ overrides, type }) => {
+      const overrideExists = hasOwn(overrides, origPkgName)
+      if (overrideExists || lockIncludes(lockSrc, origPkgName)) {
+        // With npm you may not set an override for a package that you directly
+        // depend on unless both the dependency and the override itself share
+        // the exact same spec. To make this limitation easier to deal with,
+        // overrides may also be defined as a reference to a spec for a direct
+        // dependency by prefixing the name of the package you wish the version
+        // to match with a $.
+        // https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides
+        const oldSpec = overrides[origPkgName]
+        const depAlias = depAliasMap.get(origPkgName)
+        const thisVersion =
+          overrideExists && isNonEmptyString(oldSpec)
+            ? ((
+                await fetchPackageManifest(
+                  oldSpec.startsWith('$') ? (depAlias?.id ?? oldSpec) : oldSpec
+                )
+              )?.version ?? version)
+            : version
+        const newSpec =
+          depAlias && type === 'npm'
+            ? `$${origPkgName}`
+            : `npm:${regPkgName}@^${pin ? thisVersion : semver.major(thisVersion)}`
+        if (newSpec !== oldSpec) {
+          if (overrideExists) {
+            state.updated.add(regPkgName)
+          } else {
+            state.added.add(regPkgName)
+          }
+          overrides[origPkgName] = newSpec
+        }
       }
-    }
-  }
-  if (packageNames.size) {
+    })
+  })
+  spinner.stop()
+  if (state.added.size || state.updated.size) {
     editablePkgJson.update(<PackageJsonContent>Object.fromEntries(depEntries))
     for (const { overrides, type } of overridesDataObjects) {
       updateManifestByAgent[type](editablePkgJson, toSortedObject(overrides))
     }
     await editablePkgJson.save()
   }
-  return aoState
+  return state
+}
+
+type FetchPackageManifestOptions = {
+  signal?: AbortSignal
+}
+
+async function fetchPackageManifest(
+  pkgNameOrId: string,
+  options?: FetchPackageManifestOptions
+) {
+  const pacoteOptions = <PacoteOptions & { signal?: AbortSignal }>{
+    __proto__: null,
+    ...options,
+    packumentCache,
+    preferOffline: true
+  }
+  const { signal } = pacoteOptions
+  if (signal?.aborted) {
+    return null
+  }
+  let result
+  try {
+    result = await pacote.manifest(pkgNameOrId, pacoteOptions)
+  } catch {}
+  if (signal?.aborted) {
+    return null
+  }
+  return result
 }
 
 export const optimize: CliSubcommand = {
@@ -250,116 +310,119 @@ export const optimize: CliSubcommand = {
       argv,
       importMeta
     )
-    if (commandContext) {
-      const cwd = process.cwd()
-      const {
-        agent,
-        agentExecPath,
-        isPrivate,
-        isWorkspace,
-        lockSrc,
-        lockPath,
-        minimumNodeVersion,
-        pkgJsonPath,
-        pkgJsonStr,
-        pkgJson,
-        supported
-      } = await detect({
-        cwd,
-        onUnknown(pkgManager: string | undefined) {
+    if (!commandContext) {
+      return
+    }
+    const { pin } = commandContext
+    const cwd = process.cwd()
+    const {
+      agent,
+      agentExecPath,
+      isPrivate,
+      isWorkspace,
+      lockSrc,
+      lockPath,
+      minimumNodeVersion,
+      pkgJsonPath,
+      pkgJson,
+      supported
+    } = await detect({
+      cwd,
+      onUnknown(pkgManager: string | undefined) {
+        console.log(
+          `⚠️ ${COMMAND_TITLE}: Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}, defaulting to npm`
+        )
+      }
+    })
+    if (!supported) {
+      console.log(
+        `✘ ${COMMAND_TITLE}: No supported Node or browser range detected`
+      )
+      return
+    }
+    const lockName = lockPath ? path.basename(lockPath) : 'lock file'
+    if (lockSrc === undefined) {
+      console.log(`✘ ${COMMAND_TITLE}: No ${lockName} found`)
+      return
+    }
+    if (pkgJson === undefined) {
+      console.log(`✘ ${COMMAND_TITLE}: No package.json found`)
+      return
+    }
+    if (lockPath && path.relative(cwd, lockPath).startsWith('.')) {
+      console.log(
+        `⚠️ ${COMMAND_TITLE}: Package ${lockName} found at ${lockPath}`
+      )
+    }
+
+    const state: AddOverridesState = {
+      added: new Set(),
+      updated: new Set()
+    }
+    if (lockSrc) {
+      const lockIncludes =
+        agent === 'bun' ? lockIncludesByAgent.yarn : lockIncludesByAgent[agent]
+      const nodeRange = `>=${minimumNodeVersion}`
+      const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
+        semver.satisfies(semver.coerce(data.engines.node)!, nodeRange)
+      )
+      await addOverrides(
+        <AddOverridesConfig>{
+          __proto__: null,
+          agent: agent === 'bun' ? 'yarn' : agent,
+          isPrivate,
+          isWorkspace,
+          lockIncludes,
+          lockSrc,
+          manifestEntries,
+          pin,
+          pkgJsonPath
+        },
+        state
+      )
+    }
+    const pkgJsonChanged = state.updated.size > 0 || state.updated.size > 0
+    if (state.updated.size > 0) {
+      console.log(
+        `Updated ${state.updated.size} Socket.dev optimized overrides ${state.added.size ? '.' : '🚀'}`
+      )
+    }
+    if (state.added.size > 0) {
+      console.log(`Added ${state.added.size} Socket.dev optimized overrides 🚀`)
+    }
+    if (!pkgJsonChanged) {
+      console.log('Congratulations! Already Socket.dev optimized 🎉')
+    }
+    const isNpm = agent === 'npm'
+    if (isNpm || pkgJsonChanged) {
+      // Always update package-lock.json until the npm overrides PR lands:
+      // https://github.com/npm/cli/pull/7025
+      const spinner = ora(`Updating ${lockName}...`).start()
+      try {
+        if (isNpm) {
+          const wrapperPath = path.join(distPath, 'npm-cli.js')
+          await spawn(process.execPath, [wrapperPath, 'install'], {
+            stdio: 'pipe',
+            env: (<unknown>{
+              __proto__: null,
+              ...process.env,
+              UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: '1'
+            }) as NodeJS.ProcessEnv
+          })
+        } else {
+          await spawn(agentExecPath, ['install'], { stdio: 'pipe' })
+        }
+        spinner.stop()
+        if (isNpm) {
           console.log(
-            `⚠️ ${COMMAND_TITLE}: Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}, defaulting to npm`
+            `💡 Re-run ${COMMAND_TITLE} whenever ${lockName} changes.\n   This can be skipped once npm ships https://github.com/npm/cli/pull/7025.`
           )
         }
-      })
-      if (!supported) {
+      } catch {
+        spinner.stop()
         console.log(
-          `✘ ${COMMAND_TITLE}: No supported Node or browser range detected`
+          `✘ ${COMMAND_TITLE}: ${agent} install failed to update ${lockName}`
         )
-        return
-      }
-      const lockName = lockPath ? path.basename(lockPath) : 'lock file'
-      if (lockSrc === undefined) {
-        console.log(`✘ ${COMMAND_TITLE}: No ${lockName} found`)
-        return
-      }
-      if (pkgJson === undefined) {
-        console.log(`✘ ${COMMAND_TITLE}: No package.json found`)
-        return
-      }
-      if (lockPath && path.relative(cwd, lockPath).startsWith('.')) {
-        console.log(
-          `⚠️ ${COMMAND_TITLE}: Package ${lockName} found at ${lockPath}`
-        )
-      }
-
-      const aoState: AddOverridesState = {
-        output: pkgJsonStr!,
-        packageNames: new Set()
-      }
-      if (lockSrc) {
-        const lockIncludes =
-          agent === 'bun'
-            ? lockIncludesByAgent.yarn
-            : lockIncludesByAgent[agent]
-        const nodeRange = `>=${minimumNodeVersion}`
-        const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
-          semver.satisfies(semver.coerce(data.engines.node)!, nodeRange)
-        )
-        await addOverrides(
-          <AddOverridesConfig>{
-            __proto__: null,
-            agent: agent === 'bun' ? 'yarn' : agent,
-            isPrivate,
-            isWorkspace,
-            lockIncludes,
-            lockSrc,
-            manifestEntries,
-            pkgJsonPath,
-            pkgJsonStr,
-            pkgJson
-          },
-          aoState
-        )
-      }
-      const { size: count } = aoState.packageNames
-      if (count) {
-        console.log(`Added ${count} Socket.dev optimized overrides 🚀`)
-      } else {
-        console.log('Congratulations! Already Socket.dev optimized 🎉')
-      }
-
-      const isNpm = agent === 'npm'
-      if (isNpm || count) {
-        // Always update package-lock.json until the npm overrides PR lands:
-        // https://github.com/npm/cli/pull/7025
-        const spinner = ora(`Updating ${lockName}...`).start()
-        try {
-          if (isNpm) {
-            const wrapperPath = path.join(distPath, 'npm-cli.js')
-            await spawn(process.execPath, [wrapperPath, 'install'], {
-              stdio: 'pipe',
-              env: (<unknown>{
-                __proto__: null,
-                ...process.env,
-                UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: '1'
-              }) as NodeJS.ProcessEnv
-            })
-          } else {
-            await spawn(agentExecPath, ['install'], { stdio: 'pipe' })
-          }
-          spinner.stop()
-          if (isNpm) {
-            console.log(
-              `💡 Re-run ${COMMAND_TITLE} whenever ${lockName} changes.\n   This can be skipped once npm ships https://github.com/npm/cli/pull/7025.`
-            )
-          }
-        } catch {
-          spinner.stop()
-          console.log(
-            `✘ ${COMMAND_TITLE}: ${agent} install failed to update ${lockName}`
-          )
-        }
       }
     }
   }
@@ -368,10 +431,7 @@ export const optimize: CliSubcommand = {
 // Internal functions
 
 type CommandContext = {
-  outputJson: boolean
-  outputMarkdown: boolean
-  limit: number
-  offset: number
+  pin: boolean
 }
 
 function setupCommand(
@@ -380,7 +440,13 @@ function setupCommand(
   argv: readonly string[],
   importMeta: ImportMeta
 ): CommandContext | undefined {
-  const flags: { [key: string]: any } = {}
+  const flags: { [key: string]: any } = {
+    pin: {
+      type: 'boolean',
+      default: false,
+      description: 'Pin overrides to their latest version'
+    }
+  }
 
   const cli = meow(
     `
@@ -401,17 +467,9 @@ function setupCommand(
     }
   )
 
-  const {
-    json: outputJson,
-    markdown: outputMarkdown,
-    limit,
-    offset
-  } = cli.flags
+  const { pin } = cli.flags
 
   return <CommandContext>{
-    outputJson,
-    outputMarkdown,
-    limit,
-    offset
+    pin
   }
 }
