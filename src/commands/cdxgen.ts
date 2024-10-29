@@ -57,7 +57,13 @@ const yargsConfig = {
     //evidence: false,
     //'include-crypto': false,
     //'include-formulation': false,
-    //'install-deps': true,
+
+    // Default 'install-deps' to `false` and 'lifecycle' to 'pre-build' to
+    // sidestep arbitrary code execution during a cdxgen scan.
+    // https://github.com/CycloneDX/cdxgen/issues/1328
+    'install-deps': false,
+    lifecycle: 'pre-build',
+
     //output: 'bom.json',
     //profile: 'generic',
     //'project-version': '',
@@ -103,6 +109,7 @@ const yargsConfig = {
   ],
   string: [
     'api-key',
+    'lifecycle',
     'output',
     'parent-project-id',
     'profile',
@@ -131,7 +138,7 @@ function argvToArray(argv: {
     } else if (value === true) {
       result.push(`--${key}`)
     } else if (typeof value === 'string') {
-      result.push(`--${key}=${value}`)
+      result.push(`--${key}`, String(value))
     } else if (Array.isArray(value)) {
       result.push(`--${key}`, ...value.map(String))
     }
@@ -149,7 +156,6 @@ export const cdxgen: CliSubcommand = {
       __proto__: null,
       ...yargsParse(<string[]>argv_, yargsConfig)
     }
-
     const unknown: string[] = yargv._
     const { length: unknownLength } = unknown
     if (unknownLength) {
@@ -159,7 +165,6 @@ export const cdxgen: CliSubcommand = {
       process.exitCode = 1
       return
     }
-
     let cleanupPackageLock = false
     if (
       yargv.type !== 'yarn' &&
@@ -182,11 +187,9 @@ export const cdxgen: CliSubcommand = {
         } catch {}
       }
     }
-
     if (yargv.output === undefined) {
       yargv.output = 'socket-cdx.json'
     }
-
     await spawn(
       execPath,
       [await fs.realpath(cdxgenBinPath), ...argvToArray(yargv)],
@@ -201,7 +204,6 @@ export const cdxgen: CliSubcommand = {
         stdio: 'inherit'
       }
     )
-
     if (cleanupPackageLock) {
       try {
         await fs.unlink('./package-lock.json')
