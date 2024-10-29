@@ -2,11 +2,11 @@
   "name": "socket",
   "version": "0.14.12",
   "description": "CLI tool for Socket.dev",
-  "homepage": "http://github.com/SocketDev/socket-cli-js",
+  "homepage": "http://github.com/SocketDev/socket-cli",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SocketDev/socket-cli-js.git"
+    "url": "git+https://github.com/SocketDev/socket-cli.git"
   },
   "author": {
     "name": "Socket Inc",
