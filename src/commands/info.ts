@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import meow from 'meow'
 import ora from 'ora'
 
-import { outputFlags, validationFlags } from '../flags'
+import { commonFlags, outputFlags, validationFlags } from '../flags'
 import {
   handleApiCall,
   handleUnsuccessfulApiResponse
@@ -72,10 +72,10 @@ function setupCommand(
 ): void | CommandContext {
   const flags: { [key: string]: any } = {
     __proto__: null,
+    ...commonFlags,
     ...outputFlags,
     ...validationFlags
   }
-
   const cli = meow(
     `
     Usage
@@ -95,39 +95,30 @@ function setupCommand(
       flags
     }
   )
-
-  const {
-    all: includeAllIssues,
-    json: outputJson,
-    markdown: outputMarkdown,
-    strict
-  } = cli.flags
-
   if (cli.input.length > 1) {
     throw new InputError('Only one package lookup supported at once')
   }
-
   const { 0: rawPkgName = '' } = cli.input
-
+  let showHelp = cli.flags['help']
   if (!rawPkgName) {
+    showHelp = true
+  }
+  if (showHelp) {
     cli.showHelp()
     return
   }
-
   const versionSeparator = rawPkgName.lastIndexOf('@')
-
   const pkgName =
     versionSeparator < 1 ? rawPkgName : rawPkgName.slice(0, versionSeparator)
   const pkgVersion =
     versionSeparator < 1 ? 'latest' : rawPkgName.slice(versionSeparator + 1)
-
   return {
-    includeAllIssues,
-    outputJson,
-    outputMarkdown,
+    includeAllIssues: cli.flags['all'],
+    outputJson: cli.flags['json'],
+    outputMarkdown: cli.flags['markdown'],
     pkgName,
     pkgVersion,
-    strict
+    strict: cli.flags['strict']
   } as CommandContext
 }
 

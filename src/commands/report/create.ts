@@ -7,7 +7,7 @@ import ora from 'ora'
 import { ErrorWithCause } from 'pony-cause'
 
 import { fetchReportData, formatReportDataOutput } from './view'
-import { outputFlags, validationFlags } from '../../flags'
+import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import {
   handleApiCall,
   handleUnsuccessfulApiResponse
@@ -96,6 +96,7 @@ async function setupCommand(
 ): Promise<void | CommandContext> {
   const flags: { [key: string]: any } = {
     __proto__: null,
+    ...commonFlags,
     ...outputFlags,
     ...validationFlags,
     debug: {
@@ -116,7 +117,6 @@ async function setupCommand(
       description: 'Will wait for and return the created report'
     }
   }
-
   const cli = meow(
     `
     Usage
@@ -158,21 +158,15 @@ async function setupCommand(
       flags
     }
   )
-
-  const {
-    all: includeAllIssues,
-    dryRun,
-    json: outputJson,
-    markdown: outputMarkdown,
-    strict,
-    view
-  } = cli.flags
-
+  let showHelp = cli.flags['help']
   if (!cli.input[0]) {
+    showHelp = true
+  }
+  if (showHelp) {
     cli.showHelp()
     return
   }
-
+  const { dryRun } = cli.flags
   const debugLog = createDebugLogger(!dryRun || (cli.flags['debug'] as boolean))
 
   // TODO: Allow setting a custom cwd and/or configFile path?
@@ -238,12 +232,12 @@ async function setupCommand(
     cwd,
     debugLog,
     dryRun,
-    includeAllIssues,
-    outputJson,
-    outputMarkdown,
+    includeAllIssues: cli.flags['all'],
+    outputJson: cli.flags['json'],
+    outputMarkdown: cli.flags['markdown'],
     packagePaths,
-    strict,
-    view
+    strict: cli.flags['strict'],
+    view: cli.flags['view']
   } as CommandContext
 }
 

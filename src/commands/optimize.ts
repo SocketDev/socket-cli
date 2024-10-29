@@ -9,6 +9,7 @@ import ora from 'ora'
 import pacote from 'pacote'
 import semver from 'semver'
 
+import { commonFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
 import { hasOwn } from '../utils/objects'
 import { detect } from '../utils/package-manager-detector'
@@ -230,12 +231,12 @@ async function addOverrides(
     await pEach(overridesDataObjects, 3, async ({ overrides, type }) => {
       const overrideExists = hasOwn(overrides, origPkgName)
       if (overrideExists || lockIncludes(lockSrc, origPkgName)) {
-        // With npm you may not set an override for a package that you directly
-        // depend on unless both the dependency and the override itself share
+        // With npm one may not set an override for a package that one directly
+        // depends on unless both the dependency and the override itself share
         // the exact same spec. To make this limitation easier to deal with,
         // overrides may also be defined as a reference to a spec for a direct
-        // dependency by prefixing the name of the package you wish the version
-        // to match with a $.
+        // dependency by prefixing the name of the package to match the version
+        // of with a $.
         // https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides
         const oldSpec = overrides[origPkgName]
         const depAlias = depAliasMap.get(origPkgName)
@@ -305,7 +306,7 @@ export const optimize: CliSubcommand = {
   description: 'Optimize dependencies with @socketregistry overrides',
   async run(argv, importMeta, { parentName }) {
     const commandContext = setupCommand(
-      `${parentName} dependency optimize`,
+      `${parentName} optimize`,
       optimize.description,
       argv,
       importMeta
@@ -441,13 +442,14 @@ function setupCommand(
   importMeta: ImportMeta
 ): CommandContext | undefined {
   const flags: { [key: string]: any } = {
+    __proto__: null,
+    ...commonFlags,
     pin: {
       type: 'boolean',
       default: false,
       description: 'Pin overrides to their latest version'
     }
   }
-
   const cli = meow(
     `
     Usage
@@ -466,9 +468,11 @@ function setupCommand(
       flags
     }
   )
-
-  const { pin } = cli.flags
-
+  const { help, pin } = cli.flags
+  if (help) {
+    cli.showHelp()
+    return
+  }
   return <CommandContext>{
     pin
   }

@@ -5,7 +5,7 @@ import chalk from 'chalk'
 import meow from 'meow'
 import ora from 'ora'
 
-import { outputFlags } from '../../flags'
+import { commonFlags, outputFlags } from '../../flags'
 import { handleAPIError, queryAPI } from '../../utils/api-helpers'
 import { AuthError } from '../../utils/errors'
 import { printFlagList } from '../../utils/formatting'
@@ -80,10 +80,10 @@ function setupCommand(
 ): CommandContext | undefined {
   const flags: { [key: string]: any } = {
     __proto__: null,
-    ...outputFlags,
-    ...getDiffScanFlags
+    ...commonFlags,
+    ...getDiffScanFlags,
+    ...outputFlags
   }
-
   const cli = meow(
     `
     Usage
@@ -102,42 +102,32 @@ function setupCommand(
       flags
     }
   )
-
-  const {
-    json: outputJson,
-    markdown: outputMarkdown,
-    before,
-    after,
-    preview,
-    file
-  } = cli.flags
-
+  const { before, after } = cli.flags
+  let showHelp = cli.flags['help']
   if (!before || !after) {
+    showHelp = true
     console.error(
       `${chalk.bgRed.white('Input error')}: Please specify a before and after full scan ID. To get full scans IDs, you can run the command "socket scan list <your org slug>".\n`
     )
-    cli.showHelp()
-    return
-  }
-
-  if (cli.input.length < 1) {
+  } else if (cli.input.length < 1) {
+    showHelp = true
     console.error(
       `${chalk.bgRed.white('Input error')}: Please provide an organization slug\n`
     )
+  }
+  if (showHelp) {
     cli.showHelp()
     return
   }
-
   const [orgSlug = ''] = cli.input
-
   return <CommandContext>{
-    outputJson,
-    outputMarkdown,
+    outputJson: cli.flags['json'],
+    outputMarkdown: cli.flags['markdown'],
     before,
     after,
-    preview,
+    preview: cli.flags['preview'],
     orgSlug,
-    file
+    file: cli.flags['file']
   }
 }
 

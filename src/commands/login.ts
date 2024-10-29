@@ -72,17 +72,19 @@ export const login: CliSubcommand = {
         flags
       }
     )
-
+    let showHelp = cli.flags['help']
     if (cli.input.length) {
-      cli.showHelp()
+      showHelp = true
     }
-
+    if (showHelp) {
+      cli.showHelp()
+      return
+    }
     if (!isInteractive()) {
       throw new InputError(
         'Cannot prompt for credentials in a non-interactive shell'
       )
     }
-
     const apiKey =
       (await password({
         message: `Enter your ${terminalLink(

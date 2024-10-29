@@ -120,7 +120,6 @@ async function setupCommand(
   const flags: { [key: string]: any } = {
     ...createFullScanFlags
   }
-
   const cli = meow(
     `
     Usage
@@ -139,26 +138,15 @@ async function setupCommand(
       flags
     }
   )
-
-  const {
-    repo: repoName,
-    branch: branchName,
-    commitMessage,
-    defaultBranch,
-    pendingHead,
-    tmp,
-    committers,
-    commitHash,
-    pullRequest
-  } = cli.flags
-
+  let showHelp = cli.flags['help']
   if (!cli.input[0]) {
+    showHelp = true
+  }
+  if (showHelp) {
     cli.showHelp()
     return
   }
-
   const { 0: orgSlug = '' } = cli.input
-
   const cwd = process.cwd()
   const socketSdk = await setupSdk()
   const supportedFiles = await socketSdk
@@ -183,28 +171,30 @@ async function setupCommand(
     supportedFiles,
     debugLog
   )
-
+  const { repo: repoName, branch: branchName } = cli.flags
   if (!repoName || !branchName || !packagePaths.length) {
+    showHelp = true
     console.error(`${chalk.white.bgRed('Input error')}: Please provide the required fields:\n
-- Repository name using --repo,\n
-- Branch name using --branch\n
-- At least one file path (e.g. ./package.json).\n`)
+    - Repository name using --repo,\n
+    - Branch name using --branch\n
+    - At least one file path (e.g. ./package.json).`)
+  }
+  if (showHelp) {
     cli.showHelp()
     return
   }
-
   return <CommandContext>{
     orgSlug,
     repoName,
     branchName,
-    commitMessage,
-    defaultBranch,
-    pendingHead,
-    tmp,
+    commitMessage: cli.flags['commitMessage'],
+    defaultBranch: cli.flags['defaultBranch'],
+    pendingHead: cli.flags['pendingHead'],
+    tmp: cli.flags['tmp'],
     packagePaths,
-    commitHash,
-    committers,
-    pullRequest
+    commitHash: cli.flags['commitHash'],
+    committers: cli.flags['committers'],
+    pullRequest: cli.flags['pullRequest']
   }
 }
 
