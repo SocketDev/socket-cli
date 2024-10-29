@@ -26,6 +26,8 @@ socket wrapper --enable
 - `socket optimize` - Optimize dependencies with
   [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides
 
+  - `--pin` - Pin overrides to their latest version
+
 - `socket raw-npm` and `socket raw-npx` - Temporarily disable the Socket
   'safe-npm' wrapper.
 
@@ -52,7 +54,7 @@ socket wrapper --enable
 
 ## Aliases
 
-All aliases supports flags and arguments of the commands they alias.
+All aliases support the flags and arguments of the commands they alias.
 
 - `socket ci` - alias for `socket report create --view --strict` which creates a
   report and quits with an exit code if the result is unhealthy. Use like eg.
