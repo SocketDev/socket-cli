@@ -4,7 +4,7 @@ import chalkTable from 'chalk-table'
 import meow from 'meow'
 import ora from 'ora'
 
-import { outputFlags } from '../flags'
+import { commonFlags, outputFlags } from '../flags'
 import {
   handleApiCall,
   handleUnsuccessfulApiResponse
@@ -60,8 +60,9 @@ function setupCommand(
 ): CommandContext | undefined {
   const flags: { [key: string]: any } = {
     __proto__: null,
-    ...outputFlags,
-    ...dependenciesFlags
+    ...commonFlags,
+    ...dependenciesFlags,
+    ...outputFlags
   }
 
   const cli = meow(

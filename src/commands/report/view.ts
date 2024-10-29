@@ -3,7 +3,7 @@ import meow from 'meow'
 import ora from 'ora'
 import { ErrorWithCause } from 'pony-cause'
 
-import { outputFlags, validationFlags } from '../../flags'
+import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import {
   handleApiCall,
   handleUnsuccessfulApiResponse
@@ -67,10 +67,10 @@ function setupCommand(
 ): CommandContext | undefined {
   const flags: { [key: string]: any } = {
     __proto__: null,
+    ...commonFlags,
     ...outputFlags,
     ...validationFlags
   }
-
   const cli = meow(
     `
     Usage
@@ -89,37 +89,28 @@ function setupCommand(
       flags
     }
   )
-
-  // Extract the input
-
-  const {
-    all: includeAllIssues,
-    json: outputJson,
-    markdown: outputMarkdown,
-    strict
-  } = cli.flags
-
+  // Extract the input.
   const [reportId, ...extraInput] = cli.input
-
-  if (!reportId) {
+  let showHelp = cli.flags['help']
+  if (reportId) {
+    showHelp = true
+  }
+  if (showHelp) {
     cli.showHelp()
     return
   }
-
-  // Validate the input
-
+  // Validate the input.
   if (extraInput.length) {
     throw new InputError(
       `Can only handle a single report ID at a time, but got ${cli.input.length} report ID:s: ${cli.input.join(', ')}`
     )
   }
-
   return {
-    includeAllIssues,
-    outputJson,
-    outputMarkdown,
+    includeAllIssues: cli.flags['all'],
+    outputJson: cli.flags['json'],
+    outputMarkdown: cli.flags['markdown'],
     reportId,
-    strict
+    strict: cli.flags['strict']
   } as CommandContext
 }
 type ReportData = SocketSdkReturnType<'getReport'>['data']
@@ -134,7 +125,6 @@ export async function fetchReportData(
   }: Pick<CommandContext, 'includeAllIssues' | 'strict'>
 ): Promise<void | ReportData> {
   // Do the API call
-
   const socketSdk = await setupSdk()
   const spinner = ora(
     `Fetching report with ID ${reportId} (this could take a while)`

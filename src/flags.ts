@@ -1,3 +1,12 @@
+export const commonFlags = {
+  help: {
+    type: 'boolean',
+    default: false,
+    shortFlag: 'h',
+    description: 'Print this help.'
+  }
+}
+
 export const commandFlags = {
   enable: {
     type: 'boolean',

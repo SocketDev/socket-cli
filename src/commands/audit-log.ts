@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import meow from 'meow'
 import ora from 'ora'
 
-import { outputFlags } from '../flags'
+import { commonFlags, outputFlags } from '../flags'
 import {
   handleApiCall,
   handleUnsuccessfulApiResponse
@@ -75,9 +75,9 @@ function setupCommand(
   const flags: { [key: string]: any } = {
     __proto__: null,
     ...auditLogFlags,
+    ...commonFlags,
     ...outputFlags
   }
-
   const cli = meow(
     `
     Usage
@@ -96,25 +96,25 @@ function setupCommand(
       flags
     }
   )
-
+  let showHelp = cli.flags['help']
+  if (cli.input.length < 1) {
+    showHelp = true
+    console.error(
+      `${chalk.white.bgRed('Input error')}: Please provide an organization slug\n`
+    )
+  }
+  if (showHelp) {
+    cli.showHelp()
+    return
+  }
   const {
     json: outputJson,
     markdown: outputMarkdown,
     page,
     perPage
   } = cli.flags
-
   const type = <string>cli.flags['type']
-
-  if (cli.input.length < 1) {
-    console.error(
-      `${chalk.white.bgRed('Input error')}: Please provide an organization slug\n`
-    )
-    cli.showHelp()
-    return
-  }
   const { 0: orgSlug = '' } = cli.input
-
   return <CommandContext>{
     outputJson,
     outputMarkdown,

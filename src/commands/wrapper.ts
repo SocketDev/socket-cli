@@ -30,7 +30,6 @@ function setupCommand(
   importMeta: ImportMeta
 ): void {
   const flags: { [key: string]: any } = commandFlags
-
   const cli = meow(
     `
     Usage
@@ -50,9 +49,6 @@ function setupCommand(
       flags
     }
   )
-
-  const { enable, disable } = cli.flags
-
   if (argv[0] === '--postinstall') {
     const socketWrapperEnabled =
       (fs.existsSync(BASH_FILE) && checkSocketWrapperAlreadySetup(BASH_FILE)) ||
@@ -66,15 +62,17 @@ function setupCommand(
 
       Do you want to install "safe npm" (this will create an alias to the socket-npm command)? (y/n)`)
     }
-
     return
   }
-
+  const { enable, disable } = cli.flags
+  let showHelp = cli.flags['help']
   if (!enable && !disable) {
+    showHelp = true
+  }
+  if (showHelp) {
     cli.showHelp()
     return
   }
-
   if (enable) {
     if (fs.existsSync(BASH_FILE)) {
       const socketWrapperEnabled = checkSocketWrapperAlreadySetup(BASH_FILE)
@@ -97,7 +95,6 @@ function setupCommand(
       'There was an issue setting up the alias in your bash profile'
     )
   }
-  return
 }
 
 const installSafeNpm = (query: string): void => {

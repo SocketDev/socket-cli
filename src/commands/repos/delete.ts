@@ -58,17 +58,18 @@ function setupCommand(
       importMeta
     }
   )
-
   const { 0: orgSlug = '', 1: repoName = '' } = cli.input
-
+  let showHelp = cli.flags['help']
   if (!orgSlug || !repoName) {
+    showHelp = true
     console.error(
       `${chalk.white.bgRed('Input error')}: Please provide an organization slug and repository slug\n`
     )
+  }
+  if (showHelp) {
     cli.showHelp()
     return
   }
-
   return {
     orgSlug,
     repoName

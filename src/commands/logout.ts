@@ -27,11 +27,14 @@ export const logout: CliSubcommand = {
         importMeta
       }
     )
-
+    let showHelp = cli.flags['help']
     if (cli.input.length) {
-      cli.showHelp()
+      showHelp = true
     }
-
+    if (showHelp) {
+      cli.showHelp()
+      return
+    }
     updateSetting('apiKey', null)
     updateSetting('apiBaseUrl', null)
     updateSetting('apiProxy', null)

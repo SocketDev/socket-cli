@@ -4,7 +4,7 @@ import chalkTable from 'chalk-table'
 import meow from 'meow'
 import ora from 'ora'
 
-import { outputFlags } from '../../flags'
+import { commonFlags, outputFlags } from '../../flags'
 import {
   handleApiCall,
   handleUnsuccessfulApiResponse
@@ -96,8 +96,10 @@ function setupCommand(
   importMeta: ImportMeta
 ): CommandContext | undefined {
   const flags: { [key: string]: any } = {
-    ...outputFlags,
-    ...listFullScanFlags
+    __proto__: null,
+    ...commonFlags,
+    ...listFullScanFlags,
+    ...outputFlags
   }
 
   const cli = meow(
@@ -118,38 +120,28 @@ function setupCommand(
       flags
     }
   )
-
-  const {
-    json: outputJson,
-    markdown: outputMarkdown,
-    sort,
-    direction,
-    perPage,
-    page,
-    fromTime,
-    untilTime
-  } = cli.flags
-
+  let showHelp = cli.flags['help']
   if (!cli.input[0]) {
+    showHelp = true
     console.error(
       `${chalk.white.bgRed('Input error')}: Please specify an organization slug.\n`
     )
+  }
+  if (showHelp) {
     cli.showHelp()
     return
   }
-
   const { 0: orgSlug = '' } = cli.input
-
   return <CommandContext>{
-    outputJson,
-    outputMarkdown,
+    outputJson: cli.flags['json'],
+    outputMarkdown: cli.flags['markdown'],
     orgSlug,
-    sort,
-    direction,
-    per_page: perPage,
-    page,
-    from_time: fromTime,
-    until_time: untilTime
+    sort: cli.flags['sort'],
+    direction: cli.flags['direction'],
+    per_page: cli.flags['perPage'],
+    page: cli.flags['page'],
+    from_time: cli.flags['fromTime'],
+    until_time: cli.flags['untilTime']
   }
 }
 

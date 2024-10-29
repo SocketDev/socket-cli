@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import meow from 'meow'
 import ora from 'ora'
 
-import { outputFlags } from '../../flags'
+import { commonFlags, outputFlags } from '../../flags'
 import {
   handleApiCall,
   handleUnsuccessfulApiResponse
@@ -87,10 +87,10 @@ function setupCommand(
 ): CommandContext | undefined {
   const flags: { [key: string]: any } = {
     __proto__: null,
+    ...commonFlags,
     ...outputFlags,
     ...repositoryCreationFlags
   }
-
   const cli = meow(
     `
     Usage
@@ -109,44 +109,33 @@ function setupCommand(
       flags
     }
   )
-
-  const {
-    json: outputJson,
-    markdown: outputMarkdown,
-    repoName,
-    repoDescription,
-    homepage,
-    defaultBranch,
-    visibility
-  } = cli.flags
-
+  const { repoName } = cli.flags
   const [orgSlug = ''] = cli.input
-
+  let showHelp = cli.flags['help']
   if (!orgSlug) {
+    showHelp = true
     console.error(
       `${chalk.white.bgRed('Input error')}: Please provide an organization slug\n`
     )
-    cli.showHelp()
-    return
-  }
-
-  if (!repoName) {
+  } else if (!repoName) {
+    showHelp = true
     console.error(
       `${chalk.white.bgRed('Input error')}: Repository name is required.\n`
     )
+  }
+  if (showHelp) {
     cli.showHelp()
     return
   }
-
   return <CommandContext>{
-    outputJson,
-    outputMarkdown,
+    outputJson: cli.flags['json'],
+    outputMarkdown: cli.flags['markdown'],
     orgSlug,
     name: repoName,
-    description: repoDescription,
-    homepage,
-    default_branch: defaultBranch,
-    visibility
+    description: cli.flags['repoDescription'],
+    homepage: cli.flags['homepage'],
+    default_branch: cli.flags['defaultBranch'],
+    visibility: cli.flags['visibility']
   }
 }
 

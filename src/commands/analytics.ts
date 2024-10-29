@@ -7,7 +7,7 @@ import chalk from 'chalk'
 import meow from 'meow'
 import ora from 'ora'
 
-import { outputFlags } from '../flags'
+import { commonFlags, outputFlags } from '../flags'
 import {
   handleApiCall,
   handleUnsuccessfulApiResponse
@@ -103,10 +103,10 @@ function setupCommand(
 ): void | CommandContext {
   const flags: { [key: string]: any } = {
     __proto__: null,
+    ...commonFlags,
     ...outputFlags,
     ...analyticsFlags
   }
-
   const cli = meow(
     `
     Usage
@@ -127,31 +127,30 @@ function setupCommand(
       flags
     }
   )
-
-  const { json: outputJson, scope, time, repo, file } = cli.flags
-
+  const { repo, scope, time } = cli.flags
   if (scope !== 'org' && scope !== 'repo') {
     throw new InputError("The scope must either be 'org' or 'repo'")
   }
-
   if (time !== 7 && time !== 30 && time !== 90) {
     throw new InputError('The time filter must either be 7, 30 or 90')
   }
-
+  let showHelp = cli.flags['help']
   if (scope === 'repo' && !repo) {
+    showHelp = true
     console.error(
       `${chalk.bgRed.white('Input error')}: Please provide a repository name when using the repository scope. \n`
     )
+  }
+  if (showHelp) {
     cli.showHelp()
     return
   }
-
   return <CommandContext>{
     scope,
     time,
     repo,
-    outputJson,
-    file
+    outputJson: cli.flags['json'],
+    file: cli.flags['file']
   }
 }
 

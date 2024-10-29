@@ -4,7 +4,7 @@ import contrib from 'blessed-contrib'
 import meow from 'meow'
 import ora from 'ora'
 
-import { outputFlags } from '../flags'
+import { commonFlags, outputFlags } from '../flags'
 import { queryAPI } from '../utils/api-helpers'
 import { AuthError } from '../utils/errors'
 import { printFlagList } from '../utils/formatting'
@@ -78,8 +78,9 @@ function setupCommand(
 ): CommandContext | undefined {
   const flags: { [key: string]: any } = {
     __proto__: null,
-    ...threatFeedFlags,
-    ...outputFlags
+    ...commonFlags,
+    ...outputFlags,
+    ...threatFeedFlags
   }
 
   const cli = meow(

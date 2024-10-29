@@ -1,7 +1,7 @@
 import spawn from '@npmcli/promise-spawn'
 import meow from 'meow'
 
-import { validationFlags } from '../flags'
+import { commonFlags, validationFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
@@ -24,8 +24,11 @@ async function setupCommand(
   argv: readonly string[],
   importMeta: ImportMeta
 ): Promise<void> {
-  const flags: { [key: string]: any } = validationFlags
-
+  const flags: { [key: string]: any } = {
+    __proto__: null,
+    ...commonFlags,
+    ...validationFlags
+  }
   const cli = meow(
     `
     Usage
@@ -44,12 +47,14 @@ async function setupCommand(
       flags
     }
   )
-
+  let showHelp = cli.flags['help']
   if (!argv[0]) {
+    showHelp = true
+  }
+  if (showHelp) {
     cli.showHelp()
     return
   }
-
   const spawnPromise = spawn('npm', [argv.join(' ')], {
     stdio: 'inherit'
   })
