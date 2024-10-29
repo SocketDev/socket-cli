@@ -22,7 +22,7 @@ const sharedRules = {
   'no-control-regex': ['error'],
   'no-new': ['error'],
   'no-warning-comments': ['warn', { terms: ['fixme'] }],
-  'unicorn/consistent-function-scoping': 'off'
+  'unicorn/consistent-function-scoping': ['error']
 }
 
 module.exports = [

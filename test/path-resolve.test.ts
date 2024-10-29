@@ -8,7 +8,6 @@ import nock from 'nock'
 import { getPackageFiles } from './dist/path-resolve'
 
 const testPath = __dirname
-const rootPath = path.resolve(__dirname, '..')
 const mockPath = path.join(testPath, 'mock')
 
 const globPatterns = {
