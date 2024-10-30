@@ -14,7 +14,6 @@ const npxPath = installLinks(path.join(realDirname, 'bin'), 'npx')
 const injectionPath = path.join(realDirname, 'npm-injection.js')
 
 process.exitCode = 1
-
 const spawnPromise = spawn(
   process.execPath,
   ['--require', injectionPath, npxPath, ...process.argv.slice(2)],
