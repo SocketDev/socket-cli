@@ -1,6 +1,7 @@
 {
   "settings": {},
   "rules": {
+    "@typescript-eslint/no-misused-new": ["deny"],
     "@typescript-eslint/no-this-alias": ["deny"],
     "unicorn/no-empty-file": "allow",
     "unicorn/no-new-array": "allow",

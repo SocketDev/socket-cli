@@ -11,14 +11,17 @@ import chalk from 'chalk'
 import isInteractive from 'is-interactive'
 import ora, { spinners } from 'ora'
 
+import { API_V0_URL, ENV } from '../constants'
 import { createTTYServer } from './tty-server'
 import { ChalkOrMarkdown } from '../utils/chalk-markdown'
 import { createIssueUXLookup } from '../utils/issue-rules'
 import { isErrnoException } from '../utils/misc'
+import { isObject } from '../utils/objects'
 import { findRoot } from '../utils/path-resolve'
 import { getDefaultKey, FREE_API_KEY, setupSdk } from '../utils/sdk'
 import { getSetting } from '../utils/settings'
 
+import type { Writable } from 'node:stream'
 import type {
   Arborist as BaseArborist,
   DependencyProblem,
@@ -27,9 +30,7 @@ import type {
   Node as BaseNode,
   Options as ArboristOptions
 } from '@npmcli/arborist'
-import type { Writable } from 'node:stream'
 import type { Options as OraOptions } from 'ora'
-import { API_V0_URL, ENV } from '../constants'
 
 type ArboristClass = typeof BaseArborist & {
   new (...args: any): typeof BaseArborist
@@ -37,7 +38,7 @@ type ArboristClass = typeof BaseArborist & {
 
 type EdgeClass = Omit<BaseEdge, 'overrides' | 'reload'> & {
   optional: boolean
-  overrides: OverrideSet | undefined
+  overrides: OverrideSetClass | undefined
   peer: boolean
   peerConflicted: boolean
   rawSpec: string
@@ -54,7 +55,7 @@ type EdgeOptions = {
   spec: string
   from: NodeClass
   accept?: string | undefined
-  overrides?: OverrideSet | undefined
+  overrides?: OverrideSetClass | undefined
 }
 
 type ErrorStatus = DependencyProblem | 'OK'
@@ -80,36 +81,58 @@ type InstallEffect = {
   newPackage: PURLParts
 }
 
-type NodeClass = Omit<BaseNode, 'edgesOut' | 'isTop' | 'parent' | 'resolve'> & {
+type NodeClass = Omit<
+  BaseNode,
+  'edgesIn' | 'edgesOut' | 'from' | 'isTop' | 'parent' | 'resolve' | 'root'
+> & {
   name: string
   version: string
   edgesIn: Set<SafeEdge>
   edgesOut: Map<string, SafeEdge>
+  from: NodeClass | null
   hasShrinkwrap: boolean
   inShrinkwrap: boolean | undefined
   isTop: boolean | undefined
-  overrides: OverrideSet | undefined
+  meta: BaseNode['meta'] & {
+    addEdge(edge: SafeEdge): void
+  }
+  overrides: OverrideSetClass | undefined
   parent: NodeClass | null
+  get packageName(): string | null
+  get root(): NodeClass | null
+  set root(value: NodeClass | null)
   new (...args: any): NodeClass
   addEdgeIn(edge: SafeEdge): void
   addEdgeOut(edge: SafeEdge): void
+  canReplace(node: NodeClass, ignorePeers?: string[]): boolean
+  canReplaceWith(node: NodeClass, ignorePeers?: string[]): boolean
+  deleteEdgeIn(edge: SafeEdge): void
+  recalculateOutEdgesOverrides(): void
   resolve(name: string): NodeClass
+  updateOverridesEdgeInAdded(
+    otherOverrideSet: OverrideSetClass | undefined
+  ): boolean
+  updateOverridesEdgeInRemoved(otherOverrideSet: OverrideSetClass): boolean
 }
 
-interface OverrideSet {
-  children: Map<string, OverrideSet>
+interface OverrideSetClass {
+  children: Map<string, OverrideSetClass>
   key: string | undefined
   keySpec: string | undefined
   name: string | undefined
-  parent: OverrideSet | undefined
+  parent: OverrideSetClass | undefined
   value: string | undefined
   version: string | undefined
+  // eslint-disable-next-line @typescript-eslint/no-misused-new
+  new (...args: any[]): OverrideSetClass
   get isRoot(): boolean
-  get ruleset(): Map<string, OverrideSet>
-  ancestry(): Generator<OverrideSet>
-  getEdgeRule(edge: SafeEdge): OverrideSet
-  getNodeRule(node: NodeClass): OverrideSet
-  getMatchingRule(node: NodeClass): OverrideSet | null
+  get ruleset(): Map<string, OverrideSetClass>
+  ancestry(): Generator<OverrideSetClass>
+  childrenAreEqual(otherOverrideSet: OverrideSetClass | undefined): boolean
+  getEdgeRule(edge: SafeEdge): OverrideSetClass
+  getNodeRule(node: NodeClass): OverrideSetClass
+  getMatchingRule(node: NodeClass): OverrideSetClass | null
+  isEqual(otherOverrideSet: OverrideSetClass | undefined): boolean
 }
 
 type PURLParts = {
@@ -152,6 +175,14 @@ const arboristEdgeClassPath = path.join(
   npmNmPath,
   '@npmcli/arborist/lib/edge.js'
 )
+const arboristNodeClassPath = path.join(
+  npmNmPath,
+  '@npmcli/arborist/lib/node.js'
+)
+const arboristOverrideSetClassPatch = path.join(
+  npmNmPath,
+  '@npmcli/arborist/lib/override-set.js'
+)
 
 let npmlog: typeof import('npmlog') | undefined
 try {
@@ -178,6 +209,8 @@ try {
 
 const Arborist: ArboristClass = require(arboristClassPath)
 const Edge: EdgeClass = require(arboristEdgeClassPath)
+const Node: NodeClass = require(arboristNodeClassPath)
+const OverrideSet: OverrideSetClass = require(arboristOverrideSetClassPatch)
 
 const kCtorArgs = Symbol('ctorArgs')
 const kRiskyReify = Symbol('riskyReify')
@@ -247,14 +280,6 @@ async function* batchScan(
   }
 }
 
-function deleteEdgeIn(node: NodeClass, edge: SafeEdge) {
-  node.edgesIn.delete(edge)
-  const { overrides } = edge
-  if (overrides) {
-    updateNodeOverrideSetDueToEdgeRemoval(node, overrides)
-  }
-}
-
 function findSocketYmlSync() {
   let prevDir = null
   let dir = process.cwd()
@@ -281,20 +306,22 @@ function findSocketYmlSync() {
   return null
 }
 
+// Patch adding findSpecificOverrideSet is based on
+// https://github.com/npm/cli/pull/7025.
 function findSpecificOverrideSet(
-  first: OverrideSet | undefined,
-  second: OverrideSet | undefined
+  first: OverrideSetClass | undefined,
+  second: OverrideSetClass | undefined
 ) {
   let overrideSet = second
   while (overrideSet) {
-    if (overrideSetsEqual(overrideSet, first)) {
+    if (overrideSet.isEqual(first)) {
       return second
     }
     overrideSet = overrideSet.parent
   }
   overrideSet = first
   while (overrideSet) {
-    if (overrideSetsEqual(overrideSet, second)) {
+    if (overrideSet.isEqual(second)) {
       return first
     }
     overrideSet = overrideSet.parent
@@ -308,60 +335,6 @@ function maybeReadfileSync(filepath: string): string | undefined {
     return readFileSync(filepath, 'utf8')
   } catch {}
   return undefined
-}
-
-function overrideSetsChildrenAreEqual(
-  overrideSet: OverrideSet,
-  other: OverrideSet
-): boolean {
-  const queue: [OverrideSet, OverrideSet][] = [[overrideSet, other]]
-  let pos = 0
-  let { length: queueLength } = queue
-  while (pos < queueLength) {
-    if (pos === LOOP_SENTINEL) {
-      throw new Error('Detected infinite loop while comparing override sets')
-    }
-    const { 0: currSet, 1: currOtherSet } = queue[pos++]!
-    const { children } = currSet
-    const { children: otherChildren } = currOtherSet
-    if (children.size !== otherChildren.size) {
-      return false
-    }
-    for (const key of children.keys()) {
-      if (!otherChildren.has(key)) {
-        return false
-      }
-      const child = <OverrideSet>children.get(key)
-      const otherChild = <OverrideSet>otherChildren.get(key)
-      if (child!.value !== otherChild!.value) {
-        return false
-      }
-      queue[queueLength++] = [child, otherChild]
-    }
-  }
-  return true
-}
-
-function overrideSetsEqual(
-  overrideSet: OverrideSet,
-  other: OverrideSet | undefined
-) {
-  if (overrideSet === other) {
-    return true
-  }
-  if (!other) {
-    return false
-  }
-  if (overrideSet.key !== other.key || overrideSet.value !== other.value) {
-    return false
-  }
-  if (!overrideSetsChildrenAreEqual(overrideSet, other)) {
-    return false
-  }
-  if (!overrideSet.parent) {
-    return !other.parent
-  }
-  return overrideSetsEqual(overrideSet.parent, other.parent)
 }
 
 async function packagesHaveRiskyIssues(
@@ -494,16 +467,6 @@ function pkgidParts(pkgid: string) {
   return { name, version }
 }
 
-function recalculateOutEdgesOverrides(node: NodeClass) {
-  // For each edge out propagate the new overrides through.
-  for (const edge of node.edgesOut.values()) {
-    edge.reload(true)
-    if (edge.to) {
-      updateNodeOverrideSet(edge.to, edge.overrides)
-    }
-  }
-}
-
 function toPURL(pkgid: string, resolved: string): PURLParts {
   const repo = resolved
     .replace(/#[\s\S]*$/u, '')
@@ -516,85 +479,6 @@ function toPURL(pkgid: string, resolved: string): PURLParts {
     version,
     repository_url: repo
   }
-}
-
-function updateNodeOverrideSetDueToEdgeRemoval(
-  node: NodeClass,
-  other: OverrideSet
-) {
-  const { overrides } = node
-  // If this edge's overrides isn't equal to this node's overrides, then removing
-  // it won't change newOverrideSet later.
-  if (!overrides || !overrideSetsEqual(overrides, other)) {
-    return false
-  }
-  let newOverrideSet
-  for (const edge of node.edgesIn) {
-    const { overrides: edgeOverrides } = edge
-    if (newOverrideSet) {
-      newOverrideSet = findSpecificOverrideSet(edgeOverrides, newOverrideSet)
-    } else {
-      newOverrideSet = edgeOverrides
-    }
-  }
-  if (overrideSetsEqual(overrides, newOverrideSet)) {
-    return false
-  }
-  node.overrides = newOverrideSet
-  if (newOverrideSet) {
-    // Optimization: If there's any override set at all, then no non-extraneous
-    // node has an empty override set. So if we temporarily have no override set
-    // (for example, we removed all the edges in), there's no use updating all
-    // the edges out right now. Let's just wait until we have an actual override
-    // set later.
-    recalculateOutEdgesOverrides(node)
-  }
-  return true
-}
-
-// This logic isn't perfect either. When we have two edges in that have different
-// override sets, then we have to decide which set is correct. This function
-// assumes the more specific override set is applicable, so if we have dependencies
-// A->B->C and A->C and an override set that specifies what happens for C under
-// A->B, this will work even if the new A->C edge comes along and tries to change
-// the override set. The strictly correct logic is not to allow two edges with
-// different overrides to point to the same node, because even if this node can
-// satisfy both, one of its dependencies might need to be different depending on
-// the edge leading to it. However, this might cause a lot of duplication, because
-// the conflict in the dependencies might never actually happen.
-function updateNodeOverrideSet(
-  node: NodeClass,
-  otherOverrideSet: OverrideSet | undefined
-) {
-  if (!node.overrides) {
-    // Assuming there are any overrides at all, the overrides field is never
-    // undefined for any node at the end state of the tree. So if the new edge's
-    // overrides is undefined it will be updated later. So we can wait with
-    // updating the node's overrides field.
-    if (!otherOverrideSet) {
-      return false
-    }
-    node.overrides = otherOverrideSet
-    recalculateOutEdgesOverrides(node)
-    return true
-  }
-  const { overrides } = node
-  if (overrideSetsEqual(overrides, otherOverrideSet)) {
-    return false
-  }
-  const newOverrideSet = findSpecificOverrideSet(overrides, otherOverrideSet)
-  if (newOverrideSet) {
-    if (overrideSetsEqual(overrides, newOverrideSet)) {
-      return false
-    }
-    node.overrides = newOverrideSet
-    recalculateOutEdgesOverrides(node)
-    return true
-  }
-  // This is an error condition. We can only get here if the new override set is
-  // in conflict with the existing.
-  console.error('Conflicting override sets')
-  return false
 }
 
 function walk(
@@ -656,15 +540,18 @@ function walk(
   return needInfoOn
 }
 
-// Copied from
-// https://github.com/npm/cli/blob/v10.9.0/workspaces/arborist/lib/edge.js:
+// The Edge class makes heavy use of private properties which subclasses do NOT
+// have access to. So we have to recreate any functionality that relies on those
+// private properties and use our own "safe" prefixed non-conflicting private
+// properties. Implementation code not related to patch https://github.com/npm/cli/pull/7025
+// is based on https://github.com/npm/cli/blob/v10.9.0/workspaces/arborist/lib/edge.js.
+//
 // The npm application
 // Copyright (c) npm, Inc. and Contributors
 // Licensed on the terms of The Artistic License 2.0
 //
 // An edge in the dependency graph.
 // Represents a dependency relationship of some kind.
-
 class SafeEdge extends Edge {
   #safeAccept: string | undefined
   #safeError: ErrorStatus | null
@@ -729,13 +616,22 @@ class SafeEdge extends Edge {
       this.overrides.value !== '*' &&
       this.overrides.name === this.name
     ) {
+      // Patch adding "if" condition is based on
+      // https://github.com/npm/cli/pull/7025.
+      //
+      // If this edge has the same overrides field as the source, then we're not
+      // applying an override for this edge.
+      if (this.overrides === this.#safeFrom?.overrides) {
+        // The Edge rawSpec getter will retrieve the private Edge #spec property.
+        return this.rawSpec
+      }
       if (this.overrides.value.startsWith('$')) {
         const ref = this.overrides.value.slice(1)
         // We may be a virtual root, if we are we want to resolve reference
         // overrides from the real root, not the virtual one.
         const pkg = this.#safeFrom?.sourceReference
           ? this.#safeFrom.sourceReference.root.package
-          : this.#safeFrom?.root.package
+          : this.#safeFrom?.root?.package
         if (pkg?.devDependencies?.[ref]) {
           return <string>pkg.devDependencies[ref]
         }
@@ -775,6 +671,20 @@ class SafeEdge extends Edge {
         this.#safeError = 'PEER LOCAL'
       } else if (!this.satisfiedBy(this.#safeTo)) {
         this.#safeError = 'INVALID'
+      }
+      // Patch adding "else if" condition is based on
+      // https://github.com/npm/cli/pull/7025.
+      else if (
+        this.overrides &&
+        this.#safeTo.edgesOut.size &&
+        !findSpecificOverrideSet(this.overrides, this.#safeTo.overrides)
+      ) {
+        // Any inconsistency between the edge's override set and the target's
+        // override set is potentially problematic. But we only say the edge is
+        // in error if the override sets are plainly conflicting. Note that if
+        // the target doesn't have any dependencies of their own, then this
+        // inconsistency is irrelevant.
+        this.#safeError = 'INVALID'
       } else {
         this.#safeError = 'OK'
       }
@@ -787,17 +697,34 @@ class SafeEdge extends Edge {
 
   override reload(hard = false) {
     this.#safeExplanation = null
+
+    // Patch adding newOverrideSet and oldOverrideSet is based on
+    // https://github.com/npm/cli/pull/7025.
+    let newOverrideSet
+    let oldOverrideSet
     if (this.#safeFrom?.overrides) {
-      this.overrides = this.#safeFrom.overrides.getEdgeRule(this)
+      // Patch replacing
+      // this.overrides = this.#safeFrom.overrides.getEdgeRule(this)
+      // is based on https://github.com/npm/cli/pull/7025.
+      const newOverrideSet = this.#safeFrom.overrides.getEdgeRule(this)
+      if (newOverrideSet && !newOverrideSet.isEqual(this.overrides)) {
+        // If there's a new different override set we need to propagate it to
+        // the nodes. If we're deleting the override set then there's no point
+        // propagating it right now since it will be filled with another value
+        // later.
+        oldOverrideSet = this.overrides
+        this.overrides = newOverrideSet
+      }
     } else {
       this.overrides = undefined
     }
     const newTo = this.#safeFrom?.resolve(this.name)
     if (newTo !== this.#safeTo) {
       if (this.#safeTo) {
-        // Instead of `this.#safeTo.edgesIn.delete(this)` we patch based on
-        // https://github.com/npm/cli/pull/7025.
-        deleteEdgeIn(this.#safeTo, this)
+        // Patch replacing
+        // this.#safeTo.edgesIn.delete(this)
+        // is based on https://github.com/npm/cli/pull/7025.
+        this.#safeTo.deleteEdgeIn(this)
       }
       this.#safeTo = <NodeClass>newTo ?? null
       this.#safeError = null
@@ -807,14 +734,22 @@ class SafeEdge extends Edge {
     } else if (hard) {
       this.#safeError = null
     }
+    // Patch adding "else if" condition based on
+    // https://github.com/npm/cli/pull/7025
+    else if (oldOverrideSet) {
+      // Propagate the new override set to the target node.
+      this.#safeTo.updateOverridesEdgeInRemoved(oldOverrideSet)
+      this.#safeTo.updateOverridesEdgeInAdded(newOverrideSet)
+    }
   }
 
   detach() {
     this.#safeExplanation = null
     if (this.#safeTo) {
-      // Instead of `this.#safeTo.edgesIn.delete(this)` we patch based on
-      // https://github.com/npm/cli/pull/7025.
-      deleteEdgeIn(this.#safeTo, this)
+      // Patch replacing
+      // this.#safeTo.edgesIn.delete(this)
+      // is based on https://github.com/npm/cli/pull/7025.
+      this.#safeTo.deleteEdgeIn(this)
     }
     if (this.#safeFrom) {
       this.#safeFrom.edgesOut.delete(this.name)
@@ -835,6 +770,295 @@ class SafeEdge extends Edge {
   }
 }
 
+// Implementation code not related to patch https://github.com/npm/cli/pull/7025
+// is based on https://github.com/npm/cli/blob/v10.9.0/workspaces/arborist/lib/node.js:
+class SafeNode extends Node {
+  // Is it safe to replace one node with another?  check the edges to
+  // make sure no one will get upset.  Note that the node might end up
+  // having its own unmet dependencies, if the new node has new deps.
+  // Note that there are cases where Arborist will opt to insert a node
+  // into the tree even though this function returns false!  This is
+  // necessary when a root dependency is added or updated, or when a
+  // root dependency brings peer deps along with it.  In that case, we
+  // will go ahead and create the invalid state, and then try to resolve
+  // it with more tree construction, because it's a user request.
+  override canReplaceWith(node: NodeClass, ignorePeers?: string[]) {
+    if (this.name !== node.name || this.packageName !== node.packageName) {
+      return false
+    }
+    // Patch replacing
+    // if (node.overrides !== this.overrides) {
+    //   return false
+    // }
+    // is based on https://github.com/npm/cli/pull/7025.
+    //
+    // If this node has no dependencies, then it's irrelevant to check the
+    // override rules of the replacement node.
+    if (this.edgesOut.size) {
+      // XXX need to check for two root nodes?
+      if (node.overrides) {
+        if (!node.overrides.isEqual(this.overrides)) {
+          return false
+        }
+      } else {
+        if (this.overrides) {
+          return false
+        }
+      }
+    }
+    // To satisfy the patch we ensure `node.overrides === this.overrides`
+    // so that the condition we want to replace,
+    // if (this.overrides !== node.overrides) {
+    // , is not hit.`
+    const oldOverrideSet = this.overrides
+    let result = true
+    if (oldOverrideSet !== node.overrides) {
+      this.overrides = node.overrides
+    }
+    try {
+      result = super.canReplaceWith(node, ignorePeers)
+      this.overrides = oldOverrideSet
+    } catch (e) {
+      this.overrides = oldOverrideSet
+      throw e
+    }
+    return result
+  }
+
+  override deleteEdgeIn(edge: SafeEdge) {
+    this.edgesIn.delete(edge)
+    const { overrides } = edge
+    if (overrides) {
+      this.updateOverridesEdgeInRemoved(overrides)
+    }
+  }
+
+  override addEdgeIn(edge: SafeEdge): void {
+    // Patch replacing
+    // if (edge.overrides) {
+    //   this.overrides = edge.overrides
+    // }
+    // is based on https://github.com/npm/cli/pull/7025.
+    //
+    // We need to handle the case where the new edge in has an overrides field
+    // which is different from the current value.
+    if (!this.overrides || !this.overrides.isEqual(edge.overrides)) {
+      this.updateOverridesEdgeInAdded(edge.overrides)
+    }
+    this.edgesIn.add(edge)
+    // Try to get metadata from the yarn.lock file.
+    this.root.meta?.addEdge(edge)
+  }
+
+  // @ts-ignore: Incorrectly typed as a property instead of an accessor.
+  override get overridden() {
+    // Patch replacing
+    // return !!(this.overrides && this.overrides.value && this.overrides.name === this.name)
+    // is based on https://github.com/npm/cli/pull/7025.
+    if (
+      !this.overrides ||
+      !this.overrides.value ||
+      this.overrides.name !== this.name
+    ) {
+      return false
+    }
+    // The overrides rule is for a package with this name, but some override rules
+    // only apply to specific versions. To make sure this package was actually
+    // overridden, we check whether any edge going in had the rule applied to it,
+    // in which case its overrides set is different than its source node.
+    for (const edge of this.edgesIn) {
+      if (this.overrides.isEqual(edge.overrides)) {
+        if (!edge.overrides?.isEqual(edge.from?.overrides)) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  // Patch adding recalculateOutEdgesOverrides is based on
+  // https://github.com/npm/cli/pull/7025.
+  override recalculateOutEdgesOverrides() {
+    // For each edge out propagate the new overrides through.
+    for (const edge of this.edgesOut.values()) {
+      edge.reload(true)
+      if (edge.to) {
+        edge.to.updateOverridesEdgeInAdded(edge.overrides)
+      }
+    }
+  }
+
+  // @ts-ignore: Incorrectly typed to accept null.
+  override set root(newRoot: NodeClass) {
+    // Patch removing
+    // if (!this.overrides && this.parent && this.parent.overrides) {
+    //   this.overrides = this.parent.overrides.getNodeRule(this)
+    // }
+    // is based on https://github.com/npm/cli/pull/7025.
+    //
+    // The "root" setter is a really large and complex function. To satisfy the
+    // patch we add a dummy value to `this.overrides` so that the condition we
+    // want to remove,
+    // if (!this.overrides && this.parent && this.parent.overrides) {
+    // , is not hit.
+    if (!this.overrides) {
+      this.overrides = new OverrideSet({ overrides: '' })
+    }
+    try {
+      super.root = newRoot
+      this.overrides = undefined
+    } catch (e) {
+      this.overrides = undefined
+      throw e
+    }
+  }
+
+  // Patch adding updateOverridesEdgeInAdded is based on
+  // https://github.com/npm/cli/pull/7025.
+  //
+  // This logic isn't perfect either. When we have two edges in that have
+  // different override sets, then we have to decide which set is correct. This
+  // function assumes the more specific override set is applicable, so if we have
+  // dependencies A->B->C and A->C and an override set that specifies what happens
+  // for C under A->B, this will work even if the new A->C edge comes along and
+  // tries to change the override set. The strictly correct logic is not to allow
+  // two edges with different overrides to point to the same node, because even
+  // if this node can satisfy both, one of its dependencies might need to be
+  // different depending on the edge leading to it. However, this might cause a
+  // lot of duplication, because the conflict in the dependencies might never
+  // actually happen.
+  override updateOverridesEdgeInAdded(
+    otherOverrideSet: OverrideSetClass | undefined
+  ) {
+    if (!otherOverrideSet) {
+      // Assuming there are any overrides at all, the overrides field is never
+      // undefined for any node at the end state of the tree. So if the new edge's
+      // overrides is undefined it will be updated later. So we can wait with
+      // updating the node's overrides field.
+      return false
+    }
+    if (!this.overrides) {
+      this.overrides = otherOverrideSet
+      this.recalculateOutEdgesOverrides()
+      return true
+    }
+    if (this.overrides.isEqual(otherOverrideSet)) {
+      return false
+    }
+    const newOverrideSet = findSpecificOverrideSet(
+      this.overrides,
+      otherOverrideSet
+    )
+    if (newOverrideSet) {
+      if (this.overrides.isEqual(newOverrideSet)) {
+        return false
+      }
+      this.overrides = newOverrideSet
+      this.recalculateOutEdgesOverrides()
+      return true
+    }
+    // This is an error condition. We can only get here if the new override set is
+    // in conflict with the existing.
+    console.error('Conflicting override sets')
+    return false
+  }
+
+  // Patch adding updateOverridesEdgeInRemoved is based on
+  // https://github.com/npm/cli/pull/7025.
+  override updateOverridesEdgeInRemoved(otherOverrideSet: OverrideSetClass) {
+    // If this edge's overrides isn't equal to this node's overrides,
+    // then removing it won't change newOverrideSet later.
+    if (!this.overrides || !this.overrides.isEqual(otherOverrideSet)) {
+      return false
+    }
+    let newOverrideSet
+    for (const edge of this.edgesIn) {
+      const { overrides: edgeOverrides } = edge
+      if (newOverrideSet && edgeOverrides) {
+        newOverrideSet = findSpecificOverrideSet(edgeOverrides, newOverrideSet)
+      } else {
+        newOverrideSet = edgeOverrides
+      }
+    }
+    if (this.overrides.isEqual(newOverrideSet)) {
+      return false
+    }
+    this.overrides = newOverrideSet
+    if (newOverrideSet) {
+      // Optimization: If there's any override set at all, then no non-extraneous
+      // node has an empty override set. So if we temporarily have no override set
+      // (for example, we removed all the edges in), there's no use updating all
+      // the edges out right now. Let's just wait until we have an actual override
+      // set later.
+      this.recalculateOutEdgesOverrides()
+    }
+    return true
+  }
+}
+
+// Implementation code not related to patch https://github.com/npm/cli/pull/7025
+// is based on https://github.com/npm/cli/blob/v10.9.0/workspaces/arborist/lib/override-set.js:
+class SafeOverrideSet extends OverrideSet {
+  // Patch adding childrenAreEqual is based on
+  // https://github.com/npm/cli/pull/7025.
+  override childrenAreEqual(otherOverrideSet: OverrideSetClass): boolean {
+    const queue: [OverrideSetClass, OverrideSetClass][] = [
+      [this, otherOverrideSet]
+    ]
+    let pos = 0
+    let { length: queueLength } = queue
+    while (pos < queueLength) {
+      if (pos === LOOP_SENTINEL) {
+        throw new Error('Detected infinite loop while comparing override sets')
+      }
+      const { 0: currSet, 1: currOtherSet } = queue[pos++]!
+      const { children } = currSet
+      const { children: otherChildren } = currOtherSet
+      if (children.size !== otherChildren.size) {
+        return false
+      }
+      for (const key of children.keys()) {
+        if (!otherChildren.has(key)) {
+          return false
+        }
+        const child = <OverrideSetClass>children.get(key)
+        const otherChild = <OverrideSetClass>otherChildren.get(key)
+        if (child!.value !== otherChild!.value) {
+          return false
+        }
+        queue[queueLength++] = [child, otherChild]
+      }
+    }
+    return true
+  }
+
+  // Patch adding isEqual is based on
+  // https://github.com/npm/cli/pull/7025.
+  override isEqual(otherOverrideSet: OverrideSetClass | undefined) {
+    if (this === otherOverrideSet) {
+      return true
+    }
+    if (!otherOverrideSet) {
+      return false
+    }
+    if (
+      this.key !== otherOverrideSet.key ||
+      this.value !== otherOverrideSet.value
+    ) {
+      return false
+    }
+    if (!this.childrenAreEqual(otherOverrideSet)) {
+      return false
+    }
+    if (!this.parent) {
+      return !otherOverrideSet.parent
+    }
+    return this.parent.isEqual(otherOverrideSet.parent)
+  }
+}
+
+// Implementation code not related to our custom behavior is based on
+// https://github.com/npm/cli/blob/v10.9.0/workspaces/arborist/lib/arborist/index.js:
 export class SafeArborist extends Arborist {
   constructor(...ctorArgs: ConstructorParameters<ArboristClass>) {
     const mutedArguments = [
@@ -957,8 +1181,10 @@ export class SafeArborist extends Arborist {
 }
 
 export function installSafeArborist() {
-  require.cache[arboristEdgeClassPath]!.exports = SafeEdge
   require.cache[arboristClassPath]!.exports = SafeArborist
+  require.cache[arboristEdgeClassPath]!.exports = SafeEdge
+  require.cache[arboristNodeClassPath]!.exports = SafeNode
+  require.cache[arboristOverrideSetClassPatch]!.exports = SafeOverrideSet
 }
 
 void (async () => {
@@ -981,11 +1207,7 @@ void (async () => {
         }
       }
       const result = await socketSdk.postSettings(
-        orgs.map(org => {
-          return {
-            organization: org.id
-          }
-        })
+        orgs.map(org => ({ organization: org.id }))
       )
       if (!result.success) {
         throw new Error(
@@ -997,7 +1219,7 @@ void (async () => {
         settings: result.data
       }
     } catch (e: any) {
-      if (typeof e === 'object' && e !== null && 'cause' in e) {
+      if (isObject(e) && 'cause' in e) {
         const { cause } = e
         if (isErrnoException(cause)) {
           if (cause.code === 'ENOTFOUND' || cause.code === 'ECONNREFUSED') {
@@ -1016,7 +1238,7 @@ void (async () => {
   const { orgs, settings } = remoteSettings
   const enforcedOrgs = getSetting('enforcedOrgs') ?? []
 
-  // remove any organizations not being enforced
+  // Remove any organizations not being enforced.
   for (const { 0: i, 1: org } of orgs.entries()) {
     if (!enforcedOrgs.includes(org.id)) {
       settings.entries.splice(i, 1)
