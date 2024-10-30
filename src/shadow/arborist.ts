@@ -10,6 +10,8 @@ import config from '@socketsecurity/config'
 import chalk from 'chalk'
 import isInteractive from 'is-interactive'
 import ora, { spinners } from 'ora'
+import npmPackageArg from 'npm-package-arg'
+import semver from 'semver'
 
 import { API_V0_URL, ENV } from '../constants'
 import { createTTYServer } from './tty-server'
@@ -31,6 +33,7 @@ import type {
   Options as ArboristOptions
 } from '@npmcli/arborist'
 import type { Options as OraOptions } from 'ora'
+import type { AliasResult, RegistryResult } from 'npm-package-arg'
 
 type ArboristClass = typeof BaseArborist & {
   new (...args: any): typeof BaseArborist
@@ -1030,6 +1033,52 @@ class SafeOverrideSet extends OverrideSet {
       }
     }
     return true
+  }
+
+  override getEdgeRule(edge: SafeEdge): OverrideSetClass {
+    for (const rule of this.ruleset.values()) {
+      if (rule.name !== edge.name) {
+        continue
+      }
+      // If keySpec is * we found our override.
+      if (rule.keySpec === '*') {
+        return rule
+      }
+      // Patch replacing
+      // let spec = npa(`${edge.name}@${edge.spec}`)
+      // is based on https://github.com/npm/cli/pull/7025.
+      //
+      // We need to use the rawSpec here, because the spec has the overrides
+      // applied to it already.
+      let spec = npmPackageArg(`${edge.name}@${edge.rawSpec}`)
+      if (spec.type === 'alias') {
+        spec = (<AliasResult>spec).subSpec
+      }
+      if (spec.type === 'git') {
+        if (
+          spec.gitRange &&
+          rule.keySpec &&
+          semver.intersects(spec.gitRange, rule.keySpec)
+        ) {
+          return rule
+        }
+        continue
+      }
+      if (spec.type === 'range' || spec.type === 'version') {
+        if (
+          rule.keySpec &&
+          semver.intersects((<RegistryResult>spec).fetchSpec, rule.keySpec)
+        ) {
+          return rule
+        }
+        continue
+      }
+      // If we got this far, the spec type is one of tag, directory or file
+      // which means we have no real way to make version comparisons, so we
+      // just accept the override.
+      return rule
+    }
+    return this
   }
 
   // Patch adding isEqual is based on
