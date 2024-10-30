@@ -1024,9 +1024,9 @@ class SafeOverrideSet extends OverrideSet {
         if (!otherChildren.has(key)) {
           return false
         }
-        const child = <OverrideSetClass>children.get(key)
-        const otherChild = <OverrideSetClass>otherChildren.get(key)
-        if (child!.value !== otherChild!.value) {
+        const child = children.get(key)!
+        const otherChild = otherChildren.get(key)!
+        if (child.value !== otherChild.value) {
           return false
         }
         queue[queueLength++] = [child, otherChild]
