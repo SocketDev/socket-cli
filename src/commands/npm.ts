@@ -10,8 +10,8 @@ const description = 'npm wrapper functionality'
 export const npm: CliSubcommand = {
   description,
   async run(argv, _importMeta, _ctx) {
-    process.exitCode = 1
     const wrapperPath = path.join(distPath, 'npm-cli.js')
+    process.exitCode = 1
     const spawnPromise = spawn(process.execPath, [wrapperPath, ...argv], {
       stdio: 'inherit'
     })

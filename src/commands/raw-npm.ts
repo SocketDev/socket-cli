@@ -55,7 +55,7 @@ async function setupCommand(
     cli.showHelp()
     return
   }
-  const spawnPromise = spawn('npm', [argv.join(' ')], {
+  const spawnPromise = spawn('npm', <string[]>argv, {
     stdio: 'inherit'
   })
   spawnPromise.process.on('exit', (code, signal) => {
