@@ -3,6 +3,10 @@ export function hasOwn(obj: any, propKey: PropertyKey): boolean {
   return Object.hasOwn(obj, propKey)
 }
 
+export function isObject(value: any): value is object {
+  return value !== null && typeof value === 'object'
+}
+
 export function isObjectObject(value: any): value is { [key: string]: any } {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }

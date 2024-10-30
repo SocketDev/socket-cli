@@ -50,6 +50,10 @@ module.exports = [
     rules: {
       ...sharedRules,
       '@typescript-eslint/no-floating-promises': ['error'],
+      // Define @typescript-eslint/no-misused-new because oxlint defines
+      // "no-misused-new": ["deny"] and trying to eslint-disable it will
+      // cause an eslint "Definition not found" error otherwise.
+      '@typescript-eslint/no-misused-new': ['error'],
       '@typescript-eslint/no-misused-promises': ['error'],
       // Define @typescript-eslint/no-this-alias because oxlint defines
       // "no-this-alias": ["deny"] and trying to eslint-disable it will
