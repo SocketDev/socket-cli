@@ -144,20 +144,24 @@ const updateManifestByAgent: Record<AgentPlusBun, AgentModifyManifestFn> = {
   }
 }
 
-type AgentListDepsFn = (cwd: string, rootPath: string) => Promise<string>
+type AgentListDepsFn = (
+  agentExecPath: string,
+  cwd: string,
+  rootPath: string
+) => Promise<string>
 
 const lsByAgent: Record<AgentPlusBun, AgentListDepsFn> = {
-  async bun(cwd: string, _rootPath: string) {
+  async bun(agentExecPath: string, cwd: string, _rootPath: string) {
     try {
-      return (await spawn('bun', ['pm', 'ls', '--all'], { cwd })).stdout
+      return (await spawn(agentExecPath, ['pm', 'ls', '--all'], { cwd })).stdout
     } catch {}
     return ''
   },
-  async npm(cwd: string, rootPath: string) {
+  async npm(agentExecPath: string, cwd: string, rootPath: string) {
     try {
       ;(
         await spawn(
-          'npm',
+          agentExecPath,
           ['ls', '--parseable', '--include', 'prod', '--all'],
           { cwd }
         )
@@ -167,11 +171,11 @@ const lsByAgent: Record<AgentPlusBun, AgentListDepsFn> = {
     } catch {}
     return ''
   },
-  async pnpm(cwd: string, rootPath: string) {
+  async pnpm(agentExecPath: string, cwd: string, rootPath: string) {
     try {
       return (
         await spawn(
-          'pnpm',
+          agentExecPath,
           ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
           { cwd }
         )
@@ -181,14 +185,16 @@ const lsByAgent: Record<AgentPlusBun, AgentListDepsFn> = {
     } catch {}
     return ''
   },
-  async yarn(cwd: string, _rootPath: string) {
+  async yarn(agentExecPath: string, cwd: string, _rootPath: string) {
     try {
       return (
-        await spawn('yarn', ['info', '--recursive', '--name-only'], { cwd })
+        await spawn(agentExecPath, ['info', '--recursive', '--name-only'], {
+          cwd
+        })
       ).stdout
     } catch {}
     try {
-      return (await spawn('yarn', ['list', '--prod'], { cwd })).stdout
+      return (await spawn(agentExecPath, ['list', '--prod'], { cwd })).stdout
     } catch {}
     return ''
   }
@@ -233,7 +239,7 @@ function getDependencyEntries(pkgJson: PackageJsonContent) {
 }
 
 async function getWorkspaces(
-  agent: Agent,
+  agent: AgentPlusBun,
   pkgPath: string,
   pkgJson: PackageJsonContent
 ): Promise<string[] | undefined> {
@@ -279,7 +285,8 @@ function workspaceToGlobPattern(workspace: string): string {
 }
 
 type AddOverridesConfig = {
-  agent: Agent
+  agent: AgentPlusBun
+  agentExecPath: string
   lockSrc: string
   manifestEntries: ManifestEntry[]
   pkgJson?: EditablePackageJson | undefined
@@ -296,6 +303,7 @@ type AddOverridesState = {
 async function addOverrides(
   {
     agent,
+    agentExecPath,
     lockSrc,
     manifestEntries,
     pkgJson: editablePkgJson,
@@ -315,7 +323,7 @@ async function addOverrides(
   const isRoot = pkgPath === rootPath
   const thingToScan = isRoot
     ? lockSrc
-    : await lsByAgent[agent](pkgPath, rootPath)
+    : await lsByAgent[agent](agentExecPath, pkgPath, rootPath)
   const thingScanner = isRoot
     ? lockIncludesByAgent[agent]
     : depsIncludesByAgent[agent]
@@ -421,6 +429,7 @@ async function addOverrides(
     await pEach(wsPkgJsonPaths, 3, async wsPkgJsonPath => {
       const { added, updated } = await addOverrides({
         agent,
+        agentExecPath,
         lockSrc,
         manifestEntries,
         pin,
@@ -535,7 +544,8 @@ export const optimize: CliSubcommand = {
       )
       await addOverrides(
         {
-          agent: agent === 'bun' ? 'yarn' : agent,
+          agent,
+          agentExecPath,
           lockSrc,
           manifestEntries,
           pin,
