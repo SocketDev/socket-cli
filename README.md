@@ -27,6 +27,7 @@ socket wrapper --enable
   [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides
 
   - `--pin` - Pin overrides to their latest version
+  - `--prod` - Only add overrides for production dependencies
 
 - `socket raw-npm` and `socket raw-npx` - Temporarily disable the Socket
   'safe-npm' wrapper.

@@ -153,47 +153,50 @@ type AgentListDepsFn = (
 const lsByAgent: Record<AgentPlusBun, AgentListDepsFn> = {
   async bun(agentExecPath: string, cwd: string, _rootPath: string) {
     try {
+      // Bun does not support filtering by production packages yet.
+      // https://github.com/oven-sh/bun/issues/8283
       return (await spawn(agentExecPath, ['pm', 'ls', '--all'], { cwd })).stdout
     } catch {}
     return ''
   },
   async npm(agentExecPath: string, cwd: string, rootPath: string) {
     try {
-      ;(
-        await spawn(
-          agentExecPath,
-          ['ls', '--parseable', '--include', 'prod', '--all'],
-          { cwd }
-        )
-      ).stdout
-        .replaceAll(cwd, '')
-        .replaceAll(rootPath, '')
+      let { stdout } = await spawn(
+        agentExecPath,
+        ['ls', '--parseable', '--omit', 'dev', '--all'],
+        { cwd }
+      )
+      stdout = stdout.replaceAll(cwd, '')
+      return rootPath === cwd ? stdout : stdout.replaceAll(rootPath, '')
     } catch {}
     return ''
   },
   async pnpm(agentExecPath: string, cwd: string, rootPath: string) {
     try {
-      return (
-        await spawn(
-          agentExecPath,
-          ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
-          { cwd }
-        )
-      ).stdout
-        .replaceAll(cwd, '')
-        .replaceAll(rootPath, '')
+      let { stdout } = await spawn(
+        agentExecPath,
+        ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
+        { cwd }
+      )
+      stdout = stdout.replaceAll(cwd, '')
+      return rootPath === cwd ? stdout : stdout.replaceAll(rootPath, '')
     } catch {}
     return ''
   },
   async yarn(agentExecPath: string, cwd: string, _rootPath: string) {
     try {
       return (
-        await spawn(agentExecPath, ['info', '--recursive', '--name-only'], {
-          cwd
-        })
-      ).stdout
+        // Yarn Berry does not support filtering by production packages yet.
+        // https://github.com/yarnpkg/berry/issues/5117
+        (
+          await spawn(agentExecPath, ['info', '--recursive', '--name-only'], {
+            cwd
+          })
+        ).stdout
+      )
     } catch {}
     try {
+      // However, Yarn Classic does support it.
       return (await spawn(agentExecPath, ['list', '--prod'], { cwd })).stdout
     } catch {}
     return ''
@@ -291,7 +294,8 @@ type AddOverridesConfig = {
   manifestEntries: ManifestEntry[]
   pkgJson?: EditablePackageJson | undefined
   pkgPath: string
-  pin: boolean
+  pin?: boolean | undefined
+  prod?: boolean | undefined
   rootPath: string
 }
 
@@ -306,9 +310,10 @@ async function addOverrides(
     agentExecPath,
     lockSrc,
     manifestEntries,
+    pin,
     pkgJson: editablePkgJson,
     pkgPath,
-    pin,
+    prod,
     rootPath
   }: AddOverridesConfig,
   state: AddOverridesState = {
@@ -321,10 +326,11 @@ async function addOverrides(
   }
   const pkgJson: Readonly<PackageJsonContent> = editablePkgJson.content
   const isRoot = pkgPath === rootPath
-  const thingToScan = isRoot
+  const isLockScanned = isRoot && !prod
+  const thingToScan = isLockScanned
     ? lockSrc
     : await lsByAgent[agent](agentExecPath, pkgPath, rootPath)
-  const thingScanner = isRoot
+  const thingScanner = isLockScanned
     ? lockIncludesByAgent[agent]
     : depsIncludesByAgent[agent]
   const depEntries = getDependencyEntries(pkgJson)
@@ -377,7 +383,7 @@ async function addOverrides(
         const oldSpec = overrideExists ? overrides[origPkgName] : undefined
         const depAlias = depAliasMap.get(origPkgName)
         const regSpecStartsLike = `npm:${regPkgName}@`
-        let newSpec = `${regSpecStartsLike}${pin ? version : `^${major}`}`
+        let newSpec = `${regSpecStartsLike}^${pin ? version : major}`
         let thisVersion = version
         if (depAlias && type === 'npm') {
           // With npm one may not set an override for a package that one directly
@@ -401,7 +407,7 @@ async function addOverrides(
                   ? version
                   : ((await fetchPackageManifest(thisSpec))?.version ?? version)
             }
-            newSpec = `${regSpecStartsLike}${pin ? thisVersion : `^${semver.major(thisVersion)}`}`
+            newSpec = `${regSpecStartsLike}^${pin ? thisVersion : semver.major(thisVersion)}`
           } else {
             newSpec = oldSpec
           }
@@ -434,6 +440,7 @@ async function addOverrides(
         manifestEntries,
         pin,
         pkgPath: path.dirname(wsPkgJsonPath),
+        prod,
         rootPath
       })
       for (const regPkgName of added) {
@@ -494,7 +501,7 @@ export const optimize: CliSubcommand = {
     if (!commandContext) {
       return
     }
-    const { pin } = commandContext
+    const { pin, prod } = commandContext
     const cwd = process.cwd()
     const {
       agent,
@@ -551,6 +558,7 @@ export const optimize: CliSubcommand = {
           pin,
           pkgJson,
           pkgPath,
+          prod,
           rootPath: pkgPath
         },
         state
@@ -606,6 +614,7 @@ export const optimize: CliSubcommand = {
 
 type CommandContext = {
   pin: boolean
+  prod: boolean
 }
 
 function setupCommand(
@@ -620,6 +629,11 @@ function setupCommand(
       type: 'boolean',
       default: false,
       description: 'Pin overrides to their latest version'
+    },
+    prod: {
+      type: 'boolean',
+      default: false,
+      description: 'Only add overrides for production dependencies'
     }
   }
   const cli = meow(
@@ -640,12 +654,13 @@ function setupCommand(
       flags
     }
   )
-  const { help, pin } = cli.flags
+  const { help, pin, prod } = cli.flags
   if (help) {
     cli.showHelp()
     return
   }
   return <CommandContext>{
-    pin
+    pin,
+    prod
   }
 }
