@@ -28,6 +28,7 @@ import type { PacoteOptions } from 'pacote'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type {
   Agent,
+  AgentPlusBun,
   StringKeyValueObject
 } from '../utils/package-manager-detector'
 
@@ -49,48 +50,35 @@ type GetOverridesResult = {
   overrides: Overrides
 }
 
-const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
+const getOverridesDataByAgent: Record<AgentPlusBun, GetOverrides> = {
+  bun(pkgJson: PackageJsonContent) {
+    const overrides = (pkgJson as any)?.resolutions ?? {}
+    return { type: 'yarn', overrides }
+  },
   // npm overrides documentation:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
-  npm: (pkgJson: PackageJsonContent) => {
+  npm(pkgJson: PackageJsonContent) {
     const overrides = (pkgJson as any)?.overrides ?? {}
     return { type: 'npm', overrides }
   },
   // pnpm overrides documentation:
   // https://pnpm.io/package_json#pnpmoverrides
-  pnpm: (pkgJson: PackageJsonContent) => {
+  pnpm(pkgJson: PackageJsonContent) {
     const overrides = (pkgJson as any)?.pnpm?.overrides ?? {}
     return { type: 'pnpm', overrides }
   },
   // Yarn resolutions documentation:
   // https://yarnpkg.com/configuration/manifest#resolutions
-  yarn: (pkgJson: PackageJsonContent) => {
+  yarn(pkgJson: PackageJsonContent) {
     const overrides = (pkgJson as any)?.resolutions ?? {}
     return { type: 'yarn', overrides }
   }
 }
 
-type LockIncludes = (lockSrc: string, name: string) => boolean
+type AgentLockIncludesFn = (lockSrc: string, name: string) => boolean
 
-const lockIncludesByAgent: Record<Agent, LockIncludes> = {
-  npm: (lockSrc: string, name: string) => {
-    // Detects the package name in the following cases:
-    //   "name":
-    return lockSrc.includes(`"${name}":`)
-  },
-  pnpm: (lockSrc: string, name: string) => {
-    const escapedName = escapeRegExp(name)
-    return new RegExp(
-      // Detects the package name in the following cases:
-      //   /name/
-      //   'name'
-      //   name:
-      //   name@
-      `(?<=^\\s*)(?:(['/])${escapedName}\\1|${escapedName}(?=[:@]))`,
-      'm'
-    ).test(lockSrc)
-  },
-  yarn: (lockSrc: string, name: string) => {
+const lockIncludesByAgent: Record<AgentPlusBun, AgentLockIncludesFn> = (() => {
+  const yarn = (lockSrc: string, name: string) => {
     const escapedName = escapeRegExp(name)
     return new RegExp(
       // Detects the package name in the following cases:
@@ -102,14 +90,40 @@ const lockIncludesByAgent: Record<Agent, LockIncludes> = {
       'm'
     ).test(lockSrc)
   }
-}
+  return {
+    bun: yarn,
+    npm(lockSrc: string, name: string) {
+      // Detects the package name in the following cases:
+      //   "name":
+      return lockSrc.includes(`"${name}":`)
+    },
+    pnpm(lockSrc: string, name: string) {
+      const escapedName = escapeRegExp(name)
+      return new RegExp(
+        // Detects the package name in the following cases:
+        //   /name/
+        //   'name'
+        //   name:
+        //   name@
+        `(?<=^\\s*)(?:(['/])${escapedName}\\1|${escapedName}(?=[:@]))`,
+        'm'
+      ).test(lockSrc)
+    },
+    yarn
+  }
+})()
 
-type ModifyManifest = (
+type AgentModifyManifestFn = (
   pkgJson: EditablePackageJson,
   overrides: Overrides
 ) => void
 
-const updateManifestByAgent: Record<Agent, ModifyManifest> = {
+const updateManifestByAgent: Record<AgentPlusBun, AgentModifyManifestFn> = {
+  bun(pkgJson: EditablePackageJson, overrides: Overrides) {
+    pkgJson.update({
+      [RESOLUTIONS_FIELD_NAME]: <PnpmOrYarnOverrides>overrides
+    })
+  },
   npm(pkgJson: EditablePackageJson, overrides: Overrides) {
     pkgJson.update({
       [OVERRIDES_FIELD_NAME]: overrides
@@ -128,6 +142,65 @@ const updateManifestByAgent: Record<Agent, ModifyManifest> = {
       [RESOLUTIONS_FIELD_NAME]: <PnpmOrYarnOverrides>overrides
     })
   }
+}
+
+type AgentListDepsFn = (cwd: string, rootPath: string) => Promise<string>
+
+const lsByAgent: Record<AgentPlusBun, AgentListDepsFn> = {
+  async bun(cwd: string, _rootPath: string) {
+    try {
+      return (await spawn('bun', ['pm', 'ls', '--all'], { cwd })).stdout
+    } catch {}
+    return ''
+  },
+  async npm(cwd: string, rootPath: string) {
+    try {
+      ;(
+        await spawn(
+          'npm',
+          ['ls', '--parseable', '--include', 'prod', '--all'],
+          { cwd }
+        )
+      ).stdout
+        .replaceAll(cwd, '')
+        .replaceAll(rootPath, '')
+    } catch {}
+    return ''
+  },
+  async pnpm(cwd: string, rootPath: string) {
+    try {
+      return (
+        await spawn(
+          'pnpm',
+          ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
+          { cwd }
+        )
+      ).stdout
+        .replaceAll(cwd, '')
+        .replaceAll(rootPath, '')
+    } catch {}
+    return ''
+  },
+  async yarn(cwd: string, _rootPath: string) {
+    try {
+      return (
+        await spawn('yarn', ['info', '--recursive', '--name-only'], { cwd })
+      ).stdout
+    } catch {}
+    try {
+      return (await spawn('yarn', ['list', '--prod'], { cwd })).stdout
+    } catch {}
+    return ''
+  }
+}
+
+type AgentDepsIncludesFn = (stdout: string, name: string) => boolean
+
+const depsIncludesByAgent: Record<AgentPlusBun, AgentDepsIncludesFn> = {
+  bun: (stdout: string, name: string) => stdout.includes(name),
+  npm: (stdout: string, name: string) => stdout.includes(name),
+  pnpm: (stdout: string, name: string) => stdout.includes(name),
+  yarn: (stdout: string, name: string) => stdout.includes(name)
 }
 
 function getDependencyEntries(pkgJson: PackageJsonContent) {
@@ -207,7 +280,6 @@ function workspaceToGlobPattern(workspace: string): string {
 
 type AddOverridesConfig = {
   agent: Agent
-  lockIncludes: LockIncludes
   lockSrc: string
   manifestEntries: ManifestEntry[]
   pkgJson?: EditablePackageJson | undefined
@@ -224,7 +296,6 @@ type AddOverridesState = {
 async function addOverrides(
   {
     agent,
-    lockIncludes,
     lockSrc,
     manifestEntries,
     pkgJson: editablePkgJson,
@@ -242,6 +313,12 @@ async function addOverrides(
   }
   const pkgJson: Readonly<PackageJsonContent> = editablePkgJson.content
   const isRoot = pkgPath === rootPath
+  const thingToScan = isRoot
+    ? lockSrc
+    : await lsByAgent[agent](pkgPath, rootPath)
+  const thingScanner = isRoot
+    ? lockIncludesByAgent[agent]
+    : depsIncludesByAgent[agent]
   const depEntries = getDependencyEntries(pkgJson)
   const workspaces = await getWorkspaces(agent, pkgPath, pkgJson)
   const isWorkspace = !!workspaces
@@ -268,14 +345,14 @@ async function addOverrides(
         let thisVersion = version
         // Add package aliases for direct dependencies to avoid npm EOVERRIDE errors.
         // https://docs.npmjs.com/cli/v8/using-npm/package-spec#aliases
-        const specStartsWith = `npm:${regPkgName}@`
-        const existingVersion = pkgSpec.startsWith(specStartsWith)
+        const regSpecStartsLike = `npm:${regPkgName}@`
+        const existingVersion = pkgSpec.startsWith(regSpecStartsLike)
           ? (semver.coerce(npa(pkgSpec).rawSpec)?.version ?? '')
           : ''
         if (existingVersion) {
           thisVersion = existingVersion
         } else {
-          pkgSpec = `${specStartsWith}^${version}`
+          pkgSpec = `${regSpecStartsLike}^${version}`
           depObj[origPkgName] = pkgSpec
           state.added.add(regPkgName)
         }
@@ -285,16 +362,14 @@ async function addOverrides(
         })
       }
     }
-    if (!isRoot) {
-      return
-    }
     // Chunk package names to process them in parallel 3 at a time.
     await pEach(overridesDataObjects, 3, async ({ overrides, type }) => {
       const overrideExists = hasOwn(overrides, origPkgName)
-      if (overrideExists || lockIncludes(lockSrc, origPkgName)) {
+      if (overrideExists || thingScanner(thingToScan, origPkgName)) {
         const oldSpec = overrideExists ? overrides[origPkgName] : undefined
         const depAlias = depAliasMap.get(origPkgName)
-        let newSpec = `npm:${regPkgName}@^${pin ? version : major}`
+        const regSpecStartsLike = `npm:${regPkgName}@`
+        let newSpec = `${regSpecStartsLike}^${pin ? version : major}`
         let thisVersion = version
         if (depAlias && type === 'npm') {
           // With npm one may not set an override for a package that one directly
@@ -305,16 +380,23 @@ async function addOverrides(
           // of with a $.
           // https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides
           newSpec = `$${origPkgName}`
-        } else if (overrideExists && pin) {
+        } else if (overrideExists) {
           const thisSpec = oldSpec.startsWith('$')
             ? (depAlias?.id ?? newSpec)
             : (oldSpec ?? newSpec)
-          thisVersion = semver.coerce(npa(thisSpec).rawSpec)?.version ?? version
-          if (semver.major(thisVersion) !== major) {
-            thisVersion =
-              (await fetchPackageManifest(thisSpec))?.version ?? version
+          if (thisSpec.startsWith(regSpecStartsLike)) {
+            if (pin) {
+              thisVersion =
+                semver.major(
+                  semver.coerce(npa(thisSpec).rawSpec)?.version ?? version
+                ) === major
+                  ? version
+                  : ((await fetchPackageManifest(thisSpec))?.version ?? version)
+            }
+            newSpec = `${regSpecStartsLike}^${pin ? thisVersion : semver.major(thisVersion)}`
+          } else {
+            newSpec = oldSpec
           }
-          newSpec = `npm:${regPkgName}@^${pin ? thisVersion : semver.major(thisVersion)}`
         }
         if (newSpec !== oldSpec) {
           if (overrideExists) {
@@ -340,7 +422,6 @@ async function addOverrides(
       const { added, updated } = await addOverrides({
         agent,
         lockSrc,
-        lockIncludes,
         manifestEntries,
         pin,
         pkgPath: path.dirname(wsPkgJsonPath),
@@ -448,8 +529,6 @@ export const optimize: CliSubcommand = {
       updated: new Set()
     }
     if (lockSrc) {
-      const lockIncludes =
-        agent === 'bun' ? lockIncludesByAgent.yarn : lockIncludesByAgent[agent]
       const nodeRange = `>=${minimumNodeVersion}`
       const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
         semver.satisfies(semver.coerce(data.engines.node)!, nodeRange)
@@ -457,7 +536,6 @@ export const optimize: CliSubcommand = {
       await addOverrides(
         {
           agent: agent === 'bun' ? 'yarn' : agent,
-          lockIncludes,
           lockSrc,
           manifestEntries,
           pin,
