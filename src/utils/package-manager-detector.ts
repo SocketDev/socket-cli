@@ -1,5 +1,6 @@
 import path from 'node:path'
 
+import EditablePackageJson from '@npmcli/package-json'
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb'
 import spawn from '@npmcli/promise-spawn'
 import browserslist from 'browserslist'
@@ -7,11 +8,8 @@ import semver from 'semver'
 import which from 'which'
 
 import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
-import { parseJSONObject } from './json'
 import { isObjectObject } from './objects'
 import { isNonEmptyString } from './strings'
-
-import type { Content as PackageJsonContent } from '@npmcli/package-json'
 
 export const AGENTS = ['bun', 'npm', 'pnpm', 'yarn'] as const
 export type AgentPlusBun = (typeof AGENTS)[number]
@@ -82,8 +80,6 @@ const LOCKS: Record<string, string> = {
   'node_modules/.package-lock.json': 'npm'
 }
 
-const PNPM_WORKSPACE = 'pnpm-workspace'
-
 type ReadLockFile = (
   lockPath: string,
   agentExecPath: string
@@ -133,14 +129,11 @@ export type DetectResult = Readonly<{
   agent: AgentPlusBun
   agentExecPath: string
   agentVersion: string | undefined
-  isPrivate: boolean
-  isWorkspace: boolean
   lockPath: string | undefined
   lockSrc: string | undefined
   minimumNodeVersion: string
-  pkgJson: PackageJsonContent | undefined
-  pkgJsonPath: string | undefined
-  pkgJsonStr: string | undefined
+  pkgJson: EditablePackageJson | undefined
+  pkgPath: string | undefined
   supported: boolean
   targets: {
     browser: boolean
@@ -157,20 +150,15 @@ export async function detect({
   const pkgJsonPath = lockPath
     ? path.resolve(lockPath, `${isHiddenLockFile ? '../' : ''}../package.json`)
     : await findUp('package.json', { cwd })
+  const pkgPath = existsSync(pkgJsonPath)
+    ? path.dirname(pkgJsonPath)
+    : undefined
+  const pkgJson = pkgPath ? await EditablePackageJson.load(pkgPath) : undefined
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
-  const pkgJsonStr = existsSync(pkgJsonPath)
-    ? await readFileUtf8(pkgJsonPath)
+  const pkgManager = isNonEmptyString(pkgJson?.content?.packageManager)
+    ? pkgJson.content.packageManager
     : undefined
-  const pkgJson =
-    typeof pkgJsonStr === 'string'
-      ? (parseJSONObject(pkgJsonStr) ?? undefined)
-      : undefined
-  const pkgManager = <string | undefined>(
-    (isNonEmptyString(pkgJson?.['packageManager'])
-      ? pkgJson['packageManager']
-      : undefined)
-  )
 
   let agent: AgentPlusBun | undefined
   let agentVersion: string | undefined
@@ -204,28 +192,22 @@ export async function detect({
     node: true
   }
   let lockSrc: string | undefined
-  let isPrivate = false
-  let isWorkspace = false
   let minimumNodeVersion = maintainedNodeVersions.previous
   if (pkgJson) {
-    const pkgPath = path.dirname(pkgJsonPath!)
-    isPrivate = !!pkgJson['private']
-    isWorkspace =
-      !!pkgJson['workspaces'] ||
-      existsSync(path.join(pkgPath, `${PNPM_WORKSPACE}.yaml`)) ||
-      existsSync(path.join(pkgPath, `${PNPM_WORKSPACE}.yml`))
-    const browserField = pkgJson['browser']
+    const browserField = pkgJson.content.browser
     if (isNonEmptyString(browserField) || isObjectObject(browserField)) {
       targets.browser = true
     }
-    const nodeRange = (pkgJson as any)['engines']?.['node']
+    const nodeRange = pkgJson.content.engines?.['node']
     if (isNonEmptyString(nodeRange)) {
       const coerced = semver.coerce(nodeRange)
       if (coerced && semver.lt(coerced, minimumNodeVersion)) {
         minimumNodeVersion = coerced.version
       }
     }
-    const browserslistQuery = <string[] | undefined>pkgJson['browserslist']
+    const browserslistQuery = <string[] | undefined>(
+      pkgJson.content['browserslist']
+    )
     if (Array.isArray(browserslistQuery)) {
       const browserslistTargets = browserslist(browserslistQuery)
         .map(s => s.toLowerCase())
@@ -258,14 +240,11 @@ export async function detect({
     agent,
     agentExecPath,
     agentVersion,
-    isPrivate,
-    isWorkspace,
     lockPath,
     lockSrc,
     minimumNodeVersion,
     pkgJson,
-    pkgJsonPath,
-    pkgJsonStr,
+    pkgPath,
     supported: targets.browser || targets.node,
     targets
   }

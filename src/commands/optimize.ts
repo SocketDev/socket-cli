@@ -1,3 +1,4 @@
+import fs from 'fs/promises'
 import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
@@ -8,9 +9,12 @@ import npmPackageArg from 'npm-package-arg'
 import ora from 'ora'
 import pacote from 'pacote'
 import semver from 'semver'
+import { glob as tinyGlob } from 'tinyglobby'
+import { parse as yamlParse } from 'yaml'
 
 import { commonFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
+import { existsSync } from '../utils/fs'
 import { hasOwn } from '../utils/objects'
 import { detect } from '../utils/package-manager-detector'
 import { pEach } from '../utils/promises'
@@ -27,12 +31,12 @@ import type {
   StringKeyValueObject
 } from '../utils/package-manager-detector'
 
-const distPath = __dirname
-
 const COMMAND_TITLE = 'Socket Optimize'
 const OVERRIDES_FIELD_NAME = 'overrides'
+const PNPM_WORKSPACE = 'pnpm-workspace'
 const RESOLUTIONS_FIELD_NAME = 'resolutions'
 
+const distPath = __dirname
 const manifestNpmOverrides = getManifestData('npm')!
 const packumentCache = new Map()
 
@@ -101,74 +105,39 @@ const lockIncludesByAgent: Record<Agent, LockIncludes> = {
 }
 
 type ModifyManifest = (
-  editablePkgJson: EditablePackageJson,
+  pkgJson: EditablePackageJson,
   overrides: Overrides
 ) => void
 
-const updateManifestByAgent: Record<Agent, ModifyManifest> = (<any>{
-  __proto__: null,
-  npm(editablePkgJson: EditablePackageJson, overrides: Overrides) {
-    editablePkgJson.update({
-      __proto__: null,
+const updateManifestByAgent: Record<Agent, ModifyManifest> = {
+  npm(pkgJson: EditablePackageJson, overrides: Overrides) {
+    pkgJson.update({
       [OVERRIDES_FIELD_NAME]: overrides
     })
   },
-  pnpm(editablePkgJson: EditablePackageJson, overrides: Overrides) {
-    editablePkgJson.update({
+  pnpm(pkgJson: EditablePackageJson, overrides: Overrides) {
+    pkgJson.update({
       pnpm: {
-        __proto__: null,
-        ...(<object>editablePkgJson.content['pnpm']),
+        ...(<object>pkgJson.content['pnpm']),
         [OVERRIDES_FIELD_NAME]: overrides
       }
     })
   },
-  yarn(editablePkgJson: EditablePackageJson, overrides: PnpmOrYarnOverrides) {
-    editablePkgJson.update({
-      __proto__: null,
-      [RESOLUTIONS_FIELD_NAME]: overrides
+  yarn(pkgJson: EditablePackageJson, overrides: Overrides) {
+    pkgJson.update({
+      [RESOLUTIONS_FIELD_NAME]: <PnpmOrYarnOverrides>overrides
     })
   }
-}) as Record<Agent, ModifyManifest>
-
-type AddOverridesConfig = {
-  agent: Agent
-  isPrivate: boolean
-  isWorkspace: boolean
-  lockIncludes: LockIncludes
-  lockSrc: string
-  manifestEntries: ManifestEntry[]
-  pkgJsonPath: string
-  pin: boolean
 }
 
-type AddOverridesState = {
-  added: Set<string>
-  updated: Set<string>
-}
-
-async function addOverrides(
-  {
-    agent,
-    isPrivate,
-    isWorkspace,
-    lockSrc,
-    lockIncludes,
-    manifestEntries,
-    pkgJsonPath,
-    pin
-  }: AddOverridesConfig,
-  state: AddOverridesState
-): Promise<AddOverridesState> {
-  const editablePkgJson = await EditablePackageJson.load(
-    path.dirname(pkgJsonPath)
-  )
+function getDependencyEntries(pkgJson: PackageJsonContent) {
   const {
     dependencies,
     devDependencies,
-    peerDependencies,
-    optionalDependencies
-  } = editablePkgJson.content
-  const depEntries = <[string, NonNullable<typeof dependencies>][]>[
+    optionalDependencies,
+    peerDependencies
+  } = pkgJson
+  return <[string, NonNullable<typeof dependencies>][]>[
     [
       'dependencies',
       dependencies ? { __proto__: null, ...dependencies } : undefined
@@ -188,19 +157,107 @@ async function addOverrides(
         : undefined
     ]
   ].filter(({ 1: o }) => o)
+}
+
+async function getWorkspaces(
+  agent: Agent,
+  pkgPath: string,
+  pkgJson: PackageJsonContent
+): Promise<string[] | undefined> {
+  if (agent !== 'pnpm') {
+    return Array.isArray(pkgJson['workspaces'])
+      ? <string[]>pkgJson['workspaces'].filter(isNonEmptyString)
+      : undefined
+  }
+  for (const workspacePath of [
+    path.join(pkgPath!, `${PNPM_WORKSPACE}.yaml`),
+    path.join(pkgPath!, `${PNPM_WORKSPACE}.yml`)
+  ]) {
+    if (existsSync(workspacePath)) {
+      let packages
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        packages = yamlParse(await fs.readFile(workspacePath, 'utf8'))?.packages
+      } catch {}
+      if (Array.isArray(packages)) {
+        return packages.filter(isNonEmptyString)
+      }
+    }
+  }
+  return undefined
+}
+
+function workspaceToGlobPattern(workspace: string): string {
+  const { length } = workspace
+  // If the workspace ends with "/"
+  if (workspace.charCodeAt(length - 1) === 47 /*'/'*/) {
+    return `${workspace}/*/package.json`
+  }
+  // If the workspace ends with "/**"
+  if (
+    workspace.charCodeAt(length - 1) === 42 /*'*'*/ &&
+    workspace.charCodeAt(length - 2) === 42 /*'*'*/ &&
+    workspace.charCodeAt(length - 3) === 47 /*'/'*/
+  ) {
+    return `${workspace}/*/**/package.json`
+  }
+  // Things like "packages/a" or "packages/*"
+  return `${workspace}/package.json`
+}
+
+type AddOverridesConfig = {
+  agent: Agent
+  lockIncludes: LockIncludes
+  lockSrc: string
+  manifestEntries: ManifestEntry[]
+  pkgJson?: EditablePackageJson | undefined
+  pkgPath: string
+  pin: boolean
+  rootPath: string
+}
+
+type AddOverridesState = {
+  added: Set<string>
+  updated: Set<string>
+}
+
+async function addOverrides(
+  {
+    agent,
+    lockIncludes,
+    lockSrc,
+    manifestEntries,
+    pkgJson: editablePkgJson,
+    pkgPath,
+    pin,
+    rootPath
+  }: AddOverridesConfig,
+  state: AddOverridesState = {
+    added: new Set(),
+    updated: new Set()
+  }
+): Promise<AddOverridesState> {
+  if (editablePkgJson === undefined) {
+    editablePkgJson = await EditablePackageJson.load(pkgPath)
+  }
+  const pkgJson: Readonly<PackageJsonContent> = editablePkgJson.content
+  const isRoot = pkgPath === rootPath
+  const depEntries = getDependencyEntries(pkgJson)
+  const workspaces = await getWorkspaces(agent, pkgPath, pkgJson)
+  const isWorkspace = !!workspaces
   const overridesDataObjects = <GetOverridesResult[]>[]
-  if (isPrivate || isWorkspace) {
-    overridesDataObjects.push(
-      getOverridesDataByAgent[agent](editablePkgJson.content)
-    )
+  if (pkgJson['private'] || isWorkspace) {
+    overridesDataObjects.push(getOverridesDataByAgent[agent](pkgJson))
   } else {
     overridesDataObjects.push(
-      getOverridesDataByAgent['npm'](editablePkgJson.content),
-      getOverridesDataByAgent['yarn'](editablePkgJson.content)
+      getOverridesDataByAgent['npm'](pkgJson),
+      getOverridesDataByAgent['yarn'](pkgJson)
     )
   }
+  const spinner = isRoot
+    ? ora('Fetching override manifests...').start()
+    : undefined
   const depAliasMap = new Map<string, { id: string; version: string }>()
-  const spinner = ora(`Fetching override manifests...`).start()
   // Chunk package names to process them in parallel 3 at a time.
   await pEach(manifestEntries, 3, async ({ 1: data }) => {
     const { name: regPkgName, package: origPkgName, version } = data
@@ -226,6 +283,9 @@ async function addOverrides(
           version: thisVersion
         })
       }
+    }
+    if (!isRoot) {
+      return
     }
     // Chunk package names to process them in parallel 3 at a time.
     await pEach(overridesDataObjects, 3, async ({ overrides, type }) => {
@@ -263,7 +323,34 @@ async function addOverrides(
       }
     })
   })
-  spinner.stop()
+  if (workspaces) {
+    const wsPkgJsonPaths = await tinyGlob(
+      workspaces.map(workspaceToGlobPattern),
+      {
+        absolute: true,
+        cwd: pkgPath!
+      }
+    )
+    // Chunk package names to process them in parallel 3 at a time.
+    await pEach(wsPkgJsonPaths, 3, async wsPkgJsonPath => {
+      const { added, updated } = await addOverrides({
+        agent,
+        lockSrc,
+        lockIncludes,
+        manifestEntries,
+        pin,
+        pkgPath: path.dirname(wsPkgJsonPath),
+        rootPath
+      })
+      for (const regPkgName of added) {
+        state.added.add(regPkgName)
+      }
+      for (const regPkgName of updated) {
+        state.updated.add(regPkgName)
+      }
+    })
+  }
+  spinner?.stop()
   if (state.added.size || state.updated.size) {
     editablePkgJson.update(<PackageJsonContent>Object.fromEntries(depEntries))
     for (const { overrides, type } of overridesDataObjects) {
@@ -318,13 +405,11 @@ export const optimize: CliSubcommand = {
     const {
       agent,
       agentExecPath,
-      isPrivate,
-      isWorkspace,
       lockSrc,
       lockPath,
       minimumNodeVersion,
-      pkgJsonPath,
       pkgJson,
+      pkgPath,
       supported
     } = await detect({
       cwd,
@@ -345,7 +430,7 @@ export const optimize: CliSubcommand = {
       console.log(`✘ ${COMMAND_TITLE}: No ${lockName} found`)
       return
     }
-    if (pkgJson === undefined) {
+    if (pkgPath === undefined) {
       console.log(`✘ ${COMMAND_TITLE}: No package.json found`)
       return
     }
@@ -354,7 +439,6 @@ export const optimize: CliSubcommand = {
         `⚠️ ${COMMAND_TITLE}: Package ${lockName} found at ${lockPath}`
       )
     }
-
     const state: AddOverridesState = {
       added: new Set(),
       updated: new Set()
@@ -369,13 +453,13 @@ export const optimize: CliSubcommand = {
       await addOverrides(
         {
           agent: agent === 'bun' ? 'yarn' : agent,
-          isPrivate,
-          isWorkspace,
           lockIncludes,
           lockSrc,
           manifestEntries,
           pin,
-          pkgJsonPath
+          pkgJson,
+          pkgPath,
+          rootPath: pkgPath
         },
         state
       )
