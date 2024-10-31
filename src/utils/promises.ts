@@ -1,7 +1,7 @@
 import { arrayChunk } from './arrays'
 
 type pOptions = { signal: AbortSignal }
-type pEachCallback = (value: any, options?: pOptions) => Promise<void>
+type pEachCallback = (value: any, options?: pOptions) => Promise<any>
 
 export async function pEach<T>(
   array: T[],
