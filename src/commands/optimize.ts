@@ -5,7 +5,7 @@ import spawn from '@npmcli/promise-spawn'
 import EditablePackageJson from '@npmcli/package-json'
 import { getManifestData } from '@socketsecurity/registry'
 import meow from 'meow'
-import npmPackageArg from 'npm-package-arg'
+import npa from 'npm-package-arg'
 import ora from 'ora'
 import pacote from 'pacote'
 import semver from 'semver'
@@ -261,6 +261,7 @@ async function addOverrides(
   // Chunk package names to process them in parallel 3 at a time.
   await pEach(manifestEntries, 3, async ({ 1: data }) => {
     const { name: regPkgName, package: origPkgName, version } = data
+    const major = semver.major(version)
     for (const { 1: depObj } of depEntries) {
       let pkgSpec = depObj[origPkgName]
       if (pkgSpec) {
@@ -269,7 +270,7 @@ async function addOverrides(
         // https://docs.npmjs.com/cli/v8/using-npm/package-spec#aliases
         const specStartsWith = `npm:${regPkgName}@`
         const existingVersion = pkgSpec.startsWith(specStartsWith)
-          ? (semver.coerce(npmPackageArg(pkgSpec).rawSpec)?.version ?? '')
+          ? (semver.coerce(npa(pkgSpec).rawSpec)?.version ?? '')
           : ''
         if (existingVersion) {
           thisVersion = existingVersion
@@ -291,27 +292,30 @@ async function addOverrides(
     await pEach(overridesDataObjects, 3, async ({ overrides, type }) => {
       const overrideExists = hasOwn(overrides, origPkgName)
       if (overrideExists || lockIncludes(lockSrc, origPkgName)) {
-        // With npm one may not set an override for a package that one directly
-        // depends on unless both the dependency and the override itself share
-        // the exact same spec. To make this limitation easier to deal with,
-        // overrides may also be defined as a reference to a spec for a direct
-        // dependency by prefixing the name of the package to match the version
-        // of with a $.
-        // https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides
-        const oldSpec = overrides[origPkgName]
+        const oldSpec = overrideExists ? overrides[origPkgName] : undefined
         const depAlias = depAliasMap.get(origPkgName)
-        const thisVersion =
-          overrideExists && isNonEmptyString(oldSpec)
-            ? ((
-                await fetchPackageManifest(
-                  oldSpec.startsWith('$') ? (depAlias?.id ?? oldSpec) : oldSpec
-                )
-              )?.version ?? version)
-            : version
-        const newSpec =
-          depAlias && type === 'npm'
-            ? `$${origPkgName}`
-            : `npm:${regPkgName}@^${pin ? thisVersion : semver.major(thisVersion)}`
+        let newSpec = `npm:${regPkgName}@^${pin ? version : major}`
+        let thisVersion = version
+        if (depAlias && type === 'npm') {
+          // With npm one may not set an override for a package that one directly
+          // depends on unless both the dependency and the override itself share
+          // the exact same spec. To make this limitation easier to deal with,
+          // overrides may also be defined as a reference to a spec for a direct
+          // dependency by prefixing the name of the package to match the version
+          // of with a $.
+          // https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides
+          newSpec = `$${origPkgName}`
+        } else if (overrideExists && pin) {
+          const thisSpec = oldSpec.startsWith('$')
+            ? (depAlias?.id ?? newSpec)
+            : (oldSpec ?? newSpec)
+          thisVersion = semver.coerce(npa(thisSpec).rawSpec)?.version ?? version
+          if (semver.major(thisVersion) !== major) {
+            thisVersion =
+              (await fetchPackageManifest(thisSpec))?.version ?? version
+          }
+          newSpec = `npm:${regPkgName}@^${pin ? thisVersion : semver.major(thisVersion)}`
+        }
         if (newSpec !== oldSpec) {
           if (overrideExists) {
             state.updated.add(regPkgName)
