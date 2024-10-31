@@ -464,7 +464,7 @@ export const optimize: CliSubcommand = {
         state
       )
     }
-    const pkgJsonChanged = state.updated.size > 0 || state.updated.size > 0
+    const pkgJsonChanged = state.added.size > 0 || state.updated.size > 0
     if (state.updated.size > 0) {
       console.log(
         `Updated ${state.updated.size} Socket.dev optimized overrides ${state.added.size ? '.' : '🚀'}`
