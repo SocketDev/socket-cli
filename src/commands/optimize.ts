@@ -369,7 +369,7 @@ async function addOverrides(
         const oldSpec = overrideExists ? overrides[origPkgName] : undefined
         const depAlias = depAliasMap.get(origPkgName)
         const regSpecStartsLike = `npm:${regPkgName}@`
-        let newSpec = `${regSpecStartsLike}^${pin ? version : major}`
+        let newSpec = `${regSpecStartsLike}${pin ? version : `^${major}`}`
         let thisVersion = version
         if (depAlias && type === 'npm') {
           // With npm one may not set an override for a package that one directly
@@ -393,7 +393,7 @@ async function addOverrides(
                   ? version
                   : ((await fetchPackageManifest(thisSpec))?.version ?? version)
             }
-            newSpec = `${regSpecStartsLike}^${pin ? thisVersion : semver.major(thisVersion)}`
+            newSpec = `${regSpecStartsLike}${pin ? thisVersion : `^${semver.major(thisVersion)}`}`
           } else {
             newSpec = oldSpec
           }
