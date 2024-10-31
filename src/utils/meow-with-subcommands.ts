@@ -59,7 +59,6 @@ export async function meowWithSubcommands(
     }
   }
   const flags = {
-    __proto__: null,
     ...commonFlags,
     ...additionalOptions.flags
   }

@@ -79,6 +79,7 @@
     "tinyglobby": "^0.2.10",
     "which": "^5.0.0",
     "write-file-atomic": "^6.0.0",
+    "yaml": "^2.6.0",
     "yargs-parser": "^21.1.1"
   },
   "devDependencies": {
@@ -145,9 +146,6 @@
     "validate-npm-package-name": "^6.0.0"
   },
   "overrides": {
-    "@cyclonedx/cdxgen": {
-      "packageurl-js": "https://registry.npmjs.org/packageurl-js/-/packageurl-js-2.0.1.tgz"
-    },
     "aggregate-error": "npm:@socketregistry/aggregate-error@^1",
     "es-define-property": "npm:@socketregistry/es-define-property@^1",
     "function-bind": "npm:@socketregistry/function-bind@^1",
@@ -161,12 +159,14 @@
     "is-core-module": "npm:@socketregistry/is-core-module@^1",
     "isarray": "npm:@socketregistry/isarray@^1",
     "npm-package-arg": "$npm-package-arg",
+    "packageurl-js": "https://registry.npmjs.org/packageurl-js/-/packageurl-js-2.0.1.tgz",
     "path-parse": "npm:@socketregistry/path-parse@^1",
     "safe-buffer": "npm:@socketregistry/safe-buffer@^1",
     "safer-buffer": "npm:@socketregistry/safer-buffer@^1",
     "semver": "$semver",
     "set-function-length": "npm:@socketregistry/set-function-length@^1",
-    "side-channel": "npm:@socketregistry/side-channel@^1"
+    "side-channel": "npm:@socketregistry/side-channel@^1",
+    "yaml": "$yaml"
   },
   "resolutions": {
     "aggregate-error": "npm:@socketregistry/aggregate-error@^1",
@@ -182,12 +182,14 @@
     "is-core-module": "npm:@socketregistry/is-core-module@^1",
     "isarray": "npm:@socketregistry/isarray@^1",
     "npm-package-arg": "^12.0.0",
+    "packageurl-js": "https://registry.npmjs.org/packageurl-js/-/packageurl-js-2.0.1.tgz",
     "path-parse": "npm:@socketregistry/path-parse@^1",
     "safe-buffer": "npm:@socketregistry/safe-buffer@^1",
     "safer-buffer": "npm:@socketregistry/safer-buffer@^1",
     "semver": "^7.6.3",
     "set-function-length": "npm:@socketregistry/set-function-length@^1",
-    "side-channel": "npm:@socketregistry/side-channel@^1"
+    "side-channel": "npm:@socketregistry/side-channel@^1",
+    "yaml": "^2.6.0"
   },
   "engines": {
     "node": "^20.9.0 || >=22.0.0"

@@ -153,7 +153,6 @@ export const cdxgen: CliSubcommand = {
   description: 'Create an SBOM with CycloneDX generator (cdxgen)',
   async run(argv_) {
     const yargv = <any>{
-      __proto__: null,
       ...yargsParse(<string[]>argv_, yargsConfig)
     }
     const unknown: string[] = yargv._
