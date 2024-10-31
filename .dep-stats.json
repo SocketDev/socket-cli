@@ -21,6 +21,7 @@
     "synp": "^1.9.13",
     "tinyglobby": "^0.2.10",
     "which": "^5.0.0",
+    "yaml": "^2.6.0",
     "yargs-parser": "^21.1.1"
   },
   "devDependencies": {},
@@ -116,6 +117,7 @@
     "tinyglobby": "^0.2.10",
     "which": "^5.0.0",
     "write-file-atomic": "^6.0.0",
+    "yaml": "^2.6.0",
     "yargs-parser": "^21.1.1"
   },
   "transitives": {
