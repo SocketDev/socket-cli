@@ -42,13 +42,9 @@ async function globWithGitIgnore(
     socketConfig,
     cwd = process.cwd(),
     ...additionalOptions
-  } = <GlobWithGitIgnoreOptions>{
-    __proto__: null,
-    ...options
-  }
+  } = <GlobWithGitIgnoreOptions>{ __proto__: null, ...options }
   const projectIgnorePaths = socketConfig?.projectIgnorePaths
-  const ignoreFiles = await tinyGlob(['**/.gitignore'], <GlobOptions>{
-    __proto__: null,
+  const ignoreFiles = await tinyGlob(['**/.gitignore'], {
     absolute: true,
     cwd,
     expandDirectories: true
@@ -76,7 +72,6 @@ async function globWithGitIgnore(
   ]
   const hasNegatedPattern = ignores.some(p => p.charCodeAt(0) === 33 /*'!'*/)
   const globOptions = {
-    __proto__: null,
     absolute: true,
     cwd,
     expandDirectories: false,

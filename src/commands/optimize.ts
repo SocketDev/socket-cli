@@ -283,7 +283,6 @@ async function fetchPackageManifest(
   options?: FetchPackageManifestOptions
 ) {
   const pacoteOptions = <PacoteOptions & { signal?: AbortSignal }>{
-    __proto__: null,
     ...options,
     packumentCache,
     preferOffline: true
@@ -368,8 +367,7 @@ export const optimize: CliSubcommand = {
         semver.satisfies(semver.coerce(data.engines.node)!, nodeRange)
       )
       await addOverrides(
-        <AddOverridesConfig>{
-          __proto__: null,
+        {
           agent: agent === 'bun' ? 'yarn' : agent,
           isPrivate,
           isWorkspace,
@@ -404,11 +402,10 @@ export const optimize: CliSubcommand = {
           const wrapperPath = path.join(distPath, 'npm-cli.js')
           await spawn(process.execPath, [wrapperPath, 'install'], {
             stdio: 'pipe',
-            env: (<unknown>{
-              __proto__: null,
+            env: {
               ...process.env,
               UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: '1'
-            }) as NodeJS.ProcessEnv
+            }
           })
         } else {
           await spawn(agentExecPath, ['install'], { stdio: 'pipe' })
@@ -442,7 +439,6 @@ function setupCommand(
   importMeta: ImportMeta
 ): CommandContext | undefined {
   const flags: { [key: string]: any } = {
-    __proto__: null,
     ...commonFlags,
     pin: {
       type: 'boolean',

@@ -77,7 +77,6 @@ function setupCommand(
   importMeta: ImportMeta
 ): CommandContext | undefined {
   const flags: { [key: string]: any } = {
-    __proto__: null,
     ...commonFlags,
     ...outputFlags,
     ...threatFeedFlags
