@@ -10,7 +10,7 @@ import config from '@socketsecurity/config'
 import chalk from 'chalk'
 import isInteractive from 'is-interactive'
 import ora, { spinners } from 'ora'
-import npmPackageArg from 'npm-package-arg'
+import npa from 'npm-package-arg'
 import semver from 'semver'
 
 import { API_V0_URL, ENV } from '../constants'
@@ -1050,7 +1050,7 @@ class SafeOverrideSet extends OverrideSet {
       //
       // We need to use the rawSpec here, because the spec has the overrides
       // applied to it already.
-      let spec = npmPackageArg(`${edge.name}@${edge.rawSpec}`)
+      let spec = npa(`${edge.name}@${edge.rawSpec}`)
       if (spec.type === 'alias') {
         spec = (<AliasResult>spec).subSpec
       }
