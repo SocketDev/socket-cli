@@ -11,9 +11,17 @@ import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
 import { isObjectObject } from './objects'
 import { isNonEmptyString } from './strings'
 
-export const AGENTS = ['bun', 'npm', 'pnpm', 'yarn'] as const
-export type AgentPlusBun = (typeof AGENTS)[number]
-export type Agent = Exclude<AgentPlusBun, 'bun'>
+import type { Content as PackageJsonContent } from '@npmcli/package-json'
+import type { SemVer } from 'semver'
+
+export const AGENTS = [
+  'bun',
+  'npm',
+  'pnpm',
+  'yarn/berry',
+  'yarn/classic'
+] as const
+export type Agent = (typeof AGENTS)[number]
 export type StringKeyValueObject = { [key: string]: string }
 
 const numericCollator = new Intl.Collator(undefined, {
@@ -61,11 +69,11 @@ const maintainedNodeVersions = (() => {
   )
 })()
 
-const LOCKS: Record<string, string> = {
+const LOCKS: Record<string, Agent> = {
   'bun.lockb': 'bun',
   'pnpm-lock.yaml': 'pnpm',
   'pnpm-lock.yml': 'pnpm',
-  'yarn.lock': 'yarn',
+  'yarn.lock': 'yarn/classic',
   // If both package-lock.json and npm-shrinkwrap.json are present in the root
   // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
   // will be ignored.
@@ -85,7 +93,7 @@ type ReadLockFile = (
   agentExecPath: string
 ) => Promise<string | undefined>
 
-const readLockFileByAgent: Record<AgentPlusBun, ReadLockFile> = (() => {
+const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
   function wrapReader(
     reader: (
       lockPath: string,
@@ -112,11 +120,12 @@ const readLockFileByAgent: Record<AgentPlusBun, ReadLockFile> = (() => {
       } catch {}
       // To print a Yarn lockfile to your console without writing it to disk use `bun bun.lockb`.
       // https://bun.sh/guides/install/yarnlock
-      return (await spawn(agentExecPath, [lockPath])).stdout
+      return (await spawn(agentExecPath, [lockPath])).stdout.trim()
     }),
     npm: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath)),
     pnpm: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath)),
-    yarn: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath))
+    'yarn/berry': wrapReader(async (lockPath: string) => await readFileUtf8(lockPath)),
+    'yarn/classic': wrapReader(async (lockPath: string) => await readFileUtf8(lockPath))
   }
 })()
 
@@ -126,9 +135,9 @@ export type DetectOptions = {
 }
 
 export type DetectResult = Readonly<{
-  agent: AgentPlusBun
+  agent: Agent
   agentExecPath: string
-  agentVersion: string | undefined
+  agentVersion: SemVer | undefined
   lockPath: string | undefined
   lockSrc: string | undefined
   minimumNodeVersion: string
@@ -153,23 +162,27 @@ export async function detect({
   const pkgPath = existsSync(pkgJsonPath)
     ? path.dirname(pkgJsonPath)
     : undefined
-  const pkgJson = pkgPath ? await EditablePackageJson.load(pkgPath) : undefined
+  const editablePkgJson = pkgPath
+    ? await EditablePackageJson.load(pkgPath)
+    : undefined
+  const pkgJson: Readonly<PackageJsonContent> | undefined =
+    editablePkgJson?.content
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
-  const pkgManager = isNonEmptyString(pkgJson?.content?.packageManager)
-    ? pkgJson.content.packageManager
+  const pkgManager = isNonEmptyString(pkgJson?.packageManager)
+    ? pkgJson.packageManager
     : undefined
 
-  let agent: AgentPlusBun | undefined
-  let agentVersion: string | undefined
+  let agent: Agent | undefined
+  let agentVersion: SemVer | undefined
   if (pkgManager) {
     const atSignIndex = pkgManager.lastIndexOf('@')
     if (atSignIndex !== -1) {
-      const name = <AgentPlusBun>pkgManager.slice(0, atSignIndex)
+      const name = <Agent>pkgManager.slice(0, atSignIndex)
       const version = pkgManager.slice(atSignIndex + 1)
       if (version && AGENTS.includes(name)) {
         agent = name
-        agentVersion = version
+        agentVersion = semver.coerce(version) ?? undefined
       }
     }
   }
@@ -179,14 +192,25 @@ export async function detect({
     typeof pkgJsonPath === 'string' &&
     typeof lockPath === 'string'
   ) {
-    agent = <AgentPlusBun>LOCKS[path.basename(lockPath)]
+    agent = <Agent>LOCKS[path.basename(lockPath)]
   }
   if (agent === undefined) {
     agent = 'npm'
     onUnknown?.(pkgManager)
   }
-
   const agentExecPath = (await which(agent, { nothrow: true })) ?? agent
+  if (agentVersion === undefined) {
+    try {
+      agentVersion =
+        semver.coerce(
+          // All package managers support the "--version" flag.
+          (await spawn(agentExecPath, ['--version'], { cwd })).stdout
+        ) ?? undefined
+    } catch {}
+  }
+  if (agent === 'yarn/classic' && (agentVersion?.major ?? 0) > 1) {
+    agent = 'yarn/berry'
+  }
   const targets = {
     browser: false,
     node: true
@@ -194,20 +218,18 @@ export async function detect({
   let lockSrc: string | undefined
   let minimumNodeVersion = maintainedNodeVersions.previous
   if (pkgJson) {
-    const browserField = pkgJson.content.browser
+    const browserField = pkgJson.browser
     if (isNonEmptyString(browserField) || isObjectObject(browserField)) {
       targets.browser = true
     }
-    const nodeRange = pkgJson.content.engines?.['node']
+    const nodeRange = pkgJson.engines?.['node']
     if (isNonEmptyString(nodeRange)) {
       const coerced = semver.coerce(nodeRange)
       if (coerced && semver.lt(coerced, minimumNodeVersion)) {
         minimumNodeVersion = coerced.version
       }
     }
-    const browserslistQuery = <string[] | undefined>(
-      pkgJson.content['browserslist']
-    )
+    const browserslistQuery = <string[] | undefined>pkgJson['browserslist']
     if (Array.isArray(browserslistQuery)) {
       const browserslistTargets = browserslist(browserslistQuery)
         .map(s => s.toLowerCase())
@@ -243,7 +265,7 @@ export async function detect({
     lockPath,
     lockSrc,
     minimumNodeVersion,
-    pkgJson,
+    pkgJson: editablePkgJson,
     pkgPath,
     supported: targets.browser || targets.node,
     targets

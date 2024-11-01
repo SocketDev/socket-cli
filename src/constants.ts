@@ -1,3 +1,5 @@
+import pacote from 'pacote'
+
 function envAsBoolean(value: any): boolean {
   return (
     typeof value === 'string' &&
@@ -13,3 +15,15 @@ export const ENV = Object.freeze({
     process.env['UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE']
   )
 })
+
+export const packumentCache = new Map()
+
+const { constructor: PacoteFetcherBase } = Reflect.getPrototypeOf(
+  (pacote as any).RegistryFetcher.prototype
+)!
+export const pacoteCachePath = (
+  new (PacoteFetcherBase as new (...args: any[]) => string)(
+    /*dummy package spec*/ 'x',
+    {}
+  ) as any
+).cache
