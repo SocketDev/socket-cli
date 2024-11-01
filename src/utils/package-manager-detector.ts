@@ -124,8 +124,12 @@ const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
     }),
     npm: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath)),
     pnpm: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath)),
-    'yarn/berry': wrapReader(async (lockPath: string) => await readFileUtf8(lockPath)),
-    'yarn/classic': wrapReader(async (lockPath: string) => await readFileUtf8(lockPath))
+    'yarn/berry': wrapReader(
+      async (lockPath: string) => await readFileUtf8(lockPath)
+    ),
+    'yarn/classic': wrapReader(
+      async (lockPath: string) => await readFileUtf8(lockPath)
+    )
   }
 })()
 
