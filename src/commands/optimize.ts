@@ -650,7 +650,9 @@ export const optimize: CliSubcommand = {
         )
       }
       if (state.added.size > 0) {
-        console.log(`Added ${state.added.size} Socket.dev optimized overrides 🚀`)
+        console.log(
+          `Added ${state.added.size} Socket.dev optimized overrides 🚀`
+        )
       }
     } else {
       console.log('Congratulations! Already Socket.dev optimized 🎉')
