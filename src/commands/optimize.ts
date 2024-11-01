@@ -4,6 +4,7 @@ import path from 'node:path'
 import spawn from '@npmcli/promise-spawn'
 import EditablePackageJson from '@npmcli/package-json'
 import { getManifestData } from '@socketsecurity/registry'
+//import cacache from 'cacache'
 import meow from 'meow'
 import npa from 'npm-package-arg'
 import ora from 'ora'
@@ -12,6 +13,8 @@ import semver from 'semver'
 import { glob as tinyGlob } from 'tinyglobby'
 import { parse as yamlParse } from 'yaml'
 
+//import { packumentCache, pacoteCachePath } from '../constants'
+import { packumentCache } from '../constants'
 import { commonFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
 import { existsSync } from '../utils/fs'
@@ -24,11 +27,11 @@ import { isNonEmptyString } from '../utils/strings'
 
 import type { Content as PackageJsonContent } from '@npmcli/package-json'
 import type { ManifestEntry } from '@socketsecurity/registry'
+import type { Ora } from 'ora'
 import type { PacoteOptions } from 'pacote'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type {
   Agent,
-  AgentPlusBun,
   StringKeyValueObject
 } from '../utils/package-manager-detector'
 
@@ -39,7 +42,6 @@ const RESOLUTIONS_FIELD_NAME = 'resolutions'
 
 const distPath = __dirname
 const manifestNpmOverrides = getManifestData('npm')!
-const packumentCache = new Map()
 
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
@@ -50,10 +52,10 @@ type GetOverridesResult = {
   overrides: Overrides
 }
 
-const getOverridesDataByAgent: Record<AgentPlusBun, GetOverrides> = {
+const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
   bun(pkgJson: PackageJsonContent) {
     const overrides = (pkgJson as any)?.resolutions ?? {}
-    return { type: 'yarn', overrides }
+    return { type: 'yarn/berry', overrides }
   },
   // npm overrides documentation:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
@@ -69,15 +71,21 @@ const getOverridesDataByAgent: Record<AgentPlusBun, GetOverrides> = {
   },
   // Yarn resolutions documentation:
   // https://yarnpkg.com/configuration/manifest#resolutions
-  yarn(pkgJson: PackageJsonContent) {
+  'yarn/berry'(pkgJson: PackageJsonContent) {
     const overrides = (pkgJson as any)?.resolutions ?? {}
-    return { type: 'yarn', overrides }
+    return { type: 'yarn/berry', overrides }
+  },
+  // Yarn resolutions documentation:
+  // https://classic.yarnpkg.com/en/docs/selective-version-resolutions
+  'yarn/classic'(pkgJson: PackageJsonContent) {
+    const overrides = (pkgJson as any)?.resolutions ?? {}
+    return { type: 'yarn/classic', overrides }
   }
 }
 
 type AgentLockIncludesFn = (lockSrc: string, name: string) => boolean
 
-const lockIncludesByAgent: Record<AgentPlusBun, AgentLockIncludesFn> = (() => {
+const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
   const yarn = (lockSrc: string, name: string) => {
     const escapedName = escapeRegExp(name)
     return new RegExp(
@@ -109,7 +117,8 @@ const lockIncludesByAgent: Record<AgentPlusBun, AgentLockIncludesFn> = (() => {
         'm'
       ).test(lockSrc)
     },
-    yarn
+    'yarn/berry': yarn,
+    'yarn/classic': yarn
   }
 })()
 
@@ -118,7 +127,7 @@ type AgentModifyManifestFn = (
   overrides: Overrides
 ) => void
 
-const updateManifestByAgent: Record<AgentPlusBun, AgentModifyManifestFn> = {
+const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = {
   bun(pkgJson: EditablePackageJson, overrides: Overrides) {
     pkgJson.update({
       [RESOLUTIONS_FIELD_NAME]: <PnpmOrYarnOverrides>overrides
@@ -137,7 +146,12 @@ const updateManifestByAgent: Record<AgentPlusBun, AgentModifyManifestFn> = {
       }
     })
   },
-  yarn(pkgJson: EditablePackageJson, overrides: Overrides) {
+  'yarn/berry'(pkgJson: EditablePackageJson, overrides: Overrides) {
+    pkgJson.update({
+      [RESOLUTIONS_FIELD_NAME]: <PnpmOrYarnOverrides>overrides
+    })
+  },
+  'yarn/classic'(pkgJson: EditablePackageJson, overrides: Overrides) {
     pkgJson.update({
       [RESOLUTIONS_FIELD_NAME]: <PnpmOrYarnOverrides>overrides
     })
@@ -150,7 +164,7 @@ type AgentListDepsFn = (
   rootPath: string
 ) => Promise<string>
 
-const lsByAgent: Record<AgentPlusBun, AgentListDepsFn> = {
+const lsByAgent: Record<Agent, AgentListDepsFn> = {
   async bun(agentExecPath: string, cwd: string, _rootPath: string) {
     try {
       // Bun does not support filtering by production packages yet.
@@ -166,8 +180,10 @@ const lsByAgent: Record<AgentPlusBun, AgentListDepsFn> = {
         ['ls', '--parseable', '--omit', 'dev', '--all'],
         { cwd }
       )
+      stdout = stdout.trim()
       stdout = stdout.replaceAll(cwd, '')
-      return rootPath === cwd ? stdout : stdout.replaceAll(rootPath, '')
+      stdout = rootPath === cwd ? stdout : stdout.replaceAll(rootPath, '')
+      return stdout.replaceAll('\\', '/')
     } catch {}
     return ''
   },
@@ -178,12 +194,14 @@ const lsByAgent: Record<AgentPlusBun, AgentListDepsFn> = {
         ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
         { cwd }
       )
+      stdout = stdout.trim()
       stdout = stdout.replaceAll(cwd, '')
-      return rootPath === cwd ? stdout : stdout.replaceAll(rootPath, '')
+      stdout = rootPath === cwd ? stdout : stdout.replaceAll(rootPath, '')
+      return stdout.replaceAll('\\', '/')
     } catch {}
     return ''
   },
-  async yarn(agentExecPath: string, cwd: string, _rootPath: string) {
+  async 'yarn/berry'(agentExecPath: string, cwd: string, _rootPath: string) {
     try {
       return (
         // Yarn Berry does not support filtering by production packages yet.
@@ -192,12 +210,20 @@ const lsByAgent: Record<AgentPlusBun, AgentListDepsFn> = {
           await spawn(agentExecPath, ['info', '--recursive', '--name-only'], {
             cwd
           })
-        ).stdout
+        ).stdout.trim()
       )
     } catch {}
+    return ''
+  },
+  async 'yarn/classic'(agentExecPath: string, cwd: string, _rootPath: string) {
     try {
       // However, Yarn Classic does support it.
-      return (await spawn(agentExecPath, ['list', '--prod'], { cwd })).stdout
+      // https://github.com/yarnpkg/yarn/releases/tag/v1.0.0
+      // > Fix: Excludes dev dependencies from the yarn list output when the
+      //   environment is production
+      return (
+        await spawn(agentExecPath, ['list', '--prod'], { cwd })
+      ).stdout.trim()
     } catch {}
     return ''
   }
@@ -205,11 +231,12 @@ const lsByAgent: Record<AgentPlusBun, AgentListDepsFn> = {
 
 type AgentDepsIncludesFn = (stdout: string, name: string) => boolean
 
-const depsIncludesByAgent: Record<AgentPlusBun, AgentDepsIncludesFn> = {
-  bun: (stdout: string, name: string) => stdout.includes(name),
-  npm: (stdout: string, name: string) => stdout.includes(name),
-  pnpm: (stdout: string, name: string) => stdout.includes(name),
-  yarn: (stdout: string, name: string) => stdout.includes(name)
+const depsIncludesByAgent: Record<Agent, AgentDepsIncludesFn> = {
+  bun: (stdout: string, name: string) => stdout.includes(` ${name}@`),
+  npm: (stdout: string, name: string) => stdout.includes(`/${name}\n`),
+  pnpm: (stdout: string, name: string) => stdout.includes(`/${name}\n`),
+  'yarn/berry': (stdout: string, name: string) => stdout.includes(` ${name}@`),
+  'yarn/classic': (stdout: string, name: string) => stdout.includes(` ${name}@`)
 }
 
 function getDependencyEntries(pkgJson: PackageJsonContent) {
@@ -242,7 +269,7 @@ function getDependencyEntries(pkgJson: PackageJsonContent) {
 }
 
 async function getWorkspaces(
-  agent: AgentPlusBun,
+  agent: Agent,
   pkgPath: string,
   pkgJson: PackageJsonContent
 ): Promise<string[] | undefined> {
@@ -288,7 +315,7 @@ function workspaceToGlobPattern(workspace: string): string {
 }
 
 type AddOverridesConfig = {
-  agent: AgentPlusBun
+  agent: Agent
   agentExecPath: string
   lockSrc: string
   manifestEntries: ManifestEntry[]
@@ -301,6 +328,7 @@ type AddOverridesConfig = {
 
 type AddOverridesState = {
   added: Set<string>
+  spinner?: Ora | undefined
   updated: Set<string>
 }
 
@@ -318,12 +346,14 @@ async function addOverrides(
   }: AddOverridesConfig,
   state: AddOverridesState = {
     added: new Set(),
+    spinner: undefined,
     updated: new Set()
   }
 ): Promise<AddOverridesState> {
   if (editablePkgJson === undefined) {
     editablePkgJson = await EditablePackageJson.load(pkgPath)
   }
+  const { spinner } = state
   const pkgJson: Readonly<PackageJsonContent> = editablePkgJson.content
   const isRoot = pkgPath === rootPath
   const isLockScanned = isRoot && !prod
@@ -342,12 +372,12 @@ async function addOverrides(
   } else {
     overridesDataObjects.push(
       getOverridesDataByAgent['npm'](pkgJson),
-      getOverridesDataByAgent['yarn'](pkgJson)
+      getOverridesDataByAgent['yarn/classic'](pkgJson)
     )
   }
-  const spinner = isRoot
-    ? ora('Fetching override manifests...').start()
-    : undefined
+  if (spinner) {
+    spinner.text = `Adding overrides${isRoot ? '' : ` to ${path.relative(rootPath, pkgPath)}`}...`
+  }
   const depAliasMap = new Map<string, { id: string; version: string }>()
   // Chunk package names to process them in parallel 3 at a time.
   await pEach(manifestEntries, 3, async ({ 1: data }) => {
@@ -428,21 +458,29 @@ async function addOverrides(
       workspaces.map(workspaceToGlobPattern),
       {
         absolute: true,
-        cwd: pkgPath!
+        cwd: pkgPath!,
+        ignore: ['**/node_modules/**', '**/bower_components/**']
       }
     )
     // Chunk package names to process them in parallel 3 at a time.
     await pEach(wsPkgJsonPaths, 3, async wsPkgJsonPath => {
-      const { added, updated } = await addOverrides({
-        agent,
-        agentExecPath,
-        lockSrc,
-        manifestEntries,
-        pin,
-        pkgPath: path.dirname(wsPkgJsonPath),
-        prod,
-        rootPath
-      })
+      const { added, updated } = await addOverrides(
+        {
+          agent,
+          agentExecPath,
+          lockSrc,
+          manifestEntries,
+          pin,
+          pkgPath: path.dirname(wsPkgJsonPath),
+          prod,
+          rootPath
+        },
+        {
+          added: new Set(),
+          spinner,
+          updated: new Set()
+        }
+      )
       for (const regPkgName of added) {
         state.added.add(regPkgName)
       }
@@ -451,8 +489,7 @@ async function addOverrides(
       }
     })
   }
-  spinner?.stop()
-  if (state.added.size || state.updated.size) {
+  if (state.added.size > 0 || state.updated.size > 0) {
     editablePkgJson.update(<PackageJsonContent>Object.fromEntries(depEntries))
     for (const { overrides, type } of overridesDataObjects) {
       updateManifestByAgent[type](editablePkgJson, toSortedObject(overrides))
@@ -461,6 +498,34 @@ async function addOverrides(
   }
   return state
 }
+
+// type ExtractOptions = pacote.Options & {
+//   tmpPrefix?: string
+//   [key: string]: any
+// }
+
+// async function extractPackage(pkgNameOrId: string, options: ExtractOptions | undefined, callback: (tmpDirPath: string) => any) {
+//   if (arguments.length === 2 && typeof options === 'function') {
+//     callback = options
+//     options = undefined
+//   }
+//   const { tmpPrefix, ...extractOptions } = { __proto__: null, ...options }
+//   // cacache.tmp.withTmp DOES return a promise.
+//   await cacache.tmp.withTmp(
+//     pacoteCachePath,
+//     { tmpPrefix },
+//     // eslint-disable-next-line @typescript-eslint/no-misused-promises
+//     async tmpDirPath => {
+//       await pacote.extract(pkgNameOrId, tmpDirPath, {
+//         __proto__: null,
+//         packumentCache,
+//         preferOffline: true,
+//         ...<Omit<typeof extractOptions, '__proto__'>>extractOptions
+//       })
+//       await callback(tmpDirPath)
+//     }
+//   )
+// }
 
 type FetchPackageManifestOptions = {
   signal?: AbortSignal
@@ -506,6 +571,7 @@ export const optimize: CliSubcommand = {
     const {
       agent,
       agentExecPath,
+      agentVersion,
       lockSrc,
       lockPath,
       minimumNodeVersion,
@@ -535,15 +601,24 @@ export const optimize: CliSubcommand = {
       console.log(`✘ ${COMMAND_TITLE}: No package.json found`)
       return
     }
+    if (prod && (agent === 'bun' || agent === 'yarn/berry')) {
+      console.log(
+        `✘ ${COMMAND_TITLE}: --prod not supported for ${agent}${agentVersion ? `@${agentVersion.toString()}` : ''}`
+      )
+      return
+    }
     if (lockPath && path.relative(cwd, lockPath).startsWith('.')) {
       console.log(
         `⚠️ ${COMMAND_TITLE}: Package ${lockName} found at ${lockPath}`
       )
     }
+    const spinner = ora('Socket optimizing...')
     const state: AddOverridesState = {
       added: new Set(),
+      spinner,
       updated: new Set()
     }
+    spinner.start()
     if (lockSrc) {
       const nodeRange = `>=${minimumNodeVersion}`
       const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
@@ -580,18 +655,23 @@ export const optimize: CliSubcommand = {
     if (isNpm || pkgJsonChanged) {
       // Always update package-lock.json until the npm overrides PR lands:
       // https://github.com/npm/cli/pull/7025
-      const spinner = ora(`Updating ${lockName}...`).start()
+      spinner.text = `Updating ${lockName}...`
       try {
         if (isNpm) {
           const wrapperPath = path.join(distPath, 'npm-cli.js')
-          await spawn(process.execPath, [wrapperPath, 'install'], {
-            stdio: 'pipe',
-            env: {
-              ...process.env,
-              UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: '1'
+          await spawn(
+            process.execPath,
+            [wrapperPath, 'install', '--no-audit', '--no-fund'],
+            {
+              stdio: 'pipe',
+              env: {
+                ...process.env,
+                UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: '1'
+              }
             }
-          })
+          )
         } else {
+          // All package managers support the "install" command.
           await spawn(agentExecPath, ['install'], { stdio: 'pipe' })
         }
         spinner.stop()
