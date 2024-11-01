@@ -597,6 +597,10 @@ export const optimize: CliSubcommand = {
       console.log(`✘ ${COMMAND_TITLE}: No ${lockName} found`)
       return
     }
+    if (lockSrc.trim() === '') {
+      console.log(`✘ ${COMMAND_TITLE}: ${lockName} is empty`)
+      return
+    }
     if (pkgPath === undefined) {
       console.log(`✘ ${COMMAND_TITLE}: No package.json found`)
       return
@@ -619,43 +623,43 @@ export const optimize: CliSubcommand = {
       updated: new Set()
     }
     spinner.start()
-    if (lockSrc) {
-      const nodeRange = `>=${minimumNodeVersion}`
-      const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
-        semver.satisfies(semver.coerce(data.engines.node)!, nodeRange)
-      )
-      await addOverrides(
-        {
-          agent,
-          agentExecPath,
-          lockSrc,
-          manifestEntries,
-          pin,
-          pkgJson,
-          pkgPath,
-          prod,
-          rootPath: pkgPath
-        },
-        state
-      )
-    }
+    const nodeRange = `>=${minimumNodeVersion}`
+    const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
+      semver.satisfies(semver.coerce(data.engines.node)!, nodeRange)
+    )
+    await addOverrides(
+      {
+        agent,
+        agentExecPath,
+        lockSrc,
+        manifestEntries,
+        pin,
+        pkgJson,
+        pkgPath,
+        prod,
+        rootPath: pkgPath
+      },
+      state
+    )
+    spinner.stop()
     const pkgJsonChanged = state.added.size > 0 || state.updated.size > 0
-    if (state.updated.size > 0) {
-      console.log(
-        `Updated ${state.updated.size} Socket.dev optimized overrides ${state.added.size ? '.' : '🚀'}`
-      )
-    }
-    if (state.added.size > 0) {
-      console.log(`Added ${state.added.size} Socket.dev optimized overrides 🚀`)
-    }
-    if (!pkgJsonChanged) {
+    if (pkgJsonChanged) {
+      if (state.updated.size > 0) {
+        console.log(
+          `Updated ${state.updated.size} Socket.dev optimized overrides ${state.added.size ? '.' : '🚀'}`
+        )
+      }
+      if (state.added.size > 0) {
+        console.log(`Added ${state.added.size} Socket.dev optimized overrides 🚀`)
+      }
+    } else {
       console.log('Congratulations! Already Socket.dev optimized 🎉')
     }
     const isNpm = agent === 'npm'
     if (isNpm || pkgJsonChanged) {
       // Always update package-lock.json until the npm overrides PR lands:
       // https://github.com/npm/cli/pull/7025
-      spinner.text = `Updating ${lockName}...`
+      spinner.start(`Updating ${lockName}...`)
       try {
         if (isNpm) {
           const wrapperPath = path.join(distPath, 'npm-cli.js')
