@@ -4,8 +4,8 @@ import { ErrorWithCause } from 'pony-cause'
 import { AuthError } from './errors'
 
 import type {
-  SocketSdkOperations,
-  SocketSdkErrorType
+  SocketSdkErrorType,
+  SocketSdkOperations
 } from '@socketsecurity/sdk'
 import type { Ora } from 'ora'
 import { API_V0_URL } from '../constants'

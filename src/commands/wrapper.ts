@@ -64,7 +64,7 @@ function setupCommand(
     }
     return
   }
-  const { enable, disable } = cli.flags
+  const { disable, enable } = cli.flags
   let showHelp = cli.flags['help']
   if (!enable && !disable) {
     showHelp = true

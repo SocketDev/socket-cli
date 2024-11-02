@@ -37,8 +37,8 @@ export async function meowWithSubcommands(
   const {
     aliases = {},
     argv,
-    name,
     importMeta,
+    name,
     ...additionalOptions
   } = { __proto__: null, ...options }
   const [commandOrAliasName, ...rawCommandArgv] = argv

@@ -57,12 +57,12 @@ function createNonStandardTTYServer(): TTYSeverResult {
               conn.removeListener('data', awaitCapture)
               conn.push(lineBuff.slice(eolIndex + 1))
               const {
-                ipc_version: remote_ipc_version,
                 capabilities: {
+                  colorLevel: ipcColorLevel,
                   input: hasInput,
-                  output: hasOutput,
-                  colorLevel: ipcColorLevel
-                }
+                  output: hasOutput
+                },
+                ipc_version: remote_ipc_version
               } = JSON.parse(lineBuff.slice(0, eolIndex).toString('utf-8'))
               lineBuff = null
               captured = true

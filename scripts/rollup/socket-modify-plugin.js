@@ -4,10 +4,10 @@ const { createFilter } = require('@rollup/pluginutils')
 const MagicString = require('magic-string')
 
 function socketModifyPlugin({
-  find,
-  replace,
-  include,
   exclude,
+  find,
+  include,
+  replace,
   sourcemap = true
 }) {
   const filter = createFilter(include, exclude)

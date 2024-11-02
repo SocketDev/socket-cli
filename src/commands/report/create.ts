@@ -1,7 +1,7 @@
 import path from 'node:path'
 
 import { betterAjvErrors } from '@apideck/better-ajv-errors'
-import { readSocketConfig, SocketValidationError } from '@socketsecurity/config'
+import { SocketValidationError, readSocketConfig } from '@socketsecurity/config'
 import meow from 'meow'
 import ora from 'ora'
 import { ErrorWithCause } from 'pony-cause'

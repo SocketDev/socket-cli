@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@apideck/better-ajv-errors": "^0.3.6",
-    "@cyclonedx/cdxgen": "^10.10.7",
+    "@cyclonedx/cdxgen": "^10.11.0",
     "@inquirer/prompts": "^7.0.1",
     "@npmcli/package-json": "6.0.1",
     "@npmcli/promise-spawn": "^8.0.2",
@@ -78,7 +78,7 @@
   },
   "external": {
     "@apideck/better-ajv-errors": "^0.3.6",
-    "@cyclonedx/cdxgen": "^10.10.7",
+    "@cyclonedx/cdxgen": "^10.11.0",
     "@inquirer/prompts": "^7.0.1",
     "@npmcli/package-json": "6.0.1",
     "@npmcli/promise-spawn": "^8.0.2",

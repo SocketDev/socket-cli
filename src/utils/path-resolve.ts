@@ -39,8 +39,8 @@ async function globWithGitIgnore(
   options: GlobWithGitIgnoreOptions
 ) {
   const {
-    socketConfig,
     cwd = process.cwd(),
+    socketConfig,
     ...additionalOptions
   } = <GlobWithGitIgnoreOptions>{ __proto__: null, ...options }
   const projectIgnorePaths = socketConfig?.projectIgnorePaths

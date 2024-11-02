@@ -101,7 +101,7 @@ function setupCommand(
       flags
     }
   )
-  const { before, after } = cli.flags
+  const { after, before } = cli.flags
   let showHelp = cli.flags['help']
   if (!before || !after) {
     showHelp = true
@@ -131,7 +131,7 @@ function setupCommand(
 }
 
 async function getDiffScan(
-  { before, after, orgSlug, file, outputJson }: CommandContext,
+  { after, before, file, orgSlug, outputJson }: CommandContext,
   spinner: Ora,
   apiKey: string
 ): Promise<void> {

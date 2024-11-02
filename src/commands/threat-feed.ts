@@ -103,12 +103,12 @@ function setupCommand(
   )
 
   const {
+    direction,
+    filter,
     json: outputJson,
     markdown: outputMarkdown,
-    perPage: per_page,
     page,
-    direction,
-    filter
+    perPage: per_page
   } = cli.flags
 
   return <CommandContext>{
@@ -133,7 +133,7 @@ type ThreatResult = {
 }
 
 async function fetchThreatFeed(
-  { per_page, page, direction, filter, outputJson }: CommandContext,
+  { direction, filter, outputJson, page, per_page }: CommandContext,
   spinner: Ora,
   apiKey: string
 ): Promise<void> {
