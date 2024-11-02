@@ -25,6 +25,7 @@ socket wrapper --enable
 
 - `socket optimize` - Optimize dependencies with
   [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides
+  _(👀 [our blog post](https://socket.dev/blog/introducing-socket-optimize)!)_
 
   - `--pin` - Pin overrides to their latest version
   - `--prod` - Only add overrides for production dependencies
@@ -33,7 +34,7 @@ socket wrapper --enable
   'safe-npm' wrapper.
 
 - `socket report create <path(s)-to-folder-or-file>` - creates a report on
-  [socket.dev](https://socket.dev/)
+  [Socket.dev](https://socket.dev/)
 
   Upload the specified `package.json` and lock files for JavaScript, Python, and
   Go dependency manifests. If any folder is specified, the ones found in there
