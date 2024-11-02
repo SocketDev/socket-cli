@@ -85,8 +85,8 @@ function setupCommand(
 
   const {
     json: outputJson,
-    markdown: outputMarkdown,
     limit,
+    markdown: outputMarkdown,
     offset
   } = cli.flags
 

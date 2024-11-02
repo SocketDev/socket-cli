@@ -9,7 +9,7 @@ import {
 } from '../utils/api-helpers'
 import { ChalkOrMarkdown } from '../utils/chalk-markdown'
 import { InputError } from '../utils/errors'
-import { getSeverityCount, formatSeverityCount } from '../utils/format-issues'
+import { formatSeverityCount, getSeverityCount } from '../utils/format-issues'
 import { printFlagList } from '../utils/formatting'
 import { objectSome } from '../utils/objects'
 import { FREE_API_KEY, getDefaultKey, setupSdk } from '../utils/sdk'
@@ -172,7 +172,7 @@ async function fetchPackageData(
 }
 
 function formatPackageDataOutput(
-  { data, severityCount, score }: PackageData,
+  { data, score, severityCount }: PackageData,
   {
     name,
     outputJson,

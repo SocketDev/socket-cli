@@ -2,10 +2,11 @@
 
 const path = require('node:path')
 
-const eslintPluginUnicorn = require('eslint-plugin-unicorn')
 const { includeIgnoreFile } = require('@eslint/compat')
 const js = require('@eslint/js')
 const nodePlugin = require('eslint-plugin-n')
+const sortDestructureKeysPlugin = require('eslint-plugin-sort-destructure-keys')
+const unicornPlugin = require('eslint-plugin-unicorn')
 const tsEslint = require('typescript-eslint')
 const tsParser = require('@typescript-eslint/parser')
 
@@ -13,15 +14,19 @@ const gitignorePath = path.resolve(__dirname, '.gitignore')
 const prettierignorePath = path.resolve(__dirname, '.prettierignore')
 
 const sharedPlugins = {
-  unicorn: eslintPluginUnicorn
+  'sort-destructure-keys': sortDestructureKeysPlugin,
+  unicorn: unicornPlugin
 }
 
 const sharedRules = {
   'no-await-in-loop': ['error'],
-  'no-empty': ['error', { allowEmptyCatch: true }],
   'no-control-regex': ['error'],
+  'no-empty': ['error', { allowEmptyCatch: true }],
   'no-new': ['error'],
+  'no-proto': ['error'],
   'no-warning-comments': ['warn', { terms: ['fixme'] }],
+  'sort-destructure-keys/sort-destructure-keys': ['error'],
+  'sort-imports': ['error', { ignoreDeclarationSort: true }],
   'unicorn/consistent-function-scoping': ['error']
 }
 
@@ -49,6 +54,10 @@ module.exports = [
     },
     rules: {
       ...sharedRules,
+      // Define @typescript-eslint/no-extraneous-class because oxlint defines
+      // "no-extraneous-class": ["deny"] and trying to eslint-disable it will
+      // cause an eslint "Definition not found" error otherwise.
+      '@typescript-eslint/no-extraneous-class': ['error'],
       '@typescript-eslint/no-floating-promises': ['error'],
       // Define @typescript-eslint/no-misused-new because oxlint defines
       // "no-misused-new": ["deny"] and trying to eslint-disable it will
@@ -88,6 +97,15 @@ module.exports = [
     rules: {
       ...js.configs.recommended.rules,
       ...sharedRules,
+      'n/exports-style': ['error', 'module.exports'],
+      // The n/no-unpublished-bin rule does does not support non-trivial glob
+      // patterns used in package.json "files" fields. In those cases we simplify
+      // the glob patterns used.
+      'n/no-unpublished-bin': ['error'],
+      'n/no-unsupported-features/es-builtins': ['error'],
+      'n/no-unsupported-features/es-syntax': ['error'],
+      'n/no-unsupported-features/node-builtins': ['error'],
+      'n/prefer-node-protocol': ['error'],
       'no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_|^this$', ignoreRestSiblings: true }

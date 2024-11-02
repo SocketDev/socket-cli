@@ -20,17 +20,17 @@ import { createIssueUXLookup } from '../utils/issue-rules'
 import { isErrnoException } from '../utils/misc'
 import { isObject } from '../utils/objects'
 import { findRoot } from '../utils/path-resolve'
-import { getDefaultKey, FREE_API_KEY, setupSdk } from '../utils/sdk'
+import { FREE_API_KEY, getDefaultKey, setupSdk } from '../utils/sdk'
 import { getSetting } from '../utils/settings'
 
 import type { Writable } from 'node:stream'
 import type {
+  Options as ArboristOptions,
   Arborist as BaseArborist,
-  DependencyProblem,
-  Diff,
   Edge as BaseEdge,
   Node as BaseNode,
-  Options as ArboristOptions
+  DependencyProblem,
+  Diff
 } from '@npmcli/arborist'
 import type { Options as OraOptions } from 'ora'
 import type { AliasResult, RegistryResult } from 'npm-package-arg'

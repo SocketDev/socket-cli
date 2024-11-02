@@ -11,8 +11,8 @@ import {
 import { ChalkOrMarkdown } from '../../utils/chalk-markdown'
 import { InputError } from '../../utils/errors'
 import {
-  getSeverityCount,
-  formatSeverityCount
+  formatSeverityCount,
+  getSeverityCount
 } from '../../utils/format-issues'
 import { printFlagList } from '../../utils/formatting'
 import { setupSdk } from '../../utils/sdk'

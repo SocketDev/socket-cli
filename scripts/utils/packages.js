@@ -8,7 +8,7 @@ const vm = require('node:vm')
 const normalizePackageData = require('normalize-package-data')
 const validatePackageName = require('validate-npm-package-name')
 
-const { normalizePath, isRelative } = require('./path')
+const { isRelative, normalizePath } = require('./path')
 const { findUpSync } = require('./fs')
 
 const { createRequire, isBuiltin } = Module

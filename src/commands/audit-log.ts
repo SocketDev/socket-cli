@@ -1,4 +1,4 @@
-import { select, Separator } from '@inquirer/prompts'
+import { Separator, select } from '@inquirer/prompts'
 import chalk from 'chalk'
 import meow from 'meow'
 import ora from 'ora'

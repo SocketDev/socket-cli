@@ -171,7 +171,7 @@ async function setupCommand(
     supportedFiles,
     debugLog
   )
-  const { repo: repoName, branch: branchName } = cli.flags
+  const { branch: branchName, repo: repoName } = cli.flags
   if (!repoName || !branchName || !packagePaths.length) {
     showHelp = true
     console.error(`${chalk.white.bgRed('Input error')}: Please provide the required fields:\n
@@ -205,14 +205,14 @@ async function createFullScan(
 ): Promise<void> {
   const socketSdk = await setupSdk(apiKey)
   const {
-    orgSlug,
-    repoName,
     branchName,
     commitMessage,
     defaultBranch,
+    orgSlug,
+    packagePaths,
     pendingHead,
-    tmp,
-    packagePaths
+    repoName,
+    tmp
   } = input
 
   const result = await handleApiCall(

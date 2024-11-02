@@ -8,7 +8,7 @@ const { describe, it } = require('node:test')
 const testPath = __dirname
 const entryPath = path.resolve(testPath, '../dist/cli.js')
 
-function spawnNPM({ cwd, installDir, args = [] }) {
+function spawnNPM({ args = [], cwd, installDir }) {
   return spawnSync(process.execPath, [entryPath, 'npm', ...args], {
     cwd: path.join(testPath, cwd),
     encoding: 'utf8',
