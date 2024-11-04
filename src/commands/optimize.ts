@@ -69,6 +69,10 @@ const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
     const overrides = (pkgJson as any)?.pnpm?.overrides ?? {}
     return { type: 'pnpm', overrides }
   },
+  vlt(pkgJson: PackageJsonContent) {
+    const overrides = (pkgJson as any)?.overrides ?? {}
+    return { type: 'vlt', overrides }
+  },
   // Yarn resolutions documentation:
   // https://yarnpkg.com/configuration/manifest#resolutions
   'yarn/berry'(pkgJson: PackageJsonContent) {
@@ -117,6 +121,11 @@ const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
         'm'
       ).test(lockSrc)
     },
+    vlt(lockSrc: string, name: string) {
+      // Detects the package name in the following cases:
+      //   "name"
+      return lockSrc.includes(`"${name}"`)
+    },
     'yarn/berry': yarn,
     'yarn/classic': yarn
   }
@@ -127,36 +136,36 @@ type AgentModifyManifestFn = (
   overrides: Overrides
 ) => void
 
-const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = {
-  bun(pkgJson: EditablePackageJson, overrides: Overrides) {
-    pkgJson.update({
-      [RESOLUTIONS_FIELD_NAME]: <PnpmOrYarnOverrides>overrides
-    })
-  },
-  npm(pkgJson: EditablePackageJson, overrides: Overrides) {
+const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
+  function updateOverrides(pkgJson: EditablePackageJson, overrides: Overrides) {
     pkgJson.update({
       [OVERRIDES_FIELD_NAME]: overrides
     })
-  },
-  pnpm(pkgJson: EditablePackageJson, overrides: Overrides) {
-    pkgJson.update({
-      pnpm: {
-        ...(<object>pkgJson.content['pnpm']),
-        [OVERRIDES_FIELD_NAME]: overrides
-      }
-    })
-  },
-  'yarn/berry'(pkgJson: EditablePackageJson, overrides: Overrides) {
-    pkgJson.update({
-      [RESOLUTIONS_FIELD_NAME]: <PnpmOrYarnOverrides>overrides
-    })
-  },
-  'yarn/classic'(pkgJson: EditablePackageJson, overrides: Overrides) {
+  }
+  function updateResolutions(
+    pkgJson: EditablePackageJson,
+    overrides: Overrides
+  ) {
     pkgJson.update({
       [RESOLUTIONS_FIELD_NAME]: <PnpmOrYarnOverrides>overrides
     })
   }
-}
+  return {
+    bun: updateResolutions,
+    npm: updateOverrides,
+    pnpm(pkgJson: EditablePackageJson, overrides: Overrides) {
+      pkgJson.update({
+        pnpm: {
+          ...(<object>pkgJson.content['pnpm']),
+          [OVERRIDES_FIELD_NAME]: overrides
+        }
+      })
+    },
+    vlt: updateOverrides,
+    'yarn/berry': updateResolutions,
+    'yarn/classic': updateResolutions
+  }
+})()
 
 type AgentListDepsOptions = {
   npmExecPath?: string
@@ -251,6 +260,16 @@ const lsByAgent = (() => {
       }
       return stdout
     },
+    async vlt(agentExecPath: string, cwd: string) {
+      try {
+        return (
+          await spawn(agentExecPath!, ['ls', '--view', 'human', ':not(.dev)'], {
+            cwd
+          })
+        ).stdout
+      } catch {}
+      return ''
+    },
     async 'yarn/berry'(agentExecPath: string, cwd: string) {
       try {
         return (
@@ -286,6 +305,7 @@ const depsIncludesByAgent: Record<Agent, AgentDepsIncludesFn> = {
   bun: (stdout: string, name: string) => stdout.includes(` ${name}@`),
   npm: (stdout: string, name: string) => stdout.includes(`/${name}\n`),
   pnpm: (stdout: string, name: string) => stdout.includes(`/${name}\n`),
+  vlt: (stdout: string, name: string) => stdout.includes(` ${name}@`),
   'yarn/berry': (stdout: string, name: string) => stdout.includes(` ${name}@`),
   'yarn/classic': (stdout: string, name: string) => stdout.includes(` ${name}@`)
 }
@@ -660,6 +680,12 @@ export const optimize: CliSubcommand = {
     if (!supported) {
       console.log(
         `✘ ${COMMAND_TITLE}: No supported Node or browser range detected`
+      )
+      return
+    }
+    if (agent === 'vlt') {
+      console.log(
+        `✘ ${COMMAND_TITLE}: ${agent} does not support overrides. Soon, though ⚡`
       )
       return
     }

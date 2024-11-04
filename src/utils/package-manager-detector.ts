@@ -19,7 +19,8 @@ export const AGENTS = [
   'npm',
   'pnpm',
   'yarn/berry',
-  'yarn/classic'
+  'yarn/classic',
+  'vlt'
 ] as const
 export type Agent = (typeof AGENTS)[number]
 export type StringKeyValueObject = { [key: string]: string }
@@ -90,15 +91,16 @@ const maintainedNodeVersions = (() => {
 
 const LOCKS: Record<string, Agent> = {
   'bun.lockb': 'bun',
-  'pnpm-lock.yaml': 'pnpm',
-  'pnpm-lock.yml': 'pnpm',
-  'yarn.lock': 'yarn/classic',
   // If both package-lock.json and npm-shrinkwrap.json are present in the root
   // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
   // will be ignored.
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#package-lockjson-vs-npm-shrinkwrapjson
   'npm-shrinkwrap.json': 'npm',
   'package-lock.json': 'npm',
+  'pnpm-lock.yaml': 'pnpm',
+  'pnpm-lock.yml': 'pnpm',
+  'yarn.lock': 'yarn/classic',
+  'vlt-lock.json': 'vlt',
   // Look for a hidden lock file if .npmrc has package-lock=false:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
   //
@@ -126,6 +128,9 @@ const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
       return undefined
     }
   }
+  const defaultReader = wrapReader(
+    async (lockPath: string) => await readFileUtf8(lockPath)
+  )
   return {
     bun: wrapReader(async (lockPath: string, agentExecPath: string) => {
       let lockBuffer: Buffer | undefined
@@ -137,18 +142,16 @@ const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
       try {
         return <string>parseBunLockb(lockBuffer)
       } catch {}
-      // To print a Yarn lockfile to your console without writing it to disk use `bun bun.lockb`.
+      // To print a Yarn lockfile to your console without writing it to disk
+      // use `bun bun.lockb`.
       // https://bun.sh/guides/install/yarnlock
       return (await spawn(agentExecPath, [lockPath])).stdout.trim()
     }),
-    npm: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath)),
-    pnpm: wrapReader(async (lockPath: string) => await readFileUtf8(lockPath)),
-    'yarn/berry': wrapReader(
-      async (lockPath: string) => await readFileUtf8(lockPath)
-    ),
-    'yarn/classic': wrapReader(
-      async (lockPath: string) => await readFileUtf8(lockPath)
-    )
+    npm: defaultReader,
+    pnpm: defaultReader,
+    vlt: defaultReader,
+    'yarn/berry': defaultReader,
+    'yarn/classic': defaultReader
   }
 })()
 
