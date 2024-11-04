@@ -30,6 +30,25 @@ const numericCollator = new Intl.Collator(undefined, {
 })
 const { compare: alphaNumericComparator } = numericCollator
 
+async function getAgentExecPath(agent: Agent): Promise<string> {
+  return (await which(agent, { nothrow: true })) ?? agent
+}
+
+async function getAgentVersion(
+  agentExecPath: string,
+  cwd: string
+): Promise<SemVer | undefined> {
+  let result
+  try {
+    result =
+      semver.coerce(
+        // All package managers support the "--version" flag.
+        (await spawn(agentExecPath, ['--version'], { cwd })).stdout
+      ) ?? undefined
+  } catch {}
+  return result
+}
+
 const maintainedNodeVersions = (() => {
   // Under the hood browserlist uses the node-releases package which is out of date:
   // https://github.com/chicoxyzzy/node-releases/issues/37
@@ -145,6 +164,7 @@ export type DetectResult = Readonly<{
   lockPath: string | undefined
   lockSrc: string | undefined
   minimumNodeVersion: string
+  npmExecPath: string
   pkgJson: EditablePackageJson | undefined
   pkgPath: string | undefined
   supported: boolean
@@ -202,15 +222,12 @@ export async function detect({
     agent = 'npm'
     onUnknown?.(pkgManager)
   }
-  const agentExecPath = (await which(agent, { nothrow: true })) ?? agent
+  const agentExecPath = await getAgentExecPath(agent)
+
+  const npmExecPath =
+    agent === 'npm' ? agentExecPath : await getAgentExecPath('npm')
   if (agentVersion === undefined) {
-    try {
-      agentVersion =
-        semver.coerce(
-          // All package managers support the "--version" flag.
-          (await spawn(agentExecPath, ['--version'], { cwd })).stdout
-        ) ?? undefined
-    } catch {}
+    agentVersion = await getAgentVersion(agentExecPath, cwd)
   }
   if (agent === 'yarn/classic' && (agentVersion?.major ?? 0) > 1) {
     agent = 'yarn/berry'
@@ -269,6 +286,7 @@ export async function detect({
     lockPath,
     lockSrc,
     minimumNodeVersion,
+    npmExecPath,
     pkgJson: editablePkgJson,
     pkgPath,
     supported: targets.browser || targets.node,

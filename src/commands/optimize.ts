@@ -158,76 +158,127 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = {
   }
 }
 
+type AgentListDepsOptions = {
+  npmExecPath?: string
+  rootPath?: string
+}
 type AgentListDepsFn = (
   agentExecPath: string,
   cwd: string,
-  rootPath: string
+  options?: AgentListDepsOptions
 ) => Promise<string>
 
-const lsByAgent: Record<Agent, AgentListDepsFn> = {
-  async bun(agentExecPath: string, cwd: string, _rootPath: string) {
-    try {
-      // Bun does not support filtering by production packages yet.
-      // https://github.com/oven-sh/bun/issues/8283
-      return (await spawn(agentExecPath, ['pm', 'ls', '--all'], { cwd })).stdout
-    } catch {}
-    return ''
-  },
-  async npm(agentExecPath: string, cwd: string, rootPath: string) {
-    try {
-      let { stdout } = await spawn(
-        agentExecPath,
-        ['ls', '--parseable', '--omit', 'dev', '--all'],
-        { cwd }
-      )
-      stdout = stdout.trim()
-      stdout = stdout.replaceAll(cwd, '')
-      stdout = rootPath === cwd ? stdout : stdout.replaceAll(rootPath, '')
-      return stdout.replaceAll('\\', '/')
-    } catch {}
-    return ''
-  },
-  async pnpm(agentExecPath: string, cwd: string, rootPath: string) {
-    try {
-      let { stdout } = await spawn(
-        agentExecPath,
-        ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
-        { cwd }
-      )
-      stdout = stdout.trim()
-      stdout = stdout.replaceAll(cwd, '')
-      stdout = rootPath === cwd ? stdout : stdout.replaceAll(rootPath, '')
-      return stdout.replaceAll('\\', '/')
-    } catch {}
-    return ''
-  },
-  async 'yarn/berry'(agentExecPath: string, cwd: string, _rootPath: string) {
-    try {
-      return (
-        // Yarn Berry does not support filtering by production packages yet.
-        // https://github.com/yarnpkg/berry/issues/5117
-        (
-          await spawn(agentExecPath, ['info', '--recursive', '--name-only'], {
-            cwd
-          })
-        ).stdout.trim()
-      )
-    } catch {}
-    return ''
-  },
-  async 'yarn/classic'(agentExecPath: string, cwd: string, _rootPath: string) {
-    try {
-      // However, Yarn Classic does support it.
-      // https://github.com/yarnpkg/yarn/releases/tag/v1.0.0
-      // > Fix: Excludes dev dependencies from the yarn list output when the
-      //   environment is production
-      return (
-        await spawn(agentExecPath, ['list', '--prod'], { cwd })
-      ).stdout.trim()
-    } catch {}
-    return ''
+const lsByAgent = (() => {
+  function cleanupParseable(
+    stdout: string,
+    cwd: string,
+    rootPath?: string
+  ): string {
+    stdout = stdout.trim()
+    stdout = stdout.replaceAll(cwd, '')
+    if (rootPath && rootPath !== cwd) {
+      stdout = stdout.replaceAll(rootPath, '')
+    }
+    return stdout.replaceAll('\\', '/')
   }
-}
+
+  async function npmLs(npmExecPath: string, cwd: string, rootPath?: string) {
+    return cleanupParseable(
+      (
+        await spawn(
+          npmExecPath,
+          ['ls', '--parseable', '--omit', 'dev', '--all'],
+          { cwd }
+        )
+      ).stdout,
+      cwd,
+      rootPath
+    )
+  }
+  return <Record<Agent, AgentListDepsFn>>{
+    async bun(agentExecPath: string, cwd: string) {
+      try {
+        // Bun does not support filtering by production packages yet.
+        // https://github.com/oven-sh/bun/issues/8283
+        return (await spawn(agentExecPath!, ['pm', 'ls', '--all'], { cwd }))
+          .stdout
+      } catch {}
+      return ''
+    },
+    async npm(
+      agentExecPath: string,
+      cwd: string,
+      options: AgentListDepsOptions
+    ) {
+      const { rootPath } = <AgentListDepsOptions>{ __proto__: null, ...options }
+      try {
+        return await npmLs(agentExecPath, cwd, rootPath)
+      } catch {}
+      return ''
+    },
+    async pnpm(
+      agentExecPath: string,
+      cwd: string,
+      options: AgentListDepsOptions
+    ) {
+      const { npmExecPath, rootPath } = <AgentListDepsOptions>{
+        __proto__: null,
+        ...options
+      }
+      let stdout = ''
+      if (npmExecPath && npmExecPath !== 'npm') {
+        try {
+          stdout = await npmLs(npmExecPath, cwd, rootPath)
+        } catch (e: any) {
+          if (e?.stderr?.includes('code ELSPROBLEMS')) {
+            stdout = e?.stdout
+          }
+        }
+      } else {
+        try {
+          stdout = cleanupParseable(
+            (
+              await spawn(
+                agentExecPath,
+                ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
+                { cwd }
+              )
+            ).stdout,
+            cwd,
+            rootPath
+          )
+        } catch {}
+      }
+      return stdout
+    },
+    async 'yarn/berry'(agentExecPath: string, cwd: string) {
+      try {
+        return (
+          // Yarn Berry does not support filtering by production packages yet.
+          // https://github.com/yarnpkg/berry/issues/5117
+          (
+            await spawn(agentExecPath, ['info', '--recursive', '--name-only'], {
+              cwd
+            })
+          ).stdout.trim()
+        )
+      } catch {}
+      return ''
+    },
+    async 'yarn/classic'(agentExecPath: string, cwd: string) {
+      try {
+        // However, Yarn Classic does support it.
+        // https://github.com/yarnpkg/yarn/releases/tag/v1.0.0
+        // > Fix: Excludes dev dependencies from the yarn list output when the
+        //   environment is production
+        return (
+          await spawn(agentExecPath, ['list', '--prod'], { cwd })
+        ).stdout.trim()
+      } catch {}
+      return ''
+    }
+  }
+})()
 
 type AgentDepsIncludesFn = (stdout: string, name: string) => boolean
 
@@ -319,6 +370,7 @@ type AddOverridesConfig = {
   agentExecPath: string
   lockSrc: string
   manifestEntries: ManifestEntry[]
+  npmExecPath: string
   pkgJson?: EditablePackageJson | undefined
   pkgPath: string
   pin?: boolean | undefined
@@ -330,6 +382,17 @@ type AddOverridesState = {
   added: Set<string>
   spinner?: Ora | undefined
   updated: Set<string>
+  warnedPnpmWorkspaceRequiresNpm: boolean
+}
+
+function createAddOverridesState(initials?: any): AddOverridesState {
+  return {
+    added: new Set(),
+    spinner: undefined,
+    updated: new Set(),
+    warnedPnpmWorkspaceRequiresNpm: false,
+    ...initials
+  }
 }
 
 async function addOverrides(
@@ -338,17 +401,14 @@ async function addOverrides(
     agentExecPath,
     lockSrc,
     manifestEntries,
+    npmExecPath,
     pin,
     pkgJson: editablePkgJson,
     pkgPath,
     prod,
     rootPath
   }: AddOverridesConfig,
-  state: AddOverridesState = {
-    added: new Set(),
-    spinner: undefined,
-    updated: new Set()
-  }
+  state = createAddOverridesState()
 ): Promise<AddOverridesState> {
   if (editablePkgJson === undefined) {
     editablePkgJson = await EditablePackageJson.load(pkgPath)
@@ -357,26 +417,39 @@ async function addOverrides(
   const pkgJson: Readonly<PackageJsonContent> = editablePkgJson.content
   const isRoot = pkgPath === rootPath
   const isLockScanned = isRoot && !prod
+  const relPath = path.relative(rootPath, pkgPath)
+  const workspaces = await getWorkspaces(agent, pkgPath, pkgJson)
+  const isWorkspace = !!workspaces
+  if (
+    isWorkspace &&
+    agent === 'pnpm' &&
+    npmExecPath === 'npm' &&
+    !state.warnedPnpmWorkspaceRequiresNpm
+  ) {
+    state.warnedPnpmWorkspaceRequiresNpm = true
+    console.log(
+      `⚠️ ${COMMAND_TITLE}: pnpm workspace support requires \`npm ls\`, falling back to \`pnpm list\``
+    )
+  }
   const thingToScan = isLockScanned
     ? lockSrc
-    : await lsByAgent[agent](agentExecPath, pkgPath, rootPath)
+    : await lsByAgent[agent](agentExecPath, pkgPath, { npmExecPath, rootPath })
   const thingScanner = isLockScanned
     ? lockIncludesByAgent[agent]
     : depsIncludesByAgent[agent]
   const depEntries = getDependencyEntries(pkgJson)
-  const workspaces = await getWorkspaces(agent, pkgPath, pkgJson)
-  const isWorkspace = !!workspaces
+
   const overridesDataObjects = <GetOverridesResult[]>[]
   if (pkgJson['private'] || isWorkspace) {
     overridesDataObjects.push(getOverridesDataByAgent[agent](pkgJson))
   } else {
     overridesDataObjects.push(
-      getOverridesDataByAgent['npm'](pkgJson),
+      getOverridesDataByAgent.npm(pkgJson),
       getOverridesDataByAgent['yarn/classic'](pkgJson)
     )
   }
   if (spinner) {
-    spinner.text = `Adding overrides${isRoot ? '' : ` to ${path.relative(rootPath, pkgPath)}`}...`
+    spinner.text = `Adding overrides${relPath ? ` to ${relPath}` : ''}...`
   }
   const depAliasMap = new Map<string, { id: string; version: string }>()
   // Chunk package names to process them in parallel 3 at a time.
@@ -470,16 +543,13 @@ async function addOverrides(
           agentExecPath,
           lockSrc,
           manifestEntries,
+          npmExecPath,
           pin,
           pkgPath: path.dirname(wsPkgJsonPath),
           prod,
           rootPath
         },
-        {
-          added: new Set(),
-          spinner,
-          updated: new Set()
-        }
+        createAddOverridesState({ spinner })
       )
       for (const regPkgName of added) {
         state.added.add(regPkgName)
@@ -575,6 +645,7 @@ export const optimize: CliSubcommand = {
       lockPath,
       lockSrc,
       minimumNodeVersion,
+      npmExecPath,
       pkgJson,
       pkgPath,
       supported
@@ -617,11 +688,7 @@ export const optimize: CliSubcommand = {
       )
     }
     const spinner = ora('Socket optimizing...')
-    const state: AddOverridesState = {
-      added: new Set(),
-      spinner,
-      updated: new Set()
-    }
+    const state = createAddOverridesState({ spinner })
     spinner.start()
     const nodeRange = `>=${minimumNodeVersion}`
     const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
@@ -633,6 +700,7 @@ export const optimize: CliSubcommand = {
         agentExecPath,
         lockSrc,
         manifestEntries,
+        npmExecPath,
         pin,
         pkgJson,
         pkgPath,
