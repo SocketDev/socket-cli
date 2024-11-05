@@ -325,6 +325,14 @@ const depsIncludesByAgent: Record<Agent, AgentDepsIncludesFn> = (() => {
   }
 })()
 
+function createActionMessage(
+  verb: string,
+  overrideCount: number,
+  workspaceCount: number
+) {
+  return `${verb} ${overrideCount} Socket.dev optimized overrides${workspaceCount ? ` in ${workspaceCount} workspace${workspaceCount > 1 ? 's' : ''}` : ''}`
+}
+
 function getDependencyEntries(pkgJson: PackageJsonContent) {
   const {
     dependencies,
@@ -354,36 +362,44 @@ function getDependencyEntries(pkgJson: PackageJsonContent) {
   ].filter(({ 1: o }) => o)
 }
 
-async function getWorkspaces(
+async function getWorkspaceGlobs(
   agent: Agent,
   pkgPath: string,
   pkgJson: PackageJsonContent
 ): Promise<string[] | undefined> {
-  if (agent !== 'pnpm') {
-    return Array.isArray(pkgJson['workspaces'])
-      ? <string[]>pkgJson['workspaces'].filter(isNonEmptyString)
-      : undefined
-  }
-  for (const workspacePath of [
-    path.join(pkgPath!, `${PNPM_WORKSPACE}.yaml`),
-    path.join(pkgPath!, `${PNPM_WORKSPACE}.yml`)
-  ]) {
-    if (existsSync(workspacePath)) {
-      let packages
-      try {
-        // eslint-disable-next-line no-await-in-loop
-        packages = yamlParse(await fs.readFile(workspacePath, 'utf8'))?.packages
-      } catch {}
-      if (Array.isArray(packages)) {
-        return packages.filter(isNonEmptyString)
+  let workspacePatterns
+  if (agent === 'pnpm') {
+    for (const workspacePath of [
+      path.join(pkgPath!, `${PNPM_WORKSPACE}.yaml`),
+      path.join(pkgPath!, `${PNPM_WORKSPACE}.yml`)
+    ]) {
+      if (existsSync(workspacePath)) {
+        try {
+          workspacePatterns = yamlParse(
+            // eslint-disable-next-line no-await-in-loop
+            await fs.readFile(workspacePath, 'utf8')
+          )?.packages
+        } catch {}
+        if (workspacePatterns) {
+          break
+        }
       }
     }
+  } else {
+    workspacePatterns = pkgJson['workspaces']
   }
-  return undefined
+  return Array.isArray(workspacePatterns)
+    ? workspacePatterns
+        .filter(isNonEmptyString)
+        .map(workspacePatternToGlobPattern)
+    : undefined
 }
 
-function workspaceToGlobPattern(workspace: string): string {
+function workspacePatternToGlobPattern(workspace: string): string {
   const { length } = workspace
+  if (!length) {
+    return ''
+  }
   // If the workspace ends with "/"
   if (workspace.charCodeAt(length - 1) === 47 /*'/'*/) {
     return `${workspace}/*/package.json`
@@ -415,16 +431,20 @@ type AddOverridesConfig = {
 
 type AddOverridesState = {
   added: Set<string>
+  addedInWorkspaces: Set<string>
   spinner?: Ora | undefined
   updated: Set<string>
+  updatedInWorkspaces: Set<string>
   warnedPnpmWorkspaceRequiresNpm: boolean
 }
 
 function createAddOverridesState(initials?: any): AddOverridesState {
   return {
     added: new Set(),
+    addedInWorkspaces: new Set(),
     spinner: undefined,
     updated: new Set(),
+    updatedInWorkspaces: new Set(),
     warnedPnpmWorkspaceRequiresNpm: false,
     ...initials
   }
@@ -452,9 +472,9 @@ async function addOverrides(
   const pkgJson: Readonly<PackageJsonContent> = editablePkgJson.content
   const isRoot = pkgPath === rootPath
   const isLockScanned = isRoot && !prod
-  const relPath = path.relative(rootPath, pkgPath)
-  const workspaces = await getWorkspaces(agent, pkgPath, pkgJson)
-  const isWorkspace = !!workspaces
+  const workspaceName = path.relative(rootPath, pkgPath)
+  const workspaceGlobs = await getWorkspaceGlobs(agent, pkgPath, pkgJson)
+  const isWorkspace = !!workspaceGlobs
   if (
     isWorkspace &&
     agent === 'pnpm' &&
@@ -484,7 +504,7 @@ async function addOverrides(
     )
   }
   if (spinner) {
-    spinner.text = `Adding overrides${relPath ? ` to ${relPath}` : ''}...`
+    spinner.text = `Adding overrides${workspaceName ? ` to ${workspaceName}` : ''}...`
   }
   const depAliasMap = new Map<string, { id: string; version: string }>()
   // Chunk package names to process them in parallel 3 at a time.
@@ -507,6 +527,7 @@ async function addOverrides(
           pkgSpec = `${regSpecStartsLike}^${version}`
           depObj[origPkgName] = pkgSpec
           state.added.add(regPkgName)
+          state.addedInWorkspaces.add(workspaceName)
         }
         depAliasMap.set(origPkgName, {
           id: pkgSpec,
@@ -551,28 +572,27 @@ async function addOverrides(
           }
         }
         if (newSpec !== oldSpec) {
+          overrides[origPkgName] = newSpec
           if (overrideExists) {
             state.updated.add(regPkgName)
+            state.updatedInWorkspaces.add(workspaceName)
           } else {
             state.added.add(regPkgName)
+            state.addedInWorkspaces.add(workspaceName)
           }
-          overrides[origPkgName] = newSpec
         }
       }
     })
   })
-  if (workspaces) {
-    const wsPkgJsonPaths = await tinyGlob(
-      workspaces.map(workspaceToGlobPattern),
-      {
-        absolute: true,
-        cwd: pkgPath!,
-        ignore: ['**/node_modules/**', '**/bower_components/**']
-      }
-    )
+  if (workspaceGlobs) {
+    const wsPkgJsonPaths = await tinyGlob(workspaceGlobs, {
+      absolute: true,
+      cwd: pkgPath!,
+      ignore: ['**/node_modules/**', '**/bower_components/**']
+    })
     // Chunk package names to process them in parallel 3 at a time.
     await pEach(wsPkgJsonPaths, 3, async wsPkgJsonPath => {
-      const { added, updated } = await addOverrides(
+      const otherState = await addOverrides(
         {
           agent,
           agentExecPath,
@@ -586,11 +606,15 @@ async function addOverrides(
         },
         createAddOverridesState({ spinner })
       )
-      for (const regPkgName of added) {
-        state.added.add(regPkgName)
-      }
-      for (const regPkgName of updated) {
-        state.updated.add(regPkgName)
+      for (const key of [
+        'added',
+        'addedInWorkspaces',
+        'updated',
+        'updatedInWorkspaces'
+      ]) {
+        for (const value of (otherState as any)[key]) {
+          ;(state as any)[key].add(value)
+        }
       }
     })
   }
@@ -751,16 +775,18 @@ export const optimize: CliSubcommand = {
       state
     )
     spinner.stop()
-    const pkgJsonChanged = state.added.size > 0 || state.updated.size > 0
+    const addedCount = state.added.size
+    const updatedCount = state.updated.size
+    const pkgJsonChanged = addedCount > 0 || updatedCount > 0
     if (pkgJsonChanged) {
-      if (state.updated.size > 0) {
+      if (updatedCount > 0) {
         console.log(
-          `Updated ${state.updated.size} Socket.dev optimized overrides ${state.added.size ? '.' : '🚀'}`
+          `${createActionMessage('Updated', updatedCount, state.updatedInWorkspaces.size)}${addedCount ? '.' : '🚀'}`
         )
       }
-      if (state.added.size > 0) {
+      if (addedCount > 0) {
         console.log(
-          `Added ${state.added.size} Socket.dev optimized overrides 🚀`
+          `${createActionMessage('Added', addedCount, state.addedInWorkspaces.size)} 🚀`
         )
       }
     } else {
