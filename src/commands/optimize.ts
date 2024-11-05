@@ -169,7 +169,6 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
 
 type AgentListDepsOptions = {
   npmExecPath?: string
-  rootPath?: string
 }
 type AgentListDepsFn = (
   agentExecPath: string,
@@ -178,32 +177,39 @@ type AgentListDepsFn = (
 ) => Promise<string>
 
 const lsByAgent = (() => {
-  function cleanupParseable(
-    stdout: string,
-    cwd: string,
-    rootPath?: string
-  ): string {
-    stdout = stdout.trim()
-    stdout = stdout.replaceAll(cwd, '')
-    if (rootPath && rootPath !== cwd) {
-      stdout = stdout.replaceAll(rootPath, '')
+  function cleanupQueryStdout(stdout: string): string {
+    if (stdout === '') {
+      return ''
     }
-    return stdout.replaceAll('\\', '/')
+    let pkgs
+    try {
+      pkgs = JSON.stringify(stdout)
+    } catch {}
+    if (!Array.isArray(pkgs)) {
+      return ''
+    }
+    const names = new Set<string>()
+    for (const { name, pkgid = '' } of pkgs) {
+      // `npm query` results may not have a "name" property, in which case we
+      // fallback to "pkgid".
+      // `vlt ls --view json` results always have a "name" property.
+      const resolvedName = name ?? pkgid.slice(0, pkgid.indexOf('@', 1))
+      if (resolvedName) {
+        names.add(resolvedName)
+      }
+    }
+    return JSON.stringify([...names], null, 2)
   }
 
-  async function npmLs(npmExecPath: string, cwd: string, rootPath?: string) {
-    return cleanupParseable(
-      (
-        await spawn(
-          npmExecPath,
-          ['ls', '--parseable', '--omit', 'dev', '--all'],
-          { cwd }
-        )
-      ).stdout,
-      cwd,
-      rootPath
-    )
+  async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
+    let stdout = ''
+    try {
+      stdout = (await spawn(npmExecPath, ['query', ':not(.dev)'], { cwd }))
+        .stdout
+    } catch {}
+    return cleanupQueryStdout(stdout)
   }
+
   return <Record<Agent, AgentListDepsFn>>{
     async bun(agentExecPath: string, cwd: string) {
       try {
@@ -214,61 +220,48 @@ const lsByAgent = (() => {
       } catch {}
       return ''
     },
-    async npm(
-      agentExecPath: string,
-      cwd: string,
-      options: AgentListDepsOptions
-    ) {
-      const { rootPath } = <AgentListDepsOptions>{ __proto__: null, ...options }
-      try {
-        return await npmLs(agentExecPath, cwd, rootPath)
-      } catch {}
-      return ''
+    async npm(agentExecPath: string, cwd: string) {
+      return await npmQuery(agentExecPath, cwd)
     },
     async pnpm(
       agentExecPath: string,
       cwd: string,
       options: AgentListDepsOptions
     ) {
-      const { npmExecPath, rootPath } = <AgentListDepsOptions>{
+      const { npmExecPath } = <AgentListDepsOptions>{
         __proto__: null,
         ...options
       }
-      let stdout = ''
       if (npmExecPath && npmExecPath !== 'npm') {
-        try {
-          stdout = await npmLs(npmExecPath, cwd, rootPath)
-        } catch (e: any) {
-          if (e?.stderr?.includes('code ELSPROBLEMS')) {
-            stdout = e?.stdout
-          }
+        const result = await npmQuery(npmExecPath, cwd)
+        if (result) {
+          return result
         }
-      } else {
-        try {
-          stdout = cleanupParseable(
-            (
-              await spawn(
-                agentExecPath,
-                ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
-                { cwd }
-              )
-            ).stdout,
-            cwd,
-            rootPath
-          )
-        } catch {}
       }
-      return stdout
+      try {
+        const { stdout } = await spawn(
+          agentExecPath,
+          ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
+          { cwd }
+        )
+        // Convert the parseable stdout into a json array of unique names.
+        // The matchAll regexp looks for forward or backward slash followed by
+        // one or more non-slashes until the newline.
+        const names = new Set(stdout.matchAll(/(?<=[/\\])[^/\\]+(?=\n)/g))
+        return JSON.stringify([...names], null, 2)
+      } catch {}
+      return ''
     },
     async vlt(agentExecPath: string, cwd: string) {
+      let stdout = ''
       try {
-        return (
-          await spawn(agentExecPath!, ['ls', '--view', 'human', ':not(.dev)'], {
+        stdout = (
+          await spawn(agentExecPath, ['ls', '--view', 'human', ':not(.dev)'], {
             cwd
           })
         ).stdout
       } catch {}
-      return ''
+      return cleanupQueryStdout(stdout)
     },
     async 'yarn/berry'(agentExecPath: string, cwd: string) {
       try {
@@ -303,8 +296,8 @@ type AgentDepsIncludesFn = (stdout: string, name: string) => boolean
 
 const depsIncludesByAgent: Record<Agent, AgentDepsIncludesFn> = {
   bun: (stdout: string, name: string) => stdout.includes(` ${name}@`),
-  npm: (stdout: string, name: string) => stdout.includes(`/${name}\n`),
-  pnpm: (stdout: string, name: string) => stdout.includes(`/${name}\n`),
+  npm: (stdout: string, name: string) => stdout.includes(`"${name}"`),
+  pnpm: (stdout: string, name: string) => stdout.includes(`"${name}"`),
   vlt: (stdout: string, name: string) => stdout.includes(` ${name}@`),
   'yarn/berry': (stdout: string, name: string) => stdout.includes(` ${name}@`),
   'yarn/classic': (stdout: string, name: string) => stdout.includes(` ${name}@`)
@@ -453,7 +446,7 @@ async function addOverrides(
   }
   const thingToScan = isLockScanned
     ? lockSrc
-    : await lsByAgent[agent](agentExecPath, pkgPath, { npmExecPath, rootPath })
+    : await lsByAgent[agent](agentExecPath, pkgPath, { npmExecPath })
   const thingScanner = isLockScanned
     ? lockIncludesByAgent[agent]
     : depsIncludesByAgent[agent]
