@@ -90,7 +90,7 @@ const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
 type AgentLockIncludesFn = (lockSrc: string, name: string) => boolean
 
 const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
-  const yarn = (lockSrc: string, name: string) => {
+  function yarnLockIncludes(lockSrc: string, name: string) {
     const escapedName = escapeRegExp(name)
     return new RegExp(
       // Detects the package name in the following cases:
@@ -102,8 +102,9 @@ const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
       'm'
     ).test(lockSrc)
   }
+
   return {
-    bun: yarn,
+    bun: yarnLockIncludes,
     npm(lockSrc: string, name: string) {
       // Detects the package name in the following cases:
       //   "name":
@@ -126,8 +127,8 @@ const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
       //   "name"
       return lockSrc.includes(`"${name}"`)
     },
-    'yarn/berry': yarn,
-    'yarn/classic': yarn
+    'yarn/berry': yarnLockIncludes,
+    'yarn/classic': yarnLockIncludes
   }
 })()
 
@@ -142,6 +143,7 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
       [OVERRIDES_FIELD_NAME]: overrides
     })
   }
+
   function updateResolutions(
     pkgJson: EditablePackageJson,
     overrides: Overrides
@@ -150,6 +152,7 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
       [RESOLUTIONS_FIELD_NAME]: <PnpmOrYarnOverrides>overrides
     })
   }
+
   return {
     bun: updateResolutions,
     npm: updateOverrides,
@@ -201,6 +204,17 @@ const lsByAgent = (() => {
     return JSON.stringify([...names], null, 2)
   }
 
+  function parseableToQueryStdout(stdout: string) {
+    if (stdout === '') {
+      return ''
+    }
+    // Convert the parseable stdout into a json array of unique names.
+    // The matchAll regexp looks for a forward (posix) or backward (win32) slash
+    // and matches one or more non-slashes until the newline.
+    const names = new Set(stdout.matchAll(/(?<=[/\\])[^/\\]+(?=\n)/g))
+    return JSON.stringify([...names], null, 2)
+  }
+
   async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
     let stdout = ''
     try {
@@ -238,19 +252,17 @@ const lsByAgent = (() => {
           return result
         }
       }
+      let stdout = ''
       try {
-        const { stdout } = await spawn(
-          agentExecPath,
-          ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
-          { cwd }
-        )
-        // Convert the parseable stdout into a json array of unique names.
-        // The matchAll regexp looks for forward or backward slash followed by
-        // one or more non-slashes until the newline.
-        const names = new Set(stdout.matchAll(/(?<=[/\\])[^/\\]+(?=\n)/g))
-        return JSON.stringify([...names], null, 2)
+        stdout = (
+          await spawn(
+            agentExecPath,
+            ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
+            { cwd }
+          )
+        ).stdout
       } catch {}
-      return ''
+      return parseableToQueryStdout(stdout)
     },
     async vlt(agentExecPath: string, cwd: string) {
       let stdout = ''
@@ -294,14 +306,24 @@ const lsByAgent = (() => {
 
 type AgentDepsIncludesFn = (stdout: string, name: string) => boolean
 
-const depsIncludesByAgent: Record<Agent, AgentDepsIncludesFn> = {
-  bun: (stdout: string, name: string) => stdout.includes(` ${name}@`),
-  npm: (stdout: string, name: string) => stdout.includes(`"${name}"`),
-  pnpm: (stdout: string, name: string) => stdout.includes(`"${name}"`),
-  vlt: (stdout: string, name: string) => stdout.includes(` ${name}@`),
-  'yarn/berry': (stdout: string, name: string) => stdout.includes(` ${name}@`),
-  'yarn/classic': (stdout: string, name: string) => stdout.includes(` ${name}@`)
-}
+const depsIncludesByAgent: Record<Agent, AgentDepsIncludesFn> = (() => {
+  function matchHumanStdout(stdout: string, name: string) {
+    return stdout.includes(` ${name}@`)
+  }
+
+  function matchQueryStdout(stdout: string, name: string) {
+    return stdout.includes(`"${name}"`)
+  }
+
+  return {
+    bun: matchHumanStdout,
+    npm: matchQueryStdout,
+    pnpm: matchQueryStdout,
+    vlt: matchQueryStdout,
+    'yarn/berry': matchHumanStdout,
+    'yarn/classic': matchHumanStdout
+  }
+})()
 
 function getDependencyEntries(pkgJson: PackageJsonContent) {
   const {
