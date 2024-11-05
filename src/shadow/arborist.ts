@@ -158,23 +158,14 @@ type RequireTransformer<T extends keyof KnownModules> = (
   mod: KnownModules[T]
 ) => KnownModules[T]
 
-const LOOP_SENTINEL = 1_000_000
-
-const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
-
 const POTENTIALLY_BUG_ERROR_SNIPPET =
   'this is potentially a bug with socket-npm caused by changes to the npm cli'
 
 const distPath = __dirname
 const rootPath = path.resolve(distPath, '..')
 
-const translations = require(path.join(rootPath, 'translations.json'))
-
-const npmEntrypoint = realpathSync(`${process.argv[1]}`)
+const npmEntrypoint = realpathSync(process.argv[1]!)
 const npmRootPath = findRoot(path.dirname(npmEntrypoint))
-
-const abortController = new AbortController()
-const { signal: abortSignal } = abortController
 
 function tryRequire<T extends keyof KnownModules>(
   ...ids: (T | [T, RequireTransformer<T>])[]
@@ -209,7 +200,11 @@ if (npmRootPath === undefined) {
   process.exit(127)
 }
 
+const LOOP_SENTINEL = 1_000_000
+const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
+
 const npmNmPath = path.join(npmRootPath, 'node_modules')
+
 const arboristClassPath = path.join(
   npmNmPath,
   '@npmcli/arborist/lib/arborist/index.js'
@@ -250,6 +245,10 @@ if (log === undefined) {
 
 const pacote = tryRequire(<'pacote'>path.join(npmNmPath, 'pacote'), 'pacote')!
 const { tarball } = pacote
+const translations = require(path.join(rootPath, 'translations.json'))
+
+const abortController = new AbortController()
+const { signal: abortSignal } = abortController
 
 const Arborist: ArboristClass = require(arboristClassPath)
 const depValid: (
