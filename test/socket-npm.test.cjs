@@ -36,8 +36,8 @@ for (const npm of ['npm8', 'npm10']) {
         installDir,
         args: ['i', 'bowserify']
       })
-      assert.equal(ret.status, 1)
-      assert.ok(ret.stderr.includes('Unable to prompt'))
+      assert.strictEqual(ret.status, 1, ret.stderr)
+      assert.ok(ret.stderr.includes('Unable to prompt'), ret.stderr)
     })
   })
 }

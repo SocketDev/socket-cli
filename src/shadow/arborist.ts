@@ -101,7 +101,9 @@ type NodeClass = Omit<
   }
   overrides: OverrideSetClass | undefined
   parent: NodeClass | null
+  get inDepBundle(): boolean
   get packageName(): string | null
+  get resolveParent(): NodeClass | null
   get root(): NodeClass | null
   set root(value: NodeClass | null)
   new (...args: any): NodeClass
@@ -110,6 +112,7 @@ type NodeClass = Omit<
   canReplace(node: NodeClass, ignorePeers?: string[]): boolean
   canReplaceWith(node: NodeClass, ignorePeers?: string[]): boolean
   deleteEdgeIn(edge: SafeEdge): void
+  matches(node: NodeClass): boolean
   recalculateOutEdgesOverrides(): void
   resolve(name: string): NodeClass
   updateOverridesEdgeInAdded(
@@ -138,6 +141,12 @@ interface OverrideSetClass {
   isEqual(otherOverrideSet: OverrideSetClass | undefined): boolean
 }
 
+interface KnownModules {
+  npmlog: typeof import('npmlog')
+  pacote: typeof import('pacote')
+  'proc-log': typeof import('proc-log')
+}
+
 type PURLParts = {
   type: 'npm'
   namespace_and_name: string
@@ -145,7 +154,13 @@ type PURLParts = {
   repository_url: URL['href']
 }
 
+type RequireTransformer<T extends keyof KnownModules> = (
+  mod: KnownModules[T]
+) => KnownModules[T]
+
 const LOOP_SENTINEL = 1_000_000
+
+const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 
 const POTENTIALLY_BUG_ERROR_SNIPPET =
   'this is potentially a bug with socket-npm caused by changes to the npm cli'
@@ -161,6 +176,31 @@ const npmRootPath = findRoot(path.dirname(npmEntrypoint))
 const abortController = new AbortController()
 const { signal: abortSignal } = abortController
 
+function tryRequire<T extends keyof KnownModules>(
+  ...ids: (T | [T, RequireTransformer<T>])[]
+): KnownModules[T] | undefined {
+  for (const data of ids) {
+    let id: string | undefined
+    let transformer: RequireTransformer<T> | undefined
+    if (Array.isArray(data)) {
+      id = data[0]
+      transformer = <RequireTransformer<T>>data[1]
+    } else {
+      id = <keyof KnownModules>data
+      transformer = mod => mod
+    }
+    try {
+      // Check that the transformed value isn't `undefined` because older
+      // versions of packages like 'proc-log' may not export a `log` method.
+      const exported = transformer(require(id)) as KnownModules[T]
+      if (exported !== undefined) {
+        return exported
+      }
+    } catch {}
+  }
+  return undefined
+}
+
 if (npmRootPath === undefined) {
   console.error(
     `Unable to find npm cli install directory, ${POTENTIALLY_BUG_ERROR_SNIPPET}.`
@@ -173,6 +213,10 @@ const npmNmPath = path.join(npmRootPath, 'node_modules')
 const arboristClassPath = path.join(
   npmNmPath,
   '@npmcli/arborist/lib/arborist/index.js'
+)
+const arboristDepValidPath = path.join(
+  npmNmPath,
+  '@npmcli/arborist/lib/dep-valid.js'
 )
 const arboristEdgeClassPath = path.join(
   npmNmPath,
@@ -187,30 +231,33 @@ const arboristOverrideSetClassPatch = path.join(
   '@npmcli/arborist/lib/override-set.js'
 )
 
-let npmlog: typeof import('npmlog') | undefined
-try {
-  npmlog = require(path.join(npmNmPath, 'proc-log/lib/index.js')).log
-} catch {}
-if (npmlog === undefined) {
-  try {
-    npmlog = require(path.join(npmNmPath, 'npmlog/lib/log.js'))
-  } catch {}
-}
-if (npmlog === undefined) {
+const log = tryRequire(
+  [
+    <'proc-log'>path.join(npmNmPath, 'proc-log/lib/index.js'),
+    // The proc-log DefinitelyTyped definition is incorrect. The type definition
+    // is really that of its export log.
+    mod => <KnownModules['proc-log']>(mod as any).log
+  ],
+  <'npmlog'>path.join(npmNmPath, 'npmlog/lib/log.js')
+)
+
+if (log === undefined) {
   console.error(
     `Unable to integrate with npm cli logging infrastructure, ${POTENTIALLY_BUG_ERROR_SNIPPET}.`
   )
   process.exit(127)
 }
 
-let tarball: typeof import('pacote').tarball
-try {
-  tarball = require(path.join(npmNmPath, 'pacote')).tarball
-} catch {
-  tarball = require('pacote').tarball
-}
+const pacote = tryRequire(<'pacote'>path.join(npmNmPath, 'pacote'), 'pacote')!
+const { tarball } = pacote
 
 const Arborist: ArboristClass = require(arboristClassPath)
+const depValid: (
+  child: NodeClass,
+  requested: string,
+  accept: string | undefined,
+  requester: NodeClass
+) => boolean = require(arboristDepValidPath)
 const Edge: EdgeClass = require(arboristEdgeClassPath)
 const Node: NodeClass = require(arboristNodeClassPath)
 const OverrideSet: OverrideSetClass = require(arboristOverrideSetClassPatch)
@@ -228,7 +275,7 @@ type IssueUXLookupResult = ReturnType<IssueUXLookup>
 const ttyServer = createTTYServer(
   chalk.level,
   isInteractive({ stream: process.stdin }),
-  npmlog
+  log
 )
 
 let _uxLookup: IssueUXLookup | undefined
@@ -329,7 +376,7 @@ function findSpecificOverrideSet(
     }
     overrideSet = overrideSet.parent
   }
-  console.error('Conflicting override sets')
+  log!.silly('Conflicting override sets', first, second)
   return undefined
 }
 
@@ -560,10 +607,11 @@ class SafeEdge extends Edge {
   #safeError: ErrorStatus | null
   #safeExplanation: Explanation | undefined
   #safeFrom: NodeClass | null
+  #safeName: string
   #safeTo: NodeClass | null
 
   constructor(options: EdgeOptions) {
-    const { accept, from } = options
+    const { accept, from, name } = options
     // Defer to supper to validate options and assign non-private values.
     super(options)
     if (accept !== undefined) {
@@ -572,44 +620,62 @@ class SafeEdge extends Edge {
     this.#safeError = null
     this.#safeExplanation = null
     this.#safeFrom = from
+    this.#safeName = name
     this.#safeTo = null
     this.reload(true)
   }
 
-  // Return the edge data, and an explanation of how that edge came to be here.
-  // @ts-ignore: Edge#explain is defined with an unused `seen = []` param.
-  override explain() {
-    if (!this.#safeExplanation) {
-      const explanation: Explanation = {
-        type: this.type,
-        name: this.name,
-        spec: this.spec,
-        bundled: false,
-        overridden: false,
-        error: undefined,
-        from: undefined,
-        rawSpec: undefined
-      }
-      if (this.rawSpec !== this.spec) {
-        explanation.rawSpec = this.rawSpec
-        explanation.overridden = true
-      }
-      if (this.bundled) {
-        explanation.bundled = this.bundled
-      }
-      if (this.error) {
-        explanation.error = this.error
-      }
-      if (this.#safeFrom) {
-        explanation.from = this.#safeFrom.explain()
-      }
-      this.#safeExplanation = explanation
-    }
-    return this.#safeExplanation
+  get accept() {
+    return this.#safeAccept
   }
 
   get bundled() {
     return !!this.#safeFrom?.package?.bundleDependencies?.includes(this.name)
+  }
+
+  override get error() {
+    if (!this.#safeError) {
+      if (!this.#safeTo) {
+        if (this.optional) {
+          this.#safeError = null
+        } else {
+          this.#safeError = 'MISSING'
+        }
+      } else if (
+        this.peer &&
+        this.#safeFrom === this.#safeTo.parent &&
+        !this.#safeFrom?.isTop
+      ) {
+        this.#safeError = 'PEER LOCAL'
+      } else if (!this.satisfiedBy(this.#safeTo)) {
+        this.#safeError = 'INVALID'
+      }
+      // Patch adding "else if" condition is based on
+      // https://github.com/npm/cli/pull/7025.
+      else if (
+        this.overrides &&
+        this.#safeTo.edgesOut.size &&
+        !findSpecificOverrideSet(this.overrides, this.#safeTo.overrides)
+      ) {
+        // Any inconsistency between the edge's override set and the target's
+        // override set is potentially problematic. But we only say the edge is
+        // in error if the override sets are plainly conflicting. Note that if
+        // the target doesn't have any dependencies of their own, then this
+        // inconsistency is irrelevant.
+        this.#safeError = 'INVALID'
+      } else {
+        this.#safeError = 'OK'
+      }
+    }
+    if (this.#safeError === 'OK') {
+      return null
+    }
+    return this.#safeError
+  }
+
+  // @ts-ignore: Incorrectly typed as a property instead of an accessor.
+  override get from() {
+    return this.#safeFrom
   }
 
   // @ts-ignore: Incorrectly typed as a property instead of an accessor.
@@ -654,48 +720,55 @@ class SafeEdge extends Edge {
     return this.rawSpec
   }
 
-  get accept() {
-    return this.#safeAccept
+  // @ts-ignore: Incorrectly typed as a property instead of an accessor.
+  override get to() {
+    return this.#safeTo
   }
 
-  override get error() {
-    if (!this.#safeError) {
-      if (!this.#safeTo) {
-        if (this.optional) {
-          this.#safeError = null
-        } else {
-          this.#safeError = 'MISSING'
-        }
-      } else if (
-        this.peer &&
-        this.#safeFrom === this.#safeTo.parent &&
-        !this.#safeFrom?.isTop
-      ) {
-        this.#safeError = 'PEER LOCAL'
-      } else if (!this.satisfiedBy(this.#safeTo)) {
-        this.#safeError = 'INVALID'
+  detach() {
+    this.#safeExplanation = null
+    // Patch replacing
+    // if (this.#safeTo) {
+    //   this.#safeTo.edgesIn.delete(this)
+    // }
+    // is based on https://github.com/npm/cli/pull/7025.
+    this.#safeTo?.deleteEdgeIn(this)
+    this.#safeFrom?.edgesOut.delete(this.name)
+    this.#safeTo = null
+    this.#safeError = 'DETACHED'
+    this.#safeFrom = null
+  }
+
+  // Return the edge data, and an explanation of how that edge came to be here.
+  // @ts-ignore: Edge#explain is defined with an unused `seen = []` param.
+  override explain() {
+    if (!this.#safeExplanation) {
+      const explanation: Explanation = {
+        type: this.type,
+        name: this.name,
+        spec: this.spec,
+        bundled: false,
+        overridden: false,
+        error: undefined,
+        from: undefined,
+        rawSpec: undefined
       }
-      // Patch adding "else if" condition is based on
-      // https://github.com/npm/cli/pull/7025.
-      else if (
-        this.overrides &&
-        this.#safeTo.edgesOut.size &&
-        !findSpecificOverrideSet(this.overrides, this.#safeTo.overrides)
-      ) {
-        // Any inconsistency between the edge's override set and the target's
-        // override set is potentially problematic. But we only say the edge is
-        // in error if the override sets are plainly conflicting. Note that if
-        // the target doesn't have any dependencies of their own, then this
-        // inconsistency is irrelevant.
-        this.#safeError = 'INVALID'
-      } else {
-        this.#safeError = 'OK'
+      if (this.rawSpec !== this.spec) {
+        explanation.rawSpec = this.rawSpec
+        explanation.overridden = true
       }
+      if (this.bundled) {
+        explanation.bundled = this.bundled
+      }
+      if (this.error) {
+        explanation.error = this.error
+      }
+      if (this.#safeFrom) {
+        explanation.from = this.#safeFrom.explain()
+      }
+      this.#safeExplanation = explanation
     }
-    if (this.#safeError === 'OK') {
-      return null
-    }
-    return this.#safeError
+    return this.#safeExplanation
   }
 
   override reload(hard = false) {
@@ -746,36 +819,105 @@ class SafeEdge extends Edge {
     }
   }
 
-  detach() {
-    this.#safeExplanation = null
-    if (this.#safeTo) {
-      // Patch replacing
-      // this.#safeTo.edgesIn.delete(this)
-      // is based on https://github.com/npm/cli/pull/7025.
-      this.#safeTo.deleteEdgeIn(this)
+  override satisfiedBy(node: NodeClass) {
+    // Patch replacing
+    // if (node.name !== this.#name) {
+    //   return false
+    // }
+    // is based on https://github.com/npm/cli/pull/7025.
+    if (node.name !== this.#safeName || !this.#safeFrom) {
+      return false
     }
-    if (this.#safeFrom) {
-      this.#safeFrom.edgesOut.delete(this.name)
+    // NOTE: this condition means we explicitly do not support overriding
+    // bundled or shrinkwrapped dependencies
+    if (node.hasShrinkwrap || node.inShrinkwrap || node.inBundle) {
+      return depValid(node, this.rawSpec, this.#safeAccept, this.#safeFrom)
     }
-    this.#safeTo = null
-    this.#safeError = 'DETACHED'
-    this.#safeFrom = null
-  }
-
-  // @ts-ignore: Incorrectly typed as a property instead of an accessor.
-  override get from() {
-    return this.#safeFrom
-  }
-
-  // @ts-ignore: Incorrectly typed as a property instead of an accessor.
-  override get to() {
-    return this.#safeTo
+    // Patch replacing
+    // return depValid(node, this.spec, this.#accept, this.#from)
+    // is based on https://github.com/npm/cli/pull/7025.
+    //
+    // If there's no override we just use the spec.
+    if (!this.overrides?.keySpec) {
+      return depValid(node, this.spec, this.#safeAccept, this.#safeFrom)
+    }
+    // There's some override. If the target node satisfies the overriding spec
+    // then it's okay.
+    if (depValid(node, this.spec, this.#safeAccept, this.#safeFrom)) {
+      return true
+    }
+    // If it doesn't, then it should at least satisfy the original spec.
+    if (!depValid(node, this.rawSpec, this.#safeAccept, this.#safeFrom)) {
+      return false
+    }
+    // It satisfies the original spec, not the overriding spec. We need to make
+    // sure it doesn't use the overridden spec.
+    // For example, we might have an ^8.0.0 rawSpec, and an override that makes
+    // keySpec=8.23.0 and the override value spec=9.0.0.
+    // If the node is 9.0.0, then it's okay because it's consistent with spec.
+    // If the node is 8.24.0, then it's okay because it's consistent with the rawSpec.
+    // If the node is 8.23.0, then it's not okay because even though it's consistent
+    // with the rawSpec, it's also consistent with the keySpec.
+    // So we're looking for ^8.0.0 or 9.0.0 and not 8.23.0.
+    return !depValid(
+      node,
+      this.overrides.keySpec,
+      this.#safeAccept,
+      this.#safeFrom
+    )
   }
 }
 
 // Implementation code not related to patch https://github.com/npm/cli/pull/7025
 // is based on https://github.com/npm/cli/blob/v10.9.0/workspaces/arborist/lib/node.js:
 class SafeNode extends Node {
+  // Return true if it's safe to remove this node, because anything that is
+  // depending on it would be fine with the thing that they would resolve to if
+  // it was removed, or nothing is depending on it in the first place.
+  canDedupe(preferDedupe = false) {
+    // Not allowed to mess with shrinkwraps or bundles.
+    if (this.inDepBundle || this.inShrinkwrap) {
+      return false
+    }
+    // It's a top level pkg, or a dep of one.
+    if (!this.resolveParent || !this.resolveParent.resolveParent) {
+      return false
+    }
+    // No one wants it, remove it.
+    if (this.edgesIn.size === 0) {
+      return true
+    }
+    const other = this.resolveParent.resolveParent.resolve(this.name)
+    // Nothing else, need this one.
+    if (!other) {
+      return false
+    }
+    // If it's the same thing, then always fine to remove.
+    if (other.matches(this)) {
+      return true
+    }
+    // If the other thing can't replace this, then skip it.
+    if (!other.canReplace(this)) {
+      return false
+    }
+    // Patch replacing
+    // if (preferDedupe || semver.gte(other.version, this.version)) {
+    //   return true
+    // }
+    // is based on https://github.com/npm/cli/pull/7025.
+    //
+    // If we prefer dedupe, or if the version is equal, take the other.
+    if (preferDedupe || semver.eq(other.version, this.version)) {
+      return true
+    }
+    // If our current version isn't the result of an override, then prefer to
+    // take the greater version.
+    if (!this.overridden && semver.gt(other.version, this.version)) {
+      return true
+    }
+    return false
+  }
+
   // Is it safe to replace one node with another?  check the edges to
   // make sure no one will get upset.  Note that the node might end up
   // having its own unmet dependencies, if the new node has new deps.
@@ -870,7 +1012,11 @@ class SafeNode extends Node {
     // overridden, we check whether any edge going in had the rule applied to it,
     // in which case its overrides set is different than its source node.
     for (const edge of this.edgesIn) {
-      if (this.overrides.isEqual(edge.overrides)) {
+      if (
+        edge.overrides &&
+        edge.overrides.name === this.name &&
+        edge.overrides.value === this.version
+      ) {
         if (!edge.overrides?.isEqual(edge.from?.overrides)) {
           return true
         }
@@ -960,9 +1106,9 @@ class SafeNode extends Node {
       this.recalculateOutEdgesOverrides()
       return true
     }
-    // This is an error condition. We can only get here if the new override set is
-    // in conflict with the existing.
-    console.error('Conflicting override sets')
+    // This is an error condition. We can only get here if the new override set
+    // is in conflict with the existing.
+    log!.silly(`Conflicting override requirements for node ${this.name}`, this)
     return false
   }
 
@@ -1164,9 +1310,8 @@ export class SafeArborist extends Arborist {
     options['saveBundle'] = old.saveBundle
     // Nothing to check, mmm already installed or all private?
     if (
-      diff.findIndex(
-        c => c.newPackage.repository_url === 'https://registry.npmjs.org'
-      ) === -1
+      diff.findIndex(c => c.newPackage.repository_url === NPM_REGISTRY_URL) ===
+      -1
     ) {
       return await this[kRiskyReify](...args)
     }
