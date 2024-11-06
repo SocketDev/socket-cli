@@ -585,13 +585,13 @@ async function addOverrides(
     })
   })
   if (workspaceGlobs) {
-    const wsPkgJsonPaths = await tinyGlob(workspaceGlobs, {
+    const workspacePkgJsonPaths = await tinyGlob(workspaceGlobs, {
       absolute: true,
       cwd: pkgPath!,
       ignore: ['**/node_modules/**', '**/bower_components/**']
     })
     // Chunk package names to process them in parallel 3 at a time.
-    await pEach(wsPkgJsonPaths, 3, async wsPkgJsonPath => {
+    await pEach(workspacePkgJsonPaths, 3, async workspacePkgJsonPath => {
       const otherState = await addOverrides(
         {
           agent,
@@ -600,7 +600,7 @@ async function addOverrides(
           manifestEntries,
           npmExecPath,
           pin,
-          pkgPath: path.dirname(wsPkgJsonPath),
+          pkgPath: path.dirname(workspacePkgJsonPath),
           prod,
           rootPath
         },
