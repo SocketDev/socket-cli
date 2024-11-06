@@ -192,11 +192,12 @@ const lsByAgent = (() => {
       return ''
     }
     const names = new Set<string>()
-    for (const { name, pkgid = '' } of pkgs) {
+    for (const { _id, name, pkgid } of pkgs) {
       // `npm query` results may not have a "name" property, in which case we
-      // fallback to "pkgid".
+      // fallback to "_id" and then "pkgid".
       // `vlt ls --view json` results always have a "name" property.
-      const resolvedName = name ?? pkgid.slice(0, pkgid.indexOf('@', 1))
+      const fallback = _id ?? pkgid ?? ''
+      const resolvedName = name ?? fallback.slice(0, fallback.indexOf('@', 1))
       if (resolvedName) {
         names.add(resolvedName)
       }
