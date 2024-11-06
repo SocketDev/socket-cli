@@ -879,7 +879,7 @@ class SafeNode extends Node {
       return false
     }
     // It's a top level pkg, or a dep of one.
-    if (!this.resolveParent || !this.resolveParent.resolveParent) {
+    if (!this.resolveParent?.resolveParent) {
       return false
     }
     // No one wants it, remove it.
@@ -1387,7 +1387,7 @@ void (async () => {
       const orgResult = await socketSdk.getOrganizations()
       if (!orgResult.success) {
         throw new Error(
-          'Failed to fetch Socket organization info: ' + orgResult.error.message
+          `Failed to fetch Socket organization info: ${orgResult.error.message}`
         )
       }
       const orgs: Exclude<
@@ -1404,7 +1404,7 @@ void (async () => {
       )
       if (!result.success) {
         throw new Error(
-          'Failed to fetch API key settings: ' + result.error.message
+          `Failed to fetch API key settings: ${result.error.message}`
         )
       }
       return {
@@ -1442,11 +1442,19 @@ void (async () => {
   if (socketYml) {
     settings.entries.push({
       start: socketYml.path,
-      // @ts-ignore
       settings: {
         [socketYml.path]: {
           deferTo: null,
-          issueRules: socketYml.parsed.issueRules
+          // TODO: TypeScript complains about the type not matching. We should
+          // figure out why are providing
+          // issueRules: { [issueName: string]: boolean }
+          // but expecting
+          // issueRules: { [issueName: string]: { action: 'defer' | 'error' | 'ignore' | 'monitor' | 'warn' } }
+          issueRules: (<unknown>socketYml.parsed.issueRules) as {
+            [key: string]: {
+              action: 'defer' | 'error' | 'ignore' | 'monitor' | 'warn'
+            }
+          }
         }
       }
     })

@@ -102,7 +102,6 @@ function issueRuleValueDoesNotDefer(
 
 /**
  * Handles booleans for backwards compatibility
-
  */
 function uxForDefinedNonDeferValue(
   issueRuleValue: NonNormalizedResolvedIssueRule
