@@ -186,7 +186,7 @@ const lsByAgent = (() => {
     }
     let pkgs
     try {
-      pkgs = JSON.stringify(stdout)
+      pkgs = JSON.parse(stdout)
     } catch {}
     if (!Array.isArray(pkgs)) {
       return ''
