@@ -804,7 +804,7 @@ export const optimize: CliSubcommand = {
             process.execPath,
             [wrapperPath, 'install', '--no-audit', '--no-fund'],
             {
-              stdio: 'pipe',
+              stdio: 'ignore',
               env: {
                 ...process.env,
                 UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: '1'
@@ -813,7 +813,7 @@ export const optimize: CliSubcommand = {
           )
         } else {
           // All package managers support the "install" command.
-          await spawn(agentExecPath, ['install'], { stdio: 'pipe' })
+          await spawn(agentExecPath, ['install'], { stdio: 'ignore' })
         }
         spinner.stop()
         if (isNpm) {
