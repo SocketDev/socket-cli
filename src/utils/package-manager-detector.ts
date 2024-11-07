@@ -8,8 +8,8 @@ import semver from 'semver'
 import which from 'which'
 
 import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
-import { isObjectObject } from './objects'
-import { isNonEmptyString } from './strings'
+import { isObjectObject } from '@socketsecurity/registry/lib/objects'
+import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import type { Content as PackageJsonContent } from '@npmcli/package-json'
 import type { SemVer } from 'semver'

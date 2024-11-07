@@ -8,7 +8,10 @@ const vm = require('node:vm')
 const normalizePackageData = require('normalize-package-data')
 const validatePackageName = require('validate-npm-package-name')
 
-const { isRelative, normalizePath } = require('./path')
+const {
+  isRelative,
+  normalizePath
+} = require('@socketsecurity/registry/lib/path')
 const { findUpSync } = require('./fs')
 
 const { createRequire, isBuiltin } = Module
