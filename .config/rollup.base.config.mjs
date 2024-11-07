@@ -50,6 +50,25 @@ const customResolver = nodeResolve({
   preferBuiltins: true
 })
 
+function isAncestorsCjs(resolvedId, parentId) {
+  let currNmIndex = resolvedId.indexOf(SLASH_NODE_MODULES_SLASH)
+  while (currNmIndex !== -1) {
+    const nextNmIndex = resolvedId.indexOf(
+      SLASH_NODE_MODULES_SLASH,
+      currNmIndex + 1
+    )
+    const currPkgName = resolvedId.slice(
+      currNmIndex + SLASH_NODE_MODULES_SLASH.length,
+      nextNmIndex === -1 ? resolvedId.length : nextNmIndex
+    )
+    if (isEsmId(currPkgName, parentId)) {
+      return false
+    }
+    currNmIndex = nextNmIndex
+  }
+  return true
+}
+
 export default (extendConfig = {}) => {
   const depStats = {
     dependencies: { __proto__: null },
@@ -79,22 +98,7 @@ export default (extendConfig = {}) => {
       const parentId = parentId_ ? resolveId(parentId_) : undefined
       const resolvedId = resolveId(id, parentId)
       if (resolvedId.endsWith('.json')) {
-        let currNmIndex = resolvedId.indexOf(SLASH_NODE_MODULES_SLASH)
-        while (currNmIndex !== -1) {
-          const nextNmIndex = resolvedId.indexOf(
-            SLASH_NODE_MODULES_SLASH,
-            currNmIndex + 1
-          )
-          const currPkgName = resolvedId.slice(
-            currNmIndex + SLASH_NODE_MODULES_SLASH.length,
-            nextNmIndex === -1 ? resolvedId.length : nextNmIndex
-          )
-          if (isEsmId(currPkgName, parentId)) {
-            return false
-          }
-          currNmIndex = nextNmIndex
-        }
-        return true
+        return isAncestorsCjs(resolvedId, parentId)
       }
       if (!isPackageName(id)) {
         return false
@@ -115,8 +119,13 @@ export default (extendConfig = {}) => {
           ''
         return false
       }
-      const parentNodeModulesIndex = parentId.lastIndexOf('/node_modules/')
+      const parentNodeModulesIndex = parentId.lastIndexOf(
+        SLASH_NODE_MODULES_SLASH
+      )
       if (parentNodeModulesIndex !== -1) {
+        if (isAncestorsCjs(resolvedId, parentId)) {
+          return true
+        }
         const parentNameStart = parentNodeModulesIndex + 14
         const parentNameEnd = getPackageNameEnd(parentId, parentNameStart)
         const {
