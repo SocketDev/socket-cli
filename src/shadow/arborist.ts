@@ -109,6 +109,7 @@ type NodeClass = Omit<
   new (...args: any): NodeClass
   addEdgeIn(edge: SafeEdge): void
   addEdgeOut(edge: SafeEdge): void
+  canDedupe(preferDedupe: boolean): boolean
   canReplace(node: NodeClass, ignorePeers?: string[]): boolean
   canReplaceWith(node: NodeClass, ignorePeers?: string[]): boolean
   deleteEdgeIn(edge: SafeEdge): void
@@ -327,6 +328,15 @@ async function* batchScan(
   for await (const line of rli) {
     yield JSON.parse(line)
   }
+}
+
+// Patch adding doOverrideSetsConflict is based on
+// https://github.com/npm/cli/pull/7025.
+function doOverrideSetsConflict(
+  first: OverrideSetClass | undefined,
+  second: OverrideSetClass | undefined
+) {
+  return findSpecificOverrideSet(first, second) === undefined
 }
 
 function findSocketYmlSync() {
@@ -654,7 +664,7 @@ class SafeEdge extends Edge {
       else if (
         this.overrides &&
         this.#safeTo.edgesOut.size &&
-        !findSpecificOverrideSet(this.overrides, this.#safeTo.overrides)
+        doOverrideSetsConflict(this.overrides, this.#safeTo.overrides)
       ) {
         // Any inconsistency between the edge's override set and the target's
         // override set is potentially problematic. But we only say the edge is
@@ -873,7 +883,7 @@ class SafeNode extends Node {
   // Return true if it's safe to remove this node, because anything that is
   // depending on it would be fine with the thing that they would resolve to if
   // it was removed, or nothing is depending on it in the first place.
-  canDedupe(preferDedupe = false) {
+  override canDedupe(preferDedupe = false) {
     // Not allowed to mess with shrinkwraps or bundles.
     if (this.inDepBundle || this.inShrinkwrap) {
       return false
@@ -1107,7 +1117,7 @@ class SafeNode extends Node {
     }
     // This is an error condition. We can only get here if the new override set
     // is in conflict with the existing.
-    log!.silly(`Conflicting override requirements for node ${this.name}`, this)
+    log!.silly('Conflicting override sets', this.name)
     return false
   }
 
