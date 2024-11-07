@@ -8,13 +8,11 @@ import { getManifestData } from '@socketsecurity/registry'
 import meow from 'meow'
 import npa from 'npm-package-arg'
 import ora from 'ora'
-import pacote from 'pacote'
 import semver from 'semver'
 import { glob as tinyGlob } from 'tinyglobby'
 import { parse as yamlParse } from 'yaml'
 
-//import { packumentCache, pacoteCachePath } from '../constants'
-import { packumentCache } from '../constants'
+import { fetchPackageManifest } from '@socketsecurity/registry/lib/packages'
 import { commonFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
 import { existsSync } from '../utils/fs'
@@ -24,10 +22,9 @@ import { pEach } from '@socketsecurity/registry/lib/promises'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import type { Content as PackageJsonContent } from '@npmcli/package-json'
+import type { Content as NPMCliPackageJson } from '@npmcli/package-json'
 import type { ManifestEntry } from '@socketsecurity/registry'
 import type { Ora } from 'ora'
-import type { PacoteOptions } from 'pacote'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type {
   Agent,
@@ -45,42 +42,42 @@ const manifestNpmOverrides = getManifestData('npm')!
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
 type Overrides = NpmOverrides | PnpmOrYarnOverrides
-type GetOverrides = (pkgJson: PackageJsonContent) => GetOverridesResult
+type GetOverrides = (pkgJson: NPMCliPackageJson) => GetOverridesResult
 type GetOverridesResult = {
   type: Agent
   overrides: Overrides
 }
 
 const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
-  bun(pkgJson: PackageJsonContent) {
+  bun(pkgJson: NPMCliPackageJson) {
     const overrides = (pkgJson as any)?.resolutions ?? {}
     return { type: 'yarn/berry', overrides }
   },
   // npm overrides documentation:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
-  npm(pkgJson: PackageJsonContent) {
+  npm(pkgJson: NPMCliPackageJson) {
     const overrides = (pkgJson as any)?.overrides ?? {}
     return { type: 'npm', overrides }
   },
   // pnpm overrides documentation:
   // https://pnpm.io/package_json#pnpmoverrides
-  pnpm(pkgJson: PackageJsonContent) {
+  pnpm(pkgJson: NPMCliPackageJson) {
     const overrides = (pkgJson as any)?.pnpm?.overrides ?? {}
     return { type: 'pnpm', overrides }
   },
-  vlt(pkgJson: PackageJsonContent) {
+  vlt(pkgJson: NPMCliPackageJson) {
     const overrides = (pkgJson as any)?.overrides ?? {}
     return { type: 'vlt', overrides }
   },
   // Yarn resolutions documentation:
   // https://yarnpkg.com/configuration/manifest#resolutions
-  'yarn/berry'(pkgJson: PackageJsonContent) {
+  'yarn/berry'(pkgJson: NPMCliPackageJson) {
     const overrides = (pkgJson as any)?.resolutions ?? {}
     return { type: 'yarn/berry', overrides }
   },
   // Yarn resolutions documentation:
   // https://classic.yarnpkg.com/en/docs/selective-version-resolutions
-  'yarn/classic'(pkgJson: PackageJsonContent) {
+  'yarn/classic'(pkgJson: NPMCliPackageJson) {
     const overrides = (pkgJson as any)?.resolutions ?? {}
     return { type: 'yarn/classic', overrides }
   }
@@ -335,7 +332,7 @@ function createActionMessage(
   return `${verb} ${overrideCount} Socket.dev optimized overrides${workspaceCount ? ` in ${workspaceCount} workspace${workspaceCount > 1 ? 's' : ''}` : ''}`
 }
 
-function getDependencyEntries(pkgJson: PackageJsonContent) {
+function getDependencyEntries(pkgJson: NPMCliPackageJson) {
   const {
     dependencies,
     devDependencies,
@@ -367,7 +364,7 @@ function getDependencyEntries(pkgJson: PackageJsonContent) {
 async function getWorkspaceGlobs(
   agent: Agent,
   pkgPath: string,
-  pkgJson: PackageJsonContent
+  pkgJson: NPMCliPackageJson
 ): Promise<string[] | undefined> {
   let workspacePatterns
   if (agent === 'pnpm') {
@@ -471,7 +468,7 @@ async function addOverrides(
     editablePkgJson = await EditablePackageJson.load(pkgPath)
   }
   const { spinner } = state
-  const pkgJson: Readonly<PackageJsonContent> = editablePkgJson.content
+  const pkgJson: Readonly<NPMCliPackageJson> = editablePkgJson.content
   const isRoot = pkgPath === rootPath
   const isLockScanned = isRoot && !prod
   const workspaceName = path.relative(rootPath, pkgPath)
@@ -621,68 +618,13 @@ async function addOverrides(
     })
   }
   if (state.added.size > 0 || state.updated.size > 0) {
-    editablePkgJson.update(<PackageJsonContent>Object.fromEntries(depEntries))
+    editablePkgJson.update(<NPMCliPackageJson>Object.fromEntries(depEntries))
     for (const { overrides, type } of overridesDataObjects) {
       updateManifestByAgent[type](editablePkgJson, toSortedObject(overrides))
     }
     await editablePkgJson.save()
   }
   return state
-}
-
-// type ExtractOptions = pacote.Options & {
-//   tmpPrefix?: string
-//   [key: string]: any
-// }
-
-// async function extractPackage(pkgNameOrId: string, options: ExtractOptions | undefined, callback: (tmpDirPath: string) => any) {
-//   if (arguments.length === 2 && typeof options === 'function') {
-//     callback = options
-//     options = undefined
-//   }
-//   const { tmpPrefix, ...extractOptions } = { __proto__: null, ...options }
-//   // cacache.tmp.withTmp DOES return a promise.
-//   await cacache.tmp.withTmp(
-//     pacoteCachePath,
-//     { tmpPrefix },
-//     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-//     async tmpDirPath => {
-//       await pacote.extract(pkgNameOrId, tmpDirPath, {
-//         __proto__: null,
-//         packumentCache,
-//         preferOffline: true,
-//         ...<Omit<typeof extractOptions, '__proto__'>>extractOptions
-//       })
-//       await callback(tmpDirPath)
-//     }
-//   )
-// }
-
-type FetchPackageManifestOptions = {
-  signal?: AbortSignal
-}
-
-async function fetchPackageManifest(
-  pkgNameOrId: string,
-  options?: FetchPackageManifestOptions
-) {
-  const pacoteOptions = <PacoteOptions & { signal?: AbortSignal }>{
-    ...options,
-    packumentCache,
-    preferOffline: true
-  }
-  const { signal } = pacoteOptions
-  if (signal?.aborted) {
-    return null
-  }
-  let result
-  try {
-    result = await pacote.manifest(pkgNameOrId, pacoteOptions)
-  } catch {}
-  if (signal?.aborted) {
-    return null
-  }
-  return result
 }
 
 export const optimize: CliSubcommand = {

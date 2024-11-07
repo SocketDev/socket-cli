@@ -7,11 +7,13 @@ import browserslist from 'browserslist'
 import semver from 'semver'
 import which from 'which'
 
-import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
+import constants from '@socketsecurity/registry/lib/constants'
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import type { Content as PackageJsonContent } from '@npmcli/package-json'
+import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
+
+import type { Content as NPMCliPackageJson } from '@npmcli/package-json'
 import type { SemVer } from 'semver'
 
 export const AGENTS = [
@@ -25,11 +27,10 @@ export const AGENTS = [
 export type Agent = (typeof AGENTS)[number]
 export type StringKeyValueObject = { [key: string]: string }
 
-const numericCollator = new Intl.Collator(undefined, {
+const { compare: alphaNumericComparator } = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: 'base'
 })
-const { compare: alphaNumericComparator } = numericCollator
 
 async function getAgentExecPath(agent: Agent): Promise<string> {
   return (await which(agent, { nothrow: true })) ?? agent
@@ -49,45 +50,6 @@ async function getAgentVersion(
   } catch {}
   return result
 }
-
-const maintainedNodeVersions = (() => {
-  // Under the hood browserlist uses the node-releases package which is out of date:
-  // https://github.com/chicoxyzzy/node-releases/issues/37
-  // So we maintain a manual version list for now.
-  // https://nodejs.org/en/about/previous-releases#looking-for-latest-release-of-a-version-branch
-  const manualPrev = '18.20.4'
-  const manualCurr = '20.18.0'
-  const manualNext = '22.10.0'
-
-  const query = browserslist('maintained node versions')
-    // Trim value, e.g. 'node 22.5.0' to '22.5.0'.
-    .map(s => s.slice(5 /*'node '.length*/))
-    // Sort ascending.
-    .toSorted(alphaNumericComparator)
-  const queryPrev = query.at(0) ?? manualPrev
-  const queryCurr = query.at(1) ?? manualCurr
-  const queryNext = query.at(2) ?? manualNext
-
-  const previous = semver.maxSatisfying(
-    [queryPrev, manualPrev],
-    `^${semver.major(queryPrev)}`
-  )!
-  const current = semver.maxSatisfying(
-    [queryCurr, manualCurr],
-    `^${semver.major(queryCurr)}`
-  )!
-  const next = semver.maxSatisfying(
-    [queryNext, manualNext],
-    `^${semver.major(queryNext)}`
-  )!
-  return Object.freeze(
-    Object.assign([previous, current, next], {
-      previous,
-      current,
-      next
-    })
-  )
-})()
 
 const LOCKS: Record<string, Agent> = {
   'bun.lockb': 'bun',
@@ -192,7 +154,7 @@ export async function detect({
   const editablePkgJson = pkgPath
     ? await EditablePackageJson.load(pkgPath)
     : undefined
-  const pkgJson: Readonly<PackageJsonContent> | undefined =
+  const pkgJson: Readonly<NPMCliPackageJson> | undefined =
     editablePkgJson?.content
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
@@ -240,7 +202,8 @@ export async function detect({
     node: true
   }
   let lockSrc: string | undefined
-  let minimumNodeVersion = maintainedNodeVersions.previous
+  // Lazily access constants.maintainedNodeVersions.
+  let minimumNodeVersion = constants.maintainedNodeVersions.previous
   if (pkgJson) {
     const browserField = pkgJson.browser
     if (isNonEmptyString(browserField) || isObjectObject(browserField)) {
@@ -272,7 +235,8 @@ export async function detect({
         }
       }
     }
-    targets.node = maintainedNodeVersions.some(v =>
+    // Lazily access constants.maintainedNodeVersions.
+    targets.node = constants.maintainedNodeVersions.some(v =>
       semver.satisfies(v, `>=${minimumNodeVersion}`)
     )
     lockSrc =
