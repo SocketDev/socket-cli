@@ -18,12 +18,11 @@ import { packumentCache } from '../constants'
 import { commonFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
 import { existsSync } from '../utils/fs'
-import { hasOwn } from '../utils/objects'
+import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { detect } from '../utils/package-manager-detector'
-import { pEach } from '../utils/promises'
-import { escapeRegExp } from '../utils/regexps'
-import { toSortedObject } from '../utils/sorts'
-import { isNonEmptyString } from '../utils/strings'
+import { pEach } from '@socketsecurity/registry/lib/promises'
+import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
+import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import type { Content as PackageJsonContent } from '@npmcli/package-json'
 import type { ManifestEntry } from '@socketsecurity/registry'
@@ -198,7 +197,9 @@ const lsByAgent = (() => {
       // `vlt ls --view json` results always have a "name" property.
       const fallback = _id ?? pkgid ?? ''
       const resolvedName = name ?? fallback.slice(0, fallback.indexOf('@', 1))
-      if (resolvedName) {
+      // Add package names, except for those under the `@types` scope as those
+      // are known to only be dev dependencies.
+      if (resolvedName && !resolvedName.startsWith('@types/')) {
         names.add(resolvedName)
       }
     }
