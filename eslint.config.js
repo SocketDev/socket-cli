@@ -13,6 +13,10 @@ const tsParser = require('@typescript-eslint/parser')
 const gitignorePath = path.resolve(__dirname, '.gitignore')
 const prettierignorePath = path.resolve(__dirname, '.prettierignore')
 
+const {
+  engines: { node: nodeRange }
+} = require('./package.json')
+
 const sharedPlugins = {
   'sort-destructure-keys': sortDestructureKeysPlugin,
   unicorn: unicornPlugin
@@ -104,7 +108,13 @@ module.exports = [
       'n/no-unpublished-bin': ['error'],
       'n/no-unsupported-features/es-builtins': ['error'],
       'n/no-unsupported-features/es-syntax': ['error'],
-      'n/no-unsupported-features/node-builtins': ['error'],
+      'n/no-unsupported-features/node-builtins': [
+        'error',
+        {
+          ignores: ['test.describe'],
+          version: nodeRange
+        }
+      ],
       'n/prefer-node-protocol': ['error'],
       'no-unused-vars': [
         'error',
