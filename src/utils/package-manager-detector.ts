@@ -219,7 +219,7 @@ export async function detect({
     if (Array.isArray(browserslistQuery)) {
       const browserslistTargets = browserslist(browserslistQuery)
         .map(s => s.toLowerCase())
-        .toSorted(alphaNumericComparator)
+        .sort(alphaNumericComparator)
       const browserslistNodeTargets = browserslistTargets
         .filter(v => v.startsWith('node '))
         .map(v => v.slice(5 /*'node '.length*/))
