@@ -4,18 +4,15 @@ const path = require('node:path')
 
 const { includeIgnoreFile } = require('@eslint/compat')
 const js = require('@eslint/js')
+const constants = require('@socketsecurity/registry/lib/constants')
+const tsParser = require('@typescript-eslint/parser')
 const nodePlugin = require('eslint-plugin-n')
 const sortDestructureKeysPlugin = require('eslint-plugin-sort-destructure-keys')
 const unicornPlugin = require('eslint-plugin-unicorn')
 const tsEslint = require('typescript-eslint')
-const tsParser = require('@typescript-eslint/parser')
 
 const gitignorePath = path.resolve(__dirname, '.gitignore')
 const prettierignorePath = path.resolve(__dirname, '.prettierignore')
-
-const {
-  engines: { node: nodeRange }
-} = require('./package.json')
 
 const sharedPlugins = {
   'sort-destructure-keys': sortDestructureKeysPlugin,
@@ -111,8 +108,9 @@ module.exports = [
       'n/no-unsupported-features/node-builtins': [
         'error',
         {
-          ignores: ['test.describe'],
-          version: nodeRange
+          ignores: ['test', 'test.describe'],
+          // Lazily access constants.maintainedNodeVersions.
+          version: constants.maintainedNodeVersions.previous
         }
       ],
       'n/prefer-node-protocol': ['error'],
