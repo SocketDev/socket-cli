@@ -7,11 +7,6 @@ import chalk from 'chalk'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 
-import {
-  objectEntries,
-  objectFromEntries
-} from '@socketsecurity/registry/lib/objects'
-
 import * as cliCommands from './commands'
 import { logSymbols } from './utils/chalk-markdown'
 import { AuthError, InputError } from './utils/errors'
@@ -23,10 +18,10 @@ const rootPkgJsonPath = path.join(rootPath, 'package.json')
 
 const rootPkgJson = require(rootPkgJsonPath)
 
-const formattedCliCommands = objectFromEntries(
-  objectEntries(cliCommands).map(entry => {
+const formattedCliCommands = Object.fromEntries(
+  Object.entries(cliCommands).map(entry => {
     const key = entry[0]
-    entry[0] = typeof key === 'string' ? camelToHyphen(key) : key
+    entry[0] = camelToHyphen(key)
     return entry
   })
 )
