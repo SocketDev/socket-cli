@@ -2,6 +2,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
+import { objectEntries } from '@socketsecurity/registry/lib/objects'
 import chalk from 'chalk'
 import yargsParse from 'yargs-parser'
 
@@ -129,18 +130,18 @@ function argvToArray(argv: {
 }): string[] {
   if (argv['help']) return ['--help']
   const result = []
-  for (const { 0: key, 1: value } of Object.entries(argv)) {
+  for (const { 0: key, 1: value } of objectEntries(argv)) {
     if (key === '_' || key === '--') continue
     if (key === 'babel' || key === 'install-deps' || key === 'validate') {
       // cdxgen documents no-babel, no-install-deps, and no-validate flags so
       // use them when relevant.
       result.push(`--${value ? key : `no-${key}`}`)
     } else if (value === true) {
-      result.push(`--${key}`)
+      result.push(`--${String(key)}`)
     } else if (typeof value === 'string') {
-      result.push(`--${key}`, String(value))
+      result.push(`--${String(key)}`, String(value))
     } else if (Array.isArray(value)) {
-      result.push(`--${key}`, ...value.map(String))
+      result.push(`--${String(key)}`, ...value.map(String))
     }
   }
   if (argv['--']) {
