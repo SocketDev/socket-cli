@@ -29,9 +29,16 @@ function getPackageName(string, start = 0) {
 }
 
 function getPackageNameEnd(string, start = 0) {
+  if (isRelative(string)) {
+    return 0
+  }
   const firstSlashIndex = string.indexOf('/', start)
-  if (firstSlashIndex === -1) return string.length
-  if (string.charCodeAt(start) !== 64 /*'@'*/) return firstSlashIndex
+  if (firstSlashIndex === -1) {
+    return string.length
+  }
+  if (string.charCodeAt(start) !== 64 /*'@'*/) {
+    return firstSlashIndex
+  }
   const secondSlashIndex = string.indexOf('/', firstSlashIndex + 1)
   return secondSlashIndex === -1 ? string.length : secondSlashIndex
 }
