@@ -4,11 +4,10 @@ import { fileURLToPath } from 'node:url'
 
 import { hasKeys, toSortedObject } from '@socketsecurity/registry/lib/objects'
 
+import baseConfig from './rollup.base.config.mjs'
 import { readJsonSync } from '../scripts/utils/fs.js'
 import { formatObject } from '../scripts/utils/objects.js'
 import { readPackageJsonSync } from '../scripts/utils/packages.js'
-
-import baseConfig from './rollup.base.config.mjs'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 

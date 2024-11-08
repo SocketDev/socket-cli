@@ -2,9 +2,10 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 
 import { password } from '@inquirer/prompts'
-import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 import isInteractive from 'is-interactive'
+
+import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
 import { AuthError } from './errors'
 import { getSetting } from './settings'

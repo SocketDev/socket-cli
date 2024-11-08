@@ -1,10 +1,11 @@
 import path from 'node:path'
 
 import { betterAjvErrors } from '@apideck/better-ajv-errors'
-import { SocketValidationError, readSocketConfig } from '@socketsecurity/config'
 import meow from 'meow'
 import ora from 'ora'
 import { ErrorWithCause } from 'pony-cause'
+
+import { SocketValidationError, readSocketConfig } from '@socketsecurity/config'
 
 import { fetchReportData, formatReportDataOutput } from './view'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
@@ -19,9 +20,9 @@ import { createDebugLogger } from '../../utils/misc'
 import { getPackageFiles } from '../../utils/path-resolve'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
-import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
 export const create: CliSubcommand = {
   description: 'Create a project report',

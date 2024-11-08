@@ -9,9 +9,9 @@ import { printFlagList } from '../utils/formatting'
 import { FREE_API_KEY, setupSdk } from '../utils/sdk'
 import { getSetting, updateSetting } from '../utils/settings'
 
+import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type { Separator } from '@inquirer/prompts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
-import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
 type Choice<Value> = {
   value: Value

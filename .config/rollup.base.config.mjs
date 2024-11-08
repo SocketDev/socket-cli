@@ -4,14 +4,16 @@ import { fileURLToPath } from 'node:url'
 
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
-import replace from '@rollup/plugin-replace'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
-import { isRelative } from '@socketsecurity/registry/lib/path'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
-import rangesIntersect from 'semver/ranges/intersects.js'
+import replace from '@rollup/plugin-replace'
 import { readPackageUpSync } from 'read-package-up'
+import rangesIntersect from 'semver/ranges/intersects.js'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
+import { isRelative } from '@socketsecurity/registry/lib/path'
+import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
+
+import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
   getPackageName,
   getPackageNameEnd,
@@ -22,7 +24,6 @@ import {
   readPackageJsonSync,
   resolveId
 } from '../scripts/utils/packages.js'
-import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const require = createRequire(import.meta.url)

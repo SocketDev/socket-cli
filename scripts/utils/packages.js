@@ -5,12 +5,13 @@ const Module = require('node:module')
 const path = require('node:path')
 const vm = require('node:vm')
 
+const normalizePackageData = require('normalize-package-data')
+const validatePackageName = require('validate-npm-package-name')
+
 const {
   isRelative,
   normalizePath
 } = require('@socketsecurity/registry/lib/path')
-const normalizePackageData = require('normalize-package-data')
-const validatePackageName = require('validate-npm-package-name')
 
 const { findUpSync } = require('./fs')
 
