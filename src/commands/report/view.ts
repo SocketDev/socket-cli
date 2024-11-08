@@ -17,11 +17,11 @@ import {
 import { printFlagList } from '../../utils/formatting'
 import { setupSdk } from '../../utils/sdk'
 
-import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type {
   SocketSdkResultType,
   SocketSdkReturnType
 } from '@socketsecurity/sdk'
+import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
 export const view: CliSubcommand = {
   description: 'View a project report',

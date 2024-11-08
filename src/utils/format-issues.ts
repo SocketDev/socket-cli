@@ -1,7 +1,7 @@
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+
 import { stringJoinWithSeparateFinalSeparator } from './misc'
 import { pick } from './objects'
-
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 type SocketIssueList = SocketSdkReturnType<'getIssuesByNPMPackage'>['data']
 
