@@ -6,6 +6,7 @@ import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
 import replace from '@rollup/plugin-replace'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
+import { isRelative } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import rangesIntersect from 'semver/ranges/intersects.js'
 import { readPackageUpSync } from 'read-package-up'
@@ -89,6 +90,9 @@ export default (extendConfig = {}) => {
         return true
       }
       const id = normalizeId(id_)
+      if (isRelative(id)) {
+        return false
+      }
       if (id.endsWith('.cjs')) {
         return true
       }
@@ -100,10 +104,10 @@ export default (extendConfig = {}) => {
       if (resolvedId.endsWith('.json')) {
         return isAncestorsCjs(resolvedId, parentId)
       }
-      if (!isPackageName(id)) {
+      const name = getPackageName(id)
+      if (!isPackageName(name) || name === '@babel/runtime') {
         return false
       }
-      const name = getPackageName(id)
       if (isEsmId(resolvedId, parentId)) {
         const parentPkg = parentId
           ? readPackageUpSync({ cwd: path.dirname(parentId) })?.packageJson
@@ -126,7 +130,8 @@ export default (extendConfig = {}) => {
         if (isAncestorsCjs(resolvedId, parentId)) {
           return true
         }
-        const parentNameStart = parentNodeModulesIndex + 14
+        const parentNameStart =
+          parentNodeModulesIndex + SLASH_NODE_MODULES_SLASH.length
         const parentNameEnd = getPackageNameEnd(parentId, parentNameStart)
         const {
           version,
