@@ -4,7 +4,15 @@ import path from 'node:path'
 import spawn from '@npmcli/promise-spawn'
 import EditablePackageJson from '@npmcli/package-json'
 import { getManifestData } from '@socketsecurity/registry'
-//import cacache from 'cacache'
+import {
+  hasOwn,
+  objectFromEntries,
+  toSortedObject
+} from '@socketsecurity/registry/lib/objects'
+import { fetchPackageManifest } from '@socketsecurity/registry/lib/packages'
+import { pEach } from '@socketsecurity/registry/lib/promises'
+import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
+import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import meow from 'meow'
 import npa from 'npm-package-arg'
 import ora from 'ora'
@@ -12,15 +20,10 @@ import semver from 'semver'
 import { glob as tinyGlob } from 'tinyglobby'
 import { parse as yamlParse } from 'yaml'
 
-import { fetchPackageManifest } from '@socketsecurity/registry/lib/packages'
 import { commonFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
 import { existsSync } from '../utils/fs'
-import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { detect } from '../utils/package-manager-detector'
-import { pEach } from '@socketsecurity/registry/lib/promises'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import type { Content as NPMCliPackageJson } from '@npmcli/package-json'
 import type { ManifestEntry } from '@socketsecurity/registry'
@@ -618,7 +621,7 @@ async function addOverrides(
     })
   }
   if (state.added.size > 0 || state.updated.size > 0) {
-    editablePkgJson.update(<NPMCliPackageJson>Object.fromEntries(depEntries))
+    editablePkgJson.update(<NPMCliPackageJson>objectFromEntries(depEntries))
     for (const { overrides, type } of overridesDataObjects) {
       updateManifestByAgent[type](editablePkgJson, toSortedObject(overrides))
     }

@@ -3,6 +3,10 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
+import {
+  objectEntries,
+  objectFromEntries
+} from '@socketsecurity/registry/lib/objects'
 import chalk from 'chalk'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
@@ -18,9 +22,10 @@ const rootPkgJsonPath = path.join(rootPath, 'package.json')
 
 const rootPkgJson = require(rootPkgJsonPath)
 
-const formattedCliCommands = Object.fromEntries(
-  Object.entries(cliCommands).map(entry => {
-    entry[0] = camelToHyphen(entry[0])
+const formattedCliCommands = objectFromEntries(
+  objectEntries(cliCommands).map(entry => {
+    const key = entry[0]
+    entry[0] = typeof key === 'string' ? camelToHyphen(key) : key
     return entry
   })
 )
