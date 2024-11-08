@@ -19,9 +19,9 @@ import { createDebugLogger } from '../../utils/misc'
 import { getPackageFiles } from '../../utils/path-resolve'
 import { setupSdk } from '../../utils/sdk'
 
-import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
 export const create: CliSubcommand = {
   description: 'Create a project report',
