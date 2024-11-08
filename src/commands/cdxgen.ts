@@ -5,8 +5,6 @@ import spawn from '@npmcli/promise-spawn'
 import chalk from 'chalk'
 import yargsParse from 'yargs-parser'
 
-import { objectEntries } from '@socketsecurity/registry/lib/objects'
-
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
 const distPath = __dirname
@@ -131,18 +129,18 @@ function argvToArray(argv: {
 }): string[] {
   if (argv['help']) return ['--help']
   const result = []
-  for (const { 0: key, 1: value } of objectEntries(argv)) {
+  for (const { 0: key, 1: value } of Object.entries(argv)) {
     if (key === '_' || key === '--') continue
     if (key === 'babel' || key === 'install-deps' || key === 'validate') {
       // cdxgen documents no-babel, no-install-deps, and no-validate flags so
       // use them when relevant.
       result.push(`--${value ? key : `no-${key}`}`)
     } else if (value === true) {
-      result.push(`--${String(key)}`)
+      result.push(`--${key}`)
     } else if (typeof value === 'string') {
-      result.push(`--${String(key)}`, String(value))
+      result.push(`--${key}`, String(value))
     } else if (Array.isArray(value)) {
-      result.push(`--${String(key)}`, ...value.map(String))
+      result.push(`--${key}`, ...value.map(String))
     }
   }
   if (argv['--']) {
