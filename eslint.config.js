@@ -4,15 +4,22 @@ const path = require('node:path')
 
 const { includeIgnoreFile } = require('@eslint/compat')
 const js = require('@eslint/js')
-const constants = require('@socketsecurity/registry/lib/constants')
 const tsParser = require('@typescript-eslint/parser')
+const importXPlugin = require('eslint-plugin-import-x')
 const nodePlugin = require('eslint-plugin-n')
 const sortDestructureKeysPlugin = require('eslint-plugin-sort-destructure-keys')
 const unicornPlugin = require('eslint-plugin-unicorn')
 const tsEslint = require('typescript-eslint')
 
-const gitignorePath = path.resolve(__dirname, '.gitignore')
-const prettierignorePath = path.resolve(__dirname, '.prettierignore')
+const constants = require('@socketsecurity/registry/lib/constants')
+
+const { flatConfigs: origImportXFlatConfigs } = importXPlugin
+
+const rootPath = __dirname
+const rootTsConfigPath = path.join(rootPath, 'tsconfig.json')
+
+const gitignorePath = path.resolve(rootPath, '.gitignore')
+const prettierignorePath = path.resolve(rootPath, '.prettierignore')
 
 const sharedPlugins = {
   'sort-destructure-keys': sortDestructureKeysPlugin,
@@ -31,9 +38,76 @@ const sharedRules = {
   'unicorn/consistent-function-scoping': ['error']
 }
 
+const getImportXFlatConfigs = isEsm => ({
+  recommended: {
+    ...origImportXFlatConfigs.recommended,
+    languageOptions: {
+      ...origImportXFlatConfigs.recommended.languageOptions,
+      ecmaVersion: 'latest',
+      sourceType: isEsm ? 'module' : 'script'
+    },
+    rules: {
+      ...origImportXFlatConfigs.recommended.rules,
+      'import-x/no-named-as-default-member': 'off',
+      'import-x/order': [
+        'warn',
+        {
+          groups: [
+            'builtin',
+            'external',
+            'internal',
+            ['parent', 'sibling', 'index'],
+            'type'
+          ],
+          pathGroups: [
+            {
+              pattern: '@socket{registry,security}/**',
+              group: 'internal'
+            }
+          ],
+          pathGroupsExcludedImportTypes: ['type'],
+          'newlines-between': 'always',
+          alphabetize: {
+            order: 'asc'
+          }
+        }
+      ]
+    }
+  },
+  typescript: {
+    ...origImportXFlatConfigs.typescript,
+    settings: {
+      ...origImportXFlatConfigs.typescript.settings,
+      'import-x/resolver': {
+        'eslint-import-resolver-oxc': {
+          tsConfig: {
+            configFile: rootTsConfigPath,
+            references: 'auto'
+          }
+        }
+      }
+    }
+  }
+})
+
+const importFlatConfigsForScript = getImportXFlatConfigs(false)
+const importFlatConfigsForModule = getImportXFlatConfigs(true)
 module.exports = [
   includeIgnoreFile(gitignorePath),
   includeIgnoreFile(prettierignorePath),
+  {
+    files: ['**/*.{c,}js'],
+    ...importFlatConfigsForScript.recommended
+  },
+  // TODO: Make this work for our .mjs files too.
+  // {
+  //   files: ['**/*.mjs'],
+  //   ...importFlatConfigsForModule.recommended
+  // },
+  {
+    files: ['src/**/*.ts', 'test/**/*.ts'],
+    ...importFlatConfigsForModule.typescript
+  },
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
     languageOptions: {
@@ -42,7 +116,7 @@ module.exports = [
         projectService: {
           allowDefaultProject: ['test/*.ts'],
           defaultProject: 'tsconfig.json',
-          tsconfigRootDir: __dirname
+          tsconfigRootDir: rootPath
         }
       }
     },

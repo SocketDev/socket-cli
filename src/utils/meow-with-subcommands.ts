@@ -1,7 +1,8 @@
 import meow from 'meow'
 
-import { printFlagList, printHelpList } from './formatting'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
+
+import { printFlagList, printHelpList } from './formatting'
 import { commonFlags } from '../flags'
 
 import type { Options } from 'meow'

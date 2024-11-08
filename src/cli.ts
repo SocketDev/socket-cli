@@ -3,13 +3,14 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
+import chalk from 'chalk'
+import { messageWithCauses, stackWithCauses } from 'pony-cause'
+import updateNotifier from 'tiny-updater'
+
 import {
   objectEntries,
   objectFromEntries
 } from '@socketsecurity/registry/lib/objects'
-import chalk from 'chalk'
-import { messageWithCauses, stackWithCauses } from 'pony-cause'
-import updateNotifier from 'tiny-updater'
 
 import * as cliCommands from './commands'
 import { logSymbols } from './utils/chalk-markdown'

@@ -14,10 +14,10 @@ import { printFlagList } from '../utils/formatting'
 import { objectSome } from '../utils/objects'
 import { FREE_API_KEY, getDefaultKey, setupSdk } from '../utils/sdk'
 
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
-import type { Ora } from 'ora'
 import type { SocketIssue } from '../utils/format-issues'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { Ora } from 'ora'
 
 export const info: CliSubcommand = {
   description: 'Look up info regarding a package',

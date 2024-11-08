@@ -2,9 +2,10 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
-import { objectEntries } from '@socketsecurity/registry/lib/objects'
 import chalk from 'chalk'
 import yargsParse from 'yargs-parser'
+
+import { objectEntries } from '@socketsecurity/registry/lib/objects'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 

@@ -1,8 +1,8 @@
 import { realpathSync } from 'node:fs'
 import path from 'node:path'
 
-import { installLinks } from './link'
 import { installSafeArborist } from './arborist'
+import { installLinks } from './link'
 
 const distPath = __dirname
 const rootPath = path.resolve(distPath, '..')

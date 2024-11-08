@@ -2,13 +2,13 @@ import chalk from 'chalk'
 import { ErrorWithCause } from 'pony-cause'
 
 import { AuthError } from './errors'
+import { API_V0_URL } from '../constants'
 
 import type {
   SocketSdkErrorType,
   SocketSdkOperations
 } from '@socketsecurity/sdk'
 import type { Ora } from 'ora'
-import { API_V0_URL } from '../constants'
 
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,

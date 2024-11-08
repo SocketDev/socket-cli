@@ -1,14 +1,15 @@
 import path from 'node:path'
 
 import EditablePackageJson from '@npmcli/package-json'
-import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb'
 import spawn from '@npmcli/promise-spawn'
-import constants from '@socketsecurity/registry/lib/constants'
-import { isObjectObject } from '@socketsecurity/registry/lib/objects'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import browserslist from 'browserslist'
 import semver from 'semver'
 import which from 'which'
+
+import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb'
+import constants from '@socketsecurity/registry/lib/constants'
+import { isObjectObject } from '@socketsecurity/registry/lib/objects'
+import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
 

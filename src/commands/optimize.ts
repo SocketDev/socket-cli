@@ -1,8 +1,15 @@
 import fs from 'fs/promises'
 import path from 'node:path'
 
-import spawn from '@npmcli/promise-spawn'
 import EditablePackageJson from '@npmcli/package-json'
+import spawn from '@npmcli/promise-spawn'
+import meow from 'meow'
+import npa from 'npm-package-arg'
+import ora from 'ora'
+import semver from 'semver'
+import { glob as tinyGlob } from 'tinyglobby'
+import { parse as yamlParse } from 'yaml'
+
 import { getManifestData } from '@socketsecurity/registry'
 import {
   hasOwn,
@@ -13,26 +20,20 @@ import { fetchPackageManifest } from '@socketsecurity/registry/lib/packages'
 import { pEach } from '@socketsecurity/registry/lib/promises'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
-import meow from 'meow'
-import npa from 'npm-package-arg'
-import ora from 'ora'
-import semver from 'semver'
-import { glob as tinyGlob } from 'tinyglobby'
-import { parse as yamlParse } from 'yaml'
 
 import { commonFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
 import { existsSync } from '../utils/fs'
 import { detect } from '../utils/package-manager-detector'
 
-import type { Content as NPMCliPackageJson } from '@npmcli/package-json'
-import type { ManifestEntry } from '@socketsecurity/registry'
-import type { Ora } from 'ora'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type {
   Agent,
   StringKeyValueObject
 } from '../utils/package-manager-detector'
+import type { Content as NPMCliPackageJson } from '@npmcli/package-json'
+import type { ManifestEntry } from '@socketsecurity/registry'
+import type { Ora } from 'ora'
 
 const COMMAND_TITLE = 'Socket Optimize'
 const OVERRIDES_FIELD_NAME = 'overrides'

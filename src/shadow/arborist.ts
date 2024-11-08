@@ -6,24 +6,24 @@ import rl from 'node:readline'
 import { PassThrough } from 'node:stream'
 import { setTimeout as wait } from 'node:timers/promises'
 
-import config from '@socketsecurity/config'
 import chalk from 'chalk'
 import isInteractive from 'is-interactive'
-import ora, { spinners } from 'ora'
 import npa from 'npm-package-arg'
+import ora, { spinners } from 'ora'
 import semver from 'semver'
 
-import { API_V0_URL, ENV } from '../constants'
+import config from '@socketsecurity/config'
+import { isObject } from '@socketsecurity/registry/lib/objects'
+
 import { createTTYServer } from './tty-server'
+import { API_V0_URL, ENV } from '../constants'
 import { ChalkOrMarkdown } from '../utils/chalk-markdown'
 import { createIssueUXLookup } from '../utils/issue-rules'
 import { isErrnoException } from '../utils/misc'
-import { isObject } from '@socketsecurity/registry/lib/objects'
 import { findRoot } from '../utils/path-resolve'
 import { FREE_API_KEY, getDefaultKey, setupSdk } from '../utils/sdk'
 import { getSetting } from '../utils/settings'
 
-import type { Writable } from 'node:stream'
 import type {
   Options as ArboristOptions,
   Arborist as BaseArborist,
@@ -32,8 +32,9 @@ import type {
   DependencyProblem,
   Diff
 } from '@npmcli/arborist'
-import type { Options as OraOptions } from 'ora'
+import type { Writable } from 'node:stream'
 import type { AliasResult, RegistryResult } from 'npm-package-arg'
+import type { Options as OraOptions } from 'ora'
 
 type ArboristClass = typeof BaseArborist & {
   new (...args: any): typeof BaseArborist
