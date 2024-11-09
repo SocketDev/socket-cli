@@ -1,6 +1,5 @@
 import path from 'node:path'
 
-import EditablePackageJson from '@npmcli/package-json'
 import spawn from '@npmcli/promise-spawn'
 import browserslist from 'browserslist'
 import semver from 'semver'
@@ -9,11 +8,12 @@ import which from 'which'
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb'
 import constants from '@socketsecurity/registry/lib/constants'
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
+import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
 
-import type { Content as NPMCliPackageJson } from '@npmcli/package-json'
+import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { SemVer } from 'semver'
 
 export const AGENTS = [
@@ -152,10 +152,9 @@ export async function detect({
     ? path.dirname(pkgJsonPath)
     : undefined
   const editablePkgJson = pkgPath
-    ? await EditablePackageJson.load(pkgPath)
+    ? await readPackageJson(pkgPath, { editable: true })
     : undefined
-  const pkgJson: Readonly<NPMCliPackageJson> | undefined =
-    editablePkgJson?.content
+  const pkgJson = editablePkgJson?.content
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
   const pkgManager = isNonEmptyString(pkgJson?.packageManager)

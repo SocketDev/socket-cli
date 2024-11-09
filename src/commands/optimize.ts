@@ -1,7 +1,6 @@
 import fs from 'fs/promises'
 import path from 'node:path'
 
-import EditablePackageJson from '@npmcli/package-json'
 import spawn from '@npmcli/promise-spawn'
 import meow from 'meow'
 import npa from 'npm-package-arg'
@@ -16,7 +15,7 @@ import {
   isObject,
   toSortedObject
 } from '@socketsecurity/registry/lib/objects'
-import { fetchPackageManifest } from '@socketsecurity/registry/lib/packages'
+import { fetchPackageManifest, readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { pEach } from '@socketsecurity/registry/lib/promises'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -31,9 +30,11 @@ import type {
   Agent,
   StringKeyValueObject
 } from '../utils/package-manager-detector'
-import type { Content as NPMCliPackageJson } from '@npmcli/package-json'
 import type { ManifestEntry } from '@socketsecurity/registry'
+import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Ora } from 'ora'
+
+type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 
 const COMMAND_TITLE = 'Socket Optimize'
 const OVERRIDES_FIELD_NAME = 'overrides'
@@ -47,42 +48,42 @@ const manifestNpmOverrides = getManifestData('npm')!
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
 type Overrides = NpmOverrides | PnpmOrYarnOverrides
-type GetOverrides = (pkgJson: NPMCliPackageJson) => GetOverridesResult
+type GetOverrides = (pkgJson: PackageJson) => GetOverridesResult
 type GetOverridesResult = {
   type: Agent
   overrides: Overrides
 }
 
 const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
-  bun(pkgJson: NPMCliPackageJson) {
+  bun(pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.resolutions ?? {}
     return { type: 'yarn/berry', overrides }
   },
   // npm overrides documentation:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
-  npm(pkgJson: NPMCliPackageJson) {
+  npm(pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.overrides ?? {}
     return { type: 'npm', overrides }
   },
   // pnpm overrides documentation:
   // https://pnpm.io/package_json#pnpmoverrides
-  pnpm(pkgJson: NPMCliPackageJson) {
+  pnpm(pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.pnpm?.overrides ?? {}
     return { type: 'pnpm', overrides }
   },
-  vlt(pkgJson: NPMCliPackageJson) {
+  vlt(pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.overrides ?? {}
     return { type: 'vlt', overrides }
   },
   // Yarn resolutions documentation:
   // https://yarnpkg.com/configuration/manifest#resolutions
-  'yarn/berry'(pkgJson: NPMCliPackageJson) {
+  'yarn/berry'(pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.resolutions ?? {}
     return { type: 'yarn/berry', overrides }
   },
   // Yarn resolutions documentation:
   // https://classic.yarnpkg.com/en/docs/selective-version-resolutions
-  'yarn/classic'(pkgJson: NPMCliPackageJson) {
+  'yarn/classic'(pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.resolutions ?? {}
     return { type: 'yarn/classic', overrides }
   }
@@ -182,7 +183,7 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
     if (oldValue) {
       // The field already exists so we simply update the field value.
       if (field === PNPM_FIELD_NAME) {
-        editablePkgJson.update({
+        editablePkgJson['update']({
           [field]: {
             ...(isObject(oldValue) ? oldValue : {}),
             overrides: value
@@ -437,7 +438,7 @@ function createActionMessage(
   return `${verb} ${overrideCount} Socket.dev optimized overrides${workspaceCount ? ` in ${workspaceCount} workspace${workspaceCount > 1 ? 's' : ''}` : ''}`
 }
 
-function getDependencyEntries(pkgJson: NPMCliPackageJson) {
+function getDependencyEntries(pkgJson: PackageJson) {
   const {
     dependencies,
     devDependencies,
@@ -469,7 +470,7 @@ function getDependencyEntries(pkgJson: NPMCliPackageJson) {
 async function getWorkspaceGlobs(
   agent: Agent,
   pkgPath: string,
-  pkgJson: NPMCliPackageJson
+  pkgJson: PackageJson
 ): Promise<string[] | undefined> {
   let workspacePatterns
   if (agent === 'pnpm') {
@@ -570,10 +571,10 @@ async function addOverrides(
   state = createAddOverridesState()
 ): Promise<AddOverridesState> {
   if (editablePkgJson === undefined) {
-    editablePkgJson = await EditablePackageJson.load(pkgPath)
+    editablePkgJson = await readPackageJson(pkgPath, { editable: true })
   }
   const { spinner } = state
-  const pkgJson: Readonly<NPMCliPackageJson> = editablePkgJson.content
+  const { content: pkgJson } = editablePkgJson
   const isRoot = pkgPath === rootPath
   const isLockScanned = isRoot && !prod
   const workspaceName = path.relative(rootPath, pkgPath)
@@ -723,7 +724,7 @@ async function addOverrides(
     })
   }
   if (state.added.size > 0 || state.updated.size > 0) {
-    editablePkgJson.update(<NPMCliPackageJson>Object.fromEntries(depEntries))
+    editablePkgJson.update(<PackageJson>Object.fromEntries(depEntries))
     for (const { overrides, type } of overridesDataObjects) {
       updateManifestByAgent[type](editablePkgJson, toSortedObject(overrides))
     }
