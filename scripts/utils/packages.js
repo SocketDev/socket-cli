@@ -5,9 +5,7 @@ const Module = require('node:module')
 const path = require('node:path')
 const vm = require('node:vm')
 
-const normalizePackageData = require('normalize-package-data')
-const validatePackageName = require('validate-npm-package-name')
-
+const { isValidPackageName } = require('@socketsecurity/registry/lib/packages')
 const {
   isRelative,
   normalizePath
@@ -16,8 +14,6 @@ const {
 const { findUpSync } = require('./fs')
 
 const { createRequire, isBuiltin } = Module
-
-const PACKAGE_JSON = 'package.json'
 
 // eslint-disable-next-line no-control-regex
 const cjsPluginPrefixRegExp = /^\x00/
@@ -65,15 +61,11 @@ function resolveId(id_, req = require) {
   if (resolvedId === undefined) {
     resolvedId = id
   }
-  if (isPackageName(id)) {
+  if (isValidPackageName(id)) {
     return resolvedId
   }
   const tsId = `${resolvedId}.ts`
   return fs.existsSync(tsId) ? tsId : resolvedId
-}
-
-function isPackageName(id) {
-  return validatePackageName(id).validForOldPackages
 }
 
 function isEsmId(id_, parentId_) {
@@ -131,26 +123,11 @@ function normalizeId(id) {
     .replace(cjsPluginSuffixRegExp, '')
 }
 
-function normalizePackageJson(pkgJson) {
-  normalizePackageData(pkgJson)
-  return pkgJson
-}
-
-function readPackageJsonSync(filepath_) {
-  const filepath = filepath_.endsWith(PACKAGE_JSON)
-    ? filepath_
-    : path.join(filepath_, PACKAGE_JSON)
-  return normalizePackageJson(JSON.parse(fs.readFileSync(filepath, 'utf8')))
-}
-
 module.exports = {
   isBuiltin,
   isEsmId,
-  isPackageName,
   getPackageName,
   getPackageNameEnd,
   normalizeId,
-  normalizePackageJson,
-  readPackageJsonSync,
   resolveId
 }

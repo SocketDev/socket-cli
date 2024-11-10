@@ -1,13 +1,13 @@
-import { chmodSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { hasKeys, toSortedObject } from '@socketsecurity/registry/lib/objects'
+import { toSortedObject } from '@socketsecurity/registry/lib/objects'
+import { readPackageJsonSync } from '@socketsecurity/registry/lib/packages'
 
 import baseConfig from './rollup.base.config.mjs'
 import { readJsonSync } from '../scripts/utils/fs.js'
 import { formatObject } from '../scripts/utils/objects.js'
-import { readPackageJsonSync } from '../scripts/utils/packages.js'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
@@ -16,8 +16,7 @@ const depStatsPath = path.join(rootPath, '.dep-stats.json')
 const distPath = path.join(rootPath, 'dist')
 const srcPath = path.join(rootPath, 'src')
 
-const pkgJsonPath = path.resolve(rootPath, 'package.json')
-const pkgJson = readPackageJsonSync(pkgJsonPath)
+const editablePkgJson = readPackageJsonSync(rootPath, { editable: true })
 
 export default () => {
   const config = baseConfig({
@@ -40,6 +39,7 @@ export default () => {
     plugins: [
       {
         writeBundle() {
+          const { content: pkgJson } = editablePkgJson
           const { '@cyclonedx/cdxgen': cdxgenRange, synp: synpRange } =
             pkgJson.dependencies
           const { depStats } = config.meta
@@ -71,28 +71,19 @@ export default () => {
 
           // Write dep stats
           writeFileSync(depStatsPath, `${formatObject(depStats)}\n`, 'utf8')
-
           // Make dist files chmod +x
           chmodSync(path.join(distPath, 'cli.js'), 0o755)
           chmodSync(path.join(distPath, 'npm-cli.js'), 0o755)
           chmodSync(path.join(distPath, 'npx-cli.js'), 0o755)
-
           // Update dependencies with additional inlined modules
-          writeFileSync(
-            pkgJsonPath,
-            readFileSync(pkgJsonPath, 'utf8').replace(
-              /(?<="dependencies":\s*)\{[^\}]*\}/,
-              () => {
-                const deps = {
-                  ...depStats.dependencies,
-                  ...depStats.transitives
-                }
-                const formatted = formatObject(deps, 4)
-                return hasKeys(deps) ? formatted.replace('}', '  }') : formatted
+          editablePkgJson
+            .update({
+              dependencies: {
+                ...depStats.dependencies,
+                ...depStats.transitives
               }
-            ),
-            'utf8'
-          )
+            })
+            .saveSync()
         }
       }
     ]

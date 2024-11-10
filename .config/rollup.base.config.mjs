@@ -12,6 +12,10 @@ import { purgePolyfills } from 'unplugin-purge-polyfills'
 
 import { isRelative } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
+import {
+  isValidPackageName,
+  readPackageJsonSync
+} from '@socketsecurity/registry/lib/packages'
 
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
@@ -19,9 +23,7 @@ import {
   getPackageNameEnd,
   isEsmId,
   normalizeId,
-  isPackageName,
   isBuiltin,
-  readPackageJsonSync,
   resolveId
 } from '../scripts/utils/packages.js'
 
@@ -106,7 +108,7 @@ export default (extendConfig = {}) => {
         return isAncestorsCjs(resolvedId, parentId)
       }
       const name = getPackageName(id)
-      if (!isPackageName(name) || name === '@babel/runtime') {
+      if (!isValidPackageName(name) || name === '@babel/runtime') {
         return false
       }
       if (isEsmId(resolvedId, parentId)) {
@@ -202,7 +204,7 @@ export default (extendConfig = {}) => {
         replace: ''
       }),
       // Fix incorrectly set "spinners" binding caused by a transpilation bug
-      // https://github.com/sindresorhus/ora/blob/v8.1.0/index.js#L415
+      // https://github.com/sindresorhus/ora/blob/v8.1.1/index.js#L424
       // export {default as spinners} from 'cli-spinners'
       socketModifyPlugin({
         find: /(?<=ora[^.]+\.spinners\s*=\s*)[$\w]+/g,
