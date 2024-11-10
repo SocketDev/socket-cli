@@ -15,7 +15,10 @@ import {
   isObject,
   toSortedObject
 } from '@socketsecurity/registry/lib/objects'
-import { fetchPackageManifest, readPackageJson } from '@socketsecurity/registry/lib/packages'
+import {
+  fetchPackageManifest,
+  readPackageJson
+} from '@socketsecurity/registry/lib/packages'
 import { pEach } from '@socketsecurity/registry/lib/promises'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
