@@ -12,14 +12,15 @@ const unicornPlugin = require('eslint-plugin-unicorn')
 const tsEslint = require('typescript-eslint')
 
 const constants = require('@socketsecurity/registry/lib/constants')
+const { GIT_IGNORE, PRETTIER_IGNORE, TSCONFIG_JSON } = constants
 
 const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 
 const rootPath = __dirname
-const rootTsConfigPath = path.join(rootPath, 'tsconfig.json')
+const rootTsConfigPath = path.join(rootPath, TSCONFIG_JSON)
 
-const gitignorePath = path.resolve(rootPath, '.gitignore')
-const prettierignorePath = path.resolve(rootPath, '.prettierignore')
+const gitignorePath = path.resolve(rootPath, GIT_IGNORE)
+const prettierignorePath = path.resolve(rootPath, PRETTIER_IGNORE)
 
 const sharedPlugins = {
   'sort-destructure-keys': sortDestructureKeysPlugin,
