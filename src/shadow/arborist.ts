@@ -337,6 +337,9 @@ function doOverrideSetsConflict(
   first: OverrideSetClass | undefined,
   second: OverrideSetClass | undefined
 ) {
+  // If override sets contain one another then we can try to use the more specific
+  // one. However, if neither one is more specific, then we consider them to be
+  // in conflict.
   return findSpecificOverrideSet(first, second) === undefined
 }
 
@@ -386,6 +389,7 @@ function findSpecificOverrideSet(
     }
     overrideSet = overrideSet.parent
   }
+  // The override sets are incomparable. Neither one contains the other.
   log!.silly('Conflicting override sets', first, second)
   return undefined
 }
