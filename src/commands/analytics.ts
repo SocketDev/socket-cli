@@ -1,8 +1,13 @@
 import fs from 'node:fs/promises'
 
-import blessed from 'blessed'
 // @ts-ignore
-import contrib from 'blessed-contrib'
+import ScreenWidget from 'blessed/lib/widgets/screen'
+// @ts-ignore
+import BarChart from 'blessed-contrib/lib/widget/charts/bar'
+// @ts-ignore
+import GridLayout from 'blessed-contrib/lib/layout/grid'
+// @ts-ignore
+import LineChart from 'blessed-contrib/lib/widget/charts/line'
 import chalk from 'chalk'
 import meow from 'meow'
 import ora from 'ora'
@@ -137,7 +142,7 @@ function setupCommand(
   if (scope === 'repo' && !repo) {
     showHelp = true
     console.error(
-      `${chalk.bgRed.white('Input error')}: Please provide a repository name when using the repository scope. \n`
+      `${chalk.bgRed.white('Input error')}: Please provide a repository name when using the repository scope.`
     )
   }
   if (showHelp) {
@@ -372,8 +377,8 @@ async function fetchRepoAnalyticsData(
 }
 
 const displayAnalyticsScreen = (data: any) => {
-  const screen = blessed.screen()
-  const grid = new contrib.grid({ rows: 5, cols: 4, screen })
+  const screen = new ScreenWidget()
+  const grid = new GridLayout({ rows: 5, cols: 4, screen })
 
   renderLineCharts(
     grid,
@@ -432,7 +437,7 @@ const displayAnalyticsScreen = (data: any) => {
     data['total_low_prevented']
   )
 
-  const bar = grid.set(4, 0, 1, 2, contrib.bar, {
+  const bar = grid.set(4, 0, 1, 2, BarChart, {
     label: 'Top 5 alert types',
     barWidth: 10,
     barSpacing: 17,
@@ -460,7 +465,7 @@ const renderLineCharts = (
   coords: number[],
   data: { [key: string]: number }
 ) => {
-  const line = grid.set(...coords, contrib.line, {
+  const line = grid.set(...coords, LineChart, {
     style: { line: 'cyan', text: 'cyan', baseline: 'black' },
     xLabelPadding: 0,
     xPadding: 0,

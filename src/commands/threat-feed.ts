@@ -1,6 +1,7 @@
-import blessed from 'blessed'
 // @ts-ignore
-import contrib from 'blessed-contrib'
+import ScreenWidget from 'blessed/lib/widgets/screen'
+// @ts-ignore
+import TableWidget from 'blessed-contrib/lib/widget/table'
 import meow from 'meow'
 import ora from 'ora'
 
@@ -16,7 +17,7 @@ import type { Ora } from 'ora'
 export const threatFeed: CliSubcommand = {
   description: 'Look up the threat feed',
   async run(argv, importMeta, { parentName }) {
-    const name = parentName + ' threat-feed'
+    const name = `${parentName} threat-feed`
 
     const input = setupCommand(name, threatFeed.description, argv, importMeta)
     if (input) {
@@ -26,7 +27,7 @@ export const threatFeed: CliSubcommand = {
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
-      const spinner = ora(`Looking up the threat feed \n`).start()
+      const spinner = ora('Looking up the threat feed').start()
       await fetchThreatFeed(input, spinner, apiKey)
     }
   }
@@ -155,9 +156,9 @@ async function fetchThreatFeed(
     return console.log(data)
   }
 
-  const screen = blessed.screen()
+  const screen = new ScreenWidget()
 
-  const table = contrib.table({
+  const table = new TableWidget({
     keys: 'true',
     fg: 'white',
     selectedFg: 'white',
