@@ -33,8 +33,8 @@ export const info: CliSubcommand = {
     if (commandContext) {
       const spinnerText =
         commandContext.pkgVersion === 'latest'
-          ? `Looking up data for the latest version of ${commandContext.pkgName}\n`
-          : `Looking up data for version ${commandContext.pkgVersion} of ${commandContext.pkgName}\n`
+          ? `Looking up data for the latest version of ${commandContext.pkgName}`
+          : `Looking up data for version ${commandContext.pkgVersion} of ${commandContext.pkgName}`
       const spinner = ora(spinnerText).start()
       const packageData = await fetchPackageData(
         commandContext.pkgName,

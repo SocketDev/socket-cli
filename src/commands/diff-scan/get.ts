@@ -144,7 +144,7 @@ async function getDiffScan(
   if (!response.ok) {
     spinner.stop()
     const err = await handleAPIError(response.status)
-    console.error(`${chalk.bgRed.white(response.statusText)}: ${err}\n`)
+    console.error(`${chalk.bgRed.white(response.statusText)}: ${err}`)
     return
   }
 

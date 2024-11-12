@@ -123,7 +123,7 @@ function setupCommand(
   if (!cli.input[0]) {
     showHelp = true
     console.error(
-      `${chalk.white.bgRed('Input error')}: Please specify an organization slug.\n`
+      `${chalk.white.bgRed('Input error')}: Please specify an organization slug.`
     )
   }
   if (showHelp) {
@@ -188,5 +188,5 @@ async function listOrgFullScan(
     }
   })
 
-  console.log(`${chalkTable(options, formattedResults)}\n`)
+  console.log(chalkTable(options, formattedResults))
 }

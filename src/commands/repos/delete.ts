@@ -63,7 +63,7 @@ function setupCommand(
   if (!orgSlug || !repoName) {
     showHelp = true
     console.error(
-      `${chalk.white.bgRed('Input error')}: Please provide an organization slug and repository slug\n`
+      `${chalk.white.bgRed('Input error')}: Please provide an organization slug and repository slug.`
     )
   }
   if (showHelp) {
