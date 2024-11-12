@@ -99,7 +99,7 @@ function setupCommand(
   if (cli.input.length < 1) {
     showHelp = true
     console.error(
-      `${chalk.white.bgRed('Input error')}: Please provide an organization slug\n`
+      `${chalk.white.bgRed('Input error')}: Please provide an organization slug.`
     )
   }
   if (showHelp) {

@@ -76,7 +76,7 @@ function setupCommand(
   if (!cli.input[0]) {
     showHelp = true
     console.error(
-      `${chalk.white.bgRed('Input error')}: Please provide an organization slug and repository name\n`
+      `${chalk.white.bgRed('Input error')}: Please provide an organization slug and repository name.`
     )
   }
   if (showHelp) {
@@ -123,5 +123,5 @@ async function viewRepository(
     ]
   }
 
-  console.log(`${chalkTable(options, [result.data])}\n`)
+  console.log(chalkTable(options, [result.data]))
 }

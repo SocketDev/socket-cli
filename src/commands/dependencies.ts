@@ -145,5 +145,5 @@ async function searchDeps({
     ]
   }
 
-  console.log(`${chalkTable(options, result.data.rows)}\n`)
+  console.log(chalkTable(options, result.data.rows))
 }

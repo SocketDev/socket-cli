@@ -106,7 +106,7 @@ function setupCommand(
   if (!cli.input[0]) {
     showHelp = true
     console.error(
-      `${chalk.white.bgRed('Input error')}: Please provide an organization slug\n`
+      `${chalk.white.bgRed('Input error')}: Please provide an organization slug.`
     )
   }
   if (showHelp) {
@@ -154,5 +154,5 @@ async function listOrgRepos(
     ]
   }
 
-  console.log(`${chalkTable(options, result.data.results)}\n`)
+  console.log(chalkTable(options, result.data.results))
 }
