@@ -8,7 +8,7 @@ import {
   handleApiCall,
   handleUnsuccessfulApiResponse
 } from '../../utils/api-helpers'
-import { ChalkOrMarkdown } from '../../utils/chalk-markdown'
+import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 import { InputError } from '../../utils/errors'
 import {
   formatSeverityCount,
@@ -187,7 +187,7 @@ export function formatReportDataOutput(
   if (outputJson) {
     console.log(JSON.stringify(data, undefined, 2))
   } else {
-    const format = new ChalkOrMarkdown(!!outputMarkdown)
+    const format = new ColorOrMarkdown(!!outputMarkdown)
     console.log(
       '\nDetailed info on socket.dev: ' +
         format.hyperlink(reportId, data.url, { fallbackToUrl: true })

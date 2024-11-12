@@ -1,4 +1,4 @@
-import { logSymbols } from './chalk-markdown'
+import { logSymbols } from './color-or-markdown'
 
 export function createDebugLogger(
   printDebugLogs?: boolean

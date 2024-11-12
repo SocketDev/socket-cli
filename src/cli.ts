@@ -8,7 +8,7 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 
 import * as cliCommands from './commands'
-import { logSymbols } from './utils/chalk-markdown'
+import { logSymbols } from './utils/color-or-markdown'
 import { AuthError, InputError } from './utils/errors'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
 
