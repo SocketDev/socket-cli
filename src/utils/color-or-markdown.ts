@@ -33,7 +33,7 @@ const markdownLogSymbols = {
   warning: ':warning:'
 }
 
-export class ChalkOrMarkdown {
+export class ColorOrMarkdown {
   public useMarkdown: boolean
 
   constructor(useMarkdown: boolean) {

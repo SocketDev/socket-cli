@@ -17,7 +17,7 @@ import { isObject } from '@socketsecurity/registry/lib/objects'
 
 import { createTTYServer } from './tty-server'
 import { API_V0_URL, ENV } from '../constants'
-import { ChalkOrMarkdown } from '../utils/chalk-markdown'
+import { ColorOrMarkdown } from '../utils/color-or-markdown'
 import { createIssueUXLookup } from '../utils/issue-rules'
 import { isErrnoException } from '../utils/misc'
 import { findRoot } from '../utils/path-resolve'
@@ -266,7 +266,7 @@ const OverrideSet: OverrideSetClass = require(arboristOverrideSetClassPatch)
 const kCtorArgs = Symbol('ctorArgs')
 const kRiskyReify = Symbol('riskyReify')
 
-const formatter = new ChalkOrMarkdown(false)
+const formatter = new ColorOrMarkdown(false)
 const pubToken = getDefaultKey() ?? FREE_API_KEY
 
 type IssueUXLookup = ReturnType<typeof createIssueUXLookup>

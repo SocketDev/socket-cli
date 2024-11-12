@@ -13,7 +13,7 @@ import {
   handleApiCall,
   handleUnsuccessfulApiResponse
 } from '../../utils/api-helpers'
-import { ChalkOrMarkdown, logSymbols } from '../../utils/chalk-markdown'
+import { ColorOrMarkdown, logSymbols } from '../../utils/color-or-markdown'
 import { InputError } from '../../utils/errors'
 import { printFlagList } from '../../utils/formatting'
 import { createDebugLogger } from '../../utils/misc'
@@ -290,7 +290,7 @@ function formatReportCreationOutput(
     return
   }
 
-  const format = new ChalkOrMarkdown(!!outputMarkdown)
+  const format = new ColorOrMarkdown(!!outputMarkdown)
 
   console.log(
     '\nNew report: ' +

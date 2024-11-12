@@ -7,7 +7,7 @@ import {
   handleApiCall,
   handleUnsuccessfulApiResponse
 } from '../utils/api-helpers'
-import { ChalkOrMarkdown } from '../utils/chalk-markdown'
+import { ColorOrMarkdown } from '../utils/color-or-markdown'
 import { InputError } from '../utils/errors'
 import { formatSeverityCount, getSeverityCount } from '../utils/format-issues'
 import { printFlagList } from '../utils/formatting'
@@ -210,7 +210,7 @@ function formatPackageDataOutput(
       spinner.succeed('Package has no issues')
     }
 
-    const format = new ChalkOrMarkdown(!!outputMarkdown)
+    const format = new ColorOrMarkdown(!!outputMarkdown)
     const url = `https://socket.dev/npm/package/${pkgName}/overview/${pkgVersion}`
     if (pkgVersion === 'latest') {
       console.log(
@@ -272,7 +272,7 @@ function formatPackageIssuesDetails(
     {}
   )
 
-  const format = new ChalkOrMarkdown(!!outputMarkdown)
+  const format = new ColorOrMarkdown(!!outputMarkdown)
   for (const issue of Object.keys(uniqueIssues)) {
     const issueWithLink = format.hyperlink(
       `${uniqueIssues[issue]?.label}`,
