@@ -30,6 +30,9 @@ socket wrapper --enable
   - `--pin` - Pin overrides to their latest version
   - `--prod` - Only add overrides for production dependencies
 
+- `socket cdxgen [command]` - Call out to [cdxgen](https://cyclonedx.github.io/cdxgen/#/?id=getting-started).
+  See [their documentation](https://cyclonedx.github.io/cdxgen/#/CLI?id=getting-help) for commands.
+
 - `socket raw-npm` and `socket raw-npx` - Temporarily disable the Socket
   'safe-npm' wrapper.
 
