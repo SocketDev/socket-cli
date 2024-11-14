@@ -21,36 +21,42 @@ socket wrapper --enable
 
 ## Commands
 
-- `socket info <package@version>` - Look up issues for a package.
+### Popular Commands
+
+- `socket npm [args...]` and `socket npx [args...]` - Wraps `npm` and `npx` to
+  integrate Socket and preempt installation of alerted packages using the builtin
+  resolution of `npm` to precisely determine package installations.
 
 - `socket optimize` - Optimize dependencies with
-  [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides
-  _(👀 [our blog post](https://socket.dev/blog/introducing-socket-optimize)!)_
+  [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides!
+  _(👀 [our blog post](https://socket.dev/blog/introducing-socket-optimize))_
+  - `--pin` - Pin overrides to their latest version.
+  - `--prod` - Add overrides for only production dependencies.
 
-  - `--pin` - Pin overrides to their latest version
-  - `--prod` - Only add overrides for production dependencies
+### Other Commands
 
 - `socket cdxgen [command]` - Call out to [cdxgen](https://cyclonedx.github.io/cdxgen/#/?id=getting-started).
   See [their documentation](https://cyclonedx.github.io/cdxgen/#/CLI?id=getting-help) for commands.
 
-- `socket raw-npm` and `socket raw-npx` - Temporarily disable the Socket
-  'safe-npm' wrapper.
+- `socket info <package@version>` - Look up issues for a package.
 
-- `socket report create <path(s)-to-folder-or-file>` - creates a report on
+- `socket raw-npm [args...]` and `socket raw-npx [args...]` - Temporarily disable
+  the Socket 'safe-npm' wrapper.
+
+- `socket report create <path(s)-to-folder-or-file>` - Create a report on
   [Socket.dev](https://socket.dev/)
 
   Upload the specified `package.json` and lock files for JavaScript, Python, and
   Go dependency manifests. If any folder is specified, the ones found in there
   recursively are uploaded.
 
-  Supports globbing such as `**/package.json`, `**/requirements.txt`,
-  `**/pyproject.toml`, and `**/go.mod`.
+  Glob patterns such as `**/package.json`, `**/requirements.txt`,
+  `**/pyproject.toml`, and `**/go.mod` is supported.
 
-  Ignores any file specified in your project's `.gitignore`, the
+  Intuitively ignores files matching your project's `.gitignore`, the
   `projectIgnorePaths` in your project's
-  [`socket.yml`](https://docs.socket.dev/docs/socket-yml) and on top of that has
-  a sensible set of
-  [default ignores](https://socket.dev/npm/package/ignore-by-default)
+  [`socket.yml`](https://docs.socket.dev/docs/socket-yml), and a sensible set of
+  [default ignore patterns](https://socket.dev/npm/package/ignore-by-default).
 
 - `socket report view <report-id>` - Look up issues and scores from a report.
 
