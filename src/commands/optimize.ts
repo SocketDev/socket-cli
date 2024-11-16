@@ -612,7 +612,7 @@ async function addOverrides(
     )
   }
   if (spinner) {
-    spinner.text = `Adding overrides${workspaceName ? ` to ${workspaceName}` : ''}...`
+    spinner.text = `Adding overrides${isWorkspace ? ` to ${workspaceName}` : ''}...`
   }
   const depAliasMap = new Map<string, { id: string; version: string }>()
   // Chunk package names to process them in parallel 3 at a time.
@@ -635,7 +635,9 @@ async function addOverrides(
           pkgSpec = `${regSpecStartsLike}^${version}`
           depObj[origPkgName] = pkgSpec
           state.added.add(regPkgName)
-          state.addedInWorkspaces.add(workspaceName)
+          if (isWorkspace) {
+            state.addedInWorkspaces.add(workspaceName)
+          }
         }
         depAliasMap.set(origPkgName, {
           id: pkgSpec,
@@ -681,12 +683,11 @@ async function addOverrides(
         }
         if (newSpec !== oldSpec) {
           overrides[origPkgName] = newSpec
-          if (overrideExists) {
-            state.updated.add(regPkgName)
-            state.updatedInWorkspaces.add(workspaceName)
-          } else {
-            state.added.add(regPkgName)
-            state.addedInWorkspaces.add(workspaceName)
+          const addedOrUpdated = overrideExists ? 'updated' : 'added'
+          state[addedOrUpdated].add(regPkgName)
+          if (isWorkspace) {
+            const addedOrUpdatedIn = overrideExists ? 'updatedInWorkspaces' : 'addedInWorkspaces'
+            state[addedOrUpdatedIn].add(workspaceName)
           }
         }
       }
