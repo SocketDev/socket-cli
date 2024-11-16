@@ -27,7 +27,7 @@ export const AGENTS = [
 export type Agent = (typeof AGENTS)[number]
 export type StringKeyValueObject = { [key: string]: string }
 
-const { compare: alphaNumericComparator } = new Intl.Collator(undefined, {
+const { compare: alphanumericComparator } = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: 'base'
 })
@@ -219,7 +219,7 @@ export async function detect({
     if (Array.isArray(browserslistQuery)) {
       const browserslistTargets = browserslist(browserslistQuery)
         .map(s => s.toLowerCase())
-        .sort(alphaNumericComparator)
+        .sort(alphanumericComparator)
       const browserslistNodeTargets = browserslistTargets
         .filter(v => v.startsWith('node '))
         .map(v => v.slice(5 /*'node '.length*/))
