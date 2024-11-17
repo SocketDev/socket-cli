@@ -13,6 +13,7 @@
     "unicorn/no-empty-file": "allow",
     "unicorn/no-new-array": "allow",
     "no-control-regex": "allow",
+    "no-new": "allow",
     "no-self-assign": "allow",
     "no-unused-vars": "allow"
   }
