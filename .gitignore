@@ -2,7 +2,6 @@
 ._.DS_Store
 Thumbs.db
 /.env
-/.eslintcache
 /.nvm
 /.tap
 /.vscode
