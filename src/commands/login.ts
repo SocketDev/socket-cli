@@ -1,7 +1,7 @@
 import { confirm, password, select } from '@inquirer/prompts'
 import isInteractive from 'is-interactive'
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 import terminalLink from 'terminal-link'
 
 import { AuthError, InputError } from '../utils/errors'
@@ -99,7 +99,7 @@ export const login: CliSubcommand = {
     let apiProxy = cli.flags['apiProxy'] as string | null | undefined
     apiProxy ??= getSetting('apiProxy') ?? undefined
 
-    const spinner = ora('Verifying API key...').start()
+    const spinner = yoctoSpinner({ text: 'Verifying API key...' }).start()
 
     let orgs: SocketSdkReturnType<'getOrganizations'>['data']
 
@@ -110,9 +110,9 @@ export const login: CliSubcommand = {
         throw new AuthError()
       }
       orgs = result.data
-      spinner.succeed('API key verified\n')
+      spinner.success('API key verified\n')
     } catch {
-      spinner.fail('Invalid API key')
+      spinner.error('Invalid API key')
       return
     }
 
@@ -157,6 +157,6 @@ export const login: CliSubcommand = {
     updateSetting('apiKey', apiKey)
     updateSetting('apiBaseUrl', apiBaseUrl)
     updateSetting('apiProxy', apiProxy)
-    spinner.succeed(`API credentials ${oldKey ? 'updated' : 'set'}`)
+    spinner.success(`API credentials ${oldKey ? 'updated' : 'set'}`)
   }
 }

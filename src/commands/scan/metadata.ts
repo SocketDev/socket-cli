@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 
 import { commonFlags, outputFlags } from '../../flags'
 import {
@@ -12,7 +12,7 @@ import { printFlagList } from '../../utils/formatting'
 import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
-import type { Ora } from 'ora'
+import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const metadata: CliSubcommand = {
   description: "Get a scan's metadata",
@@ -27,7 +27,7 @@ export const metadata: CliSubcommand = {
         )
       }
       const spinnerText = "Getting scan's metadata... \n"
-      const spinner = ora(spinnerText).start()
+      const spinner = yoctoSpinner({ text: spinnerText }).start()
       await getOrgScanMetadata(input.orgSlug, input.scanID, spinner, apiKey)
     }
   }
@@ -93,7 +93,7 @@ function setupCommand(
 async function getOrgScanMetadata(
   orgSlug: string,
   scanId: string,
-  spinner: Ora,
+  spinner: Spinner,
   apiKey: string
 ): Promise<void> {
   const socketSdk = await setupSdk(apiKey)

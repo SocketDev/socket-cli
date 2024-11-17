@@ -1,7 +1,7 @@
 import { Separator, select } from '@inquirer/prompts'
 import chalk from 'chalk'
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 
 import { commonFlags, outputFlags } from '../flags'
 import {
@@ -13,7 +13,7 @@ import { printFlagList } from '../utils/formatting'
 import { getDefaultKey, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
-import type { Ora } from 'ora'
+import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const auditLog: CliSubcommand = {
   description: 'Look up the audit log for an organization',
@@ -28,7 +28,9 @@ export const auditLog: CliSubcommand = {
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
-      const spinner = ora(`Looking up audit log for ${input.orgSlug}\n`).start()
+      const spinner = yoctoSpinner({
+        text: `Looking up audit log for ${input.orgSlug}\n`
+      }).start()
       await fetchOrgAuditLog(input.orgSlug, input, spinner, apiKey)
     }
   }
@@ -139,7 +141,7 @@ type AuditChoices = (Separator | AuditChoice)[]
 async function fetchOrgAuditLog(
   orgSlug: string,
   input: CommandContext,
-  spinner: Ora,
+  spinner: Spinner,
   apiKey: string
 ): Promise<void> {
   const socketSdk = await setupSdk(apiKey)

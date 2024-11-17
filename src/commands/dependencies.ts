@@ -2,7 +2,7 @@ import chalk from 'chalk'
 // @ts-ignore
 import chalkTable from 'chalk-table'
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 
 import { commonFlags, outputFlags } from '../flags'
 import {
@@ -110,7 +110,7 @@ async function searchDeps({
     )
   }
   const spinnerText = 'Searching dependencies...'
-  const spinner = ora(spinnerText).start()
+  const spinner = yoctoSpinner({ text: spinnerText }).start()
 
   const socketSdk = await setupSdk(apiKey)
 

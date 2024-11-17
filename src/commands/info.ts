@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 
 import { commonFlags, outputFlags, validationFlags } from '../flags'
 import {
@@ -17,7 +17,7 @@ import { FREE_API_KEY, getDefaultKey, setupSdk } from '../utils/sdk'
 import type { SocketIssue } from '../utils/format-issues'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
-import type { Ora } from 'ora'
+import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const info: CliSubcommand = {
   description: 'Look up info regarding a package',
@@ -35,7 +35,7 @@ export const info: CliSubcommand = {
         commandContext.pkgVersion === 'latest'
           ? `Looking up data for the latest version of ${commandContext.pkgName}`
           : `Looking up data for version ${commandContext.pkgVersion} of ${commandContext.pkgName}`
-      const spinner = ora(spinnerText).start()
+      const spinner = yoctoSpinner({ text: spinnerText }).start()
       const packageData = await fetchPackageData(
         commandContext.pkgName,
         commandContext.pkgVersion,
@@ -131,7 +131,7 @@ async function fetchPackageData(
   pkgName: string,
   pkgVersion: string,
   { includeAllIssues }: Pick<CommandContext, 'includeAllIssues'>,
-  spinner: Ora
+  spinner: Spinner
 ): Promise<void | PackageData> {
   const socketSdk = await setupSdk(getDefaultKey() || FREE_API_KEY)
   const result = await handleApiCall(
@@ -181,7 +181,7 @@ function formatPackageDataOutput(
     pkgVersion,
     strict
   }: CommandContext & { name: string },
-  spinner: Ora
+  spinner: Spinner
 ): void {
   if (outputJson) {
     console.log(JSON.stringify(data, undefined, 2))
@@ -201,13 +201,13 @@ function formatPackageDataOutput(
     if (objectSome(severityCount)) {
       const issueSummary = formatSeverityCount(severityCount)
       console.log('\n')
-      spinner[strict ? 'fail' : 'succeed'](
+      spinner[strict ? 'error' : 'success'](
         `Package has these issues: ${issueSummary}`
       )
       formatPackageIssuesDetails(data, outputMarkdown)
     } else {
       console.log('\n')
-      spinner.succeed('Package has no issues')
+      spinner.success('Package has no issues')
     }
 
     const format = new ColorOrMarkdown(!!outputMarkdown)

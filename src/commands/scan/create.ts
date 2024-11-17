@@ -4,7 +4,7 @@ import readline from 'node:readline/promises'
 import chalk from 'chalk'
 import meow from 'meow'
 import open from 'open'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 import { ErrorWithCause } from 'pony-cause'
 
 import {
@@ -18,7 +18,7 @@ import { getPackageFilesFullScans } from '../../utils/path-resolve'
 import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
-import type { Ora } from 'ora'
+import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const create: CliSubcommand = {
   description: 'Create a scan',
@@ -33,7 +33,7 @@ export const create: CliSubcommand = {
         )
       }
       const spinnerText = 'Creating a scan... \n'
-      const spinner = ora(spinnerText).start()
+      const spinner = yoctoSpinner({ text: spinnerText }).start()
       await createFullScan(input, spinner, apiKey)
     }
   }
@@ -153,7 +153,11 @@ async function setupCommand(
     .getReportSupportedFiles()
     .then(res => {
       if (!res.success)
-        handleUnsuccessfulApiResponse('getReportSupportedFiles', res, ora())
+        handleUnsuccessfulApiResponse(
+          'getReportSupportedFiles',
+          res,
+          yoctoSpinner()
+        )
       return (res as any).data
     })
     .catch(
@@ -200,7 +204,7 @@ async function setupCommand(
 
 async function createFullScan(
   input: CommandContext,
-  spinner: Ora,
+  spinner: Spinner,
   apiKey: string
 ): Promise<void> {
   const socketSdk = await setupSdk(apiKey)

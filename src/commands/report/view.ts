@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 import { ErrorWithCause } from 'pony-cause'
 
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
@@ -125,9 +125,9 @@ export async function fetchReportData(
 ): Promise<void | ReportData> {
   // Do the API call
   const socketSdk = await setupSdk()
-  const spinner = ora(
-    `Fetching report with ID ${reportId} (this could take a while)`
-  ).start()
+  const spinner = yoctoSpinner({
+    text: `Fetching report with ID ${reportId} (this could take a while)`
+  }).start()
 
   let result: SocketSdkResultType<'getReport'> | undefined
   for (let retry = 1; !result; ++retry) {
@@ -156,9 +156,9 @@ export async function fetchReportData(
 
   if (strict) {
     if (result.data.healthy) {
-      spinner.succeed('Report result is healthy and great!')
+      spinner.success('Report result is healthy and great!')
     } else {
-      spinner.fail('Report result deemed unhealthy for project')
+      spinner.error('Report result deemed unhealthy for project')
     }
   } else if (result.data.healthy === false) {
     const severityCount = getSeverityCount(
@@ -166,9 +166,9 @@ export async function fetchReportData(
       includeAllIssues ? undefined : 'high'
     )
     const issueSummary = formatSeverityCount(severityCount)
-    spinner.succeed(`Report has these issues: ${issueSummary}`)
+    spinner.success(`Report has these issues: ${issueSummary}`)
   } else {
-    spinner.succeed('Report has no issues')
+    spinner.success('Report has no issues')
   }
 
   return result.data
