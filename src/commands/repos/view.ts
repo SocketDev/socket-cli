@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 // @ts-ignore
 import chalkTable from 'chalk-table'
 import meow from 'meow'
@@ -76,7 +76,7 @@ function setupCommand(
   if (!cli.input[0]) {
     showHelp = true
     console.error(
-      `${chalk.white.bgRed('Input error')}: Please provide an organization slug and repository name.`
+      `${colors.bgRed(colors.white('Input error'))}: Please provide an organization slug and repository name.`
     )
   }
   if (showHelp) {
@@ -113,13 +113,13 @@ async function viewRepository(
 
   const options = {
     columns: [
-      { field: 'id', name: chalk.magenta('ID') },
-      { field: 'name', name: chalk.magenta('Name') },
-      { field: 'visibility', name: chalk.magenta('Visibility') },
-      { field: 'default_branch', name: chalk.magenta('Default branch') },
-      { field: 'homepage', name: chalk.magenta('Homepage') },
-      { field: 'archived', name: chalk.magenta('Archived') },
-      { field: 'created_at', name: chalk.magenta('Created at') }
+      { field: 'id', name: colors.magenta('ID') },
+      { field: 'name', name: colors.magenta('Name') },
+      { field: 'visibility', name: colors.magenta('Visibility') },
+      { field: 'default_branch', name: colors.magenta('Default branch') },
+      { field: 'homepage', name: colors.magenta('Homepage') },
+      { field: 'archived', name: colors.magenta('Archived') },
+      { field: 'created_at', name: colors.magenta('Created at') }
     ]
   }
 

@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 import { ErrorWithCause } from 'pony-cause'
 
 import { AuthError } from './errors'
@@ -28,7 +28,9 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
     spinner.stop()
     throw new AuthError(message)
   }
-  spinner.error(`${chalk.white.bgRed('API returned an error:')} ${message}`)
+  spinner.error(
+    `${colors.bgRed(colors.white('API returned an error:'))} ${message}`
+  )
   process.exit(1)
 }
 

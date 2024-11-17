@@ -8,7 +8,6 @@ import { PassThrough } from 'node:stream'
 import { version as ipc_version } from '../../package.json'
 import { isErrnoException } from '../utils/misc'
 
-import type { ColorSupportLevel } from 'chalk'
 import type { Server } from 'node:net'
 import type { Direction } from 'node:readline'
 import type { Readable, Writable } from 'node:stream'
@@ -26,7 +25,6 @@ type CaptureState = {
 type TTYSeverResult = {
   captureTTY<RET>(
     mutexFn: (
-      colorLevel: ColorSupportLevel,
       input?: Readable | undefined,
       output?: Writable | undefined
     ) => Promise<RET>
@@ -57,13 +55,9 @@ function createNonStandardTTYServer(): TTYSeverResult {
               conn.removeListener('data', awaitCapture)
               conn.push(lineBuff.slice(eolIndex + 1))
               const {
-                capabilities: {
-                  colorLevel: ipcColorLevel,
-                  input: hasInput,
-                  output: hasOutput
-                },
+                capabilities: { input: hasInput, output: hasOutput },
                 ipc_version: remote_ipc_version
-              } = JSON.parse(lineBuff.slice(0, eolIndex).toString('utf-8'))
+              } = JSON.parse(lineBuff.subarray(0, eolIndex).toString('utf-8'))
               lineBuff = null
               captured = true
               if (remote_ipc_version !== ipc_version) {
@@ -94,7 +88,6 @@ function createNonStandardTTYServer(): TTYSeverResult {
                 }
               }
               mutexFn(
-                ipcColorLevel,
                 hasInput ? (input as Readable) : undefined,
                 hasOutput ? (output as Writable) : undefined
               )
@@ -117,7 +110,6 @@ function createNonStandardTTYServer(): TTYSeverResult {
 }
 
 function createIPCServer(
-  colorLevel: ColorSupportLevel,
   captureState: CaptureState,
   npmlog: typeof import('npmlog')
 ): Promise<Server> {
@@ -148,8 +140,7 @@ function createIPCServer(
             ipc_version,
             capabilities: {
               input: Boolean(input),
-              output: true,
-              colorLevel
+              output: true
             }
           })}\n`
         )
@@ -190,7 +181,6 @@ function createIPCServer(
 }
 
 function createStandardTTYServer(
-  colorLevel: ColorSupportLevel,
   isInteractive: boolean,
   npmlog: typeof import('npmlog')
 ): TTYSeverResult {
@@ -214,7 +204,7 @@ function createStandardTTYServer(
 
   let ipcServerPromise: Promise<Server> | undefined
   if (input) {
-    ipcServerPromise = createIPCServer(colorLevel, captureState, npmlog)
+    ipcServerPromise = createIPCServer(captureState, npmlog)
   }
   return {
     async captureTTY(mutexFn) {
@@ -237,7 +227,7 @@ function createStandardTTYServer(
         if (wasProgressEnabled) {
           npmlog.disableProgress()
         }
-        return await mutexFn(colorLevel, input, output)
+        return await mutexFn(input, output)
       } finally {
         if (wasProgressEnabled) {
           npmlog.enableProgress()
@@ -260,11 +250,10 @@ function tryUnlinkSync(filepath: string) {
 }
 
 export function createTTYServer(
-  colorLevel: ColorSupportLevel,
   isInteractive: boolean,
   npmlog: any
 ): TTYSeverResult {
   return !isInteractive && TTY_IPC
     ? createNonStandardTTYServer()
-    : createStandardTTYServer(colorLevel, isInteractive, npmlog)
+    : createStandardTTYServer(isInteractive, npmlog)
 }

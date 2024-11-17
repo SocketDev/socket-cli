@@ -3,7 +3,7 @@
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 
@@ -69,7 +69,7 @@ void (async () => {
       errorTitle = 'Unexpected error with no details'
     }
     console.error(
-      `${logSymbols.error} ${chalk.white.bgRed(errorTitle + ':')} ${errorMessage}`
+      `${logSymbols.error} ${colors.bgRed(colors.white(errorTitle + ':'))} ${errorMessage}`
     )
     if (errorBody) {
       console.error(`\n${errorBody}`)

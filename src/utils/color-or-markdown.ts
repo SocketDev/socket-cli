@@ -1,23 +1,23 @@
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 import isUnicodeSupported from 'is-unicode-supported'
 import terminalLink from 'terminal-link'
 
 // From the 'log-symbols' module
 const unicodeLogSymbols = {
   __proto__: null,
-  info: chalk.blue('ℹ'),
-  success: chalk.green('✔'),
-  warning: chalk.yellow('⚠'),
-  error: chalk.red('✖')
+  info: colors.blue('ℹ'),
+  success: colors.green('✔'),
+  warning: colors.yellow('⚠'),
+  error: colors.red('✖')
 }
 
 // From the 'log-symbols' module
 const fallbackLogSymbols = {
   __proto__: null,
-  info: chalk.blue('i'),
-  success: chalk.green('√'),
-  warning: chalk.yellow('‼'),
-  error: chalk.red('×')
+  info: colors.blue('i'),
+  success: colors.green('√'),
+  warning: colors.yellow('‼'),
+  error: colors.red('×')
 }
 
 // From the 'log-symbols' module
@@ -43,15 +43,15 @@ export class ColorOrMarkdown {
   header(text: string, level = 1): string {
     return this.useMarkdown
       ? `\n${''.padStart(level, '#')} ${text}\n`
-      : chalk.underline(`\n${level === 1 ? chalk.bold(text) : text}\n`)
+      : colors.underline(`\n${level === 1 ? colors.bold(text) : text}\n`)
   }
 
   bold(text: string): string {
-    return this.useMarkdown ? `**${text}**` : chalk.bold(`${text}`)
+    return this.useMarkdown ? `**${text}**` : colors.bold(`${text}`)
   }
 
   italic(text: string): string {
-    return this.useMarkdown ? `_${text}_` : chalk.italic(`${text}`)
+    return this.useMarkdown ? `_${text}_` : colors.italic(`${text}`)
   }
 
   hyperlink(

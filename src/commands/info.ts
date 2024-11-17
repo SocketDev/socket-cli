@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 import meow from 'meow'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 
@@ -227,12 +227,8 @@ function formatPackageDataOutput(
     }
     if (!outputMarkdown) {
       console.log(
-        chalk.dim(
-          '\nOr rerun',
-          chalk.italic(name),
-          'using the',
-          chalk.italic('--json'),
-          'flag to get full JSON output'
+        colors.dim(
+          `\nOr rerun ${colors.italic(name)} using the ${colors.italic('--json')} flag to get full JSON output`
         )
       )
     }
@@ -288,14 +284,10 @@ function formatPackageIssuesDetails(
 }
 
 function formatScore(score: number): string {
-  const error = chalk.hex('#de7c7b')
-  const warning = chalk.hex('#e59361')
-  const success = chalk.hex('#a4cb9d')
-
   if (score > 80) {
-    return `${success(score)}`
+    return colors.green(`${score}`)
   } else if (score < 80 && score > 60) {
-    return `${warning(score)}`
+    return colors.yellow(`${score}`)
   }
-  return `${error(score)}`
+  return colors.red(`${score}`)
 }

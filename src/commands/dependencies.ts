@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 // @ts-ignore
 import chalkTable from 'chalk-table'
 import meow from 'meow'
@@ -135,13 +135,13 @@ async function searchDeps({
 
   const options = {
     columns: [
-      { field: 'namespace', name: chalk.cyan('Namespace') },
-      { field: 'name', name: chalk.cyan('Name') },
-      { field: 'version', name: chalk.cyan('Version') },
-      { field: 'repository', name: chalk.cyan('Repository') },
-      { field: 'branch', name: chalk.cyan('Branch') },
-      { field: 'type', name: chalk.cyan('Type') },
-      { field: 'direct', name: chalk.cyan('Direct') }
+      { field: 'namespace', name: colors.cyan('Namespace') },
+      { field: 'name', name: colors.cyan('Name') },
+      { field: 'version', name: colors.cyan('Version') },
+      { field: 'repository', name: colors.cyan('Repository') },
+      { field: 'branch', name: colors.cyan('Branch') },
+      { field: 'type', name: colors.cyan('Type') },
+      { field: 'direct', name: colors.cyan('Direct') }
     ]
   }
 

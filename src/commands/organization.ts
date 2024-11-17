@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 import meow from 'meow'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 
@@ -69,7 +69,7 @@ async function fetchOrganizations(): Promise<void> {
   const organizations = Object.values(result.data.organizations)
 
   console.log(
-    `List of organizations associated with your API key: ${chalk.italic(apiKey)}`
+    `List of organizations associated with your API key: ${colors.italic(apiKey)}`
   )
 
   for (const o of organizations) {
