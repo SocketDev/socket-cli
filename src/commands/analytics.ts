@@ -10,7 +10,7 @@ import GridLayout from 'blessed-contrib/lib/layout/grid'
 import LineChart from 'blessed-contrib/lib/widget/charts/line'
 import chalk from 'chalk'
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 
 import { commonFlags, outputFlags } from '../flags'
 import {
@@ -22,7 +22,7 @@ import { printFlagList } from '../utils/formatting'
 import { getDefaultKey, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
-import type { Ora } from 'ora'
+import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const analytics: CliSubcommand = {
   description: `Look up analytics data \n
@@ -38,7 +38,7 @@ export const analytics: CliSubcommand = {
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
-      const spinner = ora('Fetching analytics data').start()
+      const spinner = yoctoSpinner({ text: 'Fetching analytics data' }).start()
       if (input.scope === 'org') {
         await fetchOrgAnalyticsData(
           input.time,
@@ -175,7 +175,7 @@ const METRICS = [
 
 async function fetchOrgAnalyticsData(
   time: number,
-  spinner: Ora,
+  spinner: Spinner,
   apiKey: string,
   outputJson: boolean,
   filePath: string
@@ -339,7 +339,7 @@ const formatData = (data: any, scope: string) => {
 async function fetchRepoAnalyticsData(
   repo: string,
   time: number,
-  spinner: Ora,
+  spinner: Spinner,
   apiKey: string,
   outputJson: boolean,
   filePath: string

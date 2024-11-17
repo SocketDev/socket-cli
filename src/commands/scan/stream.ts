@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 
 import { commonFlags, outputFlags } from '../../flags'
 import {
@@ -12,7 +12,7 @@ import { printFlagList } from '../../utils/formatting'
 import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
-import type { Ora } from 'ora'
+import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const stream: CliSubcommand = {
   description: 'Stream the output of a scan',
@@ -27,7 +27,7 @@ export const stream: CliSubcommand = {
         )
       }
       const spinnerText = 'Streaming scan...\n'
-      const spinner = ora(spinnerText).start()
+      const spinner = yoctoSpinner({ text: spinnerText }).start()
       await getOrgFullScan(
         input.orgSlug,
         input.fullScanId,
@@ -102,7 +102,7 @@ async function getOrgFullScan(
   orgSlug: string,
   fullScanId: string,
   file: string | undefined,
-  spinner: Ora,
+  spinner: Spinner,
   apiKey: string
 ): Promise<void> {
   const socketSdk = await setupSdk(apiKey)

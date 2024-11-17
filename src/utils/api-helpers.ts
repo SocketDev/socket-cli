@@ -8,12 +8,12 @@ import type {
   SocketSdkErrorType,
   SocketSdkOperations
 } from '@socketsecurity/sdk'
-import type { Ora } from 'ora'
+import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
   result: SocketSdkErrorType<T>,
-  spinner: Ora
+  spinner: Spinner
 ) {
   const resultError =
     'error' in result && result.error && typeof result.error === 'object'
@@ -28,7 +28,7 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
     spinner.stop()
     throw new AuthError(message)
   }
-  spinner.fail(chalk.white.bgRed('API returned an error:') + ' ' + message)
+  spinner.error(`${chalk.white.bgRed('API returned an error:')} ${message}`)
   process.exit(1)
 }
 

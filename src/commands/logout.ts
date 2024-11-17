@@ -1,5 +1,5 @@
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 
 import { updateSetting } from '../utils/settings'
 
@@ -39,6 +39,6 @@ export const logout: CliSubcommand = {
     updateSetting('apiBaseUrl', null)
     updateSetting('apiProxy', null)
     updateSetting('enforcedOrgs', null)
-    ora('Successfully logged out').succeed()
+    yoctoSpinner().success('Successfully logged out')
   }
 }

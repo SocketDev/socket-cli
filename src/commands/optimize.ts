@@ -4,7 +4,7 @@ import path from 'node:path'
 import spawn from '@npmcli/promise-spawn'
 import meow from 'meow'
 import npa from 'npm-package-arg'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 import semver from 'semver'
 import { glob as tinyGlob } from 'tinyglobby'
 import { parse as yamlParse } from 'yaml'
@@ -35,7 +35,7 @@ import type {
 } from '../utils/package-manager-detector'
 import type { ManifestEntry } from '@socketsecurity/registry'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
-import type { Ora } from 'ora'
+import type { Spinner } from '@socketregistry/yocto-spinner'
 
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 
@@ -540,7 +540,7 @@ type AddOverridesConfig = {
 type AddOverridesState = {
   added: Set<string>
   addedInWorkspaces: Set<string>
-  spinner?: Ora | undefined
+  spinner?: Spinner | undefined
   updated: Set<string>
   updatedInWorkspaces: Set<string>
   warnedPnpmWorkspaceRequiresNpm: boolean
@@ -686,7 +686,9 @@ async function addOverrides(
           const addedOrUpdated = overrideExists ? 'updated' : 'added'
           state[addedOrUpdated].add(regPkgName)
           if (isWorkspace) {
-            const addedOrUpdatedIn = overrideExists ? 'updatedInWorkspaces' : 'addedInWorkspaces'
+            const addedOrUpdatedIn = overrideExists
+              ? 'updatedInWorkspaces'
+              : 'addedInWorkspaces'
             state[addedOrUpdatedIn].add(workspaceName)
           }
         }
@@ -806,7 +808,7 @@ export const optimize: CliSubcommand = {
         `⚠️ ${COMMAND_TITLE}: Package ${lockName} found at ${lockPath}`
       )
     }
-    const spinner = ora('Socket optimizing...')
+    const spinner = yoctoSpinner({ text: 'Socket optimizing...' })
     const state = createAddOverridesState({ spinner })
     spinner.start()
     const nodeRange = `>=${minimumNodeVersion}`

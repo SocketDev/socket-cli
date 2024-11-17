@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 
 import {
   handleApiCall,
@@ -53,7 +53,7 @@ async function fetchOrganizations(): Promise<void> {
     )
   }
   const socketSdk = await setupSdk(apiKey)
-  const spinner = ora('Fetching organizations...').start()
+  const spinner = yoctoSpinner({ text: 'Fetching organizations...' }).start()
 
   const result = await handleApiCall(
     socketSdk.getOrganizations(),

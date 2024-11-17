@@ -2,7 +2,7 @@ import path from 'node:path'
 
 import { betterAjvErrors } from '@apideck/better-ajv-errors'
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 import { ErrorWithCause } from 'pony-cause'
 
 import { SocketValidationError, readSocketConfig } from '@socketsecurity/config'
@@ -210,7 +210,11 @@ async function setupCommand(
     .getReportSupportedFiles()
     .then(res => {
       if (!res.success)
-        handleUnsuccessfulApiResponse('getReportSupportedFiles', res, ora())
+        handleUnsuccessfulApiResponse(
+          'getReportSupportedFiles',
+          res,
+          yoctoSpinner()
+        )
       return (res as SocketSdkReturnType<'getReportSupportedFiles'>).data
     })
     .catch((cause: Error) => {
@@ -257,9 +261,9 @@ async function createReport(
   }
 
   const socketSdk = await setupSdk()
-  const spinner = ora(
-    `Creating report with ${packagePaths.length} package files`
-  ).start()
+  const spinner = yoctoSpinner({
+    text: `Creating report with ${packagePaths.length} package files`
+  }).start()
   const apiCall = socketSdk.createReportFromFilePaths(
     packagePaths,
     cwd,
@@ -273,7 +277,7 @@ async function createReport(
 
   // Conclude the status of the API call
 
-  spinner.succeed()
+  spinner.success()
 
   return result
 }

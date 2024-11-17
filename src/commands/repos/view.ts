@@ -2,7 +2,7 @@ import chalk from 'chalk'
 // @ts-ignore
 import chalkTable from 'chalk-table'
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 
 import { commonFlags, outputFlags } from '../../flags'
 import {
@@ -14,7 +14,7 @@ import { printFlagList } from '../../utils/formatting'
 import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
-import type { Ora } from 'ora'
+import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const view: CliSubcommand = {
   description: 'View repositories in an organization',
@@ -29,7 +29,7 @@ export const view: CliSubcommand = {
         )
       }
       const spinnerText = 'Fetching repository... \n'
-      const spinner = ora(spinnerText).start()
+      const spinner = yoctoSpinner({ text: spinnerText }).start()
       await viewRepository(input.orgSlug, input.repositoryName, spinner, apiKey)
     }
   }
@@ -95,7 +95,7 @@ function setupCommand(
 async function viewRepository(
   orgSlug: string,
   repoName: string,
-  spinner: Ora,
+  spinner: Spinner,
   apiKey: string
 ): Promise<void> {
   const socketSdk = await setupSdk(apiKey)

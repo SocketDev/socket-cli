@@ -3,7 +3,7 @@ import util from 'node:util'
 
 import chalk from 'chalk'
 import meow from 'meow'
-import ora from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 
 import { commonFlags, outputFlags } from '../../flags'
 import { handleAPIError, queryAPI } from '../../utils/api-helpers'
@@ -12,7 +12,7 @@ import { printFlagList } from '../../utils/formatting'
 import { getDefaultKey } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
-import type { Ora } from 'ora'
+import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const get: CliSubcommand = {
   description: 'Get a diff scan for an organization',
@@ -27,7 +27,7 @@ export const get: CliSubcommand = {
         )
       }
       const spinnerText = 'Getting diff scan... \n'
-      const spinner = ora(spinnerText).start()
+      const spinner = yoctoSpinner({ text: spinnerText }).start()
       await getDiffScan(input, spinner, apiKey)
     }
   }
@@ -132,7 +132,7 @@ function setupCommand(
 
 async function getDiffScan(
   { after, before, file, orgSlug, outputJson }: CommandContext,
-  spinner: Ora,
+  spinner: Spinner,
   apiKey: string
 ): Promise<void> {
   const response = await queryAPI(

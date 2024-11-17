@@ -9,7 +9,7 @@ import { setTimeout as wait } from 'node:timers/promises'
 import chalk from 'chalk'
 import isInteractive from 'is-interactive'
 import npa from 'npm-package-arg'
-import ora, { spinners } from 'ora'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 import semver from 'semver'
 
 import config from '@socketsecurity/config'
@@ -34,7 +34,6 @@ import type {
 } from '@npmcli/arborist'
 import type { Writable } from 'node:stream'
 import type { AliasResult, RegistryResult } from 'npm-package-arg'
-import type { Options as OraOptions } from 'ora'
 
 type ArboristClass = typeof BaseArborist & {
   new (...args: any): typeof BaseArborist
@@ -410,21 +409,15 @@ async function packagesHaveRiskyIssues(
   let result = false
   let remaining = pkgs.length
   if (!remaining) {
-    ora('').succeed('No changes detected')
+    yoctoSpinner().success('No changes detected')
     return result
   }
 
   const getText = () => `Looking up data for ${remaining} packages`
 
-  const spinner = ora({
-    color: 'cyan',
-    stream: output,
-    isEnabled: true,
-    isSilent: false,
-    hideCursor: true,
-    discardStdin: true,
-    spinner: spinners.dots
-  } as OraOptions).start(getText())
+  const spinner = yoctoSpinner({
+    stream: output
+  }).start(getText())
 
   try {
     for await (const pkgData of batchScan(pkgs.map(pkg => pkg.pkgid))) {
