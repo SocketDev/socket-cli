@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 // @ts-ignore
 import chalkTable from 'chalk-table'
 import meow from 'meow'
@@ -123,7 +123,7 @@ function setupCommand(
   if (!cli.input[0]) {
     showHelp = true
     console.error(
-      `${chalk.white.bgRed('Input error')}: Please specify an organization slug.`
+      `${colors.bgRed(colors.white('Input error'))}: Please specify an organization slug.`
     )
   }
   if (showHelp) {
@@ -166,17 +166,17 @@ async function listOrgFullScan(
 
   const options = {
     columns: [
-      { field: 'id', name: chalk.magenta('ID') },
-      { field: 'report_url', name: chalk.magenta('Scan URL') },
-      { field: 'branch', name: chalk.magenta('Branch') },
-      { field: 'created_at', name: chalk.magenta('Created at') }
+      { field: 'id', name: colors.magenta('ID') },
+      { field: 'report_url', name: colors.magenta('Scan URL') },
+      { field: 'branch', name: colors.magenta('Branch') },
+      { field: 'created_at', name: colors.magenta('Created at') }
     ]
   }
 
   const formattedResults = result.data.results.map(d => {
     return {
       id: d.id,
-      report_url: chalk.underline(`${d.html_report_url}`),
+      report_url: colors.underline(`${d.html_report_url}`),
       created_at: d.created_at
         ? new Date(d.created_at).toLocaleDateString('en-us', {
             year: 'numeric',

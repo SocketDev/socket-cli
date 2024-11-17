@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import util from 'node:util'
 
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 import meow from 'meow'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 
@@ -106,12 +106,12 @@ function setupCommand(
   if (!before || !after) {
     showHelp = true
     console.error(
-      `${chalk.bgRed.white('Input error')}: Please specify a before and after full scan ID. To get full scans IDs, you can run the command "socket scan list <your org slug>".\n`
+      `${colors.bgRed(colors.white('Input error'))}: Please specify a before and after full scan ID. To get full scans IDs, you can run the command "socket scan list <your org slug>".`
     )
   } else if (cli.input.length < 1) {
     showHelp = true
     console.error(
-      `${chalk.bgRed.white('Input error')}: Please provide an organization slug\n`
+      `${colors.bgRed(colors.white('Input error'))}: Please provide an organization slug.`
     )
   }
   if (showHelp) {
@@ -144,7 +144,7 @@ async function getDiffScan(
   if (!response.ok) {
     spinner.stop()
     const err = await handleAPIError(response.status)
-    console.error(`${chalk.bgRed.white(response.statusText)}: ${err}`)
+    console.error(`${colors.bgRed(colors.white(response.statusText))}: ${err}`)
     return
   }
 
@@ -164,20 +164,18 @@ async function getDiffScan(
     console.log(
       util.inspect(data, { showHidden: false, depth: null, colors: true })
     )
-    // @ts-ignore
     console.log(
-      `\n View this diff scan in the Socket dashboard: ${chalk.cyan((data as any)?.['diff_report_url'])}\n`
+      `\n View this diff scan in the Socket dashboard: ${colors.cyan((data as any)?.['diff_report_url'])}`
     )
     return
   }
 
-  console.log('Diff scan result: ')
+  console.log('Diff scan result:')
   console.log(data)
   console.log(
     `\n 📝 To display the detailed report in the terminal, use the --json flag \n`
   )
-  // @ts-ignore
   console.log(
-    `\n View this diff scan in the Socket dashboard: ${chalk.cyan((data as any)?.['diff_report_url'])}\n`
+    `\n View this diff scan in the Socket dashboard: ${colors.cyan((data as any)?.['diff_report_url'])}`
   )
 }

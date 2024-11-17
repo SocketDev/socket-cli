@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 import meow from 'meow'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 
@@ -63,7 +63,7 @@ function setupCommand(
   if (!orgSlug || !repoName) {
     showHelp = true
     console.error(
-      `${chalk.white.bgRed('Input error')}: Please provide an organization slug and repository slug.`
+      `${colors.bgRed(colors.white('Input error'))}: Please provide an organization slug and repository slug.`
     )
   }
   if (showHelp) {

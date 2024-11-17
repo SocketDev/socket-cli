@@ -6,7 +6,6 @@ import rl from 'node:readline'
 import { PassThrough } from 'node:stream'
 import { setTimeout as wait } from 'node:timers/promises'
 
-import chalk from 'chalk'
 import isInteractive from 'is-interactive'
 import npa from 'npm-package-arg'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
@@ -206,25 +205,14 @@ const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 
 const npmNmPath = path.join(npmRootPath, 'node_modules')
 
-const arboristClassPath = path.join(
-  npmNmPath,
-  '@npmcli/arborist/lib/arborist/index.js'
-)
-const arboristDepValidPath = path.join(
-  npmNmPath,
-  '@npmcli/arborist/lib/dep-valid.js'
-)
-const arboristEdgeClassPath = path.join(
-  npmNmPath,
-  '@npmcli/arborist/lib/edge.js'
-)
-const arboristNodeClassPath = path.join(
-  npmNmPath,
-  '@npmcli/arborist/lib/node.js'
-)
+const arboristPkgPath = path.join(npmNmPath, '@npmcli/arborist')
+const arboristClassPath = path.join(arboristPkgPath, 'lib/arborist/index.js')
+const arboristDepValidPath = path.join(arboristPkgPath, 'lib/dep-valid.js')
+const arboristEdgeClassPath = path.join(arboristPkgPath, 'lib/edge.js')
+const arboristNodeClassPath = path.join(arboristPkgPath, 'lib/node.js')
 const arboristOverrideSetClassPatch = path.join(
-  npmNmPath,
-  '@npmcli/arborist/lib/override-set.js'
+  arboristPkgPath,
+  'lib/override-set.js'
 )
 
 const log = tryRequire(
@@ -272,11 +260,7 @@ type IssueUXLookup = ReturnType<typeof createIssueUXLookup>
 type IssueUXLookupSettings = Parameters<IssueUXLookup>[0]
 type IssueUXLookupResult = ReturnType<IssueUXLookup>
 
-const ttyServer = createTTYServer(
-  chalk.level,
-  isInteractive({ stream: process.stdin }),
-  log
-)
+const ttyServer = createTTYServer(isInteractive({ stream: process.stdin }), log)
 
 let _uxLookup: IssueUXLookup | undefined
 
@@ -1324,54 +1308,51 @@ export class SafeArborist extends Arborist {
     }
     let proceed = ENV.UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE
     if (!proceed) {
-      proceed = await ttyServer.captureTTY(
-        async (colorLevel, input, output) => {
-          chalk.level = colorLevel
-          if (input && output) {
-            const risky = await packagesHaveRiskyIssues(
-              this,
-              this['registry'],
-              diff,
-              output
-            )
-            if (!risky) {
-              return true
-            }
-            const rlin = new PassThrough()
-            input.pipe(rlin)
-            const rlout = new PassThrough()
-            rlout.pipe(output, { end: false })
-            const rli = rl.createInterface(rlin, rlout)
-            try {
-              while (true) {
-                // eslint-disable-next-line no-await-in-loop
-                const answer: string = await new Promise(resolve => {
-                  rli.question(
-                    'Accept risks of installing these packages (y/N)?\n',
-                    { signal: abortSignal },
-                    resolve
-                  )
-                })
-                if (/^\s*y(?:es)?\s*$/i.test(answer)) {
-                  return true
-                }
-                if (/^(?:\s*no?\s*|)$/i.test(answer)) {
-                  return false
-                }
-              }
-            } finally {
-              rli.close()
-            }
-          } else if (
-            await packagesHaveRiskyIssues(this, this['registry'], diff, output)
-          ) {
-            throw new Error(
-              'Socket npm Unable to prompt to accept risk, need TTY to do so'
-            )
+      proceed = await ttyServer.captureTTY(async (input, output) => {
+        if (input && output) {
+          const risky = await packagesHaveRiskyIssues(
+            this,
+            this['registry'],
+            diff,
+            output
+          )
+          if (!risky) {
+            return true
           }
-          return true
+          const rlin = new PassThrough()
+          input.pipe(rlin)
+          const rlout = new PassThrough()
+          rlout.pipe(output, { end: false })
+          const rli = rl.createInterface(rlin, rlout)
+          try {
+            while (true) {
+              // eslint-disable-next-line no-await-in-loop
+              const answer: string = await new Promise(resolve => {
+                rli.question(
+                  'Accept risks of installing these packages (y/N)?\n',
+                  { signal: abortSignal },
+                  resolve
+                )
+              })
+              if (/^\s*y(?:es)?\s*$/i.test(answer)) {
+                return true
+              }
+              if (/^(?:\s*no?\s*|)$/i.test(answer)) {
+                return false
+              }
+            }
+          } finally {
+            rli.close()
+          }
+        } else if (
+          await packagesHaveRiskyIssues(this, this['registry'], diff, output)
+        ) {
+          throw new Error(
+            'Socket npm Unable to prompt to accept risk, need TTY to do so'
+          )
         }
-      )
+        return true
+      })
     }
     if (proceed) {
       return await this[kRiskyReify](...args)
@@ -1382,10 +1363,11 @@ export class SafeArborist extends Arborist {
 }
 
 export function installSafeArborist() {
-  require.cache[arboristClassPath]!.exports = SafeArborist
-  require.cache[arboristEdgeClassPath]!.exports = SafeEdge
-  require.cache[arboristNodeClassPath]!.exports = SafeNode
-  require.cache[arboristOverrideSetClassPatch]!.exports = SafeOverrideSet
+  const cache: { [key: string]: any } = require.cache
+  cache[arboristClassPath] = { exports: SafeArborist }
+  cache[arboristEdgeClassPath] = { exports: SafeEdge }
+  cache[arboristNodeClassPath] = { exports: SafeNode }
+  cache[arboristOverrideSetClassPatch] = { exports: SafeOverrideSet }
 }
 
 void (async () => {

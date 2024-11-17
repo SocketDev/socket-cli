@@ -1,5 +1,5 @@
 import { Separator, select } from '@inquirer/prompts'
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 import meow from 'meow'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 
@@ -101,7 +101,7 @@ function setupCommand(
   if (cli.input.length < 1) {
     showHelp = true
     console.error(
-      `${chalk.white.bgRed('Input error')}: Please provide an organization slug.`
+      `${colors.bgRed(colors.white('Input error'))}: Please provide an organization slug.`
     )
   }
   if (showHelp) {

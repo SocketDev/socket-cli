@@ -2,7 +2,7 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 import yargsParse from 'yargs-parser'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
@@ -210,7 +210,7 @@ export const cdxgen: CliSubcommand = {
     }
     const fullOutputPath = path.join(process.cwd(), yargv.output)
     if (existsSync(fullOutputPath)) {
-      console.log(chalk.cyanBright(`${yargv.output} created!`))
+      console.log(colors.cyanBright(`${yargv.output} created!`))
     }
   }
 }

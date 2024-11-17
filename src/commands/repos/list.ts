@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 // @ts-ignore
 import chalkTable from 'chalk-table'
 import meow from 'meow'
@@ -106,7 +106,7 @@ function setupCommand(
   if (!cli.input[0]) {
     showHelp = true
     console.error(
-      `${chalk.white.bgRed('Input error')}: Please provide an organization slug.`
+      `${colors.bgRed(colors.white('Input error'))}: Please provide an organization slug.`
     )
   }
   if (showHelp) {
@@ -146,11 +146,11 @@ async function listOrgRepos(
 
   const options = {
     columns: [
-      { field: 'id', name: chalk.magenta('ID') },
-      { field: 'name', name: chalk.magenta('Name') },
-      { field: 'visibility', name: chalk.magenta('Visibility') },
-      { field: 'default_branch', name: chalk.magenta('Default branch') },
-      { field: 'archived', name: chalk.magenta('Archived') }
+      { field: 'id', name: colors.magenta('ID') },
+      { field: 'name', name: colors.magenta('Name') },
+      { field: 'visibility', name: colors.magenta('Visibility') },
+      { field: 'default_branch', name: colors.magenta('Default branch') },
+      { field: 'archived', name: colors.magenta('Archived') }
     ]
   }
 

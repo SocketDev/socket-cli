@@ -8,8 +8,8 @@ import BarChart from 'blessed-contrib/lib/widget/charts/bar'
 import GridLayout from 'blessed-contrib/lib/layout/grid'
 // @ts-ignore
 import LineChart from 'blessed-contrib/lib/widget/charts/line'
-import chalk from 'chalk'
 import meow from 'meow'
+import colors from 'yoctocolors-cjs'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 
 import { commonFlags, outputFlags } from '../flags'
@@ -142,7 +142,7 @@ function setupCommand(
   if (scope === 'repo' && !repo) {
     showHelp = true
     console.error(
-      `${chalk.bgRed.white('Input error')}: Please provide a repository name when using the repository scope.`
+      `${colors.bgRed(colors.white('Input error'))}: Please provide a repository name when using the repository scope.`
     )
   }
   if (showHelp) {

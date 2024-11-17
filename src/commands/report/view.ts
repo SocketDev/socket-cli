@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 import meow from 'meow'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 import { ErrorWithCause } from 'pony-cause'
@@ -194,12 +194,8 @@ export function formatReportDataOutput(
     )
     if (!outputMarkdown) {
       console.log(
-        chalk.dim(
-          '\nOr rerun',
-          chalk.italic(name),
-          'using the',
-          chalk.italic('--json'),
-          'flag to get full JSON output'
+        colors.dim(
+          `\nOr rerun ${colors.italic(name)} using the ${colors.italic('--json')} flag to get full JSON output`
         )
       )
     }

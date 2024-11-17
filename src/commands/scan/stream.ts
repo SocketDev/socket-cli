@@ -1,4 +1,4 @@
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 import meow from 'meow'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 
@@ -81,7 +81,7 @@ function setupCommand(
   if (cli.input.length < 2) {
     showHelp = true
     console.error(
-      `${chalk.white.bgRed('Input error')}: Please specify an organization slug and a scan ID.`
+      `${colors.bgRed(colors.white('Input error'))}: Please specify an organization slug and a scan ID.`
     )
   }
   if (showHelp) {

@@ -1,7 +1,7 @@
 import { stdin as inputText, stdout as output } from 'node:process'
 import readline from 'node:readline/promises'
 
-import chalk from 'chalk'
+import colors from 'yoctocolors-cjs'
 import meow from 'meow'
 import open from 'open'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
@@ -178,10 +178,10 @@ async function setupCommand(
   const { branch: branchName, repo: repoName } = cli.flags
   if (!repoName || !branchName || !packagePaths.length) {
     showHelp = true
-    console.error(`${chalk.white.bgRed('Input error')}: Please provide the required fields:\n
-    - Repository name using --repo,\n
+    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+    - Repository name using --repo\n
     - Branch name using --branch\n
-    - At least one file path (e.g. ./package.json).`)
+    - At least one file path (e.g. ./package.json)`)
   }
   if (showHelp) {
     cli.showHelp()
@@ -242,8 +242,8 @@ async function createFullScan(
   spinner.stop()
 
   console.log('\n✅ Scan created successfully\n')
-  const link = chalk.hex('#00FFFF').underline(`${result.data.html_report_url}`)
-  console.log(`Available at: ${link}\n`)
+  const link = colors.underline(colors.cyan(`${result.data.html_report_url}`))
+  console.log(`Available at: ${link}`)
 
   const rl = readline.createInterface({ input: inputText, output })
 
