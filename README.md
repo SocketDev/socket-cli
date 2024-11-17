@@ -24,8 +24,8 @@ socket wrapper --enable
 ### Popular Commands
 
 - `socket npm [args...]` and `socket npx [args...]` - Wraps `npm` and `npx` to
-  integrate Socket and preempt installation of alerted packages using the builtin
-  resolution of `npm` to precisely determine package installations.
+  integrate Socket and preempt installation of alerted packages using the
+  builtin resolution of `npm` to precisely determine package installations.
 
 - `socket optimize` - Optimize dependencies with
   [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides!
@@ -35,13 +35,15 @@ socket wrapper --enable
 
 ### Other Commands
 
-- `socket cdxgen [command]` - Call out to [cdxgen](https://cyclonedx.github.io/cdxgen/#/?id=getting-started).
-  See [their documentation](https://cyclonedx.github.io/cdxgen/#/CLI?id=getting-help) for commands.
+- `socket cdxgen [command]` - Call out to
+  [cdxgen](https://cyclonedx.github.io/cdxgen/#/?id=getting-started). See
+  [their documentation](https://cyclonedx.github.io/cdxgen/#/CLI?id=getting-help)
+  for commands.
 
 - `socket info <package@version>` - Look up issues for a package.
 
-- `socket raw-npm [args...]` and `socket raw-npx [args...]` - Temporarily disable
-  the Socket 'safe-npm' wrapper.
+- `socket raw-npm [args...]` and `socket raw-npx [args...]` - Temporarily
+  disable the Socket 'safe-npm' wrapper.
 
 - `socket report create <path(s)-to-folder-or-file>` - Create a report on
   [Socket.dev](https://socket.dev/)
