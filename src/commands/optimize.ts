@@ -22,6 +22,7 @@ import {
 import { pEach } from '@socketsecurity/registry/lib/promises'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
+import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { commonFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
@@ -438,7 +439,7 @@ function createActionMessage(
   overrideCount: number,
   workspaceCount: number
 ) {
-  return `${verb} ${overrideCount} Socket.dev optimized overrides${workspaceCount ? ` in ${workspaceCount} workspace${workspaceCount > 1 ? 's' : ''}` : ''}`
+  return `${verb} ${overrideCount} Socket.dev optimized overrides${workspaceCount ? ` in ${workspaceCount} ${pluralize('workspace', workspaceCount)}` : ''}`
 }
 
 function getDependencyEntries(pkgJson: PackageJson) {

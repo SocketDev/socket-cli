@@ -4,6 +4,7 @@ import path from 'node:path'
 import spawn from '@npmcli/promise-spawn'
 import colors from 'yoctocolors-cjs'
 import yargsParse from 'yargs-parser'
+import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
@@ -159,7 +160,7 @@ export const cdxgen: CliSubcommand = {
     const { length: unknownLength } = unknown
     if (unknownLength) {
       console.error(
-        `Unknown argument${unknownLength > 1 ? 's' : ''}: ${yargv._.join(', ')}`
+        `Unknown ${pluralize('argument', unknownLength)}: ${yargv._.join(', ')}`
       )
       process.exitCode = 1
       return
