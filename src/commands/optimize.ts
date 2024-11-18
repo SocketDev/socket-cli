@@ -613,7 +613,7 @@ async function addOverrides(
     )
   }
   if (spinner) {
-    spinner.text = `Adding overrides${isWorkspace ? ` to ${workspaceName}` : ''}...`
+    spinner.text = `Adding overrides${workspaceName ? ` to ${workspaceName}` : ''}...`
   }
   const depAliasMap = new Map<string, { id: string; version: string }>()
   // Chunk package names to process them in parallel 3 at a time.
@@ -636,7 +636,7 @@ async function addOverrides(
           pkgSpec = `${regSpecStartsLike}^${version}`
           depObj[origPkgName] = pkgSpec
           state.added.add(regPkgName)
-          if (isWorkspace) {
+          if (workspaceName) {
             state.addedInWorkspaces.add(workspaceName)
           }
         }
@@ -646,55 +646,58 @@ async function addOverrides(
         })
       }
     }
-    // Chunk package names to process them in parallel 3 at a time.
-    await pEach(overridesDataObjects, 3, async ({ overrides, type }) => {
-      const overrideExists = hasOwn(overrides, origPkgName)
-      if (overrideExists || thingScanner(thingToScan, origPkgName)) {
-        const oldSpec = overrideExists ? overrides[origPkgName] : undefined
-        const depAlias = depAliasMap.get(origPkgName)
-        const regSpecStartsLike = `npm:${regPkgName}@`
-        let newSpec = `${regSpecStartsLike}^${pin ? version : major}`
-        let thisVersion = version
-        if (depAlias && type === 'npm') {
-          // With npm one may not set an override for a package that one directly
-          // depends on unless both the dependency and the override itself share
-          // the exact same spec. To make this limitation easier to deal with,
-          // overrides may also be defined as a reference to a spec for a direct
-          // dependency by prefixing the name of the package to match the version
-          // of with a $.
-          // https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides
-          newSpec = `$${origPkgName}`
-        } else if (overrideExists) {
-          const thisSpec = oldSpec.startsWith('$')
-            ? (depAlias?.id ?? newSpec)
-            : (oldSpec ?? newSpec)
-          if (thisSpec.startsWith(regSpecStartsLike)) {
-            if (pin) {
-              thisVersion =
-                semver.major(
-                  semver.coerce(npa(thisSpec).rawSpec)?.version ?? version
-                ) === major
-                  ? version
-                  : ((await fetchPackageManifest(thisSpec))?.version ?? version)
+    if (isRoot) {
+      // Chunk package names to process them in parallel 3 at a time.
+      await pEach(overridesDataObjects, 3, async ({ overrides, type }) => {
+        const overrideExists = hasOwn(overrides, origPkgName)
+        if (overrideExists || thingScanner(thingToScan, origPkgName)) {
+          const oldSpec = overrideExists ? overrides[origPkgName] : undefined
+          const depAlias = depAliasMap.get(origPkgName)
+          const regSpecStartsLike = `npm:${regPkgName}@`
+          let newSpec = `${regSpecStartsLike}^${pin ? version : major}`
+          let thisVersion = version
+          if (depAlias && type === 'npm') {
+            // With npm one may not set an override for a package that one directly
+            // depends on unless both the dependency and the override itself share
+            // the exact same spec. To make this limitation easier to deal with,
+            // overrides may also be defined as a reference to a spec for a direct
+            // dependency by prefixing the name of the package to match the version
+            // of with a $.
+            // https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides
+            newSpec = `$${origPkgName}`
+          } else if (overrideExists) {
+            const thisSpec = oldSpec.startsWith('$')
+              ? (depAlias?.id ?? newSpec)
+              : (oldSpec ?? newSpec)
+            if (thisSpec.startsWith(regSpecStartsLike)) {
+              if (pin) {
+                thisVersion =
+                  semver.major(
+                    semver.coerce(npa(thisSpec).rawSpec)?.version ?? version
+                  ) === major
+                    ? version
+                    : ((await fetchPackageManifest(thisSpec))?.version ??
+                      version)
+              }
+              newSpec = `${regSpecStartsLike}^${pin ? thisVersion : semver.major(thisVersion)}`
+            } else {
+              newSpec = oldSpec
             }
-            newSpec = `${regSpecStartsLike}^${pin ? thisVersion : semver.major(thisVersion)}`
-          } else {
-            newSpec = oldSpec
+          }
+          if (newSpec !== oldSpec) {
+            overrides[origPkgName] = newSpec
+            const addedOrUpdated = overrideExists ? 'updated' : 'added'
+            state[addedOrUpdated].add(regPkgName)
+            if (workspaceName) {
+              const addedOrUpdatedIn = overrideExists
+                ? 'updatedInWorkspaces'
+                : 'addedInWorkspaces'
+              state[addedOrUpdatedIn].add(workspaceName)
+            }
           }
         }
-        if (newSpec !== oldSpec) {
-          overrides[origPkgName] = newSpec
-          const addedOrUpdated = overrideExists ? 'updated' : 'added'
-          state[addedOrUpdated].add(regPkgName)
-          if (isWorkspace) {
-            const addedOrUpdatedIn = overrideExists
-              ? 'updatedInWorkspaces'
-              : 'addedInWorkspaces'
-            state[addedOrUpdatedIn].add(workspaceName)
-          }
-        }
-      }
-    })
+      })
+    }
   })
   if (workspaceGlobs) {
     const workspacePkgJsonPaths = await tinyGlob(workspaceGlobs, {
