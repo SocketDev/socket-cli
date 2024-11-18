@@ -189,6 +189,7 @@ async function fetchOrgAnalyticsData(
   if (result.success === false) {
     return handleUnsuccessfulApiResponse('getOrgAnalytics', result, spinner)
   }
+
   spinner.stop()
 
   if (!result.data.length) {
@@ -353,6 +354,7 @@ async function fetchRepoAnalyticsData(
   if (result.success === false) {
     return handleUnsuccessfulApiResponse('getRepoAnalytics', result, spinner)
   }
+
   spinner.stop()
 
   if (!result.data.length) {

@@ -775,32 +775,32 @@ export const optimize: CliSubcommand = {
     })
     if (!supported) {
       console.log(
-        `✘ ${COMMAND_TITLE}: No supported Node or browser range detected`
+        `✖️ ${COMMAND_TITLE}: No supported Node or browser range detected`
       )
       return
     }
     if (agent === 'vlt') {
       console.log(
-        `✘ ${COMMAND_TITLE}: ${agent} does not support overrides. Soon, though ⚡`
+        `✖️ ${COMMAND_TITLE}: ${agent} does not support overrides. Soon, though ⚡`
       )
       return
     }
     const lockName = lockPath ? path.basename(lockPath) : 'lock file'
     if (lockSrc === undefined) {
-      console.log(`✘ ${COMMAND_TITLE}: No ${lockName} found`)
+      console.log(`✖️ ${COMMAND_TITLE}: No ${lockName} found`)
       return
     }
     if (lockSrc.trim() === '') {
-      console.log(`✘ ${COMMAND_TITLE}: ${lockName} is empty`)
+      console.log(`✖️ ${COMMAND_TITLE}: ${lockName} is empty`)
       return
     }
     if (pkgPath === undefined) {
-      console.log(`✘ ${COMMAND_TITLE}: No package.json found`)
+      console.log(`✖️ ${COMMAND_TITLE}: No package.json found`)
       return
     }
     if (prod && (agent === 'bun' || agent === 'yarn/berry')) {
       console.log(
-        `✘ ${COMMAND_TITLE}: --prod not supported for ${agent}${agentVersion ? `@${agentVersion.toString()}` : ''}`
+        `✖️ ${COMMAND_TITLE}: --prod not supported for ${agent}${agentVersion ? `@${agentVersion.toString()}` : ''}`
       )
       return
     }
@@ -879,9 +879,8 @@ export const optimize: CliSubcommand = {
           )
         }
       } catch {
-        spinner.stop()
-        console.log(
-          `✘ ${COMMAND_TITLE}: ${agent} install failed to update ${lockName}`
+        spinner.error(
+          `${COMMAND_TITLE}: ${agent} install failed to update ${lockName}`
         )
       }
     }

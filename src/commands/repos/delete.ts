@@ -88,12 +88,9 @@ async function deleteRepository(
     'deleting repository'
   )
 
-  if (!result.success) {
+  if (result.success) {
+    spinner.success('Repository deleted successfully')
+  } else {
     handleUnsuccessfulApiResponse('deleteOrgRepo', result, spinner)
-    return
   }
-
-  spinner.stop()
-
-  console.log('\n✅ Repository deleted successfully\n')
 }

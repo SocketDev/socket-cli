@@ -160,9 +160,6 @@ async function listOrgFullScan(
     handleUnsuccessfulApiResponse('getOrgFullScanList', result, spinner)
     return
   }
-  spinner.stop()
-
-  console.log(`\n Listing scans for: ${orgSlug}\n`)
 
   const options = {
     columns: [
@@ -188,5 +185,6 @@ async function listOrgFullScan(
     }
   })
 
+  spinner.stop(`Listing scans for: ${orgSlug}`)
   console.log(chalkTable(options, formattedResults))
 }

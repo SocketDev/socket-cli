@@ -102,7 +102,6 @@ export const login: CliSubcommand = {
     const spinner = yoctoSpinner({ text: 'Verifying API key...' }).start()
 
     let orgs: SocketSdkReturnType<'getOrganizations'>['data']
-
     try {
       const sdk = await setupSdk(apiKey, apiBaseUrl, apiProxy)
       const result = await sdk.getOrganizations()
@@ -110,7 +109,7 @@ export const login: CliSubcommand = {
         throw new AuthError()
       }
       orgs = result.data
-      spinner.success('API key verified\n')
+      spinner.success('API key verified')
     } catch {
       spinner.error('Invalid API key')
       return

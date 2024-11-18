@@ -101,10 +101,10 @@ async function deleteOrgFullScan(
     socketSdk.deleteOrgFullScan(orgSlug, fullScanId),
     'Deleting scan'
   )
-  if (!result.success) {
+
+  if (result.success) {
+    spinner.success('Scan deleted successfully')
+  } else {
     handleUnsuccessfulApiResponse('deleteOrgFullScan', result, spinner)
-    return
   }
-  spinner.stop()
-  console.log('✅ Scan deleted successfully')
 }

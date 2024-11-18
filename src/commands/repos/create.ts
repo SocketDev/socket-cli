@@ -150,12 +150,9 @@ async function createRepo(
     'creating repository'
   )
 
-  if (!result.success) {
+  if (result.success) {
+    spinner.success('Repository created successfully')
+  } else {
     handleUnsuccessfulApiResponse('createOrgRepo', result, spinner)
-    return
   }
-
-  spinner.stop()
-
-  console.log('\n✅ Repository created successfully\n')
 }

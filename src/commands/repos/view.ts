@@ -109,8 +109,6 @@ async function viewRepository(
     return
   }
 
-  spinner.stop()
-
   const options = {
     columns: [
       { field: 'id', name: colors.magenta('ID') },
@@ -123,5 +121,5 @@ async function viewRepository(
     ]
   }
 
-  console.log(chalkTable(options, [result.data]))
+  spinner.stop(chalkTable(options, [result.data]))
 }

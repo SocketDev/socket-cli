@@ -154,6 +154,7 @@ async function fetchOrgAuditLog(
     handleUnsuccessfulApiResponse('getAuditLogEvents', result, spinner)
     return
   }
+
   spinner.stop()
 
   const data: AuditChoices = []
