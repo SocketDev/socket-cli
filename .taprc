@@ -1,13 +1,10 @@
 # vim: set filetype=yaml :
 allow-incomplete-coverage: true
-color: true
 coverage-report:
   - none
 exclude:
   - test/dist/**
 include:
   - test/**/*.test.ts
-passes: false
-reporter: base
 timeout: 600 # 600 seconds is 10 minutes
 tsconfig: .config/tsconfig.tap.json
