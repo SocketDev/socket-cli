@@ -218,7 +218,6 @@ async function createFullScan(
     repoName,
     tmp
   } = input
-
   const result = await handleApiCall(
     socketSdk.createOrgFullScan(
       orgSlug,
@@ -239,9 +238,9 @@ async function createFullScan(
     handleUnsuccessfulApiResponse('CreateOrgFullScan', result, spinner)
     return
   }
-  spinner.stop()
 
-  console.log('\n✅ Scan created successfully\n')
+  spinner.success('Scan created successfully')
+
   const link = colors.underline(colors.cyan(`${result.data.html_report_url}`))
   console.log(`Available at: ${link}`)
 
@@ -254,6 +253,5 @@ async function createFullScan(
   if (answer.toLowerCase() === 'y') {
     await open(`${result.data.html_report_url}`)
   }
-
   rl.close()
 }

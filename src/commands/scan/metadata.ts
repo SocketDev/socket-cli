@@ -106,8 +106,7 @@ async function getOrgScanMetadata(
     handleUnsuccessfulApiResponse('getOrgFullScanMetadata', result, spinner)
     return
   }
-  spinner.stop()
 
-  console.log('\nScan metadata:\n')
+  spinner.stop('Scan metadata:')
   console.log(result.data)
 }

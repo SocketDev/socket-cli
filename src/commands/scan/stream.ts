@@ -12,7 +12,7 @@ import { printFlagList } from '../../utils/formatting'
 import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
-import type { Spinner } from '@socketregistry/yocto-spinner'
+import type { SocketSdkResultType } from '@socketsecurity/sdk'
 
 export const stream: CliSubcommand = {
   description: 'Stream the output of a scan',
@@ -26,15 +26,21 @@ export const stream: CliSubcommand = {
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
-      const spinnerText = 'Streaming scan...\n'
-      const spinner = yoctoSpinner({ text: spinnerText }).start()
-      await getOrgFullScan(
+      const spinner = yoctoSpinner({ text: 'Streaming scan...' }).start()
+      const result = await getOrgFullScan(
         input.orgSlug,
         input.fullScanId,
         input.file,
-        spinner,
         apiKey
       )
+
+      if (result?.success) {
+        spinner.stop(
+          input.file ? `Full scan details written to ${input.file}` : ''
+        )
+      } else {
+        handleUnsuccessfulApiResponse('getOrgFullScan', result, spinner)
+      }
     }
   }
 }
@@ -102,23 +108,11 @@ async function getOrgFullScan(
   orgSlug: string,
   fullScanId: string,
   file: string | undefined,
-  spinner: Spinner,
   apiKey: string
-): Promise<void> {
+): Promise<SocketSdkResultType<'getOrgFullScan'>> {
   const socketSdk = await setupSdk(apiKey)
-  const result = await handleApiCall(
+  return await handleApiCall(
     socketSdk.getOrgFullScan(orgSlug, fullScanId, file),
     'Streaming a scan'
-  )
-
-  if (!result?.success) {
-    handleUnsuccessfulApiResponse('getOrgFullScan', result, spinner)
-    return
-  }
-
-  spinner.stop()
-
-  console.log(
-    file ? `\nFull scan details written to ${file}\n` : '\nFull scan details:\n'
   )
 }

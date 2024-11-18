@@ -271,15 +271,12 @@ async function createReport(
   )
   const result = await handleApiCall(apiCall, 'creating report')
 
-  if (result.success === false) {
-    return handleUnsuccessfulApiResponse('createReport', result, spinner)
+  if (result.success) {
+    spinner.success()
+    return result
   }
-
-  // Conclude the status of the API call
-
-  spinner.success()
-
-  return result
+  handleUnsuccessfulApiResponse('createReport', result, spinner)
+  return undefined
 }
 
 function formatReportCreationOutput(
@@ -293,11 +290,8 @@ function formatReportCreationOutput(
     console.log(JSON.stringify(data, undefined, 2))
     return
   }
-
   const format = new ColorOrMarkdown(!!outputMarkdown)
-
   console.log(
-    '\nNew report: ' +
-      format.hyperlink(data.id, data.url, { fallbackToUrl: true })
+    `New report: ${format.hyperlink(data.id, data.url, { fallbackToUrl: true })}`
   )
 }

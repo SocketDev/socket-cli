@@ -151,12 +151,9 @@ async function updateRepository(
     'updating repository'
   )
 
-  if (!result.success) {
+  if (result.success) {
+    spinner.success('Repository updated successfully')
+  } else {
     handleUnsuccessfulApiResponse('updateOrgRepo', result, spinner)
-    return
   }
-
-  spinner.stop()
-
-  console.log('\n✅ Repository updated successfully\n')
 }

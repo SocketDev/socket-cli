@@ -109,9 +109,7 @@ async function searchDeps({
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
-  const spinnerText = 'Searching dependencies...'
-  const spinner = yoctoSpinner({ text: spinnerText }).start()
-
+  const spinner = yoctoSpinner({ text: 'Searching dependencies...' }).start()
   const socketSdk = await setupSdk(apiKey)
 
   const result = await handleApiCall(
@@ -124,9 +122,7 @@ async function searchDeps({
     return
   }
 
-  spinner.stop()
-
-  console.log('Organization dependencies:\n')
+  spinner.stop('Organization dependencies:')
 
   if (outputJson) {
     console.log(result.data)

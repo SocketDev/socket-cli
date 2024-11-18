@@ -52,26 +52,23 @@ async function fetchOrganizations(): Promise<void> {
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
-  const socketSdk = await setupSdk(apiKey)
   const spinner = yoctoSpinner({ text: 'Fetching organizations...' }).start()
-
+  const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(
     socketSdk.getOrganizations(),
     'looking up organizations'
   )
+
   if (result.success === false) {
     handleUnsuccessfulApiResponse('getOrganizations', result, spinner)
     return
   }
 
-  spinner.stop()
-
-  const organizations = Object.values(result.data.organizations)
-
-  console.log(
+  spinner.stop(
     `List of organizations associated with your API key: ${colors.italic(apiKey)}`
   )
 
+  const organizations = Object.values(result.data.organizations)
   for (const o of organizations) {
     console.log(`
 Name: ${o?.name}

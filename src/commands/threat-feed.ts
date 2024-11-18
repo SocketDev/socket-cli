@@ -146,7 +146,6 @@ async function fetchThreatFeed(
     direction,
     filter
   }).join('&')
-
   const response = await queryAPI(`threat-feed?${formattedQueryParams}`, apiKey)
   const data = <{ results: ThreatResult[]; nextPage: string }>(
     await response.json()
@@ -155,7 +154,8 @@ async function fetchThreatFeed(
   spinner.stop()
 
   if (outputJson) {
-    return console.log(data)
+    console.log(data)
+    return
   }
 
   const screen = new ScreenWidget()

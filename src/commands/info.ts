@@ -197,32 +197,27 @@ function formatPackageDataOutput(
     Object.entries(scoreResult).map(score =>
       console.log(`- ${score[0]}: ${formatScore(score[1])}`)
     )
-
+    console.log('\n')
     if (objectSome(severityCount)) {
-      const issueSummary = formatSeverityCount(severityCount)
-      console.log('\n')
       spinner[strict ? 'error' : 'success'](
-        `Package has these issues: ${issueSummary}`
+        `Package has these issues: ${formatSeverityCount(severityCount)}`
       )
       formatPackageIssuesDetails(data, outputMarkdown)
     } else {
-      console.log('\n')
       spinner.success('Package has no issues')
     }
 
     const format = new ColorOrMarkdown(!!outputMarkdown)
     const url = `https://socket.dev/npm/package/${pkgName}/overview/${pkgVersion}`
+
+    console.log('\n')
     if (pkgVersion === 'latest') {
       console.log(
-        '\nDetailed info on socket.dev: ' +
-          format.hyperlink(`${pkgName}`, url, { fallbackToUrl: true })
+        `Detailed info on socket.dev: ${format.hyperlink(`${pkgName}`, url, { fallbackToUrl: true })}`
       )
     } else {
       console.log(
-        '\nDetailed info on socket.dev: ' +
-          format.hyperlink(`${pkgName} v${pkgVersion}`, url, {
-            fallbackToUrl: true
-          })
+        `Detailed info on socket.dev: ${format.hyperlink(`${pkgName} v${pkgVersion}`, url, { fallbackToUrl: true })}`
       )
     }
     if (!outputMarkdown) {

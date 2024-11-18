@@ -142,8 +142,6 @@ async function listOrgRepos(
     return
   }
 
-  spinner.stop()
-
   const options = {
     columns: [
       { field: 'id', name: colors.magenta('ID') },
@@ -154,5 +152,5 @@ async function listOrgRepos(
     ]
   }
 
-  console.log(chalkTable(options, result.data.results))
+  spinner.stop(chalkTable(options, result.data.results))
 }
