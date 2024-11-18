@@ -90,28 +90,29 @@ function isEsmId(id_, parentId_) {
   } else if (parentId && isRelative(resolvedId)) {
     filepath = path.join(path.dirname(parentId), resolvedId)
   }
-  if (filepath) {
-    const pkgJsonPath = findUpSync('package.json', {
-      cwd: path.dirname(resolvedId)
-    })
-    if (pkgJsonPath) {
-      const pkgJson = require(pkgJsonPath)
-      const { exports: entryExports } = pkgJson
-      if (
-        pkgJson.type === 'module' &&
-        !entryExports?.require &&
-        !entryExports?.node?.default?.endsWith('.cjs')
-      ) {
-        return true
-      }
+  if (!filepath) {
+    return false
+  }
+  const pkgJsonPath = findUpSync('package.json', {
+    cwd: path.dirname(resolvedId)
+  })
+  if (pkgJsonPath) {
+    const pkgJson = require(pkgJsonPath)
+    const { exports: entryExports } = pkgJson
+    if (
+      pkgJson.type === 'module' &&
+      !entryExports?.require &&
+      !entryExports?.node?.default?.endsWith('.cjs')
+    ) {
+      return true
     }
-    try {
-      // eslint-disable-next-line no-new
-      new vm.Script(fs.readFileSync(resolvedId, 'utf8'))
-    } catch (e) {
-      if (e instanceof SyntaxError) {
-        return true
-      }
+  }
+  try {
+    // eslint-disable-next-line no-new
+    new vm.Script(fs.readFileSync(resolvedId, 'utf8'))
+  } catch (e) {
+    if (e instanceof SyntaxError) {
+      return true
     }
   }
   return false
