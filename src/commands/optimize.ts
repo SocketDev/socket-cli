@@ -11,6 +11,7 @@ import { parse as yamlParse } from 'yaml'
 
 import { getManifestData } from '@socketsecurity/registry'
 import {
+  hasKeys,
   hasOwn,
   isObject,
   toSortedObject
@@ -187,15 +188,45 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
     if (oldValue) {
       // The field already exists so we simply update the field value.
       if (field === PNPM_FIELD_NAME) {
-        editablePkgJson['update']({
-          [field]: {
-            ...(isObject(oldValue) ? oldValue : {}),
-            overrides: value
-          }
+        if (hasKeys(value)) {
+          editablePkgJson.update({
+            [field]: {
+              ...(isObject(oldValue) ? oldValue : {}),
+              overrides: value
+            }
+          })
+        } else {
+          // Properties with undefined values are omitted when saved as JSON.
+          editablePkgJson.update(
+            <typeof pkgJson>(hasKeys(pkgJson[field])
+              ? {
+                  [field]: {
+                    ...(isObject(oldValue) ? oldValue : {}),
+                    overrides: undefined
+                  }
+                }
+              : { [field]: undefined })
+          )
+        }
+      } else if (
+        field === OVERRIDES_FIELD_NAME ||
+        field === RESOLUTIONS_FIELD_NAME
+      ) {
+        // Properties with undefined values are omitted when saved as JSON.
+        editablePkgJson.update(<typeof pkgJson>{
+          [field]: hasKeys(value) ? value : undefined
         })
       } else {
         editablePkgJson.update({ [field]: value })
       }
+      return
+    }
+    if (
+      (field === OVERRIDES_FIELD_NAME ||
+        field === PNPM_FIELD_NAME ||
+        field === RESOLUTIONS_FIELD_NAME) &&
+      !hasKeys(value)
+    ) {
       return
     }
     // Since the field doesn't exist we want to insert it into the package.json
