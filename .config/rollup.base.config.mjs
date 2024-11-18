@@ -54,18 +54,33 @@ const customResolver = nodeResolve({
   preferBuiltins: true
 })
 
-function isAncestorsCjs(resolvedId, parentId) {
-  let currNmIndex = resolvedId.indexOf(SLASH_NODE_MODULES_SLASH)
+function isAncestorsExternal(id, depStats) {
+  let currNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH)
   while (currNmIndex !== -1) {
-    const nextNmIndex = resolvedId.indexOf(
-      SLASH_NODE_MODULES_SLASH,
-      currNmIndex + 1
-    )
-    const currPkgName = resolvedId.slice(
+    const nextNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH, currNmIndex + 1)
+    const nameStart = currNmIndex + SLASH_NODE_MODULES_SLASH.length
+    const nameEnd = getPackageNameEnd(id, nameStart)
+    const name = id.slice(nameStart, nameEnd)
+    const nameSlashFilename = id.slice(
       currNmIndex + SLASH_NODE_MODULES_SLASH.length,
-      nextNmIndex === -1 ? resolvedId.length : nextNmIndex
+      nextNmIndex === -1 ? id.length : nextNmIndex
     )
-    if (isEsmId(currPkgName, parentId)) {
+    if (isEsmId(nameSlashFilename, id)) {
+      return false
+    }
+    const {
+      version,
+      dependencies = {},
+      optionalDependencies = {},
+      peerDependencies = {}
+    } = readPackageJsonSync(`${id.slice(0, nameEnd)}/package.json`)
+    const range =
+      dependencies[name] ??
+      optionalDependencies[name] ??
+      peerDependencies[name] ??
+      version
+    const seenRange = pkgDeps[name] ?? depStats.external[name]
+    if (seenRange && !rangesIntersect(seenRange, range)) {
       return false
     }
     currNmIndex = nextNmIndex
@@ -93,22 +108,24 @@ export default (extendConfig = {}) => {
         return true
       }
       const id = normalizeId(id_)
-      if (isRelative(id)) {
-        return false
-      }
-      if (id.endsWith('.cjs')) {
-        return true
-      }
-      if (id.endsWith('.mjs') || id.endsWith('.mts') || id.endsWith('.ts')) {
+      if (
+        isRelative(id) ||
+        id.endsWith('.mjs') ||
+        id.endsWith('.mts') ||
+        id.endsWith('.ts')
+      ) {
         return false
       }
       const parentId = parentId_ ? resolveId(parentId_) : undefined
+      if (parentId && !isAncestorsExternal(parentId, depStats)) {
+        return false
+      }
       const resolvedId = resolveId(id, parentId)
-      if (resolvedId.endsWith('.json')) {
-        return isAncestorsCjs(resolvedId, parentId)
+      if (!isAncestorsExternal(resolvedId, depStats)) {
+        return false
       }
       const name = getPackageName(id)
-      if (!isValidPackageName(name) || name === '@babel/runtime') {
+      if (name === '@babel/runtime' || !isValidPackageName(name)) {
         return false
       }
       if (isEsmId(resolvedId, parentId)) {
@@ -123,16 +140,13 @@ export default (extendConfig = {}) => {
           parentPkg?.peerDependencies?.[name] ??
           readPackageUpSync({ cwd: path.dirname(resolvedId) })?.packageJson
             ?.version ??
-          ''
+          'latest'
         return false
       }
       const parentNodeModulesIndex = parentId.lastIndexOf(
         SLASH_NODE_MODULES_SLASH
       )
       if (parentNodeModulesIndex !== -1) {
-        if (isAncestorsCjs(resolvedId, parentId)) {
-          return true
-        }
         const parentNameStart =
           parentNodeModulesIndex + SLASH_NODE_MODULES_SLASH.length
         const parentNameEnd = getPackageNameEnd(parentId, parentNameStart)
@@ -144,17 +158,17 @@ export default (extendConfig = {}) => {
         } = readPackageJsonSync(
           `${parentId.slice(0, parentNameEnd)}/package.json`
         )
-        const curRange =
+        const range =
           dependencies[name] ??
           optionalDependencies[name] ??
           peerDependencies[name] ??
           version
         const seenRange = pkgDeps[name] ?? depStats.external[name]
         if (seenRange) {
-          return rangesIntersect(seenRange, curRange)
+          return rangesIntersect(seenRange, range)
         }
-        depStats.external[name] = curRange
-        depStats.transitives[name] = curRange
+        depStats.external[name] = range
+        depStats.transitives[name] = range
       } else if (pkgDeps[name]) {
         depStats.external[name] = pkgDeps[name]
         depStats.dependencies[name] = pkgDeps[name]
