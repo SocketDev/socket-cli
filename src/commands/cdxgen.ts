@@ -24,7 +24,7 @@ const {
 const toLower = (arg: string) => arg.toLowerCase()
 const arrayToLower = (arg: string[]) => arg.map(toLower)
 
-const nodejsPlatformTypes = [
+const nodejsPlatformTypes = new Set([
   'javascript',
   'js',
   'nodejs',
@@ -33,7 +33,7 @@ const nodejsPlatformTypes = [
   'ts',
   'tsx',
   'typescript'
-]
+])
 
 const yargsConfig = {
   configuration: {
@@ -168,7 +168,7 @@ export const cdxgen: CliSubcommand = {
     let cleanupPackageLock = false
     if (
       yargv.type !== 'yarn' &&
-      nodejsPlatformTypes.includes(yargv.type) &&
+      nodejsPlatformTypes.has(yargv.type) &&
       existsSync('./yarn.lock')
     ) {
       if (existsSync('./package-lock.json')) {
