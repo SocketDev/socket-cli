@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@apideck/better-ajv-errors": "^0.3.6",
-    "@cyclonedx/cdxgen": "^10.11.0",
+    "@cyclonedx/cdxgen": "^11.0.3",
     "@inquirer/prompts": "^7.1.0",
     "@npmcli/promise-spawn": "^8.0.2",
     "@socketregistry/hyrious__bun.lockb": "1.0.5",
@@ -19,10 +19,10 @@
     "npm-package-arg": "^12.0.0",
     "pony-cause": "^2.1.11",
     "semver": "^7.6.3",
-    "synp": "^1.9.13",
+    "synp": "^1.9.14",
     "tinyglobby": "^0.2.10",
     "which": "^5.0.0",
-    "yaml": "^2.6.0",
+    "yaml": "^2.6.1",
     "yargs-parser": "^21.1.1",
     "yoctocolors-cjs": "^2.1.2"
   },
@@ -48,7 +48,7 @@
   },
   "external": {
     "@apideck/better-ajv-errors": "^0.3.6",
-    "@cyclonedx/cdxgen": "^10.11.0",
+    "@cyclonedx/cdxgen": "^11.0.3",
     "@inquirer/prompts": "^7.1.0",
     "@npmcli/promise-spawn": "^8.0.2",
     "@socketregistry/hyrious__bun.lockb": "1.0.5",
@@ -67,10 +67,10 @@
     "npm-package-arg": "^12.0.0",
     "pony-cause": "^2.1.11",
     "semver": "^7.6.3",
-    "synp": "^1.9.13",
+    "synp": "^1.9.14",
     "tinyglobby": "^0.2.10",
     "which": "^5.0.0",
-    "yaml": "^2.6.0",
+    "yaml": "^2.6.1",
     "yargs-parser": "^21.1.1",
     "yoctocolors-cjs": "^2.1.2"
   },
