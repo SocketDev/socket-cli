@@ -12,7 +12,7 @@ const unicornPlugin = require('eslint-plugin-unicorn')
 const tsEslint = require('typescript-eslint')
 
 const constants = require('@socketsecurity/registry/lib/constants')
-const { GIT_IGNORE, PRETTIER_IGNORE, TSCONFIG_JSON } = constants
+const { GIT_IGNORE, LATEST, PRETTIER_IGNORE, TSCONFIG_JSON } = constants
 
 const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 
@@ -44,7 +44,7 @@ const getImportXFlatConfigs = isEsm => ({
     ...origImportXFlatConfigs.recommended,
     languageOptions: {
       ...origImportXFlatConfigs.recommended.languageOptions,
-      ecmaVersion: 'latest',
+      ecmaVersion: LATEST,
       sourceType: isEsm ? 'module' : 'script'
     },
     rules: {

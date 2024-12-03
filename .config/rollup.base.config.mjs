@@ -10,6 +10,7 @@ import { readPackageUpSync } from 'read-package-up'
 import rangesIntersect from 'semver/ranges/intersects.js'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
+import constants from '@socketsecurity/registry/lib/constants'
 import { isRelative } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import {
@@ -26,6 +27,8 @@ import {
   isBuiltin,
   resolveId
 } from '../scripts/utils/packages.js'
+
+const { LATEST } = constants
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const require = createRequire(import.meta.url)
@@ -140,7 +143,7 @@ export default (extendConfig = {}) => {
           parentPkg?.peerDependencies?.[name] ??
           readPackageUpSync({ cwd: path.dirname(resolvedId) })?.packageJson
             ?.version ??
-          'latest'
+          LATEST
         return false
       }
       const parentNodeModulesIndex = parentId.lastIndexOf(
