@@ -5,8 +5,16 @@ const { spawnSync } = require('node:child_process')
 const path = require('node:path')
 const { describe, it } = require('node:test')
 
+const constants = require('../scripts/constants')
+const { SUPPORTS_SYNC_ESM } = constants
+
 const testPath = __dirname
-const entryPath = path.resolve(testPath, '../dist/cli.js')
+const rootPath = path.resolve(testPath, '..')
+const distPath = path.resolve(
+  rootPath,
+  `dist${SUPPORTS_SYNC_ESM ? '' : '-legacy'}`
+)
+const entryPath = path.resolve(distPath, 'cli.js')
 
 function spawnNPM({ args = [], cwd, installDir }) {
   return spawnSync(process.execPath, [entryPath, 'npm', ...args], {
@@ -21,7 +29,7 @@ function spawnNPM({ args = [], cwd, installDir }) {
   })
 }
 
-// these aliases are defined in package.json
+// These aliases are defined in package.json.
 for (const npm of ['npm8', 'npm10']) {
   const installDir = path.join(testPath, `/socket-npm-fixtures/${npm}`)
   spawnSync('npm', ['install'], {

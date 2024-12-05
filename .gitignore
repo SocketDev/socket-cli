@@ -8,6 +8,7 @@ Thumbs.db
 /coverage
 /npm-debug.log
 **/dist
+**/dist-legacy
 **/node_modules
 /*.tsbuildinfo
 *.d.ts

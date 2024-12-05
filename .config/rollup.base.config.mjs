@@ -10,7 +10,6 @@ import { readPackageUpSync } from 'read-package-up'
 import rangesIntersect from 'semver/ranges/intersects.js'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
-import constants from '@socketsecurity/registry/lib/constants'
 import { isRelative } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import {
@@ -18,6 +17,7 @@ import {
   readPackageJsonSync
 } from '@socketsecurity/registry/lib/packages'
 
+import constants from '../scripts/constants.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
   getPackageName,
@@ -28,16 +28,17 @@ import {
   resolveId
 } from '../scripts/utils/packages.js'
 
-const { LATEST } = constants
+const {
+  LATEST,
+  ROLLUP_ENTRY_SUFFIX,
+  ROLLUP_EXTERNAL_SUFFIX,
+  SLASH_NODE_MODULES_SLASH
+} = constants
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const require = createRequire(import.meta.url)
 
 const ts = require('rollup-plugin-ts')
-
-const ENTRY_SUFFIX = '?commonjs-entry'
-const EXTERNAL_SUFFIX = '?commonjs-external'
-const SLASH_NODE_MODULES_SLASH = '/node_modules/'
 
 const builtinAliases = builtinModules.reduce((o, n) => {
   o[n] = `node:${n}`
@@ -91,7 +92,7 @@ function isAncestorsExternal(id, depStats) {
   return true
 }
 
-export default (extendConfig = {}) => {
+export default function baseConfig(extendConfig = {}) {
   const depStats = {
     dependencies: { __proto__: null },
     devDependencies: { __proto__: null },
@@ -107,15 +108,15 @@ export default (extendConfig = {}) => {
       }
     },
     external(id_, parentId_) {
-      if (id_.endsWith(EXTERNAL_SUFFIX) || isBuiltin(id_)) {
+      if (id_.endsWith(ROLLUP_EXTERNAL_SUFFIX) || isBuiltin(id_)) {
         return true
       }
       const id = normalizeId(id_)
       if (
         isRelative(id) ||
+        id.startsWith('src/') ||
         id.endsWith('.mjs') ||
-        id.endsWith('.mts') ||
-        id.endsWith('.ts')
+        id.endsWith('.mts')
       ) {
         return false
       }
@@ -234,13 +235,13 @@ export default (extendConfig = {}) => {
         }
       }),
       commonjs({
+        defaultIsModuleExports: true,
+        extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
         ignoreDynamicRequires: true,
         ignoreGlobal: true,
         ignoreTryCatch: true,
-        defaultIsModuleExports: true,
         strictRequires: 'auto',
-        transformMixedEsModules: true,
-        extensions: ['.cjs', '.js', '.ts', `.ts${ENTRY_SUFFIX}`]
+        transformMixedEsModules: true
       }),
       ...(extendConfig.plugins ?? [])
     ]
