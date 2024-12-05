@@ -74,13 +74,9 @@ type Explanation = {
 } | null
 
 type InstallEffect = {
-  action: Diff['action']
   existing: NodeClass['pkgid'] | null
   pkgid: NodeClass['pkgid']
-  resolved: NodeClass['resolved']
-  location: NodeClass['location']
-  oldPackage: PURLParts | null
-  newPackage: PURLParts
+  repository_url: string
 }
 
 type NodeClass = Omit<
@@ -145,13 +141,6 @@ interface KnownModules {
   npmlog: typeof import('npmlog')
   pacote: typeof import('pacote')
   'proc-log': typeof import('proc-log')
-}
-
-type PURLParts = {
-  type: 'npm'
-  namespace_and_name: string
-  version: string
-  repository_url: URL['href']
 }
 
 type RequireTransformer<T extends keyof KnownModules> = (
@@ -283,8 +272,8 @@ async function* batchScan(
   )
 > {
   const query = {
-    packages: pkgIds.map(pkgid => {
-      const { name, version } = pkgidParts(pkgid)
+    packages: pkgIds.map(id => {
+      const { name, version } = pkgidParts(id)
       return {
         eco: 'npm',
         pkg: name,
@@ -390,28 +379,25 @@ async function packagesHaveRiskyIssues(
   pkgs: InstallEffect[],
   output?: Writable
 ): Promise<boolean> {
-  let result = false
-  let remaining = pkgs.length
-  if (!remaining) {
-    yoctoSpinner().success('No changes detected')
-    return result
-  }
-
-  const getText = () => `Looking up data for ${remaining} packages`
-
   const spinner = yoctoSpinner({
     stream: output
-  }).start(getText())
+  })
+  let result = false
+  let { length: remaining } = pkgs
+  if (!remaining) {
+    spinner.success('No changes detected')
+    return result
+  }
+  const getText = () => `Looking up data for ${remaining} packages`
+  spinner.start(getText())
 
   try {
-    for await (const pkgData of batchScan(pkgs.map(pkg => pkg.pkgid))) {
-      let failures: { block?: boolean; raw?: any; type?: string }[] = []
-      let displayWarning = false
-
-      const name = pkgData.pkg
-      const version = pkgData.ver
+    for await (const pkgData of batchScan(pkgs.map(p => p.pkgid))) {
+      const { pkg: name, ver: version } = pkgData
       const id = `${name}@${version}`
 
+      let displayWarning = false
+      let failures: { block?: boolean; raw?: any; type?: string }[] = []
       if (pkgData.type === 'missing') {
         result = true
         failures.push({
@@ -430,7 +416,7 @@ async function packagesHaveRiskyIssues(
             // Before we ask about problematic issues, check to see if they
             // already existed in the old version if they did, be quiet.
             const pkg = pkgs.find(
-              pkg => pkg.pkgid === id && pkg.existing?.startsWith(`${name}@`)
+              p => p.pkgid === id && p.existing?.startsWith(`${name}@`)
             )
             if (pkg?.existing) {
               // eslint-disable-next-line no-await-in-loop
@@ -455,7 +441,7 @@ async function packagesHaveRiskyIssues(
           }
         }
         if (!blocked) {
-          const pkg = pkgs.find(pkg => pkg.pkgid === id)
+          const pkg = pkgs.find(p => p.pkgid === id)
           if (pkg) {
             await tarball.stream(
               id,
@@ -469,9 +455,8 @@ async function packagesHaveRiskyIssues(
         }
       }
       if (displayWarning) {
-        spinner.stop()
-        output?.write(
-          `(socket) ${formatter.hyperlink(id, `https://socket.dev/npm/package/${name}/overview/${version}`)} contains risks:\n`
+        spinner.stop(
+          `(socket) ${formatter.hyperlink(id, `https://socket.dev/npm/package/${name}/overview/${version}`)} contains risks:`
         )
         failures.sort((a, b) => (a.raw.type < b.raw.type ? -1 : 1))
         const lines = new Set()
@@ -495,9 +480,7 @@ async function packagesHaveRiskyIssues(
     }
     return result
   } finally {
-    if (spinner.isSpinning) {
-      spinner.stop()
-    }
+    spinner.stop()
   }
 }
 
@@ -508,18 +491,11 @@ function pkgidParts(pkgid: string) {
   return { name, version }
 }
 
-function toPURL(pkgid: string, resolved: string): PURLParts {
-  const repo = resolved
-    .replace(/#[\s\S]*$/u, '')
-    .replace(/\?[\s\S]*$/u, '')
-    .replace(/\/[^/]*\/-\/[\s\S]*$/u, '')
-  const { name, version } = pkgidParts(pkgid)
-  return {
-    type: 'npm',
-    namespace_and_name: name,
-    version,
-    repository_url: repo
-  }
+function toRepoUrl(resolved: string): string {
+  return resolved
+    .replace(/#[\s\S]*$/, '')
+    .replace(/\?[\s\S]*$/, '')
+    .replace(/\/[^/]*\/-\/[\s\S]*$/, '')
 }
 
 function walk(
@@ -560,15 +536,8 @@ function walk(
       ) {
         needInfoOn.push({
           existing,
-          action: diff.action,
-          location: diff.ideal.location,
           pkgid: diff.ideal.pkgid,
-          newPackage: toPURL(diff.ideal.pkgid, diff.ideal.resolved),
-          oldPackage:
-            diff.actual && diff.actual.resolved
-              ? toPURL(diff.actual.pkgid, diff.actual.resolved)
-              : null,
-          resolved: diff.ideal.resolved
+          repository_url: toRepoUrl(diff.ideal.resolved)
         })
       }
     }
@@ -1300,10 +1269,7 @@ export class SafeArborist extends Arborist {
     options['save'] = old.save
     options['saveBundle'] = old.saveBundle
     // Nothing to check, mmm already installed or all private?
-    if (
-      diff.findIndex(c => c.newPackage.repository_url === NPM_REGISTRY_URL) ===
-      -1
-    ) {
+    if (diff.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1) {
       return await this[kRiskyReify](...args)
     }
     let proceed = ENV.UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE
