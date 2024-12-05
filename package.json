@@ -14,9 +14,25 @@
     "url": "https://socket.dev"
   },
   "bin": {
-    "socket": "dist/cli.js",
-    "socket-npm": "dist/npm-cli.js",
-    "socket-npx": "dist/npx-cli.js"
+    "socket": "./dist/cli.js",
+    "socket-npm": "./dist/npm-cli.js",
+    "socket-npx": "./dist/npx-cli.js"
+  },
+  "exports": {
+    "./dist/cli.js": {
+      "module-sync": "./dist/cli.js",
+      "require": "./dist-legacy/cli.js"
+    },
+    "./dist/npm-cli.js": {
+      "module-sync": "./dist/npm-cli.js",
+      "require": "./dist-legacy/npm-cli.js"
+    },
+    "./dist/npx-cli.js": {
+      "module-sync": "./dist/npx-cli.js",
+      "require": "./dist-legacy/npx-cli.js"
+    },
+    "./package.json": "./package.json",
+    "./translations.json": "./translations.json"
   },
   "scripts": {
     "build": "run-s build:*",
@@ -31,12 +47,12 @@
     "lint": "oxlint -c=./.oxlintrc.json --ignore-path=./.prettierignore --tsconfig=./tsconfig.json .",
     "lint:fix": "npm run lint -- --fix && npm run lint:fix:fast",
     "lint:fix:fast": "prettier --cache --log-level warn --write .",
-    "prepare": "husky",
+    "prepare": "husky && custompatch",
     "test": "run-s check build:* test:*",
     "test:c8": "c8 --reporter=none node --test 'test/socket-npm.test.cjs'",
     "test-ci": "run-s build:* test:*",
-    "test:unit": "tap",
-    "test:coverage": "cp -r .tap/coverage/*.json coverage/tmp && c8 --reporter=lcov --reporter=text --include 'dist/*.js' --exclude 'dist/vendor.js' report"
+    "test:unit": "tap-run",
+    "test:coverage": "cp -r .tap/coverage/*.json coverage/tmp && c8 --reporter=lcov --reporter=text --include 'dist{,-legacy}/*.js' --exclude 'dist-legacy/vendor.js' report"
   },
   "dependencies": {
     "@apideck/better-ajv-errors": "^0.3.6",
@@ -83,6 +99,7 @@
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-replace": "^6.0.1",
     "@rollup/pluginutils": "^5.1.3",
+    "@tapjs/run": "^4.0.1",
     "@types/blessed": "^0.1.25",
     "@types/micromatch": "^4.0.9",
     "@types/mocha": "^10.0.10",
@@ -98,6 +115,7 @@
     "@typescript-eslint/eslint-plugin": "^8.17.0",
     "@typescript-eslint/parser": "^8.17.0",
     "c8": "^10.1.2",
+    "custompatch": "^1.0.28",
     "eslint": "^9.16.0",
     "eslint-import-resolver-oxc": "^0.5.0",
     "eslint-plugin-depend": "^0.12.0",
@@ -120,7 +138,6 @@
     "read-package-up": "^11.0.0",
     "rollup": "4.28.0",
     "rollup-plugin-ts": "^3.4.5",
-    "tap": "^21.0.1",
     "terminal-link": "^3.0.0",
     "tiny-updater": "^3.5.2",
     "type-coverage": "^2.29.7",
@@ -180,6 +197,7 @@
   "files": [
     "bin/**",
     "dist/**",
+    "dist-legacy/**",
     "translations.json"
   ]
 }

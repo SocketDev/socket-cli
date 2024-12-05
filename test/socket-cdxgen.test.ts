@@ -3,11 +3,19 @@ import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 import { describe, it } from 'node:test'
 
+import semver from 'semver'
+
 import type { SpawnSyncOptionsWithStringEncoding } from 'node:child_process'
+
+const SUPPORTS_SYNC_ESM = semver.satisfies(process.versions.node, '>=22.12')
 
 const testPath = __dirname
 const rootPath = path.resolve(testPath, '..')
-const distPath = path.join(rootPath, 'dist')
+const distPath = path.resolve(
+  rootPath,
+  `dist${SUPPORTS_SYNC_ESM ? '' : '-legacy'}`
+)
+
 const spawnOpts: SpawnSyncOptionsWithStringEncoding = {
   cwd: distPath,
   encoding: 'utf8'
