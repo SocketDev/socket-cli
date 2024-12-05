@@ -257,7 +257,7 @@ export default function baseConfig(extendConfig = {}) {
     ...o,
     chunkFileNames: '[name].js',
     manualChunks(id) {
-      if (id.includes('/node_modules/')) {
+      if (id.includes(SLASH_NODE_MODULES_SLASH)) {
         return 'vendor'
       }
     }
