@@ -5,14 +5,12 @@ import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
 
+import { distPath, shadowBinPath } from '../constants'
 import { installLinks } from './link'
 import { findRoot } from '../utils/path-resolve'
 
-const realFilename = realpathSync(__filename)
-const realDirname = path.dirname(realFilename)
-
-const npmPath = installLinks(path.join(realDirname, 'bin'), 'npm')
-const injectionPath = path.join(realDirname, 'npm-injection.js')
+const npmPath = installLinks(shadowBinPath, 'npm')
+const injectionPath = path.join(distPath, 'npm-injection.js')
 
 // Adding the `--quiet` and `--no-progress` flags when the `proc-log` module
 // is found to fix a UX issue when running the command with recent versions of
@@ -41,10 +39,15 @@ if (
 process.exitCode = 1
 const spawnPromise = spawn(
   process.execPath,
-  ['--require', injectionPath, npmPath, ...npmArgs],
-  {
-    stdio: 'inherit'
-  }
+  [
+    '--disable-warning',
+    'ExperimentalWarning',
+    '--require',
+    injectionPath,
+    npmPath,
+    ...npmArgs
+  ],
+  { stdio: 'inherit' }
 )
 spawnPromise.process.on('exit', (code, signal) => {
   if (signal) {

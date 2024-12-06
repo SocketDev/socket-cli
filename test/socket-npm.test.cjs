@@ -6,22 +6,17 @@ const path = require('node:path')
 const { describe, it } = require('node:test')
 
 const constants = require('../scripts/constants')
-const { SUPPORTS_SYNC_ESM } = constants
+const { distPath } = constants
 
 const testPath = __dirname
-const rootPath = path.resolve(testPath, '..')
-const distPath = path.resolve(
-  rootPath,
-  `dist${SUPPORTS_SYNC_ESM ? '' : '-legacy'}`
-)
-const entryPath = path.resolve(distPath, 'cli.js')
+const entryPath = path.join(distPath, 'cli.js')
 
 function spawnNPM({ args = [], cwd, installDir }) {
   return spawnSync(process.execPath, [entryPath, 'npm', ...args], {
     cwd: path.join(testPath, cwd),
     encoding: 'utf8',
     env: {
-      // make sure we don't borrow TTY from parent
+      // Make sure we don't borrow TTY from parent.
       SOCKET_SECURITY_TTY_IPC: undefined,
       PATH: `${path.join(installDir, 'node_modules', '.bin')}:${process.env.PATH}`
     },

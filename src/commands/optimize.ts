@@ -25,6 +25,7 @@ import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
+import { distPath } from '../constants'
 import { commonFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
 import { existsSync } from '../utils/fs'
@@ -47,7 +48,6 @@ const PNPM_FIELD_NAME = 'pnpm'
 const PNPM_WORKSPACE = 'pnpm-workspace'
 const RESOLUTIONS_FIELD_NAME = 'resolutions'
 
-const distPath = __dirname
 const manifestNpmOverrides = getManifestData('npm')!
 
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }

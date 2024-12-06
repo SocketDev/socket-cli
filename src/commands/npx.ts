@@ -2,9 +2,10 @@ import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
 
+import { distPath } from '../constants'
+
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const distPath = __dirname
 const description = 'npx wrapper functionality'
 
 export const npx: CliSubcommand = {
@@ -12,9 +13,11 @@ export const npx: CliSubcommand = {
   async run(argv, _importMeta, _ctx) {
     const wrapperPath = path.join(distPath, 'npx-cli.js')
     process.exitCode = 1
-    const spawnPromise = spawn(process.execPath, [wrapperPath, ...argv], {
-      stdio: 'inherit'
-    })
+    const spawnPromise = spawn(
+      process.execPath,
+      ['--disable-warning', 'ExperimentalWarning', wrapperPath, ...argv],
+      { stdio: 'inherit' }
+    )
     spawnPromise.process.on('exit', (code, signal) => {
       if (signal) {
         process.kill(process.pid, signal)

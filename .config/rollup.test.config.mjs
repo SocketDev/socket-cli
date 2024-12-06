@@ -1,24 +1,17 @@
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
 import { isRelative } from '@socketsecurity/registry/lib/path'
 
 import baseConfig from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
 import { normalizeId, isBuiltin } from '../scripts/utils/packages.js'
 
-const { ROLLUP_EXTERNAL_SUFFIX, SUPPORTS_SYNC_ESM } = constants
-
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
-
-const rootPath = path.resolve(__dirname, '..')
-const srcPath = path.join(rootPath, 'src')
+const { ROLLUP_EXTERNAL_SUFFIX, SUPPORTS_SYNC_ESM, rootSrcPath } = constants
 
 export default () =>
   baseConfig({
     input: {
-      misc: `${srcPath}/utils/misc.ts`,
-      'path-resolve': `${srcPath}/utils/path-resolve.ts`
+      constants: `${rootSrcPath}/constants.ts`,
+      misc: `${rootSrcPath}/utils/misc.ts`,
+      'path-resolve': `${rootSrcPath}/utils/path-resolve.ts`
     },
     output: [
       {
@@ -37,7 +30,7 @@ export default () =>
               return true
             }
             const id = normalizeId(id_)
-            return !(isRelative(id) || id.startsWith(srcPath))
+            return !(isRelative(id) || id.startsWith(rootSrcPath))
           }
         }
       : {})

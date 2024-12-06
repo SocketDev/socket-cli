@@ -1,6 +1,5 @@
 import { builtinModules, createRequire } from 'node:module'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
@@ -22,9 +21,9 @@ import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
   getPackageName,
   getPackageNameEnd,
+  isBuiltin,
   isEsmId,
   normalizeId,
-  isBuiltin,
   resolveId
 } from '../scripts/utils/packages.js'
 
@@ -32,26 +31,27 @@ const {
   LATEST,
   ROLLUP_ENTRY_SUFFIX,
   ROLLUP_EXTERNAL_SUFFIX,
-  SLASH_NODE_MODULES_SLASH
+  SLASH_NODE_MODULES_SLASH,
+  babelConfigPath,
+  rootPackageJsonPath,
+  rootPath,
+  rootSrcPath,
+  tsconfigPath
 } = constants
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const require = createRequire(import.meta.url)
 
 const ts = require('rollup-plugin-ts')
+
+const rootPackageJson = require(rootPackageJsonPath)
+const { dependencies: pkgDeps, devDependencies: pkgDevDeps } = rootPackageJson
 
 const builtinAliases = builtinModules.reduce((o, n) => {
   o[n] = `node:${n}`
   return o
 }, {})
 
-const rootPath = path.resolve(__dirname, '..')
-const babelConfigPath = path.join(__dirname, 'babel.config.js')
-const tsconfigPath = path.join(__dirname, 'tsconfig.rollup.json')
-
 const babelConfig = require(babelConfigPath)
-const { dependencies: pkgDeps, devDependencies: pkgDevDeps } =
-  readPackageJsonSync(rootPath)
 
 const customResolver = nodeResolve({
   exportConditions: ['node'],
@@ -112,11 +112,20 @@ export default function baseConfig(extendConfig = {}) {
         return true
       }
       const id = normalizeId(id_)
+      const name = getPackageName(id)
       if (
-        isRelative(id) ||
-        id.startsWith('src/') ||
+        name.startsWith('@socketregistry/') ||
+        name.startsWith('@socketsecurity/')
+      ) {
+        return true
+      }
+      if (
+        name === '@babel/runtime' ||
+        id.startsWith(rootSrcPath) ||
         id.endsWith('.mjs') ||
-        id.endsWith('.mts')
+        id.endsWith('.mts') ||
+        isRelative(id) ||
+        !isValidPackageName(name)
       ) {
         return false
       }
@@ -126,10 +135,6 @@ export default function baseConfig(extendConfig = {}) {
       }
       const resolvedId = resolveId(id, parentId)
       if (!isAncestorsExternal(resolvedId, depStats)) {
-        return false
-      }
-      const name = getPackageName(id)
-      if (name === '@babel/runtime' || !isValidPackageName(name)) {
         return false
       }
       if (isEsmId(resolvedId, parentId)) {
@@ -196,6 +201,13 @@ export default function baseConfig(extendConfig = {}) {
       purgePolyfills.rollup({
         replacements: {}
       }),
+      // Convert SOCKET_PACKAGE_NAME to the Socket package name.
+      replace({
+        preventAssignment: false,
+        values: {
+          SOCKET_PACKAGE_NAME: rootPackageJson.name
+        }
+      }),
       // Convert un-prefixed built-in imports into "node:"" prefixed forms.
       replace({
         delimiters: ['(?<=(?:require\\(|from\\s*)["\'])', '(?=["\'])'],
@@ -235,7 +247,7 @@ export default function baseConfig(extendConfig = {}) {
         }
       }),
       commonjs({
-        defaultIsModuleExports: true,
+        defaultIsModuleExports: 'auto',
         extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
         ignoreDynamicRequires: true,
         ignoreGlobal: true,
@@ -268,15 +280,13 @@ export default function baseConfig(extendConfig = {}) {
     delimiters: ['(?<=["\'])', '/'],
     preventAssignment: false,
     values: {
-      [rootPath]: '../'
+      [rootPath]: '../../'
     }
   })
-
   const replaceOutputPlugin = {
     name: replacePlugin.name,
     renderChunk: replacePlugin.renderChunk
   }
-
   for (const o of output) {
     o.plugins = [
       ...(Array.isArray(o.plugins) ? o.plugins : []),
