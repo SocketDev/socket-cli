@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import colors from 'yoctocolors-cjs'
@@ -8,15 +7,10 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 
 import * as cliCommands from './commands'
+import { rootPkgJsonPath } from './constants'
 import { logSymbols } from './utils/color-or-markdown'
 import { AuthError, InputError } from './utils/errors'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
-
-const distPath = __dirname
-const rootPath = path.resolve(distPath, '..')
-const rootPkgJsonPath = path.join(rootPath, 'package.json')
-
-const rootPkgJson = require(rootPkgJsonPath)
 
 const formattedCliCommands = Object.fromEntries(
   Object.entries(cliCommands).map(entry => {
@@ -32,6 +26,8 @@ function camelToHyphen(str: string): string {
 
 // TODO: Add autocompletion using https://socket.dev/npm/package/omelette
 void (async () => {
+  const rootPkgJson = require(rootPkgJsonPath)
+
   await updateNotifier({
     name: rootPkgJson.name,
     version: rootPkgJson.version,

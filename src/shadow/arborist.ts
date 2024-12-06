@@ -15,7 +15,7 @@ import config from '@socketsecurity/config'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 
 import { createTTYServer } from './tty-server'
-import { API_V0_URL, ENV } from '../constants'
+import { API_V0_URL, ENV, rootPath } from '../constants'
 import { ColorOrMarkdown } from '../utils/color-or-markdown'
 import { createIssueUXLookup } from '../utils/issue-rules'
 import { isErrnoException } from '../utils/misc'
@@ -149,9 +149,6 @@ type RequireTransformer<T extends keyof KnownModules> = (
 
 const POTENTIALLY_BUG_ERROR_SNIPPET =
   'this is potentially a bug with socket-npm caused by changes to the npm cli'
-
-const distPath = __dirname
-const rootPath = path.resolve(distPath, '..')
 
 const npmEntrypoint = realpathSync(process.argv[1]!)
 const npmRootPath = findRoot(path.dirname(npmEntrypoint))

@@ -11,9 +11,10 @@ const SUPPORTS_SYNC_ESM = semver.satisfies(process.versions.node, '>=22.12')
 
 const testPath = __dirname
 const rootPath = path.resolve(testPath, '..')
-const distPath = path.resolve(
-  rootPath,
-  `dist${SUPPORTS_SYNC_ESM ? '' : '-legacy'}`
+const rootDistPath = path.join(rootPath, 'dist')
+const distPath = path.join(
+  rootDistPath,
+  SUPPORTS_SYNC_ESM ? 'module-sync' : 'require'
 )
 
 const spawnOpts: SpawnSyncOptionsWithStringEncoding = {

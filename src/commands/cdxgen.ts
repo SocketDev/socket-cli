@@ -6,14 +6,11 @@ import colors from 'yoctocolors-cjs'
 import yargsParse from 'yargs-parser'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
+import { cdxgenBinPath, synpBinPath } from '../constants'
+
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const distPath = __dirname
 const { execPath } = process
-const rootPath = path.resolve(distPath, '..')
-const binPath = path.join(rootPath, 'node_modules/.bin')
-const cdxgenBinPath = path.join(binPath, 'cdxgen')
-const synpBinPath = path.join(binPath, 'synp')
 
 const {
   SBOM_SIGN_ALGORITHM, // Algorithm. Example: RS512

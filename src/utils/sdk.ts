@@ -1,19 +1,14 @@
-import fs from 'node:fs/promises'
-import path from 'node:path'
-
 import { password } from '@inquirer/prompts'
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 import isInteractive from 'is-interactive'
 
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
+import { rootPkgJsonPath } from '../constants'
 import { AuthError } from './errors'
 import { getSetting } from './settings'
 
 import type { SocketSdkOptions } from '@socketsecurity/sdk'
-
-const distPath = __dirname
-const rootPath = path.resolve(distPath, '..')
 
 export const FREE_API_KEY =
   'sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api'
@@ -67,20 +62,17 @@ export async function setupSdk(
   }
 
   let agent: SocketSdkOptions['agent'] | undefined
-
   if (proxy) {
     agent = {
       http: new HttpProxyAgent({ proxy }),
       https: new HttpsProxyAgent({ proxy })
     }
   }
-  const packageJsonPath = path.join(rootPath, 'package.json')
-  const packageJson = await fs.readFile(packageJsonPath, 'utf8')
 
   const sdkOptions: SocketSdkOptions = {
     agent,
     baseUrl: apiBaseUrl,
-    userAgent: createUserAgentFromPkgJson(JSON.parse(packageJson))
+    userAgent: createUserAgentFromPkgJson(require(rootPkgJsonPath))
   }
 
   return new SocketSdk(apiKey || '', sdkOptions)

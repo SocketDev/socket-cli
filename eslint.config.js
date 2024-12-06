@@ -19,8 +19,8 @@ const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 const rootPath = __dirname
 const rootTsConfigPath = path.join(rootPath, TSCONFIG_JSON)
 
-const gitignorePath = path.resolve(rootPath, GIT_IGNORE)
-const prettierignorePath = path.resolve(rootPath, PRETTIER_IGNORE)
+const gitignorePath = path.join(rootPath, GIT_IGNORE)
+const prettierignorePath = path.join(rootPath, PRETTIER_IGNORE)
 
 const sharedPlugins = {
   'sort-destructure-keys': sortDestructureKeysPlugin,
