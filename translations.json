@@ -1,30 +1,4 @@
 {
-  "issueCategories": {
-    "license": {
-      "title": "License"
-    },
-    "maintenance": {
-      "title": "Maintenance"
-    },
-    "miscellaneous": {
-      "title": "Miscellaneous"
-    },
-    "quality": {
-      "title": "Quality"
-    },
-    "supplyChainRisk": {
-      "title": "Supply chain risk"
-    },
-    "vulnerability": {
-      "title": "Vulnerability"
-    }
-  },
-  "issueSeverity": {
-    "0": "Low",
-    "1": "Medium",
-    "2": "High",
-    "3": "Critical"
-  },
   "issues": {
     "badEncoding": {
       "description": "Source files are encoded using a non-standard text encoding.",
