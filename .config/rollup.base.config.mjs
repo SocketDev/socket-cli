@@ -9,12 +9,12 @@ import { readPackageUpSync } from 'read-package-up'
 import rangesIntersect from 'semver/ranges/intersects.js'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
-import { isRelative } from '@socketsecurity/registry/lib/path'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import {
   isValidPackageName,
   readPackageJsonSync
 } from '@socketsecurity/registry/lib/packages'
+import { isRelative } from '@socketsecurity/registry/lib/path'
+import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import constants from '../scripts/constants.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
