@@ -38,6 +38,8 @@ type ArboristClass = typeof BaseArborist & {
   new (...args: any): typeof BaseArborist
 }
 
+type AwaitedYield<T> = T extends AsyncGenerator<infer Y, any, any> ? Y : never
+
 type EdgeClass = Omit<BaseEdge, 'overrides' | 'reload'> & {
   optional: boolean
   overrides: OverrideSetClass | undefined
@@ -434,16 +436,17 @@ async function packagesHaveRiskyIssues(
               p => p.pkgid === id && p.existing?.startsWith(`${name}@`)
             )
             if (pkg?.existing) {
-              // eslint-disable-next-line no-await-in-loop
-              for await (const oldPkgData of batchScan([pkg.existing])) {
-                if (oldPkgData.type === 'success') {
-                  failures = failures.filter(
-                    issue =>
-                      oldPkgData.value.issues.find(
-                        oldIssue => oldIssue.type === issue.type
-                      ) === undefined
-                  )
-                }
+              const oldPkgData = <AwaitedYield<ReturnType<typeof batchScan>>>(
+                // eslint-disable-next-line no-await-in-loop
+                (await batchScan([pkg.existing]).next()).value
+              )
+              if (oldPkgData.type === 'success') {
+                failures = failures.filter(
+                  issue =>
+                    oldPkgData.value.issues.find(
+                      oldIssue => oldIssue.type === issue.type
+                    ) === undefined
+                )
               }
             }
           }
