@@ -30,11 +30,9 @@ for (const npm of ['npm8', 'npm10']) {
 
   describe(`Socket npm wrapper for ${npm}`, () => {
     it('should bail on new typosquat', async () => {
-      try {
-        await spawn(
-          process.execPath,
-          [entryPath, 'npm', 'install', 'bowserify'],
-          {
+      await assert.rejects(
+        () =>
+          spawn(process.execPath, [entryPath, 'npm', 'install', 'bowserify'], {
             cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
             encoding: 'utf8',
             env: {
@@ -42,12 +40,9 @@ for (const npm of ['npm8', 'npm10']) {
               SOCKET_SECURITY_TTY_IPC: undefined,
               PATH: `${npmBinPath}:${process.env.PATH}`
             }
-          }
-        )
-        assert.ok(false, 'typosquat not error')
-      } catch (e) {
-        assert.ok(e?.stderr.includes('Unable to prompt'), e?.stderr)
-      }
+          }),
+        e => e?.stderr.includes('Unable to prompt')
+      )
     })
   })
 }
