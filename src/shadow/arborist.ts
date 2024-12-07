@@ -460,6 +460,8 @@ async function packagesHaveRiskyIssues(
         for (const failure of failures) {
           const type = failure.raw.type
           if (type) {
+            // Based data from { pageProps: { alertTypes } } of:
+            // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
             const issueTypeTranslation = translations.issues[type]
             // TODO: emoji seems to mis-align terminals sometimes
             lines.add(
