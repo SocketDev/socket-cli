@@ -15,15 +15,12 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   result: SocketSdkErrorType<T>,
   spinner: Spinner
 ) {
-  const resultError =
-    'error' in result && result.error && typeof result.error === 'object'
-      ? result.error
-      : {}
+  // SocketSdkErrorType['error'] is not typed.
+  const resultErrorMessage = (<{ error?: Error }>result).error?.message
   const message =
-    'message' in resultError && typeof resultError.message === 'string'
-      ? resultError.message
+    typeof resultErrorMessage === 'string'
+      ? resultErrorMessage
       : 'No error message returned'
-
   if (result.status === 401 || result.status === 403) {
     spinner.stop()
     throw new AuthError(message)
@@ -51,9 +48,9 @@ export async function handleApiCall<T>(
 
 export async function handleAPIError(code: number) {
   if (code === 400) {
-    return `One of the options passed might be incorrect.`
+    return 'One of the options passed might be incorrect.'
   } else if (code === 403) {
-    return `You might be trying to access an organization that is not linked to the API key you are logged in with.`
+    return 'You might be trying to access an organization that is not linked to the API key you are logged in with.'
   }
 }
 
@@ -61,7 +58,7 @@ export async function queryAPI(path: string, apiKey: string) {
   return await fetch(`${API_V0_URL}/${path}`, {
     method: 'GET',
     headers: {
-      Authorization: 'Basic ' + btoa(`${apiKey}:${apiKey}`)
+      Authorization: `Basic ${btoa(`${apiKey}:${apiKey}`)}`
     }
   })
 }
