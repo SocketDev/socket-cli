@@ -25,7 +25,10 @@ import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import { distPath } from '../constants'
+import {
+  UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+  distPath
+} from '../constants'
 import { commonFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
 import { existsSync } from '../utils/fs'
@@ -44,6 +47,7 @@ type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 
 const COMMAND_TITLE = 'Socket Optimize'
 const OVERRIDES_FIELD_NAME = 'overrides'
+const NPM_OVERRIDE_PR_URL = 'https://github.com/npm/cli/pull/7025'
 const PNPM_FIELD_NAME = 'pnpm'
 const PNPM_WORKSPACE = 'pnpm-workspace'
 const RESOLUTIONS_FIELD_NAME = 'resolutions'
@@ -898,7 +902,7 @@ export const optimize: CliSubcommand = {
               stdio: 'ignore',
               env: {
                 ...process.env,
-                UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: '1'
+                [UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
               }
             }
           )
@@ -909,7 +913,7 @@ export const optimize: CliSubcommand = {
         spinner.stop()
         if (isNpm) {
           console.log(
-            `💡 Re-run ${COMMAND_TITLE} whenever ${lockName} changes.\n   This can be skipped once npm ships https://github.com/npm/cli/pull/7025.`
+            `💡 Re-run ${COMMAND_TITLE} whenever ${lockName} changes.\n   This can be skipped once npm ships ${NPM_OVERRIDE_PR_URL}.`
           )
         }
       } catch {
