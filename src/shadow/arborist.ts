@@ -462,11 +462,12 @@ async function packagesHaveRiskyIssues(
           if (type) {
             // Based data from { pageProps: { alertTypes } } of:
             // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
-            const issueTypeTranslation = translations.issues[type]
+            const info = translations.issues[type]
+            const title = info?.title ?? type
+            const maybeBlocking = failure.block ? '' : ' (non-blocking)'
+            const maybeDesc = info?.description ? ` - ${info.description}` : ''
             // TODO: emoji seems to mis-align terminals sometimes
-            lines.add(
-              `  ${issueTypeTranslation?.title ?? type}${failure.block ? '' : ' (non-blocking)'} - ${issueTypeTranslation?.description ?? ''}\n`
-            )
+            lines.add(`  ${title}${maybeBlocking}${maybeDesc}\n`)
           }
         }
         for (const line of lines) {
