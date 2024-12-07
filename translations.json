@@ -28,9 +28,6 @@
   "issues": {
     "badEncoding": {
       "description": "Source files are encoded using a non-standard text encoding.",
-      "props": {
-        "encoding": "Encoding"
-      },
       "suggestion": "Ensure all published files are encoded using a standard encoding such as UTF8, UTF16, UTF32, SHIFT-JIS, etc.",
       "title": "Bad text encoding",
       "emoji": "⚠️"
@@ -43,113 +40,116 @@
     },
     "badSemverDependency": {
       "description": "Package has dependencies with an invalid semantic version. This could be a sign of beta, low quality, or unmaintained dependencies.",
-      "props": {
-        "packageName": "Package name",
-        "packageVersion": "Package version"
-      },
       "suggestion": "Switch to a version of the dependency with valid semver or override the dependency version if it is determined to be problematic.",
       "title": "Bad dependency semver",
       "emoji": "⚠️"
     },
     "bidi": {
-      "description": "Source files contain bidirectional unicode control characters. This could indicate a Trojan source supply chain attack. See: trojansource.code for more information.",
+      "description": "Source files contain bidirectional unicode control characters. This could indicate a Trojan source supply chain attack. See: trojansource.codes for more information.",
       "suggestion": "Remove bidirectional unicode control characters, or clearly document what they are used for.",
       "title": "Bidirectional unicode control characters",
       "emoji": "⚠️"
     },
     "binScriptConfusion": {
-      "description": "This package has multiple bin scripts with the same name.  This can cause non-deterministic behavior when installing or could be a sign of a supply chain attack",
-      "props": {
-        "binScript": "Bin script"
-      },
-      "suggestion": "Consider removing one of the conflicting packages.  Packages should only export bin scripts with their name",
+      "description": "This package has multiple bin scripts with the same name. This can cause non-deterministic behavior when installing or could be a sign of a supply chain attack.",
+      "suggestion": "Consider removing one of the conflicting packages. Packages should only export bin scripts with their name.",
       "title": "Bin script confusion",
       "emoji": "😵‍💫"
     },
     "chronoAnomaly": {
       "description": "Semantic versions published out of chronological order.",
-      "props": {
-        "prevChronoDate": "Previous chronological date",
-        "prevChronoVersion": "Previous chronological version",
-        "prevSemverDate": "Previous semver date",
-        "prevSemverVersion": "Previous semver version"
-      },
       "suggestion": "This could either indicate dependency confusion or a patched vulnerability.",
       "title": "Chronological version anomaly",
       "emoji": "⚠️"
     },
+    "compromisedSSHKey": {
+      "description": "Project maintainer's SSH key has been compromised.",
+      "suggestion": "The maintainer should revoke the compromised key and generate a new one.",
+      "title": "Compromised SSH key",
+      "emoji": "🔑"
+    },
     "criticalCVE": {
       "description": "Contains a Critical Common Vulnerability and Exposure (CVE).",
-      "props": {
-        "id": "Id",
-        "severity": "Severity",
-        "title": "Title",
-        "url": "URL"
-      },
       "suggestion": "Remove or replace dependencies that include known critical CVEs. Consumers can use dependency overrides or npm audit fix --force to remove vulnerable dependencies.",
       "title": "Critical CVE",
       "emoji": "⚠️"
     },
     "cve": {
       "description": "Contains a high severity Common Vulnerability and Exposure (CVE).",
-      "props": {
-        "id": "Id",
-        "severity": "Severity",
-        "title": "Title",
-        "url": "URL",
-        "vulnerable_versions": "Vulnerable versions"
-      },
       "suggestion": "Remove or replace dependencies that include known high severity CVEs. Consumers can use dependency overrides or npm audit fix --force to remove vulnerable dependencies.",
-      "title": "CVE",
+      "title": "High CVE",
       "emoji": "⚠️"
     },
     "debugAccess": {
       "description": "Uses debug, reflection and dynamic code execution features.",
-      "props": {
-        "module": "Module"
-      },
       "suggestion": "Removing the use of debug will reduce the risk of any reflection and dynamic code execution.",
       "title": "Debug access",
       "emoji": "⚠️"
     },
     "deprecated": {
       "description": "The maintainer of the package marked it as deprecated. This could indicate that a single version should not be used, or that the package is no longer maintained and any new vulnerabilities will not be fixed.",
-      "props": {
-        "reason": "Reason"
-      },
       "suggestion": "Research the state of the package and determine if there are non-deprecated versions that can be used, or if it should be replaced with a new, supported solution.",
       "title": "Deprecated",
       "emoji": "⚠️"
     },
     "deprecatedException": {
-      "description": "Contains a known deprecated SPDX license exception.",
-      "props": {
-        "comments": "Comments",
-        "exceptionId": "Exception id"
-      },
+      "description": "(Experimental) Contains a known deprecated SPDX license exception.",
       "suggestion": "Fix the license so that it no longer contains deprecated SPDX license exceptions.",
       "title": "Deprecated SPDX exception",
       "emoji": "⚠️"
     },
+    "explicitlyUnlicensedItem": {
+      "description": "(Experimental) Something was found which is explicitly marked as unlicensed.",
+      "suggestion": "Manually review your policy on such materials",
+      "title": "Explicitly Unlicensed Item",
+      "emoji": "⚠️"
+    },
+    "unidentifiedLicense": {
+      "description": "(Experimental) Something that seems like a license was found, but its contents could not be matched with a known license.",
+      "suggestion": "Manually review the license contents.",
+      "title": "Unidentified License",
+      "emoji": "⚠️"
+    },
+    "noLicenseFound": {
+      "description": "(Experimental) License information could not be found.",
+      "suggestion": "Manually review the licensing",
+      "title": "No License Found",
+      "emoji": "⚠️"
+    },
+    "copyleftLicense": {
+      "description": "(Experimental) Copyleft license information was found.",
+      "suggestion": "Determine whether use of copyleft material works for you",
+      "title": "Copyleft License",
+      "emoji": "⚠️"
+    },
+    "licenseSpdxDisj": {
+      "description": "This package is not allowed per your license policy. Review the package's license to ensure compliance.",
+      "suggestion": "Find a package that does not violate your license policy or adjust your policy to allow this package's license.",
+      "title": "License Policy Violation",
+      "emoji": "⚠️"
+    },
+    "nonpermissiveLicense": {
+      "description": "(Experimental) A license not known to be considered permissive was found.",
+      "suggestion": "Determine whether use of material not offered under a known permissive license works for you",
+      "title": "Non-permissive License",
+      "emoji": "⚠️"
+    },
+    "miscLicenseIssues": {
+      "description": "(Experimental) A package's licensing information has fine-grained problems.",
+      "suggestion": "Consult the alert's description and location information for more information",
+      "title": "Misc. License Issues",
+      "emoji": "⚠️"
+    },
     "deprecatedLicense": {
-      "description": "License is deprecated which may have legal implications regarding the package's use.",
-      "props": {
-        "licenseId": "License id"
-      },
+      "description": "(Experimental) License is deprecated which may have legal implications regarding the package's use.",
       "suggestion": "Update or change the license to a well-known or updated license.",
       "title": "Deprecated license",
       "emoji": "⚠️"
     },
     "didYouMean": {
       "description": "Package name is similar to other popular packages and may not be the package you want.",
-      "props": {
-        "alternatePackage": "Alternate package",
-        "downloads": "Downloads",
-        "downloadsRatio": "Download ratio",
-        "editDistance": "Edit distance"
-      },
       "suggestion": "Use care when consuming similarly named packages and ensure that you did not intend to consume a different package. Malicious packages often publish using similar names as existing popular packages.",
-      "title": "Potential typo squat",
+      "title": "Possible typosquat attack",
       "emoji": "🧐"
     },
     "dynamicRequire": {
@@ -160,77 +160,81 @@
     },
     "emptyPackage": {
       "description": "Package does not contain any code. It may be removed, is name squatting, or the result of a faulty package publish.",
-      "props": {
-        "linesOfCode": "Lines of code"
-      },
       "suggestion": "Remove dependencies that do not export any code or functionality and ensure the package version includes all of the files it is supposed to.",
       "title": "Empty package",
       "emoji": "⚠️"
     },
     "envVars": {
       "description": "Package accesses environment variables, which may be a sign of credential stuffing or data theft.",
-      "props": {
-        "envVars": "Environment variables"
-      },
       "suggestion": "Packages should be clear about which environment variables they access, and care should be taken to ensure they only access environment variables they claim to.",
       "title": "Environment variable access",
       "emoji": "⚠️"
     },
     "extraneousDependency": {
-      "description": "Package optionally loads a dependency which is not specified within any of the package.tson dependency fields. It may inadvertently be importing dependencies specified by other packages.",
-      "props": {
-        "name": "Name"
-      },
-      "suggestion": "Specify all optionally loaded dependencies in optionalDependencies within package.tson.",
+      "description": "Package optionally loads a dependency which is not specified within any of the package.json dependency fields. It may inadvertently be importing dependencies specified by other packages.",
+      "suggestion": "Specify all optionally loaded dependencies in optionalDependencies within package.json.",
       "title": "Extraneous dependency",
       "emoji": "⚠️"
     },
     "fileDependency": {
       "description": "Contains a dependency which resolves to a file. This can obfuscate analysis and serves no useful purpose.",
-      "props": {
-        "filePath": "File path",
-        "packageName": "Package name"
-      },
-      "suggestion": "Remove the dependency specified by a file resolution string from package.tson and update any bare name imports that referenced it before to use relative path strings.",
+      "suggestion": "Remove the dependency specified by a file resolution string from package.json and update any bare name imports that referenced it before to use relative path strings.",
       "title": "File dependency",
       "emoji": "⚠️"
     },
     "filesystemAccess": {
       "description": "Accesses the file system, and could potentially read sensitive data.",
-      "props": {
-        "module": "Module"
-      },
       "suggestion": "If a package must read the file system, clarify what it will read and ensure it reads only what it claims to. If appropriate, packages can leave file system access to consumers and operate on data passed to it instead.",
       "title": "Filesystem access",
       "emoji": "⚠️"
     },
+    "floatingDependency": {
+      "description": "Package has a dependency with a floating version range. This can cause issues if the dependency publishes a new major version.",
+      "suggestion": "Packages should specify properly semver ranges to avoid version conflicts.",
+      "title": "Wildcard dependency",
+      "emoji": "🎈"
+    },
     "gitDependency": {
       "description": "Contains a dependency which resolves to a remote git URL. Dependencies fetched from git URLs are not immutable can be used to inject untrusted code or reduce the likelihood of a reproducible install.",
-      "props": {
-        "packageName": "Package name",
-        "url": "URL"
-      },
       "suggestion": "Publish the git dependency to npm or a private package repository and consume it from there.",
       "title": "Git dependency",
       "emoji": "🍣"
     },
     "gitHubDependency": {
       "description": "Contains a dependency which resolves to a GitHub URL. Dependencies fetched from GitHub specifiers are not immutable can be used to inject untrusted code or reduce the likelihood of a reproducible install.",
-      "props": {
-        "commitsh": "Commit-ish (commit, branch, tag or version)",
-        "githubRepo": "Github repo",
-        "githubUser": "Github user",
-        "packageName": "Package name"
-      },
       "suggestion": "Publish the GitHub dependency to npm or a private package repository and consume it from there.",
       "title": "GitHub dependency",
       "emoji": "⚠️"
     },
+    "gptAnomaly": {
+      "description": "AI has identified unusual behaviors that may pose a security risk.",
+      "suggestion": "An AI system found a low-risk anomaly in this package. It may still be fine to use, but you should check that it is safe before proceeding.",
+      "title": "AI-detected potential code anomaly",
+      "emoji": "🤔"
+    },
+    "gptDidYouMean": {
+      "description": "AI has identified this package as a potential typosquat of a more popular package. This suggests that the package may be intentionally mimicking another package's name, description, or other metadata.",
+      "suggestion": "Given the AI system's identification of this package as a potential typosquat, please verify that you did not intend to install a different package. Be cautious, as malicious packages often use names similar to popular ones.",
+      "title": "AI-detected possible typosquat",
+      "emoji": "🤖"
+    },
+    "gptMalware": {
+      "description": "AI has identified this package as malware. This is a strong signal that the package may be malicious.",
+      "suggestion": "Given the AI system's identification of this package as malware, extreme caution is advised. It is recommended to avoid downloading or installing this package until the threat is confirmed or flagged as a false positive.",
+      "title": "AI-detected potential malware",
+      "emoji": "🤖"
+    },
+    "gptSecurity": {
+      "description": "AI has determined that this package may contain potential security issues or vulnerabilities.",
+      "suggestion": "An AI system identified potential security problems in this package. It is advised to review the package thoroughly and assess the potential risks before installation. You may also consider reporting the issue to the package maintainer or seeking alternative solutions with a stronger security posture.",
+      "title": "AI-detected potential security risk",
+      "emoji": "🤖"
+    },
     "hasNativeCode": {
-      "description": "Contains native code which could be a vector to obscure malicious code, and generally decrease the likelihood of reproducible or reliable installs.",
-      "suggestion": "Ensure that native code bindings are expected. Consumers may consider pure JS and functionally similar alternatives to avoid the challenges and risks associated with native code bindings.",
+      "description": "Contains native code (e.g., compiled binaries or shared libraries). Including native code can obscure malicious behavior.",
+      "suggestion": "Verify that the inclusion of native code is expected and necessary for this package's functionality. If it is unnecessary or unexpected, consider using alternative packages without native code to mitigate potential risks.",
       "title": "Native code",
-      "emoji": "🫣"
+      "emoji": "🛠️"
     },
     "highEntropyStrings": {
       "description": "Contains high entropy strings. This could be a sign of encrypted data, leaked secrets or obfuscated code.",
@@ -246,37 +250,20 @@
     },
     "httpDependency": {
       "description": "Contains a dependency which resolves to a remote HTTP URL which could be used to inject untrusted code and reduce overall package reliability.",
-      "props": {
-        "packageName": "Package name",
-        "url": "URL"
-      },
       "suggestion": "Publish the HTTP URL dependency to npm or a private package repository and consume it from there.",
       "title": "HTTP dependency",
       "emoji": "🥩"
     },
     "installScripts": {
       "description": "Install scripts are run when the package is installed. The majority of malware in npm is hidden in install scripts.",
-      "props": {
-        "script": "Script",
-        "source": "Source"
-      },
       "suggestion": "Packages should not be running non-essential scripts during install and there are often solutions to problems people solve with install scripts that can be run at publish time instead.",
       "title": "Install scripts",
       "emoji": "📜"
     },
-    "gptMalware": {
-      "description": "Artificial intelligence has determined that this package likely contains malicious behavior",
-      "props": {
-        "notes": "Does this contain malware?"
-      },
-      "suggestion": "Packages which contain malware should never be installed.  This package has been reported to npm for removal by socket",
-      "title": "AI detected malware",
-      "emoji": "🤖"
-    },
     "invalidPackageJSON": {
-      "description": "Package has an invalid package.tson and can cause installation problems if you try to use it.",
-      "suggestion": "Fix syntax errors in the invalid package.tson and publish a new version with a valid package.tson. Consumers can use npm overrides to force a version that does not have this problem if one exists.",
-      "title": "Invalid package.tson",
+      "description": "Package has an invalid manifest file and can cause installation problems if you try to use it.",
+      "suggestion": "Fix syntax errors in the manifest file and publish a new version. Consumers can use npm overrides to force a version that does not have this problem if one exists.",
+      "title": "Invalid manifest file",
       "emoji": "🤒"
     },
     "invisibleChars": {
@@ -286,21 +273,13 @@
       "emoji": "⚠️"
     },
     "licenseChange": {
-      "description": "Package license has recently changed.",
-      "props": {
-        "newLicenseId": "New license id",
-        "prevLicenseId": "Previous license id"
-      },
+      "description": "(Experimental) Package license has recently changed.",
       "suggestion": "License changes should be reviewed carefully to inform ongoing use. Packages should avoid making major changes to their license type.",
       "title": "License change",
       "emoji": "⚠️"
     },
     "licenseException": {
-      "description": "Contains an SPDX license exception.",
-      "props": {
-        "comments": "Comments",
-        "exceptionId": "Exception id"
-      },
+      "description": "(Experimental) Contains an SPDX license exception.",
       "suggestion": "License exceptions should be carefully reviewed.",
       "title": "License exception",
       "emoji": "⚠️"
@@ -312,51 +291,44 @@
       "emoji": "⚠️"
     },
     "missingTarball": {
-      "description": "This package is missing it's tarball.  It could be removed from the npm registry or there may have been an error when publishing.",
+      "description": "This package is missing it's tarball. It could be removed from the npm registry or there may have been an error when publishing.",
       "suggestion": "This package cannot be analyzed or installed due to missing data.",
       "title": "Missing package tarball",
       "emoji": "❔"
     },
     "majorRefactor": {
       "description": "Package has recently undergone a major refactor. It may be unstable or indicate significant internal changes. Use caution when updating to versions that include significant changes.",
-      "props": {
-        "changedPercent": "Change percentage",
-        "curSize": "Current amount of lines",
-        "linesChanged": "Lines changed",
-        "prevSize": "Previous amount of lines"
-      },
       "suggestion": "Consider waiting before upgrading to see if any issues are discovered, or be prepared to scrutinize any bugs or subtle changes the major refactor may bring. Publishers my consider publishing beta versions of major refactors to limit disruption to parties interested in the new changes.",
       "title": "Major refactor",
       "emoji": "⚠️"
     },
     "malware": {
-      "description": "This package is malware. We have asked npm to remove it.",
-      "props": {
-        "id": "Id",
-        "note": "Note"
-      },
-      "title": "Known Malware",
+      "description": "This package is malware. We have asked the package registry to remove it.",
+      "title": "Known malware",
       "suggestion": "It is strongly recommended that malware is removed from your codebase.",
       "emoji": "☠️"
     },
+    "manifestConfusion": {
+      "description": "This package has inconsistent metadata. This could be malicious or caused by an error when publishing the package.",
+      "title": "Manifest confusion",
+      "suggestion": "Packages with inconsistent metadata may be corrupted or malicious.",
+      "emoji": "🥸"
+    },
+    "mediumCVE": {
+      "description": "Contains a medium severity Common Vulnerability and Exposure (CVE).",
+      "suggestion": "Remove or replace dependencies that include known medium severity CVEs. Consumers can use dependency overrides or npm audit fix --force to remove vulnerable dependencies.",
+      "title": "Medium CVE",
+      "emoji": "⚠️"
+    },
     "mildCVE": {
       "description": "Contains a low severity Common Vulnerability and Exposure (CVE).",
-      "props": {
-        "id": "Id",
-        "severity": "Severity",
-        "title": "Title",
-        "url": "URL"
-      },
       "suggestion": "Remove or replace dependencies that include known low severity CVEs. Consumers can use dependency overrides or npm audit fix --force to remove vulnerable dependencies.",
-      "title": "Mild CVE",
+      "title": "Low CVE",
       "emoji": "⚠️"
     },
     "minifiedFile": {
-      "description": "This package contains minified code.  This may be harmless in some cases where minified code is included in packaged libraries, however packages on npm should not minify code.",
-      "props": {
-        "confidence": "Confidence"
-      },
-      "suggestion": "In many cases minified code is harmless, however minified code can be used to hide a supply chain attack.  Consider not shipping minified code on npm.",
+      "description": "This package contains minified code. This may be harmless in some cases where minified code is included in packaged libraries, however packages on npm should not minify code.",
+      "suggestion": "In many cases minified code is harmless, however minified code can be used to hide a supply chain attack. Consider not shipping minified code on npm.",
       "title": "Minified code",
       "emoji": "⚠️"
     },
@@ -367,78 +339,62 @@
       "emoji": "🫥"
     },
     "missingDependency": {
-      "description": "A required dependency is not declared in package.tson and may prevent the package from working.",
-      "props": {
-        "name": "Name"
-      },
-      "suggestion": "The package should define the missing dependency inside of package.tson and publish a new version. Consumers may have to install the missing dependency themselves as long as the dependency remains missing. If the dependency is optional, add it to optionalDependencies and handle the missing case.",
+      "description": "A required dependency is not declared in package.json and may prevent the package from working.",
+      "suggestion": "The package should define the missing dependency inside of package.json and publish a new version. Consumers may have to install the missing dependency themselves as long as the dependency remains missing. If the dependency is optional, add it to optionalDependencies and handle the missing case.",
       "title": "Missing dependency",
       "emoji": "⚠️"
     },
     "missingLicense": {
-      "description": "Package does not have a license and consumption legal status is unknown.",
-      "suggestion": "A new version of the package should be published that includes a valid SPDX license in a license file, pacakge.tson license field or mentioned in the README.",
+      "description": "(Experimental) Package does not have a license and consumption legal status is unknown.",
+      "suggestion": "A new version of the package should be published that includes a valid SPDX license in a license file, package.json license field or mentioned in the README.",
       "title": "Missing license",
       "emoji": "⚠️"
     },
     "mixedLicense": {
-      "description": "Package contains multiple licenses.",
-      "props": {
-        "licenseId": "License Id"
-      },
-      "suggestion": "A new version of the package should be published that includes a single license. Consumers may seek clarification from the package author. Ensure that the license details are consistent across the LICENSE file, package.tson license field and license details mentioned in the README.",
+      "description": "(Experimental) Package contains multiple licenses.",
+      "suggestion": "A new version of the package should be published that includes a single license. Consumers may seek clarification from the package author. Ensure that the license details are consistent across the LICENSE file, package.json license field and license details mentioned in the README.",
       "title": "Mixed license",
       "emoji": "⚠️"
     },
+    "ambiguousClassifier": {
+      "description": "(Experimental) An ambiguous license classifier was found.",
+      "suggestion": "A specific license or licenses should be identified",
+      "title": "Ambiguous License Classifier",
+      "emoji": "⚠️"
+    },
     "modifiedException": {
-      "description": "Package contains a modified version of an SPDX license exception.  Please read carefully before using this code.",
-      "props": {
-        "comments": "Comments",
-        "exceptionId": "Exception id",
-        "similarity": "Similarity"
-      },
+      "description": "(Experimental) Package contains a modified version of an SPDX license exception. Please read carefully before using this code.",
       "suggestion": "Packages should avoid making modifications to standard license exceptions.",
       "title": "Modified license exception",
       "emoji": "⚠️"
     },
     "modifiedLicense": {
-      "description": "Package contains a modified version of an SPDX license.  Please read carefully before using this code.",
-      "props": {
-        "licenseId": "License id",
-        "similarity": "Similarity"
-      },
+      "description": "(Experimental) Package contains a modified version of an SPDX license. Please read carefully before using this code.",
       "suggestion": "Packages should avoid making modifications to standard licenses.",
       "title": "Modified license",
       "emoji": "⚠️"
     },
     "networkAccess": {
       "description": "This module accesses the network.",
-      "props": {
-        "module": "Module"
-      },
-      "suggestion": "Packages should remove all network access that isn't functionally unnecessary. Consumers should audit network access to ensure legitimate use.",
+      "suggestion": "Packages should remove all network access that is functionally unnecessary. Consumers should audit network access to ensure legitimate use.",
       "title": "Network access",
       "emoji": "⚠️"
     },
     "newAuthor": {
       "description": "A new npm collaborator published a version of the package for the first time. New collaborators are usually benign additions to a project, but do indicate a change to the security surface area of a package.",
-      "props": {
-        "newAuthor": "New author",
-        "prevAuthor": "Previous author"
-      },
       "suggestion": "Scrutinize new collaborator additions to packages because they now have the ability to publish code into your dependency tree. Packages should avoid frequent or unnecessary additions or changes to publishing rights.",
       "title": "New author",
       "emoji": "⚠️"
     },
     "noAuthorData": {
-      "description": "Package does not specify a list of contributors or an author in package.tson.",
-      "suggestion": "Add a author field or contributors array to package.tson.",
+      "description": "Package does not specify a list of contributors or an author in package.json.",
+      "suggestion": "Add a author field or contributors array to package.json.",
       "title": "No contributors or author data",
       "emoji": "⚠️"
     },
     "noBugTracker": {
-      "description": "Package does not have a linked bug tracker in package.tson.",
-      "suggestion": "Add a bugs field to package.tson. https://docs.npmjs.com/cli/v8/configuring-npm/package-json#bugs",
+      "description": "Package does not have a linked bug tracker in package.json.",
+      "suggestion": "Add a bugs field to package.json. https://docs.npmjs.com/cli/v8/configuring-npm/package-json#bugs",
       "title": "No bug tracker",
       "emoji": "⚠️"
     },
@@ -450,7 +406,7 @@
     },
     "noRepository": {
       "description": "Package does not have a linked source code repository. Without this field, a package will have no reference to the location of the source code use to generate the package.",
-      "suggestion": "Add a repository field to package.tson. https://docs.npmjs.com/cli/v8/configuring-npm/package-json#repository",
+      "suggestion": "Add a repository field to package.json. https://docs.npmjs.com/cli/v8/configuring-npm/package-json#repository",
       "title": "No repository",
       "emoji": "⚠️"
     },
@@ -468,43 +424,37 @@
     },
     "noWebsite": {
       "description": "Package does not have a website.",
-      "suggestion": "Add a homepage field to package.tson. https://docs.npmjs.com/cli/v8/configuring-npm/package-json#homepage",
+      "suggestion": "Add a homepage field to package.json. https://docs.npmjs.com/cli/v8/configuring-npm/package-json#homepage",
       "title": "No website",
       "emoji": "⚠️"
     },
     "nonFSFLicense": {
-      "description": "Package has a non-FSF-approved license.",
-      "props": {
-        "licenseId": "License id"
-      },
+      "description": "(Experimental) Package has a non-FSF-approved license.",
       "title": "Non FSF license",
+      "suggestion": "Consider the terms of the license for your given use case.",
       "emoji": "⚠️"
     },
     "nonOSILicense": {
-      "description": "Package has a non-OSI-approved license.",
-      "props": {
-        "licenseId": "License id"
-      },
+      "description": "(Experimental) Package has a non-OSI-approved license.",
       "title": "Non OSI license",
+      "suggestion": "Consider the terms of the license for your given use case.",
       "emoji": "⚠️"
     },
     "nonSPDXLicense": {
-      "description": "Package contains a non-standard license somewhere. Please read carefully before using.",
-      "suggestion": "Package should adopt a standard SPDX license consistently across all license locations (LICENSE files, package.tson license fields, and READMEs).",
+      "description": "(Experimental) Package contains a non-standard license somewhere. Please read carefully before using.",
+      "suggestion": "Package should adopt a standard SPDX license consistently across all license locations (LICENSE files, package.json license fields, and READMEs).",
       "title": "Non SPDX license",
       "emoji": "⚠️"
     },
     "notice": {
-      "description": "Package contains a legal notice. This could increase your exposure to legal risk when using this project.",
+      "description": "(Experimental) Package contains a legal notice. This could increase your exposure to legal risk when using this project.",
       "title": "Legal notice",
+      "suggestion": "Consider the implications of the legal notice for your given use case.",
       "emoji": "⚠️"
     },
     "obfuscatedFile": {
-      "description": "Obfuscated files are intentionally packed to hide their behavior.  This could be a sign of malware",
-      "props": {
-        "confidence": "Confidence"
-      },
-      "suggestion": "Packages should not obfuscate their code.  Consider not using packages with obfuscated code",
+      "description": "Obfuscated files are intentionally packed to hide their behavior. This could be a sign of malware.",
+      "suggestion": "Packages should not obfuscate their code. Consider not using packages with obfuscated code",
       "title": "Obfuscated code",
       "emoji": "⚠️"
     },
@@ -515,117 +465,109 @@
       "emoji": "⚠️"
     },
     "peerDependency": {
-      "description": "Package specifies peer dependencies in package.tson.",
-      "props": {
-        "name": "Name"
-      },
+      "description": "Package specifies peer dependencies in package.json.",
       "suggestion": "Peer dependencies are fragile and can cause major problems across version changes. Be careful when updating this dependency and its peers.",
       "title": "Peer dependency",
       "emoji": "⚠️"
     },
+    "potentialVulnerability": {
+      "description": "Initial human review suggests the presence of a vulnerability in this package. It is pending further analysis and confirmation.",
+      "suggestion": "It is advisable to proceed with caution. Engage in a review of the package's security aspects and consider reaching out to the package maintainer for the latest information or patches.",
+      "title": "Potential vulnerability",
+      "emoji": "🚧"
+    },
     "semverAnomaly": {
       "description": "Package semver skipped several versions, this could indicate a dependency confusion attack or indicate the intention of disruptive breaking changes or major priority shifts for the project.",
-      "props": {
-        "newVersion": "New version",
-        "prevVersion": "Previous version"
-      },
       "suggestion": "Packages should follow semantic versions conventions by not skipping subsequent version numbers. Consumers should research the purpose of the skipped version number.",
       "title": "Semver anomaly",
       "emoji": "⚠️"
     },
     "shellAccess": {
       "description": "This module accesses the system shell. Accessing the system shell increases the risk of executing arbitrary code.",
-      "props": {
-        "module": "Module"
-      },
       "suggestion": "Packages should avoid accessing the shell which can reduce portability, and make it easier for malicious shell access to be introduced.",
       "title": "Shell access",
       "emoji": "⚠️"
     },
     "shellScriptOverride": {
-      "description": "This package re-exports a well known shell command via an npm bin script.  This is possibly a supply chain attack",
-      "props": {
-        "binScript": "Bin script"
-      },
+      "description": "This package re-exports a well known shell command via an npm bin script. This is possibly a supply chain attack.",
       "suggestion": "Packages should not export bin scripts which conflict with well known shell commands",
       "title": "Bin script shell injection",
       "emoji": "🦀"
     },
+    "shrinkwrap": {
+      "description": "Package contains a shrinkwrap file. This may allow the package to bypass normal install procedures.",
+      "suggestion": "Packages should never use npm shrinkwrap files due to the dangers they pose.",
+      "title": "NPM Shrinkwrap",
+      "emoji": "🧊"
+    },
+    "socketUpgradeAvailable": {
+      "description": "Package can be replaced with a Socket optimized override.",
+      "suggestion": "Run `npx socket optimize` in your repository to optimize your dependencies.",
+      "title": "Socket optimized override available",
+      "emoji": "🔄"
+    },
+    "suspiciousStarActivity": {
+      "description": "The GitHub repository of this package may have been artificially inflated with stars (from bots, crowdsourcing, etc.).",
+      "title": "Suspicious Stars on GitHub",
+      "suggestion": "This could be a sign of spam, fraud, or even a supply chain attack. The package should be carefully reviewed before installing.",
+      "emoji": "⚠️"
+    },
     "suspiciousString": {
-      "description": "This package contains suspicious text patterns which are commonly associated with bad behavior",
-      "props": {
-        "explanation": "Explanation",
-        "pattern": "Pattern"
-      },
+      "description": "This package contains suspicious text patterns which are commonly associated with bad behavior.",
       "suggestion": "The package code should be reviewed before installing",
       "title": "Suspicious strings",
       "emoji": "⚠️"
     },
     "telemetry": {
-      "description": "This package contains telemetry which tracks you.",
-      "props": {
-        "id": "Id",
-        "note": "Note"
-      },
+      "description": "This package contains telemetry which tracks how it is used.",
       "title": "Telemetry",
+      "suggestion": "Most telemetry comes with settings to disable it. Consider disabling telemetry if you do not want to be tracked.",
       "emoji": "📞"
     },
     "trivialPackage": {
       "description": "Packages less than 10 lines of code are easily copied into your own project and may not warrant the additional supply chain risk of an external dependency.",
-      "props": {
-        "linesOfCode": "Lines of code"
-      },
       "suggestion": "Removing this package as a dependency and implementing its logic will reduce supply chain risk.",
       "title": "Trivial Package",
       "emoji": "⚠️"
     },
     "troll": {
       "description": "This package is a joke, parody, or includes undocumented or hidden behavior unrelated to its primary function.",
-      "props": {
-        "id": "Id",
-        "note": "Note"
-      },
-      "title": "Protestware/Troll package",
+      "title": "Protestware or potentially unwanted behavior",
+      "suggestion": "Consider that consuming this package may come along with functionality unrelated to its primary purpose.",
       "emoji": "🧌"
     },
     "typeModuleCompatibility": {
-      "description": "Package is CommonJS, but has a dependency which is type: \"module\".  The two are likely incompatible.",
+      "description": "Package is CommonJS, but has a dependency which is type: \"module\". The two are likely incompatible.",
       "suggestion": "The package needs to switch to dynamic import on the esmodule dependency, or convert to esm itself. Consumers may experience errors resulting from this incompatibility.",
       "title": "CommonJS depending on ESModule",
       "emoji": "⚠️"
     },
     "uncaughtOptionalDependency": {
       "description": "Package uses an optional dependency without handling a missing dependency exception. If you install it without the optional dependencies then it could cause runtime errors.",
-      "props": {
-        "name": "Name"
-      },
       "suggestion": "Package should handle the loading of the dependency when it is not present, or convert the optional dependency into a regular dependency.",
       "title": "Uncaught optional dependency",
       "emoji": "⚠️"
     },
     "unclearLicense": {
       "description": "Package contains a reference to a license without a matching LICENSE file.",
-      "props": {
-        "possibleLicenseId": "Possible license id"
-      },
-      "suggestion": "Add a LICENSE file that matches the license field in package.tson. https://docs.npmjs.com/cli/v8/configuring-npm/package-json#license",
+      "suggestion": "Add a LICENSE file that matches the license field in package.json. https://docs.npmjs.com/cli/v8/configuring-npm/package-json#license",
       "title": "Unclear license",
       "emoji": "⚠️"
     },
     "unmaintained": {
-      "description": "Package has not been updated in more than a year and may be unmaintained. Problems with the package may go unaddressed.",
-      "props": {
-        "lastPublish": "Last publish"
-      },
+      "description": "Package has not been updated in more than 5 years and may be unmaintained. Problems with the package may go unaddressed.",
       "suggestion": "Package should publish periodic maintenance releases if they are maintained, or deprecate if they have no intention in further maintenance.",
       "title": "Unmaintained",
       "emoji": "⚠️"
     },
+    "unpopularPackage": {
+      "description": "This package is not very popular.",
+      "suggestion": "Unpopular packages may have less maintenance and contain other problems.",
+      "title": "Unpopular package",
+      "emoji": "🏚️"
+    },
     "unpublished": {
       "description": "Package version was not found on the registry. It may exist on a different registry and need to be configured to pull from that registry.",
-      "props": {
-        "version": "The version that was not found"
-      },
       "suggestion": "Packages can be removed from the registry by manually un-publishing, a security issue removal, or may simply never have been published to the registry. Reliance on these packages will cause problem when they are not found.",
       "title": "Unpublished package",
       "emoji": "⚠️"
@@ -637,45 +579,32 @@
       "emoji": "🕵️"
     },
     "unsafeCopyright": {
-      "description": "Package contains a copyright but no license. Using this package may expose you to legal risk.",
-      "suggestion": "Clarify the license type by adding a license field to package.tson and a LICENSE file.",
+      "description": "(Experimental) Package contains a copyright but no license. Using this package may expose you to legal risk.",
+      "suggestion": "Clarify the license type by adding a license field to package.json and a LICENSE file.",
       "title": "Unsafe copyright",
       "emoji": "⚠️"
     },
     "unstableOwnership": {
       "description": "A new collaborator has begun publishing package versions. Package stability and security risk may be elevated.",
-      "props": {
-        "author": "Author"
-      },
       "suggestion": "Try to reduce the amount of authors you depend on to reduce the risk to malicious actors gaining access to your supply chain. Packages should remove inactive collaborators with publishing rights from packages on npm.",
       "title": "Unstable ownership",
       "emoji": "⚠️"
     },
     "unusedDependency": {
-      "description": "Package has unused dependencies. This package depends on code that it does not use.  This can increase the attack surface for malware and slow down installation.",
-      "props": {
-        "name": "Name",
-        "version": "Version"
-      },
+      "description": "Package has unused dependencies. This package depends on code that it does not use. This can increase the attack surface for malware and slow down installation.",
       "suggestion": "Packages should only specify dependencies that they use directly.",
       "title": "Unused dependency",
       "emoji": "⚠️"
     },
     "urlStrings": {
       "description": "Package contains fragments of external URLs or IP addresses, which may indicate that it covertly exfiltrates data.",
-      "props": {
-        "urlFragment": "URL Fragment"
-      },
       "suggestion": "Avoid using packages that make connections to the network, since this helps to leak data.",
       "title": "URL strings",
       "emoji": "⚠️"
     },
     "usesEval": {
-      "description": "Package uses eval() which is a dangerous function. This prevents the code from running in certain environments and increases the risk that the code may contain exploits or malicious behavior.",
-      "props": {
-        "evalType": "Eval type"
-      },
-      "suggestion": "Avoid packages that use eval, since this could potentially execute any code.",
+      "description": "Package uses dynamic code execution (e.g., eval()), which is a dangerous practice. This can prevent the code from running in certain environments and increases the risk that the code may contain exploits or malicious behavior.",
+      "suggestion": "Avoid packages that use dynamic code execution like eval(), since this could potentially execute any code.",
       "title": "Uses eval",
       "emoji": "⚠️"
     },
