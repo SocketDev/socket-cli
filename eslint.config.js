@@ -5,6 +5,7 @@ const path = require('node:path')
 const { includeIgnoreFile } = require('@eslint/compat')
 const js = require('@eslint/js')
 const tsParser = require('@typescript-eslint/parser')
+const { createOxcImportResolver } = require('eslint-import-resolver-oxc')
 const importXPlugin = require('eslint-plugin-import-x')
 const nodePlugin = require('eslint-plugin-n')
 const sortDestructureKeysPlugin = require('eslint-plugin-sort-destructure-keys')
@@ -39,6 +40,32 @@ const sharedRules = {
   'unicorn/consistent-function-scoping': ['error']
 }
 
+const sharedRulesForImportX = {
+  'import-x/order': [
+    'warn',
+    {
+      groups: [
+        'builtin',
+        'external',
+        'internal',
+        ['parent', 'sibling', 'index'],
+        'type'
+      ],
+      pathGroups: [
+        {
+          pattern: '@socket{registry,security}/**',
+          group: 'internal'
+        }
+      ],
+      pathGroupsExcludedImportTypes: ['type'],
+      'newlines-between': 'always',
+      alphabetize: {
+        order: 'asc'
+      }
+    }
+  ]
+}
+
 const getImportXFlatConfigs = isEsm => ({
   recommended: {
     ...origImportXFlatConfigs.recommended,
@@ -49,50 +76,29 @@ const getImportXFlatConfigs = isEsm => ({
     },
     rules: {
       ...origImportXFlatConfigs.recommended.rules,
-      'import-x/no-named-as-default-member': 'off',
-      'import-x/order': [
-        'warn',
-        {
-          groups: [
-            'builtin',
-            'external',
-            'internal',
-            ['parent', 'sibling', 'index'],
-            'type'
-          ],
-          pathGroups: [
-            {
-              pattern: '@socket{registry,security}/**',
-              group: 'internal'
-            }
-          ],
-          pathGroupsExcludedImportTypes: ['type'],
-          'newlines-between': 'always',
-          alphabetize: {
-            order: 'asc'
-          }
-        }
-      ]
+      ...sharedRulesForImportX,
+      'import-x/no-named-as-default-member': 'off'
     }
   },
   typescript: {
     ...origImportXFlatConfigs.typescript,
     settings: {
       ...origImportXFlatConfigs.typescript.settings,
-      'import-x/resolver': {
-        'eslint-import-resolver-oxc': {
+      'import-x/resolver-next': [
+        createOxcImportResolver({
           tsConfig: {
             configFile: rootTsConfigPath,
             references: 'auto'
           }
-        }
-      }
+        })
+      ]
     }
   }
 })
 
 const importFlatConfigsForScript = getImportXFlatConfigs(false)
 const importFlatConfigsForModule = getImportXFlatConfigs(true)
+
 module.exports = [
   includeIgnoreFile(gitignorePath),
   includeIgnoreFile(prettierignorePath),
@@ -100,11 +106,10 @@ module.exports = [
     files: ['**/*.{c,}js'],
     ...importFlatConfigsForScript.recommended
   },
-  // TODO: Make this work for our .mjs files too.
-  // {
-  //   files: ['**/*.mjs'],
-  //   ...importFlatConfigsForModule.recommended
-  // },
+  {
+    files: ['**/*.mjs'],
+    ...importFlatConfigsForModule.recommended
+  },
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
     ...importFlatConfigsForModule.typescript
