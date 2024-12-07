@@ -394,22 +394,40 @@ async function packagesHaveRiskyIssues(
       const id = `${name}@${version}`
 
       let displayWarning = false
-      let failures: { block?: boolean; raw?: any; type?: string }[] = []
+      let failures: {
+        type: string
+        block: boolean
+        raw?: any
+      }[] = []
       if (pkgData.type === 'missing') {
         result = true
         failures.push({
-          type: 'missingDependency'
+          type: 'missingDependency',
+          block: false,
+          raw: undefined
         })
       } else {
         let blocked = false
         for (const failure of pkgData.value.issues) {
+          const { type } = failure
           // eslint-disable-next-line no-await-in-loop
           const ux = await uxLookup({
             package: { name, version },
-            issue: { type: failure.type }
+            issue: { type }
           })
-          if (ux.display || ux.block) {
-            failures.push({ raw: failure, block: ux.block })
+          if (ux.block) {
+            result = true
+            blocked = true
+          }
+          if (ux.display) {
+            displayWarning = true
+          }
+          if (ux.block || ux.display) {
+            failures.push({
+              type,
+              block: ux.block,
+              raw: failure
+            })
             // Before we ask about problematic issues, check to see if they
             // already existed in the old version if they did, be quiet.
             const pkg = pkgs.find(
@@ -422,19 +440,12 @@ async function packagesHaveRiskyIssues(
                   failures = failures.filter(
                     issue =>
                       oldPkgData.value.issues.find(
-                        oldIssue => oldIssue.type === issue.raw.type
-                      ) == null
+                        oldIssue => oldIssue.type === issue.type
+                      ) === undefined
                   )
                 }
               }
             }
-          }
-          if (ux.block) {
-            result = true
-            blocked = true
-          }
-          if (ux.display) {
-            displayWarning = true
           }
         }
         if (!blocked) {
@@ -455,20 +466,30 @@ async function packagesHaveRiskyIssues(
         spinner.stop(
           `(socket) ${formatter.hyperlink(id, `https://socket.dev/npm/package/${name}/overview/${version}`)} contains risks:`
         )
-        failures.sort((a, b) => (a.raw.type < b.raw.type ? -1 : 1))
+        // Filter issues for blessed packages.
+        if (
+          name === 'socket' ||
+          name.startsWith('@socketregistry/') ||
+          name.startsWith('@socketsecurity/')
+        ) {
+          failures = failures.filter(
+            ({ type }) =>
+              type !== 'unpopularPackage' && type !== 'unstableOwnership'
+          )
+        }
+        failures.sort((a, b) => (a.type < b.type ? -1 : 1))
+
         const lines = new Set()
         for (const failure of failures) {
-          const type = failure.raw.type
-          if (type) {
-            // Based data from { pageProps: { alertTypes } } of:
-            // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
-            const info = translations.issues[type]
-            const title = info?.title ?? type
-            const maybeBlocking = failure.block ? '' : ' (non-blocking)'
-            const maybeDesc = info?.description ? ` - ${info.description}` : ''
-            // TODO: emoji seems to mis-align terminals sometimes
-            lines.add(`  ${title}${maybeBlocking}${maybeDesc}\n`)
-          }
+          const { type } = failure
+          // Based data from { pageProps: { alertTypes } } of:
+          // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
+          const info = translations.issues[type]
+          const title = info?.title ?? type
+          const maybeBlocking = failure.block ? '' : ' (non-blocking)'
+          const maybeDesc = info?.description ? ` - ${info.description}` : ''
+          // TODO: emoji seems to mis-align terminals sometimes
+          lines.add(`  ${title}${maybeBlocking}${maybeDesc}\n`)
         }
         for (const line of lines) {
           output?.write(line)
