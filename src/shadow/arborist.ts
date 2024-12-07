@@ -20,6 +20,8 @@ import {
   ENV,
   LOOP_SENTINEL,
   NPM_REGISTRY_URL,
+  SOCKET_CLI_ISSUES_URL,
+  UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
   rootPath
 } from '../constants'
 import { ColorOrMarkdown } from '../utils/color-or-markdown'
@@ -155,8 +157,7 @@ type RequireTransformer<T extends keyof KnownModules> = (
   mod: KnownModules[T]
 ) => KnownModules[T]
 
-const POTENTIALLY_BUG_ERROR_SNIPPET =
-  'this is potentially a bug with socket-npm caused by changes to the npm cli'
+const POTENTIAL_BUG_ERROR_MESSAGE = `This is may be a bug with socket-npm related to changes to the npm CLI.\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
 
 const npmEntrypoint = realpathSync(process.argv[1]!)
 const npmRootPath = findRoot(path.dirname(npmEntrypoint))
@@ -188,9 +189,8 @@ function tryRequire<T extends keyof KnownModules>(
 
 if (npmRootPath === undefined) {
   console.error(
-    `Unable to find npm cli install directory, ${POTENTIALLY_BUG_ERROR_SNIPPET}.`
+    `Unable to find npm CLI install directory.\nSearched parent directories of ${npmEntrypoint}.\n\n${POTENTIAL_BUG_ERROR_MESSAGE}`
   )
-  console.error(`Searched parent directories of ${npmEntrypoint}`)
   process.exit(127)
 }
 
@@ -218,7 +218,7 @@ const log = tryRequire(
 
 if (log === undefined) {
   console.error(
-    `Unable to integrate with npm cli logging infrastructure, ${POTENTIALLY_BUG_ERROR_SNIPPET}.`
+    `Unable to integrate with npm CLI logging infrastructure.\n\n${POTENTIAL_BUG_ERROR_MESSAGE}.`
   )
   process.exit(127)
 }
@@ -1299,7 +1299,7 @@ export class SafeArborist extends Arborist {
     if (diff.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1) {
       return await this[kRiskyReify](...args)
     }
-    let proceed = ENV.UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE
+    let proceed = ENV[UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]
     if (!proceed) {
       proceed = await ttyServer.captureTTY(async (input, output) => {
         if (input && output) {

@@ -16,16 +16,22 @@ export const API_V0_URL = 'https://api.socket.dev/v0'
 
 export const DIST_TYPE = SUPPORTS_SYNC_ESM ? 'module-sync' : 'require'
 
-export const ENV = Object.freeze({
-  // Flag set by the optimize command to bypass the packagesHaveRiskyIssues check.
-  UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: envAsBoolean(
-    process.env['UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE']
-  )
-})
-
 export const LOOP_SENTINEL = 1_000_000
 
 export const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
+
+export const SOCKET_CLI_ISSUES_URL =
+  'https://github.com/SocketDev/socket-cli/issues'
+
+export const UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE =
+  'UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE'
+
+export const ENV = Object.freeze({
+  // Flag set by the optimize command to bypass the packagesHaveRiskyIssues check.
+  [UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]: envAsBoolean(
+    process.env[UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]
+  )
+})
 
 // Dynamically detect the rootPath so constants.ts can be used in tests.
 export const rootPath = (() => {
@@ -50,7 +56,9 @@ export const rootPath = (() => {
     oldPath = currPath
     currPath = path.dirname(currPath)
   }
-  throw new TypeError('rootPath cannot be resolved.')
+  throw new TypeError(
+    `Socket CLI initialization error: rootPath cannot be resolved.\n\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
+  )
 })()
 export const rootDistPath = path.join(rootPath, 'dist')
 export const rootBinPath = path.join(rootPath, 'bin')
