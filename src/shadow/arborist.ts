@@ -15,7 +15,13 @@ import config from '@socketsecurity/config'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 
 import { createTTYServer } from './tty-server'
-import { API_V0_URL, ENV, rootPath } from '../constants'
+import {
+  API_V0_URL,
+  ENV,
+  LOOP_SENTINEL,
+  NPM_REGISTRY_URL,
+  rootPath
+} from '../constants'
 import { ColorOrMarkdown } from '../utils/color-or-markdown'
 import { createIssueUXLookup } from '../utils/issue-rules'
 import { isErrnoException } from '../utils/misc'
@@ -187,9 +193,6 @@ if (npmRootPath === undefined) {
   console.error(`Searched parent directories of ${npmEntrypoint}`)
   process.exit(127)
 }
-
-const LOOP_SENTINEL = 1_000_000
-const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 
 const npmNmPath = path.join(npmRootPath, 'node_modules')
 

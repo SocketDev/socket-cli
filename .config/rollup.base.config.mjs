@@ -201,11 +201,11 @@ export default function baseConfig(extendConfig = {}) {
       purgePolyfills.rollup({
         replacements: {}
       }),
-      // Convert SOCKET_PACKAGE_NAME to the Socket package name.
+      // Convert REPLACED_WITH_SOCKET_PACKAGE_NAME to the Socket package name.
       replace({
         preventAssignment: false,
         values: {
-          SOCKET_PACKAGE_NAME: rootPackageJson.name
+          REPLACED_WITH_SOCKET_PACKAGE_NAME: rootPackageJson.name
         }
       }),
       // Convert un-prefixed built-in imports into "node:"" prefixed forms.

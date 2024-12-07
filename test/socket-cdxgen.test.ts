@@ -1,21 +1,10 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import path from 'node:path'
 import { describe, it } from 'node:test'
 
-import semver from 'semver'
+import { distPath } from './dist/constants'
 
 import type { SpawnSyncOptionsWithStringEncoding } from 'node:child_process'
-
-const SUPPORTS_SYNC_ESM = semver.satisfies(process.versions.node, '>=22.12')
-
-const testPath = __dirname
-const rootPath = path.resolve(testPath, '..')
-const rootDistPath = path.join(rootPath, 'dist')
-const distPath = path.join(
-  rootDistPath,
-  SUPPORTS_SYNC_ESM ? 'module-sync' : 'require'
-)
 
 const spawnOpts: SpawnSyncOptionsWithStringEncoding = {
   cwd: distPath,
