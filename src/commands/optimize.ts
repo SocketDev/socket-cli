@@ -897,7 +897,14 @@ export const optimize: CliSubcommand = {
           const wrapperPath = path.join(distPath, 'npm-cli.js')
           await spawn(
             process.execPath,
-            [wrapperPath, 'install', '--no-audit', '--no-fund'],
+            [
+              wrapperPath,
+              'install',
+              '--no-audit',
+              '--no-fund',
+              '--no-progress',
+              '--quiet'
+            ],
             {
               stdio: 'ignore',
               env: {
