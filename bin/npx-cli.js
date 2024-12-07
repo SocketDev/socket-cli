@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 'use strict'
 
-const semver = require('semver')
-const distType = semver.satisfies(process.versions.node, '>=22.12')
+const DIST_TYPE = require('semver').satisfies(process.versions.node, '>=22.12')
   ? 'module-sync'
   : 'require'
-require(`../dist/${distType}/npx-cli.js`)
+require(`../dist/${DIST_TYPE}/npx-cli.js`)

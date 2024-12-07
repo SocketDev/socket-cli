@@ -42,9 +42,9 @@ export default () => {
       {
         dir: path.relative(rootPath, distModuleSyncPath),
         entryFileNames: '[name].js',
-        format: 'cjs',
         exports: 'auto',
         externalLiveBindings: false,
+        format: 'cjs',
         freeze: false
       }
     ],
@@ -77,9 +77,9 @@ export default () => {
       {
         dir: path.relative(rootPath, distRequirePath),
         entryFileNames: '[name].js',
-        format: 'cjs',
         exports: 'auto',
         externalLiveBindings: false,
+        format: 'cjs',
         freeze: false
       }
     ],
@@ -96,9 +96,10 @@ export default () => {
             // referenced in the code but used through spawned processes.
             '@cyclonedx/cdxgen': pkgJson.dependencies['@cyclonedx/cdxgen'],
             synp: pkgJson.dependencies.synp,
+            // Assign old dep stats dependencies to preserve them.
             ...oldDepStats?.dependencies
           })
-          // Remove transitives from dependencies
+          // Remove transitives from dependencies.
           for (const key of Object.keys(oldDepStats?.transitives ?? {})) {
             if (pkgJson.dependencies[key]) {
               depStats.transitives[key] = pkgJson.dependencies[key]
@@ -111,9 +112,9 @@ export default () => {
           depStats.esm = toSortedObject(depStats.esm)
           depStats.external = toSortedObject(depStats.external)
           depStats.transitives = toSortedObject(depStats.transitives)
-          // Write dep stats
+          // Write dep stats.
           writeFileSync(depStatsPath, `${formatObject(depStats)}\n`, 'utf8')
-          // Update dependencies with additional inlined modules
+          // Update dependencies with additional inlined modules.
           editablePkgJson
             .update({
               dependencies: {
