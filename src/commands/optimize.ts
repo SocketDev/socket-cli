@@ -895,21 +895,13 @@ export const optimize: CliSubcommand = {
       try {
         if (isNpm) {
           const wrapperPath = path.join(distPath, 'npm-cli.js')
-          await spawn(
-            process.execPath,
-            [
-              wrapperPath,
-              'install',
-              '--silent'
-            ],
-            {
-              stdio: 'ignore',
-              env: {
-                ...process.env,
-                [UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
-              }
+          await spawn(process.execPath, [wrapperPath, 'install', '--silent'], {
+            stdio: 'ignore',
+            env: {
+              ...process.env,
+              [UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
             }
-          )
+          })
         } else {
           // All package managers support the "install" command.
           await spawn(agentExecPath, ['install'], { stdio: 'ignore' })
