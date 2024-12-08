@@ -900,10 +900,7 @@ export const optimize: CliSubcommand = {
             [
               wrapperPath,
               'install',
-              '--no-audit',
-              '--no-fund',
-              '--no-progress',
-              '--quiet'
+              '--silent'
             ],
             {
               stdio: 'ignore',
