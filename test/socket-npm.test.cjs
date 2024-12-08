@@ -21,7 +21,7 @@ for (const npm of ['npm8', 'npm10']) {
 
   spawnSync(
     'npm',
-    ['install', '--no-audit', '--no-fund', '--no-progress', '--quiet'],
+    ['install', '--silent'],
     {
       cwd: npmPath,
       stdio: 'ignore'
