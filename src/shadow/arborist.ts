@@ -13,6 +13,7 @@ import semver from 'semver'
 
 import config from '@socketsecurity/config'
 import { isObject } from '@socketsecurity/registry/lib/objects'
+import { isBlessedPackageName } from '@socketsecurity/registry/lib/packages'
 
 import { createTTYServer } from './tty-server'
 import {
@@ -473,11 +474,7 @@ async function packagesHaveRiskyIssues(
           `(socket) ${formatter.hyperlink(id, `https://socket.dev/npm/package/${name}/overview/${version}`)} contains risks:`
         )
         // Filter issues for blessed packages.
-        if (
-          name === 'socket' ||
-          name.startsWith('@socketregistry/') ||
-          name.startsWith('@socketsecurity/')
-        ) {
+        if (isBlessedPackageName(name)) {
           failures = failures.filter(
             ({ type }) =>
               type !== 'unpopularPackage' && type !== 'unstableOwnership'
