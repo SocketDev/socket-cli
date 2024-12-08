@@ -19,14 +19,10 @@ for (const npm of ['npm8', 'npm10']) {
   const npmPath = path.join(npmFixturesPath, npm)
   const npmBinPath = path.join(npmPath, 'node_modules', '.bin')
 
-  spawnSync(
-    'npm',
-    ['install', '--silent'],
-    {
-      cwd: npmPath,
-      stdio: 'ignore'
-    }
-  )
+  spawnSync('npm', ['install', '--silent'], {
+    cwd: npmPath,
+    stdio: 'ignore'
+  })
 
   describe(`Socket npm wrapper for ${npm}`, () => {
     it('should bail on new typosquat', async () => {
