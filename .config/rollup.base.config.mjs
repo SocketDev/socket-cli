@@ -10,6 +10,7 @@ import rangesIntersect from 'semver/ranges/intersects.js'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
 import {
+  isBlessedPackageName,
   isValidPackageName,
   readPackageJsonSync
 } from '@socketsecurity/registry/lib/packages'
@@ -113,10 +114,7 @@ export default function baseConfig(extendConfig = {}) {
       }
       const id = normalizeId(id_)
       const name = getPackageName(id)
-      if (
-        name.startsWith('@socketregistry/') ||
-        name.startsWith('@socketsecurity/')
-      ) {
+      if (isBlessedPackageName(name)) {
         return true
       }
       if (
