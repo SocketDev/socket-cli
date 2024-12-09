@@ -41,6 +41,7 @@ const sharedRules = {
 }
 
 const sharedRulesForImportX = {
+  ...origImportXFlatConfigs.recommended.rules,
   'import-x/order': [
     'warn',
     {
@@ -66,35 +67,38 @@ const sharedRulesForImportX = {
   ]
 }
 
-const getImportXFlatConfigs = isEsm => ({
-  recommended: {
-    ...origImportXFlatConfigs.recommended,
-    languageOptions: {
-      ...origImportXFlatConfigs.recommended.languageOptions,
-      ecmaVersion: LATEST,
-      sourceType: isEsm ? 'module' : 'script'
+function getImportXFlatConfigs(isEsm) {
+  return {
+    recommended: {
+      ...origImportXFlatConfigs.recommended,
+      languageOptions: {
+        ...origImportXFlatConfigs.recommended.languageOptions,
+        ecmaVersion: LATEST,
+        sourceType: isEsm ? 'module' : 'script'
+      },
+      rules: {
+        ...sharedRulesForImportX,
+        'import-x/no-named-as-default-member': 'off'
+      }
     },
-    rules: {
-      ...origImportXFlatConfigs.recommended.rules,
-      ...sharedRulesForImportX,
-      'import-x/no-named-as-default-member': 'off'
-    }
-  },
-  typescript: {
-    ...origImportXFlatConfigs.typescript,
-    settings: {
-      ...origImportXFlatConfigs.typescript.settings,
-      'import-x/resolver-next': [
-        createOxcImportResolver({
-          tsConfig: {
-            configFile: rootTsConfigPath,
-            references: 'auto'
-          }
-        })
-      ]
+    typescript: {
+      ...origImportXFlatConfigs.typescript,
+      plugins: origImportXFlatConfigs.recommended.plugins,
+      settings: {
+        ...origImportXFlatConfigs.typescript.settings,
+        ...sharedRulesForImportX,
+        'import-x/resolver-next': [
+          createOxcImportResolver({
+            tsConfig: {
+              configFile: rootTsConfigPath,
+              references: 'auto'
+            }
+          })
+        ]
+      }
     }
   }
-})
+}
 
 const importFlatConfigsForScript = getImportXFlatConfigs(false)
 const importFlatConfigsForModule = getImportXFlatConfigs(true)
@@ -126,12 +130,12 @@ module.exports = [
         }
       }
     },
+    linterOptions: {
+      reportUnusedDisableDirectives: 'off'
+    },
     plugins: {
       ...sharedPlugins,
       '@typescript-eslint': tsEslint.plugin
-    },
-    linterOptions: {
-      reportUnusedDisableDirectives: 'off'
     },
     rules: {
       ...sharedRules,
@@ -167,17 +171,10 @@ module.exports = [
     }
   },
   {
-    files: ['scripts/**/*.js', 'test/**/*.cjs'],
-    ...nodePlugin.configs['flat/recommended-script']
-  },
-  {
-    files: ['scripts/**/*.js', 'test/**/*.cjs'],
-    plugins: {
-      ...sharedPlugins
-    },
+    files: ['scripts/**/*.{c,}js', 'test/**/*.{c,}js'],
+    ...nodePlugin.configs['flat/recommended-script'],
     rules: {
-      ...js.configs.recommended.rules,
-      ...sharedRules,
+      ...nodePlugin.configs['flat/recommended-script'].rules,
       'n/exports-style': ['error', 'module.exports'],
       // The n/no-unpublished-bin rule does does not support non-trivial glob
       // patterns used in package.json "files" fields. In those cases we simplify
@@ -198,6 +195,16 @@ module.exports = [
         'error',
         { argsIgnorePattern: '^_|^this$', ignoreRestSiblings: true }
       ]
+    }
+  },
+  {
+    files: ['scripts/**/*.{c,}js', 'test/**/*.{c,}js'],
+    plugins: {
+      ...sharedPlugins
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      ...sharedRules
     }
   }
 ]
