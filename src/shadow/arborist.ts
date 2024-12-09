@@ -248,6 +248,17 @@ const kRiskyReify = Symbol('riskyReify')
 const formatter = new ColorOrMarkdown(false)
 const pubToken = getDefaultKey() ?? FREE_API_KEY
 
+type BatchIssue = {
+  type: string
+  value: {
+    severity: string
+    category: string
+    locations: ({ [key: string]: any })[]
+    label: string
+    description: string
+    props: { [key: string]: any }
+  }
+}
 type IssueUXLookup = ReturnType<typeof createIssueUXLookup>
 type IssueUXLookupSettings = Parameters<IssueUXLookup>[0]
 type IssueUXLookupResult = ReturnType<IssueUXLookup>
@@ -271,7 +282,12 @@ async function* batchScan(
 ): AsyncGenerator<
   { eco: string; pkg: string; ver: string } & (
     | { type: 'missing' }
-    | { type: 'success'; value: { issues: any[] } }
+    | {
+        type: 'success'
+        value: {
+          issues: BatchIssue[]
+        }
+      }
   )
 > {
   const query = {
@@ -369,6 +385,14 @@ function findSpecificOverrideSet(
   return undefined
 }
 
+function isIssueFixable(issue: BatchIssue): boolean {
+  const { type } = issue
+  if (type === 'cve' || type === 'mediumCVE' || type === 'mildCVE' || type === 'criticalCVE') {
+    return !!issue.value.props['firstPatchedVersionIdentifier']
+  }
+  return type === 'socketUpgradeAvailable'
+}
+
 function maybeReadfileSync(filepath: string): string | undefined {
   try {
     return readFileSync(filepath, 'utf8')
@@ -400,26 +424,27 @@ async function packagesHaveRiskyIssues(
       const id = `${name}@${version}`
 
       let displayWarning = false
-      let failures: {
+      let issues: {
         type: string
         block: boolean
+        fixable: boolean
         raw?: any
       }[] = []
       if (pkgData.type === 'missing') {
         result = true
-        failures.push({
+        issues.push({
           type: 'missingDependency',
           block: false,
+          fixable: false,
           raw: undefined
         })
       } else {
         let blocked = false
-        for (const failure of pkgData.value.issues) {
-          const { type } = failure
+        for (const issue of pkgData.value.issues) {
           // eslint-disable-next-line no-await-in-loop
           const ux = await uxLookup({
             package: { name, version },
-            issue: { type }
+            issue: { type: issue.type }
           })
           if (ux.block) {
             result = true
@@ -429,10 +454,11 @@ async function packagesHaveRiskyIssues(
             displayWarning = true
           }
           if (ux.block || ux.display) {
-            failures.push({
-              type,
+            issues.push({
+              type: issue.type,
               block: ux.block,
-              raw: failure
+              raw: issue,
+              fixable: isIssueFixable(issue)
             })
             // Before we ask about problematic issues, check to see if they
             // already existed in the old version if they did, be quiet.
@@ -445,10 +471,10 @@ async function packagesHaveRiskyIssues(
                 (await batchScan([pkg.existing]).next()).value
               )
               if (oldPkgData.type === 'success') {
-                failures = failures.filter(
-                  issue =>
+                issues = issues.filter(
+                  ({ type }) =>
                     oldPkgData.value.issues.find(
-                      oldIssue => oldIssue.type === issue.type
+                      oldIssue => oldIssue.type === type
                     ) === undefined
                 )
               }
@@ -469,30 +495,32 @@ async function packagesHaveRiskyIssues(
           }
         }
       }
+      if (displayWarning && isBlessedPackageName(name)) {
+        issues = issues.filter(
+          ({ type }) =>
+            type !== 'unpopularPackage' && type !== 'unstableOwnership'
+        )
+        displayWarning = issues.length > 0
+      }
       if (displayWarning) {
         spinner.stop(
           `(socket) ${formatter.hyperlink(id, `https://socket.dev/npm/package/${name}/overview/${version}`)} contains risks:`
         )
-        // Filter issues for blessed packages.
-        if (isBlessedPackageName(name)) {
-          failures = failures.filter(
-            ({ type }) =>
-              type !== 'unpopularPackage' && type !== 'unstableOwnership'
-          )
-        }
-        failures.sort((a, b) => (a.type < b.type ? -1 : 1))
-
+        issues.sort((a, b) => (a.type < b.type ? -1 : 1))
         const lines = new Set()
-        for (const failure of failures) {
-          const { type } = failure
+        for (const issue of issues) {
           // Based data from { pageProps: { alertTypes } } of:
           // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
-          const info = translations.issues[type]
-          const title = info?.title ?? type
-          const maybeBlocking = failure.block ? '' : ' (non-blocking)'
+          const info = translations.issues[issue.type]
+          const title = info?.title ?? issue.type
+          const attributes = [
+            ...(issue.fixable ? ['fixable'] : []),
+            ...(issue.block ? [] : ['non-blocking'])
+          ]
+          const maybeAttributes = attributes.length ? ` (${attributes.join('; ')})` : ''
           const maybeDesc = info?.description ? ` - ${info.description}` : ''
           // TODO: emoji seems to mis-align terminals sometimes
-          lines.add(`  ${title}${maybeBlocking}${maybeDesc}\n`)
+          lines.add(`  ${title}${maybeAttributes}${maybeDesc}\n`)
         }
         for (const line of lines) {
           output?.write(line)
