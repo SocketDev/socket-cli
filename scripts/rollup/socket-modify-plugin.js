@@ -16,6 +16,7 @@ function socketModifyPlugin({
     renderChunk(code, { fileName }) {
       if (!filter(fileName)) return null
       const s = new MagicString(code)
+      const { global } = find
       find.lastIndex = 0
       let match
       while ((match = find.exec(code)) !== null) {
@@ -26,6 +27,9 @@ function socketModifyPlugin({
             ? Reflect.apply(replace, match, match)
             : String(replace)
         )
+        if (!global) {
+          break
+        }
       }
       return {
         code: s.toString(),

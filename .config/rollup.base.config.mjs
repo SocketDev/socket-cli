@@ -244,14 +244,33 @@ export default function baseConfig(extendConfig = {}) {
           )
         }
       }),
+      // Add CJS interop helper for "default" only exports.
+      socketModifyPlugin({
+        find: /'use strict';?/,
+        replace: match => `${match}\n
+function _interop(e) {
+  let d
+  if (e) {
+    let c = 0
+    for (const k in e) {
+      d = c++ === 0 && k === 'default' ? e[k] : void 0
+      if (!d) break
+    }
+  }
+  return d ?? e
+}`
+      }),
+      // Wrap require calls with "_interop" helper.
+      socketModifyPlugin({
+        find: /(?<=\s*=\s*)require\(["'].+?["']\)(?=;?\r?\n)/g,
+        replace: match => `_interop(${match})`
+      }),
       commonjs({
-        defaultIsModuleExports: 'auto',
         extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
         ignoreDynamicRequires: true,
         ignoreGlobal: true,
         ignoreTryCatch: true,
-        strictRequires: 'auto',
-        transformMixedEsModules: true
+        strictRequires: 'auto'
       }),
       ...(extendConfig.plugins ?? [])
     ]
