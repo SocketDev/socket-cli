@@ -1,8 +1,13 @@
+import { isValidPackageName } from '@socketsecurity/registry/lib/packages'
 import { isRelative } from '@socketsecurity/registry/lib/path'
 
 import baseConfig from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
-import { normalizeId, isBuiltin } from '../scripts/utils/packages.js'
+import {
+  isBuiltin,
+  getPackageName,
+  normalizeId
+} from '../scripts/utils/packages.js'
 
 const { ROLLUP_EXTERNAL_SUFFIX, SUPPORTS_SYNC_ESM, rootSrcPath } = constants
 
@@ -30,7 +35,18 @@ export default () =>
               return true
             }
             const id = normalizeId(id_)
-            return !(isRelative(id) || id.startsWith(rootSrcPath))
+            const name = getPackageName(id)
+            if (
+              name === '@babel/runtime' ||
+              id.startsWith(rootSrcPath) ||
+              id.endsWith('.mjs') ||
+              id.endsWith('.mts') ||
+              isRelative(id) ||
+              !isValidPackageName(name)
+            ) {
+              return false
+            }
+            return true
           }
         }
       : {})
