@@ -2,14 +2,21 @@ import { chmodSync, existsSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
-import { readPackageJsonSync } from '@socketsecurity/registry/lib/packages'
+import {
+  isValidPackageName,
+  readPackageJsonSync
+} from '@socketsecurity/registry/lib/packages'
 import { isRelative } from '@socketsecurity/registry/lib/path'
 
 import baseConfig from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
 import { readJsonSync } from '../scripts/utils/fs.js'
 import { formatObject } from '../scripts/utils/objects.js'
-import { normalizeId, isBuiltin } from '../scripts/utils/packages.js'
+import {
+  getPackageName,
+  isBuiltin,
+  normalizeId
+} from '../scripts/utils/packages.js'
 
 const {
   ROLLUP_EXTERNAL_SUFFIX,
@@ -53,7 +60,18 @@ export default () => {
         return true
       }
       const id = normalizeId(id_)
-      return !(isRelative(id) || id.startsWith(rootSrcPath))
+      const name = getPackageName(id)
+      if (
+        name === '@babel/runtime' ||
+        id.startsWith(rootSrcPath) ||
+        id.endsWith('.mjs') ||
+        id.endsWith('.mts') ||
+        isRelative(id) ||
+        !isValidPackageName(name)
+      ) {
+        return false
+      }
+      return true
     },
     plugins: [
       {
