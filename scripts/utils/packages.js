@@ -74,7 +74,7 @@ function isEsmId(id_, parentId_) {
   }
   const parentId = parentId_ ? resolveId(parentId_) : undefined
   const resolvedId = resolveId(id_, parentId)
-  if (resolvedId.endsWith('.mjs')) {
+  if (resolvedId.endsWith('.mjs') || resolvedId.endsWith('.mts')) {
     return true
   }
   if (
@@ -102,7 +102,11 @@ function isEsmId(id_, parentId_) {
     if (
       pkgJson.type === 'module' &&
       !entryExports?.require &&
-      !entryExports?.node?.default?.endsWith('.cjs')
+      !entryExports?.node?.require &&
+      !entryExports?.node?.default?.endsWith('.cjs') &&
+      !entryExports?.['.']?.require &&
+      !entryExports?.['.']?.node?.require &&
+      !entryExports?.['.']?.node?.default?.endsWith('.cjs')
     ) {
       return true
     }
