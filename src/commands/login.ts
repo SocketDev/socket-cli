@@ -1,16 +1,20 @@
-import { confirm, password, select } from '@inquirer/prompts'
+import confirm from '@inquirer/confirm'
+import password from '@inquirer/password'
+import select from '@inquirer/select'
+
 import isInteractive from 'is-interactive'
 import meow from 'meow'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 import terminalLink from 'terminal-link'
 
+import { SOCKET_PUBLIC_API_KEY } from '../constants'
 import { AuthError, InputError } from '../utils/errors'
 import { printFlagList } from '../utils/formatting'
-import { FREE_API_KEY, setupSdk } from '../utils/sdk'
+import { setupSdk } from '../utils/sdk'
 import { getSetting, updateSetting } from '../utils/settings'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
-import type { Separator } from '@inquirer/prompts'
+import type { Separator } from '@inquirer/select'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 type Choice<Value> = {
@@ -91,7 +95,7 @@ export const login: CliSubcommand = {
           'Socket.dev API key',
           'https://docs.socket.dev/docs/api-keys'
         )} (leave blank for a public key)`
-      })) || FREE_API_KEY
+      })) || SOCKET_PUBLIC_API_KEY
 
     let apiBaseUrl = cli.flags['apiBaseUrl'] as string | null | undefined
     apiBaseUrl ??= getSetting('apiBaseUrl') ?? undefined

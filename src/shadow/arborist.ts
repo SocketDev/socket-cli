@@ -3,17 +3,16 @@ import { readFileSync, realpathSync } from 'node:fs'
 import https from 'node:https'
 import path from 'node:path'
 import rl from 'node:readline'
-import { PassThrough } from 'node:stream'
 import { setTimeout as wait } from 'node:timers/promises'
 
+import confirm from '@inquirer/confirm'
+import yoctoSpinner from '@socketregistry/yocto-spinner'
 import isInteractive from 'is-interactive'
 import npa from 'npm-package-arg'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
 import semver from 'semver'
 
 import config from '@socketsecurity/config'
 import { isObject } from '@socketsecurity/registry/lib/objects'
-import { isBlessedPackageName } from '@socketsecurity/registry/lib/packages'
 
 import { createTTYServer } from './tty-server'
 import {
@@ -22,14 +21,15 @@ import {
   LOOP_SENTINEL,
   NPM_REGISTRY_URL,
   SOCKET_CLI_ISSUES_URL,
+  SOCKET_PUBLIC_API_KEY,
   UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
   rootPath
 } from '../constants'
 import { ColorOrMarkdown } from '../utils/color-or-markdown'
-import { createIssueUXLookup } from '../utils/issue-rules'
+import { createAlertUXLookup } from '../utils/issue-rules'
 import { isErrnoException } from '../utils/misc'
 import { findRoot } from '../utils/path-resolve'
-import { FREE_API_KEY, getDefaultKey, setupSdk } from '../utils/sdk'
+import { getDefaultKey, setupSdk } from '../utils/sdk'
 import { getSetting } from '../utils/settings'
 
 import type {
@@ -46,8 +46,6 @@ import type { AliasResult, RegistryResult } from 'npm-package-arg'
 type ArboristClass = typeof BaseArborist & {
   new (...args: any): typeof BaseArborist
 }
-
-type AwaitedYield<T> = T extends AsyncGenerator<infer Y, any, any> ? Y : never
 
 type EdgeClass = Omit<BaseEdge, 'overrides' | 'reload'> & {
   optional: boolean
@@ -89,6 +87,12 @@ type InstallEffect = {
   pkgid: NodeClass['pkgid']
   repository_url: string
 }
+
+type IssueUXLookup = ReturnType<typeof createAlertUXLookup>
+
+type IssueUXLookupSettings = Parameters<IssueUXLookup>[0]
+
+type IssueUXLookupResult = ReturnType<IssueUXLookup>
 
 type NodeClass = Omit<
   BaseNode,
@@ -146,6 +150,66 @@ interface OverrideSetClass {
   getNodeRule(node: NodeClass): OverrideSetClass
   getMatchingRule(node: NodeClass): OverrideSetClass | null
   isEqual(otherOverrideSet: OverrideSetClass | undefined): boolean
+}
+
+type SocketAlert = {
+  key: string
+  type: string
+  severity: string
+  category: string
+  action?: string
+  actionPolicyIndex?: number
+  file?: string
+  props?: any
+  start?: number
+  end?: number
+}
+
+type SocketArtifact = {
+  type: string
+  namespace?: string
+  name?: string
+  version?: string
+  subpath?: string
+  release?: string
+  id?: string
+  author?: string[]
+  license?: string
+  licenseDetails?: {
+    spdxDisj: string
+    provenance: string
+    filepath: string
+    match_strength: number
+  }[]
+  licenseAttrib?: {
+    attribText: string
+    attribData: {
+      purl: string
+      foundInFilepath: string
+      spdxExpr: string
+      foundAuthors: string[]
+    }[]
+  }[]
+  score?: {
+    supplyChain: number
+    quality: number
+    maintenance: number
+    vulnerability: number
+    license: number
+    overall: number
+  }
+  alerts?: SocketAlert[]
+  size?: number
+  batchIndex?: number
+}
+
+type SocketPackageAlert = {
+  type: string
+  name: string
+  version: string
+  block: boolean
+  fixable: boolean
+  raw?: any
 }
 
 interface KnownModules {
@@ -246,22 +310,7 @@ const kCtorArgs = Symbol('ctorArgs')
 const kRiskyReify = Symbol('riskyReify')
 
 const formatter = new ColorOrMarkdown(false)
-const pubToken = getDefaultKey() ?? FREE_API_KEY
-
-type BatchIssue = {
-  type: string
-  value: {
-    severity: string
-    category: string
-    locations: ({ [key: string]: any })[]
-    label: string
-    description: string
-    props: { [key: string]: any }
-  }
-}
-type IssueUXLookup = ReturnType<typeof createIssueUXLookup>
-type IssueUXLookupSettings = Parameters<IssueUXLookup>[0]
-type IssueUXLookupResult = ReturnType<IssueUXLookup>
+const pubToken = getDefaultKey() ?? SOCKET_PUBLIC_API_KEY
 
 const ttyServer = createTTYServer(isInteractive({ stream: process.stdin }), log)
 
@@ -277,41 +326,21 @@ async function uxLookup(
   return _uxLookup(settings)
 }
 
-async function* batchScan(
-  pkgIds: string[]
-): AsyncGenerator<
-  { eco: string; pkg: string; ver: string } & (
-    | { type: 'missing' }
-    | {
-        type: 'success'
-        value: {
-          issues: BatchIssue[]
-        }
-      }
-  )
-> {
-  const query = {
-    packages: pkgIds.map(id => {
-      const { name, version } = pkgidParts(id)
-      return {
-        eco: 'npm',
-        pkg: name,
-        ver: version,
-        top: true
-      }
-    })
-  }
-  // TODO: Migrate to SDK.
-  const pkgDataReq = https
-    .request(`${API_V0_URL}/scan/batch`, {
+async function* batchScan(pkgIds: string[]): AsyncGenerator<SocketArtifact> {
+  const req = https
+    .request(`${API_V0_URL}/purl?alerts=true`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${Buffer.from(`${pubToken}:`).toString('base64url')}`
       },
       signal: abortSignal
     })
-    .end(JSON.stringify(query))
-  const { 0: res } = await events.once(pkgDataReq, 'response')
+    .end(
+      JSON.stringify({
+        components: pkgIds.map(id => ({ purl: `pkg:npm/${id}` }))
+      })
+    )
+  const { 0: res } = await events.once(req, 'response')
   const ok = res.statusCode >= 200 && res.statusCode <= 299
   if (!ok) {
     throw new Error(`Socket API Error: ${res.statusCode}`)
@@ -385,10 +414,15 @@ function findSpecificOverrideSet(
   return undefined
 }
 
-function isIssueFixable(issue: BatchIssue): boolean {
-  const { type } = issue
-  if (type === 'cve' || type === 'mediumCVE' || type === 'mildCVE' || type === 'criticalCVE') {
-    return !!issue.value.props['firstPatchedVersionIdentifier']
+function isAlertFixable(alert: SocketAlert): boolean {
+  const { type } = alert
+  if (
+    type === 'cve' ||
+    type === 'mediumCVE' ||
+    type === 'mildCVE' ||
+    type === 'criticalCVE'
+  ) {
+    return !!alert.props?.['firstPatchedVersionIdentifier']
   }
   return type === 'socketUpgradeAvailable'
 }
@@ -400,124 +434,109 @@ function maybeReadfileSync(filepath: string): string | undefined {
   return undefined
 }
 
-async function packagesHaveRiskyIssues(
+async function getPackagesAlerts(
   safeArb: SafeArborist,
   _registry: string,
   pkgs: InstallEffect[],
   output?: Writable
-): Promise<boolean> {
+): Promise<SocketPackageAlert[]> {
   const spinner = yoctoSpinner({
     stream: output
   })
-  let result = false
   let { length: remaining } = pkgs
+  const packageAlerts: SocketPackageAlert[] = []
   if (!remaining) {
     spinner.success('No changes detected')
-    return result
+    return packageAlerts
   }
   const getText = () => `Looking up data for ${remaining} packages`
   spinner.start(getText())
 
   try {
-    for await (const pkgData of batchScan(pkgs.map(p => p.pkgid))) {
-      const { pkg: name, ver: version } = pkgData
-      const id = `${name}@${version}`
+    for await (const artifact of batchScan(pkgs.map(p => p.pkgid))) {
+      if (!artifact.name || !artifact.version || !artifact.alerts?.length) {
+        continue
+      }
+      const { version } = artifact
+      const name = `${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}`
+      const id = `${name}@${artifact.version}`
 
+      let blocked = false
       let displayWarning = false
-      let issues: {
-        type: string
-        block: boolean
-        fixable: boolean
-        raw?: any
-      }[] = []
-      if (pkgData.type === 'missing') {
-        result = true
-        issues.push({
-          type: 'missingDependency',
-          block: false,
-          fixable: false,
-          raw: undefined
+      let alerts: SocketPackageAlert[] = []
+      for (const alert of artifact.alerts) {
+        // eslint-disable-next-line no-await-in-loop
+        const ux = await uxLookup({
+          package: { name, version },
+          alert: { type: alert.type }
         })
-      } else {
-        let blocked = false
-        for (const issue of pkgData.value.issues) {
-          // eslint-disable-next-line no-await-in-loop
-          const ux = await uxLookup({
-            package: { name, version },
-            issue: { type: issue.type }
-          })
-          if (ux.block) {
-            result = true
-            blocked = true
-          }
-          if (ux.display) {
-            displayWarning = true
-          }
-          if (ux.block || ux.display) {
-            issues.push({
-              type: issue.type,
-              block: ux.block,
-              raw: issue,
-              fixable: isIssueFixable(issue)
-            })
-            // Before we ask about problematic issues, check to see if they
-            // already existed in the old version if they did, be quiet.
-            const pkg = pkgs.find(
-              p => p.pkgid === id && p.existing?.startsWith(`${name}@`)
-            )
-            if (pkg?.existing) {
-              const oldPkgData = <AwaitedYield<ReturnType<typeof batchScan>>>(
-                // eslint-disable-next-line no-await-in-loop
-                (await batchScan([pkg.existing]).next()).value
-              )
-              if (oldPkgData.type === 'success') {
-                issues = issues.filter(
-                  ({ type }) =>
-                    oldPkgData.value.issues.find(
-                      oldIssue => oldIssue.type === type
-                    ) === undefined
-                )
-              }
-            }
-          }
+        if (ux.block) {
+          blocked = true
         }
-        if (!blocked) {
-          const pkg = pkgs.find(p => p.pkgid === id)
-          if (pkg) {
-            await tarball.stream(
-              id,
-              stream => {
-                stream.resume()
-                return (stream as any).promise()
-              },
-              { ...(safeArb as any)[kCtorArgs][0] }
-            )
+        if (ux.display) {
+          displayWarning = true
+        }
+        if (ux.block || ux.display) {
+          alerts.push({
+            name,
+            version,
+            type: alert.type,
+            block: ux.block,
+            raw: alert,
+            fixable: isAlertFixable(alert)
+          })
+          // Before we ask about problematic issues, check to see if they
+          // already existed in the old version if they did, be quiet.
+          const pkg = pkgs.find(
+            p => p.pkgid === id && p.existing?.startsWith(`${name}@`)
+          )
+          if (pkg?.existing) {
+            const oldArtifact: SocketArtifact =
+              // eslint-disable-next-line no-await-in-loop
+              (await batchScan([pkg.existing]).next()).value
+            console.log('oldArtifact', oldArtifact)
+            // if (oldArtifact.type === 'success') {
+            //   issues = issues.filter(
+            //     ({ type }) =>
+            //       oldPkgData.value.issues.find(
+            //         oldIssue => oldIssue.type === type
+            //       ) === undefined
+            //   )
+            // }
           }
         }
       }
-      if (displayWarning && isBlessedPackageName(name)) {
-        issues = issues.filter(
-          ({ type }) =>
-            type !== 'unpopularPackage' && type !== 'unstableOwnership'
-        )
-        displayWarning = issues.length > 0
+      if (!blocked) {
+        const pkg = pkgs.find(p => p.pkgid === id)
+        if (pkg) {
+          await tarball.stream(
+            id,
+            stream => {
+              stream.resume()
+              return (stream as any).promise()
+            },
+            { ...(safeArb as any)[kCtorArgs][0] }
+          )
+        }
       }
       if (displayWarning) {
         spinner.stop(
           `(socket) ${formatter.hyperlink(id, `https://socket.dev/npm/package/${name}/overview/${version}`)} contains risks:`
         )
-        issues.sort((a, b) => (a.type < b.type ? -1 : 1))
+        alerts.sort((a, b) => (a.type < b.type ? -1 : 1))
         const lines = new Set()
-        for (const issue of issues) {
+        for (const alert of alerts) {
           // Based data from { pageProps: { alertTypes } } of:
           // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
-          const info = translations.issues[issue.type]
-          const title = info?.title ?? issue.type
+          const info = translations.alerts[alert.type]
+          const title = info?.title ?? alert.type
           const attributes = [
-            ...(issue.fixable ? ['fixable'] : []),
-            ...(issue.block ? [] : ['non-blocking'])
+            ...(alert.fixable ? ['fixable'] : []),
+            ...(alert.block ? [] : ['non-blocking'])
           ]
-          const maybeAttributes = attributes.length ? ` (${attributes.join('; ')})` : ''
+          const maybeAttributes = attributes.length
+            ? ` (${attributes.join('; ')})`
+            : ''
           const maybeDesc = info?.description ? ` - ${info.description}` : ''
           // TODO: emoji seems to mis-align terminals sometimes
           lines.add(`  ${title}${maybeAttributes}${maybeDesc}\n`)
@@ -529,18 +548,14 @@ async function packagesHaveRiskyIssues(
       }
       remaining -= 1
       spinner.text = remaining > 0 ? getText() : ''
+      packageAlerts.push(...alerts)
     }
-    return result
+  } catch (e) {
+    console.log('error', e)
   } finally {
     spinner.stop()
   }
-}
-
-function pkgidParts(pkgid: string) {
-  const delimiter = pkgid.lastIndexOf('@')
-  const name = pkgid.slice(0, delimiter)
-  const version = pkgid.slice(delimiter + 1)
-  return { name, version }
+  return packageAlerts
 }
 
 function toRepoUrl(resolved: string): string {
@@ -1328,42 +1343,29 @@ export class SafeArborist extends Arborist {
     if (!proceed) {
       proceed = await ttyServer.captureTTY(async (input, output) => {
         if (input && output) {
-          const risky = await packagesHaveRiskyIssues(
+          const alerts = await getPackagesAlerts(
             this,
             this['registry'],
             diff,
             output
           )
-          if (!risky) {
+          if (!alerts.length) {
             return true
           }
-          const rlin = new PassThrough()
-          input.pipe(rlin)
-          const rlout = new PassThrough()
-          rlout.pipe(output, { end: false })
-          const rli = rl.createInterface(rlin, rlout)
-          try {
-            while (true) {
-              // eslint-disable-next-line no-await-in-loop
-              const answer: string = await new Promise(resolve => {
-                rli.question(
-                  'Accept risks of installing these packages (y/N)?\n',
-                  { signal: abortSignal },
-                  resolve
-                )
-              })
-              if (/^\s*y(?:es)?\s*$/i.test(answer)) {
-                return true
-              }
-              if (/^(?:\s*no?\s*|)$/i.test(answer)) {
-                return false
-              }
+          return await confirm(
+            {
+              message: 'Accept risks of installing these packages?',
+              default: false
+            },
+            {
+              input,
+              output,
+              signal: abortSignal
             }
-          } finally {
-            rli.close()
-          }
+          )
         } else if (
-          await packagesHaveRiskyIssues(this, this['registry'], diff, output)
+          (await getPackagesAlerts(this, this['registry'], diff, output))
+            .length > 0
         ) {
           throw new Error(
             'Socket npm Unable to prompt to accept risk, need TTY to do so'
@@ -1467,5 +1469,5 @@ void (async () => {
       }
     })
   }
-  _uxLookup = createIssueUXLookup(settings)
+  _uxLookup = createAlertUXLookup(settings)
 })()

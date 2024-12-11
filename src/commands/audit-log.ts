@@ -1,4 +1,4 @@
-import { Separator, select } from '@inquirer/prompts'
+import select, { Separator } from '@inquirer/select'
 import colors from 'yoctocolors-cjs'
 import meow from 'meow'
 import yoctoSpinner from '@socketregistry/yocto-spinner'

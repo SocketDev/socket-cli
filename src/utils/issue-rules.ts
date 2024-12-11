@@ -54,11 +54,9 @@ function resolveIssueRuleUX(
   } else if (defaultValue === false) {
     defaultValue = { action: 'ignore' }
   }
-
   let block = false
   let display = false
   let needDefault = true
-
   iterate_entries: for (const issueRuleArr of entriesOrderedIssueRules) {
     for (const rule of issueRuleArr) {
       if (issueRuleValueDoesNotDefer(rule)) {
@@ -73,13 +71,11 @@ function resolveIssueRuleUX(
     block = block || narrowingFilter.block
     display = display || narrowingFilter.display
   }
-
   if (needDefault) {
     const narrowingFilter = uxForDefinedNonDeferValue(defaultValue)
     block = block || narrowingFilter.block
     display = display || narrowingFilter.display
   }
-
   return { block, display }
 }
 
@@ -91,7 +87,7 @@ function issueRuleValueDoesNotDefer(
 ): issueRule is NonNormalizedResolvedIssueRule {
   if (issueRule === undefined) {
     return false
-  } else if (typeof issueRule === 'object' && issueRule) {
+  } else if (issueRule !== null && typeof issueRule === 'object') {
     const { action } = issueRule
     if (action === undefined || action === 'defer') {
       return false
@@ -124,17 +120,17 @@ type SettingsType = (SocketSdkResultType<'postSettings'> & {
   success: true
 })['data']
 
-export function createIssueUXLookup(
+export function createAlertUXLookup(
   settings: SettingsType
 ): (context: {
   package: { name: string; version: string }
-  issue: { type: string }
+  alert: { type: string }
 }) => RuleActionUX {
   const cachedUX: Map<keyof typeof settings.defaults.issueRules, RuleActionUX> =
     new Map()
   return context => {
-    const key = context.issue.type
-    let ux = cachedUX.get(key)
+    const { type } = context.alert
+    let ux = cachedUX.get(type)
     if (ux) {
       return ux
     }
@@ -147,7 +143,7 @@ export function createIssueUXLookup(
         if (!resolvedTarget) {
           break
         }
-        const issueRuleValue = resolvedTarget.issueRules?.[key]
+        const issueRuleValue = resolvedTarget.issueRules?.[type]
         if (typeof issueRuleValue !== 'undefined') {
           orderedIssueRules.push(issueRuleValue)
         }
@@ -155,7 +151,7 @@ export function createIssueUXLookup(
       }
       entriesOrderedIssueRules.push(orderedIssueRules)
     }
-    const defaultValue = settings.defaults.issueRules[key] as
+    const defaultValue = settings.defaults.issueRules[type] as
       | { action: 'error' | 'ignore' | 'warn' }
       | boolean
       | undefined
@@ -168,7 +164,7 @@ export function createIssueUXLookup(
       resolvedDefaultValue = { action: defaultValue.action ?? 'error' }
     }
     ux = resolveIssueRuleUX(entriesOrderedIssueRules, resolvedDefaultValue)
-    cachedUX.set(key, ux)
+    cachedUX.set(type, ux)
     return ux
   }
 }

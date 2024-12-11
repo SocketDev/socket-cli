@@ -1,5 +1,5 @@
 {
-  "issues": {
+  "alerts": {
     "badEncoding": {
       "description": "Source files are encoded using a non-standard text encoding.",
       "suggestion": "Ensure all published files are encoded using a standard encoding such as UTF8, UTF16, UTF32, SHIFT-JIS, etc.",
