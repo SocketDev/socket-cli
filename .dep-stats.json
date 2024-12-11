@@ -44,7 +44,6 @@
     "open": "^10.1.0",
     "run-applescript": "^7.0.0",
     "terminal-link": "^3.0.0",
-    "tiny-colors": "^2.0.2",
     "tiny-updater": "^3.5.2",
     "when-exit": "^2.1.1"
   },
@@ -62,12 +61,9 @@
     "hpagent": "^1.2.0",
     "ignore": "^6.0.2",
     "micromatch": "^4.0.8",
-    "npm-package-arg": "^12.0.0",
     "pony-cause": "^2.1.11",
-    "semver": "^7.6.3",
     "tinyglobby": "^0.2.10",
     "which": "^5.0.0",
-    "yaml": "^2.6.1",
     "yargs-parser": "^21.1.1",
     "yoctocolors-cjs": "^2.1.2"
   },
