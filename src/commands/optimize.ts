@@ -895,13 +895,32 @@ export const optimize: CliSubcommand = {
       try {
         if (isNpm) {
           const wrapperPath = path.join(distPath, 'npm-cli.js')
-          await spawn(process.execPath, [wrapperPath, 'install', '--silent'], {
+          const npmSpawnOptions: Parameters<typeof spawn>[2] = {
             stdio: 'ignore',
             env: {
               ...process.env,
               [UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
             }
-          })
+          }
+          await spawn(
+            process.execPath,
+            [wrapperPath, 'install', '--silent'],
+            npmSpawnOptions
+          )
+          // TODO: This is a temporary workaround for an `npm ci` bug where it
+          // will error out after Socket Optimize generates a lock file. More
+          // investigation is needed.
+          await spawn(
+            process.execPath,
+            [
+              wrapperPath,
+              'install',
+              '--silent',
+              '--ignore-scripts',
+              '--package-lock-only'
+            ],
+            npmSpawnOptions
+          )
         } else {
           // All package managers support the "install" command.
           await spawn(agentExecPath, ['install'], { stdio: 'ignore' })
