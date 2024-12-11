@@ -20,6 +20,9 @@ export const LOOP_SENTINEL = 1_000_000
 
 export const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 
+export const SOCKET_PUBLIC_API_KEY =
+  'sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api'
+
 export const SOCKET_CLI_ISSUES_URL =
   'https://github.com/SocketDev/socket-cli/issues'
 
