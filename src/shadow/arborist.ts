@@ -83,9 +83,9 @@ type Explanation = {
 } | null
 
 type InstallEffect = {
-  existing: NodeClass['pkgid'] | null
   pkgid: NodeClass['pkgid']
   repository_url: string
+  existing?: NodeClass['pkgid'] | undefined
 }
 
 type IssueUXLookup = ReturnType<typeof createAlertUXLookup>
@@ -487,22 +487,18 @@ async function getPackagesAlerts(
           })
           // Before we ask about problematic issues, check to see if they
           // already existed in the old version if they did, be quiet.
-          const pkg = pkgs.find(
-            p => p.pkgid === id && p.existing?.startsWith(`${name}@`)
-          )
-          if (pkg?.existing) {
-            // const oldArtifact: SocketArtifact =
-            //   // eslint-disable-next-line no-await-in-loop
-            //   (await batchScan([pkg.existing]).next()).value
-            // console.log('oldArtifact', oldArtifact)
-            // if (oldArtifact.type === 'success') {
-            //   issues = issues.filter(
-            //     ({ type }) =>
-            //       oldPkgData.value.issues.find(
-            //         oldIssue => oldIssue.type === type
-            //       ) === undefined
-            //   )
-            // }
+          const existing = pkgs.find(p =>
+            p.existing?.startsWith(`${name}@`)
+          )?.existing
+          if (existing) {
+            const oldArtifact: SocketArtifact | undefined =
+              // eslint-disable-next-line no-await-in-loop
+              (await batchScan([existing]).next()).value
+            if (oldArtifact?.alerts?.length) {
+              alerts = alerts.filter(
+                ({ type }) => !oldArtifact.alerts?.find(a => a.type === type)
+              )
+            }
           }
         }
       }
@@ -580,31 +576,35 @@ function walk(
     if (!diff) {
       continue
     }
-    if (diff.action) {
-      const sameVersion =
-        diff.actual?.package.version === diff.ideal?.package.version
+    const { action } = diff
+    if (action) {
+      const oldNode = diff.actual
+      const oldPkgid = oldNode?.pkgid
+      const pkgNode = diff.ideal
+      const pkgid = pkgNode?.pkgid
+
+      let existing
       let keep = false
-      let existing = null
-      if (diff.action === 'CHANGE') {
-        if (!sameVersion) {
-          existing = diff.actual.pkgid
+      if (action === 'CHANGE') {
+        if (pkgNode?.package.version !== oldNode?.package.version) {
           keep = true
+          if (
+            oldNode?.package.name &&
+            oldNode.package.name === pkgNode?.package.name
+          ) {
+            existing = oldPkgid
+          }
         } else {
           // console.log('SKIPPING META CHANGE ON', diff)
         }
       } else {
-        keep = diff.action !== 'REMOVE'
+        keep = action !== 'REMOVE'
       }
-      if (
-        keep &&
-        diff.ideal?.pkgid &&
-        diff.ideal.resolved &&
-        (!diff.actual || diff.actual.resolved)
-      ) {
+      if (keep && pkgid && pkgNode.resolved && (!oldNode || oldNode.resolved)) {
         needInfoOn.push({
           existing,
-          pkgid: diff.ideal.pkgid,
-          repository_url: toRepoUrl(diff.ideal.resolved)
+          pkgid,
+          repository_url: toRepoUrl(pkgNode.resolved)
         })
       }
     }
