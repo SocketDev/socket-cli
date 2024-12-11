@@ -491,10 +491,10 @@ async function getPackagesAlerts(
             p => p.pkgid === id && p.existing?.startsWith(`${name}@`)
           )
           if (pkg?.existing) {
-            const oldArtifact: SocketArtifact =
-              // eslint-disable-next-line no-await-in-loop
-              (await batchScan([pkg.existing]).next()).value
-            console.log('oldArtifact', oldArtifact)
+            // const oldArtifact: SocketArtifact =
+            //   // eslint-disable-next-line no-await-in-loop
+            //   (await batchScan([pkg.existing]).next()).value
+            // console.log('oldArtifact', oldArtifact)
             // if (oldArtifact.type === 'success') {
             //   issues = issues.filter(
             //     ({ type }) =>
