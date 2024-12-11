@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { createAlertUXLookup } from '../src/utils/issue-rules'
+import { createAlertUXLookup } from '../src/utils/alert-rules'
 
-describe('Issue Rule UX', () => {
+describe('Alert Rule UX', () => {
   it('should properly defer', () => {
     const noEntriesLookup = createAlertUXLookup({
       defaults: {
@@ -14,7 +14,7 @@ describe('Issue Rule UX', () => {
           fromUndefinedAction: {
             action: 'warn'
           },
-          fromUndefinedIssueRule: {
+          fromUndefinedRule: {
             action: 'warn'
           },
           willError: {
@@ -123,7 +123,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        alert: { type: 'fromUndefinedIssueRule' }
+        alert: { type: 'fromUndefinedRule' }
       }),
       {
         block: false,

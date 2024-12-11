@@ -26,7 +26,7 @@ import {
   rootPath
 } from '../constants'
 import { ColorOrMarkdown } from '../utils/color-or-markdown'
-import { createAlertUXLookup } from '../utils/issue-rules'
+import { createAlertUXLookup } from '../utils/alert-rules'
 import { isErrnoException } from '../utils/misc'
 import { findRoot } from '../utils/path-resolve'
 import { getDefaultKey, setupSdk } from '../utils/sdk'
@@ -42,6 +42,12 @@ import type {
 } from '@npmcli/arborist'
 import type { Writable } from 'node:stream'
 import type { AliasResult, RegistryResult } from 'npm-package-arg'
+
+type AlertUxLookup = ReturnType<typeof createAlertUXLookup>
+
+type AlertUxLookupSettings = Parameters<AlertUxLookup>[0]
+
+type AlertUxLookupResult = ReturnType<AlertUxLookup>
 
 type ArboristClass = typeof BaseArborist & {
   new (...args: any): typeof BaseArborist
@@ -87,12 +93,6 @@ type InstallEffect = {
   repository_url: string
   existing?: NodeClass['pkgid'] | undefined
 }
-
-type IssueUXLookup = ReturnType<typeof createAlertUXLookup>
-
-type IssueUXLookupSettings = Parameters<IssueUXLookup>[0]
-
-type IssueUXLookupResult = ReturnType<IssueUXLookup>
 
 type NodeClass = Omit<
   BaseNode,
@@ -314,11 +314,11 @@ const pubToken = getDefaultKey() ?? SOCKET_PUBLIC_API_KEY
 
 const ttyServer = createTTYServer(isInteractive({ stream: process.stdin }), log)
 
-let _uxLookup: IssueUXLookup | undefined
+let _uxLookup: AlertUxLookup | undefined
 
 async function uxLookup(
-  settings: IssueUXLookupSettings
-): Promise<IssueUXLookupResult> {
+  settings: AlertUxLookupSettings
+): Promise<AlertUxLookupResult> {
   while (_uxLookup === undefined) {
     // eslint-disable-next-line no-await-in-loop
     await wait(1, { signal: abortSignal })
