@@ -2,7 +2,9 @@
   "dependencies": {
     "@apideck/better-ajv-errors": "^0.3.6",
     "@cyclonedx/cdxgen": "^11.0.5",
-    "@inquirer/prompts": "^7.1.0",
+    "@inquirer/confirm": "^5.0.2",
+    "@inquirer/password": "^4.0.3",
+    "@inquirer/select": "^4.0.3",
     "@npmcli/promise-spawn": "^8.0.2",
     "@socketregistry/hyrious__bun.lockb": "1.0.5",
     "@socketregistry/yocto-spinner": "^1.0.1",
@@ -48,7 +50,9 @@
   },
   "external": {
     "@apideck/better-ajv-errors": "^0.3.6",
-    "@inquirer/prompts": "^7.1.0",
+    "@inquirer/confirm": "^5.0.2",
+    "@inquirer/password": "^4.0.3",
+    "@inquirer/select": "^4.0.3",
     "@npmcli/promise-spawn": "^8.0.2",
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",

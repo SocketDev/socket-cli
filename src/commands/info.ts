@@ -2,6 +2,7 @@ import colors from 'yoctocolors-cjs'
 import meow from 'meow'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 
+import { SOCKET_PUBLIC_API_KEY } from '../constants'
 import { commonFlags, outputFlags, validationFlags } from '../flags'
 import {
   handleApiCall,
@@ -12,7 +13,7 @@ import { InputError } from '../utils/errors'
 import { formatSeverityCount, getSeverityCount } from '../utils/format-issues'
 import { printFlagList } from '../utils/formatting'
 import { objectSome } from '../utils/objects'
-import { FREE_API_KEY, getDefaultKey, setupSdk } from '../utils/sdk'
+import { getDefaultKey, setupSdk } from '../utils/sdk'
 
 import type { SocketIssue } from '../utils/format-issues'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
@@ -133,7 +134,7 @@ async function fetchPackageData(
   { includeAllIssues }: Pick<CommandContext, 'includeAllIssues'>,
   spinner: Spinner
 ): Promise<void | PackageData> {
-  const socketSdk = await setupSdk(getDefaultKey() || FREE_API_KEY)
+  const socketSdk = await setupSdk(getDefaultKey() ?? SOCKET_PUBLIC_API_KEY)
   const result = await handleApiCall(
     socketSdk.getIssuesByNPMPackage(pkgName, pkgVersion),
     'looking up package'

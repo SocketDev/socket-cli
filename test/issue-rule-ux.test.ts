@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { createIssueUXLookup } from '../src/utils/issue-rules'
+import { createAlertUXLookup } from '../src/utils/issue-rules'
 
 describe('Issue Rule UX', () => {
   it('should properly defer', () => {
-    const noEntriesLookup = createIssueUXLookup({
+    const noEntriesLookup = createAlertUXLookup({
       defaults: {
         issueRules: {
           fromDeferString: {
@@ -58,7 +58,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'willError' }
+        alert: { type: 'willError' }
       }),
       {
         block: true,
@@ -71,7 +71,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'willIgnore' }
+        alert: { type: 'willIgnore' }
       }),
       {
         block: false,
@@ -84,7 +84,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'willWarn' }
+        alert: { type: 'willWarn' }
       }),
       {
         block: false,
@@ -97,7 +97,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'fromDeferString' }
+        alert: { type: 'fromDeferString' }
       }),
       {
         block: false,
@@ -110,7 +110,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'fromUndefinedAction' }
+        alert: { type: 'fromUndefinedAction' }
       }),
       {
         block: false,
@@ -123,7 +123,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'fromUndefinedIssueRule' }
+        alert: { type: 'fromUndefinedIssueRule' }
       }),
       {
         block: false,
@@ -136,7 +136,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'fromMiddleConfig' }
+        alert: { type: 'fromMiddleConfig' }
       }),
       {
         block: false,
@@ -145,7 +145,7 @@ describe('Issue Rule UX', () => {
     )
   })
   it('should use error UX when missing keys', () => {
-    const emptyLookup = createIssueUXLookup({
+    const emptyLookup = createAlertUXLookup({
       defaults: {
         issueRules: {}
       },
@@ -157,7 +157,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: '404' }
+        alert: { type: '404' }
       }),
       {
         block: true,
@@ -166,7 +166,7 @@ describe('Issue Rule UX', () => {
     )
   })
   it('should use error/ignore UX when having boolean values instead of config', () => {
-    const booleanLookup = createIssueUXLookup({
+    const booleanLookup = createAlertUXLookup({
       defaults: {
         issueRules: {
           // @ts-ignore backcompat
@@ -197,7 +197,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'defaultTrue' }
+        alert: { type: 'defaultTrue' }
       }),
       {
         block: true,
@@ -210,7 +210,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'orgTrue' }
+        alert: { type: 'orgTrue' }
       }),
       {
         block: true,
@@ -223,7 +223,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'defaultFalse' }
+        alert: { type: 'defaultFalse' }
       }),
       {
         block: false,
@@ -236,7 +236,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'orgFalse' }
+        alert: { type: 'orgFalse' }
       }),
       {
         block: false,
@@ -245,7 +245,7 @@ describe('Issue Rule UX', () => {
     )
   })
   it('should use the maximal strength on multiple settings entries', () => {
-    const multiSettings = createIssueUXLookup({
+    const multiSettings = createAlertUXLookup({
       defaults: {
         issueRules: {}
       },
@@ -293,7 +293,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'warn_then_error' }
+        alert: { type: 'warn_then_error' }
       }),
       {
         block: true,
@@ -306,7 +306,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'ignore_then_missing' }
+        alert: { type: 'ignore_then_missing' }
       }),
       {
         block: true,
@@ -319,7 +319,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'ignore_then_defer' }
+        alert: { type: 'ignore_then_defer' }
       }),
       {
         block: true,
@@ -328,7 +328,7 @@ describe('Issue Rule UX', () => {
     )
   })
   it('should shadow defaults', () => {
-    const shadowedLookup = createIssueUXLookup({
+    const shadowedLookup = createAlertUXLookup({
       defaults: {
         issueRules: {
           willWarn: {
@@ -358,7 +358,7 @@ describe('Issue Rule UX', () => {
           name: 'bar',
           version: '0.0.0'
         },
-        issue: { type: 'willWarn' }
+        alert: { type: 'willWarn' }
       }),
       {
         block: false,
