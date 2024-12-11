@@ -29,7 +29,7 @@ void (async () => {
   const rootPkgJson = require(rootPkgJsonPath)
 
   await updateNotifier({
-    name: rootPkgJson.name,
+    name: 'socket',
     version: rootPkgJson.version,
     ttl: 86_400_000 /* 24 hours in milliseconds */
   })
