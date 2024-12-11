@@ -51,6 +51,8 @@ const {
   overrides: pkgOverrides
 } = rootPackageJson
 
+const SOCKET_INTEROP = '_socketInterop'
+
 const builtinAliases = builtinModules.reduce((o, n) => {
   o[n] = `node:${n}`
   return o
@@ -62,6 +64,20 @@ const customResolver = nodeResolve({
   exportConditions: ['node'],
   preferBuiltins: true
 })
+
+const requireAssignmentsRegExp =
+  /(?<=\s*=\s*)require\(["'].+?["']\)(?=;?\r?\n)/g
+const checkRequireAssignmentRegExp = new RegExp(
+  requireAssignmentsRegExp.source,
+  ''
+)
+const checkSocketInteropUseRegExp = new RegExp(`\\b${SOCKET_INTEROP}\\b`)
+const danglingRequiresRegExp = /^\s*require\(["'].+?["']\);?\r?\n/gm
+const firstUseStrictRegExp = /'use strict';?/
+const oraSpinnersAssignmentsRegExp = /(?<=ora[^.]+\.spinners\s*=\s*)[$\w]+/g
+const requireUrlAssignmentRegExp =
+  /(?<=var +)[$\w]+(?= *= *require\('node:url'\))/
+const splitUrlRequiresRegExp = /require\('u' \+ 'rl'\)/g
 
 function isAncestorsExternal(id, depStats) {
   let currNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH)
@@ -154,12 +170,9 @@ export default function baseConfig(extendConfig = {}) {
           LATEST
         return false
       }
-      const parentNodeModulesIndex = parentId.lastIndexOf(
-        SLASH_NODE_MODULES_SLASH
-      )
-      if (parentNodeModulesIndex !== -1) {
-        const parentNameStart =
-          parentNodeModulesIndex + SLASH_NODE_MODULES_SLASH.length
+      const parentNmIndex = parentId.lastIndexOf(SLASH_NODE_MODULES_SLASH)
+      if (parentNmIndex !== -1) {
+        const parentNameStart = parentNmIndex + SLASH_NODE_MODULES_SLASH.length
         const parentNameEnd = getPackageNameEnd(parentId, parentNameStart)
         const {
           version,
@@ -216,30 +229,26 @@ export default function baseConfig(extendConfig = {}) {
         preventAssignment: false,
         values: builtinAliases
       }),
-      // Convert `require('u' + 'rl')` into something like `require$$2$3`.
+      // Try to convert `require('u' + 'rl')` into something like `require$$2$3`.
       socketModifyPlugin({
-        find: /require\('u' \+ 'rl'\)/g,
+        find: splitUrlRequiresRegExp,
         replace(match) {
-          return (
-            /(?<=var +)[$\w]+(?= *= *require\('node:url'\))/.exec(
-              this.input
-            )?.[0] ?? match
-          )
+          return requireUrlAssignmentRegExp.exec(this.input)?.[0] ?? match
         }
       }),
-      // Remove bare require calls, e.g. require calls not associated with an
-      // import binding:
+      // Remove dangling require calls, e.g. require calls not associated with
+      // an import binding:
       //   require('node:util')
       //   require('graceful-fs')
       socketModifyPlugin({
-        find: /^\s*require\(["'].+?["']\);?\r?\n/gm,
+        find: danglingRequiresRegExp,
         replace: ''
       }),
       // Fix incorrectly set "spinners" binding caused by a transpilation bug
       // https://github.com/sindresorhus/ora/blob/v8.1.1/index.js#L424
       // export {default as spinners} from 'cli-spinners'
       socketModifyPlugin({
-        find: /(?<=ora[^.]+\.spinners\s*=\s*)[$\w]+/g,
+        find: oraSpinnersAssignmentsRegExp,
         replace(match) {
           return (
             new RegExp(`(?<=${escapeRegExp(match)}\\s*=\\s*)[$\\w]+`).exec(
@@ -248,26 +257,28 @@ export default function baseConfig(extendConfig = {}) {
           )
         }
       }),
+      // Wrap require calls with SOCKET_INTEROP helper.
+      socketModifyPlugin({
+        find: requireAssignmentsRegExp,
+        replace: match => `${SOCKET_INTEROP}(${match})`
+      }),
       // Add CJS interop helper for "default" only exports.
       socketModifyPlugin({
-        find: /'use strict';?/,
-        replace: match => `${match}\n
-function _interop(e) {
-  let d
-  if (e) {
-    let c = 0
-    for (const k in e) {
-      d = c++ === 0 && k === 'default' ? e[k] : void 0
-      if (!d) break
-    }
+        find: firstUseStrictRegExp,
+        replace(match) {
+          return checkRequireAssignmentRegExp.test(this.input) ||
+            checkSocketInteropUseRegExp.test(this.input)
+            ? `${match}\n
+function ${SOCKET_INTEROP}(e) {
+  let c = 0
+  for (const k in e ?? {}) {
+    c = c === 0 && k === 'default' ? 1 : 0
+    if (!c) break
   }
-  return d ?? e
+  return c ? e.default : e
 }`
-      }),
-      // Wrap require calls with "_interop" helper.
-      socketModifyPlugin({
-        find: /(?<=\s*=\s*)require\(["'].+?["']\)(?=;?\r?\n)/g,
-        replace: match => `_interop(${match})`
+            : match
+        }
       }),
       commonjs({
         extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
