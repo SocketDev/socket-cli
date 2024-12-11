@@ -22,7 +22,8 @@ const cjsPluginSuffixRegExp =
 
 function getPackageName(string, start = 0) {
   const end = getPackageNameEnd(string, start)
-  return end === string.length ? string : string.slice(0, end)
+  const name = string.slice(start, end)
+  return isValidPackageName(name) ? name : ''
 }
 
 function getPackageNameEnd(string, start = 0) {
