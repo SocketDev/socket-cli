@@ -186,6 +186,8 @@
     "semver": "$semver",
     "set-function-length": "npm:@socketregistry/set-function-length@^1",
     "side-channel": "npm:@socketregistry/side-channel@^1",
+    "tiny-colors": "$yoctocolors-cjs",
+    "typedarray": "npm:@socketregistry/typedarray@^1",
     "yaml": "$yaml"
   },
   "resolutions": {
@@ -209,6 +211,8 @@
     "semver": "^7.6.3",
     "set-function-length": "npm:@socketregistry/set-function-length@^1",
     "side-channel": "npm:@socketregistry/side-channel@^1",
+    "tiny-colors": "npm:yoctocolors-cjs@^2.1.2",
+    "typedarray": "npm:@socketregistry/typedarray@^1",
     "yaml": "^2.6.0"
   },
   "engines": {
