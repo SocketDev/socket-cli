@@ -13,6 +13,7 @@ import semver from 'semver'
 
 import config from '@socketsecurity/config'
 import { isObject } from '@socketsecurity/registry/lib/objects'
+import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 
 import { createTTYServer } from './tty-server'
 import {
@@ -458,7 +459,7 @@ async function getPackagesAlerts(
         continue
       }
       const { version } = artifact
-      const name = `${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}`
+      const name = resolvePackageName(<any>artifact)
       const id = `${name}@${artifact.version}`
 
       let blocked = false
