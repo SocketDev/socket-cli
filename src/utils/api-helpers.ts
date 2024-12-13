@@ -2,13 +2,15 @@ import colors from 'yoctocolors-cjs'
 import { ErrorWithCause } from 'pony-cause'
 
 import { AuthError } from './errors'
-import { API_V0_URL } from '../constants'
+import constants from '../constants'
 
 import type {
   SocketSdkErrorType,
   SocketSdkOperations
 } from '@socketsecurity/sdk'
 import type { Spinner } from '@socketregistry/yocto-spinner'
+
+const { API_V0_URL } = constants
 
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,

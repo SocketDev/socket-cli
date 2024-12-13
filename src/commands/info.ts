@@ -2,7 +2,7 @@ import colors from 'yoctocolors-cjs'
 import meow from 'meow'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 
-import { SOCKET_PUBLIC_API_KEY } from '../constants'
+import constants from '../constants'
 import { commonFlags, outputFlags, validationFlags } from '../flags'
 import {
   handleApiCall,
@@ -19,6 +19,8 @@ import type { SocketIssue } from '../utils/format-issues'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { Spinner } from '@socketregistry/yocto-spinner'
+
+const { SOCKET_PUBLIC_API_KEY } = constants
 
 export const info: CliSubcommand = {
   description: 'Look up info regarding a package',

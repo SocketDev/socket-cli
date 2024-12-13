@@ -6,10 +6,11 @@ import colors from 'yoctocolors-cjs'
 import yargsParse from 'yargs-parser'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import { cdxgenBinPath, synpBinPath } from '../constants'
+import constants from '../constants'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
+const { cdxgenBinPath, synpBinPath } = constants
 const { execPath } = process
 
 const {

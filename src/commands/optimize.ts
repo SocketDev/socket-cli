@@ -25,10 +25,7 @@ import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import {
-  UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
-  distPath
-} from '../constants'
+import constants from '../constants'
 import { commonFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
 import { existsSync } from '../utils/fs'
@@ -45,6 +42,7 @@ import type { Spinner } from '@socketregistry/yocto-spinner'
 
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 
+const { UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE, distPath } = constants
 const COMMAND_TITLE = 'Socket Optimize'
 const OVERRIDES_FIELD_NAME = 'overrides'
 const NPM_OVERRIDE_PR_URL = 'https://github.com/npm/cli/pull/7025'

@@ -2,34 +2,27 @@ import { existsSync, realpathSync } from 'node:fs'
 import path from 'node:path'
 
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
-import constants from '@socketsecurity/registry/lib/constants'
-import semver from 'semver'
+import registryConstants from '@socketsecurity/registry/lib/constants'
 
-const { PACKAGE_JSON } = constants
+const {
+  kInternalsSymbol,
+  PACKAGE_JSON,
+  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
+    createConstantsObject
+  }
+} = registryConstants
 
-export const SUPPORTS_SYNC_ESM = semver.satisfies(
-  process.versions.node,
-  '>=22.12'
-)
+const API_V0_URL = 'https://api.socket.dev/v0'
 
-export const API_V0_URL = 'https://api.socket.dev/v0'
+const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 
-export const DIST_TYPE = SUPPORTS_SYNC_ESM ? 'module-sync' : 'require'
+const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 
-export const LOOP_SENTINEL = 1_000_000
-
-export const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
-
-export const SOCKET_PUBLIC_API_KEY =
-  'sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api'
-
-export const SOCKET_CLI_ISSUES_URL =
-  'https://github.com/SocketDev/socket-cli/issues'
-
-export const UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE =
+const UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE =
   'UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE'
 
-export const ENV = Object.freeze({
+const ENV = Object.freeze({
+  ...registryConstants.ENV,
   // Flag set by the optimize command to bypass the packagesHaveRiskyIssues check.
   [UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]: envAsBoolean(
     process.env[UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]
@@ -37,7 +30,7 @@ export const ENV = Object.freeze({
 })
 
 // Dynamically detect the rootPath so constants.ts can be used in tests.
-export const rootPath = (() => {
+const rootPath = (() => {
   let oldPath
   let currPath = realpathSync(__dirname)
   // Dirname stops when at the filepath root, e.g. '/' for posix and 'C:\\' for win32,
@@ -63,11 +56,64 @@ export const rootPath = (() => {
     `Socket CLI initialization error: rootPath cannot be resolved.\n\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
   )
 })()
-export const rootDistPath = path.join(rootPath, 'dist')
-export const rootBinPath = path.join(rootPath, 'bin')
-export const rootPkgJsonPath = path.join(rootPath, PACKAGE_JSON)
-export const nmBinPath = path.join(rootPath, 'node_modules/.bin')
-export const cdxgenBinPath = path.join(nmBinPath, 'cdxgen')
-export const distPath = path.join(rootDistPath, DIST_TYPE)
-export const shadowBinPath = path.join(rootPath, 'shadow', DIST_TYPE)
-export const synpBinPath = path.join(nmBinPath, 'synp')
+const rootDistPath = path.join(rootPath, 'dist')
+const rootBinPath = path.join(rootPath, 'bin')
+const rootPkgJsonPath = path.join(rootPath, PACKAGE_JSON)
+const nmBinPath = path.join(rootPath, 'node_modules/.bin')
+const cdxgenBinPath = path.join(nmBinPath, 'cdxgen')
+const synpBinPath = path.join(nmBinPath, 'synp')
+
+const LAZY_DIST_TYPE = () =>
+  registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? 'module-sync' : 'require'
+
+const lazyDistPath = () => path.join(rootDistPath, constants.DIST_TYPE)
+const lazyShadowBinPath = () =>
+  path.join(rootPath, 'shadow', constants.DIST_TYPE)
+
+const constants = <
+  {
+    readonly API_V0_URL: 'https://api.socket.dev/v0'
+    readonly ENV: typeof ENV
+    readonly DIST_TYPE: 'module-sync' | 'require'
+    readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
+    readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
+    readonly UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: 'UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE'
+    readonly cdxgenBinPath: string
+    readonly distPath: string
+    readonly nmBinPath: string
+    readonly rootBinPath: string
+    readonly rootDistPath: string
+    readonly rootPath: string
+    readonly rootPkgJsonPath: string
+    readonly shadowBinPath: string
+    readonly synpBinPath: string
+  } & typeof registryConstants
+>createConstantsObject(
+  {
+    API_V0_URL,
+    ENV,
+    DIST_TYPE: undefined,
+    NPM_REGISTRY_URL,
+    SOCKET_CLI_ISSUES_URL,
+    UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+    cdxgenBinPath,
+    distPath: undefined,
+    nmBinPath,
+    rootBinPath,
+    rootDistPath,
+    rootPath,
+    rootPkgJsonPath,
+    shadowBinPath: undefined,
+    synpBinPath
+  },
+  {
+    getters: {
+      DIST_TYPE: LAZY_DIST_TYPE,
+      distPath: lazyDistPath,
+      shadowBinPath: lazyShadowBinPath
+    },
+    mixin: registryConstants
+  }
+)
+
+export default constants

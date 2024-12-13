@@ -4,9 +4,10 @@ import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
 
-import { distPath, shadowBinPath } from '../constants'
+import constants from '../constants'
 import { installLinks } from './link'
 
+const { distPath, shadowBinPath } = constants
 const npxPath = installLinks(shadowBinPath, 'npx')
 const injectionPath = path.join(distPath, 'npm-injection.js')
 
