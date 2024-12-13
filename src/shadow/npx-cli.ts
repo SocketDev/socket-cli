@@ -15,8 +15,8 @@ process.exitCode = 1
 const spawnPromise = spawn(
   process.execPath,
   [
-    '--disable-warning',
-    'ExperimentalWarning',
+    // Lazily access constants.nodeNoWarningsFlags.
+    ...constants.nodeNoWarningsFlags,
     '--require',
     injectionPath,
     npxPath,

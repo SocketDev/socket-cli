@@ -2,11 +2,11 @@ import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
 
-import constant from '../constants'
+import constants from '../constants'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const { distPath } = constant
+const { distPath } = constants
 
 const description = 'npm wrapper functionality'
 
@@ -17,7 +17,12 @@ export const npm: CliSubcommand = {
     process.exitCode = 1
     const spawnPromise = spawn(
       process.execPath,
-      ['--disable-warning', 'ExperimentalWarning', wrapperPath, ...argv],
+      [
+        // Lazily access constants.nodeNoWarningsFlags.
+        ...constants.nodeNoWarningsFlags,
+        wrapperPath,
+        ...argv
+      ],
       { stdio: 'inherit' }
     )
     spawnPromise.process.on('exit', (code, signal) => {
