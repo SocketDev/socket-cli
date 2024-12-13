@@ -5,7 +5,7 @@ import path from 'node:path'
 import rl from 'node:readline'
 import { setTimeout as wait } from 'node:timers/promises'
 
-import confirm from '@inquirer/confirm'
+import { confirm } from '@socketsecurity/registry/lib/prompts'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 import isInteractive from 'is-interactive'
 import npa from 'npm-package-arg'
@@ -16,16 +16,7 @@ import { isObject } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 
 import { createTTYServer } from './tty-server'
-import {
-  API_V0_URL,
-  ENV,
-  LOOP_SENTINEL,
-  NPM_REGISTRY_URL,
-  SOCKET_CLI_ISSUES_URL,
-  SOCKET_PUBLIC_API_KEY,
-  UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
-  rootPath
-} from '../constants'
+import constants from '../constants'
 import { ColorOrMarkdown } from '../utils/color-or-markdown'
 import { createAlertUXLookup } from '../utils/alert-rules'
 import { isErrnoException } from '../utils/misc'
@@ -223,6 +214,16 @@ type RequireTransformer<T extends keyof KnownModules> = (
   mod: KnownModules[T]
 ) => KnownModules[T]
 
+const {
+  API_V0_URL,
+  ENV,
+  LOOP_SENTINEL,
+  NPM_REGISTRY_URL,
+  SOCKET_CLI_ISSUES_URL,
+  SOCKET_PUBLIC_API_KEY,
+  UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+  rootPath
+} = constants
 const POTENTIAL_BUG_ERROR_MESSAGE = `This is may be a bug with socket-npm related to changes to the npm CLI.\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
 
 const npmEntrypoint = realpathSync(process.argv[1]!)

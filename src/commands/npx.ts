@@ -2,9 +2,11 @@ import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
 
-import { distPath } from '../constants'
+import constants from '../constants'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
+
+const { distPath } = constants
 
 const description = 'npx wrapper functionality'
 

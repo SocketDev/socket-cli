@@ -1,15 +1,17 @@
-import password from '@inquirer/password'
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 import isInteractive from 'is-interactive'
 
+import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
-import { rootPkgJsonPath } from '../constants'
+import constants from '../constants'
 import { AuthError } from './errors'
 import { getSetting } from './settings'
 
 import type { SocketSdkOptions } from '@socketsecurity/sdk'
+
+const { rootPkgJsonPath } = constants
 
 // This API key should be stored globally for the duration of the CLI execution.
 let defaultKey: string | undefined

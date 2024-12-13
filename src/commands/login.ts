@@ -1,20 +1,18 @@
-import confirm from '@inquirer/confirm'
-import password from '@inquirer/password'
-import select from '@inquirer/select'
+import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 
 import isInteractive from 'is-interactive'
 import meow from 'meow'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
 import terminalLink from 'terminal-link'
 
-import { SOCKET_PUBLIC_API_KEY } from '../constants'
+import constants from '../constants'
 import { AuthError, InputError } from '../utils/errors'
 import { printFlagList } from '../utils/formatting'
 import { setupSdk } from '../utils/sdk'
 import { getSetting, updateSetting } from '../utils/settings'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
-import type { Separator } from '@inquirer/select'
+import type { Separator } from '@socketsecurity/registry/lib/prompts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 type Choice<Value> = {
@@ -28,6 +26,8 @@ type Choice<Value> = {
 type OrgChoice = Choice<string>
 
 type OrgChoices = (Separator | OrgChoice)[]
+
+const { SOCKET_PUBLIC_API_KEY } = constants
 
 const description = 'Socket API login'
 
