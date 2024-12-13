@@ -17,7 +17,12 @@ export const npx: CliSubcommand = {
     process.exitCode = 1
     const spawnPromise = spawn(
       process.execPath,
-      ['--disable-warning', 'ExperimentalWarning', wrapperPath, ...argv],
+      [
+        // Lazily access constants.nodeNoWarningsFlags.
+        ...constants.nodeNoWarningsFlags,
+        wrapperPath,
+        ...argv
+      ],
       { stdio: 'inherit' }
     )
     spawnPromise.process.on('exit', (code, signal) => {
