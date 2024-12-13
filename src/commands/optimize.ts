@@ -907,7 +907,7 @@ export const optimize: CliSubcommand = {
             [wrapperPath, 'install', '--silent'],
             npmSpawnOptions
           )
-          // TODO: This is a temporary workaround for an `npm ci` bug where it
+          // TODO: This is a temporary workaround for a `npm ci` bug where it
           // will error out after Socket Optimize generates a lock file. More
           // investigation is needed.
           await spawn(
