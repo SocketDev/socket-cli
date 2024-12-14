@@ -182,7 +182,7 @@ const removeAlias = (file: string): void => {
 }
 
 const checkSocketWrapperAlreadySetup = (file: string): boolean => {
-  const fileContent = fs.readFileSync(file, 'utf-8')
+  const fileContent = fs.readFileSync(file, 'utf8')
   const linesWithSocketAlias = fileContent
     .split('\n')
     .filter(
