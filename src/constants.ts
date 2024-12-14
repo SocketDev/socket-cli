@@ -1,4 +1,4 @@
-import { existsSync, realpathSync } from 'node:fs'
+import { realpathSync } from 'node:fs'
 import path from 'node:path'
 
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
@@ -29,33 +29,7 @@ const ENV = Object.freeze({
   )
 })
 
-// Dynamically detect the rootPath so constants.ts can be used in tests.
-const rootPath = (() => {
-  let oldPath
-  let currPath = realpathSync(__dirname)
-  // Dirname stops when at the filepath root, e.g. '/' for posix and 'C:\\' for win32,
-  // so `currPath` equal `oldPath`.
-  while (currPath !== oldPath) {
-    const pkgJsonPath = path.join(currPath, PACKAGE_JSON)
-    if (existsSync(pkgJsonPath)) {
-      try {
-        // Content matching REPLACED_WITH_SOCKET_PACKAGE_NAME is replaced by
-        // the @rollup/plugin-replace plugin used in .config/rollup.base.config.mjs
-        // with either 'socket' or '@socketsecurity/cli'.
-        if (
-          require(pkgJsonPath)?.name === 'REPLACED_WITH_SOCKET_PACKAGE_NAME'
-        ) {
-          return currPath
-        }
-      } catch {}
-    }
-    oldPath = currPath
-    currPath = path.dirname(currPath)
-  }
-  throw new TypeError(
-    `Socket CLI initialization error: rootPath cannot be resolved.\n\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
-  )
-})()
+const rootPath = path.resolve(realpathSync(__dirname), '..')
 const rootDistPath = path.join(rootPath, 'dist')
 const rootBinPath = path.join(rootPath, 'bin')
 const rootPkgJsonPath = path.join(rootPath, PACKAGE_JSON)
@@ -66,6 +40,7 @@ const synpBinPath = path.join(nmBinPath, 'synp')
 const LAZY_DIST_TYPE = () =>
   registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? 'module-sync' : 'require'
 
+const lazyConstants = () => constants
 const lazyDistPath = () => path.join(rootDistPath, constants.DIST_TYPE)
 const lazyShadowBinPath = () =>
   path.join(rootPath, 'shadow', constants.DIST_TYPE)
@@ -98,6 +73,7 @@ const constants = <
     SOCKET_CLI_ISSUES_URL,
     UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
     cdxgenBinPath,
+    constants: undefined,
     distPath: undefined,
     nmBinPath,
     rootBinPath,
@@ -110,6 +86,8 @@ const constants = <
   {
     getters: {
       DIST_TYPE: LAZY_DIST_TYPE,
+      // Preserve rollup chunk compatibility.
+      constants: lazyConstants,
       distPath: lazyDistPath,
       shadowBinPath: lazyShadowBinPath
     },

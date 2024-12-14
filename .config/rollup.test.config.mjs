@@ -14,7 +14,6 @@ const { ROLLUP_EXTERNAL_SUFFIX, SUPPORTS_SYNC_ESM, rootSrcPath } = constants
 export default () =>
   baseConfig({
     input: {
-      constants: `${rootSrcPath}/constants.ts`,
       misc: `${rootSrcPath}/utils/misc.ts`,
       'path-resolve': `${rootSrcPath}/utils/path-resolve.ts`
     },
