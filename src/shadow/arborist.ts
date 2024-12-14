@@ -224,6 +224,7 @@ const {
   UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
   rootPath
 } = constants
+
 const POTENTIAL_BUG_ERROR_MESSAGE = `This is may be a bug with socket-npm related to changes to the npm CLI.\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
 
 const npmEntrypoint = realpathSync(process.argv[1]!)

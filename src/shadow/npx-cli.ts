@@ -8,6 +8,7 @@ import constants from '../constants'
 import { installLinks } from './link'
 
 const { distPath, shadowBinPath } = constants
+
 const npxPath = installLinks(shadowBinPath, 'npx')
 const injectionPath = path.join(distPath, 'npm-injection.js')
 
