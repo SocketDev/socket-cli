@@ -66,7 +66,7 @@ const customResolver = nodeResolve({
 })
 
 const requireAssignmentsRegExp =
-  /(?<=\s*=\s*)require\(["'].+?["']\)(?=;?\r?\n)/g
+  /(?<=\s*=\s*)require\(["'](?!node:|@socket(?:registry|security)\/|\.).+?["']\)(?=;?\r?\n)/g
 const checkRequireAssignmentRegExp = new RegExp(
   requireAssignmentsRegExp.source,
   ''
@@ -216,13 +216,6 @@ export default function baseConfig(extendConfig = {}) {
       purgePolyfills.rollup({
         replacements: {}
       }),
-      // Convert REPLACED_WITH_SOCKET_PACKAGE_NAME to the Socket package name.
-      replace({
-        preventAssignment: false,
-        values: {
-          REPLACED_WITH_SOCKET_PACKAGE_NAME: rootPackageJson.name
-        }
-      }),
       // Convert un-prefixed built-in imports into "node:"" prefixed forms.
       replace({
         delimiters: ['(?<=(?:require\\(|from\\s*)["\'])', '(?=["\'])'],
@@ -257,6 +250,13 @@ export default function baseConfig(extendConfig = {}) {
           )
         }
       }),
+      commonjs({
+        extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
+        ignoreDynamicRequires: true,
+        ignoreGlobal: true,
+        ignoreTryCatch: true,
+        strictRequires: 'auto'
+      }),
       // Wrap require calls with SOCKET_INTEROP helper.
       socketModifyPlugin({
         find: requireAssignmentsRegExp,
@@ -280,13 +280,6 @@ function ${SOCKET_INTEROP}(e) {
             : match
         }
       }),
-      commonjs({
-        extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
-        ignoreDynamicRequires: true,
-        ignoreGlobal: true,
-        ignoreTryCatch: true,
-        strictRequires: 'auto'
-      }),
       ...(extendConfig.plugins ?? [])
     ]
   }
@@ -300,29 +293,33 @@ function ${SOCKET_INTEROP}(e) {
   ).map(o => ({
     ...o,
     chunkFileNames: '[name].js',
-    manualChunks(id) {
-      if (id.includes(SLASH_NODE_MODULES_SLASH)) {
+    manualChunks(id_) {
+      const id = normalizeId(id_)
+      if (
+        id.includes(SLASH_NODE_MODULES_SLASH) &&
+        !id.includes('@babel/runtime/')
+      ) {
         return 'vendor'
       }
     }
   }))
 
   // Replace hard-coded absolute paths in source with hard-coded relative paths.
-  const replacePlugin = replace({
-    delimiters: ['(?<=["\'])', '/'],
-    preventAssignment: false,
-    values: {
-      [rootPath]: '../../'
-    }
-  })
-  const replaceOutputPlugin = {
-    name: replacePlugin.name,
-    renderChunk: replacePlugin.renderChunk
-  }
+  const replaceAbsPathsOutputPlugin = (() => {
+    const { name, renderChunk } = replace({
+      delimiters: ['(?<=["\'])', '/'],
+      preventAssignment: false,
+      values: {
+        [rootPath]: '../../'
+      }
+    })
+    return { name, renderChunk }
+  })()
+
   for (const o of output) {
     o.plugins = [
       ...(Array.isArray(o.plugins) ? o.plugins : []),
-      replaceOutputPlugin
+      replaceAbsPathsOutputPlugin
     ]
   }
 

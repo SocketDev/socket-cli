@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 
 import spawn from '@npmcli/promise-spawn'
 
-import constants from './dist/constants'
+import constants from '../dist/constants'
 
 type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
   encoding?: BufferEncoding | undefined

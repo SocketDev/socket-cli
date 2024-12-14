@@ -1,4 +1,10 @@
-import { chmodSync, existsSync, writeFileSync } from 'node:fs'
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  readFileSync,
+  writeFileSync
+} from 'node:fs'
 import path from 'node:path'
 
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
@@ -26,15 +32,88 @@ const {
   rootSrcPath
 } = constants
 
+const CONSTANTS_JS = 'constants.js'
+
 const distModuleSyncPath = path.join(rootDistPath, 'module-sync')
 const distRequirePath = path.join(rootDistPath, 'require')
 
 const binBasenames = ['cli.js', 'npm-cli.js', 'npx-cli.js']
 const editablePkgJson = readPackageJsonSync(rootPath, { editable: true })
 
-function setBinPerm(filepath) {
-  // Make file chmod +x.
-  chmodSync(filepath, 0o755)
+function copyConstantsModuleSync(srcPath, destPath) {
+  copyFileSync(
+    path.join(srcPath, CONSTANTS_JS),
+    path.join(destPath, CONSTANTS_JS)
+  )
+}
+
+function modifyConstantsModuleExportsSync(distPath) {
+  const filepath = path.join(distPath, CONSTANTS_JS)
+  let code = readFileSync(filepath, 'utf8')
+  code = code
+    // Remove @babel/runtime helpers from code.
+    .replace(
+      /function getDefaultExportFromCjs[\s\S]+?constants\$\d+\.default = void 0;?\n/,
+      ''
+    )
+    // Remove @babel/runtime and @rollup/commonjs interop from code.
+    .replace(/^(?:exports.[$\w]+|[$\w]+\.default)\s*=.*(?:\n|$)/gm, '')
+  code = code + 'module.exports = constants\n'
+  writeFileSync(filepath, code, 'utf8')
+}
+
+function rewriteConstantsModuleSync(distPath) {
+  writeFileSync(
+    path.join(distPath, CONSTANTS_JS),
+    `'use strict'\n\nmodule.exports = require('../constants.js')\n`,
+    'utf8'
+  )
+}
+
+function setBinPermsSync(distPath) {
+  for (const binBasename of binBasenames) {
+    // Make file chmod +x.
+    chmodSync(path.join(distPath, binBasename), 0o755)
+  }
+}
+
+function updateDepStatsSync(depStats) {
+  const { content: pkgJson } = editablePkgJson
+  const oldDepStats = existsSync(depStatsPath)
+    ? readJsonSync(depStatsPath)
+    : undefined
+  Object.assign(depStats.dependencies, {
+    // Manually add @cyclonedx/cdxgen and synp as they are not directly
+    // referenced in the code but used through spawned processes.
+    '@cyclonedx/cdxgen': pkgJson.dependencies['@cyclonedx/cdxgen'],
+    synp: pkgJson.dependencies.synp,
+    // Assign old dep stats dependencies to preserve them.
+    ...oldDepStats?.dependencies
+  })
+  // Remove transitives from dependencies.
+  for (const key of Object.keys(oldDepStats?.transitives ?? {})) {
+    if (pkgJson.dependencies[key]) {
+      depStats.transitives[key] = pkgJson.dependencies[key]
+      depStats.external[key] = pkgJson.dependencies[key]
+      delete depStats.dependencies[key]
+    }
+  }
+  depStats.dependencies = toSortedObject(depStats.dependencies)
+  depStats.devDependencies = toSortedObject(depStats.devDependencies)
+  depStats.esm = toSortedObject(depStats.esm)
+  depStats.external = toSortedObject(depStats.external)
+  depStats.transitives = toSortedObject(depStats.transitives)
+  // Write dep stats.
+  writeFileSync(depStatsPath, `${formatObject(depStats)}\n`, 'utf8')
+  // Update dependencies with additional inlined modules.
+  editablePkgJson
+    .update({
+      dependencies: {
+        ...depStats.dependencies,
+        ...depStats.transitives
+      }
+    })
+    .saveSync()
 }
 
 export default () => {
@@ -76,9 +155,10 @@ export default () => {
     plugins: [
       {
         writeBundle() {
-          for (const binBasename of binBasenames) {
-            setBinPerm(path.join(distModuleSyncPath, binBasename))
-          }
+          setBinPermsSync(distModuleSyncPath)
+          copyConstantsModuleSync(distModuleSyncPath, rootDistPath)
+          modifyConstantsModuleExportsSync(rootDistPath)
+          rewriteConstantsModuleSync(distModuleSyncPath)
         }
       }
     ]
@@ -104,46 +184,9 @@ export default () => {
     plugins: [
       {
         writeBundle() {
-          const { content: pkgJson } = editablePkgJson
-          const oldDepStats = existsSync(depStatsPath)
-            ? readJsonSync(depStatsPath)
-            : undefined
-          const { depStats } = requireConfig.meta
-          Object.assign(depStats.dependencies, {
-            // Manually add @cyclonedx/cdxgen and synp as they are not directly
-            // referenced in the code but used through spawned processes.
-            '@cyclonedx/cdxgen': pkgJson.dependencies['@cyclonedx/cdxgen'],
-            synp: pkgJson.dependencies.synp,
-            // Assign old dep stats dependencies to preserve them.
-            ...oldDepStats?.dependencies
-          })
-          // Remove transitives from dependencies.
-          for (const key of Object.keys(oldDepStats?.transitives ?? {})) {
-            if (pkgJson.dependencies[key]) {
-              depStats.transitives[key] = pkgJson.dependencies[key]
-              depStats.external[key] = pkgJson.dependencies[key]
-              delete depStats.dependencies[key]
-            }
-          }
-          depStats.dependencies = toSortedObject(depStats.dependencies)
-          depStats.devDependencies = toSortedObject(depStats.devDependencies)
-          depStats.esm = toSortedObject(depStats.esm)
-          depStats.external = toSortedObject(depStats.external)
-          depStats.transitives = toSortedObject(depStats.transitives)
-          // Write dep stats.
-          writeFileSync(depStatsPath, `${formatObject(depStats)}\n`, 'utf8')
-          // Update dependencies with additional inlined modules.
-          editablePkgJson
-            .update({
-              dependencies: {
-                ...depStats.dependencies,
-                ...depStats.transitives
-              }
-            })
-            .saveSync()
-          for (const binBasename of binBasenames) {
-            setBinPerm(path.join(distRequirePath, binBasename))
-          }
+          setBinPermsSync(distRequirePath)
+          rewriteConstantsModuleSync(distRequirePath)
+          updateDepStatsSync(requireConfig.meta.depStats)
         }
       }
     ]
