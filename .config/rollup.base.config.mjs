@@ -293,15 +293,8 @@ function ${SOCKET_INTEROP}(e) {
   ).map(o => ({
     ...o,
     chunkFileNames: '[name].js',
-    manualChunks(id_) {
-      const id = normalizeId(id_)
-      if (
-        id.includes(SLASH_NODE_MODULES_SLASH) &&
-        !id.includes('@babel/runtime/')
-      ) {
-        return 'vendor'
-      }
-    }
+    manualChunks: id =>
+      id.includes(SLASH_NODE_MODULES_SLASH) ? 'vendor' : null
   }))
 
   // Replace hard-coded absolute paths in source with hard-coded relative paths.
