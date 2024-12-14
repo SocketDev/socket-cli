@@ -20,34 +20,19 @@
   },
   "exports": {
     "./bin/cli.js": {
-      "module-sync": {
-        "types": "./dist/module-sync/cli.d.ts",
-        "default": "./dist/module-sync/cli.js"
-      },
-      "require": {
-        "types": "./dist/require/cli.d.ts",
-        "default": "./dist/require/cli.js"
-      }
+      "types": "./dist/module-sync/cli.d.ts",
+      "module-sync": "./dist/module-sync/cli.js",
+      "require": "./dist/require/cli.js"
     },
     "./bin/npm-cli.js": {
-      "module-sync": {
-        "types": "./dist/module-sync/npm-cli.d.ts",
-        "default": "./dist/module-sync/npm-cli.js"
-      },
-      "require": {
-        "types": "./dist/require/npm-cli.d.ts",
-        "default": "./dist/require/npm-cli.js"
-      }
+      "types": "./dist/module-sync/npm-cli.d.ts",
+      "module-sync": "./dist/module-sync/npm-cli.js",
+      "require": "./dist/require/npm-cli.js"
     },
     "./bin/npx-cli.js": {
-      "module-sync": {
-        "types": "./dist/module-sync/npx-cli.d.ts",
-        "default": "./dist/module-sync/npx-cli.js"
-      },
-      "require": {
-        "types": "./dist/require/npx-cli.d.ts",
-        "default": "./dist/require/npx-cli.js"
-      }
+      "types": "./dist/module-sync/npx-cli.d.ts",
+      "module-sync": "./dist/module-sync/npx-cli.js",
+      "require": "./dist/require/npx-cli.js"
     },
     "./package.json": "./package.json",
     "./translations.json": "./translations.json"
