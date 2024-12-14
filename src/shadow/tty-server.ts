@@ -57,7 +57,7 @@ function createNonStandardTTYServer(): TTYSeverResult {
               const {
                 capabilities: { input: hasInput, output: hasOutput },
                 ipc_version: remote_ipc_version
-              } = JSON.parse(lineBuff.subarray(0, eolIndex).toString('utf-8'))
+              } = JSON.parse(lineBuff.subarray(0, eolIndex).toString('utf8'))
               lineBuff = null
               captured = true
               if (remote_ipc_version !== ipc_version) {

@@ -32,7 +32,7 @@ interface Settings {
 let settings: Settings = {}
 
 if (existsSync(settingsPath)) {
-  const raw = readFileSync(settingsPath, 'utf-8')
+  const raw = readFileSync(settingsPath, 'utf8')
   try {
     settings = JSON.parse(Buffer.from(raw, 'base64').toString())
   } catch {
