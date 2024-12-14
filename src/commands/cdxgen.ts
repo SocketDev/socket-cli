@@ -1,9 +1,9 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import spawn from '@npmcli/promise-spawn'
 import colors from 'yoctocolors-cjs'
 import yargsParse from 'yargs-parser'
+import { runBin } from '@socketsecurity/registry/lib/npm'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../constants'
@@ -11,8 +11,6 @@ import constants from '../constants'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
 const { cdxgenBinPath, synpBinPath } = constants
-
-const { execPath } = process
 
 const {
   SBOM_SIGN_ALGORITHM, // Algorithm. Example: RS512
@@ -176,11 +174,10 @@ export const cdxgen: CliSubcommand = {
         // Use synp to create a package-lock.json from the yarn.lock,
         // based on the node_modules folder, for a more accurate SBOM.
         try {
-          await spawn(
-            execPath,
-            [await fs.realpath(synpBinPath), '--source-file', './yarn.lock'],
-            { shell: true }
-          )
+          await runBin(await fs.realpath(synpBinPath), [
+            '--source-file',
+            './yarn.lock'
+          ])
           yargv.type = 'npm'
           cleanupPackageLock = true
         } catch {}
@@ -189,23 +186,18 @@ export const cdxgen: CliSubcommand = {
     if (yargv.output === undefined) {
       yargv.output = 'socket-cdx.json'
     }
-    await spawn(
-      execPath,
-      [await fs.realpath(cdxgenBinPath), ...argvToArray(yargv)],
-      {
-        env: {
-          NODE_ENV: '',
-          SBOM_SIGN_ALGORITHM,
-          SBOM_SIGN_PRIVATE_KEY,
-          SBOM_SIGN_PUBLIC_KEY
-        },
-        shell: true,
-        stdio: 'inherit'
-      }
-    )
+    await runBin(await fs.realpath(cdxgenBinPath), argvToArray(yargv), {
+      env: {
+        NODE_ENV: '',
+        SBOM_SIGN_ALGORITHM,
+        SBOM_SIGN_PRIVATE_KEY,
+        SBOM_SIGN_PUBLIC_KEY
+      },
+      stdio: 'inherit'
+    })
     if (cleanupPackageLock) {
       try {
-        await fs.unlink('./package-lock.json')
+        await fs.rm('./package-lock.json')
       } catch {}
     }
     const fullOutputPath = path.join(process.cwd(), yargv.output)

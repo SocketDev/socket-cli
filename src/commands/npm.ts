@@ -6,7 +6,7 @@ import constants from '../constants'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const { distPath } = constants
+const { distPath, execPath } = constants
 
 const description = 'npm wrapper functionality'
 
@@ -16,7 +16,7 @@ export const npm: CliSubcommand = {
     const wrapperPath = path.join(distPath, 'npm-cli.js')
     process.exitCode = 1
     const spawnPromise = spawn(
-      process.execPath,
+      execPath,
       [
         // Lazily access constants.nodeNoWarningsFlags.
         ...constants.nodeNoWarningsFlags,

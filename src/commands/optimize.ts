@@ -42,7 +42,8 @@ import type { Spinner } from '@socketregistry/yocto-spinner'
 
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 
-const { UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE, distPath } = constants
+const { UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE, distPath, execPath } =
+  constants
 
 const COMMAND_TITLE = 'Socket Optimize'
 const OVERRIDES_FIELD_NAME = 'overrides'
@@ -902,7 +903,7 @@ export const optimize: CliSubcommand = {
             }
           }
           await spawn(
-            process.execPath,
+            execPath,
             [wrapperPath, 'install', '--silent'],
             npmSpawnOptions
           )
@@ -910,7 +911,7 @@ export const optimize: CliSubcommand = {
           // will error out after Socket Optimize generates a lock file. More
           // investigation is needed.
           await spawn(
-            process.execPath,
+            execPath,
             [
               wrapperPath,
               'install',
