@@ -104,10 +104,11 @@ function isEsmId(id_, parentId_) {
       pkgJson.type === 'module' &&
       !entryExports?.require &&
       !entryExports?.node?.require &&
-      !entryExports?.node?.default?.endsWith('.cjs') &&
+      !entryExports?.node?.default?.endsWith?.('.cjs') &&
       !entryExports?.['.']?.require &&
       !entryExports?.['.']?.node?.require &&
-      !entryExports?.['.']?.node?.default?.endsWith('.cjs')
+      !entryExports?.['.']?.node?.default?.endsWith?.('.cjs') &&
+      !entryExports?.['.']?.node?.default?.default?.endsWith?.('.cjs')
     ) {
       return true
     }

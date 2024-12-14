@@ -54,12 +54,9 @@ function modifyConstantsModuleExportsSync(distPath) {
   const filepath = path.join(distPath, CONSTANTS_JS)
   let code = readFileSync(filepath, 'utf8')
   code = code
-    // Remove @babel/runtime helpers from code.
-    .replace(
-      /function getDefaultExportFromCjs[\s\S]+?constants\$\d+\.default = void 0;?\n/,
-      ''
-    )
-    // Remove @babel/runtime and @rollup/commonjs interop from code.
+    // Remove @rollup/commonjs interop from code.
+    .replace(/var constants\$\d+ = {};?\n+/, '')
+    .replace(/Object\.defineProperty\(constants\$\d+[\s\S]+?\}\);?\n/, '')
     .replace(/^(?:exports.[$\w]+|[$\w]+\.default)\s*=.*(?:\n|$)/gm, '')
   code = code + 'module.exports = constants\n'
   writeFileSync(filepath, code, 'utf8')
