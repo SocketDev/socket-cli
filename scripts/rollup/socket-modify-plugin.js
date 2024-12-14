@@ -27,6 +27,7 @@ function socketModifyPlugin({
             ? Reflect.apply(replace, match, match)
             : String(replace)
         )
+        // Exit early if not a global regexp.
         if (!global) {
           break
         }

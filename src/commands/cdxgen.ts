@@ -11,6 +11,7 @@ import constants from '../constants'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
 const { cdxgenBinPath, synpBinPath } = constants
+
 const { execPath } = process
 
 const {

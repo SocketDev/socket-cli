@@ -92,6 +92,7 @@ const constants = <
   {
     API_V0_URL,
     ENV,
+    // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
     NPM_REGISTRY_URL,
     SOCKET_CLI_ISSUES_URL,

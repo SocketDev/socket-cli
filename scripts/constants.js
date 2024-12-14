@@ -30,6 +30,7 @@ const lazyDistPath = () => path.join(rootDistPath, constants.DIST_TYPE)
 
 const constants = createConstantsObject(
   {
+    // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
     ROLLUP_ENTRY_SUFFIX,
     ROLLUP_EXTERNAL_SUFFIX,
