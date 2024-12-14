@@ -3,9 +3,12 @@ import {
   copyFileSync,
   existsSync,
   readFileSync,
+  rmSync,
   writeFileSync
 } from 'node:fs'
 import path from 'node:path'
+
+import { globSync as tinyGlobSync } from 'tinyglobby'
 
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 import {
@@ -60,6 +63,15 @@ function modifyConstantsModuleExportsSync(distPath) {
     .replace(/^(?:exports.[$\w]+|[$\w]+\.default)\s*=.*(?:\n|$)/gm, '')
   code = code + 'module.exports = constants\n'
   writeFileSync(filepath, code, 'utf8')
+}
+
+function removeDtsFilesSync(distPath) {
+  for (const filepath of tinyGlobSync(['**/*.d.ts'], {
+    absolute: true,
+    cwd: distPath
+  })) {
+    rmSync(filepath)
+  }
 }
 
 function rewriteConstantsModuleSync(distPath) {
@@ -185,6 +197,7 @@ export default () => {
       {
         writeBundle() {
           setBinPermsSync(distRequirePath)
+          removeDtsFilesSync(distRequirePath)
           rewriteConstantsModuleSync(distRequirePath)
           updateDepStatsSync(requireConfig.meta.depStats)
         }
