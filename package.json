@@ -51,11 +51,11 @@
     "lint:fix": "npm run lint -- --fix && npm run lint:fix:fast",
     "lint:fix:fast": "prettier --cache --log-level warn --write .",
     "prepare": "husky && custompatch",
-    "test": "run-s check build:* test:*",
-    "test:c8": "c8 --reporter=none node --test 'test/socket-npm.test.cjs'",
+    "test": "run-s check build:* test:* test:coverage:*",
     "test-ci": "run-s build:* test:*",
     "test:unit": "tap-run",
-    "test:coverage": "cp -r .tap/coverage/*.json coverage/tmp && c8 --reporter=lcov --reporter=text --include 'dist/{module-sync,require}/*.js' --exclude 'dist/require/vendor.js' report"
+    "test:coverage:c8": "c8 --reporter=none node --test 'test/socket-npm.test.cjs'",
+    "test:coverage:merge": "cp -r .tap/coverage/*.json coverage/tmp && c8 --reporter=lcov --reporter=text --include 'dist/{module-sync,require}/*.js' --exclude 'dist/require/vendor.js' report"
   },
   "dependencies": {
     "@apideck/better-ajv-errors": "^0.3.6",

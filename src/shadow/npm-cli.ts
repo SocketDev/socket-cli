@@ -9,7 +9,7 @@ import constants from '../constants'
 import { installLinks } from './link'
 import { findRoot } from '../utils/path-resolve'
 
-const { distPath, shadowBinPath } = constants
+const { distPath, execPath, shadowBinPath } = constants
 
 const npmPath = installLinks(shadowBinPath, 'npm')
 const injectionPath = path.join(distPath, 'npm-injection.js')
@@ -40,7 +40,7 @@ if (
 
 process.exitCode = 1
 const spawnPromise = spawn(
-  process.execPath,
+  execPath,
   [
     // Lazily access constants.nodeNoWarningsFlags.
     ...constants.nodeNoWarningsFlags,

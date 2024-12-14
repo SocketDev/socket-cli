@@ -8,10 +8,10 @@ const { describe, it } = require('node:test')
 const spawn = require('@npmcli/promise-spawn')
 
 const constants = require('../scripts/constants')
-const { distPath } = constants
+const { distPath, execPath } = constants
 
-const testPath = __dirname
 const entryPath = path.join(distPath, 'cli.js')
+const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 // These aliases are defined in package.json.
@@ -28,7 +28,7 @@ for (const npm of ['npm8', 'npm10']) {
     it('should bail on new typosquat', async () => {
       await assert.rejects(
         () =>
-          spawn(process.execPath, [entryPath, 'npm', 'install', 'bowserify'], {
+          spawn(execPath, [entryPath, 'npm', 'install', 'bowserify'], {
             cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
             encoding: 'utf8',
             env: {

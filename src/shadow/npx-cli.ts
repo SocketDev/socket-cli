@@ -7,14 +7,14 @@ import spawn from '@npmcli/promise-spawn'
 import constants from '../constants'
 import { installLinks } from './link'
 
-const { distPath, shadowBinPath } = constants
+const { distPath, execPath, shadowBinPath } = constants
 
 const npxPath = installLinks(shadowBinPath, 'npx')
 const injectionPath = path.join(distPath, 'npm-injection.js')
 
 process.exitCode = 1
 const spawnPromise = spawn(
-  process.execPath,
+  execPath,
   [
     // Lazily access constants.nodeNoWarningsFlags.
     ...constants.nodeNoWarningsFlags,
