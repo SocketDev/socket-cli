@@ -1,11 +1,4 @@
-import {
-  chmodSync,
-  copyFileSync,
-  existsSync,
-  readFileSync,
-  rmSync,
-  writeFileSync
-} from 'node:fs'
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { globSync as tinyGlobSync } from 'tinyglobby'
@@ -36,31 +29,13 @@ const {
 } = constants
 
 const CONSTANTS_JS = 'constants.js'
+const CONSTANTS_STUB_CODE = `'use strict'\n\nmodule.exports = require('../${CONSTANTS_JS}')\n`
 
+const distConstantsPath = path.join(rootDistPath, CONSTANTS_JS)
 const distModuleSyncPath = path.join(rootDistPath, 'module-sync')
 const distRequirePath = path.join(rootDistPath, 'require')
 
-const binBasenames = ['cli.js', 'npm-cli.js', 'npx-cli.js']
 const editablePkgJson = readPackageJsonSync(rootPath, { editable: true })
-
-function copyConstantsModuleSync(srcPath, destPath) {
-  copyFileSync(
-    path.join(srcPath, CONSTANTS_JS),
-    path.join(destPath, CONSTANTS_JS)
-  )
-}
-
-function modifyConstantsModuleExportsSync(distPath) {
-  const filepath = path.join(distPath, CONSTANTS_JS)
-  let code = readFileSync(filepath, 'utf8')
-  code = code
-    // Remove @rollup/commonjs interop from code.
-    .replace(/var constants\$\d+ = {};?\n+/, '')
-    .replace(/Object\.defineProperty\(constants\$\d+[\s\S]+?\}\);?\n/, '')
-    .replace(/^(?:exports.[$\w]+|[$\w]+\.default)\s*=.*(?:\n|$)/gm, '')
-  code = code + 'module.exports = constants\n'
-  writeFileSync(filepath, code, 'utf8')
-}
 
 function removeDtsFilesSync(distPath) {
   for (const filepath of tinyGlobSync(['**/*.d.ts'], {
@@ -68,21 +43,6 @@ function removeDtsFilesSync(distPath) {
     cwd: distPath
   })) {
     rmSync(filepath)
-  }
-}
-
-function rewriteConstantsModuleSync(distPath) {
-  writeFileSync(
-    path.join(distPath, CONSTANTS_JS),
-    `'use strict'\n\nmodule.exports = require('../constants.js')\n`,
-    'utf8'
-  )
-}
-
-function setBinPermsSync(distPath) {
-  for (const binBasename of binBasenames) {
-    // Make file chmod +x.
-    chmodSync(path.join(distPath, binBasename), 0o755)
   }
 }
 
@@ -129,8 +89,8 @@ export default () => {
   const moduleSyncConfig = baseConfig({
     input: {
       cli: `${rootSrcPath}/cli.ts`,
-      'npm-cli': `${rootSrcPath}/shadow/npm-cli.ts`,
-      'npx-cli': `${rootSrcPath}/shadow/npx-cli.ts`,
+      constants: `${rootSrcPath}/constants.ts`,
+      'shadow-bin': `${rootSrcPath}/shadow/shadow-bin.ts`,
       'npm-injection': `${rootSrcPath}/shadow/npm-injection.ts`
     },
     output: [
@@ -163,11 +123,13 @@ export default () => {
     },
     plugins: [
       {
-        writeBundle() {
-          setBinPermsSync(distModuleSyncPath)
-          copyConstantsModuleSync(distModuleSyncPath, rootDistPath)
-          modifyConstantsModuleExportsSync(rootDistPath)
-          rewriteConstantsModuleSync(distModuleSyncPath)
+        generateBundle(_options, bundle) {
+          const constantsBundle = bundle[CONSTANTS_JS]
+          if (constantsBundle) {
+            mkdirSync(rootDistPath, { recursive: true })
+            writeFileSync(distConstantsPath, constantsBundle.code, 'utf8')
+            bundle[CONSTANTS_JS].code = CONSTANTS_STUB_CODE
+          }
         }
       }
     ]
@@ -176,8 +138,8 @@ export default () => {
   const requireConfig = baseConfig({
     input: {
       cli: `${rootSrcPath}/cli.ts`,
-      'npm-cli': `${rootSrcPath}/shadow/npm-cli.ts`,
-      'npx-cli': `${rootSrcPath}/shadow/npx-cli.ts`,
+      constants: `${rootSrcPath}/constants.ts`,
+      'shadow-bin': `${rootSrcPath}/shadow/shadow-bin.ts`,
       'npm-injection': `${rootSrcPath}/shadow/npm-injection.ts`
     },
     output: [
@@ -192,10 +154,13 @@ export default () => {
     ],
     plugins: [
       {
+        generateBundle(_options, bundle) {
+          if (bundle[CONSTANTS_JS]) {
+            bundle[CONSTANTS_JS].code = CONSTANTS_STUB_CODE
+          }
+        },
         writeBundle() {
-          setBinPermsSync(distRequirePath)
           removeDtsFilesSync(distRequirePath)
-          rewriteConstantsModuleSync(distRequirePath)
           updateDepStatsSync(requireConfig.meta.depStats)
         }
       }

@@ -2,4 +2,5 @@
 'use strict'
 
 const constants = require('../dist/constants')
-require(`../dist/${constants.DIST_TYPE}/npm-cli.js`)
+const shadowBin = require(`../dist/${constants.DIST_TYPE}/shadow-bin.js`)
+shadowBin('npm')

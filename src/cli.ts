@@ -2,9 +2,9 @@
 
 import { pathToFileURL } from 'node:url'
 
-import colors from 'yoctocolors-cjs'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
+import colors from 'yoctocolors-cjs'
 
 import * as cliCommands from './commands'
 import constants from './constants'
@@ -28,11 +28,9 @@ function camelToHyphen(str: string): string {
 
 // TODO: Add autocompletion using https://socket.dev/npm/package/omelette
 void (async () => {
-  const rootPkgJson = require(rootPkgJsonPath)
-
   await updateNotifier({
     name: 'socket',
-    version: rootPkgJson.version,
+    version: require(rootPkgJsonPath).version,
     ttl: 86_400_000 /* 24 hours in milliseconds */
   })
 

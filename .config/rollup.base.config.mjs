@@ -53,6 +53,8 @@ const {
 
 const SOCKET_INTEROP = '_socketInterop'
 
+const constantsSrcPath = path.join(rootSrcPath, 'constants.ts')
+
 const builtinAliases = builtinModules.reduce((o, n) => {
   o[n] = `node:${n}`
   return o
@@ -251,6 +253,7 @@ export default function baseConfig(extendConfig = {}) {
         }
       }),
       commonjs({
+        defaultIsModuleExports: true,
         extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
         ignoreDynamicRequires: true,
         ignoreGlobal: true,
@@ -273,7 +276,7 @@ function ${SOCKET_INTEROP}(e) {
   let c = 0
   for (const k in e ?? {}) {
     c = c === 0 && k === 'default' ? 1 : 0
-    if (!c) break
+    if (!c && k !== '__esModule') break
   }
   return c ? e.default : e
 }`
@@ -293,8 +296,16 @@ function ${SOCKET_INTEROP}(e) {
   ).map(o => ({
     ...o,
     chunkFileNames: '[name].js',
-    manualChunks: id_ =>
-      normalizeId(id_).includes(SLASH_NODE_MODULES_SLASH) ? 'vendor' : null
+    manualChunks: id_ => {
+      const id = normalizeId(id_)
+      if (id === constantsSrcPath) {
+        return 'constants'
+      }
+      if (id.includes(SLASH_NODE_MODULES_SLASH)) {
+        return 'vendor'
+      }
+      return null
+    }
   }))
 
   // Replace hard-coded absolute paths in source with hard-coded relative paths.

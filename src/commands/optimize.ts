@@ -42,7 +42,7 @@ import type { Spinner } from '@socketregistry/yocto-spinner'
 
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 
-const { UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE, distPath, execPath } =
+const { UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE, execPath, rootBinPath } =
   constants
 
 const COMMAND_TITLE = 'Socket Optimize'
@@ -894,7 +894,7 @@ export const optimize: CliSubcommand = {
       spinner.start(`Updating ${lockName}...`)
       try {
         if (isNpm) {
-          const wrapperPath = path.join(distPath, 'npm-cli.js')
+          const wrapperPath = path.join(rootBinPath, 'npm-cli.js')
           const npmSpawnOptions: Parameters<typeof spawn>[2] = {
             stdio: 'ignore',
             env: {

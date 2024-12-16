@@ -23,21 +23,13 @@ const babelConfigPath = path.join(rootConfigPath, 'babel.config.js')
 const depStatsPath = path.join(rootPath, '.dep-stats.json')
 const tsconfigPath = path.join(rootConfigPath, 'tsconfig.rollup.json')
 
-const LAZY_DIST_TYPE = () =>
-  registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? 'module-sync' : 'require'
-
-const lazyDistPath = () => path.join(rootDistPath, constants.DIST_TYPE)
-
 const constants = createConstantsObject(
   {
-    // Lazily defined values are initialized as `undefined` to keep their key order.
-    DIST_TYPE: undefined,
     ROLLUP_ENTRY_SUFFIX,
     ROLLUP_EXTERNAL_SUFFIX,
     SLASH_NODE_MODULES_SLASH,
     babelConfigPath,
     depStatsPath,
-    distPath: undefined,
     rootConfigPath,
     rootDistPath,
     rootPackageJsonPath,
@@ -46,10 +38,6 @@ const constants = createConstantsObject(
     tsconfigPath
   },
   {
-    getters: {
-      DIST_TYPE: LAZY_DIST_TYPE,
-      distPath: lazyDistPath
-    },
     mixin: registryConstants
   }
 )

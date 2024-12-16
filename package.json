@@ -21,18 +21,15 @@
   "exports": {
     "./bin/cli.js": {
       "types": "./dist/module-sync/cli.d.ts",
-      "module-sync": "./dist/module-sync/cli.js",
-      "require": "./dist/require/cli.js"
+      "default": "./dist/cli.js"
     },
     "./bin/npm-cli.js": {
       "types": "./dist/module-sync/npm-cli.d.ts",
-      "module-sync": "./dist/module-sync/npm-cli.js",
-      "require": "./dist/require/npm-cli.js"
+      "default": "./dist/npm-cli.js"
     },
     "./bin/npx-cli.js": {
       "types": "./dist/module-sync/npx-cli.d.ts",
-      "module-sync": "./dist/module-sync/npx-cli.js",
-      "require": "./dist/require/npx-cli.js"
+      "default": "./dist/npx-cli.js"
     },
     "./package.json": "./package.json",
     "./translations.json": "./translations.json"
@@ -70,6 +67,7 @@
     "blessed-contrib": "^4.11.0",
     "browserslist": "4.24.2",
     "chalk-table": "^1.0.2",
+    "cmd-shim": "^7.0.0",
     "has-flag": "^4.0.0",
     "hpagent": "^1.2.0",
     "ignore": "^6.0.2",
@@ -89,7 +87,6 @@
     "@babel/plugin-proposal-export-default-from": "^7.25.9",
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
     "@babel/plugin-transform-export-namespace-from": "^7.25.9",
-    "@babel/plugin-transform-modules-commonjs": "^7.26.3",
     "@babel/plugin-transform-runtime": "^7.25.9",
     "@babel/preset-env": "^7.26.0",
     "@babel/preset-typescript": "^7.26.0",
@@ -103,6 +100,7 @@
     "@rollup/pluginutils": "^5.1.3",
     "@tapjs/run": "^4.0.1",
     "@types/blessed": "^0.1.25",
+    "@types/cmd-shim": "^5.0.2",
     "@types/micromatch": "^4.0.9",
     "@types/mocha": "^10.0.10",
     "@types/mock-fs": "^4.13.4",
@@ -203,6 +201,7 @@
   "files": [
     "bin/**",
     "dist/**",
+    "shadow-bin/**",
     "translations.json"
   ]
 }
