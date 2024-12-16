@@ -35,15 +35,13 @@ const rootBinPath = path.join(rootPath, 'bin')
 const rootPkgJsonPath = path.join(rootPath, PACKAGE_JSON)
 const nmBinPath = path.join(rootPath, 'node_modules/.bin')
 const cdxgenBinPath = path.join(nmBinPath, 'cdxgen')
+const shadowBinPath = path.join(rootPath, 'shadow-bin')
 const synpBinPath = path.join(nmBinPath, 'synp')
 
 const LAZY_DIST_TYPE = () =>
   registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? 'module-sync' : 'require'
 
-const lazyConstants = () => constants
 const lazyDistPath = () => path.join(rootDistPath, constants.DIST_TYPE)
-const lazyShadowBinPath = () =>
-  path.join(rootPath, 'shadow', constants.DIST_TYPE)
 
 const constants = <
   {
@@ -73,23 +71,19 @@ const constants = <
     SOCKET_CLI_ISSUES_URL,
     UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
     cdxgenBinPath,
-    constants: undefined,
     distPath: undefined,
     nmBinPath,
     rootBinPath,
     rootDistPath,
     rootPath,
     rootPkgJsonPath,
-    shadowBinPath: undefined,
+    shadowBinPath,
     synpBinPath
   },
   {
     getters: {
       DIST_TYPE: LAZY_DIST_TYPE,
-      // Preserve rollup chunk compatibility.
-      constants: lazyConstants,
-      distPath: lazyDistPath,
-      shadowBinPath: lazyShadowBinPath
+      distPath: lazyDistPath
     },
     mixin: registryConstants
   }

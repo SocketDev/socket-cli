@@ -4,15 +4,15 @@ import { describe, it } from 'node:test'
 
 import spawn from '@npmcli/promise-spawn'
 
-import constants from '../dist/constants'
+import constants from '../dist/constants.js'
 
 type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
   encoding?: BufferEncoding | undefined
 }
 
-const { distPath, execPath } = constants
+const { execPath, rootBinPath } = constants
 
-const entryPath = path.join(distPath, 'cli.js')
+const entryPath = path.join(rootBinPath, 'cli.js')
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 

@@ -176,6 +176,7 @@ module.exports = [
     rules: {
       ...nodePlugin.configs['flat/recommended-script'].rules,
       'n/exports-style': ['error', 'module.exports'],
+      'n/no-missing-require': ['off'],
       // The n/no-unpublished-bin rule does does not support non-trivial glob
       // patterns used in package.json "files" fields. In those cases we simplify
       // the glob patterns used.

@@ -7,10 +7,10 @@ const { describe, it } = require('node:test')
 
 const spawn = require('@npmcli/promise-spawn')
 
-const constants = require('../scripts/constants')
-const { distPath, execPath } = constants
+const constants = require('../dist/constants.js')
+const { execPath, rootBinPath } = constants
 
-const entryPath = path.join(distPath, 'cli.js')
+const entryPath = path.join(rootBinPath, 'cli.js')
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
