@@ -4,6 +4,28 @@ import path from 'node:path'
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 import registryConstants from '@socketsecurity/registry/lib/constants'
 
+type RegistryEnv = typeof registryConstants.ENV
+
+type Constants = {
+  readonly API_V0_URL: 'https://api.socket.dev/v0'
+  readonly ENV: RegistryEnv & {
+    UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
+  }
+  readonly DIST_TYPE: 'module-sync' | 'require'
+  readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
+  readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
+  readonly UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: 'UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE'
+  readonly cdxgenBinPath: string
+  readonly distPath: string
+  readonly nmBinPath: string
+  readonly rootBinPath: string
+  readonly rootDistPath: string
+  readonly rootPath: string
+  readonly rootPkgJsonPath: string
+  readonly shadowBinPath: string
+  readonly synpBinPath: string
+} & typeof registryConstants
+
 const {
   kInternalsSymbol,
   PACKAGE_JSON,
@@ -21,7 +43,7 @@ const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE =
   'UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE'
 
-const ENV = Object.freeze({
+const ENV: Constants['ENV'] = Object.freeze({
   ...registryConstants.ENV,
   // Flag set by the optimize command to bypass the packagesHaveRiskyIssues check.
   [UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]: envAsBoolean(
@@ -43,25 +65,7 @@ const LAZY_DIST_TYPE = () =>
 
 const lazyDistPath = () => path.join(rootDistPath, constants.DIST_TYPE)
 
-const constants = <
-  {
-    readonly API_V0_URL: 'https://api.socket.dev/v0'
-    readonly ENV: typeof ENV
-    readonly DIST_TYPE: 'module-sync' | 'require'
-    readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
-    readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
-    readonly UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: 'UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE'
-    readonly cdxgenBinPath: string
-    readonly distPath: string
-    readonly nmBinPath: string
-    readonly rootBinPath: string
-    readonly rootDistPath: string
-    readonly rootPath: string
-    readonly rootPkgJsonPath: string
-    readonly shadowBinPath: string
-    readonly synpBinPath: string
-  } & typeof registryConstants
->createConstantsObject(
+const constants = <Constants>createConstantsObject(
   {
     API_V0_URL,
     ENV,
