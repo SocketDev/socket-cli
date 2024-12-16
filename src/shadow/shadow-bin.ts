@@ -27,6 +27,8 @@ export default async function shadow(binName: 'npm' | 'npx') {
     const npmEntrypoint = realpathSync(binPath)
     const npmRootPath = findRoot(path.dirname(npmEntrypoint))
     if (npmRootPath === undefined) {
+      // The exit code 127 indicates that the command or binary being executed
+      // could not be found.
       process.exit(127)
     }
     const npmDepPath = path.join(npmRootPath, 'node_modules')
