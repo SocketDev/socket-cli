@@ -13,9 +13,11 @@ export async function installLinks(
   binName: 'npm' | 'npx'
 ): Promise<string> {
   // Find package manager being shadowed by this process.
-  const bins = await which(binName, {
-    all: true
-  })
+  const bins =
+    (await which(binName, {
+      all: true,
+      nothrow: true
+    })) ?? []
   let shadowIndex = -1
   const binPath = bins.find((binPath, i) => {
     // Skip our bin directory if it's in the front.

@@ -6,7 +6,7 @@ import constants from '../constants'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const { execPath, rootBinPath } = constants
+const { abortSignal, execPath, rootBinPath } = constants
 
 const description = 'npx wrapper functionality'
 
@@ -23,7 +23,10 @@ export const npx: CliSubcommand = {
         wrapperPath,
         ...argv
       ],
-      { stdio: 'inherit' }
+      {
+        abortSignal,
+        stdio: 'inherit'
+      }
     )
     spawnPromise.process.on('exit', (code, signal) => {
       if (signal) {

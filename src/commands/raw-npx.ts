@@ -1,10 +1,13 @@
 import spawn from '@npmcli/promise-spawn'
 import meow from 'meow'
 
+import constants from '../constants'
 import { commonFlags, validationFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
+
+const { abortSignal } = constants
 
 export const rawNpx: CliSubcommand = {
   description: 'Temporarily disable the Socket npm/npx wrapper',
@@ -55,6 +58,7 @@ async function setupCommand(
     return
   }
   const spawnPromise = spawn('npx', [argv.join(' ')], {
+    signal: abortSignal,
     stdio: 'inherit'
   })
   spawnPromise.process.on('exit', (code, signal) => {

@@ -8,7 +8,7 @@ const { describe, it } = require('node:test')
 const spawn = require('@npmcli/promise-spawn')
 
 const constants = require('../dist/constants.js')
-const { execPath, rootBinPath } = constants
+const { abortSignal, execPath, rootBinPath } = constants
 
 const entryPath = path.join(rootBinPath, 'cli.js')
 const testPath = __dirname
@@ -21,6 +21,7 @@ for (const npm of ['npm8', 'npm10']) {
 
   spawnSync('npm', ['install', '--silent'], {
     cwd: npmPath,
+    signal: abortSignal,
     stdio: 'ignore'
   })
 
@@ -35,7 +36,8 @@ for (const npm of ['npm8', 'npm10']) {
               // Make sure we don't borrow TTY from parent.
               SOCKET_SECURITY_TTY_IPC: undefined,
               PATH: `${npmBinPath}:${process.env.PATH}`
-            }
+            },
+            signal: abortSignal
           }),
         e => e?.stderr.includes('Unable to prompt')
       )

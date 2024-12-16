@@ -7,12 +7,15 @@ import constants from '../constants'
 import { installLinks } from './link'
 import { findRoot } from '../utils/path-resolve'
 
-const { distPath, execPath, shadowBinPath } = constants
+const { abortSignal, distPath, execPath, shadowBinPath } = constants
 
 const injectionPath = path.join(distPath, 'npm-injection.js')
 
 export default async function shadow(binName: 'npm' | 'npx') {
   const binPath = await installLinks(shadowBinPath, binName)
+  if (abortSignal.aborted) {
+    return
+  }
   // Adding the `--quiet` and `--no-progress` flags when the `proc-log` module
   // is found to fix a UX issue when running the command with recent versions of
   // npm (input swallowed by the standard npm spinner)
@@ -52,7 +55,10 @@ export default async function shadow(binName: 'npm' | 'npx') {
       binPath,
       ...binArgs
     ],
-    { stdio: 'inherit' }
+    {
+      signal: abortSignal,
+      stdio: 'inherit'
+    }
   )
   spawnPromise.process.on('exit', (code, signal) => {
     if (signal) {
