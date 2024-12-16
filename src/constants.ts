@@ -1,6 +1,8 @@
 import { realpathSync } from 'node:fs'
 import path from 'node:path'
 
+import { onExit } from 'signal-exit'
+
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 import registryConstants from '@socketsecurity/registry/lib/constants'
 
@@ -43,6 +45,14 @@ const LAZY_DIST_TYPE = () =>
 
 const lazyDistPath = () => path.join(rootDistPath, constants.DIST_TYPE)
 
+const abortController = new AbortController()
+const { signal: abortSignal } = abortController
+
+// Detect ^C, i.e. Ctrl + C.
+onExit(() => {
+  abortController.abort()
+})
+
 const constants = <
   {
     readonly API_V0_URL: 'https://api.socket.dev/v0'
@@ -51,6 +61,8 @@ const constants = <
     readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
     readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
     readonly UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: 'UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE'
+    readonly abortController: typeof abortController
+    readonly abortSignal: typeof abortSignal
     readonly cdxgenBinPath: string
     readonly distPath: string
     readonly nmBinPath: string
@@ -70,6 +82,8 @@ const constants = <
     NPM_REGISTRY_URL,
     SOCKET_CLI_ISSUES_URL,
     UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+    abortController,
+    abortSignal,
     cdxgenBinPath,
     distPath: undefined,
     nmBinPath,

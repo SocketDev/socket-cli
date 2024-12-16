@@ -10,7 +10,7 @@ type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
   encoding?: BufferEncoding | undefined
 }
 
-const { execPath, rootBinPath } = constants
+const { abortSignal, execPath, rootBinPath } = constants
 
 const entryPath = path.join(rootBinPath, 'cli.js')
 const testPath = __dirname
@@ -18,7 +18,8 @@ const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 const spawnOpts: PromiseSpawnOptions = {
   cwd: npmFixturesPath,
-  encoding: 'utf8'
+  encoding: 'utf8',
+  signal: abortSignal
 }
 
 describe('Socket cdxgen command', async () => {

@@ -10,7 +10,6 @@ import yoctoSpinner from '@socketregistry/yocto-spinner'
 import isInteractive from 'is-interactive'
 import npa from 'npm-package-arg'
 import semver from 'semver'
-import { onExit } from 'signal-exit'
 
 import config from '@socketsecurity/config'
 import { isObject } from '@socketsecurity/registry/lib/objects'
@@ -223,6 +222,7 @@ const {
   SOCKET_CLI_ISSUES_URL,
   SOCKET_PUBLIC_API_KEY,
   UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+  abortSignal,
   rootPath
 } = constants
 
@@ -299,14 +299,6 @@ if (log === undefined) {
 const pacote = tryRequire(<'pacote'>path.join(npmNmPath, 'pacote'), 'pacote')!
 const { tarball } = pacote
 const translations = require(path.join(rootPath, 'translations.json'))
-
-const abortController = new AbortController()
-const { signal: abortSignal } = abortController
-
-// Detect ^C, i.e. Ctrl + C.
-onExit(() => {
-  abortController.abort()
-})
 
 const Arborist: ArboristClass = require(arboristClassPath)
 const depValid: (

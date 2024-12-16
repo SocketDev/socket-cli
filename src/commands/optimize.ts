@@ -42,8 +42,12 @@ import type { Spinner } from '@socketregistry/yocto-spinner'
 
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 
-const { UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE, execPath, rootBinPath } =
-  constants
+const {
+  UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+  abortSignal,
+  execPath,
+  rootBinPath
+} = constants
 
 const COMMAND_TITLE = 'Socket Optimize'
 const OVERRIDES_FIELD_NAME = 'overrides'
@@ -896,6 +900,7 @@ export const optimize: CliSubcommand = {
         if (isNpm) {
           const wrapperPath = path.join(rootBinPath, 'npm-cli.js')
           const npmSpawnOptions: Parameters<typeof spawn>[2] = {
+            signal: abortSignal,
             stdio: 'ignore',
             env: {
               ...process.env,
@@ -923,7 +928,10 @@ export const optimize: CliSubcommand = {
           )
         } else {
           // All package managers support the "install" command.
-          await spawn(agentExecPath, ['install'], { stdio: 'ignore' })
+          await spawn(agentExecPath, ['install'], {
+            signal: abortSignal,
+            stdio: 'ignore'
+          })
         }
         spinner.stop()
         if (isNpm) {
