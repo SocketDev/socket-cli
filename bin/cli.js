@@ -27,9 +27,13 @@ if (DIST_TYPE === 'require') {
       stdio: 'inherit'
     }
   )
-  spawnPromise.process.on('exit', (code, signal) => {
-    if (signal) {
-      process.kill(process.pid, signal)
+  // See https://nodejs.org/api/all.html#all_child_process_event-exit.
+  spawnPromise.process.on('exit', (code, signalName) => {
+    if (abortSignal.aborted) {
+      return
+    }
+    if (signalName) {
+      process.kill(process.pid, signalName)
     } else if (code !== null) {
       process.exit(code)
     }
