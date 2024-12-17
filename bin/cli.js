@@ -3,15 +3,15 @@
 
 const constants = require('../dist/constants')
 
-const { DIST_TYPE } = constants
+const { DIST_TYPE, distPath } = constants
 
 if (DIST_TYPE === 'require') {
-  require(`../dist/${DIST_TYPE}/cli.js`)
+  require(`${distPath}/cli.js`)
 } else {
   const path = require('node:path')
   const spawn = require('@npmcli/promise-spawn')
 
-  const { abortSignal, execPath, rootDistPath } = constants
+  const { abortSignal, distPath, execPath } = constants
 
   process.exitCode = 1
   const spawnPromise = spawn(
@@ -19,7 +19,7 @@ if (DIST_TYPE === 'require') {
     [
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
-      path.join(rootDistPath, DIST_TYPE, 'cli.js'),
+      path.join(distPath, 'cli.js'),
       ...process.argv.slice(2)
     ],
     {
