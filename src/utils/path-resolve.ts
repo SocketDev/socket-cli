@@ -1,10 +1,12 @@
-import fs from 'node:fs/promises'
+import { promises as fs, realpathSync } from 'node:fs'
 import path from 'node:path'
 
 import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { glob as tinyGlob } from 'tinyglobby'
+import which from 'which'
 
+import constants from '../constants'
 import { directoryPatterns } from './ignore-by-default'
 
 import type { SocketYml } from '@socketsecurity/config'
@@ -14,6 +16,8 @@ import type { GlobOptions } from 'tinyglobby'
 type GlobWithGitIgnoreOptions = GlobOptions & {
   socketConfig?: SocketYml | undefined
 }
+
+const { shadowBinPath } = constants
 
 async function filterGlobResultToSupportedFiles(
   entries: string[],
@@ -175,6 +179,28 @@ export function findRoot(filepath: string): string | undefined {
     }
     curPath = parent
   }
+}
+
+export async function findBinPathDetails(binName: string): Promise<{
+  name: string
+  path: string | undefined
+  shadowed: boolean
+}> {
+  let shadowIndex = -1
+  const bins =
+    (await which(binName, {
+      all: true,
+      nothrow: true
+    })) ?? []
+  const binPath = bins.find((binPath, i) => {
+    // Skip our bin directory if it's in the front.
+    if (realpathSync(path.dirname(binPath)) === shadowBinPath) {
+      shadowIndex = i
+      return false
+    }
+    return true
+  })
+  return { name: binName, path: binPath, shadowed: shadowIndex !== -1 }
 }
 
 export async function getPackageFiles(
