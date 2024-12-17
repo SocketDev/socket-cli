@@ -4,16 +4,19 @@ import meow from 'meow'
 import constants from '../constants'
 import { commonFlags, validationFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
+import { findBinPathDetails } from '../utils/path-resolve'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
 const { abortSignal } = constants
 
+const binName = 'npx'
+
 export const rawNpx: CliSubcommand = {
-  description: 'Temporarily disable the Socket npm/npx wrapper',
+  description: `Temporarily disable the Socket ${binName} wrapper`,
   async run(argv, importMeta, { parentName }) {
     await setupCommand(
-      `${parentName} raw-npx`,
+      `${parentName} raw-${binName}`,
       rawNpx.description,
       argv,
       importMeta
@@ -34,7 +37,7 @@ async function setupCommand(
   const cli = meow(
     `
     Usage
-      $ ${name} <npx command>
+      $ ${name} <${binName} command>
 
     Options
       ${printFlagList(flags, 6)}
@@ -57,13 +60,26 @@ async function setupCommand(
     cli.showHelp()
     return
   }
-  const spawnPromise = spawn('npx', [argv.join(' ')], {
+  const { path: binPath } = await findBinPathDetails(binName)
+  if (!binPath) {
+    // The exit code 127 indicates that the command or binary being executed
+    // could not be found.
+    console.error(
+      `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable.`
+    )
+    process.exit(127)
+  }
+  const spawnPromise = spawn(binPath, <string[]>argv, {
     signal: abortSignal,
     stdio: 'inherit'
   })
-  spawnPromise.process.on('exit', (code, signal) => {
-    if (signal) {
-      process.kill(process.pid, signal)
+  // See https://nodejs.org/api/all.html#all_child_process_event-exit.
+  spawnPromise.process.on('exit', (code, signalName) => {
+    if (abortSignal.aborted) {
+      return
+    }
+    if (signalName) {
+      process.kill(process.pid, signalName)
     } else if (code !== null) {
       process.exit(code)
     }
