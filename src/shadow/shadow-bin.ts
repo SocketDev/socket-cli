@@ -11,7 +11,10 @@ const { abortSignal, distPath, execPath, shadowBinPath } = constants
 
 const injectionPath = path.join(distPath, 'npm-injection.js')
 
-export default async function shadow(binName: 'npm' | 'npx') {
+export default async function shadow(
+  binName: 'npm' | 'npx',
+  binArgs = process.argv.slice(2)
+) {
   const binPath = await installLinks(shadowBinPath, binName)
   if (abortSignal.aborted) {
     return
@@ -19,8 +22,6 @@ export default async function shadow(binName: 'npm' | 'npx') {
   // Adding the `--quiet` and `--no-progress` flags when the `proc-log` module
   // is found to fix a UX issue when running the command with recent versions of
   // npm (input swallowed by the standard npm spinner)
-  const binArgs: string[] = process.argv.slice(2)
-
   if (
     binName === 'npm' &&
     binArgs.includes('install') &&
@@ -60,9 +61,13 @@ export default async function shadow(binName: 'npm' | 'npx') {
       stdio: 'inherit'
     }
   )
-  spawnPromise.process.on('exit', (code, signal) => {
-    if (signal) {
-      process.kill(process.pid, signal)
+  // See https://nodejs.org/api/all.html#all_child_process_event-exit.
+  spawnPromise.process.on('exit', (code, signalName) => {
+    if (abortSignal.aborted) {
+      return
+    }
+    if (signalName) {
+      process.kill(process.pid, signalName)
     } else if (code !== null) {
       process.exit(code)
     }

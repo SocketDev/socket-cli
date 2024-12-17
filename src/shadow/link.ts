@@ -1,10 +1,9 @@
-import { realpathSync } from 'node:fs'
 import path from 'node:path'
 
 import cmdShim from 'cmd-shim'
-import which from 'which'
 
 import constants from '../constants'
+import { findBinPathDetails } from '../utils/path-resolve'
 
 const { WIN32, rootDistPath } = constants
 
@@ -13,26 +12,13 @@ export async function installLinks(
   binName: 'npm' | 'npx'
 ): Promise<string> {
   // Find package manager being shadowed by this process.
-  const bins =
-    (await which(binName, {
-      all: true,
-      nothrow: true
-    })) ?? []
-  let shadowIndex = -1
-  const binPath = bins.find((binPath, i) => {
-    // Skip our bin directory if it's in the front.
-    if (realpathSync(path.dirname(binPath)) === realBinPath) {
-      shadowIndex = i
-      return false
-    }
-    return true
-  })
+  const { path: binPath, shadowed } = await findBinPathDetails(binName)
   if (!binPath) {
-    console.error(
-      `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`
-    )
     // The exit code 127 indicates that the command or binary being executed
     // could not be found.
+    console.error(
+      `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable.`
+    )
     process.exit(127)
   }
   // TODO: Is this early exit needed?
@@ -40,7 +26,7 @@ export async function installLinks(
     return binPath
   }
   // Move our bin directory to front of PATH so its found first.
-  if (shadowIndex === -1) {
+  if (!shadowed) {
     if (WIN32) {
       await cmdShim(
         path.join(rootDistPath, `${binName}-cli.js`),
