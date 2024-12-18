@@ -727,12 +727,6 @@ async function addOverrides(
             overrides[origPkgName] = newSpec
             const addedOrUpdated = overrideExists ? 'updated' : 'added'
             state[addedOrUpdated].add(regPkgName)
-            if (workspaceName) {
-              const addedOrUpdatedIn = overrideExists
-                ? 'updatedInWorkspaces'
-                : 'addedInWorkspaces'
-              state[addedOrUpdatedIn].add(workspaceName)
-            }
           }
         }
       })
