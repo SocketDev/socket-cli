@@ -21,6 +21,7 @@ import {
 } from '../scripts/utils/packages.js'
 
 const {
+  BABEL_RUNTIME,
   ROLLUP_EXTERNAL_SUFFIX,
   depStatsPath,
   rootDistPath,
@@ -110,7 +111,7 @@ export default () => {
       const id = normalizeId(id_)
       const name = getPackageName(id)
       if (
-        name === '@babel/runtime' ||
+        name === BABEL_RUNTIME ||
         id.startsWith(rootSrcPath) ||
         id.endsWith('.mjs') ||
         id.endsWith('.mts') ||

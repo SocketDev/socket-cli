@@ -29,6 +29,7 @@ import {
 } from '../scripts/utils/packages.js'
 
 const {
+  BABEL_RUNTIME,
   LATEST,
   ROLLUP_ENTRY_SUFFIX,
   ROLLUP_EXTERNAL_SUFFIX,
@@ -140,7 +141,7 @@ export default function baseConfig(extendConfig = {}) {
         return true
       }
       if (
-        name === '@babel/runtime' ||
+        name === BABEL_RUNTIME ||
         id.startsWith(rootSrcPath) ||
         id.endsWith('.mjs') ||
         id.endsWith('.mts') ||

@@ -9,7 +9,12 @@ import {
   normalizeId
 } from '../scripts/utils/packages.js'
 
-const { ROLLUP_EXTERNAL_SUFFIX, SUPPORTS_SYNC_ESM, rootSrcPath } = constants
+const {
+  BABEL_RUNTIME,
+  ROLLUP_EXTERNAL_SUFFIX,
+  SUPPORTS_SYNC_ESM,
+  rootSrcPath
+} = constants
 
 export default () =>
   baseConfig({
@@ -36,7 +41,7 @@ export default () =>
             const id = normalizeId(id_)
             const name = getPackageName(id)
             if (
-              name === '@babel/runtime' ||
+              name === BABEL_RUNTIME ||
               id.startsWith(rootSrcPath) ||
               id.endsWith('.mjs') ||
               id.endsWith('.mts') ||
