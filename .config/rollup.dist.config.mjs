@@ -1,7 +1,6 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
-import semver from 'semver'
 import { globSync as tinyGlobSync } from 'tinyglobby'
 
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
@@ -23,8 +22,6 @@ import {
 
 const {
   BABEL_RUNTIME,
-  CYCLONEDX_CDXGEN,
-  SYNP,
   ROLLUP_EXTERNAL_SUFFIX,
   depStatsPath,
   rootDistPath,
@@ -55,19 +52,14 @@ function updateDepStatsSync(depStats) {
   const oldDepStats = existsSync(depStatsPath)
     ? readJsonSync(depStatsPath)
     : undefined
-  const oldDeps = oldDepStats?.dependencies
   Object.assign(depStats.dependencies, {
-    // Manually add @cyclonedx/cdxgen and synp as they are not directly
-    // referenced in the code but used through spawned processes.
-    [CYCLONEDX_CDXGEN]: pkgJson.dependencies[CYCLONEDX_CDXGEN],
-    [SYNP]: pkgJson.dependencies[SYNP],
+    // Add existing package.json dependencies without old transitives. This
+    // preserves dependencies like '@cyclonedx/cdxgen' and 'synp' that are
+    // indirectly referenced through spawned processes and not directly imported.
     ...Object.fromEntries(
-      // Assign old dep stats dependencies to preserve them.
-      Object.entries(oldDeps ?? {}).filter(({ 0: key, 1: oldSpec }) => {
-        // Skip old deps that are replaced with higher versions.
-        const s = depStats.dependencies[key]
-        return !s || semver.gt(semver.coerce(oldSpec), semver.coerce(s))
-      })
+      Object.entries(pkgJson.dependencies).filter(
+        ({ 0: key }) => !oldDepStats?.transitives?.[key]
+      )
     )
   })
   // Remove transitives from dependencies.
