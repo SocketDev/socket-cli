@@ -10,9 +10,8 @@ type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
   encoding?: BufferEncoding | undefined
 }
 
-const { abortSignal, execPath, rootBinPath } = constants
+const { abortSignal } = constants
 
-const entryPath = path.join(rootBinPath, 'cli.js')
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
@@ -23,11 +22,15 @@ const spawnOpts: PromiseSpawnOptions = {
 }
 
 describe('Socket cdxgen command', async () => {
+  // Lazily access constants.rootBinPath.
+  const entryPath = path.join(constants.rootBinPath, 'cli.js')
+
   it('should forwards known commands to cdxgen', async () => {
     for (const command of ['-h', '--help']) {
       // eslint-disable-next-line no-await-in-loop
       const ret = await spawn(
-        execPath,
+        // Lazily access constants.execPath.
+        constants.execPath,
         [entryPath, 'cdxgen', command],
         spawnOpts
       )
@@ -38,7 +41,9 @@ describe('Socket cdxgen command', async () => {
     for (const command of ['-u', '--unknown']) {
       // eslint-disable-next-line no-await-in-loop
       await assert.rejects(
-        () => spawn(execPath, [entryPath, 'cdxgen', command], spawnOpts),
+        () =>
+          // Lazily access constants.execPath.
+          spawn(constants.execPath, [entryPath, 'cdxgen', command], spawnOpts),
         e => e?.['stderr']?.startsWith(`Unknown argument: ${command}`),
         'singular'
       )
@@ -46,7 +51,8 @@ describe('Socket cdxgen command', async () => {
     await assert.rejects(
       () =>
         spawn(
-          execPath,
+          // Lazily access constants.execPath.
+          constants.execPath,
           [entryPath, 'cdxgen', '-u', '-h', '--unknown'],
           spawnOpts
         ),
