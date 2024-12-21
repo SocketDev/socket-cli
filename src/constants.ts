@@ -28,8 +28,8 @@ type Constants = {
 } & typeof registryConstants
 
 const {
-  kInternalsSymbol,
   PACKAGE_JSON,
+  kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
     createConstantsObject
   }
@@ -41,52 +41,87 @@ const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE =
   'UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE'
-const ENV: Constants['ENV'] = Object.freeze({
-  ...registryConstants.ENV,
-  // Flag set by the optimize command to bypass the packagesHaveRiskyIssues check.
-  [UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]: envAsBoolean(
-    process.env[UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]
-  )
-})
-
-const rootPath = path.resolve(realpathSync(__dirname), '..')
-const rootDistPath = path.join(rootPath, 'dist')
-const rootBinPath = path.join(rootPath, 'bin')
-const rootPkgJsonPath = path.join(rootPath, PACKAGE_JSON)
-const nmBinPath = path.join(rootPath, 'node_modules/.bin')
-const cdxgenBinPath = path.join(nmBinPath, 'cdxgen')
-const shadowBinPath = path.join(rootPath, 'shadow-bin')
-const synpBinPath = path.join(nmBinPath, 'synp')
 
 const LAZY_DIST_TYPE = () =>
   registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? 'module-sync' : 'require'
 
-const lazyDistPath = () => path.join(rootDistPath, constants.DIST_TYPE)
+const LAZY_ENV = () =>
+  Object.freeze({
+    // Lazily access registryConstants.ENV.
+    ...registryConstants.ENV,
+    // Flag set by the optimize command to bypass the packagesHaveRiskyIssues check.
+    [UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]: envAsBoolean(
+      process.env[UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]
+    )
+  })
+
+const lazyCdxgenBinPath = () =>
+  // Lazily access constants.nmBinPath.
+  path.join(constants.nmBinPath, 'cdxgen')
+
+const lazyDistPath = () =>
+  // Lazily access constants.rootDistPath and constants.DIST_TYPE.
+  path.join(constants.rootDistPath, constants.DIST_TYPE)
+
+const lazyNmBinPath = () =>
+  // Lazily access constants.rootPath.
+  path.join(constants.rootPath, 'node_modules/.bin')
+
+const lazyRootBinPath = () =>
+  // Lazily access constants.rootPath.
+  path.join(constants.rootPath, 'bin')
+
+const lazyRootDistPath = () =>
+  // Lazily access constants.rootPath.
+  path.join(constants.rootPath, 'dist')
+
+const lazyRootPath = () => path.resolve(realpathSync(__dirname), '..')
+
+const lazyRootPkgJsonPath = () =>
+  // Lazily access constants.rootPath.
+  path.join(constants.rootPath, PACKAGE_JSON)
+
+const lazyShadowBinPath = () =>
+  // Lazily access constants.rootPath.
+  path.join(constants.rootPath, 'shadow-bin')
+
+const lazySynpBinPath = () =>
+  // Lazily access constants.nmBinPath.
+  path.join(constants.nmBinPath, 'synp')
 
 const constants = <Constants>createConstantsObject(
   {
     API_V0_URL,
     BABEL_RUNTIME,
-    ENV,
+    ENV: undefined,
     // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
     NPM_REGISTRY_URL,
     SOCKET_CLI_ISSUES_URL,
     UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
-    cdxgenBinPath,
+    cdxgenBinPath: undefined,
     distPath: undefined,
-    nmBinPath,
-    rootBinPath,
-    rootDistPath,
-    rootPath,
-    rootPkgJsonPath,
-    shadowBinPath,
-    synpBinPath
+    nmBinPath: undefined,
+    rootBinPath: undefined,
+    rootDistPath: undefined,
+    rootPath: undefined,
+    rootPkgJsonPath: undefined,
+    shadowBinPath: undefined,
+    synpBinPath: undefined
   },
   {
     getters: {
       DIST_TYPE: LAZY_DIST_TYPE,
-      distPath: lazyDistPath
+      ENV: LAZY_ENV,
+      distPath: lazyDistPath,
+      cdxgenBinPath: lazyCdxgenBinPath,
+      nmBinPath: lazyNmBinPath,
+      rootBinPath: lazyRootBinPath,
+      rootDistPath: lazyRootDistPath,
+      rootPath: lazyRootPath,
+      rootPkgJsonPath: lazyRootPkgJsonPath,
+      shadowBinPath: lazyShadowBinPath,
+      synpBinPath: lazySynpBinPath
     },
     mixin: registryConstants
   }
