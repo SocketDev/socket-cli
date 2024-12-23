@@ -6,24 +6,19 @@ import semver from 'semver'
 import which from 'which'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb'
-import constants from '@socketsecurity/registry/lib/constants'
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
+import constants from '../constants'
 import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
 
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { SemVer } from 'semver'
 
-export const AGENTS = [
-  'bun',
-  'npm',
-  'pnpm',
-  'yarn/berry',
-  'yarn/classic',
-  'vlt'
-] as const
+const { BUN, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
+
+export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
 export type Agent = (typeof AGENTS)[number]
 export type StringKeyValueObject = { [key: string]: string }
 
@@ -52,23 +47,23 @@ async function getAgentVersion(
 }
 
 const LOCKS: Record<string, Agent> = {
-  'bun.lockb': 'bun',
+  'bun.lockb': BUN,
   // If both package-lock.json and npm-shrinkwrap.json are present in the root
   // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
   // will be ignored.
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#package-lockjson-vs-npm-shrinkwrapjson
-  'npm-shrinkwrap.json': 'npm',
-  'package-lock.json': 'npm',
-  'pnpm-lock.yaml': 'pnpm',
-  'pnpm-lock.yml': 'pnpm',
-  'yarn.lock': 'yarn/classic',
-  'vlt-lock.json': 'vlt',
+  'npm-shrinkwrap.json': NPM,
+  'package-lock.json': NPM,
+  'pnpm-lock.yaml': PNPM,
+  'pnpm-lock.yml': PNPM,
+  'yarn.lock': YARN_CLASSIC,
+  'vlt-lock.json': VLT,
   // Look for a hidden lock file if .npmrc has package-lock=false:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
   //
   // Unlike the other LOCKS keys this key contains a directory AND filename so
   // it has to be handled differently.
-  'node_modules/.package-lock.json': 'npm'
+  'node_modules/.package-lock.json': NPM
 }
 
 type ReadLockFile = (
@@ -94,7 +89,7 @@ const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
     async (lockPath: string) => await readFileUtf8(lockPath)
   )
   return {
-    bun: wrapReader(async (lockPath: string, agentExecPath: string) => {
+    [BUN]: wrapReader(async (lockPath: string, agentExecPath: string) => {
       let lockBuffer: Buffer | undefined
       try {
         lockBuffer = <Buffer>await readFileBinary(lockPath)
@@ -109,11 +104,11 @@ const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
       // https://bun.sh/guides/install/yarnlock
       return (await spawn(agentExecPath, [lockPath])).stdout.trim()
     }),
-    npm: defaultReader,
-    pnpm: defaultReader,
-    vlt: defaultReader,
-    'yarn/berry': defaultReader,
-    'yarn/classic': defaultReader
+    [NPM]: defaultReader,
+    [PNPM]: defaultReader,
+    [VLT]: defaultReader,
+    [YARN_BERRY]: defaultReader,
+    [YARN_CLASSIC]: defaultReader
   }
 })()
 
@@ -183,18 +178,18 @@ export async function detect({
     agent = <Agent>LOCKS[path.basename(lockPath)]
   }
   if (agent === undefined) {
-    agent = 'npm'
+    agent = NPM
     onUnknown?.(pkgManager)
   }
   const agentExecPath = await getAgentExecPath(agent)
 
   const npmExecPath =
-    agent === 'npm' ? agentExecPath : await getAgentExecPath('npm')
+    agent === NPM ? agentExecPath : await getAgentExecPath(NPM)
   if (agentVersion === undefined) {
     agentVersion = await getAgentVersion(agentExecPath, cwd)
   }
-  if (agent === 'yarn/classic' && (agentVersion?.major ?? 0) > 1) {
-    agent = 'yarn/berry'
+  if (agent === YARN_CLASSIC && (agentVersion?.major ?? 0) > 1) {
+    agent = YARN_BERRY
   }
   const targets = {
     browser: false,

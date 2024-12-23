@@ -3,4 +3,4 @@
 
 const constants = require('../dist/constants')
 const shadowBin = require(`${constants.distPath}/shadow-bin.js`)
-shadowBin('npm')
+shadowBin(constants.NPM)

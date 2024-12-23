@@ -8,23 +8,23 @@ const { describe, it } = require('node:test')
 const spawn = require('@npmcli/promise-spawn')
 
 const constants = require('../dist/constants.js')
-const { abortSignal } = constants
+const { NPM, abortSignal } = constants
 
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 // These aliases are defined in package.json.
-for (const npm of ['npm8', 'npm10']) {
-  const npmPath = path.join(npmFixturesPath, npm)
+for (const npmDir of ['npm8', 'npm10']) {
+  const npmPath = path.join(npmFixturesPath, npmDir)
   const npmBinPath = path.join(npmPath, 'node_modules', '.bin')
 
-  spawnSync('npm', ['install', '--silent'], {
+  spawnSync(NPM, ['install', '--silent'], {
     cwd: npmPath,
     signal: abortSignal,
     stdio: 'ignore'
   })
 
-  describe(`Socket npm wrapper for ${npm}`, () => {
+  describe(`Socket npm wrapper for ${npmDir}`, () => {
     // Lazily access constants.rootBinPath.
     const entryPath = path.join(constants.rootBinPath, 'cli.js')
 
@@ -34,7 +34,7 @@ for (const npm of ['npm8', 'npm10']) {
           spawn(
             // Lazily access constants.execPath.
             constants.execPath,
-            [entryPath, 'npm', 'install', 'bowserify'],
+            [entryPath, NPM, 'install', 'bowserify'],
             {
               cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
               encoding: 'utf8',

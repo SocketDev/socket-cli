@@ -8,9 +8,9 @@ import { findBinPathDetails } from '../utils/path-resolve'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const { abortSignal } = constants
+const { NPX, abortSignal } = constants
 
-const binName = 'npx'
+const binName = NPX
 
 export const rawNpx: CliSubcommand = {
   description: `Temporarily disable the Socket ${binName} wrapper`,
