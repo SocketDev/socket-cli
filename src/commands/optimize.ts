@@ -250,7 +250,7 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
     let insertIndex = -1
     let isPlacingHigher = false
     if (field === OVERRIDES_FIELD_NAME) {
-      insertIndex = getLowestEntryIndex(entries, ['resolutions'])
+      insertIndex = getLowestEntryIndex(entries, [RESOLUTIONS_FIELD_NAME])
       if (insertIndex === -1) {
         isPlacingHigher = true
         insertIndex = getHighestEntryIndex(entries, [...depFields, PNPM])
@@ -259,11 +259,14 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
       isPlacingHigher = true
       insertIndex = getHighestEntryIndex(entries, [
         ...depFields,
-        'overrides',
+        OVERRIDES_FIELD_NAME,
         PNPM
       ])
     } else if (field === PNPM_FIELD_NAME) {
-      insertIndex = getLowestEntryIndex(entries, ['overrides', 'resolutions'])
+      insertIndex = getLowestEntryIndex(entries, [
+        OVERRIDES_FIELD_NAME,
+        RESOLUTIONS_FIELD_NAME
+      ])
       if (insertIndex === -1) {
         isPlacingHigher = true
         insertIndex = getHighestEntryIndex(entries, depFields)
