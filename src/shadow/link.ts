@@ -34,7 +34,7 @@ export async function installLinks(
       )
     }
     process.env['PATH'] =
-      `${realBinPath}${WIN32 ? ';' : ':'}${process.env['PATH']}`
+      `${realBinPath}${path.delimiter}${process.env['PATH']}`
   }
   return binPath
 }
