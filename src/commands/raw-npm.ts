@@ -8,9 +8,9 @@ import { findBinPathDetails } from '../utils/path-resolve'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const { abortSignal } = constants
+const { NPM, abortSignal } = constants
 
-const binName = 'npm'
+const binName = NPM
 
 export const rawNpm: CliSubcommand = {
   description: `Temporarily disable the Socket ${binName} wrapper`,

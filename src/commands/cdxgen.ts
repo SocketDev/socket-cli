@@ -10,7 +10,7 @@ import constants from '../constants'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const { cdxgenBinPath, synpBinPath } = constants
+const { NPM, PNPM, cdxgenBinPath, synpBinPath } = constants
 
 const {
   SBOM_SIGN_ALGORITHM, // Algorithm. Example: RS512
@@ -25,8 +25,8 @@ const nodejsPlatformTypes = new Set([
   'javascript',
   'js',
   'nodejs',
-  'npm',
-  'pnpm',
+  NPM,
+  PNPM,
   'ts',
   'tsx',
   'typescript'
@@ -169,7 +169,7 @@ export const cdxgen: CliSubcommand = {
       existsSync('./yarn.lock')
     ) {
       if (existsSync('./package-lock.json')) {
-        yargv.type = 'npm'
+        yargv.type = NPM
       } else {
         // Use synp to create a package-lock.json from the yarn.lock,
         // based on the node_modules folder, for a more accurate SBOM.
@@ -178,7 +178,7 @@ export const cdxgen: CliSubcommand = {
             '--source-file',
             './yarn.lock'
           ])
-          yargv.type = 'npm'
+          yargv.type = NPM
           cleanupPackageLock = true
         } catch {}
       }

@@ -43,7 +43,13 @@ import type { Spinner } from '@socketregistry/yocto-spinner'
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 
 const {
+  BUN,
+  NPM,
+  PNPM,
   UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+  VLT,
+  YARN_BERRY,
+  YARN_CLASSIC,
   abortSignal,
   execPath,
   rootBinPath
@@ -52,11 +58,11 @@ const {
 const COMMAND_TITLE = 'Socket Optimize'
 const OVERRIDES_FIELD_NAME = 'overrides'
 const NPM_OVERRIDE_PR_URL = 'https://github.com/npm/cli/pull/7025'
-const PNPM_FIELD_NAME = 'pnpm'
-const PNPM_WORKSPACE = 'pnpm-workspace'
+const PNPM_FIELD_NAME = PNPM
+const PNPM_WORKSPACE = `${PNPM}-workspace`
 const RESOLUTIONS_FIELD_NAME = 'resolutions'
 
-const manifestNpmOverrides = getManifestData('npm')!
+const manifestNpmOverrides = getManifestData(NPM)!
 
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
@@ -68,37 +74,37 @@ type GetOverridesResult = {
 }
 
 const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
-  bun(pkgJson: PackageJson) {
+  [BUN](pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.resolutions ?? {}
-    return { type: 'yarn/berry', overrides }
+    return { type: YARN_BERRY, overrides }
   },
   // npm overrides documentation:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
-  npm(pkgJson: PackageJson) {
+  [NPM](pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.overrides ?? {}
-    return { type: 'npm', overrides }
+    return { type: NPM, overrides }
   },
   // pnpm overrides documentation:
   // https://pnpm.io/package_json#pnpmoverrides
-  pnpm(pkgJson: PackageJson) {
+  [PNPM](pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.pnpm?.overrides ?? {}
-    return { type: 'pnpm', overrides }
+    return { type: PNPM, overrides }
   },
-  vlt(pkgJson: PackageJson) {
+  [VLT](pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.overrides ?? {}
-    return { type: 'vlt', overrides }
+    return { type: VLT, overrides }
   },
   // Yarn resolutions documentation:
   // https://yarnpkg.com/configuration/manifest#resolutions
-  'yarn/berry'(pkgJson: PackageJson) {
+  [YARN_BERRY](pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.resolutions ?? {}
-    return { type: 'yarn/berry', overrides }
+    return { type: YARN_BERRY, overrides }
   },
   // Yarn resolutions documentation:
   // https://classic.yarnpkg.com/en/docs/selective-version-resolutions
-  'yarn/classic'(pkgJson: PackageJson) {
+  [YARN_CLASSIC](pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.resolutions ?? {}
-    return { type: 'yarn/classic', overrides }
+    return { type: YARN_CLASSIC, overrides }
   }
 }
 
@@ -119,13 +125,13 @@ const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
   }
 
   return {
-    bun: yarnLockIncludes,
-    npm(lockSrc: string, name: string) {
+    [BUN]: yarnLockIncludes,
+    [NPM](lockSrc: string, name: string) {
       // Detects the package name in the following cases:
       //   "name":
       return lockSrc.includes(`"${name}":`)
     },
-    pnpm(lockSrc: string, name: string) {
+    [PNPM](lockSrc: string, name: string) {
       const escapedName = escapeRegExp(name)
       return new RegExp(
         // Detects the package name in the following cases:
@@ -137,13 +143,13 @@ const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
         'm'
       ).test(lockSrc)
     },
-    vlt(lockSrc: string, name: string) {
+    [VLT](lockSrc: string, name: string) {
       // Detects the package name in the following cases:
       //   "name"
       return lockSrc.includes(`"${name}"`)
     },
-    'yarn/berry': yarnLockIncludes,
-    'yarn/classic': yarnLockIncludes
+    [YARN_BERRY]: yarnLockIncludes,
+    [YARN_CLASSIC]: yarnLockIncludes
   }
 })()
 
@@ -247,14 +253,14 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
       insertIndex = getLowestEntryIndex(entries, ['resolutions'])
       if (insertIndex === -1) {
         isPlacingHigher = true
-        insertIndex = getHighestEntryIndex(entries, [...depFields, 'pnpm'])
+        insertIndex = getHighestEntryIndex(entries, [...depFields, PNPM])
       }
     } else if (field === RESOLUTIONS_FIELD_NAME) {
       isPlacingHigher = true
       insertIndex = getHighestEntryIndex(entries, [
         ...depFields,
         'overrides',
-        'pnpm'
+        PNPM
       ])
     } else if (field === PNPM_FIELD_NAME) {
       insertIndex = getLowestEntryIndex(entries, ['overrides', 'resolutions'])
@@ -304,14 +310,14 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
   }
 
   return {
-    bun: updateResolutions,
-    npm: updateOverrides,
-    pnpm(editablePkgJson: EditablePackageJson, overrides: Overrides) {
+    [BUN]: updateResolutions,
+    [NPM]: updateOverrides,
+    [PNPM](editablePkgJson: EditablePackageJson, overrides: Overrides) {
       updatePkgJson(editablePkgJson, PNPM_FIELD_NAME, overrides)
     },
-    vlt: updateOverrides,
-    'yarn/berry': updateResolutions,
-    'yarn/classic': updateResolutions
+    [VLT]: updateOverrides,
+    [YARN_BERRY]: updateResolutions,
+    [YARN_CLASSIC]: updateResolutions
   }
 })()
 
@@ -373,7 +379,7 @@ const lsByAgent = (() => {
   }
 
   return <Record<Agent, AgentListDepsFn>>{
-    async bun(agentExecPath: string, cwd: string) {
+    async [BUN](agentExecPath: string, cwd: string) {
       try {
         // Bun does not support filtering by production packages yet.
         // https://github.com/oven-sh/bun/issues/8283
@@ -382,10 +388,10 @@ const lsByAgent = (() => {
       } catch {}
       return ''
     },
-    async npm(agentExecPath: string, cwd: string) {
+    async [NPM](agentExecPath: string, cwd: string) {
       return await npmQuery(agentExecPath, cwd)
     },
-    async pnpm(
+    async [PNPM](
       agentExecPath: string,
       cwd: string,
       options: AgentListDepsOptions
@@ -394,7 +400,7 @@ const lsByAgent = (() => {
         __proto__: null,
         ...options
       }
-      if (npmExecPath && npmExecPath !== 'npm') {
+      if (npmExecPath && npmExecPath !== NPM) {
         const result = await npmQuery(npmExecPath, cwd)
         if (result) {
           return result
@@ -412,7 +418,7 @@ const lsByAgent = (() => {
       } catch {}
       return parseableToQueryStdout(stdout)
     },
-    async vlt(agentExecPath: string, cwd: string) {
+    async [VLT](agentExecPath: string, cwd: string) {
       let stdout = ''
       try {
         stdout = (
@@ -423,7 +429,7 @@ const lsByAgent = (() => {
       } catch {}
       return cleanupQueryStdout(stdout)
     },
-    async 'yarn/berry'(agentExecPath: string, cwd: string) {
+    async [YARN_BERRY](agentExecPath: string, cwd: string) {
       try {
         return (
           // Yarn Berry does not support filtering by production packages yet.
@@ -437,7 +443,7 @@ const lsByAgent = (() => {
       } catch {}
       return ''
     },
-    async 'yarn/classic'(agentExecPath: string, cwd: string) {
+    async [YARN_CLASSIC](agentExecPath: string, cwd: string) {
       try {
         // However, Yarn Classic does support it.
         // https://github.com/yarnpkg/yarn/releases/tag/v1.0.0
@@ -464,12 +470,12 @@ const depsIncludesByAgent: Record<Agent, AgentDepsIncludesFn> = (() => {
   }
 
   return {
-    bun: matchHumanStdout,
-    npm: matchQueryStdout,
-    pnpm: matchQueryStdout,
-    vlt: matchQueryStdout,
-    'yarn/berry': matchHumanStdout,
-    'yarn/classic': matchHumanStdout
+    [BUN]: matchHumanStdout,
+    [NPM]: matchQueryStdout,
+    [PNPM]: matchQueryStdout,
+    [VLT]: matchQueryStdout,
+    [YARN_BERRY]: matchHumanStdout,
+    [YARN_CLASSIC]: matchHumanStdout
   }
 })()
 
@@ -516,7 +522,7 @@ async function getWorkspaceGlobs(
   pkgJson: PackageJson
 ): Promise<string[] | undefined> {
   let workspacePatterns
-  if (agent === 'pnpm') {
+  if (agent === PNPM) {
     for (const workspacePath of [
       path.join(pkgPath!, `${PNPM_WORKSPACE}.yaml`),
       path.join(pkgPath!, `${PNPM_WORKSPACE}.yml`)
@@ -625,8 +631,8 @@ async function addOverrides(
   const isWorkspace = !!workspaceGlobs
   if (
     isWorkspace &&
-    agent === 'pnpm' &&
-    npmExecPath === 'npm' &&
+    agent === PNPM &&
+    npmExecPath === NPM &&
     !state.warnedPnpmWorkspaceRequiresNpm
   ) {
     state.warnedPnpmWorkspaceRequiresNpm = true
@@ -647,8 +653,8 @@ async function addOverrides(
     overridesDataObjects.push(getOverridesDataByAgent[agent](pkgJson))
   } else {
     overridesDataObjects.push(
-      getOverridesDataByAgent.npm(pkgJson),
-      getOverridesDataByAgent['yarn/classic'](pkgJson)
+      getOverridesDataByAgent[NPM](pkgJson),
+      getOverridesDataByAgent[YARN_CLASSIC](pkgJson)
     )
   }
   if (spinner) {
@@ -692,10 +698,10 @@ async function addOverrides(
         if (overrideExists || thingScanner(thingToScan, origPkgName)) {
           const oldSpec = overrideExists ? overrides[origPkgName] : undefined
           const depAlias = depAliasMap.get(origPkgName)
-          const regSpecStartsLike = `npm:${regPkgName}@`
+          const regSpecStartsLike = `${NPM}:${regPkgName}@`
           let newSpec = `${regSpecStartsLike}^${pin ? version : major}`
           let thisVersion = version
-          if (depAlias && type === 'npm') {
+          if (depAlias && type === NPM) {
             // With npm one may not set an override for a package that one directly
             // depends on unless both the dependency and the override itself share
             // the exact same spec. To make this limitation easier to deal with,
@@ -815,7 +821,7 @@ export const optimize: CliSubcommand = {
       )
       return
     }
-    if (agent === 'vlt') {
+    if (agent === VLT) {
       console.error(
         `✖️ ${COMMAND_TITLE}: ${agent} does not support overrides. Soon, though ⚡`
       )
@@ -834,7 +840,7 @@ export const optimize: CliSubcommand = {
       console.error(`✖️ ${COMMAND_TITLE}: No package.json found`)
       return
     }
-    if (prod && (agent === 'bun' || agent === 'yarn/berry')) {
+    if (prod && (agent === BUN || agent === YARN_BERRY)) {
       console.error(
         `✖️ ${COMMAND_TITLE}: --prod not supported for ${agent}${agentVersion ? `@${agentVersion.toString()}` : ''}`
       )
@@ -885,7 +891,7 @@ export const optimize: CliSubcommand = {
     } else {
       console.log('Congratulations! Already Socket.dev optimized 🎉')
     }
-    const isNpm = agent === 'npm'
+    const isNpm = agent === NPM
     if (isNpm || pkgJsonChanged) {
       // Always update package-lock.json until the npm overrides PR lands:
       // https://github.com/npm/cli/pull/7025

@@ -17,24 +17,19 @@ type GlobWithGitIgnoreOptions = GlobOptions & {
   socketConfig?: SocketYml | undefined
 }
 
-const { shadowBinPath } = constants
+const { NPM, shadowBinPath } = constants
 
 async function filterGlobResultToSupportedFiles(
   entries: string[],
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data']
 ): Promise<string[]> {
-  const patterns = ['golang', 'npm', 'pypi'].reduce(
-    (r: string[], n: string) => {
-      const supported = supportedFiles[n]
-      r.push(
-        ...(supported
-          ? Object.values(supported).map(p => `**/${p.pattern}`)
-          : [])
-      )
-      return r
-    },
-    []
-  )
+  const patterns = ['golang', NPM, 'pypi'].reduce((r: string[], n: string) => {
+    const supported = supportedFiles[n]
+    r.push(
+      ...(supported ? Object.values(supported).map(p => `**/${p.pattern}`) : [])
+    )
+    return r
+  }, [])
   return entries.filter(p => micromatch.some(p, patterns))
 }
 
@@ -170,7 +165,7 @@ function pathsToPatterns(paths: string[]): string[] {
 export function findRoot(filepath: string): string | undefined {
   let curPath = filepath
   while (true) {
-    if (path.basename(curPath) === 'npm') {
+    if (path.basename(curPath) === NPM) {
       return curPath
     }
     const parent = path.dirname(curPath)
