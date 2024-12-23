@@ -2,11 +2,13 @@ import constants from '../constants'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
+const { NPM } = constants
+
 export const npm: CliSubcommand = {
-  description: 'npm wrapper functionality',
+  description: `${NPM} wrapper functionality`,
   async run(argv) {
     // Lazily access constants.distPath.
     const shadowBin = require(`${constants.distPath}/shadow-bin.js`)
-    await shadowBin('npm', argv)
+    await shadowBin(NPM, argv)
   }
 }

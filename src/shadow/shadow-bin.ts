@@ -7,7 +7,7 @@ import constants from '../constants'
 import { installLinks } from './link'
 import { findRoot } from '../utils/path-resolve'
 
-const { abortSignal, distPath, execPath, shadowBinPath } = constants
+const { NPM, abortSignal, distPath, execPath, shadowBinPath } = constants
 
 const injectionPath = path.join(distPath, 'npm-injection.js')
 
@@ -23,7 +23,7 @@ export default async function shadow(
   // is found to fix a UX issue when running the command with recent versions of
   // npm (input swallowed by the standard npm spinner)
   if (
-    binName === 'npm' &&
+    binName === NPM &&
     binArgs.includes('install') &&
     !binArgs.includes('--no-progress') &&
     !binArgs.includes('--quiet')
