@@ -108,9 +108,19 @@ const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
   }
 }
 
-type AgentLockIncludesFn = (lockSrc: string, name: string) => boolean
+type AgentLockIncludesFn = (
+  lockSrc: string,
+  name: string,
+  ext?: string
+) => boolean
 
 const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
+  function npmLockIncludes(lockSrc: string, name: string) {
+    // Detects the package name in the following cases:
+    //   "name":
+    return lockSrc.includes(`"${name}":`)
+  }
+
   function yarnLockIncludes(lockSrc: string, name: string) {
     const escapedName = escapeRegExp(name)
     return new RegExp(
@@ -125,12 +135,13 @@ const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
   }
 
   return {
-    [BUN]: yarnLockIncludes,
-    [NPM](lockSrc: string, name: string) {
-      // Detects the package name in the following cases:
-      //   "name":
-      return lockSrc.includes(`"${name}":`)
+    [BUN](lockSrc: string, name: string, lockBasename?: string) {
+      return (lockBasename === '.lock' ? npmLockIncludes : yarnLockIncludes)(
+        lockSrc,
+        name
+      )
     },
+    [NPM]: npmLockIncludes,
     [PNPM](lockSrc: string, name: string) {
       const escapedName = escapeRegExp(name)
       return new RegExp(
@@ -576,6 +587,7 @@ function workspacePatternToGlobPattern(workspace: string): string {
 type AddOverridesConfig = {
   agent: Agent
   agentExecPath: string
+  lockBasename: string
   lockSrc: string
   manifestEntries: ManifestEntry[]
   npmExecPath: string
@@ -611,6 +623,7 @@ async function addOverrides(
   {
     agent,
     agentExecPath,
+    lockBasename,
     lockSrc,
     manifestEntries,
     npmExecPath,
@@ -646,9 +659,9 @@ async function addOverrides(
   const thingToScan = isLockScanned
     ? lockSrc
     : await lsByAgent[agent](agentExecPath, pkgPath, { npmExecPath })
-  const thingScanner = isLockScanned
-    ? lockIncludesByAgent[agent]
-    : depsIncludesByAgent[agent]
+  const thingScanner = <AgentLockIncludesFn>(
+    (isLockScanned ? lockIncludesByAgent[agent] : depsIncludesByAgent[agent])
+  )
   const depEntries = getDependencyEntries(pkgJson)
 
   const overridesDataObjects = <GetOverridesResult[]>[]
@@ -698,7 +711,10 @@ async function addOverrides(
       // Chunk package names to process them in parallel 3 at a time.
       await pEach(overridesDataObjects, 3, async ({ overrides, type }) => {
         const overrideExists = hasOwn(overrides, origPkgName)
-        if (overrideExists || thingScanner(thingToScan, origPkgName)) {
+        if (
+          overrideExists ||
+          thingScanner(thingToScan, origPkgName, lockBasename)
+        ) {
           const oldSpec = overrideExists ? overrides[origPkgName] : undefined
           const depAlias = depAliasMap.get(origPkgName)
           const regSpecStartsLike = `${NPM}:${regPkgName}@`
@@ -803,6 +819,7 @@ export const optimize: CliSubcommand = {
       agent,
       agentExecPath,
       agentVersion,
+      lockBasename,
       lockPath,
       lockSrc,
       minimumNodeVersion,
@@ -830,7 +847,7 @@ export const optimize: CliSubcommand = {
       )
       return
     }
-    const lockName = lockPath ? path.basename(lockPath) : 'lock file'
+    const lockName = lockPath ? lockBasename : 'lock file'
     if (lockSrc === undefined) {
       console.error(`✖️ ${COMMAND_TITLE}: No ${lockName} found`)
       return
@@ -865,6 +882,7 @@ export const optimize: CliSubcommand = {
       {
         agent,
         agentExecPath,
+        lockBasename,
         lockSrc,
         manifestEntries,
         npmExecPath,
