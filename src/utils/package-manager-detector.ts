@@ -47,6 +47,7 @@ async function getAgentVersion(
 }
 
 const LOCKS: Record<string, Agent> = {
+  'bun.lock': BUN,
   'bun.lockb': BUN,
   // If both package-lock.json and npm-shrinkwrap.json are present in the root
   // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
@@ -66,43 +67,46 @@ const LOCKS: Record<string, Agent> = {
   'node_modules/.package-lock.json': NPM
 }
 
-type ReadLockFile = (
-  lockPath: string,
-  agentExecPath: string
-) => Promise<string | undefined>
+type ReadLockFile =
+  | ((lockPath: string) => Promise<string | undefined>)
+  | ((lockPath: string, agentExecPath: string) => Promise<string | undefined>)
 
 const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
-  function wrapReader(
-    reader: (
-      lockPath: string,
-      agentExecPath: string
-    ) => Promise<string | undefined>
-  ): ReadLockFile {
-    return async (lockPath: string, agentExecPath: string) => {
+  function wrapReader<T extends (...args: any[]) => Promise<any>>(
+    reader: T
+  ): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>> | undefined> {
+    return async (...args: any[]): Promise<any> => {
       try {
-        return await reader(lockPath, agentExecPath)
+        return await reader(...args)
       } catch {}
       return undefined
     }
   }
+
+  const binaryReader = wrapReader(readFileBinary)
+
   const defaultReader = wrapReader(
     async (lockPath: string) => await readFileUtf8(lockPath)
   )
+
   return {
     [BUN]: wrapReader(async (lockPath: string, agentExecPath: string) => {
-      let lockBuffer: Buffer | undefined
-      try {
-        lockBuffer = <Buffer>await readFileBinary(lockPath)
-      } catch {
-        return undefined
+      const ext = path.extname(lockPath)
+      if (ext === '.lock') {
+        return await defaultReader(lockPath)
       }
-      try {
-        return <string>parseBunLockb(lockBuffer)
-      } catch {}
-      // To print a Yarn lockfile to your console without writing it to disk
-      // use `bun bun.lockb`.
-      // https://bun.sh/guides/install/yarnlock
-      return (await spawn(agentExecPath, [lockPath])).stdout.trim()
+      if (ext === '.lockb') {
+        const lockBuffer = await binaryReader(lockPath)
+        if (lockBuffer) {
+          try {
+            return parseBunLockb(lockBuffer)
+          } catch {}
+        }
+        // To print a Yarn lockfile to your console without writing it to disk
+        // use `bun bun.lockb`.
+        // https://bun.sh/guides/install/yarnlock
+        return (await spawn(agentExecPath, [lockPath])).stdout.trim()
+      }
     }),
     [NPM]: defaultReader,
     [PNPM]: defaultReader,
@@ -121,6 +125,7 @@ export type DetectResult = Readonly<{
   agent: Agent
   agentExecPath: string
   agentVersion: SemVer | undefined
+  lockBasename: string | undefined
   lockPath: string | undefined
   lockSrc: string | undefined
   minimumNodeVersion: string
@@ -139,7 +144,8 @@ export async function detect({
   onUnknown
 }: DetectOptions = {}): Promise<DetectResult> {
   let lockPath = await findUp(Object.keys(LOCKS), { cwd })
-  const isHiddenLockFile = lockPath?.endsWith('.package-lock.json') ?? false
+  let lockBasename = lockPath ? path.basename(lockPath) : undefined
+  const isHiddenLockFile = lockBasename === '.package-lock.json'
   const pkgJsonPath = lockPath
     ? path.resolve(lockPath, `${isHiddenLockFile ? '../' : ''}../package.json`)
     : await findUp('package.json', { cwd })
@@ -173,9 +179,9 @@ export async function detect({
     agent === undefined &&
     !isHiddenLockFile &&
     typeof pkgJsonPath === 'string' &&
-    typeof lockPath === 'string'
+    typeof lockBasename === 'string'
   ) {
-    agent = <Agent>LOCKS[path.basename(lockPath)]
+    agent = <Agent>LOCKS[lockBasename]
   }
   if (agent === undefined) {
     agent = NPM
@@ -238,12 +244,14 @@ export async function detect({
         ? await readLockFileByAgent[agent](lockPath, agentExecPath)
         : undefined
   } else {
+    lockBasename = undefined
     lockPath = undefined
   }
   return <DetectResult>{
     agent,
     agentExecPath,
     agentVersion,
+    lockBasename,
     lockPath,
     lockSrc,
     minimumNodeVersion,
