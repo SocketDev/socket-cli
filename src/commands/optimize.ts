@@ -769,6 +769,7 @@ async function addOverrides(
         {
           agent,
           agentExecPath,
+          lockBasename,
           lockSrc,
           manifestEntries,
           npmExecPath,
@@ -848,7 +849,7 @@ export const optimize: CliSubcommand = {
       return
     }
     const lockName = lockPath ? lockBasename : 'lock file'
-    if (lockSrc === undefined) {
+    if (lockBasename === undefined || lockSrc === undefined) {
       console.error(`✖️ ${COMMAND_TITLE}: No ${lockName} found`)
       return
     }
