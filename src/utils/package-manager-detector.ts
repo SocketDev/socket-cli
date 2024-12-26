@@ -16,7 +16,16 @@ import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { SemVer } from 'semver'
 
-const { BUN, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
+const {
+  BINARY_LOCK_EXT,
+  BUN,
+  LOCK_EXT,
+  NPM,
+  PNPM,
+  VLT,
+  YARN_BERRY,
+  YARN_CLASSIC
+} = constants
 
 export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
 export type Agent = (typeof AGENTS)[number]
@@ -46,9 +55,10 @@ async function getAgentVersion(
   return result
 }
 
+// The order of LOCKS properties IS significant as it affects iteration order.
 const LOCKS: Record<string, Agent> = {
-  'bun.lock': BUN,
-  'bun.lockb': BUN,
+  [`bun${LOCK_EXT}`]: BUN,
+  [`bun${BINARY_LOCK_EXT}`]: BUN,
   // If both package-lock.json and npm-shrinkwrap.json are present in the root
   // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
   // will be ignored.
@@ -57,9 +67,9 @@ const LOCKS: Record<string, Agent> = {
   'package-lock.json': NPM,
   'pnpm-lock.yaml': PNPM,
   'pnpm-lock.yml': PNPM,
-  'yarn.lock': YARN_CLASSIC,
+  [`yarn${LOCK_EXT}`]: YARN_CLASSIC,
   'vlt-lock.json': VLT,
-  // Look for a hidden lock file if .npmrc has package-lock=false:
+  // Lastly, look for a hidden lock file which is present if .npmrc has package-lock=false:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
   //
   // Unlike the other LOCKS keys this key contains a directory AND filename so
@@ -92,10 +102,10 @@ const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
   return {
     [BUN]: wrapReader(async (lockPath: string, agentExecPath: string) => {
       const ext = path.extname(lockPath)
-      if (ext === '.lock') {
+      if (ext === LOCK_EXT) {
         return await defaultReader(lockPath)
       }
-      if (ext === '.lockb') {
+      if (ext === BINARY_LOCK_EXT) {
         const lockBuffer = await binaryReader(lockPath)
         if (lockBuffer) {
           try {
@@ -107,6 +117,7 @@ const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
         // https://bun.sh/guides/install/yarnlock
         return (await spawn(agentExecPath, [lockPath])).stdout.trim()
       }
+      return undefined
     }),
     [NPM]: defaultReader,
     [PNPM]: defaultReader,
