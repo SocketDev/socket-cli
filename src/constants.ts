@@ -9,11 +9,13 @@ type RegistryEnv = typeof registryConstants.ENV
 type Constants = {
   readonly API_V0_URL: 'https://api.socket.dev/v0'
   readonly BABEL_RUNTIME: '@babel/runtime'
+  readonly BINARY_LOCK_EXT: '.lockb'
   readonly BUN: 'bun'
   readonly ENV: RegistryEnv & {
     UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
   }
   readonly DIST_TYPE: 'module-sync' | 'require'
+  readonly LOCK_EXT: '.lock'
   readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
   readonly NPX: 'npx'
   readonly PNPM: 'pnpm'
@@ -43,7 +45,9 @@ const {
 
 const API_V0_URL = 'https://api.socket.dev/v0'
 const BABEL_RUNTIME = '@babel/runtime'
+const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
+const LOCK_EXT = '.lock'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const NPX = 'npx'
 const PNPM = 'pnpm'
@@ -105,10 +109,12 @@ const constants = <Constants>createConstantsObject(
   {
     API_V0_URL,
     BABEL_RUNTIME,
+    BINARY_LOCK_EXT,
     BUN,
     ENV: undefined,
     // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
+    LOCK_EXT,
     NPM_REGISTRY_URL,
     NPX,
     PNPM,

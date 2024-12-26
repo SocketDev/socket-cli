@@ -44,6 +44,7 @@ type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 
 const {
   BUN,
+  LOCK_EXT,
   NPM,
   PNPM,
   UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
@@ -136,10 +137,13 @@ const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
 
   return {
     [BUN](lockSrc: string, name: string, lockBasename?: string) {
-      return (lockBasename === '.lock' ? npmLockIncludes : yarnLockIncludes)(
-        lockSrc,
-        name
-      )
+      // This is a bit counterintuitive. When lockBasename ends with a .lockb
+      // we treat it as a yarn.lock. When lockBasename ends with a .lock we
+      // treat it as a package-lock.json. The bun.lock format is not identical
+      // package-lock.json, however it close enough for npmLockIncludes to work.
+      const lockScanner =
+        lockBasename?.endsWith(LOCK_EXT) ? npmLockIncludes : yarnLockIncludes
+      return lockScanner(lockSrc, name)
     },
     [NPM]: npmLockIncludes,
     [PNPM](lockSrc: string, name: string) {
@@ -659,6 +663,10 @@ async function addOverrides(
   const thingToScan = isLockScanned
     ? lockSrc
     : await lsByAgent[agent](agentExecPath, pkgPath, { npmExecPath })
+  // The AgentDepsIncludesFn and AgentLockIncludesFn types overlap in their
+  // first two parameters. AgentLockIncludesFn accepts an optional third
+  // parameter which AgentDepsIncludesFn will ignore so we cast thingScanner
+  // as an AgentLockIncludesFn type.
   const thingScanner = <AgentLockIncludesFn>(
     (isLockScanned ? lockIncludesByAgent[agent] : depsIncludesByAgent[agent])
   )
