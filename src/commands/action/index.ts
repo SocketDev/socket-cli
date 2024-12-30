@@ -2,32 +2,15 @@ import { parseArgs } from 'util'
 import { CliSubcommand } from '../../utils/meow-with-subcommands'
 import simpleGit from 'simple-git'
 import { Octokit } from '@octokit/rest'
-import { SocketSdk } from '@socketsecurity/sdk'
+import { SocketSdk, SocketSdkResultType } from '@socketsecurity/sdk'
+import type { components, operations } from '@socketsecurity/sdk/types/api.d.ts'
 import micromatch from 'micromatch'
+import ndjson from 'ndjson'
 import ignore from 'ignore'
 const octokit = new Octokit()
-const socket = new SocketSdk(getDefaultKey(), {
+const socket = new SocketSdk(getDefaultKey() ?? FREE_API_KEY, {
   baseUrl: getDefaultAPIBaseUrl()
 })
-
-// const options = (github_variables = [
-//   'GITHUB_SHA',
-//   'GITHUB_API_URL',
-//   'GITHUB_REF_TYPE',
-//   'GITHUB_EVENT_NAME',
-//   'GITHUB_WORKSPACE',
-//   'GITHUB_REPOSITORY',
-//   'GITHUB_REF_NAME',
-//   'DEFAULT_BRANCH',
-//   'PR_NUMBER',
-//   'PR_NAME',
-//   'COMMIT_MESSAGE',
-//   'GITHUB_ACTOR',
-//   'GITHUB_ENV',
-//   'GH_API_TOKEN',
-//   'GITHUB_REPOSITORY_OWNER',
-//   'EVENT_ACTION'
-// ])
 
 // https://github.com/actions/checkout/issues/58#issuecomment-2264361099
 const prNumber = parseInt(
@@ -176,6 +159,12 @@ export const action: CliSubcommand = {
       } else if (eventType() === 'diff') {
         // https://github.com/SocketDev/socket-python-cli/blob/main/socketsecurity/socketcli.py#L341
         console.log('Push initiated flow')
+        createNewDiff({
+          org: owner,
+          repo,
+          files,
+          params: {}
+        })
       }
     }
   }
@@ -346,7 +335,7 @@ async function createNewDiff({
   org: string
   repo: string
   files: string[]
-  params: FullScanParams
+  params: operations['getOrgFullScan']['parameters']
   workspace: string
 }): Promise<Diff> {
   let headFullScanId: string | null
@@ -376,7 +365,7 @@ async function createNewDiff({
 
   const label = 'Time to get new full-scan'
   console.time(label)
-  const newFullScan = createFullScan(files, params, workspace)
+  const newFullScan = await createFullScan(files, params, workspace)
   newFullScan.packages = Core.createSbomDict(newFullScan.sbom_artifacts)
   const newScanEnd = performance.now()
   console.timeEnd(label)
@@ -398,59 +387,57 @@ async function createNewDiff({
   return diffReport
 }
 
-import * as fs from 'fs'
-import * as path from 'path'
-import { platform } from 'os'
 import { URLSearchParams } from 'url'
-import { getDefaultKey } from '../../utils/sdk'
-
-interface FullScanParams {
-  [key: string]: any // Replace with specific properties of FullScanParams if known
-}
-
-interface FullScan {
-  id: string
-  sbom_artifacts: any[]
-  // Add other properties as needed
-}
-
-class Core {
-  static getSbomData(scanId: string): any[] {
-    // Implementation for retrieving SBOM data
-    return []
-  }
-}
+import { FREE_API_KEY, getDefaultKey } from '../../utils/sdk'
+import { once } from 'events'
 
 async function createFullScan(
+  owner: string,
   files: string[],
-  params: FullScanParams,
+  params: operations['getOrgFullScanList']['parameters']['query'] = {},
   workspace: string
-): Promise<FullScan> {
-  /**
-   * Calls the full scan API to create a new Full Scan
-   * @param files - Array of manifest files
-   * @param params - Set of query parameters to pass to the endpoint
-   * @param workspace - Path of workspace
-   * @return FullScan object
-   */
+): Promise<{
+  fullScan: components['schemas']['SocketReport']
+  sbomArtifacts: components['schemas']['SocketArtifact'][]
+}> {
   const sendFiles: Array<{ key: string; payload: [string, Buffer] }> = []
   const createFullStart = performance.now()
 
   console.debug('Creating new full scan')
 
   const queryParams = new URLSearchParams(
-    params as Record<string, string>
-  ).toString()
-  const fullScan = await socket.createOrgFullScan(org, {}, files)
+    Object.fromEntries(Object.entries(params).map(([k, v]) => [k, `${v}`]))
+  )
+  const fullScan = await socket.createOrgFullScan(owner, queryParams, files)
 
   if (fullScan.success) {
     const { id: fullScanId } = fullScan.data
     if (fullScanId) {
-      const resp = await socket.getOrgFullScan(org, fullScanId, undefined)
-      // it's a ndjson stream
-      // build sbom_artifacts here
-      // https://github.com/SocketDev/socket-python-cli/blob/main/socketsecurity/core/__init__.py#L506
-      return { fullScan, sbomArtifacts }
+      // https://docs.socket.dev/reference/getorgfullscan
+
+      const prevFullScan = await socket.getOrgFullScan(
+        owner,
+        fullScanId,
+        undefined
+      )
+
+      if (prevFullScan.success) {
+        const { data: readStream }: { data: any } = prevFullScan
+        // it's a ndjson stream
+        // build sbom_artifacts here
+        // https://github.com/SocketDev/socket-python-cli/blob/main/socketsecurity/core/__init__.py#L506
+        const sbomArtifacts: any = []
+
+        readStream
+          .pipe(ndjson.parse())
+          .on('data', function (sbomArtifact: any) {
+            sbomArtifacts.push(sbomArtifact)
+          })
+
+        await once(readStream, 'end')
+
+        return { fullScan: fullScan.data, sbomArtifacts }
+      }
     }
   }
 
