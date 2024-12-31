@@ -6,7 +6,7 @@ import { SocketSdk, SocketSdkResultType } from '@socketsecurity/sdk'
 import type { components, operations } from '@socketsecurity/sdk/types/api.d.ts'
 import micromatch from 'micromatch'
 import ndjson from 'ndjson'
-import ignore from 'ignore'
+import { PackageURL } from '@socketsecurity/pack'
 const octokit = new Octokit()
 const socket = new SocketSdk(getDefaultKey() ?? FREE_API_KEY, {
   baseUrl: getDefaultAPIBaseUrl()
@@ -160,10 +160,19 @@ export const action: CliSubcommand = {
         // https://github.com/SocketDev/socket-python-cli/blob/main/socketsecurity/socketcli.py#L341
         console.log('Push initiated flow')
         createNewDiff({
-          org: owner,
+          owner: owner,
           repo,
           files,
-          params: {}
+          params: {
+            //             repo=repo,
+            // branch=branch,
+            // commit_message=commit_message,
+            // commit_hash=commit_sha,
+            // pull_request=pr_number,
+            // committers=committer,
+            // make_default_branch=default_branch,
+            // set_as_pending_head=set_as_pending_head
+          }
         })
       }
     }
@@ -328,11 +337,11 @@ function processSecurityComment({
  * @return Diff report
  */
 async function createNewDiff({
-  org,
+  owner,
   repo
 }: {
   path: string
-  org: string
+  owner: string
   repo: string
   files: string[]
   params: operations['getOrgFullScan']['parameters']
@@ -342,7 +351,7 @@ async function createNewDiff({
   let headFullScan: any[]
 
   try {
-    const orgRepoResponse = await socket.getOrgRepo(org, repo)
+    const orgRepoResponse = await socket.getOrgRepo(owner, repo)
     if (orgRepoResponse.success) {
       if (!orgRepoResponse.data.head_full_scan_id) {
         headFullScan = []
@@ -350,7 +359,7 @@ async function createNewDiff({
         const label = 'Time to get head full-scan'
         console.time(label)
         const orgFullScanResponse = socket.getOrgFullScan(
-          org,
+          owner,
           orgRepoResponse.data.head_full_scan_id,
           undefined
         )
@@ -365,8 +374,11 @@ async function createNewDiff({
 
   const label = 'Time to get new full-scan'
   console.time(label)
-  const newFullScan = await createFullScan(files, params, workspace)
-  newFullScan.packages = Core.createSbomDict(newFullScan.sbom_artifacts)
+  const newFullScan = await createFullScan({ owner, files, params })
+  if (!newFullScan) {
+    throw new Error('Failed to create a new full scan')
+  }
+  newFullScan.packages = createSbomDict(newFullScan.sbomArtifacts)
   const newScanEnd = performance.now()
   console.timeEnd(label)
 
@@ -389,17 +401,61 @@ async function createNewDiff({
 
 import { URLSearchParams } from 'url'
 import { FREE_API_KEY, getDefaultKey } from '../../utils/sdk'
-import { once } from 'events'
+import { on, once } from 'events'
 
-async function createFullScan(
-  owner: string,
-  files: string[],
-  params: operations['getOrgFullScanList']['parameters']['query'] = {},
-  workspace: string
-): Promise<{
-  fullScan: components['schemas']['SocketReport']
-  sbomArtifacts: components['schemas']['SocketArtifact'][]
-}> {
+// https://github.com/SocketDev/socket-python-cli/blob/main/socketsecurity/core/__init__.py#L467
+function compareSBOMs(
+  newScan: components['schemas']['SocketArtifact'][],
+  headScan: components['schemas']['SocketArtifact'][]
+) {
+  const diff: { newPackages: string[] } = {
+    newPackages: []
+  }
+  const newScanAlerts = {}
+  const headScanAlerts = {}
+
+  const consolidated = new Set()
+
+  for (const artifact of newScan) {
+    // Get purl params
+    //     purl = Purl(
+    //     id=package.id,
+    //     name=package.name,
+    //     version=package.version,
+    //     ecosystem=package.type,
+    //     direct=package.direct,
+    //     introduced_by=introduced_by,
+    //     author=package.author or [],
+    //     size=package.size,
+    //     transitives=package.transitives,
+    //     url=package.url,
+    //     purl=package.purl
+    // )
+
+    // TODO: check that purl is not in consolidated
+    if (!headScan.find(({ id }) => id === artifact.id) && artifact.direct) {
+      diff.newPackages.push('TODO: add PURL')
+    }
+    consolidated.add(artifact.id)
+  }
+}
+
+// OK
+async function createFullScan({
+  owner,
+  files,
+  params
+}: {
+  owner: string
+  files: string[]
+  params: operations['CreateOrgFullScan']['parameters']['query']
+}): Promise<
+  | {
+      fullScan: operations['CreateOrgFullScan']['responses']['201']['content']['application/json']
+      sbomArtifacts: components['schemas']['SocketArtifact'][]
+    }
+  | undefined
+> {
   const sendFiles: Array<{ key: string; payload: [string, Buffer] }> = []
   const createFullStart = performance.now()
 
@@ -446,6 +502,41 @@ async function createFullScan(
   console.debug(
     `New Full Scan created in ${(totalTime / 1000).toFixed(2)} seconds`
   )
+}
 
-  return fullScan
+function createSbomDict(
+  sbomArtifacts: components['schemas']['SocketArtifact'][]
+): Record<string, Package> {
+  const packages: Record<string, Package> = {}
+  const topLevelCount: Record<string, number> = {}
+
+  for (const sbomArtifact of sbomArtifacts) {
+    // Assuming Package constructor logic is replaced by a direct cast or mapping
+    const packageItem = sbomArtifact as Package
+
+    if (packages[packageItem.id]) {
+      console.log('Duplicate package?')
+    } else {
+      const packageWithDetails = Core.getLicenseDetails(packageItem)
+      packages[packageItem.id] = packageWithDetails
+
+      for (const topId of packageWithDetails.topLevelAncestors) {
+        if (!topLevelCount[topId]) {
+          topLevelCount[topId] = 1
+        } else {
+          topLevelCount[topId] += 1
+        }
+      }
+    }
+  }
+
+  if (Object.keys(topLevelCount).length > 0) {
+    for (const packageId in topLevelCount) {
+      if (packages[packageId]) {
+        packages[packageId].transitives = topLevelCount[packageId]
+      }
+    }
+  }
+
+  return packages
 }
