@@ -6,7 +6,7 @@ import { SocketSdk, SocketSdkResultType } from '@socketsecurity/sdk'
 import type { components, operations } from '@socketsecurity/sdk/types/api.d.ts'
 import micromatch from 'micromatch'
 import ndjson from 'ndjson'
-import { PackageURL } from '@socketsecurity/pack'
+import { PackageURL } from '@socketsecurity/packageurl-js'
 const octokit = new Octokit()
 const socket = new SocketSdk(getDefaultKey() ?? FREE_API_KEY, {
   baseUrl: getDefaultAPIBaseUrl()
@@ -411,33 +411,197 @@ function compareSBOMs(
   const diff: { newPackages: string[] } = {
     newPackages: []
   }
-  const newScanAlerts = {}
+  const newPackages = createSbomDict(newScan)
+  const headPackages = createSbomDict(headScan)
+
+  let newScanAlerts = {}
   const headScanAlerts = {}
 
   const consolidated = new Set()
 
-  for (const artifact of newScan) {
-    // Get purl params
-    //     purl = Purl(
-    //     id=package.id,
-    //     name=package.name,
-    //     version=package.version,
-    //     ecosystem=package.type,
-    //     direct=package.direct,
-    //     introduced_by=introduced_by,
-    //     author=package.author or [],
-    //     size=package.size,
-    //     transitives=package.transitives,
-    //     url=package.url,
-    //     purl=package.purl
-    // )
+  type ExtendedPurl = {
+    id: string
+    name: string
+    version: string
+    ecosystem: string
+    direct: boolean
+    introducedBy: string // TODO: check type
+    author: string[]
+    size: number
+    transitives: string // TODO: check type
+    url: string // TODO: check type
+    purl: string // TODO: check type
+  }
+
+  for (const [packageId, pkg] of Object.entries(newPackages)) {
+    const basePurl = new PackageURL(
+      pkg.type,
+      pkg.name,
+      pkg.namespace,
+      pkg.version
+    )
 
     // TODO: check that purl is not in consolidated
-    if (!headScan.find(({ id }) => id === artifact.id) && artifact.direct) {
+    if (!headPackages[packageId] && pkg.direct && !consolidated.has(basePurl)) {
       diff.newPackages.push('TODO: add PURL')
+      consolidated.add(packageId)
     }
-    consolidated.add(artifact.id)
+    newScanAlerts = createIssueAlerts(pkg, newScanAlerts, newPackages)
   }
+}
+
+function createExtendedPurl(
+  packageId: string,
+  packages: Packages
+): {
+  id: string
+  name?: string
+  version?: string
+  ecosystem: string
+  direct?: boolean
+  introducedBy: [string, string][]
+  author: string[]
+  size?: number
+  transitives: number
+  url: string // TODO: check type
+  purl: string // TODO: check type
+} {
+  const pkg = packages[packageId]
+  if (!pkg) throw new Error()
+  const introducedBy = getSourceData(pkg, packages)
+  return {
+    id: packageId,
+    name: pkg.name,
+    version: pkg.version,
+    ecosystem: pkg.type,
+    direct: pkg.direct,
+    introducedBy,
+    author: pkg.author ?? [],
+    size: pkg.size,
+    transitives: pkg.transitives
+    // TODO: fill url and purl
+    // url: pkg.url,
+    // purl: pkg.purl
+  }
+}
+
+async function getSecurityPolicy(
+  orgId: Parameters<typeof socket.postSettings>[0][0]
+) {
+  const response = await socket.postSettings([orgId])
+  if (response.success) {
+    const {
+      defaults: { issueRules },
+      entries
+    } = response.data
+  }
+  // TODO: https://github.com/SocketDev/socket-python-cli/blob/main/socketsecurity/core/__init__.py#L353
+}
+
+/**
+ * Create the Issue Alerts from the package and base alert data.
+ * @param pkg - Current package being evaluated
+ * @param alerts - All found Issue Alerts across all packages
+ * @param packages - All packages needed to determine top-level package information
+ * @returns Updated alerts
+ */
+function createIssueAlerts(
+  pkg: Packages[keyof Packages],
+  alerts: Record<string, Issue[]>,
+  packages: Packages
+): Record<string, Issue[]> {
+  for (const alert of pkg?.alerts ?? []) {
+    // Extract alert properties
+    // TODO: retrieve or find way to get known issues
+    // const issue = allIssues[alert.type] || null
+    //
+    // const description = issue?.description || ''
+    // const title = issue?.title || ''
+    // const suggestion = issue?.suggestion || ''
+    // const nextStepTitle = issue?.nextStepTitle || ''
+
+    const description = ''
+    const title = ''
+    const suggestion = ''
+    const nextStepTitle = ''
+
+    // Get source data
+    const introducedBy = getSourceData(pkg, packages)
+
+    // Create Issue
+    const issueAlert = {
+      pkgType: pkg.type,
+      pkgName: pkg.name,
+      pkgVersion: pkg.version,
+      pkgId: pkg.id,
+      type: alert.type,
+      severity: alert.severity,
+      key: alert.key,
+      props: alert.props,
+      description,
+      title,
+      suggestion,
+      nextStepTitle,
+      introducedBy,
+      purl: pkg.purl,
+      url: pkg.url
+    }
+
+    // Apply security policy actions
+    if (alert.type in securityPolicy) {
+      const action = securityPolicy[alert.type].action
+      issueAlert[action] = true // Dynamically set property based on policy action
+    }
+
+    // Add to alerts if type is not 'licenseSpdxDisj'
+    if (issueAlert.type !== 'licenseSpdxDisj') {
+      if (!alerts[issueAlert.key]) {
+        alerts[issueAlert.key] = [issueAlert]
+      } else {
+        alerts[issueAlert.key].push(issueAlert)
+      }
+    }
+  }
+
+  return alerts
+}
+
+/**
+ * Creates the properties for source data of the source manifest file(s) and top-level packages.
+ * @param pkg - Current package being evaluated
+ * @param packages - All packages, used to determine top-level package information for transitive packages
+ * @returns Array of tuples with source type and manifest files
+ */
+function getSourceData(
+  pkg: Packages[keyof Packages],
+  packages: Packages
+): [string, string][] {
+  const introducedBy: [string, string][] = []
+
+  if (pkg.direct) {
+    // Handle direct packages
+    let manifests = (pkg.manifestFiles ?? [])
+      .map(manifest => manifest.file)
+      .join(';')
+
+    introducedBy.push(['direct', manifests])
+  } else {
+    // Handle transitive packages
+    for (const topId of pkg.topLevelAncestors ?? []) {
+      const topPackage = packages[topId] // Retrieve the top-level package
+      if (!topPackage) continue
+
+      // Construct manifest file string
+      let manifests = (topPackage?.manifestFiles ?? [])
+        .map(manifest => manifest.file)
+        .join(';')
+
+      const topPurl = `${topPackage.type}/${topPackage.name}@${topPackage.version}`
+      introducedBy.push([topPurl, manifests])
+    }
+  }
+
+  return introducedBy
 }
 
 // OK
@@ -504,23 +668,29 @@ async function createFullScan({
   )
 }
 
+type Packages = Record<
+  string,
+  components['schemas']['SocketArtifact'] & { transitives: number }
+>
+
+// OK
 function createSbomDict(
   sbomArtifacts: components['schemas']['SocketArtifact'][]
-): Record<string, Package> {
-  const packages: Record<string, Package> = {}
+): Packages {
+  const packages: Packages = {}
   const topLevelCount: Record<string, number> = {}
 
   for (const sbomArtifact of sbomArtifacts) {
-    // Assuming Package constructor logic is replaced by a direct cast or mapping
-    const packageItem = sbomArtifact as Package
+    const packageItem = sbomArtifact
 
     if (packages[packageItem.id]) {
       console.log('Duplicate package?')
     } else {
-      const packageWithDetails = Core.getLicenseDetails(packageItem)
-      packages[packageItem.id] = packageWithDetails
+      // TODO: get license details
+      // const packageWithDetails = getLicenseDetails(packageItem)
+      packages[sbomArtifact.id] = { ...sbomArtifact, transitives: 0 }
 
-      for (const topId of packageWithDetails.topLevelAncestors) {
+      for (const topId of sbomArtifact.topLevelAncestors ?? []) {
         if (!topLevelCount[topId]) {
           topLevelCount[topId] = 1
         } else {
@@ -532,8 +702,9 @@ function createSbomDict(
 
   if (Object.keys(topLevelCount).length > 0) {
     for (const packageId in topLevelCount) {
-      if (packages[packageId]) {
-        packages[packageId].transitives = topLevelCount[packageId]
+      const pkg = packages[packageId]
+      if (pkg) {
+        pkg.transitives = topLevelCount[packageId] ?? 0
       }
     }
   }
