@@ -141,8 +141,9 @@ const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
       // we treat it as a yarn.lock. When lockBasename ends with a .lock we
       // treat it as a package-lock.json. The bun.lock format is not identical
       // package-lock.json, however it close enough for npmLockIncludes to work.
-      const lockScanner =
-        lockBasename?.endsWith(LOCK_EXT) ? npmLockIncludes : yarnLockIncludes
+      const lockScanner = lockBasename?.endsWith(LOCK_EXT)
+        ? npmLockIncludes
+        : yarnLockIncludes
       return lockScanner(lockSrc, name)
     },
     [NPM]: npmLockIncludes,
