@@ -231,7 +231,10 @@ export default function baseConfig(extendConfig = {}) {
         preventAssignment: false,
         values: builtinAliases
       }),
-      // Replace ESM package require('tiny-colors') with CJS package require('yoctocolors-cjs').
+      // Replace require calls to ESM 'tiny-colors' with CJS 'yoctocolors-cjs'
+      // because we npm override 'tiny-colors' with 'yoctocolors-cjs' for dist
+      // builds which causes 'tiny-colors' to be treated as an external, not bundled,
+      // require.
       socketModifyPlugin({
         find: requireTinyColorsRegExp,
         replace: "require('yoctocolors-cjs')"
