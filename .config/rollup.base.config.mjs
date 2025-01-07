@@ -1,10 +1,10 @@
 import { builtinModules, createRequire } from 'node:module'
 import path from 'node:path'
 
-import commonjs from '@rollup/plugin-commonjs'
-import json from '@rollup/plugin-json'
+import commonjsPlugin from '@rollup/plugin-commonjs'
+import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
-import replace from '@rollup/plugin-replace'
+import replacePlugin from '@rollup/plugin-replace'
 import { readPackageUpSync } from 'read-package-up'
 import rangesIntersect from 'semver/ranges/intersects.js'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
@@ -43,7 +43,7 @@ const {
 
 const require = createRequire(import.meta.url)
 
-const ts = require('rollup-plugin-ts')
+const tsPlugin = require('rollup-plugin-ts')
 
 const rootPackageJson = require(rootPackageJsonPath)
 const {
@@ -78,9 +78,10 @@ const checkSocketInteropUseRegExp = new RegExp(`\\b${SOCKET_INTEROP}\\b`)
 const danglingRequiresRegExp = /^\s*require\(["'].+?["']\);?\r?\n/gm
 const firstUseStrictRegExp = /'use strict';?/
 const oraSpinnersAssignmentsRegExp = /(?<=ora[^.]+\.spinners\s*=\s*)[$\w]+/g
+const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
 const requireUrlAssignmentRegExp =
   /(?<=var +)[$\w]+(?= *= *require\('node:url'\))/
-const splitUrlRequiresRegExp = /require\('u' \+ 'rl'\)/g
+const splitUrlRequiresRegExp = /require\(["']u["']\s*\+\s*["']rl["']\)/g
 
 function isAncestorsExternal(id, depStats) {
   let currNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH)
@@ -207,8 +208,8 @@ export default function baseConfig(extendConfig = {}) {
     ...extendConfig,
     plugins: [
       customResolver,
-      json(),
-      ts({
+      jsonPlugin(),
+      tsPlugin({
         transpiler: 'babel',
         browserslist: false,
         transpileOnly: true,
@@ -219,11 +220,21 @@ export default function baseConfig(extendConfig = {}) {
       purgePolyfills.rollup({
         replacements: {}
       }),
-      // Convert un-prefixed built-in imports into "node:"" prefixed forms.
-      replace({
+      replacePlugin({
         delimiters: ['(?<=(?:require\\(|from\\s*)["\'])', '(?=["\'])'],
         preventAssignment: false,
         values: builtinAliases
+      }),
+      // Convert un-prefixed built-in imports into "node:"" prefixed forms.
+      replacePlugin({
+        delimiters: ['(?<=(?:require\\(|from\\s*)["\'])', '(?=["\'])'],
+        preventAssignment: false,
+        values: builtinAliases
+      }),
+      // Replace ESM package require('tiny-colors') with CJS package require('yoctocolors-cjs').
+      socketModifyPlugin({
+        find: requireTinyColorsRegExp,
+        replace: "require('yoctocolors-cjs')"
       }),
       // Try to convert `require('u' + 'rl')` into something like `require$$2$3`.
       socketModifyPlugin({
@@ -253,7 +264,7 @@ export default function baseConfig(extendConfig = {}) {
           )
         }
       }),
-      commonjs({
+      commonjsPlugin({
         defaultIsModuleExports: true,
         extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
         ignoreDynamicRequires: true,
@@ -311,7 +322,7 @@ function ${SOCKET_INTEROP}(e) {
 
   // Replace hard-coded absolute paths in source with hard-coded relative paths.
   const replaceAbsPathsOutputPlugin = (() => {
-    const { name, renderChunk } = replace({
+    const { name, renderChunk } = replacePlugin({
       delimiters: ['(?<=["\'])', '/'],
       preventAssignment: false,
       values: {
