@@ -159,6 +159,7 @@ function ignorePatternToMinimatch(pattern: string): string {
 }
 
 function pathsToPatterns(paths: string[]): string[] {
+  // TODO: Does not support `~/` paths.
   return paths.map(p => (p === '.' ? '**/*' : p))
 }
 
@@ -207,7 +208,6 @@ export async function getPackageFiles(
 ): Promise<string[]> {
   debugLog(`Globbed resolving ${inputPaths.length} paths:`, inputPaths)
 
-  // TODO: Does not support `~/` paths
   const entries = await globWithGitIgnore(pathsToPatterns(inputPaths), {
     cwd,
     socketConfig: config
@@ -239,7 +239,6 @@ export async function getPackageFilesFullScans(
 ): Promise<string[]> {
   debugLog(`Globbed resolving ${inputPaths.length} paths:`, inputPaths)
 
-  // TODO: Does not support `~/` paths
   const entries = await globWithGitIgnore(pathsToPatterns(inputPaths), {
     cwd
   })
