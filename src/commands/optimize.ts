@@ -503,7 +503,7 @@ function createActionMessage(
   overrideCount: number,
   workspaceCount: number
 ) {
-  return `${verb} ${overrideCount} Socket.dev optimized overrides${workspaceCount ? ` in ${workspaceCount} ${pluralize('workspace', workspaceCount)}` : ''}`
+  return `${verb} ${overrideCount} Socket.dev optimized ${pluralize('override', overrideCount)}${workspaceCount ? ` in ${workspaceCount} ${pluralize('workspace', workspaceCount)}` : ''}`
 }
 
 function getDependencyEntries(pkgJson: PackageJson) {
