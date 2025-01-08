@@ -5,15 +5,19 @@ import path from 'node:path'
 import rl from 'node:readline'
 import { setTimeout as wait } from 'node:timers/promises'
 
-import { confirm } from '@socketsecurity/registry/lib/prompts'
 import yoctoSpinner from '@socketregistry/yocto-spinner'
+import config from '@socketsecurity/config'
+import { getManifestData } from '@socketsecurity/registry'
+import { hasOwn, isObject } from '@socketsecurity/registry/lib/objects'
+import {
+  fetchPackagePackument,
+  resolvePackageName
+} from '@socketsecurity/registry/lib/packages'
+import { confirm } from '@socketsecurity/registry/lib/prompts'
+
 import isInteractive from 'is-interactive'
 import npa from 'npm-package-arg'
 import semver from 'semver'
-
-import config from '@socketsecurity/config'
-import { isObject } from '@socketsecurity/registry/lib/objects'
-import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 
 import { createTTYServer } from './tty-server'
 import constants from '../constants'
@@ -26,11 +30,14 @@ import { getSetting } from '../utils/settings'
 
 import type {
   Options as ArboristOptions,
+  Advisory as BaseAdvisory,
   Arborist as BaseArborist,
+  AuditReport as BaseAuditReport,
   Edge as BaseEdge,
   Node as BaseNode,
   DependencyProblem,
-  Diff
+  Diff,
+  Link as LinkNode
 } from '@npmcli/arborist'
 import type { Writable } from 'node:stream'
 import type { AliasResult, RegistryResult } from 'npm-package-arg'
@@ -41,8 +48,26 @@ type AlertUxLookupSettings = Parameters<AlertUxLookup>[0]
 
 type AlertUxLookupResult = ReturnType<AlertUxLookup>
 
-type ArboristClass = typeof BaseArborist & {
-  new (...args: any): typeof BaseArborist
+type ArboristClass = ArboristInstance & {
+  new (...args: any): ArboristInstance
+}
+
+type ArboristInstance = Omit<typeof BaseArborist, 'auditReport'> & {
+  auditReport?: AuditReportInstance | null
+}
+
+type AuditReportInstance = Omit<BaseAuditReport, 'report'> & {
+  report: { [dependency: string]: AuditAdvisory[] }
+}
+
+type AuditAdvisory = Omit<BaseAdvisory, 'id'> & {
+  id: number
+  cwe: string[]
+  cvss: {
+    score: number
+    vectorString: string
+  }
+  vulnerable_versions: string
 }
 
 type EdgeClass = Omit<BaseEdge, 'overrides' | 'reload'> & {
@@ -65,6 +90,7 @@ type EdgeOptions = {
   from: NodeClass
   accept?: string | undefined
   overrides?: OverrideSetClass | undefined
+  to?: NodeClass
 }
 
 type ErrorStatus = DependencyProblem | 'OK'
@@ -88,7 +114,14 @@ type InstallEffect = {
 
 type NodeClass = Omit<
   BaseNode,
-  'edgesIn' | 'edgesOut' | 'from' | 'isTop' | 'parent' | 'resolve' | 'root'
+  | 'edgesIn'
+  | 'edgesOut'
+  | 'from'
+  | 'integrity'
+  | 'isTop'
+  | 'parent'
+  | 'resolve'
+  | 'root'
 > & {
   name: string
   version: string
@@ -97,12 +130,14 @@ type NodeClass = Omit<
   from: NodeClass | null
   hasShrinkwrap: boolean
   inShrinkwrap: boolean | undefined
+  integrity?: string | null
   isTop: boolean | undefined
   meta: BaseNode['meta'] & {
     addEdge(edge: SafeEdge): void
   }
   overrides: OverrideSetClass | undefined
   parent: NodeClass | null
+  versions: string[]
   get inDepBundle(): boolean
   get packageName(): string | null
   get resolveParent(): NodeClass | null
@@ -218,6 +253,7 @@ const {
   API_V0_URL,
   ENV,
   LOOP_SENTINEL,
+  NPM,
   NPM_REGISTRY_URL,
   SOCKET_CLI_ISSUES_URL,
   SOCKET_PUBLIC_API_KEY,
@@ -331,6 +367,34 @@ async function uxLookup(
   return _uxLookup(settings)
 }
 
+function packageAlertsToReport(alerts: SocketPackageAlert[]) {
+  let report: { [dependency: string]: AuditAdvisory[] } | null = null
+  for (const alert of alerts) {
+    if (!isAlertFixableCve(alert.raw)) {
+      continue
+    }
+    const { name } = alert
+    if (!report) {
+      report = {}
+    }
+    if (!report[name]) {
+      report[name] = []
+    }
+    const props = alert.raw?.props
+    report[name]!.push(<AuditAdvisory>{
+      id: -1,
+      url: props?.url,
+      title: props?.title,
+      severity: alert.raw?.severity?.toLowerCase(),
+      vulnerable_versions: props?.vulnerableVersionRange,
+      cwe: props?.cwes,
+      cvss: props?.csvs,
+      name
+    })
+  }
+  return report
+}
+
 async function* batchScan(pkgIds: string[]): AsyncGenerator<SocketArtifact> {
   const req = https
     .request(`${API_V0_URL}/purl?alerts=true`, {
@@ -420,16 +484,18 @@ function findSpecificOverrideSet(
 }
 
 function isAlertFixable(alert: SocketAlert): boolean {
+  return alert.type === 'socketUpgradeAvailable' || isAlertFixableCve(alert)
+}
+
+function isAlertFixableCve(alert: SocketAlert): boolean {
   const { type } = alert
-  if (
-    type === 'cve' ||
-    type === 'mediumCVE' ||
-    type === 'mildCVE' ||
-    type === 'criticalCVE'
-  ) {
-    return !!alert.props?.['firstPatchedVersionIdentifier']
-  }
-  return type === 'socketUpgradeAvailable'
+  return (
+    (type === 'cve' ||
+      type === 'mediumCVE' ||
+      type === 'mildCVE' ||
+      type === 'criticalCVE') &&
+    !!alert.props?.['firstPatchedVersionIdentifier']
+  )
 }
 
 function maybeReadfileSync(filepath: string): string | undefined {
@@ -551,8 +617,6 @@ async function getPackagesAlerts(
       spinner.text = remaining > 0 ? getText() : ''
       packageAlerts.push(...alerts)
     }
-  } catch (e) {
-    console.log('error', e)
   } finally {
     spinner.stop()
   }
@@ -600,6 +664,7 @@ function walk(
             existing = oldPkgid
           }
         } else {
+          // TODO: Add proper debug mode.
           // console.log('SKIPPING META CHANGE ON', diff)
         }
       } else {
@@ -626,7 +691,7 @@ function walk(
 // have access to. So we have to recreate any functionality that relies on those
 // private properties and use our own "safe" prefixed non-conflicting private
 // properties. Implementation code not related to patch https://github.com/npm/cli/pull/7025
-// is based on https://github.com/npm/cli/blob/v10.9.0/workspaces/arborist/lib/edge.js.
+// is based on https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/edge.js.
 //
 // The npm application
 // Copyright (c) npm, Inc. and Contributors
@@ -634,6 +699,8 @@ function walk(
 //
 // An edge in the dependency graph.
 // Represents a dependency relationship of some kind.
+const initializedSafeEdges = new WeakSet()
+
 class SafeEdge extends Edge {
   #safeAccept: string | undefined
   #safeError: ErrorStatus | null
@@ -649,11 +716,15 @@ class SafeEdge extends Edge {
     if (accept !== undefined) {
       this.#safeAccept = accept || '*'
     }
+    if (from.constructor !== SafeNode) {
+      Reflect.setPrototypeOf(from, SafeNode.prototype)
+    }
     this.#safeError = null
     this.#safeExplanation = null
     this.#safeFrom = from
     this.#safeName = name
     this.#safeTo = null
+    initializedSafeEdges.add(this)
     this.reload(true)
   }
 
@@ -804,8 +875,11 @@ class SafeEdge extends Edge {
   }
 
   override reload(hard = false) {
+    if (!initializedSafeEdges.has(this)) {
+      // Skip if called during super constructor.
+      return
+    }
     this.#safeExplanation = null
-
     // Patch adding newOverrideSet and oldOverrideSet is based on
     // https://github.com/npm/cli/pull/7025.
     let newOverrideSet
@@ -828,17 +902,15 @@ class SafeEdge extends Edge {
     }
     const newTo = this.#safeFrom?.resolve(this.name)
     if (newTo !== this.#safeTo) {
-      if (this.#safeTo) {
-        // Patch replacing
-        // this.#safeTo.edgesIn.delete(this)
-        // is based on https://github.com/npm/cli/pull/7025.
-        this.#safeTo.deleteEdgeIn(this)
-      }
+      // Patch replacing
+      // if (this.#safeTo) {
+      //   this.#safeTo.edgesIn.delete(this)
+      // }
+      // is based on https://github.com/npm/cli/pull/7025.
+      this.#safeTo?.deleteEdgeIn(this)
       this.#safeTo = <NodeClass>newTo ?? null
       this.#safeError = null
-      if (this.#safeTo) {
-        this.#safeTo.addEdgeIn(this)
-      }
+      this.#safeTo?.addEdgeIn(this)
     } else if (hard) {
       this.#safeError = null
     }
@@ -901,7 +973,7 @@ class SafeEdge extends Edge {
 }
 
 // Implementation code not related to patch https://github.com/npm/cli/pull/7025
-// is based on https://github.com/npm/cli/blob/v10.9.0/workspaces/arborist/lib/node.js:
+// is based on https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/node.js:
 class SafeNode extends Node {
   // Return true if it's safe to remove this node, because anything that is
   // depending on it would be fine with the thing that they would resolve to if
@@ -1002,6 +1074,7 @@ class SafeNode extends Node {
     return result
   }
 
+  // Patch adding deleteEdgeIn is based on https://github.com/npm/cli/pull/7025.
   override deleteEdgeIn(edge: SafeEdge) {
     this.edgesIn.delete(edge)
     const { overrides } = edge
@@ -1178,7 +1251,7 @@ class SafeNode extends Node {
 }
 
 // Implementation code not related to patch https://github.com/npm/cli/pull/7025
-// is based on https://github.com/npm/cli/blob/v10.9.0/workspaces/arborist/lib/override-set.js:
+// is based on https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/override-set.js:
 class SafeOverrideSet extends OverrideSet {
   // Patch adding childrenAreEqual is based on
   // https://github.com/npm/cli/pull/7025.
@@ -1285,7 +1358,7 @@ class SafeOverrideSet extends OverrideSet {
 }
 
 // Implementation code not related to our custom behavior is based on
-// https://github.com/npm/cli/blob/v10.9.0/workspaces/arborist/lib/arborist/index.js:
+// https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/index.js:
 export class SafeArborist extends Arborist {
   constructor(...ctorArgs: ConstructorParameters<ArboristClass>) {
     const mutedArguments = [
@@ -1310,6 +1383,7 @@ export class SafeArborist extends Arborist {
   ): Promise<NodeClass> {
     // SafeArborist has suffered side effects and must be rebuilt from scratch.
     const arb = new Arborist(...(this as any)[kCtorArgs])
+    arb.idealTree = this.idealTree
     const ret = <unknown>await arb.reify(...args)
     Object.assign(this, arb)
     return <NodeClass>ret
@@ -1319,7 +1393,7 @@ export class SafeArborist extends Arborist {
   override async reify(
     ...args: Parameters<InstanceType<ArboristClass>['reify']>
   ): Promise<NodeClass> {
-    const options = args[0] ? <ArboristOptions>{ ...args[0] } : {}
+    const options = <ArboristOptions>(args[0] ? { ...args[0] } : {})
     if (options.dryRun) {
       return await this[kRiskyReify](...args)
     }
@@ -1333,27 +1407,23 @@ export class SafeArborist extends Arborist {
     options.dryRun = true
     options['save'] = false
     options['saveBundle'] = false
-    // TODO: Make this deal w/ any refactor to private fields by punching the
+    // TODO: Make this deal with any refactor to private fields by punching the
     // class itself.
     await super.reify(...args)
     const diff = walk(this['diff'])
     options.dryRun = old.dryRun
     options['save'] = old.save
     options['saveBundle'] = old.saveBundle
-    // Nothing to check, mmm already installed or all private?
+    // Nothing to check, hmmm already installed or all private?
     if (diff.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1) {
       return await this[kRiskyReify](...args)
     }
     let proceed = ENV[UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]
+    let alerts: SocketPackageAlert[] | undefined
     if (!proceed) {
       proceed = await ttyServer.captureTTY(async (input, output) => {
         if (input && output) {
-          const alerts = await getPackagesAlerts(
-            this,
-            this['registry'],
-            diff,
-            output
-          )
+          alerts = await getPackagesAlerts(this, this['registry'], diff, output)
           if (!alerts.length) {
             return true
           }
@@ -1380,11 +1450,153 @@ export class SafeArborist extends Arborist {
       })
     }
     if (proceed) {
+      if (options['fix'] && alerts?.length) {
+        await updateAdvisoryDependencies(this, alerts)
+      }
       return await this[kRiskyReify](...args)
     } else {
       throw new Error('Socket npm exiting due to risks')
     }
   }
+}
+
+async function updateAdvisoryDependencies(
+  arb: ArboristInstance | SafeArborist,
+  alerts: SocketPackageAlert[]
+) {
+  const report = packageAlertsToReport(alerts)
+  if (!report) {
+    // No advisories to process.
+    return
+  }
+  await arb.buildIdealTree()
+  const tree = arb.idealTree!
+
+  for (const name of Object.keys(report)) {
+    const advisories = report[name]!
+    const node = findPackageRecursively(tree, name)
+    if (!node) {
+      // Package not found in the tree.
+      continue
+    }
+
+    const { version } = node
+    const majorVerNum = semver.major(version)
+
+    // Fetch packument to get available versions.
+    // eslint-disable-next-line no-await-in-loop
+    const packument = await fetchPackagePackument(name)
+    const availableVersions = packument ? Object.keys(packument.versions) : []
+
+    for (const advisory of advisories) {
+      const { vulnerable_versions } = advisory
+      // Find the highest non-vulnerable version within the same major range
+      const targetVersion = findBestPatchVersion(
+        name,
+        availableVersions,
+        majorVerNum,
+        vulnerable_versions
+      )
+      const targetPackument = targetVersion
+        ? packument.versions[targetVersion]
+        : undefined
+      // Check !targetVersion to make TypeScript happy.
+      if (!targetVersion || !targetPackument) {
+        // No suitable patch version found.
+        continue
+      }
+
+      // Use Object.defineProperty to override the version.
+      Object.defineProperty(node, 'version', {
+        configurable: true,
+        enumerable: true,
+        get: () => targetVersion
+      })
+      node.package.version = targetVersion
+      // Update resolved and clear integrity for the new version.
+      node.resolved = `https://registry.npmjs.org/${name}/-/${name}-${targetVersion}.tgz`
+      if (node.integrity) {
+        delete node.integrity
+      }
+      if ('deprecated' in targetPackument) {
+        node.package['deprecated'] = <string>targetPackument.deprecated
+      } else {
+        delete node.package['deprecated']
+      }
+      const newDeps = { ...targetPackument.dependencies }
+      const { dependencies: oldDeps } = node.package
+      node.package.dependencies = newDeps
+      if (oldDeps) {
+        for (const oldDepName of Object.keys(oldDeps)) {
+          if (!hasOwn(newDeps, oldDepName)) {
+            node.edgesOut.get(oldDepName)?.detach()
+          }
+        }
+      }
+      for (const newDepName of Object.keys(newDeps)) {
+        if (!hasOwn(oldDeps, newDepName)) {
+          node.addEdgeOut(
+            (<unknown>new Edge({
+              from: node,
+              name: newDepName,
+              spec: newDeps[newDepName],
+              type: 'prod'
+            })) as SafeEdge
+          )
+        }
+      }
+    }
+  }
+}
+
+function findPackageRecursively(
+  tree: BaseNode | NodeClass | LinkNode,
+  packageName: string
+): NodeClass | null {
+  const queue: { node: typeof tree; depth: number }[] = [
+    { node: tree, depth: 0 }
+  ]
+  let sentinel = 0
+  while (queue.length) {
+    if (sentinel++ === LOOP_SENTINEL) {
+      throw new Error('Detected infinite loop in findPackageRecursively')
+    }
+    const { depth, node: currentNode } = queue.pop()!
+    const node = currentNode.children.get(packageName)
+    if (node) {
+      // Found package.
+      return (<unknown>node) as NodeClass
+    }
+    const children = [...currentNode.children.values()]
+    for (let i = children.length - 1; i >= 0; i -= 1) {
+      queue.push({ node: children[i]!, depth: depth + 1 })
+    }
+  }
+  return null
+}
+
+function findBestPatchVersion(
+  name: string,
+  availableVersions: string[],
+  currentMajorVersion: number,
+  vulnerableRange: string
+): string | null {
+  const manifestVersion = getManifestData(NPM, name)?.version
+  // Filter versions that are within the current major version and are not in the vulnerable range
+  const eligibleVersions = availableVersions.filter(version => {
+    const isSameMajor = semver.major(version) === currentMajorVersion
+    const isNotVulnerable = !semver.satisfies(version, vulnerableRange)
+    if (isSameMajor && isNotVulnerable) {
+      return true
+    }
+    return !!manifestVersion
+  })
+  if (eligibleVersions.length === 0) {
+    return null
+  }
+  // Use semver to find the max satisfying version
+  const bestVersion = semver.maxSatisfying(eligibleVersions, '*')
+  return bestVersion
 }
 
 export function installSafeArborist() {
