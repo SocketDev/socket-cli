@@ -6,7 +6,7 @@
     "@socketregistry/hyrious__bun.lockb": "1.0.9",
     "@socketregistry/yocto-spinner": "^1.0.2",
     "@socketsecurity/config": "^2.1.3",
-    "@socketsecurity/registry": "^1.0.61",
+    "@socketsecurity/registry": "^1.0.62",
     "@socketsecurity/sdk": "^1.3.0",
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
