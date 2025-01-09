@@ -15,36 +15,6 @@ export default async function shadow(
   binName: 'npm' | 'npx',
   binArgs = process.argv.slice(2)
 ) {
-  const binPath = await installLinks(shadowBinPath, binName)
-  if (abortSignal.aborted) {
-    return
-  }
-  // Adding the `--quiet` and `--no-progress` flags when the `proc-log` module
-  // is found to fix a UX issue when running the command with recent versions of
-  // npm (input swallowed by the standard npm spinner)
-  if (
-    binName === NPM &&
-    binArgs.includes('install') &&
-    !binArgs.includes('--no-progress') &&
-    !binArgs.includes('--quiet')
-  ) {
-    const npmEntrypoint = realpathSync(binPath)
-    const npmRootPath = findRoot(path.dirname(npmEntrypoint))
-    if (npmRootPath === undefined) {
-      // The exit code 127 indicates that the command or binary being executed
-      // could not be found.
-      process.exit(127)
-    }
-    const npmDepPath = path.join(npmRootPath, 'node_modules')
-    let procLog
-    try {
-      procLog = require(path.join(npmDepPath, 'proc-log/lib/index.js')).log
-    } catch {}
-    if (procLog) {
-      binArgs.push('--no-progress', '--quiet')
-    }
-  }
-
   process.exitCode = 1
   const spawnPromise = spawn(
     execPath,
@@ -53,8 +23,16 @@ export default async function shadow(
       ...constants.nodeNoWarningsFlags,
       '--require',
       injectionPath,
-      binPath,
-      ...binArgs
+      await installLinks(shadowBinPath, binName),
+      ...binArgs,
+      // Add the `--quiet` and `--no-progress` flags to fix input being swallowed
+      // by the spinner when running the command with recent versions of npm.
+      ...(binName === NPM &&
+      binArgs.includes('install') &&
+      !binArgs.includes('--no-progress') &&
+      !binArgs.includes('--quiet')
+        ? ['--no-progress', '--quiet']
+        : [])
     ],
     {
       signal: abortSignal,
