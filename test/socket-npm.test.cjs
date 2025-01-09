@@ -29,24 +29,33 @@ for (const npmDir of ['npm8', 'npm10']) {
     const entryPath = path.join(constants.rootBinPath, 'cli.js')
 
     it('should bail on new typosquat', async () => {
-      await assert.rejects(
+      await assert.doesNotReject(
         () =>
-          spawn(
-            // Lazily access constants.execPath.
-            constants.execPath,
-            [entryPath, NPM, 'install', 'bowserify'],
-            {
-              cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
-              encoding: 'utf8',
-              env: {
-                // Make sure we don't borrow TTY from parent.
-                SOCKET_SECURITY_TTY_IPC: undefined,
-                PATH: `${npmBinPath}:${process.env.PATH}`
-              },
-              signal: abortSignal
-            }
-          ),
-        e => e?.stderr.includes('Unable to prompt')
+          new Promise((resolve, reject) => {
+            const promise = spawn(
+              // Lazily access constants.execPath.
+              constants.execPath,
+              [entryPath, NPM, 'install', 'bowserify'],
+              {
+                cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
+                encoding: 'utf8',
+                env: {
+                  PATH: `${npmBinPath}:${process.env.PATH}`
+                },
+                signal: abortSignal
+              }
+            )
+            promise.process.stderr.on('data', buffer => {
+              if (buffer.toString().includes('Possible typosquat attack')) {
+                promise.process.kill('SIGINT')
+                resolve()
+              }
+            })
+            promise.catch(() => {
+              promise.process.kill('SIGINT')
+              reject()
+            })
+          })
       )
     })
   })
