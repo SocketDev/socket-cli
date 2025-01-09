@@ -239,7 +239,6 @@ type SocketPackageAlert = {
 
 interface KnownModules {
   npmlog: typeof import('npmlog')
-  pacote: typeof import('pacote')
   'proc-log': typeof import('proc-log')
 }
 
@@ -321,18 +320,10 @@ const log = tryRequire(
   <'npmlog'>path.join(npmNmPath, 'npmlog/lib/log.js')
 )
 
-if (log === undefined) {
-  console.error(
-    `Unable to integrate with npm CLI logging infrastructure.\n\n${POTENTIAL_BUG_ERROR_MESSAGE}.`
-  )
-  // The exit code 127 indicates that the command or binary being executed
-  // could not be found.
-  process.exit(127)
-}
-
-const pacote = tryRequire(<'pacote'>path.join(npmNmPath, 'pacote'), 'pacote')!
-const { tarball } = pacote
-const translations = require(path.join(rootPath, 'translations.json'))
+const pacote: typeof import('pacote') = require(path.join(npmNmPath, 'pacote'))
+const translations: typeof import('../../translations.json') = require(
+  path.join(rootPath, 'translations.json')
+)
 
 const Arborist: ArboristClass = require(arboristClassPath)
 const depValid: (
@@ -475,7 +466,7 @@ function findSpecificOverrideSet(
     overrideSet = overrideSet.parent
   }
   // The override sets are incomparable. Neither one contains the other.
-  log!.silly('Conflicting override sets', first, second)
+  log?.silly('Conflicting override sets', first, second)
   return undefined
 }
 
@@ -571,7 +562,7 @@ async function getPackagesAlerts(
       if (!blocked) {
         const pkg = pkgs.find(p => p.pkgid === id)
         if (pkg) {
-          await tarball.stream(
+          await pacote.tarball.stream(
             id,
             stream => {
               stream.resume()
@@ -590,7 +581,7 @@ async function getPackagesAlerts(
         for (const alert of alerts) {
           // Based data from { pageProps: { alertTypes } } of:
           // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
-          const info = translations.alerts[alert.type]
+          const info = (translations.alerts as any)[alert.type]
           const title = info?.title ?? alert.type
           const attributes = [
             ...(alert.fixable ? ['fixable'] : []),
@@ -1208,7 +1199,7 @@ class SafeNode extends Node {
     }
     // This is an error condition. We can only get here if the new override set
     // is in conflict with the existing.
-    log!.silly('Conflicting override sets', this.name)
+    log?.silly('Conflicting override sets', this.name)
     return false
   }
 
