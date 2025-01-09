@@ -156,10 +156,10 @@ export const cdxgen: CliSubcommand = {
     const unknown: string[] = yargv._
     const { length: unknownLength } = unknown
     if (unknownLength) {
+      process.exitCode = 1
       console.error(
         `Unknown ${pluralize('argument', unknownLength)}: ${yargv._.join(', ')}`
       )
-      process.exitCode = 1
       return
     }
     let cleanupPackageLock = false
