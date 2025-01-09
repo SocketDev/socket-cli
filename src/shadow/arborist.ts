@@ -15,11 +15,9 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 import { confirm } from '@socketsecurity/registry/lib/prompts'
 
-import isInteractive from 'is-interactive'
 import npa from 'npm-package-arg'
 import semver from 'semver'
 
-import { createTTYServer } from './tty-server'
 import constants from '../constants'
 import { ColorOrMarkdown } from '../utils/color-or-markdown'
 import { createAlertUXLookup } from '../utils/alert-rules'
@@ -353,8 +351,6 @@ const kRiskyReify = Symbol('riskyReify')
 const formatter = new ColorOrMarkdown(false)
 const pubToken = getDefaultKey() ?? SOCKET_PUBLIC_API_KEY
 
-const ttyServer = createTTYServer(isInteractive({ stream: process.stdin }), log)
-
 let _uxLookup: AlertUxLookup | undefined
 
 async function uxLookup(
@@ -507,7 +503,6 @@ function maybeReadfileSync(filepath: string): string | undefined {
 
 async function getPackagesAlerts(
   safeArb: SafeArborist,
-  _registry: string,
   pkgs: InstallEffect[],
   output?: Writable
 ): Promise<SocketPackageAlert[]> {
@@ -1418,39 +1413,45 @@ export class SafeArborist extends Arborist {
     if (diff.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1) {
       return await this[kRiskyReify](...args)
     }
+    const input = process.stdin
+    const output = process.stderr
     let proceed = ENV[UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]
     let alerts: SocketPackageAlert[] | undefined
     if (!proceed) {
-      proceed = await ttyServer.captureTTY(async (input, output) => {
-        if (input && output) {
-          alerts = await getPackagesAlerts(this, this['registry'], diff, output)
-          if (!alerts.length) {
-            return true
-          }
-          return await confirm(
-            {
-              message: 'Accept risks of installing these packages?',
-              default: false
-            },
-            {
-              input,
-              output,
-              signal: abortSignal
-            }
-          )
-        } else if (
-          (await getPackagesAlerts(this, this['registry'], diff, output))
-            .length > 0
-        ) {
-          throw new Error(
-            'Socket npm Unable to prompt to accept risk, need TTY to do so'
-          )
+      proceed = await (async () => {
+        alerts = await getPackagesAlerts(this, diff, output)
+        if (!alerts.length) {
+          return true
         }
+        return await confirm(
+          {
+            message: 'Accept risks of installing these packages?',
+            default: false
+          },
+          {
+            input,
+            output,
+            signal: abortSignal
+          }
+        )
         return true
-      })
+      })()
     }
     if (proceed) {
-      if (options['fix'] && alerts?.length) {
+      if (
+        alerts?.length &&
+        (await confirm(
+          {
+            message: 'Try to fix alerts?',
+            default: true
+          },
+          {
+            input,
+            output,
+            signal: abortSignal
+          }
+        ))
+      ) {
         await updateAdvisoryDependencies(this, alerts)
       }
       return await this[kRiskyReify](...args)
