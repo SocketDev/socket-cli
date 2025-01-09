@@ -338,17 +338,19 @@ function processSecurityComment({
  */
 async function createNewDiff({
   owner,
-  repo
+  repo,
+  files,
+  params
 }: {
   path: string
   owner: string
   repo: string
   files: string[]
-  params: operations['getOrgFullScan']['parameters']
+  params: operations['CreateOrgFullScan']['parameters']['query']
   workspace: string
 }): Promise<Diff> {
-  let headFullScanId: string | null
-  let headFullScan: any[]
+  let headFullScanId: string | null = null
+  let headFullScan: any[] = []
 
   try {
     const orgRepoResponse = await socket.getOrgRepo(owner, repo)
@@ -368,8 +370,6 @@ async function createNewDiff({
     }
   } catch (error) {
     console.error(error)
-    headFullScanId = null
-    headFullScan = []
   }
 
   const label = 'Time to get new full-scan'
@@ -378,12 +378,16 @@ async function createNewDiff({
   if (!newFullScan) {
     throw new Error('Failed to create a new full scan')
   }
-  newFullScan.packages = createSbomDict(newFullScan.sbomArtifacts)
-  const newScanEnd = performance.now()
+  const newFullScanPackages = createSbomDict(newFullScan.sbomArtifacts)
   console.timeEnd(label)
 
-  const diffReport = Core.compareSboms(newFullScan.sbom_artifacts, headFullScan)
-  diffReport.packages = newFullScan.packages
+  const securityPolicy = (await getSecurityPolicy(owner)) ?? {}
+  const diffReport = compareSBOMs({
+    newScan: newFullScan.sbomArtifacts,
+    headScan: headFullScan,
+    securityPolicy
+  })
+  diffReport.packages = newFullScanPackages
 
   // Set the diff ID and URLs
   const baseSocket = 'https://socket.dev/dashboard/org'
@@ -404,10 +408,15 @@ import { FREE_API_KEY, getDefaultKey } from '../../utils/sdk'
 import { on, once } from 'events'
 
 // https://github.com/SocketDev/socket-python-cli/blob/main/socketsecurity/core/__init__.py#L467
-function compareSBOMs(
-  newScan: components['schemas']['SocketArtifact'][],
+function compareSBOMs({
+  newScan,
+  headScan,
+  securityPolicy
+}: {
+  newScan: components['schemas']['SocketArtifact'][]
   headScan: components['schemas']['SocketArtifact'][]
-) {
+  securityPolicy: Awaited<ReturnType<typeof getSecurityPolicy>>
+}) {
   const diff: { newPackages: string[] } = {
     newPackages: []
   }
@@ -419,21 +428,9 @@ function compareSBOMs(
 
   const consolidated = new Set()
 
-  type ExtendedPurl = {
-    id: string
-    name: string
-    version: string
-    ecosystem: string
-    direct: boolean
-    introducedBy: string // TODO: check type
-    author: string[]
-    size: number
-    transitives: string // TODO: check type
-    url: string // TODO: check type
-    purl: string // TODO: check type
-  }
-
   for (const [packageId, pkg] of Object.entries(newPackages)) {
+    // TODO: may be unnecessary
+    const purl = createExtendedPurl(packageId, newPackages)
     const basePurl = new PackageURL(
       pkg.type,
       pkg.name,
@@ -446,7 +443,12 @@ function compareSBOMs(
       diff.newPackages.push('TODO: add PURL')
       consolidated.add(packageId)
     }
-    newScanAlerts = createIssueAlerts(pkg, newScanAlerts, newPackages)
+    newScanAlerts = createIssueAlerts({
+      pkg,
+      alerts: newScanAlerts,
+      packages: newPackages,
+      securityPolicy
+    })
   }
 }
 
@@ -455,16 +457,16 @@ function createExtendedPurl(
   packages: Packages
 ): {
   id: string
-  name?: string
-  version?: string
+  name: string | undefined
+  version: string | undefined
   ecosystem: string
-  direct?: boolean
+  direct: boolean | undefined
   introducedBy: [string, string][]
   author: string[]
-  size?: number
+  size: number | undefined
   transitives: number
-  url: string // TODO: check type
-  purl: string // TODO: check type
+  url: string
+  purl: string
 } {
   const pkg = packages[packageId]
   if (!pkg) throw new Error()
@@ -478,25 +480,60 @@ function createExtendedPurl(
     introducedBy,
     author: pkg.author ?? [],
     size: pkg.size,
-    transitives: pkg.transitives
-    // TODO: fill url and purl
-    // url: pkg.url,
-    // purl: pkg.purl
+    transitives: pkg.transitives,
+    url: pkg.url,
+    purl: pkg.purl
   }
 }
 
-async function getSecurityPolicy(
-  orgId: Parameters<typeof socket.postSettings>[0][0]
-) {
-  const response = await socket.postSettings([orgId])
+async function getSecurityPolicy(orgId: string) {
+  const response = await socket.postSettings([{ organization: orgId }])
   if (response.success) {
     const {
       defaults: { issueRules },
       entries
     } = response.data
+    type DefaultIssueRules = (typeof response.data)['defaults']['issueRules']
+    type EntryIssueRule =
+      (typeof response.data)['entries'][number]['settings'][string]['issueRules']
+
+    let orgRules: DefaultIssueRules | EntryIssueRule = {}
+    for (const orgSet of entries) {
+      const {
+        settings: { organization }
+      } = orgSet
+      if (organization) {
+        orgRules = organization.issueRules
+      }
+    }
+    for (const issueRule in issueRules) {
+      if (!(issueRule in orgRules)) {
+        const action = issueRules['default']?.action
+        if (action) {
+          orgRules['default'] = { action }
+        }
+      }
+    }
+    return orgRules
   }
-  // TODO: https://github.com/SocketDev/socket-python-cli/blob/main/socketsecurity/core/__init__.py#L353
 }
+type IssueAlert = {
+  pkgType: Package['type']
+  pkgName: Package['name']
+  pkgVersion: Package['version']
+  pkgId: Package['id']
+  type: NonNullable<Package['alerts']>[number]['type']
+  severity: NonNullable<Package['alerts']>[number]['severity']
+  key: NonNullable<Package['alerts']>[number]['key']
+  props: NonNullable<Package['alerts']>[number]['props']
+  description: string
+  title: string
+  suggestion: string
+  nextStepTitle: string
+  introducedBy: [string, string][]
+  purl: string
+  url: string
+} & Record<string, boolean>
 
 /**
  * Create the Issue Alerts from the package and base alert data.
@@ -505,11 +542,17 @@ async function getSecurityPolicy(
  * @param packages - All packages needed to determine top-level package information
  * @returns Updated alerts
  */
-function createIssueAlerts(
-  pkg: Packages[keyof Packages],
-  alerts: Record<string, Issue[]>,
+async function createIssueAlerts({
+  pkg,
+  alerts,
+  packages,
+  securityPolicy
+}: {
+  pkg: Package
+  alerts: Record<string, IssueAlert[]>
   packages: Packages
-): Record<string, Issue[]> {
+  securityPolicy: Awaited<ReturnType<typeof getSecurityPolicy>>
+}): Promise<Record<string, IssueAlert[]>> {
   for (const alert of pkg?.alerts ?? []) {
     // Extract alert properties
     // TODO: retrieve or find way to get known issues
@@ -529,7 +572,7 @@ function createIssueAlerts(
     const introducedBy = getSourceData(pkg, packages)
 
     // Create Issue
-    const issueAlert = {
+    const issueAlert: IssueAlert = {
       pkgType: pkg.type,
       pkgName: pkg.name,
       pkgVersion: pkg.version,
@@ -549,8 +592,10 @@ function createIssueAlerts(
 
     // Apply security policy actions
     if (alert.type in securityPolicy) {
-      const action = securityPolicy[alert.type].action
-      issueAlert[action] = true // Dynamically set property based on policy action
+      const action = securityPolicy[alert.type]?.action
+      if (action) {
+        issueAlert[action] = true // Dynamically set property based on policy action
+      }
     }
 
     // Add to alerts if type is not 'licenseSpdxDisj'
@@ -558,7 +603,7 @@ function createIssueAlerts(
       if (!alerts[issueAlert.key]) {
         alerts[issueAlert.key] = [issueAlert]
       } else {
-        alerts[issueAlert.key].push(issueAlert)
+        alerts[issueAlert.key]?.push(issueAlert)
       }
     }
   }
@@ -668,10 +713,12 @@ async function createFullScan({
   )
 }
 
-type Packages = Record<
-  string,
-  components['schemas']['SocketArtifact'] & { transitives: number }
->
+type Package = components['schemas']['SocketArtifact'] & {
+  purl: string
+  url: string
+  transitives: number
+}
+type Packages = Record<string, Package>
 
 // OK
 function createSbomDict(
