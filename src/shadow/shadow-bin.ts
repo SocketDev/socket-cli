@@ -1,11 +1,9 @@
-import { realpathSync } from 'node:fs'
 import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
 
 import constants from '../constants'
 import { installLinks } from './link'
-import { findRoot } from '../utils/path-resolve'
 
 const { NPM, abortSignal, distPath, execPath, shadowBinPath } = constants
 
