@@ -38,7 +38,6 @@ for (const npmDir of ['npm8', 'npm10']) {
               [entryPath, NPM, 'install', 'bowserify'],
               {
                 cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
-                encoding: 'utf8',
                 env: {
                   PATH: `${npmBinPath}:${process.env.PATH}`
                 },

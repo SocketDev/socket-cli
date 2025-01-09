@@ -17,7 +17,6 @@ const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 const spawnOpts: PromiseSpawnOptions = {
   cwd: npmFixturesPath,
-  encoding: 'utf8',
   signal: abortSignal
 }
 
