@@ -1,11 +1,12 @@
 import { stdin as inputText, stdout as output } from 'node:process'
 import readline from 'node:readline/promises'
 
-import colors from 'yoctocolors-cjs'
 import meow from 'meow'
 import open from 'open'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
 import { ErrorWithCause } from 'pony-cause'
+import colors from 'yoctocolors-cjs'
+
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import {
   handleApiCall,
@@ -18,7 +19,6 @@ import { getPackageFilesFullScans } from '../../utils/path-resolve'
 import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
-import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const create: CliSubcommand = {
   description: 'Create a scan',
@@ -33,7 +33,7 @@ export const create: CliSubcommand = {
         )
       }
       const spinnerText = 'Creating a scan... \n'
-      const spinner = yoctoSpinner({ text: spinnerText }).start()
+      const spinner = new Spinner({ text: spinnerText }).start()
       await createFullScan(input, spinner, apiKey)
     }
   }
@@ -156,7 +156,7 @@ async function setupCommand(
         handleUnsuccessfulApiResponse(
           'getReportSupportedFiles',
           res,
-          yoctoSpinner()
+          new Spinner()
         )
       return (res as any).data
     })

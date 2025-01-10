@@ -1,8 +1,9 @@
-import colors from 'yoctocolors-cjs'
 // @ts-ignore
 import chalkTable from 'chalk-table'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+import colors from 'yoctocolors-cjs'
+
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags } from '../../flags'
 import {
@@ -14,7 +15,6 @@ import { printFlagList } from '../../utils/formatting'
 import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
-import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const view: CliSubcommand = {
   description: 'View repositories in an organization',
@@ -29,7 +29,7 @@ export const view: CliSubcommand = {
         )
       }
       const spinnerText = 'Fetching repository... \n'
-      const spinner = yoctoSpinner({ text: spinnerText }).start()
+      const spinner = new Spinner({ text: spinnerText }).start()
       await viewRepository(input.orgSlug, input.repositoryName, spinner, apiKey)
     }
   }

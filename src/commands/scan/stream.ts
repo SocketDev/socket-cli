@@ -1,6 +1,7 @@
-import colors from 'yoctocolors-cjs'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+import colors from 'yoctocolors-cjs'
+
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags } from '../../flags'
 import {
@@ -26,7 +27,7 @@ export const stream: CliSubcommand = {
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
-      const spinner = yoctoSpinner({ text: 'Streaming scan...' }).start()
+      const spinner = new Spinner({ text: 'Streaming scan...' }).start()
       const result = await getOrgFullScan(
         input.orgSlug,
         input.fullScanId,

@@ -1,5 +1,6 @@
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { updateSetting } from '../utils/settings'
 
@@ -39,6 +40,6 @@ export const logout: CliSubcommand = {
     updateSetting('apiBaseUrl', null)
     updateSetting('apiProxy', null)
     updateSetting('enforcedOrgs', null)
-    yoctoSpinner().success('Successfully logged out')
+    new Spinner().success('Successfully logged out')
   }
 }

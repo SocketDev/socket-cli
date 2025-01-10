@@ -3,14 +3,15 @@ import fs from 'node:fs/promises'
 // @ts-ignore
 import ScreenWidget from 'blessed/lib/widgets/screen'
 // @ts-ignore
-import BarChart from 'blessed-contrib/lib/widget/charts/bar'
-// @ts-ignore
 import GridLayout from 'blessed-contrib/lib/layout/grid'
+// @ts-ignore
+import BarChart from 'blessed-contrib/lib/widget/charts/bar'
 // @ts-ignore
 import LineChart from 'blessed-contrib/lib/widget/charts/line'
 import meow from 'meow'
 import colors from 'yoctocolors-cjs'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags } from '../flags'
 import {
@@ -22,7 +23,6 @@ import { printFlagList } from '../utils/formatting'
 import { getDefaultKey, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
-import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const analytics: CliSubcommand = {
   description: `Look up analytics data \n
@@ -38,7 +38,7 @@ export const analytics: CliSubcommand = {
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
-      const spinner = yoctoSpinner({ text: 'Fetching analytics data' }).start()
+      const spinner = new Spinner({ text: 'Fetching analytics data' }).start()
       if (input.scope === 'org') {
         await fetchOrgAnalyticsData(
           input.time,

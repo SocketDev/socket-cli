@@ -4,7 +4,6 @@ import path from 'node:path'
 import spawn from '@npmcli/promise-spawn'
 import meow from 'meow'
 import npa from 'npm-package-arg'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
 import semver from 'semver'
 import { glob as tinyGlob } from 'tinyglobby'
 import { parse as yamlParse } from 'yaml'
@@ -22,6 +21,7 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 import { pEach } from '@socketsecurity/registry/lib/promises'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -38,7 +38,6 @@ import type {
 } from '../utils/package-manager-detector'
 import type { ManifestEntry } from '@socketsecurity/registry'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
-import type { Spinner } from '@socketregistry/yocto-spinner'
 
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 
@@ -881,7 +880,7 @@ export const optimize: CliSubcommand = {
         `⚠️ ${COMMAND_TITLE}: Package ${lockName} found at ${lockPath}`
       )
     }
-    const spinner = yoctoSpinner({ text: 'Socket optimizing...' })
+    const spinner = new Spinner({ text: 'Socket optimizing...' })
     const state = createAddOverridesState({ spinner })
     spinner.start()
     const nodeRange = `>=${minimumNodeVersion}`

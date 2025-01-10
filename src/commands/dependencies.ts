@@ -1,8 +1,9 @@
-import colors from 'yoctocolors-cjs'
 // @ts-ignore
 import chalkTable from 'chalk-table'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+import colors from 'yoctocolors-cjs'
+
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags } from '../flags'
 import {
@@ -109,7 +110,7 @@ async function searchDeps({
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
-  const spinner = yoctoSpinner({ text: 'Searching dependencies...' }).start()
+  const spinner = new Spinner({ text: 'Searching dependencies...' }).start()
   const socketSdk = await setupSdk(apiKey)
 
   const result = await handleApiCall(
