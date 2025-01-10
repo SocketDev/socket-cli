@@ -970,10 +970,11 @@ export const optimize: CliSubcommand = {
             `💡 Re-run ${COMMAND_TITLE} whenever ${lockName} changes.\n   This can be skipped once npm ships ${NPM_OVERRIDE_PR_URL}.`
           )
         }
-      } catch {
+      } catch (e: any) {
         spinner.error(
           `${COMMAND_TITLE}: ${agent} install failed to update ${lockName}`
         )
+        console.error(e)
       }
     }
   }
