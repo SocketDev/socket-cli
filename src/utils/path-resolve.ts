@@ -6,8 +6,8 @@ import micromatch from 'micromatch'
 import { glob as tinyGlob } from 'tinyglobby'
 import which from 'which'
 
-import constants from '../constants'
 import { directoryPatterns } from './ignore-by-default'
+import constants from '../constants'
 
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'

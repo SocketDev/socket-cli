@@ -1,8 +1,9 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import colors from 'yoctocolors-cjs'
 import yargsParse from 'yargs-parser'
+import colors from 'yoctocolors-cjs'
+
 import { runBin } from '@socketsecurity/registry/lib/npm'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
