@@ -1,6 +1,6 @@
-import colors from 'yoctocolors-cjs'
 import isUnicodeSupported from 'is-unicode-supported'
 import terminalLink from 'terminal-link'
+import colors from 'yoctocolors-cjs'
 
 // From the 'log-symbols' module
 const unicodeLogSymbols = {
