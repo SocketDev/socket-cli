@@ -1,3 +1,5 @@
+import { isObject } from '@socketsecurity/registry/lib/objects'
+
 import type { SocketSdkResultType } from '@socketsecurity/sdk'
 
 //#region UX Constants
@@ -43,13 +45,17 @@ type NonNormalizedResolvedRule =
 /**
  * Iterates over all entries with ordered issue rule for deferral.  Iterates over
  * all issue rules and finds the first defined value that does not defer otherwise
- * uses the defaultValue. Takes the value and converts into a UX workflow
+ * uses the defaultValue. Takes the value and converts into a UX workflow.
  */
 function resolveAlertRuleUX(
   orderedRulesCollection: Iterable<Iterable<NonNormalizedRule>>,
   defaultValue: NonNormalizedResolvedRule
 ): RuleActionUX {
-  if (defaultValue === true || defaultValue == null) {
+  if (
+    defaultValue === true ||
+    defaultValue === null ||
+    defaultValue === undefined
+  ) {
     defaultValue = { action: 'error' }
   } else if (defaultValue === false) {
     defaultValue = { action: 'ignore' }
@@ -80,14 +86,15 @@ function resolveAlertRuleUX(
 }
 
 /**
- * Negative form because it is narrowing the type
+ * Negative form because it is narrowing the type.
  */
 function ruleValueDoesNotDefer(
   rule: NonNormalizedRule
 ): rule is NonNormalizedResolvedRule {
   if (rule === undefined) {
     return false
-  } else if (rule !== null && typeof rule === 'object') {
+  }
+  if (isObject(rule)) {
     const { action } = rule
     if (action === undefined || action === 'defer') {
       return false
@@ -97,7 +104,7 @@ function ruleValueDoesNotDefer(
 }
 
 /**
- * Handles booleans for backwards compatibility
+ * Handles booleans for backwards compatibility.
  */
 function uxForDefinedNonDeferValue(
   ruleValue: NonNormalizedResolvedRule
