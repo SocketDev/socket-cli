@@ -1,4 +1,5 @@
 export * from './cdxgen'
+export * from './fix'
 export * from './info'
 export * from './login'
 export * from './logout'

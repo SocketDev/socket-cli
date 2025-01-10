@@ -252,9 +252,10 @@ const {
   LOOP_SENTINEL,
   NPM,
   NPM_REGISTRY_URL,
+  SOCKET_CLI_FIX_PACKAGE_LOCK_FILE,
   SOCKET_CLI_ISSUES_URL,
+  SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
   SOCKET_PUBLIC_API_KEY,
-  UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
   abortSignal,
   rootPath
 } = constants
@@ -1396,22 +1397,22 @@ export class SafeArborist extends Arborist {
     // TODO: Make this deal with any refactor to private fields by punching the
     // class itself.
     await super.reify(...args)
-    const diff = walk(this['diff'])
     options.dryRun = old.dryRun
     options['save'] = old.save
     options['saveBundle'] = old.saveBundle
     // Nothing to check, hmmm already installed or all private?
+    const diff = walk(this['diff'])
     if (diff.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1) {
       return await this[kRiskyReify](...args)
     }
     const input = process.stdin
     const output = process.stderr
-    let proceed = ENV[UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]
     let alerts: SocketPackageAlert[] | undefined
-    if (!proceed) {
-      proceed = await (async () => {
+    const proceed =
+      ENV[SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE] ||
+      (await (async () => {
         alerts = await getPackagesAlerts(this, diff, output)
-        if (!alerts.length) {
+        if (!alerts.length || ENV[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]) {
           return true
         }
         return await confirm(
@@ -1425,25 +1426,24 @@ export class SafeArborist extends Arborist {
             signal: abortSignal
           }
         )
-        return true
-      })()
-    }
+      })())
     if (proceed) {
-      if (
-        alerts?.length &&
-        (await confirm(
-          {
-            message: 'Try to fix alerts?',
-            default: true
-          },
-          {
-            input,
-            output,
-            signal: abortSignal
-          }
-        ))
-      ) {
-        await updateAdvisoryDependencies(this, alerts)
+      const fix =
+        !!alerts?.length &&
+        (ENV[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE] ||
+          (await confirm(
+            {
+              message: 'Try to fix alerts?',
+              default: true
+            },
+            {
+              input,
+              output,
+              signal: abortSignal
+            }
+          )))
+      if (fix) {
+        await updateAdvisoryDependencies(this, alerts!)
       }
       return await this[kRiskyReify](...args)
     } else {
@@ -1586,9 +1586,8 @@ function findBestPatchVersion(
   if (eligibleVersions.length === 0) {
     return null
   }
-  // Use semver to find the max satisfying version
-  const bestVersion = semver.maxSatisfying(eligibleVersions, '*')
-  return bestVersion
+  // Use semver to find the max satisfying version.
+  return semver.maxSatisfying(eligibleVersions, '*')
 }
 
 export function installSafeArborist() {
@@ -1600,7 +1599,7 @@ export function installSafeArborist() {
 }
 
 void (async () => {
-  const remoteSettings = await (async () => {
+  const { orgs, settings } = await (async () => {
     try {
       const socketSdk = await setupSdk(pubToken)
       const orgResult = await socketSdk.getOrganizations()
@@ -1647,10 +1646,9 @@ void (async () => {
       throw e
     }
   })()
-  const { orgs, settings } = remoteSettings
-  const enforcedOrgs = getSetting('enforcedOrgs') ?? []
 
   // Remove any organizations not being enforced.
+  const enforcedOrgs = getSetting('enforcedOrgs') ?? []
   for (const { 0: i, 1: org } of orgs.entries()) {
     if (!enforcedOrgs.includes(org.id)) {
       settings.entries.splice(i, 1)

@@ -12,15 +12,17 @@ type Constants = {
   readonly BINARY_LOCK_EXT: '.lockb'
   readonly BUN: 'bun'
   readonly ENV: RegistryEnv & {
-    UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
+    SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: boolean
+    SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
   }
   readonly DIST_TYPE: 'module-sync' | 'require'
   readonly LOCK_EXT: '.lock'
   readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
   readonly NPX: 'npx'
   readonly PNPM: 'pnpm'
+  readonly SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: 'SOCKET_CLI_FIX_PACKAGE_LOCK_FILE'
   readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
-  readonly UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE: 'UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE'
+  readonly SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: 'SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE'
   readonly VLT: 'vlt'
   readonly YARN_BERRY: 'yarn/berry'
   readonly YARN_CLASSIC: 'yarn/classic'
@@ -51,9 +53,10 @@ const LOCK_EXT = '.lock'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const NPX = 'npx'
 const PNPM = 'pnpm'
+const SOCKET_CLI_FIX_PACKAGE_LOCK_FILE = 'SOCKET_CLI_FIX_PACKAGE_LOCK_FILE'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
-const UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE =
-  'UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE'
+const SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE =
+  'SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE'
 const VLT = 'vlt'
 const YARN_BERRY = 'yarn/berry'
 const YARN_CLASSIC = 'yarn/classic'
@@ -65,9 +68,15 @@ const LAZY_ENV = () =>
   Object.freeze({
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
-    // Flag set by the optimize command to bypass the packagesHaveRiskyIssues check.
-    [UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]: envAsBoolean(
-      process.env[UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]
+    // Flag set by the "fix" command to accept the package alerts prompt with
+    // "Y(es)" in the SafeArborist reify method.
+    [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: envAsBoolean(
+      process.env[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
+    ),
+    // Flag set by the "optimize" command to bypass the package alerts check
+    // in the SafeArborist reify method.
+    [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: envAsBoolean(
+      process.env[SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]
     )
   })
 
@@ -118,8 +127,9 @@ const constants = <Constants>createConstantsObject(
     NPM_REGISTRY_URL,
     NPX,
     PNPM,
+    SOCKET_CLI_FIX_PACKAGE_LOCK_FILE,
     SOCKET_CLI_ISSUES_URL,
-    UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+    SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
     VLT,
     YARN_BERRY,
     YARN_CLASSIC,
