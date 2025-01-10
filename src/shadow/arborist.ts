@@ -543,19 +543,21 @@ async function getPackagesAlerts(
             raw: alert,
             fixable: isAlertFixable(alert)
           })
-          // Before we ask about problematic issues, check to see if they
-          // already existed in the old version if they did, be quiet.
-          const existing = pkgs.find(p =>
-            p.existing?.startsWith(`${name}@`)
-          )?.existing
-          if (existing) {
-            const oldArtifact: SocketArtifact | undefined =
-              // eslint-disable-next-line no-await-in-loop
-              (await batchScan([existing]).next()).value
-            if (oldArtifact?.alerts?.length) {
-              alerts = alerts.filter(
-                ({ type }) => !oldArtifact.alerts?.find(a => a.type === type)
-              )
+          if (!ENV[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]) {
+            // Before we ask about problematic issues, check to see if they
+            // already existed in the old version if they did, be quiet.
+            const existing = pkgs.find(p =>
+              p.existing?.startsWith(`${name}@`)
+            )?.existing
+            if (existing) {
+              const oldArtifact: SocketArtifact | undefined =
+                // eslint-disable-next-line no-await-in-loop
+                (await batchScan([existing]).next()).value
+              if (oldArtifact?.alerts?.length) {
+                alerts = alerts.filter(
+                  ({ type }) => !oldArtifact.alerts?.find(a => a.type === type)
+                )
+              }
             }
           }
         }
@@ -611,17 +613,15 @@ async function getPackagesAlerts(
 }
 
 function toRepoUrl(resolved: string): string {
-  return resolved
-    .replace(/#[\s\S]*$/, '')
-    .replace(/\?[\s\S]*$/, '')
-    .replace(/\/[^/]*\/-\/[\s\S]*$/, '')
+  try {
+    return URL.parse(resolved)?.origin ?? ''
+  } catch {}
+  return ''
 }
 
-function walk(
-  diff_: Diff | null,
-  needInfoOn: InstallEffect[] = []
-): InstallEffect[] {
-  const queue: (Diff | null)[] = [diff_]
+function walk(diff_: Diff): InstallEffect[] {
+  const needInfoOn: InstallEffect[] = []
+  const queue: Diff[] = [...diff_.children]
   let pos = 0
   let { length: queueLength } = queue
   while (pos < queueLength) {
@@ -629,9 +629,6 @@ function walk(
       throw new Error('Detected infinite loop while walking Arborist diff')
     }
     const diff = queue[pos++]!
-    if (!diff) {
-      continue
-    }
     const { action } = diff
     if (action) {
       const oldNode = diff.actual
@@ -665,10 +662,19 @@ function walk(
         })
       }
     }
-    if (diff.children) {
-      for (const child of diff.children) {
-        queue[queueLength++] = child
-      }
+    for (const child of diff.children) {
+      queue[queueLength++] = child
+    }
+  }
+  if (ENV[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]) {
+    const { unchanged } = diff_!
+    for (let i = 0, { length } = unchanged; i < length; i += 1) {
+      const pkgNode = unchanged[i]!
+      needInfoOn.push({
+        existing: pkgNode.pkgid,
+        pkgid: pkgNode.pkgid,
+        repository_url: toRepoUrl(pkgNode.resolved!)
+      })
     }
   }
   return needInfoOn
@@ -1400,9 +1406,11 @@ export class SafeArborist extends Arborist {
     options.dryRun = old.dryRun
     options['save'] = old.save
     options['saveBundle'] = old.saveBundle
-    // Nothing to check, hmmm already installed or all private?
-    const diff = walk(this['diff'])
-    if (diff.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1) {
+    const needInfoOn = walk(this['diff']!)
+    if (
+      needInfoOn.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1
+    ) {
+      // Nothing to check, hmmm already installed or all private?
       return await this[kRiskyReify](...args)
     }
     const input = process.stdin
@@ -1411,7 +1419,7 @@ export class SafeArborist extends Arborist {
     const proceed =
       ENV[SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE] ||
       (await (async () => {
-        alerts = await getPackagesAlerts(this, diff, output)
+        alerts = await getPackagesAlerts(this, needInfoOn, output)
         if (!alerts.length || ENV[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]) {
           return true
         }
