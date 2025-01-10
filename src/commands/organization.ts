@@ -1,6 +1,7 @@
-import colors from 'yoctocolors-cjs'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+import colors from 'yoctocolors-cjs'
+
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import {
   handleApiCall,
@@ -52,7 +53,7 @@ async function fetchOrganizations(): Promise<void> {
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
-  const spinner = yoctoSpinner({ text: 'Fetching organizations...' }).start()
+  const spinner = new Spinner({ text: 'Fetching organizations...' }).start()
   const socketSdk = await setupSdk(apiKey)
   const result = await handleApiCall(
     socketSdk.getOrganizations(),

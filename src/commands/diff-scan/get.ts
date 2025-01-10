@@ -1,9 +1,10 @@
 import fs from 'node:fs'
 import util from 'node:util'
 
-import colors from 'yoctocolors-cjs'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+import colors from 'yoctocolors-cjs'
+
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags } from '../../flags'
 import { handleAPIError, queryAPI } from '../../utils/api-helpers'
@@ -12,7 +13,6 @@ import { printFlagList } from '../../utils/formatting'
 import { getDefaultKey } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
-import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const get: CliSubcommand = {
   description: 'Get a diff scan for an organization',
@@ -27,7 +27,7 @@ export const get: CliSubcommand = {
         )
       }
       const spinnerText = 'Getting diff scan... \n'
-      const spinner = yoctoSpinner({ text: spinnerText }).start()
+      const spinner = new Spinner({ text: spinnerText }).start()
       await getDiffScan(input, spinner, apiKey)
     }
   }

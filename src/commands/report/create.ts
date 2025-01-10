@@ -2,10 +2,10 @@ import path from 'node:path'
 
 import { betterAjvErrors } from '@apideck/better-ajv-errors'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
 import { ErrorWithCause } from 'pony-cause'
 
 import { SocketValidationError, readSocketConfig } from '@socketsecurity/config'
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { fetchReportData, formatReportDataOutput } from './view'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
@@ -213,7 +213,7 @@ async function setupCommand(
         handleUnsuccessfulApiResponse(
           'getReportSupportedFiles',
           res,
-          yoctoSpinner()
+          new Spinner()
         )
       return (res as SocketSdkReturnType<'getReportSupportedFiles'>).data
     })
@@ -261,7 +261,7 @@ async function createReport(
   }
 
   const socketSdk = await setupSdk()
-  const spinner = yoctoSpinner({
+  const spinner = new Spinner({
     text: `Creating report with ${packagePaths.length} package files`
   }).start()
   const apiCall = socketSdk.createReportFromFilePaths(
