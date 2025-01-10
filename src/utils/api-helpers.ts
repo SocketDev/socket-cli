@@ -1,14 +1,14 @@
-import colors from 'yoctocolors-cjs'
 import { ErrorWithCause } from 'pony-cause'
+import colors from 'yoctocolors-cjs'
 
 import { AuthError } from './errors'
 import constants from '../constants'
 
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type {
   SocketSdkErrorType,
   SocketSdkOperations
 } from '@socketsecurity/sdk'
-import type { Spinner } from '@socketregistry/yocto-spinner'
 
 const { API_V0_URL } = constants
 

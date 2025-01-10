@@ -1,7 +1,8 @@
 import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../constants'
 
@@ -22,7 +23,7 @@ export const fix: CliSubcommand = {
         [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: '1'
       }
     }
-    const spinner = yoctoSpinner().start()
+    const spinner = new Spinner().start()
     try {
       await spawn(
         execPath,

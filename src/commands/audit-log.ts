@@ -1,7 +1,8 @@
-import { Separator, select } from '@socketsecurity/registry/lib/prompts'
-import colors from 'yoctocolors-cjs'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+import colors from 'yoctocolors-cjs'
+
+import { Separator, select } from '@socketsecurity/registry/lib/prompts'
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags } from '../flags'
 import {
@@ -13,7 +14,6 @@ import { printFlagList } from '../utils/formatting'
 import { getDefaultKey, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
-import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const auditLog: CliSubcommand = {
   description: 'Look up the audit log for an organization',
@@ -28,7 +28,7 @@ export const auditLog: CliSubcommand = {
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
-      const spinner = yoctoSpinner({
+      const spinner = new Spinner({
         text: `Looking up audit log for ${input.orgSlug}\n`
       }).start()
       await fetchOrgAuditLog(input.orgSlug, input, spinner, apiKey)

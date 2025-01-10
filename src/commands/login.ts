@@ -1,9 +1,9 @@
-import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
-
 import isInteractive from 'is-interactive'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
 import terminalLink from 'terminal-link'
+
+import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../constants'
 import { AuthError, InputError } from '../utils/errors'
@@ -103,7 +103,7 @@ export const login: CliSubcommand = {
     let apiProxy = cli.flags['apiProxy'] as string | null | undefined
     apiProxy ??= getSetting('apiProxy') ?? undefined
 
-    const spinner = yoctoSpinner({ text: 'Verifying API key...' }).start()
+    const spinner = new Spinner({ text: 'Verifying API key...' }).start()
 
     let orgs: SocketSdkReturnType<'getOrganizations'>['data']
     try {

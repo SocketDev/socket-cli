@@ -5,7 +5,9 @@ import path from 'node:path'
 import rl from 'node:readline'
 import { setTimeout as wait } from 'node:timers/promises'
 
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+import npa from 'npm-package-arg'
+import semver from 'semver'
+
 import config from '@socketsecurity/config'
 import { getManifestData } from '@socketsecurity/registry'
 import { hasOwn, isObject } from '@socketsecurity/registry/lib/objects'
@@ -14,13 +16,11 @@ import {
   resolvePackageName
 } from '@socketsecurity/registry/lib/packages'
 import { confirm } from '@socketsecurity/registry/lib/prompts'
-
-import npa from 'npm-package-arg'
-import semver from 'semver'
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../constants'
-import { ColorOrMarkdown } from '../utils/color-or-markdown'
 import { createAlertUXLookup } from '../utils/alert-rules'
+import { ColorOrMarkdown } from '../utils/color-or-markdown'
 import { isErrnoException } from '../utils/misc'
 import { findRoot } from '../utils/path-resolve'
 import { getDefaultKey, setupSdk } from '../utils/sdk'
@@ -498,7 +498,7 @@ async function getPackagesAlerts(
   pkgs: InstallEffect[],
   output?: Writable
 ): Promise<SocketPackageAlert[]> {
-  const spinner = yoctoSpinner({
+  const spinner = new Spinner({
     stream: output
   })
   let { length: remaining } = pkgs
