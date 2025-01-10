@@ -5,9 +5,9 @@ import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
-import constants from '../constants'
 import { AuthError } from './errors'
 import { getSetting } from './settings'
+import constants from '../constants'
 
 import type { SocketSdkOptions } from '@socketsecurity/sdk'
 

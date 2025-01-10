@@ -2,8 +2,8 @@ import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
 
-import constants from '../constants'
 import { installLinks } from './link'
+import constants from '../constants'
 
 const { NPM, abortSignal, distPath, execPath, shadowBinPath } = constants
 

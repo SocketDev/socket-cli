@@ -1,8 +1,8 @@
 import { realpathSync } from 'node:fs'
 import path from 'node:path'
 
-import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 import registryConstants from '@socketsecurity/registry/lib/constants'
+import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
 type RegistryEnv = typeof registryConstants.ENV
 

@@ -10,8 +10,8 @@ import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import constants from '../constants'
 import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
+import constants from '../constants'
 
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { SemVer } from 'semver'
