@@ -47,7 +47,7 @@ const {
   LOCK_EXT,
   NPM,
   PNPM,
-  UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+  SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
@@ -935,7 +935,7 @@ export const optimize: CliSubcommand = {
             stdio: 'ignore',
             env: {
               ...process.env,
-              [UPDATE_SOCKET_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
+              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
             }
           }
           await spawn(
