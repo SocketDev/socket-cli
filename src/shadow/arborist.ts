@@ -631,8 +631,9 @@ function walk(diff_: Diff): InstallEffect[] {
     const diff = queue[pos++]!
     const { action } = diff
     if (action) {
+      // The `oldNode`, i.e. `actual` node, may be `undefined` if there is no
+      // node_modules folder.
       const { actual: oldNode, ideal: pkgNode } = diff
-      const { pkgid: oldPkgid } = oldNode
       const { pkgid } = pkgNode
 
       let existing
@@ -644,7 +645,7 @@ function walk(diff_: Diff): InstallEffect[] {
             oldNode?.package.name &&
             oldNode.package.name === pkgNode?.package.name
           ) {
-            existing = oldPkgid
+            existing = oldNode.pkgid
           }
         } else {
           // TODO: Add proper debug mode.
