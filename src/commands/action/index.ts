@@ -7,10 +7,9 @@ import type { components, operations } from '@socketsecurity/sdk/types/api.d.ts'
 import micromatch from 'micromatch'
 import ndjson from 'ndjson'
 import { PackageURL } from '@socketsecurity/packageurl-js'
+
 const octokit = new Octokit()
-const socket = new SocketSdk(getDefaultKey() ?? FREE_API_KEY, {
-  baseUrl: getDefaultAPIBaseUrl()
-})
+const socket = new SocketSdk(getDefaultKey() ?? FREE_API_KEY)
 
 // https://github.com/actions/checkout/issues/58#issuecomment-2264361099
 const prNumber = parseInt(
@@ -348,7 +347,18 @@ async function createNewDiff({
   files: string[]
   params: operations['CreateOrgFullScan']['parameters']['query']
   workspace: string
-}): Promise<Diff> {
+}): Promise<{
+  newPackages: string[]
+  // TODO: replace any
+  newCapabilites: Record<string, any>
+  removedPackages: string[]
+  newAlerts: string[]
+  id: string
+  sbom: string
+  packages: Packages
+  reportUrl: string
+  diffUrl: string
+}> {
   let headFullScanId: string | null = null
   let headFullScan: any[] = []
 
@@ -387,20 +397,23 @@ async function createNewDiff({
     headScan: headFullScan,
     securityPolicy
   })
-  diffReport.packages = newFullScanPackages
 
   // Set the diff ID and URLs
   const baseSocket = 'https://socket.dev/dashboard/org'
-  diffReport.id = newFullScan.id
-  diffReport.report_url = `${baseSocket}/${orgSlug}/sbom/${diffReport.id}`
+  const id = newFullScan.id
+  const reportUrl = `${baseSocket}/${orgSlug}/sbom/${id}`
 
+  let diffUrl
   if (headFullScanId) {
-    diffReport.diff_url = `${baseSocket}/${orgSlug}/diff/${diffReport.id}/${headFullScanId}`
+    diffUrl = `${baseSocket}/${orgSlug}/diff/${diffReport.id}/${headFullScanId}`
   } else {
-    diffReport.diff_url = diffReport.report_url
+    diffUrl = reportUrl
   }
 
-  return diffReport
+  // return diffReport
+  return {
+    packages: newFullScanPackages
+  }
 }
 
 import { URLSearchParams } from 'url'
@@ -415,16 +428,20 @@ function compareSBOMs({
 }: {
   newScan: components['schemas']['SocketArtifact'][]
   headScan: components['schemas']['SocketArtifact'][]
-  securityPolicy: Awaited<ReturnType<typeof getSecurityPolicy>>
+  securityPolicy: NonNullable<Awaited<ReturnType<typeof getSecurityPolicy>>>
 }) {
-  const diff: { newPackages: string[] } = {
-    newPackages: []
+  const diff: {
+    newPackages: Awaited<ReturnType<typeof createExtendedPurl>>[]
+    removedPackages: Awaited<ReturnType<typeof createExtendedPurl>>[]
+  } = {
+    newPackages: [],
+    removedPackages: []
   }
   const newPackages = createSbomDict(newScan)
   const headPackages = createSbomDict(headScan)
 
   let newScanAlerts = {}
-  const headScanAlerts = {}
+  let headScanAlerts = {}
 
   const consolidated = new Set()
 
@@ -440,7 +457,7 @@ function compareSBOMs({
 
     // TODO: check that purl is not in consolidated
     if (!headPackages[packageId] && pkg.direct && !consolidated.has(basePurl)) {
-      diff.newPackages.push('TODO: add PURL')
+      diff.newPackages.push(purl)
       consolidated.add(packageId)
     }
     newScanAlerts = createIssueAlerts({
@@ -449,6 +466,24 @@ function compareSBOMs({
       packages: newPackages,
       securityPolicy
     })
+  }
+
+  for (const [packageId, pkg] of Object.entries(headPackages)) {
+    const purl = createExtendedPurl(packageId, headPackages)
+    if (!newPackages[packageId] && pkg.direct) {
+      diff.removedPackages.push(purl)
+    }
+    headScanAlerts = createIssueAlerts({
+      pkg,
+      alerts: headScanAlerts,
+      packages: headPackages,
+      securityPolicy
+    })
+  }
+
+  return {
+    newAlerts: compareIssueAlerts({ newScanAlerts, headScanAlerts, alerts }),
+    newCapabilites: compareCapabilities({ newPackages, headPackages })
   }
 }
 
@@ -533,7 +568,13 @@ type IssueAlert = {
   introducedBy: [string, string][]
   purl: string
   url: string
-} & Record<string, boolean>
+  // actions
+  error: boolean
+  ignore: boolean
+  warn: boolean
+  defer: boolean
+  monitor: boolean
+}
 
 /**
  * Create the Issue Alerts from the package and base alert data.
@@ -551,7 +592,7 @@ async function createIssueAlerts({
   pkg: Package
   alerts: Record<string, IssueAlert[]>
   packages: Packages
-  securityPolicy: Awaited<ReturnType<typeof getSecurityPolicy>>
+  securityPolicy: NonNullable<Awaited<ReturnType<typeof getSecurityPolicy>>>
 }): Promise<Record<string, IssueAlert[]>> {
   for (const alert of pkg?.alerts ?? []) {
     // Extract alert properties
@@ -587,7 +628,12 @@ async function createIssueAlerts({
       nextStepTitle,
       introducedBy,
       purl: pkg.purl,
-      url: pkg.url
+      url: pkg.url,
+      error: false,
+      ignore: false,
+      warn: false,
+      defer: false,
+      monitor: false
     }
 
     // Apply security policy actions
