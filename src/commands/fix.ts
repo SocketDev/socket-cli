@@ -15,21 +15,18 @@ export const fix: CliSubcommand = {
   description: 'Fix "fixable" Socket alerts',
   async run() {
     const wrapperPath = path.join(rootBinPath, 'npm-cli.js')
-    const npmSpawnOptions: Parameters<typeof spawn>[2] = {
-      signal: abortSignal,
-      stdio: 'ignore',
-      env: {
-        ...process.env,
-        [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: '1'
-      }
-    }
     const spinner = new Spinner().start()
     try {
-      await spawn(
-        execPath,
-        [wrapperPath, 'install', '--silent'],
-        npmSpawnOptions
-      )
+      await spawn(execPath, [wrapperPath, 'install', '--silent'], {
+        signal: abortSignal,
+        stdio: 'ignore',
+        env: {
+          ...process.env,
+          [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: '1'
+        }
+      })
+    } catch (e: any) {
+      console.error(e)
     } finally {
       spinner.stop()
     }
