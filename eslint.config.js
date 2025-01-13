@@ -121,8 +121,16 @@ module.exports = [
     ...importFlatConfigsForModule.recommended
   },
   {
-    files: ['src/**/*.ts', 'test/**/*.ts'],
+    files: ['src/**/*.ts'],
     ...importFlatConfigsForModule.typescript
+  },
+  {
+    files: ['test/**/*.ts'],
+    ...importFlatConfigsForModule.typescript,
+    rules: {
+      ...importFlatConfigsForModule.typescript.rules,
+      'import-x/no-unresolved': 'off'
+    }
   },
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
