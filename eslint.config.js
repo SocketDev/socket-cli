@@ -166,7 +166,10 @@ module.exports = [
       // Define @typescript-eslint/no-this-alias because oxlint defines
       // "no-this-alias": ["deny"] and trying to eslint-disable it will
       // cause an eslint "Definition not found" error otherwise.
-      '@typescript-eslint/no-this-alias': ['error'],
+      '@typescript-eslint/no-this-alias': [
+        'error',
+        { allowDestructuring: true }
+      ],
       // Returning unawaited promises in a try/catch/finally is dangerous
       // (the `catch` won't catch if the promise is rejected, and the `finally`
       // won't wait for the promise to resolve). Returning unawaited promises
