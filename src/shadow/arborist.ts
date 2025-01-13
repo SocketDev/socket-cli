@@ -635,10 +635,10 @@ function walk(diff_: Diff): InstallEffect[] {
       // node_modules folder.
       const { actual: oldNode, ideal: pkgNode } = diff
       if (!oldNode) {
-        console.log('oldNode', oldNode)
+        console.log('oldNode', oldNode, diff)
       }
       if (!pkgNode) {
-        console.log('pkgNode', pkgNode)
+        console.log('pkgNode', pkgNode, diff)
       }
       let existing
       let keep = false
