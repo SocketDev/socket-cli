@@ -927,22 +927,13 @@ export const optimize: CliSubcommand = {
               [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
             }
           }
-          await spawn(
-            execPath,
-            [wrapperPath, 'install'],
-            npmSpawnOptions
-          )
+          await spawn(execPath, [wrapperPath, 'install'], npmSpawnOptions)
           // TODO: This is a temporary workaround for a `npm ci` bug where it
           // will error out after Socket Optimize generates a lock file. More
           // investigation is needed.
           await spawn(
             execPath,
-            [
-              wrapperPath,
-              'install',
-              '--ignore-scripts',
-              '--package-lock-only'
-            ],
+            [wrapperPath, 'install', '--ignore-scripts', '--package-lock-only'],
             npmSpawnOptions
           )
         } else {
