@@ -45,7 +45,9 @@ const {
   BUN,
   LOCK_EXT,
   NPM,
+  OVERRIDES,
   PNPM,
+  RESOLUTIONS,
   SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
   VLT,
   YARN_BERRY,
@@ -56,11 +58,9 @@ const {
 } = constants
 
 const COMMAND_TITLE = 'Socket Optimize'
-const OVERRIDES_FIELD_NAME = 'overrides'
 const NPM_OVERRIDE_PR_URL = 'https://github.com/npm/cli/pull/7025'
 const PNPM_FIELD_NAME = PNPM
 const PNPM_WORKSPACE = `${PNPM}-workspace`
-const RESOLUTIONS_FIELD_NAME = 'resolutions'
 
 const manifestNpmOverrides = getManifestData(NPM)!
 
@@ -75,35 +75,35 @@ type GetOverridesResult = {
 
 const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
   [BUN](pkgJson: PackageJson) {
-    const overrides = (pkgJson as any)?.resolutions ?? {}
+    const overrides = (pkgJson as any)?.[RESOLUTIONS] ?? {}
     return { type: YARN_BERRY, overrides }
   },
   // npm overrides documentation:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
   [NPM](pkgJson: PackageJson) {
-    const overrides = (pkgJson as any)?.overrides ?? {}
+    const overrides = (pkgJson as any)?.[OVERRIDES] ?? {}
     return { type: NPM, overrides }
   },
   // pnpm overrides documentation:
   // https://pnpm.io/package_json#pnpmoverrides
   [PNPM](pkgJson: PackageJson) {
-    const overrides = (pkgJson as any)?.pnpm?.overrides ?? {}
+    const overrides = (pkgJson as any)?.pnpm?.[OVERRIDES] ?? {}
     return { type: PNPM, overrides }
   },
   [VLT](pkgJson: PackageJson) {
-    const overrides = (pkgJson as any)?.overrides ?? {}
+    const overrides = (pkgJson as any)?.[OVERRIDES] ?? {}
     return { type: VLT, overrides }
   },
   // Yarn resolutions documentation:
   // https://yarnpkg.com/configuration/manifest#resolutions
   [YARN_BERRY](pkgJson: PackageJson) {
-    const overrides = (pkgJson as any)?.resolutions ?? {}
+    const overrides = (pkgJson as any)?.[RESOLUTIONS] ?? {}
     return { type: YARN_BERRY, overrides }
   },
   // Yarn resolutions documentation:
   // https://classic.yarnpkg.com/en/docs/selective-version-resolutions
   [YARN_CLASSIC](pkgJson: PackageJson) {
-    const overrides = (pkgJson as any)?.resolutions ?? {}
+    const overrides = (pkgJson as any)?.[RESOLUTIONS] ?? {}
     return { type: YARN_CLASSIC, overrides }
   }
 }
@@ -237,10 +237,7 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
               : { [field]: undefined })
           )
         }
-      } else if (
-        field === OVERRIDES_FIELD_NAME ||
-        field === RESOLUTIONS_FIELD_NAME
-      ) {
+      } else if (field === OVERRIDES || field === RESOLUTIONS) {
         // Properties with undefined values are omitted when saved as JSON.
         editablePkgJson.update(<typeof pkgJson>{
           [field]: hasKeys(value) ? value : undefined
@@ -251,9 +248,9 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
       return
     }
     if (
-      (field === OVERRIDES_FIELD_NAME ||
+      (field === OVERRIDES ||
         field === PNPM_FIELD_NAME ||
-        field === RESOLUTIONS_FIELD_NAME) &&
+        field === RESOLUTIONS) &&
       !hasKeys(value)
     ) {
       return
@@ -264,24 +261,21 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
     const entries = Object.entries(pkgJson)
     let insertIndex = -1
     let isPlacingHigher = false
-    if (field === OVERRIDES_FIELD_NAME) {
-      insertIndex = getLowestEntryIndex(entries, [RESOLUTIONS_FIELD_NAME])
+    if (field === OVERRIDES) {
+      insertIndex = getLowestEntryIndex(entries, [RESOLUTIONS])
       if (insertIndex === -1) {
         isPlacingHigher = true
         insertIndex = getHighestEntryIndex(entries, [...depFields, PNPM])
       }
-    } else if (field === RESOLUTIONS_FIELD_NAME) {
+    } else if (field === RESOLUTIONS) {
       isPlacingHigher = true
       insertIndex = getHighestEntryIndex(entries, [
         ...depFields,
-        OVERRIDES_FIELD_NAME,
+        OVERRIDES,
         PNPM
       ])
     } else if (field === PNPM_FIELD_NAME) {
-      insertIndex = getLowestEntryIndex(entries, [
-        OVERRIDES_FIELD_NAME,
-        RESOLUTIONS_FIELD_NAME
-      ])
+      insertIndex = getLowestEntryIndex(entries, [OVERRIDES, RESOLUTIONS])
       if (insertIndex === -1) {
         isPlacingHigher = true
         insertIndex = getHighestEntryIndex(entries, depFields)
@@ -313,18 +307,14 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
     editablePkgJson: EditablePackageJson,
     overrides: Overrides
   ) {
-    updatePkgJson(editablePkgJson, OVERRIDES_FIELD_NAME, overrides)
+    updatePkgJson(editablePkgJson, OVERRIDES, overrides)
   }
 
   function updateResolutions(
     editablePkgJson: EditablePackageJson,
     overrides: Overrides
   ) {
-    updatePkgJson(
-      editablePkgJson,
-      RESOLUTIONS_FIELD_NAME,
-      <PnpmOrYarnOverrides>overrides
-    )
+    updatePkgJson(editablePkgJson, RESOLUTIONS, <PnpmOrYarnOverrides>overrides)
   }
 
   return {
