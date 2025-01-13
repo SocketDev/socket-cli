@@ -8,13 +8,16 @@
   },
   "settings": {},
   "rules": {
-    "@typescript-eslint/no-misused-new": ["deny"],
-    "@typescript-eslint/no-this-alias": ["deny"],
-    "unicorn/no-empty-file": "allow",
-    "unicorn/no-new-array": "allow",
-    "no-control-regex": "allow",
-    "no-new": "allow",
-    "no-self-assign": "allow",
-    "no-unused-vars": "allow"
+    "@typescript-eslint/no-misused-new": ["error"],
+    "@typescript-eslint/no-this-alias": [
+      "error",
+      { "allowDestructuring": true }
+    ],
+    "unicorn/no-empty-file": "off",
+    "unicorn/no-new-array": "off",
+    "no-control-regex": "off",
+    "no-new": "off",
+    "no-self-assign": "off",
+    "no-unused-vars": "off"
   }
 }
