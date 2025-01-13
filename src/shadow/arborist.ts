@@ -631,10 +631,9 @@ function walk(diff_: Diff): InstallEffect[] {
     const diff = queue[pos++]!
     const { action } = diff
     if (action) {
-      const oldNode = diff.actual
-      const oldPkgid = oldNode?.pkgid
-      const pkgNode = diff.ideal
-      const pkgid = pkgNode?.pkgid
+      const { actual: oldNode, ideal: pkgNode } = diff
+      const { pkgid: oldPkgid } = oldNode
+      const { pkgid } = pkgNode
 
       let existing
       let keep = false
@@ -649,7 +648,7 @@ function walk(diff_: Diff): InstallEffect[] {
           }
         } else {
           // TODO: Add proper debug mode.
-          // console.log('SKIPPING META CHANGE ON', diff)
+          // console.warn('SKIPPING META CHANGE ON', diff)
         }
       } else {
         keep = action !== 'REMOVE'
@@ -1553,15 +1552,13 @@ function findPackageRecursively(
   tree: BaseNode | NodeClass | LinkNode,
   packageName: string
 ): NodeClass | null {
-  const queue: { node: typeof tree; depth: number }[] = [
-    { node: tree, depth: 0 }
-  ]
+  const queue: { node: typeof tree }[] = [{ node: tree }]
   let sentinel = 0
   while (queue.length) {
     if (sentinel++ === LOOP_SENTINEL) {
       throw new Error('Detected infinite loop in findPackageRecursively')
     }
-    const { depth, node: currentNode } = queue.pop()!
+    const { node: currentNode } = queue.pop()!
     const node = currentNode.children.get(packageName)
     if (node) {
       // Found package.
@@ -1569,7 +1566,7 @@ function findPackageRecursively(
     }
     const children = [...currentNode.children.values()]
     for (let i = children.length - 1; i >= 0; i -= 1) {
-      queue.push({ node: children[i]!, depth: depth + 1 })
+      queue.push({ node: children[i]! })
     }
   }
   return null
