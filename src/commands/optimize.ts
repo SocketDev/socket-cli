@@ -921,7 +921,7 @@ export const optimize: CliSubcommand = {
           const wrapperPath = path.join(rootBinPath, 'npm-cli.js')
           const npmSpawnOptions: Parameters<typeof spawn>[2] = {
             signal: abortSignal,
-            stdio: 'ignore',
+            stdio: 'inherit',
             env: {
               ...process.env,
               [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
@@ -929,7 +929,7 @@ export const optimize: CliSubcommand = {
           }
           await spawn(
             execPath,
-            [wrapperPath, 'install', '--silent'],
+            [wrapperPath, 'install'],
             npmSpawnOptions
           )
           // TODO: This is a temporary workaround for a `npm ci` bug where it
@@ -940,7 +940,6 @@ export const optimize: CliSubcommand = {
             [
               wrapperPath,
               'install',
-              '--silent',
               '--ignore-scripts',
               '--package-lock-only'
             ],
