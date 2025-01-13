@@ -1406,7 +1406,10 @@ export class SafeArborist extends Arborist {
     options.dryRun = old.dryRun
     options['save'] = old.save
     options['saveBundle'] = old.saveBundle
-    const needInfoOn = walk(this['diff']!)
+    const { diff } = this
+    // `diff` is `null` when `options.packageLockOnly`, --package-lock-only,
+    // is `true`.
+    const needInfoOn = diff ? walk(diff) : []
     if (
       needInfoOn.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1
     ) {
