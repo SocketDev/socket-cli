@@ -634,8 +634,12 @@ function walk(diff_: Diff): InstallEffect[] {
       // The `oldNode`, i.e. `actual` node, may be `undefined` if there is no
       // node_modules folder.
       const { actual: oldNode, ideal: pkgNode } = diff
-      const { pkgid } = pkgNode
-
+      if (!oldNode) {
+        console.log('oldNode', oldNode)
+      }
+      if (!pkgNode) {
+        console.log('pkgNode', pkgNode)
+      }
       let existing
       let keep = false
       if (action === 'CHANGE') {
@@ -654,10 +658,10 @@ function walk(diff_: Diff): InstallEffect[] {
       } else {
         keep = action !== 'REMOVE'
       }
-      if (keep && pkgid && pkgNode.resolved && (!oldNode || oldNode.resolved)) {
+      if (keep && pkgNode?.resolved && (!oldNode || oldNode.resolved)) {
         needInfoOn.push({
           existing,
-          pkgid,
+          pkgid: pkgNode.pkgid,
           repository_url: toRepoUrl(pkgNode.resolved)
         })
       }
