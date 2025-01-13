@@ -17,9 +17,9 @@ export const fix: CliSubcommand = {
     const wrapperPath = path.join(rootBinPath, 'npm-cli.js')
     const spinner = new Spinner().start()
     try {
-      await spawn(execPath, [wrapperPath, 'install', '--silent'], {
+      await spawn(execPath, [wrapperPath, 'install'], {
         signal: abortSignal,
-        stdio: 'ignore',
+        stdio: 'inherit',
         env: {
           ...process.env,
           [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: '1'
