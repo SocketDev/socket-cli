@@ -1,7 +1,3 @@
-import path from 'node:path'
-
-import spawn from '@npmcli/promise-spawn'
-
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../constants'
