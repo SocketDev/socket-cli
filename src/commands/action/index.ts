@@ -7,6 +7,10 @@ import type { components, operations } from '@socketsecurity/sdk/types/api.d.ts'
 import micromatch from 'micromatch'
 import ndjson from 'ndjson'
 import { PackageURL } from '@socketsecurity/packageurl-js'
+import { URLSearchParams } from 'url'
+import { FREE_API_KEY, getDefaultKey } from '../../utils/sdk'
+import { on, once } from 'events'
+import { deepEqual } from 'assert'
 
 const octokit = new Octokit()
 const socket = new SocketSdk(getDefaultKey() ?? FREE_API_KEY)
@@ -163,6 +167,7 @@ export const action: CliSubcommand = {
           repo,
           files,
           params: {
+            repo
             //             repo=repo,
             // branch=branch,
             // commit_message=commit_message,
@@ -341,12 +346,10 @@ async function createNewDiff({
   files,
   params
 }: {
-  path: string
   owner: string
   repo: string
   files: string[]
   params: operations['CreateOrgFullScan']['parameters']['query']
-  workspace: string
 }): Promise<{
   newPackages: string[]
   // TODO: replace any
@@ -392,7 +395,7 @@ async function createNewDiff({
   console.timeEnd(label)
 
   const securityPolicy = (await getSecurityPolicy(owner)) ?? {}
-  const diffReport = compareSBOMs({
+  const diffReport = await compareSBOMs({
     newScan: newFullScan.sbomArtifacts,
     headScan: headFullScan,
     securityPolicy
@@ -400,12 +403,12 @@ async function createNewDiff({
 
   // Set the diff ID and URLs
   const baseSocket = 'https://socket.dev/dashboard/org'
-  const id = newFullScan.id
-  const reportUrl = `${baseSocket}/${orgSlug}/sbom/${id}`
+  const id = newFullScan.fullScan.id
+  const reportUrl = `${baseSocket}/${owner}/sbom/${id}`
 
   let diffUrl
   if (headFullScanId) {
-    diffUrl = `${baseSocket}/${orgSlug}/diff/${diffReport.id}/${headFullScanId}`
+    diffUrl = `${baseSocket}/${owner}/diff/${diffReport.id}/${headFullScanId}`
   } else {
     diffUrl = reportUrl
   }
@@ -416,12 +419,8 @@ async function createNewDiff({
   }
 }
 
-import { URLSearchParams } from 'url'
-import { FREE_API_KEY, getDefaultKey } from '../../utils/sdk'
-import { on, once } from 'events'
-
 // https://github.com/SocketDev/socket-python-cli/blob/main/socketsecurity/core/__init__.py#L467
-function compareSBOMs({
+async function compareSBOMs({
   newScan,
   headScan,
   securityPolicy
@@ -460,7 +459,7 @@ function compareSBOMs({
       diff.newPackages.push(purl)
       consolidated.add(packageId)
     }
-    newScanAlerts = createIssueAlerts({
+    newScanAlerts = await createIssueAlerts({
       pkg,
       alerts: newScanAlerts,
       packages: newPackages,
@@ -473,7 +472,7 @@ function compareSBOMs({
     if (!newPackages[packageId] && pkg.direct) {
       diff.removedPackages.push(purl)
     }
-    headScanAlerts = createIssueAlerts({
+    headScanAlerts = await createIssueAlerts({
       pkg,
       alerts: headScanAlerts,
       packages: headPackages,
@@ -482,9 +481,140 @@ function compareSBOMs({
   }
 
   return {
-    newAlerts: compareIssueAlerts({ newScanAlerts, headScanAlerts, alerts }),
+    newAlerts: compareIssueAlerts({
+      newScanAlerts,
+      headScanAlerts
+    }),
     newCapabilites: compareCapabilities({ newPackages, headPackages })
   }
+}
+
+function compareIssueAlerts({
+  newScanAlerts,
+  headScanAlerts
+}: {
+  newScanAlerts: Record<string, IssueAlert[]>
+  headScanAlerts: Record<string, IssueAlert[]>
+}): IssueAlert[] {
+  const alerts: IssueAlert[] = []
+  /**
+   * Compare the issue alerts from the new full scan and the head full scans. Return a list of new alerts that
+   * are in the new full scan and not in the head full scan
+   */
+  const consolidatedAlerts: string[] = []
+
+  for (const alertKey in newScanAlerts) {
+    if (!(alertKey in headScanAlerts)) {
+      const newAlerts = newScanAlerts[alertKey] ?? []
+      for (const alert of newAlerts) {
+        const alertStr = `${alert.purl},,${alert.type}`
+        if (
+          (alert.error || alert.warn) &&
+          !consolidatedAlerts.includes(alertStr)
+        ) {
+          alerts.push(alert)
+          consolidatedAlerts.push(alertStr)
+        }
+      }
+    } else {
+      const newAlerts = newScanAlerts[alertKey] ?? []
+      const headAlerts = headScanAlerts[alertKey] ?? []
+      for (const alert of newAlerts) {
+        const alertStr = `${alert.purl},,${alert.type}`
+        if (
+          !headAlerts.some(
+            headAlert =>
+              headAlert.purl === alert.purl && headAlert.type === alert.type
+          ) &&
+          !consolidatedAlerts.includes(alertStr)
+        ) {
+          if (alert.error || alert.warn) {
+            alerts.push(alert)
+            consolidatedAlerts.push(alertStr)
+          }
+        }
+      }
+    }
+  }
+
+  return alerts
+}
+type Capabilities = Record<string, string[]>
+function compareCapabilities({
+  newPackages,
+  headPackages
+}: {
+  newPackages: Record<string, Package>
+  headPackages: Record<string, Package>
+}): Capabilities {
+  let capabilities: Capabilities = {}
+
+  for (const packageId in newPackages) {
+    const pkg = newPackages[packageId]
+    if (!pkg) continue
+
+    if (packageId in headPackages) {
+      const headPackage = headPackages[packageId]
+      if (!headPackage) continue
+
+      for (const alert of pkg?.alerts ?? []) {
+        if (
+          !headPackage?.alerts?.some(headAlert => deepEqual(headAlert, alert))
+        ) {
+          capabilities = checkAlertCapabilities({
+            pkg,
+            capabilities,
+            packageId,
+            headPackage
+          })
+        }
+      }
+    } else {
+      capabilities = checkAlertCapabilities({ pkg, capabilities, packageId })
+    }
+  }
+
+  return capabilities
+}
+
+function checkAlertCapabilities({
+  pkg,
+  capabilities = {},
+  packageId,
+  headPackage
+}: {
+  pkg: Package
+  capabilities: Capabilities
+  packageId: string
+  headPackage?: Package
+}): Capabilities {
+  const alertTypes = {
+    envVars: 'Environment',
+    networkAccess: 'Network',
+    filesystemAccess: 'File System',
+    shellAccess: 'Shell'
+  }
+
+  for (const alert of pkg.alerts ?? []) {
+    let newAlert = true
+    if (headPackage?.alerts?.find(headAlert => deepEqual(headAlert, alert))) {
+      newAlert = false
+    }
+
+    // Process the alert if it's new and its type is in alertTypes
+    if (alert.type in alertTypes && newAlert) {
+      // @ts-ignore
+      const value = alertTypes[alert.type]
+
+      if (!(packageId in capabilities)) {
+        capabilities[packageId] = [value]
+      } else if (!capabilities[packageId]?.includes(value)) {
+        capabilities[packageId]?.push(value)
+      }
+    }
+  }
+
+  return capabilities
 }
 
 function createExtendedPurl(
