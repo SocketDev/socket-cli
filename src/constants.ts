@@ -12,6 +12,7 @@ type Constants = {
   readonly BINARY_LOCK_EXT: '.lockb'
   readonly BUN: 'bun'
   readonly ENV: RegistryEnv & {
+    SOCKET_CLI_DEBUG: boolean
     SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: boolean
     SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
   }
@@ -20,6 +21,7 @@ type Constants = {
   readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
   readonly NPX: 'npx'
   readonly PNPM: 'pnpm'
+  readonly SOCKET_CLI_DEBUG: 'SOCKET_CLI_DEBUG'
   readonly SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: 'SOCKET_CLI_FIX_PACKAGE_LOCK_FILE'
   readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
   readonly SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: 'SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE'
@@ -53,6 +55,7 @@ const LOCK_EXT = '.lock'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const NPX = 'npx'
 const PNPM = 'pnpm'
+const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
 const SOCKET_CLI_FIX_PACKAGE_LOCK_FILE = 'SOCKET_CLI_FIX_PACKAGE_LOCK_FILE'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE =
@@ -68,6 +71,8 @@ const LAZY_ENV = () =>
   Object.freeze({
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
+    // Flag set to help debug Socket CLI.
+    [SOCKET_CLI_DEBUG]: envAsBoolean(process.env[SOCKET_CLI_DEBUG]),
     // Flag set by the "fix" command to accept the package alerts prompt with
     // "Y(es)" in the SafeArborist reify method.
     [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: envAsBoolean(
@@ -127,6 +132,7 @@ const constants = <Constants>createConstantsObject(
     NPM_REGISTRY_URL,
     NPX,
     PNPM,
+    SOCKET_CLI_DEBUG,
     SOCKET_CLI_FIX_PACKAGE_LOCK_FILE,
     SOCKET_CLI_ISSUES_URL,
     SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
