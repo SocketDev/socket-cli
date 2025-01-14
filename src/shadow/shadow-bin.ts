@@ -5,9 +5,7 @@ import spawn from '@npmcli/promise-spawn'
 import { installLinks } from './link'
 import constants from '../constants'
 
-const { NPM, abortSignal, distPath, execPath, shadowBinPath } = constants
-
-const injectionPath = path.join(distPath, 'npm-injection.js')
+const { NPM, abortSignal } = constants
 
 export default async function shadow(
   binName: 'npm' | 'npx',
@@ -15,13 +13,16 @@ export default async function shadow(
 ) {
   process.exitCode = 1
   const spawnPromise = spawn(
-    execPath,
+    // Lazily access constants.execPath.
+    constants.execPath,
     [
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
       '--require',
-      injectionPath,
-      await installLinks(shadowBinPath, binName),
+      // Lazily access constants.distPath.
+      path.join(constants.distPath, 'npm-injection.js'),
+      // Lazily access constants.shadowBinPath.
+      await installLinks(constants.shadowBinPath, binName),
       ...binArgs,
       // Add the `--quiet` and `--no-progress` flags to fix input being swallowed
       // by the spinner when running the command with recent versions of npm.
