@@ -5,23 +5,19 @@ import spawn from '@npmcli/promise-spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../constants'
+import { shadowNpmInstall } from '../utils/shadow-npm'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const { SOCKET_CLI_FIX_PACKAGE_LOCK_FILE, abortSignal, execPath, rootBinPath } =
-  constants
+const { SOCKET_CLI_FIX_PACKAGE_LOCK_FILE } = constants
 
 export const fix: CliSubcommand = {
   description: 'Fix "fixable" Socket alerts',
   async run() {
-    const wrapperPath = path.join(rootBinPath, 'npm-cli.js')
     const spinner = new Spinner().start()
     try {
-      await spawn(execPath, [wrapperPath, 'install'], {
-        signal: abortSignal,
-        stdio: 'inherit',
+      await shadowNpmInstall({
         env: {
-          ...process.env,
           [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: '1'
         }
       })
