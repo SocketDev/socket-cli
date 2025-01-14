@@ -631,15 +631,11 @@ function walk(diff_: Diff): InstallEffect[] {
     const diff = queue[pos++]!
     const { action } = diff
     if (action) {
-      // The `oldNode`, i.e. `actual` node, may be `undefined` if there is no
-      // node_modules folder.
+      // The `pkgNode`, i.e. the `ideal` node, will be `undefined` if the diff
+      // action is 'REMOVE'
+      // The `oldNode`, i.e. the `actual` node, will be `undefined` if the diff
+      // action is 'ADD'.
       const { actual: oldNode, ideal: pkgNode } = diff
-      if (!oldNode) {
-        console.log('oldNode', oldNode, diff)
-      }
-      if (!pkgNode) {
-        console.log('pkgNode', pkgNode, diff)
-      }
       let existing
       let keep = false
       if (action === 'CHANGE') {
