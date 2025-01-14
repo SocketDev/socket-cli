@@ -26,7 +26,12 @@ export async function shadowNpmInstall(
       // Lazily access constants.rootBinPath.
       path.join(constants.rootBinPath, 'npm-cli.js'),
       'install',
-      ...(SOCKET_CLI_DEBUG ? ['silent'] : []),
+      // Even though the 'silent' flag is passed npm will still run through code
+      // paths for 'audit' and 'fund' unless '--no-audit' and '--no-fund' flags
+      // are passed.
+      ...(SOCKET_CLI_DEBUG
+        ? ['--no-audit', '--no-fund']
+        : ['silent', '--no-audit', '--no-fund']),
       ...flags
     ],
     {
