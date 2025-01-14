@@ -32,7 +32,7 @@ for (const npmDir of ['npm8', 'npm10']) {
       await assert.doesNotReject(
         () =>
           new Promise((resolve, reject) => {
-            const promise = spawn(
+            const spawnPromise = spawn(
               // Lazily access constants.execPath.
               constants.execPath,
               [entryPath, NPM, 'install', 'bowserify'],
@@ -44,14 +44,14 @@ for (const npmDir of ['npm8', 'npm10']) {
                 signal: abortSignal
               }
             )
-            promise.process.stderr.on('data', buffer => {
+            spawnPromise.process.stderr.on('data', buffer => {
               if (buffer.toString().includes('Possible typosquat attack')) {
-                promise.process.kill('SIGINT')
+                spawnPromise.process.kill('SIGINT')
                 resolve()
               }
             })
-            promise.catch(() => {
-              promise.process.kill('SIGINT')
+            spawnPromise.catch(() => {
+              spawnPromise.process.kill('SIGINT')
               reject()
             })
           })
