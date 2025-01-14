@@ -3,23 +3,27 @@
 
 const constants = require('../dist/constants')
 
-const { DIST_TYPE, distPath } = constants
+const { DIST_TYPE } = constants
 
+// When Node 18 is dropped and experimental-require-module warning are no longer
+// a thing we can just use the require(`${constants.distPath}/cli.js`) code path.
 if (DIST_TYPE === 'require') {
-  require(`${distPath}/cli.js`)
+  // Lazily access constants.distPath.
+  require(`${constants.distPath}/cli.js`)
 } else {
   const path = require('node:path')
   const spawn = require('@npmcli/promise-spawn')
-
-  const { abortSignal, distPath, execPath } = constants
+  const { abortSignal } = constants
 
   process.exitCode = 1
   const spawnPromise = spawn(
-    execPath,
+    // Lazily access constants.execPath
+    constants.execPath,
     [
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
-      path.join(distPath, 'cli.js'),
+      // Lazily access constants.distPath.
+      path.join(constants.distPath, 'cli.js'),
       ...process.argv.slice(2)
     ],
     {
