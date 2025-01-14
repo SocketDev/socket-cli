@@ -30,6 +30,7 @@ import { commonFlags } from '../flags'
 import { printFlagList } from '../utils/formatting'
 import { existsSync } from '../utils/fs'
 import { detect } from '../utils/package-manager-detector'
+import { shadowNpmInstall } from '../utils/shadow-npm'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type {
@@ -52,9 +53,7 @@ const {
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
-  abortSignal,
-  execPath,
-  rootBinPath
+  abortSignal
 } = constants
 
 const COMMAND_TITLE = 'Socket Optimize'
@@ -918,24 +917,20 @@ export const optimize: CliSubcommand = {
       spinner.start(`Updating ${lockName}...`)
       try {
         if (isNpm) {
-          const wrapperPath = path.join(rootBinPath, 'npm-cli.js')
-          const npmSpawnOptions: Parameters<typeof spawn>[2] = {
-            signal: abortSignal,
-            stdio: 'inherit',
+          await shadowNpmInstall({
             env: {
-              ...process.env,
               [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
             }
-          }
-          await spawn(execPath, [wrapperPath, 'install'], npmSpawnOptions)
+          })
           // TODO: This is a temporary workaround for a `npm ci` bug where it
           // will error out after Socket Optimize generates a lock file. More
           // investigation is needed.
-          await spawn(
-            execPath,
-            [wrapperPath, 'install', '--ignore-scripts', '--package-lock-only'],
-            npmSpawnOptions
-          )
+          await shadowNpmInstall({
+            flags: ['--ignore-scripts', '--package-lock-only'],
+            env: {
+              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
+            }
+          })
         } else {
           // All package managers support the "install" command.
           await spawn(agentExecPath, ['install'], {
