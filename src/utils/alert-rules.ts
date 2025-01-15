@@ -1,26 +1,23 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { setTimeout as wait } from 'node:timers/promises'
+
+import config from '@socketsecurity/config'
 import { isObject } from '@socketsecurity/registry/lib/objects'
+
+import { isErrnoException } from './misc'
+import { getPublicToken, setupSdk } from './sdk'
+import { getSetting } from './settings'
+import constants from '../constants'
 
 import type { SocketSdkResultType } from '@socketsecurity/sdk'
 
-//#region UX Constants
-type RuleActionUX = { block: boolean; display: boolean }
+type AlertUxLookup = ReturnType<typeof createAlertUXLookup>
 
-const IGNORE_UX: RuleActionUX = {
-  block: false,
-  display: false
-}
+type AlertUxLookupSettings = Parameters<AlertUxLookup>[0]
 
-const WARN_UX: RuleActionUX = {
-  block: false,
-  display: true
-}
+type AlertUxLookupResult = ReturnType<AlertUxLookup>
 
-const ERROR_UX: RuleActionUX = {
-  block: true,
-  display: true
-}
-//#endregion
-//#region utils
 type NonNormalizedRule =
   | NonNullable<
       NonNullable<
@@ -32,6 +29,7 @@ type NonNormalizedRule =
       >
     >[string]
   | boolean
+
 type NonNormalizedResolvedRule =
   | (NonNullable<
       NonNullable<
@@ -42,11 +40,65 @@ type NonNormalizedResolvedRule =
     > & { action: string })
   | boolean
 
-/**
- * Iterates over all entries with ordered issue rule for deferral.  Iterates over
- * all issue rules and finds the first defined value that does not defer otherwise
- * uses the defaultValue. Takes the value and converts into a UX workflow.
- */
+type RuleActionUX = { block: boolean; display: boolean }
+
+const { abortSignal } = constants
+
+const ERROR_UX: RuleActionUX = {
+  block: true,
+  display: true
+}
+
+const IGNORE_UX: RuleActionUX = {
+  block: false,
+  display: false
+}
+
+const WARN_UX: RuleActionUX = {
+  block: false,
+  display: true
+}
+
+type SettingsType = (SocketSdkResultType<'postSettings'> & {
+  success: true
+})['data']
+
+function findSocketYmlSync() {
+  let prevDir = null
+  let dir = process.cwd()
+  while (dir !== prevDir) {
+    let ymlPath = path.join(dir, 'socket.yml')
+    let yml = maybeReadfileSync(ymlPath)
+    if (yml === undefined) {
+      ymlPath = path.join(dir, 'socket.yaml')
+      yml = maybeReadfileSync(ymlPath)
+    }
+    if (typeof yml === 'string') {
+      try {
+        return {
+          path: ymlPath,
+          parsed: config.parseSocketConfig(yml)
+        }
+      } catch {
+        throw new Error(`Found file but was unable to parse ${ymlPath}`)
+      }
+    }
+    prevDir = dir
+    dir = path.join(dir, '..')
+  }
+  return null
+}
+
+function maybeReadfileSync(filepath: string): string | undefined {
+  try {
+    return readFileSync(filepath, 'utf8')
+  } catch {}
+  return undefined
+}
+
+// Iterates over all entries with ordered issue rule for deferral.  Iterates over
+// all issue rules and finds the first defined value that does not defer otherwise
+// uses the defaultValue. Takes the value and converts into a UX workflow.
 function resolveAlertRuleUX(
   orderedRulesCollection: Iterable<Iterable<NonNormalizedRule>>,
   defaultValue: NonNormalizedResolvedRule
@@ -85,9 +137,7 @@ function resolveAlertRuleUX(
   return { block, display }
 }
 
-/**
- * Negative form because it is narrowing the type.
- */
+// Negative form because it is narrowing the type.
 function ruleValueDoesNotDefer(
   rule: NonNormalizedRule
 ): rule is NonNormalizedResolvedRule {
@@ -103,9 +153,7 @@ function ruleValueDoesNotDefer(
   return true
 }
 
-/**
- * Handles booleans for backwards compatibility.
- */
+// Handles booleans for backwards compatibility.
 function uxForDefinedNonDeferValue(
   ruleValue: NonNormalizedResolvedRule
 ): RuleActionUX {
@@ -120,12 +168,6 @@ function uxForDefinedNonDeferValue(
   }
   return ERROR_UX
 }
-//#endregion
-
-//#region exports
-type SettingsType = (SocketSdkResultType<'postSettings'> & {
-  success: true
-})['data']
 
 export function createAlertUXLookup(
   settings: SettingsType
@@ -175,4 +217,95 @@ export function createAlertUXLookup(
     return ux
   }
 }
-//#endregion
+
+let _uxLookup: AlertUxLookup | undefined
+export async function uxLookup(
+  settings: AlertUxLookupSettings
+): Promise<AlertUxLookupResult> {
+  while (_uxLookup === undefined) {
+    // eslint-disable-next-line no-await-in-loop
+    await wait(1, { signal: abortSignal })
+  }
+  return _uxLookup(settings)
+}
+
+// Start initializing the AlertUxLookupResult immediately.
+void (async () => {
+  const { orgs, settings } = await (async () => {
+    try {
+      const socketSdk = await setupSdk(getPublicToken())
+      const orgResult = await socketSdk.getOrganizations()
+      if (!orgResult.success) {
+        throw new Error(
+          `Failed to fetch Socket organization info: ${orgResult.error.message}`
+        )
+      }
+      const orgs: Exclude<
+        (typeof orgResult.data.organizations)[string],
+        undefined
+      >[] = []
+      for (const org of Object.values(orgResult.data.organizations)) {
+        if (org) {
+          orgs.push(org)
+        }
+      }
+      const result = await socketSdk.postSettings(
+        orgs.map(org => ({ organization: org.id }))
+      )
+      if (!result.success) {
+        throw new Error(
+          `Failed to fetch API key settings: ${result.error.message}`
+        )
+      }
+      return {
+        orgs,
+        settings: result.data
+      }
+    } catch (e: any) {
+      const cause = isObject(e) && 'cause' in e ? e.cause : undefined
+      if (
+        isErrnoException(cause) &&
+        (cause.code === 'ENOTFOUND' || cause.code === 'ECONNREFUSED')
+      ) {
+        throw new Error(
+          'Unable to connect to socket.dev, ensure internet connectivity before retrying',
+          {
+            cause: e
+          }
+        )
+      }
+      throw e
+    }
+  })()
+
+  // Remove any organizations not being enforced.
+  const enforcedOrgs = getSetting('enforcedOrgs') ?? []
+  for (const { 0: i, 1: org } of orgs.entries()) {
+    if (!enforcedOrgs.includes(org.id)) {
+      settings.entries.splice(i, 1)
+    }
+  }
+
+  const socketYml = findSocketYmlSync()
+  if (socketYml) {
+    settings.entries.push({
+      start: socketYml.path,
+      settings: {
+        [socketYml.path]: {
+          deferTo: null,
+          // TODO: TypeScript complains about the type not matching. We should
+          // figure out why are providing
+          // issueRules: { [issueName: string]: boolean }
+          // but expecting
+          // issueRules: { [issueName: string]: { action: 'defer' | 'error' | 'ignore' | 'monitor' | 'warn' } }
+          issueRules: (<unknown>socketYml.parsed.issueRules) as {
+            [key: string]: {
+              action: 'defer' | 'error' | 'ignore' | 'monitor' | 'warn'
+            }
+          }
+        }
+      }
+    })
+  }
+  _uxLookup = createAlertUXLookup(settings)
+})()
