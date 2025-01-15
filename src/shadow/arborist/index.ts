@@ -6,7 +6,7 @@ import {
   arboristClassPath,
   arboristEdgeClassPath,
   arboristNodeClassPath,
-  arboristOverrideSetClassPatch
+  arboristOverrideSetClassPath
 } from '../npm-paths'
 
 export function installSafeArborist() {
@@ -14,5 +14,5 @@ export function installSafeArborist() {
   cache[arboristClassPath] = { exports: SafeArborist }
   cache[arboristEdgeClassPath] = { exports: SafeEdge }
   cache[arboristNodeClassPath] = { exports: SafeNode }
-  cache[arboristOverrideSetClassPatch] = { exports: SafeOverrideSet }
+  cache[arboristOverrideSetClassPath] = { exports: SafeOverrideSet }
 }
