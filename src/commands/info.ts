@@ -3,7 +3,6 @@ import colors from 'yoctocolors-cjs'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import constants from '../constants'
 import { commonFlags, outputFlags, validationFlags } from '../flags'
 import {
   handleApiCall,
