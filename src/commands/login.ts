@@ -27,7 +27,7 @@ type OrgChoice = Choice<string>
 
 type OrgChoices = (Separator | OrgChoice)[]
 
-const { SOCKET_PUBLIC_API_KEY } = constants
+const { SOCKET_PUBLIC_API_TOKEN } = constants
 
 const description = 'Socket API login'
 
@@ -89,13 +89,13 @@ export const login: CliSubcommand = {
         'Cannot prompt for credentials in a non-interactive shell'
       )
     }
-    const apiKey =
+    const apiToken =
       (await password({
         message: `Enter your ${terminalLink(
           'Socket.dev API key',
           'https://docs.socket.dev/docs/api-keys'
         )} (leave blank for a public key)`
-      })) || SOCKET_PUBLIC_API_KEY
+      })) || SOCKET_PUBLIC_API_TOKEN
 
     let apiBaseUrl = cli.flags['apiBaseUrl'] as string | null | undefined
     apiBaseUrl ??= getSetting('apiBaseUrl') ?? undefined
@@ -107,7 +107,7 @@ export const login: CliSubcommand = {
 
     let orgs: SocketSdkReturnType<'getOrganizations'>['data']
     try {
-      const sdk = await setupSdk(apiKey, apiBaseUrl, apiProxy)
+      const sdk = await setupSdk(apiToken, apiBaseUrl, apiProxy)
       const result = await sdk.getOrganizations()
       if (!result.success) {
         throw new AuthError()
@@ -156,10 +156,11 @@ export const login: CliSubcommand = {
     }
 
     updateSetting('enforcedOrgs', enforcedOrgs)
-    const oldKey = getSetting('apiKey')
-    updateSetting('apiKey', apiKey)
+    // TODO: Rename the 'apiKey' setting to 'apiToken'.
+    const oldToken = getSetting('apiKey')
+    updateSetting('apiKey', apiToken)
     updateSetting('apiBaseUrl', apiBaseUrl)
     updateSetting('apiProxy', apiProxy)
-    spinner.success(`API credentials ${oldKey ? 'updated' : 'set'}`)
+    spinner.success(`API credentials ${oldToken ? 'updated' : 'set'}`)
   }
 }

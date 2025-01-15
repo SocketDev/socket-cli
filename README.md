@@ -117,7 +117,7 @@ use of the `projectIgnorePaths` to excludes files when creating a report.
 
 ## Environment variables
 
-- `SOCKET_SECURITY_API_KEY` - if set, this will be used as the API-key
+- `SOCKET_SECURITY_API_TOKEN` - if set, this will be used as the API-key
 
 ## Contributing
 

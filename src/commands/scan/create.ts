@@ -16,7 +16,7 @@ import { AuthError } from '../../utils/errors'
 import { printFlagList } from '../../utils/formatting'
 import { createDebugLogger } from '../../utils/misc'
 import { getPackageFilesFullScans } from '../../utils/path-resolve'
-import { getDefaultKey, setupSdk } from '../../utils/sdk'
+import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
@@ -26,7 +26,7 @@ export const create: CliSubcommand = {
     const name = `${parentName} create`
     const input = await setupCommand(name, create.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultKey()
+      const apiKey = getDefaultToken()
       if (!apiKey) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
