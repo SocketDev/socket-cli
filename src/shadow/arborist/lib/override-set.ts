@@ -2,7 +2,7 @@ import npa from 'npm-package-arg'
 import semver from 'semver'
 
 import constants from '../../../constants'
-import { arboristOverrideSetClassPatch } from '../../npm-paths'
+import { arboristOverrideSetClassPath } from '../../npm-paths'
 import { getLogger } from '../../proc-log'
 
 import type { SafeEdge } from './edge'
@@ -31,7 +31,7 @@ interface OverrideSetClass {
   isEqual(otherOverrideSet: SafeOverrideSet | undefined): boolean
 }
 
-const OverrideSet: OverrideSetClass = require(arboristOverrideSetClassPatch)
+const OverrideSet: OverrideSetClass = require(arboristOverrideSetClassPath)
 
 // Implementation code not related to patch https://github.com/npm/cli/pull/7025
 // is based on https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/override-set.js:
