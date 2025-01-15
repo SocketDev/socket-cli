@@ -10,8 +10,6 @@ import { AuthError } from './errors'
 import { getSetting } from './settings'
 import constants from '../constants'
 
-import type { SocketSdkOptions } from '@socketsecurity/sdk'
-
 // The API server that should be used for operations.
 function getDefaultAPIBaseUrl(): string | undefined {
   const baseUrl =
@@ -29,10 +27,10 @@ function getDefaultHTTPProxy(): string | undefined {
 // This API key should be stored globally for the duration of the CLI execution.
 let _defaultToken: string | undefined
 export function getDefaultToken(): string | undefined {
-  // Keep 'SOCKET_SECURITY_API_KEY' as an alias of 'SOCKET_SECURITY_API_TOKEN' for now.
-  // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
   const key =
     process.env['SOCKET_SECURITY_API_TOKEN'] ||
+    // Keep 'SOCKET_SECURITY_API_KEY' as an alias of 'SOCKET_SECURITY_API_TOKEN'.
+    // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
     process.env['SOCKET_SECURITY_API_KEY'] ||
     // TODO: Rename the 'apiKey' setting to 'apiToken'.
     getSetting('apiKey') ||
@@ -57,25 +55,18 @@ export async function setupSdk(
     })
     _defaultToken = apiToken
   }
-
   if (!apiToken) {
     throw new AuthError('You need to provide an API key')
   }
-
-  let agent: SocketSdkOptions['agent'] | undefined
-  if (proxy) {
-    agent = {
-      http: new HttpProxyAgent({ proxy }),
-      https: new HttpsProxyAgent({ proxy })
-    }
-  }
-
-  const sdkOptions: SocketSdkOptions = {
-    agent,
+  return new SocketSdk(apiToken, {
+    agent: proxy
+      ? {
+          http: new HttpProxyAgent({ proxy }),
+          https: new HttpsProxyAgent({ proxy })
+        }
+      : undefined,
     baseUrl: apiBaseUrl,
     // Lazily access constants.rootPkgJsonPath.
     userAgent: createUserAgentFromPkgJson(require(constants.rootPkgJsonPath))
-  }
-
-  return new SocketSdk(apiToken || '', sdkOptions)
+  })
 }
