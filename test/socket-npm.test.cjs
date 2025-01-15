@@ -8,7 +8,8 @@ const { describe, it } = require('node:test')
 const spawn = require('@npmcli/promise-spawn')
 
 const constants = require('../dist/constants.js')
-const { NPM, abortSignal } = constants
+
+const { NODE_MODULES, NPM, abortSignal } = constants
 
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
@@ -16,7 +17,7 @@ const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 // These aliases are defined in package.json.
 for (const npmDir of ['npm8', 'npm10']) {
   const npmPath = path.join(npmFixturesPath, npmDir)
-  const npmBinPath = path.join(npmPath, 'node_modules', '.bin')
+  const npmBinPath = path.join(npmPath, NODE_MODULES, '.bin')
 
   spawnSync(NPM, ['install', '--silent'], {
     cwd: npmPath,
