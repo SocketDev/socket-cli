@@ -41,13 +41,13 @@ function tryRequire<T extends keyof RequireKnownModules>(
   return undefined
 }
 
-type GetLoggerReturnType =
+export type Logger =
   | typeof import('npmlog')
   | typeof import('proc-log')
   | undefined
 
-let _log: GetLoggerReturnType | {} = UNDEFINED_TOKEN
-export function getLogger(): GetLoggerReturnType {
+let _log: Logger | {} = UNDEFINED_TOKEN
+export function getLogger(): Logger {
   if (_log === UNDEFINED_TOKEN) {
     _log = tryRequire(
       [
@@ -59,5 +59,5 @@ export function getLogger(): GetLoggerReturnType {
       <'npmlog'>path.join(npmNmPath, 'npmlog/lib/log.js')
     )
   }
-  return <GetLoggerReturnType>_log
+  return <Logger>_log
 }
