@@ -4,7 +4,7 @@ import path from 'node:path'
 import constants from '../constants'
 import { findRoot } from '../utils/path-resolve'
 
-const { SOCKET_CLI_ISSUES_URL } = constants
+const { NODE_MODULES, SOCKET_CLI_ISSUES_URL } = constants
 
 const npmEntrypoint = realpathSync(process.argv[1]!)
 const npmRootPath = findRoot(path.dirname(npmEntrypoint))
@@ -21,7 +21,7 @@ Please report to ${SOCKET_CLI_ISSUES_URL}.`
   process.exit(127)
 }
 
-export const npmNmPath = path.join(npmRootPath, 'node_modules')
+export const npmNmPath = path.join(npmRootPath, NODE_MODULES)
 export const arboristPkgPath = path.join(npmNmPath, '@npmcli/arborist')
 export const arboristClassPath = path.join(
   arboristPkgPath,
@@ -33,7 +33,8 @@ export const arboristDepValidPath = path.join(
 )
 export const arboristEdgeClassPath = path.join(arboristPkgPath, 'lib/edge.js')
 export const arboristNodeClassPath = path.join(arboristPkgPath, 'lib/node.js')
-export const arboristOverrideSetClassPatch = path.join(
+export const arboristOverrideSetClassPath = path.join(
   arboristPkgPath,
   'lib/override-set.js'
 )
+export const pacotePath = path.join(npmNmPath, 'pacote')
