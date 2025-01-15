@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { createAlertUXLookup } from '../src/utils/alert-rules'
+import { createAlertUXLookup } from './dist/alert-rules'
 
 describe('Alert Rule UX', () => {
   it('should properly defer', () => {
