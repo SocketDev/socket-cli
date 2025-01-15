@@ -8,7 +8,7 @@ import {
   handleUnsuccessfulApiResponse
 } from '../../utils/api-helpers'
 import { AuthError } from '../../utils/errors'
-import { getDefaultKey, setupSdk } from '../../utils/sdk'
+import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
@@ -18,7 +18,7 @@ export const del: CliSubcommand = {
     const name = `${parentName} del`
     const input = setupCommand(name, del.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultKey()
+      const apiKey = getDefaultToken()
       if (!apiKey) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'

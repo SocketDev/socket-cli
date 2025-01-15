@@ -10,7 +10,7 @@ import { commonFlags, outputFlags } from '../flags'
 import { queryAPI } from '../utils/api-helpers'
 import { AuthError } from '../utils/errors'
 import { printFlagList } from '../utils/formatting'
-import { getDefaultKey } from '../utils/sdk'
+import { getDefaultToken } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
@@ -21,7 +21,7 @@ export const threatFeed: CliSubcommand = {
 
     const input = setupCommand(name, threatFeed.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultKey()
+      const apiKey = getDefaultToken()
       if (!apiKey) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'

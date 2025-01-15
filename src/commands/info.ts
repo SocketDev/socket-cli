@@ -14,13 +14,11 @@ import { InputError } from '../utils/errors'
 import { formatSeverityCount, getSeverityCount } from '../utils/format-issues'
 import { printFlagList } from '../utils/formatting'
 import { objectSome } from '../utils/objects'
-import { getDefaultKey, setupSdk } from '../utils/sdk'
+import { getPublicToken, setupSdk } from '../utils/sdk'
 
 import type { SocketIssue } from '../utils/format-issues'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
-
-const { SOCKET_PUBLIC_API_KEY } = constants
 
 export const info: CliSubcommand = {
   description: 'Look up info regarding a package',
@@ -136,7 +134,7 @@ async function fetchPackageData(
   { includeAllIssues }: Pick<CommandContext, 'includeAllIssues'>,
   spinner: Spinner
 ): Promise<void | PackageData> {
-  const socketSdk = await setupSdk(getDefaultKey() ?? SOCKET_PUBLIC_API_KEY)
+  const socketSdk = await setupSdk(getPublicToken())
   const result = await handleApiCall(
     socketSdk.getIssuesByNPMPackage(pkgName, pkgVersion),
     'looking up package'

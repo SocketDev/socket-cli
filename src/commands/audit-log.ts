@@ -11,7 +11,7 @@ import {
 } from '../utils/api-helpers'
 import { AuthError } from '../utils/errors'
 import { printFlagList } from '../utils/formatting'
-import { getDefaultKey, setupSdk } from '../utils/sdk'
+import { getDefaultToken, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
@@ -22,7 +22,7 @@ export const auditLog: CliSubcommand = {
 
     const input = setupCommand(name, auditLog.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultKey()
+      const apiKey = getDefaultToken()
       if (!apiKey) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'

@@ -20,7 +20,7 @@ import {
 } from '../utils/api-helpers'
 import { AuthError, InputError } from '../utils/errors'
 import { printFlagList } from '../utils/formatting'
-import { getDefaultKey, setupSdk } from '../utils/sdk'
+import { getDefaultToken, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
@@ -32,7 +32,7 @@ export const analytics: CliSubcommand = {
 
     const input = setupCommand(name, analytics.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultKey()
+      const apiKey = getDefaultToken()
       if (!apiKey) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
