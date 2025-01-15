@@ -39,7 +39,8 @@ const distRequirePath = path.join(rootDistPath, 'require')
 
 const editablePkgJson = readPackageJsonSync(rootPath, { editable: true })
 
-const processEnvTapRegExp = /\bprocess\.env(?:\.TAP|\[['"]TAP['"]\])(\s*\?[^:]+:\s*)?/g
+const processEnvTapRegExp =
+  /\bprocess\.env(?:\.TAP|\[['"]TAP['"]\])(\s*\?[^:]+:\s*)?/g
 
 function removeDtsFilesSync(distPath) {
   for (const filepath of tinyGlobSync(['**/*.d.ts'], {
@@ -132,7 +133,7 @@ export default () => {
       // operation, or replace it with `false`.
       socketModifyPlugin({
         find: processEnvTapRegExp,
-        replace: (match, ternary) => ternary ? '' : 'false'
+        replace: (match, ternary) => (ternary ? '' : 'false')
       }),
       {
         generateBundle(_options, bundle) {
