@@ -1,11 +1,13 @@
-import fs from 'node:fs/promises'
+import { promises as fs, realpathSync } from 'node:fs'
 import path from 'node:path'
 
 import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { glob as tinyGlob } from 'tinyglobby'
+import which from 'which'
 
 import { directoryPatterns } from './ignore-by-default'
+import constants from '../constants'
 
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -15,22 +17,19 @@ type GlobWithGitIgnoreOptions = GlobOptions & {
   socketConfig?: SocketYml | undefined
 }
 
+const { NPM, shadowBinPath } = constants
+
 async function filterGlobResultToSupportedFiles(
   entries: string[],
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data']
 ): Promise<string[]> {
-  const patterns = ['golang', 'npm', 'pypi'].reduce(
-    (r: string[], n: string) => {
-      const supported = supportedFiles[n]
-      r.push(
-        ...(supported
-          ? Object.values(supported).map(p => `**/${p.pattern}`)
-          : [])
-      )
-      return r
-    },
-    []
-  )
+  const patterns = ['golang', NPM, 'pypi'].reduce((r: string[], n: string) => {
+    const supported = supportedFiles[n]
+    r.push(
+      ...(supported ? Object.values(supported).map(p => `**/${p.pattern}`) : [])
+    )
+    return r
+  }, [])
   return entries.filter(p => micromatch.some(p, patterns))
 }
 
@@ -160,13 +159,14 @@ function ignorePatternToMinimatch(pattern: string): string {
 }
 
 function pathsToPatterns(paths: string[]): string[] {
+  // TODO: Does not support `~/` paths.
   return paths.map(p => (p === '.' ? '**/*' : p))
 }
 
 export function findRoot(filepath: string): string | undefined {
   let curPath = filepath
   while (true) {
-    if (path.basename(curPath) === 'npm') {
+    if (path.basename(curPath) === NPM) {
       return curPath
     }
     const parent = path.dirname(curPath)
@@ -175,6 +175,28 @@ export function findRoot(filepath: string): string | undefined {
     }
     curPath = parent
   }
+}
+
+export async function findBinPathDetails(binName: string): Promise<{
+  name: string
+  path: string | undefined
+  shadowed: boolean
+}> {
+  let shadowIndex = -1
+  const bins =
+    (await which(binName, {
+      all: true,
+      nothrow: true
+    })) ?? []
+  const binPath = bins.find((binPath, i) => {
+    // Skip our bin directory if it's in the front.
+    if (realpathSync(path.dirname(binPath)) === shadowBinPath) {
+      shadowIndex = i
+      return false
+    }
+    return true
+  })
+  return { name: binName, path: binPath, shadowed: shadowIndex !== -1 }
 }
 
 export async function getPackageFiles(
@@ -186,7 +208,6 @@ export async function getPackageFiles(
 ): Promise<string[]> {
   debugLog(`Globbed resolving ${inputPaths.length} paths:`, inputPaths)
 
-  // TODO: Does not support `~/` paths
   const entries = await globWithGitIgnore(pathsToPatterns(inputPaths), {
     cwd,
     socketConfig: config
@@ -218,7 +239,6 @@ export async function getPackageFilesFullScans(
 ): Promise<string[]> {
   debugLog(`Globbed resolving ${inputPaths.length} paths:`, inputPaths)
 
-  // TODO: Does not support `~/` paths
   const entries = await globWithGitIgnore(pathsToPatterns(inputPaths), {
     cwd
   })

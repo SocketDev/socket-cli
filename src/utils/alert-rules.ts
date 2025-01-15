@@ -1,3 +1,5 @@
+import { isObject } from '@socketsecurity/registry/lib/objects'
+
 import type { SocketSdkResultType } from '@socketsecurity/sdk'
 
 //#region UX Constants
@@ -19,7 +21,7 @@ const ERROR_UX: RuleActionUX = {
 }
 //#endregion
 //#region utils
-type NonNormalizedIssueRule =
+type NonNormalizedRule =
   | NonNullable<
       NonNullable<
         NonNullable<
@@ -30,7 +32,7 @@ type NonNormalizedIssueRule =
       >
     >[string]
   | boolean
-type NonNormalizedResolvedIssueRule =
+type NonNormalizedResolvedRule =
   | (NonNullable<
       NonNullable<
         (SocketSdkResultType<'postSettings'> & {
@@ -43,25 +45,27 @@ type NonNormalizedResolvedIssueRule =
 /**
  * Iterates over all entries with ordered issue rule for deferral.  Iterates over
  * all issue rules and finds the first defined value that does not defer otherwise
- * uses the defaultValue. Takes the value and converts into a UX workflow
+ * uses the defaultValue. Takes the value and converts into a UX workflow.
  */
-function resolveIssueRuleUX(
-  entriesOrderedIssueRules: Iterable<Iterable<NonNormalizedIssueRule>>,
-  defaultValue: NonNormalizedResolvedIssueRule
+function resolveAlertRuleUX(
+  orderedRulesCollection: Iterable<Iterable<NonNormalizedRule>>,
+  defaultValue: NonNormalizedResolvedRule
 ): RuleActionUX {
-  if (defaultValue === true || defaultValue == null) {
+  if (
+    defaultValue === true ||
+    defaultValue === null ||
+    defaultValue === undefined
+  ) {
     defaultValue = { action: 'error' }
   } else if (defaultValue === false) {
     defaultValue = { action: 'ignore' }
   }
-
   let block = false
   let display = false
   let needDefault = true
-
-  iterate_entries: for (const issueRuleArr of entriesOrderedIssueRules) {
-    for (const rule of issueRuleArr) {
-      if (issueRuleValueDoesNotDefer(rule)) {
+  iterate_entries: for (const rules of orderedRulesCollection) {
+    for (const rule of rules) {
+      if (ruleValueDoesNotDefer(rule)) {
         needDefault = false
         const narrowingFilter = uxForDefinedNonDeferValue(rule)
         block = block || narrowingFilter.block
@@ -73,26 +77,25 @@ function resolveIssueRuleUX(
     block = block || narrowingFilter.block
     display = display || narrowingFilter.display
   }
-
   if (needDefault) {
     const narrowingFilter = uxForDefinedNonDeferValue(defaultValue)
     block = block || narrowingFilter.block
     display = display || narrowingFilter.display
   }
-
   return { block, display }
 }
 
 /**
- * Negative form because it is narrowing the type
+ * Negative form because it is narrowing the type.
  */
-function issueRuleValueDoesNotDefer(
-  issueRule: NonNormalizedIssueRule
-): issueRule is NonNormalizedResolvedIssueRule {
-  if (issueRule === undefined) {
+function ruleValueDoesNotDefer(
+  rule: NonNormalizedRule
+): rule is NonNormalizedResolvedRule {
+  if (rule === undefined) {
     return false
-  } else if (typeof issueRule === 'object' && issueRule) {
-    const { action } = issueRule
+  }
+  if (isObject(rule)) {
+    const { action } = rule
     if (action === undefined || action === 'defer') {
       return false
     }
@@ -101,15 +104,15 @@ function issueRuleValueDoesNotDefer(
 }
 
 /**
- * Handles booleans for backwards compatibility
+ * Handles booleans for backwards compatibility.
  */
 function uxForDefinedNonDeferValue(
-  issueRuleValue: NonNormalizedResolvedIssueRule
+  ruleValue: NonNormalizedResolvedRule
 ): RuleActionUX {
-  if (typeof issueRuleValue === 'boolean') {
-    return issueRuleValue ? ERROR_UX : IGNORE_UX
+  if (typeof ruleValue === 'boolean') {
+    return ruleValue ? ERROR_UX : IGNORE_UX
   }
-  const { action } = issueRuleValue
+  const { action } = ruleValue
   if (action === 'warn') {
     return WARN_UX
   } else if (action === 'ignore') {
@@ -124,42 +127,42 @@ type SettingsType = (SocketSdkResultType<'postSettings'> & {
   success: true
 })['data']
 
-export function createIssueUXLookup(
+export function createAlertUXLookup(
   settings: SettingsType
 ): (context: {
   package: { name: string; version: string }
-  issue: { type: string }
+  alert: { type: string }
 }) => RuleActionUX {
   const cachedUX: Map<keyof typeof settings.defaults.issueRules, RuleActionUX> =
     new Map()
   return context => {
-    const key = context.issue.type
-    let ux = cachedUX.get(key)
+    const { type } = context.alert
+    let ux = cachedUX.get(type)
     if (ux) {
       return ux
     }
-    const entriesOrderedIssueRules: Array<Array<NonNormalizedIssueRule>> = []
+    const orderedRulesCollection: Array<Array<NonNormalizedRule>> = []
     for (const settingsEntry of settings.entries) {
-      const orderedIssueRules: Array<NonNormalizedIssueRule> = []
+      const orderedRules: NonNormalizedRule[] = []
       let target = settingsEntry.start
       while (target !== null) {
         const resolvedTarget = settingsEntry.settings[target]
         if (!resolvedTarget) {
           break
         }
-        const issueRuleValue = resolvedTarget.issueRules?.[key]
+        const issueRuleValue = resolvedTarget.issueRules?.[type]
         if (typeof issueRuleValue !== 'undefined') {
-          orderedIssueRules.push(issueRuleValue)
+          orderedRules.push(issueRuleValue)
         }
         target = resolvedTarget.deferTo ?? null
       }
-      entriesOrderedIssueRules.push(orderedIssueRules)
+      orderedRulesCollection.push(orderedRules)
     }
-    const defaultValue = settings.defaults.issueRules[key] as
+    const defaultValue = settings.defaults.issueRules[type] as
       | { action: 'error' | 'ignore' | 'warn' }
       | boolean
       | undefined
-    let resolvedDefaultValue: NonNormalizedResolvedIssueRule = {
+    let resolvedDefaultValue: NonNormalizedResolvedRule = {
       action: 'error'
     }
     if (defaultValue === false) {
@@ -167,8 +170,8 @@ export function createIssueUXLookup(
     } else if (defaultValue && defaultValue !== true) {
       resolvedDefaultValue = { action: defaultValue.action ?? 'error' }
     }
-    ux = resolveIssueRuleUX(entriesOrderedIssueRules, resolvedDefaultValue)
-    cachedUX.set(key, ux)
+    ux = resolveAlertRuleUX(orderedRulesCollection, resolvedDefaultValue)
+    cachedUX.set(type, ux)
     return ux
   }
 }

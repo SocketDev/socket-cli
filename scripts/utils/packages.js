@@ -22,7 +22,8 @@ const cjsPluginSuffixRegExp =
 
 function getPackageName(string, start = 0) {
   const end = getPackageNameEnd(string, start)
-  return end === string.length ? string : string.slice(0, end)
+  const name = string.slice(start, end)
+  return isValidPackageName(name) ? name : ''
 }
 
 function getPackageNameEnd(string, start = 0) {
@@ -74,7 +75,7 @@ function isEsmId(id_, parentId_) {
   }
   const parentId = parentId_ ? resolveId(parentId_) : undefined
   const resolvedId = resolveId(id_, parentId)
-  if (resolvedId.endsWith('.mjs')) {
+  if (resolvedId.endsWith('.mjs') || resolvedId.endsWith('.mts')) {
     return true
   }
   if (
@@ -102,7 +103,12 @@ function isEsmId(id_, parentId_) {
     if (
       pkgJson.type === 'module' &&
       !entryExports?.require &&
-      !entryExports?.node?.default?.endsWith('.cjs')
+      !entryExports?.node?.require &&
+      !entryExports?.node?.default?.endsWith?.('.cjs') &&
+      !entryExports?.['.']?.require &&
+      !entryExports?.['.']?.node?.require &&
+      !entryExports?.['.']?.node?.default?.endsWith?.('.cjs') &&
+      !entryExports?.['.']?.node?.default?.default?.endsWith?.('.cjs')
     ) {
       return true
     }

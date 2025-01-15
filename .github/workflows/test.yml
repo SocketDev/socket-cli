@@ -24,7 +24,5 @@ jobs:
     with:
       no-lockfile: true
       npm-test-script: 'test-ci'
-      node-versions: '20'
-      # We currently have some issues on Windows that will have to wait to be fixed
-      # os: 'ubuntu-latest,windows-latest'
-      os: 'ubuntu-latest'
+      node-versions: '18,20,22'
+      os: 'ubuntu-latest,windows-latest'

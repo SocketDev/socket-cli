@@ -5,10 +5,12 @@ import { afterEach, beforeEach, describe, it } from 'node:test'
 import mockFs from 'mock-fs'
 import nock from 'nock'
 
+import { normalizePath } from '@socketsecurity/registry/lib/path'
+
 import { getPackageFiles } from './dist/path-resolve'
 
 const testPath = __dirname
-const mockPath = path.join(testPath, 'mock')
+const mockPath = normalizePath(path.join(testPath, 'mock'))
 
 const globPatterns = {
   general: {
@@ -88,10 +90,13 @@ describe('Path Resolve', () => {
         [`${mockPath}/package.json`]: '{}'
       })
 
-      assert.deepEqual(
-        await sortedGetPackageFiles(mockPath, ['.'], undefined, globPatterns),
-        [`${mockPath}/package.json`]
+      const actual = await sortedGetPackageFiles(
+        mockPath,
+        ['.'],
+        undefined,
+        globPatterns
       )
+      assert.deepEqual(actual.map(normalizePath), [`${mockPath}/package.json`])
     })
 
     it('should respect ignores from socket config', async () => {
@@ -102,24 +107,22 @@ describe('Path Resolve', () => {
         [`${mockPath}/foo/package.json`]: '{}'
       })
 
-      assert.deepEqual(
-        await sortedGetPackageFiles(
-          mockPath,
-          ['**/*'],
-          {
-            version: 2,
-            projectIgnorePaths: ['bar/*', '!bar/package.json'],
-            issueRules: {},
-            githubApp: {}
-          },
-          globPatterns
-        ),
-        [
-          `${mockPath}/bar/package.json`,
-          `${mockPath}/foo/package-lock.json`,
-          `${mockPath}/foo/package.json`
-        ]
+      const actual = await sortedGetPackageFiles(
+        mockPath,
+        ['**/*'],
+        {
+          version: 2,
+          projectIgnorePaths: ['bar/*', '!bar/package.json'],
+          issueRules: {},
+          githubApp: {}
+        },
+        globPatterns
       )
+      assert.deepEqual(actual.map(normalizePath), [
+        `${mockPath}/bar/package.json`,
+        `${mockPath}/foo/package-lock.json`,
+        `${mockPath}/foo/package.json`
+      ])
     })
 
     it('should respect .gitignore', async () => {
@@ -131,19 +134,17 @@ describe('Path Resolve', () => {
         [`${mockPath}/foo/package.json`]: '{}'
       })
 
-      assert.deepEqual(
-        await sortedGetPackageFiles(
-          mockPath,
-          ['**/*'],
-          undefined,
-          globPatterns
-        ),
-        [
-          `${mockPath}/bar/package.json`,
-          `${mockPath}/foo/package-lock.json`,
-          `${mockPath}/foo/package.json`
-        ]
+      const actual = await sortedGetPackageFiles(
+        mockPath,
+        ['**/*'],
+        undefined,
+        globPatterns
       )
+      assert.deepEqual(actual.map(normalizePath), [
+        `${mockPath}/bar/package.json`,
+        `${mockPath}/foo/package-lock.json`,
+        `${mockPath}/foo/package.json`
+      ])
     })
 
     it('should always ignore some paths', async () => {
@@ -162,15 +163,16 @@ describe('Path Resolve', () => {
         [`${mockPath}/foo/package.json`]: '{}'
       })
 
-      assert.deepEqual(
-        await sortedGetPackageFiles(
-          mockPath,
-          ['**/*'],
-          undefined,
-          globPatterns
-        ),
-        [`${mockPath}/foo/package-lock.json`, `${mockPath}/foo/package.json`]
+      const actual = await sortedGetPackageFiles(
+        mockPath,
+        ['**/*'],
+        undefined,
+        globPatterns
       )
+      assert.deepEqual(actual.map(normalizePath), [
+        `${mockPath}/foo/package-lock.json`,
+        `${mockPath}/foo/package.json`
+      ])
     })
 
     it('should ignore irrelevant matches', async () => {
@@ -181,15 +183,16 @@ describe('Path Resolve', () => {
         [`${mockPath}/foo/random.json`]: '{}'
       })
 
-      assert.deepEqual(
-        await sortedGetPackageFiles(
-          mockPath,
-          ['**/*'],
-          undefined,
-          globPatterns
-        ),
-        [`${mockPath}/foo/package-lock.json`, `${mockPath}/foo/package.json`]
+      const actual = await sortedGetPackageFiles(
+        mockPath,
+        ['**/*'],
+        undefined,
+        globPatterns
       )
+      assert.deepEqual(actual.map(normalizePath), [
+        `${mockPath}/foo/package-lock.json`,
+        `${mockPath}/foo/package.json`
+      ])
     })
 
     it('should be lenient on oddities', async () => {
@@ -199,15 +202,13 @@ describe('Path Resolve', () => {
         }
       })
 
-      assert.deepEqual(
-        await sortedGetPackageFiles(
-          mockPath,
-          ['**/*'],
-          undefined,
-          globPatterns
-        ),
-        []
+      const actual = await sortedGetPackageFiles(
+        mockPath,
+        ['**/*'],
+        undefined,
+        globPatterns
       )
+      assert.deepEqual(actual.map(normalizePath), [])
     })
 
     it('should resolve package and lock file', async () => {
@@ -216,15 +217,16 @@ describe('Path Resolve', () => {
         [`${mockPath}/package.json`]: '{}'
       })
 
-      assert.deepEqual(
-        await sortedGetPackageFiles(
-          mockPath,
-          ['**/*'],
-          undefined,
-          globPatterns
-        ),
-        [`${mockPath}/package-lock.json`, `${mockPath}/package.json`]
+      const actual = await sortedGetPackageFiles(
+        mockPath,
+        ['**/*'],
+        undefined,
+        globPatterns
       )
+      assert.deepEqual(actual.map(normalizePath), [
+        `${mockPath}/package-lock.json`,
+        `${mockPath}/package.json`
+      ])
     })
 
     it('should resolve package without lock file', async () => {
@@ -232,15 +234,13 @@ describe('Path Resolve', () => {
         [`${mockPath}/package.json`]: '{}'
       })
 
-      assert.deepEqual(
-        await sortedGetPackageFiles(
-          mockPath,
-          ['**/*'],
-          undefined,
-          globPatterns
-        ),
-        [`${mockPath}/package.json`]
+      const actual = await sortedGetPackageFiles(
+        mockPath,
+        ['**/*'],
+        undefined,
+        globPatterns
       )
+      assert.deepEqual(actual.map(normalizePath), [`${mockPath}/package.json`])
     })
 
     it('should support alternative lock files', async () => {
@@ -249,15 +249,16 @@ describe('Path Resolve', () => {
         [`${mockPath}/package.json`]: '{}'
       })
 
-      assert.deepEqual(
-        await sortedGetPackageFiles(
-          mockPath,
-          ['**/*'],
-          undefined,
-          globPatterns
-        ),
-        [`${mockPath}/package.json`, `${mockPath}/yarn.lock`]
+      const actual = await sortedGetPackageFiles(
+        mockPath,
+        ['**/*'],
+        undefined,
+        globPatterns
       )
+      assert.deepEqual(actual.map(normalizePath), [
+        `${mockPath}/package.json`,
+        `${mockPath}/yarn.lock`
+      ])
     })
 
     it('should handle all variations', async () => {
@@ -271,23 +272,21 @@ describe('Path Resolve', () => {
         [`${mockPath}/abc/package.json`]: '{}'
       })
 
-      assert.deepEqual(
-        await sortedGetPackageFiles(
-          mockPath,
-          ['**/*'],
-          undefined,
-          globPatterns
-        ),
-        [
-          `${mockPath}/abc/package.json`,
-          `${mockPath}/bar/package.json`,
-          `${mockPath}/bar/yarn.lock`,
-          `${mockPath}/foo/package-lock.json`,
-          `${mockPath}/foo/package.json`,
-          `${mockPath}/package-lock.json`,
-          `${mockPath}/package.json`
-        ]
+      const actual = await sortedGetPackageFiles(
+        mockPath,
+        ['**/*'],
+        undefined,
+        globPatterns
       )
+      assert.deepEqual(actual.map(normalizePath), [
+        `${mockPath}/abc/package.json`,
+        `${mockPath}/bar/package.json`,
+        `${mockPath}/bar/yarn.lock`,
+        `${mockPath}/foo/package-lock.json`,
+        `${mockPath}/foo/package.json`,
+        `${mockPath}/package-lock.json`,
+        `${mockPath}/package.json`
+      ])
     })
   })
 })

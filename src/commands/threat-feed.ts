@@ -3,7 +3,8 @@ import ScreenWidget from 'blessed/lib/widgets/screen'
 // @ts-ignore
 import TableWidget from 'blessed-contrib/lib/widget/table'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags } from '../flags'
 import { queryAPI } from '../utils/api-helpers'
@@ -12,7 +13,6 @@ import { printFlagList } from '../utils/formatting'
 import { getDefaultKey } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
-import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const threatFeed: CliSubcommand = {
   description: 'Look up the threat feed',
@@ -27,7 +27,7 @@ export const threatFeed: CliSubcommand = {
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
-      const spinner = yoctoSpinner({
+      const spinner = new Spinner({
         text: 'Looking up the threat feed'
       }).start()
       await fetchThreatFeed(input, spinner, apiKey)

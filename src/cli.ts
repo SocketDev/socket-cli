@@ -2,15 +2,17 @@
 
 import { pathToFileURL } from 'node:url'
 
-import colors from 'yoctocolors-cjs'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
+import colors from 'yoctocolors-cjs'
 
 import * as cliCommands from './commands'
-import { rootPkgJsonPath } from './constants'
+import constants from './constants'
 import { logSymbols } from './utils/color-or-markdown'
 import { AuthError, InputError } from './utils/errors'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
+
+const { rootPkgJsonPath } = constants
 
 const formattedCliCommands = Object.fromEntries(
   Object.entries(cliCommands).map(entry => {
@@ -26,11 +28,9 @@ function camelToHyphen(str: string): string {
 
 // TODO: Add autocompletion using https://socket.dev/npm/package/omelette
 void (async () => {
-  const rootPkgJson = require(rootPkgJsonPath)
-
   await updateNotifier({
-    name: rootPkgJson.name,
-    version: rootPkgJson.version,
+    name: 'socket',
+    version: require(rootPkgJsonPath).version,
     ttl: 86_400_000 /* 24 hours in milliseconds */
   })
 

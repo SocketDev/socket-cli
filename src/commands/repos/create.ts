@@ -1,6 +1,7 @@
-import colors from 'yoctocolors-cjs'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+import colors from 'yoctocolors-cjs'
+
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags } from '../../flags'
 import {
@@ -12,7 +13,6 @@ import { printFlagList } from '../../utils/formatting'
 import { getDefaultKey, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
-import type { Spinner } from '@socketregistry/yocto-spinner'
 
 export const create: CliSubcommand = {
   description: 'Create a repository in an organization',
@@ -27,7 +27,7 @@ export const create: CliSubcommand = {
         )
       }
       const spinnerText = 'Creating repository... \n'
-      const spinner = yoctoSpinner({ text: spinnerText }).start()
+      const spinner = new Spinner({ text: spinnerText }).start()
       await createRepo(input.orgSlug, input, spinner, apiKey)
     }
   }

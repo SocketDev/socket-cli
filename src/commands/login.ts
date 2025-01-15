@@ -1,16 +1,18 @@
-import { confirm, password, select } from '@inquirer/prompts'
 import isInteractive from 'is-interactive'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
 import terminalLink from 'terminal-link'
 
+import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
+
+import constants from '../constants'
 import { AuthError, InputError } from '../utils/errors'
 import { printFlagList } from '../utils/formatting'
-import { FREE_API_KEY, setupSdk } from '../utils/sdk'
+import { setupSdk } from '../utils/sdk'
 import { getSetting, updateSetting } from '../utils/settings'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
-import type { Separator } from '@inquirer/prompts'
+import type { Separator } from '@socketsecurity/registry/lib/prompts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 type Choice<Value> = {
@@ -24,6 +26,8 @@ type Choice<Value> = {
 type OrgChoice = Choice<string>
 
 type OrgChoices = (Separator | OrgChoice)[]
+
+const { SOCKET_PUBLIC_API_KEY } = constants
 
 const description = 'Socket API login'
 
@@ -91,7 +95,7 @@ export const login: CliSubcommand = {
           'Socket.dev API key',
           'https://docs.socket.dev/docs/api-keys'
         )} (leave blank for a public key)`
-      })) || FREE_API_KEY
+      })) || SOCKET_PUBLIC_API_KEY
 
     let apiBaseUrl = cli.flags['apiBaseUrl'] as string | null | undefined
     apiBaseUrl ??= getSetting('apiBaseUrl') ?? undefined
@@ -99,7 +103,7 @@ export const login: CliSubcommand = {
     let apiProxy = cli.flags['apiProxy'] as string | null | undefined
     apiProxy ??= getSetting('apiProxy') ?? undefined
 
-    const spinner = yoctoSpinner({ text: 'Verifying API key...' }).start()
+    const spinner = new Spinner({ text: 'Verifying API key...' }).start()
 
     let orgs: SocketSdkReturnType<'getOrganizations'>['data']
     try {

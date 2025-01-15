@@ -1,7 +1,9 @@
-import colors from 'yoctocolors-cjs'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+import colors from 'yoctocolors-cjs'
 
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
+
+import constants from '../constants'
 import { commonFlags, outputFlags, validationFlags } from '../flags'
 import {
   handleApiCall,
@@ -12,12 +14,13 @@ import { InputError } from '../utils/errors'
 import { formatSeverityCount, getSeverityCount } from '../utils/format-issues'
 import { printFlagList } from '../utils/formatting'
 import { objectSome } from '../utils/objects'
-import { FREE_API_KEY, getDefaultKey, setupSdk } from '../utils/sdk'
+import { getDefaultKey, setupSdk } from '../utils/sdk'
 
 import type { SocketIssue } from '../utils/format-issues'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
-import type { Spinner } from '@socketregistry/yocto-spinner'
+
+const { SOCKET_PUBLIC_API_KEY } = constants
 
 export const info: CliSubcommand = {
   description: 'Look up info regarding a package',
@@ -35,7 +38,7 @@ export const info: CliSubcommand = {
         commandContext.pkgVersion === 'latest'
           ? `Looking up data for the latest version of ${commandContext.pkgName}`
           : `Looking up data for version ${commandContext.pkgVersion} of ${commandContext.pkgName}`
-      const spinner = yoctoSpinner({ text: spinnerText }).start()
+      const spinner = new Spinner({ text: spinnerText }).start()
       const packageData = await fetchPackageData(
         commandContext.pkgName,
         commandContext.pkgVersion,
@@ -133,7 +136,7 @@ async function fetchPackageData(
   { includeAllIssues }: Pick<CommandContext, 'includeAllIssues'>,
   spinner: Spinner
 ): Promise<void | PackageData> {
-  const socketSdk = await setupSdk(getDefaultKey() || FREE_API_KEY)
+  const socketSdk = await setupSdk(getDefaultKey() ?? SOCKET_PUBLIC_API_KEY)
   const result = await handleApiCall(
     socketSdk.getIssuesByNPMPackage(pkgName, pkgVersion),
     'looking up package'

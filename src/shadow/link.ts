@@ -1,38 +1,40 @@
-import { realpathSync } from 'node:fs'
 import path from 'node:path'
 
-import which from 'which'
+import cmdShim from 'cmd-shim'
 
-export function installLinks(
-  realDirname: string,
+import constants from '../constants'
+import { findBinPathDetails } from '../utils/path-resolve'
+
+const { WIN32, rootDistPath } = constants
+
+export async function installLinks(
+  realBinPath: string,
   binName: 'npm' | 'npx'
-): string {
-  const realShadowBinDir = realDirname
-  // find package manager being shadowed by this process
-  const bins = which.sync(binName, {
-    all: true
-  })
-  let shadowIndex = -1
-  const binPath = bins.find((binPath, i) => {
-    if (realpathSync(path.dirname(binPath)) === realShadowBinDir) {
-      shadowIndex = i
-      return false
-    }
-    return true
-  })
-  const isWin = process.platform === 'win32'
-  if (isWin && binPath) {
-    return binPath
-  }
+): Promise<string> {
+  // Find package manager being shadowed by this process.
+  const { path: binPath, shadowed } = await findBinPathDetails(binName)
   if (!binPath) {
+    // The exit code 127 indicates that the command or binary being executed
+    // could not be found.
     console.error(
-      `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`
+      `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable.`
     )
     process.exit(127)
   }
-  if (shadowIndex === -1) {
-    const binDir = path.join(realDirname)
-    process.env['PATH'] = `${binDir}${isWin ? ';' : ':'}${process.env['PATH']}`
+  // TODO: Is this early exit needed?
+  if (WIN32 && binPath) {
+    return binPath
+  }
+  // Move our bin directory to front of PATH so its found first.
+  if (!shadowed) {
+    if (WIN32) {
+      await cmdShim(
+        path.join(rootDistPath, `${binName}-cli.js`),
+        path.join(realBinPath, binName)
+      )
+    }
+    process.env['PATH'] =
+      `${realBinPath}${path.delimiter}${process.env['PATH']}`
   }
   return binPath
 }

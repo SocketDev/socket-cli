@@ -1,47 +1,40 @@
-import { password } from '@inquirer/prompts'
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 import isInteractive from 'is-interactive'
 
+import { password } from '@socketsecurity/registry/lib/prompts'
+import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
-import { rootPkgJsonPath } from '../constants'
 import { AuthError } from './errors'
 import { getSetting } from './settings'
+import constants from '../constants'
 
 import type { SocketSdkOptions } from '@socketsecurity/sdk'
 
-export const FREE_API_KEY =
-  'sktsec_t_--RAN5U4ivauy4w37-6aoKyYPDt5ZbaT5JBVMqiwKo_api'
+const { rootPkgJsonPath } = constants
 
-// This API key should be stored globally for the duration of the CLI execution
+// This API key should be stored globally for the duration of the CLI execution.
 let defaultKey: string | undefined
 
 export function getDefaultKey(): string | undefined {
-  defaultKey =
+  const key =
     process.env['SOCKET_SECURITY_API_KEY'] || getSetting('apiKey') || defaultKey
+  defaultKey = isNonEmptyString(key) ? key : undefined
   return defaultKey
 }
 
-// The API server that should be used for operations
-let defaultAPIBaseUrl: string | undefined
-
+// The API server that should be used for operations.
 function getDefaultAPIBaseUrl(): string | undefined {
-  defaultAPIBaseUrl =
-    process.env['SOCKET_SECURITY_API_BASE_URL'] ||
-    getSetting('apiBaseUrl') ||
-    undefined
-  return defaultAPIBaseUrl
+  const baseUrl =
+    process.env['SOCKET_SECURITY_API_BASE_URL'] || getSetting('apiBaseUrl')
+  return isNonEmptyString(baseUrl) ? baseUrl : undefined
 }
 
-// The API server that should be used for operations
-let defaultApiProxy: string | undefined
-
+// The API server that should be used for operations.
 function getDefaultHTTPProxy(): string | undefined {
-  defaultApiProxy =
-    process.env['SOCKET_SECURITY_API_PROXY'] ||
-    getSetting('apiProxy') ||
-    undefined
-  return defaultApiProxy
+  const apiProxy =
+    process.env['SOCKET_SECURITY_API_PROXY'] || getSetting('apiProxy')
+  return isNonEmptyString(apiProxy) ? apiProxy : undefined
 }
 
 export async function setupSdk(

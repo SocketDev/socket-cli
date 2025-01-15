@@ -1,10 +1,10 @@
 import { builtinModules, createRequire } from 'node:module'
 import path from 'node:path'
 
-import commonjs from '@rollup/plugin-commonjs'
-import json from '@rollup/plugin-json'
+import commonjsPlugin from '@rollup/plugin-commonjs'
+import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
-import replace from '@rollup/plugin-replace'
+import replacePlugin from '@rollup/plugin-replace'
 import { readPackageUpSync } from 'read-package-up'
 import rangesIntersect from 'semver/ranges/intersects.js'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
@@ -29,6 +29,7 @@ import {
 } from '../scripts/utils/packages.js'
 
 const {
+  BABEL_RUNTIME,
   LATEST,
   ROLLUP_ENTRY_SUFFIX,
   ROLLUP_EXTERNAL_SUFFIX,
@@ -42,10 +43,18 @@ const {
 
 const require = createRequire(import.meta.url)
 
-const ts = require('rollup-plugin-ts')
+const tsPlugin = require('rollup-plugin-ts')
 
 const rootPackageJson = require(rootPackageJsonPath)
-const { dependencies: pkgDeps, devDependencies: pkgDevDeps } = rootPackageJson
+const {
+  dependencies: pkgDeps,
+  devDependencies: pkgDevDeps,
+  overrides: pkgOverrides
+} = rootPackageJson
+
+const SOCKET_INTEROP = '_socketInterop'
+
+const constantsSrcPath = path.join(rootSrcPath, 'constants.ts')
 
 const builtinAliases = builtinModules.reduce((o, n) => {
   o[n] = `node:${n}`
@@ -58,6 +67,21 @@ const customResolver = nodeResolve({
   exportConditions: ['node'],
   preferBuiltins: true
 })
+
+const requireAssignmentsRegExp =
+  /(?<=\s*=\s*)require\(["'](?!node:|@socket(?:registry|security)\/|\.).+?["']\)(?=;?\r?\n)/g
+const checkRequireAssignmentRegExp = new RegExp(
+  requireAssignmentsRegExp.source,
+  ''
+)
+const checkSocketInteropUseRegExp = new RegExp(`\\b${SOCKET_INTEROP}\\b`)
+const danglingRequiresRegExp = /^\s*require\(["'].+?["']\);?\r?\n/gm
+const firstUseStrictRegExp = /'use strict';?/
+const oraSpinnersAssignmentsRegExp = /(?<=ora[^.]+\.spinners\s*=\s*)[$\w]+/g
+const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
+const requireUrlAssignmentRegExp =
+  /(?<=var +)[$\w]+(?= *= *require\('node:url'\))/
+const splitUrlRequiresRegExp = /require\(["']u["']\s*\+\s*["']rl["']\)/g
 
 function isAncestorsExternal(id, depStats) {
   let currNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH)
@@ -114,11 +138,11 @@ export default function baseConfig(extendConfig = {}) {
       }
       const id = normalizeId(id_)
       const name = getPackageName(id)
-      if (isBlessedPackageName(name)) {
+      if (pkgOverrides[name] || isBlessedPackageName(name)) {
         return true
       }
       if (
-        name === '@babel/runtime' ||
+        name === BABEL_RUNTIME ||
         id.startsWith(rootSrcPath) ||
         id.endsWith('.mjs') ||
         id.endsWith('.mts') ||
@@ -150,12 +174,9 @@ export default function baseConfig(extendConfig = {}) {
           LATEST
         return false
       }
-      const parentNodeModulesIndex = parentId.lastIndexOf(
-        SLASH_NODE_MODULES_SLASH
-      )
-      if (parentNodeModulesIndex !== -1) {
-        const parentNameStart =
-          parentNodeModulesIndex + SLASH_NODE_MODULES_SLASH.length
+      const parentNmIndex = parentId.lastIndexOf(SLASH_NODE_MODULES_SLASH)
+      if (parentNmIndex !== -1) {
+        const parentNameStart = parentNmIndex + SLASH_NODE_MODULES_SLASH.length
         const parentNameEnd = getPackageNameEnd(parentId, parentNameStart)
         const {
           version,
@@ -187,8 +208,8 @@ export default function baseConfig(extendConfig = {}) {
     ...extendConfig,
     plugins: [
       customResolver,
-      json(),
-      ts({
+      jsonPlugin(),
+      tsPlugin({
         transpiler: 'babel',
         browserslist: false,
         transpileOnly: true,
@@ -199,43 +220,45 @@ export default function baseConfig(extendConfig = {}) {
       purgePolyfills.rollup({
         replacements: {}
       }),
-      // Convert REPLACED_WITH_SOCKET_PACKAGE_NAME to the Socket package name.
-      replace({
-        preventAssignment: false,
-        values: {
-          REPLACED_WITH_SOCKET_PACKAGE_NAME: rootPackageJson.name
-        }
-      }),
-      // Convert un-prefixed built-in imports into "node:"" prefixed forms.
-      replace({
+      replacePlugin({
         delimiters: ['(?<=(?:require\\(|from\\s*)["\'])', '(?=["\'])'],
         preventAssignment: false,
         values: builtinAliases
       }),
-      // Convert `require('u' + 'rl')` into something like `require$$2$3`.
+      // Convert un-prefixed built-in imports into "node:"" prefixed forms.
+      replacePlugin({
+        delimiters: ['(?<=(?:require\\(|from\\s*)["\'])', '(?=["\'])'],
+        preventAssignment: false,
+        values: builtinAliases
+      }),
+      // Replace require calls to ESM 'tiny-colors' with CJS 'yoctocolors-cjs'
+      // because we npm override 'tiny-colors' with 'yoctocolors-cjs' for dist
+      // builds which causes 'tiny-colors' to be treated as an external, not bundled,
+      // require.
       socketModifyPlugin({
-        find: /require\('u' \+ 'rl'\)/g,
+        find: requireTinyColorsRegExp,
+        replace: "require('yoctocolors-cjs')"
+      }),
+      // Try to convert `require('u' + 'rl')` into something like `require$$2$3`.
+      socketModifyPlugin({
+        find: splitUrlRequiresRegExp,
         replace(match) {
-          return (
-            /(?<=var +)[$\w]+(?= *= *require\('node:url'\))/.exec(
-              this.input
-            )?.[0] ?? match
-          )
+          return requireUrlAssignmentRegExp.exec(this.input)?.[0] ?? match
         }
       }),
-      // Remove bare require calls, e.g. require calls not associated with an
-      // import binding:
+      // Remove dangling require calls, e.g. require calls not associated with
+      // an import binding:
       //   require('node:util')
       //   require('graceful-fs')
       socketModifyPlugin({
-        find: /^\s*require\(["'].+?["']\);?\r?\n/gm,
+        find: danglingRequiresRegExp,
         replace: ''
       }),
       // Fix incorrectly set "spinners" binding caused by a transpilation bug
       // https://github.com/sindresorhus/ora/blob/v8.1.1/index.js#L424
       // export {default as spinners} from 'cli-spinners'
       socketModifyPlugin({
-        find: /(?<=ora[^.]+\.spinners\s*=\s*)[$\w]+/g,
+        find: oraSpinnersAssignmentsRegExp,
         replace(match) {
           return (
             new RegExp(`(?<=${escapeRegExp(match)}\\s*=\\s*)[$\\w]+`).exec(
@@ -244,14 +267,36 @@ export default function baseConfig(extendConfig = {}) {
           )
         }
       }),
-      commonjs({
-        defaultIsModuleExports: 'auto',
+      commonjsPlugin({
+        defaultIsModuleExports: true,
         extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
         ignoreDynamicRequires: true,
         ignoreGlobal: true,
         ignoreTryCatch: true,
-        strictRequires: 'auto',
-        transformMixedEsModules: true
+        strictRequires: 'auto'
+      }),
+      // Wrap require calls with SOCKET_INTEROP helper.
+      socketModifyPlugin({
+        find: requireAssignmentsRegExp,
+        replace: match => `${SOCKET_INTEROP}(${match})`
+      }),
+      // Add CJS interop helper for "default" only exports.
+      socketModifyPlugin({
+        find: firstUseStrictRegExp,
+        replace(match) {
+          return checkRequireAssignmentRegExp.test(this.input) ||
+            checkSocketInteropUseRegExp.test(this.input)
+            ? `${match}\n
+function ${SOCKET_INTEROP}(e) {
+  let c = 0
+  for (const k in e ?? {}) {
+    c = c === 0 && k === 'default' ? 1 : 0
+    if (!c && k !== '__esModule') break
+  }
+  return c ? e.default : e
+}`
+            : match
+        }
       }),
       ...(extendConfig.plugins ?? [])
     ]
@@ -266,29 +311,34 @@ export default function baseConfig(extendConfig = {}) {
   ).map(o => ({
     ...o,
     chunkFileNames: '[name].js',
-    manualChunks(id) {
+    manualChunks: id_ => {
+      const id = normalizeId(id_)
+      if (id === constantsSrcPath) {
+        return 'constants'
+      }
       if (id.includes(SLASH_NODE_MODULES_SLASH)) {
         return 'vendor'
       }
+      return null
     }
   }))
 
   // Replace hard-coded absolute paths in source with hard-coded relative paths.
-  const replacePlugin = replace({
-    delimiters: ['(?<=["\'])', '/'],
-    preventAssignment: false,
-    values: {
-      [rootPath]: '../../'
-    }
-  })
-  const replaceOutputPlugin = {
-    name: replacePlugin.name,
-    renderChunk: replacePlugin.renderChunk
-  }
+  const replaceAbsPathsOutputPlugin = (() => {
+    const { name, renderChunk } = replacePlugin({
+      delimiters: ['(?<=["\'])', '/'],
+      preventAssignment: false,
+      values: {
+        [rootPath]: '../../'
+      }
+    })
+    return { name, renderChunk }
+  })()
+
   for (const o of output) {
     o.plugins = [
       ...(Array.isArray(o.plugins) ? o.plugins : []),
-      replaceOutputPlugin
+      replaceAbsPathsOutputPlugin
     ]
   }
 

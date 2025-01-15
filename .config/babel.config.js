@@ -1,7 +1,5 @@
 'use strict'
 
-const { isEsmId } = require('../scripts/utils/packages')
-
 module.exports = {
   plugins: [
     '@babel/plugin-proposal-export-default-from',
@@ -14,25 +12,6 @@ module.exports = {
         helpers: true,
         regenerator: false,
         version: '^7.25.7'
-      }
-    ],
-    [
-      '@babel/plugin-transform-modules-commonjs',
-      {
-        allowTopLevelThis: true,
-        importInterop: (specifier, requestingFilename) => {
-          if (requestingFilename) {
-            const specIsEsm = isEsmId(specifier, requestingFilename)
-            const parentIsEsm = isEsmId(requestingFilename)
-            if (specIsEsm && parentIsEsm) {
-              return 'none'
-            }
-            if (specIsEsm) {
-              return 'babel'
-            }
-          }
-          return 'node'
-        }
       }
     ]
   ]

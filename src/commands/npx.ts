@@ -1,30 +1,14 @@
-import path from 'node:path'
-
-import spawn from '@npmcli/promise-spawn'
-
-import { distPath } from '../constants'
+import constants from '../constants'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const description = 'npx wrapper functionality'
+const { NPX } = constants
 
 export const npx: CliSubcommand = {
-  description,
-  async run(argv, _importMeta, _ctx) {
-    const wrapperPath = path.join(distPath, 'npx-cli.js')
-    process.exitCode = 1
-    const spawnPromise = spawn(
-      process.execPath,
-      ['--disable-warning', 'ExperimentalWarning', wrapperPath, ...argv],
-      { stdio: 'inherit' }
-    )
-    spawnPromise.process.on('exit', (code, signal) => {
-      if (signal) {
-        process.kill(process.pid, signal)
-      } else if (code !== null) {
-        process.exit(code)
-      }
-    })
-    await spawnPromise
+  description: `${NPX} wrapper functionality`,
+  async run(argv) {
+    // Lazily access constants.distPath.
+    const shadowBin = require(`${constants.distPath}/shadow-bin.js`)
+    await shadowBin(NPX, argv)
   }
 }

@@ -86,7 +86,6 @@ function getImportXFlatConfigs(isEsm) {
       plugins: origImportXFlatConfigs.recommended.plugins,
       settings: {
         ...origImportXFlatConfigs.typescript.settings,
-        ...sharedRulesForImportX,
         'import-x/resolver-next': [
           createOxcImportResolver({
             tsConfig: {
@@ -95,6 +94,13 @@ function getImportXFlatConfigs(isEsm) {
             }
           })
         ]
+      },
+      rules: {
+        ...sharedRulesForImportX,
+        // TypeScript compilation already ensures that named imports exist in
+        // the referenced module.
+        'import-x/named': 'off',
+        'import-x/no-named-as-default-member': 'off'
       }
     }
   }
@@ -115,8 +121,16 @@ module.exports = [
     ...importFlatConfigsForModule.recommended
   },
   {
-    files: ['src/**/*.ts', 'test/**/*.ts'],
+    files: ['src/**/*.ts'],
     ...importFlatConfigsForModule.typescript
+  },
+  {
+    files: ['test/**/*.ts'],
+    ...importFlatConfigsForModule.typescript,
+    rules: {
+      ...importFlatConfigsForModule.typescript.rules,
+      'import-x/no-unresolved': 'off'
+    }
   },
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
@@ -152,7 +166,10 @@ module.exports = [
       // Define @typescript-eslint/no-this-alias because oxlint defines
       // "no-this-alias": ["deny"] and trying to eslint-disable it will
       // cause an eslint "Definition not found" error otherwise.
-      '@typescript-eslint/no-this-alias': ['error'],
+      '@typescript-eslint/no-this-alias': [
+        'error',
+        { allowDestructuring: true }
+      ],
       // Returning unawaited promises in a try/catch/finally is dangerous
       // (the `catch` won't catch if the promise is rejected, and the `finally`
       // won't wait for the promise to resolve). Returning unawaited promises
@@ -176,6 +193,7 @@ module.exports = [
     rules: {
       ...nodePlugin.configs['flat/recommended-script'].rules,
       'n/exports-style': ['error', 'module.exports'],
+      'n/no-missing-require': ['off'],
       // The n/no-unpublished-bin rule does does not support non-trivial glob
       // patterns used in package.json "files" fields. In those cases we simplify
       // the glob patterns used.

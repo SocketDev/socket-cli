@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import yoctoSpinner from '@socketregistry/yocto-spinner'
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 let dataHome: string | undefined =
   process.platform === 'win32'
@@ -32,11 +32,11 @@ interface Settings {
 let settings: Settings = {}
 
 if (existsSync(settingsPath)) {
-  const raw = readFileSync(settingsPath, 'utf-8')
+  const raw = readFileSync(settingsPath, 'utf8')
   try {
     settings = JSON.parse(Buffer.from(raw, 'base64').toString())
   } catch {
-    yoctoSpinner().warning(`Failed to parse settings at ${settingsPath}`)
+    new Spinner().warning(`Failed to parse settings at ${settingsPath}`)
   }
 } else {
   mkdirSync(path.dirname(settingsPath), { recursive: true })

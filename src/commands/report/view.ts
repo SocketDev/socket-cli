@@ -1,7 +1,8 @@
-import colors from 'yoctocolors-cjs'
 import meow from 'meow'
-import yoctoSpinner from '@socketregistry/yocto-spinner'
 import { ErrorWithCause } from 'pony-cause'
+import colors from 'yoctocolors-cjs'
+
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import {
@@ -125,7 +126,7 @@ export async function fetchReportData(
 ): Promise<void | ReportData> {
   // Do the API call
   const socketSdk = await setupSdk()
-  const spinner = yoctoSpinner({
+  const spinner = new Spinner({
     text: `Fetching report with ID ${reportId} (this could take a while)`
   }).start()
 

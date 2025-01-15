@@ -1,16 +1,17 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import spawn from '@npmcli/promise-spawn'
-import colors from 'yoctocolors-cjs'
 import yargsParse from 'yargs-parser'
+import colors from 'yoctocolors-cjs'
+
+import { runBin } from '@socketsecurity/registry/lib/npm'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import { cdxgenBinPath, synpBinPath } from '../constants'
+import constants from '../constants'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const { execPath } = process
+const { NPM, PNPM, cdxgenBinPath, synpBinPath } = constants
 
 const {
   SBOM_SIGN_ALGORITHM, // Algorithm. Example: RS512
@@ -25,8 +26,8 @@ const nodejsPlatformTypes = new Set([
   'javascript',
   'js',
   'nodejs',
-  'npm',
-  'pnpm',
+  NPM,
+  PNPM,
   'ts',
   'tsx',
   'typescript'
@@ -156,10 +157,10 @@ export const cdxgen: CliSubcommand = {
     const unknown: string[] = yargv._
     const { length: unknownLength } = unknown
     if (unknownLength) {
+      process.exitCode = 1
       console.error(
         `Unknown ${pluralize('argument', unknownLength)}: ${yargv._.join(', ')}`
       )
-      process.exitCode = 1
       return
     }
     let cleanupPackageLock = false
@@ -169,17 +170,16 @@ export const cdxgen: CliSubcommand = {
       existsSync('./yarn.lock')
     ) {
       if (existsSync('./package-lock.json')) {
-        yargv.type = 'npm'
+        yargv.type = NPM
       } else {
         // Use synp to create a package-lock.json from the yarn.lock,
         // based on the node_modules folder, for a more accurate SBOM.
         try {
-          await spawn(
-            execPath,
-            [await fs.realpath(synpBinPath), '--source-file', './yarn.lock'],
-            { shell: true }
-          )
-          yargv.type = 'npm'
+          await runBin(await fs.realpath(synpBinPath), [
+            '--source-file',
+            './yarn.lock'
+          ])
+          yargv.type = NPM
           cleanupPackageLock = true
         } catch {}
       }
@@ -187,23 +187,18 @@ export const cdxgen: CliSubcommand = {
     if (yargv.output === undefined) {
       yargv.output = 'socket-cdx.json'
     }
-    await spawn(
-      execPath,
-      [await fs.realpath(cdxgenBinPath), ...argvToArray(yargv)],
-      {
-        env: {
-          NODE_ENV: '',
-          SBOM_SIGN_ALGORITHM,
-          SBOM_SIGN_PRIVATE_KEY,
-          SBOM_SIGN_PUBLIC_KEY
-        },
-        shell: true,
-        stdio: 'inherit'
-      }
-    )
+    await runBin(await fs.realpath(cdxgenBinPath), argvToArray(yargv), {
+      env: {
+        NODE_ENV: '',
+        SBOM_SIGN_ALGORITHM,
+        SBOM_SIGN_PRIVATE_KEY,
+        SBOM_SIGN_PUBLIC_KEY
+      },
+      stdio: 'inherit'
+    })
     if (cleanupPackageLock) {
       try {
-        await fs.unlink('./package-lock.json')
+        await fs.rm('./package-lock.json')
       } catch {}
     }
     const fullOutputPath = path.join(process.cwd(), yargv.output)
