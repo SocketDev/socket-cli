@@ -28,6 +28,8 @@ import {
   resolveId
 } from '../scripts/utils/packages.js'
 
+const require = createRequire(import.meta.url)
+
 const {
   BABEL_RUNTIME,
   LATEST,
@@ -41,27 +43,24 @@ const {
   tsconfigPath
 } = constants
 
-const require = createRequire(import.meta.url)
+const SOCKET_INTEROP = '_socketInterop'
 
+const constantsSrcPath = path.join(rootSrcPath, 'constants.ts')
+
+const babelConfig = require(babelConfigPath)
 const tsPlugin = require('rollup-plugin-ts')
-
 const rootPackageJson = require(rootPackageJsonPath)
+
 const {
   dependencies: pkgDeps,
   devDependencies: pkgDevDeps,
   overrides: pkgOverrides
 } = rootPackageJson
 
-const SOCKET_INTEROP = '_socketInterop'
-
-const constantsSrcPath = path.join(rootSrcPath, 'constants.ts')
-
 const builtinAliases = builtinModules.reduce((o, n) => {
   o[n] = `node:${n}`
   return o
 }, {})
-
-const babelConfig = require(babelConfigPath)
 
 const customResolver = nodeResolve({
   exportConditions: ['node'],
@@ -70,17 +69,24 @@ const customResolver = nodeResolve({
 
 const requireAssignmentsRegExp =
   /(?<=\s*=\s*)require\(["'](?!node:|@socket(?:registry|security)\/|\.).+?["']\)(?=;?\r?\n)/g
+
 const checkRequireAssignmentRegExp = new RegExp(
   requireAssignmentsRegExp.source,
   ''
 )
 const checkSocketInteropUseRegExp = new RegExp(`\\b${SOCKET_INTEROP}\\b`)
+
 const danglingRequiresRegExp = /^\s*require\(["'].+?["']\);?\r?\n/gm
+
 const firstUseStrictRegExp = /'use strict';?/
+
 const oraSpinnersAssignmentsRegExp = /(?<=ora[^.]+\.spinners\s*=\s*)[$\w]+/g
+
 const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
+
 const requireUrlAssignmentRegExp =
   /(?<=var +)[$\w]+(?= *= *require\('node:url'\))/
+
 const splitUrlRequiresRegExp = /require\(["']u["']\s*\+\s*["']rl["']\)/g
 
 function isAncestorsExternal(id, depStats) {
