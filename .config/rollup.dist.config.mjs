@@ -12,6 +12,7 @@ import { isRelative } from '@socketsecurity/registry/lib/path'
 
 import baseConfig from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
+import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import { readJsonSync } from '../scripts/utils/fs.js'
 import { formatObject } from '../scripts/utils/objects.js'
 import {
@@ -37,6 +38,8 @@ const distModuleSyncPath = path.join(rootDistPath, 'module-sync')
 const distRequirePath = path.join(rootDistPath, 'require')
 
 const editablePkgJson = readPackageJsonSync(rootPath, { editable: true })
+
+const processEnvTapRegExp = /\bprocess\.env(?:\.TAP|\[['"]TAP['"]\])(\s*\?[^:]+:\s*)?/g
 
 function removeDtsFilesSync(distPath) {
   for (const filepath of tinyGlobSync(['**/*.d.ts'], {
@@ -125,6 +128,12 @@ export default () => {
       return true
     },
     plugins: [
+      // When process.env['TAP'] is found either remove it, if part of a ternary
+      // operation, or replace it with `false`.
+      socketModifyPlugin({
+        find: processEnvTapRegExp,
+        replace: (match, ternary) => ternary ? '' : 'false'
+      }),
       {
         generateBundle(_options, bundle) {
           const constantsBundle = bundle[CONSTANTS_JS]
