@@ -7,7 +7,7 @@ import constants from '../constants'
 
 const { NPM, abortSignal } = constants
 
-export default async function shadow(
+export default async function shadowBin(
   binName: 'npm' | 'npx',
   binArgs = process.argv.slice(2)
 ) {
