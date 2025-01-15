@@ -1,12 +1,9 @@
-import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { setTimeout as wait } from 'node:timers/promises'
 
 import semver from 'semver'
 
-import config from '@socketsecurity/config'
 import { getManifestData } from '@socketsecurity/registry'
-import { hasOwn, isObject } from '@socketsecurity/registry/lib/objects'
+import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import {
   fetchPackagePackument,
   resolvePackageName
@@ -17,24 +14,15 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { batchScan, isAlertFixable, isAlertFixableCve, walk } from './alerts'
 import { kCtorArgs, kRiskyReify } from './index'
 import constants from '../../../../constants'
-import { createAlertUXLookup } from '../../../../utils/alert-rules'
+import { uxLookup } from '../../../../utils/alert-rules'
 import { ColorOrMarkdown } from '../../../../utils/color-or-markdown'
-import { isErrnoException } from '../../../../utils/misc'
-import { getPublicToken, setupSdk } from '../../../../utils/sdk'
-import { getSetting } from '../../../../utils/settings'
-import { npmNmPath } from '../../../npm-paths'
+import { pacotePath } from '../../../npm-paths'
 import { Edge, SafeEdge } from '../edge'
 
 import type { InstallEffect, SocketArtifact } from './alerts'
 import type { ArboristClass, AuditAdvisory, SafeArborist } from './index'
 import type { SafeNode } from '../node'
 import type { Writable } from 'node:stream'
-
-type AlertUxLookup = ReturnType<typeof createAlertUXLookup>
-
-type AlertUxLookupSettings = Parameters<AlertUxLookup>[0]
-
-type AlertUxLookupResult = ReturnType<AlertUxLookup>
 
 type SocketPackageAlert = {
   key: string
@@ -46,7 +34,7 @@ type SocketPackageAlert = {
   raw?: any
 }
 
-const pacote: typeof import('pacote') = require(path.join(npmNmPath, 'pacote'))
+const pacote: typeof import('pacote') = require(pacotePath)
 
 const {
   ENV,
@@ -83,15 +71,12 @@ function findBestPatchVersion(
   return semver.maxSatisfying(eligibleVersions, '*')
 }
 
-function findPackageRecursively(
-  tree: SafeNode,
-  packageName: string
-): SafeNode | null {
+function findPackage(tree: SafeNode, packageName: string): SafeNode | null {
   const queue: { node: typeof tree }[] = [{ node: tree }]
   let sentinel = 0
   while (queue.length) {
     if (sentinel++ === LOOP_SENTINEL) {
-      throw new Error('Detected infinite loop in findPackageRecursively')
+      throw new Error('Detected infinite loop in findPackage')
     }
     const { node: currentNode } = queue.pop()!
     const node = currentNode.children.get(packageName)
@@ -103,32 +88,6 @@ function findPackageRecursively(
     for (let i = children.length - 1; i >= 0; i -= 1) {
       queue.push({ node: (<unknown>children[i]) as SafeNode })
     }
-  }
-  return null
-}
-
-function findSocketYmlSync() {
-  let prevDir = null
-  let dir = process.cwd()
-  while (dir !== prevDir) {
-    let ymlPath = path.join(dir, 'socket.yml')
-    let yml = maybeReadfileSync(ymlPath)
-    if (yml === undefined) {
-      ymlPath = path.join(dir, 'socket.yaml')
-      yml = maybeReadfileSync(ymlPath)
-    }
-    if (typeof yml === 'string') {
-      try {
-        return {
-          path: ymlPath,
-          parsed: config.parseSocketConfig(yml)
-        }
-      } catch {
-        throw new Error(`Found file but was unable to parse ${ymlPath}`)
-      }
-    }
-    prevDir = dir
-    dir = path.join(dir, '..')
   }
   return null
 }
@@ -279,13 +238,6 @@ function getTranslations() {
   return _translations!
 }
 
-function maybeReadfileSync(filepath: string): string | undefined {
-  try {
-    return readFileSync(filepath, 'utf8')
-  } catch {}
-  return undefined
-}
-
 function packageAlertsToReport(alerts: SocketPackageAlert[]) {
   let report: { [dependency: string]: AuditAdvisory[] } | null = null
   for (const alert of alerts) {
@@ -328,7 +280,7 @@ async function updateAdvisoryDependencies(
 
   for (const name of Object.keys(report)) {
     const advisories = report[name]!
-    const node = findPackageRecursively(tree, name)
+    const node = findPackage(tree, name)
     if (!node) {
       // Package not found in the tree.
       continue
@@ -401,17 +353,6 @@ async function updateAdvisoryDependencies(
       }
     }
   }
-}
-
-let _uxLookup: AlertUxLookup | undefined
-async function uxLookup(
-  settings: AlertUxLookupSettings
-): Promise<AlertUxLookupResult> {
-  while (_uxLookup === undefined) {
-    // eslint-disable-next-line no-await-in-loop
-    await wait(1, { signal: abortSignal })
-  }
-  return _uxLookup(settings)
 }
 
 export async function reify(
@@ -493,83 +434,3 @@ export async function reify(
     throw new Error('Socket npm exiting due to risks')
   }
 }
-
-void (async () => {
-  const { orgs, settings } = await (async () => {
-    try {
-      const socketSdk = await setupSdk(getPublicToken())
-      const orgResult = await socketSdk.getOrganizations()
-      if (!orgResult.success) {
-        throw new Error(
-          `Failed to fetch Socket organization info: ${orgResult.error.message}`
-        )
-      }
-      const orgs: Exclude<
-        (typeof orgResult.data.organizations)[string],
-        undefined
-      >[] = []
-      for (const org of Object.values(orgResult.data.organizations)) {
-        if (org) {
-          orgs.push(org)
-        }
-      }
-      const result = await socketSdk.postSettings(
-        orgs.map(org => ({ organization: org.id }))
-      )
-      if (!result.success) {
-        throw new Error(
-          `Failed to fetch API key settings: ${result.error.message}`
-        )
-      }
-      return {
-        orgs,
-        settings: result.data
-      }
-    } catch (e: any) {
-      const cause = isObject(e) && 'cause' in e ? e.cause : undefined
-      if (
-        isErrnoException(cause) &&
-        (cause.code === 'ENOTFOUND' || cause.code === 'ECONNREFUSED')
-      ) {
-        throw new Error(
-          'Unable to connect to socket.dev, ensure internet connectivity before retrying',
-          {
-            cause: e
-          }
-        )
-      }
-      throw e
-    }
-  })()
-
-  // Remove any organizations not being enforced.
-  const enforcedOrgs = getSetting('enforcedOrgs') ?? []
-  for (const { 0: i, 1: org } of orgs.entries()) {
-    if (!enforcedOrgs.includes(org.id)) {
-      settings.entries.splice(i, 1)
-    }
-  }
-
-  const socketYml = findSocketYmlSync()
-  if (socketYml) {
-    settings.entries.push({
-      start: socketYml.path,
-      settings: {
-        [socketYml.path]: {
-          deferTo: null,
-          // TODO: TypeScript complains about the type not matching. We should
-          // figure out why are providing
-          // issueRules: { [issueName: string]: boolean }
-          // but expecting
-          // issueRules: { [issueName: string]: { action: 'defer' | 'error' | 'ignore' | 'monitor' | 'warn' } }
-          issueRules: (<unknown>socketYml.parsed.issueRules) as {
-            [key: string]: {
-              action: 'defer' | 'error' | 'ignore' | 'monitor' | 'warn'
-            }
-          }
-        }
-      }
-    })
-  }
-  _uxLookup = createAlertUXLookup(settings)
-})()
