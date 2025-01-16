@@ -1,5 +1,5 @@
 export function stringJoinWithSeparateFinalSeparator(
-  list: (string | undefined)[],
+  list: string[],
   separator: string = ' and '
 ): string {
   const values = list.filter(Boolean)
@@ -8,7 +8,7 @@ export function stringJoinWithSeparateFinalSeparator(
     return ''
   }
   if (length === 1) {
-    return values[0]
+    return values[0]!
   }
   const finalValue = values.pop()
   return `${values.join(', ')}${separator}${finalValue}`

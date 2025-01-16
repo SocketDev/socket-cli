@@ -9,14 +9,34 @@ import type { Node as BaseNode } from '@npmcli/arborist'
 
 type NodeClass = Omit<
   BaseNode,
+  | 'addEdgeIn'
+  | 'addEdgeOut'
+  | 'canDedupe'
+  | 'canReplace'
+  | 'canReplaceWith'
+  | 'deleteEdgeIn'
   | 'edgesIn'
   | 'edgesOut'
   | 'from'
+  | 'hasShrinkwrap'
+  | 'inDepBundle'
+  | 'inShrinkwrap'
   | 'integrity'
   | 'isTop'
+  | 'matches'
+  | 'meta'
+  | 'name'
+  | 'overrides'
+  | 'packageName'
   | 'parent'
+  | 'recalculateOutEdgesOverrides'
   | 'resolve'
+  | 'resolveParent'
   | 'root'
+  | 'updateOverridesEdgeInAdded'
+  | 'updateOverridesEdgeInRemoved'
+  | 'version'
+  | 'versions'
 > & {
   name: string
   version: string
@@ -41,7 +61,7 @@ type NodeClass = Omit<
   new (...args: any): NodeClass
   addEdgeIn(edge: SafeEdge): void
   addEdgeOut(edge: SafeEdge): void
-  canDedupe(preferDedupe: boolean): boolean
+  canDedupe(preferDedupe?: boolean): boolean
   canReplace(node: SafeNode, ignorePeers?: string[]): boolean
   canReplaceWith(node: SafeNode, ignorePeers?: string[]): boolean
   deleteEdgeIn(edge: SafeEdge): void
@@ -115,7 +135,7 @@ export class SafeNode extends Node {
   // root dependency brings peer deps along with it.  In that case, we
   // will go ahead and create the invalid state, and then try to resolve
   // it with more tree construction, because it's a user request.
-  override canReplaceWith(node: SafeNode, ignorePeers?: string[]) {
+  override canReplaceWith(node: SafeNode, ignorePeers?: string[]): boolean {
     if (this.name !== node.name || this.packageName !== node.packageName) {
       return false
     }
