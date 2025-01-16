@@ -1,4 +1,10 @@
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  rmSync,
+  writeFileSync
+} from 'node:fs'
 import path from 'node:path'
 
 import { globSync as tinyGlobSync } from 'tinyglobby'
@@ -23,29 +29,48 @@ import {
 
 const {
   BABEL_RUNTIME,
+  CONSTANTS,
+  MODULE_SYNC,
+  REQUIRE,
   ROLLUP_EXTERNAL_SUFFIX,
+  VENDOR,
   depStatsPath,
   rootDistPath,
   rootPath,
   rootSrcPath
 } = constants
 
-const CONSTANTS_JS = 'constants.js'
-const CONSTANTS_STUB_CODE = `'use strict'\n\nmodule.exports = require('../${CONSTANTS_JS}')\n`
+const CONSTANTS_JS = `${CONSTANTS}.js`
+const CONSTANTS_STUB_CODE = createStubCode(`../${CONSTANTS_JS}`)
+const VENDOR_JS = `${VENDOR}.js`
 
 const distConstantsPath = path.join(rootDistPath, CONSTANTS_JS)
-const distModuleSyncPath = path.join(rootDistPath, 'module-sync')
-const distRequirePath = path.join(rootDistPath, 'require')
+const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
+const distRequirePath = path.join(rootDistPath, REQUIRE)
 
 const editablePkgJson = readPackageJsonSync(rootPath, { editable: true })
 
 const processEnvTapRegExp =
   /\bprocess\.env(?:\.TAP|\[['"]TAP['"]\])(\s*\?[^:]+:\s*)?/g
 
-function removeDtsFilesSync(distPath) {
-  for (const filepath of tinyGlobSync(['**/*.d.ts'], {
+function createStubCode(relFilepath) {
+  return `'use strict'\n\nmodule.exports = require('${relFilepath}')\n`
+}
+
+function moveDtsFilesSync(namePattern, srcPath, destPath) {
+  for (const filepath of tinyGlobSync([`**/${namePattern}.d.ts{.map,}`], {
     absolute: true,
-    cwd: distPath
+    cwd: srcPath
+  })) {
+    copyFileSync(filepath, path.join(destPath, path.basename(filepath)))
+    rmSync(filepath)
+  }
+}
+
+function removeDtsFilesSync(namePattern, srcPath) {
+  for (const filepath of tinyGlobSync([`**/${namePattern}.d.ts{.map,}`], {
+    absolute: true,
+    cwd: srcPath
   })) {
     rmSync(filepath)
   }
@@ -129,20 +154,15 @@ export default () => {
       return true
     },
     plugins: [
-      // When process.env['TAP'] is found either remove it, if part of a ternary
-      // operation, or replace it with `false`.
-      socketModifyPlugin({
-        find: processEnvTapRegExp,
-        replace: (match, ternary) => (ternary ? '' : 'false')
-      }),
       {
         generateBundle(_options, bundle) {
-          const constantsBundle = bundle[CONSTANTS_JS]
-          if (constantsBundle) {
-            mkdirSync(rootDistPath, { recursive: true })
-            writeFileSync(distConstantsPath, constantsBundle.code, 'utf8')
-            bundle[CONSTANTS_JS].code = CONSTANTS_STUB_CODE
+          const data = bundle[CONSTANTS_JS]
+          if (data?.type === 'chunk') {
+            data.code = CONSTANTS_STUB_CODE
           }
+        },
+        writeBundle() {
+          removeDtsFilesSync(CONSTANTS, distModuleSyncPath)
         }
       }
     ]
@@ -166,14 +186,33 @@ export default () => {
       }
     ],
     plugins: [
+      // When process.env['TAP'] is found either remove it, if part of a ternary
+      // operation, or replace it with `false`.
+      socketModifyPlugin({
+        find: processEnvTapRegExp,
+        replace: (_match, ternary) => (ternary ? '' : 'false')
+      }),
       {
         generateBundle(_options, bundle) {
-          if (bundle[CONSTANTS_JS]) {
-            bundle[CONSTANTS_JS].code = CONSTANTS_STUB_CODE
+          for (const basename of Object.keys(bundle)) {
+            const data = bundle[basename]
+            if (data.type === 'chunk') {
+              if (basename === CONSTANTS_JS) {
+                mkdirSync(rootDistPath, { recursive: true })
+                writeFileSync(distConstantsPath, data.code, 'utf8')
+                data.code = CONSTANTS_STUB_CODE
+              } else if (
+                basename !== VENDOR_JS &&
+                !data.code.includes(`'./${VENDOR_JS}'`)
+              ) {
+                data.code = createStubCode(`../${MODULE_SYNC}/${basename}`)
+              }
+            }
           }
         },
         writeBundle() {
-          removeDtsFilesSync(distRequirePath)
+          moveDtsFilesSync(CONSTANTS, distRequirePath, rootDistPath)
+          removeDtsFilesSync('*', distRequirePath)
           updateDepStatsSync(requireConfig.meta.depStats)
         }
       }
