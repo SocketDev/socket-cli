@@ -16,6 +16,7 @@ import { kCtorArgs, kRiskyReify } from './index'
 import constants from '../../../../constants'
 import { uxLookup } from '../../../../utils/alert-rules'
 import { ColorOrMarkdown } from '../../../../utils/color-or-markdown'
+import { getSocketDevPackageOverviewUrl } from '../../../../utils/socket-url'
 import { pacotePath } from '../../../npm-paths'
 import { Edge, SafeEdge } from '../edge'
 
@@ -187,7 +188,7 @@ async function getPackagesAlerts(
       }
       if (displayWarning && spinner) {
         spinner.stop(
-          `(socket) ${formatter.hyperlink(id, `https://socket.dev/npm/package/${name}/overview/${version}`)} contains risks:`
+          `(socket) ${formatter.hyperlink(id, getSocketDevPackageOverviewUrl(NPM, name, version))} contains risks:`
         )
       }
       alerts.sort((a, b) => (a.type < b.type ? -1 : 1))
