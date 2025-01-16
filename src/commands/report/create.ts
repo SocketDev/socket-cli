@@ -13,10 +13,11 @@ import {
   handleApiCall,
   handleUnsuccessfulApiResponse
 } from '../../utils/api-helpers'
-import { ColorOrMarkdown, logSymbols } from '../../utils/color-or-markdown'
+import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 import { InputError } from '../../utils/errors'
 import { getFlagListOutput } from '../../utils/formatting'
-import { createDebugLogger } from '../../utils/misc'
+import { logSymbols } from '../../utils/log-symbols'
+import { createDebugLogger } from '../../utils/logger'
 import { getPackageFiles } from '../../utils/path-resolve'
 import { setupSdk } from '../../utils/sdk'
 
@@ -167,7 +168,7 @@ async function setupCommand(
     return
   }
   const { dryRun } = cli.flags
-  const debugLog = createDebugLogger(!dryRun || (cli.flags['debug'] as boolean))
+  const debugLog = createDebugLogger(!dryRun || !!cli.flags['debug'])
 
   // TODO: Allow setting a custom cwd and/or configFile path?
   const cwd = process.cwd()

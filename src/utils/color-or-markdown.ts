@@ -1,29 +1,9 @@
-import isUnicodeSupported from 'is-unicode-supported'
 import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
-// From the 'log-symbols' module
-const unicodeLogSymbols = {
-  __proto__: null,
-  info: colors.blue('ℹ'),
-  success: colors.green('✔'),
-  warning: colors.yellow('⚠'),
-  error: colors.red('✖')
-}
+import indentString from '@socketregistry/indent-string/index.cjs'
 
-// From the 'log-symbols' module
-const fallbackLogSymbols = {
-  __proto__: null,
-  info: colors.blue('i'),
-  success: colors.green('√'),
-  warning: colors.yellow('‼'),
-  error: colors.red('×')
-}
-
-// From the 'log-symbols' module
-export const logSymbols = isUnicodeSupported()
-  ? unicodeLogSymbols
-  : fallbackLogSymbols
+import { logSymbols } from './log-symbols'
 
 const markdownLogSymbols = {
   __proto__: null,
@@ -40,18 +20,14 @@ export class ColorOrMarkdown {
     this.useMarkdown = !!useMarkdown
   }
 
-  header(text: string, level = 1): string {
-    return this.useMarkdown
-      ? `\n${''.padStart(level, '#')} ${text}\n`
-      : colors.underline(`\n${level === 1 ? colors.bold(text) : text}\n`)
-  }
-
   bold(text: string): string {
     return this.useMarkdown ? `**${text}**` : colors.bold(`${text}`)
   }
 
-  italic(text: string): string {
-    return this.useMarkdown ? `_${text}_` : colors.italic(`${text}`)
+  header(text: string, level = 1): string {
+    return this.useMarkdown
+      ? `\n${''.padStart(level, '#')} ${text}\n`
+      : colors.underline(`\n${level === 1 ? colors.bold(text) : text}\n`)
   }
 
   hyperlink(
@@ -73,6 +49,22 @@ export class ColorOrMarkdown {
         })
   }
 
+  indent(
+    ...args: Parameters<typeof indentString>
+  ): ReturnType<typeof indentString> {
+    return indentString(...args)
+  }
+
+  italic(text: string): string {
+    return this.useMarkdown ? `_${text}_` : colors.italic(`${text}`)
+  }
+
+  json(value: any): string {
+    return this.useMarkdown
+      ? '```json\n' + JSON.stringify(value) + '\n```'
+      : JSON.stringify(value)
+  }
+
   list(items: string[]): string {
     const indentedContent = items.map(item => this.indent(item).trimStart())
     return this.useMarkdown
@@ -82,16 +74,5 @@ export class ColorOrMarkdown {
 
   get logSymbols(): typeof logSymbols {
     return this.useMarkdown ? markdownLogSymbols : logSymbols
-  }
-
-  indent(text: string, level = 1): string {
-    const indent = ''.padStart(level * 2, ' ')
-    return indent + text.split('\n').join('\n' + indent)
-  }
-
-  json(value: unknown): string {
-    return this.useMarkdown
-      ? '```json\n' + JSON.stringify(value) + '\n```'
-      : JSON.stringify(value)
   }
 }
