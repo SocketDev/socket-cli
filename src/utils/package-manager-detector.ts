@@ -5,7 +5,7 @@ import browserslist from 'browserslist'
 import semver from 'semver'
 import which from 'which'
 
-import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb'
+import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
