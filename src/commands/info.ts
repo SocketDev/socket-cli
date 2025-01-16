@@ -1,6 +1,7 @@
 import meow from 'meow'
 import colors from 'yoctocolors-cjs'
 
+import constants from '@socketsecurity/registry/lib/constants'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags, validationFlags } from '../flags'
@@ -14,10 +15,16 @@ import { formatSeverityCount, getSeverityCount } from '../utils/format-issues'
 import { getFlagListOutput } from '../utils/formatting'
 import { objectSome } from '../utils/objects'
 import { getPublicToken, setupSdk } from '../utils/sdk'
+import {
+  getSocketDevAlertUrl,
+  getSocketDevPackageOverviewUrl
+} from '../utils/socket-url'
 
 import type { SocketIssue } from '../utils/format-issues'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+
+const { NPM } = constants
 
 export const info: CliSubcommand = {
   description: 'Look up info regarding a package',
@@ -208,7 +215,7 @@ function formatPackageDataOutput(
     }
 
     const format = new ColorOrMarkdown(!!outputMarkdown)
-    const url = `https://socket.dev/npm/package/${pkgName}/overview/${pkgVersion}`
+    const url = getSocketDevPackageOverviewUrl(NPM, pkgName, pkgVersion)
 
     console.log('\n')
     if (pkgVersion === 'latest') {
@@ -267,7 +274,7 @@ function formatPackageIssuesDetails(
   for (const issue of Object.keys(uniqueIssues)) {
     const issueWithLink = format.hyperlink(
       `${uniqueIssues[issue]?.label}`,
-      `https://socket.dev/npm/issue/${issue}`,
+      getSocketDevAlertUrl(issue),
       { fallbackToUrl: true }
     )
     if (uniqueIssues[issue]?.count === 1) {
