@@ -32,10 +32,12 @@ const require = createRequire(import.meta.url)
 
 const {
   BABEL_RUNTIME,
+  CONSTANTS,
   LATEST,
   ROLLUP_ENTRY_SUFFIX,
   ROLLUP_EXTERNAL_SUFFIX,
   SLASH_NODE_MODULES_SLASH,
+  VENDOR,
   babelConfigPath,
   rootPackageJsonPath,
   rootPath,
@@ -45,7 +47,7 @@ const {
 
 const SOCKET_INTEROP = '_socketInterop'
 
-const constantsSrcPath = path.join(rootSrcPath, 'constants.ts')
+const constantsSrcPath = path.join(rootSrcPath, `${CONSTANTS}.ts`)
 
 const babelConfig = require(babelConfigPath)
 const tsPlugin = require('rollup-plugin-ts')
@@ -320,10 +322,10 @@ function ${SOCKET_INTEROP}(e) {
     manualChunks: id_ => {
       const id = normalizeId(id_)
       if (id === constantsSrcPath) {
-        return 'constants'
+        return CONSTANTS
       }
       if (id.includes(SLASH_NODE_MODULES_SLASH)) {
-        return 'vendor'
+        return VENDOR
       }
       return null
     }

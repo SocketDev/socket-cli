@@ -9,9 +9,13 @@ const {
   [kInternalsSymbol]: { createConstantsObject }
 } = registryConstants
 
+const CONSTANTS = 'constants'
+const MODULE_SYNC = 'module-sync'
+const REQUIRE = 'require'
 const ROLLUP_ENTRY_SUFFIX = '?commonjs-entry'
 const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
+const VENDOR = 'vendor'
 
 const lazyBabelConfigPath = () =>
   // Lazily access constants.rootConfigPath.
@@ -45,9 +49,13 @@ const lazyTsconfigPath = () =>
 
 const constants = createConstantsObject(
   {
+    CONSTANTS,
+    MODULE_SYNC,
+    REQUIRE,
     ROLLUP_ENTRY_SUFFIX,
     ROLLUP_EXTERNAL_SUFFIX,
     SLASH_NODE_MODULES_SLASH,
+    VENDOR,
     babelConfigPath: undefined,
     depStatsPath: undefined,
     rootConfigPath: undefined,
