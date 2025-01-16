@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, it } from 'node:test'
 
-import { isErrnoException } from './dist/misc'
+import { isErrnoException } from './dist/errors'
 
 const testPath = __dirname
 

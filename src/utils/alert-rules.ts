@@ -5,7 +5,7 @@ import { setTimeout as wait } from 'node:timers/promises'
 import config from '@socketsecurity/config'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 
-import { isErrnoException } from './misc'
+import { isErrnoException } from './errors'
 import { getPublicToken, setupSdk } from './sdk'
 import { getSetting } from './settings'
 import constants from '../constants'
