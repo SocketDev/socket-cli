@@ -7,6 +7,7 @@ import { glob as tinyGlob } from 'tinyglobby'
 import which from 'which'
 
 import { directoryPatterns } from './ignore-by-default'
+import { createDebugLogger } from './logger'
 import constants from '../constants'
 
 import type { SocketYml } from '@socketsecurity/config'
@@ -204,7 +205,7 @@ export async function getPackageFiles(
   inputPaths: string[],
   config: SocketYml | undefined,
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
-  debugLog: typeof console.error = () => {}
+  debugLog = createDebugLogger()
 ): Promise<string[]> {
   debugLog(`Globbed resolving ${inputPaths.length} paths:`, inputPaths)
 

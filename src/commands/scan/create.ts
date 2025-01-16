@@ -14,7 +14,6 @@ import {
 } from '../../utils/api-helpers'
 import { AuthError } from '../../utils/errors'
 import { getFlagListOutput } from '../../utils/formatting'
-import { createDebugLogger } from '../../utils/misc'
 import { getPackageFilesFullScans } from '../../utils/path-resolve'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
@@ -168,12 +167,10 @@ async function setupCommand(
         })
       }
     )
-  const debugLog = createDebugLogger(false)
   const packagePaths = await getPackageFilesFullScans(
     cwd,
     cli.input,
-    supportedFiles,
-    debugLog
+    supportedFiles
   )
   const { branch: branchName, repo: repoName } = cli.flags
   if (!repoName || !branchName || !packagePaths.length) {

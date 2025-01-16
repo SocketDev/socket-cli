@@ -1,7 +1,7 @@
-import isInteractive from 'is-interactive'
 import meow from 'meow'
 import terminalLink from 'terminal-link'
 
+import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
