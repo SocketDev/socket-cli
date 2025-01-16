@@ -5,15 +5,30 @@ import { arboristEdgeClassPath } from '../../npm-paths'
 
 import type { Edge as BaseEdge, DependencyProblem } from '@npmcli/arborist'
 
-type EdgeClass = Omit<BaseEdge, 'overrides' | 'reload'> & {
+type EdgeClass = Omit<
+  BaseEdge,
+  | 'accept'
+  | 'detach'
+  | 'optional'
+  | 'overrides'
+  | 'peer'
+  | 'peerConflicted'
+  | 'rawSpec'
+  | 'reload'
+  | 'satisfiedBy'
+  | 'spec'
+  | 'to'
+> & {
   optional: boolean
   overrides: SafeOverrideSet | undefined
   peer: boolean
   peerConflicted: boolean
   rawSpec: string
+  get accept(): string | undefined
   get spec(): string
   get to(): SafeNode | null
   new (...args: any): EdgeClass
+  detach(): void
   reload(hard?: boolean): void
   satisfiedBy(node: SafeNode): boolean
 }
@@ -84,11 +99,11 @@ export class SafeEdge extends Edge {
     this.reload(true)
   }
 
-  get accept() {
+  override get accept() {
     return this.#safeAccept
   }
 
-  get bundled() {
+  override get bundled() {
     return !!this.#safeFrom?.package?.bundleDependencies?.includes(this.name)
   }
 
@@ -187,7 +202,7 @@ export class SafeEdge extends Edge {
     return this.#safeTo
   }
 
-  detach() {
+  override detach() {
     this.#safeExplanation = null
     // Patch replacing
     // if (this.#safeTo) {
