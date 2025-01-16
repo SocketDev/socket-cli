@@ -5,7 +5,7 @@ import readline from 'node:readline'
 import meow from 'meow'
 
 import { commandFlags } from '../flags'
-import { printFlagList } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/formatting'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
@@ -36,7 +36,7 @@ function setupCommand(
       $ ${name} <flag>
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} --enable

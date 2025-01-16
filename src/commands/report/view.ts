@@ -15,7 +15,7 @@ import {
   formatSeverityCount,
   getSeverityCount
 } from '../../utils/format-issues'
-import { printFlagList } from '../../utils/formatting'
+import { getFlagListOutput } from '../../utils/formatting'
 import { setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
@@ -77,7 +77,7 @@ function setupCommand(
       $ ${name} <report-identifier>
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ

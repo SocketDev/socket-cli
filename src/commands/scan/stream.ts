@@ -9,7 +9,7 @@ import {
   handleUnsuccessfulApiResponse
 } from '../../utils/api-helpers'
 import { AuthError } from '../../utils/errors'
-import { printFlagList } from '../../utils/formatting'
+import { getFlagListOutput } from '../../utils/formatting'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
@@ -72,7 +72,7 @@ function setupCommand(
       $ ${name} <org slug> <scan ID> <path to output file>
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 ./stream.txt

@@ -9,7 +9,7 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { commonFlags, outputFlags } from '../flags'
 import { queryAPI } from '../utils/api-helpers'
 import { AuthError } from '../utils/errors'
-import { printFlagList } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/formatting'
 import { getDefaultToken } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
@@ -91,7 +91,7 @@ function setupCommand(
       $ ${name}
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name}

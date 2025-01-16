@@ -9,7 +9,7 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { commonFlags, outputFlags } from '../../flags'
 import { handleAPIError, queryAPI } from '../../utils/api-helpers'
 import { AuthError } from '../../utils/errors'
-import { printFlagList } from '../../utils/formatting'
+import { getFlagListOutput } from '../../utils/formatting'
 import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
@@ -89,7 +89,7 @@ function setupCommand(
       $ ${name} <org slug> --before=<before> --after=<after>
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} FakeCorp --before=aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 --after=aaa1aa1a-aaaa-1111-1a1a-1111111a11a1

@@ -19,7 +19,7 @@ import {
   handleUnsuccessfulApiResponse
 } from '../utils/api-helpers'
 import { AuthError, InputError } from '../utils/errors'
-import { printFlagList } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/formatting'
 import { getDefaultToken, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
@@ -117,7 +117,7 @@ function setupCommand(
       $ ${name} --scope=<scope> --time=<time filter>
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} --scope=org --time=7

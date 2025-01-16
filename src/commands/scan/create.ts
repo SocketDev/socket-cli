@@ -13,7 +13,7 @@ import {
   handleUnsuccessfulApiResponse
 } from '../../utils/api-helpers'
 import { AuthError } from '../../utils/errors'
-import { printFlagList } from '../../utils/formatting'
+import { getFlagListOutput } from '../../utils/formatting'
 import { createDebugLogger } from '../../utils/misc'
 import { getPackageFilesFullScans } from '../../utils/path-resolve'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
@@ -126,7 +126,7 @@ async function setupCommand(
       $ ${name} [...options]
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} --org=FakeOrg --repo=test-repo --branch=main ./package.json

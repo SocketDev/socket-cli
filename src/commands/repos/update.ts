@@ -9,7 +9,7 @@ import {
   handleUnsuccessfulApiResponse
 } from '../../utils/api-helpers'
 import { AuthError } from '../../utils/errors'
-import { printFlagList } from '../../utils/formatting'
+import { getFlagListOutput } from '../../utils/formatting'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
@@ -97,7 +97,7 @@ function setupCommand(
       $ ${name} <org slug>
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} FakeOrg
