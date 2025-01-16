@@ -15,7 +15,7 @@ import {
 } from '../../utils/api-helpers'
 import { ColorOrMarkdown, logSymbols } from '../../utils/color-or-markdown'
 import { InputError } from '../../utils/errors'
-import { printFlagList } from '../../utils/formatting'
+import { getFlagListOutput } from '../../utils/formatting'
 import { createDebugLogger } from '../../utils/misc'
 import { getPackageFiles } from '../../utils/path-resolve'
 import { setupSdk } from '../../utils/sdk'
@@ -132,7 +132,7 @@ async function setupCommand(
     default ignores from the "ignore-by-default" module.
 
     Options
-      ${printFlagList(
+      ${getFlagListOutput(
         {
           all: 'Include all issues',
           debug: 'Output debug information',

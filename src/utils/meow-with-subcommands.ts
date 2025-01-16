@@ -2,7 +2,7 @@ import meow from 'meow'
 
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 
-import { printFlagList, printHelpList } from './formatting'
+import { getFlagListOutput, getHelpListOutput } from './formatting'
 import { commonFlags } from '../flags'
 
 import type { Options } from 'meow'
@@ -70,7 +70,7 @@ export async function meowWithSubcommands(
       $ ${name} <command>
 
     Commands
-      ${printHelpList(
+      ${getHelpListOutput(
         {
           ...toSortedObject(subcommands),
           ...toSortedObject(aliases)
@@ -79,7 +79,7 @@ export async function meowWithSubcommands(
       )}
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} --help

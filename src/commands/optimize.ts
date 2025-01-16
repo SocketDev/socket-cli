@@ -27,7 +27,7 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../constants'
 import { commonFlags } from '../flags'
-import { printFlagList } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/formatting'
 import { existsSync } from '../utils/fs'
 import { detect } from '../utils/package-manager-detector'
 import { shadowNpmInstall } from '../utils/shadow-npm'
@@ -986,7 +986,7 @@ function setupCommand(
       $ ${name}
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name}

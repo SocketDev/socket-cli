@@ -11,7 +11,7 @@ import {
 import { ColorOrMarkdown } from '../utils/color-or-markdown'
 import { InputError } from '../utils/errors'
 import { formatSeverityCount, getSeverityCount } from '../utils/format-issues'
-import { printFlagList } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/formatting'
 import { objectSome } from '../utils/objects'
 import { getPublicToken, setupSdk } from '../utils/sdk'
 
@@ -81,7 +81,7 @@ function setupCommand(
       $ ${name} <name>
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} webtorrent

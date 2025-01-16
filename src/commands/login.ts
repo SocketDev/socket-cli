@@ -7,7 +7,7 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../constants'
 import { AuthError, InputError } from '../utils/errors'
-import { printFlagList } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/formatting'
 import { setupSdk } from '../utils/sdk'
 import { getSetting, updateSetting } from '../utils/settings'
 
@@ -58,7 +58,7 @@ export const login: CliSubcommand = {
       Logs into the Socket API by prompting for an API key
 
       Options
-        ${printFlagList(
+        ${getFlagListOutput(
           {
             'api-base-url': flags['apiBaseUrl'].description,
             'api-proxy': flags['apiProxy'].description
