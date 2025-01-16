@@ -1,6 +1,6 @@
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
-import isInteractive from 'is-interactive'
 
+import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/lib/constants'
 import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
