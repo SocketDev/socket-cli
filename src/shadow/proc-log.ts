@@ -46,7 +46,7 @@ export type Logger =
   | typeof import('proc-log')
   | undefined
 
-let _log: Logger | {} = UNDEFINED_TOKEN
+let _log: Logger | {} | undefined = UNDEFINED_TOKEN
 export function getLogger(): Logger {
   if (_log === UNDEFINED_TOKEN) {
     _log = tryRequire(
@@ -59,5 +59,5 @@ export function getLogger(): Logger {
       <'npmlog'>path.join(npmNmPath, 'npmlog/lib/log.js')
     )
   }
-  return <Logger>_log
+  return <Logger | undefined>_log
 }
