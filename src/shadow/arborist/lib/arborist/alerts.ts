@@ -67,7 +67,6 @@ export type SocketArtifact = {
 
 const {
   API_V0_URL,
-  ENV,
   LOOP_SENTINEL,
   SOCKET_CLI_FIX_PACKAGE_LOCK_FILE,
   abortSignal
@@ -128,11 +127,15 @@ export function walk(
   diff_: Diff | null,
   options?: WalkOptions
 ): InstallEffect[] {
-  const { fix = ENV[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE] } = <WalkOptions>{
+  const {
+    // Lazily access constants.IPC.
+    fix = constants.IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
+  } = <WalkOptions>{
     __proto__: null,
     ...options
   }
   const needInfoOn: InstallEffect[] = []
+  // `diff_` is `null` when `npm install --package-lock-only` is passed.
   if (!diff_) {
     return needInfoOn
   }
