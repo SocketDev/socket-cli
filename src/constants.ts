@@ -4,9 +4,6 @@ import process from 'node:process'
 
 import registryConstants from '@socketsecurity/registry/lib/constants'
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
-import { isObject } from '@socketsecurity/registry/lib/objects'
-
-import type { Serializable } from 'node:child_process'
 
 type RegistryEnv = typeof registryConstants.ENV
 
