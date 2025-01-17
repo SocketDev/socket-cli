@@ -196,10 +196,6 @@ async function getPackagesAlerts(
         const lines = new Set()
         const translations = getTranslations()
         for (const alert of alerts) {
-          // Based data from { pageProps: { alertTypes } } of:
-          // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
-          const info = (translations.alerts as any)[alert.type]
-          const title = info?.title ?? alert.type
           const attributes = [
             ...(alert.fixable ? ['fixable'] : []),
             ...(alert.block ? [] : ['non-blocking'])
@@ -207,6 +203,10 @@ async function getPackagesAlerts(
           const maybeAttributes = attributes.length
             ? ` (${attributes.join('; ')})`
             : ''
+          // Based data from { pageProps: { alertTypes } } of:
+          // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
+          const info = (translations.alerts as any)[alert.type]
+          const title = info?.title ?? alert.type
           const maybeDesc = info?.description ? ` - ${info.description}` : ''
           // TODO: emoji seems to mis-align terminals sometimes
           lines.add(`  ${title}${maybeAttributes}${maybeDesc}\n`)
@@ -362,8 +362,11 @@ export async function reify(
 ): Promise<SafeNode> {
   // `this.diff` is `null` when `options.packageLockOnly`, --package-lock-only,
   // is `true`.
-  const needInfoOn = this.diff ? walk(this.diff) : []
-  if (needInfoOn.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1) {
+  const needInfoOn = walk(this.diff)
+  if (
+    needInfoOn.length! ||
+    needInfoOn.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1
+  ) {
     // Nothing to check, hmmm already installed or all private?
     return await this[kRiskyReify](...args)
   }
@@ -413,11 +416,9 @@ export async function reify(
         ret = await this[kRiskyReify](...args)
         await this.loadActual()
         await this.buildIdealTree()
-        alerts = await getPackagesAlerts(
-          this,
-          this.diff ? walk(this.diff, { fix: true }) : [],
-          { fixable: true }
-        )
+        alerts = await getPackagesAlerts(this, walk(this.diff, { fix: true }), {
+          fixable: true
+        })
         alerts = alerts.filter(a => {
           const { key } = a
           if (prev.has(key)) {
