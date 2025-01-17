@@ -918,19 +918,16 @@ export const optimize: CliSubcommand = {
       spinner.start(`Updating ${lockName}...`)
       try {
         if (isNpm) {
-          await shadowNpmInstall({
-            ipc: {
-              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: true
-            }
-          })
+          const ipc = {
+            [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: true
+          }
+          await shadowNpmInstall({ ipc })
           // TODO: This is a temporary workaround for a `npm ci` bug where it
           // will error out after Socket Optimize generates a lock file. More
           // investigation is needed.
           await shadowNpmInstall({
             flags: ['--ignore-scripts', '--package-lock-only'],
-            ipc: {
-              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: true
-            }
+            ipc
           })
         } else {
           // All package managers support the "install" command.

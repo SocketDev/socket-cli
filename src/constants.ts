@@ -1,4 +1,4 @@
-import { realpathSync } from 'node:fs'
+import { realpathSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -103,27 +103,32 @@ const LAZY_IPC = (() => {
     _ipc[key] = false
     defineGetter(ipc, key, () => _ipc[key])
   }
-  void new Promise<void>(resolve => {
-    const onmessage = (ipcData_: Serializable) => {
-      const ipcData: { [key: string]: any } = {
-        __proto__: null,
-        ...(isObject(ipcData_) ? ipcData_ : {})
+  // A forked subprocess will have the 'send' method.
+  // https://nodejs.org/api/child_process.html#subprocesssendmessage-sendhandle-options-callback
+  if (typeof process.send === 'function') {
+    void new Promise<void>(resolve => {
+      const onmessage = (ipcData_: Serializable) => {
+        finish()
+        const ipcData: { [key: string]: any } = {
+          __proto__: null,
+          ...(isObject(ipcData_) ? ipcData_ : {})
+        }
+        for (const key of keys) {
+          _ipc[key] = ipcData[key]
+        }
       }
-      for (const key of keys) {
-        _ipc[key] = ipcData[key]
-      }
-      resolve()
-    }
-    process.once('message', onmessage)
-    abortSignal.addEventListener(
-      'abort',
-      () => {
+      const finish = () => {
+        abortSignal.removeEventListener('abort', finish)
         process.removeListener('message', onmessage)
         resolve()
-      },
-      { once: true }
-    )
-  })
+      }
+      abortSignal.addEventListener('abort', finish, { once: true })
+      process.on('message', onmessage)
+      // The timeout of 100ms is to prevent an unresolved promised. It should be
+      // more than enough time for the IPC handshake.
+      setTimeout(finish, 100)
+    })
+  }
   return () => Object.freeze(ipc)
 })()
 
