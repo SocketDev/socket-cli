@@ -124,12 +124,18 @@ function toRepoUrl(resolved: string): string {
 
 export type WalkOptions = { fix?: boolean }
 
-export function walk(diff_: Diff, options?: WalkOptions): InstallEffect[] {
+export function walk(
+  diff_: Diff | null,
+  options?: WalkOptions
+): InstallEffect[] {
   const { fix = ENV[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE] } = <WalkOptions>{
     __proto__: null,
     ...options
   }
   const needInfoOn: InstallEffect[] = []
+  if (!diff_) {
+    return needInfoOn
+  }
   const queue: Diff[] = [...diff_.children]
   let pos = 0
   let { length: queueLength } = queue
