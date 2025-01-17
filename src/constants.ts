@@ -1,4 +1,4 @@
-import { realpathSync, writeFileSync } from 'node:fs'
+import { realpathSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -50,14 +50,11 @@ type Constants = {
   readonly synpBinPath: string
 } & typeof registryConstants
 
-const { abortSignal } = registryConstants
-
 const {
   PACKAGE_JSON,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
-    createConstantsObject,
-    defineGetter
+    createConstantsObject
   }
 } = registryConstants
 
@@ -90,47 +87,6 @@ const LAZY_ENV = () =>
     // Flag set to help debug Socket CLI.
     [SOCKET_CLI_DEBUG]: envAsBoolean(process.env[SOCKET_CLI_DEBUG])
   })
-
-const LAZY_IPC = (() => {
-  // Initialize and wire-up immediately.
-  const keys = [
-    SOCKET_CLI_FIX_PACKAGE_LOCK_FILE,
-    SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE
-  ]
-  const _ipc = (<unknown>{ __proto__: null }) as IPCObject
-  const ipc = (<unknown>{ __proto__: null }) as IPCObject
-  for (const key of keys) {
-    _ipc[key] = false
-    defineGetter(ipc, key, () => _ipc[key])
-  }
-  // A forked subprocess will have the 'send' method.
-  // https://nodejs.org/api/child_process.html#subprocesssendmessage-sendhandle-options-callback
-  if (typeof process.send === 'function') {
-    void new Promise<void>(resolve => {
-      const onmessage = (ipcData_: Serializable) => {
-        finish()
-        const ipcData: { [key: string]: any } = {
-          __proto__: null,
-          ...(isObject(ipcData_) ? ipcData_ : {})
-        }
-        for (const key of keys) {
-          _ipc[key] = ipcData[key]
-        }
-      }
-      const finish = () => {
-        abortSignal.removeEventListener('abort', finish)
-        process.removeListener('message', onmessage)
-        resolve()
-      }
-      abortSignal.addEventListener('abort', finish, { once: true })
-      process.on('message', onmessage)
-      // The timeout of 100ms is to prevent an unresolved promised. It should be
-      // more than enough time for the IPC handshake.
-      setTimeout(finish, 100)
-    })
-  }
-  return () => Object.freeze(ipc)
-})()
 
 const lazyCdxgenBinPath = () =>
   // Lazily access constants.nmBinPath.
@@ -178,7 +134,6 @@ const constants = <Constants>createConstantsObject(
     // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
     ENV: undefined,
-    IPC: undefined,
     LOCK_EXT,
     MODULE_SYNC,
     NPM_REGISTRY_URL,
@@ -206,7 +161,6 @@ const constants = <Constants>createConstantsObject(
     getters: {
       DIST_TYPE: LAZY_DIST_TYPE,
       ENV: LAZY_ENV,
-      IPC: LAZY_IPC,
       distPath: lazyDistPath,
       cdxgenBinPath: lazyCdxgenBinPath,
       nmBinPath: lazyNmBinPath,
