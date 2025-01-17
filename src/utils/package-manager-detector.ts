@@ -1,4 +1,5 @@
 import path from 'node:path'
+import process from 'node:process'
 
 import spawn from '@npmcli/promise-spawn'
 import browserslist from 'browserslist'

@@ -1,5 +1,6 @@
 import { realpathSync } from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 
 import constants from '../constants'
 import { findRoot } from '../utils/path-resolve'

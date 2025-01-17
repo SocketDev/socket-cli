@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict')
 const { spawnSync } = require('node:child_process')
 const path = require('node:path')
+const process = require('node:process')
 const { describe, it } = require('node:test')
 
 const spawn = require('@npmcli/promise-spawn')

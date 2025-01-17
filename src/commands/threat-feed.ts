@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 // @ts-ignore
 import ScreenWidget from 'blessed/lib/widgets/screen'
 // @ts-ignore

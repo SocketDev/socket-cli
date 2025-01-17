@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 import meow from 'meow'
 import { ErrorWithCause } from 'pony-cause'
 import colors from 'yoctocolors-cjs'

@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'

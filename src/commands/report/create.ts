@@ -1,4 +1,5 @@
 import path from 'node:path'
+import process from 'node:process'
 
 import { betterAjvErrors } from '@apideck/better-ajv-errors'
 import meow from 'meow'
