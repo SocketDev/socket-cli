@@ -1,5 +1,6 @@
 import { promises as fs, realpathSync } from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 
 import ignore from 'ignore'
 import micromatch from 'micromatch'

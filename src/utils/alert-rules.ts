@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 import { setTimeout as wait } from 'node:timers/promises'
 
 import config from '@socketsecurity/config'

@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 import spawn from '@npmcli/promise-spawn'
 import meow from 'meow'
 

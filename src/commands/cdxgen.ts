@@ -1,5 +1,6 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 
 import yargsParse from 'yargs-parser'
 import colors from 'yoctocolors-cjs'
