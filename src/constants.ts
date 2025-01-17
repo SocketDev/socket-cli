@@ -18,9 +18,11 @@ type Constants = {
   }
   readonly DIST_TYPE: 'module-sync' | 'require'
   readonly LOCK_EXT: '.lock'
+  readonly MODULE_SYNC: 'module-sync'
   readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
   readonly NPX: 'npx'
   readonly PNPM: 'pnpm'
+  readonly REQUIRE: 'require'
   readonly SOCKET_CLI_DEBUG: 'SOCKET_CLI_DEBUG'
   readonly SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: 'SOCKET_CLI_FIX_PACKAGE_LOCK_FILE'
   readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
@@ -52,9 +54,11 @@ const BABEL_RUNTIME = '@babel/runtime'
 const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
 const LOCK_EXT = '.lock'
+const MODULE_SYNC = 'module-sync'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const NPX = 'npx'
 const PNPM = 'pnpm'
+const REQUIRE = 'require'
 const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
 const SOCKET_CLI_FIX_PACKAGE_LOCK_FILE = 'SOCKET_CLI_FIX_PACKAGE_LOCK_FILE'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
@@ -65,7 +69,7 @@ const YARN_BERRY = 'yarn/berry'
 const YARN_CLASSIC = 'yarn/classic'
 
 const LAZY_DIST_TYPE = () =>
-  registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? 'module-sync' : 'require'
+  registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? MODULE_SYNC : REQUIRE
 
 const LAZY_ENV = () =>
   Object.freeze({
@@ -132,9 +136,11 @@ const constants = <Constants>createConstantsObject(
     // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
     LOCK_EXT,
+    MODULE_SYNC,
     NPM_REGISTRY_URL,
     NPX,
     PNPM,
+    REQUIRE,
     SOCKET_CLI_DEBUG,
     SOCKET_CLI_FIX_PACKAGE_LOCK_FILE,
     SOCKET_CLI_ISSUES_URL,
