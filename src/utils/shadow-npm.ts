@@ -1,25 +1,23 @@
 import path from 'node:path'
 
-import spawn from '@npmcli/promise-spawn'
-
+import { fork } from './promise-fork'
 import constants from '../constants'
+
+import type { ForkOptions, ForkResult } from './promise-fork'
 
 const { abortSignal } = constants
 
-type ShadowNpmInstallOptions = Exclude<
-  Parameters<typeof spawn>[2],
-  undefined
-> & {
+type ShadowNpmInstallOptions = ForkOptions & {
   flags?: string[]
 }
 
-export async function shadowNpmInstall(
+export function shadowNpmInstall<O extends ShadowNpmInstallOptions>(
   opts?: ShadowNpmInstallOptions
-): Promise<Awaited<ReturnType<typeof spawn>>> {
+) {
   const { flags = [], ...spawnOptions } = { __proto__: null, ...opts }
   // Lazily access constants.ENV.
   const { SOCKET_CLI_DEBUG } = constants.ENV
-  return await spawn(
+  return fork(
     // Lazily access constants.execPath.
     constants.execPath,
     [
@@ -44,5 +42,5 @@ export async function shadowNpmInstall(
         ...spawnOptions.env
       }
     }
-  )
+  ) as ForkResult<O extends { stdioString: false } ? Buffer : string, undefined>
 }
