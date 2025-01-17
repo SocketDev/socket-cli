@@ -4,6 +4,7 @@ import process from 'node:process'
 
 import registryConstants from '@socketsecurity/registry/lib/constants'
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
+import { isObject } from '@socketsecurity/registry/lib/objects'
 
 type RegistryEnv = typeof registryConstants.ENV
 
@@ -14,10 +15,12 @@ type Constants = {
   readonly BUN: 'bun'
   readonly ENV: RegistryEnv & {
     SOCKET_CLI_DEBUG: boolean
-    SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: boolean
-    SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
   }
   readonly DIST_TYPE: 'module-sync' | 'require'
+  readonly IPC: () => Promise<{
+    SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: boolean
+    SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
+  }>
   readonly LOCK_EXT: '.lock'
   readonly MODULE_SYNC: 'module-sync'
   readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
@@ -41,6 +44,29 @@ type Constants = {
   readonly shadowBinPath: string
   readonly synpBinPath: string
 } & typeof registryConstants
+
+const { abortSignal } = registryConstants
+
+const IPC = (() => {
+  const promise = new Promise((resolve, reject) => {
+    process.once('message', ipcData => {
+      console.log('hi')
+      const {
+        [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: a,
+        [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: b
+      } = <any>{ __proto__: null, ...(isObject(ipcData) ? ipcData : {}) }
+      console.log('ok')
+      resolve({
+        [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: !!a,
+        [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: !!b
+      })
+    })
+    abortSignal.addEventListener('abort', reject, { once: true })
+  })
+  return function IPC() {
+    return promise
+  }
+})()
 
 const {
   PACKAGE_JSON,
@@ -77,17 +103,7 @@ const LAZY_ENV = () =>
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
     // Flag set to help debug Socket CLI.
-    [SOCKET_CLI_DEBUG]: envAsBoolean(process.env[SOCKET_CLI_DEBUG]),
-    // Flag set by the "fix" command to accept the package alerts prompt with
-    // "Y(es)" in the SafeArborist reify method.
-    [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: envAsBoolean(
-      process.env[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
-    ),
-    // Flag set by the "optimize" command to bypass the package alerts check
-    // in the SafeArborist reify method.
-    [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: envAsBoolean(
-      process.env[SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]
-    )
+    [SOCKET_CLI_DEBUG]: envAsBoolean(process.env[SOCKET_CLI_DEBUG])
   })
 
 const lazyCdxgenBinPath = () =>
@@ -136,6 +152,7 @@ const constants = <Constants>createConstantsObject(
     ENV: undefined,
     // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
+    IPC,
     LOCK_EXT,
     MODULE_SYNC,
     NPM_REGISTRY_URL,
