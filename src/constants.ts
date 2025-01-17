@@ -1,5 +1,6 @@
 import { realpathSync } from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 
 import registryConstants from '@socketsecurity/registry/lib/constants'
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'

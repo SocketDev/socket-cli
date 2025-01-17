@@ -1,5 +1,6 @@
-import fs from 'fs/promises'
+import fs from 'node:fs/promises'
 import path from 'node:path'
+import process from 'node:process'
 
 import spawn from '@npmcli/promise-spawn'
 import meow from 'meow'
