@@ -59,10 +59,6 @@ const WARN_UX: RuleActionUX = {
   display: true
 }
 
-type SettingsType = (SocketSdkResultType<'postSettings'> & {
-  success: true
-})['data']
-
 function findSocketYmlSync() {
   let prevDir = null
   let dir = process.cwd()
@@ -168,6 +164,10 @@ function uxForDefinedNonDeferValue(
   }
   return ERROR_UX
 }
+
+type SettingsType = (SocketSdkResultType<'postSettings'> & {
+  success: true
+})['data']
 
 export function createAlertUXLookup(
   settings: SettingsType
