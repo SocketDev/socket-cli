@@ -28,14 +28,11 @@ export type ForkResult<Output, Extra> = Promise<
   } & Extra
 > & { process: BuiltinForkResult; stdio: BuiltinForkResult['stdio'] }
 
-function isPipe(stdio: StdioOptions = 'pipe', fd: number) {
+function isPipe(stdio: StdioOptions = 'pipe', fd: number): boolean {
   if (stdio === 'pipe' || stdio === null) {
     return true
   }
-  if (Array.isArray(stdio)) {
-    return isPipe((stdio as any)[fd], fd)
-  }
-  return false
+  return Array.isArray(stdio) ? isPipe((stdio as any)[fd], fd) : false
 }
 
 function stdioResult(

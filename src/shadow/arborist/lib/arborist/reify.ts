@@ -1,4 +1,5 @@
 import path from 'node:path'
+import process from 'node:process'
 
 import semver from 'semver'
 
@@ -38,7 +39,6 @@ type SocketPackageAlert = {
 const pacote: typeof import('pacote') = require(pacotePath)
 
 const {
-  ENV,
   LOOP_SENTINEL,
   NPM,
   NPM_REGISTRY_URL,
@@ -154,7 +154,8 @@ async function getPackagesAlerts(
               fixable: isFixable
             })
           }
-          if (!fixable && !ENV[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]) {
+          // Lazily access constants.IPC.
+          if (!fixable && !constants.IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]) {
             // Before we ask about problematic issues, check to see if they
             // already existed in the old version if they did, be quiet.
             const existing = pkgs.find(p =>
@@ -321,7 +322,7 @@ async function updateAdvisoryDependencies(
       })
       node.package.version = targetVersion
       // Update resolved and clear integrity for the new version.
-      node.resolved = `https://registry.npmjs.org/${name}/-/${name}-${targetVersion}.tgz`
+      node.resolved = `${NPM_REGISTRY_URL}/${name}/-/${name}-${targetVersion}.tgz`
       if (node.integrity) {
         delete node.integrity
       }
@@ -360,9 +361,7 @@ export async function reify(
   this: SafeArborist,
   ...args: Parameters<InstanceType<ArboristClass>['reify']>
 ): Promise<SafeNode> {
-  // `this.diff` is `null` when `options.packageLockOnly`, --package-lock-only,
-  // is `true`.
-  const needInfoOn = walk(this.diff)
+  const needInfoOn = await walk(this.diff)
   if (
     needInfoOn.length! ||
     needInfoOn.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1
@@ -370,14 +369,19 @@ export async function reify(
     // Nothing to check, hmmm already installed or all private?
     return await this[kRiskyReify](...args)
   }
-  const input = process.stdin
-  const output = process.stderr
+  // Lazily access constants.IPC.
+  const {
+    [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: bypassConfirms,
+    [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: bypassAlerts
+  } = constants.IPC
+  const { stderr: output, stdin: input } = process
+
   let alerts: SocketPackageAlert[] | undefined
   const proceed =
-    ENV[SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE] ||
+    bypassAlerts ||
     (await (async () => {
       alerts = await getPackagesAlerts(this, needInfoOn, { output })
-      if (!alerts.length || ENV[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]) {
+      if (bypassConfirms || !alerts.length) {
         return true
       }
       return await confirm(
@@ -395,7 +399,7 @@ export async function reify(
   if (proceed) {
     const fix =
       !!alerts?.length &&
-      (ENV[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE] ||
+      (bypassConfirms ||
         (await confirm(
           {
             message: 'Try to fix alerts?',
@@ -416,9 +420,13 @@ export async function reify(
         ret = await this[kRiskyReify](...args)
         await this.loadActual()
         await this.buildIdealTree()
-        alerts = await getPackagesAlerts(this, walk(this.diff, { fix: true }), {
-          fixable: true
-        })
+        alerts = await getPackagesAlerts(
+          this,
+          await walk(this.diff, { fix: true }),
+          {
+            fixable: true
+          }
+        )
         alerts = alerts.filter(a => {
           const { key } = a
           if (prev.has(key)) {

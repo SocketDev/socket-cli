@@ -6,7 +6,15 @@ import registryConstants from '@socketsecurity/registry/lib/constants'
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 
+import type { Serializable } from 'node:child_process'
+
 type RegistryEnv = typeof registryConstants.ENV
+
+type IPCObject = {
+  SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: boolean
+  SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
+  [key: string]: any
+}
 
 type Constants = {
   readonly API_V0_URL: 'https://api.socket.dev/v0'
@@ -17,10 +25,7 @@ type Constants = {
     SOCKET_CLI_DEBUG: boolean
   }
   readonly DIST_TYPE: 'module-sync' | 'require'
-  readonly IPC: () => Promise<{
-    SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: boolean
-    SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
-  }>
+  readonly IPC: IPCObject
   readonly LOCK_EXT: '.lock'
   readonly MODULE_SYNC: 'module-sync'
   readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
@@ -47,32 +52,12 @@ type Constants = {
 
 const { abortSignal } = registryConstants
 
-const IPC = (() => {
-  const promise = new Promise((resolve, reject) => {
-    process.once('message', ipcData => {
-      console.log('hi')
-      const {
-        [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: a,
-        [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: b
-      } = <any>{ __proto__: null, ...(isObject(ipcData) ? ipcData : {}) }
-      console.log('ok')
-      resolve({
-        [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: !!a,
-        [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: !!b
-      })
-    })
-    abortSignal.addEventListener('abort', reject, { once: true })
-  })
-  return function IPC() {
-    return promise
-  }
-})()
-
 const {
   PACKAGE_JSON,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
-    createConstantsObject
+    createConstantsObject,
+    defineGetter
   }
 } = registryConstants
 
@@ -105,6 +90,42 @@ const LAZY_ENV = () =>
     // Flag set to help debug Socket CLI.
     [SOCKET_CLI_DEBUG]: envAsBoolean(process.env[SOCKET_CLI_DEBUG])
   })
+
+const LAZY_IPC = (() => {
+  // Initialize and wire-up immediately.
+  const keys = [
+    SOCKET_CLI_FIX_PACKAGE_LOCK_FILE,
+    SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE
+  ]
+  const _ipc = (<unknown>{ __proto__: null }) as IPCObject
+  const ipc = (<unknown>{ __proto__: null }) as IPCObject
+  for (const key of keys) {
+    _ipc[key] = false
+    defineGetter(ipc, key, () => _ipc[key])
+  }
+  void new Promise<void>(resolve => {
+    const onmessage = (ipcData_: Serializable) => {
+      const ipcData: { [key: string]: any } = {
+        __proto__: null,
+        ...(isObject(ipcData_) ? ipcData_ : {})
+      }
+      for (const key of keys) {
+        _ipc[key] = ipcData[key]
+      }
+      resolve()
+    }
+    process.once('message', onmessage)
+    abortSignal.addEventListener(
+      'abort',
+      () => {
+        process.removeListener('message', onmessage)
+        resolve()
+      },
+      { once: true }
+    )
+  })
+  return () => Object.freeze(ipc)
+})()
 
 const lazyCdxgenBinPath = () =>
   // Lazily access constants.nmBinPath.
@@ -149,10 +170,10 @@ const constants = <Constants>createConstantsObject(
     BABEL_RUNTIME,
     BINARY_LOCK_EXT,
     BUN,
-    ENV: undefined,
     // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
-    IPC,
+    ENV: undefined,
+    IPC: undefined,
     LOCK_EXT,
     MODULE_SYNC,
     NPM_REGISTRY_URL,
@@ -180,6 +201,7 @@ const constants = <Constants>createConstantsObject(
     getters: {
       DIST_TYPE: LAZY_DIST_TYPE,
       ENV: LAZY_ENV,
+      IPC: LAZY_IPC,
       distPath: lazyDistPath,
       cdxgenBinPath: lazyCdxgenBinPath,
       nmBinPath: lazyNmBinPath,
