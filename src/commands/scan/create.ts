@@ -1,4 +1,4 @@
-import { stdin as inputText, stdout as output } from 'node:process'
+import process from 'node:process'
 import readline from 'node:readline/promises'
 
 import meow from 'meow'
@@ -241,7 +241,10 @@ async function createFullScan(
   const link = colors.underline(colors.cyan(`${result.data.html_report_url}`))
   console.log(`Available at: ${link}`)
 
-  const rl = readline.createInterface({ input: inputText, output })
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
 
   const answer = await rl.question(
     'Would you like to open it in your browser? (y/n)'
