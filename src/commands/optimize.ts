@@ -919,8 +919,8 @@ export const optimize: CliSubcommand = {
       try {
         if (isNpm) {
           await shadowNpmInstall({
-            env: {
-              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
+            ipc: {
+              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: true
             }
           })
           // TODO: This is a temporary workaround for a `npm ci` bug where it
@@ -928,8 +928,8 @@ export const optimize: CliSubcommand = {
           // investigation is needed.
           await shadowNpmInstall({
             flags: ['--ignore-scripts', '--package-lock-only'],
-            env: {
-              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
+            ipc: {
+              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: true
             }
           })
         } else {
