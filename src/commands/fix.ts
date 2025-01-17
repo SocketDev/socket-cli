@@ -13,8 +13,8 @@ export const fix: CliSubcommand = {
     const spinner = new Spinner().start()
     try {
       await shadowNpmInstall({
-        env: {
-          [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: '1'
+        ipc: {
+          [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: true
         }
       })
     } catch (e: any) {
