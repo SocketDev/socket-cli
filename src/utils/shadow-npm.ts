@@ -1,4 +1,5 @@
 import path from 'node:path'
+import process from 'node:process'
 
 import { fork } from './promise-fork'
 import constants from '../constants'

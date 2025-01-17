@@ -1,5 +1,6 @@
 import fs from 'node:fs'
-import homedir from 'node:os'
+import os from 'node:os'
+import process from 'node:process'
 import readline from 'node:readline'
 
 import meow from 'meow'
@@ -9,8 +10,8 @@ import { getFlagListOutput } from '../utils/formatting'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const BASH_FILE = `${homedir.homedir()}/.bashrc`
-const ZSH_BASH_FILE = `${homedir.homedir()}/.zshrc`
+const BASH_FILE = `${os.homedir()}/.bashrc`
+const ZSH_BASH_FILE = `${os.homedir()}/.zshrc`
 
 export const wrapper: CliSubcommand = {
   description: 'Enable or disable the Socket npm/npx wrapper',
