@@ -4,14 +4,17 @@
 // Copyright (c) npm, Inc.
 import { fork as builtinFork } from 'node:child_process'
 
-import type { ForkOptions as BuiltinForkOptions } from 'node:child_process'
+import type {
+  ForkOptions as BuiltinForkOptions,
+  StdioOptions
+} from 'node:child_process'
 
 type BuiltinForkResult = ReturnType<typeof builtinFork>
 
 export type ForkOptions = {
   cwd?: string
   encoding?: BufferEncoding
-  stdioString?: boolean
+  stdioString?: boolean | undefined
 } & BuiltinForkOptions
 
 export type ForkResult<Output, Extra> = Promise<
@@ -24,6 +27,47 @@ export type ForkResult<Output, Extra> = Promise<
     stderr: Output
   } & Extra
 > & { process: BuiltinForkResult; stdio: BuiltinForkResult['stdio'] }
+
+function isPipe(stdio: StdioOptions = 'pipe', fd: number) {
+  if (stdio === 'pipe' || stdio === null) {
+    return true
+  }
+  if (Array.isArray(stdio)) {
+    return isPipe((stdio as any)[fd], fd)
+  }
+  return false
+}
+
+function stdioResult(
+  stdout: Buffer<ArrayBufferLike>[],
+  stderr: Buffer<ArrayBufferLike>[],
+  {
+    stdio,
+    stdioString = true
+  }: { stdioString?: boolean | undefined; stdio?: StdioOptions | undefined }
+) {
+  const result: {
+    stdout: Buffer<ArrayBufferLike> | string | null
+    stderr: Buffer<ArrayBufferLike> | string | null
+  } = {
+    stdout: null,
+    stderr: null
+  }
+  // stdio is [stdin, stdout, stderr]
+  if (isPipe(stdio, 1)) {
+    result.stdout = Buffer.concat(stdout)
+    if (stdioString) {
+      result.stdout = result.stdout.toString().trim()
+    }
+  }
+  if (isPipe(stdio, 2)) {
+    result.stderr = Buffer.concat(stderr)
+    if (stdioString) {
+      result.stderr = result.stderr.toString().trim()
+    }
+  }
+  return result
+}
 
 export function fork<O extends ForkOptions>(
   cmd: string,
@@ -57,8 +101,7 @@ export function fork<O extends ForkOptions>(
     cmd,
     args,
     ...result,
-    stdout: Buffer.concat(stdout).toString(encoding),
-    stderr: Buffer.concat(stderr).toString(encoding),
+    ...stdioResult(stdout, stderr, builtinForkOptions),
     ...extra
   })
 
@@ -68,20 +111,16 @@ export function fork<O extends ForkOptions>(
   }
 
   const proc = builtinFork(cmd, args, builtinForkOptions)
-    .on('error', error => rejectWithOpts(error, {}))
+    .on('error', rejectWithOpts)
     .on('close', (code, signal) => {
-      if (code !== 0 || signal) {
+      if (code || signal) {
         rejectWithOpts(closeError, { code, signal })
       } else {
         resolve?.(getResult({ code, signal }))
       }
     })
-  proc.stdout
-    ?.on('data', chunk => stdout.push(chunk))
-    .on('error', error => rejectWithOpts(error, {}))
-  proc.stderr
-    ?.on('data', chunk => stderr.push(chunk))
-    .on('error', error => rejectWithOpts(error, {}))
+  proc.stdout?.on('data', c => stdout.push(c)).on('error', rejectWithOpts)
+  proc.stderr?.on('data', c => stderr.push(c)).on('error', rejectWithOpts)
   ;(promise as any).stdin = proc.stdin
   ;(promise as any).process = proc
   return promise
