@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import indentString from '@socketregistry/indent-string/index.cjs'
 
-import { logSymbols } from './log-symbols'
+import { logSymbols } from './logging'
 
 const markdownLogSymbols = {
   __proto__: null,
@@ -41,12 +41,14 @@ export class ColorOrMarkdown {
       fallbackToUrl?: boolean
     } = {}
   ) {
-    if (!url) return text
-    return this.useMarkdown
-      ? `[${text}](${url})`
-      : terminalLink(text, url, {
-          fallback: fallbackToUrl ? (_text, url) => url : fallback
-        })
+    if (url) {
+      return this.useMarkdown
+        ? `[${text}](${url})`
+        : terminalLink(text, url, {
+            fallback: fallbackToUrl ? (_text, url) => url : fallback
+          })
+    }
+    return text
   }
 
   indent(

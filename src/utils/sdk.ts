@@ -13,14 +13,14 @@ import { getSetting } from './settings'
 import constants from '../constants'
 
 // The API server that should be used for operations.
-function getDefaultAPIBaseUrl(): string | undefined {
+function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
     process.env['SOCKET_SECURITY_API_BASE_URL'] || getSetting('apiBaseUrl')
   return isNonEmptyString(baseUrl) ? baseUrl : undefined
 }
 
 // The API server that should be used for operations.
-function getDefaultHTTPProxy(): string | undefined {
+function getDefaultHttpProxy(): string | undefined {
   const apiProxy =
     process.env['SOCKET_SECURITY_API_PROXY'] || getSetting('apiProxy')
   return isNonEmptyString(apiProxy) ? apiProxy : undefined
@@ -47,8 +47,8 @@ export function getPublicToken(): string {
 
 export async function setupSdk(
   apiToken: string | undefined = getDefaultToken(),
-  apiBaseUrl: string | undefined = getDefaultAPIBaseUrl(),
-  proxy: string | undefined = getDefaultHTTPProxy()
+  apiBaseUrl: string | undefined = getDefaultApiBaseUrl(),
+  proxy: string | undefined = getDefaultHttpProxy()
 ): Promise<SocketSdk> {
   if (typeof apiToken !== 'string' && isInteractive()) {
     apiToken = await password({

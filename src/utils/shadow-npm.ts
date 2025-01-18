@@ -5,6 +5,7 @@ import spawn from '@npmcli/promise-spawn'
 
 import { isObject } from '@socketsecurity/registry/lib/objects'
 
+import { isDebug } from './debug'
 import constants from '../constants'
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
@@ -19,8 +20,7 @@ type ShadowNpmInstallOptions = SpawnOption & {
 export function shadowNpmInstall(opts?: ShadowNpmInstallOptions) {
   const { flags = [], ipc, ...spawnOptions } = { __proto__: null, ...opts }
   const useIpc = isObject(ipc)
-  // Lazily access constants.ENV.
-  const { SOCKET_CLI_DEBUG } = constants.ENV
+  const useDebug = isDebug()
   const promise = spawn(
     // Lazily access constants.execPath.
     constants.execPath,
@@ -31,7 +31,7 @@ export function shadowNpmInstall(opts?: ShadowNpmInstallOptions) {
       // Even though the 'silent' flag is passed npm will still run through code
       // paths for 'audit' and 'fund' unless '--no-audit' and '--no-fund' flags
       // are passed.
-      ...(SOCKET_CLI_DEBUG
+      ...(useDebug
         ? ['--no-audit', '--no-fund']
         : ['silent', '--no-audit', '--no-fund']),
       ...flags
@@ -41,7 +41,7 @@ export function shadowNpmInstall(opts?: ShadowNpmInstallOptions) {
       // Set stdio to include 'ipc'.
       // See https://github.com/nodejs/node/blob/v23.6.0/lib/child_process.js#L161-L166
       // and https://github.com/nodejs/node/blob/v23.6.0/lib/internal/child_process.js#L238.
-      stdio: SOCKET_CLI_DEBUG
+      stdio: useDebug
         ? // 'inherit'
           useIpc
           ? [0, 1, 2, 'ipc']

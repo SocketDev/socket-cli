@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
-import { logger } from './logger'
+import { logger } from './logging'
 import constants from '../constants'
 
 const LOCALAPPDATA = 'LOCALAPPDATA'

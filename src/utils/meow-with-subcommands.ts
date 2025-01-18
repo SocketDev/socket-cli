@@ -2,7 +2,7 @@ import meow from 'meow'
 
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 
-import { getFlagListOutput, getHelpListOutput } from './formatting'
+import { getFlagListOutput, getHelpListOutput } from './output-formatting'
 import { commonFlags } from '../flags'
 
 import type { Options } from 'meow'

@@ -28,8 +28,8 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../constants'
 import { commonFlags } from '../flags'
-import { getFlagListOutput } from '../utils/formatting'
 import { existsSync } from '../utils/fs'
+import { getFlagListOutput } from '../utils/output-formatting'
 import { detect } from '../utils/package-manager-detector'
 import { shadowNpmInstall } from '../utils/shadow-npm'
 

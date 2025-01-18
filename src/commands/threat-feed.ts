@@ -9,9 +9,9 @@ import meow from 'meow'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags } from '../flags'
-import { queryAPI } from '../utils/api-helpers'
+import { queryAPI } from '../utils/api'
 import { AuthError } from '../utils/errors'
-import { getFlagListOutput } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/output-formatting'
 import { getDefaultToken } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
