@@ -17,6 +17,7 @@ import { kCtorArgs, kRiskyReify } from './index'
 import constants from '../../../../constants'
 import { uxLookup } from '../../../../utils/alert-rules'
 import { ColorOrMarkdown } from '../../../../utils/color-or-markdown'
+import { debugLog } from '../../../../utils/debug'
 import { getSocketDevPackageOverviewUrl } from '../../../../utils/socket-url'
 import { pacotePath } from '../../../npm-paths'
 import { Edge, SafeEdge } from '../edge'
@@ -223,6 +224,8 @@ async function getPackagesAlerts(
       }
       packageAlerts.push(...alerts)
     }
+  } catch (e) {
+    debugLog(e)
   } finally {
     spinner?.stop()
   }

@@ -14,12 +14,9 @@ import colors from 'yoctocolors-cjs'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags } from '../flags'
-import {
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../utils/api-helpers'
+import { handleApiCall, handleUnsuccessfulApiResponse } from '../utils/api'
 import { AuthError, InputError } from '../utils/errors'
-import { getFlagListOutput } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/output-formatting'
 import { getDefaultToken, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'

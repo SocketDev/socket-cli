@@ -10,15 +10,12 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { fetchReportData, formatReportDataOutput } from './view'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
-import {
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../../utils/api-helpers'
+import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { ColorOrMarkdown } from '../../utils/color-or-markdown'
+import { debugLog } from '../../utils/debug'
 import { InputError } from '../../utils/errors'
-import { getFlagListOutput } from '../../utils/formatting'
-import { logSymbols } from '../../utils/log-symbols'
-import { createDebugLogger } from '../../utils/logger'
+import { logSymbols } from '../../utils/logging'
+import { getFlagListOutput } from '../../utils/output-formatting'
 import { getPackageFiles } from '../../utils/path-resolve'
 import { setupSdk } from '../../utils/sdk'
 
@@ -39,7 +36,6 @@ export const create: CliSubcommand = {
       const {
         config,
         cwd,
-        debugLog,
         dryRun,
         includeAllIssues,
         outputJson,
@@ -50,8 +46,7 @@ export const create: CliSubcommand = {
       } = input
 
       const result =
-        input &&
-        (await createReport(packagePaths, { config, cwd, debugLog, dryRun }))
+        input && (await createReport(packagePaths, { config, cwd, dryRun }))
 
       if (result && view) {
         const reportId = result.data.id
@@ -81,7 +76,6 @@ export const create: CliSubcommand = {
 type CommandContext = {
   config: SocketYml | undefined
   cwd: string
-  debugLog: typeof console.error
   dryRun: boolean
   includeAllIssues: boolean
   outputJson: boolean
@@ -101,12 +95,6 @@ async function setupCommand(
     ...commonFlags,
     ...outputFlags,
     ...validationFlags,
-    debug: {
-      type: 'boolean',
-      shortFlag: 'd',
-      default: false,
-      description: 'Output debug information'
-    },
     dryRun: {
       type: 'boolean',
       default: false,
@@ -137,7 +125,6 @@ async function setupCommand(
       ${getFlagListOutput(
         {
           all: 'Include all issues',
-          debug: 'Output debug information',
           'dry-run': 'Only output what will be done without actually doing it',
           json: 'Output result as json',
           markdown: 'Output result as markdown',
@@ -169,7 +156,6 @@ async function setupCommand(
     return
   }
   const { dryRun } = cli.flags
-  const debugLog = createDebugLogger(!dryRun || !!cli.flags['debug'])
 
   // TODO: Allow setting a custom cwd and/or configFile path?
   const cwd = process.cwd()
@@ -229,14 +215,12 @@ async function setupCommand(
     cwd,
     cli.input,
     config,
-    supportedFiles,
-    debugLog
+    supportedFiles
   )
 
   return {
     config,
     cwd,
-    debugLog,
     dryRun,
     includeAllIssues: cli.flags['all'],
     outputJson: cli.flags['json'],
@@ -249,12 +233,7 @@ async function setupCommand(
 
 async function createReport(
   packagePaths: string[],
-  {
-    config,
-    cwd,
-    debugLog,
-    dryRun
-  }: Pick<CommandContext, 'config' | 'cwd' | 'debugLog' | 'dryRun'>
+  { config, cwd, dryRun }: Pick<CommandContext, 'config' | 'cwd' | 'dryRun'>
 ): Promise<void | SocketSdkReturnType<'createReport'>> {
   debugLog('Uploading:', packagePaths.join(`\n${logSymbols.info} Uploading: `))
 

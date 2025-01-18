@@ -5,7 +5,7 @@ import meow from 'meow'
 
 import constants from '../constants'
 import { commonFlags, validationFlags } from '../flags'
-import { getFlagListOutput } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/output-formatting'
 import { findBinPathDetails } from '../utils/path-resolve'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
