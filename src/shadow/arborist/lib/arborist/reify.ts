@@ -363,7 +363,7 @@ export async function reify(
 ): Promise<SafeNode> {
   const needInfoOn = await walk(this.diff)
   if (
-    needInfoOn.length! ||
+    !needInfoOn.length ||
     needInfoOn.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1
   ) {
     // Nothing to check, hmmm already installed or all private?
