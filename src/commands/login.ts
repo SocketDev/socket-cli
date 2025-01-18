@@ -7,7 +7,7 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../constants'
 import { AuthError, InputError } from '../utils/errors'
-import { getFlagListOutput } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/output-formatting'
 import { setupSdk } from '../utils/sdk'
 import { getSetting, updateSetting } from '../utils/settings'
 

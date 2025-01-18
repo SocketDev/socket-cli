@@ -6,12 +6,13 @@ import readline from 'node:readline'
 import meow from 'meow'
 
 import { commandFlags } from '../flags'
-import { getFlagListOutput } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/output-formatting'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const BASH_FILE = `${os.homedir()}/.bashrc`
-const ZSH_BASH_FILE = `${os.homedir()}/.zshrc`
+const HOME_DIR = os.homedir()
+const BASH_FILE = `${HOME_DIR}/.bashrc`
+const ZSH_BASH_FILE = `${HOME_DIR}/.zshrc`
 
 export const wrapper: CliSubcommand = {
   description: 'Enable or disable the Socket npm/npx wrapper',
@@ -98,23 +99,23 @@ function setupCommand(
   }
 }
 
-const installSafeNpm = (query: string): void => {
-  console.log(`
- _____         _       _
-|   __|___ ___| |_ ___| |_
-|__   | . |  _| '_| -_|  _|
-|_____|___|___|_,_|___|_|
-
+function addAlias(file: string): void {
+  return fs.appendFile(
+    file,
+    'alias npm="socket npm"\nalias npx="socket npx"\n',
+    err => {
+      if (err) {
+        return new Error(`There was an error setting up the alias: ${err}`)
+      }
+      console.log(`
+The alias was added to ${file}. Running 'npm install' will now be wrapped in Socket's "safe npm" 🎉
+If you want to disable it at any time, run \`socket wrapper --disable\`
 `)
-
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  })
-  return askQuestion(rl, query)
+    }
+  )
 }
 
-const askQuestion = (rl: readline.Interface, query: string): void => {
+function askQuestion(rl: readline.Interface, query: string): void {
   rl.question(query, (ans: string) => {
     if (ans.toLowerCase() === 'y') {
       try {
@@ -139,23 +140,40 @@ const askQuestion = (rl: readline.Interface, query: string): void => {
   })
 }
 
-const addAlias = (file: string): void => {
-  return fs.appendFile(
-    file,
-    'alias npm="socket npm"\nalias npx="socket npx"\n',
-    err => {
-      if (err) {
-        return new Error(`There was an error setting up the alias: ${err}`)
-      }
-      console.log(`
-The alias was added to ${file}. Running 'npm install' will now be wrapped in Socket's "safe npm" 🎉
-If you want to disable it at any time, run \`socket wrapper --disable\`
-`)
-    }
-  )
+function checkSocketWrapperAlreadySetup(file: string): boolean {
+  const fileContent = fs.readFileSync(file, 'utf8')
+  const linesWithSocketAlias = fileContent
+    .split('\n')
+    .filter(
+      l => l === 'alias npm="socket npm"' || l === 'alias npx="socket npx"'
+    )
+
+  if (linesWithSocketAlias.length) {
+    console.log(
+      `The Socket npm/npx wrapper is set up in your bash profile (${file}).`
+    )
+    return true
+  }
+  return false
 }
 
-const removeAlias = (file: string): void => {
+function installSafeNpm(query: string): void {
+  console.log(`
+ _____         _       _
+|   __|___ ___| |_ ___| |_
+|__   | . |  _| '_| -_|  _|
+|_____|___|___|_,_|___|_|
+
+`)
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
+  return askQuestion(rl, query)
+}
+
+function removeAlias(file: string): void {
   return fs.readFile(file, 'utf8', function (err, data) {
     if (err) {
       console.error(`There was an error removing the alias: ${err}`)
@@ -180,21 +198,4 @@ const removeAlias = (file: string): void => {
       }
     })
   })
-}
-
-const checkSocketWrapperAlreadySetup = (file: string): boolean => {
-  const fileContent = fs.readFileSync(file, 'utf8')
-  const linesWithSocketAlias = fileContent
-    .split('\n')
-    .filter(
-      l => l === 'alias npm="socket npm"' || l === 'alias npx="socket npx"'
-    )
-
-  if (linesWithSocketAlias.length) {
-    console.log(
-      `The Socket npm/npx wrapper is set up in your bash profile (${file}).`
-    )
-    return true
-  }
-  return false
 }

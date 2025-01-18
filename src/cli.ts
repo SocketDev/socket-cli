@@ -10,7 +10,7 @@ import colors from 'yoctocolors-cjs'
 import * as cliCommands from './commands'
 import constants from './constants'
 import { AuthError, InputError } from './utils/errors'
-import { logSymbols } from './utils/log-symbols'
+import { logSymbols } from './utils/logging'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
 
 const { rootPkgJsonPath } = constants

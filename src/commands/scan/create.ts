@@ -8,12 +8,9 @@ import colors from 'yoctocolors-cjs'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import {
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../../utils/api-helpers'
+import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
-import { getFlagListOutput } from '../../utils/formatting'
+import { getFlagListOutput } from '../../utils/output-formatting'
 import { getPackageFilesFullScans } from '../../utils/path-resolve'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
