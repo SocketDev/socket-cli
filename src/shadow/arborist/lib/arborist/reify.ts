@@ -402,7 +402,7 @@ export async function reify(
   if (proceed) {
     const fix =
       !!alerts?.length &&
-      (bypassConfirms ||
+      bypassConfirms /*||
         (await confirm(
           {
             message: 'Try to fix alerts?',
@@ -413,7 +413,7 @@ export async function reify(
             output,
             signal: abortSignal
           }
-        )))
+        ))*/
     if (fix) {
       let ret: SafeNode | undefined
       const prev = new Set(alerts?.map(a => a.key))
