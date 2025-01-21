@@ -34,6 +34,7 @@ type Constants = {
   readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
   readonly SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: 'SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE'
   readonly VLT: 'vlt'
+  readonly YARN: 'yarn'
   readonly YARN_BERRY: 'yarn/berry'
   readonly YARN_CLASSIC: 'yarn/classic'
   readonly cdxgenBinPath: string
@@ -71,8 +72,9 @@ const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE =
   'SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE'
 const VLT = 'vlt'
-const YARN_BERRY = 'yarn/berry'
-const YARN_CLASSIC = 'yarn/classic'
+const YARN = 'yarn'
+const YARN_BERRY = `${YARN}/berry`
+const YARN_CLASSIC = `${YARN}/classic`
 
 const LAZY_DIST_TYPE = () =>
   registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? MODULE_SYNC : REQUIRE
@@ -145,6 +147,7 @@ const constants = <Constants>createConstantsObject(
     SOCKET_CLI_ISSUES_URL,
     SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
     VLT,
+    YARN,
     YARN_BERRY,
     YARN_CLASSIC,
     cdxgenBinPath: undefined,
