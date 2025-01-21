@@ -16,12 +16,11 @@ import { meowWithSubcommands } from './utils/meow-with-subcommands'
 const { rootPkgJsonPath } = constants
 
 const formattedCliCommands = Object.fromEntries(
-  Object.entries(cliCommands)
-    .map(entry => {
-      const key = entry[0]
-      entry[0] = camelToHyphen(key)
-      return entry
-    })
+  Object.entries(cliCommands).map(entry => {
+    const key = entry[0]
+    entry[0] = camelToHyphen(key)
+    return entry
+  })
 )
 
 function camelToHyphen(str: string): string {

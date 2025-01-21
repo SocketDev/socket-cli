@@ -75,14 +75,14 @@ export async function meowWithSubcommands(
         {
           ...toSortedObject(
             Object.fromEntries(
-              Object.entries(subcommands)
-                .filter(entry => !entry[1].hidden)
+              Object.entries(subcommands).filter(entry => !entry[1].hidden)
             )
           ),
           ...toSortedObject(
             Object.fromEntries(
-              Object.entries(aliases)
-                .filter(entry => !subcommands[entry[1]?.argv[0]!]?.hidden)
+              Object.entries(aliases).filter(
+                entry => !subcommands[entry[1]?.argv[0]!]?.hidden
+              )
             )
           )
         },
