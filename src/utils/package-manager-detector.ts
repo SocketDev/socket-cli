@@ -32,13 +32,24 @@ export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
 export type Agent = (typeof AGENTS)[number]
 export type StringKeyValueObject = { [key: string]: string }
 
+const binByAgent = {
+  __proto__: null,
+  [BUN]: BUN,
+  [NPM]: NPM,
+  [PNPM]: PNPM,
+  [YARN_BERRY]: 'yarn',
+  [YARN_CLASSIC]: 'yarn',
+  [VLT]: VLT
+}
+
 const { compare: alphanumericComparator } = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: 'base'
 })
 
 async function getAgentExecPath(agent: Agent): Promise<string> {
-  return (await which(agent, { nothrow: true })) ?? agent
+  const binName = binByAgent[agent]
+  return (await which(binName, { nothrow: true })) ?? binName
 }
 
 async function getAgentVersion(
