@@ -108,7 +108,10 @@ const lazyRootDistPath = () =>
 const lazyRootPath = () =>
   // The '@rollup/plugin-replace' will replace 'process.env.TAP' with `false` and
   // it will be dead code eliminated by Rollup.
-  path.resolve(realpathSync(__dirname), process.env['TAP'] ? '../..' : '..')
+  path.resolve(
+    realpathSync.native(__dirname),
+    process.env['TAP'] ? '../..' : '..'
+  )
 
 const lazyRootPkgJsonPath = () =>
   // Lazily access constants.rootPath.

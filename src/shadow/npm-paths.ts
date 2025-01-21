@@ -7,7 +7,7 @@ import { findRoot } from '../utils/path-resolve'
 
 const { NODE_MODULES, SOCKET_CLI_ISSUES_URL } = constants
 
-const npmEntrypoint = realpathSync(process.argv[1]!)
+const npmEntrypoint = realpathSync.native(process.argv[1]!)
 const npmRootPath = findRoot(path.dirname(npmEntrypoint))
 if (npmRootPath === undefined) {
   console.error(
