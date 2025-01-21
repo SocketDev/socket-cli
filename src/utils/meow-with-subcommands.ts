@@ -22,6 +22,7 @@ type CliSubcommandRun = (
 
 export interface CliSubcommand {
   description: string
+  hidden?: boolean
   run: CliSubcommandRun
 }
 
@@ -72,8 +73,18 @@ export async function meowWithSubcommands(
     Commands
       ${getHelpListOutput(
         {
-          ...toSortedObject(subcommands),
-          ...toSortedObject(aliases)
+          ...toSortedObject(
+            Object.fromEntries(
+              Object.entries(subcommands)
+                .filter(entry => !entry[1].hidden)
+            )
+          ),
+          ...toSortedObject(
+            Object.fromEntries(
+              Object.entries(aliases)
+                .filter(entry => !subcommands[entry[1]?.argv[0]!]?.hidden)
+            )
+          )
         },
         6
       )}
