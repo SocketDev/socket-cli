@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@apideck/better-ajv-errors": "^0.3.6",
-    "@cyclonedx/cdxgen": "^11.0.10",
+    "@cyclonedx/cdxgen": "^11.1.0",
     "@npmcli/promise-spawn": "^8.0.2",
     "@socketregistry/hyrious__bun.lockb": "^1.0.11",
     "@socketregistry/indent-string": "^1.0.9",
@@ -24,7 +24,7 @@
     "pony-cause": "^2.1.11",
     "semver": "^7.6.3",
     "synp": "^1.9.14",
-    "terminal-link": "^2.1.1",
+    "terminal-link": "2.1.1",
     "tiny-updater": "^3.5.3",
     "tinyglobby": "^0.2.10",
     "which": "^5.0.0",
@@ -56,18 +56,18 @@
     "browserslist": "4.24.4",
     "chalk-table": "^1.0.2",
     "cmd-shim": "^7.0.0",
-    "has-flag": "^4.0.0",
+    "has-flag": "4.0.0",
     "hpagent": "^1.2.0",
     "ignore": "^7.0.3",
     "micromatch": "^4.0.8",
     "pony-cause": "^2.1.11",
-    "terminal-link": "^2.1.1",
+    "terminal-link": "2.1.1",
     "tinyglobby": "^0.2.10",
     "which": "^5.0.0",
     "yargs-parser": "^21.1.1",
     "yoctocolors-cjs": "^2.1.2"
   },
   "transitives": {
-    "has-flag": "^4.0.0"
+    "has-flag": "4.0.0"
   }
 }
