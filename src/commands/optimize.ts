@@ -74,7 +74,8 @@ type GetOverridesResult = {
   overrides: Overrides
 }
 
-const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
+const getOverridesDataByAgent = <Record<Agent, GetOverrides>>{
+  __proto__: null,
   [BUN](pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.[RESOLUTIONS] ?? {}
     return { type: YARN_BERRY, overrides }
@@ -136,6 +137,7 @@ const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
   }
 
   return {
+    __proto__: null,
     [BUN](lockSrc: string, name: string, lockBasename?: string) {
       // This is a bit counterintuitive. When lockBasename ends with a .lockb
       // we treat it as a yarn.lock. When lockBasename ends with a .lock we
@@ -319,6 +321,7 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
   }
 
   return {
+    __proto__: null,
     [BUN]: updateResolutions,
     [NPM]: updateOverrides,
     [PNPM](editablePkgJson: EditablePackageJson, overrides: Overrides) {
@@ -388,6 +391,7 @@ const lsByAgent = (() => {
   }
 
   return <Record<Agent, AgentListDepsFn>>{
+    __proto__: null,
     async [BUN](agentExecPath: string, cwd: string) {
       try {
         // Bun does not support filtering by production packages yet.
@@ -479,6 +483,7 @@ const depsIncludesByAgent: Record<Agent, AgentDepsIncludesFn> = (() => {
   }
 
   return {
+    __proto__: null,
     [BUN]: matchHumanStdout,
     [NPM]: matchQueryStdout,
     [PNPM]: matchQueryStdout,
