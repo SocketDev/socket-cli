@@ -7,20 +7,20 @@ import constants from '@socketsecurity/registry/lib/constants'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags, validationFlags } from '../flags'
+import { formatSeverityCount, getSeverityCount } from '../utils/alert/severity'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../utils/api'
 import { ColorOrMarkdown } from '../utils/color-or-markdown'
 import { InputError } from '../utils/errors'
 import { objectSome } from '../utils/objects'
 import { getFlagListOutput } from '../utils/output-formatting'
 import { getPublicToken, setupSdk } from '../utils/sdk'
-import { formatSeverityCount, getSeverityCount } from '../utils/sdk-issues'
 import {
   getSocketDevAlertUrl,
   getSocketDevPackageOverviewUrl
 } from '../utils/socket-url'
 
+import type { SocketAlert } from '../utils/alert/severity'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
-import type { SocketIssue } from '../utils/sdk-issues'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 const { NPM } = constants
@@ -129,7 +129,7 @@ function setupCommand(
 
 interface PackageData {
   data: SocketSdkReturnType<'getIssuesByNPMPackage'>['data']
-  severityCount: Record<SocketIssue['severity'], number>
+  severityCount: Record<SocketAlert['severity'], number>
   score: SocketSdkReturnType<'getScoreByNPMPackage'>['data']
 }
 

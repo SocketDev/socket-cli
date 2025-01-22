@@ -11,7 +11,7 @@ import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
+import { findUp, readFileBinary, readFileUtf8, safeExistsSync } from './fs'
 import constants from '../constants'
 
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
@@ -173,8 +173,8 @@ export async function detect({
   const pkgJsonPath = lockPath
     ? path.resolve(lockPath, `${isHiddenLockFile ? '../' : ''}../package.json`)
     : await findUp('package.json', { cwd })
-  const pkgPath = existsSync(pkgJsonPath)
-    ? path.dirname(pkgJsonPath)
+  const pkgPath = safeExistsSync(pkgJsonPath)
+    ? path.dirname(pkgJsonPath!)
     : undefined
   const editablePkgJson = pkgPath
     ? await readPackageJson(pkgPath, { editable: true })

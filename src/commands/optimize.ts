@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -28,7 +27,7 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../constants'
 import { commonFlags } from '../flags'
-import { existsSync } from '../utils/fs'
+import { safeReadFile } from '../utils/fs'
 import { getFlagListOutput } from '../utils/output-formatting'
 import { detect } from '../utils/package-manager-detector'
 import { shadowNpmInstall } from '../utils/shadow-npm'
@@ -541,12 +540,11 @@ async function getWorkspaceGlobs(
       path.join(pkgPath!, `${PNPM_WORKSPACE}.yaml`),
       path.join(pkgPath!, `${PNPM_WORKSPACE}.yml`)
     ]) {
-      if (existsSync(workspacePath)) {
+      // eslint-disable-next-line no-await-in-loop
+      const yml = <string | undefined>await safeReadFile(workspacePath, 'utf8')
+      if (yml) {
         try {
-          workspacePatterns = yamlParse(
-            // eslint-disable-next-line no-await-in-loop
-            await fs.readFile(workspacePath, 'utf8')
-          )?.packages
+          workspacePatterns = yamlParse(yml)?.packages
         } catch {}
         if (workspacePatterns) {
           break

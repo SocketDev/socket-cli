@@ -1,17 +1,14 @@
-import { existsSync as existsSync_, promises as fs } from 'node:fs'
+import {
+  promises as fs,
+  existsSync as fsExistsSync,
+  readFileSync as fsReadFileSync
+} from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
 import type { Abortable } from 'node:events'
 import type { ObjectEncodingOptions, OpenMode, PathLike } from 'node:fs'
 import type { FileHandle } from 'node:fs/promises'
-
-export function existsSync(filepath: any): filepath is PathLike {
-  try {
-    return filepath ? existsSync_(filepath) : false
-  } catch {}
-  return false
-}
 
 export async function findUp(
   name: string | string[],
@@ -59,4 +56,29 @@ export async function readFileUtf8(
     ...options,
     encoding: 'utf8'
   })
+}
+
+export function safeExistsSync(filepath: PathLike | undefined): boolean {
+  try {
+    return filepath ? fsExistsSync(filepath) : false
+  } catch {}
+  return false
+}
+
+export function safeReadFile(
+  ...args: Parameters<typeof fs.readFile>
+): ReturnType<typeof fs.readFile> | undefined {
+  try {
+    return fs.readFile(...args)
+  } catch {}
+  return undefined
+}
+
+export function safeReadFileSync(
+  ...args: Parameters<typeof fsReadFileSync>
+): ReturnType<typeof fsReadFileSync> | undefined {
+  try {
+    return fsReadFileSync(...args)
+  } catch {}
+  return undefined
 }

@@ -18,8 +18,8 @@ const {
 
 export default () =>
   baseConfig({
-    input: ['alert-rules', 'errors', 'path-resolve'].reduce((o, k) => {
-      o[k] = `${rootSrcPath}/utils/${k}.ts`
+    input: ['alert/rules', 'errors', 'path-resolve'].reduce((o, k) => {
+      o[k.replaceAll('/', '-')] = `${rootSrcPath}/utils/${k}.ts`
       return o
     }, {}),
     output: [
