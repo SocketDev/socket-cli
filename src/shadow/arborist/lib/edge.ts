@@ -289,7 +289,7 @@ export class SafeEdge extends Edge {
       this.#safeError = null
     }
     // Patch adding "else if" condition based on
-    // https://github.com/npm/cli/pull/7025
+    // https://github.com/npm/cli/pull/7025.
     else if (oldOverrideSet) {
       // Propagate the new override set to the target node.
       this.#safeTo.updateOverridesEdgeInRemoved(oldOverrideSet)
