@@ -52,11 +52,13 @@
     "test-ci": "run-s build:* test:*",
     "test:unit": "tap-run",
     "test:coverage:c8": "c8 --reporter=none node --test 'test/socket-npm.test.cjs'",
-    "test:coverage:merge": "cp -r .tap/coverage/*.json coverage/tmp && c8 --reporter=lcov --reporter=text --include 'dist/{module-sync,require}/*.js' --exclude 'dist/require/vendor.js' report"
+    "test:coverage:merge": "cp -r .tap/coverage/*.json coverage/tmp && c8 --reporter=lcov --reporter=text --include 'dist/{module-sync,require}/*.js' --exclude 'dist/require/vendor.js' report",
+    "update": "run-p --aggregate-output update:**",
+    "update:deps": "npx npm-check-updates"
   },
   "dependencies": {
     "@apideck/better-ajv-errors": "^0.3.6",
-    "@cyclonedx/cdxgen": "^11.1.0",
+    "@cyclonedx/cdxgen": "^11.1.1",
     "@npmcli/promise-spawn": "^8.0.2",
     "@socketregistry/hyrious__bun.lockb": "^1.0.11",
     "@socketregistry/indent-string": "^1.0.9",
@@ -130,7 +132,7 @@
     "eslint-plugin-sort-destructure-keys": "^2.0.0",
     "eslint-plugin-unicorn": "^56.0.1",
     "husky": "^9.1.7",
-    "knip": "^5.42.2",
+    "knip": "^5.43.1",
     "magic-string": "^0.30.17",
     "mock-fs": "^5.4.1",
     "nock": "^13.5.6",
