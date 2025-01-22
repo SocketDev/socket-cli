@@ -102,7 +102,8 @@ function findPackage(tree: SafeNode, packageName: string): SafeNode | null {
 
 type GetPackageAlertsOptions = {
   output?: Writable
-  fixable?: boolean
+  includeExisting?: boolean
+  includeUnfixable?: boolean
 }
 
 async function getPackagesAlerts(
@@ -115,7 +116,11 @@ async function getPackagesAlerts(
   if (!remaining) {
     return packageAlerts
   }
-  const { fixable, output } = <GetPackageAlertsOptions>{
+  const {
+    includeExisting = false,
+    includeUnfixable = true,
+    output
+  } = <GetPackageAlertsOptions>{
     __proto__: null,
     ...options
   }
@@ -149,8 +154,8 @@ async function getPackagesAlerts(
           displayWarning = true
         }
         if (ux.block || ux.display) {
-          const isFixable = isArtifactAlertFixable(alert)
-          if (!fixable || isFixable) {
+          const fixable = isArtifactAlertFixable(alert)
+          if (includeUnfixable || fixable) {
             alerts.push({
               name,
               version,
@@ -158,15 +163,18 @@ async function getPackagesAlerts(
               type: alert.type,
               block: ux.block,
               raw: alert,
-              fixable: isFixable
+              fixable
             })
           }
           // Lazily access constants.IPC.
-          if (!fixable && !constants.IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]) {
+          if (
+            includeExisting &&
+            !constants.IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
+          ) {
             // Before we ask about problematic issues, check to see if they
             // already existed in the old version if they did, be quiet.
-            const existing = pkgs.find(p =>
-              p.existing?.startsWith(`${name}@`)
+            const existing = details.find(d =>
+              d.existing?.startsWith(`${name}@`)
             )?.existing
             if (existing) {
               const oldArtifact: SocketArtifact | undefined =
@@ -182,8 +190,7 @@ async function getPackagesAlerts(
         }
       }
       if (!blocked) {
-        const pkg = pkgs.find(p => p.pkgid === id)
-        if (pkg) {
+        if (details.find(d => d.pkgid === id)) {
           await pacote.tarball.stream(
             id,
             stream => {
@@ -424,15 +431,16 @@ export async function reify(
         ret = await this[kRiskyReify](...args)
         await this.loadActual()
         await this.buildIdealTree()
-        alerts = await getPackagesAlerts(
-          this,
-          getPackagesToQueryFromDiff(this.diff, { includeUnchanged: true }),
-          {
-            fixable: true
-          }
-        )
-        alerts = alerts.filter(a => {
-          const { key } = a
+        alerts = (
+          await getPackagesAlerts(
+            this,
+            getPackagesToQueryFromDiff(this.diff, { includeUnchanged: true }),
+            {
+              includeExisting: true,
+              includeUnfixable: true
+            }
+          )
+        ).filter(({ key }) => {
           if (prev.has(key)) {
             return false
           }
