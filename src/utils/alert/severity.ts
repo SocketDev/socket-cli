@@ -1,17 +1,18 @@
-import { pick } from './objects'
-import { stringJoinWithSeparateFinalSeparator } from './strings'
+import { pick } from '../objects'
+import { stringJoinWithSeparateFinalSeparator } from '../strings'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
-type SocketIssueList = SocketSdkReturnType<'getIssuesByNPMPackage'>['data']
+type SocketAlertList = SocketSdkReturnType<'getIssuesByNPMPackage'>['data']
 
-export type SocketIssue = SocketIssueList[number]['value'] extends
+export type SocketAlert = SocketAlertList[number]['value'] extends
   | infer U
   | undefined
   ? U
   : never
 
-const SEVERITIES_BY_ORDER: SocketIssue['severity'][] = [
+// Ordered from most severe to least.
+const SEVERITIES_BY_ORDER: SocketAlert['severity'][] = [
   'critical',
   'high',
   'middle',
@@ -19,9 +20,9 @@ const SEVERITIES_BY_ORDER: SocketIssue['severity'][] = [
 ]
 
 function getDesiredSeverities(
-  lowestToInclude: SocketIssue['severity'] | undefined
-): SocketIssue['severity'][] {
-  const result: SocketIssue['severity'][] = []
+  lowestToInclude: SocketAlert['severity'] | undefined
+): SocketAlert['severity'][] {
+  const result: SocketAlert['severity'][] = []
   for (const severity of SEVERITIES_BY_ORDER) {
     result.push(severity)
     if (severity === lowestToInclude) {
@@ -32,7 +33,7 @@ function getDesiredSeverities(
 }
 
 export function formatSeverityCount(
-  severityCount: Record<SocketIssue['severity'], number>
+  severityCount: Record<SocketAlert['severity'], number>
 ): string {
   const summary: string[] = []
   for (const severity of SEVERITIES_BY_ORDER) {
@@ -44,13 +45,13 @@ export function formatSeverityCount(
 }
 
 export function getSeverityCount(
-  issues: SocketIssueList,
-  lowestToInclude: SocketIssue['severity'] | undefined
-): Record<SocketIssue['severity'], number> {
+  issues: SocketAlertList,
+  lowestToInclude: SocketAlert['severity'] | undefined
+): Record<SocketAlert['severity'], number> {
   const severityCount = pick(
     { low: 0, middle: 0, high: 0, critical: 0 },
     getDesiredSeverities(lowestToInclude)
-  ) as Record<SocketIssue['severity'], number>
+  ) as Record<SocketAlert['severity'], number>
 
   for (const issue of issues) {
     const { value } = issue

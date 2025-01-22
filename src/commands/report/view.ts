@@ -7,12 +7,15 @@ import colors from 'yoctocolors-cjs'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
+import {
+  formatSeverityCount,
+  getSeverityCount
+} from '../../utils/alert/severity'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 import { InputError } from '../../utils/errors'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { setupSdk } from '../../utils/sdk'
-import { formatSeverityCount, getSeverityCount } from '../../utils/sdk-issues'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import type {

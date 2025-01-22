@@ -1,15 +1,11 @@
-import { readFileSync } from 'node:fs'
-import path from 'node:path'
-import process from 'node:process'
 import { setTimeout as wait } from 'node:timers/promises'
 
-import config from '@socketsecurity/config'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 
-import { isErrnoException } from './errors'
-import { getPublicToken, setupSdk } from './sdk'
-import { getSetting } from './settings'
-import constants from '../constants'
+import constants from '../../constants'
+import { isErrnoException } from '../errors'
+import { getPublicToken, setupSdk } from '../sdk'
+import { findSocketYmlSync, getSetting } from '../settings'
 
 import type { SocketSdkResultType } from '@socketsecurity/sdk'
 
@@ -58,39 +54,6 @@ const IGNORE_UX: RuleActionUX = {
 const WARN_UX: RuleActionUX = {
   block: false,
   display: true
-}
-
-function findSocketYmlSync() {
-  let prevDir = null
-  let dir = process.cwd()
-  while (dir !== prevDir) {
-    let ymlPath = path.join(dir, 'socket.yml')
-    let yml = maybeReadfileSync(ymlPath)
-    if (yml === undefined) {
-      ymlPath = path.join(dir, 'socket.yaml')
-      yml = maybeReadfileSync(ymlPath)
-    }
-    if (typeof yml === 'string') {
-      try {
-        return {
-          path: ymlPath,
-          parsed: config.parseSocketConfig(yml)
-        }
-      } catch {
-        throw new Error(`Found file but was unable to parse ${ymlPath}`)
-      }
-    }
-    prevDir = dir
-    dir = path.join(dir, '..')
-  }
-  return null
-}
-
-function maybeReadfileSync(filepath: string): string | undefined {
-  try {
-    return readFileSync(filepath, 'utf8')
-  } catch {}
-  return undefined
 }
 
 // Iterates over all entries with ordered issue rule for deferral.  Iterates over
