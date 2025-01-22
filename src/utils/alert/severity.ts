@@ -3,16 +3,17 @@ import { stringJoinWithSeparateFinalSeparator } from '../strings'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
-type SocketAlertList = SocketSdkReturnType<'getIssuesByNPMPackage'>['data']
+export type SocketSdkAlertList =
+  SocketSdkReturnType<'getIssuesByNPMPackage'>['data']
 
-export type SocketAlert = SocketAlertList[number]['value'] extends
+export type SocketSdkAlert = SocketSdkAlertList[number]['value'] extends
   | infer U
   | undefined
   ? U
   : never
 
 // Ordered from most severe to least.
-const SEVERITIES_BY_ORDER: SocketAlert['severity'][] = [
+const SEVERITIES_BY_ORDER: SocketSdkAlert['severity'][] = [
   'critical',
   'high',
   'middle',
@@ -20,9 +21,9 @@ const SEVERITIES_BY_ORDER: SocketAlert['severity'][] = [
 ]
 
 function getDesiredSeverities(
-  lowestToInclude: SocketAlert['severity'] | undefined
-): SocketAlert['severity'][] {
-  const result: SocketAlert['severity'][] = []
+  lowestToInclude: SocketSdkAlert['severity'] | undefined
+): SocketSdkAlert['severity'][] {
+  const result: SocketSdkAlert['severity'][] = []
   for (const severity of SEVERITIES_BY_ORDER) {
     result.push(severity)
     if (severity === lowestToInclude) {
@@ -33,7 +34,7 @@ function getDesiredSeverities(
 }
 
 export function formatSeverityCount(
-  severityCount: Record<SocketAlert['severity'], number>
+  severityCount: Record<SocketSdkAlert['severity'], number>
 ): string {
   const summary: string[] = []
   for (const severity of SEVERITIES_BY_ORDER) {
@@ -45,13 +46,13 @@ export function formatSeverityCount(
 }
 
 export function getSeverityCount(
-  issues: SocketAlertList,
-  lowestToInclude: SocketAlert['severity'] | undefined
-): Record<SocketAlert['severity'], number> {
+  issues: SocketSdkAlertList,
+  lowestToInclude: SocketSdkAlert['severity'] | undefined
+): Record<SocketSdkAlert['severity'], number> {
   const severityCount = pick(
     { low: 0, middle: 0, high: 0, critical: 0 },
     getDesiredSeverities(lowestToInclude)
-  ) as Record<SocketAlert['severity'], number>
+  ) as Record<SocketSdkAlert['severity'], number>
 
   for (const issue of issues) {
     const { value } = issue
