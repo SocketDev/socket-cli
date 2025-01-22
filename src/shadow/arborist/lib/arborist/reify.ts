@@ -15,7 +15,7 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { batchScan, isAlertFixable, isAlertFixableCve, walk } from './alerts'
 import { kCtorArgs, kRiskyReify } from './index'
 import constants from '../../../../constants'
-import { uxLookup } from '../../../../utils/alert-rules'
+import { uxLookup } from '../../../../utils/alert/rules'
 import { ColorOrMarkdown } from '../../../../utils/color-or-markdown'
 import { debugLog } from '../../../../utils/debug'
 import { getSocketDevPackageOverviewUrl } from '../../../../utils/socket-url'
@@ -400,9 +400,7 @@ export async function reify(
       )
     })())
   if (proceed) {
-    const fix =
-      !!alerts?.length &&
-      bypassConfirms /*||
+    const fix = !!alerts?.length && bypassConfirms /*||
         (await confirm(
           {
             message: 'Try to fix alerts?',

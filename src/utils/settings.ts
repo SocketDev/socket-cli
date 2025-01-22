@@ -1,8 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
+import config from '@socketsecurity/config'
+
+import { safeReadFileSync } from './fs'
 import { logger } from './logging'
 import constants from '../constants'
 
@@ -21,8 +24,8 @@ function getSettings(): Settings {
     _settings = <Settings>{}
     const settingsPath = getSettingsPath()
     if (settingsPath) {
-      if (existsSync(settingsPath)) {
-        const raw = readFileSync(settingsPath, 'utf8')
+      const raw = <string | undefined>safeReadFileSync(settingsPath, 'utf8')
+      if (raw) {
         try {
           Object.assign(
             _settings,
@@ -68,6 +71,32 @@ function getSettingsPath(): string | undefined {
       : undefined
   }
   return _settingsPath
+}
+
+export function findSocketYmlSync() {
+  let prevDir = null
+  let dir = process.cwd()
+  while (dir !== prevDir) {
+    let ymlPath = path.join(dir, 'socket.yml')
+    let yml = <string | undefined>safeReadFileSync(ymlPath, 'utf8')
+    if (yml === undefined) {
+      ymlPath = path.join(dir, 'socket.yaml')
+      yml = <string | undefined>safeReadFileSync(ymlPath, 'utf8')
+    }
+    if (typeof yml === 'string') {
+      try {
+        return {
+          path: ymlPath,
+          parsed: config.parseSocketConfig(yml)
+        }
+      } catch {
+        throw new Error(`Found file but was unable to parse ${ymlPath}`)
+      }
+    }
+    prevDir = dir
+    dir = path.join(dir, '..')
+  }
+  return null
 }
 
 export function getSetting<Key extends keyof Settings>(
