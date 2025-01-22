@@ -12,8 +12,8 @@ import {
 import { confirm } from '@socketsecurity/registry/lib/prompts'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { kCtorArgs, kRiskyReify } from './index'
 import { getPackagesToQueryFromDiff } from './diff'
+import { kCtorArgs, kRiskyReify } from './index'
 import constants from '../../../../constants'
 import {
   batchScan,
@@ -27,8 +27,8 @@ import { getSocketDevPackageOverviewUrl } from '../../../../utils/socket-url'
 import { pacotePath } from '../../../npm-paths'
 import { Edge, SafeEdge } from '../edge'
 
+import type { PackageDetail } from './diff'
 import type { ArboristClass, AuditAdvisory, SafeArborist } from './index'
-import type { InstallEffect } from './walk'
 import type { SocketArtifact } from '../../../../utils/alert/artifact'
 import type { SafeNode } from '../node'
 import type { Writable } from 'node:stream'
@@ -107,10 +107,10 @@ type GetPackageAlertsOptions = {
 
 async function getPackagesAlerts(
   safeArb: SafeArborist,
-  pkgs: InstallEffect[],
+  details: PackageDetail[],
   options?: GetPackageAlertsOptions
 ): Promise<SocketPackageAlert[]> {
-  let { length: remaining } = pkgs
+  let { length: remaining } = details
   const packageAlerts: SocketPackageAlert[] = []
   if (!remaining) {
     return packageAlerts
@@ -125,7 +125,7 @@ async function getPackagesAlerts(
     : () => ''
   spinner?.start(getText())
   try {
-    for await (const artifact of batchScan(pkgs.map(p => p.pkgid))) {
+    for await (const artifact of batchScan(details.map(d => d.pkgid))) {
       if (!artifact.name || !artifact.version || !artifact.alerts?.length) {
         continue
       }
@@ -371,10 +371,7 @@ export async function reify(
   ...args: Parameters<InstanceType<ArboristClass>['reify']>
 ): Promise<SafeNode> {
   const needInfoOn = getPackagesToQueryFromDiff(this.diff)
-  if (
-    !needInfoOn.length ||
-    needInfoOn.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1
-  ) {
+  if (!needInfoOn.length) {
     // Nothing to check, hmmm already installed or all private?
     return await this[kRiskyReify](...args)
   }
