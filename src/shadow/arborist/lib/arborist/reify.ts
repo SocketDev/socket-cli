@@ -15,12 +15,12 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { kCtorArgs, kRiskyReify } from './index'
 import { walk } from './walk'
 import constants from '../../../../constants'
-import { uxLookup } from '../../../../utils/alert/rules'
 import {
   batchScan,
-  isAlertFixable,
-  isAlertFixableCve
-} from '../../../../utils/alert/scan'
+  isArtifactAlertCveFixable,
+  isArtifactAlertFixable
+} from '../../../../utils/alert/artifact'
+import { uxLookup } from '../../../../utils/alert/rules'
 import { ColorOrMarkdown } from '../../../../utils/color-or-markdown'
 import { debugLog } from '../../../../utils/debug'
 import { getSocketDevPackageOverviewUrl } from '../../../../utils/socket-url'
@@ -28,10 +28,8 @@ import { pacotePath } from '../../../npm-paths'
 import { Edge, SafeEdge } from '../edge'
 
 import type { ArboristClass, AuditAdvisory, SafeArborist } from './index'
-import type {
-  InstallEffect,
-  SocketScanArtifact
-} from '../../../../utils/alert/scan'
+import type { InstallEffect } from './walk'
+import type { SocketArtifact } from '../../../../utils/alert/artifact'
 import type { SafeNode } from '../node'
 import type { Writable } from 'node:stream'
 
@@ -151,7 +149,7 @@ async function getPackagesAlerts(
           displayWarning = true
         }
         if (ux.block || ux.display) {
-          const isFixable = isAlertFixable(alert)
+          const isFixable = isArtifactAlertFixable(alert)
           if (!fixable || isFixable) {
             alerts.push({
               name,
@@ -171,7 +169,7 @@ async function getPackagesAlerts(
               p.existing?.startsWith(`${name}@`)
             )?.existing
             if (existing) {
-              const oldArtifact: SocketScanArtifact | undefined =
+              const oldArtifact: SocketArtifact | undefined =
                 // eslint-disable-next-line no-await-in-loop
                 (await batchScan([existing]).next()).value
               if (oldArtifact?.alerts?.length) {
@@ -254,7 +252,7 @@ function getTranslations() {
 function packageAlertsToReport(alerts: SocketPackageAlert[]) {
   let report: { [dependency: string]: AuditAdvisory[] } | null = null
   for (const alert of alerts) {
-    if (!isAlertFixableCve(alert.raw)) {
+    if (!isArtifactAlertCveFixable(alert.raw)) {
       continue
     }
     const { name } = alert

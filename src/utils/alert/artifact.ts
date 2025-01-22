@@ -5,15 +5,7 @@ import rl from 'node:readline'
 import constants from '../../constants'
 import { getPublicToken } from '../sdk'
 
-import type { SafeNode } from '../../shadow/arborist/lib/node'
-
-export type InstallEffect = {
-  pkgid: SafeNode['pkgid']
-  repository_url: string
-  existing?: SafeNode['pkgid'] | undefined
-}
-
-export type SocketScanArtifactAlert = {
+export type SocketArtifactAlert = {
   key: string
   type: string
   severity: string
@@ -26,7 +18,7 @@ export type SocketScanArtifactAlert = {
   end?: number
 }
 
-export type SocketScanArtifact = {
+export type SocketArtifact = {
   type: string
   namespace?: string
   name?: string
@@ -59,7 +51,7 @@ export type SocketScanArtifact = {
     license: number
     overall: number
   }
-  alerts?: SocketScanArtifactAlert[]
+  alerts?: SocketArtifactAlert[]
   size?: number
   batchIndex?: number
 }
@@ -68,7 +60,7 @@ const { API_V0_URL, abortSignal } = constants
 
 export async function* batchScan(
   pkgIds: string[]
-): AsyncGenerator<SocketScanArtifact> {
+): AsyncGenerator<SocketArtifact> {
   const req = https
     .request(`${API_V0_URL}/purl?alerts=true`, {
       method: 'POST',
@@ -93,11 +85,7 @@ export async function* batchScan(
   }
 }
 
-export function isAlertFixable(alert: SocketScanArtifactAlert): boolean {
-  return alert.type === 'socketUpgradeAvailable' || isAlertFixableCve(alert)
-}
-
-export function isAlertFixableCve(alert: SocketScanArtifactAlert): boolean {
+export function isArtifactAlertCveFixable(alert: SocketArtifactAlert): boolean {
   const { type } = alert
   return (
     (type === 'cve' ||
@@ -105,5 +93,11 @@ export function isAlertFixableCve(alert: SocketScanArtifactAlert): boolean {
       type === 'mildCVE' ||
       type === 'criticalCVE') &&
     !!alert.props?.['firstPatchedVersionIdentifier']
+  )
+}
+
+export function isArtifactAlertFixable(alert: SocketArtifactAlert): boolean {
+  return (
+    alert.type === 'socketUpgradeAvailable' || isArtifactAlertCveFixable(alert)
   )
 }
