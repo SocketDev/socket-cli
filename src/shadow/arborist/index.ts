@@ -10,6 +10,8 @@ import {
 } from '../npm-paths'
 
 export function installSafeArborist() {
+  // Override '@npmcli/arborist' module exports with patched variants based on
+  // https://github.com/npm/cli/pull/7025.
   const cache: { [key: string]: any } = require.cache
   cache[arboristClassPath] = { exports: SafeArborist }
   cache[arboristEdgeClassPath] = { exports: SafeEdge }
