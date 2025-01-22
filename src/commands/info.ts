@@ -19,7 +19,7 @@ import {
   getSocketDevPackageOverviewUrl
 } from '../utils/socket-url'
 
-import type { SocketAlert } from '../utils/alert/severity'
+import type { SocketSdkAlert } from '../utils/alert/severity'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
@@ -129,7 +129,7 @@ function setupCommand(
 
 interface PackageData {
   data: SocketSdkReturnType<'getIssuesByNPMPackage'>['data']
-  severityCount: Record<SocketAlert['severity'], number>
+  severityCount: Record<SocketSdkAlert['severity'], number>
   score: SocketSdkReturnType<'getScoreByNPMPackage'>['data']
 }
 

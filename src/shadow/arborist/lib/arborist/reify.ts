@@ -12,18 +12,26 @@ import {
 import { confirm } from '@socketsecurity/registry/lib/prompts'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { batchScan, isAlertFixable, isAlertFixableCve, walk } from './alerts'
 import { kCtorArgs, kRiskyReify } from './index'
+import { walk } from './walk'
 import constants from '../../../../constants'
 import { uxLookup } from '../../../../utils/alert/rules'
+import {
+  batchScan,
+  isAlertFixable,
+  isAlertFixableCve
+} from '../../../../utils/alert/scan'
 import { ColorOrMarkdown } from '../../../../utils/color-or-markdown'
 import { debugLog } from '../../../../utils/debug'
 import { getSocketDevPackageOverviewUrl } from '../../../../utils/socket-url'
 import { pacotePath } from '../../../npm-paths'
 import { Edge, SafeEdge } from '../edge'
 
-import type { InstallEffect, SocketArtifact } from './alerts'
 import type { ArboristClass, AuditAdvisory, SafeArborist } from './index'
+import type {
+  InstallEffect,
+  SocketScanArtifact
+} from '../../../../utils/alert/scan'
 import type { SafeNode } from '../node'
 import type { Writable } from 'node:stream'
 
@@ -163,7 +171,7 @@ async function getPackagesAlerts(
               p.existing?.startsWith(`${name}@`)
             )?.existing
             if (existing) {
-              const oldArtifact: SocketArtifact | undefined =
+              const oldArtifact: SocketScanArtifact | undefined =
                 // eslint-disable-next-line no-await-in-loop
                 (await batchScan([existing]).next()).value
               if (oldArtifact?.alerts?.length) {
@@ -364,7 +372,7 @@ export async function reify(
   this: SafeArborist,
   ...args: Parameters<InstanceType<ArboristClass>['reify']>
 ): Promise<SafeNode> {
-  const needInfoOn = await walk(this.diff)
+  const needInfoOn = walk(this.diff)
   if (
     !needInfoOn.length ||
     needInfoOn.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1
@@ -421,13 +429,9 @@ export async function reify(
         ret = await this[kRiskyReify](...args)
         await this.loadActual()
         await this.buildIdealTree()
-        alerts = await getPackagesAlerts(
-          this,
-          await walk(this.diff, { fix: true }),
-          {
-            fixable: true
-          }
-        )
+        alerts = await getPackagesAlerts(this, walk(this.diff, { fix: true }), {
+          fixable: true
+        })
         alerts = alerts.filter(a => {
           const { key } = a
           if (prev.has(key)) {
