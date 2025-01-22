@@ -13,7 +13,7 @@ import { confirm } from '@socketsecurity/registry/lib/prompts'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { kCtorArgs, kRiskyReify } from './index'
-import { walk } from './walk'
+import { getPackagesToQueryFromDiff } from './diff'
 import constants from '../../../../constants'
 import {
   batchScan,
@@ -370,7 +370,7 @@ export async function reify(
   this: SafeArborist,
   ...args: Parameters<InstanceType<ArboristClass>['reify']>
 ): Promise<SafeNode> {
-  const needInfoOn = walk(this.diff)
+  const needInfoOn = getPackagesToQueryFromDiff(this.diff)
   if (
     !needInfoOn.length ||
     needInfoOn.findIndex(c => c.repository_url === NPM_REGISTRY_URL) === -1
@@ -427,9 +427,13 @@ export async function reify(
         ret = await this[kRiskyReify](...args)
         await this.loadActual()
         await this.buildIdealTree()
-        alerts = await getPackagesAlerts(this, walk(this.diff, { fix: true }), {
-          fixable: true
-        })
+        alerts = await getPackagesAlerts(
+          this,
+          getPackagesToQueryFromDiff(this.diff, { includeUnchanged: true }),
+          {
+            fixable: true
+          }
+        )
         alerts = alerts.filter(a => {
           const { key } = a
           if (prev.has(key)) {

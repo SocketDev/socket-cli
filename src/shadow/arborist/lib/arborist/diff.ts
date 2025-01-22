@@ -12,29 +12,29 @@ function toRepoUrl(resolved: string): string {
   return ''
 }
 
-export type InstallEffect = {
+export type PackageDetail = {
   pkgid: SafeNode['pkgid']
   repository_url: string
   existing?: SafeNode['pkgid'] | undefined
 }
 
-export type WalkOptions = { fix?: boolean }
+type GetPackagesToQueryFromDiffOptions = { includeUnchanged?: boolean }
 
-export function walk(
+export function getPackagesToQueryFromDiff(
   diff_: Diff | null,
-  options?: WalkOptions
-): InstallEffect[] {
+  options?: GetPackagesToQueryFromDiffOptions
+): PackageDetail[] {
   const {
     // Lazily access constants.IPC.
-    fix = constants.IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
-  } = <WalkOptions>{
+    includeUnchanged = constants.IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
+  } = <GetPackagesToQueryFromDiffOptions>{
     __proto__: null,
     ...options
   }
-  const needInfoOn: InstallEffect[] = []
+  const details: PackageDetail[] = []
   // `diff_` is `null` when `npm install --package-lock-only` is passed.
   if (!diff_) {
-    return needInfoOn
+    return details
   }
   const queue: Diff[] = [...diff_.children]
   let pos = 0
@@ -70,7 +70,7 @@ export function walk(
         keep = action !== 'REMOVE'
       }
       if (keep && pkgNode?.resolved && (!oldNode || oldNode.resolved)) {
-        needInfoOn.push({
+        details.push({
           existing,
           pkgid: pkgNode.pkgid,
           repository_url: toRepoUrl(pkgNode.resolved)
@@ -81,16 +81,16 @@ export function walk(
       queue[queueLength++] = child
     }
   }
-  if (fix) {
+  if (includeUnchanged) {
     const { unchanged } = diff_!
     for (let i = 0, { length } = unchanged; i < length; i += 1) {
       const pkgNode = unchanged[i]!
-      needInfoOn.push({
+      details.push({
         existing: pkgNode.pkgid,
         pkgid: pkgNode.pkgid,
         repository_url: toRepoUrl(pkgNode.resolved!)
       })
     }
   }
-  return needInfoOn
+  return details
 }
