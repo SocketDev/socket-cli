@@ -3,22 +3,26 @@ import constants from '../../../../constants'
 import type { SafeNode } from '../node'
 import type { Diff } from '@npmcli/arborist'
 
-const { LOOP_SENTINEL, SOCKET_CLI_FIX_PACKAGE_LOCK_FILE } = constants
+const { LOOP_SENTINEL, NPM_REGISTRY_URL, SOCKET_CLI_FIX_PACKAGE_LOCK_FILE } =
+  constants
 
-function toRepoUrl(resolved: string): string {
+function getUrlOrigin(input: string): string {
   try {
-    return URL.parse(resolved)?.origin ?? ''
+    return URL.parse(input)?.origin ?? ''
   } catch {}
   return ''
 }
 
 export type PackageDetail = {
   pkgid: SafeNode['pkgid']
-  repository_url: string
+  origin: string
   existing?: SafeNode['pkgid'] | undefined
 }
 
-type GetPackagesToQueryFromDiffOptions = { includeUnchanged?: boolean }
+type GetPackagesToQueryFromDiffOptions = {
+  includeUnchanged?: boolean
+  includeUnknownOrigin?: boolean
+}
 
 export function getPackagesToQueryFromDiff(
   diff_: Diff | null,
@@ -26,7 +30,8 @@ export function getPackagesToQueryFromDiff(
 ): PackageDetail[] {
   const {
     // Lazily access constants.IPC.
-    includeUnchanged = constants.IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
+    includeUnchanged = constants.IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE],
+    includeUnknownOrigin = false
   } = <GetPackagesToQueryFromDiffOptions>{
     __proto__: null,
     ...options
@@ -70,11 +75,14 @@ export function getPackagesToQueryFromDiff(
         keep = action !== 'REMOVE'
       }
       if (keep && pkgNode?.resolved && (!oldNode || oldNode.resolved)) {
-        details.push({
-          existing,
-          pkgid: pkgNode.pkgid,
-          repository_url: toRepoUrl(pkgNode.resolved)
-        })
+        const origin = getUrlOrigin(pkgNode.resolved)
+        if (includeUnknownOrigin || origin === NPM_REGISTRY_URL) {
+          details.push({
+            pkgid: pkgNode.pkgid,
+            origin,
+            existing
+          })
+        }
       }
     }
     for (const child of diff.children) {
@@ -85,11 +93,15 @@ export function getPackagesToQueryFromDiff(
     const { unchanged } = diff_!
     for (let i = 0, { length } = unchanged; i < length; i += 1) {
       const pkgNode = unchanged[i]!
-      details.push({
-        existing: pkgNode.pkgid,
-        pkgid: pkgNode.pkgid,
-        repository_url: toRepoUrl(pkgNode.resolved!)
-      })
+      const origin = getUrlOrigin(pkgNode.resolved!)
+      if (includeUnknownOrigin || origin === NPM_REGISTRY_URL) {
+        const { pkgid } = pkgNode
+        details.push({
+          pkgid,
+          origin,
+          existing: pkgid
+        })
+      }
     }
   }
   return details
