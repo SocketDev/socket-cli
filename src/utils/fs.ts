@@ -1,8 +1,4 @@
-import {
-  promises as fs,
-  existsSync as fsExistsSync,
-  readFileSync as fsReadFileSync
-} from 'node:fs'
+import { promises as fs, readFileSync as fsReadFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -56,13 +52,6 @@ export async function readFileUtf8(
     ...options,
     encoding: 'utf8'
   })
-}
-
-export function safeExistsSync(filepath: PathLike | undefined): boolean {
-  try {
-    return filepath ? fsExistsSync(filepath) : false
-  } catch {}
-  return false
 }
 
 export function safeReadFile(
