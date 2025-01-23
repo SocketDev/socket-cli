@@ -10,6 +10,7 @@ import which from 'which'
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
+import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { findUp, readFileBinary, readFileUtf8 } from './fs'
@@ -33,11 +34,6 @@ const {
 export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
 export type Agent = (typeof AGENTS)[number]
 export type StringKeyValueObject = { [key: string]: string }
-
-const { compare: alphanumericComparator } = new Intl.Collator(undefined, {
-  numeric: true,
-  sensitivity: 'base'
-})
 
 const binByAgent = {
   __proto__: null,
@@ -246,7 +242,7 @@ export async function detect({
     if (Array.isArray(browserslistQuery)) {
       const browserslistTargets = browserslist(browserslistQuery)
         .map(s => s.toLowerCase())
-        .sort(alphanumericComparator)
+        .sort(naturalCompare)
       const browserslistNodeTargets = browserslistTargets
         .filter(v => v.startsWith('node '))
         .map(v => v.slice(5 /*'node '.length*/))
