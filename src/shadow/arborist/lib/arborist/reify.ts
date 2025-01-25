@@ -13,7 +13,7 @@ import { confirm } from '@socketsecurity/registry/lib/prompts'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { getPackagesToQueryFromDiff } from './diff'
-import { kCtorArgs, kRiskyReify } from './index'
+import { kRiskyReify } from './index'
 import constants from '../../../../constants'
 import {
   batchScan,
@@ -24,7 +24,6 @@ import { uxLookup } from '../../../../utils/alert/rules'
 import { ColorOrMarkdown } from '../../../../utils/color-or-markdown'
 import { debugLog } from '../../../../utils/debug'
 import { getSocketDevPackageOverviewUrl } from '../../../../utils/socket-url'
-import { pacotePath } from '../../../npm-paths'
 import { Edge, SafeEdge } from '../edge'
 
 import type { PackageDetail } from './diff'
@@ -42,8 +41,6 @@ type SocketPackageAlert = {
   fixable: boolean
   raw?: any
 }
-
-const pacote: typeof import('pacote') = require(pacotePath)
 
 const {
   LOOP_SENTINEL,
@@ -107,7 +104,7 @@ type GetPackageAlertsOptions = {
 }
 
 async function getPackagesAlerts(
-  safeArb: SafeArborist,
+  _safeArb: SafeArborist,
   details: PackageDetail[],
   options?: GetPackageAlertsOptions
 ): Promise<SocketPackageAlert[]> {
@@ -138,7 +135,6 @@ async function getPackagesAlerts(
       const name = resolvePackageName(<any>artifact)
       const id = `${name}@${artifact.version}`
 
-      let blocked = false
       let displayWarning = false
       let alerts: SocketPackageAlert[] = []
       for (const alert of artifact.alerts) {
@@ -147,9 +143,6 @@ async function getPackagesAlerts(
           package: { name, version },
           alert: { type: alert.type }
         })
-        if (ux.block) {
-          blocked = true
-        }
         if (ux.display && output) {
           displayWarning = true
         }
@@ -187,18 +180,6 @@ async function getPackagesAlerts(
               }
             }
           }
-        }
-      }
-      if (!blocked) {
-        if (details.find(d => d.pkgid === id)) {
-          await pacote.tarball.stream(
-            id,
-            stream => {
-              stream.resume()
-              return (stream as any).promise()
-            },
-            { ...(safeArb as any)[kCtorArgs][0] }
-          )
         }
       }
       if (displayWarning && spinner) {
