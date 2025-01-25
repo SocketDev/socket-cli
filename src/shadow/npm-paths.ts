@@ -38,4 +38,3 @@ export const arboristOverrideSetClassPath = path.join(
   arboristPkgPath,
   'lib/override-set.js'
 )
-export const pacotePath = path.join(npmNmPath, 'pacote')
