@@ -1,6 +1,7 @@
 import { reify } from './reify'
 import { arboristClassPath } from '../../../npm-paths'
 
+import type { SafeDiff } from './diff'
 import type { SafeNode } from '../node'
 import type {
   Options as ArboristOptions,
@@ -16,10 +17,12 @@ export type ArboristClass = ArboristInstance & {
 
 export type ArboristInstance = Omit<
   typeof BaseArborist,
-  'auditReport' | 'idealTree' | 'reify'
+  'actualTree' | 'auditReport' | 'diff' | 'idealTree' | 'reify'
 > & {
-  auditReport?: AuditReportInstance | null
-  idealTree: SafeNode | null
+  auditReport?: AuditReportInstance | null | undefined
+  actualTree?: SafeNode | null | undefined
+  diff: SafeDiff | null
+  idealTree?: SafeNode | null | undefined
   reify(options?: ArboristReifyOptions): Promise<SafeNode>
 }
 
@@ -93,8 +96,6 @@ export class SafeArborist extends Arborist {
     options.dryRun = true
     options.save = false
     options.saveBundle = false
-    // TODO: Make this deal with any refactor to private fields by punching the
-    // class itself.
     await super.reify(...args)
     options.dryRun = old.dryRun
     options.save = old.save

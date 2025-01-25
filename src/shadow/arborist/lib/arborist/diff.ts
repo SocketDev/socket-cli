@@ -1,7 +1,29 @@
 import constants from '../../../../constants'
 
 import type { SafeNode } from '../node'
-import type { Diff } from '@npmcli/arborist'
+import type { Diff as BaseDiff } from '@npmcli/arborist'
+
+export type SafeDiff = Omit<
+  BaseDiff,
+  | 'actual'
+  | 'children'
+  | 'filterSet'
+  | 'ideal'
+  | 'leaves'
+  | 'removed'
+  | 'shrinkwrapInflated'
+  | 'unchanged'
+> & {
+  actual: SafeNode
+  children: SafeDiff[]
+  filterSet: Set<SafeNode>
+  ideal: SafeNode
+  leaves: SafeNode[]
+  parent: SafeDiff | null
+  removed: SafeNode[]
+  shrinkwrapInflated: Set<SafeNode>
+  unchanged: SafeNode[]
+}
 
 const { LOOP_SENTINEL, NPM_REGISTRY_URL, SOCKET_CLI_FIX_PACKAGE_LOCK_FILE } =
   constants
@@ -14,9 +36,9 @@ function getUrlOrigin(input: string): string {
 }
 
 export type PackageDetail = {
-  pkgid: SafeNode['pkgid']
+  node: SafeNode
   origin: string
-  existing?: SafeNode['pkgid'] | undefined
+  existing?: SafeNode | undefined
 }
 
 type GetPackagesToQueryFromDiffOptions = {
@@ -25,7 +47,7 @@ type GetPackagesToQueryFromDiffOptions = {
 }
 
 export function getPackagesToQueryFromDiff(
-  diff_: Diff | null,
+  diff_: SafeDiff | null,
   options?: GetPackagesToQueryFromDiffOptions
 ): PackageDetail[] {
   const {
@@ -41,7 +63,7 @@ export function getPackagesToQueryFromDiff(
   if (!diff_) {
     return details
   }
-  const queue: Diff[] = [...diff_.children]
+  const queue: SafeDiff[] = [...diff_.children]
   let pos = 0
   let { length: queueLength } = queue
   while (pos < queueLength) {
@@ -56,7 +78,7 @@ export function getPackagesToQueryFromDiff(
       // The `oldNode`, i.e. the `actual` node, will be `undefined` if the diff
       // action is 'ADD'.
       const { actual: oldNode, ideal: pkgNode } = diff
-      let existing
+      let existing: SafeNode | undefined
       let keep = false
       if (action === 'CHANGE') {
         if (pkgNode?.package.version !== oldNode?.package.version) {
@@ -65,7 +87,7 @@ export function getPackagesToQueryFromDiff(
             oldNode?.package.name &&
             oldNode.package.name === pkgNode?.package.name
           ) {
-            existing = oldNode.pkgid
+            existing = oldNode
           }
         } else {
           // TODO: Add proper debug mode.
@@ -78,7 +100,7 @@ export function getPackagesToQueryFromDiff(
         const origin = getUrlOrigin(pkgNode.resolved)
         if (includeUnknownOrigin || origin === NPM_REGISTRY_URL) {
           details.push({
-            pkgid: pkgNode.pkgid,
+            node: pkgNode,
             origin,
             existing
           })
@@ -95,11 +117,10 @@ export function getPackagesToQueryFromDiff(
       const pkgNode = unchanged[i]!
       const origin = getUrlOrigin(pkgNode.resolved!)
       if (includeUnknownOrigin || origin === NPM_REGISTRY_URL) {
-        const { pkgid } = pkgNode
         details.push({
-          pkgid,
+          node: pkgNode,
           origin,
-          existing: pkgid
+          existing: pkgNode
         })
       }
     }
