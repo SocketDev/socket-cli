@@ -4,6 +4,8 @@ import process from 'node:process'
 import semver from 'semver'
 
 import { getManifestData } from '@socketsecurity/registry'
+// eslint-disable-next-line import-x/no-unresolved
+import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import {
   fetchPackagePackument,
@@ -76,25 +78,25 @@ function findBestPatchVersion(
   return semver.maxSatisfying(eligibleVersions, '*')
 }
 
-function findPackage(tree: SafeNode, packageName: string): SafeNode | null {
+function findPackageNodes(tree: SafeNode, packageName: string): SafeNode[] {
   const queue: { node: typeof tree }[] = [{ node: tree }]
+  const matches: SafeNode[] = []
   let sentinel = 0
   while (queue.length) {
     if (sentinel++ === LOOP_SENTINEL) {
-      throw new Error('Detected infinite loop in findPackage')
+      throw new Error('Detected infinite loop in findPackageNodes')
     }
     const { node: currentNode } = queue.pop()!
     const node = currentNode.children.get(packageName)
     if (node) {
-      // Found package.
-      return (<unknown>node) as SafeNode
+      matches.push((<unknown>node) as SafeNode)
     }
     const children = [...currentNode.children.values()]
     for (let i = children.length - 1; i >= 0; i -= 1) {
       queue.push({ node: (<unknown>children[i]) as SafeNode })
     }
   }
-  return null
+  return matches
 }
 
 type GetPackageAlertsOptions = {
@@ -104,7 +106,6 @@ type GetPackageAlertsOptions = {
 }
 
 async function getPackagesAlerts(
-  _safeArb: SafeArborist,
   details: PackageDetail[],
   options?: GetPackageAlertsOptions
 ): Promise<SocketPackageAlert[]> {
@@ -127,7 +128,9 @@ async function getPackagesAlerts(
     : () => ''
   spinner?.start(getText())
   try {
-    for await (const artifact of batchScan(details.map(d => d.pkgid))) {
+    for await (const artifact of batchScan(
+      arrayUnique(details.map(d => d.node.pkgid))
+    )) {
       if (!artifact.name || !artifact.version || !artifact.alerts?.length) {
         continue
       }
@@ -167,15 +170,15 @@ async function getPackagesAlerts(
             // Before we ask about problematic issues, check to see if they
             // already existed in the old version if they did, be quiet.
             const existing = details.find(d =>
-              d.existing?.startsWith(`${name}@`)
+              d.existing?.pkgid.startsWith(`${name}@`)
             )?.existing
             if (existing) {
               const oldArtifact: SocketArtifact | undefined =
                 // eslint-disable-next-line no-await-in-loop
-                (await batchScan([existing]).next()).value
+                (await batchScan([existing.pkgid]).next()).value
               if (oldArtifact?.alerts?.length) {
                 alerts = alerts.filter(
-                  ({ type }) => !oldArtifact.alerts?.find(a => a.type === type)
+                  ({ type }) => !oldArtifact.alerts!.find(a => a.type === type)
                 )
               }
             }
@@ -237,21 +240,24 @@ function getTranslations() {
   return _translations!
 }
 
-function packageAlertsToReport(alerts: SocketPackageAlert[]) {
-  let report: { [dependency: string]: AuditAdvisory[] } | null = null
+async function updateAdvisoryDependencies(
+  arb: SafeArborist,
+  alerts: SocketPackageAlert[]
+) {
+  let alertsByPkg: { [key: string]: AuditAdvisory[] } | undefined
   for (const alert of alerts) {
     if (!isArtifactAlertCveFixable(alert.raw)) {
       continue
     }
-    const { name } = alert
-    if (!report) {
-      report = {}
+    if (!alertsByPkg) {
+      alertsByPkg = {}
     }
-    if (!report[name]) {
-      report[name] = []
+    const { name } = alert
+    if (!alertsByPkg[name]) {
+      alertsByPkg[name] = []
     }
     const props = alert.raw?.props
-    report[name]!.push(<AuditAdvisory>{
+    alertsByPkg[name]!.push(<AuditAdvisory>{
       id: -1,
       url: props?.url,
       title: props?.title,
@@ -262,92 +268,80 @@ function packageAlertsToReport(alerts: SocketPackageAlert[]) {
       name
     })
   }
-  return report
-}
-
-async function updateAdvisoryDependencies(
-  arb: SafeArborist,
-  alerts: SocketPackageAlert[]
-) {
-  const report = packageAlertsToReport(alerts)
-  if (!report) {
+  if (!alertsByPkg) {
     // No advisories to process.
     return
   }
   await arb.buildIdealTree()
   const tree = arb.idealTree!
-
-  for (const name of Object.keys(report)) {
-    const advisories = report[name]!
-    const node = findPackage(tree, name)
-    if (!node) {
-      // Package not found in the tree.
+  for (const name of Object.keys(alertsByPkg)) {
+    const nodes = findPackageNodes(tree, name)
+    if (!nodes.length) {
       continue
     }
-
-    const { version } = node
-    const majorVerNum = semver.major(version)
-
     // Fetch packument to get available versions.
     // eslint-disable-next-line no-await-in-loop
     const packument = await fetchPackagePackument(name)
-    const availableVersions = packument ? Object.keys(packument.versions) : []
-
-    for (const advisory of advisories) {
-      const { vulnerable_versions } = advisory
-      // Find the highest non-vulnerable version within the same major range
-      const targetVersion = findBestPatchVersion(
-        name,
-        availableVersions,
-        majorVerNum,
-        vulnerable_versions
-      )
-      const targetPackument = targetVersion
-        ? packument.versions[targetVersion]
-        : undefined
-      // Check !targetVersion to make TypeScript happy.
-      if (!targetVersion || !targetPackument) {
-        // No suitable patch version found.
-        continue
-      }
-
-      // Use Object.defineProperty to override the version.
-      Object.defineProperty(node, 'version', {
-        configurable: true,
-        enumerable: true,
-        get: () => targetVersion
-      })
-      node.package.version = targetVersion
-      // Update resolved and clear integrity for the new version.
-      node.resolved = `${NPM_REGISTRY_URL}/${name}/-/${name}-${targetVersion}.tgz`
-      if (node.integrity) {
-        delete node.integrity
-      }
-      if ('deprecated' in targetPackument) {
-        node.package['deprecated'] = <string>targetPackument.deprecated
-      } else {
-        delete node.package['deprecated']
-      }
-      const newDeps = { ...targetPackument.dependencies }
-      const { dependencies: oldDeps } = node.package
-      node.package.dependencies = newDeps
-      if (oldDeps) {
-        for (const oldDepName of Object.keys(oldDeps)) {
-          if (!hasOwn(newDeps, oldDepName)) {
-            node.edgesOut.get(oldDepName)?.detach()
+    for (const node of nodes) {
+      const { version } = node
+      const majorVerNum = semver.major(version)
+      const availableVersions = packument ? Object.keys(packument.versions) : []
+      const pkgAlerts = alertsByPkg[name]!
+      for (const alert of pkgAlerts) {
+        const { vulnerable_versions } = alert
+        // Find the highest non-vulnerable version within the same major range
+        const targetVersion = findBestPatchVersion(
+          name,
+          availableVersions,
+          majorVerNum,
+          vulnerable_versions
+        )
+        const targetPackument = targetVersion
+          ? packument.versions[targetVersion]
+          : undefined
+        // Check !targetVersion to make TypeScript happy.
+        if (!targetVersion || !targetPackument) {
+          // No suitable patch version found.
+          continue
+        }
+        // Use Object.defineProperty to override the version.
+        Object.defineProperty(node, 'version', {
+          configurable: true,
+          enumerable: true,
+          get: () => targetVersion
+        })
+        node.package.version = targetVersion
+        // Update resolved and clear integrity for the new version.
+        node.resolved = `${NPM_REGISTRY_URL}/${name}/-/${name}-${targetVersion}.tgz`
+        if (node.integrity) {
+          delete node.integrity
+        }
+        if ('deprecated' in targetPackument) {
+          node.package['deprecated'] = <string>targetPackument.deprecated
+        } else {
+          delete node.package['deprecated']
+        }
+        const newDeps = { ...targetPackument.dependencies }
+        const { dependencies: oldDeps } = node.package
+        node.package.dependencies = newDeps
+        if (oldDeps) {
+          for (const oldDepName of Object.keys(oldDeps)) {
+            if (!hasOwn(newDeps, oldDepName)) {
+              node.edgesOut.get(oldDepName)?.detach()
+            }
           }
         }
-      }
-      for (const newDepName of Object.keys(newDeps)) {
-        if (!hasOwn(oldDeps, newDepName)) {
-          node.addEdgeOut(
-            (<unknown>new Edge({
-              from: node,
-              name: newDepName,
-              spec: newDeps[newDepName],
-              type: 'prod'
-            })) as SafeEdge
-          )
+        for (const newDepName of Object.keys(newDeps)) {
+          if (!hasOwn(oldDeps, newDepName)) {
+            node.addEdgeOut(
+              (<unknown>new Edge({
+                from: node,
+                name: newDepName,
+                spec: newDeps[newDepName],
+                type: 'prod'
+              })) as SafeEdge
+            )
+          }
         }
       }
     }
@@ -358,6 +352,8 @@ export async function reify(
   this: SafeArborist,
   ...args: Parameters<InstanceType<ArboristClass>['reify']>
 ): Promise<SafeNode> {
+  // We are assuming `this[_diffTrees]()` has been called by `super.reify(...)`:
+  // https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/reify.js#L141
   const needInfoOn = getPackagesToQueryFromDiff(this.diff)
   if (!needInfoOn.length) {
     // Nothing to check, hmmm already installed or all private?
@@ -369,71 +365,67 @@ export async function reify(
     [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: bypassAlerts
   } = constants.IPC
   const { stderr: output, stdin: input } = process
-
-  let alerts: SocketPackageAlert[] | undefined
-  const proceed =
-    bypassAlerts ||
-    (await (async () => {
-      alerts = await getPackagesAlerts(this, needInfoOn, { output })
-      if (bypassConfirms || !alerts.length) {
-        return true
+  let alerts: SocketPackageAlert[] = bypassAlerts
+    ? []
+    : await getPackagesAlerts(needInfoOn, { output })
+  if (
+    alerts.length &&
+    !bypassConfirms &&
+    !(await confirm(
+      {
+        message: 'Accept risks of installing these packages?',
+        default: false
+      },
+      {
+        input,
+        output,
+        signal: abortSignal
       }
-      return await confirm(
+    ))
+  ) {
+    throw new Error('Socket npm exiting due to risks')
+  }
+  if (
+    !alerts.length ||
+    (!bypassConfirms &&
+      !(await confirm(
         {
-          message: 'Accept risks of installing these packages?',
-          default: false
+          message: 'Try to fix alerts?',
+          default: true
         },
         {
           input,
           output,
           signal: abortSignal
         }
-      )
-    })())
-  if (proceed) {
-    const fix = !!alerts?.length && bypassConfirms /*||
-        (await confirm(
-          {
-            message: 'Try to fix alerts?',
-            default: true
-          },
-          {
-            input,
-            output,
-            signal: abortSignal
-          }
-        ))*/
-    if (fix) {
-      let ret: SafeNode | undefined
-      const prev = new Set(alerts?.map(a => a.key))
-      /* eslint-disable no-await-in-loop */
-      while (alerts!.length > 0) {
-        await updateAdvisoryDependencies(this, alerts!)
-        ret = await this[kRiskyReify](...args)
-        await this.loadActual()
-        await this.buildIdealTree()
-        alerts = (
-          await getPackagesAlerts(
-            this,
-            getPackagesToQueryFromDiff(this.diff, { includeUnchanged: true }),
-            {
-              includeExisting: true,
-              includeUnfixable: true
-            }
-          )
-        ).filter(({ key }) => {
-          if (prev.has(key)) {
-            return false
-          }
-          prev.add(key)
-          return true
-        })
-      }
-      /* eslint-enable no-await-in-loop */
-      return ret!
-    }
+      )))
+  ) {
     return await this[kRiskyReify](...args)
-  } else {
-    throw new Error('Socket npm exiting due to risks')
   }
+  const prev = new Set(alerts.map(a => a.key))
+  let ret: SafeNode | undefined
+  /* eslint-disable no-await-in-loop */
+  while (alerts.length > 0) {
+    await updateAdvisoryDependencies(this, alerts)
+    ret = await this[kRiskyReify](...args)
+    await this.loadActual()
+    await this.buildIdealTree()
+    alerts = (
+      await getPackagesAlerts(
+        getPackagesToQueryFromDiff(this.diff, { includeUnchanged: true }),
+        {
+          includeExisting: true,
+          includeUnfixable: true
+        }
+      )
+    ).filter(({ key }) => {
+      if (prev.has(key)) {
+        return false
+      }
+      prev.add(key)
+      return true
+    })
+  }
+  /* eslint-enable no-await-in-loop */
+  return ret!
 }
