@@ -100,7 +100,8 @@ function getImportXFlatConfigs(isEsm) {
         // TypeScript compilation already ensures that named imports exist in
         // the referenced module.
         'import-x/named': 'off',
-        'import-x/no-named-as-default-member': 'off'
+        'import-x/no-named-as-default-member': 'off',
+        'import-x/no-unresolved': 'off'
       }
     }
   }
@@ -121,16 +122,8 @@ module.exports = [
     ...importFlatConfigsForModule.recommended
   },
   {
-    files: ['src/**/*.ts'],
+    files: ['src/**/*.ts', 'test/**/*.ts'],
     ...importFlatConfigsForModule.typescript
-  },
-  {
-    files: ['test/**/*.ts'],
-    ...importFlatConfigsForModule.typescript,
-    rules: {
-      ...importFlatConfigsForModule.typescript.rules,
-      'import-x/no-unresolved': 'off'
-    }
   },
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
