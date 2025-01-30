@@ -7,7 +7,7 @@ import micromatch from 'micromatch'
 import { getDefaultToken } from '../../utils/sdk'
 import { Core } from './core'
 import { GitHub } from './core/github'
-import { SCMComments } from './core/scm_comments'
+import * as SCMComments from './core/scm_comments'
 import { Messages } from './core/messages'
 
 const socket = new SocketSdk(getDefaultToken()!)

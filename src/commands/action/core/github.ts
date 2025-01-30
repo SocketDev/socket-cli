@@ -1,7 +1,8 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/github.py
 import { Octokit } from '@octokit/rest'
 import { Comment } from './classes'
-import { SCMComments, SocketComments } from './scm_comments'
+
+import * as SCMComments from './scm_comments'
 
 export class GitHub {
   octokit: Octokit = new Octokit()
@@ -59,7 +60,7 @@ export class GitHub {
     }
   }
 
-  async getCommentsForPR(): Promise<SocketComments> {
+  async getCommentsForPR(): Promise<SCMComments.SocketComments> {
     const { data: githubComments } =
       await this.octokit.rest.issues.listComments({
         owner: this.owner,
@@ -105,7 +106,11 @@ export class GitHub {
     })
   }
 
-  async handleIgnoreReactons({ comments }: { comments: SocketComments }) {
+  async handleIgnoreReactons({
+    comments
+  }: {
+    comments: SCMComments.SocketComments
+  }) {
     for (const ignoreComment of comments.ignore) {
       if (
         ignoreComment.body?.includes('SocketSecurity ignore') &&
@@ -127,7 +132,7 @@ export class GitHub {
     })
   }
 
-  removeCommentAlerts({ comments }: { comments: SocketComments }) {
+  removeCommentAlerts({ comments }: { comments: SCMComments.SocketComments }) {
     const securityAlert = comments.security
     if (securityAlert !== undefined) {
       const newBody = SCMComments.processSecurityComment({
@@ -157,7 +162,7 @@ export class GitHub {
   }: {
     securityComment: string
     overviewComment: string
-    comments: SocketComments
+    comments: SCMComments.SocketComments
     newSecurityComment: boolean
     newOverviewComment: boolean
   }): Promise<void> {
