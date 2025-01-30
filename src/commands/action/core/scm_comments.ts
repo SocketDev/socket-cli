@@ -1,3 +1,4 @@
+// https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/scm_comments.py
 import { Comment, Issue } from './classes'
 
 export type SocketComments = {

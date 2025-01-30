@@ -1,3 +1,4 @@
+// https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/__init__.py
 import { SocketSdk } from '@socketsecurity/sdk'
 import { Diff, FullScan, Issue, Package, Purl } from './classes'
 import type { components, operations } from '@socketsecurity/sdk/types/api.d.ts'
@@ -27,7 +28,6 @@ export class Core {
     this.files = []
   }
 
-  // OK
   async getSbomData({
     fullScanId
   }: {
@@ -54,7 +54,6 @@ export class Core {
     return sbomArtifacts
   }
 
-  // OK
   async createFullScan({
     params
   }: {
@@ -62,7 +61,7 @@ export class Core {
   }): Promise<FullScan> {
     const orgFullScanResponse = await this.socket.createOrgFullScan(
       this.owner,
-      // pull_request is of type number but URLSearchParams will convert it to a string
+      // Ignoring because pull_request is of type number but URLSearchParams will convert it to a string
       // @ts-ignore
       new URLSearchParams({ repo: this.repo, ...params }),
       this.files
@@ -80,7 +79,6 @@ export class Core {
     return fullScan
   }
 
-  // OK
   getSourceData({
     pkg,
     packages
@@ -114,7 +112,6 @@ export class Core {
     return introducedBy
   }
 
-  // OK
   createPurl({
     packageId,
     packages
@@ -140,7 +137,6 @@ export class Core {
     return { purl, pkg }
   }
 
-  // OK
   async createIssueAlerts({
     pkg,
     alerts,
@@ -212,7 +208,6 @@ export class Core {
     return alerts
   }
 
-  // OK
   compareIssueAlerts({
     newScanAlerts,
     headScanAlerts,
@@ -260,7 +255,6 @@ export class Core {
     return alerts
   }
 
-  // OK
   checkAlertCapabilities({
     pkg,
     capabilities,
@@ -299,7 +293,6 @@ export class Core {
     return capabilities
   }
 
-  // OK
   compareCapabilities({
     newPackages,
     headPackages
@@ -336,7 +329,6 @@ export class Core {
     return capabilities
   }
 
-  // OK
   addCapabilitiesToPurl(diff: Diff): Diff {
     const newPackages: Purl[] = []
 
@@ -463,7 +455,6 @@ export class Core {
     return pkg
   }
 
-  // OK
   createSbomDict(
     sbomArtifacts: Awaited<ReturnType<typeof this.getSbomData>>
   ): Record<string, Package> {

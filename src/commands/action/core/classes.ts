@@ -1,3 +1,4 @@
+// https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/classes.py
 import { components } from '@socketsecurity/sdk/types/api'
 
 type IntroducedBy = [string, string][]

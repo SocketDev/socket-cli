@@ -1,3 +1,4 @@
+// https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/github.py
 import { Octokit } from '@octokit/rest'
 import { Comment } from './classes'
 import { SCMComments, SocketComments } from './scm_comments'
@@ -29,9 +30,12 @@ export class GitHub {
         return this.prNumber ? 'diff' : 'main'
 
       case 'pull_request':
-        // Provided by github.event.action, add this code below to GitHub action
-        //  if: github.event_name == 'pull_request'
-        //  run: echo "EVENT_ACTION=${{ github.event.action }}" >> $GITHUB_ENV
+        // This env variable needs to be set in the GitHub action.
+        // Add this code below to GitHub action:
+        // - steps:
+        //   - name: Get PR State
+        //     if: github.event_name == 'pull_request'
+        //     run: echo "EVENT_ACTION=${{ github.event.action }}" >> $GITHUB_ENV
         const eventAction = process.env['EVENT_ACTION']
 
         if (!eventAction) {
@@ -82,7 +86,6 @@ export class GitHub {
   }: {
     commentId: number
   }): Promise<boolean> {
-    // Fetch reactions for the specified comment
     const { data } = await this.octokit.reactions.listForIssueComment({
       owner: this.owner,
       repo: this.repo,

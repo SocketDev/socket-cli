@@ -1,12 +1,12 @@
+// https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/messages.py
 import { Diff, Issue, Purl } from './classes'
 
 export class Messages {
-  // OK
-  createSecurityCommentJSON({ diff }: { diff: Diff }) {
+  static createSecurityCommentJSON({ diff }: { diff: Diff }) {
     let scanFailed = false
 
     if (diff.newAlerts.length === 0) {
-      // TODO: unreachable code
+      // FIXME: unreachable code
       for (const alert of diff.newAlerts) {
         if (alert.error) {
           scanFailed = true
@@ -31,13 +31,11 @@ export class Messages {
     return output
   }
 
-  // OK
   static createPurlLink(purl: Purl): string {
     const packageUrl = `[${purl.purl}](${purl.url})`
     return packageUrl
   }
 
-  // OK
   static createAddedTable(diff: Diff): string {
     const overviewTable = [
       'Package',
@@ -72,7 +70,6 @@ export class Messages {
     return md
   }
 
-  // OK
   static createRemoveLine(diff: Diff): string {
     const removedLine = ['Removed packages:']
     for (const removed of diff.removedPackages) {
@@ -82,7 +79,6 @@ export class Messages {
     return removedLine.join(', ')
   }
 
-  // OK
   static dependencyOverviewTemplate(diff: Diff): string {
     let md = ''
     md += '<!-- socket-overview-comment-actions -->\n'
@@ -96,7 +92,6 @@ export class Messages {
     return md
   }
 
-  // OK
   static createSources(alert: Issue): [string, string] {
     const sources: string[] = []
     const manifests: string[] = []
@@ -117,7 +112,6 @@ export class Messages {
     return [manifestStr, sourcesStr]
   }
 
-  // OK
   static createSecurityAlertTable(diff: Diff): {
     ignoreCommands: string[]
     nextSteps: Record<string, string[]>
@@ -165,7 +159,6 @@ export class Messages {
     return { ignoreCommands, nextSteps, mdTable: md }
   }
 
-  // OK
   static createNextSteps(nextSteps: Record<string, string[]>): string {
     let md = ''
     for (const step in nextSteps) {
@@ -180,7 +173,6 @@ export class Messages {
     return md
   }
 
-  // OK
   static createDeeperLook(): string {
     let md = ''
     md += '<details>\n'
@@ -191,7 +183,6 @@ export class Messages {
     return md
   }
 
-  // OK
   static createRemovePackage(): string {
     let md = ''
     md += '<details>\n'
@@ -202,7 +193,6 @@ export class Messages {
     return md
   }
 
-  // OK
   static createAcceptableRisk(ignoreCommands: string[]): string {
     let md = ''
     md += '<details>\n'
@@ -218,7 +208,6 @@ export class Messages {
     return md
   }
 
-  // OK
   static securityCommentTemplate(diff: Diff): string {
     let md = ''
     md += '<!-- socket-security-comment-actions -->\n'
