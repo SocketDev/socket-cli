@@ -1,12 +1,16 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/__init__.py
-// eslint-disable no-await-in-loop
-import { SocketSdk } from '@socketsecurity/sdk'
-import { Diff, FullScan, Issue, Package, Purl } from './classes'
-import type { components, operations } from '@socketsecurity/sdk/types/api.d.ts'
-import ndjson from 'ndjson'
+/* eslint-disable no-await-in-loop */
 import { once } from 'node:events'
 import fs from 'node:fs'
 import path from 'node:path'
+
+import ndjson from 'ndjson'
+
+import { SocketSdk } from '@socketsecurity/sdk'
+
+import { Diff, FullScan, Issue, Package, Purl } from './classes'
+
+import type { components, operations } from '@socketsecurity/sdk/types/api.d.ts'
 
 export class Core {
   socket: SocketSdk
@@ -19,9 +23,9 @@ export class Core {
   > = {}
 
   constructor({
-    socket,
     owner,
-    repo
+    repo,
+    socket
   }: Pick<Core, 'socket' | 'owner' | 'repo' | 'files'>) {
     this.socket = socket
     this.owner = owner
@@ -81,8 +85,8 @@ export class Core {
   }
 
   getSourceData({
-    pkg,
-    packages
+    packages,
+    pkg
   }: {
     pkg: Package
     packages: Record<string, Package>
@@ -139,9 +143,9 @@ export class Core {
   }
 
   async createIssueAlerts({
-    pkg,
     alerts,
-    packages
+    packages,
+    pkg
   }: {
     pkg: Package
     alerts: Record<string, Issue[]>
@@ -210,9 +214,9 @@ export class Core {
   }
 
   compareIssueAlerts({
-    newScanAlerts,
+    alerts,
     headScanAlerts,
-    alerts
+    newScanAlerts
   }: {
     newScanAlerts: Record<string, Issue[]>
     headScanAlerts: Record<string, Issue[]>
@@ -257,10 +261,10 @@ export class Core {
   }
 
   checkAlertCapabilities({
-    pkg,
     capabilities,
+    headPackage,
     packageId,
-    headPackage
+    pkg
   }: {
     pkg: Package
     capabilities: Record<string, string[]>
@@ -295,8 +299,8 @@ export class Core {
   }
 
   compareCapabilities({
-    newPackages,
-    headPackages
+    headPackages,
+    newPackages
   }: {
     newPackages: Record<string, Package>
     headPackages: Record<string, Package>
@@ -351,8 +355,8 @@ export class Core {
   }
 
   async compareSBOMs({
-    newScan,
-    headScan
+    headScan,
+    newScan
   }: {
     newScan: Awaited<ReturnType<Core['getSbomData']>>
     headScan: Awaited<ReturnType<Core['getSbomData']>>
@@ -366,7 +370,7 @@ export class Core {
     const consolidated = new Set()
 
     for (const packageId in newPackages) {
-      const { purl, pkg } = this.createPurl({
+      const { pkg, purl } = this.createPurl({
         packageId,
         packages: newPackages
       })
@@ -389,7 +393,7 @@ export class Core {
     }
 
     for (const packageId in headPackages) {
-      const { purl, pkg } = this.createPurl({
+      const { pkg, purl } = this.createPurl({
         packageId,
         packages: headPackages
       })

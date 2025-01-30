@@ -1,8 +1,8 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/github.py
-// eslint-disable no-await-in-loop
+/* eslint-disable no-await-in-loop */
 import { Octokit } from '@octokit/rest'
-import { Comment } from './classes'
 
+import { Comment } from './classes'
 import * as SCMComments from './scm_comments'
 
 export class GitHub {
@@ -115,16 +115,16 @@ export class GitHub {
     for (const ignoreComment of comments.ignore) {
       if (
         ignoreComment.body?.includes('SocketSecurity ignore') &&
-        !this.commentReactionExists({
+        !(await this.commentReactionExists({
           commentId: ignoreComment.id
-        })
+        }))
       ) {
         await this.postReaction({ commentId: ignoreComment.id })
       }
     }
   }
 
-  async updateComment({ id, body }: { id: number; body: string }) {
+  async updateComment({ body, id }: { id: number; body: string }) {
     await this.octokit.issues.updateComment({
       owner: this.owner,
       repo: this.repo,
@@ -133,15 +133,15 @@ export class GitHub {
     })
   }
 
-  removeCommentAlerts({ comments }: { comments: SCMComments.SocketComments }) {
+  async removeCommentAlerts({ comments }: { comments: SCMComments.SocketComments }) {
     const securityAlert = comments.security
     if (securityAlert !== undefined) {
       const newBody = SCMComments.processSecurityComment({
         security: comments.security,
         ignore: comments.ignore
       })
-      this.handleIgnoreReactons({ comments })
-      this.updateComment({ id: securityAlert.id, body: newBody })
+      await this.handleIgnoreReactons({ comments })
+      await this.updateComment({ id: securityAlert.id, body: newBody })
     }
   }
 
@@ -155,11 +155,11 @@ export class GitHub {
   }
 
   async addSocketComments({
-    securityComment,
-    overviewComment,
     comments,
+    newOverviewComment,
     newSecurityComment,
-    newOverviewComment
+    overviewComment,
+    securityComment
   }: {
     securityComment: string
     overviewComment: string

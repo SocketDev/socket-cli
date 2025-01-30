@@ -4,15 +4,8 @@ import { Diff, Issue, Purl } from './classes'
 export function createSecurityCommentJSON({ diff }: { diff: Diff }) {
   let scanFailed = false
 
-  if (diff.newAlerts.length === 0) {
-    // FIXME: unreachable code
-    for (const alert of diff.newAlerts) {
-      if (alert.error) {
-        scanFailed = true
-        break
-      }
-    }
-  }
+  // Not porting this code because it's unreachable
+  // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/messages.py#L13-L18
 
   const output: {
     scanFailed: boolean
@@ -216,7 +209,7 @@ export function securityCommentTemplate(diff: Diff): string {
   md +=
     'To accept the risk, merge this PR and you will not be notified again.\n\n'
   md += '<!-- start-socket-alerts-table -->\n'
-  const { ignoreCommands, nextSteps, mdTable } = createSecurityAlertTable(diff)
+  const { ignoreCommands, mdTable, nextSteps } = createSecurityAlertTable(diff)
   md += mdTable
   md += '<!-- end-socket-alerts-table -->\n\n'
   md += createNextSteps(nextSteps)

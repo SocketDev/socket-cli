@@ -1,14 +1,17 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/socketcli.py
 import { parseArgs } from 'util'
-import { CliSubcommand } from '../../utils/meow-with-subcommands'
-import { simpleGit } from 'simple-git'
-import { SocketSdk } from '@socketsecurity/sdk'
+
 import micromatch from 'micromatch'
-import { getDefaultToken } from '../../utils/sdk'
+import { simpleGit } from 'simple-git'
+
+import { SocketSdk } from '@socketsecurity/sdk'
+
 import { Core } from './core'
 import { GitHub } from './core/github'
-import * as SCMComments from './core/scm_comments'
 import * as Messages from './core/messages'
+import * as SCMComments from './core/scm_comments'
+import { CliSubcommand } from '../../utils/meow-with-subcommands'
+import { getDefaultToken } from '../../utils/sdk'
 
 const socket = new SocketSdk(getDefaultToken()!)
 
@@ -58,7 +61,7 @@ export const action: CliSubcommand = {
     if (scm.checkEventType() === 'comment') {
       console.log('Comment initiated flow')
       const comments = await scm.getCommentsForPR()
-      scm.removeCommentAlerts({ comments })
+      await scm.removeCommentAlerts({ comments })
     } else if (scm.checkEventType() === 'diff') {
       console.log('Push initiated flow')
       const core = new Core({ owner: scm.owner, repo: scm.repo, files, socket })
@@ -92,7 +95,7 @@ export const action: CliSubcommand = {
           console.log('Updated overview comment with no dependencies')
         }
       }
-      scm.addSocketComments({
+      await scm.addSocketComments({
         securityComment,
         overviewComment,
         comments,

@@ -65,8 +65,8 @@ export function parseIgnoreCommand(line: string) {
 
 // Ref: https://github.com/socketdev-demo/javascript-threats/pull/89#issuecomment-2456015512
 export function processSecurityComment({
-  security: securityComment,
-  ignore: ignoreComments
+  ignore: ignoreComments,
+  security: securityComment
 }: Pick<SocketComments, 'security' | 'ignore'>): string {
   const result: string[] = []
   let start = false
