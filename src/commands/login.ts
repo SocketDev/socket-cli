@@ -1,13 +1,13 @@
-import isInteractive from 'is-interactive'
 import meow from 'meow'
 import terminalLink from 'terminal-link'
 
+import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../constants'
 import { AuthError, InputError } from '../utils/errors'
-import { printFlagList } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/output-formatting'
 import { setupSdk } from '../utils/sdk'
 import { getSetting, updateSetting } from '../utils/settings'
 
@@ -27,7 +27,7 @@ type OrgChoice = Choice<string>
 
 type OrgChoices = (Separator | OrgChoice)[]
 
-const { SOCKET_PUBLIC_API_KEY } = constants
+const { SOCKET_PUBLIC_API_TOKEN } = constants
 
 const description = 'Socket API login'
 
@@ -58,7 +58,7 @@ export const login: CliSubcommand = {
       Logs into the Socket API by prompting for an API key
 
       Options
-        ${printFlagList(
+        ${getFlagListOutput(
           {
             'api-base-url': flags['apiBaseUrl'].description,
             'api-proxy': flags['apiProxy'].description
@@ -89,13 +89,13 @@ export const login: CliSubcommand = {
         'Cannot prompt for credentials in a non-interactive shell'
       )
     }
-    const apiKey =
+    const apiToken =
       (await password({
         message: `Enter your ${terminalLink(
           'Socket.dev API key',
           'https://docs.socket.dev/docs/api-keys'
         )} (leave blank for a public key)`
-      })) || SOCKET_PUBLIC_API_KEY
+      })) || SOCKET_PUBLIC_API_TOKEN
 
     let apiBaseUrl = cli.flags['apiBaseUrl'] as string | null | undefined
     apiBaseUrl ??= getSetting('apiBaseUrl') ?? undefined
@@ -107,7 +107,7 @@ export const login: CliSubcommand = {
 
     let orgs: SocketSdkReturnType<'getOrganizations'>['data']
     try {
-      const sdk = await setupSdk(apiKey, apiBaseUrl, apiProxy)
+      const sdk = await setupSdk(apiToken, apiBaseUrl, apiProxy)
       const result = await sdk.getOrganizations()
       if (!result.success) {
         throw new AuthError()
@@ -156,10 +156,11 @@ export const login: CliSubcommand = {
     }
 
     updateSetting('enforcedOrgs', enforcedOrgs)
-    const oldKey = getSetting('apiKey')
-    updateSetting('apiKey', apiKey)
+    // TODO: Rename the 'apiKey' setting to 'apiToken'.
+    const oldToken = getSetting('apiKey')
+    updateSetting('apiKey', apiToken)
     updateSetting('apiBaseUrl', apiBaseUrl)
     updateSetting('apiProxy', apiProxy)
-    spinner.success(`API credentials ${oldKey ? 'updated' : 'set'}`)
+    spinner.success(`API credentials ${oldToken ? 'updated' : 'set'}`)
   }
 }

@@ -18,10 +18,10 @@ const {
 
 export default () =>
   baseConfig({
-    input: {
-      misc: `${rootSrcPath}/utils/misc.ts`,
-      'path-resolve': `${rootSrcPath}/utils/path-resolve.ts`
-    },
+    input: ['alert/rules', 'errors', 'path-resolve'].reduce((o, k) => {
+      o[k.replaceAll('/', '-')] = `${rootSrcPath}/utils/${k}.ts`
+      return o
+    }, {}),
     output: [
       {
         dir: 'test/dist',

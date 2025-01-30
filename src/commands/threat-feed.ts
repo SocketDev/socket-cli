@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 // @ts-ignore
 import ScreenWidget from 'blessed/lib/widgets/screen'
 // @ts-ignore
@@ -7,10 +9,10 @@ import meow from 'meow'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags } from '../flags'
-import { queryAPI } from '../utils/api-helpers'
+import { queryAPI } from '../utils/api'
 import { AuthError } from '../utils/errors'
-import { printFlagList } from '../utils/formatting'
-import { getDefaultKey } from '../utils/sdk'
+import { getFlagListOutput } from '../utils/output-formatting'
+import { getDefaultToken } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
@@ -21,7 +23,7 @@ export const threatFeed: CliSubcommand = {
 
     const input = setupCommand(name, threatFeed.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultKey()
+      const apiKey = getDefaultToken()
       if (!apiKey) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
@@ -91,7 +93,7 @@ function setupCommand(
       $ ${name}
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name}

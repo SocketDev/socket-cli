@@ -1,10 +1,17 @@
 import { realpathSync } from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 
 import registryConstants from '@socketsecurity/registry/lib/constants'
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
 type RegistryEnv = typeof registryConstants.ENV
+
+type IPCObject = {
+  SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: boolean
+  SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
+  [key: string]: any
+}
 
 type Constants = {
   readonly API_V0_URL: 'https://api.socket.dev/v0'
@@ -13,19 +20,21 @@ type Constants = {
   readonly BUN: 'bun'
   readonly ENV: RegistryEnv & {
     SOCKET_CLI_DEBUG: boolean
-    SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: boolean
-    SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
   }
   readonly DIST_TYPE: 'module-sync' | 'require'
+  readonly IPC: IPCObject
   readonly LOCK_EXT: '.lock'
+  readonly MODULE_SYNC: 'module-sync'
   readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
   readonly NPX: 'npx'
   readonly PNPM: 'pnpm'
+  readonly REQUIRE: 'require'
   readonly SOCKET_CLI_DEBUG: 'SOCKET_CLI_DEBUG'
   readonly SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: 'SOCKET_CLI_FIX_PACKAGE_LOCK_FILE'
   readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
   readonly SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: 'SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE'
   readonly VLT: 'vlt'
+  readonly YARN: 'yarn'
   readonly YARN_BERRY: 'yarn/berry'
   readonly YARN_CLASSIC: 'yarn/classic'
   readonly cdxgenBinPath: string
@@ -52,37 +61,30 @@ const BABEL_RUNTIME = '@babel/runtime'
 const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
 const LOCK_EXT = '.lock'
+const MODULE_SYNC = 'module-sync'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const NPX = 'npx'
 const PNPM = 'pnpm'
+const REQUIRE = 'require'
 const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
 const SOCKET_CLI_FIX_PACKAGE_LOCK_FILE = 'SOCKET_CLI_FIX_PACKAGE_LOCK_FILE'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE =
   'SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE'
 const VLT = 'vlt'
-const YARN_BERRY = 'yarn/berry'
-const YARN_CLASSIC = 'yarn/classic'
+const YARN = 'yarn'
+const YARN_BERRY = `${YARN}/berry`
+const YARN_CLASSIC = `${YARN}/classic`
 
 const LAZY_DIST_TYPE = () =>
-  registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? 'module-sync' : 'require'
+  registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? MODULE_SYNC : REQUIRE
 
 const LAZY_ENV = () =>
   Object.freeze({
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
     // Flag set to help debug Socket CLI.
-    [SOCKET_CLI_DEBUG]: envAsBoolean(process.env[SOCKET_CLI_DEBUG]),
-    // Flag set by the "fix" command to accept the package alerts prompt with
-    // "Y(es)" in the SafeArborist reify method.
-    [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: envAsBoolean(
-      process.env[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
-    ),
-    // Flag set by the "optimize" command to bypass the package alerts check
-    // in the SafeArborist reify method.
-    [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: envAsBoolean(
-      process.env[SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]
-    )
+    [SOCKET_CLI_DEBUG]: envAsBoolean(process.env[SOCKET_CLI_DEBUG])
   })
 
 const lazyCdxgenBinPath = () =>
@@ -105,7 +107,13 @@ const lazyRootDistPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'dist')
 
-const lazyRootPath = () => path.resolve(realpathSync(__dirname), '..')
+const lazyRootPath = () =>
+  // The '@rollup/plugin-replace' will replace 'process.env.TAP' with `false` and
+  // it will be dead code eliminated by Rollup.
+  path.resolve(
+    realpathSync.native(__dirname),
+    process.env['TAP'] ? '../..' : '..'
+  )
 
 const lazyRootPkgJsonPath = () =>
   // Lazily access constants.rootPath.
@@ -125,18 +133,21 @@ const constants = <Constants>createConstantsObject(
     BABEL_RUNTIME,
     BINARY_LOCK_EXT,
     BUN,
-    ENV: undefined,
     // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
+    ENV: undefined,
     LOCK_EXT,
+    MODULE_SYNC,
     NPM_REGISTRY_URL,
     NPX,
     PNPM,
+    REQUIRE,
     SOCKET_CLI_DEBUG,
     SOCKET_CLI_FIX_PACKAGE_LOCK_FILE,
     SOCKET_CLI_ISSUES_URL,
     SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
     VLT,
+    YARN,
     YARN_BERRY,
     YARN_CLASSIC,
     cdxgenBinPath: undefined,

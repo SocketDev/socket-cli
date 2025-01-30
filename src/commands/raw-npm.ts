@@ -1,9 +1,11 @@
+import process from 'node:process'
+
 import spawn from '@npmcli/promise-spawn'
 import meow from 'meow'
 
 import constants from '../constants'
 import { commonFlags, validationFlags } from '../flags'
-import { printFlagList } from '../utils/formatting'
+import { getFlagListOutput } from '../utils/output-formatting'
 import { findBinPathDetails } from '../utils/path-resolve'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
@@ -40,7 +42,7 @@ async function setupCommand(
       $ ${name} <${binName} command>
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} install

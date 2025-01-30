@@ -1,11 +1,10 @@
 import path from 'node:path'
+import process from 'node:process'
 
 import cmdShim from 'cmd-shim'
 
 import constants from '../constants'
 import { findBinPathDetails } from '../utils/path-resolve'
-
-const { WIN32, rootDistPath } = constants
 
 export async function installLinks(
   realBinPath: string,
@@ -21,6 +20,8 @@ export async function installLinks(
     )
     process.exit(127)
   }
+  // Lazily access constants.WIN32.
+  const { WIN32 } = constants
   // TODO: Is this early exit needed?
   if (WIN32 && binPath) {
     return binPath
@@ -29,7 +30,8 @@ export async function installLinks(
   if (!shadowed) {
     if (WIN32) {
       await cmdShim(
-        path.join(rootDistPath, `${binName}-cli.js`),
+        // Lazily access constants.rootDistPath.
+        path.join(constants.rootDistPath, `${binName}-cli.js`),
         path.join(realBinPath, binName)
       )
     }

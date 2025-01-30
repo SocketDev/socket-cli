@@ -1,16 +1,16 @@
-type ListDescription = string | { description: string }
-
 type HelpListOptions = {
   keyPrefix: string
   padName: number
 }
 
-export function printFlagList(
+type ListDescription = string | { description: string }
+
+export function getFlagListOutput(
   list: Record<string, ListDescription>,
   indent: number,
   { keyPrefix = '--', padName } = <HelpListOptions>{}
 ): string {
-  return printHelpList(
+  return getHelpListOutput(
     {
       ...list
     },
@@ -19,7 +19,7 @@ export function printFlagList(
   )
 }
 
-export function printHelpList(
+export function getHelpListOutput(
   list: Record<string, ListDescription>,
   indent: number,
   { keyPrefix = '', padName = 18 } = <HelpListOptions>{}

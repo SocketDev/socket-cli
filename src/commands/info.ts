@@ -1,26 +1,29 @@
+import process from 'node:process'
+
 import meow from 'meow'
 import colors from 'yoctocolors-cjs'
 
+import constants from '@socketsecurity/registry/lib/constants'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import constants from '../constants'
 import { commonFlags, outputFlags, validationFlags } from '../flags'
-import {
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../utils/api-helpers'
+import { formatSeverityCount, getSeverityCount } from '../utils/alert/severity'
+import { handleApiCall, handleUnsuccessfulApiResponse } from '../utils/api'
 import { ColorOrMarkdown } from '../utils/color-or-markdown'
 import { InputError } from '../utils/errors'
-import { formatSeverityCount, getSeverityCount } from '../utils/format-issues'
-import { printFlagList } from '../utils/formatting'
 import { objectSome } from '../utils/objects'
-import { getDefaultKey, setupSdk } from '../utils/sdk'
+import { getFlagListOutput } from '../utils/output-formatting'
+import { getPublicToken, setupSdk } from '../utils/sdk'
+import {
+  getSocketDevAlertUrl,
+  getSocketDevPackageOverviewUrl
+} from '../utils/socket-url'
 
-import type { SocketIssue } from '../utils/format-issues'
+import type { SocketSdkAlert } from '../utils/alert/severity'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
-const { SOCKET_PUBLIC_API_KEY } = constants
+const { NPM } = constants
 
 export const info: CliSubcommand = {
   description: 'Look up info regarding a package',
@@ -84,7 +87,7 @@ function setupCommand(
       $ ${name} <name>
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} webtorrent
@@ -126,7 +129,7 @@ function setupCommand(
 
 interface PackageData {
   data: SocketSdkReturnType<'getIssuesByNPMPackage'>['data']
-  severityCount: Record<SocketIssue['severity'], number>
+  severityCount: Record<SocketSdkAlert['severity'], number>
   score: SocketSdkReturnType<'getScoreByNPMPackage'>['data']
 }
 
@@ -136,7 +139,7 @@ async function fetchPackageData(
   { includeAllIssues }: Pick<CommandContext, 'includeAllIssues'>,
   spinner: Spinner
 ): Promise<void | PackageData> {
-  const socketSdk = await setupSdk(getDefaultKey() ?? SOCKET_PUBLIC_API_KEY)
+  const socketSdk = await setupSdk(getPublicToken())
   const result = await handleApiCall(
     socketSdk.getIssuesByNPMPackage(pkgName, pkgVersion),
     'looking up package'
@@ -211,7 +214,7 @@ function formatPackageDataOutput(
     }
 
     const format = new ColorOrMarkdown(!!outputMarkdown)
-    const url = `https://socket.dev/npm/package/${pkgName}/overview/${pkgVersion}`
+    const url = getSocketDevPackageOverviewUrl(NPM, pkgName, pkgVersion)
 
     console.log('\n')
     if (pkgVersion === 'latest') {
@@ -270,7 +273,7 @@ function formatPackageIssuesDetails(
   for (const issue of Object.keys(uniqueIssues)) {
     const issueWithLink = format.hyperlink(
       `${uniqueIssues[issue]?.label}`,
-      `https://socket.dev/npm/issue/${issue}`,
+      getSocketDevAlertUrl(issue),
       { fallbackToUrl: true }
     )
     if (uniqueIssues[issue]?.count === 1) {

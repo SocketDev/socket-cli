@@ -1,3 +1,5 @@
+import process from 'node:process'
+
 import meow from 'meow'
 import { ErrorWithCause } from 'pony-cause'
 import colors from 'yoctocolors-cjs'
@@ -6,16 +8,13 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import {
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../../utils/api-helpers'
-import { ColorOrMarkdown } from '../../utils/color-or-markdown'
-import { InputError } from '../../utils/errors'
-import {
   formatSeverityCount,
   getSeverityCount
-} from '../../utils/format-issues'
-import { printFlagList } from '../../utils/formatting'
+} from '../../utils/alert/severity'
+import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { ColorOrMarkdown } from '../../utils/color-or-markdown'
+import { InputError } from '../../utils/errors'
+import { getFlagListOutput } from '../../utils/output-formatting'
 import { setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
@@ -77,7 +76,7 @@ function setupCommand(
       $ ${name} <report-identifier>
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ

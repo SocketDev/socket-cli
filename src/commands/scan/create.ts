@@ -1,4 +1,4 @@
-import { stdin as inputText, stdout as output } from 'node:process'
+import process from 'node:process'
 import readline from 'node:readline/promises'
 
 import meow from 'meow'
@@ -8,15 +8,11 @@ import colors from 'yoctocolors-cjs'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import {
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../../utils/api-helpers'
+import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
-import { printFlagList } from '../../utils/formatting'
-import { createDebugLogger } from '../../utils/misc'
+import { getFlagListOutput } from '../../utils/output-formatting'
 import { getPackageFilesFullScans } from '../../utils/path-resolve'
-import { getDefaultKey, setupSdk } from '../../utils/sdk'
+import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
@@ -26,7 +22,7 @@ export const create: CliSubcommand = {
     const name = `${parentName} create`
     const input = await setupCommand(name, create.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultKey()
+      const apiKey = getDefaultToken()
       if (!apiKey) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
@@ -126,7 +122,7 @@ async function setupCommand(
       $ ${name} [...options]
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} --org=FakeOrg --repo=test-repo --branch=main ./package.json
@@ -168,12 +164,10 @@ async function setupCommand(
         })
       }
     )
-  const debugLog = createDebugLogger(false)
   const packagePaths = await getPackageFilesFullScans(
     cwd,
     cli.input,
-    supportedFiles,
-    debugLog
+    supportedFiles
   )
   const { branch: branchName, repo: repoName } = cli.flags
   if (!repoName || !branchName || !packagePaths.length) {
@@ -244,7 +238,10 @@ async function createFullScan(
   const link = colors.underline(colors.cyan(`${result.data.html_report_url}`))
   console.log(`Available at: ${link}`)
 
-  const rl = readline.createInterface({ input: inputText, output })
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
 
   const answer = await rl.question(
     'Would you like to open it in your browser? (y/n)'

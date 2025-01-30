@@ -7,10 +7,10 @@ import colors from 'yoctocolors-cjs'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { commonFlags, outputFlags } from '../../flags'
-import { handleAPIError, queryAPI } from '../../utils/api-helpers'
+import { handleAPIError, queryAPI } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
-import { printFlagList } from '../../utils/formatting'
-import { getDefaultKey } from '../../utils/sdk'
+import { getFlagListOutput } from '../../utils/output-formatting'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
@@ -20,7 +20,7 @@ export const get: CliSubcommand = {
     const name = `${parentName} get`
     const input = setupCommand(name, get.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultKey()
+      const apiKey = getDefaultToken()
       if (!apiKey) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
@@ -89,7 +89,7 @@ function setupCommand(
       $ ${name} <org slug> --before=<before> --after=<after>
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} FakeCorp --before=aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 --after=aaa1aa1a-aaaa-1111-1a1a-1111111a11a1

@@ -1,0 +1,5 @@
+{
+  "loglevel": "minimal",
+  "reject": ["has-flag", "terminal-link", "typescript"],
+  "upgrade": true
+}

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
@@ -8,8 +9,8 @@ import colors from 'yoctocolors-cjs'
 
 import * as cliCommands from './commands'
 import constants from './constants'
-import { logSymbols } from './utils/color-or-markdown'
 import { AuthError, InputError } from './utils/errors'
+import { logSymbols } from './utils/logging'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
 
 const { rootPkgJsonPath } = constants

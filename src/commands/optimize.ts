@@ -1,5 +1,5 @@
-import fs from 'fs/promises'
 import path from 'node:path'
+import process from 'node:process'
 
 import spawn from '@npmcli/promise-spawn'
 import meow from 'meow'
@@ -27,8 +27,8 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../constants'
 import { commonFlags } from '../flags'
-import { printFlagList } from '../utils/formatting'
-import { existsSync } from '../utils/fs'
+import { safeReadFile } from '../utils/fs'
+import { getFlagListOutput } from '../utils/output-formatting'
 import { detect } from '../utils/package-manager-detector'
 import { shadowNpmInstall } from '../utils/shadow-npm'
 
@@ -50,6 +50,7 @@ const {
   PNPM,
   RESOLUTIONS,
   SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+  SOCKET_IPC_HANDSHAKE,
   VLT,
   YARN_BERRY,
   YARN_CLASSIC,
@@ -72,7 +73,8 @@ type GetOverridesResult = {
   overrides: Overrides
 }
 
-const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
+const getOverridesDataByAgent = <Record<Agent, GetOverrides>>{
+  __proto__: null,
   [BUN](pkgJson: PackageJson) {
     const overrides = (pkgJson as any)?.[RESOLUTIONS] ?? {}
     return { type: YARN_BERRY, overrides }
@@ -134,6 +136,7 @@ const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = (() => {
   }
 
   return {
+    __proto__: null,
     [BUN](lockSrc: string, name: string, lockBasename?: string) {
       // This is a bit counterintuitive. When lockBasename ends with a .lockb
       // we treat it as a yarn.lock. When lockBasename ends with a .lock we
@@ -317,6 +320,7 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
   }
 
   return {
+    __proto__: null,
     [BUN]: updateResolutions,
     [NPM]: updateOverrides,
     [PNPM](editablePkgJson: EditablePackageJson, overrides: Overrides) {
@@ -386,6 +390,7 @@ const lsByAgent = (() => {
   }
 
   return <Record<Agent, AgentListDepsFn>>{
+    __proto__: null,
     async [BUN](agentExecPath: string, cwd: string) {
       try {
         // Bun does not support filtering by production packages yet.
@@ -477,6 +482,7 @@ const depsIncludesByAgent: Record<Agent, AgentDepsIncludesFn> = (() => {
   }
 
   return {
+    __proto__: null,
     [BUN]: matchHumanStdout,
     [NPM]: matchQueryStdout,
     [PNPM]: matchQueryStdout,
@@ -534,12 +540,11 @@ async function getWorkspaceGlobs(
       path.join(pkgPath!, `${PNPM_WORKSPACE}.yaml`),
       path.join(pkgPath!, `${PNPM_WORKSPACE}.yml`)
     ]) {
-      if (existsSync(workspacePath)) {
+      // eslint-disable-next-line no-await-in-loop
+      const yml = <string | undefined>await safeReadFile(workspacePath, 'utf8')
+      if (yml) {
         try {
-          workspacePatterns = yamlParse(
-            // eslint-disable-next-line no-await-in-loop
-            await fs.readFile(workspacePath, 'utf8')
-          )?.packages
+          workspacePatterns = yamlParse(yml)?.packages
         } catch {}
         if (workspacePatterns) {
           break
@@ -715,7 +720,7 @@ async function addOverrides(
           const oldSpec = overrideExists ? overrides[origPkgName] : undefined
           const depAlias = depAliasMap.get(origPkgName)
           const regSpecStartsLike = `${NPM}:${regPkgName}@`
-          let newSpec = `${regSpecStartsLike}^${pin ? version : major}`
+          let newSpec = `${regSpecStartsLike}${pin ? version : `^${major}`}`
           let thisVersion = version
           if (depAlias && type === NPM) {
             // With npm one may not set an override for a package that one directly
@@ -740,7 +745,7 @@ async function addOverrides(
                     : ((await fetchPackageManifest(thisSpec))?.version ??
                       version)
               }
-              newSpec = `${regSpecStartsLike}^${pin ? thisVersion : semver.major(thisVersion)}`
+              newSpec = `${regSpecStartsLike}${pin ? thisVersion : `^${semver.major(thisVersion)}`}`
             } else {
               newSpec = oldSpec
             }
@@ -917,19 +922,18 @@ export const optimize: CliSubcommand = {
       spinner.start(`Updating ${lockName}...`)
       try {
         if (isNpm) {
-          await shadowNpmInstall({
-            env: {
-              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
+          const ipc = {
+            [SOCKET_IPC_HANDSHAKE]: {
+              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: true
             }
-          })
+          }
+          await shadowNpmInstall({ ipc })
           // TODO: This is a temporary workaround for a `npm ci` bug where it
           // will error out after Socket Optimize generates a lock file. More
           // investigation is needed.
           await shadowNpmInstall({
             flags: ['--ignore-scripts', '--package-lock-only'],
-            env: {
-              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: '1'
-            }
+            ipc
           })
         } else {
           // All package managers support the "install" command.
@@ -986,7 +990,7 @@ function setupCommand(
       $ ${name}
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name}

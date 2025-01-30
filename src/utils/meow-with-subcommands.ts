@@ -2,7 +2,7 @@ import meow from 'meow'
 
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 
-import { printFlagList, printHelpList } from './formatting'
+import { getFlagListOutput, getHelpListOutput } from './output-formatting'
 import { commonFlags } from '../flags'
 
 import type { Options } from 'meow'
@@ -22,6 +22,7 @@ type CliSubcommandRun = (
 
 export interface CliSubcommand {
   description: string
+  hidden?: boolean
   run: CliSubcommandRun
 }
 
@@ -70,16 +71,26 @@ export async function meowWithSubcommands(
       $ ${name} <command>
 
     Commands
-      ${printHelpList(
+      ${getHelpListOutput(
         {
-          ...toSortedObject(subcommands),
-          ...toSortedObject(aliases)
+          ...toSortedObject(
+            Object.fromEntries(
+              Object.entries(subcommands).filter(entry => !entry[1].hidden)
+            )
+          ),
+          ...toSortedObject(
+            Object.fromEntries(
+              Object.entries(aliases).filter(
+                entry => !subcommands[entry[1]?.argv[0]!]?.hidden
+              )
+            )
+          )
         },
         6
       )}
 
     Options
-      ${printFlagList(flags, 6)}
+      ${getFlagListOutput(flags, 6)}
 
     Examples
       $ ${name} --help

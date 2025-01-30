@@ -1,6 +1,9 @@
-import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
-import isInteractive from 'is-interactive'
+import process from 'node:process'
 
+import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
+
+import isInteractive from '@socketregistry/is-interactive/index.cjs'
+import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/lib/constants'
 import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
@@ -9,64 +12,63 @@ import { AuthError } from './errors'
 import { getSetting } from './settings'
 import constants from '../constants'
 
-import type { SocketSdkOptions } from '@socketsecurity/sdk'
-
-const { rootPkgJsonPath } = constants
-
-// This API key should be stored globally for the duration of the CLI execution.
-let defaultKey: string | undefined
-
-export function getDefaultKey(): string | undefined {
-  const key =
-    process.env['SOCKET_SECURITY_API_KEY'] || getSetting('apiKey') || defaultKey
-  defaultKey = isNonEmptyString(key) ? key : undefined
-  return defaultKey
-}
-
 // The API server that should be used for operations.
-function getDefaultAPIBaseUrl(): string | undefined {
+function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
     process.env['SOCKET_SECURITY_API_BASE_URL'] || getSetting('apiBaseUrl')
   return isNonEmptyString(baseUrl) ? baseUrl : undefined
 }
 
 // The API server that should be used for operations.
-function getDefaultHTTPProxy(): string | undefined {
+function getDefaultHttpProxy(): string | undefined {
   const apiProxy =
     process.env['SOCKET_SECURITY_API_PROXY'] || getSetting('apiProxy')
   return isNonEmptyString(apiProxy) ? apiProxy : undefined
 }
 
+// This API key should be stored globally for the duration of the CLI execution.
+let _defaultToken: string | undefined
+export function getDefaultToken(): string | undefined {
+  const key =
+    process.env['SOCKET_SECURITY_API_TOKEN'] ||
+    // Keep 'SOCKET_SECURITY_API_KEY' as an alias of 'SOCKET_SECURITY_API_TOKEN'.
+    // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
+    process.env['SOCKET_SECURITY_API_KEY'] ||
+    // TODO: Rename the 'apiKey' setting to 'apiToken'.
+    getSetting('apiKey') ||
+    _defaultToken
+  _defaultToken = isNonEmptyString(key) ? key : undefined
+  return _defaultToken
+}
+
+export function getPublicToken(): string {
+  return getDefaultToken() ?? SOCKET_PUBLIC_API_TOKEN
+}
+
 export async function setupSdk(
-  apiKey: string | undefined = getDefaultKey(),
-  apiBaseUrl: string | undefined = getDefaultAPIBaseUrl(),
-  proxy: string | undefined = getDefaultHTTPProxy()
+  apiToken: string | undefined = getDefaultToken(),
+  apiBaseUrl: string | undefined = getDefaultApiBaseUrl(),
+  proxy: string | undefined = getDefaultHttpProxy()
 ): Promise<SocketSdk> {
-  if (typeof apiKey !== 'string' && isInteractive()) {
-    apiKey = await password({
+  if (typeof apiToken !== 'string' && isInteractive()) {
+    apiToken = await password({
       message:
         'Enter your Socket.dev API key (not saved, use socket login to persist)'
     })
-    defaultKey = apiKey
+    _defaultToken = apiToken
   }
-
-  if (!apiKey) {
+  if (!apiToken) {
     throw new AuthError('You need to provide an API key')
   }
-
-  let agent: SocketSdkOptions['agent'] | undefined
-  if (proxy) {
-    agent = {
-      http: new HttpProxyAgent({ proxy }),
-      https: new HttpsProxyAgent({ proxy })
-    }
-  }
-
-  const sdkOptions: SocketSdkOptions = {
-    agent,
+  return new SocketSdk(apiToken, {
+    agent: proxy
+      ? {
+          http: new HttpProxyAgent({ proxy }),
+          https: new HttpsProxyAgent({ proxy })
+        }
+      : undefined,
     baseUrl: apiBaseUrl,
-    userAgent: createUserAgentFromPkgJson(require(rootPkgJsonPath))
-  }
-
-  return new SocketSdk(apiKey || '', sdkOptions)
+    // Lazily access constants.rootPkgJsonPath.
+    userAgent: createUserAgentFromPkgJson(require(constants.rootPkgJsonPath))
+  })
 }

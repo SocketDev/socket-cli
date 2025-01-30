@@ -1,16 +1,19 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
+import process from 'node:process'
 
 import spawn from '@npmcli/promise-spawn'
 import browserslist from 'browserslist'
 import semver from 'semver'
 import which from 'which'
 
-import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb'
+import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
+import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import { existsSync, findUp, readFileBinary, readFileUtf8 } from './fs'
+import { findUp, readFileBinary, readFileUtf8 } from './fs'
 import constants from '../constants'
 
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
@@ -23,6 +26,7 @@ const {
   NPM,
   PNPM,
   VLT,
+  YARN,
   YARN_BERRY,
   YARN_CLASSIC
 } = constants
@@ -31,13 +35,19 @@ export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
 export type Agent = (typeof AGENTS)[number]
 export type StringKeyValueObject = { [key: string]: string }
 
-const { compare: alphanumericComparator } = new Intl.Collator(undefined, {
-  numeric: true,
-  sensitivity: 'base'
-})
+const binByAgent = {
+  __proto__: null,
+  [BUN]: BUN,
+  [NPM]: NPM,
+  [PNPM]: PNPM,
+  [YARN_BERRY]: YARN,
+  [YARN_CLASSIC]: YARN,
+  [VLT]: VLT
+}
 
 async function getAgentExecPath(agent: Agent): Promise<string> {
-  return (await which(agent, { nothrow: true })) ?? agent
+  const binName = binByAgent[agent]
+  return (await which(binName, { nothrow: true })) ?? binName
 }
 
 async function getAgentVersion(
@@ -160,9 +170,10 @@ export async function detect({
   const pkgJsonPath = lockPath
     ? path.resolve(lockPath, `${isHiddenLockFile ? '../' : ''}../package.json`)
     : await findUp('package.json', { cwd })
-  const pkgPath = existsSync(pkgJsonPath)
-    ? path.dirname(pkgJsonPath)
-    : undefined
+  const pkgPath =
+    pkgJsonPath && existsSync(pkgJsonPath)
+      ? path.dirname(pkgJsonPath)
+      : undefined
   const editablePkgJson = pkgPath
     ? await readPackageJson(pkgPath, { editable: true })
     : undefined
@@ -231,7 +242,7 @@ export async function detect({
     if (Array.isArray(browserslistQuery)) {
       const browserslistTargets = browserslist(browserslistQuery)
         .map(s => s.toLowerCase())
-        .sort(alphanumericComparator)
+        .sort(naturalCompare)
       const browserslistNodeTargets = browserslistTargets
         .filter(v => v.startsWith('node '))
         .map(v => v.slice(5 /*'node '.length*/))
