@@ -1,4 +1,5 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/github.py
+// eslint-disable no-await-in-loop
 import { Octokit } from '@octokit/rest'
 import { Comment } from './classes'
 

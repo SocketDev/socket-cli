@@ -1,7 +1,7 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/socketcli.py
 import { parseArgs } from 'util'
 import { CliSubcommand } from '../../utils/meow-with-subcommands'
-import simpleGit from 'simple-git'
+import { simpleGit } from 'simple-git'
 import { SocketSdk } from '@socketsecurity/sdk'
 import micromatch from 'micromatch'
 import { getDefaultToken } from '../../utils/sdk'

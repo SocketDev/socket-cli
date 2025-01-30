@@ -1,4 +1,5 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/__init__.py
+// eslint-disable no-await-in-loop
 import { SocketSdk } from '@socketsecurity/sdk'
 import { Diff, FullScan, Issue, Package, Purl } from './classes'
 import type { components, operations } from '@socketsecurity/sdk/types/api.d.ts'
