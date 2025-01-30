@@ -1,3 +1,4 @@
+export * from './action'
 export * from './cdxgen'
 export * from './fix'
 export * from './info'
