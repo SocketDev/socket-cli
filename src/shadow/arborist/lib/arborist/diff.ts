@@ -1,29 +1,7 @@
 import constants from '../../../../constants'
 
+import type { Diff } from './types'
 import type { SafeNode } from '../node'
-import type { Diff as BaseDiff } from '@npmcli/arborist'
-
-export type SafeDiff = Omit<
-  BaseDiff,
-  | 'actual'
-  | 'children'
-  | 'filterSet'
-  | 'ideal'
-  | 'leaves'
-  | 'removed'
-  | 'shrinkwrapInflated'
-  | 'unchanged'
-> & {
-  actual: SafeNode
-  children: SafeDiff[]
-  filterSet: Set<SafeNode>
-  ideal: SafeNode
-  leaves: SafeNode[]
-  parent: SafeDiff | null
-  removed: SafeNode[]
-  shrinkwrapInflated: Set<SafeNode>
-  unchanged: SafeNode[]
-}
 
 const { LOOP_SENTINEL, NPM_REGISTRY_URL, SOCKET_CLI_FIX_PACKAGE_LOCK_FILE } =
   constants
@@ -47,7 +25,7 @@ type GetPackagesToQueryFromDiffOptions = {
 }
 
 export function getPackagesToQueryFromDiff(
-  diff_: SafeDiff | null,
+  diff_: Diff | null,
   options?: GetPackagesToQueryFromDiffOptions
 ): PackageDetail[] {
   const {
@@ -63,7 +41,7 @@ export function getPackagesToQueryFromDiff(
   if (!diff_) {
     return details
   }
-  const queue: SafeDiff[] = [...diff_.children]
+  const queue: Diff[] = [...diff_.children]
   let pos = 0
   let { length: queueLength } = queue
   while (pos < queueLength) {
