@@ -28,12 +28,12 @@ export function shadowNpmInstall(opts?: ShadowNpmInstallOptions) {
       // Lazily access constants.rootBinPath.
       path.join(constants.rootBinPath, 'npm-cli.js'),
       'install',
-      // Even though the 'silent' flag is passed npm will still run through code
-      // paths for 'audit' and 'fund' unless '--no-audit' and '--no-fund' flags
-      // are passed.
+      // Even though the '--silent' flag is passed npm will still run through
+      // code paths for 'audit' and 'fund' unless '--no-audit' and '--no-fund'
+      // flags are passed.
       ...(useDebug
         ? ['--no-audit', '--no-fund']
-        : ['silent', '--no-audit', '--no-fund']),
+        : ['--silent', '--no-audit', '--no-fund']),
       ...flags
     ],
     {
