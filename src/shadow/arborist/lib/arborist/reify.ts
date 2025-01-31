@@ -14,7 +14,6 @@ import { confirm } from '@socketsecurity/registry/lib/prompts'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { getPackagesToQueryFromDiff } from './diff'
-import { kRiskyReify } from './index'
 import constants from '../../../../constants'
 import {
   batchScan,
@@ -28,7 +27,7 @@ import { getSocketDevPackageOverviewUrl } from '../../../../utils/socket-url'
 import { Edge, SafeEdge } from '../edge'
 
 import type { PackageDetail } from './diff'
-import type { ArboristClass, AuditAdvisory, SafeArborist } from './index'
+import type { ArboristClass, ArboristReifyOptions } from './types'
 import type { SocketArtifact } from '../../../../utils/alert/artifact'
 import type { SafeNode } from '../node'
 import type { Writable } from 'node:stream'
@@ -58,13 +57,14 @@ function findBestPatchVersion(
   name: string,
   availableVersions: string[],
   currentMajorVersion: number,
-  vulnerableRange: string
+  vulnerableVersionRange: string,
+  _firstPatchedVersionIdentifier: string
 ): string | null {
   const manifestVersion = getManifestData(NPM, name)?.version
   // Filter versions that are within the current major version and are not in the vulnerable range
   const eligibleVersions = availableVersions.filter(version => {
     const isSameMajor = semver.major(version) === currentMajorVersion
-    const isNotVulnerable = !semver.satisfies(version, vulnerableRange)
+    const isNotVulnerable = !semver.satisfies(version, vulnerableVersionRange)
     if (isSameMajor && isNotVulnerable) {
       return true
     }
@@ -243,37 +243,39 @@ async function updateAdvisoryDependencies(
   arb: SafeArborist,
   alerts: SocketPackageAlert[]
 ) {
-  let alertsByPkg: { [key: string]: AuditAdvisory[] } | undefined
+  let patchDataByPkg:
+    | {
+        [key: string]: {
+          firstPatchedVersionIdentifier: string
+          vulnerableVersionRange: string
+        }[]
+      }
+    | undefined
   for (const alert of alerts) {
     if (!isArtifactAlertCveFixable(alert.raw)) {
       continue
     }
-    if (!alertsByPkg) {
-      alertsByPkg = {}
+    if (!patchDataByPkg) {
+      patchDataByPkg = {}
     }
     const { name } = alert
-    if (!alertsByPkg[name]) {
-      alertsByPkg[name] = []
+    if (!patchDataByPkg[name]) {
+      patchDataByPkg[name] = []
     }
-    const props = alert.raw?.props
-    alertsByPkg[name]!.push(<AuditAdvisory>{
-      id: -1,
-      url: props?.url,
-      title: props?.title,
-      severity: alert.raw?.severity?.toLowerCase(),
-      vulnerable_versions: props?.vulnerableVersionRange,
-      cwe: props?.cwes,
-      cvss: props?.csvs,
-      name
+    const { firstPatchedVersionIdentifier, vulnerableVersionRange } =
+      alert.raw.props
+    patchDataByPkg[name]!.push({
+      firstPatchedVersionIdentifier,
+      vulnerableVersionRange
     })
   }
-  if (!alertsByPkg) {
+  if (!patchDataByPkg) {
     // No advisories to process.
     return
   }
   await arb.buildIdealTree()
   const tree = arb.idealTree!
-  for (const name of Object.keys(alertsByPkg)) {
+  for (const name of Object.keys(patchDataByPkg)) {
     const nodes = findPackageNodes(tree, name)
     if (!nodes.length) {
       continue
@@ -285,15 +287,18 @@ async function updateAdvisoryDependencies(
       const { version } = node
       const majorVerNum = semver.major(version)
       const availableVersions = packument ? Object.keys(packument.versions) : []
-      const pkgAlerts = alertsByPkg[name]!
-      for (const alert of pkgAlerts) {
-        const { vulnerable_versions } = alert
+      const patchData = patchDataByPkg[name]!
+      for (const {
+        firstPatchedVersionIdentifier,
+        vulnerableVersionRange
+      } of patchData) {
         // Find the highest non-vulnerable version within the same major range
         const targetVersion = findBestPatchVersion(
           name,
           availableVersions,
           majorVerNum,
-          vulnerable_versions
+          vulnerableVersionRange,
+          firstPatchedVersionIdentifier
         )
         const targetPackument = targetVersion
           ? packument.versions[targetVersion]
@@ -347,13 +352,19 @@ async function updateAdvisoryDependencies(
   }
 }
 
+export const kRiskyReify = Symbol('riskyReify')
+
+type SafeArborist = ArboristClass & {
+  [kRiskyReify](options?: ArboristReifyOptions): Promise<SafeNode>
+}
+
 export async function reify(
   this: SafeArborist,
   ...args: Parameters<InstanceType<ArboristClass>['reify']>
 ): Promise<SafeNode> {
   // We are assuming `this[_diffTrees]()` has been called by `super.reify(...)`:
   // https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/reify.js#L141
-  const needInfoOn = getPackagesToQueryFromDiff(this.diff)
+  let needInfoOn = getPackagesToQueryFromDiff(this.diff)
   if (!needInfoOn.length) {
     // Nothing to check, hmmm already installed or all private?
     return await this[kRiskyReify](...args)
@@ -409,20 +420,20 @@ export async function reify(
     ret = await this[kRiskyReify](...args)
     await this.loadActual()
     await this.buildIdealTree()
+    needInfoOn = getPackagesToQueryFromDiff(this.diff, {
+      includeUnchanged: true
+    })
     alerts = (
-      await getPackagesAlerts(
-        getPackagesToQueryFromDiff(this.diff, { includeUnchanged: true }),
-        {
-          includeExisting: true,
-          includeUnfixable: true
-        }
-      )
+      await getPackagesAlerts(needInfoOn, {
+        includeExisting: true,
+        includeUnfixable: true
+      })
     ).filter(({ key }) => {
-      if (prev.has(key)) {
-        return false
+      const unseen = !prev.has(key)
+      if (unseen) {
+        prev.add(key)
       }
-      prev.add(key)
-      return true
+      return unseen
     })
   }
   /* eslint-enable no-await-in-loop */
