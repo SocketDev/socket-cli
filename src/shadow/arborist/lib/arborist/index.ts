@@ -1,50 +1,12 @@
-import { reify } from './reify'
+import { kRiskyReify, reify } from './reify'
 import { arboristClassPath } from '../../../npm-paths'
 
-import type { SafeDiff } from './diff'
+import type { ArboristClass, ArboristReifyOptions } from './types'
 import type { SafeNode } from '../node'
-import type {
-  Options as ArboristOptions,
-  Advisory as BaseAdvisory,
-  Arborist as BaseArborist,
-  AuditReport as BaseAuditReport,
-  ReifyOptions
-} from '@npmcli/arborist'
-
-export type ArboristClass = ArboristInstance & {
-  new (...args: any): ArboristInstance
-}
-
-export type ArboristInstance = Omit<
-  typeof BaseArborist,
-  'actualTree' | 'auditReport' | 'diff' | 'idealTree' | 'reify'
-> & {
-  auditReport?: AuditReportInstance | null | undefined
-  actualTree?: SafeNode | null | undefined
-  diff: SafeDiff | null
-  idealTree?: SafeNode | null | undefined
-  reify(options?: ArboristReifyOptions): Promise<SafeNode>
-}
-
-export type ArboristReifyOptions = ReifyOptions & ArboristOptions
-
-export type AuditReportInstance = Omit<BaseAuditReport, 'report'> & {
-  report: { [dependency: string]: AuditAdvisory[] }
-}
-
-export type AuditAdvisory = Omit<BaseAdvisory, 'id'> & {
-  id: number
-  cwe: string[]
-  cvss: {
-    score: number
-    vectorString: string
-  }
-  vulnerable_versions: string
-}
 
 export const Arborist: ArboristClass = require(arboristClassPath)
+
 export const kCtorArgs = Symbol('ctorArgs')
-export const kRiskyReify = Symbol('riskyReify')
 
 // Implementation code not related to our custom behavior is based on
 // https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/index.js:
