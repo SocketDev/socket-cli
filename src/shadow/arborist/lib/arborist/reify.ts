@@ -4,7 +4,6 @@ import process from 'node:process'
 import semver from 'semver'
 
 import { getManifestData } from '@socketsecurity/registry'
-// eslint-disable-next-line import-x/no-unresolved
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import {
