@@ -3,13 +3,13 @@ import path from 'node:path'
 import process from 'node:process'
 
 import constants from '../constants'
-import { findRoot } from '../utils/path-resolve'
+import { findNpmPath } from '../utils/path-resolve'
 
 const { NODE_MODULES, SOCKET_CLI_ISSUES_URL } = constants
 
 const npmEntrypoint = realpathSync.native(process.argv[1]!)
-const npmRootPath = findRoot(path.dirname(npmEntrypoint))
-if (npmRootPath === undefined) {
+const npmPath = findNpmPath(npmEntrypoint)
+if (npmPath === undefined) {
   console.error(
     `Unable to find npm CLI install directory.
 Searched parent directories of ${npmEntrypoint}.
@@ -22,7 +22,7 @@ Please report to ${SOCKET_CLI_ISSUES_URL}.`
   process.exit(127)
 }
 
-export const npmNmPath = path.join(npmRootPath, NODE_MODULES)
+export const npmNmPath = path.join(npmPath, NODE_MODULES)
 export const arboristPkgPath = path.join(npmNmPath, '@npmcli/arborist')
 export const arboristClassPath = path.join(
   arboristPkgPath,
