@@ -165,7 +165,7 @@ function pathsToPatterns(paths: string[]): string[] {
   return paths.map(p => (p === '.' ? '**/*' : p))
 }
 
-export function findRoot(filepath: string): string | undefined {
+export function findNpmPath(filepath: string): string | undefined {
   let curPath = filepath
   while (true) {
     if (path.basename(curPath) === NPM) {
