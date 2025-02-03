@@ -26,10 +26,13 @@ export default async function shadowBin(
       await installLinks(constants.shadowBinPath, binName),
       ...(binName === NPM && binArgs.includes('install')
         ? [
-            // Add the `--quiet` and `--no-progress` flags to fix input being swallowed
-            // by the spinner when running the command with recent versions of npm.
+            // Add the `--quiet` and `--no-progress` flags to fix input being
+            // swallowed by the spinner when running the command with recent
+            // versions of npm.
             ...binArgs.filter(a => a !== '--progress' && a !== '--no-progress'),
             '--no-progress',
+            // Add the '--quiet' flag if an equivalent flag is not provided.
+            // https://docs.npmjs.com/cli/v11/using-npm/logging#aliases
             ...(binArgs.includes('-q') ||
             binArgs.includes('--quiet') ||
             binArgs.includes('-s') ||

@@ -55,9 +55,12 @@ export function shadowNpmInstall(opts?: ShadowNpmInstallOptions) {
       // when running the command with recent versions of npm.
       '--no-progress',
       ...(useDebug ||
+      // Detect loglevel flags:
       flags.some(
         f =>
+          // https://docs.npmjs.com/cli/v11/using-npm/logging#setting-log-levels
           f.startsWith('--loglevel') ||
+          // https://docs.npmjs.com/cli/v11/using-npm/logging#aliases
           f === '-d' ||
           f === '--dd' ||
           f === '--ddd' ||
