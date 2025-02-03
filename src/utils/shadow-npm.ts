@@ -19,7 +19,20 @@ type ShadowNpmInstallOptions = SpawnOption & {
 }
 
 export function shadowNpmInstall(opts?: ShadowNpmInstallOptions) {
-  const { flags = [], ipc, ...spawnOptions } = { __proto__: null, ...opts }
+  const {
+    flags: flags_ = [],
+    ipc,
+    ...spawnOptions
+  } = { __proto__: null, ...opts }
+  const flags = flags_.filter(
+    f =>
+      f !== '--audit' &&
+      f !== '--fund' &&
+      f !== '--progress' &&
+      f !== '--no-audit' &&
+      f !== '--no-fund' &&
+      f !== '--no-progress'
+  )
   const useIpc = isObject(ipc)
   const useDebug = isDebug()
   const spawnPromise = spawn(
@@ -55,15 +68,7 @@ export function shadowNpmInstall(opts?: ShadowNpmInstallOptions) {
       )
         ? []
         : ['--silent']),
-      ...flags.filter(
-        f =>
-          f !== '--audit' &&
-          f !== '--fund' &&
-          f !== '--progress' &&
-          f !== '--no-audit' &&
-          f !== '--no-fund' &&
-          f !== '--no-progress'
-      )
+      ...flags
     ],
     {
       signal: abortSignal,
