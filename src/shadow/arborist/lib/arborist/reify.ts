@@ -365,26 +365,25 @@ export async function reify(
   ...args: Parameters<InstanceType<ArboristClass>['reify']>
 ): Promise<SafeNode> {
   const IPC = await getIPC()
+  const runningFixCommand = !!IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
   // We are assuming `this[_diffTrees]()` has been called by `super.reify(...)`:
   // https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/reify.js#L141
   let needInfoOn = getPackagesToQueryFromDiff(this.diff, {
-    includeUnchanged: !!IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
+    includeUnchanged: runningFixCommand
   })
   if (!needInfoOn.length) {
     // Nothing to check, hmmm already installed or all private?
     return await this[kRiskyReify](...args)
   }
-  const {
-    [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: bypassConfirms,
-    [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: bypassAlerts
-  } = IPC
+  const runningOptimizeCommand =
+    !!IPC[SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]
   const { stderr: output, stdin: input } = process
-  let alerts: SocketPackageAlert[] = bypassAlerts
+  let alerts: SocketPackageAlert[] = runningOptimizeCommand
     ? []
     : await getPackagesAlerts(needInfoOn, { output })
   if (
     alerts.length &&
-    !bypassConfirms &&
+    !runningFixCommand &&
     !(await confirm(
       {
         message: 'Accept risks of installing these packages?',
@@ -399,21 +398,7 @@ export async function reify(
   ) {
     throw new Error('Socket npm exiting due to risks')
   }
-  if (
-    !alerts.length ||
-    (!bypassConfirms &&
-      !(await confirm(
-        {
-          message: 'Try to fix alerts?',
-          default: true
-        },
-        {
-          input,
-          output,
-          signal: abortSignal
-        }
-      )))
-  ) {
+  if (!alerts.length || !runningFixCommand) {
     return await this[kRiskyReify](...args)
   }
   const prev = new Set(alerts.map(a => a.key))
