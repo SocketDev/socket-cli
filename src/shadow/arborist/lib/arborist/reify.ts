@@ -368,7 +368,7 @@ export async function reify(
   // We are assuming `this[_diffTrees]()` has been called by `super.reify(...)`:
   // https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/reify.js#L141
   let needInfoOn = getPackagesToQueryFromDiff(this.diff, {
-    includeUnchanged: IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
+    includeUnchanged: !!IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
   })
   if (!needInfoOn.length) {
     // Nothing to check, hmmm already installed or all private?

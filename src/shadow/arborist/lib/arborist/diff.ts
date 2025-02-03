@@ -3,8 +3,7 @@ import constants from '../../../../constants'
 import type { Diff } from './types'
 import type { SafeNode } from '../node'
 
-const { LOOP_SENTINEL, NPM_REGISTRY_URL, SOCKET_CLI_FIX_PACKAGE_LOCK_FILE } =
-  constants
+const { LOOP_SENTINEL, NPM_REGISTRY_URL } = constants
 
 function getUrlOrigin(input: string): string {
   try {
@@ -28,11 +27,9 @@ export function getPackagesToQueryFromDiff(
   diff_: Diff | null,
   options?: GetPackagesToQueryFromDiffOptions
 ): PackageDetail[] {
-  const {
-    // Lazily access constants.IPC.
-    includeUnchanged = constants.IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE],
-    includeUnknownOrigin = false
-  } = <GetPackagesToQueryFromDiffOptions>{
+  const { includeUnchanged = false, includeUnknownOrigin = false } = <
+    GetPackagesToQueryFromDiffOptions
+  >{
     __proto__: null,
     ...options
   }
