@@ -1,7 +1,7 @@
 import semver from 'semver'
 
 import { SafeOverrideSet } from './override-set'
-import { arboristNodeClassPath } from '../../npm-paths'
+import { getArboristNodeClassPath } from '../../npm-paths'
 import { getLogger } from '../../proc-log'
 
 import type { SafeEdge } from './edge'
@@ -74,7 +74,7 @@ type NodeClass = Omit<
   updateOverridesEdgeInRemoved(otherOverrideSet: SafeOverrideSet): boolean
 }
 
-const Node: NodeClass = require(arboristNodeClassPath)
+const Node: NodeClass = require(getArboristNodeClassPath())
 
 // Implementation code not related to patch https://github.com/npm/cli/pull/7025
 // is based on https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/node.js:
