@@ -5,24 +5,50 @@ import process from 'node:process'
 import registryConstants from '@socketsecurity/registry/lib/constants'
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
+const {
+  PACKAGE_JSON,
+  kInternalsSymbol,
+  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
+    createConstantsObject
+  }
+} = registryConstants
+
 type RegistryEnv = typeof registryConstants.ENV
 
-type IPCObject = {
+type RegistryInternals = (typeof registryConstants)['Symbol(kInternalsSymbol)']
+
+type Internals = Omit<RegistryInternals, 'getIPC'> &
+  Readonly<{
+    getIPC: {
+      (): Promise<IPC>
+      <K extends keyof IPC | undefined>(
+        key?: K
+      ): Promise<K extends keyof IPC ? IPC[K] : IPC>
+    }
+  }>
+
+type ENV = RegistryEnv &
+  Readonly<{
+    SOCKET_CLI_DEBUG: boolean
+  }>
+
+type IPC = Readonly<{
   SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: boolean
   SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
-  [key: string]: any
-}
+}>
 
-type Constants = {
+type Constants = Omit<
+  typeof registryConstants,
+  'Symbol(kInternalsSymbol)' | 'ENV' | 'IPC'
+> & {
+  readonly 'Symbol(kInternalsSymbol)': Internals
   readonly API_V0_URL: 'https://api.socket.dev/v0'
   readonly BABEL_RUNTIME: '@babel/runtime'
   readonly BINARY_LOCK_EXT: '.lockb'
   readonly BUN: 'bun'
-  readonly ENV: RegistryEnv & {
-    SOCKET_CLI_DEBUG: boolean
-  }
+  readonly ENV: ENV
   readonly DIST_TYPE: 'module-sync' | 'require'
-  readonly IPC: IPCObject
+  readonly IPC: IPC
   readonly LOCK_EXT: '.lock'
   readonly MODULE_SYNC: 'module-sync'
   readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
@@ -46,15 +72,7 @@ type Constants = {
   readonly rootPkgJsonPath: string
   readonly shadowBinPath: string
   readonly synpBinPath: string
-} & typeof registryConstants
-
-const {
-  PACKAGE_JSON,
-  kInternalsSymbol,
-  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
-    createConstantsObject
-  }
-} = registryConstants
+}
 
 const API_V0_URL = 'https://api.socket.dev/v0'
 const BABEL_RUNTIME = '@babel/runtime'
