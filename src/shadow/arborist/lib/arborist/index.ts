@@ -1,10 +1,10 @@
 import { kRiskyReify, reify } from './reify'
-import { arboristClassPath } from '../../../npm-paths'
+import { getArboristClassPath } from '../../../npm-paths'
 
 import type { ArboristClass, ArboristReifyOptions } from './types'
 import type { SafeNode } from '../node'
 
-export const Arborist: ArboristClass = require(arboristClassPath)
+export const Arborist: ArboristClass = require(getArboristClassPath())
 
 export const kCtorArgs = Symbol('ctorArgs')
 

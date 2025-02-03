@@ -165,7 +165,29 @@ function pathsToPatterns(paths: string[]): string[] {
   return paths.map(p => (p === '.' ? '**/*' : p))
 }
 
-export function findNpmPath(filepath: string): string | undefined {
+export function findBinPathDetailsSync(binName: string): {
+  name: string
+  path: string | undefined
+  shadowed: boolean
+} {
+  let shadowIndex = -1
+  const bins =
+    which.sync(binName, {
+      all: true,
+      nothrow: true
+    }) ?? []
+  const binPath = bins.find((binPath, i) => {
+    // Skip our bin directory if it's in the front.
+    if (realpathSync(path.dirname(binPath)) === shadowBinPath) {
+      shadowIndex = i
+      return false
+    }
+    return true
+  })
+  return { name: binName, path: binPath, shadowed: shadowIndex !== -1 }
+}
+
+export function findNpmPathSync(filepath: string): string | undefined {
   let curPath = filepath
   while (true) {
     if (path.basename(curPath) === NPM) {
@@ -177,28 +199,6 @@ export function findNpmPath(filepath: string): string | undefined {
     }
     curPath = parent
   }
-}
-
-export async function findBinPathDetails(binName: string): Promise<{
-  name: string
-  path: string | undefined
-  shadowed: boolean
-}> {
-  let shadowIndex = -1
-  const bins =
-    (await which(binName, {
-      all: true,
-      nothrow: true
-    })) ?? []
-  const binPath = bins.find((binPath, i) => {
-    // Skip our bin directory if it's in the front.
-    if (realpathSync(path.dirname(binPath)) === shadowBinPath) {
-      shadowIndex = i
-      return false
-    }
-    return true
-  })
-  return { name: binName, path: binPath, shadowed: shadowIndex !== -1 }
 }
 
 export async function getPackageFiles(

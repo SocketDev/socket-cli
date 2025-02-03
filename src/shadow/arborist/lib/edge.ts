@@ -1,7 +1,7 @@
 import { depValid } from './dep-valid'
 import { SafeNode } from './node'
 import { SafeOverrideSet } from './override-set'
-import { arboristEdgeClassPath } from '../../npm-paths'
+import { getArboristEdgeClassPath } from '../../npm-paths'
 
 import type { Edge as BaseEdge, DependencyProblem } from '@npmcli/arborist'
 
@@ -56,7 +56,7 @@ export type Explanation = {
   from: object | undefined
 } | null
 
-export const Edge: EdgeClass = require(arboristEdgeClassPath)
+export const Edge: EdgeClass = require(getArboristEdgeClassPath())
 
 // The Edge class makes heavy use of private properties which subclasses do NOT
 // have access to. So we have to recreate any functionality that relies on those

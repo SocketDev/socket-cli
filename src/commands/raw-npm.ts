@@ -5,8 +5,8 @@ import meow from 'meow'
 
 import constants from '../constants'
 import { commonFlags, validationFlags } from '../flags'
+import { getNpmBinPath } from '../shadow/npm-paths'
 import { getFlagListOutput } from '../utils/output-formatting'
-import { findBinPathDetails } from '../utils/path-resolve'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
@@ -62,16 +62,7 @@ async function setupCommand(
     cli.showHelp()
     return
   }
-  const { path: binPath } = await findBinPathDetails(binName)
-  if (!binPath) {
-    // The exit code 127 indicates that the command or binary being executed
-    // could not be found.
-    console.error(
-      `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable.`
-    )
-    process.exit(127)
-  }
-  const spawnPromise = spawn(binPath, <string[]>argv, {
+  const spawnPromise = spawn(getNpmBinPath(), <string[]>argv, {
     signal: abortSignal,
     stdio: 'inherit'
   })
