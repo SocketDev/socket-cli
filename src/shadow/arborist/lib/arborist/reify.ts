@@ -48,7 +48,9 @@ const {
   NPM_REGISTRY_URL,
   SOCKET_CLI_FIX_PACKAGE_LOCK_FILE,
   SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
-  abortSignal
+  abortSignal,
+  kInternalsSymbol,
+  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIPC }
 } = constants
 
 const formatter = new ColorOrMarkdown(false)
@@ -369,11 +371,10 @@ export async function reify(
     // Nothing to check, hmmm already installed or all private?
     return await this[kRiskyReify](...args)
   }
-  // Lazily access constants.IPC.
   const {
     [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: bypassConfirms,
     [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: bypassAlerts
-  } = constants.IPC
+  } = await getIPC()
   const { stderr: output, stdin: input } = process
   let alerts: SocketPackageAlert[] = bypassAlerts
     ? []
