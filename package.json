@@ -144,7 +144,7 @@
     "oxlint": "0.15.9",
     "prettier": "3.4.2",
     "read-package-up": "^11.0.0",
-    "rollup": "4.34.0",
+    "rollup": "4.34.1",
     "rollup-plugin-ts": "^3.4.5",
     "type-coverage": "^2.29.7",
     "typescript": "5.4.5",
