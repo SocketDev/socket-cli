@@ -364,9 +364,12 @@ export async function reify(
   this: SafeArborist,
   ...args: Parameters<InstanceType<ArboristClass>['reify']>
 ): Promise<SafeNode> {
+  const IPC = await getIPC()
   // We are assuming `this[_diffTrees]()` has been called by `super.reify(...)`:
   // https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/reify.js#L141
-  let needInfoOn = getPackagesToQueryFromDiff(this.diff)
+  let needInfoOn = getPackagesToQueryFromDiff(this.diff, {
+    includeUnchanged: IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
+  })
   if (!needInfoOn.length) {
     // Nothing to check, hmmm already installed or all private?
     return await this[kRiskyReify](...args)
@@ -374,7 +377,7 @@ export async function reify(
   const {
     [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: bypassConfirms,
     [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: bypassAlerts
-  } = await getIPC()
+  } = IPC
   const { stderr: output, stdin: input } = process
   let alerts: SocketPackageAlert[] = bypassAlerts
     ? []
