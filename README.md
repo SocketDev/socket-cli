@@ -9,19 +9,10 @@
 
 ```bash
 npm install -g socket
-```
-
-```bash
 socket --help
-socket info webtorrent@1.9.1
-socket report create package.json --view
-socket report view QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
-socket wrapper --enable
 ```
 
 ## Commands
-
-### Popular Commands
 
 - `socket npm [args...]` and `socket npx [args...]` - Wraps `npm` and `npx` to
   integrate Socket and preempt installation of alerted packages using the
@@ -33,37 +24,10 @@ socket wrapper --enable
   - `--pin` - Pin overrides to their latest version.
   - `--prod` - Add overrides for only production dependencies.
 
-### Other Commands
-
 - `socket cdxgen [command]` - Call out to
   [cdxgen](https://cyclonedx.github.io/cdxgen/#/?id=getting-started). See
   [their documentation](https://cyclonedx.github.io/cdxgen/#/CLI?id=getting-help)
   for commands.
-
-- `socket info <package@version>` - Look up issues for a package.
-
-- `socket raw-npm [args...]` and `socket raw-npx [args...]` - Temporarily
-  disable the Socket 'safe-npm' wrapper.
-
-- `socket report create <path(s)-to-folder-or-file>` - Create a report on
-  [Socket.dev](https://socket.dev/)
-
-  Upload the specified `package.json` and lock files for JavaScript, Python, and
-  Go dependency manifests. If any folder is specified, the ones found in there
-  recursively are uploaded.
-
-  Glob patterns such as `**/package.json`, `**/requirements.txt`,
-  `**/pyproject.toml`, and `**/go.mod` is supported.
-
-  Intuitively ignores files matching your project's `.gitignore`, the
-  `projectIgnorePaths` in your project's
-  [`socket.yml`](https://docs.socket.dev/docs/socket-yml), and a sensible set of
-  [default ignore patterns](https://socket.dev/npm/package/ignore-by-default).
-
-- `socket report view <report-id>` - Look up issues and scores from a report.
-
-- `socket wrapper --enable` and `socket wrapper --disable` - Enable and disable
-  the Socket 'safe-npm' wrapper.
 
 ## Aliases
 
