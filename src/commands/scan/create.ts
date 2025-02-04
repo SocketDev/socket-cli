@@ -3,7 +3,6 @@ import readline from 'node:readline/promises'
 
 import meow from 'meow'
 import open from 'open'
-import { ErrorWithCause } from 'pony-cause'
 import colors from 'yoctocolors-cjs'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -159,7 +158,7 @@ async function setupCommand(
     .catch(
       /** @type {(cause: Error) => never} */
       cause => {
-        throw new ErrorWithCause('Failed getting supported files for report', {
+        throw new Error('Failed getting supported files for report', {
           cause
         })
       }

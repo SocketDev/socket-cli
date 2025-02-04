@@ -1,7 +1,6 @@
 import process from 'node:process'
 
 import meow from 'meow'
-import { ErrorWithCause } from 'pony-cause'
 import colors from 'yoctocolors-cjs'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -140,8 +139,9 @@ export async function fetchReportData(
     } catch (err) {
       if (
         retry >= MAX_TIMEOUT_RETRY ||
-        !(err instanceof ErrorWithCause) ||
-        err.cause?.cause?.response?.statusCode !== 524
+        !(err instanceof Error) ||
+        // The 524 HTTP status code indicates a timeout.
+        (err.cause as any)?.cause?.response?.statusCode !== 524
       ) {
         throw err
       }
