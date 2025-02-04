@@ -3,7 +3,6 @@ import process from 'node:process'
 
 import { betterAjvErrors } from '@apideck/better-ajv-errors'
 import meow from 'meow'
-import { ErrorWithCause } from 'pony-cause'
 
 import { SocketValidationError, readSocketConfig } from '@socketsecurity/config'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -188,7 +187,7 @@ async function setupCommand(
             .join('\n')
         )
       } else {
-        throw new ErrorWithCause('Failed to read socket.yml config', { cause })
+        throw new Error('Failed to read socket.yml config', { cause })
       }
     }
   )
@@ -206,7 +205,7 @@ async function setupCommand(
       return (res as SocketSdkReturnType<'getReportSupportedFiles'>).data
     })
     .catch((cause: Error) => {
-      throw new ErrorWithCause('Failed getting supported files for report', {
+      throw new Error('Failed getting supported files for report', {
         cause
       })
     })

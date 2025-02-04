@@ -1,6 +1,5 @@
 import process from 'node:process'
 
-import { ErrorWithCause } from 'pony-cause'
 import colors from 'yoctocolors-cjs'
 
 import { AuthError } from './errors'
@@ -40,13 +39,11 @@ export async function handleApiCall<T>(
   description: string
 ): Promise<T> {
   let result: T
-
   try {
     result = await value
   } catch (cause) {
-    throw new ErrorWithCause(`Failed ${description}`, { cause })
+    throw new Error(`Failed ${description}`, { cause })
   }
-
   return result
 }
 
