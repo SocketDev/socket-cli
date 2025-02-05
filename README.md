@@ -21,6 +21,7 @@ socket --help
 - `socket optimize` - Optimize dependencies with
   [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides!
   _(👀 [our blog post](https://socket.dev/blog/introducing-socket-optimize))_
+
   - `--pin` - Pin overrides to their latest version.
   - `--prod` - Add overrides for only production dependencies.
 
