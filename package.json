@@ -48,8 +48,10 @@
     "knip:dependencies": "knip --dependencies",
     "knip:exports": "knip --include exports,duplicates",
     "lint": "oxlint -c=./.oxlintrc.json --ignore-path=./.prettierignore --tsconfig=./tsconfig.json .",
+    "lint-staged": "lint-staged",
     "lint:fix": "npm run lint -- --fix && npm run lint:fix:fast",
     "lint:fix:fast": "prettier --cache --log-level warn --write .",
+    "precommit": "lint-staged",
     "prepare": "husky && custompatch",
     "test": "run-s check build:* test:* test:coverage:*",
     "test-ci": "run-s build:* test:*",
@@ -142,6 +144,7 @@
     "eslint-plugin-unicorn": "^56.0.1",
     "husky": "^9.1.7",
     "knip": "^5.43.6",
+    "lint-staged": "^15.4.3",
     "magic-string": "^0.30.17",
     "mock-fs": "^5.4.1",
     "nock": "^14.0.0",
@@ -216,5 +219,10 @@
     "dist/**",
     "shadow-bin/**",
     "translations.json"
-  ]
+  ],
+  "lint-staged": {
+    "*.{cjs,js,md,mjs,ts}": [
+      "npm run lint:fix"
+    ]
+  }
 }
