@@ -36,7 +36,7 @@ export const logout: CliSubcommand = {
       cli.showHelp()
       return
     }
-    updateSetting('apiKey', null)
+    updateSetting('apiToken', null)
     updateSetting('apiBaseUrl', null)
     updateSetting('apiProxy', null)
     updateSetting('enforcedOrgs', null)

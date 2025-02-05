@@ -19,8 +19,8 @@ export const auditLog: CliSubcommand = {
 
     const input = setupCommand(name, auditLog.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
@@ -28,7 +28,7 @@ export const auditLog: CliSubcommand = {
       const spinner = new Spinner({
         text: `Looking up audit log for ${input.orgSlug}\n`
       }).start()
-      await fetchOrgAuditLog(input.orgSlug, input, spinner, apiKey)
+      await fetchOrgAuditLog(input.orgSlug, input, spinner, apiToken)
     }
   }
 }
@@ -139,9 +139,9 @@ async function fetchOrgAuditLog(
   orgSlug: string,
   input: CommandContext,
   spinner: Spinner,
-  apiKey: string
+  apiToken: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getAuditLogEvents(orgSlug, input),
     `Looking up audit log for ${orgSlug}\n`

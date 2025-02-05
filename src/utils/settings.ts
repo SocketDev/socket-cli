@@ -11,11 +11,20 @@ import constants from '../constants'
 
 const LOCALAPPDATA = 'LOCALAPPDATA'
 
+const supportedApiKeys = new Set([
+  'apiBaseUrl',
+  'apiKey',
+  'apiProxy',
+  'enforcedOrgs'
+])
+
 interface Settings {
-  apiKey?: string | null
-  enforcedOrgs?: string[] | null
-  apiBaseUrl?: string | null
-  apiProxy?: string | null
+  apiBaseUrl?: string | null | undefined
+  apiKey?: string | null | undefined
+  apiProxy?: string | null | undefined
+  enforcedOrgs?: string[] | null | undefined
+  // apiToken is an alias for apiKey.
+  apiToken?: string | null | undefined
 }
 
 let _settings: Settings | undefined
@@ -73,6 +82,14 @@ function getSettingsPath(): string | undefined {
   return _settingsPath
 }
 
+function normalizeSettingsKey(key: string): string {
+  const normalizedKey = key === 'apiToken' ? 'apiKey' : key
+  if (!supportedApiKeys.has(normalizedKey)) {
+    throw new Error(`Invalid settings key: ${normalizedKey}`)
+  }
+  return normalizedKey
+}
+
 export function findSocketYmlSync() {
   let prevDir = null
   let dir = process.cwd()
@@ -102,7 +119,7 @@ export function findSocketYmlSync() {
 export function getSetting<Key extends keyof Settings>(
   key: Key
 ): Settings[Key] {
-  return getSettings()[key]
+  return getSettings()[<Key>normalizeSettingsKey(key)]
 }
 
 let pendingSave = false
@@ -111,7 +128,7 @@ export function updateSetting<Key extends keyof Settings>(
   value: Settings[Key]
 ): void {
   const settings = getSettings()
-  settings[key] = value
+  ;(settings as any)[<Key>normalizeSettingsKey(key)] = value
   if (!pendingSave) {
     pendingSave = true
     process.nextTick(() => {

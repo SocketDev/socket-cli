@@ -17,15 +17,15 @@ export const create: CliSubcommand = {
     const name = `${parentName} create`
     const input = setupCommand(name, create.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
       const spinnerText = 'Creating repository... \n'
       const spinner = new Spinner({ text: spinnerText }).start()
-      await createRepo(input.orgSlug, input, spinner, apiKey)
+      await createRepo(input.orgSlug, input, spinner, apiToken)
     }
   }
 }
@@ -139,9 +139,9 @@ async function createRepo(
   orgSlug: string,
   input: CommandContext,
   spinner: Spinner,
-  apiKey: string
+  apiToken: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.createOrgRepo(orgSlug, input),
     'creating repository'

@@ -44,14 +44,14 @@ function setupCommand(
 }
 
 async function fetchOrganizations(): Promise<void> {
-  const apiKey = getDefaultToken()
-  if (!apiKey) {
+  const apiToken = getDefaultToken()
+  if (!apiToken) {
     throw new AuthError(
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
   const spinner = new Spinner({ text: 'Fetching organizations...' }).start()
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getOrganizations(),
     'looking up organizations'
@@ -63,7 +63,7 @@ async function fetchOrganizations(): Promise<void> {
   }
 
   spinner.stop(
-    `List of organizations associated with your API key: ${colors.italic(apiKey)}`
+    `List of organizations associated with your API key: ${colors.italic(apiToken)}`
   )
 
   const organizations = Object.values(result.data.organizations)

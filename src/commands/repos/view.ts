@@ -19,15 +19,20 @@ export const view: CliSubcommand = {
     const name = `${parentName} view`
     const input = setupCommand(name, view.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
       const spinnerText = 'Fetching repository... \n'
       const spinner = new Spinner({ text: spinnerText }).start()
-      await viewRepository(input.orgSlug, input.repositoryName, spinner, apiKey)
+      await viewRepository(
+        input.orgSlug,
+        input.repositoryName,
+        spinner,
+        apiToken
+      )
     }
   }
 }
@@ -93,9 +98,9 @@ async function viewRepository(
   orgSlug: string,
   repoName: string,
   spinner: Spinner,
-  apiKey: string
+  apiToken: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getOrgRepo(orgSlug, repoName),
     'fetching repository'

@@ -55,11 +55,11 @@ export async function handleAPIError(code: number) {
   }
 }
 
-export async function queryAPI(path: string, apiKey: string) {
+export async function queryAPI(path: string, apiToken: string) {
   return await fetch(`${API_V0_URL}/${path}`, {
     method: 'GET',
     headers: {
-      Authorization: `Basic ${btoa(`${apiKey}:${apiKey}`)}`
+      Authorization: `Basic ${btoa(`${apiToken}:${apiToken}`)}`
     }
   })
 }

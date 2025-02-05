@@ -17,15 +17,20 @@ export const del: CliSubcommand = {
     const name = `${parentName} del`
     const input = setupCommand(name, del.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
       const spinnerText = 'Deleting scan...'
       const spinner = new Spinner({ text: spinnerText }).start()
-      await deleteOrgFullScan(input.orgSlug, input.fullScanId, spinner, apiKey)
+      await deleteOrgFullScan(
+        input.orgSlug,
+        input.fullScanId,
+        spinner,
+        apiToken
+      )
     }
   }
 }
@@ -91,9 +96,9 @@ async function deleteOrgFullScan(
   orgSlug: string,
   fullScanId: string,
   spinner: Spinner,
-  apiKey: string
+  apiToken: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.deleteOrgFullScan(orgSlug, fullScanId),
     'Deleting scan'
