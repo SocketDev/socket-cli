@@ -1,4 +1,4 @@
-import { arboristDepValidPath } from '../../npm-paths'
+import { getArboristDepValidPath } from '../../npm-paths'
 
 import type { SafeNode } from './node'
 
@@ -7,4 +7,4 @@ export const depValid: (
   requested: string,
   accept: string | undefined,
   requester: SafeNode
-) => boolean = require(arboristDepValidPath)
+) => boolean = require(getArboristDepValidPath())

@@ -5,6 +5,24 @@ import rl from 'node:readline'
 import constants from '../../constants'
 import { getPublicToken } from '../sdk'
 
+export type CveAlertType = 'criticalCVE' | 'cve' | 'mediumCVE' | 'mildCVE'
+
+export type ArtifactAlertCveFixable = Omit<
+  SocketArtifactAlert,
+  'props' | 'title'
+> & {
+  type: CveAlertType
+  props: {
+    firstPatchedVersionIdentifier: string
+    vulnerableVersionRange: string
+    [key: string]: any
+  }
+}
+
+export type ArtifactAlertFixable = ArtifactAlertCveFixable & {
+  type: CveAlertType | 'socketUpgradeAvailable'
+}
+
 export type SocketArtifactAlert = {
   key: string
   type: string
@@ -85,18 +103,23 @@ export async function* batchScan(
   }
 }
 
-export function isArtifactAlertCveFixable(alert: SocketArtifactAlert): boolean {
+export function isArtifactAlertCveFixable(
+  alert: SocketArtifactAlert
+): alert is ArtifactAlertCveFixable {
   const { type } = alert
   return (
     (type === 'cve' ||
       type === 'mediumCVE' ||
       type === 'mildCVE' ||
       type === 'criticalCVE') &&
-    !!alert.props?.['firstPatchedVersionIdentifier']
+    !!alert.props?.['firstPatchedVersionIdentifier'] &&
+    !!alert.props?.['vulnerableVersionRange']
   )
 }
 
-export function isArtifactAlertFixable(alert: SocketArtifactAlert): boolean {
+export function isArtifactAlertFixable(
+  alert: SocketArtifactAlert
+): alert is ArtifactAlertFixable {
   return (
     alert.type === 'socketUpgradeAvailable' || isArtifactAlertCveFixable(alert)
   )

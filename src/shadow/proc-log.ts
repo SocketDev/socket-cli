@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { npmNmPath } from './npm-paths'
+import { getNpmNodeModulesPath } from './npm-paths'
 import constants from '../constants'
 
 const { UNDEFINED_TOKEN } = constants
@@ -49,6 +49,7 @@ export type Logger =
 let _log: Logger | {} | undefined = UNDEFINED_TOKEN
 export function getLogger(): Logger {
   if (_log === UNDEFINED_TOKEN) {
+    const npmNmPath = getNpmNodeModulesPath()
     _log = tryRequire(
       [
         <'proc-log'>path.join(npmNmPath, 'proc-log/lib/index.js'),
