@@ -86,6 +86,18 @@ use of the `projectIgnorePaths` to excludes files when creating a report.
 
 ## Contributing
 
+### Setup
+
+To run dev locally you can run these steps
+
+```
+npm install
+npm run build:dist
+npm exec socket
+```
+
+That should invoke it from local sources. If you make changes you run `build:dist` again.
+
 ### Environment variables for development
 
 - `SOCKET_SECURITY_API_BASE_URL` - if set, this will be the base for all
