@@ -96,7 +96,8 @@ npm run build:dist
 npm exec socket
 ```
 
-That should invoke it from local sources. If you make changes you run `build:dist` again.
+That should invoke it from local sources. If you make changes you run
+`build:dist` again.
 
 ### Environment variables for development
 
