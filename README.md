@@ -21,6 +21,7 @@ socket --help
 - `socket optimize` - Optimize dependencies with
   [`@socketregistry`](https://github.com/SocketDev/socket-registry) overrides!
   _(👀 [our blog post](https://socket.dev/blog/introducing-socket-optimize))_
+
   - `--pin` - Pin overrides to their latest version.
   - `--prod` - Add overrides for only production dependencies.
 
@@ -95,7 +96,8 @@ npm run build:dist
 npm exec socket
 ```
 
-That should invoke it from local sources. If you make changes you run `build:dist` again.
+That should invoke it from local sources. If you make changes you run
+`build:dist` again.
 
 ### Environment variables for development
 
