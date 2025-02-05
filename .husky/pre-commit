@@ -1,1 +1,11 @@
-npm test
+if [ -z "${DISABLE_PRECOMMIT_LINT}" ]; then
+  npm run lint-staged
+else
+  echo "Skipping lint due to DISABLE_PRECOMMIT_LINT env var"
+fi
+
+if [ -z "${DISABLE_PRECOMMIT_TEST}" ]; then
+  npm test
+else
+  echo "Skipping testing due to DISABLE_PRECOMMIT_TEST env var"
+fi
