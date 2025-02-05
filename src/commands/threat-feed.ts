@@ -23,8 +23,8 @@ export const threatFeed: CliSubcommand = {
 
     const input = setupCommand(name, threatFeed.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
@@ -32,7 +32,7 @@ export const threatFeed: CliSubcommand = {
       const spinner = new Spinner({
         text: 'Looking up the threat feed'
       }).start()
-      await fetchThreatFeed(input, spinner, apiKey)
+      await fetchThreatFeed(input, spinner, apiToken)
     }
   }
 }
@@ -140,7 +140,7 @@ type ThreatResult = {
 async function fetchThreatFeed(
   { direction, filter, outputJson, page, per_page }: CommandContext,
   spinner: Spinner,
-  apiKey: string
+  apiToken: string
 ): Promise<void> {
   const formattedQueryParams = formatQueryParams({
     per_page,
@@ -148,7 +148,10 @@ async function fetchThreatFeed(
     direction,
     filter
   }).join('&')
-  const response = await queryAPI(`threat-feed?${formattedQueryParams}`, apiKey)
+  const response = await queryAPI(
+    `threat-feed?${formattedQueryParams}`,
+    apiToken
+  )
   const data = <{ results: ThreatResult[]; nextPage: string }>(
     await response.json()
   )

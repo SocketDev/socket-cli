@@ -34,8 +34,7 @@ export function getDefaultToken(): string | undefined {
     // Keep 'SOCKET_SECURITY_API_KEY' as an alias of 'SOCKET_SECURITY_API_TOKEN'.
     // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
     process.env['SOCKET_SECURITY_API_KEY'] ||
-    // TODO: Rename the 'apiKey' setting to 'apiToken'.
-    getSetting('apiKey') ||
+    getSetting('apiToken') ||
     _defaultToken
   _defaultToken = isNonEmptyString(key) ? key : undefined
   return _defaultToken

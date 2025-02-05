@@ -18,8 +18,8 @@ export const stream: CliSubcommand = {
     const name = `${parentName} stream`
     const input = setupCommand(name, stream.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
@@ -29,7 +29,7 @@ export const stream: CliSubcommand = {
         input.orgSlug,
         input.fullScanId,
         input.file,
-        apiKey
+        apiToken
       )
 
       if (result?.success) {
@@ -106,9 +106,9 @@ async function getOrgFullScan(
   orgSlug: string,
   fullScanId: string,
   file: string | undefined,
-  apiKey: string
+  apiToken: string
 ): Promise<SocketSdkResultType<'getOrgFullScan'>> {
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   return await handleApiCall(
     socketSdk.getOrgFullScan(orgSlug, fullScanId, file),
     'Streaming a scan'

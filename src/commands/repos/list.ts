@@ -19,15 +19,15 @@ export const list: CliSubcommand = {
     const name = `${parentName} list`
     const input = setupCommand(name, list.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
       const spinnerText = 'Listing repositories... \n'
       const spinner = new Spinner({ text: spinnerText }).start()
-      await listOrgRepos(input.orgSlug, input, spinner, apiKey)
+      await listOrgRepos(input.orgSlug, input, spinner, apiToken)
     }
   }
 }
@@ -126,9 +126,9 @@ async function listOrgRepos(
   orgSlug: string,
   input: CommandContext,
   spinner: Spinner,
-  apiKey: string
+  apiToken: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getOrgRepoList(orgSlug, input),
     'listing repositories'

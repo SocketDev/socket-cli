@@ -15,15 +15,15 @@ export const del: CliSubcommand = {
     const name = `${parentName} del`
     const input = setupCommand(name, del.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
       const spinnerText = 'Deleting repository... \n'
       const spinner = new Spinner({ text: spinnerText }).start()
-      await deleteRepository(input.orgSlug, input.repoName, spinner, apiKey)
+      await deleteRepository(input.orgSlug, input.repoName, spinner, apiToken)
     }
   }
 }
@@ -77,9 +77,9 @@ async function deleteRepository(
   orgSlug: string,
   repoName: string,
   spinner: Spinner,
-  apiKey: string
+  apiToken: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.deleteOrgRepo(orgSlug, repoName),
     'deleting repository'

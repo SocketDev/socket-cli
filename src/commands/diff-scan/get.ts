@@ -20,15 +20,15 @@ export const get: CliSubcommand = {
     const name = `${parentName} get`
     const input = setupCommand(name, get.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
       const spinnerText = 'Getting diff scan... \n'
       const spinner = new Spinner({ text: spinnerText }).start()
-      await getDiffScan(input, spinner, apiKey)
+      await getDiffScan(input, spinner, apiToken)
     }
   }
 }
@@ -133,11 +133,11 @@ function setupCommand(
 async function getDiffScan(
   { after, before, file, orgSlug, outputJson }: CommandContext,
   spinner: Spinner,
-  apiKey: string
+  apiToken: string
 ): Promise<void> {
   const response = await queryAPI(
     `${orgSlug}/full-scans/diff?before=${before}&after=${after}&preview`,
-    apiKey
+    apiToken
   )
   const data = await response.json()
 

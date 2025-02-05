@@ -101,14 +101,14 @@ async function searchDeps({
   offset,
   outputJson
 }: CommandContext): Promise<void> {
-  const apiKey = getDefaultToken()
-  if (!apiKey) {
+  const apiToken = getDefaultToken()
+  if (!apiToken) {
     throw new AuthError(
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
   const spinner = new Spinner({ text: 'Searching dependencies...' }).start()
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
 
   const result = await handleApiCall(
     socketSdk.searchDependencies({ limit, offset }),
