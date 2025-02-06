@@ -1,12 +1,13 @@
-import child_process from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import util from 'node:util'
 
 import meow from 'meow'
 
+import spawn from '@npmcli/promise-spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
+import { safeReadFile } from '../../utils/fs'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
@@ -15,7 +16,6 @@ type ListDescription =
   | string
   | { description: string; type?: string; default?: string }
 
-const execp = util.promisify(child_process.exec)
 const renamep = util.promisify(fs.rename)
 
 const description =
@@ -177,7 +177,7 @@ async function startConversion(
     // We must now run sbt, pick the generated xml from the /target folder (the stdout should tell you the location upon success) and store it somewhere else.
     // TODO: Not sure what this somewhere else might be tbh.
 
-    const output = await execp(bin + ` makePom ${sbtOpts.join(' ')}`, {
+    const output = await spawn(bin, ['makePom'].concat(sbtOpts), {
       cwd: target || '.'
     })
     spinner.success()
@@ -205,7 +205,7 @@ async function startConversion(
     // Move the pom file to ...? initial cwd? loc will be an absolute path, or dump to stdout
     if (out === '-') {
       spinner.start('Result:\n```').success()
-      console.log(fs.readFileSync(loc, 'utf8'))
+      console.log(await safeReadFile(loc, 'utf8'))
       console.log('```')
       spinner.start().success(`OK`)
     } else {
