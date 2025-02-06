@@ -3,7 +3,6 @@ import meow from 'meow'
 import { scala } from './scala'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
-
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
 const description =
