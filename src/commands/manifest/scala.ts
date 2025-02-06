@@ -2,9 +2,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 import util from 'node:util'
 
+import spawn from '@npmcli/promise-spawn'
 import meow from 'meow'
 
-import spawn from '@npmcli/promise-spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { safeReadFile } from '../../utils/fs'
