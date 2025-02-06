@@ -22,11 +22,10 @@ const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 
 const rootPath = __dirname
 const rootTsConfigPath = path.join(rootPath, TSCONFIG_JSON)
+const gitignorePath = path.join(rootPath, GIT_IGNORE)
 
 const BIOME_JSON = 'biome.json'
 const biomeConfig = require(path.join(rootPath, BIOME_JSON))
-
-const gitignorePath = path.join(rootPath, GIT_IGNORE)
 
 const sharedPlugins = {
   'sort-destructure-keys': sortDestructureKeysPlugin,
