@@ -228,16 +228,14 @@ const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = (() => {
           })
         } else {
           // Properties with undefined values are omitted when saved as JSON.
-          editablePkgJson.update(
-            <typeof pkgJson>(hasKeys(pkgJson[field])
+          editablePkgJson.update(<typeof pkgJson>(hasKeys(pkgJson[field])
               ? {
                   [field]: {
                     ...(isObject(oldValue) ? oldValue : {}),
                     overrides: undefined
                   }
                 }
-              : { [field]: undefined })
-          )
+              : { [field]: undefined }))
         }
       } else if (field === OVERRIDES || field === RESOLUTIONS) {
         // Properties with undefined values are omitted when saved as JSON.

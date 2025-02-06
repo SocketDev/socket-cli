@@ -34,7 +34,10 @@ export function checkForSocketComments({
       // To ignore an alert, reply with a comment starting with @SocketSecurity ignore
       // followed by a space separated list of ecosystem/package-name@version specifiers.
       // e.g. @SocketSecurity ignore npm/foo@1.0.0 or ignore all packages with @SocketSecurity ignore-all
-      comment.body.split('\n').at(0)?.includes('SocketSecurity ignore')
+      comment.body
+        .split('\n')
+        .at(0)
+        ?.includes('SocketSecurity ignore')
     ) {
       socketComments.ignore.push(comment)
     }

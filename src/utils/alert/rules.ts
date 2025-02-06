@@ -133,9 +133,7 @@ type SettingsType = (SocketSdkResultType<'postSettings'> & {
   success: true
 })['data']
 
-export function createAlertUXLookup(
-  settings: SettingsType
-): (context: {
+export function createAlertUXLookup(settings: SettingsType): (context: {
   package: { name: string; version: string }
   alert: { type: string }
 }) => RuleActionUX {
