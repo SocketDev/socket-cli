@@ -4,6 +4,7 @@ Thumbs.db
 /.env
 /.nvm
 /.tap
+/.type-coverage
 /.vscode
 /coverage
 /npm-debug.log

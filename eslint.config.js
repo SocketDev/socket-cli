@@ -2,7 +2,10 @@
 
 const path = require('node:path')
 
-const { includeIgnoreFile } = require('@eslint/compat')
+const {
+  convertIgnorePatternToMinimatch,
+  includeIgnoreFile
+} = require('@eslint/compat')
 const js = require('@eslint/js')
 const tsParser = require('@typescript-eslint/parser')
 const { createOxcImportResolver } = require('eslint-import-resolver-oxc')
@@ -13,15 +16,17 @@ const unicornPlugin = require('eslint-plugin-unicorn')
 const tsEslint = require('typescript-eslint')
 
 const constants = require('@socketsecurity/registry/lib/constants')
-const { GIT_IGNORE, LATEST, PRETTIER_IGNORE, TSCONFIG_JSON } = constants
+const { GIT_IGNORE, LATEST, TSCONFIG_JSON } = constants
 
 const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 
 const rootPath = __dirname
 const rootTsConfigPath = path.join(rootPath, TSCONFIG_JSON)
 
+const BIOME_JSON = 'biome.json'
+const biomeConfig = require(path.join(rootPath, BIOME_JSON))
+
 const gitignorePath = path.join(rootPath, GIT_IGNORE)
-const prettierignorePath = path.join(rootPath, PRETTIER_IGNORE)
 
 const sharedPlugins = {
   'sort-destructure-keys': sortDestructureKeysPlugin,
@@ -112,7 +117,10 @@ const importFlatConfigsForModule = getImportXFlatConfigs(true)
 
 module.exports = [
   includeIgnoreFile(gitignorePath),
-  includeIgnoreFile(prettierignorePath),
+  {
+    name: 'Imported biome.json ignore patterns',
+    ignores: biomeConfig.files.ignore.map(convertIgnorePatternToMinimatch)
+  },
   {
     files: ['**/*.{c,}js'],
     ...importFlatConfigsForScript.recommended

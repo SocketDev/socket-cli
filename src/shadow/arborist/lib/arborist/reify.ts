@@ -339,14 +339,12 @@ async function updateAdvisoryDependencies(
         }
         for (const newDepName of Object.keys(newDeps)) {
           if (!hasOwn(oldDeps, newDepName)) {
-            node.addEdgeOut(
-              (<unknown>new Edge({
+            node.addEdgeOut((<unknown>new Edge({
                 from: node,
                 name: newDepName,
                 spec: newDeps[newDepName],
                 type: 'prod'
-              })) as SafeEdge
-            )
+              })) as SafeEdge)
           }
         }
       }

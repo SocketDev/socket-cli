@@ -50,7 +50,7 @@
     "lint": "oxlint -c=./.oxlintrc.json --ignore-path=./.prettierignore --tsconfig=./tsconfig.json .",
     "lint-staged": "lint-staged",
     "lint:fix": "npm run lint -- --fix && npm run lint:fix:fast",
-    "lint:fix:fast": "prettier --cache --log-level warn --write .",
+    "lint:fix:fast": "biome format --write",
     "precommit": "lint-staged",
     "prepare": "husky && custompatch",
     "test": "run-s check build:* test:* test:coverage:*",
@@ -108,6 +108,9 @@
     "@babel/preset-env": "^7.26.7",
     "@babel/preset-typescript": "^7.26.0",
     "@babel/runtime": "^7.26.7",
+    "@biomejs/biome": "^1.9.4",
+    "@biomejs/js-api": "^0.7.1",
+    "@biomejs/wasm-nodejs": "^1.9.4",
     "@eslint/compat": "^1.2.6",
     "@eslint/js": "^9.19.0",
     "@rollup/plugin-commonjs": "^28.0.2",
@@ -222,7 +225,8 @@
   ],
   "lint-staged": {
     "*.{cjs,js,md,mjs,ts}": [
-      "npm run lint:fix"
+      "npm run lint -- --fix",
+      "npm run lint:fix:fast -- --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
     ]
   }
 }
