@@ -1,11 +1,13 @@
-import util from 'node:util'
-import fs from 'node:fs'
 import child_process from 'node:child_process'
+import fs from 'node:fs'
 import path from 'node:path'
+import util from 'node:util'
 
 import meow from 'meow'
-import { getFlagListOutput } from '../../utils/output-formatting.ts'
+
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
+
+import { getFlagListOutput } from '../../utils/output-formatting.ts'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
@@ -19,7 +21,7 @@ const renamep = util.promisify(fs.rename)
 const description =
   'Generate a "Software Bill of Materials" (`pom.xml`) from Scala\'s `build.sbt` file'
 
-const sbomFlags: Record<string, ListDescription> = {
+const scalaCmdFlags: Record<string, ListDescription> = {
   bin: {
     type: 'string',
     default: 'sbt',
@@ -29,7 +31,7 @@ const sbomFlags: Record<string, ListDescription> = {
     type: 'string',
     default: './socket.pom.xml',
     description:
-      'Path of output file; where to store the resulting sbom, see also --stdout'
+      'Path of output file; where to store the resulting manifest, see also --stdout'
   },
   stdout: {
     type: 'boolean',
@@ -54,8 +56,8 @@ const help = (name: string, flags: Record<string, ListDescription>) => `
     ${getFlagListOutput(flags, 6)}
 
   Uses \`sbt makePom\` to generate a \`pom.xml\` from your \`build.sbt\` file.
-  This xml file is the SBOM ("Software Bill of Materials") like a package.json
-  for Node.js or requirements.txt for PyPi, but specifically for Scala.
+  This xml file is the dependency manifest (like a package.json
+  for Node.js or requirements.txt for PyPi), but specifically for Scala.
 
   There are some caveats with \`build.sbt\` to \`pom.xml\` conversion:
 
@@ -84,7 +86,7 @@ export const scala: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     const name = `${parentName} scala`
     // note: meow will exit if it prints the --help screen
-    const cli = meow(help(name, sbomFlags), {
+    const cli = meow(help(name, scalaCmdFlags), {
       argv: argv.length === 0 ? ['--help'] : argv,
       description,
       importMeta
@@ -209,7 +211,7 @@ async function startConversion(
     } else {
       if (verbose) {
         spinner.start(
-          `Moving sbom file from \`${loc.replace(/^\/home\/[^/]*?\//, '~/')}\` to \`${out}\``
+          `Moving manifest file from \`${loc.replace(/^\/home\/[^/]*?\//, '~/')}\` to \`${out}\``
         )
       } else {
         spinner.start('Moving output pom file')
