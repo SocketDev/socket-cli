@@ -1,41 +1,31 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
-    "ignore": [
-      "**/.env",
-      "**/.github",
-      "**/.nvm",
-      "**/.tap",
-      "**/.type-coverage",
-      "**/coverage",
-      "**/dist",
-      "**/package.json",
-      "**/package-lock.json"
-    ],
+    "ignore": ["**/package.json", "**/package-lock.json"],
     "maxSize": 5242880
   },
   "formatter": {
     "enabled": true,
-    "useEditorconfig": true,
+    "attributePosition": "auto",
+    "bracketSpacing": true,
     "formatWithErrors": false,
     "indentStyle": "space",
     "indentWidth": 2,
     "lineEnding": "lf",
     "lineWidth": 80,
-    "attributePosition": "auto",
-    "bracketSpacing": true
+    "useEditorconfig": true
   },
   "javascript": {
     "formatter": {
+      "arrowParentheses": "asNeeded",
+      "attributePosition": "auto",
+      "bracketSameLine": false,
+      "bracketSpacing": true,
       "jsxQuoteStyle": "double",
       "quoteProperties": "asNeeded",
-      "trailingCommas": "none",
-      "semicolons": "asNeeded",
-      "arrowParentheses": "asNeeded",
-      "bracketSameLine": false,
       "quoteStyle": "single",
-      "attributePosition": "auto",
-      "bracketSpacing": true
+      "semicolons": "asNeeded",
+      "trailingCommas": "none"
     }
   },
   "json": {
