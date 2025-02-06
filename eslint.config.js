@@ -16,16 +16,17 @@ const unicornPlugin = require('eslint-plugin-unicorn')
 const tsEslint = require('typescript-eslint')
 
 const constants = require('@socketsecurity/registry/lib/constants')
-const { GIT_IGNORE, LATEST, TSCONFIG_JSON } = constants
+const { BIOME_JSON, GIT_IGNORE, LATEST, TSCONFIG_JSON } = constants
 
 const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 
 const rootPath = __dirname
 const rootTsConfigPath = path.join(rootPath, TSCONFIG_JSON)
+
+const biomeConfigPath = path.join(rootPath, BIOME_JSON)
 const gitignorePath = path.join(rootPath, GIT_IGNORE)
 
-const BIOME_JSON = 'biome.json'
-const biomeConfig = require(path.join(rootPath, BIOME_JSON))
+const biomeConfig = require(biomeConfigPath)
 
 const sharedPlugins = {
   'sort-destructure-keys': sortDestructureKeysPlugin,
