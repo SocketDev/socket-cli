@@ -41,7 +41,8 @@
     "check": "run-p -c --aggregate-output check:*",
     "check:lint": "eslint --report-unused-disable-directives .",
     "check:tsc": "tsc",
-    "check:type-coverage": "type-coverage --detail --strict --at-least 95 --ignore-files 'test/*'",
+    "check:type-coverage": "type-coverage",
+    "check:type-coverage:detail": "npm run check:type-coverage -- --detail",
     "clean": "run-p --aggregate-output clean:*",
     "clean:dist": "del-cli 'dist' 'test/dist'",
     "clean:node_modules": "del-cli '**/node_modules'",
@@ -228,5 +229,16 @@
       "npm run lint -- --fix",
       "npm run lint:fix:fast -- --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
     ]
+  },
+  "typeCoverage": {
+    "cache": true,
+    "atLeast": 95,
+    "ignoreAsAssertion": true,
+    "ignoreCatch": true,
+    "ignoreEmptyType": true,
+    "ignore-non-null-assertion": true,
+    "ignore-type-assertion": true,
+    "ignore-files": "test/*",
+    "strict": true
   }
 }
