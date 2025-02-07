@@ -51,7 +51,7 @@ const distRequirePath = path.join(rootDistPath, REQUIRE)
 const editablePkgJson = readPackageJsonSync(rootPath, { editable: true })
 
 const processEnvTapRegExp =
-  /\bprocess\.env(?:\.TAP|\[['"]TAP['"]\])(\s*\?[^:]+:\s*)?/g
+  /\bprocess\.env(?:\.TAP|\[['"](?:TAP|VITEST)['"]\])(\s*\?[^:]+:\s*)?/g
 
 function createStubCode(relFilepath) {
   return `'use strict'\n\nmodule.exports = require('${relFilepath}')\n`
