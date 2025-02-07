@@ -10,6 +10,7 @@ import type { Options } from 'meow'
 interface CliAlias {
   description: string
   argv: readonly string[]
+  hidden?: boolean
 }
 
 type CliAliases = Record<string, CliAlias>
@@ -75,13 +76,18 @@ export async function meowWithSubcommands(
         {
           ...toSortedObject(
             Object.fromEntries(
-              Object.entries(subcommands).filter(entry => !entry[1].hidden)
+              Object.entries(subcommands).filter(({ 1: subcommand }) => !subcommand.hidden)
             )
           ),
           ...toSortedObject(
             Object.fromEntries(
               Object.entries(aliases).filter(
-                entry => !subcommands[entry[1]?.argv[0]!]?.hidden
+                ({ 1: alias }) => {
+                  const { hidden } = alias
+                  const cmdName = hidden ? '' : alias.argv[0]
+                  const subcommand = cmdName ? subcommands[cmdName] : undefined
+                  return subcommand && !subcommand.hidden
+                }
               )
             )
           )
