@@ -21,15 +21,15 @@ export const create: CliSubcommand = {
     const name = `${parentName} create`
     const input = await setupCommand(name, create.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
       const spinnerText = 'Creating a scan... \n'
       const spinner = new Spinner({ text: spinnerText }).start()
-      await createFullScan(input, spinner, apiKey)
+      await createFullScan(input, spinner, apiToken)
     }
   }
 }
@@ -198,9 +198,9 @@ async function setupCommand(
 async function createFullScan(
   input: CommandContext,
   spinner: Spinner,
-  apiKey: string
+  apiToken: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   const {
     branchName,
     commitMessage,

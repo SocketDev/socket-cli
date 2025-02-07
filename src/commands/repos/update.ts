@@ -17,15 +17,15 @@ export const update: CliSubcommand = {
     const name = `${parentName} update`
     const input = setupCommand(name, update.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
       const spinnerText = 'Updating repository... \n'
       const spinner = new Spinner({ text: spinnerText }).start()
-      await updateRepository(input.orgSlug, input, spinner, apiKey)
+      await updateRepository(input.orgSlug, input, spinner, apiToken)
     }
   }
 }
@@ -140,9 +140,9 @@ async function updateRepository(
   orgSlug: string,
   input: CommandContext,
   spinner: Spinner,
-  apiKey: string
+  apiToken: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.updateOrgRepo(orgSlug, input.name, input),
     'updating repository'

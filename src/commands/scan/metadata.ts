@@ -17,15 +17,15 @@ export const metadata: CliSubcommand = {
     const name = `${parentName} metadata`
     const input = setupCommand(name, metadata.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
       }
       const spinnerText = "Getting scan's metadata... \n"
       const spinner = new Spinner({ text: spinnerText }).start()
-      await getOrgScanMetadata(input.orgSlug, input.scanID, spinner, apiKey)
+      await getOrgScanMetadata(input.orgSlug, input.scanID, spinner, apiToken)
     }
   }
 }
@@ -91,9 +91,9 @@ async function getOrgScanMetadata(
   orgSlug: string,
   scanId: string,
   spinner: Spinner,
-  apiKey: string
+  apiToken: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getOrgFullScanMetadata(orgSlug, scanId),
     'Listing scans'

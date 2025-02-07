@@ -29,8 +29,8 @@ export const analytics: CliSubcommand = {
 
     const input = setupCommand(name, analytics.description, argv, importMeta)
     if (input) {
-      const apiKey = getDefaultToken()
-      if (!apiKey) {
+      const apiToken = getDefaultToken()
+      if (!apiToken) {
         throw new AuthError(
           'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
         )
@@ -40,7 +40,7 @@ export const analytics: CliSubcommand = {
         await fetchOrgAnalyticsData(
           input.time,
           spinner,
-          apiKey,
+          apiToken,
           input.outputJson,
           input.file
         )
@@ -50,7 +50,7 @@ export const analytics: CliSubcommand = {
             input.repo,
             input.time,
             spinner,
-            apiKey,
+            apiToken,
             input.outputJson,
             input.file
           )
@@ -173,11 +173,11 @@ const METRICS = [
 async function fetchOrgAnalyticsData(
   time: number,
   spinner: Spinner,
-  apiKey: string,
+  apiToken: string,
   outputJson: boolean,
   filePath: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getOrgAnalytics(time.toString()),
     'fetching analytics data'
@@ -338,11 +338,11 @@ async function fetchRepoAnalyticsData(
   repo: string,
   time: number,
   spinner: Spinner,
-  apiKey: string,
+  apiToken: string,
   outputJson: boolean,
   filePath: string
 ): Promise<void> {
-  const socketSdk = await setupSdk(apiKey)
+  const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getRepoAnalytics(repo, time.toString()),
     'fetching analytics data'

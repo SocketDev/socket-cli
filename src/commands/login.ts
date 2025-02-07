@@ -156,9 +156,8 @@ export const login: CliSubcommand = {
     }
 
     updateSetting('enforcedOrgs', enforcedOrgs)
-    // TODO: Rename the 'apiKey' setting to 'apiToken'.
-    const oldToken = getSetting('apiKey')
-    updateSetting('apiKey', apiToken)
+    const oldToken = getSetting('apiToken')
+    updateSetting('apiToken', apiToken)
     updateSetting('apiBaseUrl', apiBaseUrl)
     updateSetting('apiProxy', apiProxy)
     spinner.success(`API credentials ${oldToken ? 'updated' : 'set'}`)
