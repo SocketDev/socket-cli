@@ -76,19 +76,19 @@ export async function meowWithSubcommands(
         {
           ...toSortedObject(
             Object.fromEntries(
-              Object.entries(subcommands).filter(({ 1: subcommand }) => !subcommand.hidden)
+              Object.entries(subcommands).filter(
+                ({ 1: subcommand }) => !subcommand.hidden
+              )
             )
           ),
           ...toSortedObject(
             Object.fromEntries(
-              Object.entries(aliases).filter(
-                ({ 1: alias }) => {
-                  const { hidden } = alias
-                  const cmdName = hidden ? '' : alias.argv[0]
-                  const subcommand = cmdName ? subcommands[cmdName] : undefined
-                  return subcommand && !subcommand.hidden
-                }
-              )
+              Object.entries(aliases).filter(({ 1: alias }) => {
+                const { hidden } = alias
+                const cmdName = hidden ? '' : alias.argv[0]
+                const subcommand = cmdName ? subcommands[cmdName] : undefined
+                return subcommand && !subcommand.hidden
+              })
             )
           )
         },
