@@ -171,7 +171,7 @@
     "has-proto": "npm:@socketregistry/has-proto@^1",
     "has-symbols": "npm:@socketregistry/has-symbols@^1",
     "hasown": "npm:@socketregistry/hasown@^1",
-    "indent-string": "npm:@socketregistry/indent-string@^1",
+    "indent-string": "$@socketregistry/indent-string",
     "is-core-module": "npm:@socketregistry/is-core-module@^1",
     "isarray": "npm:@socketregistry/isarray@^1",
     "npm-package-arg": "$npm-package-arg",
