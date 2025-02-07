@@ -7,7 +7,7 @@ const description = 'Diff scans related commands'
 
 export const diffScan: CliSubcommand = {
   description,
-  run: async (argv, importMeta, { parentName }) => {
+  async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
         get
