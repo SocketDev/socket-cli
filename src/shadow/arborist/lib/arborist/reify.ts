@@ -3,6 +3,7 @@ import process from 'node:process'
 
 import semver from 'semver'
 
+import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
@@ -32,6 +33,8 @@ import type { SocketArtifact } from '../../../../utils/alert/artifact'
 import type { SafeNode } from '../node'
 import type { Writable } from 'node:stream'
 
+type Packument = Awaited<ReturnType<typeof fetchPackagePackument>>
+
 type SocketPackageAlert = {
   key: string
   type: string
@@ -59,19 +62,20 @@ function findBestPatchVersion(
   name: string,
   availableVersions: string[],
   currentMajorVersion: number,
-  vulnerableVersionRange: string,
-  _firstPatchedVersionIdentifier: string
+  vulnerableVersionRange?: string,
+  _firstPatchedVersionIdentifier?: string
 ): string | null {
-  const manifestVersion = getManifestData(NPM, name)?.version
+  const manifestData = getManifestData(NPM, name)
   // Filter versions that are within the current major version and are not in the vulnerable range
-  const eligibleVersions = availableVersions.filter(version => {
-    const isSameMajor = semver.major(version) === currentMajorVersion
-    const isNotVulnerable = !semver.satisfies(version, vulnerableVersionRange)
-    if (isSameMajor && isNotVulnerable) {
-      return true
-    }
-    return !!manifestVersion
-  })
+  const eligibleVersions =
+    manifestData && manifestData.name === manifestData.package
+      ? availableVersions
+      : availableVersions.filter(
+          version =>
+            semver.major(version) === currentMajorVersion &&
+            (!vulnerableVersionRange ||
+              !semver.satisfies(version, vulnerableVersionRange))
+        )
   if (eligibleVersions.length === 0) {
     return null
   }
@@ -279,75 +283,115 @@ async function updateAdvisoryDependencies(
   const tree = arb.idealTree!
   for (const name of Object.keys(patchDataByPkg)) {
     const nodes = findPackageNodes(tree, name)
-    if (!nodes.length) {
+    const patchData = patchDataByPkg[name]!
+    if (!nodes.length || !patchData.length) {
       continue
     }
-    // Fetch packument to get available versions.
     // eslint-disable-next-line no-await-in-loop
     const packument = await fetchPackagePackument(name)
+    if (!packument) {
+      continue
+    }
     for (const node of nodes) {
-      const { version } = node
-      const majorVerNum = semver.major(version)
-      const availableVersions = packument ? Object.keys(packument.versions) : []
-      const patchData = patchDataByPkg[name]!
       for (const {
         firstPatchedVersionIdentifier,
         vulnerableVersionRange
       } of patchData) {
-        // Find the highest non-vulnerable version within the same major range
-        const targetVersion = findBestPatchVersion(
-          name,
-          availableVersions,
-          majorVerNum,
+        updateNode(
+          node,
+          packument,
           vulnerableVersionRange,
           firstPatchedVersionIdentifier
         )
-        const targetPackument = targetVersion
-          ? packument.versions[targetVersion]
-          : undefined
-        // Check !targetVersion to make TypeScript happy.
-        if (!targetVersion || !targetPackument) {
-          // No suitable patch version found.
-          continue
-        }
-        // Use Object.defineProperty to override the version.
-        Object.defineProperty(node, 'version', {
-          configurable: true,
-          enumerable: true,
-          get: () => targetVersion
-        })
-        node.package.version = targetVersion
-        // Update resolved and clear integrity for the new version.
-        node.resolved = `${NPM_REGISTRY_URL}/${name}/-/${name}-${targetVersion}.tgz`
-        if (node.integrity) {
-          delete node.integrity
-        }
-        if ('deprecated' in targetPackument) {
-          node.package['deprecated'] = <string>targetPackument.deprecated
-        } else {
-          delete node.package['deprecated']
-        }
-        const newDeps = { ...targetPackument.dependencies }
-        const { dependencies: oldDeps } = node.package
-        node.package.dependencies = newDeps
-        if (oldDeps) {
-          for (const oldDepName of Object.keys(oldDeps)) {
-            if (!hasOwn(newDeps, oldDepName)) {
-              node.edgesOut.get(oldDepName)?.detach()
-            }
-          }
-        }
-        for (const newDepName of Object.keys(newDeps)) {
-          if (!hasOwn(oldDeps, newDepName)) {
-            node.addEdgeOut((<unknown>new Edge({
-                from: node,
-                name: newDepName,
-                spec: newDeps[newDepName],
-                type: 'prod'
-              })) as SafeEdge)
-          }
-        }
       }
+    }
+  }
+}
+
+async function updateSocketRegistryDependencies(arb: SafeArborist) {
+  await arb.buildIdealTree()
+  const manifest = getManifestData(NPM)!
+  const tree = arb.idealTree!
+  for (const { 1: data } of manifest) {
+    const nodes = findPackageNodes(tree, data.name)
+    if (!nodes.length) {
+      continue
+    }
+    // eslint-disable-next-line no-await-in-loop
+    const packument = await fetchPackagePackument(data.name)
+    if (!packument) {
+      continue
+    }
+    for (const node of nodes) {
+      updateNode(node, packument)
+    }
+  }
+}
+
+function updateNode(
+  node: SafeNode,
+  packument: Packument,
+  vulnerableVersionRange?: string,
+  firstPatchedVersionIdentifier?: string
+) {
+  const { version } = node
+  const majorVerNum = semver.major(version)
+  const availableVersions = packument ? Object.keys(packument.versions) : []
+  // Find the highest non-vulnerable version within the same major range
+  const targetVersion = findBestPatchVersion(
+    node.name,
+    availableVersions,
+    majorVerNum,
+    vulnerableVersionRange,
+    firstPatchedVersionIdentifier
+  )
+  const targetPackument = targetVersion
+    ? packument.versions[targetVersion]
+    : undefined
+  // Check !targetVersion to make TypeScript happy.
+  if (!targetVersion || !targetPackument) {
+    // No suitable patch version found.
+    return node
+  }
+  // Use Object.defineProperty to override the version.
+  Object.defineProperty(node, 'version', {
+    configurable: true,
+    enumerable: true,
+    get: () => targetVersion
+  })
+  node.package.version = targetVersion
+  // Update resolved and clear integrity for the new version.
+  const purlObj = PackageURL.fromString(`pkg:npm/${node.name}`)
+  node.resolved = `${NPM_REGISTRY_URL}/${node.name}/-/${purlObj.name}-${targetVersion}.tgz`
+  const { integrity } = targetPackument.dist
+  if (integrity) {
+    node.integrity = integrity
+  } else {
+    delete node.integrity
+  }
+  if ('deprecated' in targetPackument) {
+    node.package['deprecated'] = <string>targetPackument.deprecated
+  } else {
+    delete node.package['deprecated']
+  }
+  const newDeps = { ...targetPackument.dependencies }
+  const { dependencies: oldDeps } = node.package
+  node.package.dependencies = newDeps
+  if (oldDeps) {
+    for (const oldDepName of Object.keys(oldDeps)) {
+      if (!hasOwn(newDeps, oldDepName)) {
+        node.edgesOut.get(oldDepName)?.detach()
+      }
+    }
+  }
+  for (const newDepName of Object.keys(newDeps)) {
+    if (!hasOwn(oldDeps, newDepName)) {
+      node.addEdgeOut((<unknown>new Edge({
+          from: node,
+          name: newDepName,
+          spec: newDeps[newDepName],
+          type: 'prod'
+        })) as SafeEdge)
     }
   }
 }
@@ -363,6 +407,7 @@ export async function reify(
   ...args: Parameters<InstanceType<ArboristClass>['reify']>
 ): Promise<SafeNode> {
   const IPC = await getIPC()
+  await updateSocketRegistryDependencies(this)
   const runningFixCommand = !!IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
   // We are assuming `this[_diffTrees]()` has been called by `super.reify(...)`:
   // https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/reify.js#L141
