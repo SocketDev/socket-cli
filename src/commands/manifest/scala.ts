@@ -19,7 +19,7 @@ type ListDescription =
 const renamep = util.promisify(fs.rename)
 
 const description =
-  'Generate a "Software Bill of Materials" (`pom.xml`) from Scala\'s `build.sbt` file'
+  'Generate a manifest file (`pom.xml`) from Scala\'s `build.sbt` file'
 
 const scalaCmdFlags: Record<string, ListDescription> = {
   bin: {
@@ -84,6 +84,7 @@ const help = (name: string, flags: Record<string, ListDescription>) => `
 export const scala: CliSubcommand = {
   description,
   async run(argv, importMeta, { parentName }) {
+    // console.log('scala', argv, parentName)
     const name = `${parentName} scala`
     // note: meow will exit if it prints the --help screen
     const cli = meow(help(name, scalaCmdFlags), {
@@ -91,6 +92,10 @@ export const scala: CliSubcommand = {
       description,
       importMeta
     })
+
+    if (cli.flags['verbose']) {
+      console.log('[VERBOSE] cli.flags:', cli.flags, ', cli.input:', cli.input)
+    }
 
     const target = cli.input[0]
 
@@ -158,18 +163,21 @@ async function startConversion(
   verbose: boolean,
   sbtOpts: Array<string>
 ) {
-  const spinner = new Spinner()
-
   const rbin = path.resolve(bin)
   const rtarget = path.resolve(target)
   const rout = out === '-' ? '-' : path.resolve(out)
 
   if (verbose) {
-    spinner.clear()
-    console.log(`- Absolute bin path: \`${rbin}\``)
-    console.log(`- Absolute target path: \`${rtarget}\``)
-    console.log(`- Absolute out path: \`${rout}\``)
+    console.log(`[VERBOSE] - Absolute bin path: \`${rbin}\``)
+    console.log(`[VERBOSE] - Absolute target path: \`${rtarget}\``)
+    console.log(`[VERBOSE] - Absolute out path: \`${rout}\``)
+  } else {
+    console.log(`- executing: \`${bin}\``);
+    console.log(`- src dir: \`${target}\``)
+    console.log(`- dst dir: \`${out}\``)
   }
+
+  const spinner = new Spinner()
 
   spinner.start(`Running sbt from \`${bin}\` on \`${target}\`...`)
 
@@ -182,7 +190,7 @@ async function startConversion(
     })
     spinner.success()
     if (verbose) {
-      console.group('sbt stdout:')
+      console.group('[VERBOSE] sbt stdout:')
       console.log(output)
       console.groupEnd()
     }
@@ -190,7 +198,11 @@ async function startConversion(
     if (output.stderr) {
       spinner.error('There were errors while running sbt')
       // (In verbose mode, stderr was printed above, no need to repeat it)
-      if (!verbose) console.error(output.stderr)
+      if (!verbose) {
+        console.group('[VERBOSE] stderr:');
+        console.error(output.stderr)
+        console.groupEnd();
+      }
       process.exit(1)
     }
 
@@ -222,9 +234,11 @@ async function startConversion(
       spinner.start().success(`OK. File should be available in \`${out}\``)
     }
   } catch (e) {
-    spinner.error('There was an unexpected error while running this')
+    spinner.error('There was an unexpected error while running this' + (verbose ? '' : ' (use --verbose for details)'))
     if (verbose) {
+      console.group('[VERBOSE] error:');
       console.log(e)
+      console.groupEnd();
     }
     process.exit(1)
   }
