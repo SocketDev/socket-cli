@@ -676,35 +676,41 @@ async function addOverrides(
   if (spinner) {
     spinner.text = `Adding overrides${workspaceName ? ` to ${workspaceName}` : ''}...`
   }
-  const depAliasMap = new Map<string, { id: string; version: string }>()
+  const depAliasMap = new Map<string, string>()
   // Chunk package names to process them in parallel 3 at a time.
   await pEach(manifestEntries, 3, async ({ 1: data }) => {
-    const { name: regPkgName, package: origPkgName, version } = data
+    const { name: sockRegPkgName, package: origPkgName, version } = data
     const major = semver.major(version)
+    const sockOverridePrefix = `${NPM}:${sockRegPkgName}@`
+    const sockOverrideSpec = `${sockOverridePrefix}${pin ? version : `^${major}`}`
     for (const { 1: depObj } of depEntries) {
-      let pkgSpec = depObj[origPkgName]
-      if (pkgSpec) {
-        let thisVersion = version
+      const sockSpec = hasOwn(depObj, sockRegPkgName)
+        ? depObj[sockRegPkgName]
+        : undefined
+      if (sockSpec) {
+        depAliasMap.set(sockRegPkgName, sockSpec)
+      }
+      const origSpec = hasOwn(depObj, origPkgName)
+        ? depObj[origPkgName]
+        : undefined
+      if (origSpec) {
+        let thisSpec = origSpec
         // Add package aliases for direct dependencies to avoid npm EOVERRIDE errors.
         // https://docs.npmjs.com/cli/v8/using-npm/package-spec#aliases
-        const regSpecStartsLike = `npm:${regPkgName}@`
-        const existingVersion = pkgSpec.startsWith(regSpecStartsLike)
-          ? (semver.coerce(npa(pkgSpec).rawSpec)?.version ?? '')
-          : ''
-        if (existingVersion) {
-          thisVersion = existingVersion
-        } else {
-          pkgSpec = `${regSpecStartsLike}^${version}`
-          depObj[origPkgName] = pkgSpec
-          state.added.add(regPkgName)
+        if (
+          !(
+            thisSpec.startsWith(sockOverridePrefix) &&
+            semver.coerce(npa(thisSpec).rawSpec)?.version
+          )
+        ) {
+          thisSpec = sockOverrideSpec
+          depObj[origPkgName] = thisSpec
+          state.added.add(sockRegPkgName)
           if (workspaceName) {
             state.addedInWorkspaces.add(workspaceName)
           }
         }
-        depAliasMap.set(origPkgName, {
-          id: pkgSpec,
-          version: thisVersion
-        })
+        depAliasMap.set(origPkgName, thisSpec)
       }
     }
     if (isRoot) {
@@ -716,11 +722,11 @@ async function addOverrides(
           thingScanner(thingToScan, origPkgName, lockBasename)
         ) {
           const oldSpec = overrideExists ? overrides[origPkgName] : undefined
-          const depAlias = depAliasMap.get(origPkgName)
-          const regSpecStartsLike = `${NPM}:${regPkgName}@`
-          let newSpec = `${regSpecStartsLike}${pin ? version : `^${major}`}`
-          let thisVersion = version
-          if (depAlias && type === NPM) {
+          const origDepAlias = depAliasMap.get(origPkgName)
+          const sockRegDepAlias = depAliasMap.get(sockRegPkgName)
+          const depAlias = sockRegDepAlias ?? origDepAlias
+          let newSpec = sockOverrideSpec
+          if (type === NPM && depAlias) {
             // With npm one may not set an override for a package that one directly
             // depends on unless both the dependency and the override itself share
             // the exact same spec. To make this limitation easier to deal with,
@@ -728,22 +734,24 @@ async function addOverrides(
             // dependency by prefixing the name of the package to match the version
             // of with a $.
             // https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides
-            newSpec = `$${origPkgName}`
+            newSpec = `$${sockRegDepAlias ? sockRegPkgName : origPkgName}`
           } else if (overrideExists) {
             const thisSpec = oldSpec.startsWith('$')
-              ? (depAlias?.id ?? newSpec)
-              : (oldSpec ?? newSpec)
-            if (thisSpec.startsWith(regSpecStartsLike)) {
-              if (pin) {
-                thisVersion =
-                  semver.major(
-                    semver.coerce(npa(thisSpec).rawSpec)?.version ?? version
-                  ) === major
-                    ? version
-                    : ((await fetchPackageManifest(thisSpec))?.version ??
-                      version)
+              ? depAlias || newSpec
+              : oldSpec || newSpec
+            if (thisSpec.startsWith(sockOverridePrefix)) {
+              if (
+                pin &&
+                semver.major(
+                  semver.coerce(npa(thisSpec).rawSpec)?.version ?? version
+                ) !== major
+              ) {
+                const otherVersion = (await fetchPackageManifest(thisSpec))
+                  ?.version
+                if (otherVersion !== version) {
+                  newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${semver.major(otherVersion)}`}`
+                }
               }
-              newSpec = `${regSpecStartsLike}${pin ? thisVersion : `^${semver.major(thisVersion)}`}`
             } else {
               newSpec = oldSpec
             }
@@ -751,7 +759,7 @@ async function addOverrides(
           if (newSpec !== oldSpec) {
             overrides[origPkgName] = newSpec
             const addedOrUpdated = overrideExists ? 'updated' : 'added'
-            state[addedOrUpdated].add(regPkgName)
+            state[addedOrUpdated].add(sockRegPkgName)
           }
         }
       })
