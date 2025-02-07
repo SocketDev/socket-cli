@@ -4,9 +4,10 @@ import { scala } from './scala'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
+import { auto } from './auto.ts'
 
 const description =
-  'Generate a "Software Bill of Materials" for given file or dir'
+  'Generate a dependency manifest for given file or dir'
 const help = (name: string) => `
   Usage
 
@@ -25,10 +26,15 @@ const help = (name: string) => `
   Examples
 
     $ ${name} scala .
+
+  To have it auto-detect and attempt to run:
+
+    $ ${name} yolo
 `
 
 export const manifest: CliSubcommand = {
   description,
+  hidden: true,
   async run(argv, importMeta, { parentName }) {
     const name = `${parentName} manifest`
 
@@ -44,10 +50,18 @@ export const manifest: CliSubcommand = {
 
     await meowWithSubcommands(
       {
-        scala
+        scala,
+        auto
       },
       {
         argv,
+        aliases: {
+          yolo: {
+            description: auto.description,
+            hidden: true,
+            argv: ['auto']
+          }
+        },
         description,
         importMeta,
         name
