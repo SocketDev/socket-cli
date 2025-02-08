@@ -62,7 +62,7 @@ const NPM_OVERRIDE_PR_URL = 'https://github.com/npm/cli/pull/7025'
 const PNPM_FIELD_NAME = PNPM
 const PNPM_WORKSPACE = `${PNPM}-workspace`
 
-const manifestNpmOverrides = getManifestData(NPM)!
+const manifestNpmOverrides = getManifestData(NPM)
 
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
