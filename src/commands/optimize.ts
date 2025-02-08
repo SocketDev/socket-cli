@@ -28,9 +28,9 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 import constants from '../constants'
 import { commonFlags } from '../flags'
 import { safeReadFile } from '../utils/fs'
+import { shadowNpmInstall } from '../utils/npm'
 import { getFlagListOutput } from '../utils/output-formatting'
 import { detect } from '../utils/package-manager-detector'
-import { shadowNpmInstall } from '../utils/shadow-npm'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type {
