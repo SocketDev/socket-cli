@@ -312,7 +312,7 @@ async function updateAdvisoryDependencies(
 
 async function updateSocketRegistryDependencies(arb: SafeArborist) {
   await arb.buildIdealTree()
-  const manifest = getManifestData(NPM)!
+  const manifest = getManifestData(NPM)
   const tree = arb.idealTree!
   for (const { 1: data } of manifest) {
     const nodes = findPackageNodes(tree, data.name)
