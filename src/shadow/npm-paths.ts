@@ -1,4 +1,4 @@
-import { realpathSync } from 'node:fs'
+import { statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -65,16 +65,18 @@ export function isNpxBinPathShadowed() {
 let _npmPath: string | undefined
 export function getNpmPath() {
   if (_npmPath === undefined) {
-    const npmEntrypoint = path.dirname(realpathSync.native(getNpmBinPath()))
-    _npmPath = findNpmPathSync(npmEntrypoint)
+    const npmBinPath = getNpmBinPath()
+    _npmPath = npmBinPath ? findNpmPathSync(npmBinPath) : undefined
     if (!_npmPath) {
-      console.error(
-        `Unable to find npm CLI install directory.
-    Searched parent directories of ${npmEntrypoint}.
-
-    This is may be a bug with socket-npm related to changes to the npm CLI.
-    Please report to ${SOCKET_CLI_ISSUES_URL}.`
-      )
+      let message = 'Unable to find npm CLI install directory.'
+      if (npmBinPath) {
+        const npmBinDirname = statSync(npmBinPath).isDirectory()
+          ? npmBinPath
+          : path.dirname(npmBinPath)
+        message += `\nSearched parent directories of ${npmBinDirname}.`
+      }
+      message += `\n\nThis is may be a bug with socket-npm related to changes to the npm CLI.\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
+      console.error(message)
       // The exit code 127 indicates that the command or binary being executed
       // could not be found.
       process.exit(127)
