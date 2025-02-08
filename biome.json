@@ -1,7 +1,13 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
-    "ignore": ["**/package.json", "**/package-lock.json"],
+    "ignore": [
+      "**/.*",
+      "**/coverage",
+      "**/dist",
+      "**/package.json",
+      "**/package-lock.json"
+    ],
     "maxSize": 5242880
   },
   "formatter": {

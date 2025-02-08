@@ -9,11 +9,9 @@ Thumbs.db
 /coverage
 /npm-debug.log
 **/dist
-**/dist-legacy
 **/node_modules
 /*.tsbuildinfo
 *.d.ts
 *.d.ts.map
 
 !/.vscode/extensions.json
-/test/socket-npm-fixtures/**/node_modules/
