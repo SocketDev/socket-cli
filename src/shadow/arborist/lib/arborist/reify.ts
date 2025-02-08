@@ -33,7 +33,10 @@ import type { SocketArtifact } from '../../../../utils/alert/artifact'
 import type { SafeNode } from '../node'
 import type { Writable } from 'node:stream'
 
-type Packument = Awaited<ReturnType<typeof fetchPackagePackument>>
+type Packument = Exclude<
+  Awaited<ReturnType<typeof fetchPackagePackument>>,
+  null
+>
 
 type SocketPackageAlert = {
   key: string
@@ -284,25 +287,24 @@ async function updateAdvisoryDependencies(
   for (const name of Object.keys(patchDataByPkg)) {
     const nodes = findPackageNodes(tree, name)
     const patchData = patchDataByPkg[name]!
-    if (!nodes.length || !patchData.length) {
-      continue
-    }
-    // eslint-disable-next-line no-await-in-loop
-    const packument = await fetchPackagePackument(name)
-    if (!packument) {
-      continue
-    }
-    for (const node of nodes) {
-      for (const {
-        firstPatchedVersionIdentifier,
-        vulnerableVersionRange
-      } of patchData) {
-        updateNode(
-          node,
-          packument,
-          vulnerableVersionRange,
-          firstPatchedVersionIdentifier
-        )
+    const packument =
+      nodes.length && patchData.length
+        ? // eslint-disable-next-line no-await-in-loop
+          await fetchPackagePackument(name)
+        : null
+    if (packument) {
+      for (const node of nodes) {
+        for (const {
+          firstPatchedVersionIdentifier,
+          vulnerableVersionRange
+        } of patchData) {
+          updateNode(
+            node,
+            packument,
+            vulnerableVersionRange,
+            firstPatchedVersionIdentifier
+          )
+        }
       }
     }
   }
@@ -314,16 +316,14 @@ async function updateSocketRegistryDependencies(arb: SafeArborist) {
   const tree = arb.idealTree!
   for (const { 1: data } of manifest) {
     const nodes = findPackageNodes(tree, data.name)
-    if (!nodes.length) {
-      continue
-    }
-    // eslint-disable-next-line no-await-in-loop
-    const packument = await fetchPackagePackument(data.name)
-    if (!packument) {
-      continue
-    }
-    for (const node of nodes) {
-      updateNode(node, packument)
+    const packument = nodes.length
+      ? // eslint-disable-next-line no-await-in-loop
+        await fetchPackagePackument(data.name)
+      : null
+    if (packument) {
+      for (const node of nodes) {
+        updateNode(node, packument)
+      }
     }
   }
 }
@@ -336,7 +336,7 @@ function updateNode(
 ) {
   const { version } = node
   const majorVerNum = semver.major(version)
-  const availableVersions = packument ? Object.keys(packument.versions) : []
+  const availableVersions = Object.keys(packument.versions)
   // Find the highest non-vulnerable version within the same major range
   const targetVersion = findBestPatchVersion(
     node.name,
@@ -346,7 +346,7 @@ function updateNode(
     firstPatchedVersionIdentifier
   )
   const targetPackument = targetVersion
-    ? packument!.versions[targetVersion]
+    ? packument.versions[targetVersion]
     : undefined
   // Check !targetVersion to make TypeScript happy.
   if (!targetVersion || !targetPackument) {
