@@ -933,7 +933,10 @@ export const optimize: CliSubcommand = {
               [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: true
             }
           }
-          await shadowNpmInstall({ ipc })
+          await shadowNpmInstall({
+            flags: ['--ignore-scripts'],
+            ipc
+          })
           // TODO: This is a temporary workaround for a `npm ci` bug where it
           // will error out after Socket Optimize generates a lock file. More
           // investigation is needed.
