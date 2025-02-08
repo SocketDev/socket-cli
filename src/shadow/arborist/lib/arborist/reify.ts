@@ -346,7 +346,7 @@ function updateNode(
     firstPatchedVersionIdentifier
   )
   const targetPackument = targetVersion
-    ? packument.versions[targetVersion]
+    ? packument!.versions[targetVersion]
     : undefined
   // Check !targetVersion to make TypeScript happy.
   if (!targetVersion || !targetPackument) {
