@@ -1,7 +1,7 @@
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../constants'
-import { shadowNpmInstall } from '../utils/shadow-npm'
+import { shadowNpmInstall } from '../utils/npm'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 

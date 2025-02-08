@@ -13,6 +13,41 @@ type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
 const { abortSignal } = constants
 
+// https://docs.npmjs.com/cli/v11/commands/npm-install#synopsis
+const installCmds = new Set([
+  'install',
+  'in',
+  'ins',
+  'inst',
+  'insta',
+  'instal',
+  'isnt',
+  'isnta',
+  'isntal',
+  'isntall'
+])
+
+// https://docs.npmjs.com/cli/v11/using-npm/logging#aliases
+const logCmds = new Set([
+  '--loglevel',
+  '-d',
+  '--dd',
+  '--ddd',
+  '-q',
+  '--quiet',
+  '-s',
+  '--silent'
+])
+
+export function isInstallCmd(cmd: string) {
+  return installCmds.has(cmd)
+}
+
+export function isLoglevelCmd(cmd: string) {
+  // https://docs.npmjs.com/cli/v11/using-npm/logging#setting-log-levels
+  return cmd.startsWith('--loglevel=') || logCmds.has(cmd)
+}
+
 type ShadowNpmInstallOptions = SpawnOption & {
   flags?: string[]
   ipc?: object
@@ -54,23 +89,7 @@ export function shadowNpmInstall(opts?: ShadowNpmInstallOptions) {
       // Add `--no-progress` flags to fix input being swallowed by the spinner
       // when running the command with recent versions of npm.
       '--no-progress',
-      ...(useDebug ||
-      // Detect loglevel flags:
-      flags.some(
-        f =>
-          // https://docs.npmjs.com/cli/v11/using-npm/logging#setting-log-levels
-          f.startsWith('--loglevel') ||
-          // https://docs.npmjs.com/cli/v11/using-npm/logging#aliases
-          f === '-d' ||
-          f === '--dd' ||
-          f === '--ddd' ||
-          f === '-q' ||
-          f === '--quiet' ||
-          f === '-s' ||
-          f === '--silent'
-      )
-        ? []
-        : ['--silent']),
+      ...(useDebug || flags.some(isLoglevelCmd) ? [] : ['--silent']),
       ...flags
     ],
     {
