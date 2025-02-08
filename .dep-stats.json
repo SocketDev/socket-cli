@@ -10,7 +10,7 @@
     "@socketregistry/is-unicode-supported": "^1.0.0",
     "@socketregistry/packageurl-js": "^1.0.2",
     "@socketsecurity/config": "^2.1.3",
-    "@socketsecurity/registry": "^1.0.85",
+    "@socketsecurity/registry": "^1.0.87",
     "@socketsecurity/sdk": "^1.4.5",
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
