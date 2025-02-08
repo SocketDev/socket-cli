@@ -748,7 +748,7 @@ async function addOverrides(
               ) {
                 const otherVersion = (await fetchPackageManifest(thisSpec))
                   ?.version
-                if (otherVersion !== version) {
+                if (otherVersion && otherVersion !== version) {
                   newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${semver.major(otherVersion)}`}`
                 }
               }
