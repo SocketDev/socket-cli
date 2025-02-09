@@ -62,27 +62,27 @@ const {
 const formatter = new ColorOrMarkdown(false)
 
 function findBestPatchVersion(
-  name: string,
+  node: SafeNode,
   availableVersions: string[],
-  currentMajorVersion: number,
   vulnerableVersionRange?: string,
   _firstPatchedVersionIdentifier?: string
 ): string | null {
-  const manifestData = getManifestData(NPM, name)
-  // Filter versions that are within the current major version and are not in the vulnerable range
-  const eligibleVersions =
-    manifestData && manifestData.name === manifestData.package
-      ? availableVersions
-      : availableVersions.filter(
-          version =>
-            semver.major(version) === currentMajorVersion &&
-            (!vulnerableVersionRange ||
-              !semver.satisfies(version, vulnerableVersionRange))
-        )
-  if (eligibleVersions.length === 0) {
-    return null
+  const manifestData = getManifestData(NPM, node.name)
+  let eligibleVersions
+  if (manifestData && manifestData.name === manifestData.package) {
+    const major = semver.major(manifestData.version)
+    eligibleVersions = availableVersions.filter(v => semver.major(v) === major)
+  } else {
+    const major = semver.major(node.version)
+    eligibleVersions = availableVersions.filter(
+      v =>
+        // Filter for versions that are within the current major version
+        // and are not in the vulnerable range
+        semver.major(v) === major &&
+        (!vulnerableVersionRange ||
+          !semver.satisfies(v, vulnerableVersionRange))
+    )
   }
-  // Use semver to find the max satisfying version.
   return semver.maxSatisfying(eligibleVersions, '*')
 }
 
@@ -114,15 +114,15 @@ type GetPackageAlertsOptions = {
 }
 
 async function getPackagesAlerts(
-  details: PackageDetail[],
+  arb: SafeArborist,
   options?: GetPackageAlertsOptions
 ): Promise<SocketPackageAlert[]> {
-  let { length: remaining } = details
   const IPC = await getIPC()
   const runningFixCmd = !!IPC[SOCKET_CLI_IN_FIX_CMD]
   const needInfoOn = getPackagesToQueryFromDiff(arb.diff, {
     includeUnchanged: runningFixCmd
   })
+  let { length: remaining } = needInfoOn
   const packageAlerts: SocketPackageAlert[] = []
   if (!remaining) {
     return packageAlerts
@@ -142,14 +142,13 @@ async function getPackagesAlerts(
   spinner?.start(getText())
   try {
     for await (const artifact of batchScan(
-      arrayUnique(details.map(d => d.node.pkgid))
+      arrayUnique(needInfoOn.map(d => d.node.pkgid))
     )) {
       if (!artifact.name || !artifact.version || !artifact.alerts?.length) {
         continue
       }
-      const { version } = artifact
       const name = resolvePackageName(<any>artifact)
-      const id = `${name}@${artifact.version}`
+      const { version } = artifact
 
       let displayWarning = false
       let alerts: SocketPackageAlert[] = []
@@ -178,16 +177,17 @@ async function getPackagesAlerts(
           if (includeExisting && !runningFixCmd) {
             // Before we ask about problematic issues, check to see if they
             // already existed in the old version if they did, be quiet.
-            const existing = details.find(d =>
+            const existing = needInfoOn.find(d =>
               d.existing?.pkgid.startsWith(`${name}@`)
             )?.existing
             if (existing) {
               const oldArtifact: SocketArtifact | undefined =
                 // eslint-disable-next-line no-await-in-loop
                 (await batchScan([existing.pkgid]).next()).value
-              if (oldArtifact?.alerts?.length) {
+              const oldAlerts = oldArtifact?.alerts
+              if (oldAlerts?.length) {
                 alerts = alerts.filter(
-                  ({ type }) => !oldArtifact.alerts!.find(a => a.type === type)
+                  ({ type }) => !oldAlerts.find(a => a.type === type)
                 )
               }
             }
@@ -196,7 +196,10 @@ async function getPackagesAlerts(
       }
       if (displayWarning && spinner) {
         spinner.stop(
-          `(socket) ${formatter.hyperlink(id, getSocketDevPackageOverviewUrl(NPM, name, version))} contains risks:`
+          `(socket) ${formatter.hyperlink(
+            `${name}@${version}`,
+            getSocketDevPackageOverviewUrl(NPM, name, version)
+          )} contains risks:`
         )
       }
       alerts.sort((a, b) => (a.type < b.type ? -1 : 1))
@@ -249,7 +252,7 @@ function getTranslations() {
   return _translations!
 }
 
-async function updateAdvisoryDependencies(
+async function updateAdvisoryNodes(
   arb: SafeArborist,
   alerts: SocketPackageAlert[]
 ) {
@@ -311,11 +314,10 @@ async function updateAdvisoryDependencies(
   }
 }
 
-async function updateSocketRegistryDependencies(arb: SafeArborist) {
+async function updateSocketRegistryNodes(arb: SafeArborist) {
   await arb.buildIdealTree()
-  const manifest = getManifestData(NPM)
   const tree = arb.idealTree!
-  for (const { 1: data } of manifest) {
+  for (const { 1: data } of getManifestData(NPM)) {
     const nodes = findPackageNodes(tree, data.name)
     const packument = nodes.length
       ? // eslint-disable-next-line no-await-in-loop
@@ -335,14 +337,11 @@ function updateNode(
   vulnerableVersionRange?: string,
   firstPatchedVersionIdentifier?: string
 ) {
-  const { version } = node
-  const majorVerNum = semver.major(version)
   const availableVersions = Object.keys(packument.versions)
   // Find the highest non-vulnerable version within the same major range
   const targetVersion = findBestPatchVersion(
-    node.name,
+    node,
     availableVersions,
-    majorVerNum,
     vulnerableVersionRange,
     firstPatchedVersionIdentifier
   )
@@ -433,33 +432,31 @@ export async function reify(
   ) {
     throw new Error('Socket npm exiting due to risks')
   }
-  if (!alerts.length || !runningFixCommand) {
-    return await this[kRiskyReify](...args)
-  }
-  const prev = new Set(alerts.map(a => a.key))
-  let ret: SafeNode | undefined
-  /* eslint-disable no-await-in-loop */
-  while (alerts.length > 0) {
-    await updateAdvisoryDependencies(this, alerts)
-    ret = await this[kRiskyReify](...args)
-    await this.loadActual()
-    await this.buildIdealTree()
-    needInfoOn = getPackagesToQueryFromDiff(this.diff, {
-      includeUnchanged: true
-    })
-    alerts = (
-      await getPackagesAlerts(needInfoOn, {
-        includeExisting: true,
-        includeUnfixable: true
-      })
-    ).filter(({ key }) => {
-      const unseen = !prev.has(key)
-      if (unseen) {
-        prev.add(key)
-      }
-      return unseen
-    })
-  }
-  /* eslint-enable no-await-in-loop */
-  return ret!
+  return await this[kRiskyReify](...args)
+  // const prev = new Set(alerts.map(a => a.key))
+  // let ret: SafeNode | undefined
+  // /* eslint-disable no-await-in-loop */
+  // while (alerts.length > 0) {
+  //   await updateAdvisoryNodes(this, alerts)
+  //   ret = await this[kRiskyReify](...args)
+  //   await this.loadActual()
+  //   await this.buildIdealTree()
+  //   needInfoOn = getPackagesToQueryFromDiff(this.diff, {
+  //     includeUnchanged: true
+  //   })
+  //   alerts = (
+  //     await getPackagesAlerts(needInfoOn, {
+  //       includeExisting: true,
+  //       includeUnfixable: true
+  //     })
+  //   ).filter(({ key }) => {
+  //     const unseen = !prev.has(key)
+  //     if (unseen) {
+  //       prev.add(key)
+  //     }
+  //     return unseen
+  //   })
+  // }
+  // /* eslint-enable no-await-in-loop */
+  // return ret!
 }
