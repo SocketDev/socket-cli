@@ -1,4 +1,3 @@
-import { statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -70,10 +69,7 @@ export function getNpmPath() {
     if (!_npmPath) {
       let message = 'Unable to find npm CLI install directory.'
       if (npmBinPath) {
-        const npmBinDirname = statSync(npmBinPath).isDirectory()
-          ? npmBinPath
-          : path.dirname(npmBinPath)
-        message += `\nSearched parent directories of ${npmBinDirname}.`
+        message += `\nSearched parent directories of ${path.dirname(npmBinPath)}.`
       }
       message += `\n\nThis is may be a bug with socket-npm related to changes to the npm CLI.\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
       console.error(message)
