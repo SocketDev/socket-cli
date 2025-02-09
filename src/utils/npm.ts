@@ -13,6 +13,10 @@ type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
 const { abortSignal } = constants
 
+const auditCmds = new Set(['--audit', '--no-audit'])
+
+const fundCmds = new Set(['--fund', '--no-fund'])
+
 // https://docs.npmjs.com/cli/v11/commands/npm-install#synopsis
 const installCmds = new Set([
   'install',
@@ -39,6 +43,16 @@ const logCmds = new Set([
   '--silent'
 ])
 
+const progressCmds = new Set(['--progress', '--no-progress'])
+
+export function isAuditCmd(cmd: string) {
+  return auditCmds.has(cmd)
+}
+
+export function isFundCmd(cmd: string) {
+  return fundCmds.has(cmd)
+}
+
 export function isInstallCmd(cmd: string) {
   return installCmds.has(cmd)
 }
@@ -46,6 +60,10 @@ export function isInstallCmd(cmd: string) {
 export function isLoglevelCmd(cmd: string) {
   // https://docs.npmjs.com/cli/v11/using-npm/logging#setting-log-levels
   return cmd.startsWith('--loglevel=') || logCmds.has(cmd)
+}
+
+export function isProgressCmd(cmd: string) {
+  return progressCmds.has(cmd)
 }
 
 type ShadowNpmInstallOptions = SpawnOption & {
@@ -60,13 +78,7 @@ export function shadowNpmInstall(opts?: ShadowNpmInstallOptions) {
     ...spawnOptions
   } = { __proto__: null, ...opts }
   const flags = flags_.filter(
-    f =>
-      f !== '--audit' &&
-      f !== '--fund' &&
-      f !== '--progress' &&
-      f !== '--no-audit' &&
-      f !== '--no-fund' &&
-      f !== '--no-progress'
+    f => !isAuditCmd(f) && !isFundCmd(f) && !isProgressCmd(f)
   )
   const useIpc = isObject(ipc)
   const useDebug = isDebug()
