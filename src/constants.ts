@@ -33,8 +33,8 @@ type ENV = RegistryEnv &
   }>
 
 type IPC = Readonly<{
-  SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: boolean
-  SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: boolean
+  SOCKET_CLI_IN_FIX_CMD: boolean
+  SOCKET_CLI_IN_OPTIMIZE_CMD: boolean
 }>
 
 type Constants = Omit<
@@ -56,9 +56,9 @@ type Constants = Omit<
   readonly PNPM: 'pnpm'
   readonly REQUIRE: 'require'
   readonly SOCKET_CLI_DEBUG: 'SOCKET_CLI_DEBUG'
-  readonly SOCKET_CLI_FIX_PACKAGE_LOCK_FILE: 'SOCKET_CLI_FIX_PACKAGE_LOCK_FILE'
+  readonly SOCKET_CLI_IN_FIX_CMD: 'SOCKET_CLI_IN_FIX_CMD'
+  readonly SOCKET_CLI_IN_OPTIMIZE_CMD: 'SOCKET_CLI_IN_OPTIMIZE_CMD'
   readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
-  readonly SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE: 'SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE'
   readonly VLT: 'vlt'
   readonly YARN: 'yarn'
   readonly YARN_BERRY: 'yarn/berry'
@@ -85,10 +85,9 @@ const NPX = 'npx'
 const PNPM = 'pnpm'
 const REQUIRE = 'require'
 const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
-const SOCKET_CLI_FIX_PACKAGE_LOCK_FILE = 'SOCKET_CLI_FIX_PACKAGE_LOCK_FILE'
+const SOCKET_CLI_IN_FIX_CMD = 'SOCKET_CLI_IN_FIX_CMD'
+const SOCKET_CLI_IN_OPTIMIZE_CMD = 'SOCKET_CLI_IN_OPTIMIZE_CMD'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
-const SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE =
-  'SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE'
 const VLT = 'vlt'
 const YARN = 'yarn'
 const YARN_BERRY = `${YARN}/berry`
@@ -161,9 +160,9 @@ const constants = <Constants>createConstantsObject(
     PNPM,
     REQUIRE,
     SOCKET_CLI_DEBUG,
-    SOCKET_CLI_FIX_PACKAGE_LOCK_FILE,
+    SOCKET_CLI_IN_FIX_CMD,
+    SOCKET_CLI_IN_OPTIMIZE_CMD,
     SOCKET_CLI_ISSUES_URL,
-    SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
     VLT,
     YARN,
     YARN_BERRY,

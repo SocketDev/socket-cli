@@ -49,7 +49,7 @@ const {
   OVERRIDES,
   PNPM,
   RESOLUTIONS,
-  SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+  SOCKET_CLI_IN_OPTIMIZE_CMD,
   SOCKET_IPC_HANDSHAKE,
   VLT,
   YARN_BERRY,
@@ -930,7 +930,7 @@ export const optimize: CliSubcommand = {
         if (isNpm) {
           const ipc = {
             [SOCKET_IPC_HANDSHAKE]: {
-              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: true
+              [SOCKET_CLI_IN_OPTIMIZE_CMD]: true
             }
           }
           await shadowNpmInstall({
