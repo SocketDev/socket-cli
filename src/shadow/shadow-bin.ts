@@ -30,7 +30,7 @@ export default async function shadowBin(
             // Add the `--quiet` and `--no-progress` flags to fix input being
             // swallowed by the spinner when running the command with recent
             // versions of npm.
-            ...binArgs.filter(a => a !== '--progress' && a !== '--no-progress'),
+            ...binArgs.filter(a => !isProgressCmd(a)),
             '--no-progress',
             // Add the '--quiet' flag if an equivalent flag is not provided.
             ...(binArgs.some(isLoglevelCmd) ? [] : ['--quiet'])
