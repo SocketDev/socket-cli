@@ -1,4 +1,4 @@
-import { promises as fs, realpathSync } from 'node:fs'
+import { promises as fs, realpathSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -19,7 +19,7 @@ type GlobWithGitIgnoreOptions = GlobOptions & {
   socketConfig?: SocketYml | undefined
 }
 
-const { NPM, shadowBinPath } = constants
+const { NODE_MODULES, NPM, shadowBinPath } = constants
 
 async function filterGlobResultToSupportedFiles(
   entries: string[],
@@ -190,10 +190,24 @@ export function findBinPathDetailsSync(binName: string): {
   return { name: binName, path: binPath, shadowed: shadowIndex !== -1 }
 }
 
-export function findNpmPathSync(filepath: string): string | undefined {
-  let curPath = filepath
+export function findNpmPathSync(npmBinPath: string): string | undefined {
+  let curPath = npmBinPath
   while (true) {
-    if (path.basename(curPath) === NPM) {
+    if (
+      // npm bin paths may look like:
+      // /usr/local/share/npm/bin/npm
+      // /Users/SomeUsername/.nvm/versions/node/vX.X.X/bin/npm
+      // C:\Users\SomeUsername\AppData\Roaming\npm\bin\npm.cmd
+      // OR
+      // C:\Program Files\nodejs\npm.cmd
+      path.basename(curPath) === NPM ||
+      // In all cases the npm path contains a node_modules folder:
+      // /usr/local/share/npm/bin/npm/node_modules
+      // C:\Program Files\nodejs\node_modules
+      statSync(path.join(curPath, NODE_MODULES), {
+        throwIfNoEntry: false
+      })?.isDirectory()
+    ) {
       return curPath
     }
     const parent = path.dirname(curPath)
