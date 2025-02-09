@@ -52,8 +52,8 @@ const {
   LOOP_SENTINEL,
   NPM,
   NPM_REGISTRY_URL,
-  SOCKET_CLI_FIX_PACKAGE_LOCK_FILE,
-  SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+  SOCKET_CLI_IN_FIX_CMD,
+  SOCKET_CLI_IN_OPTIMIZE_CMD,
   abortSignal,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIPC }
@@ -118,6 +118,11 @@ async function getPackagesAlerts(
   options?: GetPackageAlertsOptions
 ): Promise<SocketPackageAlert[]> {
   let { length: remaining } = details
+  const IPC = await getIPC()
+  const runningFixCmd = !!IPC[SOCKET_CLI_IN_FIX_CMD]
+  const needInfoOn = getPackagesToQueryFromDiff(arb.diff, {
+    includeUnchanged: runningFixCmd
+  })
   const packageAlerts: SocketPackageAlert[] = []
   if (!remaining) {
     return packageAlerts
@@ -170,11 +175,7 @@ async function getPackagesAlerts(
               fixable
             })
           }
-          // Lazily access constants.IPC.
-          if (
-            includeExisting &&
-            !constants.IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
-          ) {
+          if (includeExisting && !runningFixCmd) {
             // Before we ask about problematic issues, check to see if they
             // already existed in the old version if they did, be quiet.
             const existing = details.find(d =>
@@ -407,26 +408,17 @@ export async function reify(
   ...args: Parameters<InstanceType<ArboristClass>['reify']>
 ): Promise<SafeNode> {
   const IPC = await getIPC()
-  await updateSocketRegistryDependencies(this)
-  const runningFixCommand = !!IPC[SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]
-  // We are assuming `this[_diffTrees]()` has been called by `super.reify(...)`:
-  // https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/reify.js#L141
-  let needInfoOn = getPackagesToQueryFromDiff(this.diff, {
-    includeUnchanged: runningFixCommand
-  })
-  if (!needInfoOn.length) {
-    // Nothing to check, hmmm already installed or all private?
+  const runningFixCmd = !!IPC[SOCKET_CLI_IN_FIX_CMD]
+  const runningOptimizeCmd = !!IPC[SOCKET_CLI_IN_OPTIMIZE_CMD]
+  await updateSocketRegistryNodes(this)
+  if (runningOptimizeCmd) {
     return await this[kRiskyReify](...args)
   }
-  const runningOptimizeCommand =
-    !!IPC[SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]
   const { stderr: output, stdin: input } = process
-  let alerts: SocketPackageAlert[] = runningOptimizeCommand
-    ? []
-    : await getPackagesAlerts(needInfoOn, { output })
+  const alerts = await getPackagesAlerts(this, { output })
   if (
     alerts.length &&
-    !runningFixCommand &&
+    !runningFixCmd &&
     !(await confirm(
       {
         message: 'Accept risks of installing these packages?',

@@ -5,7 +5,7 @@ import { shadowNpmInstall } from '../utils/npm'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-const { SOCKET_CLI_FIX_PACKAGE_LOCK_FILE, SOCKET_IPC_HANDSHAKE } = constants
+const { SOCKET_CLI_IN_FIX_CMD, SOCKET_IPC_HANDSHAKE } = constants
 
 export const fix: CliSubcommand = {
   description: 'Fix "fixable" Socket alerts',
@@ -16,7 +16,7 @@ export const fix: CliSubcommand = {
       await shadowNpmInstall({
         ipc: {
           [SOCKET_IPC_HANDSHAKE]: {
-            [SOCKET_CLI_FIX_PACKAGE_LOCK_FILE]: true
+            [SOCKET_CLI_IN_FIX_CMD]: true
           }
         }
       })
