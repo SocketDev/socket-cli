@@ -8,6 +8,18 @@ export const Arborist: ArboristClass = require(getArboristClassPath())
 
 export const kCtorArgs = Symbol('ctorArgs')
 
+const safeOptOverrides = {
+  __proto__: null,
+  audit: false,
+  dryRun: true,
+  fund: false,
+  ignoreScripts: true,
+  progress: false,
+  save: false,
+  saveBundle: false,
+  silent: true
+}
+
 // Implementation code not related to our custom behavior is based on
 // https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/index.js:
 export class SafeArborist extends Arborist {
@@ -15,13 +27,7 @@ export class SafeArborist extends Arborist {
     super(
       {
         ...ctorArgs[0],
-        audit: true,
-        dryRun: true,
-        ignoreScripts: true,
-        save: false,
-        saveBundle: false,
-        // progress: false,
-        fund: false
+        ...safeOptOverrides
       },
       ...ctorArgs.slice(1)
     )
@@ -31,9 +37,8 @@ export class SafeArborist extends Arborist {
   async [kRiskyReify](
     ...args: Parameters<InstanceType<ArboristClass>['reify']>
   ): Promise<SafeNode> {
-    // SafeArborist has suffered side effects and must be rebuilt from scratch.
     const arb = new Arborist(...(this as any)[kCtorArgs])
-    arb.idealTree = this.idealTree
+    //arb.idealTree = this.idealTree
     const ret = await arb.reify(...args)
     Object.assign(this, arb)
     return ret
@@ -44,24 +49,18 @@ export class SafeArborist extends Arborist {
     this: SafeArborist,
     ...args: Parameters<InstanceType<ArboristClass>['reify']>
   ): Promise<SafeNode> {
-    const options = <ArboristReifyOptions>(args[0] ? { ...args[0] } : {})
+    const options = <ArboristReifyOptions>{
+      __proto__: null,
+      ...(args.length ? args[0] : undefined)
+    }
     if (options.dryRun) {
       return await this[kRiskyReify](...args)
     }
-    const old = {
-      ...options,
-      dryRun: false,
-      save: Boolean(options.save ?? true),
-      saveBundle: Boolean(options.saveBundle ?? false)
-    }
+    Object.assign(options, safeOptOverrides)
+    const old = args[0]
     args[0] = options
-    options.dryRun = true
-    options.save = false
-    options.saveBundle = false
     await super.reify(...args)
-    options.dryRun = old.dryRun
-    options.save = old.save
-    options.saveBundle = old.saveBundle
+    args[0] = old
     return await Reflect.apply(reify, this, args)
   }
 }

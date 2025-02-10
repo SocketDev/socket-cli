@@ -28,9 +28,9 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 import constants from '../constants'
 import { commonFlags } from '../flags'
 import { safeReadFile } from '../utils/fs'
+import { shadowNpmInstall } from '../utils/npm'
 import { getFlagListOutput } from '../utils/output-formatting'
 import { detect } from '../utils/package-manager-detector'
-import { shadowNpmInstall } from '../utils/shadow-npm'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 import type {
@@ -49,7 +49,7 @@ const {
   OVERRIDES,
   PNPM,
   RESOLUTIONS,
-  SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE,
+  SOCKET_CLI_IN_OPTIMIZE_CMD,
   SOCKET_IPC_HANDSHAKE,
   VLT,
   YARN_BERRY,
@@ -62,7 +62,7 @@ const NPM_OVERRIDE_PR_URL = 'https://github.com/npm/cli/pull/7025'
 const PNPM_FIELD_NAME = PNPM
 const PNPM_WORKSPACE = `${PNPM}-workspace`
 
-const manifestNpmOverrides = getManifestData(NPM)!
+const manifestNpmOverrides = getManifestData(NPM)
 
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
@@ -930,10 +930,13 @@ export const optimize: CliSubcommand = {
         if (isNpm) {
           const ipc = {
             [SOCKET_IPC_HANDSHAKE]: {
-              [SOCKET_CLI_UPDATE_OVERRIDES_IN_PACKAGE_LOCK_FILE]: true
+              [SOCKET_CLI_IN_OPTIMIZE_CMD]: true
             }
           }
-          await shadowNpmInstall({ ipc })
+          await shadowNpmInstall({
+            flags: ['--ignore-scripts'],
+            ipc
+          })
           // TODO: This is a temporary workaround for a `npm ci` bug where it
           // will error out after Socket Optimize generates a lock file. More
           // investigation is needed.

@@ -5,6 +5,7 @@ import spawn from '@npmcli/promise-spawn'
 
 import { installLinks } from './link'
 import constants from '../constants'
+import { isInstallCmd, isLoglevelCmd, isProgressCmd } from '../utils/npm'
 
 const { NPM, abortSignal } = constants
 
@@ -24,21 +25,15 @@ export default async function shadowBin(
       path.join(constants.distPath, 'npm-injection.js'),
       // Lazily access constants.shadowBinPath.
       await installLinks(constants.shadowBinPath, binName),
-      ...(binName === NPM && binArgs.includes('install')
+      ...(binName === NPM && binArgs.some(isInstallCmd)
         ? [
             // Add the `--quiet` and `--no-progress` flags to fix input being
             // swallowed by the spinner when running the command with recent
             // versions of npm.
-            ...binArgs.filter(a => a !== '--progress' && a !== '--no-progress'),
+            ...binArgs.filter(a => !isProgressCmd(a)),
             '--no-progress',
             // Add the '--quiet' flag if an equivalent flag is not provided.
-            // https://docs.npmjs.com/cli/v11/using-npm/logging#aliases
-            ...(binArgs.includes('-q') ||
-            binArgs.includes('--quiet') ||
-            binArgs.includes('-s') ||
-            binArgs.includes('--silent')
-              ? []
-              : ['--quiet'])
+            ...(binArgs.some(isLoglevelCmd) ? [] : ['--quiet'])
           ]
         : binArgs)
     ],

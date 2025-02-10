@@ -22,8 +22,7 @@ import { getDefaultToken, setupSdk } from '../utils/sdk'
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
 export const analytics: CliSubcommand = {
-  description: `Look up analytics data \n
-  Default parameters are set to show the organization-level analytics over the last 7 days.`,
+  description: `Look up analytics data\n                        Default parameters are set to show the organization-level analytics over the last 7 days.`,
   async run(argv, importMeta, { parentName }) {
     const name = parentName + ' analytics'
 
