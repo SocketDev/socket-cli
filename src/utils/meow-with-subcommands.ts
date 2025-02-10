@@ -9,7 +9,6 @@ import type { Options } from 'meow'
 
 interface CliAlias {
   description: string
-  hidden?: boolean
   argv: readonly string[]
 }
 
@@ -82,7 +81,7 @@ export async function meowWithSubcommands(
           ...toSortedObject(
             Object.fromEntries(
               Object.entries(aliases).filter(
-                entry => !entry[1]?.hidden && !subcommands[entry[1]?.argv[0]!]?.hidden
+                entry => !subcommands[entry[1]?.argv[0]!]?.hidden
               )
             )
           )
