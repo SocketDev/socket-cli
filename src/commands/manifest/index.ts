@@ -1,13 +1,12 @@
 import meow from 'meow'
 
+import { auto } from './auto.ts'
 import { scala } from './scala'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
-import { auto } from './auto.ts'
 
-const description =
-  'Generate a dependency manifest for given file or dir'
+const description = 'Generate a dependency manifest for given file or dir'
 const help = (name: string) => `
   Usage
 
