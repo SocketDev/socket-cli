@@ -5,7 +5,7 @@ import spawn from '@npmcli/promise-spawn'
 
 import { installLinks } from './link'
 import constants from '../constants'
-import { isInstallCmd, isLoglevelCmd } from '../utils/npm'
+import { isInstallCmd, isLoglevelCmd, isProgressCmd } from '../utils/npm'
 
 const { NPM, abortSignal } = constants
 
