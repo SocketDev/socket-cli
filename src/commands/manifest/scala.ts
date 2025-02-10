@@ -19,7 +19,7 @@ type ListDescription =
 const renamep = util.promisify(fs.rename)
 
 const description =
-  'Generate a manifest file (`pom.xml`) from Scala\'s `build.sbt` file'
+  "Generate a manifest file (`pom.xml`) from Scala's `build.sbt` file"
 
 const scalaCmdFlags: Record<string, ListDescription> = {
   bin: {
@@ -88,8 +88,10 @@ export const scala: CliSubcommand = {
     const name = `${parentName} scala`
     // note: meow will exit if it prints the --help screen
     const cli = meow(help(name, scalaCmdFlags), {
+      flags: <{ [key: string]: any }>scalaCmdFlags,
       argv: argv.length === 0 ? ['--help'] : argv,
       description,
+      allowUnknownFlags: false,
       importMeta
     })
 
@@ -98,7 +100,6 @@ export const scala: CliSubcommand = {
     }
 
     const target = cli.input[0]
-
     if (!target) {
       // will exit.
       new Spinner()
@@ -172,7 +173,7 @@ async function startConversion(
     console.log(`[VERBOSE] - Absolute target path: \`${rtarget}\``)
     console.log(`[VERBOSE] - Absolute out path: \`${rout}\``)
   } else {
-    console.log(`- executing: \`${bin}\``);
+    console.log(`- executing: \`${bin}\``)
     console.log(`- src dir: \`${target}\``)
     console.log(`- dst dir: \`${out}\``)
   }
@@ -199,9 +200,9 @@ async function startConversion(
       spinner.error('There were errors while running sbt')
       // (In verbose mode, stderr was printed above, no need to repeat it)
       if (!verbose) {
-        console.group('[VERBOSE] stderr:');
+        console.group('[VERBOSE] stderr:')
         console.error(output.stderr)
-        console.groupEnd();
+        console.groupEnd()
       }
       process.exit(1)
     }
@@ -234,11 +235,14 @@ async function startConversion(
       spinner.start().success(`OK. File should be available in \`${out}\``)
     }
   } catch (e) {
-    spinner.error('There was an unexpected error while running this' + (verbose ? '' : ' (use --verbose for details)'))
+    spinner.error(
+      'There was an unexpected error while running this' +
+        (verbose ? '' : ' (use --verbose for details)')
+    )
     if (verbose) {
-      console.group('[VERBOSE] error:');
+      console.group('[VERBOSE] error:')
       console.log(e)
-      console.groupEnd();
+      console.groupEnd()
     }
     process.exit(1)
   }
