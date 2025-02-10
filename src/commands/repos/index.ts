@@ -11,7 +11,7 @@ const description = 'Repositories related commands'
 
 export const repo: CliSubcommand = {
   description,
-  run: async (argv, importMeta, { parentName }) => {
+  async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
         create,

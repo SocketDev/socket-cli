@@ -176,14 +176,17 @@ export function findBinPathDetailsSync(binName: string): {
       all: true,
       nothrow: true
     }) ?? []
-  const binPath = bins.find((binPath, i) => {
+  let binPath: string | undefined
+  for (let i = 0, { length } = bins; i < length; i += 1) {
+    const bin = realpathSync.native(bins[i]!)
     // Skip our bin directory if it's in the front.
-    if (realpathSync(path.dirname(binPath)) === shadowBinPath) {
+    if (path.dirname(bin) === shadowBinPath) {
       shadowIndex = i
-      return false
+    } else {
+      binPath = bin
+      break
     }
-    return true
-  })
+  }
   return { name: binName, path: binPath, shadowed: shadowIndex !== -1 }
 }
 
