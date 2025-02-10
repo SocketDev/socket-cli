@@ -27,7 +27,6 @@ import { debugLog } from '../../../../utils/debug'
 import { getSocketDevPackageOverviewUrl } from '../../../../utils/socket-url'
 import { Edge, SafeEdge } from '../edge'
 
-import type { PackageDetail } from './diff'
 import type { ArboristClass, ArboristReifyOptions } from './types'
 import type { SocketArtifact } from '../../../../utils/alert/artifact'
 import type { SafeNode } from '../node'
@@ -174,7 +173,7 @@ async function getPackagesAlerts(
               fixable
             })
           }
-          if (includeExisting && !runningFixCmd) {
+          if (!includeExisting) {
             // Before we ask about problematic issues, check to see if they
             // already existed in the old version if they did, be quiet.
             const existing = needInfoOn.find(d =>
@@ -336,7 +335,7 @@ function updateNode(
   packument: Packument,
   vulnerableVersionRange?: string,
   firstPatchedVersionIdentifier?: string
-) {
+): boolean {
   const availableVersions = Object.keys(packument.versions)
   // Find the highest non-vulnerable version within the same major range
   const targetVersion = findBestPatchVersion(
@@ -351,7 +350,7 @@ function updateNode(
   // Check !targetVersion to make TypeScript happy.
   if (!targetVersion || !targetPackument) {
     // No suitable patch version found.
-    return node
+    return false
   }
   // Use Object.defineProperty to override the version.
   Object.defineProperty(node, 'version', {
@@ -394,6 +393,7 @@ function updateNode(
         })) as SafeEdge)
     }
   }
+  return true
 }
 
 export const kRiskyReify = Symbol('riskyReify')
@@ -407,17 +407,14 @@ export async function reify(
   ...args: Parameters<InstanceType<ArboristClass>['reify']>
 ): Promise<SafeNode> {
   const IPC = await getIPC()
-  const runningFixCmd = !!IPC[SOCKET_CLI_IN_FIX_CMD]
-  const runningOptimizeCmd = !!IPC[SOCKET_CLI_IN_OPTIMIZE_CMD]
   await updateSocketRegistryNodes(this)
-  if (runningOptimizeCmd) {
+  if (IPC[SOCKET_CLI_IN_FIX_CMD] || IPC[SOCKET_CLI_IN_OPTIMIZE_CMD]) {
     return await this[kRiskyReify](...args)
   }
   const { stderr: output, stdin: input } = process
   const alerts = await getPackagesAlerts(this, { output })
   if (
     alerts.length &&
-    !runningFixCmd &&
     !(await confirm(
       {
         message: 'Accept risks of installing these packages?',
@@ -433,30 +430,4 @@ export async function reify(
     throw new Error('Socket npm exiting due to risks')
   }
   return await this[kRiskyReify](...args)
-  // const prev = new Set(alerts.map(a => a.key))
-  // let ret: SafeNode | undefined
-  // /* eslint-disable no-await-in-loop */
-  // while (alerts.length > 0) {
-  //   await updateAdvisoryNodes(this, alerts)
-  //   ret = await this[kRiskyReify](...args)
-  //   await this.loadActual()
-  //   await this.buildIdealTree()
-  //   needInfoOn = getPackagesToQueryFromDiff(this.diff, {
-  //     includeUnchanged: true
-  //   })
-  //   alerts = (
-  //     await getPackagesAlerts(needInfoOn, {
-  //       includeExisting: true,
-  //       includeUnfixable: true
-  //     })
-  //   ).filter(({ key }) => {
-  //     const unseen = !prev.has(key)
-  //     if (unseen) {
-  //       prev.add(key)
-  //     }
-  //     return unseen
-  //   })
-  // }
-  // /* eslint-enable no-await-in-loop */
-  // return ret!
 }
