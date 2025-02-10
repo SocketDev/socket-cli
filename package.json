@@ -93,7 +93,7 @@
     "semver": "^7.7.1",
     "simple-git": "^3.27.0",
     "synp": "^1.9.14",
-    "terminal-link": "2.1.1",
+    "terminal-link": "3.0.0",
     "tiny-updater": "^3.5.3",
     "tinyglobby": "^0.2.10",
     "which": "^5.0.0",
