@@ -2,11 +2,11 @@ import fs from 'node:fs'
 
 import meow from 'meow'
 
-import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 import { scala } from './scala.ts'
 
-const description =
-  'Auto-detect build and attempt to generate manifest file'
+import type { CliSubcommand } from '../../utils/meow-with-subcommands'
+
+const description = 'Auto-detect build and attempt to generate manifest file'
 
 const help = (name: string) => `
   Usage
@@ -23,14 +23,14 @@ export const auto: CliSubcommand = {
   description,
   async run(argv, importMeta, { parentName }) {
     // Allow `--verbose` to pass through
-    let verbose = false;
+    let verbose = false
     const args = argv.filter(arg => {
       if (arg === '--verbose') {
-        verbose = true;
-        return false;
+        verbose = true
+        return false
       }
-      return true;
-    });
+      return true
+    })
 
     const name = `${parentName} auto`
     if (args.length) {
@@ -42,18 +42,21 @@ export const auto: CliSubcommand = {
       })
     }
 
-    const subArgs = [];
-    if (verbose) subArgs.push('--verbose', '1');
-    const scalaDir = '.';
+    const subArgs = []
+    if (verbose) subArgs.push('--verbose', '1')
+    const scalaDir = '.'
     if (fs.existsSync(scalaDir)) {
-      console.log('Detected a Scala sbt build, running default Scala generator...')
+      console.log(
+        'Detected a Scala sbt build, running default Scala generator...'
+      )
       subArgs.push(scalaDir)
-      await scala.run(subArgs, importMeta, {parentName})
-      return;
+      await scala.run(subArgs, importMeta, { parentName })
+      return
     }
 
     // Show new help screen and exit
-    meow(`
+    meow(
+      `
       $ ${name}
 
       Unfortunately this script did not discover a supported language in the
@@ -64,11 +67,12 @@ export const auto: CliSubcommand = {
       - Make sure the necessary build tools are available (\`PATH\`)
 
       If that doesn't work, see \`${name} <lang> --help\` for config details
-    `, {
-      argv: ['--help'],
-      description,
-      importMeta
-    })
+    `,
+      {
+        argv: ['--help'],
+        description,
+        importMeta
+      }
+    )
   }
 }
-
