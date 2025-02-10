@@ -106,13 +106,90 @@ function findPackageNodes(tree: SafeNode, packageName: string): SafeNode[] {
   return matches
 }
 
+let _translations: typeof import('../../../../../translations.json') | undefined
+function getTranslations() {
+  if (_translations === undefined) {
+    _translations = require(
+      // Lazily access constants.rootPath.
+      path.join(constants.rootPath, 'translations.json')
+    )
+  }
+  return _translations!
+}
+
+function updateNode(
+  node: SafeNode,
+  packument: Packument,
+  vulnerableVersionRange?: string,
+  firstPatchedVersionIdentifier?: string
+): boolean {
+  const availableVersions = Object.keys(packument.versions)
+  // Find the highest non-vulnerable version within the same major range
+  const targetVersion = findBestPatchVersion(
+    node,
+    availableVersions,
+    vulnerableVersionRange,
+    firstPatchedVersionIdentifier
+  )
+  const targetPackument = targetVersion
+    ? packument.versions[targetVersion]
+    : undefined
+  // Check !targetVersion to make TypeScript happy.
+  if (!targetVersion || !targetPackument) {
+    // No suitable patch version found.
+    return false
+  }
+  // Use Object.defineProperty to override the version.
+  Object.defineProperty(node, 'version', {
+    configurable: true,
+    enumerable: true,
+    get: () => targetVersion
+  })
+  node.package.version = targetVersion
+  // Update resolved and clear integrity for the new version.
+  const purlObj = PackageURL.fromString(`pkg:npm/${node.name}`)
+  node.resolved = `${NPM_REGISTRY_URL}/${node.name}/-/${purlObj.name}-${targetVersion}.tgz`
+  const { integrity } = targetPackument.dist
+  if (integrity) {
+    node.integrity = integrity
+  } else {
+    delete node.integrity
+  }
+  if ('deprecated' in targetPackument) {
+    node.package['deprecated'] = <string>targetPackument.deprecated
+  } else {
+    delete node.package['deprecated']
+  }
+  const newDeps = { ...targetPackument.dependencies }
+  const { dependencies: oldDeps } = node.package
+  node.package.dependencies = newDeps
+  if (oldDeps) {
+    for (const oldDepName of Object.keys(oldDeps)) {
+      if (!hasOwn(newDeps, oldDepName)) {
+        node.edgesOut.get(oldDepName)?.detach()
+      }
+    }
+  }
+  for (const newDepName of Object.keys(newDeps)) {
+    if (!hasOwn(oldDeps, newDepName)) {
+      node.addEdgeOut((<unknown>new Edge({
+          from: node,
+          name: newDepName,
+          spec: newDeps[newDepName],
+          type: 'prod'
+        })) as SafeEdge)
+    }
+  }
+  return true
+}
+
 type GetPackageAlertsOptions = {
   output?: Writable
   includeExisting?: boolean
   includeUnfixable?: boolean
 }
 
-async function getPackagesAlerts(
+export async function getPackagesAlerts(
   arb: SafeArborist,
   options?: GetPackageAlertsOptions
 ): Promise<SocketPackageAlert[]> {
@@ -240,18 +317,7 @@ async function getPackagesAlerts(
   return packageAlerts
 }
 
-let _translations: typeof import('../../../../../translations.json') | undefined
-function getTranslations() {
-  if (_translations === undefined) {
-    _translations = require(
-      // Lazily access constants.rootPath.
-      path.join(constants.rootPath, 'translations.json')
-    )
-  }
-  return _translations!
-}
-
-async function updateAdvisoryNodes(
+export async function updateAdvisoryNodes(
   arb: SafeArborist,
   alerts: SocketPackageAlert[]
 ) {
@@ -313,7 +379,7 @@ async function updateAdvisoryNodes(
   }
 }
 
-async function updateSocketRegistryNodes(arb: SafeArborist) {
+export async function updateSocketRegistryNodes(arb: SafeArborist) {
   await arb.buildIdealTree()
   const tree = arb.idealTree!
   for (const { 1: data } of getManifestData(NPM)) {
@@ -328,72 +394,6 @@ async function updateSocketRegistryNodes(arb: SafeArborist) {
       }
     }
   }
-}
-
-function updateNode(
-  node: SafeNode,
-  packument: Packument,
-  vulnerableVersionRange?: string,
-  firstPatchedVersionIdentifier?: string
-): boolean {
-  const availableVersions = Object.keys(packument.versions)
-  // Find the highest non-vulnerable version within the same major range
-  const targetVersion = findBestPatchVersion(
-    node,
-    availableVersions,
-    vulnerableVersionRange,
-    firstPatchedVersionIdentifier
-  )
-  const targetPackument = targetVersion
-    ? packument.versions[targetVersion]
-    : undefined
-  // Check !targetVersion to make TypeScript happy.
-  if (!targetVersion || !targetPackument) {
-    // No suitable patch version found.
-    return false
-  }
-  // Use Object.defineProperty to override the version.
-  Object.defineProperty(node, 'version', {
-    configurable: true,
-    enumerable: true,
-    get: () => targetVersion
-  })
-  node.package.version = targetVersion
-  // Update resolved and clear integrity for the new version.
-  const purlObj = PackageURL.fromString(`pkg:npm/${node.name}`)
-  node.resolved = `${NPM_REGISTRY_URL}/${node.name}/-/${purlObj.name}-${targetVersion}.tgz`
-  const { integrity } = targetPackument.dist
-  if (integrity) {
-    node.integrity = integrity
-  } else {
-    delete node.integrity
-  }
-  if ('deprecated' in targetPackument) {
-    node.package['deprecated'] = <string>targetPackument.deprecated
-  } else {
-    delete node.package['deprecated']
-  }
-  const newDeps = { ...targetPackument.dependencies }
-  const { dependencies: oldDeps } = node.package
-  node.package.dependencies = newDeps
-  if (oldDeps) {
-    for (const oldDepName of Object.keys(oldDeps)) {
-      if (!hasOwn(newDeps, oldDepName)) {
-        node.edgesOut.get(oldDepName)?.detach()
-      }
-    }
-  }
-  for (const newDepName of Object.keys(newDeps)) {
-    if (!hasOwn(oldDeps, newDepName)) {
-      node.addEdgeOut((<unknown>new Edge({
-          from: node,
-          name: newDepName,
-          spec: newDeps[newDepName],
-          type: 'prod'
-        })) as SafeEdge)
-    }
-  }
-  return true
 }
 
 export const kRiskyReify = Symbol('riskyReify')
