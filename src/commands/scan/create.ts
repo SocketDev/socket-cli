@@ -29,7 +29,7 @@ export const create: CliSubcommand = {
       }
       const spinnerText = 'Creating a scan... \n'
       const spinner = new Spinner({ text: spinnerText }).start()
-      await createFullScan(input, spinner, apiToken)
+      await createFullScan(input, spinner, apiToken, input.cwd)
     }
   }
 }
@@ -59,6 +59,10 @@ const createFullScanFlags: { [key: string]: any } = {
     default: '',
     description: 'Commit hash'
   },
+  cwd: {
+    type: 'string',
+    description: 'working directory, defaults to process.cwd()'
+  },
   pullRequest: {
     type: 'number',
     shortFlag: 'pr',
@@ -75,6 +79,10 @@ const createFullScanFlags: { [key: string]: any } = {
     shortFlag: 'db',
     default: false,
     description: 'Make default branch'
+  },
+  org: {
+    type: 'string',
+    description: 'Set your org name'
   },
   pendingHead: {
     type: 'boolean',
@@ -93,6 +101,7 @@ const createFullScanFlags: { [key: string]: any } = {
 // Internal functions
 
 type CommandContext = {
+  cwd: string
   orgSlug: string
   repoName: string
   branchName: string
@@ -118,7 +127,12 @@ async function setupCommand(
   const cli = meow(
     `
     Usage
-      $ ${name} [...options]
+      $ ${name} [...options] FILE|DIR
+
+    The FILE or DIR must be inside the CWD.
+
+    When a FILE is given only that FILE is targted. Otherwise any eligible
+    files in the given DIR will be considered.
 
     Options
       ${getFlagListOutput(flags, 6)}
@@ -141,8 +155,7 @@ async function setupCommand(
     cli.showHelp()
     return
   }
-  const { 0: orgSlug = '' } = cli.input
-  const cwd = process.cwd()
+
   const socketSdk = await setupSdk()
   const supportedFiles = await socketSdk
     .getReportSupportedFiles()
@@ -163,6 +176,13 @@ async function setupCommand(
         })
       }
     )
+
+  // TODO: I think the cwd should be set to the DIR|FILE arg of this command and the DIR/FILE be either '.' or the filename() of the arg
+  const cwd =
+    cli.flags['cwd'] && cli.flags['cwd'] !== 'process.cwd()'
+      ? String(cli.flags['cwd'])
+      : process.cwd()
+
   const packagePaths = await getPackageFilesFullScans(
     cwd,
     cli.input,
@@ -181,7 +201,8 @@ async function setupCommand(
     return
   }
   return <CommandContext>{
-    orgSlug,
+    cwd,
+    orgSlug: cli.flags['org'],
     repoName,
     branchName,
     commitMessage: cli.flags['commitMessage'],
@@ -198,7 +219,8 @@ async function setupCommand(
 async function createFullScan(
   input: CommandContext,
   spinner: Spinner,
-  apiToken: string
+  apiToken: string,
+  cwd: string = process.cwd()
 ): Promise<void> {
   const socketSdk = await setupSdk(apiToken)
   const {
@@ -222,7 +244,8 @@ async function createFullScan(
         set_as_pending_head: pendingHead,
         tmp
       },
-      packagePaths
+      packagePaths,
+      cwd
     ),
     'Creating scan'
   )

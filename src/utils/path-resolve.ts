@@ -25,13 +25,18 @@ async function filterGlobResultToSupportedFiles(
   entries: string[],
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data']
 ): Promise<string[]> {
-  const patterns = ['golang', NPM, 'pypi'].reduce((r: string[], n: string) => {
-    const supported = supportedFiles[n]
-    r.push(
-      ...(supported ? Object.values(supported).map(p => `**/${p.pattern}`) : [])
-    )
-    return r
-  }, [])
+  const patterns = ['golang', NPM, 'maven', 'pypi'].reduce(
+    (r: string[], n: string) => {
+      const supported = supportedFiles[n]
+      r.push(
+        ...(supported
+          ? Object.values(supported).map(p => `**/${p.pattern}`)
+          : [])
+      )
+      return r
+    },
+    []
+  )
   return entries.filter(p => micromatch.some(p, patterns))
 }
 
@@ -84,6 +89,9 @@ async function globWithGitIgnore(
     return result
   }
   const { absolute } = globOptions
+
+  // Note: the input files must be INSIDE the cwd. If you get strange looking
+  // relative path errors here, most likely your path is outside the given cwd.
   const filtered = ignore()
     .add(ignores)
     .filter(absolute ? result.map(p => path.relative(cwd, p)) : result)
