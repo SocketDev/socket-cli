@@ -163,6 +163,7 @@ async function setupCommand(
         })
       }
     )
+
   const packagePaths = await getPackageFilesFullScans(
     cwd,
     cli.input,
@@ -172,9 +173,9 @@ async function setupCommand(
   if (!repoName || !branchName || !packagePaths.length) {
     showHelp = true
     console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-    - Repository name using --repo\n
-    - Branch name using --branch\n
-    - At least one file path (e.g. ./package.json)`)
+    - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}\n
+    - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}\n
+    - At least one file path (e.g. ./package.json) ${!packagePaths.length ? colors.red('(missing or no matching/supported files found!)') : colors.green('(ok)')}`)
   }
   if (showHelp) {
     cli.showHelp()
