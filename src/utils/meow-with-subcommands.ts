@@ -3,7 +3,7 @@ import meow from 'meow'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 
 import { getFlagListOutput, getHelpListOutput } from './output-formatting'
-import { commonFlags } from '../flags'
+import { MeowFlags, commonFlags } from '../flags'
 
 import type { Options } from 'meow'
 
@@ -25,6 +25,17 @@ export interface CliSubcommand {
   description: string
   hidden?: boolean
   run: CliSubcommandRun
+}
+
+// Property names are picked such that the name is at the top when the props
+// get ordered by alphabet while flags is near the bottom and the help text
+// at the bottom, because they tend ot occupy the most lines of code.
+export interface CliCommandConfig {
+  commandName: string // tmp optional while we migrate
+  description: string
+  hidden: boolean
+  flags: MeowFlags // tmp optional while we migrate
+  help: (parentName: string, config: CliCommandConfig) => string
 }
 
 interface MeowOptions extends Options<any> {
