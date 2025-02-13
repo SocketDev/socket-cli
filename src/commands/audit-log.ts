@@ -12,12 +12,14 @@ import { getDefaultToken, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-export const auditLog: CliSubcommand = {
-  description: 'Look up the audit log for an organization',
+const description = 'Look up the audit log for an organization'
+
+export const auditLogCommand: CliSubcommand = {
+  description,
   async run(argv, importMeta, { parentName }) {
     const name = parentName + ' audit-log'
 
-    const input = setupCommand(name, auditLog.description, argv, importMeta)
+    const input = setupCommand(name, description, argv, importMeta)
     if (input) {
       const apiToken = getDefaultToken()
       if (!apiToken) {

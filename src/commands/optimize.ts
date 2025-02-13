@@ -64,6 +64,8 @@ const PNPM_WORKSPACE = `${PNPM}-workspace`
 
 const manifestNpmOverrides = getManifestData(NPM)
 
+const description = 'Optimize dependencies with @socketregistry overrides'
+
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 type PnpmOrYarnOverrides = { [key: string]: string }
 type Overrides = NpmOverrides | PnpmOrYarnOverrides
@@ -810,12 +812,12 @@ async function addOverrides(
   return state
 }
 
-export const optimize: CliSubcommand = {
-  description: 'Optimize dependencies with @socketregistry overrides',
+export const optimizeCommand: CliSubcommand = {
+  description,
   async run(argv, importMeta, { parentName }) {
     const commandContext = setupCommand(
       `${parentName} optimize`,
-      optimize.description,
+      description,
       argv,
       importMeta
     )

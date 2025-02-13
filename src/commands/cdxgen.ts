@@ -149,7 +149,7 @@ function argvToArray(argv: {
   return result
 }
 
-export const cdxgen: CliSubcommand = {
+export const cdxgenCommand: CliSubcommand = {
   description: 'Create an SBOM with CycloneDX generator (cdxgen)',
   async run(argv_) {
     const yargv = <any>{

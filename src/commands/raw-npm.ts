@@ -14,12 +14,14 @@ const { NPM, abortSignal } = constants
 
 const binName = NPM
 
-export const rawNpm: CliSubcommand = {
-  description: `Temporarily disable the Socket ${binName} wrapper`,
+const description = `Temporarily disable the Socket ${binName} wrapper`
+
+export const rawNpmCommand: CliSubcommand = {
+  description,
   async run(argv, importMeta, { parentName }) {
     await setupCommand(
       `${parentName} raw-${binName}`,
-      rawNpm.description,
+      description,
       argv,
       importMeta
     )

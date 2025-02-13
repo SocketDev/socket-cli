@@ -46,7 +46,7 @@ function nonNullish<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined
 }
 
-export const login: CliSubcommand = {
+export const loginCommand: CliSubcommand = {
   description,
   async run(argv, importMeta, { parentName }) {
     const name = `${parentName} login`

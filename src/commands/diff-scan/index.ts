@@ -5,7 +5,7 @@ import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
 const description = 'Diff scans related commands'
 
-export const diffScan: CliSubcommand = {
+export const diffScanCommand: CliSubcommand = {
   description,
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(

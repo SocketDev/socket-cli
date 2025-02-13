@@ -14,12 +14,14 @@ const { NPX, abortSignal } = constants
 
 const binName = NPX
 
-export const rawNpx: CliSubcommand = {
-  description: `Temporarily disable the Socket ${binName} wrapper`,
+const description = `Temporarily disable the Socket ${binName} wrapper`
+
+export const rawNpxCommand: CliSubcommand = {
+  description,
   async run(argv, importMeta, { parentName }) {
     await setupCommand(
       `${parentName} raw-${binName}`,
-      rawNpx.description,
+      description,
       argv,
       importMeta
     )
