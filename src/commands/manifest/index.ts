@@ -31,7 +31,7 @@ const help = (name: string) => `
     $ ${name} yolo
 `
 
-export const manifest: CliSubcommand = {
+export const manifestCommand: CliSubcommand = {
   description,
   hidden: true,
   async run(argv, importMeta, { parentName }) {

@@ -14,14 +14,16 @@ const HOME_DIR = os.homedir()
 const BASH_FILE = `${HOME_DIR}/.bashrc`
 const ZSH_BASH_FILE = `${HOME_DIR}/.zshrc`
 
-export const wrapper: CliSubcommand = {
-  description: 'Enable or disable the Socket npm/npx wrapper',
+const description = 'Enable or disable the Socket npm/npx wrapper'
+
+export const wrapperCommand: CliSubcommand = {
+  description,
   async run(
     argv: readonly string[],
     importMeta: ImportMeta,
     { parentName }: { parentName: string }
   ) {
-    setupCommand(`${parentName} wrapper`, wrapper.description, argv, importMeta)
+    setupCommand(`${parentName} wrapper`, description, argv, importMeta)
   }
 }
 
