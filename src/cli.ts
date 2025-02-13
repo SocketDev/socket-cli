@@ -8,7 +8,7 @@ import updateNotifier from 'tiny-updater'
 import colors from 'yoctocolors-cjs'
 
 import { actionCommand } from './commands/action'
-import { analyticsCommand } from './commands/analytics'
+import { analyticsCommand } from './commands/analytics/analytics-command'
 import { auditLogCommand } from './commands/audit-log'
 import { cdxgenCommand } from './commands/cdxgen'
 import { dependenciesCommand } from './commands/dependencies'
