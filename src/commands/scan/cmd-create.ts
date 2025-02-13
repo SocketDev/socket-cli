@@ -150,7 +150,7 @@ async function run(
     - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
     - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}\n
     - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}\n
-    - At least TARGET (e.g. \`.\` or \`./package.json\`) ${
+    - At least one TARGET (e.g. \`.\` or \`./package.json\`) ${
       !packagePaths.length
         ? colors.red(
             targets.length > 0
