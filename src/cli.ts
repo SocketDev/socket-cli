@@ -26,7 +26,7 @@ import { rawNpmCommand } from './commands/raw-npm'
 import { rawNpxCommand } from './commands/raw-npx'
 import { reportCommand } from './commands/report'
 import { reposCommand } from './commands/repos'
-import { scanCommand } from './commands/scan'
+import { cmdScan } from './commands/scan/cmd-scan.ts'
 import { threatFeedCommand } from './commands/threat-feed'
 import { wrapperCommand } from './commands/wrapper'
 import constants from './constants'
@@ -61,7 +61,7 @@ void (async () => {
         'raw-npx': rawNpxCommand,
         report: reportCommand,
         wrapper: wrapperCommand,
-        scan: scanCommand,
+        scan: cmdScan,
         'audit-log': auditLogCommand,
         repos: reposCommand,
         dependencies: dependenciesCommand,
