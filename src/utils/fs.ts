@@ -8,7 +8,7 @@ import type { FileHandle } from 'node:fs/promises'
 
 export async function findUp(
   name: string | string[],
-  { cwd = process.cwd() }: { cwd: string | undefined }
+  { cwd = process.cwd() }: { cwd: string }
 ): Promise<string | undefined> {
   let dir = path.resolve(cwd)
   const { root } = path.parse(dir)
