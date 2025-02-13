@@ -9,15 +9,12 @@ import { getDefaultToken, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-export const organizations: CliSubcommand = {
-  description: 'List organizations associated with the API key used',
+const description = 'List organizations associated with the API key used'
+
+export const organizationCommand: CliSubcommand = {
+  description,
   async run(argv, importMeta, { parentName }) {
-    setupCommand(
-      `${parentName} organizations`,
-      organizations.description,
-      argv,
-      importMeta
-    )
+    setupCommand(`${parentName} organizations`, description, argv, importMeta)
     await fetchOrganizations()
   }
 }

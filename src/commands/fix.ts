@@ -34,7 +34,7 @@ const { SOCKET_CLI_IN_FIX_CMD, SOCKET_IPC_HANDSHAKE } = constants
 // /* eslint-enable no-await-in-loop */
 // return ret!
 
-export const fix: CliSubcommand = {
+export const fixCommand: CliSubcommand = {
   description: 'Fix "fixable" Socket alerts',
   hidden: true,
   async run() {

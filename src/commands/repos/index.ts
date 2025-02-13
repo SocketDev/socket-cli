@@ -9,7 +9,7 @@ import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
 const description = 'Repositories related commands'
 
-export const repo: CliSubcommand = {
+export const reposCommand: CliSubcommand = {
   description,
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
