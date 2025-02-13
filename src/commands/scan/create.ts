@@ -188,7 +188,7 @@ async function setupCommand(
   - Org name as first arg ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
   - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}\n
   - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}\n
-  - At least one file path (e.g. ./package.json) ${
+  - At least TARGET (e.g. \`.\` or \`./package.json\`) ${
     !packagePaths.length
       ? colors.red(
           targets.length > 0
