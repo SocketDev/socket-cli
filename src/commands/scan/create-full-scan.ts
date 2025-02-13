@@ -15,6 +15,7 @@ export async function createFullScan({
   commitHash: _commitHash,
   commitMessage,
   committers: _committers,
+  cwd,
   defaultBranch,
   orgSlug,
   packagePaths,
@@ -35,6 +36,7 @@ export async function createFullScan({
   pendingHead: boolean
   tmp: boolean
   packagePaths: string[]
+  cwd: string
 }): Promise<void> {
   const spinnerText = 'Creating a scan... \n'
   const spinner = new Spinner({ text: spinnerText }).start()
@@ -51,7 +53,8 @@ export async function createFullScan({
         set_as_pending_head: pendingHead,
         tmp
       },
-      packagePaths
+      packagePaths,
+      cwd
     ),
     'Creating scan'
   )

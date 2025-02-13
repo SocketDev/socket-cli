@@ -43,6 +43,10 @@ const config: CliCommandConfig = {
       default: '',
       description: 'Commit hash'
     },
+    cwd: {
+      type: 'string',
+      description: 'working directory, defaults to process.cwd()'
+    },
     pullRequest: {
       type: 'number',
       shortFlag: 'pr',
@@ -76,13 +80,18 @@ const config: CliCommandConfig = {
   },
   help: (parentName, config) => `
     Usage
-      $ ${parentName} ${config.commandName} [...options] <org>
+      $ ${parentName} ${config.commandName} [...options] <org> <TARGET> [TARGET...]
+
+    Where TARGET is a FILE or DIR that _must_ be inside the CWD.
+
+    When a FILE is given only that FILE is targeted. Otherwise any eligible
+    files in the given DIR will be considered.
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName} --org=FakeOrg --repo=test-repo --branch=main ./package.json
+      $ ${parentName} ${config.commandName} --repo=test-repo --branch=main FakeOrg ./package.json
   `
 }
 
@@ -104,8 +113,12 @@ async function run(
     flags: config.flags
   })
 
-  const orgSlug = cli.input[0] ?? '' // TODO: if nobody uses this then get rid of it in favor of --org
-  const cwd = process.cwd()
+  const [orgSlug = '', ...targets] = cli.input
+
+  const cwd =
+    cli.flags['cwd'] && cli.flags['cwd'] !== 'process.cwd()'
+      ? String(cli.flags['cwd'])
+      : process.cwd()
 
   const socketSdk = await setupSdk()
   const supportedFiles = await socketSdk
@@ -126,7 +139,7 @@ async function run(
 
   const packagePaths = await getPackageFilesFullScans(
     cwd,
-    cli.input,
+    targets,
     supportedFiles
   )
 
@@ -134,10 +147,20 @@ async function run(
 
   if (!orgSlug || !repoName || !branchName || !packagePaths.length) {
     console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-    - Org name as the argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
+    - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
     - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}\n
     - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}\n
-    - At least one file path (e.g. ./package.json) ${!packagePaths.length ? colors.red('(missing or no matching/supported files found!)') : colors.green('(ok)')}`)
+    - At least one TARGET (e.g. \`.\` or \`./package.json\`) ${
+      !packagePaths.length
+        ? colors.red(
+            targets.length > 0
+              ? '(TARGET' +
+                  (targets.length ? 's' : '') +
+                  ' contained no matching/supported files!)'
+              : '(missing)'
+          )
+        : colors.green('(ok)')
+    }`)
     config.help(parentName, config)
     return
   }
@@ -159,6 +182,7 @@ async function run(
     pendingHead: Boolean(cli.flags['pendingHead']),
     tmp: Boolean(cli.flags['tmp']),
     packagePaths,
+    cwd,
     commitHash: (cli.flags['commitHash'] as string) ?? '',
     committers: (cli.flags['committers'] as string) ?? '',
     pullRequest: (cli.flags['pullRequest'] as number) ?? undefined
