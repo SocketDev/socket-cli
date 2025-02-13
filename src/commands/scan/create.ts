@@ -80,10 +80,6 @@ const createFullScanFlags: { [key: string]: any } = {
     default: false,
     description: 'Make default branch'
   },
-  org: {
-    type: 'string',
-    description: 'Set your org name'
-  },
   pendingHead: {
     type: 'boolean',
     shortFlag: 'ph',
@@ -127,18 +123,18 @@ async function setupCommand(
   const cli = meow(
     `
     Usage
-      $ ${name} [...options] FILE|DIR
+      $ ${name} [...options] <org> <TARGET> [TARGET ...]
 
-    The FILE or DIR must be inside the CWD.
+    Where TARGET is a FILE or DIR that _must_ be inside the CWD.
 
-    When a FILE is given only that FILE is targted. Otherwise any eligible
+    When a FILE is given only that FILE is targeted. Otherwise any eligible
     files in the given DIR will be considered.
 
     Options
       ${getFlagListOutput(flags, 6)}
 
     Examples
-      $ ${name} --org=FakeOrg --repo=test-repo --branch=main ./package.json
+      $ ${name} --repo=test-repo --branch=main FakeOrg ./package.json
   `,
     {
       argv,
@@ -147,14 +143,8 @@ async function setupCommand(
       flags
     }
   )
+
   let showHelp = cli.flags['help']
-  if (!cli.input[0]) {
-    showHelp = true
-  }
-  if (showHelp) {
-    cli.showHelp()
-    return
-  }
 
   const socketSdk = await setupSdk()
   const supportedFiles = await socketSdk
@@ -183,26 +173,41 @@ async function setupCommand(
       ? String(cli.flags['cwd'])
       : process.cwd()
 
+  const [orgSlug, ...targets] = cli.input
+
   const packagePaths = await getPackageFilesFullScans(
     cwd,
-    cli.input,
+    targets,
     supportedFiles
   )
+
   const { branch: branchName, repo: repoName } = cli.flags
-  if (!repoName || !branchName || !packagePaths.length) {
+  if (!orgSlug || !repoName || !branchName || !packagePaths.length) {
     showHelp = true
     console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-    - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}\n
-    - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}\n
-    - At least one file path (e.g. ./package.json) ${!packagePaths.length ? colors.red('(missing or no matching/supported files found!)') : colors.green('(ok)')}`)
+  - Org name as first arg ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
+  - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}\n
+  - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}\n
+  - At least one file path (e.g. ./package.json) ${
+    !packagePaths.length
+      ? colors.red(
+          targets.length > 0
+            ? '(TARGET' +
+                (targets.length ? 's' : '') +
+                ' contained no matching/supported files!)'
+            : '(missing)'
+        )
+      : colors.green('(ok)')
+  }`)
   }
   if (showHelp) {
     cli.showHelp()
     return
   }
+
   return <CommandContext>{
     cwd,
-    orgSlug: cli.flags['org'],
+    orgSlug,
     repoName,
     branchName,
     commitMessage: cli.flags['commitMessage'],
