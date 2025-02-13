@@ -8,7 +8,7 @@ import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
 const description = 'Socket API logout'
 
-export const logout: CliSubcommand = {
+export const logoutCommand: CliSubcommand = {
   description,
   async run(argv, importMeta, { parentName }) {
     const name = `${parentName} logout`

@@ -4,7 +4,7 @@ import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
 const { NPX } = constants
 
-export const npx: CliSubcommand = {
+export const npxCommand: CliSubcommand = {
   description: `${NPX} wrapper functionality`,
   async run(argv) {
     // Lazily access constants.distPath.

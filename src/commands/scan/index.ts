@@ -9,7 +9,7 @@ import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
 const description = 'Scans related commands'
 
-export const scan: CliSubcommand = {
+export const scanCommand: CliSubcommand = {
   description,
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(

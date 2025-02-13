@@ -16,12 +16,14 @@ import { getDefaultToken } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-export const threatFeed: CliSubcommand = {
-  description: 'Look up the threat feed',
+const description = 'Look up the threat feed'
+
+export const threatFeedCommand: CliSubcommand = {
+  description,
   async run(argv, importMeta, { parentName }) {
     const name = `${parentName} threat-feed`
 
-    const input = setupCommand(name, threatFeed.description, argv, importMeta)
+    const input = setupCommand(name, description, argv, importMeta)
     if (input) {
       const apiToken = getDefaultToken()
       if (!apiToken) {

@@ -25,17 +25,14 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 const { NPM } = constants
 
-export const info: CliSubcommand = {
-  description: 'Look up info regarding a package',
+const description = 'Look up info regarding a package'
+
+export const infoCommand: CliSubcommand = {
+  description,
   async run(argv, importMeta, { parentName }) {
     const name = parentName + ' info'
 
-    const commandContext = setupCommand(
-      name,
-      info.description,
-      argv,
-      importMeta
-    )
+    const commandContext = setupCommand(name, description, argv, importMeta)
     if (commandContext) {
       const spinnerText =
         commandContext.pkgVersion === 'latest'
