@@ -15,7 +15,7 @@ import { getDefaultToken } from '../../utils/sdk'
 
 const socket = new SocketSdk(getDefaultToken()!)
 
-export const action: CliSubcommand = {
+export const actionCommand: CliSubcommand = {
   description: 'Socket action command',
   hidden: true,
   async run(args: readonly string[]) {

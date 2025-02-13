@@ -7,25 +7,34 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 import colors from 'yoctocolors-cjs'
 
-import * as cliCommands from './commands'
+import { actionCommand } from './commands/action'
+import { analyticsCommand } from './commands/analytics'
+import { auditLogCommand } from './commands/audit-log'
+import { cdxgenCommand } from './commands/cdxgen'
+import { dependenciesCommand } from './commands/dependencies'
+import { diffScanCommand } from './commands/diff-scan'
+import { fixCommand } from './commands/fix'
+import { infoCommand } from './commands/info'
+import { loginCommand } from './commands/login'
+import { logoutCommand } from './commands/logout'
+import { manifestCommand } from './commands/manifest'
+import { npmCommand } from './commands/npm'
+import { npxCommand } from './commands/npx'
+import { optimizeCommand } from './commands/optimize'
+import { organizationCommand } from './commands/organization'
+import { rawNpmCommand } from './commands/raw-npm'
+import { rawNpxCommand } from './commands/raw-npx'
+import { reportCommand } from './commands/report'
+import { reposCommand } from './commands/repos'
+import { scanCommand } from './commands/scan'
+import { threatFeedCommand } from './commands/threat-feed'
+import { wrapperCommand } from './commands/wrapper'
 import constants from './constants'
 import { AuthError, InputError } from './utils/errors'
 import { logSymbols } from './utils/logging'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
 
 const { rootPkgJsonPath } = constants
-
-const formattedCliCommands = Object.fromEntries(
-  Object.entries(cliCommands).map(entry => {
-    const key = entry[0]
-    entry[0] = camelToHyphen(key)
-    return entry
-  })
-)
-
-function camelToHyphen(str: string): string {
-  return str.replace(/[A-Z]+/g, '-$&').toLowerCase()
-}
 
 // TODO: Add autocompletion using https://socket.dev/npm/package/omelette
 void (async () => {
@@ -36,17 +45,43 @@ void (async () => {
   })
 
   try {
-    await meowWithSubcommands(formattedCliCommands, {
-      aliases: {
-        ci: {
-          description: 'Alias for "report create --view --strict"',
-          argv: ['report', 'create', '--view', '--strict']
-        }
+    await meowWithSubcommands(
+      {
+        action: actionCommand,
+        cdxgen: cdxgenCommand,
+        fix: fixCommand,
+        info: infoCommand,
+        login: loginCommand,
+        logout: logoutCommand,
+        npm: npmCommand,
+        npx: npxCommand,
+        optimize: optimizeCommand,
+        organization: organizationCommand,
+        'raw-npm': rawNpmCommand,
+        'raw-npx': rawNpxCommand,
+        report: reportCommand,
+        wrapper: wrapperCommand,
+        scan: scanCommand,
+        'audit-log': auditLogCommand,
+        repos: reposCommand,
+        dependencies: dependenciesCommand,
+        analytics: analyticsCommand,
+        'diff-scan': diffScanCommand,
+        'threat-feed': threatFeedCommand,
+        manifest: manifestCommand
       },
-      argv: process.argv.slice(2),
-      name: 'socket',
-      importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta
-    })
+      {
+        aliases: {
+          ci: {
+            description: 'Alias for "report create --view --strict"',
+            argv: ['report', 'create', '--view', '--strict']
+          }
+        },
+        argv: process.argv.slice(2),
+        name: 'socket',
+        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta
+      }
+    )
   } catch (err) {
     let errorBody: string | undefined
     let errorTitle: string

@@ -13,13 +13,15 @@ import { getDefaultToken, setupSdk } from '../utils/sdk'
 
 import type { CliSubcommand } from '../utils/meow-with-subcommands'
 
-export const dependencies: CliSubcommand = {
-  description:
-    'Search for any dependency that is being used in your organization',
+const description =
+  'Search for any dependency that is being used in your organization'
+
+export const dependenciesCommand: CliSubcommand = {
+  description,
   async run(argv, importMeta, { parentName }) {
     const name = parentName + ' dependencies'
 
-    const input = setupCommand(name, dependencies.description, argv, importMeta)
+    const input = setupCommand(name, description, argv, importMeta)
     if (input) {
       await searchDeps(input)
     }

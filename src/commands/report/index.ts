@@ -6,7 +6,7 @@ import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
 const description = '[Deprecated] Project report related commands'
 
-export const report: CliSubcommand = {
+export const reportCommand: CliSubcommand = {
   description,
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
