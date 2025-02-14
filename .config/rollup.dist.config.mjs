@@ -87,7 +87,11 @@ function updateDepStatsSync(depStats) {
   const oldDepStats = existsSync(depStatsPath)
     ? readJsonSync(depStatsPath)
     : undefined
-  Object.assign(depStats.dependencies, Object.fromEntries(
+  Object.assign(depStats.dependencies,
+    // Add existing package.json dependencies without old transitives. This
+    // preserves dependencies like '@cyclonedx/cdxgen' and 'synp' that are
+    // indirectly referenced through spawned processes and not directly imported.
+    Object.fromEntries(
       Object.entries(pkgJson.dependencies).filter(
         ({ 0: key }) => !oldDepStats?.transitives?.[key]
       )
