@@ -13,7 +13,7 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 const config: CliCommandConfig = {
   commandName: 'gradle',
   description:
-    'Use Gradle to generate a manifest file (`pom.xml`) for a Gradle/Java/Kotlin/etc project',
+    '[beta] Use Gradle to generate a manifest file (`pom.xml`) for a Gradle/Java/Kotlin/etc project',
   hidden: false,
   flags: {
     ...commonFlags,
@@ -75,6 +75,8 @@ const config: CliCommandConfig = {
       think something is missing that could be supported please reach out.
 
     - it works with your \`gradlew\` from your repo and local settings and config
+
+    Support is beta. Please report issues or give us feedback on what's missing.
 
     Examples
 

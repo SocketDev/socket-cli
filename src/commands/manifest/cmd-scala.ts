@@ -11,7 +11,7 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 const config: CliCommandConfig = {
   commandName: 'kotlin',
   description:
-    "Generate a manifest file (`pom.xml`) from Scala's `build.sbt` file",
+    "[beta] Generate a manifest file (`pom.xml`) from Scala's `build.sbt` file",
   hidden: false,
   flags: {
     ...commonFlags,
@@ -70,6 +70,8 @@ const config: CliCommandConfig = {
       development and production, you must run them separately.
 
     You can optionally configure the path to the \`sbt\` bin to invoke.
+
+    Support is beta. Please report issues or give us feedback on what's missing.
 
     Examples
 
