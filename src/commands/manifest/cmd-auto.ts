@@ -6,6 +6,7 @@ import meow from 'meow'
 import { cmdManifestGradle } from './cmd-gradle.ts'
 import { cmdManifestScala } from './cmd-scala.ts'
 import { commonFlags } from '../../flags.ts'
+import { getFlagListOutput } from '../../utils/output-formatting.ts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -15,6 +16,10 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
+    cwd: {
+      type: 'string',
+      description: 'Set the cwd, defaults to process.cwd()'
+    },
     verbose: {
       type: 'boolean',
       default: false,
@@ -26,11 +31,12 @@ const config: CliCommandConfig = {
     Usage
       $ ${parentName} ${config.commandName}
 
+    Options
+      ${getFlagListOutput(config.flags, 6)}
+
     Tries to figure out what language your current repo uses. If it finds a
     supported case then it will try to generate the manifest file for that
     language with the default or detected settings.
-
-    This command takes no arguments except --verbose.
   `
 }
 
@@ -45,35 +51,35 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  // Allow `--verbose` to pass through
-  let verbose = false
-  const args = argv.filter(arg => {
-    if (arg === '--verbose') {
-      verbose = true
-      return false
-    }
-    return true
+  const cli = meow(config.help(parentName, config), {
+    argv,
+    description: config.description,
+    importMeta,
+    flags: config.flags,
+    allowUnknownFlags: false
   })
 
-  if (args.length) {
-    meow(config.help(parentName, config), {
-      argv: ['--help'],
-      description: config.description,
-      importMeta,
-      flags: config.flags
-    })
-    return
+  const verbose = cli.flags['verbose'] ?? false
+  const cwd = String(cli.flags['cwd']) || false
+  if (verbose) {
+    console.group('- ', parentName, config.commandName, ':')
+    console.group('- flags:', cli.flags)
+    console.groupEnd()
+    console.log('- input:', cli.input)
+    console.log('- cwd:', cwd || process.cwd())
+    console.groupEnd()
   }
 
   const subArgs = []
-  if (verbose) subArgs.push('--verbose', '1')
+  if (verbose) subArgs.push('--verbose')
 
-  const dir = '.'
+  const dir = cwd || '.'
 
   if (fs.existsSync(path.join(dir, 'build.sbt'))) {
     console.log(
       'Detected a Scala sbt build, running default Scala generator...'
     )
+    if (cwd) subArgs.push('--cwd', cwd)
     subArgs.push(dir)
     await cmdManifestScala.run(subArgs, importMeta, { parentName })
     return
@@ -81,6 +87,7 @@ async function run(
 
   if (fs.existsSync(path.join(dir, 'gradlew'))) {
     console.log('Detected a gradle build, running default gradle generator...')
+    if (cwd) subArgs.push(cwd) // This command takes the cwd as first arg
     await cmdManifestGradle.run(subArgs, importMeta, { parentName })
     return
   }
