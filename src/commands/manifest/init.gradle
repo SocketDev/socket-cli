@@ -1,0 +1,250 @@
+// This is a Gradle initialization script that generates Maven POM files for projects
+// A POM file describes a project's dependencies and other metadata in XML format
+
+// This script:
+// - Generates Maven POM files for Java/Kotlin/Android projects
+// - Handles different types of dependencies (direct, project, version catalog)
+// - Supports different project types (Java, Android, root project)
+// - Can be invoked with `./gradlew --init-script /path/to/this/script pom` to generate POM files
+// - Copies the generated POM to a target location (default: pom.xml)
+
+initscript {
+    repositories {
+        // We need these repositories for Gradle's plugin resolution system
+        // TODO: it's not clear if we actually need them.
+        gradlePluginPortal()
+        mavenCentral()
+        google()
+    }
+
+    dependencies {
+        // No external dependencies needed as we only use Gradle's built-in maven-publish plugin
+    }
+}
+
+// Apply these configurations to all projects in the build
+gradle.allprojects { project ->
+    // Create a unique name for the Maven publication
+    // Example: project ':foo:bar' becomes 'maven-foo-bar'
+    def publicationName = "maven-${project.path.replace(':', '-')}"
+    if (publicationName.startsWith('maven--')) {
+        publicationName = 'maven-root'  // Special case for root project
+    }
+
+    // Apply the Maven Publish plugin if not already applied
+    if (!project.plugins.hasPlugin('maven-publish')) {
+        project.plugins.apply('maven-publish')
+    }
+
+    // Register a new task called 'pom' that will generate the POM file.
+    // This is what allows us to do `gradlew pom`. We could rename it to
+    // something like socket-generate-pom instead. It should be invisible
+    // to the user because this script is not part of their repo.
+    project.tasks.register('pom') {
+        group = 'publishing'  // Group tasks are shown together in ./gradlew tasks (irrelevant)
+        description = 'Generates a POM file'
+        // Force task to run every time. Otherwise caching would cause
+        // subsequent runs without changes to do anything.
+        // There may be room for improvement; I think this may cause
+        // everything to run which is theorietically not necessary.
+        outputs.upToDateWhen { false }
+
+        // Define where POM files will be generated and copied
+        def defaultPomFile = project.file("build/publications/${publicationName}/pom-default.xml")
+        def targetPomFile = project.hasProperty('pomPath') ?
+            project.file(project.property('pomPath')) :  // Custom location if specified. You can use `./gradlew pom -PpomPath=path/to/pom.xml` to specify a custom location.
+            project.file('pom.xml')                      // Default location
+
+        // Declare task inputs and outputs for Gradle's incremental build system
+        inputs.file(defaultPomFile)
+        outputs.file(targetPomFile)
+
+        // The actual work of copying the POM file happens here
+        doLast {
+            if (defaultPomFile.exists()) {
+                // Print the generated POM for inspection
+                println "\nGenerated POM file for ${publicationName}:"
+//                 println "=================================="
+//                 println defaultPomFile.text
+//                 println "=================================="
+
+                // Copy the POM file to its target location
+                targetPomFile.parentFile.mkdirs()
+                targetPomFile.text = defaultPomFile.text
+                println "\nPOM file copied to: ${targetPomFile.absolutePath}"
+            } else {
+                println "No POM file generated at ${defaultPomFile.absolutePath}"
+            }
+        }
+    }
+
+    // Wait for project evaluation to complete before configuring publication
+    project.afterEvaluate { p ->
+        p.plugins.withId('maven-publish') {
+            // Gather project information
+            def projectPath = p.path
+            def projectName = p.name
+            def projectDesc = p.description ?: p.name
+            def isRootProject = p.path == ':' && !p.subprojects.isEmpty()
+            def isAndroidProject = p.plugins?.hasPlugin('com.android.library') ||
+                                 p.plugins?.hasPlugin('com.android.application')
+            def hasJavaComponent = p.extensions?.findByName('components')?.findByName('java') != null
+
+            // Store all dependencies we find here
+            def projectDependencies = []
+
+            // Find all relevant dependency configurations
+            // We care about implementation, api, compile, and runtime configurations
+            // TODO: anything we're missing here? tests maybe?
+            def relevantConfigs = p.configurations.findAll { config ->
+                !config.name.toLowerCase().contains('test') &&
+                (config.name.endsWith('Implementation') ||
+                 config.name.endsWith('Api') ||
+                 config.name == 'implementation' ||
+                 config.name == 'api' ||
+                 config.name == 'compile' ||
+                 config.name == 'runtime')
+            }
+
+            // Process each configuration to find dependencies
+            relevantConfigs.each { config ->
+                config.dependencies.each { dep ->
+                    if (dep instanceof ProjectDependency) {
+                        // Handle project dependencies (e.g., implementation(project(":other-module")))
+                        def depProjectPath = dep.dependencyProject.path
+                        def depProjectName = depProjectPath.substring(depProjectPath.lastIndexOf(':') + 1)
+                        projectDependencies << [
+                            group: p.group ?: p.rootProject.name,
+                            name: depProjectName,
+                            version: p.version ?: 'unspecified',
+                            scope: config.name.contains('api') ? 'compile' : 'runtime'
+                        ]
+                    } else {
+                        // Handle all other types of dependencies
+                        try {
+                            def group = dep.group
+                            def name = dep.name
+                            def version = dep.version
+
+                            // Handle version catalog dependencies (e.g., implementation(libs.some.library))
+                            if (!group && p.findProperty('libs')) {
+                                def depString = dep.toString()
+
+                                // Skip bundles and file dependencies as they need special handling
+                                if (!depString.contains('Bundle') && !dep.toString().contains('DefaultFileCollectionDependency')) {
+                                    try {
+                                        // Extract library name from version catalog reference
+                                        def libName = depString.contains('libs.') ?
+                                            depString.substring(depString.indexOf('libs.') + 5) :
+                                            depString
+                                        def libProvider = p.libs.findLibrary(libName)
+                                        if (libProvider.present) {
+                                            def dependency = libProvider.get()
+                                            projectDependencies << [
+                                                group: dependency.get().module.group,
+                                                name: dependency.get().module.name,
+                                                version: dependency.versionConstraint.requiredVersion,
+                                                scope: config.name.contains('api') ? 'compile' : 'runtime'
+                                            ]
+                                        }
+                                    } catch (Exception e) {
+                                        println "  - Skipping non-catalog dependency: ${dep}"
+                                    }
+                                }
+                            } else if (group && name) {
+                                // Handle regular dependencies (e.g., implementation("group:name:version"))
+                                projectDependencies << [
+                                    group: group,
+                                    name: name,
+                                    version: version ?: 'unspecified',
+                                    scope: config.name.contains('api') ? 'compile' : 'runtime'
+                                ]
+                            }
+                        } catch (Exception e) {
+                            println "  - Failed to process dependency: ${e.message}"
+                        }
+                    }
+                }
+            }
+
+            // Configure the Maven publication
+            p.publishing {
+                publications {
+                    if (!publications.findByName(publicationName)) {
+                        create(publicationName, MavenPublication) {
+                            // Handle different project types
+                            if (isAndroidProject) {
+                                // For Android libraries, we need to wait for the Android plugin to set up
+                                afterEvaluate {
+                                    def android = p.extensions.findByName('android')
+                                    if (android) {
+                                        // Try to get the release variant component
+                                        def components = p.components
+                                        def componentNames = components.names
+
+                                        // Look for specific variant components
+                                        // Prefer release over debug
+                                        if (components.findByName("release")) {
+                                            from components.release
+                                        } else if (components.findByName("debug")) {
+                                            from components.debug
+                                        } else {
+                                            println "Warning: No release or debug component found for Android project ${p.name}"
+                                            // Skip the component for now, will still generate POM
+                                        }
+                                    } else {
+                                        println "Warning: Android extension not found for project ${p.name}"
+                                    }
+                                }
+                            } else if (!isRootProject && hasJavaComponent) {
+                                // For Java libraries, use the java component
+                                from components.java
+                            }
+                            // Root project doesn't need a 'from' clause as it's just a POM
+
+                            // Configure the POM file content
+                            pom {
+                                // Set packaging type based on project type (why is this necessary?)
+                                packaging = isRootProject ? 'pom' : (isAndroidProject ? 'aar' : 'jar')
+                                name = projectName
+                                description = projectDesc
+
+                                // Customize the POM XML
+                                withXml { xml ->
+                                    def root = xml.asNode()
+                                    def dependencies = root.appendNode('dependencies')
+
+                                    // Add all collected dependencies to the POM
+                                    projectDependencies.each { dep ->
+                                        def dependency = dependencies.appendNode('dependency')
+                                        // Ensure all values are strings
+                                        dependency.appendNode('groupId', String.valueOf(dep.group))
+                                        dependency.appendNode('artifactId', String.valueOf(dep.name))
+                                        dependency.appendNode('version', String.valueOf(dep.version ?: 'unspecified'))
+                                        dependency.appendNode('scope', String.valueOf(dep.scope))
+                                    }
+
+                                    // Add standard properties for root project
+                                    if (isRootProject) {
+                                        def properties = root.appendNode('properties')
+                                        properties.appendNode('kotlin.version', String.valueOf('1.9.0'))
+                                        properties.appendNode('java.version', String.valueOf('11'))
+                                        properties.appendNode('project.build.sourceEncoding', String.valueOf('UTF-8'))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Make our pom task depend on the actual POM generation task
+            project.tasks.named('pom') {
+                def pomTask = "generatePomFileFor${publicationName.capitalize()}Publication"
+                if (project.tasks?.findByName(pomTask)) {
+                    dependsOn(pomTask)
+                }
+            }
+        }
+    }
+}
