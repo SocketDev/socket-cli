@@ -23,7 +23,7 @@ initscript {
 }
 
 // Apply these configurations to all projects in the build
-cmdGradle.allprojects { project ->
+gradle.allprojects { project ->
     // Create a unique name for the Maven publication
     // Example: project ':foo:bar' becomes 'maven-foo-bar'
     def publicationName = "maven-${project.path.replace(':', '-')}"
@@ -64,9 +64,9 @@ cmdGradle.allprojects { project ->
             if (defaultPomFile.exists()) {
                 // Print the generated POM for inspection
                 println "\nGenerated POM file for ${publicationName}:"
-                println "=================================="
-                println defaultPomFile.text
-                println "=================================="
+//                 println "=================================="
+//                 println defaultPomFile.text
+//                 println "=================================="
 
                 // Copy the POM file to its target location
                 targetPomFile.parentFile.mkdirs()

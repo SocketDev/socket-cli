@@ -1,8 +1,10 @@
+import path from 'node:path'
+
 import meow from 'meow'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { gradleToMaven } from './gradle-to-maven.ts'
+import { convertGradleToMaven } from './convert_gradle_to_maven.ts'
 import { commonFlags } from '../../flags.ts'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
 
@@ -22,8 +24,11 @@ const config: CliCommandConfig = {
     ...commonFlags,
     bin: {
       type: 'string',
-      default: 'DIR/gradlew',
-      description: 'Location of gradlew binary to use'
+      description: 'Location of gradlew binary to use, default: CWD/gradlew'
+    },
+    cwd: {
+      type: 'string',
+      description: 'Set the cwd, defaults to process.cwd()'
     },
     gradleOpts: {
       type: 'string',
@@ -103,8 +108,14 @@ async function run(
     importMeta
   })
 
-  if (cli.flags['verbose']) {
-    console.log('[VERBOSE] cli.flags:', cli.flags, ', cli.input:', cli.input)
+  const verbose = Boolean(cli.flags['verbose'])
+
+  if (verbose) {
+    console.group('- ', parentName, config.commandName, ':')
+    console.group('- flags:', cli.flags)
+    console.groupEnd()
+    console.log('- input:', cli.input)
+    console.groupEnd()
   }
 
   const target = cli.input[0]
@@ -128,9 +139,11 @@ async function run(
     process.exit(1)
   }
 
-  let bin: string = './gradlew'
+  let bin: string
   if (cli.flags['bin']) {
     bin = cli.flags['bin'] as string
+  } else {
+    bin = path.join(target, './gradlew')
   }
 
   let out: string = './socket.pom.xml'
@@ -151,7 +164,13 @@ async function run(
     process.exit(1)
   }
 
-  const verbose = (cli.flags['verbose'] as boolean) ?? false
+  if (verbose) {
+    console.group()
+    console.log('- target:', target)
+    console.log('- gradle bin:', bin)
+    console.log('- out:', out)
+    console.groupEnd()
+  }
 
   let gradleOpts: Array<string> = []
   if (cli.flags['gradleOpts']) {
@@ -161,5 +180,5 @@ async function run(
       .filter(Boolean)
   }
 
-  await gradleToMaven(target, bin, out, verbose, gradleOpts)
+  await convertGradleToMaven(target, bin, out, verbose, gradleOpts)
 }

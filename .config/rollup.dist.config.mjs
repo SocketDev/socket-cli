@@ -67,6 +67,12 @@ function moveDtsFilesSync(namePattern, srcPath, destPath) {
   }
 }
 
+function copyInitGradle() {
+  const filepath = path.join(rootSrcPath, 'commands', 'manifest', 'init.gradle')
+  const destPath = path.join(rootDistPath, 'init.gradle')
+  copyFileSync(filepath, destPath)
+}
+
 function removeDtsFilesSync(namePattern, srcPath) {
   for (const filepath of tinyGlobSync([`**/${namePattern}.d.ts{.map,}`], {
     absolute: true,
@@ -81,16 +87,11 @@ function updateDepStatsSync(depStats) {
   const oldDepStats = existsSync(depStatsPath)
     ? readJsonSync(depStatsPath)
     : undefined
-  Object.assign(depStats.dependencies, {
-    // Add existing package.json dependencies without old transitives. This
-    // preserves dependencies like '@cyclonedx/cdxgen' and 'synp' that are
-    // indirectly referenced through spawned processes and not directly imported.
-    ...Object.fromEntries(
+  Object.assign(depStats.dependencies, Object.fromEntries(
       Object.entries(pkgJson.dependencies).filter(
         ({ 0: key }) => !oldDepStats?.transitives?.[key]
       )
-    )
-  })
+    ))
   // Remove transitives from dependencies.
   for (const key of Object.keys(oldDepStats?.transitives ?? {})) {
     if (pkgJson.dependencies[key]) {
@@ -212,6 +213,7 @@ export default () => {
         },
         writeBundle() {
           moveDtsFilesSync(CONSTANTS, distRequirePath, rootDistPath)
+          copyInitGradle()
           removeDtsFilesSync('*', distRequirePath)
           updateDepStatsSync(requireConfig.meta.depStats)
         }

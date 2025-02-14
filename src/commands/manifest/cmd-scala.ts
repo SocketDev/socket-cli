@@ -2,7 +2,7 @@ import meow from 'meow'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { sbtToMaven } from './sbt-to-maven.ts'
+import { convertSbtToMaven } from './convert_sbt_to_maven.ts'
 import { commonFlags } from '../../flags.ts'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
 
@@ -19,6 +19,10 @@ const config: CliCommandConfig = {
       type: 'string',
       default: 'sbt',
       description: 'Location of sbt binary to use'
+    },
+    cwd: {
+      type: 'string',
+      description: 'Set the cwd, defaults to process.cwd()'
     },
     out: {
       type: 'string',
@@ -95,8 +99,14 @@ async function run(
     importMeta
   })
 
-  if (cli.flags['verbose']) {
-    console.log('[VERBOSE] cli.flags:', cli.flags, ', cli.input:', cli.input)
+  const verbose = Boolean(cli.flags['verbose'])
+
+  if (verbose) {
+    console.group('- ', parentName, config.commandName, ':')
+    console.group('- flags:', cli.flags)
+    console.groupEnd()
+    console.log('- input:', cli.input)
+    console.groupEnd()
   }
 
   const target = cli.input[0]
@@ -133,6 +143,14 @@ async function run(
     out = '-'
   }
 
+  if (verbose) {
+    console.group()
+    console.log('- target:', target)
+    console.log('- gradle bin:', bin)
+    console.log('- out:', out)
+    console.groupEnd()
+  }
+
   // TODO: we can make `-` (accept from stdin) work by storing it into /tmp
   if (target === '-') {
     new Spinner()
@@ -143,8 +161,6 @@ async function run(
     process.exit(1)
   }
 
-  const verbose = (cli.flags['verbose'] as boolean) ?? false
-
   let sbtOpts: Array<string> = []
   if (cli.flags['sbtOpts']) {
     sbtOpts = (cli.flags['sbtOpts'] as string)
@@ -153,5 +169,5 @@ async function run(
       .filter(Boolean)
   }
 
-  await sbtToMaven(target, bin, out, verbose, sbtOpts)
+  await convertSbtToMaven(target, bin, out, verbose, sbtOpts)
 }

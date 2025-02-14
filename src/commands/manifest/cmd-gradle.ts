@@ -1,8 +1,10 @@
+import path from 'node:path'
+
 import meow from 'meow'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { gradleToMaven } from './gradle-to-maven.ts'
+import { convertGradleToMaven } from './convert_gradle_to_maven.ts'
 import { commonFlags } from '../../flags.ts'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
 
@@ -17,8 +19,11 @@ const config: CliCommandConfig = {
     ...commonFlags,
     bin: {
       type: 'string',
-      default: 'DIR/gradlew',
-      description: 'Location of gradlew binary to use'
+      description: 'Location of gradlew binary to use, default: CWD/gradlew'
+    },
+    cwd: {
+      type: 'string',
+      description: 'Set the cwd, defaults to process.cwd()'
     },
     gradleOpts: {
       type: 'string',
@@ -89,7 +94,6 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const name = `${parentName} gradle`
   // note: meow will exit if it prints the --help screen
   const cli = meow(config.help(parentName, config), {
     flags: config.flags,
@@ -99,8 +103,14 @@ async function run(
     importMeta
   })
 
-  if (cli.flags['verbose']) {
-    console.log('[VERBOSE] cli.flags:', cli.flags, ', cli.input:', cli.input)
+  const verbose = Boolean(cli.flags['verbose'])
+
+  if (verbose) {
+    console.group('- ', parentName, config.commandName, ':')
+    console.group('- flags:', cli.flags)
+    console.groupEnd()
+    console.log('- input:', cli.input)
+    console.groupEnd()
   }
 
   const target = cli.input[0]
@@ -109,7 +119,7 @@ async function run(
     new Spinner()
       .start('Parsing...')
       .error(
-        `Failure: Missing DIR argument. See \`${name} --help\` for details.`
+        `Failure: Missing DIR argument. See \`${parentName} ${config.commandName} --help\` for details.`
       )
     process.exit(1)
   }
@@ -119,14 +129,16 @@ async function run(
     new Spinner()
       .start('Parsing...')
       .error(
-        `Failure: Can only accept one FILE or DIR, received ${cli.input.length} (make sure to escape spaces!). See \`${name} --help\` for details.`
+        `Failure: Can only accept one FILE or DIR, received ${cli.input.length} (make sure to escape spaces!). See \`${parentName} ${config.commandName} --help\` for details.`
       )
     process.exit(1)
   }
 
-  let bin: string = './gradlew'
+  let bin: string
   if (cli.flags['bin']) {
     bin = cli.flags['bin'] as string
+  } else {
+    bin = path.join(target, './gradlew')
   }
 
   let out: string = './socket.pom.xml'
@@ -142,12 +154,18 @@ async function run(
     new Spinner()
       .start('Parsing...')
       .error(
-        `Failure: Currently source code from stdin is not supported. See \`${name} --help\` for details.`
+        `Failure: Currently source code from stdin is not supported. See \`${parentName} ${config.commandName} --help\` for details.`
       )
     process.exit(1)
   }
 
-  const verbose = (cli.flags['verbose'] as boolean) ?? false
+  if (verbose) {
+    console.group()
+    console.log('- target:', target)
+    console.log('- gradle bin:', bin)
+    console.log('- out:', out)
+    console.groupEnd()
+  }
 
   let gradleOpts: Array<string> = []
   if (cli.flags['gradleOpts']) {
@@ -157,5 +175,5 @@ async function run(
       .filter(Boolean)
   }
 
-  await gradleToMaven(target, bin, out, verbose, gradleOpts)
+  await convertGradleToMaven(target, bin, out, verbose, gradleOpts)
 }
