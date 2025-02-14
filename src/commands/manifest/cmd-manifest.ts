@@ -28,7 +28,8 @@ const config: CliCommandConfig = {
     configurations available. See \`manifest <language> --help\` for usage details
     per language.
 
-    Currently supported language: scala, gradle
+    Currently supported language: scala [beta], gradle [beta], kotlin (through
+    gradle) [beta].
 
     Examples
 
