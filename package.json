@@ -46,6 +46,7 @@
     "clean": "run-p --aggregate-output clean:*",
     "clean:dist": "del-cli 'dist' 'test/dist'",
     "clean:node_modules": "del-cli '**/node_modules'",
+    "fix": "npm run lint:fix ; npm run check:lint -- --fix",
     "knip:dependencies": "knip --dependencies",
     "knip:exports": "knip --include exports,duplicates",
     "lint": "oxlint -c=./.oxlintrc.json --ignore-path=./.oxlintignore --tsconfig=./tsconfig.json .",
