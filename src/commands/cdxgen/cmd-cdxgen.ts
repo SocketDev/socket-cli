@@ -1,4 +1,4 @@
-// import meowOrDie from 'meow'
+// import meowOrExit from 'meow'
 import process from 'node:process'
 
 import yargsParse from 'yargs-parser'
@@ -130,7 +130,7 @@ async function run(
   _importMeta: ImportMeta,
   { parentName: _parentName }: { parentName: string }
 ): Promise<void> {
-  // const cli = meowOrDie(config.help(parentName, config), {
+  // const cli = meowOrExit(config.help(parentName, config), {
   //   argv,
   //   description: config.description,
   //   importMeta,

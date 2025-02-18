@@ -1,6 +1,6 @@
 import process from 'node:process'
 
-import meowOrDie from 'meow'
+import meowOrExit from 'meow'
 import colors from 'yoctocolors-cjs'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -106,7 +106,7 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrDie(config.help(parentName, config), {
+  const cli = meowOrExit(config.help(parentName, config), {
     argv,
     description: config.description,
     importMeta,

@@ -1,4 +1,4 @@
-import meowOrDie from 'meow'
+import meowOrExit from 'meow'
 import colors from 'yoctocolors-cjs'
 
 import { getDiffScan } from './get-diff-scan.ts'
@@ -64,7 +64,7 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrDie(config.help(parentName, config), {
+  const cli = meowOrExit(config.help(parentName, config), {
     argv,
     description: config.description,
     importMeta,

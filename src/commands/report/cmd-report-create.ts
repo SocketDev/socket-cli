@@ -1,7 +1,7 @@
 import path from 'node:path'
 import process from 'node:process'
 
-import meowOrDie from 'meow'
+import meowOrExit from 'meow'
 
 import { createReport } from './create-report.ts'
 import { getSocketConfig } from './get-socket-config.ts'
@@ -67,7 +67,7 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrDie(config.help(parentName, config), {
+  const cli = meowOrExit(config.help(parentName, config), {
     argv,
     description: config.description,
     importMeta,
