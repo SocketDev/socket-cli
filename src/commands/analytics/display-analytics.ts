@@ -8,8 +8,6 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
-import type { CommandContext } from '../types.ts'
-
 type FormattedData = {
   top_five_alert_types: { [key: string]: number }
   total_critical_alerts: { [key: string]: number }
@@ -57,31 +55,44 @@ const METRICS = [
   'total_low_prevented'
 ] as const
 
-export async function runAnalytics(
-  apiToken: string,
-  input: CommandContext
-): Promise<void> {
-  if (input) {
-    const spinner = new Spinner({ text: 'Fetching analytics data' }).start()
-    if (input.scope === 'org') {
-      await fetchOrgAnalyticsData(
-        input.time,
-        spinner,
-        apiToken,
-        input.outputJson,
-        input.file
-      )
-    } else {
-      if (input.repo) {
-        await fetchRepoAnalyticsData(
-          input.repo,
-          input.time,
-          spinner,
-          apiToken,
-          input.outputJson,
-          input.file
-        )
+export async function displayAnalytics({
+  apiToken,
+  filePath,
+  outputJson,
+  repo,
+  scope,
+  time
+}: {
+  apiToken: string
+  scope: string
+  time: number
+  repo: string
+  outputJson: boolean
+  filePath: string
+}): Promise<void> {
+  const spinner = new Spinner({ text: 'Fetching analytics data' }).start()
+
+  let data: undefined | { [key: string]: any }[]
+  if (scope === 'org') {
+    data = await fetchOrgAnalyticsData(time, spinner, apiToken)
+  } else if (repo) {
+    data = await fetchRepoAnalyticsData(repo, time, spinner, apiToken)
+  }
+
+  if (data) {
+    if (outputJson && !filePath) {
+      console.log(data)
+    } else if (filePath) {
+      try {
+        await fs.writeFile(filePath, JSON.stringify(data), 'utf8')
+        console.log(`Data successfully written to ${filePath}`)
+      } catch (e: any) {
+        console.error(e)
       }
+    } else {
+      const fdata =
+        scope === 'org' ? formatData(data, 'org') : formatData(data, 'repo')
+      displayAnalyticsScreen(fdata)
     }
   }
 }
@@ -171,10 +182,8 @@ function displayAnalyticsScreen(data: FormattedData): void {
 async function fetchOrgAnalyticsData(
   time: number,
   spinner: Spinner,
-  apiToken: string,
-  outputJson: boolean,
-  filePath: string
-): Promise<void> {
+  apiToken: string
+): Promise<{ [key: string]: any }[] | undefined> {
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getOrgAnalytics(time.toString()),
@@ -182,41 +191,26 @@ async function fetchOrgAnalyticsData(
   )
 
   if (result.success === false) {
-    return handleUnsuccessfulApiResponse('getOrgAnalytics', result, spinner)
+    handleUnsuccessfulApiResponse('getOrgAnalytics', result, spinner)
+    return undefined
   }
 
   spinner.stop()
 
   if (!result.data.length) {
-    return console.log(
-      'No analytics data is available for this organization yet.'
-    )
+    console.log('No analytics data is available for this organization yet.')
+    return undefined
   }
-  const data = formatData(result.data, 'org')
-  if (outputJson && !filePath) {
-    console.log(result.data)
-    return
-  }
-  if (filePath) {
-    try {
-      await fs.writeFile(filePath, JSON.stringify(result.data), 'utf8')
-      console.log(`Data successfully written to ${filePath}`)
-    } catch (e: any) {
-      console.error(e)
-    }
-    return
-  }
-  return displayAnalyticsScreen(data)
+
+  return result.data
 }
 
 async function fetchRepoAnalyticsData(
   repo: string,
   time: number,
   spinner: Spinner,
-  apiToken: string,
-  outputJson: boolean,
-  filePath: string
-): Promise<void> {
+  apiToken: string
+): Promise<{ [key: string]: any }[] | undefined> {
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getRepoAnalytics(repo, time.toString()),
@@ -224,30 +218,18 @@ async function fetchRepoAnalyticsData(
   )
 
   if (result.success === false) {
-    return handleUnsuccessfulApiResponse('getRepoAnalytics', result, spinner)
+    handleUnsuccessfulApiResponse('getRepoAnalytics', result, spinner)
+    return undefined
   }
 
   spinner.stop()
 
   if (!result.data.length) {
-    return console.log(
-      'No analytics data is available for this organization yet.'
-    )
+    console.log('No analytics data is available for this organization yet.')
+    return undefined
   }
-  const data = formatData(result.data, 'repo')
-  if (outputJson && !filePath) {
-    return console.log(result.data)
-  }
-  if (filePath) {
-    try {
-      await fs.writeFile(filePath, JSON.stringify(result.data), 'utf8')
-      console.log(`Data successfully written to ${filePath}`)
-    } catch (e: any) {
-      console.error(e)
-    }
-    return
-  }
-  return displayAnalyticsScreen(data)
+
+  return result.data
 }
 
 function formatData(

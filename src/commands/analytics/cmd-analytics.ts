@@ -1,14 +1,13 @@
-import meowOrDie from 'meow'
+import meowOrExit from 'meow'
 import colors from 'yoctocolors-cjs'
 
-import { runAnalytics } from './run-analytics.ts'
+import { displayAnalytics } from './display-analytics.ts'
 import { commonFlags, outputFlags } from '../../flags'
-import { AuthError, InputError } from '../../utils/errors'
+import { AuthError } from '../../utils/errors'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk.ts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
-import type { CommandContext } from '../types.ts'
 
 const config: CliCommandConfig = {
   commandName: 'analytics',
@@ -60,7 +59,7 @@ const config: CliCommandConfig = {
   `
 }
 
-export const analyticsCommand = {
+export const cmdAnalytics = {
   description: config.description,
   hidden: config.hidden,
   run: run
@@ -71,7 +70,7 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrDie(config.help(parentName, config), {
+  const cli = meowOrExit(config.help(parentName, config), {
     argv,
     description: config.description,
     importMeta,
@@ -80,19 +79,18 @@ async function run(
 
   const { repo, scope, time } = cli.flags
 
-  if (scope !== 'org' && scope !== 'repo') {
-    throw new InputError("The scope must either be 'org' or 'repo'")
-  }
+  const badScope = scope !== 'org' && scope !== 'repo'
+  const badTime = time !== 7 && time !== 30 && time !== 90
+  const badRepo = scope === 'repo' && !repo
 
-  if (time !== 7 && time !== 30 && time !== 90) {
-    throw new InputError('The time filter must either be 7, 30 or 90')
-  }
-
-  if (scope === 'repo' && !repo) {
-    console.error(
-      `${colors.bgRed(colors.white('Input error'))}: Please provide a repository name when using the repository scope.`
-    )
+  if (badScope || badTime || badRepo) {
+    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+      - Scope must be "repo" or "org" ${badScope ? colors.red('(bad!)') : colors.green('(ok)')}\n
+      - The time filter must either be 7, 30 or 90 ${badTime ? colors.red('(bad!)') : colors.green('(ok)')}\n
+      - Repository name using --repo when scope is "repo" ${badRepo ? colors.red('(bad!)') : colors.green('(ok)')}\n
+    `)
     cli.showHelp()
+    return
   }
 
   const apiToken = getDefaultToken()
@@ -102,11 +100,12 @@ async function run(
     )
   }
 
-  return await runAnalytics(apiToken, {
+  return await displayAnalytics({
+    apiToken,
     scope,
     time,
-    repo,
-    outputJson: cli.flags['json'],
-    file: cli.flags['file']
-  } as CommandContext)
+    repo: String(repo || ''),
+    outputJson: Boolean(cli.flags['json']),
+    filePath: String(cli.flags['file'] || '')
+  })
 }
