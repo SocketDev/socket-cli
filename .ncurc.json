@@ -1,5 +1,5 @@
 {
   "loglevel": "minimal",
-  "reject": ["has-flag", "terminal-link", "typescript"],
+  "reject": ["eslint-plugin-unicorn", "has-flag", "terminal-link", "typescript"],
   "upgrade": true
 }
