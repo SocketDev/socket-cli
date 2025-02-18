@@ -17,7 +17,7 @@ import { cmdFix } from './commands/fix/cmd-fix.ts'
 import { cmdInfo } from './commands/info/cmd-info.ts'
 import { loginCommand } from './commands/login'
 import { logoutCommand } from './commands/logout'
-import { manifestCommand } from './commands/manifest'
+import { cmdManifest } from './commands/manifest/cmd-manifest.ts'
 import { npmCommand } from './commands/npm'
 import { npxCommand } from './commands/npx'
 import { optimizeCommand } from './commands/optimize'
@@ -68,7 +68,7 @@ void (async () => {
         analytics: cmdAnalytics,
         'diff-scan': cmdDiffScan,
         'threat-feed': threatFeedCommand,
-        manifest: manifestCommand
+        manifest: cmdManifest
       },
       {
         aliases: {
