@@ -1,12 +1,15 @@
 import fs from 'node:fs/promises'
 
-import { Widgets } from 'blessed'
+// @ts-ignore
+import ScreenWidget from 'blessed/lib/widgets/screen'
 import contrib from 'blessed-contrib'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
+
+import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
 
 type FormattedData = {
   top_five_alert_types: { [key: string]: number }
@@ -98,7 +101,7 @@ export async function displayAnalytics({
 }
 
 function displayAnalyticsScreen(data: FormattedData): void {
-  const screen = new Widgets.Screen({})
+  const screen: Widgets.Screen = new ScreenWidget({})
   const grid = new contrib.grid({ rows: 5, cols: 4, screen })
 
   renderLineCharts(
