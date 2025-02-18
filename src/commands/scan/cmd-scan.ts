@@ -1,8 +1,8 @@
-import { cmdScanCreate } from './cmd-create'
-import { cmdScanDelete } from './cmd-delete.ts'
-import { cmdScanList } from './cmd-list.ts'
-import { cmdScanMetadata } from './cmd-metadata.ts'
-import { cmdScanStream } from './cmd-stream.ts'
+import { cmdScanCreate } from './cmd-scan-create.ts'
+import { cmdScanDelete } from './cmd-scan-delete.ts'
+import { cmdScanList } from './cmd-scan-list.ts'
+import { cmdScanMetadata } from './cmd-scan-metadata.ts'
+import { cmdScanStream } from './cmd-scan-stream.ts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'

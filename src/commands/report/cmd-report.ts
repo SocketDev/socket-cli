@@ -1,22 +1,24 @@
-import { get } from './get'
+import { cmdReportCreate } from './cmd-report-create.ts'
+import { cmdReportView } from './cmd-report-view.ts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
-const description = 'Diff scans related commands'
+const description = '[Deprecated] Project report related commands'
 
-export const diffScanCommand: CliSubcommand = {
+export const cmdReport: CliSubcommand = {
   description,
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        get
+        create: cmdReportCreate,
+        view: cmdReportView
       },
       {
         argv,
         description,
         importMeta,
-        name: parentName + ' diff-scan'
+        name: parentName + ' report'
       }
     )
   }
