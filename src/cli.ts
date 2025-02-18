@@ -7,14 +7,14 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 import colors from 'yoctocolors-cjs'
 
-import { actionCommand } from './commands/action'
-import { analyticsCommand } from './commands/analytics/analytics-command'
-import { auditLogCommand } from './commands/audit-log'
-import { cdxgenCommand } from './commands/cdxgen'
-import { dependenciesCommand } from './commands/dependencies'
-import { diffScanCommand } from './commands/diff-scan'
-import { fixCommand } from './commands/fix'
-import { infoCommand } from './commands/info'
+import { cmdAction } from './commands/action/cmd-action.ts'
+import { cmdAnalytics } from './commands/analytics/cmd-analytics.ts'
+import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.ts'
+import { cmdCdxgen } from './commands/cdxgen/cmd-cdxgen.ts'
+import { cmdScanCreate } from './commands/dependencies/cmd-dependencies.ts'
+import { cmdDiffScan } from './commands/diff-scan/cmd-diff-scan.ts'
+import { cmdFix } from './commands/fix/cmd-fix.ts'
+import { cmdInfo } from './commands/info/cmd-info.ts'
 import { loginCommand } from './commands/login'
 import { logoutCommand } from './commands/logout'
 import { manifestCommand } from './commands/manifest'
@@ -24,8 +24,8 @@ import { optimizeCommand } from './commands/optimize'
 import { organizationCommand } from './commands/organization'
 import { rawNpmCommand } from './commands/raw-npm'
 import { rawNpxCommand } from './commands/raw-npx'
-import { reportCommand } from './commands/report'
-import { reposCommand } from './commands/repos'
+import { cmdReport } from './commands/report/cmd-report.ts'
+import { cmdRepos } from './commands/repos/cmd-repos.ts'
 import { cmdScan } from './commands/scan/cmd-scan.ts'
 import { threatFeedCommand } from './commands/threat-feed'
 import { wrapperCommand } from './commands/wrapper'
@@ -47,10 +47,10 @@ void (async () => {
   try {
     await meowWithSubcommands(
       {
-        action: actionCommand,
-        cdxgen: cdxgenCommand,
-        fix: fixCommand,
-        info: infoCommand,
+        action: cmdAction,
+        cdxgen: cmdCdxgen,
+        fix: cmdFix,
+        info: cmdInfo,
         login: loginCommand,
         logout: logoutCommand,
         npm: npmCommand,
@@ -59,14 +59,14 @@ void (async () => {
         organization: organizationCommand,
         'raw-npm': rawNpmCommand,
         'raw-npx': rawNpxCommand,
-        report: reportCommand,
+        report: cmdReport,
         wrapper: wrapperCommand,
         scan: cmdScan,
-        'audit-log': auditLogCommand,
-        repos: reposCommand,
-        dependencies: dependenciesCommand,
-        analytics: analyticsCommand,
-        'diff-scan': diffScanCommand,
+        'audit-log': cmdAuditLog,
+        repos: cmdRepos,
+        dependencies: cmdScanCreate,
+        analytics: cmdAnalytics,
+        'diff-scan': cmdDiffScan,
         'threat-feed': threatFeedCommand,
         manifest: manifestCommand
       },
