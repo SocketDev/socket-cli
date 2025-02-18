@@ -1,4 +1,4 @@
-import meowOrDie from 'meow'
+import meowOrExit from 'meow'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
@@ -35,7 +35,7 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrDie(config.help(parentName, config), {
+  meowOrExit(config.help(parentName, config), {
     argv,
     description: config.description,
     importMeta,

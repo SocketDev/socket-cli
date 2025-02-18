@@ -1,4 +1,4 @@
-import meowOrDie from 'meow'
+import meowOrExit from 'meow'
 
 import { getPackageInfo } from './get-package-info.ts'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
@@ -40,7 +40,7 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrDie(config.help(parentName, config), {
+  const cli = meowOrExit(config.help(parentName, config), {
     argv,
     description: config.description,
     importMeta,

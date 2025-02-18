@@ -1,5 +1,5 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/socketcli.py
-import meowOrDie from 'meow'
+import meowOrExit from 'meow'
 
 import { runAction } from './run-action.ts'
 import { type CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -47,7 +47,7 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrDie(config.help(parentName, config), {
+  const cli = meowOrExit(config.help(parentName, config), {
     argv,
     description: config.description,
     importMeta,
