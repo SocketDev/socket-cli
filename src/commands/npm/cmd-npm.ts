@@ -1,25 +1,24 @@
 import meowOrExit from 'meow'
 
-import { runFix } from './run-fix.ts'
-import { getFlagListOutput } from '../../utils/output-formatting.ts'
+import { wrapNpm } from './wrap-npm.ts'
+import constants from '../../constants'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
+
+const { NPM } = constants
 
 const config: CliCommandConfig = {
-  commandName: 'fix',
-  description: 'Fix "fixable" Socket alerts',
-  hidden: true,
+  commandName: 'npm',
+  description: `${NPM} wrapper functionality`,
+  hidden: false,
   flags: {},
   help: (parentName, config) => `
     Usage
       $ ${parentName} ${config.commandName}
-
-    Options
-      ${getFlagListOutput(config.flags, 6)}
   `
 }
 
-export const cmdFix = {
+export const cmdNpm = {
   description: config.description,
   hidden: config.hidden,
   run
@@ -37,5 +36,5 @@ async function run(
     flags: config.flags
   })
 
-  await runFix()
+  await wrapNpm(argv)
 }

@@ -7,28 +7,28 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 import colors from 'yoctocolors-cjs'
 
-import { cmdAction } from './commands/action/cmd-action.ts'
-import { cmdAnalytics } from './commands/analytics/cmd-analytics.ts'
-import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.ts'
-import { cmdCdxgen } from './commands/cdxgen/cmd-cdxgen.ts'
-import { cmdScanCreate } from './commands/dependencies/cmd-dependencies.ts'
-import { cmdDiffScan } from './commands/diff-scan/cmd-diff-scan.ts'
-import { cmdFix } from './commands/fix/cmd-fix.ts'
-import { cmdInfo } from './commands/info/cmd-info.ts'
-import { loginCommand } from './commands/login'
-import { logoutCommand } from './commands/logout'
-import { cmdManifest } from './commands/manifest/cmd-manifest.ts'
-import { npmCommand } from './commands/npm'
-import { npxCommand } from './commands/npx'
-import { optimizeCommand } from './commands/optimize'
-import { organizationCommand } from './commands/organization'
-import { rawNpmCommand } from './commands/raw-npm'
-import { rawNpxCommand } from './commands/raw-npx'
-import { cmdReport } from './commands/report/cmd-report.ts'
-import { cmdRepos } from './commands/repos/cmd-repos.ts'
-import { cmdScan } from './commands/scan/cmd-scan.ts'
-import { threatFeedCommand } from './commands/threat-feed'
-import { wrapperCommand } from './commands/wrapper'
+import { cmdAction } from './commands/action/cmd-action'
+import { cmdAnalytics } from './commands/analytics/cmd-analytics'
+import { cmdAuditLog } from './commands/audit-log/cmd-audit-log'
+import { cmdCdxgen } from './commands/cdxgen/cmd-cdxgen'
+import { cmdScanCreate } from './commands/dependencies/cmd-dependencies'
+import { cmdDiffScan } from './commands/diff-scan/cmd-diff-scan'
+import { cmdFix } from './commands/fix/cmd-fix'
+import { cmdInfo } from './commands/info/cmd-info'
+import { cmdLogin } from './commands/login/cmd-login'
+import { cmdLogout } from './commands/logout/cmd-logout'
+import { cmdManifest } from './commands/manifest/cmd-manifest'
+import { cmdNpm } from './commands/npm/cmd-npm'
+import { cmdNpx } from './commands/npx/cmd-npx'
+import { cmdOptimize } from './commands/optimize/cmd-optimize'
+import { cmdOrganizations } from './commands/organizations/cmd-organizations'
+import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm'
+import { cmdRawNpx } from './commands/raw-npx/cmd-raw-npx'
+import { cmdReport } from './commands/report/cmd-report'
+import { cmdRepos } from './commands/repos/cmd-repos'
+import { cmdScan } from './commands/scan/cmd-scan'
+import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed'
+import { cmdWrapper } from './commands/wrapper/cmd-wrapper'
 import constants from './constants'
 import { AuthError, InputError } from './utils/errors'
 import { logSymbols } from './utils/logging'
@@ -51,23 +51,23 @@ void (async () => {
         cdxgen: cmdCdxgen,
         fix: cmdFix,
         info: cmdInfo,
-        login: loginCommand,
-        logout: logoutCommand,
-        npm: npmCommand,
-        npx: npxCommand,
-        optimize: optimizeCommand,
-        organization: organizationCommand,
-        'raw-npm': rawNpmCommand,
-        'raw-npx': rawNpxCommand,
+        login: cmdLogin,
+        logout: cmdLogout,
+        npm: cmdNpm,
+        npx: cmdNpx,
+        optimize: cmdOptimize,
+        organization: cmdOrganizations,
+        'raw-npm': cmdRawNpm,
+        'raw-npx': cmdRawNpx,
         report: cmdReport,
-        wrapper: wrapperCommand,
+        wrapper: cmdWrapper,
         scan: cmdScan,
         'audit-log': cmdAuditLog,
         repos: cmdRepos,
         dependencies: cmdScanCreate,
         analytics: cmdAnalytics,
         'diff-scan': cmdDiffScan,
-        'threat-feed': threatFeedCommand,
+        'threat-feed': cmdThreatFeed,
         manifest: cmdManifest
       },
       {

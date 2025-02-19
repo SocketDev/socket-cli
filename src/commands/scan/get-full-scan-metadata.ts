@@ -9,9 +9,11 @@ import { setupSdk } from '../../utils/sdk.ts'
 export async function getOrgScanMetadata(
   orgSlug: string,
   scanId: string,
-  spinner: Spinner,
   apiToken: string
 ): Promise<void> {
+  const spinnerText = "Getting scan's metadata... \n"
+  const spinner = new Spinner({ text: spinnerText }).start()
+
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getOrgFullScanMetadata(orgSlug, scanId),
