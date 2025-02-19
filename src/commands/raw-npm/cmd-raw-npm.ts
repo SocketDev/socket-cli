@@ -1,32 +1,38 @@
 import meowOrExit from 'meow'
 
-import { runFix } from './run-fix.ts'
-import { getFlagListOutput } from '../../utils/output-formatting.ts'
+import { runRawNpm } from './run-raw-npm.ts'
+import constants from '../../constants'
+import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 
+const { NPM } = constants
+
 const config: CliCommandConfig = {
-  commandName: 'fix',
-  description: 'Fix "fixable" Socket alerts',
-  hidden: true,
+  commandName: 'raw-npm',
+  description: `Temporarily disable the Socket ${NPM} wrapper`,
+  hidden: false,
   flags: {},
   help: (parentName, config) => `
     Usage
-      $ ${parentName} ${config.commandName}
+      $ ${parentName} ${config.commandName} <command>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
+
+    Examples
+      $ ${parentName} ${config.commandName} install
   `
 }
 
-export const cmdFix = {
+export const cmdRawNpm = {
   description: config.description,
   hidden: config.hidden,
   run
 }
 
 async function run(
-  argv: readonly string[],
+  argv: ReadonlyArray<string>,
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
@@ -37,5 +43,5 @@ async function run(
     flags: config.flags
   })
 
-  await runFix()
+  await runRawNpm(argv)
 }

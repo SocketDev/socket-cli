@@ -1,7 +1,7 @@
-import { cmdManifestAuto } from './cmd-auto.ts'
-import { cmdManifestGradle } from './cmd-gradle.ts'
-import { cmdManifestKotlin } from './cmd-kotlin.ts'
-import { cmdManifestScala } from './cmd-scala.ts'
+import { cmdManifestAuto } from './cmd-manifest-auto.ts'
+import { cmdManifestGradle } from './cmd-manifest-gradle.ts'
+import { cmdManifestKotlin } from './cmd-manifest-kotlin.ts'
+import { cmdManifestScala } from './cmd-manifest-scala.ts'
 import { commonFlags } from '../../flags.ts'
 import {
   type CliCommandConfig,

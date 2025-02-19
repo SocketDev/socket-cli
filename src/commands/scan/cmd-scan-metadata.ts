@@ -1,8 +1,6 @@
 import meow from 'meow'
 import colors from 'yoctocolors-cjs'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
 import { getOrgScanMetadata } from './get-full-scan-metadata.ts'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
@@ -71,7 +69,6 @@ async function run(
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
-  const spinnerText = "Getting scan's metadata... \n"
-  const spinner = new Spinner({ text: spinnerText }).start()
-  await getOrgScanMetadata(orgSlug, fullScanId, spinner, apiToken)
+
+  await getOrgScanMetadata(orgSlug, fullScanId, apiToken)
 }
