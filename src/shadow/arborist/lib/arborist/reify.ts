@@ -12,6 +12,7 @@ import {
   resolvePackageName
 } from '@socketsecurity/registry/lib/packages'
 import { confirm } from '@socketsecurity/registry/lib/prompts'
+import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { getPackagesToQueryFromDiff } from './diff'
@@ -19,11 +20,10 @@ import constants from '../../../../constants'
 import {
   batchScan,
   isArtifactAlertCveFixable,
-  isArtifactAlertFixable
+  isArtifactAlertUpgradeFixable
 } from '../../../../utils/alert/artifact'
 import { uxLookup } from '../../../../utils/alert/rules'
 import { ColorOrMarkdown } from '../../../../utils/color-or-markdown'
-import { debugLog } from '../../../../utils/debug'
 import { getSocketDevPackageOverviewUrl } from '../../../../utils/socket-url'
 import { Edge, SafeEdge } from '../edge'
 
@@ -31,6 +31,8 @@ import type { ArboristClass, ArboristReifyOptions } from './types'
 import type { SocketArtifact } from '../../../../utils/alert/artifact'
 import type { SafeNode } from '../node'
 import type { Writable } from 'node:stream'
+
+type PackageJsonType = SafeNode['package']
 
 type Packument = Exclude<
   Awaited<ReturnType<typeof fetchPackagePackument>>,
@@ -44,18 +46,18 @@ type SocketPackageAlert = {
   version: string
   block: boolean
   fixable: boolean
-  raw?: any
+  raw: any
 }
 
 const {
+  CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
   LOOP_SENTINEL,
   NPM,
   NPM_REGISTRY_URL,
-  SOCKET_CLI_IN_FIX_CMD,
-  SOCKET_CLI_IN_OPTIMIZE_CMD,
-  abortSignal,
-  kInternalsSymbol,
-  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIPC }
+  OVERRIDES,
+  PNPM,
+  RESOLUTIONS,
+  abortSignal
 } = constants
 
 const formatter = new ColorOrMarkdown(false)
@@ -85,7 +87,10 @@ function findBestPatchVersion(
   return semver.maxSatisfying(eligibleVersions, '*')
 }
 
-function findPackageNodes(tree: SafeNode, packageName: string): SafeNode[] {
+export function findPackageNodes(
+  tree: SafeNode,
+  packageName: string
+): SafeNode[] {
   const queue: { node: typeof tree }[] = [{ node: tree }]
   const matches: SafeNode[] = []
   let sentinel = 0
@@ -117,7 +122,15 @@ function getTranslations() {
   return _translations!
 }
 
-function updateNode(
+function hasOverride(pkgJson: PackageJsonType, name: string): boolean {
+  return !!(
+    (pkgJson as any)?.[OVERRIDES]?.[name] ||
+    (pkgJson as any)?.[RESOLUTIONS]?.[name] ||
+    (pkgJson as any)?.[PNPM]?.[OVERRIDES]?.[name]
+  )
+}
+
+export function updateNode(
   node: SafeNode,
   packument: Packument,
   vulnerableVersionRange?: string,
@@ -185,6 +198,7 @@ function updateNode(
 
 type GetPackageAlertsOptions = {
   output?: Writable
+  consolidate?: boolean
   includeExisting?: boolean
   includeUnfixable?: boolean
 }
@@ -193,17 +207,8 @@ export async function getPackagesAlerts(
   arb: SafeArborist,
   options?: GetPackageAlertsOptions
 ): Promise<SocketPackageAlert[]> {
-  const IPC = await getIPC()
-  const runningFixCmd = !!IPC[SOCKET_CLI_IN_FIX_CMD]
-  const needInfoOn = getPackagesToQueryFromDiff(arb.diff, {
-    includeUnchanged: runningFixCmd
-  })
-  let { length: remaining } = needInfoOn
-  const packageAlerts: SocketPackageAlert[] = []
-  if (!remaining) {
-    return packageAlerts
-  }
   const {
+    consolidate = false,
     includeExisting = false,
     includeUnfixable = true,
     output
@@ -211,153 +216,211 @@ export async function getPackagesAlerts(
     __proto__: null,
     ...options
   }
-  const spinner = output ? new Spinner({ stream: output }) : undefined
-  const getText = spinner
-    ? () => `Looking up data for ${remaining} packages`
-    : () => ''
-  spinner?.start(getText())
-  try {
-    for await (const artifact of batchScan(
-      arrayUnique(needInfoOn.map(d => d.node.pkgid))
-    )) {
-      if (!artifact.name || !artifact.version || !artifact.alerts?.length) {
-        continue
-      }
-      const name = resolvePackageName(<any>artifact)
-      const { version } = artifact
-
-      let displayWarning = false
-      let alerts: SocketPackageAlert[] = []
-      for (const alert of artifact.alerts) {
-        // eslint-disable-next-line no-await-in-loop
-        const ux = await uxLookup({
-          package: { name, version },
-          alert: { type: alert.type }
-        })
-        if (ux.display && output) {
-          displayWarning = true
-        }
-        if (ux.block || ux.display) {
-          const fixable = isArtifactAlertFixable(alert)
-          if (includeUnfixable || fixable) {
-            alerts.push({
-              name,
-              version,
-              key: alert.key,
-              type: alert.type,
-              block: ux.block,
-              raw: alert,
-              fixable
-            })
-          }
-          if (!includeExisting) {
-            // Before we ask about problematic issues, check to see if they
-            // already existed in the old version if they did, be quiet.
-            const existing = needInfoOn.find(d =>
-              d.existing?.pkgid.startsWith(`${name}@`)
-            )?.existing
-            if (existing) {
-              const oldArtifact: SocketArtifact | undefined =
-                // eslint-disable-next-line no-await-in-loop
-                (await batchScan([existing.pkgid]).next()).value
-              const oldAlerts = oldArtifact?.alerts
-              if (oldAlerts?.length) {
-                alerts = alerts.filter(
-                  ({ type }) => !oldAlerts.find(a => a.type === type)
-                )
-              }
-            }
-          }
-        }
-      }
-      if (displayWarning && spinner) {
-        spinner.stop(
-          `(socket) ${formatter.hyperlink(
-            `${name}@${version}`,
-            getSocketDevPackageOverviewUrl(NPM, name, version)
-          )} contains risks:`
-        )
-      }
-      alerts.sort((a, b) => (a.type < b.type ? -1 : 1))
-      if (output) {
-        const lines = new Set()
-        const translations = getTranslations()
-        for (const alert of alerts) {
-          const attributes = [
-            ...(alert.fixable ? ['fixable'] : []),
-            ...(alert.block ? [] : ['non-blocking'])
-          ]
-          const maybeAttributes = attributes.length
-            ? ` (${attributes.join('; ')})`
-            : ''
-          // Based data from { pageProps: { alertTypes } } of:
-          // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
-          const info = (translations.alerts as any)[alert.type]
-          const title = info?.title ?? alert.type
-          const maybeDesc = info?.description ? ` - ${info.description}` : ''
-          // TODO: emoji seems to mis-align terminals sometimes
-          lines.add(`  ${title}${maybeAttributes}${maybeDesc}\n`)
-        }
-        for (const line of lines) {
-          output?.write(line)
-        }
-      }
-      spinner?.start()
-      remaining -= 1
-      if (spinner) {
-        spinner.text = remaining > 0 ? getText() : ''
-      }
-      packageAlerts.push(...alerts)
-    }
-  } catch (e) {
-    debugLog(e)
-  } finally {
-    spinner?.stop()
+  const needInfoOn = getPackagesToQueryFromDiff(arb.diff, {
+    includeUnchanged: includeExisting
+  })
+  const purls = arrayUnique(needInfoOn.map(d => d.node.pkgid))
+  let { length: remaining } = purls
+  const results: SocketPackageAlert[] = []
+  if (!remaining) {
+    return results
   }
-  return packageAlerts
+  const pkgJson = (arb.actualTree ?? arb.idealTree)!.package
+  const spinner = output ? new Spinner({ stream: output }) : undefined
+  const getText = () => `Looking up data for ${remaining} packages`
+  spinner?.start(getText())
+  for await (const artifact of batchScan(purls)) {
+    if (!artifact.name || !artifact.version || !artifact.alerts?.length) {
+      remaining -= 1
+      continue
+    }
+    const name = resolvePackageName(artifact)
+    const { version } = artifact
+    let displayWarning = false
+    let sockPkgAlerts = []
+    for (const alert of artifact.alerts) {
+      // eslint-disable-next-line no-await-in-loop
+      const ux = await uxLookup({
+        package: { name, version },
+        alert: { type: alert.type }
+      })
+      if (ux.display) {
+        displayWarning = !!output
+      }
+      const fixableCve = isArtifactAlertCveFixable(alert)
+      const fixableUpgrade = isArtifactAlertUpgradeFixable(alert)
+      if (
+        (fixableCve || fixableUpgrade || includeUnfixable) &&
+        !(fixableUpgrade && hasOverride(pkgJson, name))
+      ) {
+        sockPkgAlerts.push({
+          name,
+          version,
+          key: alert.key,
+          type: alert.type,
+          block: ux.block,
+          raw: alert,
+          fixable: fixableCve || fixableUpgrade
+        })
+      }
+    }
+    if (!includeExisting && sockPkgAlerts.length) {
+      // Before we ask about problematic issues, check to see if they
+      // already existed in the old version if they did, be quiet.
+      const allExisting = needInfoOn.filter(d =>
+        d.existing?.pkgid.startsWith(`${name}@`)
+      )
+      for (const { existing } of allExisting) {
+        const oldAlerts: SocketArtifact['alerts'] | undefined =
+          // eslint-disable-next-line no-await-in-loop
+          (await batchScan([existing!.pkgid]).next()).value?.alerts
+        if (oldAlerts?.length) {
+          // SocketArtifactAlert and SocketPackageAlert both have the 'key' property.
+          sockPkgAlerts = sockPkgAlerts.filter(
+            ({ key }) => !oldAlerts.find(a => a.key === key)
+          )
+        }
+      }
+    }
+    if (consolidate && sockPkgAlerts.length) {
+      const highestForCve = new Map<number, SocketPackageAlert>()
+      const highestForUpgrade = new Map<number, SocketPackageAlert>()
+      const unfixableAlerts: SocketPackageAlert[] = []
+      for (const sockPkgAlert of sockPkgAlerts) {
+        if (isArtifactAlertCveFixable(sockPkgAlert.raw)) {
+          const version =
+            sockPkgAlert.raw.props[
+              CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER
+            ]
+          const major = semver.major(version)
+          const highest =
+            highestForCve.get(major)?.raw[
+              CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER
+            ] ?? '0.0.0'
+          if (semver.gt(version, highest)) {
+            highestForCve.set(major, sockPkgAlert)
+          }
+        } else if (isArtifactAlertUpgradeFixable(sockPkgAlert.raw)) {
+          const { version } = sockPkgAlert
+          const major = semver.major(version)
+          const highest = highestForUpgrade.get(major)?.version ?? '0.0.0'
+          if (semver.gt(version, highest)) {
+            highestForUpgrade.set(major, sockPkgAlert)
+          }
+        } else {
+          unfixableAlerts.push(sockPkgAlert)
+        }
+      }
+      sockPkgAlerts = [
+        ...unfixableAlerts,
+        ...highestForCve.values(),
+        ...highestForUpgrade.values()
+      ]
+    }
+    sockPkgAlerts.sort((a, b) => naturalCompare(a.type, b.type))
+    spinner?.stop()
+    if (displayWarning && sockPkgAlerts.length) {
+      const lines = new Set()
+      const translations = getTranslations()
+      for (const sockPkgAlert of sockPkgAlerts) {
+        const attributes = [
+          ...(sockPkgAlert.fixable ? ['fixable'] : []),
+          ...(sockPkgAlert.block ? [] : ['non-blocking'])
+        ]
+        const maybeAttributes = attributes.length
+          ? ` (${attributes.join('; ')})`
+          : ''
+        // Based data from { pageProps: { alertTypes } } of:
+        // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
+        const info = (translations.alerts as any)[sockPkgAlert.type]
+        const title = info?.title ?? sockPkgAlert.type
+        const maybeDesc = info?.description ? ` - ${info.description}` : ''
+        // TODO: emoji seems to mis-align terminals sometimes
+        lines.add(`  ${title}${maybeAttributes}${maybeDesc}\n`)
+      }
+      output?.write(
+        `(socket) ${formatter.hyperlink(
+          `${name}@${version}`,
+          getSocketDevPackageOverviewUrl(NPM, name, version)
+        )} contains risks:\n`
+      )
+      for (const line of lines) {
+        output?.write(line)
+      }
+    }
+    results.push(...sockPkgAlerts)
+    remaining -= 1
+    if (spinner && remaining > 0) {
+      spinner.start()
+      spinner.text = getText()
+    }
+  }
+  spinner?.stop()
+  return results
+}
+
+type CveInfoByPackage = Map<
+  string,
+  {
+    firstPatchedVersionIdentifier: string
+    vulnerableVersionRange: string
+  }[]
+>
+
+type GetCveInfoByPackageOptions = {
+  excludeUpgrades?: boolean
+}
+
+export function getCveInfoByPackage(
+  alerts: SocketPackageAlert[],
+  options?: GetCveInfoByPackageOptions
+): CveInfoByPackage | null {
+  const { excludeUpgrades } = <GetCveInfoByPackageOptions>{
+    __proto__: null,
+    ...options
+  }
+  let infoByPkg: CveInfoByPackage | null = null
+  for (const alert of alerts) {
+    if (
+      !isArtifactAlertCveFixable(alert.raw) ||
+      (excludeUpgrades && getManifestData(NPM, alert.name))
+    ) {
+      continue
+    }
+    if (!infoByPkg) {
+      infoByPkg = new Map()
+    }
+    const { name } = alert
+    let infos = infoByPkg.get(name)
+    if (!infos) {
+      infos = []
+      infoByPkg.set(name, infos)
+    }
+    const { firstPatchedVersionIdentifier, vulnerableVersionRange } =
+      alert.raw.props
+    infos.push({
+      firstPatchedVersionIdentifier,
+      vulnerableVersionRange
+    })
+  }
+  return infoByPkg
 }
 
 export async function updateAdvisoryNodes(
   arb: SafeArborist,
   alerts: SocketPackageAlert[]
 ) {
-  let patchDataByPkg:
-    | {
-        [key: string]: {
-          firstPatchedVersionIdentifier: string
-          vulnerableVersionRange: string
-        }[]
-      }
-    | undefined
-  for (const alert of alerts) {
-    if (!isArtifactAlertCveFixable(alert.raw)) {
-      continue
-    }
-    if (!patchDataByPkg) {
-      patchDataByPkg = {}
-    }
-    const { name } = alert
-    if (!patchDataByPkg[name]) {
-      patchDataByPkg[name] = []
-    }
-    const { firstPatchedVersionIdentifier, vulnerableVersionRange } =
-      alert.raw.props
-    patchDataByPkg[name]!.push({
-      firstPatchedVersionIdentifier,
-      vulnerableVersionRange
-    })
-  }
-  if (!patchDataByPkg) {
+  const infoByPkg = getCveInfoByPackage(alerts)
+  if (!infoByPkg) {
     // No advisories to process.
     return
   }
   await arb.buildIdealTree()
   const tree = arb.idealTree!
-  for (const name of Object.keys(patchDataByPkg)) {
+  for (const { 0: name, 1: infos } of infoByPkg) {
     const nodes = findPackageNodes(tree, name)
-    const patchData = patchDataByPkg[name]!
     const packument =
-      nodes.length && patchData.length
+      nodes.length && infos.length
         ? // eslint-disable-next-line no-await-in-loop
           await fetchPackagePackument(name)
         : null
@@ -366,7 +429,7 @@ export async function updateAdvisoryNodes(
         for (const {
           firstPatchedVersionIdentifier,
           vulnerableVersionRange
-        } of patchData) {
+        } of infos) {
           updateNode(
             node,
             packument,
@@ -406,11 +469,6 @@ export async function reify(
   this: SafeArborist,
   ...args: Parameters<InstanceType<ArboristClass>['reify']>
 ): Promise<SafeNode> {
-  const IPC = await getIPC()
-  await updateSocketRegistryNodes(this)
-  if (IPC[SOCKET_CLI_IN_FIX_CMD] || IPC[SOCKET_CLI_IN_OPTIMIZE_CMD]) {
-    return await this[kRiskyReify](...args)
-  }
   const { stderr: output, stdin: input } = process
   const alerts = await getPackagesAlerts(this, { output })
   if (

@@ -33,8 +33,9 @@ type ENV = RegistryEnv &
   }>
 
 type IPC = Readonly<{
-  SOCKET_CLI_IN_FIX_CMD: boolean
-  SOCKET_CLI_IN_OPTIMIZE_CMD: boolean
+  SOCKET_CLI_FIX?: string
+  SOCKET_CLI_OPTIMIZE?: boolean
+  SOCKET_CLI_SAFE_WRAPPER?: boolean
 }>
 
 type Constants = Omit<
@@ -42,10 +43,17 @@ type Constants = Omit<
   'Symbol(kInternalsSymbol)' | 'ENV' | 'IPC'
 > & {
   readonly 'Symbol(kInternalsSymbol)': Internals
+  readonly ALERT_TYPE_CRITICAL_CVE: 'criticalCVE'
+  readonly ALERT_TYPE_CVE: 'cve'
+  readonly ALERT_TYPE_MEDIUM_CVE: 'mediumCVE'
+  readonly ALERT_TYPE_MILD_CVE: 'mildCVE'
+  readonly ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE: 'socketUpgradeAvailable'
   readonly API_V0_URL: 'https://api.socket.dev/v0'
   readonly BABEL_RUNTIME: '@babel/runtime'
   readonly BINARY_LOCK_EXT: '.lockb'
   readonly BUN: 'bun'
+  readonly CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER: 'firstPatchedVersionIdentifier'
+  readonly CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE: 'vulnerableVersionRange'
   readonly ENV: ENV
   readonly DIST_TYPE: 'module-sync' | 'require'
   readonly IPC: IPC
@@ -56,9 +64,10 @@ type Constants = Omit<
   readonly PNPM: 'pnpm'
   readonly REQUIRE: 'require'
   readonly SOCKET_CLI_DEBUG: 'SOCKET_CLI_DEBUG'
-  readonly SOCKET_CLI_IN_FIX_CMD: 'SOCKET_CLI_IN_FIX_CMD'
-  readonly SOCKET_CLI_IN_OPTIMIZE_CMD: 'SOCKET_CLI_IN_OPTIMIZE_CMD'
+  readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
   readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
+  readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
+  readonly SOCKET_CLI_SAFE_WRAPPER: 'SOCKET_CLI_SAFE_WRAPPER'
   readonly VLT: 'vlt'
   readonly YARN: 'yarn'
   readonly YARN_BERRY: 'yarn/berry'
@@ -74,10 +83,18 @@ type Constants = Omit<
   readonly synpBinPath: string
 }
 
+const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
+const ALERT_TYPE_CVE = 'cve'
+const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
+const ALERT_TYPE_MILD_CVE = 'mildCVE'
+const ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE = 'socketUpgradeAvailable'
 const API_V0_URL = 'https://api.socket.dev/v0'
 const BABEL_RUNTIME = '@babel/runtime'
 const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
+const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
+  'firstPatchedVersionIdentifier'
+const CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE = 'vulnerableVersionRange'
 const LOCK_EXT = '.lock'
 const MODULE_SYNC = 'module-sync'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
@@ -85,9 +102,10 @@ const NPX = 'npx'
 const PNPM = 'pnpm'
 const REQUIRE = 'require'
 const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
-const SOCKET_CLI_IN_FIX_CMD = 'SOCKET_CLI_IN_FIX_CMD'
-const SOCKET_CLI_IN_OPTIMIZE_CMD = 'SOCKET_CLI_IN_OPTIMIZE_CMD'
+const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
+const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
+const SOCKET_CLI_SAFE_WRAPPER = 'SOCKET_CLI_SAFE_WRAPPER'
 const VLT = 'vlt'
 const YARN = 'yarn'
 const YARN_BERRY = `${YARN}/berry`
@@ -146,10 +164,17 @@ const lazySynpBinPath = () =>
 
 const constants = <Constants>createConstantsObject(
   {
+    ALERT_TYPE_CRITICAL_CVE,
+    ALERT_TYPE_CVE,
+    ALERT_TYPE_MEDIUM_CVE,
+    ALERT_TYPE_MILD_CVE,
+    ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE,
     API_V0_URL,
     BABEL_RUNTIME,
     BINARY_LOCK_EXT,
     BUN,
+    CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
+    CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE,
     // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
     ENV: undefined,
@@ -160,9 +185,10 @@ const constants = <Constants>createConstantsObject(
     PNPM,
     REQUIRE,
     SOCKET_CLI_DEBUG,
-    SOCKET_CLI_IN_FIX_CMD,
-    SOCKET_CLI_IN_OPTIMIZE_CMD,
+    SOCKET_CLI_FIX,
     SOCKET_CLI_ISSUES_URL,
+    SOCKET_CLI_OPTIMIZE,
+    SOCKET_CLI_SAFE_WRAPPER,
     VLT,
     YARN,
     YARN_BERRY,

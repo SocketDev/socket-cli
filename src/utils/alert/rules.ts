@@ -195,8 +195,8 @@ export async function uxLookup(
 void (async () => {
   const { orgs, settings } = await (async () => {
     try {
-      const socketSdk = await setupSdk(getPublicToken())
-      const orgResult = await socketSdk.getOrganizations()
+      const sockSdk = await setupSdk(getPublicToken())
+      const orgResult = await sockSdk.getOrganizations()
       if (!orgResult.success) {
         throw new Error(
           `Failed to fetch Socket organization info: ${orgResult.error.message}`
@@ -211,7 +211,7 @@ void (async () => {
           orgs.push(org)
         }
       }
-      const result = await socketSdk.postSettings(
+      const result = await sockSdk.postSettings(
         orgs.map(org => ({ organization: org.id }))
       )
       if (!result.success) {
