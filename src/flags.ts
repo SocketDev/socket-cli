@@ -18,19 +18,6 @@ export const commonFlags: MeowFlags = {
   }
 }
 
-export const commandFlags: MeowFlags = {
-  enable: {
-    type: 'boolean',
-    default: false,
-    description: 'Enables the Socket npm/npx wrapper'
-  },
-  disable: {
-    type: 'boolean',
-    default: false,
-    description: 'Disables the Socket npm/npx wrapper'
-  }
-}
-
 export const outputFlags: MeowFlags = {
   json: {
     type: 'boolean',

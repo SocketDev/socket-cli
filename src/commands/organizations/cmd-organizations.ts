@@ -1,25 +1,21 @@
 import meowOrExit from 'meow'
 
-import { runFix } from './run-fix.ts'
-import { getFlagListOutput } from '../../utils/output-formatting.ts'
+import { getOrganizations } from './get-organizations.ts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 
 const config: CliCommandConfig = {
-  commandName: 'fix',
-  description: 'Fix "fixable" Socket alerts',
-  hidden: true,
+  commandName: 'organizations',
+  description: 'List organizations associated with the API key used',
+  hidden: false,
   flags: {},
   help: (parentName, config) => `
     Usage
       $ ${parentName} ${config.commandName}
-
-    Options
-      ${getFlagListOutput(config.flags, 6)}
   `
 }
 
-export const cmdFix = {
+export const cmdOrganizations = {
   description: config.description,
   hidden: config.hidden,
   run
@@ -37,5 +33,5 @@ async function run(
     flags: config.flags
   })
 
-  await runFix()
+  await getOrganizations()
 }

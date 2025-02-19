@@ -3,8 +3,8 @@ import path from 'node:path'
 
 import meow from 'meow'
 
-import { cmdManifestGradle } from './cmd-gradle.ts'
-import { cmdManifestScala } from './cmd-scala.ts'
+import { cmdManifestGradle } from './cmd-manifest-gradle.ts'
+import { cmdManifestScala } from './cmd-manifest-scala.ts'
 import { commonFlags } from '../../flags.ts'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
 

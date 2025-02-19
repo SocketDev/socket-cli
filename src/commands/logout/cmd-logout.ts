@@ -1,25 +1,26 @@
 import meowOrExit from 'meow'
 
-import { runFix } from './run-fix.ts'
-import { getFlagListOutput } from '../../utils/output-formatting.ts'
+import { attemptLogout } from './attempt-logout.ts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 
 const config: CliCommandConfig = {
-  commandName: 'fix',
-  description: 'Fix "fixable" Socket alerts',
-  hidden: true,
+  commandName: 'logout',
+  description: 'Socket API logout',
+  hidden: false,
   flags: {},
   help: (parentName, config) => `
     Usage
       $ ${parentName} ${config.commandName}
 
-    Options
-      ${getFlagListOutput(config.flags, 6)}
+    Logs out of the Socket API and clears all Socket credentials from disk
+
+    Examples
+      $ ${parentName} ${config.commandName}
   `
 }
 
-export const cmdFix = {
+export const cmdLogout = {
   description: config.description,
   hidden: config.hidden,
   run
@@ -37,5 +38,5 @@ async function run(
     flags: config.flags
   })
 
-  await runFix()
+  attemptLogout()
 }
