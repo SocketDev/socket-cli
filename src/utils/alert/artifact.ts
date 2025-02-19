@@ -5,6 +5,8 @@ import rl from 'node:readline'
 import constants from '../../constants'
 import { getPublicToken } from '../sdk'
 
+import type { IncomingMessage } from 'node:http'
+
 export type CveAlertType = 'criticalCVE' | 'cve' | 'mediumCVE' | 'mildCVE'
 
 export type ArtifactAlertCveFixable = Omit<
@@ -38,8 +40,8 @@ export type SocketArtifactAlert = {
 
 export type SocketArtifact = {
   type: string
+  name: string
   namespace?: string
-  name?: string
   version?: string
   subpath?: string
   release?: string
@@ -74,7 +76,17 @@ export type SocketArtifact = {
   batchIndex?: number
 }
 
-const { API_V0_URL, abortSignal } = constants
+const {
+  ALERT_TYPE_CRITICAL_CVE,
+  ALERT_TYPE_CVE,
+  ALERT_TYPE_MEDIUM_CVE,
+  ALERT_TYPE_MILD_CVE,
+  ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE,
+  API_V0_URL,
+  CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
+  CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE,
+  abortSignal
+} = constants
 
 export async function* batchScan(
   pkgIds: string[]
@@ -92,8 +104,10 @@ export async function* batchScan(
         components: pkgIds.map(id => ({ purl: `pkg:npm/${id}` }))
       })
     )
-  const { 0: res } = await events.once(req, 'response')
-  const ok = res.statusCode >= 200 && res.statusCode <= 299
+  const { 0: res } = <[IncomingMessage]>(
+    await events.once(req, 'response', { signal: abortSignal })
+  )
+  const ok = res.statusCode! >= 200 && res.statusCode! <= 299
   if (!ok) {
     throw new Error(`Socket API Error: ${res.statusCode}`)
   }
@@ -108,19 +122,25 @@ export function isArtifactAlertCveFixable(
 ): alert is ArtifactAlertCveFixable {
   const { type } = alert
   return (
-    (type === 'cve' ||
-      type === 'mediumCVE' ||
-      type === 'mildCVE' ||
-      type === 'criticalCVE') &&
-    !!alert.props?.['firstPatchedVersionIdentifier'] &&
-    !!alert.props?.['vulnerableVersionRange']
+    (type === ALERT_TYPE_CVE ||
+      type === ALERT_TYPE_MEDIUM_CVE ||
+      type === ALERT_TYPE_MILD_CVE ||
+      type === ALERT_TYPE_CRITICAL_CVE) &&
+    !!alert.props?.[CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER] &&
+    !!alert.props?.[CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE]
   )
+}
+
+export function isArtifactAlertUpgradeFixable(
+  alert: SocketArtifactAlert
+): alert is ArtifactAlertFixable {
+  return alert.type === ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE
 }
 
 export function isArtifactAlertFixable(
   alert: SocketArtifactAlert
 ): alert is ArtifactAlertFixable {
   return (
-    alert.type === 'socketUpgradeAvailable' || isArtifactAlertCveFixable(alert)
+    isArtifactAlertUpgradeFixable(alert) || isArtifactAlertCveFixable(alert)
   )
 }
