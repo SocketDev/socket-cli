@@ -2,7 +2,6 @@ import meowOrExit from 'meow'
 
 import { runRawNpm } from './run-raw-npm.ts'
 import constants from '../../constants'
-import { commonFlags, validationFlags } from '../../flags'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
@@ -13,10 +12,7 @@ const config: CliCommandConfig = {
   commandName: 'raw-npm',
   description: `Temporarily disable the Socket ${NPM} wrapper`,
   hidden: false,
-  flags: {
-    ...commonFlags,
-    ...validationFlags
-  },
+  flags: {},
   help: (parentName, config) => `
     Usage
       $ ${parentName} ${config.commandName} <command>
