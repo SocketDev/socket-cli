@@ -24,9 +24,11 @@ export async function listFullScans(
     from_time: string
     until_time: string
   },
-  spinner: Spinner,
   apiToken: string
 ): Promise<void> {
+  const spinnerText = 'Listing scans... \n'
+  const spinner = new Spinner({ text: spinnerText }).start()
+
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getOrgFullScanList(orgSlug, input),
