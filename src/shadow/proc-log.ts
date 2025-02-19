@@ -1,6 +1,4 @@
-import path from 'node:path'
-
-import { getNpmNodeModulesPath } from './npm-paths'
+import { getNpmRequire } from './npm-paths'
 import constants from '../constants'
 
 const { UNDEFINED_TOKEN } = constants
@@ -17,6 +15,7 @@ type RequireTransformer<T extends keyof RequireKnownModules> = (
 ) => RequireKnownModules[T]
 
 function tryRequire<T extends keyof RequireKnownModules>(
+  req: NodeJS.Require,
   ...ids: (T | [T, RequireTransformer<T>])[]
 ): RequireKnownModules[T] | undefined {
   for (const data of ids) {
@@ -32,7 +31,7 @@ function tryRequire<T extends keyof RequireKnownModules>(
     try {
       // Check that the transformed value isn't `undefined` because older
       // versions of packages like 'proc-log' may not export a `log` method.
-      const exported = transformer(require(id))
+      const exported = transformer(req(id))
       if (exported !== undefined) {
         return exported
       }
@@ -49,15 +48,15 @@ export type Logger =
 let _log: Logger | {} | undefined = UNDEFINED_TOKEN
 export function getLogger(): Logger {
   if (_log === UNDEFINED_TOKEN) {
-    const npmNmPath = getNpmNodeModulesPath()
     _log = tryRequire(
+      getNpmRequire(),
       [
-        <'proc-log'>path.join(npmNmPath, 'proc-log/lib/index.js'),
+        <'proc-log'>'proc-log/lib/index.js',
         // The proc-log DefinitelyTyped definition is incorrect. The type definition
         // is really that of its export log.
         mod => <RequireKnownModules['proc-log']>(mod as any).log
       ],
-      <'npmlog'>path.join(npmNmPath, 'npmlog/lib/log.js')
+      <'npmlog'>'npmlog/lib/log.js'
     )
   }
   return <Logger | undefined>_log
