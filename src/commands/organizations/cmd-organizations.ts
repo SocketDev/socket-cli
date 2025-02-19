@@ -5,7 +5,7 @@ import { getOrganizations } from './get-organizations.ts'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 
 const config: CliCommandConfig = {
-  commandName: 'organization',
+  commandName: 'organizations',
   description: 'List organizations associated with the API key used',
   hidden: false,
   flags: {},
@@ -15,7 +15,7 @@ const config: CliCommandConfig = {
   `
 }
 
-export const cmdOrganization = {
+export const cmdOrganizations = {
   description: config.description,
   hidden: config.hidden,
   run

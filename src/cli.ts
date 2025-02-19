@@ -21,7 +21,7 @@ import { cmdManifest } from './commands/manifest/cmd-manifest'
 import { cmdNpm } from './commands/npm/cmd-npm'
 import { cmdNpx } from './commands/npx/cmd-npx'
 import { cmdOptimize } from './commands/optimize/cmd-optimize'
-import { cmdOrganization } from './commands/organization/cmd-organization'
+import { cmdOrganizations } from './commands/organizations/cmd-organizations'
 import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm'
 import { cmdRawNpx } from './commands/raw-npx/cmd-raw-npx'
 import { cmdReport } from './commands/report/cmd-report'
@@ -56,7 +56,7 @@ void (async () => {
         npm: cmdNpm,
         npx: cmdNpx,
         optimize: cmdOptimize,
-        organization: cmdOrganization,
+        organization: cmdOrganizations,
         'raw-npm': cmdRawNpm,
         'raw-npx': cmdRawNpx,
         report: cmdReport,
