@@ -140,17 +140,21 @@ export function meowOrExit({
   allowUnknownFlags?: boolean
 }) {
   const command = `${parentName} ${config.commandName}`
+
+  // Be able to bucket by command
+  Sentry.setTag('command', command)
+
+  const help = config.help(command, config)
+
   // This exits if .printHelp() is called either by meow itself or by us.
-  const cli = meow(config.help(command, config), {
+  const cli = meow({
     argv,
     description: config.description,
+    help,
     importMeta,
     flags: config.flags,
     allowUnknownFlags: Boolean(allowUnknownFlags)
   })
-
-  // Be able to bucket by command
-  Sentry.setTag('command', command)
 
   return cli
 }
