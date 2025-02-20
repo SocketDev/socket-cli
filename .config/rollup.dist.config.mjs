@@ -68,7 +68,7 @@ function moveDtsFilesSync(namePattern, srcPath, destPath) {
 }
 
 function copyInitGradle() {
-  const filepath = path.join(rootSrcPath, 'commands', 'manifest', 'init.gradle')
+  const filepath = path.join(rootSrcPath, 'commands/manifest/init.gradle')
   const destPath = path.join(rootDistPath, 'init.gradle')
   copyFileSync(filepath, destPath)
 }
