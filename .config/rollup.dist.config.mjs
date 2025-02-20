@@ -8,6 +8,7 @@ import {
 } from 'node:fs'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 
 import { globSync as tinyGlobSync } from 'tinyglobby'
 
@@ -139,9 +140,7 @@ function versionBanner(_chunk) {
   // Make each build generate a unique version id, regardless
   // Mostly for development: confirms the build refreshed. For prod
   // builds the git hash should suffice to identify the build.
-  // Note: It's okay that Math.random() is not "secure".
-  // Drop the `0.`, force to 16 digits.
-  const rng = String(Math.random()).slice(2).padStart(16, '0');
+  const rng = randomUUID().split('-')[0];
 
   return `
     var SOCKET_CLI_PKG_JSON_VERSION = "${pkgJsonVersion}"
