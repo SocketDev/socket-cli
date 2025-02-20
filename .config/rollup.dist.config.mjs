@@ -3,9 +3,11 @@ import {
   existsSync,
   mkdirSync,
   rmSync,
-  writeFileSync
+  writeFileSync,
+  readFileSync
 } from 'node:fs'
 import path from 'node:path'
+import { spawnSync } from 'node:child_process'
 
 import { globSync as tinyGlobSync } from 'tinyglobby'
 
@@ -122,6 +124,33 @@ function updateDepStatsSync(depStats) {
     .saveSync()
 }
 
+function versionBanner(_chunk) {
+  let pkgJsonVersion = 'unknown';
+  try { pkgJsonVersion = JSON.parse(readFileSync('package.json', 'utf8'))?.version ?? 'unknown' } catch {}
+
+  let gitHash = ''
+  try {
+    const obj = spawnSync('git', ['rev-parse','--short', 'HEAD']);
+    if (obj.stdout) {
+      gitHash = obj.stdout.toString('utf8').trim()
+    }
+  } catch {}
+
+  // Make each build generate a unique version id, regardless
+  // Mostly for development: confirms the build refreshed. For prod
+  // builds the git hash should suffice to identify the build.
+  // Note: It's okay that Math.random() is not "secure".
+  // Drop the `0.`, force to 16 digits.
+  const rng = String(Math.random()).slice(2).padStart(16, '0');
+
+  return `
+    var SOCKET_CLI_PKG_JSON_VERSION = "${pkgJsonVersion}"
+    var SOCKET_CLI_GIT_HASH = "${gitHash}"
+    var SOCKET_CLI_BUILD_RNG = "${rng}"
+    var SOCKET_CLI_VERSION = "${pkgJsonVersion}:${gitHash}:${rng}"
+  `.trim().split('\n').map(s => s.trim()).join('\n')
+}
+
 export default () => {
   const moduleSyncConfig = baseConfig({
     input: {
@@ -132,12 +161,15 @@ export default () => {
     },
     output: [
       {
+        intro: versionBanner, // Note: "banner" would defeat "use strict"
         dir: path.relative(rootPath, distModuleSyncPath),
         entryFileNames: '[name].js',
         exports: 'auto',
         externalLiveBindings: false,
         format: 'cjs',
-        freeze: false
+        freeze: false,
+        sourcemap: true,
+        sourcemapDebugIds: true,
       }
     ],
     external(id_) {
@@ -182,12 +214,15 @@ export default () => {
     },
     output: [
       {
+        intro: versionBanner, // Note: "banner" would defeat "use strict"
         dir: path.relative(rootPath, distRequirePath),
         entryFileNames: '[name].js',
         exports: 'auto',
         externalLiveBindings: false,
         format: 'cjs',
-        freeze: false
+        freeze: false,
+        sourcemap: true,
+        sourcemapDebugIds: true,
       }
     ],
     plugins: [

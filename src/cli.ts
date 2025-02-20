@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
+import './utils/initialize-sentry' // Keep this at the top of entry file(s)
+
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
+import * as sentry from '@sentry/node'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 import colors from 'yoctocolors-cjs'
@@ -20,6 +23,7 @@ import { cmdLogout } from './commands/logout/cmd-logout'
 import { cmdManifest } from './commands/manifest/cmd-manifest'
 import { cmdNpm } from './commands/npm/cmd-npm'
 import { cmdNpx } from './commands/npx/cmd-npx'
+import { cmdOops } from './commands/oops/cmd-oops'
 import { cmdOptimize } from './commands/optimize/cmd-optimize'
 import { cmdOrganizations } from './commands/organizations/cmd-organizations'
 import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm'
@@ -55,6 +59,7 @@ void (async () => {
         logout: cmdLogout,
         npm: cmdNpm,
         npx: cmdNpx,
+        oops: cmdOops,
         optimize: cmdOptimize,
         organization: cmdOrganizations,
         'raw-npm': cmdRawNpm,
@@ -106,6 +111,15 @@ void (async () => {
     if (errorBody) {
       console.error(`\n${errorBody}`)
     }
-    process.exit(1)
+    if (process.env['SOCKET_CLI_DEBUG'] === '1') {
+      console.log('Sending to Sentry...')
+    }
+    sentry.captureException(err)
+    if (process.env['SOCKET_CLI_DEBUG'] === '1') {
+      console.log('Sent to Sentry.')
+    }
+    // If we exit now the fetch to Sentry has no time to complete
+    // (or even start) and the event may never reach it.
+    process.exitCode = 1
   }
 })()
