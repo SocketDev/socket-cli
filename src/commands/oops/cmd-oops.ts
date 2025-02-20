@@ -1,8 +1,6 @@
-import {
-  CliCommandConfig,
-  meowOrExit
-} from '../../utils/meow-with-subcommands.ts'
-import { getFlagListOutput } from '../../utils/output-formatting.ts'
+import meowOrExit from 'meow'
+
+import { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 
 const config: CliCommandConfig = {
   commandName: 'oops',
@@ -13,8 +11,7 @@ const config: CliCommandConfig = {
     Usage
       $ ${parentName} ${config.commandName}
 
-    Options
-      ${getFlagListOutput(config.flags, 6)}
+    Don't run me.
   `
 }
 
@@ -29,11 +26,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrExit({
-    config,
+  meowOrExit(config.help(parentName, config), {
     argv,
-    parentName,
-    importMeta
+    description: config.description,
+    importMeta,
+    flags: config.flags
   })
 
   throw new Error('This error was intentionally left blank')
