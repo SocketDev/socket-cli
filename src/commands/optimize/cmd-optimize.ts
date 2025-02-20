@@ -1,9 +1,8 @@
 import process from 'node:process'
 
-import meowOrExit from 'meow'
-
 import { applyOptimization } from './apply-optimization.ts'
 import { commonFlags } from '../../flags'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
@@ -25,15 +24,16 @@ const config: CliCommandConfig = {
       description: 'Only add overrides for production dependencies'
     }
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName}
+      $ ${command}
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName}
+      $ ${command}
+      $ ${command} --pin
   `
 }
 
@@ -48,11 +48,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   const cwd = process.cwd()

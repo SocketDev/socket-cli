@@ -1,9 +1,9 @@
-import meowOrExit from 'meow'
 import colors from 'yoctocolors-cjs'
 
 import { getDiffScan } from './get-diff-scan.ts'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
 
@@ -41,15 +41,15 @@ const config: CliCommandConfig = {
     },
     ...outputFlags
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} <org slug> --before=<before> --after=<after>
+      $ ${command} <org slug> --before=<before> --after=<after>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName} FakeCorp --before=aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 --after=aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
+      $ ${command} FakeCorp --before=aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 --after=aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
   `
 }
 
@@ -64,12 +64,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags,
-    allowUnknownFlags: false
+    parentName
   })
 
   const before = String(cli.flags['before'] || '')

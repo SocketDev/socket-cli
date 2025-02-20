@@ -1,8 +1,8 @@
-import meowOrExit from 'meow'
 import colors from 'yoctocolors-cjs'
 
 import { viewReport } from './view-report.ts'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -16,15 +16,15 @@ const config: CliCommandConfig = {
     ...outputFlags,
     ...validationFlags
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} <report-identifier>
+      $ ${command} <report-identifier>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName} QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
+      $ ${command} QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
   `
 }
 
@@ -39,12 +39,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags,
-    allowUnknownFlags: false
+    parentName
   })
 
   const [reportId, ...extraInput] = cli.input

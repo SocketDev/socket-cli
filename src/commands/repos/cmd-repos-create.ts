@@ -1,9 +1,9 @@
-import meowOrExit from 'meow'
 import colors from 'yoctocolors-cjs'
 
 import { createRepo } from './create-repo.ts'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
 
@@ -47,15 +47,15 @@ const config: CliCommandConfig = {
       description: 'Repository visibility (Default Private)'
     }
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} <org slug>
+      $ ${command} <org slug>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName} FakeOrg --repoName=test-repo
+      $ ${command} FakeOrg --repoName=test-repo
   `
 }
 
@@ -70,12 +70,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags,
-    allowUnknownFlags: false
+    parentName
   })
 
   const repoName = cli.flags['repoName']

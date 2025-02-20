@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node'
 import meow from 'meow'
 
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
@@ -35,7 +36,7 @@ export interface CliCommandConfig {
   description: string
   hidden: boolean
   flags: MeowFlags // tmp optional while we migrate
-  help: (parentName: string, config: CliCommandConfig) => string
+  help: (command: string, config: CliCommandConfig) => string
 }
 
 interface MeowOptions extends Options<any> {
@@ -120,4 +121,36 @@ export async function meowWithSubcommands(
     }
   )
   cli.showHelp()
+}
+
+/**
+ * Note: meow will exit immediately if it calls its .showHelp()
+ */
+export function meowOrExit({
+  allowUnknownFlags, // commands that pass-through args need to allow this
+  argv,
+  config,
+  importMeta,
+  parentName
+}: {
+  argv: ReadonlyArray<string>
+  config: CliCommandConfig
+  parentName: string
+  importMeta: ImportMeta
+  allowUnknownFlags?: boolean
+}) {
+  const command = `${parentName} ${config.commandName}`
+  // This exits if .printHelp() is called either by meow itself or by us.
+  const cli = meow(config.help(command, config), {
+    argv,
+    description: config.description,
+    importMeta,
+    flags: config.flags,
+    allowUnknownFlags: Boolean(allowUnknownFlags)
+  })
+
+  // Be able to bucket by command
+  Sentry.setTag('command', command)
+
+  return cli
 }

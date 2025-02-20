@@ -1,13 +1,12 @@
 import path from 'node:path'
 import process from 'node:process'
 
-import meowOrExit from 'meow'
-
 import { createReport } from './create-report.ts'
 import { getSocketConfig } from './get-socket-config.ts'
 import { viewReport } from './view-report.ts'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import { ColorOrMarkdown } from '../../utils/color-or-markdown.ts'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -32,9 +31,9 @@ const config: CliCommandConfig = {
       description: 'Will wait for and return the created report'
     }
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} <paths-to-package-folders-and-files>
+      $ ${command} <paths-to-package-folders-and-files>
 
     Uploads the specified "package.json" and lock files for JavaScript, Python, and Go dependency manifests.
     If any folder is specified, the ones found in there recursively are uploaded.
@@ -49,10 +48,10 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName} .
-      $ ${parentName} ${config.commandName} '**/package.json'
-      $ ${parentName} ${config.commandName} /path/to/a/package.json /path/to/another/package.json
-      $ ${parentName} ${config.commandName} . --view --json
+      $ ${command} .
+      $ ${command} '**/package.json'
+      $ ${command} /path/to/a/package.json /path/to/another/package.json
+      $ ${command} . --view --json
   `
 }
 
@@ -67,12 +66,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags,
-    allowUnknownFlags: false
+    parentName
   })
 
   // TODO: Allow setting a custom cwd and/or configFile path?

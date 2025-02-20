@@ -1,4 +1,4 @@
-// import meowOrExit from 'meow'
+// import { meowOrExit } from '../../utils/meow-with-subcommands'
 import process from 'node:process'
 
 import yargsParse from 'yargs-parser'
@@ -6,9 +6,8 @@ import yargsParse from 'yargs-parser'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { runCycloneDX } from './run-cyclonedx.ts'
+import { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
-
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 
 // TODO: convert yargs to meow. Or convert all the other things to yargs.
 const toLower = (arg: string) => arg.toLowerCase()
@@ -110,9 +109,9 @@ const config: CliCommandConfig = {
   flags: {
     // TODO: convert from yargsConfig
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} [options]
+      $ ${command} [options]
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -130,12 +129,12 @@ async function run(
   _importMeta: ImportMeta,
   { parentName: _parentName }: { parentName: string }
 ): Promise<void> {
-  // const cli = meowOrExit(config.help(parentName, config), {
+  // const cli = meowOrExit({
+  //   allowUnknownFlags: true,
   //   argv,
-  //   description: config.description,
+  //   config,
   //   importMeta,
-  //   // Note: we pass the args through so unknown args are allowed for this command
-  //   flags: config.flags
+  //   parentName,
   // })
   //
   //
