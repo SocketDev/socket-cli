@@ -29,6 +29,7 @@ import {
   isBuiltin,
   normalizeId
 } from '../scripts/utils/packages.js'
+import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
 const {
   BABEL_RUNTIME,
@@ -55,6 +56,10 @@ const editablePkgJson = readPackageJsonSync(rootPath, { editable: true })
 
 const processEnvTapRegExp =
   /\bprocess\.env(?:\.TAP|\[['"]TAP['"]\])(\s*\?[^:]+:\s*)?/g
+const processEnvSocketIsPublishedRegExp =
+  /\bprocess\.env(?:\.SOCKET_IS_PUBLISHED|\[['"]SOCKET_IS_PUBLISHED['"]\])/g
+const processEnvSocketCliVersionRegExp =
+  /\bprocess\.env(?:\.SOCKET_CLI_VERSION|\[['"]SOCKET_CLI_VERSION['"]\])/g
 
 function createStubCode(relFilepath) {
   return `'use strict'\n\nmodule.exports = require('${relFilepath}')\n`
@@ -147,6 +152,7 @@ function versionBanner(_chunk) {
     var SOCKET_CLI_GIT_HASH = "${gitHash}"
     var SOCKET_CLI_BUILD_RNG = "${rng}"
     var SOCKET_CLI_VERSION = "${pkgJsonVersion}:${gitHash}:${rng}"
+    var SOCKET_PUB = ${envAsBoolean(process.env['SOCKET_IS_PUBLISHED'])}
   `.trim().split('\n').map(s => s.trim()).join('\n')
 }
 
@@ -231,6 +237,19 @@ export default () => {
         find: processEnvTapRegExp,
         replace: (_match, ternary) => (ternary ? '' : 'false')
       }),
+      // Replace `process.env.SOCKET_IS_PUBLISHED` with a boolean
+      socketModifyPlugin({
+        find: processEnvSocketIsPublishedRegExp,
+        // Note: these are going to be bools in JS, not strings
+        replace: () => (envAsBoolean(process.env['SOCKET_IS_PUBLISHED']) ? 'true' : 'false')
+      }),
+      // Replace `process.env.SOCKET_CLI_VERSION` with var ref that rollup
+      // adds to the top of each file.
+      socketModifyPlugin({
+        find: processEnvSocketCliVersionRegExp,
+        replace: 'SOCKET_CLI_VERSION'
+      }),
+
       {
         generateBundle(_options, bundle) {
           for (const basename of Object.keys(bundle)) {
