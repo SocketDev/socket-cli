@@ -7,7 +7,7 @@ import { getPublicToken } from '../sdk'
 
 import type { IncomingMessage } from 'node:http'
 
-export type CveAlertType = 'criticalCVE' | 'cve' | 'mediumCVE' | 'mildCVE'
+export type CveAlertType = 'cve' | 'mediumCVE' | 'mildCVE' | 'criticalCVE'
 
 export type ArtifactAlertCveFixable = Omit<
   SocketArtifactAlert,
