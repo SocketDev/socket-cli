@@ -91,11 +91,14 @@ const {
 export async function* batchScan(
   pkgIds: string[]
 ): AsyncGenerator<SocketArtifact> {
+  const query = new URLSearchParams()
+  query.append('alerts', 'true')
+  query.append('compact', 'true')
   const req = https
-    .request(`${API_V0_URL}/purl?alerts=true`, {
+    .request(`${API_V0_URL}/purl?${query}`, {
       method: 'POST',
       headers: {
-        Authorization: `Basic ${Buffer.from(`${getPublicToken()}:`).toString('base64url')}`
+        Authorization: `Basic ${btoa(`${getPublicToken()}:`)}`
       },
       signal: abortSignal
     })
