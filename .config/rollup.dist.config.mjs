@@ -117,7 +117,6 @@ function updateDepStatsSync(depStats) {
     }
   }
 
-  console.log('ass:', assert)
   assert(Object.keys(editablePkgJson?.content?.bin).join(',') === 'socket,socket-npm,socket-npx', 'If this fails, make sure to update the rollup sentry override for .bin to match the regular build!');
   if (IS_SENTRY_BUILD) {
     editablePkgJson.content['name'] = '@socketsecurity/socket-with-sentry'
