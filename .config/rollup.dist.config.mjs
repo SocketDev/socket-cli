@@ -30,6 +30,7 @@ import {
   normalizeId
 } from '../scripts/utils/packages.js'
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
+import assert from 'node:assert'
 
 const {
   BABEL_RUNTIME,
@@ -47,6 +48,9 @@ const {
 const CONSTANTS_JS = `${CONSTANTS}.js`
 const CONSTANTS_STUB_CODE = createStubCode(`../${CONSTANTS_JS}`)
 const VENDOR_JS = `${VENDOR}.js`
+
+const IS_SENTRY_BUILD = envAsBoolean(process.env['SOCKET_WITH_SENTRY']);
+const IS_PUBLISH = envAsBoolean(process.env['SOCKET_IS_PUBLISHED'])
 
 const distConstantsPath = path.join(rootDistPath, CONSTANTS_JS)
 const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
@@ -112,6 +116,21 @@ function updateDepStatsSync(depStats) {
       delete depStats.dependencies[key]
     }
   }
+
+  console.log('ass:', assert)
+  assert(Object.keys(editablePkgJson?.content?.bin).join(',') === 'socket,socket-npm,socket-npx', 'If this fails, make sure to update the rollup sentry override for .bin to match the regular build!');
+  if (IS_SENTRY_BUILD) {
+    editablePkgJson.content['name'] = '@socketsecurity/socket-with-sentry'
+    editablePkgJson.content['description'] = "CLI tool for Socket.dev, includes Sentry error handling, otherwise identical to the regular `socket` package"
+    editablePkgJson.content['bin'] = {
+      "socket-with-sentry": "bin/cli.js",
+      "socket-npm-with-sentry": "bin/npm-cli.js",
+      "socket-npx-with-sentry": "bin/npx-cli.js"
+    }
+    // Add Sentry as a regular dep for this build
+    depStats.dependencies['@sentry/node'] = '9.1.0';
+  }
+
   depStats.dependencies = toSortedObject(depStats.dependencies)
   depStats.devDependencies = toSortedObject(depStats.devDependencies)
   depStats.esm = toSortedObject(depStats.esm)
@@ -119,6 +138,7 @@ function updateDepStatsSync(depStats) {
   depStats.transitives = toSortedObject(depStats.transitives)
   // Write dep stats.
   writeFileSync(depStatsPath, `${formatObject(depStats)}\n`, 'utf8')
+
   // Update dependencies with additional inlined modules.
   editablePkgJson
     .update({
@@ -128,6 +148,14 @@ function updateDepStatsSync(depStats) {
       }
     })
     .saveSync()
+
+  if (IS_SENTRY_BUILD) {
+    // Replace the name in the package lock too, just in case.
+    const lock = readFileSync('package-lock.json', 'utf8');
+    // Note: this should just replace the first occurrence, even if there are more
+    const lock2 = lock.replace('"name": "socket",', '"name": "@socketsecurity/socket-with-sentry",')
+    writeFileSync('package-lock.json', lock2)
+  }
 }
 
 function versionBanner(_chunk) {
@@ -151,8 +179,8 @@ function versionBanner(_chunk) {
     var SOCKET_CLI_PKG_JSON_VERSION = "${pkgJsonVersion}"
     var SOCKET_CLI_GIT_HASH = "${gitHash}"
     var SOCKET_CLI_BUILD_RNG = "${rng}"
-    var SOCKET_CLI_VERSION = "${pkgJsonVersion}:${gitHash}:${rng}"
-    var SOCKET_PUB = ${envAsBoolean(process.env['SOCKET_IS_PUBLISHED'])}
+    var SOCKET_PUB = ${IS_PUBLISH}
+    var SOCKET_CLI_VERSION = "${pkgJsonVersion}:${gitHash}:${rng}${IS_PUBLISH ? ':pub':''}"
   `.trim().split('\n').map(s => s.trim()).join('\n')
 }
 
@@ -241,7 +269,7 @@ export default () => {
       socketModifyPlugin({
         find: processEnvSocketIsPublishedRegExp,
         // Note: these are going to be bools in JS, not strings
-        replace: () => (envAsBoolean(process.env['SOCKET_IS_PUBLISHED']) ? 'true' : 'false')
+        replace: () => (IS_PUBLISH ? 'true' : 'false')
       }),
       // Replace `process.env.SOCKET_CLI_VERSION` with var ref that rollup
       // adds to the top of each file.

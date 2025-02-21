@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-import './utils/initialize-sentry' // Keep this at the top of entry file(s)
+// Keep this on top, no `from`, just init:
+import './initialize-crash-handler'
 
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
-import * as sentry from '@sentry/node'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 import colors from 'yoctocolors-cjs'
@@ -34,6 +34,7 @@ import { cmdScan } from './commands/scan/cmd-scan'
 import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper'
 import constants from './constants'
+import { handle } from './handle-crash'
 import { AuthError, InputError } from './utils/errors'
 import { logSymbols } from './utils/logging'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
@@ -111,15 +112,9 @@ void (async () => {
     if (errorBody) {
       console.error(`\n${errorBody}`)
     }
-    if (process.env['SOCKET_CLI_DEBUG'] === '1') {
-      console.log('Sending to Sentry...')
-    }
-    sentry.captureException(err)
-    if (process.env['SOCKET_CLI_DEBUG'] === '1') {
-      console.log('Sent to Sentry.')
-    }
-    // If we exit now the fetch to Sentry has no time to complete
-    // (or even start) and the event may never reach it.
+
     process.exitCode = 1
+
+    await handle(err)
   }
 })()

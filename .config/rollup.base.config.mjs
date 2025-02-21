@@ -27,6 +27,7 @@ import {
   normalizeId,
   resolveId
 } from '../scripts/utils/packages.js'
+import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
 const require = createRequire(import.meta.url)
 
@@ -44,6 +45,11 @@ const {
   rootSrcPath,
   tsconfigPath
 } = constants
+
+const IS_SENTRY_BUILD = envAsBoolean(process.env['SOCKET_WITH_SENTRY']);
+console.log('IS_SENTRY_BUILD:', IS_SENTRY_BUILD);
+const IS_PUBLISH = envAsBoolean(process.env['SOCKET_IS_PUBLISHED'])
+console.log('IS_PUBLISH:', IS_PUBLISH);
 
 const SOCKET_INTEROP = '_socketInterop'
 
@@ -124,6 +130,33 @@ function isAncestorsExternal(id, depStats) {
   }
   return true
 }
+
+
+function sentryAliasingPlugin() {
+  return {
+    name: 'sentry-alias-plugin',
+    order: 'post',
+    resolveId(source, importer) {
+      // By default use the noop file for crash handler.
+      // When at build-time the `SOCKET_WITH_SENTRY` flag is set, route to use
+      // the Sentry specific files instead.
+      if (source === './initialize-crash-handler') {
+        return IS_SENTRY_BUILD
+          ? `${rootSrcPath}/initialize-sentry.ts`
+          : `${rootSrcPath}/initialize-crash-handler.ts`;
+      }
+
+      if (source === './handle-crash') {
+        return IS_SENTRY_BUILD
+          ? `${rootSrcPath}/handle-crash-with-sentry.ts`
+          : `${rootSrcPath}/handle-crash.ts`;
+      }
+
+      return null;
+    }
+  };
+}
+
 
 export default function baseConfig(extendConfig = {}) {
   const depStats = {
@@ -215,6 +248,7 @@ export default function baseConfig(extendConfig = {}) {
     },
     ...extendConfig,
     plugins: [
+      sentryAliasingPlugin(), // Should go real early.
       customResolver,
       jsonPlugin(),
       tsPlugin({
