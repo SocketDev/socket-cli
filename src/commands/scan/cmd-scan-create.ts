@@ -1,6 +1,5 @@
 import process from 'node:process'
 
-import meowOrExit from 'meow'
 import colors from 'yoctocolors-cjs'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -8,6 +7,7 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { createFullScan } from './create-full-scan.ts'
 import { handleUnsuccessfulApiResponse } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getPackageFilesFullScans } from '../../utils/path-resolve'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
@@ -78,9 +78,9 @@ const config: CliCommandConfig = {
         'Set the visibility (true/false) of the scan in your dashboard'
     }
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} [...options] <org> <TARGET> [TARGET...]
+      $ ${command} [...options] <org> <TARGET> [TARGET...]
 
     Where TARGET is a FILE or DIR that _must_ be inside the CWD.
 
@@ -91,7 +91,7 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName} --repo=test-repo --branch=main FakeOrg ./package.json
+      $ ${command} --repo=test-repo --branch=main FakeOrg ./package.json
   `
 }
 
@@ -106,11 +106,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   const [orgSlug = '', ...targets] = cli.input

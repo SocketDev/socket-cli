@@ -1,12 +1,11 @@
 import fs from 'node:fs'
 import os from 'node:os'
 
-import meowOrExit from 'meow'
-
 import { addSocketWrapper } from './add-socket-wrapper.ts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.ts'
 import { postinstallWrapper } from './postinstall-wrapper.ts'
 import { removeSocketWrapper } from './remove-socket-wrapper.ts'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -31,16 +30,16 @@ const config: CliCommandConfig = {
       description: 'Disables the Socket npm/npx wrapper'
     }
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} <flag>
+      $ ${command} <flag>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName} --enable
-      $ ${parentName} ${config.commandName} --disable
+      $ ${command} --enable
+      $ ${command} --disable
   `
 }
 
@@ -61,11 +60,11 @@ async function run(
     return
   }
 
-  const cli = meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   const { disable, enable } = cli.flags

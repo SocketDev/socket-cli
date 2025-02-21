@@ -1,6 +1,5 @@
-import meowOrExit from 'meow'
-
 import { runFix } from './run-fix.ts'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
@@ -10,9 +9,9 @@ const config: CliCommandConfig = {
   description: 'Fix "fixable" Socket alerts',
   hidden: true,
   flags: {},
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName}
+      $ ${command}
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -30,11 +29,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrExit(config.help(parentName, config), {
+  meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   await runFix()

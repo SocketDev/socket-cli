@@ -1,7 +1,6 @@
-import meowOrExit from 'meow'
-
 import { wrapNpm } from './wrap-npm.ts'
 import constants from '../../constants'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -12,9 +11,9 @@ const config: CliCommandConfig = {
   description: `${NPM} wrapper functionality`,
   hidden: false,
   flags: {},
-  help: (parentName, config) => `
+  help: (command, _config) => `
     Usage
-      $ ${parentName} ${config.commandName}
+      $ ${command}
   `
 }
 
@@ -29,11 +28,12 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrExit(config.help(parentName, config), {
+  meowOrExit({
+    allowUnknownFlags: true,
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   await wrapNpm(argv)

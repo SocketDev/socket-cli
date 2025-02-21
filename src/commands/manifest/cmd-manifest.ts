@@ -3,10 +3,10 @@ import { cmdManifestGradle } from './cmd-manifest-gradle.ts'
 import { cmdManifestKotlin } from './cmd-manifest-kotlin.ts'
 import { cmdManifestScala } from './cmd-manifest-scala.ts'
 import { commonFlags } from '../../flags.ts'
-import {
-  type CliCommandConfig,
-  meowWithSubcommands
-} from '../../utils/meow-with-subcommands'
+import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
+import { getFlagListOutput } from '../../utils/output-formatting.ts'
+
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const config: CliCommandConfig = {
   commandName: 'manifest',
@@ -15,10 +15,12 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
+      $ ${command} <language> <target>
 
-      $ ${parentName} ${config.commandName} <language> <target>
+    Options
+      ${getFlagListOutput(config.flags, 6)}
 
     Generates a declarative dependency manifest (like a package.json for Node.JS
     or requirements.txt for PyPi), but for certain supported ecosystems
@@ -33,11 +35,11 @@ const config: CliCommandConfig = {
 
     Examples
 
-      $ ${parentName} ${config.commandName} scala .
+      $ ${command} scala .
 
     To have it auto-detect and attempt to run:
 
-      $ ${parentName} ${config.commandName} yolo
+      $ ${command} yolo
   `
 }
 

@@ -56,9 +56,9 @@ const config: CliCommandConfig = {
       description: 'Print debug messages'
     }
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} [--gradle=path/to/gradle/binary] [--out=path/to/result] DIR
+      $ ${command} [--gradle=path/to/gradle/binary] [--out=path/to/result] DIR
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -85,8 +85,8 @@ const config: CliCommandConfig = {
 
     Examples
 
-      $ ${parentName} ${config.commandName} .
-      $ ${parentName} ${config.commandName} --gradlew=../gradlew .
+      $ ${command} .
+      $ ${command} --gradlew=../gradlew .
   `
 }
 

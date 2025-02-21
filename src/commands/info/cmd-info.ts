@@ -1,8 +1,7 @@
-import meowOrExit from 'meow'
-
 import { getPackageInfo } from './get-package-info.ts'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import { InputError } from '../../utils/errors'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
@@ -16,16 +15,16 @@ const config: CliCommandConfig = {
     ...outputFlags,
     ...validationFlags
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} <name>
+      $ ${command} <name>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName} webtorrent
-      $ ${parentName} ${config.commandName} webtorrent@1.9.1
+      $ ${command} webtorrent
+      $ ${command} webtorrent@1.9.1
   `
 }
 
@@ -40,11 +39,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   if (cli.input.length > 1) {
