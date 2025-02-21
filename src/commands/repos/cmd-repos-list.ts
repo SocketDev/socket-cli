@@ -1,9 +1,9 @@
-import meowOrExit from 'meow'
 import colors from 'yoctocolors-cjs'
 
 import { listRepos } from './list-repos.ts'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
 
@@ -40,15 +40,15 @@ const config: CliCommandConfig = {
     },
     ...outputFlags
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} <org slug>
+      $ ${command} <org slug>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName} FakeOrg
+      $ ${command} FakeOrg
   `
 }
 
@@ -63,12 +63,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags,
-    allowUnknownFlags: false
+    parentName
   })
 
   const [orgSlug = ''] = cli.input

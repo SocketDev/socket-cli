@@ -1,6 +1,5 @@
-import meowOrExit from 'meow'
-
 import { getOrganizations } from './get-organizations.ts'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 
@@ -9,9 +8,9 @@ const config: CliCommandConfig = {
   description: 'List organizations associated with the API key used',
   hidden: false,
   flags: {},
-  help: (parentName, config) => `
+  help: (command, _config) => `
     Usage
-      $ ${parentName} ${config.commandName}
+      $ ${command}
   `
 }
 
@@ -26,11 +25,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrExit(config.help(parentName, config), {
+  meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   await getOrganizations()

@@ -20,15 +20,15 @@ const config: CliCommandConfig = {
     ...commonFlags,
     ...outputFlags
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} <org slug> <scan id>
+      $ ${command} <org slug> <scan id>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName} FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0
+      $ ${command} FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0
   `
 }
 

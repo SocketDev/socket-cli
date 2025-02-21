@@ -44,9 +44,9 @@ const config: CliCommandConfig = {
       description: 'Print debug messages'
     }
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} [--sbt=path/to/sbt/binary] [--out=path/to/result] FILE|DIR
+      $ ${command} [--sbt=path/to/sbt/binary] [--out=path/to/result] FILE|DIR
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -75,8 +75,8 @@ const config: CliCommandConfig = {
 
     Examples
 
-      $ ${parentName} ${config.commandName} ./build.sbt
-      $ ${parentName} ${config.commandName} --bin=/usr/bin/sbt ./build.sbt
+      $ ${command} ./build.sbt
+      $ ${command} --bin=/usr/bin/sbt ./build.sbt
   `
 }
 

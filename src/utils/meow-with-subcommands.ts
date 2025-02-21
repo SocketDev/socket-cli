@@ -35,7 +35,7 @@ export interface CliCommandConfig {
   description: string
   hidden: boolean
   flags: MeowFlags // tmp optional while we migrate
-  help: (parentName: string, config: CliCommandConfig) => string
+  help: (command: string, config: CliCommandConfig) => string
 }
 
 interface MeowOptions extends Options<any> {
@@ -120,4 +120,37 @@ export async function meowWithSubcommands(
     }
   )
   cli.showHelp()
+}
+
+/**
+ * Note: meow will exit immediately if it calls its .showHelp()
+ */
+export function meowOrExit({
+  allowUnknownFlags, // commands that pass-through args need to allow this
+  argv,
+  config,
+  importMeta,
+  parentName
+}: {
+  argv: ReadonlyArray<string>
+  config: CliCommandConfig
+  parentName: string
+  importMeta: ImportMeta
+  allowUnknownFlags?: boolean
+}) {
+  const command = `${parentName} ${config.commandName}`
+
+  const help = config.help(command, config)
+
+  // This exits if .printHelp() is called either by meow itself or by us.
+  const cli = meow({
+    argv,
+    description: config.description,
+    help,
+    importMeta,
+    flags: config.flags,
+    allowUnknownFlags: Boolean(allowUnknownFlags)
+  })
+
+  return cli
 }
