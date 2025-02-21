@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/node'
 import meow from 'meow'
 
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
@@ -140,9 +139,6 @@ export function meowOrExit({
   allowUnknownFlags?: boolean
 }) {
   const command = `${parentName} ${config.commandName}`
-
-  // Be able to bucket by command
-  Sentry.setTag('command', command)
 
   const help = config.help(command, config)
 
