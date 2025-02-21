@@ -1,7 +1,6 @@
-import meowOrExit from 'meow'
-
 import { runRawNpm } from './run-raw-npm.ts'
 import constants from '../../constants'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
@@ -13,15 +12,15 @@ const config: CliCommandConfig = {
   description: `Temporarily disable the Socket ${NPM} wrapper`,
   hidden: false,
   flags: {},
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} <command>
+      $ ${command} <command>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName} install
+      $ ${command} install
   `
 }
 
@@ -36,11 +35,12 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrExit(config.help(parentName, config), {
+  meowOrExit({
+    allowUnknownFlags: true,
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   await runRawNpm(argv)

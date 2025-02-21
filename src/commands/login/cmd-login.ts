@@ -1,9 +1,8 @@
-import meowOrExit from 'meow'
-
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 
 import { attemptLogin } from './attempt-login.ts'
 import { InputError } from '../../utils/errors'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
@@ -22,9 +21,9 @@ const config: CliCommandConfig = {
       description: 'Proxy to use when making connection to API server'
     }
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName}
+      $ ${command}
 
     Logs into the Socket API by prompting for an API key
 
@@ -32,7 +31,8 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName}
+      $ ${command}
+      $ ${command} --api-proxy=http://localhost:1234
   `
 }
 
@@ -47,11 +47,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   if (!isInteractive()) {

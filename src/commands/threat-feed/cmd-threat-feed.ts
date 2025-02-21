@@ -1,8 +1,7 @@
-import meowOrExit from 'meow'
-
 import { getThreatFeed } from './get-threat-feed.ts'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
 
@@ -40,16 +39,16 @@ const config: CliCommandConfig = {
       description: 'Filter what type of threats to return'
     }
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName}
+      $ ${command}
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName}
-      $ ${parentName} ${config.commandName} --perPage=5 --page=2 --direction=asc --filter=joke
+      $ ${command}
+      $ ${command} --perPage=5 --page=2 --direction=asc --filter=joke
   `
 }
 
@@ -64,11 +63,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   const apiToken = getDefaultToken()

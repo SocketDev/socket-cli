@@ -1,8 +1,8 @@
-import meowOrExit from 'meow'
 import colors from 'yoctocolors-cjs'
 
 import { deleteRepo } from './delete-repo.ts'
 import { AuthError } from '../../utils/errors'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -12,12 +12,12 @@ const config: CliCommandConfig = {
   description: 'Delete a repository in an organization',
   hidden: false,
   flags: {},
-  help: (parentName, config) => `
+  help: (command, _config) => `
     Usage
-      $ ${parentName} ${config.commandName} <org slug> <repo slug>
+      $ ${command} <org slug> <repo slug>
 
     Examples
-      $ ${parentName} ${config.commandName} FakeOrg test-repo
+      $ ${command} FakeOrg test-repo
   `
 }
 
@@ -32,12 +32,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags,
-    allowUnknownFlags: false
+    parentName
   })
 
   const [orgSlug = '', repoName = ''] = cli.input

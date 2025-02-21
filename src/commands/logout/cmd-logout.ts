@@ -1,6 +1,5 @@
-import meowOrExit from 'meow'
-
 import { attemptLogout } from './attempt-logout.ts'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 
@@ -9,14 +8,11 @@ const config: CliCommandConfig = {
   description: 'Socket API logout',
   hidden: false,
   flags: {},
-  help: (parentName, config) => `
+  help: (command, _config) => `
     Usage
-      $ ${parentName} ${config.commandName}
+      $ ${command}
 
     Logs out of the Socket API and clears all Socket credentials from disk
-
-    Examples
-      $ ${parentName} ${config.commandName}
   `
 }
 
@@ -31,11 +27,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrExit(config.help(parentName, config), {
+  meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   attemptLogout()

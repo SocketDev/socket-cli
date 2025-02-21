@@ -27,9 +27,9 @@ const config: CliCommandConfig = {
     }
     // TODO: support output flags
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName}
+      $ ${command}
 
     Options
       ${getFlagListOutput(config.flags, 6)}

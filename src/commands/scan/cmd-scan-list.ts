@@ -57,15 +57,15 @@ const config: CliCommandConfig = {
       description: 'Until time - as a unix timestamp'
     }
   },
-  help: (parentName, config) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${config.commandName} <org slug>
+      $ ${command} <org slug>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${config.commandName} FakeOrg
+      $ ${command} FakeOrg
   `
 }
 
