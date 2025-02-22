@@ -1,6 +1,8 @@
 import events from 'node:events'
 import https from 'node:https'
-import rl from 'node:readline'
+import readline from 'node:readline'
+
+import { arrayChunk } from '@socketsecurity/registry/lib/arrays'
 
 import constants from '../../constants'
 import { getPublicToken } from '../sdk'
@@ -82,20 +84,17 @@ const {
   ALERT_TYPE_MEDIUM_CVE,
   ALERT_TYPE_MILD_CVE,
   ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE,
-  API_V0_URL,
   CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
   CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE,
   abortSignal
 } = constants
 
-export async function* batchScan(
-  pkgIds: string[]
+async function* createBatchGenerator(
+  chunk: string[]
 ): AsyncGenerator<SocketArtifact> {
-  const query = new URLSearchParams()
-  query.append('alerts', 'true')
-  query.append('compact', 'true')
   const req = https
-    .request(`${API_V0_URL}/purl?${query}`, {
+    // Lazily access constants.BATCH_PURL_ENDPOINT.
+    .request(constants.BATCH_PURL_ENDPOINT, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${btoa(`${getPublicToken()}:`)}`
@@ -104,7 +103,7 @@ export async function* batchScan(
     })
     .end(
       JSON.stringify({
-        components: pkgIds.map(id => ({ purl: `pkg:npm/${id}` }))
+        components: chunk.map(id => ({ purl: `pkg:npm/${id}` }))
       })
     )
   const { 0: res } = <[IncomingMessage]>(
@@ -114,10 +113,72 @@ export async function* batchScan(
   if (!ok) {
     throw new Error(`Socket API Error: ${res.statusCode}`)
   }
-  const rli = rl.createInterface(res)
+  const rli = readline.createInterface({
+    input: res,
+    crlfDelay: Infinity,
+    signal: abortSignal
+  })
   for await (const line of rli) {
-    yield JSON.parse(line)
+    yield <SocketArtifact>JSON.parse(line)
   }
+}
+
+async function* mergeAsyncGenerators<T>(generators: AsyncGenerator<T>[]) {
+  type GeneratorStep = {
+    generator: AsyncGenerator<T>
+    iteratorResult: IteratorResult<T>
+  }
+  type GeneratorEntry = {
+    generator: AsyncGenerator<T>
+    promise: Promise<GeneratorStep>
+  }
+  type ResolveFn = (value: GeneratorStep) => void
+
+  // Active generator queue.
+  const running: GeneratorEntry[] = []
+  const enqueueGen = (generator: AsyncGenerator<T>): void => {
+    let resolveFn: ResolveFn
+    running.push({
+      generator,
+      promise: new Promise<GeneratorStep>(resolve => {
+        resolveFn = resolve
+      })
+    })
+    // Start generator execution.
+    void generator
+      .next()
+      .then(nextResult => resolveFn!({ generator, iteratorResult: nextResult }))
+  }
+  // Initialize all generators.
+  for (const generator of generators) {
+    enqueueGen(generator)
+  }
+  while (running.length > 0) {
+    // Wait for the next available generator result.
+    // eslint-disable-next-line no-await-in-loop
+    const { generator, iteratorResult } = await Promise.race(
+      running.map(entry => entry.promise)
+    )
+    // Find and remove the correct entry.
+    const index = running.findIndex(entry => entry.generator === generator)
+    if (index !== -1) {
+      running.splice(index, 1)
+    }
+    if (!iteratorResult.done) {
+      // Yield the iterator result value immediately.
+      yield iteratorResult.value
+      // Continue fetching the next value from this generator.
+      enqueueGen(generator)
+    }
+  }
+}
+
+export async function* batchScan(
+  pkgIds: string[]
+): AsyncGenerator<SocketArtifact> {
+  const chunks = arrayChunk(pkgIds, 25)
+  const generators = chunks.map(chunk => createBatchGenerator(chunk))
+  yield* mergeAsyncGenerators(generators)
 }
 
 export function isArtifactAlertCveFixable(
