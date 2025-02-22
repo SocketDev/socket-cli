@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "@apideck/better-ajv-errors": "^0.3.6",
-    "@cyclonedx/cdxgen": "^11.1.8",
+    "@cyclonedx/cdxgen": "^11.1.9",
     "@npmcli/promise-spawn": "^8.0.2",
     "@octokit/rest": "^21.1.1",
     "@socketregistry/hyrious__bun.lockb": "^1.0.12",
@@ -30,7 +30,7 @@
     "synp": "^1.9.14",
     "terminal-link": "2.1.1",
     "tiny-updater": "^3.5.3",
-    "tinyglobby": "^0.2.11",
+    "tinyglobby": "^0.2.12",
     "which": "^5.0.0",
     "yaml": "^2.7.0",
     "yargs-parser": "^21.1.1",
@@ -81,7 +81,7 @@
     "pony-cause": "^2.1.11",
     "simple-git": "^3.27.0",
     "terminal-link": "2.1.1",
-    "tinyglobby": "^0.2.11",
+    "tinyglobby": "^0.2.12",
     "which": "^5.0.0",
     "yargs-parser": "^21.1.1",
     "yoctocolors-cjs": "^2.1.2"
