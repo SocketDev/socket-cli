@@ -228,10 +228,17 @@ export async function getPackagesAlerts(
   const pkgJson = (arb.actualTree ?? arb.idealTree)!.package
   const spinner = output ? new Spinner({ stream: output }) : undefined
   const getText = () => `Looking up data for ${remaining} packages`
+  const decrementRemaining = () => {
+    remaining -= 1
+    if (spinner && remaining > 0) {
+      spinner.start()
+      spinner.text = getText()
+    }
+  }
   spinner?.start(getText())
   for await (const artifact of batchScan(purls)) {
     if (!artifact.name || !artifact.version || !artifact.alerts?.length) {
-      remaining -= 1
+      decrementRemaining()
       continue
     }
     const name = resolvePackageName(artifact)
@@ -349,11 +356,7 @@ export async function getPackagesAlerts(
       }
     }
     results.push(...sockPkgAlerts)
-    remaining -= 1
-    if (spinner && remaining > 0) {
-      spinner.start()
-      spinner.text = getText()
-    }
+    decrementRemaining()
   }
   spinner?.stop()
   return results
