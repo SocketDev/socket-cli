@@ -58,6 +58,7 @@ type Constants = Omit<
   readonly ENV: ENV
   readonly DIST_TYPE: 'module-sync' | 'require'
   readonly IPC: IPC
+  readonly IS_PUBLISHED: boolean
   readonly LOCK_EXT: '.lock'
   readonly MODULE_SYNC: 'module-sync'
   readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
@@ -96,6 +97,7 @@ const BUN = 'bun'
 const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
   'firstPatchedVersionIdentifier'
 const CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE = 'vulnerableVersionRange'
+const IS_PUBLISHED = process.env['SOCKET_IS_PUBLISHED']
 const LOCK_EXT = '.lock'
 const MODULE_SYNC = 'module-sync'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
@@ -187,6 +189,7 @@ const constants = <Constants>createConstantsObject(
     // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
     ENV: undefined,
+    IS_PUBLISHED,
     LOCK_EXT,
     MODULE_SYNC,
     NPM_REGISTRY_URL,

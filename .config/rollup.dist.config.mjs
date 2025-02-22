@@ -3,9 +3,12 @@ import {
   existsSync,
   mkdirSync,
   rmSync,
-  writeFileSync
+  writeFileSync,
+  readFileSync
 } from 'node:fs'
 import path from 'node:path'
+import { spawnSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 
 import { globSync as tinyGlobSync } from 'tinyglobby'
 
@@ -26,6 +29,8 @@ import {
   isBuiltin,
   normalizeId
 } from '../scripts/utils/packages.js'
+import { envAsBoolean } from '@socketsecurity/registry/lib/env'
+import assert from 'node:assert'
 
 const {
   BABEL_RUNTIME,
@@ -44,6 +49,9 @@ const CONSTANTS_JS = `${CONSTANTS}.js`
 const CONSTANTS_STUB_CODE = createStubCode(`../${CONSTANTS_JS}`)
 const VENDOR_JS = `${VENDOR}.js`
 
+const IS_SENTRY_BUILD = envAsBoolean(process.env['SOCKET_WITH_SENTRY']);
+const IS_PUBLISH = envAsBoolean(process.env['SOCKET_IS_PUBLISHED'])
+
 const distConstantsPath = path.join(rootDistPath, CONSTANTS_JS)
 const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
 const distRequirePath = path.join(rootDistPath, REQUIRE)
@@ -52,6 +60,10 @@ const editablePkgJson = readPackageJsonSync(rootPath, { editable: true })
 
 const processEnvTapRegExp =
   /\bprocess\.env(?:\.TAP|\[['"]TAP['"]\])(\s*\?[^:]+:\s*)?/g
+const processEnvSocketIsPublishedRegExp =
+  /\bprocess\.env(?:\.SOCKET_IS_PUBLISHED|\[['"]SOCKET_IS_PUBLISHED['"]\])/g
+const processEnvSocketCliVersionRegExp =
+  /\bprocess\.env(?:\.SOCKET_CLI_VERSION|\[['"]SOCKET_CLI_VERSION['"]\])/g
 
 function createStubCode(relFilepath) {
   return `'use strict'\n\nmodule.exports = require('${relFilepath}')\n`
@@ -104,6 +116,20 @@ function updateDepStatsSync(depStats) {
       delete depStats.dependencies[key]
     }
   }
+
+  assert(Object.keys(editablePkgJson?.content?.bin).join(',') === 'socket,socket-npm,socket-npx', 'If this fails, make sure to update the rollup sentry override for .bin to match the regular build!');
+  if (IS_SENTRY_BUILD) {
+    editablePkgJson.content['name'] = '@socketsecurity/socket-with-sentry'
+    editablePkgJson.content['description'] = "CLI tool for Socket.dev, includes Sentry error handling, otherwise identical to the regular `socket` package"
+    editablePkgJson.content['bin'] = {
+      "socket-with-sentry": "bin/cli.js",
+      "socket-npm-with-sentry": "bin/npm-cli.js",
+      "socket-npx-with-sentry": "bin/npx-cli.js"
+    }
+    // Add Sentry as a regular dep for this build
+    depStats.dependencies['@sentry/node'] = '9.1.0';
+  }
+
   depStats.dependencies = toSortedObject(depStats.dependencies)
   depStats.devDependencies = toSortedObject(depStats.devDependencies)
   depStats.esm = toSortedObject(depStats.esm)
@@ -111,6 +137,7 @@ function updateDepStatsSync(depStats) {
   depStats.transitives = toSortedObject(depStats.transitives)
   // Write dep stats.
   writeFileSync(depStatsPath, `${formatObject(depStats)}\n`, 'utf8')
+
   // Update dependencies with additional inlined modules.
   editablePkgJson
     .update({
@@ -120,6 +147,40 @@ function updateDepStatsSync(depStats) {
       }
     })
     .saveSync()
+
+  if (IS_SENTRY_BUILD) {
+    // Replace the name in the package lock too, just in case.
+    const lock = readFileSync('package-lock.json', 'utf8');
+    // Note: this should just replace the first occurrence, even if there are more
+    const lock2 = lock.replace('"name": "socket",', '"name": "@socketsecurity/socket-with-sentry",')
+    writeFileSync('package-lock.json', lock2)
+  }
+}
+
+function versionBanner(_chunk) {
+  let pkgJsonVersion = 'unknown';
+  try { pkgJsonVersion = JSON.parse(readFileSync('package.json', 'utf8'))?.version ?? 'unknown' } catch {}
+
+  let gitHash = ''
+  try {
+    const obj = spawnSync('git', ['rev-parse','--short', 'HEAD']);
+    if (obj.stdout) {
+      gitHash = obj.stdout.toString('utf8').trim()
+    }
+  } catch {}
+
+  // Make each build generate a unique version id, regardless
+  // Mostly for development: confirms the build refreshed. For prod
+  // builds the git hash should suffice to identify the build.
+  const rng = randomUUID().split('-')[0];
+
+  return `
+    var SOCKET_CLI_PKG_JSON_VERSION = "${pkgJsonVersion}"
+    var SOCKET_CLI_GIT_HASH = "${gitHash}"
+    var SOCKET_CLI_BUILD_RNG = "${rng}"
+    var SOCKET_PUB = ${IS_PUBLISH}
+    var SOCKET_CLI_VERSION = "${pkgJsonVersion}:${gitHash}:${rng}${IS_PUBLISH ? ':pub':''}"
+  `.trim().split('\n').map(s => s.trim()).join('\n')
 }
 
 export default () => {
@@ -132,12 +193,15 @@ export default () => {
     },
     output: [
       {
+        intro: versionBanner, // Note: "banner" would defeat "use strict"
         dir: path.relative(rootPath, distModuleSyncPath),
         entryFileNames: '[name].js',
         exports: 'auto',
         externalLiveBindings: false,
         format: 'cjs',
-        freeze: false
+        freeze: false,
+        sourcemap: true,
+        sourcemapDebugIds: true,
       }
     ],
     external(id_) {
@@ -182,12 +246,15 @@ export default () => {
     },
     output: [
       {
+        intro: versionBanner, // Note: "banner" would defeat "use strict"
         dir: path.relative(rootPath, distRequirePath),
         entryFileNames: '[name].js',
         exports: 'auto',
         externalLiveBindings: false,
         format: 'cjs',
-        freeze: false
+        freeze: false,
+        sourcemap: true,
+        sourcemapDebugIds: true,
       }
     ],
     plugins: [
@@ -197,6 +264,19 @@ export default () => {
         find: processEnvTapRegExp,
         replace: (_match, ternary) => (ternary ? '' : 'false')
       }),
+      // Replace `process.env.SOCKET_IS_PUBLISHED` with a boolean
+      socketModifyPlugin({
+        find: processEnvSocketIsPublishedRegExp,
+        // Note: these are going to be bools in JS, not strings
+        replace: () => (IS_PUBLISH ? 'true' : 'false')
+      }),
+      // Replace `process.env.SOCKET_CLI_VERSION` with var ref that rollup
+      // adds to the top of each file.
+      socketModifyPlugin({
+        find: processEnvSocketCliVersionRegExp,
+        replace: 'SOCKET_CLI_VERSION'
+      }),
+
       {
         generateBundle(_options, bundle) {
           for (const basename of Object.keys(bundle)) {
