@@ -56,6 +56,8 @@ export class SafeArborist extends Arborist {
       },
       ...ctorArgs.slice(1)
     )
+    arb.actualTree = this.actualTree
+    arb.idealTree = this.idealTree
     const ret = await (arb.reify as (...args: any[]) => Promise<SafeNode>)(
       {
         ...(args.length ? args[0] : undefined),
