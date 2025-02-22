@@ -5,7 +5,6 @@ import type {
   Arborist as BaseArborist,
   AuditReport as BaseAuditReport,
   Diff as BaseDiff,
-  Link,
   ReifyOptions
 } from '@npmcli/arborist'
 

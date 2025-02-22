@@ -1,6 +1,9 @@
 import { getManifestData } from '@socketsecurity/registry'
 import { runScript } from '@socketsecurity/registry/lib/npm'
-import { fetchPackagePackument } from '@socketsecurity/registry/lib/packages'
+import {
+  fetchPackagePackument,
+  readPackageJson
+} from '@socketsecurity/registry/lib/packages'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../../constants'
@@ -15,13 +18,24 @@ import {
   getPackagesAlerts,
   updateNode
 } from '../../shadow/arborist/lib/arborist/reify'
+// import { detect } from '../../utils/package-manager-detector'
+
+import type { SafeNode } from '../../shadow/arborist/lib/node'
 
 const { NPM } = constants
 
+function isTopLevel(tree: SafeNode, node: SafeNode): boolean {
+  return tree.children.get(node.name) === node
+}
+
 export async function runFix() {
   const spinner = new Spinner().start()
+  const cwd = process.cwd()
+  const editablePkgJson = await readPackageJson(cwd, { editable: true })
+  // const agentDetails = await detect()
+
   const arb = new SafeArborist({
-    path: process.cwd(),
+    path: cwd,
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
   })
   await arb.reify()
@@ -80,6 +94,24 @@ export async function runFix() {
                 await runScript('test', [], { stdio: 'pipe' })
                 spinner.info(`Patched ${name} ${oldVersion} -> ${node.version}`)
                 spinner.start()
+                if (isTopLevel(tree, node)) {
+                  for (const depField of [
+                    'dependencies',
+                    'optionalDependencies',
+                    'peerDependencies'
+                  ]) {
+                    const oldVersion = (
+                      editablePkgJson.content[depField] as any
+                    )?.[name]
+                    if (oldVersion) {
+                      const decorator = /^[~^]/.exec(oldVersion)?.[0] ?? ''
+                      ;(editablePkgJson as any).content[depField][name] =
+                        `${decorator}${node.version}`
+                    }
+                  }
+                }
+                // eslint-disable-next-line no-await-in-loop
+                await editablePkgJson.save()
               } catch {
                 spinner.error(`Reverting ${name} to ${oldVersion}`)
                 spinner.start()
@@ -95,18 +127,7 @@ export async function runFix() {
       }
     }
   }
-
-  // await arb.reify({
-  //   audit: false,
-  //   dryRun: false,
-  //   fund: false,
-  //   ignoreScripts: false,
-  //   progress: false,
-  //   save: true,
-  //   saveBundle: false,
-  //   silent: true
-  // })
-  const arb2 = new Arborist()
+  const arb2 = new Arborist({ path: cwd })
   arb2.idealTree = arb.idealTree
   await arb2.reify()
   spinner.stop()
