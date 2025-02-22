@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+// Keep this on top, no `from`, just init:
+import './initialize-crash-handler'
+
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
@@ -20,6 +23,7 @@ import { cmdLogout } from './commands/logout/cmd-logout'
 import { cmdManifest } from './commands/manifest/cmd-manifest'
 import { cmdNpm } from './commands/npm/cmd-npm'
 import { cmdNpx } from './commands/npx/cmd-npx'
+import { cmdOops } from './commands/oops/cmd-oops'
 import { cmdOptimize } from './commands/optimize/cmd-optimize'
 import { cmdOrganizations } from './commands/organizations/cmd-organizations'
 import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm'
@@ -30,6 +34,7 @@ import { cmdScan } from './commands/scan/cmd-scan'
 import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper'
 import constants from './constants'
+import { handle } from './handle-crash'
 import { AuthError, InputError } from './utils/errors'
 import { logSymbols } from './utils/logging'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
@@ -55,6 +60,7 @@ void (async () => {
         logout: cmdLogout,
         npm: cmdNpm,
         npx: cmdNpx,
+        oops: cmdOops,
         optimize: cmdOptimize,
         organization: cmdOrganizations,
         'raw-npm': cmdRawNpm,
@@ -106,6 +112,9 @@ void (async () => {
     if (errorBody) {
       console.error(`\n${errorBody}`)
     }
-    process.exit(1)
+
+    process.exitCode = 1
+
+    await handle(err)
   }
 })()
