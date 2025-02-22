@@ -50,6 +50,7 @@ type Constants = Omit<
   readonly ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE: 'socketUpgradeAvailable'
   readonly API_V0_URL: 'https://api.socket.dev/v0'
   readonly BABEL_RUNTIME: '@babel/runtime'
+  readonly BATCH_PURL_ENDPOINT: 'https://api.socket.dev/v0/purl?alerts=true&compact=true'
   readonly BINARY_LOCK_EXT: '.lockb'
   readonly BUN: 'bun'
   readonly CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER: 'firstPatchedVersionIdentifier'
@@ -111,6 +112,13 @@ const YARN = 'yarn'
 const YARN_BERRY = `${YARN}/berry`
 const YARN_CLASSIC = `${YARN}/classic`
 
+const LAZY_BATCH_PURL_ENDPOINT = () => {
+  const query = new URLSearchParams()
+  query.append('alerts', 'true')
+  query.append('compact', 'true')
+  return `${API_V0_URL}/purl?${query}`
+}
+
 const LAZY_DIST_TYPE = () =>
   registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? MODULE_SYNC : REQUIRE
 
@@ -171,6 +179,7 @@ const constants = <Constants>createConstantsObject(
     ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE,
     API_V0_URL,
     BABEL_RUNTIME,
+    BATCH_PURL_ENDPOINT: undefined,
     BINARY_LOCK_EXT,
     BUN,
     CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
@@ -205,6 +214,7 @@ const constants = <Constants>createConstantsObject(
   },
   {
     getters: {
+      BATCH_PURL_ENDPOINT: LAZY_BATCH_PURL_ENDPOINT,
       DIST_TYPE: LAZY_DIST_TYPE,
       ENV: LAZY_ENV,
       distPath: lazyDistPath,
