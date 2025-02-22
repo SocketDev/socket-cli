@@ -19,7 +19,7 @@ if (DIST_TYPE === 'require') {
 
   process.exitCode = 1
   const spawnPromise = spawn(
-    // Lazily access constants.execPath
+    // Lazily access constants.execPath.
     constants.execPath,
     [
       // Lazily access constants.nodeNoWarningsFlags.
