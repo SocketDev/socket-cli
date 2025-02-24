@@ -1,4 +1,6 @@
 import assert from 'node:assert'
+import { spawnSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import util from 'node:util'
@@ -43,11 +45,9 @@ const {
   rootSrcPath
 } = constants
 
-const CONSTANTS_JS = `${CONSTANTS}.js`
-const CONSTANTS_STUB_CODE = createStubCode(`../${CONSTANTS_JS}`)
+const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
 const VENDOR_JS = `${VENDOR}.js`
 
-const distConstantsPath = path.join(rootDistPath, CONSTANTS_JS)
 const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
 const distRequirePath = path.join(rootDistPath, REQUIRE)
 
@@ -91,23 +91,30 @@ function getSocketVersionHash() {
   return _socketVersionHash
 }
 
-async function moveDtsFiles(namePattern, srcPath, destPath) {
-  for (const filepath of await tinyGlob([`**/${namePattern}.d.ts{.map,}`], {
+async function globDtsAndMapFiles(namePattern, srcPath) {
+  return await tinyGlob([`**/${namePattern}{.d.ts{.map,},.js.map}`], {
     absolute: true,
     cwd: srcPath
-  })) {
+  })
+}
+
+async function moveDtsAndMapFiles(namePattern, srcPath, destPath) {
+  for (const filepath of await globDtsAndMapFiles(namePattern, srcPath)) {
     await fs.rename(filepath, path.join(destPath, path.basename(filepath)))
   }
 }
 
 async function removeDtsAndMapFiles(namePattern, srcPath) {
-  for (const filepath of await tinyGlob(
-    [`**/${namePattern}{.d.ts{.map,},.map}`],
-    {
-      absolute: true,
-      cwd: srcPath
-    }
-  )) {
+  for (const filepath of await globDtsAndMapFiles(namePattern, srcPath)) {
+    await fs.rm(filepath)
+  }
+}
+
+async function removeJsFiles(namePattern, srcPath) {
+  for (const filepath of await tinyGlob([`**/${namePattern}.js`], {
+    absolute: true,
+    cwd: srcPath
+  })) {
     await fs.rm(filepath)
   }
 }
@@ -164,18 +171,18 @@ async function updateDepStats(depStats) {
 async function updatePackageJson() {
   const editablePkgJson = await readPackageJson(rootPath, { editable: true })
   const { content: pkgJson } = editablePkgJson
-  const bin = pkgJson.bin ?? {}
   const dependencies = { ...pkgJson.dependencies }
-
-  delete dependencies['@sentry/node']
-  editablePkgJson.update({
-    bin: {
-      socket: bin.socket ?? bin['socket-with-sentry'],
-      'socket-npm': bin['socket-npm'] ?? bin['socket-npm-with-sentry'],
-      'socket-npx': bin['socket-npx'] ?? bin['socket-npx-with-sentry']
-    },
-    dependencies
-  })
+  const rawBin = pkgJson.bin ?? {}
+  const tmpBin = {
+    socket: rawBin.socket ?? rawBin['socket-with-sentry'],
+    'socket-npm': rawBin['socket-npm'] ?? rawBin['socket-npm-with-sentry'],
+    'socket-npx': rawBin['socket-npx'] ?? rawBin['socket-npx-with-sentry']
+  }
+  const bin = {
+    ...(tmpBin.socket ? { socket: tmpBin.socket } : {}),
+    ...(tmpBin['socket-npm'] ? { 'socket-npm': tmpBin['socket-npm'] } : {}),
+    ...(tmpBin['socket-npx'] ? { 'socket-npx': tmpBin['socket-npx'] } : {})
+  }
   assert(
     util.isDeepStrictEqual(Object.keys(bin).sort(naturalCompare), [
       'socket',
@@ -184,6 +191,13 @@ async function updatePackageJson() {
     ]),
     'If this fails, make sure to update the rollup sentry override for .bin to match the regular build!'
   )
+  delete dependencies['@sentry/node']
+  editablePkgJson.update({
+    name: 'socket',
+    description: 'CLI tool for Socket.dev',
+    bin,
+    dependencies
+  })
   // Lazily access constants.ENV[SOCKET_WITH_SENTRY].
   if (constants.ENV[SOCKET_WITH_SENTRY]) {
     editablePkgJson.update({
@@ -191,11 +205,9 @@ async function updatePackageJson() {
       description:
         'CLI tool for Socket.dev, includes Sentry error handling, otherwise identical to the regular `socket` package',
       bin: {
-        'socket-with-sentry': bin.socket ?? bin['socket-with-sentry'],
-        'socket-npm-with-sentry':
-          bin['socket-npm'] ?? bin['socket-npm-with-sentry'],
-        'socket-npx-with-sentry':
-          bin['socket-npx'] ?? bin['socket-npx-with-sentry']
+        'socket-with-sentry': bin.socket,
+        'socket-npm-with-sentry': bin['socket-npm'],
+        'socket-npx-with-sentry': bin['socket-npx']
       },
       dependencies: {
         ...dependencies,
@@ -236,7 +248,7 @@ export default () => {
       // Lazily access constants.ENV[SOCKET_WITH_SENTRY].
       ...(constants.ENV[SOCKET_WITH_SENTRY]
         ? {
-            'instrument-with-sentry': `${rootSrcPath}/instrument-with-sentry.ts`
+            [INSTRUMENT_WITH_SENTRY]: `${rootSrcPath}/${INSTRUMENT_WITH_SENTRY}.ts`
           }
         : {})
     },
@@ -300,21 +312,29 @@ export default () => {
       }),
       {
         async generateBundle(_options, bundle) {
-          const data = bundle[CONSTANTS_JS]
-          if (data?.type === 'chunk') {
-            await fs.mkdir(rootDistPath, { recursive: true })
-            await fs.writeFile(distConstantsPath, data.code, 'utf8')
-            data.code = CONSTANTS_STUB_CODE
+          for (const basename of Object.keys(bundle)) {
+            const data = bundle[basename]
+            if (
+              data.type === 'chunk' &&
+              (basename === `${CONSTANTS}.js` ||
+                basename === `${INSTRUMENT_WITH_SENTRY}.js`)
+            ) {
+              await fs.mkdir(rootDistPath, { recursive: true })
+              await fs.writeFile(
+                path.join(rootDistPath, basename),
+                data.code,
+                'utf8'
+              )
+              data.code = createStubCode(`../${basename}`)
+            }
           }
         },
         async writeBundle() {
           await Promise.all([
-            moveDtsFiles(CONSTANTS, distModuleSyncPath, rootDistPath),
             copyInitGradle(),
             updatePackageJson(),
             updatePackageLockFile()
           ])
-          await removeDtsAndMapFiles(CONSTANTS, distModuleSyncPath)
         }
       }
     ]
@@ -344,20 +364,34 @@ export default () => {
         async generateBundle(_options, bundle) {
           for (const basename of Object.keys(bundle)) {
             const data = bundle[basename]
-            if (data.type === 'chunk') {
-              if (
-                basename !== VENDOR_JS &&
-                !data.code.includes(`'./${VENDOR_JS}'`)
-              ) {
-                data.code = createStubCode(`../${MODULE_SYNC}/${basename}`)
-              }
+            if (
+              data.type === 'chunk' &&
+              basename !== VENDOR_JS &&
+              !data.code.includes(`'./${VENDOR_JS}'`)
+            ) {
+              data.code = createStubCode(`../${MODULE_SYNC}/${basename}`)
             }
           }
         },
         async writeBundle() {
           await Promise.all([
             updateDepStats(requireConfig.meta.depStats),
-            removeDtsAndMapFiles('*', distRequirePath)
+            removeDtsAndMapFiles('*', distRequirePath),
+            moveDtsAndMapFiles(CONSTANTS, distModuleSyncPath, rootDistPath)
+          ])
+          await Promise.all([
+            removeDtsAndMapFiles(CONSTANTS, distModuleSyncPath),
+            // Lazily access constants.ENV[SOCKET_WITH_SENTRY].
+            ...(constants.ENV[SOCKET_WITH_SENTRY]
+              ? [
+                  moveDtsAndMapFiles(
+                    INSTRUMENT_WITH_SENTRY,
+                    distModuleSyncPath,
+                    rootDistPath
+                  ),
+                  removeJsFiles(INSTRUMENT_WITH_SENTRY, distModuleSyncPath)
+                ]
+              : [])
           ])
         }
       }
