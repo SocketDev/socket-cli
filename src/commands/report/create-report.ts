@@ -5,7 +5,7 @@ import {
   handleUnsuccessfulApiResponse
 } from '../../utils/api.ts'
 import { debugLog } from '../../utils/debug.ts'
-import { logSymbols } from '../../utils/logging.ts'
+import { getLogSymbols } from '../../utils/logging.ts'
 import { getPackageFiles } from '../../utils/path-resolve.ts'
 import { setupSdk } from '../../utils/sdk.ts'
 
@@ -51,7 +51,10 @@ export async function createReport(
     supportedFiles
   )
 
-  debugLog('Uploading:', packagePaths.join(`\n${logSymbols.info} Uploading: `))
+  debugLog(
+    'Uploading:',
+    packagePaths.join(`\n${getLogSymbols().info} Uploading: `)
+  )
 
   if (dryRun) {
     debugLog('[dryRun] Skipped actual upload')

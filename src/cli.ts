@@ -32,7 +32,7 @@ import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper'
 import constants from './constants'
 import { AuthError, InputError, captureException } from './utils/errors'
-import { logSymbols } from './utils/logging'
+import { getLogSymbols } from './utils/logging'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
 
 const { rootPkgJsonPath } = constants
@@ -104,7 +104,7 @@ void (async () => {
       errorTitle = 'Unexpected error with no details'
     }
     console.error(
-      `${logSymbols.error} ${colors.bgRed(colors.white(errorTitle + ':'))} ${errorMessage}`
+      `${getLogSymbols().error} ${colors.bgRed(colors.white(errorTitle + ':'))} ${errorMessage}`
     )
     if (errorBody) {
       console.error(`\n${errorBody}`)
