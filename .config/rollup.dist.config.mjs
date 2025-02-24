@@ -152,7 +152,7 @@ async function updateDepStats(depStats) {
   // Lazily access constants.ENV[SOCKET_WITH_SENTRY].
   if (constants.ENV[SOCKET_WITH_SENTRY]) {
     // Add Sentry as a regular dep for this build.
-    depStats.dependencies['@sentry/node'] = await getSentryManifest().version
+    depStats.dependencies['@sentry/node'] = (await getSentryManifest()).version
   } else {
     delete depStats.dependencies['@sentry/node']
   }
@@ -211,7 +211,7 @@ async function updatePackageJson() {
       },
       dependencies: {
         ...dependencies,
-        '@sentry/node': await getSentryManifest().version
+        '@sentry/node': (await getSentryManifest()).version
       }
     })
   }
