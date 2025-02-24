@@ -61,7 +61,7 @@
     "test:coverage:c8": "c8 --reporter=none node --test 'test/socket-npm.test.cjs'",
     "test:coverage:merge": "cp -r .tap/coverage/*.json coverage/tmp && c8 --reporter=lcov --reporter=text --include 'dist/{module-sync,require}/*.js' --exclude 'dist/require/vendor.js' report",
     "update": "run-p --aggregate-output update:**",
-    "update:deps": "npx npm-check-updates"
+    "update:deps": "npx --yes npm-check-updates"
   },
   "dependencies": {
     "@apideck/better-ajv-errors": "^0.3.6",
