@@ -224,7 +224,7 @@ void (async () => {
         settings: result.data
       }
     } catch (e: any) {
-      const cause = isObject(e) && 'cause' in e ? e.cause : undefined
+      const cause = isObject(e) && 'cause' in e ? e['cause'] : undefined
       if (
         isErrnoException(cause) &&
         (cause.code === 'ENOTFOUND' || cause.code === 'ECONNREFUSED')
