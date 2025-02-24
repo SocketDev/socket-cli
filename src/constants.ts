@@ -85,6 +85,7 @@ type Constants = Remap<
     readonly distPath: string
     readonly instrumentWithSentryPath: string
     readonly nmBinPath: string
+    readonly npmInjectionPath: string
     readonly rootBinPath: string
     readonly rootDistPath: string
     readonly rootPath: string
@@ -150,9 +151,17 @@ const lazyDistPath = () =>
   // Lazily access constants.rootDistPath and constants.DIST_TYPE.
   path.join(constants.rootDistPath, constants.DIST_TYPE)
 
+const lazyInstrumentWithSentryPath = () =>
+  // Lazily access constants.rootDistPath.
+  path.join(constants.rootDistPath, 'instrument-with-sentry.js')
+
 const lazyNmBinPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'node_modules/.bin')
+
+const lazyNpmInjectionPath = () =>
+  // Lazily access constants.distPath.
+  path.join(constants.distPath, 'npm-injection.js')
 
 const lazyRootBinPath = () =>
   // Lazily access constants.rootPath.
@@ -172,10 +181,6 @@ const lazyRootPath = () =>
 const lazyRootPkgJsonPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, PACKAGE_JSON)
-
-const lazyInstrumentWithSentryPath = () =>
-  // Lazily access constants.rootDistPath.
-  path.join(constants.rootDistPath, 'instrument-with-sentry.js')
 
 const lazyShadowBinPath = () =>
   // Lazily access constants.rootPath.
@@ -221,6 +226,7 @@ const constants = <Constants>createConstantsObject(
     distPath: undefined,
     instrumentWithSentryPath: undefined,
     nmBinPath: undefined,
+    npmInjectionPath: undefined,
     rootBinPath: undefined,
     rootDistPath: undefined,
     rootPath: undefined,
@@ -237,6 +243,7 @@ const constants = <Constants>createConstantsObject(
       cdxgenBinPath: lazyCdxgenBinPath,
       instrumentWithSentryPath: lazyInstrumentWithSentryPath,
       nmBinPath: lazyNmBinPath,
+      npmInjectionPath: lazyNpmInjectionPath,
       rootBinPath: lazyRootBinPath,
       rootDistPath: lazyRootDistPath,
       rootPath: lazyRootPath,

@@ -69,8 +69,8 @@ export function safeNpmInstall(opts?: SafeNpmInstallOptions) {
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
       '--require',
-      // Lazily access constants.distPath.
-      path.join(constants.distPath, 'npm-injection.js'),
+      // Lazily access constants.npmInjectionPath.
+      constants.npmInjectionPath,
       getNpmBinPath(),
       'install',
       // Even though the '--silent' flag is passed npm will still run through
