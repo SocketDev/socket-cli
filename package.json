@@ -36,7 +36,6 @@
   },
   "scripts": {
     "build": "run-s build:*",
-    "build:sentry": "rollup -c .config/rollup.sentry.config.mjs",
     "build:dist": "rollup -c .config/rollup.dist.config.mjs",
     "build:test": "rollup -c .config/rollup.test.config.mjs",
     "check": "run-p -c --aggregate-output check:*",

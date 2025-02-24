@@ -10,7 +10,8 @@ import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 import {
   fetchPackageManifest,
   isValidPackageName,
-  readPackageJson
+  readPackageJson,
+  readPackageJsonSync
 } from '@socketsecurity/registry/lib/packages'
 import { isRelative } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -31,6 +32,7 @@ const {
   MODULE_SYNC,
   REQUIRE,
   ROLLUP_EXTERNAL_SUFFIX,
+  SOCKET_IS_PUBLISHED,
   SOCKET_WITH_SENTRY,
   TAP,
   VENDOR,
@@ -65,6 +67,28 @@ async function getSentryManifest() {
     _sentryManifest = await fetchPackageManifest('@sentry/node@latest')
   }
   return _sentryManifest
+}
+
+let _socketVersionHash
+function getSocketVersionHash() {
+  if (_socketVersionHash === undefined) {
+    const { version } = readPackageJsonSync(rootPath)
+    let gitHash = ''
+    try {
+      ;({ stdout: gitHash } = spawnSync(
+        'git',
+        ['rev-parse', '--short', 'HEAD'],
+        'utf8'
+      ))
+    } catch {}
+    // Make each build generate a unique version id, regardless.
+    // Mostly for development: confirms the build refreshed. For prod
+    // builds the git hash should suffice to identify the build.
+    _socketVersionHash = JSON.stringify(
+      `${version}:${gitHash}:${randomUUID().split('-')[0]}${constants.ENV[SOCKET_IS_PUBLISHED] ? ':pub' : ''}`
+    )
+  }
+  return _socketVersionHash
 }
 
 async function moveDtsFiles(namePattern, srcPath, destPath) {
@@ -208,7 +232,13 @@ export default () => {
       cli: `${rootSrcPath}/cli.ts`,
       constants: `${rootSrcPath}/constants.ts`,
       'shadow-bin': `${rootSrcPath}/shadow/shadow-bin.ts`,
-      'npm-injection': `${rootSrcPath}/shadow/npm-injection.ts`
+      'npm-injection': `${rootSrcPath}/shadow/npm-injection.ts`,
+      // Lazily access constants.ENV[SOCKET_WITH_SENTRY].
+      ...(constants.ENV[SOCKET_WITH_SENTRY]
+        ? {
+            'instrument-with-sentry': `${rootSrcPath}/instrument-with-sentry.ts`
+          }
+        : {})
     },
     output: [
       {
@@ -251,9 +281,20 @@ export default () => {
         delimiters: ['\\b', ''],
         preventAssignment: true,
         values: {
-          "process.env['TAP']": JSON.stringify(!!constants.ENV[TAP]),
+          "process.env['SOCKET_CLI_VERSION']"() {
+            return JSON.stringify(getSocketVersionHash())
+          },
+          "process.env['SOCKET_IS_PUBLISHED']": JSON.stringify(
+            // Lazily access constants.ENV[SOCKET_IS_PUBLISHED].
+            !!constants.ENV[SOCKET_IS_PUBLISHED]
+          ),
           "process.env['SOCKET_WITH_SENTRY']": JSON.stringify(
+            // Lazily access constants.ENV[SOCKET_WITH_SENTRY].
             !!constants.ENV[SOCKET_WITH_SENTRY]
+          ),
+          "process.env['TAP']": JSON.stringify(
+            // Lazily access constants.ENV[TAP].
+            !!constants.ENV[TAP]
           )
         }
       }),
