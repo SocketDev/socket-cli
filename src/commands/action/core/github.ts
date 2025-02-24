@@ -7,7 +7,6 @@ import * as SCMComments from './scm_comments'
 
 export class GitHub {
   octokit: Octokit = new Octokit()
-
   owner: string
   repo: string
   prNumber: number
@@ -29,7 +28,6 @@ export class GitHub {
     switch (process.env['GITHUB_EVENT_NAME']) {
       case 'push':
         return this.prNumber ? 'diff' : 'main'
-
       case 'pull_request':
         // This env variable needs to be set in the GitHub action.
         // Add this code below to GitHub action:
@@ -47,10 +45,8 @@ export class GitHub {
           console.log(`Pull request action: ${eventAction} is not supported`)
           process.exit()
         }
-
       case 'issue_comment':
         return 'comment'
-
       default:
         throw new Error(
           `Unknown event type: ${process.env['GITHUB_EVENT_NAME']}`
@@ -65,7 +61,6 @@ export class GitHub {
         repo: this.repo,
         issue_number: this.prNumber
       })
-
     const comments: Record<string, Comment> = {}
     for (const githubComment of githubComments) {
       comments[githubComment.id] = new Comment({
@@ -74,10 +69,7 @@ export class GitHub {
         body_list: (githubComment.body ?? '').split('\n')
       })
     }
-
-    const socketComments = SCMComments.checkForSocketComments({ comments })
-
-    return socketComments
+    return SCMComments.checkForSocketComments({ comments })
   }
 
   async commentReactionExists({
@@ -90,9 +82,7 @@ export class GitHub {
       repo: this.repo,
       comment_id: commentId
     })
-
-    const exists = data.some(reaction => reaction.content === '+1')
-    return exists
+    return data.some(reaction => reaction.content === '+1')
   }
 
   async postReaction({ commentId }: { commentId: number }) {
