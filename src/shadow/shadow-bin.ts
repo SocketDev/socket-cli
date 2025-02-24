@@ -34,8 +34,8 @@ export default async function shadowBin(
           ]
         : []),
       '--require',
-      // Lazily access constants.distPath.
-      path.join(constants.distPath, 'npm-injection.js'),
+      // Lazily access constants.npmInjectionPath.
+      constants.npmInjectionPath,
       // Lazily access constants.shadowBinPath.
       await installLinks(constants.shadowBinPath, binName),
       // Add `--no-progress` and `--quiet` flags to fix input being swallowed by
