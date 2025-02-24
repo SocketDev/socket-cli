@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-// Keep this on top, no `from`, just init:
-import './initialize-crash-handler'
-
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
@@ -34,8 +31,7 @@ import { cmdScan } from './commands/scan/cmd-scan'
 import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper'
 import constants from './constants'
-import { handle } from './handle-crash'
-import { AuthError, InputError } from './utils/errors'
+import { AuthError, InputError, captureException } from './utils/errors'
 import { logSymbols } from './utils/logging'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
 
@@ -88,21 +84,22 @@ void (async () => {
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta
       }
     )
-  } catch (err) {
+  } catch (e: any) {
+    process.exitCode = 1
     let errorBody: string | undefined
     let errorTitle: string
     let errorMessage = ''
-    if (err instanceof AuthError) {
+    if (e instanceof AuthError) {
       errorTitle = 'Authentication error'
-      errorMessage = err.message
-    } else if (err instanceof InputError) {
+      errorMessage = e.message
+    } else if (e instanceof InputError) {
       errorTitle = 'Invalid input'
-      errorMessage = err.message
-      errorBody = err.body
-    } else if (err instanceof Error) {
+      errorMessage = e.message
+      errorBody = e.body
+    } else if (e instanceof Error) {
       errorTitle = 'Unexpected error'
-      errorMessage = messageWithCauses(err)
-      errorBody = stackWithCauses(err)
+      errorMessage = messageWithCauses(e)
+      errorBody = stackWithCauses(e)
     } else {
       errorTitle = 'Unexpected error with no details'
     }
@@ -112,9 +109,6 @@ void (async () => {
     if (errorBody) {
       console.error(`\n${errorBody}`)
     }
-
-    process.exitCode = 1
-
-    await handle(err)
+    await captureException(e)
   }
 })()
