@@ -330,11 +330,9 @@ export default () => {
           }
         },
         async writeBundle() {
-          await Promise.all([
-            copyInitGradle(),
-            updatePackageJson(),
-            updatePackageLockFile()
-          ])
+          await Promise.all([copyInitGradle(), updatePackageJson()])
+          // Update package-lock.json AFTER package.json.
+          await updatePackageLockFile()
         }
       }
     ]
