@@ -7,9 +7,11 @@ const constants = require('../dist/constants')
 
 const { DIST_TYPE } = constants
 
-// When Node 18 is dropped and experimental-require-module warning are no longer
-// a thing we can just use the require(`${constants.distPath}/cli.js`) code path.
-if (DIST_TYPE === 'require') {
+if (
+  DIST_TYPE === 'require' &&
+  // The '@rollup/plugin-replace' will replace 'process.env.SOCKET_WITH_SENTRY'.
+  !process.env['SOCKET_WITH_SENTRY']
+) {
   // Lazily access constants.distPath.
   require(`${constants.distPath}/cli.js`)
 } else {
@@ -24,6 +26,14 @@ if (DIST_TYPE === 'require') {
     [
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
+      // The '@rollup/plugin-replace' will replace 'process.env.SOCKET_WITH_SENTRY'.
+      ...(process.env['SOCKET_WITH_SENTRY']
+        ? // Lazily access constants.rootDistPath.
+          [
+            '--require',
+            path.join(constants.rootDistPath, 'instrument-with-sentry.js')
+          ]
+        : []),
       // Lazily access constants.distPath.
       path.join(constants.distPath, 'cli.js'),
       ...process.argv.slice(2)
