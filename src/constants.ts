@@ -83,6 +83,7 @@ type Constants = Remap<
     readonly YARN_CLASSIC: 'yarn/classic'
     readonly cdxgenBinPath: string
     readonly distPath: string
+    readonly instrumentWithSentryPath: string
     readonly nmBinPath: string
     readonly rootBinPath: string
     readonly rootDistPath: string
@@ -172,6 +173,10 @@ const lazyRootPkgJsonPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, PACKAGE_JSON)
 
+const lazyInstrumentWithSentryPath = () =>
+  // Lazily access constants.rootDistPath.
+  path.join(constants.rootDistPath, 'instrument-with-sentry.js')
+
 const lazyShadowBinPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'shadow-bin')
@@ -189,12 +194,12 @@ const constants = <Constants>createConstantsObject(
     ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE,
     API_V0_URL,
     BABEL_RUNTIME,
+    // Lazily defined values are initialized as `undefined` to keep their key order.
     BATCH_PURL_ENDPOINT: undefined,
     BINARY_LOCK_EXT,
     BUN,
     CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
     CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE,
-    // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
     ENV: undefined,
     LOCK_EXT,
@@ -214,6 +219,7 @@ const constants = <Constants>createConstantsObject(
     YARN_CLASSIC,
     cdxgenBinPath: undefined,
     distPath: undefined,
+    instrumentWithSentryPath: undefined,
     nmBinPath: undefined,
     rootBinPath: undefined,
     rootDistPath: undefined,
@@ -229,6 +235,7 @@ const constants = <Constants>createConstantsObject(
       ENV: LAZY_ENV,
       distPath: lazyDistPath,
       cdxgenBinPath: lazyCdxgenBinPath,
+      instrumentWithSentryPath: lazyInstrumentWithSentryPath,
       nmBinPath: lazyNmBinPath,
       rootBinPath: lazyRootBinPath,
       rootDistPath: lazyRootDistPath,

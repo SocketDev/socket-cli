@@ -27,10 +27,10 @@ export default async function shadowBin(
       ...constants.nodeNoWarningsFlags,
       // The '@rollup/plugin-replace' will replace 'process.env.SOCKET_WITH_SENTRY'.
       ...(process.env['SOCKET_WITH_SENTRY']
-        ? // Lazily access constants.rootDistPath.
-          [
+        ? [
             '--require',
-            path.join(constants.rootDistPath, 'instrument-with-sentry.js')
+            // Lazily access constants.instrumentWithSentryPath.
+            constants.instrumentWithSentryPath
           ]
         : []),
       '--require',
