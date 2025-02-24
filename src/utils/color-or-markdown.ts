@@ -3,9 +3,11 @@ import colors from 'yoctocolors-cjs'
 
 import indentString from '@socketregistry/indent-string/index.cjs'
 
-import { logSymbols } from './logging'
+import { getLogSymbols } from './logging'
 
-const markdownLogSymbols = {
+import type { LogSymbols } from './logging'
+
+const markdownLogSymbols = <LogSymbols>{
   __proto__: null,
   info: ':information_source:',
   error: ':stop_sign:',
@@ -74,7 +76,7 @@ export class ColorOrMarkdown {
       : `${indentedContent.join('\n')}\n`
   }
 
-  get logSymbols(): typeof logSymbols {
-    return this.useMarkdown ? markdownLogSymbols : logSymbols
+  get logSymbols(): LogSymbols {
+    return this.useMarkdown ? markdownLogSymbols : getLogSymbols()
   }
 }

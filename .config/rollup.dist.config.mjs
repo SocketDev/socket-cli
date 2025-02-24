@@ -1,36 +1,29 @@
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  rmSync,
-  writeFileSync,
-  readFileSync
-} from 'node:fs'
+import assert from 'node:assert'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
-import { spawnSync } from 'node:child_process'
-import { randomUUID } from 'node:crypto'
+import util from 'node:util'
 
-import { globSync as tinyGlobSync } from 'tinyglobby'
+import replacePlugin from '@rollup/plugin-replace'
+import { glob as tinyGlob } from 'tinyglobby'
 
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 import {
+  fetchPackageManifest,
   isValidPackageName,
-  readPackageJsonSync
+  readPackageJson
 } from '@socketsecurity/registry/lib/packages'
 import { isRelative } from '@socketsecurity/registry/lib/path'
+import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
 import baseConfig from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
-import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
-import { readJsonSync } from '../scripts/utils/fs.js'
+import { readJson } from '../scripts/utils/fs.js'
 import { formatObject } from '../scripts/utils/objects.js'
 import {
   getPackageName,
   isBuiltin,
   normalizeId
 } from '../scripts/utils/packages.js'
-import { envAsBoolean } from '@socketsecurity/registry/lib/env'
-import assert from 'node:assert'
 
 const {
   BABEL_RUNTIME,
@@ -38,9 +31,12 @@ const {
   MODULE_SYNC,
   REQUIRE,
   ROLLUP_EXTERNAL_SUFFIX,
+  SOCKET_WITH_SENTRY,
+  TAP,
   VENDOR,
   depStatsPath,
   rootDistPath,
+  rootPackageLockPath,
   rootPath,
   rootSrcPath
 } = constants
@@ -49,57 +45,57 @@ const CONSTANTS_JS = `${CONSTANTS}.js`
 const CONSTANTS_STUB_CODE = createStubCode(`../${CONSTANTS_JS}`)
 const VENDOR_JS = `${VENDOR}.js`
 
-const IS_SENTRY_BUILD = envAsBoolean(process.env['SOCKET_WITH_SENTRY']);
-const IS_PUBLISH = envAsBoolean(process.env['SOCKET_IS_PUBLISHED'])
-
 const distConstantsPath = path.join(rootDistPath, CONSTANTS_JS)
 const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
 const distRequirePath = path.join(rootDistPath, REQUIRE)
 
-const editablePkgJson = readPackageJsonSync(rootPath, { editable: true })
-
-const processEnvTapRegExp =
-  /\bprocess\.env(?:\.TAP|\[['"]TAP['"]\])(\s*\?[^:]+:\s*)?/g
-const processEnvSocketIsPublishedRegExp =
-  /\bprocess\.env(?:\.SOCKET_IS_PUBLISHED|\[['"]SOCKET_IS_PUBLISHED['"]\])/g
-const processEnvSocketCliVersionRegExp =
-  /\bprocess\.env(?:\.SOCKET_CLI_VERSION|\[['"]SOCKET_CLI_VERSION['"]\])/g
+async function copyInitGradle() {
+  const filepath = path.join(rootSrcPath, 'commands/manifest/init.gradle')
+  const destPath = path.join(rootDistPath, 'init.gradle')
+  await fs.copyFile(filepath, destPath)
+}
 
 function createStubCode(relFilepath) {
   return `'use strict'\n\nmodule.exports = require('${relFilepath}')\n`
 }
 
-function moveDtsFilesSync(namePattern, srcPath, destPath) {
-  for (const filepath of tinyGlobSync([`**/${namePattern}.d.ts{.map,}`], {
+let _sentryManifest
+async function getSentryManifest() {
+  if (_sentryManifest === undefined) {
+    _sentryManifest = await fetchPackageManifest('@sentry/node@latest')
+  }
+  return _sentryManifest
+}
+
+async function moveDtsFiles(namePattern, srcPath, destPath) {
+  for (const filepath of await tinyGlob([`**/${namePattern}.d.ts{.map,}`], {
     absolute: true,
     cwd: srcPath
   })) {
-    copyFileSync(filepath, path.join(destPath, path.basename(filepath)))
-    rmSync(filepath)
+    await fs.rename(filepath, path.join(destPath, path.basename(filepath)))
   }
 }
 
-function copyInitGradle() {
-  const filepath = path.join(rootSrcPath, 'commands/manifest/init.gradle')
-  const destPath = path.join(rootDistPath, 'init.gradle')
-  copyFileSync(filepath, destPath)
-}
-
-function removeDtsFilesSync(namePattern, srcPath) {
-  for (const filepath of tinyGlobSync([`**/${namePattern}.d.ts{.map,}`], {
-    absolute: true,
-    cwd: srcPath
-  })) {
-    rmSync(filepath)
+async function removeDtsAndMapFiles(namePattern, srcPath) {
+  for (const filepath of await tinyGlob(
+    [`**/${namePattern}{.d.ts{.map,},.map}`],
+    {
+      absolute: true,
+      cwd: srcPath
+    }
+  )) {
+    await fs.rm(filepath)
   }
 }
 
-function updateDepStatsSync(depStats) {
+async function updateDepStats(depStats) {
+  const editablePkgJson = await readPackageJson(rootPath, { editable: true })
   const { content: pkgJson } = editablePkgJson
   const oldDepStats = existsSync(depStatsPath)
-    ? readJsonSync(depStatsPath)
+    ? await readJson(depStatsPath)
     : undefined
-  Object.assign(depStats.dependencies,
+  Object.assign(
+    depStats.dependencies,
     // Add existing package.json dependencies without old transitives. This
     // preserves dependencies like '@cyclonedx/cdxgen' and 'synp' that are
     // indirectly referenced through spawned processes and not directly imported.
@@ -107,7 +103,8 @@ function updateDepStatsSync(depStats) {
       Object.entries(pkgJson.dependencies).filter(
         ({ 0: key }) => !oldDepStats?.transitives?.[key]
       )
-    ))
+    )
+  )
   // Remove transitives from dependencies.
   for (const key of Object.keys(oldDepStats?.transitives ?? {})) {
     if (pkgJson.dependencies[key]) {
@@ -116,71 +113,93 @@ function updateDepStatsSync(depStats) {
       delete depStats.dependencies[key]
     }
   }
-
-  assert(Object.keys(editablePkgJson?.content?.bin).join(',') === 'socket,socket-npm,socket-npx', 'If this fails, make sure to update the rollup sentry override for .bin to match the regular build!');
-  if (IS_SENTRY_BUILD) {
-    editablePkgJson.content['name'] = '@socketsecurity/socket-with-sentry'
-    editablePkgJson.content['description'] = "CLI tool for Socket.dev, includes Sentry error handling, otherwise identical to the regular `socket` package"
-    editablePkgJson.content['bin'] = {
-      "socket-with-sentry": "bin/cli.js",
-      "socket-npm-with-sentry": "bin/npm-cli.js",
-      "socket-npx-with-sentry": "bin/npx-cli.js"
-    }
-    // Add Sentry as a regular dep for this build
-    depStats.dependencies['@sentry/node'] = '9.1.0';
-  }
-
   depStats.dependencies = toSortedObject(depStats.dependencies)
   depStats.devDependencies = toSortedObject(depStats.devDependencies)
   depStats.esm = toSortedObject(depStats.esm)
   depStats.external = toSortedObject(depStats.external)
   depStats.transitives = toSortedObject(depStats.transitives)
-  // Write dep stats.
-  writeFileSync(depStatsPath, `${formatObject(depStats)}\n`, 'utf8')
-
-  // Update dependencies with additional inlined modules.
-  editablePkgJson
-    .update({
-      dependencies: {
-        ...depStats.dependencies,
-        ...depStats.transitives
-      }
-    })
-    .saveSync()
-
-  if (IS_SENTRY_BUILD) {
-    // Replace the name in the package lock too, just in case.
-    const lock = readFileSync('package-lock.json', 'utf8');
-    // Note: this should just replace the first occurrence, even if there are more
-    const lock2 = lock.replace('"name": "socket",', '"name": "@socketsecurity/socket-with-sentry",')
-    writeFileSync('package-lock.json', lock2)
+  // Lazily access constants.ENV[SOCKET_WITH_SENTRY].
+  if (constants.ENV[SOCKET_WITH_SENTRY]) {
+    // Add Sentry as a regular dep for this build.
+    depStats.dependencies['@sentry/node'] = await getSentryManifest().version
+  } else {
+    delete depStats.dependencies['@sentry/node']
   }
+  // Write dep stats.
+  await fs.writeFile(depStatsPath, `${formatObject(depStats)}\n`, 'utf8')
+  // Update dependencies with additional inlined modules.
+  editablePkgJson.update({
+    dependencies: {
+      ...depStats.dependencies,
+      ...depStats.transitives
+    }
+  })
+  await editablePkgJson.save()
 }
 
-function versionBanner(_chunk) {
-  let pkgJsonVersion = 'unknown';
-  try { pkgJsonVersion = JSON.parse(readFileSync('package.json', 'utf8'))?.version ?? 'unknown' } catch {}
+async function updatePackageJson() {
+  const editablePkgJson = await readPackageJson(rootPath, { editable: true })
+  const { content: pkgJson } = editablePkgJson
+  const bin = pkgJson.bin ?? {}
+  const dependencies = { ...pkgJson.dependencies }
 
-  let gitHash = ''
-  try {
-    const obj = spawnSync('git', ['rev-parse','--short', 'HEAD']);
-    if (obj.stdout) {
-      gitHash = obj.stdout.toString('utf8').trim()
-    }
-  } catch {}
+  delete dependencies['@sentry/node']
+  editablePkgJson.update({
+    bin: {
+      socket: bin.socket ?? bin['socket-with-sentry'],
+      'socket-npm': bin['socket-npm'] ?? bin['socket-npm-with-sentry'],
+      'socket-npx': bin['socket-npx'] ?? bin['socket-npx-with-sentry']
+    },
+    dependencies
+  })
+  assert(
+    util.isDeepStrictEqual(Object.keys(bin).sort(naturalCompare), [
+      'socket',
+      'socket-npm',
+      'socket-npx'
+    ]),
+    'If this fails, make sure to update the rollup sentry override for .bin to match the regular build!'
+  )
+  // Lazily access constants.ENV[SOCKET_WITH_SENTRY].
+  if (constants.ENV[SOCKET_WITH_SENTRY]) {
+    editablePkgJson.update({
+      name: '@socketsecurity/socket-with-sentry',
+      description:
+        'CLI tool for Socket.dev, includes Sentry error handling, otherwise identical to the regular `socket` package',
+      bin: {
+        'socket-with-sentry': bin.socket ?? bin['socket-with-sentry'],
+        'socket-npm-with-sentry':
+          bin['socket-npm'] ?? bin['socket-npm-with-sentry'],
+        'socket-npx-with-sentry':
+          bin['socket-npx'] ?? bin['socket-npx-with-sentry']
+      },
+      dependencies: {
+        ...dependencies,
+        '@sentry/node': await getSentryManifest().version
+      }
+    })
+  }
+  await editablePkgJson.save()
+}
 
-  // Make each build generate a unique version id, regardless
-  // Mostly for development: confirms the build refreshed. For prod
-  // builds the git hash should suffice to identify the build.
-  const rng = randomUUID().split('-')[0];
-
-  return `
-    var SOCKET_CLI_PKG_JSON_VERSION = "${pkgJsonVersion}"
-    var SOCKET_CLI_GIT_HASH = "${gitHash}"
-    var SOCKET_CLI_BUILD_RNG = "${rng}"
-    var SOCKET_PUB = ${IS_PUBLISH}
-    var SOCKET_CLI_VERSION = "${pkgJsonVersion}:${gitHash}:${rng}${IS_PUBLISH ? ':pub':''}"
-  `.trim().split('\n').map(s => s.trim()).join('\n')
+async function updatePackageLockFile() {
+  if (!existsSync(rootPackageLockPath)) {
+    return
+  }
+  // Note: This should just replace the first occurrence, even if there are more.
+  const lockSrc = await fs.readFile(rootPackageLockPath, 'utf8')
+  let updatedLockSrc = lockSrc.replace(
+    '"name": "@socketsecurity/socket-with-sentry",',
+    '"name": "socket",'
+  )
+  // Lazily access constants.ENV[SOCKET_WITH_SENTRY].
+  if (constants.ENV[SOCKET_WITH_SENTRY]) {
+    updatedLockSrc = lockSrc.replace(
+      '"name": "socket",',
+      '"name": "@socketsecurity/socket-with-sentry",'
+    )
+  }
+  await fs.writeFile(rootPackageLockPath, updatedLockSrc, 'utf8')
 }
 
 export default () => {
@@ -193,7 +212,6 @@ export default () => {
     },
     output: [
       {
-        intro: versionBanner, // Note: "banner" would defeat "use strict"
         dir: path.relative(rootPath, distModuleSyncPath),
         entryFileNames: '[name].js',
         exports: 'auto',
@@ -201,7 +219,7 @@ export default () => {
         format: 'cjs',
         freeze: false,
         sourcemap: true,
-        sourcemapDebugIds: true,
+        sourcemapDebugIds: true
       }
     ],
     external(id_) {
@@ -211,11 +229,16 @@ export default () => {
       const id = normalizeId(id_)
       const name = getPackageName(id)
       if (
+        // Inline Babel helpers.
         name === BABEL_RUNTIME ||
+        // Inline local src/ modules.
         id.startsWith(rootSrcPath) ||
+        // Inline .mjs .mts modules.
         id.endsWith('.mjs') ||
         id.endsWith('.mts') ||
+        // Inline relative referenced modules.
         isRelative(id) ||
+        // Inline anything else that isn't a valid package name.
         !isValidPackageName(name)
       ) {
         return false
@@ -223,15 +246,34 @@ export default () => {
       return true
     },
     plugins: [
+      // Inline process.env values.
+      replacePlugin({
+        delimiters: ['\\b', ''],
+        preventAssignment: true,
+        values: {
+          "process.env['TAP']": JSON.stringify(!!constants.ENV[TAP]),
+          "process.env['SOCKET_WITH_SENTRY']": JSON.stringify(
+            !!constants.ENV[SOCKET_WITH_SENTRY]
+          )
+        }
+      }),
       {
-        generateBundle(_options, bundle) {
+        async generateBundle(_options, bundle) {
           const data = bundle[CONSTANTS_JS]
           if (data?.type === 'chunk') {
+            await fs.mkdir(rootDistPath, { recursive: true })
+            await fs.writeFile(distConstantsPath, data.code, 'utf8')
             data.code = CONSTANTS_STUB_CODE
           }
         },
-        writeBundle() {
-          removeDtsFilesSync(CONSTANTS, distModuleSyncPath)
+        async writeBundle() {
+          await Promise.all([
+            moveDtsFiles(CONSTANTS, distModuleSyncPath, rootDistPath),
+            copyInitGradle(),
+            updatePackageJson(),
+            updatePackageLockFile()
+          ])
+          await removeDtsAndMapFiles(CONSTANTS, distModuleSyncPath)
         }
       }
     ]
@@ -246,7 +288,6 @@ export default () => {
     },
     output: [
       {
-        intro: versionBanner, // Note: "banner" would defeat "use strict"
         dir: path.relative(rootPath, distRequirePath),
         entryFileNames: '[name].js',
         exports: 'auto',
@@ -254,39 +295,16 @@ export default () => {
         format: 'cjs',
         freeze: false,
         sourcemap: true,
-        sourcemapDebugIds: true,
+        sourcemapDebugIds: true
       }
     ],
     plugins: [
-      // When process.env['TAP'] is found either remove it, if part of a ternary
-      // operation, or replace it with `false`.
-      socketModifyPlugin({
-        find: processEnvTapRegExp,
-        replace: (_match, ternary) => (ternary ? '' : 'false')
-      }),
-      // Replace `process.env.SOCKET_IS_PUBLISHED` with a boolean
-      socketModifyPlugin({
-        find: processEnvSocketIsPublishedRegExp,
-        // Note: these are going to be bools in JS, not strings
-        replace: () => (IS_PUBLISH ? 'true' : 'false')
-      }),
-      // Replace `process.env.SOCKET_CLI_VERSION` with var ref that rollup
-      // adds to the top of each file.
-      socketModifyPlugin({
-        find: processEnvSocketCliVersionRegExp,
-        replace: 'SOCKET_CLI_VERSION'
-      }),
-
       {
-        generateBundle(_options, bundle) {
+        async generateBundle(_options, bundle) {
           for (const basename of Object.keys(bundle)) {
             const data = bundle[basename]
             if (data.type === 'chunk') {
-              if (basename === CONSTANTS_JS) {
-                mkdirSync(rootDistPath, { recursive: true })
-                writeFileSync(distConstantsPath, data.code, 'utf8')
-                data.code = CONSTANTS_STUB_CODE
-              } else if (
+              if (
                 basename !== VENDOR_JS &&
                 !data.code.includes(`'./${VENDOR_JS}'`)
               ) {
@@ -295,11 +313,11 @@ export default () => {
             }
           }
         },
-        writeBundle() {
-          moveDtsFilesSync(CONSTANTS, distRequirePath, rootDistPath)
-          copyInitGradle()
-          removeDtsFilesSync('*', distRequirePath)
-          updateDepStatsSync(requireConfig.meta.depStats)
+        async writeBundle() {
+          await Promise.all([
+            updateDepStats(requireConfig.meta.depStats),
+            removeDtsAndMapFiles('*', distRequirePath)
+          ])
         }
       }
     ]

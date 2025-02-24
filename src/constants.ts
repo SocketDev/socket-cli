@@ -5,6 +5,8 @@ import process from 'node:process'
 import registryConstants from '@socketsecurity/registry/lib/constants'
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
+import type { Remap } from '@socketsecurity/registry/lib/objects'
+
 const {
   PACKAGE_JSON,
   kInternalsSymbol,
@@ -17,20 +19,28 @@ type RegistryEnv = typeof registryConstants.ENV
 
 type RegistryInternals = (typeof registryConstants)['Symbol(kInternalsSymbol)']
 
-type Internals = Omit<RegistryInternals, 'getIPC'> &
-  Readonly<{
-    getIPC: {
-      (): Promise<IPC>
-      <K extends keyof IPC | undefined>(
-        key?: K
-      ): Promise<K extends keyof IPC ? IPC[K] : IPC>
-    }
-  }>
+type Sentry = any
 
-type ENV = RegistryEnv &
-  Readonly<{
-    SOCKET_CLI_DEBUG: boolean
-  }>
+type Internals = Remap<
+  Omit<RegistryInternals, 'getIPC'> &
+    Readonly<{
+      getIPC: {
+        (): Promise<IPC>
+        <K extends keyof IPC | undefined>(
+          key?: K
+        ): Promise<K extends keyof IPC ? IPC[K] : IPC>
+      }
+      getSentry: () => Sentry
+      setSentry(Sentry: Sentry): boolean
+    }>
+>
+
+type ENV = Remap<
+  RegistryEnv &
+    Readonly<{
+      SOCKET_CLI_DEBUG: boolean
+    }>
+>
 
 type IPC = Readonly<{
   SOCKET_CLI_FIX?: string
@@ -38,52 +48,50 @@ type IPC = Readonly<{
   SOCKET_CLI_SAFE_WRAPPER?: boolean
 }>
 
-type Constants = Omit<
-  typeof registryConstants,
-  'Symbol(kInternalsSymbol)' | 'ENV' | 'IPC'
-> & {
-  readonly 'Symbol(kInternalsSymbol)': Internals
-  readonly ALERT_TYPE_CRITICAL_CVE: 'criticalCVE'
-  readonly ALERT_TYPE_CVE: 'cve'
-  readonly ALERT_TYPE_MEDIUM_CVE: 'mediumCVE'
-  readonly ALERT_TYPE_MILD_CVE: 'mildCVE'
-  readonly ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE: 'socketUpgradeAvailable'
-  readonly API_V0_URL: 'https://api.socket.dev/v0'
-  readonly BABEL_RUNTIME: '@babel/runtime'
-  readonly BATCH_PURL_ENDPOINT: 'https://api.socket.dev/v0/purl?alerts=true&compact=true'
-  readonly BINARY_LOCK_EXT: '.lockb'
-  readonly BUN: 'bun'
-  readonly CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER: 'firstPatchedVersionIdentifier'
-  readonly CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE: 'vulnerableVersionRange'
-  readonly ENV: ENV
-  readonly DIST_TYPE: 'module-sync' | 'require'
-  readonly IPC: IPC
-  readonly IS_PUBLISHED: boolean
-  readonly LOCK_EXT: '.lock'
-  readonly MODULE_SYNC: 'module-sync'
-  readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
-  readonly NPX: 'npx'
-  readonly PNPM: 'pnpm'
-  readonly REQUIRE: 'require'
-  readonly SOCKET_CLI_DEBUG: 'SOCKET_CLI_DEBUG'
-  readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
-  readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
-  readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
-  readonly SOCKET_CLI_SAFE_WRAPPER: 'SOCKET_CLI_SAFE_WRAPPER'
-  readonly VLT: 'vlt'
-  readonly YARN: 'yarn'
-  readonly YARN_BERRY: 'yarn/berry'
-  readonly YARN_CLASSIC: 'yarn/classic'
-  readonly cdxgenBinPath: string
-  readonly distPath: string
-  readonly nmBinPath: string
-  readonly rootBinPath: string
-  readonly rootDistPath: string
-  readonly rootPath: string
-  readonly rootPkgJsonPath: string
-  readonly shadowBinPath: string
-  readonly synpBinPath: string
-}
+type Constants = Remap<
+  Omit<typeof registryConstants, 'Symbol(kInternalsSymbol)' | 'ENV' | 'IPC'> & {
+    readonly 'Symbol(kInternalsSymbol)': Internals
+    readonly ALERT_TYPE_CRITICAL_CVE: 'criticalCVE'
+    readonly ALERT_TYPE_CVE: 'cve'
+    readonly ALERT_TYPE_MEDIUM_CVE: 'mediumCVE'
+    readonly ALERT_TYPE_MILD_CVE: 'mildCVE'
+    readonly ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE: 'socketUpgradeAvailable'
+    readonly API_V0_URL: 'https://api.socket.dev/v0'
+    readonly BABEL_RUNTIME: '@babel/runtime'
+    readonly BATCH_PURL_ENDPOINT: 'https://api.socket.dev/v0/purl?alerts=true&compact=true'
+    readonly BINARY_LOCK_EXT: '.lockb'
+    readonly BUN: 'bun'
+    readonly CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER: 'firstPatchedVersionIdentifier'
+    readonly CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE: 'vulnerableVersionRange'
+    readonly ENV: ENV
+    readonly DIST_TYPE: 'module-sync' | 'require'
+    readonly IPC: IPC
+    readonly LOCK_EXT: '.lock'
+    readonly MODULE_SYNC: 'module-sync'
+    readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
+    readonly NPX: 'npx'
+    readonly PNPM: 'pnpm'
+    readonly REQUIRE: 'require'
+    readonly SOCKET_CLI_DEBUG: 'SOCKET_CLI_DEBUG'
+    readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
+    readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
+    readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
+    readonly SOCKET_CLI_SAFE_WRAPPER: 'SOCKET_CLI_SAFE_WRAPPER'
+    readonly VLT: 'vlt'
+    readonly YARN: 'yarn'
+    readonly YARN_BERRY: 'yarn/berry'
+    readonly YARN_CLASSIC: 'yarn/classic'
+    readonly cdxgenBinPath: string
+    readonly distPath: string
+    readonly nmBinPath: string
+    readonly rootBinPath: string
+    readonly rootDistPath: string
+    readonly rootPath: string
+    readonly rootPkgJsonPath: string
+    readonly shadowBinPath: string
+    readonly synpBinPath: string
+  }
+>
 
 const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
 const ALERT_TYPE_CVE = 'cve'
@@ -97,7 +105,6 @@ const BUN = 'bun'
 const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
   'firstPatchedVersionIdentifier'
 const CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE = 'vulnerableVersionRange'
-const IS_PUBLISHED = process.env['SOCKET_IS_PUBLISHED']
 const LOCK_EXT = '.lock'
 const MODULE_SYNC = 'module-sync'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
@@ -113,6 +120,8 @@ const VLT = 'vlt'
 const YARN = 'yarn'
 const YARN_BERRY = `${YARN}/berry`
 const YARN_CLASSIC = `${YARN}/classic`
+
+let _Sentry: any
 
 const LAZY_BATCH_PURL_ENDPOINT = () => {
   const query = new URLSearchParams()
@@ -153,8 +162,7 @@ const lazyRootDistPath = () =>
   path.join(constants.rootPath, 'dist')
 
 const lazyRootPath = () =>
-  // The '@rollup/plugin-replace' will replace 'process.env.TAP' with `false` and
-  // it will be dead code eliminated by Rollup.
+  // The '@rollup/plugin-replace' will replace 'process.env.TAP'.
   path.resolve(
     realpathSync.native(__dirname),
     process.env['TAP'] ? '../..' : '..'
@@ -189,7 +197,6 @@ const constants = <Constants>createConstantsObject(
     // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
     ENV: undefined,
-    IS_PUBLISHED,
     LOCK_EXT,
     MODULE_SYNC,
     NPM_REGISTRY_URL,
@@ -229,6 +236,18 @@ const constants = <Constants>createConstantsObject(
       rootPkgJsonPath: lazyRootPkgJsonPath,
       shadowBinPath: lazyShadowBinPath,
       synpBinPath: lazySynpBinPath
+    },
+    internals: {
+      getSentry() {
+        return _Sentry
+      },
+      setSentry(Sentry: Sentry): boolean {
+        if (_Sentry === undefined) {
+          _Sentry = Sentry
+          return true
+        }
+        return false
+      }
     },
     mixin: registryConstants
   }

@@ -1,4 +1,4 @@
-import { logSymbols } from './logging'
+import { getLogSymbols } from './logging'
 import constants from '../constants'
 
 export function isDebug() {
@@ -8,6 +8,6 @@ export function isDebug() {
 
 export function debugLog(...args: any[]) {
   if (isDebug()) {
-    console.error(logSymbols.info, ...args)
+    console.error(getLogSymbols().info, ...args)
   }
 }
