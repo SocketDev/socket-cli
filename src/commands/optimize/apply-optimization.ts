@@ -260,7 +260,7 @@ async function addOverrides(
           overrideExists ||
           thingScanner(thingToScan, origPkgName, lockBasename)
         ) {
-          const oldSpec = overrideExists ? overrides[origPkgName] : undefined
+          const oldSpec = overrideExists ? overrides[origPkgName]! : undefined
           const origDepAlias = depAliasMap.get(origPkgName)
           const sockRegDepAlias = depAliasMap.get(sockRegPkgName)
           const depAlias = sockRegDepAlias ?? origDepAlias
@@ -274,7 +274,7 @@ async function addOverrides(
             // of with a $.
             // https://docs.npmjs.com/cli/v8/configuring-npm/package-json#overrides
             newSpec = `$${sockRegDepAlias ? sockRegPkgName : origPkgName}`
-          } else if (overrideExists) {
+          } else if (typeof oldSpec === 'string') {
             const thisSpec = oldSpec.startsWith('$')
               ? depAlias || newSpec
               : oldSpec || newSpec
