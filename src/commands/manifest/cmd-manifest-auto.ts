@@ -1,11 +1,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import meow from 'meow'
-
 import { cmdManifestGradle } from './cmd-manifest-gradle.ts'
 import { cmdManifestScala } from './cmd-manifest-scala.ts'
 import { commonFlags } from '../../flags.ts'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -51,12 +50,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meow(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags,
-    allowUnknownFlags: false
+    parentName
   })
 
   const verbose = cli.flags['verbose'] ?? false
@@ -93,24 +91,19 @@ async function run(
   }
 
   // Show new help screen and exit
-  meow(
+  console.log(
     `
-    $ ${parentName} ${config.commandName}
+$ ${parentName} ${config.commandName}
 
-    Unfortunately this script did not discover a supported language in the
-    current folder.
+Unfortunately this script did not discover a supported language in the
+current folder.
 
-    - Make sure this script would work with your target build
-    - Make sure to run it from the correct folder
-    - Make sure the necessary build tools are available (\`PATH\`)
+- Make sure this script would work with your target build
+- Make sure to run it from the correct folder
+- Make sure the necessary build tools are available (\`PATH\`)
 
-    If that doesn't work, see \`${parentName} <lang> --help\` for config details for
-    your target language.
-  `,
-    {
-      argv: [],
-      description: config.description,
-      importMeta
-    }
-  ).showHelp()
+If that doesn't work, see \`${parentName} <lang> --help\` for config details for
+your target language.
+    `.trim()
+  )
 }

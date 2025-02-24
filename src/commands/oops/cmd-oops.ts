@@ -1,6 +1,6 @@
-import meowOrExit from 'meow'
+import { meowOrExit } from '../../utils/meow-with-subcommands.ts'
 
-import { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 
 const config: CliCommandConfig = {
   commandName: 'oops',
@@ -26,11 +26,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrExit(config.help(parentName, config), {
+  meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   throw new Error('This error was intentionally left blank')

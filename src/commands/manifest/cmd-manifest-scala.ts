@@ -1,9 +1,8 @@
-import meow from 'meow'
-
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { convertSbtToMaven } from './convert_sbt_to_maven.ts'
 import { commonFlags } from '../../flags.ts'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -91,14 +90,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  // console.log('scala', argv, parentName)
-  // note: meow will exit if it prints the --help screen
-  const cli = meow(config.help(parentName, config), {
-    flags: config.flags,
-    argv: argv.length === 0 ? ['--help'] : argv,
-    description: config.description,
-    allowUnknownFlags: false,
-    importMeta
+  const cli = meowOrExit({
+    argv,
+    config,
+    importMeta,
+    parentName
   })
 
   const verbose = Boolean(cli.flags['verbose'])
