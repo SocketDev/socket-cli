@@ -20,7 +20,6 @@ export class GitHub {
     const prNumber = parseInt(
       process.env['GITHUB_REF']?.match(/refs\/pull\/(\d+)\/merge/)?.at(1) ?? ''
     )
-
     this.owner = owner
     this.repo = repo
     this.prNumber = prNumber
@@ -39,11 +38,9 @@ export class GitHub {
         //     if: github.event_name == 'pull_request'
         //     run: echo "EVENT_ACTION=${{ github.event.action }}" >> $GITHUB_ENV
         const eventAction = process.env['EVENT_ACTION']
-
         if (!eventAction) {
           throw new Error('Missing event action')
         }
-
         if (['opened', 'synchronize'].includes(eventAction)) {
           return 'diff'
         } else {
