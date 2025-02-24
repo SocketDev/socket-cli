@@ -28,12 +28,12 @@ const config: CliCommandConfig = {
       description: 'After marker'
     }
   },
-  help: (parentName, { commandName, flags }) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${commandName} [options]
+      $ ${command} [options]
 
     Options
-      ${getFlagListOutput(flags, 6)}
+      ${getFlagListOutput(config.flags, 6)}
   `
 }
 

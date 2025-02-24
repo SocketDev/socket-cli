@@ -42,20 +42,20 @@ const config: CliCommandConfig = {
       description: 'Path to a local file to save the output'
     }
   },
-  help: (parentName, { commandName, flags }) => `
+  help: (command, config) => `
     Usage
-      $ ${parentName} ${commandName} --scope=<scope> --time=<time filter>
+      $ ${command} --scope=<scope> --time=<time filter>
 
     Default parameters are set to show the organization-level analytics over the
     last 7 days.
 
     Options
-      ${getFlagListOutput(flags, 6)}
+      ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${parentName} ${commandName} --scope=org --time=7
-      $ ${parentName} ${commandName} --scope=org --time=30
-      $ ${parentName} ${commandName} --scope=repo --repo=test-repo --time=30
+      $ ${command} --scope=org --time=7
+      $ ${command} --scope=org --time=30
+      $ ${command} --scope=repo --repo=test-repo --time=30
   `
 }
 

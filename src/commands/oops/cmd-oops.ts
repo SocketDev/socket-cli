@@ -7,9 +7,9 @@ const config: CliCommandConfig = {
   description: 'Trigger an intentional error (for development)',
   hidden: true,
   flags: {},
-  help: (parentName, config) => `
+  help: (command, _config) => `
     Usage
-      $ ${parentName} ${config.commandName}
+      $ ${command}
 
     Don't run me.
   `
