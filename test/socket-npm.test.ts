@@ -22,8 +22,8 @@ for (const npmDir of versions) {
   spawnSync(NPM, ['install', '--silent'], {
     cwd: npmPath,
     signal: abortSignal,
-    // stdio: 'ignore'
-    stdio: 'pipe'
+    stdio: 'ignore'
+    // stdio: 'pipe'
   })
 
   describe(`Socket npm wrapper for ${npmDir}`, () => {
