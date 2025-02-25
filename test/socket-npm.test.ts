@@ -44,8 +44,12 @@ for (const npmDir of versions) {
             signal: abortSignal
           }
         )
+        spawnPromise.process.stdout.on('data', (buffer: Buffer) => {
+          console.log(buffer.toString('utf8'))
+        });
 
         spawnPromise.process.stderr.on('data', (buffer: Buffer) => {
+          console.error(buffer.toString('utf8'))
           if (buffer.toString().includes('Possible typosquat attack')) {
             spawnPromise.process.kill('SIGINT')
             resolve()
