@@ -10,7 +10,7 @@ type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
   encoding?: BufferEncoding | undefined
 }
 
-const { abortSignal } = constants
+const { CLI, abortSignal } = constants
 
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
@@ -22,7 +22,7 @@ const spawnOpts: PromiseSpawnOptions = {
 
 describe('Socket cdxgen command', async () => {
   // Lazily access constants.rootBinPath.
-  const entryPath = path.join(constants.rootBinPath, 'cli.js')
+  const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
   it('should forwards known commands to cdxgen', async () => {
     for (const command of ['-h', '--help']) {

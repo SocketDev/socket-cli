@@ -39,6 +39,10 @@ type ENV = Remap<
   RegistryEnv &
     Readonly<{
       SOCKET_CLI_DEBUG: boolean
+      SOCKET_CLI_LEGACY_BUILD: boolean
+      SOCKET_CLI_PUBLISHED_BUILD: boolean
+      SOCKET_CLI_SENTRY_BUILD: boolean
+      SOCKET_CLI_VERSION_HASH: string
     }>
 >
 
@@ -61,6 +65,7 @@ type Constants = Remap<
     readonly BATCH_PURL_ENDPOINT: 'https://api.socket.dev/v0/purl?alerts=true&compact=true'
     readonly BINARY_LOCK_EXT: '.lockb'
     readonly BUN: 'bun'
+    readonly CLI: 'cli'
     readonly CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER: 'firstPatchedVersionIdentifier'
     readonly CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE: 'vulnerableVersionRange'
     readonly ENV: ENV
@@ -68,15 +73,21 @@ type Constants = Remap<
     readonly IPC: IPC
     readonly LOCK_EXT: '.lock'
     readonly MODULE_SYNC: 'module-sync'
+    readonly NPM_INJECTION: 'npm-injection'
     readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
     readonly NPX: 'npx'
     readonly PNPM: 'pnpm'
     readonly REQUIRE: 'require'
+    readonly SHADOW_BIN: 'shadow-bin'
     readonly SOCKET_CLI_DEBUG: 'SOCKET_CLI_DEBUG'
     readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
     readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
+    readonly SOCKET_CLI_LEGACY_BUILD: 'SOCKET_CLI_LEGACY_BUILD'
     readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
+    readonly SOCKET_CLI_PUBLISHED_BUILD: 'SOCKET_CLI_PUBLISHED_BUILD'
     readonly SOCKET_CLI_SAFE_WRAPPER: 'SOCKET_CLI_SAFE_WRAPPER'
+    readonly SOCKET_CLI_SENTRY_BUILD: 'SOCKET_CLI_SENTRY_BUILD'
+    readonly SOCKET_CLI_VERSION_HASH: 'SOCKET_CLI_VERSION_HASH'
     readonly VLT: 'vlt'
     readonly YARN: 'yarn'
     readonly YARN_BERRY: 'yarn/berry'
@@ -104,20 +115,27 @@ const API_V0_URL = 'https://api.socket.dev/v0'
 const BABEL_RUNTIME = '@babel/runtime'
 const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
+const CLI = 'cli'
 const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
   'firstPatchedVersionIdentifier'
 const CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE = 'vulnerableVersionRange'
 const LOCK_EXT = '.lock'
 const MODULE_SYNC = 'module-sync'
+const NPM_INJECTION = 'npm-injection'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const NPX = 'npx'
 const PNPM = 'pnpm'
 const REQUIRE = 'require'
+const SHADOW_BIN = 'shadow-bin'
 const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
 const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
+const SOCKET_CLI_LEGACY_BUILD = 'SOCKET_CLI_LEGACY_BUILD'
 const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
+const SOCKET_CLI_PUBLISHED_BUILD = 'SOCKET_CLI_PUBLISHED_BUILD'
 const SOCKET_CLI_SAFE_WRAPPER = 'SOCKET_CLI_SAFE_WRAPPER'
+const SOCKET_CLI_SENTRY_BUILD = 'SOCKET_CLI_SENTRY_BUILD'
+const SOCKET_CLI_VERSION_HASH = 'SOCKET_CLI_VERSION_HASH'
 const VLT = 'vlt'
 const YARN = 'yarn'
 const YARN_BERRY = `${YARN}/berry`
@@ -140,7 +158,22 @@ const LAZY_ENV = () =>
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
     // Flag set to help debug Socket CLI.
-    [SOCKET_CLI_DEBUG]: envAsBoolean(process.env[SOCKET_CLI_DEBUG])
+    [SOCKET_CLI_DEBUG]: envAsBoolean(process.env[SOCKET_CLI_DEBUG]),
+    // Inline the following environment values so that they CANNOT be influenced
+    // by user provided environment variables.
+    //
+    // Flag set to determine if this is the Legacy build.
+    // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_LEGACY_BUILD]".
+    [SOCKET_CLI_LEGACY_BUILD]: process.env[SOCKET_CLI_LEGACY_BUILD],
+    // Flag set to determine if this is a published build.
+    // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_PUBLISHED_BUILD]".
+    [SOCKET_CLI_PUBLISHED_BUILD]: process.env[SOCKET_CLI_PUBLISHED_BUILD],
+    // Flag set to determine if this is the Sentry build.
+    // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_SENTRY_BUILD]".
+    [SOCKET_CLI_SENTRY_BUILD]: process.env[SOCKET_CLI_SENTRY_BUILD],
+    // Flag set to determine the version hash of the build.
+    // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_VERSION_HASH]".
+    [SOCKET_CLI_VERSION_HASH]: process.env[SOCKET_CLI_VERSION_HASH]
   })
 
 const lazyCdxgenBinPath = () =>
@@ -161,7 +194,7 @@ const lazyNmBinPath = () =>
 
 const lazyNpmInjectionPath = () =>
   // Lazily access constants.distPath.
-  path.join(constants.distPath, 'npm-injection.js')
+  path.join(constants.distPath, `${NPM_INJECTION}.js`)
 
 const lazyRootBinPath = () =>
   // Lazily access constants.rootPath.
@@ -172,7 +205,7 @@ const lazyRootDistPath = () =>
   path.join(constants.rootPath, 'dist')
 
 const lazyRootPath = () =>
-  // The '@rollup/plugin-replace' will replace 'process.env.TAP'.
+  // The '@rollup/plugin-replace' will replace "process.env.['TAP']".
   path.resolve(
     realpathSync.native(__dirname),
     process.env['TAP'] ? '../..' : '..'
@@ -184,7 +217,7 @@ const lazyRootPkgJsonPath = () =>
 
 const lazyShadowBinPath = () =>
   // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'shadow-bin')
+  path.join(constants.rootPath, SHADOW_BIN)
 
 const lazySynpBinPath = () =>
   // Lazily access constants.nmBinPath.
@@ -203,21 +236,28 @@ const constants = <Constants>createConstantsObject(
     BATCH_PURL_ENDPOINT: undefined,
     BINARY_LOCK_EXT,
     BUN,
+    CLI,
     CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
     CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE,
     DIST_TYPE: undefined,
     ENV: undefined,
     LOCK_EXT,
     MODULE_SYNC,
+    NPM_INJECTION,
     NPM_REGISTRY_URL,
     NPX,
     PNPM,
     REQUIRE,
+    SHADOW_BIN,
     SOCKET_CLI_DEBUG,
     SOCKET_CLI_FIX,
     SOCKET_CLI_ISSUES_URL,
+    SOCKET_CLI_LEGACY_BUILD,
     SOCKET_CLI_OPTIMIZE,
+    SOCKET_CLI_PUBLISHED_BUILD,
     SOCKET_CLI_SAFE_WRAPPER,
+    SOCKET_CLI_SENTRY_BUILD,
+    SOCKET_CLI_VERSION_HASH,
     VLT,
     YARN,
     YARN_BERRY,

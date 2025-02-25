@@ -6,7 +6,12 @@ import { installLinks } from './link'
 import constants from '../constants'
 import { isLoglevelFlag, isProgressFlag } from '../utils/npm'
 
-const { SOCKET_CLI_SAFE_WRAPPER, SOCKET_IPC_HANDSHAKE, abortSignal } = constants
+const {
+  SOCKET_CLI_SAFE_WRAPPER,
+  SOCKET_CLI_SENTRY_BUILD,
+  SOCKET_IPC_HANDSHAKE,
+  abortSignal
+} = constants
 
 export default async function shadowBin(
   binName: 'npm' | 'npx',
@@ -24,8 +29,8 @@ export default async function shadowBin(
     [
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
-      // The '@rollup/plugin-replace' will replace 'process.env.SOCKET_IS_SENTRY_BUILD'.
-      ...(process.env['SOCKET_IS_SENTRY_BUILD']
+      // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
+      ...(constants.ENV[SOCKET_CLI_SENTRY_BUILD]
         ? [
             '--require',
             // Lazily access constants.instrumentWithSentryPath.

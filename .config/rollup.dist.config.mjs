@@ -31,11 +31,14 @@ const {
   BABEL_RUNTIME,
   CONSTANTS,
   MODULE_SYNC,
+  NPM_INJECTION,
   REQUIRE,
   ROLLUP_EXTERNAL_SUFFIX,
-  SOCKET_IS_LEGACY_BUILD,
-  SOCKET_IS_PUBLISHED_BUILD,
-  SOCKET_IS_SENTRY_BUILD,
+  SHADOW_BIN,
+  SOCKET_CLI_LEGACY_BUILD,
+  SOCKET_CLI_PUBLISHED_BUILD,
+  SOCKET_CLI_SENTRY_BUILD,
+  SOCKET_CLI_VERSION_HASH,
   TAP,
   VENDOR,
   depStatsPath,
@@ -45,12 +48,40 @@ const {
   rootSrcPath
 } = constants
 
+const WITH_SENTRY = 'with-sentry'
+const INSTRUMENT_WITH_SENTRY = `instrument-${WITH_SENTRY}`
 const SENTRY_NODE = '@sentry/node'
-const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
+const SOCKET = 'socket'
+const SOCKET_DESCRIPTION = 'CLI tool for Socket.dev'
+const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET}\` package`
+const SOCKET_NPM = 'socket-npm'
+const SOCKET_NPX = 'socket-npx'
+const SOCKET_WITH_SENTRY = `socket-${WITH_SENTRY}`
+const SOCKET_NPM_WITH_SENTRY = `${SOCKET_NPM}-${WITH_SENTRY}`
+const SOCKET_NPX_WITH_SENTRY = `${SOCKET_NPX}-${WITH_SENTRY}`
+const SOCKET_SECURITY_CLI = '@socketsecurity/cli'
+const SOCKET_SECURITY_CLI_WITH_SENTRY = `${SOCKET_SECURITY_CLI}-${WITH_SENTRY}`
 const VENDOR_JS = `${VENDOR}.js`
 
 const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
 const distRequirePath = path.join(rootDistPath, REQUIRE)
+
+const sharedInputs = {
+  cli: `${rootSrcPath}/cli.ts`,
+  [CONSTANTS]: `${rootSrcPath}/${CONSTANTS}.ts`,
+  [SHADOW_BIN]: `${rootSrcPath}/shadow/${SHADOW_BIN}.ts`,
+  [NPM_INJECTION]: `${rootSrcPath}/shadow/${NPM_INJECTION}.ts`
+}
+
+const sharedOutputs = {
+  entryFileNames: '[name].js',
+  exports: 'auto',
+  externalLiveBindings: false,
+  format: 'cjs',
+  freeze: false,
+  sourcemap: true,
+  sourcemapDebugIds: true
+}
 
 async function copyInitGradle() {
   const filepath = path.join(rootSrcPath, 'commands/manifest/init.gradle')
@@ -65,7 +96,7 @@ function createStubCode(relFilepath) {
 let _sentryManifest
 async function getSentryManifest() {
   if (_sentryManifest === undefined) {
-    _sentryManifest = await fetchPackageManifest('@sentry/node@latest')
+    _sentryManifest = await fetchPackageManifest(`${SENTRY_NODE}@latest`)
   }
   return _sentryManifest
 }
@@ -73,21 +104,21 @@ async function getSentryManifest() {
 let _socketVersionHash
 function getSocketVersionHash() {
   if (_socketVersionHash === undefined) {
+    const randUuidSegment = randomUUID().split('-')[0]
     const { version } = readPackageJsonSync(rootPath)
     let gitHash = ''
     try {
-      ;({ stdout: gitHash } = spawnSync(
-        'git',
-        ['rev-parse', '--short', 'HEAD'],
-        'utf8'
-      ))
+      gitHash = spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
+        encoding: 'utf8'
+      }).stdout.trim()
     } catch {}
     // Make each build generate a unique version id, regardless.
-    // Mostly for development: confirms the build refreshed. For prod
-    // builds the git hash should suffice to identify the build.
-    _socketVersionHash = JSON.stringify(
-      `${version}:${gitHash}:${randomUUID().split('-')[0]}${constants.ENV[SOCKET_IS_PUBLISHED_BUILD] ? ':pub' : ''}`
-    )
+    // Mostly for development: confirms the build refreshed. For prod builds
+    // the git hash should suffice to identify the build.
+    _socketVersionHash = `${version}:${gitHash}:${randUuidSegment}${
+      // Lazily access constants.ENV[SOCKET_CLI_PUBLISHED_BUILD].
+      constants.ENV[SOCKET_CLI_PUBLISHED_BUILD] ? ':pub' : ':dev'
+    }`
   }
   return _socketVersionHash
 }
@@ -122,20 +153,20 @@ async function removeJsFiles(namePattern, srcPath) {
 
 function resetBin(bin) {
   const tmpBin = {
-    socket: bin?.socket ?? bin?.['socket-with-sentry'],
-    'socket-npm': bin?.['socket-npm'] ?? bin?.['socket-npm-with-sentry'],
-    'socket-npx': bin?.['socket-npx'] ?? bin?.['socket-npx-with-sentry']
+    socket: bin?.[SOCKET] ?? bin?.[SOCKET_WITH_SENTRY],
+    [SOCKET_NPM]: bin?.[SOCKET_NPM] ?? bin?.[SOCKET_NPM_WITH_SENTRY],
+    [SOCKET_NPX]: bin?.[SOCKET_NPX] ?? bin?.[SOCKET_NPX_WITH_SENTRY]
   }
   const newBin = {
-    ...(tmpBin.socket ? { socket: tmpBin.socket } : {}),
-    ...(tmpBin['socket-npm'] ? { 'socket-npm': tmpBin['socket-npm'] } : {}),
-    ...(tmpBin['socket-npx'] ? { 'socket-npx': tmpBin['socket-npx'] } : {})
+    ...(tmpBin[SOCKET] ? { socket: tmpBin.socket } : {}),
+    ...(tmpBin[SOCKET_NPM] ? { [SOCKET_NPM]: tmpBin[SOCKET_NPM] } : {}),
+    ...(tmpBin[SOCKET_NPX] ? { [SOCKET_NPX]: tmpBin[SOCKET_NPX] } : {})
   }
   assert(
     util.isDeepStrictEqual(Object.keys(newBin).sort(naturalCompare), [
-      'socket',
-      'socket-npm',
-      'socket-npx'
+      SOCKET,
+      SOCKET_NPM,
+      SOCKET_NPX
     ]),
     "Update the rollup Legacy and Sentry build's .bin to match the default build."
   )
@@ -174,8 +205,8 @@ async function updateDepStats(depStats) {
       delete depStats.dependencies[key]
     }
   }
-  // Lazily access constants.ENV[SOCKET_IS_SENTRY_BUILD].
-  if (constants.ENV[SOCKET_IS_SENTRY_BUILD]) {
+  // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
+  if (constants.ENV[SOCKET_CLI_SENTRY_BUILD]) {
     // Add Sentry as a direct dependency for this build.
     depStats.dependencies[SENTRY_NODE] = (await getSentryManifest()).version
   }
@@ -202,15 +233,15 @@ async function updatePackageJson() {
   const bin = resetBin(pkgJson.bin)
   const dependencies = resetDependencies(pkgJson.dependencies)
   editablePkgJson.update({
-    name: 'socket',
-    description: 'CLI tool for Socket.dev',
+    name: SOCKET,
+    description: SOCKET_DESCRIPTION,
     bin,
     dependencies
   })
-  // Lazily access constants.ENV[SOCKET_IS_LEGACY_BUILD].
-  if (constants.ENV[SOCKET_IS_LEGACY_BUILD]) {
+  // Lazily access constants.ENV[SOCKET_CLI_LEGACY_BUILD].
+  if (constants.ENV[SOCKET_CLI_LEGACY_BUILD]) {
     editablePkgJson.update({
-      name: '@socketsecurity/cli',
+      name: SOCKET_SECURITY_CLI,
       bin: {
         cli: bin.socket,
         ...bin
@@ -221,16 +252,15 @@ async function updatePackageJson() {
       }
     })
   }
-  // Lazily access constants.ENV[SOCKET_IS_SENTRY_BUILD].
-  else if (constants.ENV[SOCKET_IS_SENTRY_BUILD]) {
+  // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
+  else if (constants.ENV[SOCKET_CLI_SENTRY_BUILD]) {
     editablePkgJson.update({
-      name: '@socketsecurity/socket-with-sentry',
-      description:
-        'CLI tool for Socket.dev, includes Sentry error handling, otherwise identical to the regular `socket` package',
+      name: SOCKET_SECURITY_CLI_WITH_SENTRY,
+      description: SOCKET_DESCRIPTION_WITH_SENTRY,
       bin: {
-        'socket-with-sentry': bin.socket,
-        'socket-npm-with-sentry': bin['socket-npm'],
-        'socket-npx-with-sentry': bin['socket-npx']
+        [SOCKET_WITH_SENTRY]: bin.socket,
+        [SOCKET_NPM_WITH_SENTRY]: bin[SOCKET_NPM],
+        [SOCKET_NPX_WITH_SENTRY]: bin[SOCKET_NPX]
       },
       dependencies: {
         ...dependencies,
@@ -249,27 +279,24 @@ async function updatePackageLockFile() {
   const rootPkg = lockJson.packages['']
   const bin = resetBin(rootPkg.bin)
   const dependencies = resetDependencies(rootPkg.dependencies)
-  const defaultName = 'socket'
 
-  lockJson.name = defaultName
-  rootPkg.name = defaultName
+  lockJson.name = SOCKET
+  rootPkg.name = SOCKET
   rootPkg.bin = bin
   rootPkg.dependencies = dependencies
-  // Lazily access constants.ENV[SOCKET_IS_LEGACY_BUILD].
-  if (constants.ENV[SOCKET_IS_LEGACY_BUILD]) {
-    const name = '@socketsecurity/cli'
-    lockJson.name = name
-    rootPkg.name = name
+  // Lazily access constants.ENV[SOCKET_CLI_LEGACY_BUILD].
+  if (constants.ENV[SOCKET_CLI_LEGACY_BUILD]) {
+    lockJson.name = SOCKET_SECURITY_CLI
+    rootPkg.name = SOCKET_SECURITY_CLI
     rootPkg.bin = toSortedObject({
       cli: bin.socket,
       ...bin
     })
   }
-  // Lazily access constants.ENV[SOCKET_IS_SENTRY_BUILD].
-  else if (constants.ENV[SOCKET_IS_SENTRY_BUILD]) {
-    const name = '@socketsecurity/socket-with-sentry'
-    lockJson.name = name
-    rootPkg.name = name
+  // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
+  else if (constants.ENV[SOCKET_CLI_SENTRY_BUILD]) {
+    lockJson.name = SOCKET_SECURITY_CLI_WITH_SENTRY
+    rootPkg.name = SOCKET_SECURITY_CLI_WITH_SENTRY
     rootPkg.dependencies = toSortedObject({
       ...dependencies,
       [SENTRY_NODE]: (await getSentryManifest()).version
@@ -281,12 +308,9 @@ async function updatePackageLockFile() {
 export default () => {
   const moduleSyncConfig = baseConfig({
     input: {
-      cli: `${rootSrcPath}/cli.ts`,
-      constants: `${rootSrcPath}/constants.ts`,
-      'shadow-bin': `${rootSrcPath}/shadow/shadow-bin.ts`,
-      'npm-injection': `${rootSrcPath}/shadow/npm-injection.ts`,
-      // Lazily access constants.ENV[SOCKET_IS_SENTRY_BUILD].
-      ...(constants.ENV[SOCKET_IS_SENTRY_BUILD]
+      ...sharedInputs,
+      // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
+      ...(constants.ENV[SOCKET_CLI_SENTRY_BUILD]
         ? {
             [INSTRUMENT_WITH_SENTRY]: `${rootSrcPath}/${INSTRUMENT_WITH_SENTRY}.ts`
           }
@@ -294,14 +318,8 @@ export default () => {
     },
     output: [
       {
-        dir: path.relative(rootPath, distModuleSyncPath),
-        entryFileNames: '[name].js',
-        exports: 'auto',
-        externalLiveBindings: false,
-        format: 'cjs',
-        freeze: false,
-        sourcemap: true,
-        sourcemapDebugIds: true
+        ...sharedOutputs,
+        dir: path.relative(rootPath, distModuleSyncPath)
       }
     ],
     external(id_) {
@@ -330,29 +348,49 @@ export default () => {
     plugins: [
       // Inline process.env values.
       replacePlugin({
-        delimiters: ['\\b', ''],
+        delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
         preventAssignment: true,
-        values: {
-          "process.env['SOCKET_CLI_VERSION']"() {
-            return JSON.stringify(getSocketVersionHash())
-          },
-          "process.env['SOCKET_IS_LEGACY_BUILD']": JSON.stringify(
-            // Lazily access constants.ENV[SOCKET_IS_LEGACY_BUILD].
-            !!constants.ENV[SOCKET_IS_LEGACY_BUILD]
-          ),
-          "process.env['SOCKET_IS_PUBLISHED_BUILD']": JSON.stringify(
-            // Lazily access constants.ENV[SOCKET_IS_PUBLISHED_BUILD].
-            !!constants.ENV[SOCKET_IS_PUBLISHED_BUILD]
-          ),
-          "process.env['SOCKET_IS_SENTRY_BUILD']": JSON.stringify(
-            // Lazily access constants.ENV[SOCKET_IS_SENTRY_BUILD].
-            !!constants.ENV[SOCKET_IS_SENTRY_BUILD]
-          ),
-          "process.env['TAP']": JSON.stringify(
-            // Lazily access constants.ENV[TAP].
-            !!constants.ENV[TAP]
-          )
-        }
+        values: [
+          [
+            SOCKET_CLI_VERSION_HASH,
+            () => JSON.stringify(getSocketVersionHash())
+          ],
+          [
+            SOCKET_CLI_LEGACY_BUILD,
+            () =>
+              JSON.stringify(
+                // Lazily access constants.ENV[SOCKET_CLI_LEGACY_BUILD].
+                !!constants.ENV[SOCKET_CLI_LEGACY_BUILD]
+              )
+          ],
+          [
+            SOCKET_CLI_PUBLISHED_BUILD,
+            () =>
+              JSON.stringify(
+                // Lazily access constants.ENV[SOCKET_CLI_PUBLISHED_BUILD].
+                !!constants.ENV[SOCKET_CLI_PUBLISHED_BUILD]
+              )
+          ],
+          [
+            SOCKET_CLI_SENTRY_BUILD,
+            () =>
+              JSON.stringify(
+                // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
+                !!constants.ENV[SOCKET_CLI_SENTRY_BUILD]
+              )
+          ],
+          [
+            TAP,
+            () =>
+              // Lazily access constants.ENV[TAP].
+              !!constants.ENV[TAP]
+          ]
+        ].reduce((obj, { 0: name, 1: value }) => {
+          obj[`process.env.${name}`] = value
+          obj[`process.env['${name}']`] = value
+          obj[`process.env[${name}]`] = value
+          return obj
+        }, {})
       }),
       {
         async generateBundle(_options, bundle) {
@@ -384,21 +422,12 @@ export default () => {
 
   const requireConfig = baseConfig({
     input: {
-      cli: `${rootSrcPath}/cli.ts`,
-      constants: `${rootSrcPath}/constants.ts`,
-      'shadow-bin': `${rootSrcPath}/shadow/shadow-bin.ts`,
-      'npm-injection': `${rootSrcPath}/shadow/npm-injection.ts`
+      ...sharedInputs
     },
     output: [
       {
-        dir: path.relative(rootPath, distRequirePath),
-        entryFileNames: '[name].js',
-        exports: 'auto',
-        externalLiveBindings: false,
-        format: 'cjs',
-        freeze: false,
-        sourcemap: true,
-        sourcemapDebugIds: true
+        ...sharedOutputs,
+        dir: path.relative(rootPath, distRequirePath)
       }
     ],
     plugins: [
@@ -423,8 +452,8 @@ export default () => {
           ])
           await Promise.all([
             removeDtsAndMapFiles(CONSTANTS, distModuleSyncPath),
-            // Lazily access constants.ENV[SOCKET_IS_SENTRY_BUILD].
-            ...(constants.ENV[SOCKET_IS_SENTRY_BUILD]
+            // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
+            ...(constants.ENV[SOCKET_CLI_SENTRY_BUILD]
               ? [
                   moveDtsAndMapFiles(
                     INSTRUMENT_WITH_SENTRY,
@@ -433,7 +462,10 @@ export default () => {
                   ),
                   removeJsFiles(INSTRUMENT_WITH_SENTRY, distModuleSyncPath)
                 ]
-              : [])
+              : [
+                  removeDtsAndMapFiles(INSTRUMENT_WITH_SENTRY, rootDistPath),
+                  removeJsFiles(INSTRUMENT_WITH_SENTRY, rootDistPath)
+                ])
           ])
         }
       }
