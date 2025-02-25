@@ -9,15 +9,12 @@ import {
   normalizeId
 } from '../scripts/utils/packages.js'
 
-const {
-  BABEL_RUNTIME,
-  ROLLUP_EXTERNAL_SUFFIX,
-  SUPPORTS_SYNC_ESM,
-  rootSrcPath
-} = constants
+const { BABEL_RUNTIME, ROLLUP_EXTERNAL_SUFFIX } = constants
 
-export default () =>
-  baseConfig({
+export default () => {
+  // Lazily access constants.rootSrcPath
+  const { rootSrcPath } = constants
+  return baseConfig({
     input: {
       'alert-rules': `${rootSrcPath}/utils/alert/rules.ts`,
       errors: `${rootSrcPath}/utils/errors.ts`,
@@ -35,7 +32,8 @@ export default () =>
         sourcemapDebugIds: true
       }
     ],
-    ...(SUPPORTS_SYNC_ESM
+    // Lazily access constants.SUPPORTS_SYNC_ESM
+    ...(constants.SUPPORTS_SYNC_ESM
       ? {
           external(id_) {
             if (id_.endsWith(ROLLUP_EXTERNAL_SUFFIX) || isBuiltin(id_)) {
@@ -58,3 +56,4 @@ export default () =>
         }
       : {})
   })
+}
