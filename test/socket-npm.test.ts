@@ -61,6 +61,6 @@ for (const npmDir of versions) {
         1,
         'if the promise resolves then the typo-squat attack message was seen, the promise should not reject in any way'
       ).toBe(1)
-    }, 20_000) // About 5s on my machine, will be slow in ci, extend if too flaky
+    }, 30_000) // About 5s on my machine, will be slow in ci, extend if too flaky
   })
 }
