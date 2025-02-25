@@ -90,6 +90,7 @@ const {
 async function* createBatchGenerator(
   chunk: string[]
 ): AsyncGenerator<SocketArtifact> {
+  // Adds the first 'abort' listener to abortSignal.
   const req = https
     // Lazily access constants.BATCH_PURL_ENDPOINT.
     .request(constants.BATCH_PURL_ENDPOINT, {
@@ -104,6 +105,7 @@ async function* createBatchGenerator(
         components: chunk.map(id => ({ purl: `pkg:npm/${id}` }))
       })
     )
+  // Adds the second 'abort' listener to abortSignal.
   const { 0: res } = <[IncomingMessage]>(
     await events.once(req, 'response', { signal: abortSignal })
   )
@@ -135,6 +137,16 @@ export async function* batchScan(
   }
   type ResolveFn = (value: GeneratorStep) => void
 
+  // The createBatchGenerator method will add 2 'abort' event listeners to
+  // abortSignal so we multiply the concurrencyLimit by 2.
+  const neededMaxListeners = concurrencyLimit * 2
+  // Increase abortSignal max listeners count to avoid Node's MaxListenersExceededWarning.
+  const oldAbortSignalMaxListeners = events.getMaxListeners(abortSignal)
+  let abortSignalMaxListeners = oldAbortSignalMaxListeners
+  if (oldAbortSignalMaxListeners < neededMaxListeners) {
+    abortSignalMaxListeners = oldAbortSignalMaxListeners + neededMaxListeners
+    events.setMaxListeners(abortSignalMaxListeners, abortSignal)
+  }
   const { length: pkgIdsCount } = pkgIds
   const running: GeneratorEntry[] = []
   let index = 0
@@ -180,6 +192,10 @@ export async function* batchScan(
       // Keep fetching values from this generator.
       continueGen(generator)
     }
+  }
+  // Reset abortSignal max listeners count.
+  if (abortSignalMaxListeners > oldAbortSignalMaxListeners) {
+    events.setMaxListeners(oldAbortSignalMaxListeners, abortSignal)
   }
 }
 
