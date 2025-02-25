@@ -17,7 +17,7 @@ if (
 } else {
   const path = require('node:path')
   const spawn = require('@npmcli/promise-spawn')
-  const { abortSignal } = constants
+  // const { abortSignal } = constants
 
   process.exitCode = 1
   const spawnPromise = spawn(
@@ -39,7 +39,7 @@ if (
       ...process.argv.slice(2)
     ],
     {
-      signal: abortSignal,
+      // signal: abortSignal,
       stdio: 'inherit'
     }
   )
