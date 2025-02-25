@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest'
 
 import { createAlertUXLookup } from './dist/alert-rules'
 
@@ -51,85 +51,99 @@ describe('Alert Rule UX', () => {
         }
       ]
     })
-    expect(noEntriesLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'willError' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      noEntriesLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'willError' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": true,
         "display": true,
       }
     `)
-    expect(noEntriesLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'willIgnore' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      noEntriesLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'willIgnore' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": false,
         "display": false,
       }
     `)
-    expect(noEntriesLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'willWarn' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      noEntriesLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'willWarn' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": false,
         "display": true,
       }
     `)
-    expect(noEntriesLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'fromDeferString' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      noEntriesLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'fromDeferString' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": false,
         "display": true,
       }
     `)
-    expect(noEntriesLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'fromUndefinedAction' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      noEntriesLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'fromUndefinedAction' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": false,
         "display": true,
       }
     `)
-    expect(noEntriesLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'fromUndefinedRule' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      noEntriesLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'fromUndefinedRule' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": false,
         "display": true,
       }
     `)
-    expect(noEntriesLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'fromMiddleConfig' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      noEntriesLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'fromMiddleConfig' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": false,
         "display": true,
@@ -143,13 +157,15 @@ describe('Alert Rule UX', () => {
       },
       entries: []
     })
-    expect(emptyLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: '404' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      emptyLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: '404' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": true,
         "display": true,
@@ -182,49 +198,57 @@ describe('Alert Rule UX', () => {
         }
       ]
     })
-    expect(booleanLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'defaultTrue' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      booleanLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'defaultTrue' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": true,
         "display": true,
       }
     `)
-    expect(booleanLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'orgTrue' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      booleanLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'orgTrue' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": true,
         "display": true,
       }
     `)
-    expect(booleanLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'defaultFalse' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      booleanLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'defaultFalse' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": false,
         "display": false,
       }
     `)
-    expect(booleanLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'orgFalse' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      booleanLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'orgFalse' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": false,
         "display": false,
@@ -274,37 +298,43 @@ describe('Alert Rule UX', () => {
         }
       ]
     })
-    expect(multiSettings({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'warn_then_error' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      multiSettings({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'warn_then_error' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": true,
         "display": true,
       }
     `)
-    expect(multiSettings({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'ignore_then_missing' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      multiSettings({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'ignore_then_missing' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": true,
         "display": true,
       }
     `)
-    expect(multiSettings({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'ignore_then_defer' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      multiSettings({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'ignore_then_defer' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": true,
         "display": true,
@@ -336,13 +366,15 @@ describe('Alert Rule UX', () => {
         }
       ]
     })
-    expect(shadowedLookup({
-      package: {
-        name: 'bar',
-        version: '0.0.0'
-      },
-      alert: { type: 'willWarn' }
-    })).toMatchInlineSnapshot(`
+    expect(
+      shadowedLookup({
+        package: {
+          name: 'bar',
+          version: '0.0.0'
+        },
+        alert: { type: 'willWarn' }
+      })
+    ).toMatchInlineSnapshot(`
       {
         "block": false,
         "display": false,

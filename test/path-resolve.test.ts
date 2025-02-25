@@ -2,7 +2,7 @@ import path from 'node:path'
 
 import mockFs from 'mock-fs'
 import nock from 'nock'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 

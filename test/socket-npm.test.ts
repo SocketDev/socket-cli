@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest'
 
 const { spawnSync } = require('node:child_process')
 const path = require('node:path')
@@ -57,7 +57,10 @@ for (const npmDir of versions) {
         })
       })
 
-      expect(1, 'if the promise resolves then the typoesquat attack message was seen, the promise should not reject in any way').toBe(1)
+      expect(
+        1,
+        'if the promise resolves then the typoesquat attack message was seen, the promise should not reject in any way'
+      ).toBe(1)
     }, 10_000) // About 5s on my machine, will be slow in ci
   })
 }
