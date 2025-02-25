@@ -140,7 +140,7 @@ async function run(
   if (cli.flags['bin']) {
     bin = cli.flags['bin'] as string
   } else {
-    bin = path.join(target, './gradlew')
+    bin = path.join(target, 'gradlew')
   }
 
   let out: string = './socket.pom.xml'

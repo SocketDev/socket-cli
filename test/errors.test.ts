@@ -10,7 +10,7 @@ const testPath = __dirname
 describe('Error Narrowing', () => {
   it('should properly detect node errors', () => {
     try {
-      readFileSync(path.join(testPath, './enoent'))
+      readFileSync(path.join(testPath, 'enoent'))
     } catch (e) {
       assert.equal(isErrnoException(e), true)
     }
