@@ -1,4 +1,4 @@
-import fs from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import meow from 'meow'
@@ -58,41 +58,42 @@ async function run(
     flags: config.flags,
     allowUnknownFlags: false
   })
-
-  const verbose = cli.flags['verbose'] ?? false
-  const cwd = String(cli.flags['cwd']) || false
+  const verbose = !!cli.flags['verbose']
+  const cwd = <string>cli.flags['cwd'] ?? process.cwd()
   if (verbose) {
     console.group('- ', parentName, config.commandName, ':')
     console.group('- flags:', cli.flags)
     console.groupEnd()
     console.log('- input:', cli.input)
-    console.log('- cwd:', cwd || process.cwd())
+    console.log('- cwd:', cwd)
     console.groupEnd()
   }
-
   const subArgs = []
-  if (verbose) subArgs.push('--verbose')
-
-  const dir = cwd || '.'
-
-  if (fs.existsSync(path.join(dir, 'build.sbt'))) {
+  if (verbose) {
+    subArgs.push('--verbose')
+  }
+  const dir = cwd
+  if (existsSync(path.join(dir, 'build.sbt'))) {
     console.log(
       'Detected a Scala sbt build, running default Scala generator...'
     )
-    if (cwd) subArgs.push('--cwd', cwd)
+    if (cwd) {
+      subArgs.push('--cwd', cwd)
+    }
     subArgs.push(dir)
     await cmdManifestScala.run(subArgs, importMeta, { parentName })
     return
   }
-
-  if (fs.existsSync(path.join(dir, 'gradlew'))) {
+  if (existsSync(path.join(dir, 'gradlew'))) {
     console.log('Detected a gradle build, running default gradle generator...')
-    if (cwd) subArgs.push(cwd) // This command takes the cwd as first arg
+    if (cwd) {
+      // This command takes the cwd as first arg.
+      subArgs.push(cwd)
+    }
     await cmdManifestGradle.run(subArgs, importMeta, { parentName })
     return
   }
-
-  // Show new help screen and exit
+  // Show new help screen and exit.
   meow(
     `
     $ ${parentName} ${config.commandName}
