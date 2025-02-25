@@ -1,6 +1,6 @@
 'use strict'
 
-const { promises: fs, statSync } = require('node:fs')
+const { statSync } = require('node:fs')
 const path = require('node:path')
 
 function findUpSync(name, { cwd = process.cwd() }) {
@@ -22,11 +22,6 @@ function findUpSync(name, { cwd = process.cwd() }) {
   return undefined
 }
 
-async function readJson(filepath) {
-  return JSON.parse(await fs.readFile(filepath, 'utf8'))
-}
-
 module.exports = {
-  findUpSync,
-  readJson
+  findUpSync
 }

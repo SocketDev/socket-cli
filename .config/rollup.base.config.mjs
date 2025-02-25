@@ -37,7 +37,6 @@ const {
   ROLLUP_ENTRY_SUFFIX,
   ROLLUP_EXTERNAL_SUFFIX,
   SLASH_NODE_MODULES_SLASH,
-  SOCKET_WITH_SENTRY,
   VENDOR,
   babelConfigPath,
   rootPackageJsonPath,
