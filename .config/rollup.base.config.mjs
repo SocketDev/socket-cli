@@ -75,6 +75,10 @@ const requireUrlAssignmentRegExp =
 const splitUrlRequiresRegExp = /require\(["']u["']\s*\+\s*["']rl["']\)/g
 
 function isAncestorsExternal(id, depStats) {
+  const { rootPackageJsonPath } = constants
+
+  const { dependencies: pkgDeps } = require(rootPackageJsonPath)
+
   let currNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH)
   while (currNmIndex !== -1) {
     const nextNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH, currNmIndex + 1)
