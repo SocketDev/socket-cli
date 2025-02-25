@@ -5,15 +5,15 @@ const process = require('node:process')
 
 const constants = require('../dist/constants')
 
-const { DIST_TYPE } = constants
+const { CLI, DIST_TYPE, SOCKET_CLI_SENTRY_BUILD } = constants
 
 if (
   DIST_TYPE === 'require' &&
-  // The '@rollup/plugin-replace' will replace 'process.env.SOCKET_IS_SENTRY_BUILD'.
-  !process.env['SOCKET_IS_SENTRY_BUILD']
+  // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
+  !constants.ENV[SOCKET_CLI_SENTRY_BUILD]
 ) {
   // Lazily access constants.distPath.
-  require(`${constants.distPath}/cli.js`)
+  require(`${constants.distPath}/${CLI}.js`)
 } else {
   const path = require('node:path')
   const spawn = require('@npmcli/promise-spawn')
@@ -26,8 +26,8 @@ if (
     [
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
-      // The '@rollup/plugin-replace' will replace 'process.env.SOCKET_IS_SENTRY_BUILD'.
-      ...(process.env['SOCKET_IS_SENTRY_BUILD']
+      // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
+      ...(constants.ENV[SOCKET_CLI_SENTRY_BUILD]
         ? [
             '--require',
             // Lazily access constants.instrumentWithSentryPath.
@@ -35,7 +35,7 @@ if (
           ]
         : []),
       // Lazily access constants.distPath.
-      path.join(constants.distPath, 'cli.js'),
+      path.join(constants.distPath, `${CLI}.js`),
       ...process.argv.slice(2)
     ],
     {

@@ -11,7 +11,7 @@ import {
 } from './npm-paths'
 import constants from '../constants'
 
-const { NPX } = constants
+const { CLI, NPX } = constants
 
 export async function installLinks(
   realBinPath: string,
@@ -32,7 +32,7 @@ export async function installLinks(
     if (WIN32) {
       await cmdShim(
         // Lazily access constants.rootDistPath.
-        path.join(constants.rootDistPath, `${binName}-cli.js`),
+        path.join(constants.rootDistPath, `${binName}-${CLI}.js`),
         path.join(realBinPath, binName)
       )
     }
