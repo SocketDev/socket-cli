@@ -8,7 +8,9 @@ const spawn = require('@npmcli/promise-spawn')
 
 const constants = require('../dist/constants.js')
 
-const { NODE_MODULES, NPM, abortSignal } = constants
+const abortSignal = new AbortController().signal
+
+const { NODE_MODULES, NPM } = constants
 
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
@@ -19,7 +21,9 @@ for (const npmDir of versions) {
   const npmPath = path.join(npmFixturesPath, npmDir)
   const npmBinPath = path.join(npmPath, NODE_MODULES, '.bin')
 
-  console.log(`Running \`npm install --silent\` for ${npmDir} in ${process.version}`)
+  console.log(
+    `Running \`npm install --silent\` for ${npmDir} in ${process.version}`
+  )
   spawnSync(NPM, ['install', '--silent'], {
     cwd: npmPath,
     signal: abortSignal,
