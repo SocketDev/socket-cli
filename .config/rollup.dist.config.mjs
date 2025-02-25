@@ -21,7 +21,6 @@ import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
 import baseConfig from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
-import { formatObject } from '../scripts/utils/objects.js'
 import {
   getPackageName,
   isBuiltin,
@@ -165,6 +164,8 @@ async function updateDepStats(depStats) {
       )
     )
   )
+  // Remove Sentry as a direct dependency by default.
+  delete depStats.dependencies[SENTRY_NODE]
   // Remove transitives from dependencies.
   for (const key of Object.keys(oldDepStats?.transitives ?? {})) {
     if (pkgJson.dependencies[key]) {
@@ -173,20 +174,18 @@ async function updateDepStats(depStats) {
       delete depStats.dependencies[key]
     }
   }
+  // Lazily access constants.ENV[SOCKET_IS_SENTRY_BUILD].
+  if (constants.ENV[SOCKET_IS_SENTRY_BUILD]) {
+    // Add Sentry as a direct dependency for this build.
+    depStats.dependencies[SENTRY_NODE] = (await getSentryManifest()).version
+  }
   depStats.dependencies = toSortedObject(depStats.dependencies)
   depStats.devDependencies = toSortedObject(depStats.devDependencies)
   depStats.esm = toSortedObject(depStats.esm)
   depStats.external = toSortedObject(depStats.external)
   depStats.transitives = toSortedObject(depStats.transitives)
-  // Lazily access constants.ENV[SOCKET_IS_SENTRY_BUILD].
-  if (constants.ENV[SOCKET_IS_SENTRY_BUILD]) {
-    // Add Sentry as a regular dep for this build.
-    depStats.dependencies[SENTRY_NODE] = (await getSentryManifest()).version
-  } else {
-    delete depStats.dependencies[SENTRY_NODE]
-  }
   // Write dep stats.
-  await fs.writeFile(depStatsPath, `${formatObject(depStats)}\n`, 'utf8')
+  await writeJson(depStatsPath, toSortedObject(depStats), { spaces: 2 })
   // Update dependencies with additional inlined modules.
   editablePkgJson.update({
     dependencies: {
