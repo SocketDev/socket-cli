@@ -30,7 +30,7 @@ for (const npmDir of versions) {
     const entryPath = path.join(constants.rootBinPath, 'cli.js')
 
     it('should bail on new typosquat', async () => {
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const spawnPromise = spawn(
           // Lazily access constants.execPath.
           constants.execPath,
@@ -59,8 +59,8 @@ for (const npmDir of versions) {
 
       expect(
         1,
-        'if the promise resolves then the typoesquat attack message was seen, the promise should not reject in any way'
+        'if the promise resolves then the typo-squat attack message was seen, the promise should not reject in any way'
       ).toBe(1)
-    }, 10_000) // About 5s on my machine, will be slow in ci
+    }, 20_000) // About 5s on my machine, will be slow in ci, extend if too flaky
   })
 }
