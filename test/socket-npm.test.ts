@@ -22,12 +22,13 @@ for (const npmDir of versions) {
   spawnSync(NPM, ['install', '--silent'], {
     cwd: npmPath,
     signal: abortSignal,
-    stdio: 'ignore'
+    // stdio: 'ignore'
+    stdio: 'pipe'
   })
 
   describe(`Socket npm wrapper for ${npmDir}`, () => {
     // Lazily access constants.rootBinPath.
-    const entryPath = path.join(constants.rootBinPath, 'cli.js')
+    const entryPath = path.join(constants['rootBinPath'], 'cli.js')
 
     it('should bail on new typosquat', async () => {
       await new Promise<void>((resolve, reject) => {
@@ -44,7 +45,7 @@ for (const npmDir of versions) {
           }
         )
 
-        spawnPromise.process.stderr.on('data', buffer => {
+        spawnPromise.process.stderr.on('data', (buffer: Buffer) => {
           if (buffer.toString().includes('Possible typosquat attack')) {
             spawnPromise.process.kill('SIGINT')
             resolve()
