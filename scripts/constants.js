@@ -21,7 +21,6 @@ const SOCKET_IS_LEGACY_BUILD = 'SOCKET_IS_LEGACY_BUILD'
 const SOCKET_IS_PUBLISHED_BUILD = 'SOCKET_IS_PUBLISHED_BUILD'
 const SOCKET_IS_SENTRY_BUILD = 'SOCKET_IS_SENTRY_BUILD'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
-const TAP = 'TAP'
 const VITEST = 'VITEST'
 const VENDOR = 'vendor'
 
@@ -36,8 +35,6 @@ const LAZY_ENV = () => {
     [SOCKET_IS_PUBLISHED_BUILD]: envAsBoolean(env[SOCKET_IS_PUBLISHED_BUILD]),
     // Flag set to determine if this is the Sentry build.
     [SOCKET_IS_SENTRY_BUILD]: envAsBoolean(env[SOCKET_IS_SENTRY_BUILD]),
-    // Flag set when running in Node-tap.
-    [TAP]: envAsBoolean(env[TAP]),
     // Flag set when running in vitest
     [VITEST]: envAsBoolean(env[VITEST])
   })
@@ -89,7 +86,6 @@ const constants = createConstantsObject(
     SOCKET_IS_LEGACY_BUILD,
     SOCKET_IS_PUBLISHED_BUILD,
     SOCKET_IS_SENTRY_BUILD,
-    TAP,
     VENDOR,
     VITEST,
     babelConfigPath: undefined,

@@ -36,7 +36,6 @@ const {
   SOCKET_IS_LEGACY_BUILD,
   SOCKET_IS_PUBLISHED_BUILD,
   SOCKET_IS_SENTRY_BUILD,
-  TAP,
   VENDOR,
   VITEST,
   depStatsPath,
@@ -348,10 +347,6 @@ export default () => {
           "process.env['SOCKET_IS_SENTRY_BUILD']": JSON.stringify(
             // Lazily access constants.ENV[SOCKET_IS_SENTRY_BUILD].
             !!constants.ENV[SOCKET_IS_SENTRY_BUILD]
-          ),
-          "process.env['TAP']": JSON.stringify(
-            // Lazily access constants.ENV[TAP].
-            !!constants.ENV[TAP]
           ),
           "process.env['VITEST']": JSON.stringify(
             // Lazily access constants.ENV[VITEST].
