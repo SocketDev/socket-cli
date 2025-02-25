@@ -12,15 +12,19 @@ const {
   [kInternalsSymbol]: { createConstantsObject }
 } = registryConstants
 
+const CLI = 'cli'
 const CONSTANTS = 'constants'
 const MODULE_SYNC = 'module-sync'
+const NPM_INJECTION = 'npm-injection'
 const REQUIRE = 'require'
 const ROLLUP_ENTRY_SUFFIX = '?commonjs-entry'
 const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
-const SOCKET_IS_LEGACY_BUILD = 'SOCKET_IS_LEGACY_BUILD'
-const SOCKET_IS_PUBLISHED_BUILD = 'SOCKET_IS_PUBLISHED_BUILD'
-const SOCKET_IS_SENTRY_BUILD = 'SOCKET_IS_SENTRY_BUILD'
+const SHADOW_BIN = 'shadow-bin'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
+const SOCKET_CLI_LEGACY_BUILD = 'SOCKET_CLI_LEGACY_BUILD'
+const SOCKET_CLI_PUBLISHED_BUILD = 'SOCKET_CLI_PUBLISHED_BUILD'
+const SOCKET_CLI_SENTRY_BUILD = 'SOCKET_CLI_SENTRY_BUILD'
+const SOCKET_CLI_VERSION_HASH = 'SOCKET_CLI_VERSION_HASH'
 const TAP = 'TAP'
 const VENDOR = 'vendor'
 
@@ -30,11 +34,11 @@ const LAZY_ENV = () => {
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
     // Flag set to determine if this is the Legacy build.
-    [SOCKET_IS_LEGACY_BUILD]: envAsBoolean(env[SOCKET_IS_LEGACY_BUILD]),
+    [SOCKET_CLI_LEGACY_BUILD]: envAsBoolean(env[SOCKET_CLI_LEGACY_BUILD]),
     // Flag set to determine if this is a published build.
-    [SOCKET_IS_PUBLISHED_BUILD]: envAsBoolean(env[SOCKET_IS_PUBLISHED_BUILD]),
+    [SOCKET_CLI_PUBLISHED_BUILD]: envAsBoolean(env[SOCKET_CLI_PUBLISHED_BUILD]),
     // Flag set to determine if this is the Sentry build.
-    [SOCKET_IS_SENTRY_BUILD]: envAsBoolean(env[SOCKET_IS_SENTRY_BUILD]),
+    [SOCKET_CLI_SENTRY_BUILD]: envAsBoolean(env[SOCKET_CLI_SENTRY_BUILD]),
     // Flag set when running in Node-tap.
     [TAP]: envAsBoolean(env[TAP])
   })
@@ -76,16 +80,20 @@ const lazyTsconfigPath = () =>
 
 const constants = createConstantsObject(
   {
+    CLI,
     CONSTANTS,
     ENV: undefined,
     MODULE_SYNC,
+    NPM_INJECTION,
     REQUIRE,
     ROLLUP_ENTRY_SUFFIX,
     ROLLUP_EXTERNAL_SUFFIX,
+    SHADOW_BIN,
     SLASH_NODE_MODULES_SLASH,
-    SOCKET_IS_LEGACY_BUILD,
-    SOCKET_IS_PUBLISHED_BUILD,
-    SOCKET_IS_SENTRY_BUILD,
+    SOCKET_CLI_LEGACY_BUILD,
+    SOCKET_CLI_PUBLISHED_BUILD,
+    SOCKET_CLI_SENTRY_BUILD,
+    SOCKET_CLI_VERSION_HASH,
     TAP,
     VENDOR,
     babelConfigPath: undefined,

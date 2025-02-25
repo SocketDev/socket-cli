@@ -10,7 +10,7 @@ const spawn = require('@npmcli/promise-spawn')
 
 const constants = require('../dist/constants.js')
 
-const { NODE_MODULES, NPM, abortSignal } = constants
+const { CLI, NODE_MODULES, NPM, abortSignal } = constants
 
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
@@ -28,7 +28,7 @@ for (const npmDir of ['npm8', 'npm10']) {
 
   describe(`Socket npm wrapper for ${npmDir}`, () => {
     // Lazily access constants.rootBinPath.
-    const entryPath = path.join(constants.rootBinPath, 'cli.js')
+    const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
     it('should bail on new typosquat', async () => {
       await assert.doesNotReject(
