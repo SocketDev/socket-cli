@@ -2,8 +2,6 @@ import events from 'node:events'
 import https from 'node:https'
 import readline from 'node:readline'
 
-import { arrayChunk } from '@socketsecurity/registry/lib/arrays'
-
 import constants from '../../constants'
 import { getPublicToken } from '../sdk'
 
@@ -123,62 +121,66 @@ async function* createBatchGenerator(
   }
 }
 
-async function* mergeAsyncGenerators<T>(generators: AsyncGenerator<T>[]) {
+export async function* batchScan(
+  pkgIds: string[],
+  concurrencyLimit = 50
+): AsyncGenerator<SocketArtifact> {
   type GeneratorStep = {
-    generator: AsyncGenerator<T>
-    iteratorResult: IteratorResult<T>
+    generator: AsyncGenerator<SocketArtifact>
+    iteratorResult: IteratorResult<SocketArtifact>
   }
   type GeneratorEntry = {
-    generator: AsyncGenerator<T>
+    generator: AsyncGenerator<SocketArtifact>
     promise: Promise<GeneratorStep>
   }
   type ResolveFn = (value: GeneratorStep) => void
 
-  // Active generator queue.
+  const { length: pkgIdsCount } = pkgIds
   const running: GeneratorEntry[] = []
-  const enqueueGen = (generator: AsyncGenerator<T>): void => {
+  let index = 0
+  const enqueueGen = () => {
+    if (index >= pkgIdsCount) {
+      // No more work to do.
+      return
+    }
+    const chunk = pkgIds.slice(index, index + 25)
+    index += 25
+    const generator = createBatchGenerator(chunk)
+    continueGen(generator)
+  }
+  const continueGen = (generator: AsyncGenerator<SocketArtifact>) => {
     let resolveFn: ResolveFn
     running.push({
       generator,
-      promise: new Promise<GeneratorStep>(resolve => {
-        resolveFn = resolve
-      })
+      promise: new Promise<GeneratorStep>(resolve => (resolveFn = resolve))
     })
-    // Start generator execution.
     void generator
       .next()
-      .then(nextResult => resolveFn!({ generator, iteratorResult: nextResult }))
+      .then(res => resolveFn!({ generator, iteratorResult: res }))
   }
-  // Initialize all generators.
-  for (const generator of generators) {
-    enqueueGen(generator)
+  // Start initial batch of generators.
+  while (running.length < concurrencyLimit && index < pkgIdsCount) {
+    enqueueGen()
   }
   while (running.length > 0) {
-    // Wait for the next available generator result.
     // eslint-disable-next-line no-await-in-loop
     const { generator, iteratorResult } = await Promise.race(
       running.map(entry => entry.promise)
     )
-    // Find and remove the correct entry.
-    const index = running.findIndex(entry => entry.generator === generator)
-    if (index !== -1) {
-      running.splice(index, 1)
-    }
-    if (!iteratorResult.done) {
-      // Yield the iterator result value immediately.
+    // Remove generator.
+    running.splice(
+      running.findIndex(entry => entry.generator === generator),
+      1
+    )
+    if (iteratorResult.done) {
+      // Start a new generator if available.
+      enqueueGen()
+    } else {
       yield iteratorResult.value
-      // Continue fetching the next value from this generator.
-      enqueueGen(generator)
+      // Keep fetching values from this generator.
+      continueGen(generator)
     }
   }
-}
-
-export async function* batchScan(
-  pkgIds: string[]
-): AsyncGenerator<SocketArtifact> {
-  const chunks = arrayChunk(pkgIds, 25)
-  const generators = chunks.map(chunk => createBatchGenerator(chunk))
-  yield* mergeAsyncGenerators(generators)
 }
 
 export function isArtifactAlertCveFixable(
