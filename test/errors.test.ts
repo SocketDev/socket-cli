@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest'
 
 import { isErrnoException } from './dist/errors'
 
@@ -10,7 +10,7 @@ const testPath = __dirname
 describe('Error Narrowing', () => {
   it('should properly detect node errors', () => {
     try {
-      readFileSync(path.join(testPath, './enoent'))
+      readFileSync(path.join(testPath, 'enoent'))
     } catch (e) {
       expect(isErrnoException(e)).toBe(true)
     }

@@ -18,10 +18,11 @@ const {
 
 export default () =>
   baseConfig({
-    input: ['alert/rules', 'errors', 'path-resolve'].reduce((o, k) => {
-      o[k.replaceAll('/', '-')] = `${rootSrcPath}/utils/${k}.ts`
-      return o
-    }, {}),
+    input: {
+      'alert-rules': `${rootSrcPath}/utils/alert/rules.ts`,
+      errors: `${rootSrcPath}/utils/errors.ts`,
+      'path-resolve': `${rootSrcPath}/utils/path-resolve.ts`
+    },
     output: [
       {
         dir: 'test/dist',
@@ -29,7 +30,9 @@ export default () =>
         format: 'cjs',
         exports: 'auto',
         externalLiveBindings: false,
-        freeze: false
+        freeze: false,
+        sourcemap: true,
+        sourcemapDebugIds: true
       }
     ],
     ...(SUPPORTS_SYNC_ESM

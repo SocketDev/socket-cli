@@ -133,9 +133,7 @@ type SettingsType = (SocketSdkResultType<'postSettings'> & {
   success: true
 })['data']
 
-export function createAlertUXLookup(
-  settings: SettingsType
-): (context: {
+export function createAlertUXLookup(settings: SettingsType): (context: {
   package: { name: string; version: string }
   alert: { type: string }
 }) => RuleActionUX {
@@ -197,8 +195,8 @@ export async function uxLookup(
 void (async () => {
   const { orgs, settings } = await (async () => {
     try {
-      const socketSdk = await setupSdk(getPublicToken())
-      const orgResult = await socketSdk.getOrganizations()
+      const sockSdk = await setupSdk(getPublicToken())
+      const orgResult = await sockSdk.getOrganizations()
       if (!orgResult.success) {
         throw new Error(
           `Failed to fetch Socket organization info: ${orgResult.error.message}`
@@ -213,7 +211,7 @@ void (async () => {
           orgs.push(org)
         }
       }
-      const result = await socketSdk.postSettings(
+      const result = await sockSdk.postSettings(
         orgs.map(org => ({ organization: org.id }))
       )
       if (!result.success) {
@@ -226,7 +224,7 @@ void (async () => {
         settings: result.data
       }
     } catch (e: any) {
-      const cause = isObject(e) && 'cause' in e ? e.cause : undefined
+      const cause = isObject(e) && 'cause' in e ? e['cause'] : undefined
       if (
         isErrnoException(cause) &&
         (cause.code === 'ENOTFOUND' || cause.code === 'ECONNREFUSED')

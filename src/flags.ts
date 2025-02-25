@@ -1,4 +1,15 @@
-export const commonFlags = {
+import type { Flag } from 'meow'
+
+// TODO: not sure if I'm missing something but meow doesn't seem to expose this?
+type StringFlag = Flag<'string', string> | Flag<'string', string[], true>
+type BooleanFlag = Flag<'boolean', boolean> | Flag<'boolean', boolean[], true>
+type NumberFlag = Flag<'number', number> | Flag<'number', number[], true>
+type AnyFlag = StringFlag | BooleanFlag | NumberFlag
+
+// Note: we use this description in getFlagListOutput, meow doesn't care
+export type MeowFlags = Record<string, AnyFlag & { description: string }>
+
+export const commonFlags: MeowFlags = {
   help: {
     type: 'boolean',
     default: false,
@@ -7,20 +18,7 @@ export const commonFlags = {
   }
 }
 
-export const commandFlags = {
-  enable: {
-    type: 'boolean',
-    default: false,
-    description: 'Enables the Socket npm/npx wrapper'
-  },
-  disable: {
-    type: 'boolean',
-    default: false,
-    description: 'Disables the Socket npm/npx wrapper'
-  }
-}
-
-export const outputFlags = {
+export const outputFlags: MeowFlags = {
   json: {
     type: 'boolean',
     shortFlag: 'j',
@@ -35,7 +33,7 @@ export const outputFlags = {
   }
 }
 
-export const validationFlags = {
+export const validationFlags: MeowFlags = {
   all: {
     type: 'boolean',
     default: false,

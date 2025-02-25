@@ -5,7 +5,7 @@ import { getArboristNodeClassPath } from '../../npm-paths'
 import { getLogger } from '../../proc-log'
 
 import type { SafeEdge } from './edge'
-import type { Node as BaseNode } from '@npmcli/arborist'
+import type { Node as BaseNode, Link } from '@npmcli/arborist'
 
 type NodeClass = Omit<
   BaseNode,
@@ -14,6 +14,7 @@ type NodeClass = Omit<
   | 'canDedupe'
   | 'canReplace'
   | 'canReplaceWith'
+  | 'children'
   | 'deleteEdgeIn'
   | 'edgesIn'
   | 'edgesOut'
@@ -40,6 +41,7 @@ type NodeClass = Omit<
 > & {
   name: string
   version: string
+  children: Map<string, SafeNode | Link>
   edgesIn: Set<SafeEdge>
   edgesOut: Map<string, SafeEdge>
   from: SafeNode | null

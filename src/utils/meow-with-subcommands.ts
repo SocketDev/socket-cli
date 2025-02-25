@@ -3,13 +3,14 @@ import meow from 'meow'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 
 import { getFlagListOutput, getHelpListOutput } from './output-formatting'
-import { commonFlags } from '../flags'
+import { MeowFlags, commonFlags } from '../flags'
 
 import type { Options } from 'meow'
 
 interface CliAlias {
   description: string
   argv: readonly string[]
+  hidden?: boolean
 }
 
 type CliAliases = Record<string, CliAlias>
@@ -24,6 +25,17 @@ export interface CliSubcommand {
   description: string
   hidden?: boolean
   run: CliSubcommandRun
+}
+
+// Property names are picked such that the name is at the top when the props
+// get ordered by alphabet while flags is near the bottom and the help text
+// at the bottom, because they tend ot occupy the most lines of code.
+export interface CliCommandConfig {
+  commandName: string // tmp optional while we migrate
+  description: string
+  hidden: boolean
+  flags: MeowFlags // tmp optional while we migrate
+  help: (command: string, config: CliCommandConfig) => string
 }
 
 interface MeowOptions extends Options<any> {
@@ -75,14 +87,19 @@ export async function meowWithSubcommands(
         {
           ...toSortedObject(
             Object.fromEntries(
-              Object.entries(subcommands).filter(entry => !entry[1].hidden)
+              Object.entries(subcommands).filter(
+                ({ 1: subcommand }) => !subcommand.hidden
+              )
             )
           ),
           ...toSortedObject(
             Object.fromEntries(
-              Object.entries(aliases).filter(
-                entry => !subcommands[entry[1]?.argv[0]!]?.hidden
-              )
+              Object.entries(aliases).filter(({ 1: alias }) => {
+                const { hidden } = alias
+                const cmdName = hidden ? '' : alias.argv[0]
+                const subcommand = cmdName ? subcommands[cmdName] : undefined
+                return subcommand && !subcommand.hidden
+              })
             )
           )
         },
@@ -103,4 +120,37 @@ export async function meowWithSubcommands(
     }
   )
   cli.showHelp()
+}
+
+/**
+ * Note: meow will exit immediately if it calls its .showHelp()
+ */
+export function meowOrExit({
+  allowUnknownFlags, // commands that pass-through args need to allow this
+  argv,
+  config,
+  importMeta,
+  parentName
+}: {
+  argv: ReadonlyArray<string>
+  config: CliCommandConfig
+  parentName: string
+  importMeta: ImportMeta
+  allowUnknownFlags?: boolean
+}) {
+  const command = `${parentName} ${config.commandName}`
+
+  const help = config.help(command, config)
+
+  // This exits if .printHelp() is called either by meow itself or by us.
+  const cli = meow({
+    argv,
+    description: config.description,
+    help,
+    importMeta,
+    flags: config.flags,
+    allowUnknownFlags: Boolean(allowUnknownFlags)
+  })
+
+  return cli
 }

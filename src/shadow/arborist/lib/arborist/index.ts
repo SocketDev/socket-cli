@@ -1,12 +1,33 @@
+import process from 'node:process'
+
 import { kRiskyReify, reify } from './reify'
+import constants from '../../../../constants'
 import { getArboristClassPath } from '../../../npm-paths'
 
 import type { ArboristClass, ArboristReifyOptions } from './types'
 import type { SafeNode } from '../node'
 
+const {
+  SOCKET_CLI_SAFE_WRAPPER,
+  kInternalsSymbol,
+  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIPC }
+} = constants
+
 export const Arborist: ArboristClass = require(getArboristClassPath())
 
 export const kCtorArgs = Symbol('ctorArgs')
+
+export const SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
+  __proto__: null,
+  audit: false,
+  dryRun: true,
+  fund: false,
+  ignoreScripts: true,
+  progress: false,
+  save: false,
+  saveBundle: false,
+  silent: true
+}
 
 // Implementation code not related to our custom behavior is based on
 // https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/index.js:
@@ -14,14 +35,10 @@ export class SafeArborist extends Arborist {
   constructor(...ctorArgs: ConstructorParameters<ArboristClass>) {
     super(
       {
-        ...ctorArgs[0],
-        audit: true,
-        dryRun: true,
-        ignoreScripts: true,
-        save: false,
-        saveBundle: false,
-        // progress: false,
-        fund: false
+        path:
+          (ctorArgs.length ? ctorArgs[0]?.path : undefined) ?? process.cwd(),
+        ...(ctorArgs.length ? ctorArgs[0] : undefined),
+        ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
       },
       ...ctorArgs.slice(1)
     )
@@ -31,10 +48,23 @@ export class SafeArborist extends Arborist {
   async [kRiskyReify](
     ...args: Parameters<InstanceType<ArboristClass>['reify']>
   ): Promise<SafeNode> {
-    // SafeArborist has suffered side effects and must be rebuilt from scratch.
-    const arb = new Arborist(...(this as any)[kCtorArgs])
+    const ctorArgs = (this as any)[kCtorArgs]
+    const arb = new Arborist(
+      {
+        ...(ctorArgs.length ? ctorArgs[0] : undefined),
+        progress: false
+      },
+      ...ctorArgs.slice(1)
+    )
+    arb.actualTree = this.actualTree
     arb.idealTree = this.idealTree
-    const ret = await arb.reify(...args)
+    const ret = await (arb.reify as (...args: any[]) => Promise<SafeNode>)(
+      {
+        ...(args.length ? args[0] : undefined),
+        progress: false
+      },
+      ...args.slice(1)
+    )
     Object.assign(this, arb)
     return ret
   }
@@ -44,24 +74,25 @@ export class SafeArborist extends Arborist {
     this: SafeArborist,
     ...args: Parameters<InstanceType<ArboristClass>['reify']>
   ): Promise<SafeNode> {
-    const options = <ArboristReifyOptions>(args[0] ? { ...args[0] } : {})
-    if (options.dryRun) {
-      return await this[kRiskyReify](...args)
+    const options = <ArboristReifyOptions>{
+      __proto__: null,
+      ...(args.length ? args[0] : undefined)
     }
-    const old = {
-      ...options,
-      dryRun: false,
-      save: Boolean(options.save ?? true),
-      saveBundle: Boolean(options.saveBundle ?? false)
+    const safeArgs = [
+      {
+        ...options,
+        progress: false
+      },
+      ...args.slice(1)
+    ]
+    if (options.dryRun || !(await getIPC(SOCKET_CLI_SAFE_WRAPPER))) {
+      return await this[kRiskyReify](...safeArgs)
     }
+    Object.assign(options, SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES)
+    const old = args[0]
     args[0] = options
-    options.dryRun = true
-    options.save = false
-    options.saveBundle = false
-    await super.reify(...args)
-    options.dryRun = old.dryRun
-    options.save = old.save
-    options.saveBundle = old.saveBundle
-    return await Reflect.apply(reify, this, args)
+    await super.reify(...safeArgs)
+    args[0] = old
+    return await Reflect.apply(reify, this, safeArgs)
   }
 }

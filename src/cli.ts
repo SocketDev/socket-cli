@@ -7,25 +7,35 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 import colors from 'yoctocolors-cjs'
 
-import * as cliCommands from './commands'
+import { cmdAction } from './commands/action/cmd-action'
+import { cmdAnalytics } from './commands/analytics/cmd-analytics'
+import { cmdAuditLog } from './commands/audit-log/cmd-audit-log'
+import { cmdCdxgen } from './commands/cdxgen/cmd-cdxgen'
+import { cmdScanCreate } from './commands/dependencies/cmd-dependencies'
+import { cmdDiffScan } from './commands/diff-scan/cmd-diff-scan'
+import { cmdFix } from './commands/fix/cmd-fix'
+import { cmdInfo } from './commands/info/cmd-info'
+import { cmdLogin } from './commands/login/cmd-login'
+import { cmdLogout } from './commands/logout/cmd-logout'
+import { cmdManifest } from './commands/manifest/cmd-manifest'
+import { cmdNpm } from './commands/npm/cmd-npm'
+import { cmdNpx } from './commands/npx/cmd-npx'
+import { cmdOops } from './commands/oops/cmd-oops'
+import { cmdOptimize } from './commands/optimize/cmd-optimize'
+import { cmdOrganizations } from './commands/organizations/cmd-organizations'
+import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm'
+import { cmdRawNpx } from './commands/raw-npx/cmd-raw-npx'
+import { cmdReport } from './commands/report/cmd-report'
+import { cmdRepos } from './commands/repos/cmd-repos'
+import { cmdScan } from './commands/scan/cmd-scan'
+import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed'
+import { cmdWrapper } from './commands/wrapper/cmd-wrapper'
 import constants from './constants'
-import { AuthError, InputError } from './utils/errors'
-import { logSymbols } from './utils/logging'
+import { AuthError, InputError, captureException } from './utils/errors'
+import { getLogSymbols } from './utils/logging'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
 
 const { rootPkgJsonPath } = constants
-
-const formattedCliCommands = Object.fromEntries(
-  Object.entries(cliCommands).map(entry => {
-    const key = entry[0]
-    entry[0] = camelToHyphen(key)
-    return entry
-  })
-)
-
-function camelToHyphen(str: string): string {
-  return str.replace(/[A-Z]+/g, '-$&').toLowerCase()
-}
 
 // TODO: Add autocompletion using https://socket.dev/npm/package/omelette
 void (async () => {
@@ -36,41 +46,69 @@ void (async () => {
   })
 
   try {
-    await meowWithSubcommands(formattedCliCommands, {
-      aliases: {
-        ci: {
-          description: 'Alias for "report create --view --strict"',
-          argv: ['report', 'create', '--view', '--strict']
-        }
+    await meowWithSubcommands(
+      {
+        action: cmdAction,
+        cdxgen: cmdCdxgen,
+        fix: cmdFix,
+        info: cmdInfo,
+        login: cmdLogin,
+        logout: cmdLogout,
+        npm: cmdNpm,
+        npx: cmdNpx,
+        oops: cmdOops,
+        optimize: cmdOptimize,
+        organization: cmdOrganizations,
+        'raw-npm': cmdRawNpm,
+        'raw-npx': cmdRawNpx,
+        report: cmdReport,
+        wrapper: cmdWrapper,
+        scan: cmdScan,
+        'audit-log': cmdAuditLog,
+        repos: cmdRepos,
+        dependencies: cmdScanCreate,
+        analytics: cmdAnalytics,
+        'diff-scan': cmdDiffScan,
+        'threat-feed': cmdThreatFeed,
+        manifest: cmdManifest
       },
-      argv: process.argv.slice(2),
-      name: 'socket',
-      importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta
-    })
-  } catch (err) {
+      {
+        aliases: {
+          ci: {
+            description: 'Alias for "report create --view --strict"',
+            argv: ['report', 'create', '--view', '--strict']
+          }
+        },
+        argv: process.argv.slice(2),
+        name: 'socket',
+        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta
+      }
+    )
+  } catch (e: any) {
+    process.exitCode = 1
     let errorBody: string | undefined
     let errorTitle: string
     let errorMessage = ''
-    if (err instanceof AuthError) {
+    if (e instanceof AuthError) {
       errorTitle = 'Authentication error'
-      errorMessage = err.message
-    } else if (err instanceof InputError) {
+      errorMessage = e.message
+    } else if (e instanceof InputError) {
       errorTitle = 'Invalid input'
-      errorMessage = err.message
-      errorBody = err.body
-    } else if (err instanceof Error) {
+      errorMessage = e.message
+      errorBody = e.body
+    } else if (e instanceof Error) {
       errorTitle = 'Unexpected error'
-      errorMessage = messageWithCauses(err)
-      errorBody = stackWithCauses(err)
+      errorMessage = messageWithCauses(e)
+      errorBody = stackWithCauses(e)
     } else {
       errorTitle = 'Unexpected error with no details'
     }
     console.error(
-      `${logSymbols.error} ${colors.bgRed(colors.white(errorTitle + ':'))} ${errorMessage}`
+      `${getLogSymbols().error} ${colors.bgRed(colors.white(errorTitle + ':'))} ${errorMessage}`
     )
     if (errorBody) {
       console.error(`\n${errorBody}`)
     }
-    process.exit(1)
+    await captureException(e)
   }
 })()

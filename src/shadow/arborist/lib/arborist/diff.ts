@@ -14,7 +14,6 @@ function getUrlOrigin(input: string): string {
 
 export type PackageDetail = {
   node: SafeNode
-  origin: string
   existing?: SafeNode | undefined
 }
 
@@ -72,11 +71,12 @@ export function getPackagesToQueryFromDiff(
         keep = action !== 'REMOVE'
       }
       if (keep && pkgNode?.resolved && (!oldNode || oldNode.resolved)) {
-        const origin = getUrlOrigin(pkgNode.resolved)
-        if (includeUnknownOrigin || origin === NPM_REGISTRY_URL) {
+        if (
+          includeUnknownOrigin ||
+          getUrlOrigin(pkgNode.resolved) === NPM_REGISTRY_URL
+        ) {
           details.push({
             node: pkgNode,
-            origin,
             existing
           })
         }
@@ -90,11 +90,12 @@ export function getPackagesToQueryFromDiff(
     const { unchanged } = diff_!
     for (let i = 0, { length } = unchanged; i < length; i += 1) {
       const pkgNode = unchanged[i]!
-      const origin = getUrlOrigin(pkgNode.resolved!)
-      if (includeUnknownOrigin || origin === NPM_REGISTRY_URL) {
+      if (
+        includeUnknownOrigin ||
+        getUrlOrigin(pkgNode.resolved!) === NPM_REGISTRY_URL
+      ) {
         details.push({
           node: pkgNode,
-          origin,
           existing: pkgNode
         })
       }

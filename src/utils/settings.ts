@@ -76,7 +76,7 @@ function getSettingsPath(): string | undefined {
       }
     }
     _settingsPath = dataHome
-      ? path.join(dataHome, 'socket', 'settings')
+      ? path.join(dataHome, 'socket/settings')
       : undefined
   }
   return _settingsPath

@@ -1,4 +1,4 @@
-import { promises as fs, realpathSync } from 'node:fs'
+import { existsSync, promises as fs, realpathSync, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -19,19 +19,24 @@ type GlobWithGitIgnoreOptions = GlobOptions & {
   socketConfig?: SocketYml | undefined
 }
 
-const { NPM, shadowBinPath } = constants
+const { NODE_MODULES, NPM, shadowBinPath } = constants
 
 async function filterGlobResultToSupportedFiles(
   entries: string[],
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data']
 ): Promise<string[]> {
-  const patterns = ['golang', NPM, 'pypi'].reduce((r: string[], n: string) => {
-    const supported = supportedFiles[n]
-    r.push(
-      ...(supported ? Object.values(supported).map(p => `**/${p.pattern}`) : [])
-    )
-    return r
-  }, [])
+  const patterns = ['golang', NPM, 'maven', 'pypi'].reduce(
+    (r: string[], n: string) => {
+      const supported = supportedFiles[n]
+      r.push(
+        ...(supported
+          ? Object.values(supported).map(p => `**/${p.pattern}`)
+          : [])
+      )
+      return r
+    },
+    []
+  )
   return entries.filter(p => micromatch.some(p, patterns))
 }
 
@@ -84,6 +89,9 @@ async function globWithGitIgnore(
     return result
   }
   const { absolute } = globOptions
+
+  // Note: the input files must be INSIDE the cwd. If you get strange looking
+  // relative path errors here, most likely your path is outside the given cwd.
   const filtered = ignore()
     .add(ignores)
     .filter(absolute ? result.map(p => path.relative(cwd, p)) : result)
@@ -176,28 +184,54 @@ export function findBinPathDetailsSync(binName: string): {
       all: true,
       nothrow: true
     }) ?? []
-  const binPath = bins.find((binPath, i) => {
+  let binPath: string | undefined
+  for (let i = 0, { length } = bins; i < length; i += 1) {
+    const bin = realpathSync.native(bins[i]!)
     // Skip our bin directory if it's in the front.
-    if (realpathSync(path.dirname(binPath)) === shadowBinPath) {
+    if (path.dirname(bin) === shadowBinPath) {
       shadowIndex = i
-      return false
+    } else {
+      binPath = bin
+      break
     }
-    return true
-  })
+  }
   return { name: binName, path: binPath, shadowed: shadowIndex !== -1 }
 }
 
-export function findNpmPathSync(filepath: string): string | undefined {
-  let curPath = filepath
+export function findNpmPathSync(npmBinPath: string): string | undefined {
+  let thePath = npmBinPath
   while (true) {
-    if (path.basename(curPath) === NPM) {
-      return curPath
+    const nmPath = path.join(thePath, NODE_MODULES)
+    if (
+      // npm bin paths may look like:
+      // /usr/local/share/npm/bin/npm
+      // /Users/SomeUsername/.nvm/versions/node/vX.X.X/bin/npm
+      // C:\Users\SomeUsername\AppData\Roaming\npm\bin\npm.cmd
+      // OR
+      // C:\Program Files\nodejs\npm.cmd
+      //
+      // In all cases the npm path contains a node_modules folder:
+      // /usr/local/share/npm/bin/npm/node_modules
+      // C:\Program Files\nodejs\node_modules
+      //
+      // Use existsSync here because statsSync, even with { throwIfNoEntry: false },
+      // will throw an ENOTDIR error for paths like ./a-file-that-exists/a-directory-that-does-not.
+      // See https://github.com/nodejs/node/issues/56993.
+      existsSync(nmPath) &&
+      statSync(nmPath, { throwIfNoEntry: false })?.isDirectory() &&
+      // Optimistically look for the default location.
+      (path.basename(thePath) === NPM ||
+        // Chocolatey installs npm bins in the same directory as node bins.
+        // Lazily access constants.WIN32.
+        (constants.WIN32 && existsSync(path.join(thePath, `${NPM}.cmd`))))
+    ) {
+      return thePath
     }
-    const parent = path.dirname(curPath)
-    if (parent === curPath) {
+    const parent = path.dirname(thePath)
+    if (parent === thePath) {
       return undefined
     }
-    curPath = parent
+    thePath = parent
   }
 }
 

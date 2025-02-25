@@ -1,6 +1,9 @@
-import { realpathSync } from 'node:fs'
+import { existsSync } from 'node:fs'
+import Module from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
+
+import { normalizePath } from '@socketsecurity/registry/lib/path'
 
 import constants from '../constants'
 import { findBinPathDetailsSync, findNpmPathSync } from '../utils/path-resolve'
@@ -65,16 +68,15 @@ export function isNpxBinPathShadowed() {
 let _npmPath: string | undefined
 export function getNpmPath() {
   if (_npmPath === undefined) {
-    const npmEntrypoint = path.dirname(realpathSync.native(getNpmBinPath()))
-    _npmPath = findNpmPathSync(npmEntrypoint)
+    const npmBinPath = getNpmBinPath()
+    _npmPath = npmBinPath ? findNpmPathSync(npmBinPath) : undefined
     if (!_npmPath) {
-      console.error(
-        `Unable to find npm CLI install directory.
-    Searched parent directories of ${npmEntrypoint}.
-
-    This is may be a bug with socket-npm related to changes to the npm CLI.
-    Please report to ${SOCKET_CLI_ISSUES_URL}.`
-      )
+      let message = 'Unable to find npm CLI install directory.'
+      if (npmBinPath) {
+        message += `\nSearched parent directories of ${path.dirname(npmBinPath)}.`
+      }
+      message += `\n\nThis is may be a bug with socket-npm related to changes to the npm CLI.\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
+      console.error(message)
       // The exit code 127 indicates that the command or binary being executed
       // could not be found.
       process.exit(127)
@@ -83,18 +85,33 @@ export function getNpmPath() {
   return _npmPath
 }
 
-let _npmNmPath: string | undefined
-export function getNpmNodeModulesPath() {
-  if (_npmNmPath === undefined) {
-    _npmNmPath = path.join(getNpmPath(), NODE_MODULES)
+let _npmRequire: NodeJS.Require | undefined
+export function getNpmRequire(): NodeJS.Require {
+  if (_npmRequire === undefined) {
+    const npmPath = getNpmPath()
+    const npmNmPath = path.join(npmPath, NODE_MODULES, NPM)
+    _npmRequire = Module.createRequire(
+      path.join(existsSync(npmNmPath) ? npmNmPath : npmPath, '<dummy-basename>')
+    )
   }
-  return _npmNmPath
+  return _npmRequire
 }
 
 let _arboristPkgPath: string | undefined
 export function getArboristPackagePath() {
   if (_arboristPkgPath === undefined) {
-    _arboristPkgPath = path.join(getNpmNodeModulesPath(), '@npmcli/arborist')
+    const pkgName = '@npmcli/arborist'
+    const mainPathWithForwardSlashes = normalizePath(
+      getNpmRequire().resolve(pkgName)
+    )
+    const arboristPkgPathWithForwardSlashes = mainPathWithForwardSlashes.slice(
+      0,
+      mainPathWithForwardSlashes.lastIndexOf(pkgName) + pkgName.length
+    )
+    // Lazily access constants.WIN32.
+    _arboristPkgPath = constants.WIN32
+      ? path.normalize(arboristPkgPathWithForwardSlashes)
+      : arboristPkgPathWithForwardSlashes
   }
   return _arboristPkgPath
 }

@@ -1,11 +1,13 @@
 import events from 'node:events'
 import https from 'node:https'
-import rl from 'node:readline'
+import readline from 'node:readline'
 
 import constants from '../../constants'
 import { getPublicToken } from '../sdk'
 
-export type CveAlertType = 'criticalCVE' | 'cve' | 'mediumCVE' | 'mildCVE'
+import type { IncomingMessage } from 'node:http'
+
+export type CveAlertType = 'cve' | 'mediumCVE' | 'mildCVE' | 'criticalCVE'
 
 export type ArtifactAlertCveFixable = Omit<
   SocketArtifactAlert,
@@ -38,8 +40,8 @@ export type SocketArtifactAlert = {
 
 export type SocketArtifact = {
   type: string
+  name: string
   namespace?: string
-  name?: string
   version?: string
   subpath?: string
   release?: string
@@ -74,32 +76,126 @@ export type SocketArtifact = {
   batchIndex?: number
 }
 
-const { API_V0_URL, abortSignal } = constants
+const {
+  ALERT_TYPE_CRITICAL_CVE,
+  ALERT_TYPE_CVE,
+  ALERT_TYPE_MEDIUM_CVE,
+  ALERT_TYPE_MILD_CVE,
+  ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE,
+  CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
+  CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE,
+  abortSignal
+} = constants
 
-export async function* batchScan(
-  pkgIds: string[]
+async function* createBatchGenerator(
+  chunk: string[]
 ): AsyncGenerator<SocketArtifact> {
+  // Adds the first 'abort' listener to abortSignal.
   const req = https
-    .request(`${API_V0_URL}/purl?alerts=true`, {
+    // Lazily access constants.BATCH_PURL_ENDPOINT.
+    .request(constants.BATCH_PURL_ENDPOINT, {
       method: 'POST',
       headers: {
-        Authorization: `Basic ${Buffer.from(`${getPublicToken()}:`).toString('base64url')}`
+        Authorization: `Basic ${btoa(`${getPublicToken()}:`)}`
       },
       signal: abortSignal
     })
     .end(
       JSON.stringify({
-        components: pkgIds.map(id => ({ purl: `pkg:npm/${id}` }))
+        components: chunk.map(id => ({ purl: `pkg:npm/${id}` }))
       })
     )
-  const { 0: res } = await events.once(req, 'response')
-  const ok = res.statusCode >= 200 && res.statusCode <= 299
+  // Adds the second 'abort' listener to abortSignal.
+  const { 0: res } = <[IncomingMessage]>(
+    await events.once(req, 'response', { signal: abortSignal })
+  )
+  const ok = res.statusCode! >= 200 && res.statusCode! <= 299
   if (!ok) {
     throw new Error(`Socket API Error: ${res.statusCode}`)
   }
-  const rli = rl.createInterface(res)
+  const rli = readline.createInterface({
+    input: res,
+    crlfDelay: Infinity,
+    signal: abortSignal
+  })
   for await (const line of rli) {
-    yield JSON.parse(line)
+    yield <SocketArtifact>JSON.parse(line)
+  }
+}
+
+export async function* batchScan(
+  pkgIds: string[],
+  concurrencyLimit = 50
+): AsyncGenerator<SocketArtifact> {
+  type GeneratorStep = {
+    generator: AsyncGenerator<SocketArtifact>
+    iteratorResult: IteratorResult<SocketArtifact>
+  }
+  type GeneratorEntry = {
+    generator: AsyncGenerator<SocketArtifact>
+    promise: Promise<GeneratorStep>
+  }
+  type ResolveFn = (value: GeneratorStep) => void
+
+  // The createBatchGenerator method will add 2 'abort' event listeners to
+  // abortSignal so we multiply the concurrencyLimit by 2.
+  const neededMaxListeners = concurrencyLimit * 2
+  // Increase abortSignal max listeners count to avoid Node's MaxListenersExceededWarning.
+  const oldAbortSignalMaxListeners = events.getMaxListeners(abortSignal)
+  let abortSignalMaxListeners = oldAbortSignalMaxListeners
+  if (oldAbortSignalMaxListeners < neededMaxListeners) {
+    abortSignalMaxListeners = oldAbortSignalMaxListeners + neededMaxListeners
+    events.setMaxListeners(abortSignalMaxListeners, abortSignal)
+  }
+  const { length: pkgIdsCount } = pkgIds
+  const running: GeneratorEntry[] = []
+  let index = 0
+  const enqueueGen = () => {
+    if (index >= pkgIdsCount) {
+      // No more work to do.
+      return
+    }
+    const chunk = pkgIds.slice(index, index + 25)
+    index += 25
+    const generator = createBatchGenerator(chunk)
+    continueGen(generator)
+  }
+  const continueGen = (generator: AsyncGenerator<SocketArtifact>) => {
+    let resolveFn: ResolveFn
+    running.push({
+      generator,
+      promise: new Promise<GeneratorStep>(resolve => (resolveFn = resolve))
+    })
+    void generator
+      .next()
+      .then(res => resolveFn!({ generator, iteratorResult: res }))
+  }
+  // Start initial batch of generators.
+  while (running.length < concurrencyLimit && index < pkgIdsCount) {
+    enqueueGen()
+  }
+  while (running.length > 0) {
+    // eslint-disable-next-line no-await-in-loop
+    const { generator, iteratorResult } = await Promise.race(
+      running.map(entry => entry.promise)
+    )
+    // Remove generator.
+    running.splice(
+      running.findIndex(entry => entry.generator === generator),
+      1
+    )
+    if (iteratorResult.done) {
+      // Start a new generator if available.
+      enqueueGen()
+    } else {
+      yield iteratorResult.value
+      // Keep fetching values from this generator.
+      continueGen(generator)
+    }
+  }
+  // Reset abortSignal max listeners count.
+  if (abortSignalMaxListeners > oldAbortSignalMaxListeners) {
+    events.setMaxListeners(oldAbortSignalMaxListeners, abortSignal)
   }
 }
 
@@ -108,19 +204,25 @@ export function isArtifactAlertCveFixable(
 ): alert is ArtifactAlertCveFixable {
   const { type } = alert
   return (
-    (type === 'cve' ||
-      type === 'mediumCVE' ||
-      type === 'mildCVE' ||
-      type === 'criticalCVE') &&
-    !!alert.props?.['firstPatchedVersionIdentifier'] &&
-    !!alert.props?.['vulnerableVersionRange']
+    (type === ALERT_TYPE_CVE ||
+      type === ALERT_TYPE_MEDIUM_CVE ||
+      type === ALERT_TYPE_MILD_CVE ||
+      type === ALERT_TYPE_CRITICAL_CVE) &&
+    !!alert.props?.[CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER] &&
+    !!alert.props?.[CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE]
   )
+}
+
+export function isArtifactAlertUpgradeFixable(
+  alert: SocketArtifactAlert
+): alert is ArtifactAlertFixable {
+  return alert.type === ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE
 }
 
 export function isArtifactAlertFixable(
   alert: SocketArtifactAlert
 ): alert is ArtifactAlertFixable {
   return (
-    alert.type === 'socketUpgradeAvailable' || isArtifactAlertCveFixable(alert)
+    isArtifactAlertUpgradeFixable(alert) || isArtifactAlertCveFixable(alert)
   )
 }

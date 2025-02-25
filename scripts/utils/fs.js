@@ -1,6 +1,6 @@
 'use strict'
 
-const fs = require('node:fs')
+const { statSync } = require('node:fs')
 const path = require('node:path')
 
 function findUpSync(name, { cwd = process.cwd() }) {
@@ -11,7 +11,7 @@ function findUpSync(name, { cwd = process.cwd() }) {
     for (const name of names) {
       const filePath = path.join(dir, name)
       try {
-        const stats = fs.statSync(filePath)
+        const stats = statSync(filePath)
         if (stats.isFile()) {
           return filePath
         }
@@ -22,11 +22,6 @@ function findUpSync(name, { cwd = process.cwd() }) {
   return undefined
 }
 
-function readJsonSync(filepath) {
-  return JSON.parse(fs.readFileSync(filepath, 'utf8'))
-}
-
 module.exports = {
-  findUpSync,
-  readJsonSync
+  findUpSync
 }

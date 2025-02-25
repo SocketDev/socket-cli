@@ -228,11 +228,6 @@ export default function baseConfig(extendConfig = {}) {
       purgePolyfills.rollup({
         replacements: {}
       }),
-      replacePlugin({
-        delimiters: ['(?<=(?:require\\(|from\\s*)["\'])', '(?=["\'])'],
-        preventAssignment: false,
-        values: builtinAliases
-      }),
       // Convert un-prefixed built-in imports into "node:"" prefixed forms.
       replacePlugin({
         delimiters: ['(?<=(?:require\\(|from\\s*)["\'])', '(?=["\'])'],
