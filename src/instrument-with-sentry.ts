@@ -13,8 +13,8 @@ const {
 
 const debugging = constants.ENV.SOCKET_CLI_DEBUG
 
-// The '@rollup/plugin-replace' will replace 'process.env.SOCKET_WITH_SENTRY'.
-if (process.env['SOCKET_WITH_SENTRY']) {
+// The '@rollup/plugin-replace' will replace 'process.env.SOCKET_IS_SENTRY_BUILD'.
+if (process.env['SOCKET_IS_SENTRY_BUILD']) {
   setSentry(Sentry)
   if (debugging) {
     console.log('[DEBUG] Setting up Sentry...')
@@ -31,8 +31,8 @@ if (process.env['SOCKET_WITH_SENTRY']) {
   })
   Sentry.setTag(
     'environment',
-    // The '@rollup/plugin-replace' will replace 'process.env.SOCKET_IS_PUBLISHED'.
-    process.env['SOCKET_IS_PUBLISHED'] ? 'pub' : process.env['NODE_ENV']
+    // The '@rollup/plugin-replace' will replace 'process.env.SOCKET_IS_PUBLISHED_BUILD'.
+    process.env['SOCKET_IS_PUBLISHED_BUILD'] ? 'pub' : process.env['NODE_ENV']
   )
   Sentry.setTag('debugging', debugging)
   Sentry.setTag(

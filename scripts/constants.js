@@ -17,23 +17,28 @@ const MODULE_SYNC = 'module-sync'
 const REQUIRE = 'require'
 const ROLLUP_ENTRY_SUFFIX = '?commonjs-entry'
 const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
-const SOCKET_IS_PUBLISHED = 'SOCKET_IS_PUBLISHED'
-const SOCKET_WITH_SENTRY = 'SOCKET_WITH_SENTRY'
+const SOCKET_IS_LEGACY_BUILD = 'SOCKET_IS_LEGACY_BUILD'
+const SOCKET_IS_PUBLISHED_BUILD = 'SOCKET_IS_PUBLISHED_BUILD'
+const SOCKET_IS_SENTRY_BUILD = 'SOCKET_IS_SENTRY_BUILD'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
 const TAP = 'TAP'
 const VENDOR = 'vendor'
 
-const LAZY_ENV = () =>
-  Object.freeze({
+const LAZY_ENV = () => {
+  const { env } = process
+  return Object.freeze({
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
-    // Flag set to determine if this is the published package build.
-    [SOCKET_IS_PUBLISHED]: envAsBoolean(process.env[SOCKET_IS_PUBLISHED]),
+    // Flag set to determine if this is the Legacy build.
+    [SOCKET_IS_LEGACY_BUILD]: envAsBoolean(env[SOCKET_IS_LEGACY_BUILD]),
+    // Flag set to determine if this is a published build.
+    [SOCKET_IS_PUBLISHED_BUILD]: envAsBoolean(env[SOCKET_IS_PUBLISHED_BUILD]),
     // Flag set to determine if this is the Sentry build.
-    [SOCKET_WITH_SENTRY]: envAsBoolean(process.env[SOCKET_WITH_SENTRY]),
+    [SOCKET_IS_SENTRY_BUILD]: envAsBoolean(env[SOCKET_IS_SENTRY_BUILD]),
     // Flag set when running in Node-tap.
-    [TAP]: envAsBoolean(process.env[TAP])
+    [TAP]: envAsBoolean(env[TAP])
   })
+}
 
 const lazyBabelConfigPath = () =>
   // Lazily access constants.rootConfigPath.
@@ -78,8 +83,9 @@ const constants = createConstantsObject(
     ROLLUP_ENTRY_SUFFIX,
     ROLLUP_EXTERNAL_SUFFIX,
     SLASH_NODE_MODULES_SLASH,
-    SOCKET_IS_PUBLISHED,
-    SOCKET_WITH_SENTRY,
+    SOCKET_IS_LEGACY_BUILD,
+    SOCKET_IS_PUBLISHED_BUILD,
+    SOCKET_IS_SENTRY_BUILD,
     TAP,
     VENDOR,
     babelConfigPath: undefined,
