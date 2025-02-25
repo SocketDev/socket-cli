@@ -8,8 +8,6 @@ const spawn = require('@npmcli/promise-spawn')
 
 const constants = require('../dist/constants.js')
 
-const abortSignal = new AbortController().signal
-
 const { NODE_MODULES, NPM } = constants
 
 const testPath = __dirname
@@ -26,7 +24,6 @@ for (const npmDir of versions) {
   )
   spawnSync(NPM, ['install', '--silent'], {
     cwd: npmPath,
-    signal: abortSignal,
     stdio: 'ignore'
   })
   console.log(`End of npm i`)
@@ -46,8 +43,7 @@ for (const npmDir of versions) {
             cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
             env: {
               PATH: `${npmBinPath}:${process.env.PATH}`
-            },
-            signal: abortSignal
+            }
           }
         )
         spawnPromise.process.stdout.on('data', (buffer: Buffer) => {
