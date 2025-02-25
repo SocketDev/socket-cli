@@ -19,12 +19,13 @@ for (const npmDir of versions) {
   const npmPath = path.join(npmFixturesPath, npmDir)
   const npmBinPath = path.join(npmPath, NODE_MODULES, '.bin')
 
+  console.log(`Running \`npm install --silent\` for ${npmDir}`)
   spawnSync(NPM, ['install', '--silent'], {
     cwd: npmPath,
     signal: abortSignal,
     stdio: 'ignore'
-    // stdio: 'pipe'
   })
+  console.log(`End of npm i`)
 
   describe(`Socket npm wrapper for ${npmDir}`, () => {
     // Lazily access constants.rootBinPath.
