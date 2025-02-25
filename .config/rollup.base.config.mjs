@@ -37,27 +37,10 @@ const {
   ROLLUP_ENTRY_SUFFIX,
   ROLLUP_EXTERNAL_SUFFIX,
   SLASH_NODE_MODULES_SLASH,
-  VENDOR,
-  babelConfigPath,
-  rootPackageJsonPath,
-  rootPath,
-  rootSrcPath,
-  tsconfigPath
+  VENDOR
 } = constants
 
 const SOCKET_INTEROP = '_socketInterop'
-
-const constantsSrcPath = path.join(rootSrcPath, `${CONSTANTS}.ts`)
-
-const babelConfig = require(babelConfigPath)
-const tsPlugin = require('rollup-plugin-ts')
-const rootPackageJson = require(rootPackageJsonPath)
-
-const {
-  dependencies: pkgDeps,
-  devDependencies: pkgDevDeps,
-  overrides: pkgOverrides
-} = rootPackageJson
 
 const builtinAliases = builtinModules.reduce((o, n) => {
   o[n] = `node:${n}`
@@ -126,6 +109,25 @@ function isAncestorsExternal(id, depStats) {
 }
 
 export default function baseConfig(extendConfig = {}) {
+  // Lazily access constants props.
+  const {
+    babelConfigPath,
+    rootPackageJsonPath,
+    rootPath,
+    rootSrcPath,
+    tsconfigPath
+  } = constants
+
+  const {
+    dependencies: pkgDeps,
+    devDependencies: pkgDevDeps,
+    overrides: pkgOverrides
+  } = require(rootPackageJsonPath)
+
+  const constantsSrcPath = path.join(rootSrcPath, `${CONSTANTS}.ts`)
+  const babelConfig = require(babelConfigPath)
+  const tsPlugin = require('rollup-plugin-ts')
+
   const depStats = {
     dependencies: { __proto__: null },
     devDependencies: { __proto__: null },
