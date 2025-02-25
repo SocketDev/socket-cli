@@ -19,7 +19,7 @@ for (const npmDir of versions) {
   const npmPath = path.join(npmFixturesPath, npmDir)
   const npmBinPath = path.join(npmPath, NODE_MODULES, '.bin')
 
-  console.log(`Running \`npm install --silent\` for ${npmDir}`)
+  console.log(`Running \`npm install --silent\` for ${npmDir} in ${process.version}`)
   spawnSync(NPM, ['install', '--silent'], {
     cwd: npmPath,
     signal: abortSignal,
@@ -33,6 +33,7 @@ for (const npmDir of versions) {
 
     it('should bail on new typosquat', async () => {
       await new Promise<void>((resolve, reject) => {
+        console.log(`Now running npm i bowser, ${npmDir}, ${process.version}`)
         const spawnPromise = spawn(
           // Lazily access constants.execPath.
           constants.execPath,
@@ -71,7 +72,7 @@ for (const npmDir of versions) {
 
         spawnPromise.catch(() => {
           spawnPromise.process.kill('SIGINT')
-          reject()
+          reject(new Error('Received a SIGINT'))
         })
       })
 
