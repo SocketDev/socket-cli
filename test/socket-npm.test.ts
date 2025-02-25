@@ -54,7 +54,9 @@ for (const npmDir of versions) {
             )
           ) {
             reject(
-              'It seems npm ran anyways so the test failed to invoke socket'
+              new Error(
+                'It seems npm ran anyways so the test failed to invoke socket'
+              )
             )
           }
         })
