@@ -384,12 +384,6 @@ export default () => {
                 !!constants.ENV[SOCKET_CLI_SENTRY_BUILD]
               )
           ],
-          [
-            VITEST,
-            () =>
-              // Lazily access constants.ENV[VITEST].
-              !!constants.ENV[VITEST]
-          ]
         ].reduce((obj, { 0: name, 1: value }) => {
           obj[`process.env.${name}`] = value
           obj[`process.env['${name}']`] = value

@@ -29,7 +29,6 @@ const SOCKET_CLI_PUBLISHED_BUILD = 'SOCKET_CLI_PUBLISHED_BUILD'
 const SOCKET_CLI_SENTRY_BUILD = 'SOCKET_CLI_SENTRY_BUILD'
 const SOCKET_CLI_VERSION_HASH = 'SOCKET_CLI_VERSION_HASH'
 const VENDOR = 'vendor'
-const VITEST = 'VITEST'
 
 const LAZY_ENV = () => {
   const { env } = process
@@ -41,9 +40,7 @@ const LAZY_ENV = () => {
     // Flag set to determine if this is a published build.
     [SOCKET_CLI_PUBLISHED_BUILD]: envAsBoolean(env[SOCKET_CLI_PUBLISHED_BUILD]),
     // Flag set to determine if this is the Sentry build.
-    [SOCKET_CLI_SENTRY_BUILD]: envAsBoolean(env[SOCKET_CLI_SENTRY_BUILD]),
-    // Flag set when running in vitest
-    [VITEST]: envAsBoolean(env[VITEST])
+    [SOCKET_CLI_SENTRY_BUILD]: envAsBoolean(env[SOCKET_CLI_SENTRY_BUILD])
   })
 }
 
@@ -100,7 +97,6 @@ const constants = createConstantsObject(
     SOCKET_CLI_SENTRY_BUILD,
     SOCKET_CLI_VERSION_HASH,
     VENDOR,
-    VITEST,
     WITH_SENTRY,
     babelConfigPath: undefined,
     depStatsPath: undefined,
