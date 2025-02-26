@@ -1,4 +1,5 @@
 import { realpathSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -43,6 +44,7 @@ type ENV = Remap<
       SOCKET_CLI_LEGACY_BUILD: boolean
       SOCKET_CLI_PUBLISHED_BUILD: boolean
       SOCKET_CLI_SENTRY_BUILD: boolean
+      SOCKET_CLI_SHOW_BANNER: boolean
       SOCKET_CLI_VERSION_HASH: string
     }>
 >
@@ -89,13 +91,16 @@ type Constants = Remap<
     readonly SOCKET_CLI_PUBLISHED_BUILD: 'SOCKET_CLI_PUBLISHED_BUILD'
     readonly SOCKET_CLI_SAFE_WRAPPER: 'SOCKET_CLI_SAFE_WRAPPER'
     readonly SOCKET_CLI_SENTRY_BUILD: 'SOCKET_CLI_SENTRY_BUILD'
+    readonly SOCKET_CLI_SHOW_BANNER: 'SOCKET_CLI_SHOW_BANNER'
     readonly SOCKET_CLI_VERSION_HASH: 'SOCKET_CLI_VERSION_HASH'
     readonly VLT: 'vlt'
     readonly YARN: 'yarn'
     readonly YARN_BERRY: 'yarn/berry'
     readonly YARN_CLASSIC: 'yarn/classic'
+    readonly bashRcPath: string
     readonly cdxgenBinPath: string
     readonly distPath: string
+    readonly homePath: string
     readonly instrumentWithSentryPath: string
     readonly nmBinPath: string
     readonly npmInjectionPath: string
@@ -105,6 +110,7 @@ type Constants = Remap<
     readonly rootPkgJsonPath: string
     readonly shadowBinPath: string
     readonly synpBinPath: string
+    readonly zshRcPath: string
   }
 >
 
@@ -138,6 +144,7 @@ const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
 const SOCKET_CLI_PUBLISHED_BUILD = 'SOCKET_CLI_PUBLISHED_BUILD'
 const SOCKET_CLI_SAFE_WRAPPER = 'SOCKET_CLI_SAFE_WRAPPER'
 const SOCKET_CLI_SENTRY_BUILD = 'SOCKET_CLI_SENTRY_BUILD'
+const SOCKET_CLI_SHOW_BANNER = 'SOCKET_CLI_SHOW_BANNER'
 const SOCKET_CLI_VERSION_HASH = 'SOCKET_CLI_VERSION_HASH'
 const VLT = 'vlt'
 const YARN = 'yarn'
@@ -156,28 +163,35 @@ const LAZY_BATCH_PURL_ENDPOINT = () => {
 const LAZY_DIST_TYPE = () =>
   registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? MODULE_SYNC : REQUIRE
 
-const LAZY_ENV = () =>
-  Object.freeze({
+const LAZY_ENV = () => {
+  const { env } = process
+  // We inline some environment values so that they CANNOT be influenced by user
+  // provided environment variables.
+  return Object.freeze({
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
     // Flag set to help debug Socket CLI.
-    [SOCKET_CLI_DEBUG]: envAsBoolean(process.env[SOCKET_CLI_DEBUG]),
-    // Inline the following environment values so that they CANNOT be influenced
-    // by user provided environment variables.
-    //
-    // Flag set to determine if this is the Legacy build.
+    [SOCKET_CLI_DEBUG]: envAsBoolean(env[SOCKET_CLI_DEBUG]),
+    // Inlined flag set to determine if this is the Legacy build.
     // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_LEGACY_BUILD]".
     [SOCKET_CLI_LEGACY_BUILD]: process.env[SOCKET_CLI_LEGACY_BUILD],
-    // Flag set to determine if this is a published build.
+    // Inlined flag set to determine if this is a published build.
     // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_PUBLISHED_BUILD]".
     [SOCKET_CLI_PUBLISHED_BUILD]: process.env[SOCKET_CLI_PUBLISHED_BUILD],
-    // Flag set to determine if this is the Sentry build.
+    // Inlined flag set to determine if this is the Sentry build.
     // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_SENTRY_BUILD]".
     [SOCKET_CLI_SENTRY_BUILD]: process.env[SOCKET_CLI_SENTRY_BUILD],
-    // Flag set to determine the version hash of the build.
+    // Flag set to toggle the informative ASCII art banner.
+    [SOCKET_CLI_SHOW_BANNER]: envAsBoolean(env[SOCKET_CLI_SHOW_BANNER]),
+    // Inlined flag set to determine the version hash of the build.
     // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_VERSION_HASH]".
     [SOCKET_CLI_VERSION_HASH]: process.env[SOCKET_CLI_VERSION_HASH]
   })
+}
+
+const lazyBashRcPath = () =>
+  // Lazily access constants.homePath.
+  path.join(constants.homePath, '.bashrc')
 
 const lazyCdxgenBinPath = () =>
   // Lazily access constants.nmBinPath.
@@ -186,6 +200,8 @@ const lazyCdxgenBinPath = () =>
 const lazyDistPath = () =>
   // Lazily access constants.rootDistPath and constants.DIST_TYPE.
   path.join(constants.rootDistPath, constants.DIST_TYPE)
+
+const lazyHomePath = () => os.homedir()
 
 const lazyInstrumentWithSentryPath = () =>
   // Lazily access constants.rootDistPath.
@@ -227,6 +243,10 @@ const lazySynpBinPath = () =>
   // Lazily access constants.nmBinPath.
   path.join(constants.nmBinPath, 'synp')
 
+const lazyZshRcPath = () =>
+  // Lazily access constants.homePath.
+  path.join(constants.homePath, '.zshrc')
+
 const constants = <Constants>createConstantsObject(
   {
     ALERT_TYPE_CRITICAL_CVE,
@@ -262,13 +282,16 @@ const constants = <Constants>createConstantsObject(
     SOCKET_CLI_PUBLISHED_BUILD,
     SOCKET_CLI_SAFE_WRAPPER,
     SOCKET_CLI_SENTRY_BUILD,
+    SOCKET_CLI_SHOW_BANNER,
     SOCKET_CLI_VERSION_HASH,
     VLT,
     YARN,
     YARN_BERRY,
     YARN_CLASSIC,
+    bashRcPath: undefined,
     cdxgenBinPath: undefined,
     distPath: undefined,
+    homePath: undefined,
     instrumentWithSentryPath: undefined,
     nmBinPath: undefined,
     npmInjectionPath: undefined,
@@ -277,15 +300,18 @@ const constants = <Constants>createConstantsObject(
     rootPath: undefined,
     rootPkgJsonPath: undefined,
     shadowBinPath: undefined,
-    synpBinPath: undefined
+    synpBinPath: undefined,
+    zshRcPath: undefined
   },
   {
     getters: {
       BATCH_PURL_ENDPOINT: LAZY_BATCH_PURL_ENDPOINT,
       DIST_TYPE: LAZY_DIST_TYPE,
       ENV: LAZY_ENV,
+      bashRcPath: lazyBashRcPath,
       distPath: lazyDistPath,
       cdxgenBinPath: lazyCdxgenBinPath,
+      homePath: lazyHomePath,
       instrumentWithSentryPath: lazyInstrumentWithSentryPath,
       nmBinPath: lazyNmBinPath,
       npmInjectionPath: lazyNpmInjectionPath,
@@ -294,7 +320,8 @@ const constants = <Constants>createConstantsObject(
       rootPath: lazyRootPath,
       rootPkgJsonPath: lazyRootPkgJsonPath,
       shadowBinPath: lazyShadowBinPath,
-      synpBinPath: lazySynpBinPath
+      synpBinPath: lazySynpBinPath,
+      zshRcPath: lazyZshRcPath
     },
     internals: {
       getSentry() {
