@@ -85,6 +85,52 @@ const sharedOutputs = {
   sourcemapDebugIds: true
 }
 
+const sharedPlugins = [
+  // Inline process.env values.
+  replacePlugin({
+    delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
+    preventAssignment: true,
+    values: [
+      [SOCKET_CLI_VERSION_HASH, () => JSON.stringify(getSocketVersionHash())],
+      [
+        SOCKET_CLI_LEGACY_BUILD,
+        () =>
+          JSON.stringify(
+            // Lazily access constants.ENV[SOCKET_CLI_LEGACY_BUILD].
+            !!constants.ENV[SOCKET_CLI_LEGACY_BUILD]
+          )
+      ],
+      [
+        SOCKET_CLI_PUBLISHED_BUILD,
+        () =>
+          JSON.stringify(
+            // Lazily access constants.ENV[SOCKET_CLI_PUBLISHED_BUILD].
+            !!constants.ENV[SOCKET_CLI_PUBLISHED_BUILD]
+          )
+      ],
+      [
+        SOCKET_CLI_SENTRY_BUILD,
+        () =>
+          JSON.stringify(
+            // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
+            !!constants.ENV[SOCKET_CLI_SENTRY_BUILD]
+          )
+      ],
+      [
+        VITEST,
+        () =>
+          // Lazily access constants.ENV[VITEST].
+          !!constants.ENV[VITEST]
+      ]
+    ].reduce((obj, { 0: name, 1: value }) => {
+      obj[`process.env.${name}`] = value
+      obj[`process.env['${name}']`] = value
+      obj[`process.env[${name}]`] = value
+      return obj
+    }, {})
+  })
+]
+
 async function copyInitGradle() {
   const filepath = path.join(rootSrcPath, 'commands/manifest/init.gradle')
   const destPath = path.join(rootDistPath, 'init.gradle')
@@ -351,52 +397,7 @@ export default () => {
       return true
     },
     plugins: [
-      // Inline process.env values.
-      replacePlugin({
-        delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
-        preventAssignment: true,
-        values: [
-          [
-            SOCKET_CLI_VERSION_HASH,
-            () => JSON.stringify(getSocketVersionHash())
-          ],
-          [
-            SOCKET_CLI_LEGACY_BUILD,
-            () =>
-              JSON.stringify(
-                // Lazily access constants.ENV[SOCKET_CLI_LEGACY_BUILD].
-                !!constants.ENV[SOCKET_CLI_LEGACY_BUILD]
-              )
-          ],
-          [
-            SOCKET_CLI_PUBLISHED_BUILD,
-            () =>
-              JSON.stringify(
-                // Lazily access constants.ENV[SOCKET_CLI_PUBLISHED_BUILD].
-                !!constants.ENV[SOCKET_CLI_PUBLISHED_BUILD]
-              )
-          ],
-          [
-            SOCKET_CLI_SENTRY_BUILD,
-            () =>
-              JSON.stringify(
-                // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
-                !!constants.ENV[SOCKET_CLI_SENTRY_BUILD]
-              )
-          ],
-          [
-            VITEST,
-            () =>
-              // Lazily access constants.ENV[VITEST].
-              !!constants.ENV[VITEST]
-          ]
-        ].reduce((obj, { 0: name, 1: value }) => {
-          obj[`process.env.${name}`] = value
-          obj[`process.env['${name}']`] = value
-          obj[`process.env[${name}]`] = value
-          return obj
-        }, {})
-      }),
+      ...sharedPlugins,
       {
         async generateBundle(_options, bundle) {
           for (const basename of Object.keys(bundle)) {
@@ -437,6 +438,7 @@ export default () => {
       }
     ],
     plugins: [
+      ...sharedPlugins,
       {
         async generateBundle(_options, bundle) {
           for (const basename of Object.keys(bundle)) {
