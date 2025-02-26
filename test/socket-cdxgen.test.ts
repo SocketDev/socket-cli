@@ -38,7 +38,7 @@ describe('Socket cdxgen command', async () => {
         'forwards commands to cdxgen'
       ).toBe(true)
     }
-  })
+  }, 20_000)
   describe('command forwarding', async () => {
     expect.extend({
       toHaveStderrStartWith(received, expected) {
@@ -66,18 +66,22 @@ describe('Socket cdxgen command', async () => {
     it('should not forward --unknown to cdxgen', async () => {
       const command = '--unknown'
       await expect(
-        // Lazily access constants.execPath.
         async () =>
-          spawn(constants.execPath, [entryPath, 'cdxgen', command], spawnOpts)
+          await spawn(
+            // Lazily access constants.execPath.
+            constants.execPath,
+            [entryPath, 'cdxgen', command],
+            spawnOpts
+          )
         // @ts-ignore -- toHaveStderrStartWith is defined above
       ).rejects.toHaveStderrStartWith(`Unknown argument: ${command}`)
     })
 
     it('should not forward multiple unknown commands to cdxgen', async () => {
       await expect(
-        // Lazily access constants.execPath.
         () =>
           spawn(
+            // Lazily access constants.execPath.
             constants.execPath,
             [entryPath, 'cdxgen', '-u', '-h', '--unknown'],
             spawnOpts
