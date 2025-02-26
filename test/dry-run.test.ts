@@ -771,21 +771,13 @@ describe('dry-run on all commands', async () => {
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan create\`, cwd: <redacted>"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan create\`, cwd: <redacted>
+
+      [DryRun] Bailing now"
     `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+    expect(stderr).toMatchInlineSnapshot(`""`)
 
-          - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
-
-          - Repository name using --repo \\x1b[31m(missing!)\\x1b[39m
-
-          - Branch name using --branch \\x1b[31m(missing!)\\x1b[39m
-
-          - At least one TARGET (e.g. \`.\` or \`./package.json\`) \\x1b[31m(missing)\\x1b[39m"
-    `)
-
-    expect(code).toBe(2)
+    expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
     expect(stdout, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )

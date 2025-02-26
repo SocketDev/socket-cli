@@ -142,6 +142,8 @@ async function run(
       throw new Error('Failed getting supported files for report', { cause })
     })
 
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+
   const packagePaths = await getPackageFilesFullScans(
     cwd,
     targets,
@@ -169,8 +171,6 @@ async function run(
     process.exitCode = 2 // bad input
     return
   }
-
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   const apiToken = getDefaultToken()
   if (!apiToken) {
