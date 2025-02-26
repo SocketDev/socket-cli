@@ -1,19 +1,17 @@
-import fs from 'node:fs'
-import os from 'node:os'
+import { existsSync } from 'node:fs'
 import process from 'node:process'
 import readline from 'node:readline'
 
-import { addSocketWrapper } from './add-socket-wrapper.ts'
-import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.ts'
-
-const HOME_DIR = os.homedir()
-const BASH_FILE = `${HOME_DIR}/.bashrc`
-const ZSH_BASH_FILE = `${HOME_DIR}/.zshrc`
+import { addSocketWrapper } from './add-socket-wrapper'
+import { checkSocketWrapperSetup } from './check-socket-wrapper-setup'
+import constants from '../../constants'
 
 export function postinstallWrapper() {
+  // Lazily access constants.bashRcPath and constants.zshRcPath.
+  const { bashRcPath, zshRcPath } = constants
   const socketWrapperEnabled =
-    (fs.existsSync(BASH_FILE) && checkSocketWrapperSetup(BASH_FILE)) ||
-    (fs.existsSync(ZSH_BASH_FILE) && checkSocketWrapperSetup(ZSH_BASH_FILE))
+    (existsSync(bashRcPath) && checkSocketWrapperSetup(bashRcPath)) ||
+    (existsSync(zshRcPath) && checkSocketWrapperSetup(zshRcPath))
 
   if (!socketWrapperEnabled) {
     installSafeNpm(`The Socket CLI is now successfully installed! 🎉
@@ -43,12 +41,14 @@ function installSafeNpm(query: string): void {
 function askQuestion(rl: readline.Interface, query: string): void {
   rl.question(query, (ans: string) => {
     if (ans.toLowerCase() === 'y') {
+      // Lazily access constants.bashRcPath and constants.zshRcPath.
+      const { bashRcPath, zshRcPath } = constants
       try {
-        if (fs.existsSync(BASH_FILE)) {
-          addSocketWrapper(BASH_FILE)
+        if (existsSync(bashRcPath)) {
+          addSocketWrapper(bashRcPath)
         }
-        if (fs.existsSync(ZSH_BASH_FILE)) {
-          addSocketWrapper(ZSH_BASH_FILE)
+        if (existsSync(zshRcPath)) {
+          addSocketWrapper(zshRcPath)
         }
       } catch (e) {
         throw new Error(`There was an issue setting up the alias: ${e}`)
