@@ -15,6 +15,11 @@ export const commonFlags: MeowFlags = {
     default: false,
     shortFlag: 'h',
     description: 'Print this help.'
+  },
+  dryRun: {
+    type: 'boolean',
+    default: false,
+    description: 'Do input validation for a command and exit 0 when input is ok'
   }
 }
 

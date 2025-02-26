@@ -25,12 +25,14 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrExit({
+  const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName
   })
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await getOrganizations()
 }

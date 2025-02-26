@@ -1,15 +1,14 @@
-import meow from 'meow'
-
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
+import colors from 'yoctocolors-cjs'
 
 import { convertSbtToMaven } from './convert_sbt_to_maven.ts'
 import { commonFlags } from '../../flags.ts'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const config: CliCommandConfig = {
-  commandName: 'kotlin',
+  commandName: 'scala',
   description:
     "[beta] Generate a manifest file (`pom.xml`) from Scala's `build.sbt` file",
   hidden: false,
@@ -92,13 +91,11 @@ async function run(
   { parentName }: { parentName: string }
 ): Promise<void> {
   // console.log('scala', argv, parentName)
-  // note: meow will exit if it prints the --help screen
-  const cli = meow(config.help(parentName, config), {
-    flags: config.flags,
-    argv: argv.length === 0 ? ['--help'] : argv,
-    description: config.description,
-    allowUnknownFlags: false,
-    importMeta
+  const cli = meowOrExit({
+    argv,
+    config,
+    importMeta,
+    parentName
   })
 
   const verbose = Boolean(cli.flags['verbose'])
@@ -112,24 +109,18 @@ async function run(
   }
 
   const target = cli.input[0]
-  if (!target) {
-    // will exit.
-    new Spinner()
-      .start('Parsing...')
-      .error(
-        `Failure: Missing FILE|DIR argument. See \`${parentName} ${config.commandName} --help\` for details.`
-      )
-    process.exit(1)
-  }
 
-  if (cli.input.length > 1) {
-    // will exit.
-    new Spinner()
-      .start('Parsing...')
-      .error(
-        `Failure: Can only accept one FILE or DIR, received ${cli.input.length} (make sure to escape spaces!). See \`${parentName} ${config.commandName} --help\` for details.`
-      )
-    process.exit(1)
+  // TODO: I'm not sure it's feasible to parse source file from stdin. We could try, store contents in a file in some folder, target that folder... what would the file name be?
+
+  if (!target || target === '-' || cli.input.length > 1) {
+    console.error(
+      `${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+      - The DIR or FILE arg is required ${!target ? colors.red('(missing!)') : target === '-' ? colors.red('(stdin is not supported)') : colors.green('(ok)')}\n
+      - Can only accept one DIR or FILE (make sure to escape spaces!) ${cli.input.length > 1 ? colors.red(`(received ${cli.input.length}!)`) : colors.green('(ok)')}\n
+    `
+    )
+    process.exitCode = 2 // bad input
+    return
   }
 
   let bin: string = 'sbt'
@@ -153,16 +144,6 @@ async function run(
     console.groupEnd()
   }
 
-  // TODO: we can make `-` (accept from stdin) work by storing it into /tmp
-  if (target === '-') {
-    new Spinner()
-      .start('Parsing...')
-      .error(
-        `Failure: Currently source code from stdin is not supported. See \`${parentName} ${config.commandName} --help\` for details.`
-      )
-    process.exit(1)
-  }
-
   let sbtOpts: Array<string> = []
   if (cli.flags['sbtOpts']) {
     sbtOpts = (cli.flags['sbtOpts'] as string)
@@ -170,6 +151,8 @@ async function run(
       .map(s => s.trim())
       .filter(Boolean)
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await convertSbtToMaven(target, bin, out, verbose, sbtOpts)
 }

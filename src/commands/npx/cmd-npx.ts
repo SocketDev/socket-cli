@@ -28,13 +28,15 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrExit({
+  const cli = meowOrExit({
     allowUnknownFlags: true,
     argv,
     config,
     importMeta,
     parentName
   })
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await wrapNpx(argv)
 }

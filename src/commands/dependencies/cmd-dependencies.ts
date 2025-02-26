@@ -56,6 +56,8 @@ async function run(
     parentName
   })
 
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+
   // TODO: markdown flag is ignored
   await findDependencies({
     limit: Number(cli.flags['limit'] || 0) || 0,

@@ -1,10 +1,13 @@
 import fs from 'node:fs'
 import os from 'node:os'
 
+import colors from 'yoctocolors-cjs'
+
 import { addSocketWrapper } from './add-socket-wrapper.ts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.ts'
 import { postinstallWrapper } from './postinstall-wrapper.ts'
 import { removeSocketWrapper } from './remove-socket-wrapper.ts'
+import { commonFlags } from '../../flags.ts'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -19,6 +22,7 @@ const config: CliCommandConfig = {
   description: 'Enable or disable the Socket npm/npx wrapper',
   hidden: false,
   flags: {
+    ...commonFlags,
     enable: {
       type: 'boolean',
       default: false,
@@ -67,11 +71,18 @@ async function run(
     parentName
   })
 
+  const isDryRun = cli.flags['dryRun']
+
   const { disable, enable } = cli.flags
   if (!enable && !disable) {
-    cli.showHelp()
+    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required flags:\n
+      - Must use --enabled or --disabled
+    `)
+    process.exitCode = 2 // bad input
     return
   }
+
+  if (isDryRun) return console.log('[DryRun] Bailing now')
 
   if (enable) {
     if (fs.existsSync(BASH_FILE)) {

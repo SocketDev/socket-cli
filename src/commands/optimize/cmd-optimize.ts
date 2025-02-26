@@ -8,7 +8,7 @@ import { getFlagListOutput } from '../../utils/output-formatting'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 
 const config: CliCommandConfig = {
-  commandName: 'create',
+  commandName: 'optimize',
   description: 'Optimize dependencies with @socketregistry overrides',
   hidden: false,
   flags: {
@@ -56,6 +56,8 @@ async function run(
   })
 
   const cwd = process.cwd()
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await applyOptimization(
     cwd,

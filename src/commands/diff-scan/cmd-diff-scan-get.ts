@@ -81,9 +81,11 @@ async function run(
           - To get full scans IDs, you can run the command "socket scan list <your org slug>".
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n}
     `)
-    config.help(parentName, config)
+    process.exitCode = 2 // bad input
     return
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   const apiToken = getDefaultToken()
   if (!apiToken) {

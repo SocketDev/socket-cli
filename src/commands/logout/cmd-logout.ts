@@ -1,4 +1,5 @@
 import { attemptLogout } from './attempt-logout.ts'
+import { commonFlags } from '../../flags.ts'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
@@ -7,7 +8,9 @@ const config: CliCommandConfig = {
   commandName: 'logout',
   description: 'Socket API logout',
   hidden: false,
-  flags: {},
+  flags: {
+    ...commonFlags
+  },
   help: (command, _config) => `
     Usage
       $ ${command}
@@ -27,12 +30,14 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrExit({
+  const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName
   })
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   attemptLogout()
 }

@@ -42,9 +42,9 @@ const config: CliCommandConfig = {
       description: 'Path to a local file to save the output'
     }
   },
-  help: (parentName, { commandName, flags }) => `
+  help: (command, { flags }) => `
     Usage
-      $ ${parentName} ${commandName} --scope=<scope> --time=<time filter>
+      $ ${command} --scope=<scope> --time=<time filter>
 
     Default parameters are set to show the organization-level analytics over the
     last 7 days.
@@ -53,9 +53,9 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(flags, 6)}
 
     Examples
-      $ ${parentName} ${commandName} --scope=org --time=7
-      $ ${parentName} ${commandName} --scope=org --time=30
-      $ ${parentName} ${commandName} --scope=repo --repo=test-repo --time=30
+      $ ${command} --scope=org --time=7
+      $ ${command} --scope=org --time=30
+      $ ${command} --scope=repo --repo=test-repo --time=30
   `
 }
 
@@ -89,9 +89,11 @@ async function run(
       - The time filter must either be 7, 30 or 90 ${badTime ? colors.red('(bad!)') : colors.green('(ok)')}\n
       - Repository name using --repo when scope is "repo" ${badRepo ? colors.red('(bad!)') : colors.green('(ok)')}\n
     `)
-    cli.showHelp()
+    process.exitCode = 2 // bad input
     return
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   const apiToken = getDefaultToken()
   if (!apiToken) {
