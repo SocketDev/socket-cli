@@ -161,7 +161,7 @@
     "typescript": "5.4.5",
     "typescript-eslint": "^8.25.0",
     "unplugin-purge-polyfills": "^0.0.7",
-    "vitest": "3.0.7"
+    "vitest": "^3.0.7"
   },
   "overrides": {
     "aggregate-error": "npm:@socketregistry/aggregate-error@^1",
