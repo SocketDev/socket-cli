@@ -5,11 +5,11 @@ import yargsParse from 'yargs-parser'
 
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import { runCycloneDX } from './run-cyclonedx.ts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.ts'
-import { getFlagListOutput } from '../../utils/output-formatting.ts'
+import { runCycloneDX } from './run-cyclonedx'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
+import { getFlagListOutput } from '../../utils/output-formatting'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 // TODO: convert yargs to meow. Or convert all the other things to yargs.
 const toLower = (arg: string) => arg.toLowerCase()

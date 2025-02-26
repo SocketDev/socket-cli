@@ -1,5 +1,5 @@
-import { cmdReportCreate } from './cmd-report-create.ts'
-import { cmdReportView } from './cmd-report-view.ts'
+import { cmdReportCreate } from './cmd-report-create'
+import { cmdReportView } from './cmd-report-view'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'

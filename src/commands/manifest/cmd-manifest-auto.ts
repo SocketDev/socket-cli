@@ -3,11 +3,11 @@ import path from 'node:path'
 
 import meow from 'meow'
 
-import { cmdManifestGradle } from './cmd-manifest-gradle.ts'
-import { cmdManifestScala } from './cmd-manifest-scala.ts'
-import { commonFlags } from '../../flags.ts'
+import { cmdManifestGradle } from './cmd-manifest-gradle'
+import { cmdManifestScala } from './cmd-manifest-scala'
+import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
-import { getFlagListOutput } from '../../utils/output-formatting.ts'
+import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 

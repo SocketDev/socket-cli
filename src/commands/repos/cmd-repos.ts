@@ -1,8 +1,8 @@
-import { cmdReposCreate } from './cmd-repos-create.ts'
-import { cmdReposDel } from './cmd-repos-del.ts'
-import { cmdReposList } from './cmd-repos-list.ts'
-import { cmdReposUpdate } from './cmd-repos-update.ts'
-import { cmdReposView } from './cmd-repos-view.ts'
+import { cmdReposCreate } from './cmd-repos-create'
+import { cmdReposDel } from './cmd-repos-del'
+import { cmdReposList } from './cmd-repos-list'
+import { cmdReposUpdate } from './cmd-repos-update'
+import { cmdReposView } from './cmd-repos-view'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'

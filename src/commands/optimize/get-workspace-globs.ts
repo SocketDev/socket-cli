@@ -5,10 +5,10 @@ import { parse as yamlParse } from 'yaml'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import constants from '../../constants.ts'
-import { safeReadFile } from '../../utils/fs.ts'
+import constants from '../../constants'
+import { safeReadFile } from '../../utils/fs'
 
-import type { Agent } from '../../utils/package-manager-detector.ts'
+import type { Agent } from '../../utils/package-manager-detector'
 
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 

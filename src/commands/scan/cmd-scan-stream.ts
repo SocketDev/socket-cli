@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { getFullScan } from './get-full-scan.ts'
+import { getFullScan } from './get-full-scan'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'

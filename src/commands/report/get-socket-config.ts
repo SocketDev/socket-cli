@@ -2,7 +2,7 @@ import { betterAjvErrors } from '@apideck/better-ajv-errors'
 
 import { SocketValidationError, readSocketConfig } from '@socketsecurity/config'
 
-import { InputError } from '../../utils/errors.ts'
+import { InputError } from '../../utils/errors'
 
 export async function getSocketConfig(absoluteConfigPath: string) {
   const socketConfig = await readSocketConfig(absoluteConfigPath).catch(

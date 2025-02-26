@@ -1,6 +1,6 @@
-import constants from '../../constants.ts'
+import constants from '../../constants'
 
-import type { Agent } from '../../utils/package-manager-detector.ts'
+import type { Agent } from '../../utils/package-manager-detector'
 
 type AgentDepsIncludesFn = (stdout: string, name: string) => boolean
 

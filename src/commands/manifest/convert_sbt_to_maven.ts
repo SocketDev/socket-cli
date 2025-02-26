@@ -4,7 +4,7 @@ import spawn from '@npmcli/promise-spawn'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { safeReadFile } from '../../utils/fs.ts'
+import { safeReadFile } from '../../utils/fs'
 
 export async function convertSbtToMaven(
   target: string,

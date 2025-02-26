@@ -1,8 +1,8 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/socketcli.py
 
-import { runAction } from './run-action.ts'
+import { runAction } from './run-action'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
-import { getFlagListOutput } from '../../utils/output-formatting.ts'
+import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 

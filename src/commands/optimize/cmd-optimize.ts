@@ -1,11 +1,11 @@
 import process from 'node:process'
 
-import { applyOptimization } from './apply-optimization.ts'
+import { applyOptimization } from './apply-optimization'
 import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const config: CliCommandConfig = {
   commandName: 'optimize',

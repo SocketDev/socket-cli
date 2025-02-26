@@ -1,9 +1,9 @@
 import colors from 'yoctocolors-cjs'
 
-import { convertSbtToMaven } from './convert_sbt_to_maven.ts'
-import { commonFlags } from '../../flags.ts'
+import { convertSbtToMaven } from './convert_sbt_to_maven'
+import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
-import { getFlagListOutput } from '../../utils/output-formatting.ts'
+import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 

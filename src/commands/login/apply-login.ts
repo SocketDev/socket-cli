@@ -1,4 +1,4 @@
-import { updateSetting } from '../../utils/settings.ts'
+import { updateSetting } from '../../utils/settings'
 
 export function applyLogin(
   apiToken: string,

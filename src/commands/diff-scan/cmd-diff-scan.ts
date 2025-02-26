@@ -1,4 +1,4 @@
-import { cmdDiffScanGet } from './cmd-diff-scan-get.ts'
+import { cmdDiffScanGet } from './cmd-diff-scan-get'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'

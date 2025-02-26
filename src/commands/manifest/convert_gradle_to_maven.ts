@@ -4,7 +4,7 @@ import spawn from '@npmcli/promise-spawn'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import constants from '../../constants.ts'
+import constants from '../../constants'
 
 export async function convertGradleToMaven(
   target: string,

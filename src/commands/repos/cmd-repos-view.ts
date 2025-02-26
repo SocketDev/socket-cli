@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { viewRepo } from './view-repo.ts'
+import { viewRepo } from './view-repo'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'

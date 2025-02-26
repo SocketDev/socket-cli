@@ -4,8 +4,8 @@ import semver from 'semver'
 
 import { ManifestEntry, getManifestData } from '@socketsecurity/registry'
 
-import constants from '../../constants.ts'
-import { detect } from '../../utils/package-manager-detector.ts'
+import constants from '../../constants'
+import { detect } from '../../utils/package-manager-detector'
 
 const { BUN, NPM, VLT, YARN_BERRY } = constants
 

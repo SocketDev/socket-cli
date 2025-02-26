@@ -1,11 +1,11 @@
 import colors from 'yoctocolors-cjs'
 
-import { getPackageInfo } from './get-package-info.ts'
+import { getPackageInfo } from './get-package-info'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const config: CliCommandConfig = {
   commandName: 'info',

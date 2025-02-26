@@ -15,24 +15,24 @@ import { pEach } from '@socketsecurity/registry/lib/promises'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import { depsIncludesByAgent } from './deps-includes-by-agent.ts'
-import { detectAndValidatePackageManager } from './detect-and-validate-package-manager.ts'
-import { getDependencyEntries } from './get-dependency-entries.ts'
-import { getOverridesDataByAgent } from './get-overrides-by-agent.ts'
-import { getWorkspaceGlobs } from './get-workspace-globs.ts'
+import { depsIncludesByAgent } from './deps-includes-by-agent'
+import { detectAndValidatePackageManager } from './detect-and-validate-package-manager'
+import { getDependencyEntries } from './get-dependency-entries'
+import { getOverridesDataByAgent } from './get-overrides-by-agent'
+import { getWorkspaceGlobs } from './get-workspace-globs'
 import {
   AgentLockIncludesFn,
   lockIncludesByAgent
-} from './lock-includes-by-agent.ts'
-import { lsByAgent } from './ls-by-agent.ts'
-import { updateManifestByAgent } from './update-manifest-by-agent.ts'
-import { updatePackageLockJson } from './update-package-lock-json.ts'
-import constants from '../../constants.ts'
+} from './lock-includes-by-agent'
+import { lsByAgent } from './ls-by-agent'
+import { updateManifestByAgent } from './update-manifest-by-agent'
+import { updatePackageLockJson } from './update-package-lock-json'
+import constants from '../../constants'
 
 import type {
   Agent,
   StringKeyValueObject
-} from '../../utils/package-manager-detector.ts'
+} from '../../utils/package-manager-detector'
 
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 

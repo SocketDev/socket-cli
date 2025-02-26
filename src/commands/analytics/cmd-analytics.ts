@@ -1,11 +1,11 @@
 import colors from 'yoctocolors-cjs'
 
-import { displayAnalytics } from './display-analytics.ts'
+import { displayAnalytics } from './display-analytics'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken } from '../../utils/sdk.ts'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 

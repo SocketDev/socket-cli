@@ -1,6 +1,6 @@
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { applyLogout } from './apply-logout.ts'
+import { applyLogout } from './apply-logout'
 
 export function attemptLogout() {
   try {

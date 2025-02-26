@@ -1,8 +1,8 @@
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
-import constants from '../../constants.ts'
+import constants from '../../constants'
 
-import type { Agent } from '../../utils/package-manager-detector.ts'
+import type { Agent } from '../../utils/package-manager-detector'
 
 export type AgentLockIncludesFn = (
   lockSrc: string,

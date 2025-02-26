@@ -1,4 +1,4 @@
-import { wrapNpm } from './wrap-npm.ts'
+import { wrapNpm } from './wrap-npm'
 import constants from '../../constants'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 

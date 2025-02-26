@@ -1,11 +1,11 @@
 import path from 'node:path'
 import process from 'node:process'
 
-import { createReport } from './create-report.ts'
-import { getSocketConfig } from './get-socket-config.ts'
-import { viewReport } from './view-report.ts'
+import { createReport } from './create-report'
+import { getSocketConfig } from './get-socket-config'
+import { viewReport } from './view-report'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
-import { ColorOrMarkdown } from '../../utils/color-or-markdown.ts'
+import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 

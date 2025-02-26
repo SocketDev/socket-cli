@@ -4,7 +4,7 @@ import colors from 'yoctocolors-cjs'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { createFullScan } from './create-full-scan.ts'
+import { createFullScan } from './create-full-scan'
 import { handleUnsuccessfulApiResponse } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'

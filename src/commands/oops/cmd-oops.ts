@@ -1,7 +1,7 @@
-import { commonFlags } from '../../flags.ts'
-import { meowOrExit } from '../../utils/meow-with-subcommands.ts'
+import { commonFlags } from '../../flags'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const config: CliCommandConfig = {
   commandName: 'oops',
