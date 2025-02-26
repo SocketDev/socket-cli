@@ -387,7 +387,7 @@ export default () => {
           [
             VITEST,
             () =>
-              // Lazily access constants.ENV[TAP].
+              // Lazily access constants.ENV[VITEST].
               !!constants.ENV[VITEST]
           ]
         ].reduce((obj, { 0: name, 1: value }) => {
