@@ -66,14 +66,14 @@ export async function meowWithSubcommands(
     ...additionalOptions
   } = { __proto__: null, ...options }
   const [commandOrAliasName, ...rawCommandArgv] = argv
-  // If we got at least some args, then lets find out if we can find a command
+  // If we got at least some args, then lets find out if we can find a command.
   if (commandOrAliasName) {
     const alias = aliases[commandOrAliasName]
-    // First: Resolve argv data from alias if its an alias that's been given
+    // First: Resolve argv data from alias if its an alias that's been given.
     const [commandName, ...commandArgv] = alias
       ? [...alias.argv, ...rawCommandArgv]
       : [commandOrAliasName, ...rawCommandArgv]
-    // Second: Find a command definition using that data
+    // Second: Find a command definition using that data.
     const commandDefinition = commandName ? subcommands[commandName] : undefined
     // Third: If a valid command has been found, then we run it...
     if (commandDefinition) {
@@ -86,7 +86,7 @@ export async function meowWithSubcommands(
     ...commonFlags,
     ...additionalOptions.flags
   }
-  // ...else we provide basic instructions and help
+  // ...else we provide basic instructions and help.
 
   // Temp disable until we clear the --json and --markdown usage
   if (envAsBoolean(process.env['SOCKET_CLI_SHOW_BANNER'])) {
