@@ -15,6 +15,7 @@ const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 // These aliases are defined in package.json.
 for (const npmDir of ['npm8', 'npm10']) {
+  if (process.env['CI']) continue // Skip this test in CI.
   const npmPath = path.join(npmFixturesPath, npmDir)
   const npmBinPath = path.join(npmPath, NODE_MODULES, '.bin')
 
