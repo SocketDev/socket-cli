@@ -10,6 +10,7 @@ import type { Remap } from '@socketsecurity/registry/lib/objects'
 const {
   NODE_MODULES,
   PACKAGE_JSON,
+  TAP,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
     createConstantsObject
@@ -208,10 +209,10 @@ const lazyRootDistPath = () =>
   path.join(constants.rootPath, 'dist')
 
 const lazyRootPath = () =>
-  // The '@rollup/plugin-replace' will replace "process.env.['TAP']".
+  // The '@rollup/plugin-replace' will replace "process.env.[TAP]".
   path.resolve(
     realpathSync.native(__dirname),
-    process.env['TAP'] ? '../..' : '..'
+    process.env[TAP] ? '../..' : '..'
   )
 
 const lazyRootPkgJsonPath = () =>

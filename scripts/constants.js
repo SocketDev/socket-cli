@@ -28,7 +28,6 @@ const SOCKET_CLI_LEGACY_BUILD = 'SOCKET_CLI_LEGACY_BUILD'
 const SOCKET_CLI_PUBLISHED_BUILD = 'SOCKET_CLI_PUBLISHED_BUILD'
 const SOCKET_CLI_SENTRY_BUILD = 'SOCKET_CLI_SENTRY_BUILD'
 const SOCKET_CLI_VERSION_HASH = 'SOCKET_CLI_VERSION_HASH'
-const TAP = 'TAP'
 const VENDOR = 'vendor'
 
 const LAZY_ENV = () => {
@@ -41,9 +40,7 @@ const LAZY_ENV = () => {
     // Flag set to determine if this is a published build.
     [SOCKET_CLI_PUBLISHED_BUILD]: envAsBoolean(env[SOCKET_CLI_PUBLISHED_BUILD]),
     // Flag set to determine if this is the Sentry build.
-    [SOCKET_CLI_SENTRY_BUILD]: envAsBoolean(env[SOCKET_CLI_SENTRY_BUILD]),
-    // Flag set when running in Node-tap.
-    [TAP]: envAsBoolean(env[TAP])
+    [SOCKET_CLI_SENTRY_BUILD]: envAsBoolean(env[SOCKET_CLI_SENTRY_BUILD])
   })
 }
 
@@ -99,7 +96,6 @@ const constants = createConstantsObject(
     SOCKET_CLI_PUBLISHED_BUILD,
     SOCKET_CLI_SENTRY_BUILD,
     SOCKET_CLI_VERSION_HASH,
-    TAP,
     VENDOR,
     WITH_SENTRY,
     babelConfigPath: undefined,
