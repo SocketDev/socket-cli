@@ -2,10 +2,7 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { PackageData } from './get-package-info'
 import { getSeverityCount } from '../../utils/alert/severity'
-import {
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../../utils/api'
+import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { getPublicToken, setupSdk } from '../../utils/sdk'
 
 export async function fetchPackageInfo(

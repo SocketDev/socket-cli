@@ -1,9 +1,6 @@
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import {
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../../utils/api'
+import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
 import type { SocketSdkResultType } from '@socketsecurity/sdk'
