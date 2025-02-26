@@ -92,9 +92,11 @@ async function run(
 
   if (dryRun && view) {
     console.log(
-      '[dryrun] Ignoring view flag since no report was actually generated'
+      '[DryRun] Ignoring view flag since no report was actually generated'
     )
   }
+  if (dryRun) return console.log('[DryRun] Bailing now')
+
   if (result?.success) {
     if (view) {
       const reportId = result.data.id

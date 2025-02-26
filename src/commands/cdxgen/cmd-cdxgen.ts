@@ -6,8 +6,10 @@ import yargsParse from 'yargs-parser'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { runCycloneDX } from './run-cyclonedx.ts'
-import { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
+import { meowOrExit } from '../../utils/meow-with-subcommands.ts'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
+
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 
 // TODO: convert yargs to meow. Or convert all the other things to yargs.
 const toLower = (arg: string) => arg.toLowerCase()
@@ -126,16 +128,16 @@ export const cmdCdxgen = {
 
 async function run(
   argv: readonly string[],
-  _importMeta: ImportMeta,
-  { parentName: _parentName }: { parentName: string }
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string }
 ): Promise<void> {
-  // const cli = meowOrExit({
-  //   allowUnknownFlags: true,
-  //   argv,
-  //   config,
-  //   importMeta,
-  //   parentName,
-  // })
+  const cli = meowOrExit({
+    allowUnknownFlags: true,
+    argv: argv.filter(s => s !== '--help' && s !== '-h'), // Don't let meow take over --help
+    config,
+    importMeta,
+    parentName
+  })
   //
   //
   // if (cli.input.length)
@@ -154,16 +156,18 @@ async function run(
   const unknown: Array<string> = yargv._
   const { length: unknownLength } = unknown
   if (unknownLength) {
-    process.exitCode = 1
     console.error(
       `Unknown ${pluralize('argument', unknownLength)}: ${yargv._.join(', ')}`
     )
+    process.exitCode = 2 // bad input
     return
   }
 
   if (yargv.output === undefined) {
     yargv.output = 'socket-cdx.json'
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await runCycloneDX(yargv)
 }

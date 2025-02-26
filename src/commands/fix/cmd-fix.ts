@@ -1,4 +1,5 @@
 import { runFix } from './run-fix.ts'
+import { commonFlags } from '../../flags.ts'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
 
@@ -8,7 +9,9 @@ const config: CliCommandConfig = {
   commandName: 'fix',
   description: 'Fix "fixable" Socket alerts',
   hidden: true,
-  flags: {},
+  flags: {
+    ...commonFlags
+  },
   help: (command, config) => `
     Usage
       $ ${command}
@@ -29,12 +32,14 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrExit({
+  const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName
   })
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await runFix()
 }

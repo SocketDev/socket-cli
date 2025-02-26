@@ -1,27 +1,34 @@
 import colors from 'yoctocolors-cjs'
 
 import { deleteRepo } from './delete-repo.ts'
+import { commonFlags } from '../../flags.ts'
 import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
+import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const config: CliCommandConfig = {
-  commandName: 'delete',
+  commandName: 'del',
   description: 'Delete a repository in an organization',
   hidden: false,
-  flags: {},
-  help: (command, _config) => `
+  flags: {
+    ...commonFlags
+  },
+  help: (command, config) => `
     Usage
       $ ${command} <org slug> <repo slug>
+
+    Options
+      ${getFlagListOutput(config.flags, 6)}
 
     Examples
       $ ${command} FakeOrg test-repo
   `
 }
 
-export const cmdReposDelete = {
+export const cmdReposDel = {
   description: config.description,
   hidden: config.hidden,
   run
@@ -47,7 +54,7 @@ async function run(
       - Repository name as the second argument ${!repoName ? colors.red('(missing!)') : typeof repoName !== 'string' ? colors.red('(invalid!)') : colors.green('(ok)')}\n
       - At least one TARGET (e.g. \`.\` or \`./package.json\`
     `)
-    cli.showHelp()
+    process.exitCode = 2 // bad input
     return
   }
 
@@ -57,6 +64,8 @@ async function run(
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await deleteRepo(orgSlug, repoName, apiToken)
 }

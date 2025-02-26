@@ -72,7 +72,7 @@ async function run(
     console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
     - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
     `)
-    config.help(parentName, config)
+    process.exitCode = 2 // bad input
     return
   }
 
@@ -82,6 +82,8 @@ async function run(
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await getAuditLog({
     apiToken,

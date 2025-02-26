@@ -47,6 +47,11 @@ const config: CliCommandConfig = {
       type: 'string',
       description: 'working directory, defaults to process.cwd()'
     },
+    dryRun: {
+      type: 'boolean',
+      description:
+        'run input validation part of command without any concrete side effects'
+    },
     pullRequest: {
       type: 'number',
       shortFlag: 'pr',
@@ -161,7 +166,7 @@ async function run(
           )
         : colors.green('(ok)')
     }`)
-    config.help(parentName, config)
+    process.exitCode = 2 // bad input
     return
   }
 
@@ -171,6 +176,8 @@ async function run(
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await createFullScan({
     apiToken,

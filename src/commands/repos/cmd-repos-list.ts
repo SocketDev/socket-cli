@@ -77,7 +77,7 @@ async function run(
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
       - At least one TARGET (e.g. \`.\` or \`./package.json\`
     `)
-    cli.showHelp()
+    process.exitCode = 2 // bad input
     return
   }
 
@@ -87,6 +87,8 @@ async function run(
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await listRepos({
     apiToken,

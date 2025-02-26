@@ -85,7 +85,7 @@ async function run(
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
       - Repository name using --repoName ${!repoName ? colors.red('(missing!)') : typeof repoName !== 'string' ? colors.red('(invalid!)') : colors.green('(ok)')}\n
     `)
-    cli.showHelp()
+    process.exitCode = 2 // bad input
     return
   }
 
@@ -95,6 +95,8 @@ async function run(
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await createRepo({
     outputJson: Boolean(cli.flags['json']),

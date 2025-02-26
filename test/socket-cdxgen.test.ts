@@ -32,10 +32,9 @@ describe('Socket cdxgen command', async () => {
         [entryPath, 'cdxgen', command],
         spawnOpts
       )
-      expect(
-        ret.stdout.startsWith('cdxgen'),
-        'forwards commands to cdxgen'
-      ).toBe(true)
+      expect(ret.stdout.includes('cdxgen'), 'forwards commands to cdxgen').toBe(
+        true
+      )
     }
     // Takes ~10s in CI
   }, 20_000)

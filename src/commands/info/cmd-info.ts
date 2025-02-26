@@ -1,6 +1,7 @@
+import colors from 'yoctocolors-cjs'
+
 import { getPackageInfo } from './get-package-info.ts'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
-import { InputError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -46,23 +47,24 @@ async function run(
     parentName
   })
 
-  if (cli.input.length > 1) {
-    throw new InputError('Only one package lookup supported at once')
-  }
-  const { 0: rawPkgName = '' } = cli.input
-  let showHelp = cli.flags['help']
-  if (!rawPkgName) {
-    showHelp = true
-  }
-  if (showHelp) {
-    cli.showHelp()
+  const [rawPkgName = ''] = cli.input
+
+  if (!rawPkgName || cli.input.length > 1) {
+    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+      - Expecting a package name ${!rawPkgName ? colors.red('(missing!)') : colors.green('(ok)')}\n
+      - Can only accept one package at a time ${cli.input.length > 1 ? colors.red('(got ' + cli.input.length + '!)') : colors.green('(ok)')}\n
+    `)
+    process.exitCode = 2 // bad input
     return
   }
+
   const versionSeparator = rawPkgName.lastIndexOf('@')
   const pkgName =
     versionSeparator < 1 ? rawPkgName : rawPkgName.slice(0, versionSeparator)
   const pkgVersion =
     versionSeparator < 1 ? 'latest' : rawPkgName.slice(versionSeparator + 1)
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await getPackageInfo({
     commandName: `${parentName} ${config.commandName}`,

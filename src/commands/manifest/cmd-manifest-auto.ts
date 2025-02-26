@@ -6,6 +6,7 @@ import meow from 'meow'
 import { cmdManifestGradle } from './cmd-manifest-gradle.ts'
 import { cmdManifestScala } from './cmd-manifest-scala.ts'
 import { commonFlags } from '../../flags.ts'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting.ts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -51,13 +52,13 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meow(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags,
-    allowUnknownFlags: false
+    parentName
   })
+
   const verbose = !!cli.flags['verbose']
   const cwd = <string>cli.flags['cwd'] ?? process.cwd()
   if (verbose) {
@@ -81,6 +82,9 @@ async function run(
       subArgs.push('--cwd', cwd)
     }
     subArgs.push(dir)
+
+    if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+
     await cmdManifestScala.run(subArgs, importMeta, { parentName })
     return
   }
@@ -90,6 +94,9 @@ async function run(
       // This command takes the cwd as first arg.
       subArgs.push(cwd)
     }
+
+    if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+
     await cmdManifestGradle.run(subArgs, importMeta, { parentName })
     return
   }

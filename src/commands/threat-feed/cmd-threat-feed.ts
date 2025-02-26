@@ -77,6 +77,8 @@ async function run(
     )
   }
 
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+
   await getThreatFeed({
     apiToken,
     direction: String(cli.flags['direction'] || 'desc'),
