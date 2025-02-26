@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { getOrgScanMetadata } from './get-full-scan-metadata.ts'
+import { getOrgScanMetadata } from './get-full-scan-metadata'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'

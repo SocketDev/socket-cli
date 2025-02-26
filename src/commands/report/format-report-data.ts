@@ -2,9 +2,9 @@ import process from 'node:process'
 
 import colors from 'yoctocolors-cjs'
 
-import { ColorOrMarkdown } from '../../utils/color-or-markdown.ts'
+import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 
-import type { ReportData } from './fetch-report-data.ts'
+import type { ReportData } from './fetch-report-data'
 
 export function formatReportDataOutput(
   reportId: string,

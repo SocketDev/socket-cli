@@ -1,8 +1,8 @@
-import { attemptLogout } from './attempt-logout.ts'
-import { commonFlags } from '../../flags.ts'
+import { attemptLogout } from './attempt-logout'
+import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const config: CliCommandConfig = {
   commandName: 'logout',

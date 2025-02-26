@@ -10,7 +10,7 @@ import { SocketSdk } from '@socketsecurity/sdk'
 
 import { Diff, FullScan, Issue, Package, Purl } from './classes'
 
-import type { components, operations } from '@socketsecurity/sdk/types/api.d.ts'
+import type { components, operations } from '@socketsecurity/sdk/types/api.d'
 
 export class Core {
   socket: SocketSdk

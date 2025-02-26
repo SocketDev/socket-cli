@@ -1,11 +1,11 @@
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 
-import constants from '../../constants.ts'
+import constants from '../../constants'
 
 import type {
   Agent,
   StringKeyValueObject
-} from '../../utils/package-manager-detector.ts'
+} from '../../utils/package-manager-detector'
 
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }

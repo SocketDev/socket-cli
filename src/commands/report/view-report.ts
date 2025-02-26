@@ -1,5 +1,5 @@
-import { fetchReportData } from './fetch-report-data.ts'
-import { formatReportDataOutput } from './format-report-data.ts'
+import { fetchReportData } from './fetch-report-data'
+import { formatReportDataOutput } from './format-report-data'
 
 export async function viewReport(
   reportId: string,

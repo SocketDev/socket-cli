@@ -1,12 +1,12 @@
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 
-import { attemptLogin } from './attempt-login.ts'
-import { commonFlags } from '../../flags.ts'
+import { attemptLogin } from './attempt-login'
+import { commonFlags } from '../../flags'
 import { InputError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const config: CliCommandConfig = {
   commandName: 'login',

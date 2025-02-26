@@ -5,14 +5,14 @@ import colors from 'yoctocolors-cjs'
 import constants from '@socketsecurity/registry/lib/constants'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { PackageData } from './get-package-info.ts'
-import { formatSeverityCount } from '../../utils/alert/severity.ts'
-import { ColorOrMarkdown } from '../../utils/color-or-markdown.ts'
-import { objectSome } from '../../utils/objects.ts'
+import { PackageData } from './get-package-info'
+import { formatSeverityCount } from '../../utils/alert/severity'
+import { ColorOrMarkdown } from '../../utils/color-or-markdown'
+import { objectSome } from '../../utils/objects'
 import {
   getSocketDevAlertUrl,
   getSocketDevPackageOverviewUrl
-} from '../../utils/socket-url.ts'
+} from '../../utils/socket-url'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 

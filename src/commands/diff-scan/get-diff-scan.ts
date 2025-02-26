@@ -5,7 +5,7 @@ import colors from 'yoctocolors-cjs'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { handleAPIError, queryAPI } from '../../utils/api.ts'
+import { handleAPIError, queryAPI } from '../../utils/api'
 
 export async function getDiffScan(
   {

@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { createRepo } from './create-repo.ts'
+import { createRepo } from './create-repo'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'

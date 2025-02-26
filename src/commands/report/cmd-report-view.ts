@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { viewReport } from './view-report.ts'
+import { viewReport } from './view-report'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'

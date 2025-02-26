@@ -1,4 +1,4 @@
-import { getThreatFeed } from './get-threat-feed.ts'
+import { getThreatFeed } from './get-threat-feed'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'

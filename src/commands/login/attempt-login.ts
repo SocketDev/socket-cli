@@ -8,11 +8,11 @@ import {
 } from '@socketsecurity/registry/lib/prompts'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { applyLogin } from './apply-login.ts'
-import constants from '../../constants.ts'
-import { AuthError } from '../../utils/errors.ts'
-import { setupSdk } from '../../utils/sdk.ts'
-import { getSetting } from '../../utils/settings.ts'
+import { applyLogin } from './apply-login'
+import constants from '../../constants'
+import { AuthError } from '../../utils/errors'
+import { setupSdk } from '../../utils/sdk'
+import { getSetting } from '../../utils/settings'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 

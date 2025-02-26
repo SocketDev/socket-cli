@@ -2,10 +2,10 @@ import spawn from '@npmcli/promise-spawn'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import constants from '../../constants.ts'
-import { safeNpmInstall } from '../../utils/npm.ts'
+import constants from '../../constants'
+import { safeNpmInstall } from '../../utils/npm'
 
-import type { Agent } from '../../utils/package-manager-detector.ts'
+import type { Agent } from '../../utils/package-manager-detector'
 
 const { NPM, SOCKET_CLI_SAFE_WRAPPER, abortSignal } = constants
 

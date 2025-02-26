@@ -7,7 +7,7 @@ import TableWidget from 'blessed-contrib/lib/widget/table'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { queryAPI } from '../../utils/api.ts'
+import { queryAPI } from '../../utils/api'
 
 type ThreatResult = {
   createdAt: string

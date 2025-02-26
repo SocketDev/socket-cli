@@ -1,9 +1,9 @@
-import { runRawNpx } from './run-raw-npx.ts'
+import { runRawNpx } from './run-raw-npx'
 import constants from '../../constants'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const { NPX } = constants
 

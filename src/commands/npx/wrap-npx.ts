@@ -1,4 +1,4 @@
-import constants from '../../constants.ts'
+import constants from '../../constants'
 
 const { NPX, SHADOW_BIN } = constants
 

@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { getAuditLog } from './get-audit-log.ts'
+import { getAuditLog } from './get-audit-log'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'

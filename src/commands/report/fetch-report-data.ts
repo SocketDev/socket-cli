@@ -3,12 +3,12 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import {
   formatSeverityCount,
   getSeverityCount
-} from '../../utils/alert/severity.ts'
+} from '../../utils/alert/severity'
 import {
   handleApiCall,
   handleUnsuccessfulApiResponse
-} from '../../utils/api.ts'
-import { setupSdk } from '../../utils/sdk.ts'
+} from '../../utils/api'
+import { setupSdk } from '../../utils/sdk'
 
 import type {
   SocketSdkResultType,

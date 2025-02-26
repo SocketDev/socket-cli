@@ -1,7 +1,7 @@
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { fetchPackageInfo } from './fetch-package-info.ts'
-import { formatPackageInfo } from './format-package-info.ts'
+import { fetchPackageInfo } from './fetch-package-info'
+import { formatPackageInfo } from './format-package-info'
 
 import type { SocketSdkAlert } from '../../utils/alert/severity'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'

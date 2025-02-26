@@ -7,8 +7,8 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import {
   handleApiCall,
   handleUnsuccessfulApiResponse
-} from '../../utils/api.ts'
-import { setupSdk } from '../../utils/sdk.ts'
+} from '../../utils/api'
+import { setupSdk } from '../../utils/sdk'
 
 export async function viewRepo(
   orgSlug: string,

@@ -1,7 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
-import { deleteRepo } from './delete-repo.ts'
-import { commonFlags } from '../../flags.ts'
+import { deleteRepo } from './delete-repo'
+import { commonFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'

@@ -3,11 +3,11 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import {
   handleApiCall,
   handleUnsuccessfulApiResponse
-} from '../../utils/api.ts'
-import { debugLog } from '../../utils/debug.ts'
-import { getLogSymbols } from '../../utils/logging.ts'
-import { getPackageFiles } from '../../utils/path-resolve.ts'
-import { setupSdk } from '../../utils/sdk.ts'
+} from '../../utils/api'
+import { debugLog } from '../../utils/debug'
+import { getLogSymbols } from '../../utils/logging'
+import { getPackageFiles } from '../../utils/path-resolve'
+import { setupSdk } from '../../utils/sdk'
 
 import type { SocketYml } from '@socketsecurity/config'
 import type {

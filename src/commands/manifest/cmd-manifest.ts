@@ -1,10 +1,10 @@
-import { cmdManifestAuto } from './cmd-manifest-auto.ts'
-import { cmdManifestGradle } from './cmd-manifest-gradle.ts'
-import { cmdManifestKotlin } from './cmd-manifest-kotlin.ts'
-import { cmdManifestScala } from './cmd-manifest-scala.ts'
-import { commonFlags } from '../../flags.ts'
+import { cmdManifestAuto } from './cmd-manifest-auto'
+import { cmdManifestGradle } from './cmd-manifest-gradle'
+import { cmdManifestKotlin } from './cmd-manifest-kotlin'
+import { cmdManifestScala } from './cmd-manifest-scala'
+import { commonFlags } from '../../flags'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
-import { getFlagListOutput } from '../../utils/output-formatting.ts'
+import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 

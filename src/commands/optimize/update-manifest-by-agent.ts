@@ -1,11 +1,11 @@
 import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
 
-import constants from '../../constants.ts'
+import constants from '../../constants'
 
 import type {
   Agent,
   StringKeyValueObject
-} from '../../utils/package-manager-detector.ts'
+} from '../../utils/package-manager-detector'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }

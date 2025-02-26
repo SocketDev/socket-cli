@@ -1,7 +1,7 @@
-import { getOrganizations } from './get-organizations.ts'
+import { getOrganizations } from './get-organizations'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const config: CliCommandConfig = {
   commandName: 'organizations',
