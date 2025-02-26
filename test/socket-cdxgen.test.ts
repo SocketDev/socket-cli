@@ -16,7 +16,8 @@ const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 const spawnOpts: PromiseSpawnOptions = {
   cwd: npmFixturesPath,
-  signal: abortSignal
+  signal: abortSignal,
+  stdio: 'pipe'
 }
 
 describe('Socket cdxgen command', async () => {
@@ -66,7 +67,7 @@ describe('Socket cdxgen command', async () => {
       const command = '--unknown'
       await expect(
         // Lazily access constants.execPath.
-        () =>
+        async () =>
           spawn(constants.execPath, [entryPath, 'cdxgen', command], spawnOpts)
         // @ts-ignore -- toHaveStderrStartWith is defined above
       ).rejects.toHaveStderrStartWith(`Unknown argument: ${command}`)
