@@ -212,7 +212,7 @@ const lazyRootPath = () =>
   // it will be dead code eliminated by Rollup.
   path.resolve(
     realpathSync.native(__dirname),
-    process.env['VITEST'] ? '../..' : '..'
+    process.env['SOCKET_CLI_TEST_DIST_BUILD'] ? '../..' : '..'
   )
 
 const lazyRootPkgJsonPath = () =>
