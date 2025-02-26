@@ -239,6 +239,14 @@ export default function baseConfig(extendConfig = {}) {
       }
       return true
     },
+    onwarn(warning, warn) {
+      // Suppress THIS_IS_UNDEFINED warnings.
+      if (warning.code === 'THIS_IS_UNDEFINED') {
+        return
+      }
+      // Forward other warnings.
+      warn(warning)
+    },
     ...extendConfig,
     plugins: [
       customResolver,
