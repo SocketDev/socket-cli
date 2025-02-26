@@ -208,7 +208,7 @@ const lazyRootDistPath = () =>
   path.join(constants.rootPath, 'dist')
 
 const lazyRootPath = () =>
-  // The '@rollup/plugin-replace' will replace 'process.env.VITEST' with `false` and
+  // The '@rollup/plugin-replace' will replace "process.env.['VITEST']" with `false` and
   // it will be dead code eliminated by Rollup.
   path.resolve(
     realpathSync.native(__dirname),
