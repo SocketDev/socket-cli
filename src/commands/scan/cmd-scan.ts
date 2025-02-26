@@ -1,5 +1,5 @@
 import { cmdScanCreate } from './cmd-scan-create.ts'
-import { cmdScanDelete } from './cmd-scan-delete.ts'
+import { cmdScanDel } from './cmd-scan-del.ts'
 import { cmdScanList } from './cmd-scan-list.ts'
 import { cmdScanMetadata } from './cmd-scan-metadata.ts'
 import { cmdScanStream } from './cmd-scan-stream.ts'
@@ -17,7 +17,7 @@ export const cmdScan: CliSubcommand = {
         create: cmdScanCreate,
         stream: cmdScanStream,
         list: cmdScanList,
-        del: cmdScanDelete,
+        del: cmdScanDel,
         metadata: cmdScanMetadata
       },
       {

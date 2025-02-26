@@ -1,9 +1,9 @@
-import meow from 'meow'
 import colors from 'yoctocolors-cjs'
 
 import { getFullScan } from './get-full-scan.ts'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
 
@@ -45,11 +45,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meow(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   const [orgSlug = '', fullScanId = '', file = '-'] = cli.input
@@ -61,9 +61,11 @@ async function run(
       - Full Scan ID to fetch as second argument ${!fullScanId ? colors.red('(missing!)') : colors.green('(ok)')}
     `
     )
-    config.help(parentName, config)
+    process.exitCode = 2 // bad input
     return
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   const apiToken = getDefaultToken()
   if (!apiToken) {

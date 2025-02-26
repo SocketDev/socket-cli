@@ -1,5 +1,5 @@
 import { cmdReposCreate } from './cmd-repos-create.ts'
-import { cmdReposDelete } from './cmd-repos-delete.ts'
+import { cmdReposDel } from './cmd-repos-del.ts'
 import { cmdReposList } from './cmd-repos-list.ts'
 import { cmdReposUpdate } from './cmd-repos-update.ts'
 import { cmdReposView } from './cmd-repos-view.ts'
@@ -14,17 +14,17 @@ export const cmdRepos: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        cmdReposCreate,
-        cmdReposView,
-        cmdReposList,
-        cmdReposDelete,
-        cmdReposUpdate
+        create: cmdReposCreate,
+        view: cmdReposView,
+        list: cmdReposList,
+        del: cmdReposDel,
+        update: cmdReposUpdate
       },
       {
         argv,
         description,
         importMeta,
-        name: `${parentName} repo`
+        name: `${parentName} repos`
       }
     )
   }

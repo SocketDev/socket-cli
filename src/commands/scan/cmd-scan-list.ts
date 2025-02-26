@@ -1,9 +1,9 @@
-import meow from 'meow'
 import colors from 'yoctocolors-cjs'
 
 import { listFullScans } from './list-full-scans.ts'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
+import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
 
@@ -80,11 +80,11 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ) {
-  const cli = meow(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
 
   const orgSlug = cli.input[0]
@@ -92,9 +92,11 @@ async function run(
   if (!orgSlug) {
     console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
     - Org name as the argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}`)
-    config.help(parentName, config)
+    process.exitCode = 2 // bad input
     return
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   const apiToken = getDefaultToken()
   if (!apiToken) {

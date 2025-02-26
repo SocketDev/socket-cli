@@ -77,9 +77,11 @@ async function run(
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
       - At least one TARGET (e.g. \`.\` or \`./package.json\`
     `)
-    cli.showHelp()
+    process.exitCode = 2 // bad input
     return
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   const apiToken = getDefaultToken()
   if (!apiToken) {

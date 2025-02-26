@@ -1,12 +1,15 @@
-import meowOrExit from 'meow'
+import { commonFlags } from '../../flags.ts'
+import { meowOrExit } from '../../utils/meow-with-subcommands.ts'
 
-import { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands.ts'
 
 const config: CliCommandConfig = {
   commandName: 'oops',
   description: 'Trigger an intentional error (for development)',
   hidden: true,
-  flags: {},
+  flags: {
+    ...commonFlags
+  },
   help: (parentName, config) => `
     Usage
       $ ${parentName} ${config.commandName}
@@ -26,12 +29,14 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  meowOrExit(config.help(parentName, config), {
+  const cli = meowOrExit({
     argv,
-    description: config.description,
+    config,
     importMeta,
-    flags: config.flags
+    parentName
   })
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   throw new Error('This error was intentionally left blank')
 }

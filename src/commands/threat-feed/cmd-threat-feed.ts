@@ -70,6 +70,8 @@ async function run(
     parentName
   })
 
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+
   const apiToken = getDefaultToken()
   if (!apiToken) {
     throw new AuthError(

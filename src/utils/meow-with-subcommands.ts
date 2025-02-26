@@ -1,8 +1,10 @@
 import meow from 'meow'
 
+import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 
 import { getFlagListOutput, getHelpListOutput } from './output-formatting'
+import { getSetting } from './settings.ts'
 import { MeowFlags, commonFlags } from '../flags'
 
 import type { Options } from 'meow'
@@ -44,6 +46,14 @@ interface MeowOptions extends Options<any> {
   name: string
 }
 
+// For debugging. Whenever you call meowOrExit it will store the command here
+// This module exports a getter that returns the current value.
+let lastSeenCommand = ''
+
+export function getLastSeenCommand(): string {
+  return lastSeenCommand
+}
+
 export async function meowWithSubcommands(
   subcommands: Record<string, CliSubcommand>,
   options: MeowOptions
@@ -77,6 +87,12 @@ export async function meowWithSubcommands(
     ...additionalOptions.flags
   }
   // ...else we provide basic instructions and help
+
+  // Temp disable until we clear the --json and --markdown usage
+  if (envAsBoolean(process.env['SOCKET_CLI_SHOW_BANNER'])) {
+    console.log(getAsciiHeader(name))
+  }
+
   const cli = meow(
     `
     Usage
@@ -116,9 +132,14 @@ export async function meowWithSubcommands(
       argv,
       importMeta,
       ...additionalOptions,
-      flags
+      flags,
+      autoHelp: false // otherwise we can't exit(0)
     }
   )
+  if (!cli.flags['help'] && cli.flags['dryRun']) {
+    console.log('[DryRun]: noop, call a sub-command; ok')
+    process.exit(0)
+  }
   cli.showHelp()
 }
 
@@ -132,15 +153,21 @@ export function meowOrExit({
   importMeta,
   parentName
 }: {
+  allowUnknownFlags?: boolean
   argv: ReadonlyArray<string>
   config: CliCommandConfig
   parentName: string
   importMeta: ImportMeta
-  allowUnknownFlags?: boolean
 }) {
   const command = `${parentName} ${config.commandName}`
+  lastSeenCommand = command
 
   const help = config.help(command, config)
+
+  // Temp disable until we clear the --json and --markdown usage
+  if (envAsBoolean(process.env['SOCKET_CLI_SHOW_BANNER'])) {
+    console.log(getAsciiHeader(command))
+  }
 
   // This exits if .printHelp() is called either by meow itself or by us.
   const cli = meow({
@@ -149,8 +176,32 @@ export function meowOrExit({
     help,
     importMeta,
     flags: config.flags,
-    allowUnknownFlags: Boolean(allowUnknownFlags)
+    allowUnknownFlags: Boolean(allowUnknownFlags),
+    autoHelp: false // otherwise we can't exit(0)
   })
 
+  if (cli.flags['help']) cli.showHelp()
+
   return cli
+}
+
+function getAsciiHeader(command: string) {
+  // Note: in tests we return <redacted> because otherwise snapshots will fail
+  return (
+    '   ' +
+    `
+   _____         _       _        /---------------
+  |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${process.env['VITEST'] ? '<redacted>' : process.env['SOCKET_CLI_VERSION']}
+  |__   | . |  _| '_| -_|  _|     | Node: ${process.env['VITEST'] ? '<redacted>' : process.version}, API token set: ${process.env['VITEST'] ? '<redacted>' : getSetting('apiToken')?.slice(-9, -4) || 'no'}
+  |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${
+    process.env['VITEST']
+      ? '<redacted>'
+      : process
+          .cwd()
+          .trim()
+          .replace(/^\/home\/[a-z0-9_-]+\//i, '~/')
+  }
+  `.trim() +
+    '\n'
+  )
 }

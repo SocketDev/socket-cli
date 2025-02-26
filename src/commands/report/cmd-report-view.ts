@@ -54,9 +54,11 @@ async function run(
       - Need at least one report ID ${!reportId ? colors.red('(missing!)') : colors.green('(ok)')}\n
       - Can only handle a single report ID ${extraInput.length < 2 ? colors.red(`(received ${extraInput.length}!)`) : colors.green('(ok)')}\n
     `)
-    cli.showHelp()
+    process.exitCode = 2 // bad input
     return
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await viewReport(reportId, {
     all: Boolean(cli.flags['all']),

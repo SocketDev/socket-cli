@@ -10,7 +10,7 @@ import { getDefaultToken } from '../../utils/sdk'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const config: CliCommandConfig = {
-  commandName: 'create',
+  commandName: 'update',
   description: 'Update a repository in an organization',
   hidden: false,
   flags: {
@@ -86,9 +86,11 @@ async function run(
       - Repository name using --repoName ${!repoName ? colors.red('(missing!)') : typeof repoName !== 'string' ? colors.red('(invalid!)') : colors.green('(ok)')}\n
       - At least one TARGET (e.g. \`.\` or \`./package.json\`
     `)
-    cli.showHelp()
+    process.exitCode = 2 // bad input
     return
   }
+
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   const apiToken = getDefaultToken()
   if (!apiToken) {
