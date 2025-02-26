@@ -8,14 +8,13 @@ const spawn = require('@npmcli/promise-spawn')
 
 const constants = require('../dist/constants.js')
 
-const { NODE_MODULES, NPM } = constants
+const { CLI, NODE_MODULES, NPM, abortSignal } = constants
 
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 // These aliases are defined in package.json.
-const versions = ['npm8', 'npm10']
-for (const npmDir of versions) {
+for (const npmDir of ['npm8', 'npm10']) {
   const npmPath = path.join(npmFixturesPath, npmDir)
   const npmBinPath = path.join(npmPath, NODE_MODULES, '.bin')
 
@@ -24,13 +23,14 @@ for (const npmDir of versions) {
   )
   spawnSync(NPM, ['install', '--silent'], {
     cwd: npmPath,
+    signal: abortSignal,
     stdio: 'ignore'
   })
   console.log(`End of npm i`)
 
   describe(`Socket npm wrapper for ${npmDir}`, () => {
     // Lazily access constants.rootBinPath.
-    const entryPath = path.join(constants['rootBinPath'], 'cli.js')
+    const entryPath = path.join(constants['rootBinPath'], `${CLI}.js`)
 
     it('should bail on new typosquat', async () => {
       await new Promise<void>((resolve, reject) => {
@@ -43,7 +43,8 @@ for (const npmDir of versions) {
             cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
             env: {
               PATH: `${npmBinPath}:${process.env.PATH}`
-            }
+            },
+            signal: abortSignal
           }
         )
         spawnPromise.process.stdout.on('data', (buffer: Buffer) => {

@@ -59,7 +59,7 @@
     "test": "run-s check build:* test:* test:coverage:*",
     "test-ci": "run-s build:* test:*",
     "test:unit": "vitest --run",
-    "test:coverage:c8": "vitest run --coverage --coverage.reportsDirectory ./coverage/tmp --coverage.exclude=test/dist/** test/socket-npm.test.cjs",
+    "test:coverage:c8": "vitest run --coverage --coverage.reportsDirectory ./coverage/tmp --coverage.exclude=test/dist/** test/socket-npm.test.ts",
     "test:coverage:merge": "c8 --reporter=lcov --reporter=text --include 'dist/{module-sync,require}/*.js' --exclude 'dist/require/vendor.js' report",
     "update": "run-p --aggregate-output update:**",
     "update:deps": "npx --yes npm-check-updates"
