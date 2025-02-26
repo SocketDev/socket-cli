@@ -23,23 +23,18 @@ for (const npmDir of ['npm8', 'npm10']) {
   const npmPath = path.join(npmFixturesPath, npmDir)
   const npmBinPath = path.join(npmPath, NODE_MODULES, '.bin')
 
-  console.log(
-    `Running \`npm install --silent\` for ${npmDir} in ${process.version}`
-  )
   spawnSync(NPM, ['install', '--silent'], {
     cwd: npmPath,
     signal: abortSignal,
     stdio: 'ignore'
   })
-  console.log(`End of npm i`)
 
   describe(`Socket npm wrapper for ${npmDir}`, () => {
     // Lazily access constants.rootBinPath.
     const entryPath = path.join(constants['rootBinPath'], `${CLI}.js`)
 
     it('should bail on new typosquat', async () => {
-      await new Promise<void>((resolve, reject) => {
-        console.log(`Now running npm i bowser, ${npmDir}, ${process.version}`)
+      const result = await new Promise<string>((resolve, reject) => {
         const spawnPromise = spawn(
           // Lazily access constants.execPath.
           constants.execPath,
@@ -53,7 +48,7 @@ for (const npmDir of ['npm8', 'npm10']) {
           }
         )
         spawnPromise.process.stdout.on('data', (buffer: Buffer) => {
-          console.log(buffer.toString('utf8'))
+          // console.log(buffer.toString('utf8'))
           // changed 13 packages, and audited 176 packages in 3s
           if (
             /changed .* packages, and audited .* packages in/.test(
@@ -69,10 +64,10 @@ for (const npmDir of ['npm8', 'npm10']) {
         })
 
         spawnPromise.process.stderr.on('data', (buffer: Buffer) => {
-          console.error(buffer.toString('utf8'))
+          // console.error(buffer.toString('utf8'))
           if (buffer.toString().includes('Possible typosquat attack')) {
+            resolve('OK')
             spawnPromise.process.kill('SIGINT')
-            resolve()
           }
         })
 
@@ -83,9 +78,9 @@ for (const npmDir of ['npm8', 'npm10']) {
       })
 
       expect(
-        1,
+        result,
         'if the promise resolves then the typo-squat attack message was seen, the promise should not reject in any way'
-      ).toBe(1)
+      ).toBe('OK')
     }, 30_000) // About 5s on my machine, will be slow in ci, extend if too flaky
   })
 }

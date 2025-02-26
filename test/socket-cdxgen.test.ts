@@ -16,8 +16,7 @@ const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 const spawnOpts: PromiseSpawnOptions = {
   cwd: npmFixturesPath,
-  signal: abortSignal,
-  stdio: 'pipe'
+  signal: abortSignal
 }
 
 describe('Socket cdxgen command', async () => {
@@ -38,7 +37,9 @@ describe('Socket cdxgen command', async () => {
         'forwards commands to cdxgen'
       ).toBe(true)
     }
+    // Takes ~10s in CI
   }, 20_000)
+
   describe('command forwarding', async () => {
     expect.extend({
       toHaveStderrStartWith(received, expected) {
@@ -56,9 +57,13 @@ describe('Socket cdxgen command', async () => {
     it('should not forward -u to cdxgen', async () => {
       const command = '-u'
       await expect(
-        // Lazily access constants.execPath.
         () =>
-          spawn(constants.execPath, [entryPath, 'cdxgen', command], spawnOpts)
+          spawn(
+            // Lazily access constants.execPath.
+            constants.execPath,
+            [entryPath, 'cdxgen', command],
+            spawnOpts
+          )
         // @ts-ignore -- toHaveStderrStartWith is defined above
       ).rejects.toHaveStderrStartWith(`Unknown argument: ${command}`)
     })
@@ -66,8 +71,8 @@ describe('Socket cdxgen command', async () => {
     it('should not forward --unknown to cdxgen', async () => {
       const command = '--unknown'
       await expect(
-        async () =>
-          await spawn(
+        () =>
+          spawn(
             // Lazily access constants.execPath.
             constants.execPath,
             [entryPath, 'cdxgen', command],
