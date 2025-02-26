@@ -1,8 +1,7 @@
-import assert from 'node:assert/strict'
 import path from 'node:path'
-import { describe, it } from 'node:test'
 
 import spawn from '@npmcli/promise-spawn'
+import { describe, expect, it } from 'vitest'
 
 import constants from '../dist/constants.js'
 
@@ -33,30 +32,67 @@ describe('Socket cdxgen command', async () => {
         [entryPath, 'cdxgen', command],
         spawnOpts
       )
-      assert.ok(ret.stdout.startsWith('cdxgen'), 'forwards commands to cdxgen')
+      expect(
+        ret.stdout.startsWith('cdxgen'),
+        'forwards commands to cdxgen'
+      ).toBe(true)
     }
-  })
-  it('should not forward unknown commands to cdxgen', async () => {
-    for (const command of ['-u', '--unknown']) {
-      // eslint-disable-next-line no-await-in-loop
-      await assert.rejects(
+    // Takes ~10s in CI
+  }, 20_000)
+
+  describe('command forwarding', async () => {
+    expect.extend({
+      toHaveStderrStartWith(received, expected) {
+        // console.log('got:', received)
+        const { isNot } = this
+        return {
+          // do not alter your "pass" based on isNot. Vitest does it for you
+          pass: received?.stderr?.startsWith?.(expected) ?? false,
+          message: () =>
+            `spawn.stderr did${isNot ? ' not' : ''} start with \`${expected}\`: ${received?.stderr}`
+        }
+      }
+    })
+
+    it('should not forward -u to cdxgen', async () => {
+      const command = '-u'
+      await expect(
         () =>
-          // Lazily access constants.execPath.
-          spawn(constants.execPath, [entryPath, 'cdxgen', command], spawnOpts),
-        e => e?.['stderr']?.startsWith(`Unknown argument: ${command}`),
-        'singular'
-      )
-    }
-    await assert.rejects(
-      () =>
-        spawn(
-          // Lazily access constants.execPath.
-          constants.execPath,
-          [entryPath, 'cdxgen', '-u', '-h', '--unknown'],
-          spawnOpts
-        ),
-      e => e?.['stderr']?.startsWith('Unknown arguments: -u, --unknown'),
-      'plural'
-    )
+          spawn(
+            // Lazily access constants.execPath.
+            constants.execPath,
+            [entryPath, 'cdxgen', command],
+            spawnOpts
+          )
+        // @ts-ignore -- toHaveStderrStartWith is defined above
+      ).rejects.toHaveStderrStartWith(`Unknown argument: ${command}`)
+    })
+
+    it('should not forward --unknown to cdxgen', async () => {
+      const command = '--unknown'
+      await expect(
+        () =>
+          spawn(
+            // Lazily access constants.execPath.
+            constants.execPath,
+            [entryPath, 'cdxgen', command],
+            spawnOpts
+          )
+        // @ts-ignore -- toHaveStderrStartWith is defined above
+      ).rejects.toHaveStderrStartWith(`Unknown argument: ${command}`)
+    })
+
+    it('should not forward multiple unknown commands to cdxgen', async () => {
+      await expect(
+        () =>
+          spawn(
+            // Lazily access constants.execPath.
+            constants.execPath,
+            [entryPath, 'cdxgen', '-u', '-h', '--unknown'],
+            spawnOpts
+          )
+        // @ts-ignore -- toHaveStderrStartWith is defined above
+      ).rejects.toHaveStderrStartWith('Unknown arguments: -u, --unknown')
+    })
   })
 })
