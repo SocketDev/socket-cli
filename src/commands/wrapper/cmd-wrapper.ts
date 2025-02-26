@@ -69,13 +69,12 @@ async function run(
 
   const { enable } = cli.flags
   if (!enable && !cli.flags['disable']) {
-    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required flags:\n
-      - Must use --enabled or --disabled
-    `)
-    // Use exit status of 2 to indicate incorrect usage, generally invalid options
-    // or missing arguments.
+    // Use exit status of 2 to indicate incorrect usage, generally invalid
+    // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
+    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required flags:\n
+      - Must use --enabled or --disabled\n`)
     return
   }
 

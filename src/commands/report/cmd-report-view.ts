@@ -50,11 +50,13 @@ async function run(
 
   // Validate the input.
   if (extraInput.length || !reportId) {
+    // Use exit status of 2 to indicate incorrect usage, generally invalid
+    // options or missing arguments.
+    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+    process.exitCode = 2
     console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Need at least one report ID ${!reportId ? colors.red('(missing!)') : colors.green('(ok)')}\n
-      - Can only handle a single report ID ${extraInput.length < 2 ? colors.red(`(received ${extraInput.length}!)`) : colors.green('(ok)')}\n
-    `)
-    process.exitCode = 2 // bad input
+      - Can only handle a single report ID ${extraInput.length < 2 ? colors.red(`(received ${extraInput.length}!)`) : colors.green('(ok)')}\n`)
     return
   }
 

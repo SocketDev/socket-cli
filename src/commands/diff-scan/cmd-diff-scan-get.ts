@@ -76,12 +76,14 @@ async function run(
   const [orgSlug = ''] = cli.input
 
   if (!before || !after || cli.input.length < 1) {
+    // Use exit status of 2 to indicate incorrect usage, generally invalid
+    // options or missing arguments.
+    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+    process.exitCode = 2
     console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Specify a before and after full scan ID ${!before && !after ? colors.red('(missing before and after!)') : !before ? colors.red('(missing before!)') : !after ? colors.red('(missing after!)') : colors.green('(ok)')}\n
           - To get full scans IDs, you can run the command "socket scan list <your org slug>".
-      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n}
-    `)
-    process.exitCode = 2 // bad input
+      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n`)
     return
   }
 

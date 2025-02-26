@@ -84,12 +84,14 @@ async function run(
   const badRepo = scope === 'repo' && !repo
 
   if (badScope || badTime || badRepo) {
+    // Use exit status of 2 to indicate incorrect usage, generally invalid
+    // options or missing arguments.
+    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+    process.exitCode = 2
     console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Scope must be "repo" or "org" ${badScope ? colors.red('(bad!)') : colors.green('(ok)')}\n
       - The time filter must either be 7, 30 or 90 ${badTime ? colors.red('(bad!)') : colors.green('(ok)')}\n
-      - Repository name using --repo when scope is "repo" ${badRepo ? colors.red('(bad!)') : colors.green('(ok)')}\n
-    `)
-    process.exitCode = 2 // bad input
+      - Repository name using --repo when scope is "repo" ${badRepo ? colors.red('(bad!)') : colors.green('(ok)')}\n`)
     return
   }
 

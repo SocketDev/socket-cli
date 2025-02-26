@@ -73,11 +73,13 @@ async function run(
   const [orgSlug = ''] = cli.input
 
   if (!orgSlug) {
+    // Use exit status of 2 to indicate incorrect usage, generally invalid
+    // options or missing arguments.
+    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+    process.exitCode = 2
     console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
-      - At least one TARGET (e.g. \`.\` or \`./package.json\`
-    `)
-    process.exitCode = 2 // bad input
+      - At least one TARGET (e.g. \`.\` or \`./package.json\`\n`)
     return
   }
 

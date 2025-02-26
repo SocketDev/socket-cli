@@ -50,11 +50,13 @@ async function run(
   const [rawPkgName = ''] = cli.input
 
   if (!rawPkgName || cli.input.length > 1) {
+    // Use exit status of 2 to indicate incorrect usage, generally invalid
+    // options or missing arguments.
+    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+    process.exitCode = 2
     console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Expecting a package name ${!rawPkgName ? colors.red('(missing!)') : colors.green('(ok)')}\n
-      - Can only accept one package at a time ${cli.input.length > 1 ? colors.red('(got ' + cli.input.length + '!)') : colors.green('(ok)')}\n
-    `)
-    process.exitCode = 2 // bad input
+      - Can only accept one package at a time ${cli.input.length > 1 ? colors.red('(got ' + cli.input.length + '!)') : colors.green('(ok)')}\n`)
     return
   }
 

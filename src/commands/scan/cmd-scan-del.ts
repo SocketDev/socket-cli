@@ -50,13 +50,15 @@ async function run(
   const [orgSlug = '', fullScanId = ''] = cli.input
 
   if (!orgSlug || !fullScanId) {
+    // Use exit status of 2 to indicate incorrect usage, generally invalid
+    // options or missing arguments.
+    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+    process.exitCode = 2
     console.error(
       `${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
-      - Full Scan ID to delete as second argument ${!fullScanId ? colors.red('(missing!)') : colors.green('(ok)')}
-    `
+      - Full Scan ID to delete as second argument ${!fullScanId ? colors.red('(missing!)') : colors.green('(ok)')}\n`
     )
-    process.exitCode = 2 // bad input
     return
   }
 
