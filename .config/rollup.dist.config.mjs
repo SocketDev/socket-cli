@@ -29,18 +29,22 @@ import {
 
 const {
   BABEL_RUNTIME,
+  CLI,
   CONSTANTS,
+  INSTRUMENT_WITH_SENTRY,
   MODULE_SYNC,
   NPM_INJECTION,
   REQUIRE,
   ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_BIN,
+  SOCKET,
   SOCKET_CLI_LEGACY_BUILD,
   SOCKET_CLI_PUBLISHED_BUILD,
   SOCKET_CLI_SENTRY_BUILD,
   SOCKET_CLI_VERSION_HASH,
   VENDOR,
   VITEST,
+  WITH_SENTRY,
   depStatsPath,
   rootDistPath,
   rootPackageLockPath,
@@ -48,10 +52,8 @@ const {
   rootSrcPath
 } = constants
 
-const WITH_SENTRY = 'with-sentry'
-const INSTRUMENT_WITH_SENTRY = `instrument-${WITH_SENTRY}`
+const CLI_WITH_SENTRY = `${CLI}-${WITH_SENTRY}`
 const SENTRY_NODE = '@sentry/node'
-const SOCKET = 'socket'
 const SOCKET_DESCRIPTION = 'CLI tool for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET}\` package`
 const SOCKET_NPM = 'socket-npm'
@@ -153,12 +155,12 @@ async function removeJsFiles(namePattern, srcPath) {
 
 function resetBin(bin) {
   const tmpBin = {
-    socket: bin?.[SOCKET] ?? bin?.[SOCKET_WITH_SENTRY],
+    [SOCKET]: bin?.[SOCKET] ?? bin?.[SOCKET_WITH_SENTRY],
     [SOCKET_NPM]: bin?.[SOCKET_NPM] ?? bin?.[SOCKET_NPM_WITH_SENTRY],
     [SOCKET_NPX]: bin?.[SOCKET_NPX] ?? bin?.[SOCKET_NPX_WITH_SENTRY]
   }
   const newBin = {
-    ...(tmpBin[SOCKET] ? { socket: tmpBin.socket } : {}),
+    ...(tmpBin[SOCKET] ? { [SOCKET]: tmpBin.socket } : {}),
     ...(tmpBin[SOCKET_NPM] ? { [SOCKET_NPM]: tmpBin[SOCKET_NPM] } : {}),
     ...(tmpBin[SOCKET_NPX] ? { [SOCKET_NPX]: tmpBin[SOCKET_NPX] } : {})
   }
@@ -243,12 +245,8 @@ async function updatePackageJson() {
     editablePkgJson.update({
       name: SOCKET_SECURITY_CLI,
       bin: {
-        cli: bin.socket,
+        [CLI]: bin[SOCKET],
         ...bin
-      },
-      dependencies: {
-        ...dependencies,
-        [SENTRY_NODE]: (await getSentryManifest()).version
       }
     })
   }
@@ -258,7 +256,8 @@ async function updatePackageJson() {
       name: SOCKET_SECURITY_CLI_WITH_SENTRY,
       description: SOCKET_DESCRIPTION_WITH_SENTRY,
       bin: {
-        [SOCKET_WITH_SENTRY]: bin.socket,
+        [CLI_WITH_SENTRY]: bin[SOCKET],
+        [SOCKET_WITH_SENTRY]: bin[SOCKET],
         [SOCKET_NPM_WITH_SENTRY]: bin[SOCKET_NPM],
         [SOCKET_NPX_WITH_SENTRY]: bin[SOCKET_NPX]
       },
@@ -289,7 +288,7 @@ async function updatePackageLockFile() {
     lockJson.name = SOCKET_SECURITY_CLI
     rootPkg.name = SOCKET_SECURITY_CLI
     rootPkg.bin = toSortedObject({
-      cli: bin.socket,
+      [CLI]: bin[SOCKET],
       ...bin
     })
   }
@@ -297,6 +296,12 @@ async function updatePackageLockFile() {
   else if (constants.ENV[SOCKET_CLI_SENTRY_BUILD]) {
     lockJson.name = SOCKET_SECURITY_CLI_WITH_SENTRY
     rootPkg.name = SOCKET_SECURITY_CLI_WITH_SENTRY
+    rootPkg.bin = {
+      [CLI_WITH_SENTRY]: bin[SOCKET],
+      [SOCKET_WITH_SENTRY]: bin[SOCKET],
+      [SOCKET_NPM_WITH_SENTRY]: bin[SOCKET_NPM],
+      [SOCKET_NPX_WITH_SENTRY]: bin[SOCKET_NPX]
+    }
     rootPkg.dependencies = toSortedObject({
       ...dependencies,
       [SENTRY_NODE]: (await getSentryManifest()).version

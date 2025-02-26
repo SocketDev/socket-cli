@@ -75,10 +75,8 @@ const requireUrlAssignmentRegExp =
 const splitUrlRequiresRegExp = /require\(["']u["']\s*\+\s*["']rl["']\)/g
 
 function isAncestorsExternal(id, depStats) {
-  const { rootPackageJsonPath } = constants
-
-  const { dependencies: pkgDeps } = require(rootPackageJsonPath)
-
+  // Lazily access constants.rootPackageJsonPath.
+  const { dependencies: pkgDeps } = require(constants.rootPackageJsonPath)
   let currNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH)
   while (currNmIndex !== -1) {
     const nextNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH, currNmIndex + 1)
@@ -97,7 +95,7 @@ function isAncestorsExternal(id, depStats) {
       dependencies = {},
       optionalDependencies = {},
       peerDependencies = {}
-    } = readPackageJsonSync(`${id.slice(0, nameEnd)}/package.json`)
+    } = readPackageJsonSync(id.slice(0, nameEnd))
     const range =
       dependencies[name] ??
       optionalDependencies[name] ??
@@ -113,23 +111,17 @@ function isAncestorsExternal(id, depStats) {
 }
 
 export default function baseConfig(extendConfig = {}) {
-  // Lazily access constants props.
-  const {
-    babelConfigPath,
-    rootPackageJsonPath,
-    rootPath,
-    rootSrcPath,
-    tsconfigPath
-  } = constants
-
+  // Lazily access constants.rootSrcPath.
+  const { rootSrcPath } = constants
   const {
     dependencies: pkgDeps,
     devDependencies: pkgDevDeps,
     overrides: pkgOverrides
-  } = require(rootPackageJsonPath)
-
+    // Lazily access constants.rootPackageJsonPath.
+  } = require(constants.rootPackageJsonPath)
   const constantsSrcPath = path.join(rootSrcPath, `${CONSTANTS}.ts`)
-  const babelConfig = require(babelConfigPath)
+  // Lazily access constants.babelConfigPath.
+  const babelConfig = require(constants.babelConfigPath)
   const tsPlugin = require('rollup-plugin-ts')
 
   const depStats = {
@@ -197,9 +189,7 @@ export default function baseConfig(extendConfig = {}) {
           dependencies = {},
           optionalDependencies = {},
           peerDependencies = {}
-        } = readPackageJsonSync(
-          `${parentId.slice(0, parentNameEnd)}/package.json`
-        )
+        } = readPackageJsonSync(parentId.slice(0, parentNameEnd))
         const range =
           dependencies[name] ??
           optionalDependencies[name] ??
@@ -229,7 +219,8 @@ export default function baseConfig(extendConfig = {}) {
         transpileOnly: true,
         exclude: ['**/*.json'],
         babelConfig,
-        tsconfig: tsconfigPath
+        // Lazily access constants.tsconfigPath.
+        tsconfig: constants.tsconfigPath
       }),
       purgePolyfills.rollup({
         replacements: {}
@@ -338,7 +329,8 @@ function ${SOCKET_INTEROP}(e) {
       delimiters: ['(?<=["\'])', '/'],
       preventAssignment: false,
       values: {
-        [rootPath]: '../../'
+        // Lazily access constants.rootPath.
+        [constants.rootPath]: '../../'
       }
     })
     return { name, renderChunk }
