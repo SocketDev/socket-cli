@@ -1,13 +1,18 @@
 import meow from 'meow'
 
-import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
+import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import { getFlagListOutput, getHelpListOutput } from './output-formatting'
-import { getSetting } from './settings.ts'
+import { getSetting } from './settings'
+import constants from '../constants'
 import { MeowFlags, commonFlags } from '../flags'
 
 import type { Options } from 'meow'
+
+const { SOCKET_CLI_SHOW_BANNER } = constants
+
+const REDACTED = '<redacted>'
 
 interface CliAlias {
   description: string
@@ -89,10 +94,10 @@ export async function meowWithSubcommands(
   // ...else we provide basic instructions and help.
 
   // Temp disable until we clear the --json and --markdown usage
-  if (envAsBoolean(process.env['SOCKET_CLI_SHOW_BANNER'])) {
+  // Lazily access constants.ENV[SOCKET_CLI_SHOW_BANNER].
+  if (constants.ENV[SOCKET_CLI_SHOW_BANNER]) {
     console.log(getAsciiHeader(name))
   }
-
   const cli = meow(
     `
     Usage
@@ -138,9 +143,10 @@ export async function meowWithSubcommands(
   )
   if (!cli.flags['help'] && cli.flags['dryRun']) {
     console.log('[DryRun]: noop, call a sub-command; ok')
-    process.exit(0)
+    process.exitCode = 0
+  } else {
+    cli.showHelp()
   }
-  cli.showHelp()
 }
 
 /**
@@ -161,45 +167,58 @@ export function meowOrExit({
 }) {
   const command = `${parentName} ${config.commandName}`
   lastSeenCommand = command
-
-  const help = config.help(command, config)
-
-  // Temp disable until we clear the --json and --markdown usage
-  if (envAsBoolean(process.env['SOCKET_CLI_SHOW_BANNER'])) {
+  // Temp disable until we clear the --json and --markdown usage.
+  // Lazily access constants.ENV[SOCKET_CLI_SHOW_BANNER].
+  if (constants.ENV[SOCKET_CLI_SHOW_BANNER]) {
     console.log(getAsciiHeader(command))
   }
-
   // This exits if .printHelp() is called either by meow itself or by us.
   const cli = meow({
     argv,
     description: config.description,
-    help,
+    help: config.help(command, config),
     importMeta,
     flags: config.flags,
     allowUnknownFlags: Boolean(allowUnknownFlags),
     autoHelp: false // otherwise we can't exit(0)
   })
-
-  if (cli.flags['help']) cli.showHelp()
-
+  if (cli.flags['help']) {
+    cli.showHelp()
+  }
   return cli
 }
 
 function getAsciiHeader(command: string) {
+  // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
+  const cliVersion = process.env['VITEST']
+    ? REDACTED
+    : // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_VERSION_HASH']".
+      process.env['SOCKET_CLI_VERSION_HASH']
+  // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
+  const nodeVersion = process.env['VITEST'] ? REDACTED : process.version
+  // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
+  const apiToken = process.env['VITEST']
+    ? REDACTED
+    // Get the last 5 characters of the API token before the trailing "_api".
+    : getSetting('apiToken')?.slice(-9, -4) || 'no'
   // Note: in tests we return <redacted> because otherwise snapshots will fail
   return (
     '   ' +
     `
    _____         _       _        /---------------
-  |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${process.env['VITEST'] ? '<redacted>' : process.env['SOCKET_CLI_VERSION']}
-  |__   | . |  _| '_| -_|  _|     | Node: ${process.env['VITEST'] ? '<redacted>' : process.version}, API token set: ${process.env['VITEST'] ? '<redacted>' : getSetting('apiToken')?.slice(-9, -4) || 'no'}
+  |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
+  |__   | . |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${apiToken}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${
+    // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
     process.env['VITEST']
-      ? '<redacted>'
+      ? REDACTED
       : process
           .cwd()
           .trim()
-          .replace(/^\/home\/[a-z0-9_-]+\//i, '~/')
+          .replace(
+            new RegExp(`^${escapeRegExp(constants.homePath)}`, 'i'),
+            '~/'
+          )
   }
   `.trim() +
     '\n'
