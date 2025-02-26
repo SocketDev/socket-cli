@@ -189,38 +189,27 @@ export function meowOrExit({
 }
 
 function getAsciiHeader(command: string) {
-  // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
-  const cliVersion = process.env['VITEST']
+  // Note: In tests we return <redacted> because otherwise snapshots will fail.
+  // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_VERSION_HASH']".
+  const redacting = process.env['VITEST']
+  const cliVersion = redacting
     ? REDACTED
     : // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_VERSION_HASH']".
       process.env['SOCKET_CLI_VERSION_HASH']
-  // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
-  const nodeVersion = process.env['VITEST'] ? REDACTED : process.version
+  const nodeVersion = redacting ? REDACTED : process.version
   // Get the last 5 characters of the API token before the trailing "_api".
-  // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
-  const lastFiveCharsOfApiToken = process.env['VITEST']
+  const lastFiveCharsOfApiToken = redacting
     ? REDACTED
     : getSetting('apiToken')?.slice(-9, -4) || 'no'
-  // Note: in tests we return <redacted> because otherwise snapshots will fail
-  return (
-    '   ' +
-    `
+  const relCwd = redacting
+    ? REDACTED
+    : process
+        .cwd()
+        .replace(new RegExp(`^${escapeRegExp(constants.homePath)}`, 'i'), '~/')
+  const body = `
    _____         _       _        /---------------
   |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
   |__   | . |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${lastFiveCharsOfApiToken}
-  |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${
-    // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
-    process.env['VITEST']
-      ? REDACTED
-      : process
-          .cwd()
-          .trim()
-          .replace(
-            new RegExp(`^${escapeRegExp(constants.homePath)}`, 'i'),
-            '~/'
-          )
-  }
-  `.trim() +
-    '\n'
-  )
+  |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}`.trimStart()
+  return `   ${body}\n`
 }
