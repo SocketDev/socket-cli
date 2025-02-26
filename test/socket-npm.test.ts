@@ -17,7 +17,7 @@ const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 for (const npmDir of ['npm8', 'npm10']) {
   if (process.env['CI']) {
     // Skip this test in CI.
-    expect(true).toBe(true);
+    describe('skipme', () => it('should skip', () => expect(true).toBe(true)));
     continue
   }
   const npmPath = path.join(npmFixturesPath, npmDir)
