@@ -73,7 +73,9 @@ async function run(
   if (verbose) {
     subArgs.push('--verbose')
   }
+
   const dir = cwd
+
   if (existsSync(path.join(dir, 'build.sbt'))) {
     console.log(
       'Detected a Scala sbt build, running default Scala generator...'
@@ -88,6 +90,7 @@ async function run(
     await cmdManifestScala.run(subArgs, importMeta, { parentName })
     return
   }
+
   if (existsSync(path.join(dir, 'gradlew'))) {
     console.log('Detected a gradle build, running default gradle generator...')
     if (cwd) {
@@ -100,6 +103,7 @@ async function run(
     await cmdManifestGradle.run(subArgs, importMeta, { parentName })
     return
   }
+
   // Show new help screen and exit.
   meow(
     `

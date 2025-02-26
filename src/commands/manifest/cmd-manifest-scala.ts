@@ -1,7 +1,5 @@
 import colors from 'yoctocolors-cjs'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
 import { convertSbtToMaven } from './convert_sbt_to_maven.ts'
 import { commonFlags } from '../../flags.ts'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -144,16 +142,6 @@ async function run(
     console.log('- gradle bin:', bin)
     console.log('- out:', out)
     console.groupEnd()
-  }
-
-  // TODO: we can make `-` (accept from stdin) work by storing it into /tmp
-  if (target === '-') {
-    new Spinner()
-      .start('Parsing...')
-      .error(
-        `Failure: Currently source code from stdin is not supported. See \`${parentName} ${config.commandName} --help\` for details.`
-      )
-    process.exit(1)
   }
 
   let sbtOpts: Array<string> = []

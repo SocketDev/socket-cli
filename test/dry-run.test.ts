@@ -13,8 +13,9 @@ import path from 'node:path'
 import spawn from '@npmcli/promise-spawn'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import constants from '../dist/constants.js'
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
+
+import constants from '../dist/constants.js'
 
 type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
   encoding?: BufferEncoding | undefined

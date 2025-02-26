@@ -56,18 +56,16 @@ async function run(
     parentName
   })
 
-  const isDryRun = cli.flags['dryRun']
+  let apiBaseUrl = cli.flags['apiBaseUrl'] as string | undefined
+  let apiProxy = cli.flags['apiProxy'] as string | undefined
 
-  if (!isInteractive() && !isDryRun) {
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+
+  if (!isInteractive()) {
     throw new InputError(
       'Cannot prompt for credentials in a non-interactive shell'
     )
   }
-
-  let apiBaseUrl = cli.flags['apiBaseUrl'] as string | undefined
-  let apiProxy = cli.flags['apiProxy'] as string | undefined
-
-  if (isDryRun) return console.log('[DryRun] Bailing now')
 
   await attemptLogin(apiBaseUrl, apiProxy)
 }

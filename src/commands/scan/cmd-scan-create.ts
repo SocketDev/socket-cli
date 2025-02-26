@@ -170,14 +170,14 @@ async function run(
     return
   }
 
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+
   const apiToken = getDefaultToken()
   if (!apiToken) {
     throw new AuthError(
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
-
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   await createFullScan({
     apiToken,

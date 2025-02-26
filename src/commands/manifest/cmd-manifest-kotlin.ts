@@ -2,8 +2,6 @@ import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
 import { convertGradleToMaven } from './convert_gradle_to_maven.ts'
 import { commonFlags } from '../../flags.ts'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -147,16 +145,6 @@ async function run(
   }
   if (cli.flags['stdout']) {
     out = '-'
-  }
-
-  // TODO: I'm not sure it's feasible to parse source file from stdin. We could try, store contents in a file in some folder, target that folder... what would the file name be?
-  if (target === '-') {
-    new Spinner()
-      .start('Parsing...')
-      .error(
-        `Failure: Currently source code from stdin is not supported. See \`${parentName} ${config.commandName} --help\` for details.`
-      )
-    process.exit(1)
   }
 
   if (verbose) {

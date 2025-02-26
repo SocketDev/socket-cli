@@ -1,5 +1,6 @@
 import meow from 'meow'
 
+import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 
 import { getFlagListOutput, getHelpListOutput } from './output-formatting'
@@ -7,7 +8,6 @@ import { getSetting } from './settings.ts'
 import { MeowFlags, commonFlags } from '../flags'
 
 import type { Options } from 'meow'
-import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
 interface CliAlias {
   description: string
