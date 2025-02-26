@@ -425,6 +425,7 @@ export default () => {
     ]
   })
 
+  const keptRequireDtsMapFiles = new Set()
   const requireConfig = baseConfig({
     input: {
       ...sharedInputs
@@ -440,19 +441,27 @@ export default () => {
         async generateBundle(_options, bundle) {
           for (const basename of Object.keys(bundle)) {
             const data = bundle[basename]
-            if (
-              data.type === 'chunk' &&
-              basename !== VENDOR_JS &&
-              !data.code.includes(`'./${VENDOR_JS}'`)
-            ) {
-              data.code = createStubCode(`../${MODULE_SYNC}/${basename}`)
+            if (data.type === 'chunk') {
+              if (
+                basename !== VENDOR_JS &&
+                !data.code.includes(`'./${VENDOR_JS}'`)
+              ) {
+                data.code = createStubCode(`../${MODULE_SYNC}/${basename}`)
+              } else {
+                keptRequireDtsMapFiles.add(
+                  path.basename(basename, path.extname(basename))
+                )
+              }
             }
           }
         },
         async writeBundle() {
           await Promise.all([
             updateDepStats(requireConfig.meta.depStats),
-            removeDtsAndMapFiles('*', distRequirePath),
+            removeDtsAndMapFiles(
+              `!(${[...keptRequireDtsMapFiles].sort(naturalCompare).join('|')})`,
+              distRequirePath
+            ),
             moveDtsAndMapFiles(CONSTANTS, distModuleSyncPath, rootDistPath)
           ])
           await Promise.all([
