@@ -247,10 +247,6 @@ async function updatePackageJson() {
       bin: {
         [CLI]: bin[SOCKET],
         ...bin
-      },
-      dependencies: {
-        ...dependencies,
-        [SENTRY_NODE]: (await getSentryManifest()).version
       }
     })
   }
