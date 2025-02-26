@@ -196,10 +196,10 @@ function getAsciiHeader(command: string) {
       process.env['SOCKET_CLI_VERSION_HASH']
   // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
   const nodeVersion = process.env['VITEST'] ? REDACTED : process.version
+  // Get the last 5 characters of the API token before the trailing "_api".
   // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
-  const apiToken = process.env['VITEST']
+  const lastFiveCharsOfApiToken = process.env['VITEST']
     ? REDACTED
-    // Get the last 5 characters of the API token before the trailing "_api".
     : getSetting('apiToken')?.slice(-9, -4) || 'no'
   // Note: in tests we return <redacted> because otherwise snapshots will fail
   return (
@@ -207,7 +207,7 @@ function getAsciiHeader(command: string) {
     `
    _____         _       _        /---------------
   |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
-  |__   | . |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${apiToken}
+  |__   | . |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${lastFiveCharsOfApiToken}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${
     // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
     process.env['VITEST']
