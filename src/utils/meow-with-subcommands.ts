@@ -7,6 +7,7 @@ import { getSetting } from './settings.ts'
 import { MeowFlags, commonFlags } from '../flags'
 
 import type { Options } from 'meow'
+import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
 interface CliAlias {
   description: string
@@ -87,7 +88,10 @@ export async function meowWithSubcommands(
   }
   // ...else we provide basic instructions and help
 
-  console.log(getAsciiHeader(name))
+  // Temp disable until we clear the --json and --markdown usage
+  if (envAsBoolean(process.env['SOCKET_CLI_SHOW_BANNER'])) {
+    console.log(getAsciiHeader(name))
+  }
 
   const cli = meow(
     `
@@ -160,7 +164,10 @@ export function meowOrExit({
 
   const help = config.help(command, config)
 
-  console.log(getAsciiHeader(command))
+  // Temp disable until we clear the --json and --markdown usage
+  if (envAsBoolean(process.env['SOCKET_CLI_SHOW_BANNER'])) {
+    console.log(getAsciiHeader(command))
+  }
 
   // This exits if .printHelp() is called either by meow itself or by us.
   const cli = meow({

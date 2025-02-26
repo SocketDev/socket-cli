@@ -11,9 +11,10 @@
 import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import constants from '../dist/constants.js'
+import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
 type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
   encoding?: BufferEncoding | undefined
@@ -43,6 +44,22 @@ function cmdit(
 }
 
 describe('dry-run on all commands', async () => {
+  let was: unknown
+
+  beforeAll(() => {
+    // Temp: we have to disable the banner by default until we make it work
+    //       properly with --json and --markdown, since otherwise the output
+    //       would be invalid.
+    was = process.env['SOCKET_CLI_SHOW_BANNER']
+    process.env['SOCKET_CLI_SHOW_BANNER'] = '1'
+  })
+
+  afterAll(() => {
+    if (was) {
+      process.env['SOCKET_CLI_SHOW_BANNER'] = was as any
+    }
+  })
+
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
