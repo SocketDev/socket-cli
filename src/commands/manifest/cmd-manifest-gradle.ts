@@ -117,13 +117,15 @@ async function run(
   // TODO: I'm not sure it's feasible to parse source file from stdin. We could try, store contents in a file in some folder, target that folder... what would the file name be?
 
   if (!target || target === '-' || cli.input.length > 1) {
+    // Use exit status of 2 to indicate incorrect usage, generally invalid
+    // options or missing arguments.
+    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+    process.exitCode = 2
     console.error(
       `${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - The DIR arg is required ${!target ? colors.red('(missing!)') : target === '-' ? colors.red('(stdin is not supported)') : colors.green('(ok)')}\n
-      - Can only accept one DIR (make sure to escape spaces!) ${cli.input.length > 1 ? colors.red(`(received ${cli.input.length}!)`) : colors.green('(ok)')}\n
-    `
+      - Can only accept one DIR (make sure to escape spaces!) ${cli.input.length > 1 ? colors.red(`(received ${cli.input.length}!)`) : colors.green('(ok)')}\n`
     )
-    process.exitCode = 2 // bad input
     return
   }
 
