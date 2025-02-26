@@ -29,6 +29,7 @@ import {
 
 const {
   BABEL_RUNTIME,
+  CLI,
   CONSTANTS,
   INSTRUMENT_WITH_SENTRY,
   MODULE_SYNC,
@@ -51,6 +52,7 @@ const {
   rootSrcPath
 } = constants
 
+const CLI_WITH_SENTRY = `${CLI}-${WITH_SENTRY}`
 const SENTRY_NODE = '@sentry/node'
 const SOCKET_DESCRIPTION = 'CLI tool for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET}\` package`
@@ -153,12 +155,12 @@ async function removeJsFiles(namePattern, srcPath) {
 
 function resetBin(bin) {
   const tmpBin = {
-    socket: bin?.[SOCKET] ?? bin?.[SOCKET_WITH_SENTRY],
+    [SOCKET]: bin?.[SOCKET] ?? bin?.[SOCKET_WITH_SENTRY],
     [SOCKET_NPM]: bin?.[SOCKET_NPM] ?? bin?.[SOCKET_NPM_WITH_SENTRY],
     [SOCKET_NPX]: bin?.[SOCKET_NPX] ?? bin?.[SOCKET_NPX_WITH_SENTRY]
   }
   const newBin = {
-    ...(tmpBin[SOCKET] ? { socket: tmpBin.socket } : {}),
+    ...(tmpBin[SOCKET] ? { [SOCKET]: tmpBin.socket } : {}),
     ...(tmpBin[SOCKET_NPM] ? { [SOCKET_NPM]: tmpBin[SOCKET_NPM] } : {}),
     ...(tmpBin[SOCKET_NPX] ? { [SOCKET_NPX]: tmpBin[SOCKET_NPX] } : {})
   }
@@ -243,7 +245,7 @@ async function updatePackageJson() {
     editablePkgJson.update({
       name: SOCKET_SECURITY_CLI,
       bin: {
-        cli: bin.socket,
+        [CLI]: bin[SOCKET],
         ...bin
       },
       dependencies: {
@@ -258,7 +260,8 @@ async function updatePackageJson() {
       name: SOCKET_SECURITY_CLI_WITH_SENTRY,
       description: SOCKET_DESCRIPTION_WITH_SENTRY,
       bin: {
-        [SOCKET_WITH_SENTRY]: bin.socket,
+        [CLI_WITH_SENTRY]: bin[SOCKET],
+        [SOCKET_WITH_SENTRY]: bin[SOCKET],
         [SOCKET_NPM_WITH_SENTRY]: bin[SOCKET_NPM],
         [SOCKET_NPX_WITH_SENTRY]: bin[SOCKET_NPX]
       },
