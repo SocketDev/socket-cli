@@ -30,17 +30,20 @@ import {
 const {
   BABEL_RUNTIME,
   CONSTANTS,
+  INSTRUMENT_WITH_SENTRY,
   MODULE_SYNC,
   NPM_INJECTION,
   REQUIRE,
   ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_BIN,
+  SOCKET,
   SOCKET_CLI_LEGACY_BUILD,
   SOCKET_CLI_PUBLISHED_BUILD,
   SOCKET_CLI_SENTRY_BUILD,
   SOCKET_CLI_VERSION_HASH,
   TAP,
   VENDOR,
+  WITH_SENTRY,
   depStatsPath,
   rootDistPath,
   rootPackageLockPath,
@@ -48,10 +51,7 @@ const {
   rootSrcPath
 } = constants
 
-const WITH_SENTRY = 'with-sentry'
-const INSTRUMENT_WITH_SENTRY = `instrument-${WITH_SENTRY}`
 const SENTRY_NODE = '@sentry/node'
-const SOCKET = 'socket'
 const SOCKET_DESCRIPTION = 'CLI tool for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET}\` package`
 const SOCKET_NPM = 'socket-npm'

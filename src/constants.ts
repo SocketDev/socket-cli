@@ -8,6 +8,7 @@ import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 
 const {
+  NODE_MODULES,
   PACKAGE_JSON,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
@@ -79,6 +80,7 @@ type Constants = Remap<
     readonly PNPM: 'pnpm'
     readonly REQUIRE: 'require'
     readonly SHADOW_BIN: 'shadow-bin'
+    readonly SOCKET: 'socket'
     readonly SOCKET_CLI_DEBUG: 'SOCKET_CLI_DEBUG'
     readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
     readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
@@ -127,6 +129,7 @@ const NPX = 'npx'
 const PNPM = 'pnpm'
 const REQUIRE = 'require'
 const SHADOW_BIN = 'shadow-bin'
+const SOCKET = 'socket'
 const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
 const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
@@ -190,7 +193,7 @@ const lazyInstrumentWithSentryPath = () =>
 
 const lazyNmBinPath = () =>
   // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'node_modules/.bin')
+  path.join(constants.rootPath, `${NODE_MODULES}/.bin`)
 
 const lazyNpmInjectionPath = () =>
   // Lazily access constants.distPath.
@@ -249,6 +252,7 @@ const constants = <Constants>createConstantsObject(
     PNPM,
     REQUIRE,
     SHADOW_BIN,
+    SOCKET,
     SOCKET_CLI_DEBUG,
     SOCKET_CLI_FIX,
     SOCKET_CLI_ISSUES_URL,

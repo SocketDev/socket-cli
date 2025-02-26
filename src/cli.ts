@@ -35,12 +35,12 @@ import { AuthError, InputError, captureException } from './utils/errors'
 import { getLogSymbols } from './utils/logging'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
 
-const { rootPkgJsonPath } = constants
+const { SOCKET, rootPkgJsonPath } = constants
 
 // TODO: Add autocompletion using https://socket.dev/npm/package/omelette
 void (async () => {
   await updateNotifier({
-    name: 'socket',
+    name: SOCKET,
     version: require(rootPkgJsonPath).version,
     ttl: 86_400_000 /* 24 hours in milliseconds */
   })
@@ -80,7 +80,7 @@ void (async () => {
           }
         },
         argv: process.argv.slice(2),
-        name: 'socket',
+        name: SOCKET,
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta
       }
     )
