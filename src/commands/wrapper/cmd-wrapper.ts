@@ -1,21 +1,18 @@
-import fs from 'node:fs'
-import os from 'node:os'
+import { existsSync } from 'node:fs'
 
 import colors from 'yoctocolors-cjs'
 
-import { addSocketWrapper } from './add-socket-wrapper.ts'
-import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.ts'
-import { postinstallWrapper } from './postinstall-wrapper.ts'
-import { removeSocketWrapper } from './remove-socket-wrapper.ts'
-import { commonFlags } from '../../flags.ts'
+import { addSocketWrapper } from './add-socket-wrapper'
+import { checkSocketWrapperSetup } from './check-socket-wrapper-setup'
+import { postinstallWrapper } from './postinstall-wrapper'
+import { removeSocketWrapper } from './remove-socket-wrapper'
+import constants from '../../constants'
+import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
-const HOME_DIR = os.homedir()
-const BASH_FILE = `${HOME_DIR}/.bashrc`
-const ZSH_BASH_FILE = `${HOME_DIR}/.zshrc`
+import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const config: CliCommandConfig = {
   commandName: 'wrapper',
@@ -71,37 +68,40 @@ async function run(
     parentName
   })
 
-  const isDryRun = cli.flags['dryRun']
-
-  const { disable, enable } = cli.flags
-  if (!enable && !disable) {
+  const { enable } = cli.flags
+  if (!enable && !cli.flags['disable']) {
     console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required flags:\n
       - Must use --enabled or --disabled
     `)
-    process.exitCode = 2 // bad input
+    // Use exit status of 2 to indicate incorrect usage, generally invalid options
+    // or missing arguments.
+    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+    process.exitCode = 2
     return
   }
 
-  if (isDryRun) return console.log('[DryRun] Bailing now')
+  if (cli.flags['dryRun']) {
+    return console.log('[DryRun] Bailing now')
+  }
 
+  // Lazily access constants.bashRcPath and constants.zshRcPath.
+  const { bashRcPath, zshRcPath } = constants
   if (enable) {
-    if (fs.existsSync(BASH_FILE)) {
-      const socketWrapperEnabled = checkSocketWrapperSetup(BASH_FILE)
-      !socketWrapperEnabled && addSocketWrapper(BASH_FILE)
+    if (existsSync(bashRcPath) && !checkSocketWrapperSetup(bashRcPath)) {
+      addSocketWrapper(bashRcPath)
     }
-    if (fs.existsSync(ZSH_BASH_FILE)) {
-      const socketWrapperEnabled = checkSocketWrapperSetup(ZSH_BASH_FILE)
-      !socketWrapperEnabled && addSocketWrapper(ZSH_BASH_FILE)
+    if (existsSync(zshRcPath) && !checkSocketWrapperSetup(zshRcPath)) {
+      addSocketWrapper(zshRcPath)
     }
   } else {
-    if (fs.existsSync(BASH_FILE)) {
-      removeSocketWrapper(BASH_FILE)
+    if (existsSync(bashRcPath)) {
+      removeSocketWrapper(bashRcPath)
     }
-    if (fs.existsSync(ZSH_BASH_FILE)) {
-      removeSocketWrapper(ZSH_BASH_FILE)
+    if (existsSync(zshRcPath)) {
+      removeSocketWrapper(zshRcPath)
     }
   }
-  if (!fs.existsSync(BASH_FILE) && !fs.existsSync(ZSH_BASH_FILE)) {
+  if (!existsSync(bashRcPath) && !existsSync(zshRcPath)) {
     console.error(
       'There was an issue setting up the alias in your bash profile'
     )
