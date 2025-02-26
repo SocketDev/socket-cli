@@ -288,7 +288,7 @@ async function updatePackageLockFile() {
     lockJson.name = SOCKET_SECURITY_CLI
     rootPkg.name = SOCKET_SECURITY_CLI
     rootPkg.bin = toSortedObject({
-      cli: bin.socket,
+      [CLI]: bin[SOCKET],
       ...bin
     })
   }
@@ -296,6 +296,12 @@ async function updatePackageLockFile() {
   else if (constants.ENV[SOCKET_CLI_SENTRY_BUILD]) {
     lockJson.name = SOCKET_SECURITY_CLI_WITH_SENTRY
     rootPkg.name = SOCKET_SECURITY_CLI_WITH_SENTRY
+    rootPkg.bin = {
+      [CLI_WITH_SENTRY]: bin[SOCKET],
+      [SOCKET_WITH_SENTRY]: bin[SOCKET],
+      [SOCKET_NPM_WITH_SENTRY]: bin[SOCKET_NPM],
+      [SOCKET_NPX_WITH_SENTRY]: bin[SOCKET_NPX]
+    }
     rootPkg.dependencies = toSortedObject({
       ...dependencies,
       [SENTRY_NODE]: (await getSentryManifest()).version
