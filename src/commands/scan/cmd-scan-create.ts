@@ -125,6 +125,9 @@ async function run(
       ? String(cli.flags['cwd'])
       : process.cwd()
 
+  // Note exiting earlier to skirt a hidden auth requirement
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+
   const socketSdk = await setupSdk()
   const supportedFiles = await socketSdk
     .getReportSupportedFiles()
@@ -141,8 +144,6 @@ async function run(
     .catch((cause: Error) => {
       throw new Error('Failed getting supported files for report', { cause })
     })
-
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
 
   const packagePaths = await getPackageFilesFullScans(
     cwd,
