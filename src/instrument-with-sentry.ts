@@ -1,13 +1,16 @@
 // This should ONLY be included in the special Sentry build!
 // Otherwise the Sentry dependency won't even be present in the manifest.
 
+// Require constants with require(relConstantsPath) instead of require('./constants')
+// so Rollup doesn't generate a constants2.js chunk.
+const relConstantsPath = './constants'
 // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_SENTRY_BUILD']".
 if (process.env['SOCKET_CLI_SENTRY_BUILD']) {
   const Sentry = require('@sentry/node')
   Sentry.init({
     onFatalError(error: Error) {
       // Defer module loads until after Sentry.init is called.
-      if (require('./constants').ENV.SOCKET_CLI_DEBUG) {
+      if (require(relConstantsPath).ENV.SOCKET_CLI_DEBUG) {
         console.error('[DEBUG] [Sentry onFatalError]:', error)
       }
     },
@@ -25,7 +28,7 @@ if (process.env['SOCKET_CLI_SENTRY_BUILD']) {
     // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_VERSION_HASH']".
     process.env['SOCKET_CLI_VERSION_HASH']
   )
-  const constants = require('./constants')
+  const constants = require(relConstantsPath)
   if (constants.ENV.SOCKET_CLI_DEBUG) {
     Sentry.setTag('debugging', true)
     console.log('[DEBUG] Set up Sentry.')
@@ -37,6 +40,6 @@ if (process.env['SOCKET_CLI_SENTRY_BUILD']) {
     [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { setSentry }
   } = constants
   setSentry(Sentry)
-} else if (require('./constants').ENV.SOCKET_CLI_DEBUG) {
+} else if (require(relConstantsPath).ENV.SOCKET_CLI_DEBUG) {
   console.log('[DEBUG] Sentry disabled explicitly.')
 }
