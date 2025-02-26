@@ -84,18 +84,13 @@ async function run(
   const includeAllIssues = Boolean(cli.flags['all'])
   const view = Boolean(cli.flags['view'])
 
+  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+
   const socketConfig = await getSocketConfig(absoluteConfigPath)
 
   const result = await createReport(socketConfig, cli.input, { cwd, dryRun })
 
   const commandName = `${parentName} ${config.commandName}`
-
-  if (dryRun && view) {
-    console.log(
-      '[DryRun] Ignoring view flag since no report was actually generated'
-    )
-  }
-  if (dryRun) return console.log('[DryRun] Bailing now')
 
   if (result?.success) {
     if (view) {
