@@ -1,27 +1,13 @@
 // This should ONLY be included in the special Sentry build!
 // Otherwise the Sentry dependency won't even be present in the manifest.
 
-// @ts-ignore
-import Sentry from '@sentry/node'
-
-import constants from './constants'
-
-const {
-  kInternalsSymbol,
-  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { setSentry }
-} = constants
-
-const debugging = constants.ENV.SOCKET_CLI_DEBUG
-
 // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_SENTRY_BUILD']".
 if (process.env['SOCKET_CLI_SENTRY_BUILD']) {
-  setSentry(Sentry)
-  if (debugging) {
-    console.log('[DEBUG] Setting up Sentry...')
-  }
+  const Sentry = require('@sentry/node')
   Sentry.init({
     onFatalError(error: Error) {
-      if (debugging) {
+      // Defer module loads until after Sentry.init is called.
+      if (require('./constants').ENV.SOCKET_CLI_DEBUG) {
         console.error('[DEBUG] [Sentry onFatalError]:', error)
       }
     },
@@ -34,15 +20,23 @@ if (process.env['SOCKET_CLI_SENTRY_BUILD']) {
     // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_PUBLISHED_BUILD']".
     process.env['SOCKET_CLI_PUBLISHED_BUILD'] ? 'pub' : process.env['NODE_ENV']
   )
-  Sentry.setTag('debugging', debugging)
   Sentry.setTag(
     'version',
     // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_VERSION_HASH']".
     process.env['SOCKET_CLI_VERSION_HASH']
   )
-  if (debugging) {
+  const constants = require('./constants')
+  if (constants.ENV.SOCKET_CLI_DEBUG) {
+    Sentry.setTag('debugging', true)
     console.log('[DEBUG] Set up Sentry.')
+  } else {
+    Sentry.setTag('debugging', false)
   }
-} else if (debugging) {
+  const {
+    kInternalsSymbol,
+    [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { setSentry }
+  } = constants
+  setSentry(Sentry)
+} else if (require('./constants').ENV.SOCKET_CLI_DEBUG) {
   console.log('[DEBUG] Sentry disabled explicitly.')
 }
