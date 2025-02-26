@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import { builtinModules, createRequire } from 'node:module'
 import path from 'node:path'
 
@@ -37,6 +39,11 @@ const {
   ROLLUP_ENTRY_SUFFIX,
   ROLLUP_EXTERNAL_SUFFIX,
   SLASH_NODE_MODULES_SLASH,
+  SOCKET_CLI_LEGACY_BUILD,
+  SOCKET_CLI_PUBLISHED_BUILD,
+  SOCKET_CLI_SENTRY_BUILD,
+  SOCKET_CLI_VERSION_HASH,
+  VITEST,
   VENDOR
 } = constants
 
@@ -73,6 +80,29 @@ const requireUrlAssignmentRegExp =
   /(?<=var +)[$\w]+(?= *= *require\('node:url'\))/
 
 const splitUrlRequiresRegExp = /require\(["']u["']\s*\+\s*["']rl["']\)/g
+
+let _socketVersionHash
+function getSocketVersionHash() {
+  if (_socketVersionHash === undefined) {
+    const randUuidSegment = randomUUID().split('-')[0]
+    // Lazily access constants.rootPath.
+    const { version } = readPackageJsonSync(constants.rootPath)
+    let gitHash = ''
+    try {
+      gitHash = spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
+        encoding: 'utf8'
+      }).stdout.trim()
+    } catch {}
+    // Make each build generate a unique version id, regardless.
+    // Mostly for development: confirms the build refreshed. For prod builds
+    // the git hash should suffice to identify the build.
+    _socketVersionHash = `${version}:${gitHash}:${randUuidSegment}${
+      // Lazily access constants.ENV[SOCKET_CLI_PUBLISHED_BUILD].
+      constants.ENV[SOCKET_CLI_PUBLISHED_BUILD] ? ':pub' : ':dev'
+    }`
+  }
+  return _socketVersionHash
+}
 
 function isAncestorsExternal(id, depStats) {
   // Lazily access constants.rootPackageJsonPath.
@@ -224,6 +254,52 @@ export default function baseConfig(extendConfig = {}) {
       }),
       purgePolyfills.rollup({
         replacements: {}
+      }),
+      // Inline process.env values.
+      replacePlugin({
+        delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
+        preventAssignment: true,
+        values: [
+          [
+            SOCKET_CLI_VERSION_HASH,
+            () => JSON.stringify(getSocketVersionHash())
+          ],
+          [
+            SOCKET_CLI_LEGACY_BUILD,
+            () =>
+              JSON.stringify(
+                // Lazily access constants.ENV[SOCKET_CLI_LEGACY_BUILD].
+                !!constants.ENV[SOCKET_CLI_LEGACY_BUILD]
+              )
+          ],
+          [
+            SOCKET_CLI_PUBLISHED_BUILD,
+            () =>
+              JSON.stringify(
+                // Lazily access constants.ENV[SOCKET_CLI_PUBLISHED_BUILD].
+                !!constants.ENV[SOCKET_CLI_PUBLISHED_BUILD]
+              )
+          ],
+          [
+            SOCKET_CLI_SENTRY_BUILD,
+            () =>
+              JSON.stringify(
+                // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
+                !!constants.ENV[SOCKET_CLI_SENTRY_BUILD]
+              )
+          ],
+          [
+            VITEST,
+            () =>
+              // Lazily access constants.ENV[VITEST].
+              !!constants.ENV[VITEST]
+          ]
+        ].reduce((obj, { 0: name, 1: value }) => {
+          obj[`process.env.${name}`] = value
+          obj[`process.env['${name}']`] = value
+          obj[`process.env[${name}]`] = value
+          return obj
+        }, {})
       }),
       // Convert un-prefixed built-in imports into "node:"" prefixed forms.
       replacePlugin({

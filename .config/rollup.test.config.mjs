@@ -1,3 +1,5 @@
+import replacePlugin from '@rollup/plugin-replace'
+
 import { isValidPackageName } from '@socketsecurity/registry/lib/packages'
 import { isRelative } from '@socketsecurity/registry/lib/path'
 
@@ -9,7 +11,8 @@ import {
   normalizeId
 } from '../scripts/utils/packages.js'
 
-const { BABEL_RUNTIME, ROLLUP_EXTERNAL_SUFFIX } = constants
+const { BABEL_RUNTIME, ROLLUP_EXTERNAL_SUFFIX, SOCKET_CLI_TEST_DIST_BUILD } =
+  constants
 
 export default () => {
   // Lazily access constants.rootSrcPath
@@ -54,6 +57,22 @@ export default () => {
             return true
           }
         }
-      : {})
+      : {}),
+    plugins: [
+      // Inline process.env values.
+      replacePlugin({
+        delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
+        preventAssignment: true,
+        values: [[SOCKET_CLI_TEST_DIST_BUILD, 'true']].reduce(
+          (obj, { 0: name, 1: value }) => {
+            obj[`process.env.${name}`] = value
+            obj[`process.env['${name}']`] = value
+            obj[`process.env[${name}]`] = value
+            return obj
+          },
+          {}
+        )
+      })
+    ]
   })
 }

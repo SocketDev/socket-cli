@@ -1,6 +1,4 @@
 import assert from 'node:assert'
-import { spawnSync } from 'node:child_process'
-import { randomUUID } from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import util from 'node:util'
@@ -13,8 +11,7 @@ import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 import {
   fetchPackageManifest,
   isValidPackageName,
-  readPackageJson,
-  readPackageJsonSync
+  readPackageJson
 } from '@socketsecurity/registry/lib/packages'
 import { isRelative } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -39,11 +36,9 @@ const {
   SHADOW_BIN,
   SOCKET,
   SOCKET_CLI_LEGACY_BUILD,
-  SOCKET_CLI_PUBLISHED_BUILD,
   SOCKET_CLI_SENTRY_BUILD,
-  SOCKET_CLI_VERSION_HASH,
+  SOCKET_CLI_TEST_DIST_BUILD,
   VENDOR,
-  VITEST,
   WITH_SENTRY,
   depStatsPath,
   rootDistPath,
@@ -90,44 +85,15 @@ const sharedPlugins = [
   replacePlugin({
     delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
     preventAssignment: true,
-    values: [
-      [SOCKET_CLI_VERSION_HASH, () => JSON.stringify(getSocketVersionHash())],
-      [
-        SOCKET_CLI_LEGACY_BUILD,
-        () =>
-          JSON.stringify(
-            // Lazily access constants.ENV[SOCKET_CLI_LEGACY_BUILD].
-            !!constants.ENV[SOCKET_CLI_LEGACY_BUILD]
-          )
-      ],
-      [
-        SOCKET_CLI_PUBLISHED_BUILD,
-        () =>
-          JSON.stringify(
-            // Lazily access constants.ENV[SOCKET_CLI_PUBLISHED_BUILD].
-            !!constants.ENV[SOCKET_CLI_PUBLISHED_BUILD]
-          )
-      ],
-      [
-        SOCKET_CLI_SENTRY_BUILD,
-        () =>
-          JSON.stringify(
-            // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
-            !!constants.ENV[SOCKET_CLI_SENTRY_BUILD]
-          )
-      ],
-      [
-        VITEST,
-        () =>
-          // Lazily access constants.ENV[VITEST].
-          !!constants.ENV[VITEST]
-      ]
-    ].reduce((obj, { 0: name, 1: value }) => {
-      obj[`process.env.${name}`] = value
-      obj[`process.env['${name}']`] = value
-      obj[`process.env[${name}]`] = value
-      return obj
-    }, {})
+    values: [[SOCKET_CLI_TEST_DIST_BUILD, 'false']].reduce(
+      (obj, { 0: name, 1: value }) => {
+        obj[`process.env.${name}`] = value
+        obj[`process.env['${name}']`] = value
+        obj[`process.env[${name}]`] = value
+        return obj
+      },
+      {}
+    )
   })
 ]
 
@@ -147,28 +113,6 @@ async function getSentryManifest() {
     _sentryManifest = await fetchPackageManifest(`${SENTRY_NODE}@latest`)
   }
   return _sentryManifest
-}
-
-let _socketVersionHash
-function getSocketVersionHash() {
-  if (_socketVersionHash === undefined) {
-    const randUuidSegment = randomUUID().split('-')[0]
-    const { version } = readPackageJsonSync(rootPath)
-    let gitHash = ''
-    try {
-      gitHash = spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
-        encoding: 'utf8'
-      }).stdout.trim()
-    } catch {}
-    // Make each build generate a unique version id, regardless.
-    // Mostly for development: confirms the build refreshed. For prod builds
-    // the git hash should suffice to identify the build.
-    _socketVersionHash = `${version}:${gitHash}:${randUuidSegment}${
-      // Lazily access constants.ENV[SOCKET_CLI_PUBLISHED_BUILD].
-      constants.ENV[SOCKET_CLI_PUBLISHED_BUILD] ? ':pub' : ':dev'
-    }`
-  }
-  return _socketVersionHash
 }
 
 async function globDtsAndMapFiles(namePattern, srcPath) {
