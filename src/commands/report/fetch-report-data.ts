@@ -4,10 +4,7 @@ import {
   formatSeverityCount,
   getSeverityCount
 } from '../../utils/alert/severity'
-import {
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../../utils/api'
+import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
 import type {

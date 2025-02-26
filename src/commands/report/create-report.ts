@@ -1,9 +1,6 @@
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import {
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../../utils/api'
+import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { debugLog } from '../../utils/debug'
 import { getLogSymbols } from '../../utils/logging'
 import { getPackageFiles } from '../../utils/path-resolve'
