@@ -12,8 +12,10 @@ const {
   [kInternalsSymbol]: { createConstantsObject }
 } = registryConstants
 
+const WITH_SENTRY = 'with-sentry'
 const CLI = 'cli'
 const CONSTANTS = 'constants'
+const INSTRUMENT_WITH_SENTRY = `instrument-${WITH_SENTRY}`
 const MODULE_SYNC = 'module-sync'
 const NPM_INJECTION = 'npm-injection'
 const REQUIRE = 'require'
@@ -21,6 +23,7 @@ const ROLLUP_ENTRY_SUFFIX = '?commonjs-entry'
 const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
 const SHADOW_BIN = 'shadow-bin'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
+const SOCKET = 'socket'
 const SOCKET_CLI_LEGACY_BUILD = 'SOCKET_CLI_LEGACY_BUILD'
 const SOCKET_CLI_PUBLISHED_BUILD = 'SOCKET_CLI_PUBLISHED_BUILD'
 const SOCKET_CLI_SENTRY_BUILD = 'SOCKET_CLI_SENTRY_BUILD'
@@ -83,6 +86,7 @@ const constants = createConstantsObject(
     CLI,
     CONSTANTS,
     ENV: undefined,
+    INSTRUMENT_WITH_SENTRY,
     MODULE_SYNC,
     NPM_INJECTION,
     REQUIRE,
@@ -90,12 +94,14 @@ const constants = createConstantsObject(
     ROLLUP_EXTERNAL_SUFFIX,
     SHADOW_BIN,
     SLASH_NODE_MODULES_SLASH,
+    SOCKET,
     SOCKET_CLI_LEGACY_BUILD,
     SOCKET_CLI_PUBLISHED_BUILD,
     SOCKET_CLI_SENTRY_BUILD,
     SOCKET_CLI_VERSION_HASH,
     TAP,
     VENDOR,
+    WITH_SENTRY,
     babelConfigPath: undefined,
     depStatsPath: undefined,
     rootConfigPath: undefined,
