@@ -1,7 +1,7 @@
-import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import { describe, it } from 'node:test'
+
+import { describe, expect, it } from 'vitest'
 
 import { isErrnoException } from './dist/errors'
 
@@ -12,11 +12,11 @@ describe('Error Narrowing', () => {
     try {
       readFileSync(path.join(testPath, 'enoent'))
     } catch (e) {
-      assert.equal(isErrnoException(e), true)
+      expect(isErrnoException(e)).toBe(true)
     }
   })
   it('should properly only detect node errors', () => {
-    assert.equal(isErrnoException(new Error()), false)
-    assert.equal(isErrnoException({ ...new Error() }), false)
+    expect(isErrnoException(new Error())).toBe(false)
+    expect(isErrnoException({ ...new Error() })).toBe(false)
   })
 })

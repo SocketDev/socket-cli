@@ -42,8 +42,8 @@ const {
   SOCKET_CLI_PUBLISHED_BUILD,
   SOCKET_CLI_SENTRY_BUILD,
   SOCKET_CLI_VERSION_HASH,
-  TAP,
   VENDOR,
+  VITEST,
   WITH_SENTRY,
   depStatsPath,
   rootDistPath,
@@ -385,10 +385,10 @@ export default () => {
               )
           ],
           [
-            TAP,
+            VITEST,
             () =>
               // Lazily access constants.ENV[TAP].
-              !!constants.ENV[TAP]
+              !!constants.ENV[VITEST]
           ]
         ].reduce((obj, { 0: name, 1: value }) => {
           obj[`process.env.${name}`] = value

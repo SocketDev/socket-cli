@@ -1,5 +1,4 @@
-import assert from 'node:assert/strict'
-import { describe, it } from 'node:test'
+import { describe, expect, it } from 'vitest'
 
 import { createAlertUXLookup } from './dist/alert-rules'
 
@@ -52,97 +51,104 @@ describe('Alert Rule UX', () => {
         }
       ]
     })
-    assert.deepEqual(
+    expect(
       noEntriesLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'willError' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: true,
-        display: true
+        "block": true,
+        "display": true,
       }
-    )
-    assert.deepEqual(
+    `)
+    expect(
       noEntriesLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'willIgnore' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: false,
-        display: false
+        "block": false,
+        "display": false,
       }
-    )
-    assert.deepEqual(
+    `)
+    expect(
       noEntriesLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'willWarn' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: false,
-        display: true
+        "block": false,
+        "display": true,
       }
-    )
-    assert.deepEqual(
+    `)
+    expect(
       noEntriesLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'fromDeferString' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: false,
-        display: true
+        "block": false,
+        "display": true,
       }
-    )
-    assert.deepEqual(
+    `)
+    expect(
       noEntriesLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'fromUndefinedAction' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: false,
-        display: true
+        "block": false,
+        "display": true,
       }
-    )
-    assert.deepEqual(
+    `)
+    expect(
       noEntriesLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'fromUndefinedRule' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: false,
-        display: true
+        "block": false,
+        "display": true,
       }
-    )
-    assert.deepEqual(
+    `)
+    expect(
       noEntriesLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'fromMiddleConfig' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: false,
-        display: true
+        "block": false,
+        "display": true,
       }
-    )
+    `)
   })
   it('should use error UX when missing keys', () => {
     const emptyLookup = createAlertUXLookup({
@@ -151,19 +157,20 @@ describe('Alert Rule UX', () => {
       },
       entries: []
     })
-    assert.deepEqual(
+    expect(
       emptyLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: '404' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: true,
-        display: true
+        "block": true,
+        "display": true,
       }
-    )
+    `)
   })
   it('should use error/ignore UX when having boolean values instead of config', () => {
     const booleanLookup = createAlertUXLookup({
@@ -191,58 +198,62 @@ describe('Alert Rule UX', () => {
         }
       ]
     })
-    assert.deepEqual(
+    expect(
       booleanLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'defaultTrue' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: true,
-        display: true
+        "block": true,
+        "display": true,
       }
-    )
-    assert.deepEqual(
+    `)
+    expect(
       booleanLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'orgTrue' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: true,
-        display: true
+        "block": true,
+        "display": true,
       }
-    )
-    assert.deepEqual(
+    `)
+    expect(
       booleanLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'defaultFalse' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: false,
-        display: false
+        "block": false,
+        "display": false,
       }
-    )
-    assert.deepEqual(
+    `)
+    expect(
       booleanLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'orgFalse' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: false,
-        display: false
+        "block": false,
+        "display": false,
       }
-    )
+    `)
   })
   it('should use the maximal strength on multiple settings entries', () => {
     const multiSettings = createAlertUXLookup({
@@ -287,45 +298,48 @@ describe('Alert Rule UX', () => {
         }
       ]
     })
-    assert.deepEqual(
+    expect(
       multiSettings({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'warn_then_error' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: true,
-        display: true
+        "block": true,
+        "display": true,
       }
-    )
-    assert.deepEqual(
+    `)
+    expect(
       multiSettings({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'ignore_then_missing' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: true,
-        display: true
+        "block": true,
+        "display": true,
       }
-    )
-    assert.deepEqual(
+    `)
+    expect(
       multiSettings({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'ignore_then_defer' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: true,
-        display: true
+        "block": true,
+        "display": true,
       }
-    )
+    `)
   })
   it('should shadow defaults', () => {
     const shadowedLookup = createAlertUXLookup({
@@ -352,18 +366,19 @@ describe('Alert Rule UX', () => {
         }
       ]
     })
-    assert.deepEqual(
+    expect(
       shadowedLookup({
         package: {
           name: 'bar',
           version: '0.0.0'
         },
         alert: { type: 'willWarn' }
-      }),
+      })
+    ).toMatchInlineSnapshot(`
       {
-        block: false,
-        display: false
+        "block": false,
+        "display": false,
       }
-    )
+    `)
   })
 })

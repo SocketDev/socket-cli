@@ -1,9 +1,8 @@
-import assert from 'node:assert/strict'
 import path from 'node:path'
-import { afterEach, beforeEach, describe, it } from 'node:test'
 
 import mockFs from 'mock-fs'
 import nock from 'nock'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
@@ -96,7 +95,7 @@ describe('Path Resolve', () => {
         undefined,
         globPatterns
       )
-      assert.deepEqual(actual.map(normalizePath), [`${mockPath}/package.json`])
+      expect(actual.map(normalizePath)).toEqual([`${mockPath}/package.json`])
     })
 
     it('should respect ignores from socket config', async () => {
@@ -118,7 +117,7 @@ describe('Path Resolve', () => {
         },
         globPatterns
       )
-      assert.deepEqual(actual.map(normalizePath), [
+      expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/bar/package.json`,
         `${mockPath}/foo/package-lock.json`,
         `${mockPath}/foo/package.json`
@@ -140,7 +139,7 @@ describe('Path Resolve', () => {
         undefined,
         globPatterns
       )
-      assert.deepEqual(actual.map(normalizePath), [
+      expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/bar/package.json`,
         `${mockPath}/foo/package-lock.json`,
         `${mockPath}/foo/package.json`
@@ -169,7 +168,7 @@ describe('Path Resolve', () => {
         undefined,
         globPatterns
       )
-      assert.deepEqual(actual.map(normalizePath), [
+      expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/foo/package-lock.json`,
         `${mockPath}/foo/package.json`
       ])
@@ -189,7 +188,7 @@ describe('Path Resolve', () => {
         undefined,
         globPatterns
       )
-      assert.deepEqual(actual.map(normalizePath), [
+      expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/foo/package-lock.json`,
         `${mockPath}/foo/package.json`
       ])
@@ -208,7 +207,7 @@ describe('Path Resolve', () => {
         undefined,
         globPatterns
       )
-      assert.deepEqual(actual.map(normalizePath), [])
+      expect(actual.map(normalizePath)).toEqual([])
     })
 
     it('should resolve package and lock file', async () => {
@@ -223,7 +222,7 @@ describe('Path Resolve', () => {
         undefined,
         globPatterns
       )
-      assert.deepEqual(actual.map(normalizePath), [
+      expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/package-lock.json`,
         `${mockPath}/package.json`
       ])
@@ -240,7 +239,7 @@ describe('Path Resolve', () => {
         undefined,
         globPatterns
       )
-      assert.deepEqual(actual.map(normalizePath), [`${mockPath}/package.json`])
+      expect(actual.map(normalizePath)).toEqual([`${mockPath}/package.json`])
     })
 
     it('should support alternative lock files', async () => {
@@ -255,7 +254,7 @@ describe('Path Resolve', () => {
         undefined,
         globPatterns
       )
-      assert.deepEqual(actual.map(normalizePath), [
+      expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/package.json`,
         `${mockPath}/yarn.lock`
       ])
@@ -278,7 +277,7 @@ describe('Path Resolve', () => {
         undefined,
         globPatterns
       )
-      assert.deepEqual(actual.map(normalizePath), [
+      expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/abc/package.json`,
         `${mockPath}/bar/package.json`,
         `${mockPath}/bar/yarn.lock`,
