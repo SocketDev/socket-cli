@@ -10,7 +10,7 @@ import type { Agent } from '../../utils/package-manager-detector'
 const { NPM, SOCKET_CLI_SAFE_WRAPPER, abortSignal } = constants
 
 const COMMAND_TITLE = 'Socket Optimize'
-const NPM_OVERRIDE_PR_URL = 'https://github.com/npm/cli/pull/7025'
+const NPM_OVERRIDE_PR_URL = 'https://github.com/npm/cli/pull/8089'
 
 export async function updatePackageLockJson(
   lockName: string,

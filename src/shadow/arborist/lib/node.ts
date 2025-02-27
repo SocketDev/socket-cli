@@ -53,10 +53,11 @@ type NodeClass = Omit<
     addEdge(edge: SafeEdge): void
   }
   overrides: SafeOverrideSet | undefined
-  parent: SafeNode | null
   versions: string[]
   get inDepBundle(): boolean
   get packageName(): string | null
+  get parent(): SafeNode | null
+  set parent(value: SafeNode | null)
   get resolveParent(): SafeNode | null
   get root(): SafeNode | null
   set root(value: SafeNode | null)
@@ -78,7 +79,7 @@ type NodeClass = Omit<
 
 const Node: NodeClass = require(getArboristNodeClassPath())
 
-// Implementation code not related to patch https://github.com/npm/cli/pull/7025
+// Implementation code not related to patch https://github.com/npm/cli/pull/8089
 // is based on https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/node.js:
 export class SafeNode extends Node {
   // Return true if it's safe to remove this node, because anything that is
@@ -114,7 +115,7 @@ export class SafeNode extends Node {
     // if (preferDedupe || semver.gte(other.version, this.version)) {
     //   return true
     // }
-    // is based on https://github.com/npm/cli/pull/7025.
+    // is based on https://github.com/npm/cli/pull/8089.
     //
     // If we prefer dedupe, or if the version is equal, take the other.
     if (preferDedupe || semver.eq(other.version, this.version)) {
@@ -145,7 +146,7 @@ export class SafeNode extends Node {
     // if (node.overrides !== this.overrides) {
     //   return false
     // }
-    // is based on https://github.com/npm/cli/pull/7025.
+    // is based on https://github.com/npm/cli/pull/8089.
     //
     // If this node has no dependencies, then it's irrelevant to check the
     // override rules of the replacement node.
@@ -180,7 +181,7 @@ export class SafeNode extends Node {
     return result
   }
 
-  // Patch adding deleteEdgeIn is based on https://github.com/npm/cli/pull/7025.
+  // Patch adding deleteEdgeIn is based on https://github.com/npm/cli/pull/8089.
   override deleteEdgeIn(edge: SafeEdge) {
     this.edgesIn.delete(edge)
     const { overrides } = edge
@@ -194,7 +195,7 @@ export class SafeNode extends Node {
     // if (edge.overrides) {
     //   this.overrides = edge.overrides
     // }
-    // is based on https://github.com/npm/cli/pull/7025.
+    // is based on https://github.com/npm/cli/pull/8089.
     //
     // We need to handle the case where the new edge in has an overrides field
     // which is different from the current value.
@@ -210,7 +211,7 @@ export class SafeNode extends Node {
   override get overridden() {
     // Patch replacing
     // return !!(this.overrides && this.overrides.value && this.overrides.name === this.name)
-    // is based on https://github.com/npm/cli/pull/7025.
+    // is based on https://github.com/npm/cli/pull/8089.
     if (
       !this.overrides ||
       !this.overrides.value ||
@@ -218,17 +219,18 @@ export class SafeNode extends Node {
     ) {
       return false
     }
-    // The overrides rule is for a package with this name, but some override rules
-    // only apply to specific versions. To make sure this package was actually
-    // overridden, we check whether any edge going in had the rule applied to it,
-    // in which case its overrides set is different than its source node.
+    // The overrides rule is for a package with this name, but some override
+    // rules only apply to specific versions. To make sure this package was
+    // actually overridden, we check whether any edge going in had the rule
+    // applied to it, in which case its overrides set is different than its
+    // source node.
     for (const edge of this.edgesIn) {
       if (
         edge.overrides &&
         edge.overrides.name === this.name &&
         edge.overrides.value === this.version
       ) {
-        if (!edge.overrides?.isEqual(edge.from?.overrides)) {
+        if (!edge.overrides.isEqual(edge.from?.overrides)) {
           return true
         }
       }
@@ -236,8 +238,31 @@ export class SafeNode extends Node {
     return false
   }
 
+  override set parent(newParent: SafeNode) {
+    // Patch removing
+    // if (parent.overrides) {
+    //   this.overrides = parent.overrides.getNodeRule(this)
+    // }
+    // is based on https://github.com/npm/cli/pull/8089.
+    //
+    // The "parent" setter is a really large and complex function. To satisfy
+    // the patch we hold on to the old overrides value and set `this.overrides`
+    // to `undefined` so that the condition we want to remove is not hit.
+    const { overrides } = this
+    if (overrides) {
+      this.overrides = undefined
+    }
+    try {
+      super.parent = newParent
+      this.overrides = overrides
+    } catch (e) {
+      this.overrides = overrides
+      throw e
+    }
+  }
+
   // Patch adding recalculateOutEdgesOverrides is based on
-  // https://github.com/npm/cli/pull/7025.
+  // https://github.com/npm/cli/pull/8089.
   override recalculateOutEdgesOverrides() {
     // For each edge out propagate the new overrides through.
     for (const edge of this.edgesOut.values()) {
@@ -254,13 +279,11 @@ export class SafeNode extends Node {
     // if (!this.overrides && this.parent && this.parent.overrides) {
     //   this.overrides = this.parent.overrides.getNodeRule(this)
     // }
-    // is based on https://github.com/npm/cli/pull/7025.
+    // is based on https://github.com/npm/cli/pull/8089.
     //
     // The "root" setter is a really large and complex function. To satisfy the
     // patch we add a dummy value to `this.overrides` so that the condition we
-    // want to remove,
-    // if (!this.overrides && this.parent && this.parent.overrides) {
-    // , is not hit.
+    // want to remove is not hit.
     if (!this.overrides) {
       this.overrides = new SafeOverrideSet({ overrides: '' })
     }
