@@ -130,7 +130,7 @@ export async function applyOptimization(
 
   if (agent === NPM || pkgJsonChanged) {
     // Always update package-lock.json until the npm overrides PR lands:
-    // https://github.com/npm/cli/pull/7025
+    // https://github.com/npm/cli/pull/8089
     await updatePackageLockJson(lockName, agentExecPath, agent, spinner)
   }
 }
