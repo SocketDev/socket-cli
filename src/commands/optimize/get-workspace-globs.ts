@@ -8,7 +8,7 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import constants from '../../constants'
 import { safeReadFile } from '../../utils/fs'
 
-import type { Agent } from '../../utils/package-manager-detector'
+import type { Agent } from '../../utils/package-environment-detector'
 
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 

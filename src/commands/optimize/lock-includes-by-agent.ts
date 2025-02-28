@@ -2,7 +2,7 @@ import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import constants from '../../constants'
 
-import type { Agent } from '../../utils/package-manager-detector'
+import type { Agent } from '../../utils/package-environment-detector'
 
 export type AgentLockIncludesFn = (
   lockSrc: string,
@@ -18,12 +18,12 @@ function lockIncludesNpm(lockSrc: string, name: string) {
   return lockSrc.includes(`"${name}":`)
 }
 
-function lockIncludesBun(lockSrc: string, name: string, lockBasename?: string) {
-  // This is a bit counterintuitive. When lockBasename ends with a .lockb
-  // we treat it as a yarn.lock. When lockBasename ends with a .lock we
+function lockIncludesBun(lockSrc: string, name: string, lockName?: string) {
+  // This is a bit counterintuitive. When lockName ends with a .lockb
+  // we treat it as a yarn.lock. When lockName ends with a .lock we
   // treat it as a package-lock.json. The bun.lock format is not identical
   // package-lock.json, however it close enough for npmLockIncludes to work.
-  const lockScanner = lockBasename?.endsWith(LOCK_EXT)
+  const lockScanner = lockName?.endsWith(LOCK_EXT)
     ? lockIncludesNpm
     : lockIncludesYarn
   return lockScanner(lockSrc, name)
@@ -61,14 +61,11 @@ function lockIncludesYarn(lockSrc: string, name: string) {
   ).test(lockSrc)
 }
 
-export const lockIncludesByAgent: Record<Agent, AgentLockIncludesFn> = {
-  // @ts-ignore
-  __proto__: null,
-
-  [BUN]: lockIncludesBun,
-  [NPM]: lockIncludesNpm,
-  [PNPM]: lockIncludesPnpm,
-  [VLT]: lockIncludesVlt,
-  [YARN_BERRY]: lockIncludesYarn,
-  [YARN_CLASSIC]: lockIncludesYarn
-}
+export const lockIncludesByAgent = new Map<Agent, AgentLockIncludesFn>([
+  [BUN, lockIncludesBun],
+  [NPM, lockIncludesNpm],
+  [PNPM, lockIncludesPnpm],
+  [VLT, lockIncludesVlt],
+  [YARN_BERRY, lockIncludesYarn],
+  [YARN_CLASSIC, lockIncludesYarn]
+])

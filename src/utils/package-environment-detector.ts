@@ -137,16 +137,16 @@ const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
   }
 })()
 
-export type DetectOptions = {
+export type GetPackageEnvironmentOptions = {
   cwd?: string
   onUnknown?: (pkgManager: string | undefined) => void
 }
 
-export type DetectResult = Readonly<{
+export type PartialPackageEnvironmentDetails = Readonly<{
   agent: Agent
   agentExecPath: string
   agentVersion: SemVer | undefined
-  lockBasename: string | undefined
+  lockName: string | undefined
   lockPath: string | undefined
   lockSrc: string | undefined
   minimumNodeVersion: string
@@ -160,13 +160,33 @@ export type DetectResult = Readonly<{
   }
 }>
 
-export async function detect({
+export type PackageEnvironmentDetails = Readonly<{
+  agent: Agent
+  agentExecPath: string
+  agentVersion: SemVer
+  lockName: string
+  lockPath: string
+  lockSrc: string
+  minimumNodeVersion: string
+  npmExecPath: string
+  pkgJson: EditablePackageJson
+  pkgPath: string
+  supported: boolean
+  targets: {
+    browser: boolean
+    node: boolean
+  }
+}>
+
+export async function detectPackageEnvironment({
   cwd = process.cwd(),
   onUnknown
-}: DetectOptions = {}): Promise<DetectResult> {
+}: GetPackageEnvironmentOptions = {}): Promise<
+  PackageEnvironmentDetails | PartialPackageEnvironmentDetails
+> {
   let lockPath = await findUp(Object.keys(LOCKS), { cwd })
-  let lockBasename = lockPath ? path.basename(lockPath) : undefined
-  const isHiddenLockFile = lockBasename === '.package-lock.json'
+  let lockName = lockPath ? path.basename(lockPath) : undefined
+  const isHiddenLockFile = lockName === '.package-lock.json'
   const pkgJsonPath = lockPath
     ? path.resolve(lockPath, `${isHiddenLockFile ? '../' : ''}../package.json`)
     : await findUp('package.json', { cwd })
@@ -201,9 +221,9 @@ export async function detect({
     agent === undefined &&
     !isHiddenLockFile &&
     typeof pkgJsonPath === 'string' &&
-    typeof lockBasename === 'string'
+    typeof lockName === 'string'
   ) {
-    agent = <Agent>LOCKS[lockBasename]
+    agent = <Agent>LOCKS[lockName]
   }
   if (agent === undefined) {
     agent = NPM
@@ -266,14 +286,14 @@ export async function detect({
         ? await readLockFileByAgent[agent](lockPath, agentExecPath)
         : undefined
   } else {
-    lockBasename = undefined
+    lockName = undefined
     lockPath = undefined
   }
-  return <DetectResult>{
+  return {
     agent,
     agentExecPath,
     agentVersion,
-    lockBasename,
+    lockName,
     lockPath,
     lockSrc,
     minimumNodeVersion,
