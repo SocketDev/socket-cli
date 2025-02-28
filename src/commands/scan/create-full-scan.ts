@@ -1,3 +1,4 @@
+import assert from 'node:assert'
 import process from 'node:process'
 import readline from 'node:readline/promises'
 
@@ -6,11 +7,16 @@ import colors from 'yoctocolors-cjs'
 
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
+import { suggestOrgSlug } from './suggest-org-slug.ts'
+import { suggestRepoSlug } from './suggest-repo-slug.ts'
+import { suggestBranchSlug } from './suggest_branch_slug.ts'
+import { suggestTarget } from './suggest_target.ts'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { setupSdk } from '../../utils/sdk'
+import { AuthError } from '../../utils/errors.ts'
+import { getPackageFilesFullScans } from '../../utils/path-resolve.ts'
+import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 export async function createFullScan({
-  apiToken,
   branchName,
   commitHash: _commitHash,
   commitMessage,
@@ -18,30 +24,147 @@ export async function createFullScan({
   cwd,
   defaultBranch,
   orgSlug,
-  packagePaths,
   pendingHead,
   pullRequest: _pullRequest,
+  readOnly,
   repoName,
+  targets,
   tmp
 }: {
-  apiToken: string
-  orgSlug: string
-  repoName: string
   branchName: string
-  committers: string
-  commitMessage: string
   commitHash: string
-  pullRequest: number | undefined
-  defaultBranch: boolean
-  pendingHead: boolean
-  tmp: boolean
-  packagePaths: string[]
+  commitMessage: string
+  committers: string
   cwd: string
+  defaultBranch: boolean
+  orgSlug: string
+  pendingHead: boolean
+  pullRequest: number | undefined
+  readOnly: boolean
+  repoName: string
+  targets: Array<string>
+  tmp: boolean
 }): Promise<void> {
+  const socketSdk = await setupSdk()
+  const supportedFiles = await socketSdk
+    .getReportSupportedFiles()
+    .then(res => {
+      if (!res.success) {
+        handleUnsuccessfulApiResponse(
+          'getReportSupportedFiles',
+          res,
+          new Spinner()
+        )
+        assert(
+          false,
+          'handleUnsuccessfulApiResponse should unconditionally throw'
+        )
+      }
+
+      return res.data
+    })
+    .catch((cause: Error) => {
+      throw new Error('Failed getting supported files for report', { cause })
+    })
+
+  // If we updated any inputs then we should print the command line to repeat
+  // the command without requiring user input, as a suggestion.
+  let updatedInput = false
+
+  if (!targets.length) {
+    const received = await suggestTarget()
+    targets = received ?? []
+    updatedInput = true
+  }
+
+  const packagePaths = await getPackageFilesFullScans(
+    cwd,
+    targets,
+    supportedFiles
+  )
+
+  // We're going to need an api token to suggest data because those suggestions
+  // must come from data we already know. Don't error on missing api token yet.
+  // If the api-token is not set, ignore it for the sake of suggestions.
+  const apiToken = getDefaultToken()
+
+  if (apiToken && !orgSlug) {
+    const suggestion = await suggestOrgSlug(socketSdk)
+    if (suggestion) orgSlug = suggestion
+    updatedInput = true
+  }
+
+  // If the current cwd is unknown and is used as a repo slug anyways, we will
+  // first need to register the slug before we can use it.
+  let repoDefaultBranch = ''
+
+  // (Don't bother asking for the rest if we didn't get an org slug above)
+  if (apiToken && orgSlug && !repoName) {
+    const suggestion = await suggestRepoSlug(socketSdk, orgSlug)
+    if (suggestion) {
+      ;({ defaultBranch: repoDefaultBranch, slug: repoName } = suggestion)
+    }
+    updatedInput = true
+  }
+
+  // (Don't bother asking for the rest if we didn't get an org/repo above)
+  if (apiToken && orgSlug && repoName && !branchName) {
+    const suggestion = await suggestBranchSlug(repoDefaultBranch)
+    if (suggestion) branchName = suggestion
+    updatedInput = true
+  }
+
+  if (!orgSlug || !repoName || !branchName || !packagePaths.length) {
+    // Use exit status of 2 to indicate incorrect usage, generally invalid
+    // options or missing arguments.
+    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+    process.exitCode = 2
+    console.error(`
+      ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
+      - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}\n
+      - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}\n
+      - At least one TARGET (e.g. \`.\` or \`./package.json\`) ${
+        !packagePaths.length
+          ? colors.red(
+              targets.length > 0
+                ? '(TARGET' +
+                    (targets.length ? 's' : '') +
+                    ' contained no matching/supported files!)'
+                : '(missing)'
+            )
+          : colors.green('(ok)')
+      }\n
+      ${!apiToken ? 'Note: was unable to make suggestions because no API Token was found; this would make command fail regardless\n' : ''}
+    `)
+    return
+  }
+
+  if (updatedInput) {
+    console.log(
+      'Note: You can invoke this command next time to skip the interactive questions:'
+    )
+    console.log('```')
+    console.log(
+      `    socket scan create [other flags...] --repo ${repoName} --branch ${branchName} ${orgSlug} ${targets.join(' ')}`
+    )
+    console.log('```')
+  }
+
+  if (!apiToken) {
+    throw new AuthError(
+      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+    )
+  }
+
+  if (readOnly) {
+    console.log('[ReadOnly] Bailing now')
+    return
+  }
+
   const spinnerText = 'Creating a scan... \n'
   const spinner = new Spinner({ text: spinnerText }).start()
 
-  const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.createOrgFullScan(
       orgSlug,
@@ -64,7 +187,7 @@ export async function createFullScan({
     return
   }
 
-  spinner.success('Scan created successfully')
+  spinner.successAndStop('Scan created successfully')
 
   const link = colors.underline(colors.cyan(`${result.data.html_report_url}`))
   console.log(`Available at: ${link}`)
