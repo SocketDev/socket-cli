@@ -28,7 +28,7 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
     spinner.stop()
     throw new AuthError(message)
   }
-  spinner.error(
+  spinner.errorAndStop(
     `${colors.bgRed(colors.white('API returned an error:'))} ${message}`
   )
   process.exit(1)
