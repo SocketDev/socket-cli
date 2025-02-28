@@ -170,7 +170,9 @@ async function run(
     yargv.output = 'socket-cdx.json'
   }
 
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+  if (cli.flags['dryRun']) {
+    return console.log('[DryRun] Bailing now')
+  }
 
   await runCycloneDX(yargv)
 }

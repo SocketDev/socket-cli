@@ -58,7 +58,9 @@ async function run(
   const githubEventBefore = String(cli.flags['githubEventBefore'] || '')
   const githubEventAfter = String(cli.flags['githubEventAfter'] || '')
 
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+  if (cli.flags['dryRun']) {
+    return console.log('[DryRun] Bailing now')
+  }
 
   await runAction(githubEventBefore, githubEventAfter)
 }

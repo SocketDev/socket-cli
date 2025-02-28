@@ -160,7 +160,9 @@ async function run(
       .filter(Boolean)
   }
 
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+  if (cli.flags['dryRun']) {
+    return console.log('[DryRun] Bailing now')
+  }
 
   await convertGradleToMaven(target, bin, out, verbose, gradleOpts)
 }
