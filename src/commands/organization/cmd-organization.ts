@@ -1,10 +1,11 @@
+import colors from 'yoctocolors-cjs'
+
 import { getOrganization } from './get-organization.ts'
+import { commonFlags, outputFlags } from '../../flags.ts'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
-import { commonFlags, outputFlags } from '../../flags.ts'
-import colors from 'yoctocolors-cjs'
 
 const config: CliCommandConfig = {
   commandName: 'organizations',
