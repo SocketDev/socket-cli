@@ -62,7 +62,7 @@
     "test:unit": "vitest --run",
     "test:unit:coverage": "vitest run --coverage",
     "test-ci": "run-s test:*",
-    "testu": "run-s test:prepare test:unit -- --update",
+    "testu": "cross-env SOCKET_CLI_NO_API_TOKEN=1 run-s test:prepare test:unit -- --update",
     "update": "run-p --aggregate-output update:**",
     "update:deps": "npx --yes npm-check-updates"
   },
