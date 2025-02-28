@@ -61,8 +61,8 @@
     "test:prepare": "cross-env VITEST=1 npm run build",
     "test:unit": "vitest --run",
     "test:unit:coverage": "vitest run --coverage",
-    "test:unit:update-snapshots": "vitest --update",
     "test-ci": "run-s test:*",
+    "testu": "npm run build:dist; VITEST=1 npm run build:test-dist ; npm run test:unit -- -u",
     "update": "run-p --aggregate-output update:**",
     "update:deps": "npx --yes npm-check-updates"
   },
