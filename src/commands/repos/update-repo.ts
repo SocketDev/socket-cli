@@ -43,7 +43,7 @@ export async function updateRepo({
   )
 
   if (result.success) {
-    spinner.success('Repository updated successfully')
+    spinner.successAndStop('Repository updated successfully')
   } else {
     handleUnsuccessfulApiResponse('updateOrgRepo', result, spinner)
   }

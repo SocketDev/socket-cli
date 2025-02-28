@@ -58,7 +58,7 @@ export function formatPackageInfo(
       )
       formatPackageIssuesDetails(data, outputMarkdown)
     } else {
-      spinner.success('Package has no issues')
+      spinner.successAndStop('Package has no issues')
     }
 
     const format = new ColorOrMarkdown(!!outputMarkdown)

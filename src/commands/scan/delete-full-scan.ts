@@ -18,7 +18,7 @@ export async function deleteOrgFullScan(
   )
 
   if (result.success) {
-    spinner.success('Scan deleted successfully')
+    spinner.successAndStop('Scan deleted successfully')
   } else {
     handleUnsuccessfulApiResponse('deleteOrgFullScan', result, spinner)
   }
