@@ -2,15 +2,10 @@ import process from 'node:process'
 
 import colors from 'yoctocolors-cjs'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
 import { createFullScan } from './create-full-scan'
-import { handleUnsuccessfulApiResponse } from '../../utils/api'
-import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getPackageFilesFullScans } from '../../utils/path-resolve'
-import { getDefaultToken, setupSdk } from '../../utils/sdk'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -75,6 +70,12 @@ const config: CliCommandConfig = {
       default: false,
       description: 'Set as pending head'
     },
+    readOnly: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Similar to --dry-run except it can read from remote, stops before it would create an actual report'
+    },
     tmp: {
       type: 'boolean',
       shortFlag: 't',
@@ -125,79 +126,46 @@ async function run(
       ? String(cli.flags['cwd'])
       : process.cwd()
 
+  let { branch: branchName, repo: repoName } = cli.flags
+
+  const apiToken = getDefaultToken()
+
+  if (!apiToken && (!orgSlug || !repoName || !branchName || !targets.length)) {
+    // Without api token we cannot recover because we can't request more info
+    // from the server, to match and help with the current cwd/git status.
+    // Use exit status of 2 to indicate incorrect usage, generally invalid
+    // options or missing arguments.
+    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
+    process.exitCode = 2
+    console.error(`
+      ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
+      - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}\n
+      - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}\n
+      - At least one TARGET (e.g. \`.\` or \`./package.json\`) ${!targets.length ? '(missing)' : colors.green('(ok)')}\n
+      (Additionally, no API Token was set so we cannot auto-discover these details)\n
+    `)
+    return
+  }
+
   // Note exiting earlier to skirt a hidden auth requirement
   if (cli.flags['dryRun']) {
     return console.log('[DryRun] Bailing now')
   }
 
-  const socketSdk = await setupSdk()
-  const supportedFiles = await socketSdk
-    .getReportSupportedFiles()
-    .then(res => {
-      if (!res.success)
-        handleUnsuccessfulApiResponse(
-          'getReportSupportedFiles',
-          res,
-          new Spinner()
-        )
-      // TODO: verify type at runtime? Consider it trusted data and assume type?
-      return (res as any).data
-    })
-    .catch((cause: Error) => {
-      throw new Error('Failed getting supported files for report', { cause })
-    })
-
-  const packagePaths = await getPackageFilesFullScans(
-    cwd,
-    targets,
-    supportedFiles
-  )
-
-  const { branch: branchName, repo: repoName } = cli.flags
-
-  if (!orgSlug || !repoName || !branchName || !packagePaths.length) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-    - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
-    - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}\n
-    - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}\n
-    - At least one TARGET (e.g. \`.\` or \`./package.json\`) ${
-      !packagePaths.length
-        ? colors.red(
-            targets.length > 0
-              ? '(TARGET' +
-                  (targets.length ? 's' : '') +
-                  ' contained no matching/supported files!)'
-              : '(missing)'
-          )
-        : colors.green('(ok)')
-    }\n`)
-    return
-  }
-
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
   await createFullScan({
-    apiToken,
-    orgSlug,
-    repoName: repoName as string,
     branchName: branchName as string,
-    commitMessage: (cli.flags['commitMessage'] as string) ?? '',
-    defaultBranch: Boolean(cli.flags['defaultBranch']),
-    pendingHead: Boolean(cli.flags['pendingHead']),
-    tmp: Boolean(cli.flags['tmp']),
-    packagePaths,
-    cwd,
     commitHash: (cli.flags['commitHash'] as string) ?? '',
+    commitMessage: (cli.flags['commitMessage'] as string) ?? '',
     committers: (cli.flags['committers'] as string) ?? '',
-    pullRequest: (cli.flags['pullRequest'] as number) ?? undefined
+    cwd,
+    defaultBranch: Boolean(cli.flags['defaultBranch']),
+    orgSlug,
+    pendingHead: Boolean(cli.flags['pendingHead']),
+    pullRequest: (cli.flags['pullRequest'] as number) ?? undefined,
+    readOnly: Boolean(cli.flags['readOnly']),
+    repoName: repoName as string,
+    targets,
+    tmp: Boolean(cli.flags['tmp'])
   })
 }
