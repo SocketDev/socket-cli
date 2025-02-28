@@ -55,6 +55,11 @@ export async function handleAPIError(code: number) {
   }
 }
 
+export function getLastFiveOfApiToken(token: string): string {
+  // Get the last 5 characters of the API token before the trailing "_api".
+  return token.slice(-9, -4)
+}
+
 export async function queryAPI(path: string, apiToken: string) {
   return await fetch(`${API_V0_URL}/${path}`, {
     method: 'GET',

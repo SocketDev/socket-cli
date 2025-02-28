@@ -3,6 +3,7 @@ import meow from 'meow'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
+import { getLastFiveOfApiToken } from './api'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting'
 import { getSetting } from './settings'
 import constants from '../constants'
@@ -198,10 +199,12 @@ function getAsciiHeader(command: string) {
     : // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_VERSION_HASH']".
       process.env['SOCKET_CLI_VERSION_HASH']
   const nodeVersion = redacting ? REDACTED : process.version
-  // Get the last 5 characters of the API token before the trailing "_api".
-  const lastFiveCharsOfApiToken = redacting
+  const apiToken = getSetting('apiToken')
+  const shownToken = redacting
     ? REDACTED
-    : getSetting('apiToken')?.slice(-9, -4) || 'no'
+    : apiToken
+      ? getLastFiveOfApiToken(apiToken)
+      : 'no'
   const relCwd = redacting
     ? REDACTED
     : process
@@ -210,7 +213,7 @@ function getAsciiHeader(command: string) {
   const body = `
    _____         _       _        /---------------
   |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
-  |__   | . |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${lastFiveCharsOfApiToken}
+  |__   | . |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${shownToken}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}`.trimStart()
   return `   ${body}\n`
 }
