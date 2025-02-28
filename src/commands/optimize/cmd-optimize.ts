@@ -57,7 +57,9 @@ async function run(
 
   const cwd = process.cwd()
 
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+  if (cli.flags['dryRun']) {
+    return console.log('[DryRun] Bailing now')
+  }
 
   await applyOptimization(
     cwd,

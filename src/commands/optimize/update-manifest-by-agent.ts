@@ -5,7 +5,7 @@ import constants from '../../constants'
 import type {
   Agent,
   StringKeyValueObject
-} from '../../utils/package-manager-detector'
+} from '../../utils/package-environment-detector'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
@@ -169,14 +169,11 @@ function pnpmUpdatePkgJson(
   updatePkgJson(editablePkgJson, PNPM_FIELD_NAME, overrides)
 }
 
-export const updateManifestByAgent: Record<Agent, AgentModifyManifestFn> = {
-  // @ts-ignore
-  __proto__: null,
-
-  [BUN]: updateResolutions,
-  [NPM]: updateOverrides,
-  [PNPM]: pnpmUpdatePkgJson,
-  [VLT]: updateOverrides,
-  [YARN_BERRY]: updateResolutions,
-  [YARN_CLASSIC]: updateResolutions
-}
+export const updateManifestByAgent = new Map<Agent, AgentModifyManifestFn>([
+  [BUN, updateResolutions],
+  [NPM, updateOverrides],
+  [PNPM, pnpmUpdatePkgJson],
+  [VLT, updateOverrides],
+  [YARN_BERRY, updateResolutions],
+  [YARN_CLASSIC, updateResolutions]
+])

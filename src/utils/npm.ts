@@ -8,6 +8,8 @@ import { isDebug } from './debug'
 import constants from '../constants'
 import { getNpmBinPath } from '../shadow/npm-paths'
 
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+
 const { SOCKET_IPC_HANDSHAKE, abortSignal } = constants
 
 const auditFlags = new Set(['--audit', '--no-audit'])
@@ -48,12 +50,18 @@ export function isProgressFlag(cmdArg: string) {
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
 type SafeNpmInstallOptions = SpawnOption & {
-  args?: string[]
-  ipc?: object
+  args?: string[] | undefined
+  ipc?: object | undefined
+  spinner?: Spinner | undefined
 }
 
-export function safeNpmInstall(opts?: SafeNpmInstallOptions) {
-  const { args = [], ipc, ...spawnOptions } = { __proto__: null, ...opts }
+export function safeNpmInstall(options?: SafeNpmInstallOptions) {
+  const {
+    args = [],
+    ipc,
+    spinner,
+    ...spawnOptions
+  } = <SafeNpmInstallOptions>{ __proto__: null, ...options }
   const terminatorPos = args.indexOf('--')
   const npmArgs = (
     terminatorPos === -1 ? args : args.slice(0, terminatorPos)
@@ -61,7 +69,12 @@ export function safeNpmInstall(opts?: SafeNpmInstallOptions) {
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const useIpc = isObject(ipc)
   const useDebug = isDebug()
-  const spawnPromise = spawn(
+  const isSilent = !useDebug && !npmArgs.some(isLoglevelFlag)
+  const isSpinning = spinner?.isSpinning ?? false
+  if (!isSilent) {
+    spinner?.stop()
+  }
+  let spawnPromise = spawn(
     // Lazily access constants.execPath.
     constants.execPath,
     [
@@ -82,7 +95,7 @@ export function safeNpmInstall(opts?: SafeNpmInstallOptions) {
       '--no-progress',
       // Add the '--silent' flag if a loglevel flag is not provided and the
       // SOCKET_CLI_DEBUG environment variable is not truthy.
-      ...(useDebug || npmArgs.some(isLoglevelFlag) ? [] : ['--silent']),
+      ...(isSilent ? ['--silent'] : []),
       ...npmArgs,
       ...otherArgs
     ],
@@ -91,15 +104,15 @@ export function safeNpmInstall(opts?: SafeNpmInstallOptions) {
       // Set stdio to include 'ipc'.
       // See https://github.com/nodejs/node/blob/v23.6.0/lib/child_process.js#L161-L166
       // and https://github.com/nodejs/node/blob/v23.6.0/lib/internal/child_process.js#L238.
-      stdio: useDebug
-        ? // 'inherit'
-          useIpc
-          ? [0, 1, 2, 'ipc']
-          : 'inherit'
-        : // 'ignore'
+      stdio: isSilent
+        ? // 'ignore'
           useIpc
           ? ['ignore', 'ignore', 'ignore', 'ipc']
-          : 'ignore',
+          : 'ignore'
+        : // 'inherit'
+          useIpc
+          ? [0, 1, 2, 'ipc']
+          : 'inherit',
       ...spawnOptions,
       env: {
         ...process.env,
@@ -109,6 +122,14 @@ export function safeNpmInstall(opts?: SafeNpmInstallOptions) {
   )
   if (useIpc) {
     spawnPromise.process.send({ [SOCKET_IPC_HANDSHAKE]: ipc })
+  }
+  if (!isSilent && isSpinning) {
+    const oldSpawnPromise = spawnPromise
+    spawnPromise = <typeof oldSpawnPromise>spawnPromise.finally(() => {
+      spinner?.start()
+    })
+    spawnPromise.process = oldSpawnPromise.process
+    ;(spawnPromise as any).stdin = (spawnPromise as any).stdin
   }
   return spawnPromise
 }

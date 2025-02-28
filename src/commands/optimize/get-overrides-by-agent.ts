@@ -5,7 +5,7 @@ import constants from '../../constants'
 import type {
   Agent,
   StringKeyValueObject
-} from '../../utils/package-manager-detector'
+} from '../../utils/package-environment-detector'
 
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }
@@ -63,14 +63,11 @@ function getOverridesDataClassic(pkgJson: PackageJson) {
   return { type: YARN_CLASSIC, overrides }
 }
 
-export const getOverridesDataByAgent: Record<Agent, GetOverrides> = {
-  // @ts-ignore
-  __proto__: null,
-
-  [BUN]: getOverridesDataBun,
-  [NPM]: getOverridesDataNpm,
-  [PNPM]: getOverridesDataPnpm,
-  [VLT]: getOverridesDataVlt,
-  [YARN_BERRY]: getOverridesDataYarn,
-  [YARN_CLASSIC]: getOverridesDataClassic
-}
+export const overridesDataByAgent = new Map<Agent, GetOverrides>([
+  [BUN, getOverridesDataBun],
+  [NPM, getOverridesDataNpm],
+  [PNPM, getOverridesDataPnpm],
+  [VLT, getOverridesDataVlt],
+  [YARN_BERRY, getOverridesDataYarn],
+  [YARN_CLASSIC, getOverridesDataClassic]
+])

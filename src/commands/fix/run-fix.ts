@@ -18,7 +18,7 @@ import {
   getPackagesAlerts,
   updateNode
 } from '../../shadow/arborist/lib/arborist/reify'
-// import { detect } from '../../utils/package-manager-detector'
+// import { detect } from '../../utils/package-environment-detector'
 
 import type { SafeNode } from '../../shadow/arborist/lib/node'
 

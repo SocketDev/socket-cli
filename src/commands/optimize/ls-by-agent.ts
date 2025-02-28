@@ -2,7 +2,7 @@ import spawn from '@npmcli/promise-spawn'
 
 import constants from '../../constants'
 
-import type { Agent } from '../../utils/package-manager-detector'
+import type { Agent } from '../../utils/package-environment-detector'
 
 type AgentListDepsOptions = { npmExecPath?: string }
 
