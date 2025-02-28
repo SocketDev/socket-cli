@@ -48,6 +48,20 @@ export async function listRepos({
     return
   }
 
+  spinner.stop()
+
+  if (outputJson) {
+    const data = result.data.results.map(o => ({
+      id: o.id,
+      name: o.name,
+      visibility: o.visibility,
+      defaultBranch: o.default_branch,
+      archived: o.archived
+    }))
+    console.log(JSON.stringify(data, null, 2))
+    return
+  }
+
   const options = {
     columns: [
       { field: 'id', name: colors.magenta('ID') },
@@ -58,5 +72,5 @@ export async function listRepos({
     ]
   }
 
-  spinner.stop(chalkTable(options, result.data.results))
+  console.log(chalkTable(options, result.data.results))
 }
