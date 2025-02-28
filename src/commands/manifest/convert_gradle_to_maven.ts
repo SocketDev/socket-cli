@@ -53,7 +53,7 @@ export async function convertGradleToMaven(
     const output = await spawn(bin, commandArgs, {
       cwd: target || '.'
     })
-    spinner.success()
+    spinner.stop()
     if (verbose) {
       console.group('[VERBOSE] gradle stdout:')
       console.log(output)
@@ -61,7 +61,7 @@ export async function convertGradleToMaven(
     }
 
     if (output.stderr) {
-      spinner.error('There were errors while running gradle')
+      spinner.errorAndStop('There were errors while running gradle')
       // (In verbose mode, stderr was printed above, no need to repeat it)
       if (!verbose) {
         console.group('[VERBOSE] stderr:')
@@ -70,6 +70,9 @@ export async function convertGradleToMaven(
       }
       process.exit(1)
     }
+
+    spinner.start()
+    spinner.successAndStop('Executed gradle successfully')
 
     console.log('Reported exports:')
     output.stdout.replace(
@@ -82,7 +85,7 @@ export async function convertGradleToMaven(
 
     // const loc = output.stdout?.match(/Wrote (.*?.pom)\n/)?.[1]?.trim()
     // if (!loc) {
-    //   spinner.error(
+    //   spinner.errorAndStop(
     //     'There were no errors from sbt but could not find the location of resulting .pom file either'
     //   )
     //   process.exit(1)
@@ -104,11 +107,11 @@ export async function convertGradleToMaven(
     //   }
     //   // TODO: do we prefer fs-extra? renaming can be gnarly on windows and fs-extra's version is better
     //   await renamep(loc, out)
-    //   spinner.success()
+    //   spinner.successAndStop()
     //   spinner.start().success(`OK. File should be available in \`${out}\``)
     // }
   } catch (e) {
-    spinner.error(
+    spinner.errorAndStop(
       'There was an unexpected error while running this' +
         (verbose ? '' : ' (use --verbose for details)')
     )

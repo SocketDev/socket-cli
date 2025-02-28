@@ -73,7 +73,7 @@ export async function createReport(
       handleUnsuccessfulApiResponse('createReport', result, spinner)
       return undefined
     }
-    spinner.success()
+    spinner.successAndStop()
     return result
   }
 }

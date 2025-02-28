@@ -43,7 +43,7 @@ export async function createRepo({
   )
 
   if (result.success) {
-    spinner.success('Repository created successfully')
+    spinner.successAndStop('Repository created successfully')
   } else {
     handleUnsuccessfulApiResponse('createOrgRepo', result, spinner)
   }

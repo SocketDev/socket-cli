@@ -36,7 +36,9 @@ export async function getDiffScan(
 
   if (!response.ok) {
     const err = await handleAPIError(response.status)
-    spinner.error(`${colors.bgRed(colors.white(response.statusText))}: ${err}`)
+    spinner.errorAndStop(
+      `${colors.bgRed(colors.white(response.statusText))}: ${err}`
+    )
     return
   }
 

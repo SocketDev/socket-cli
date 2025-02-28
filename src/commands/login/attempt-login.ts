@@ -55,7 +55,7 @@ export async function attemptLogin(
     orgs = result.data
     spinner.success('API key verified')
   } catch {
-    spinner.error('Invalid API key')
+    spinner.errorAndStop('Invalid API key')
     return
   }
 
@@ -97,8 +97,8 @@ export async function attemptLogin(
   const oldToken = getSetting('apiToken')
   try {
     applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
-    spinner.success(`API credentials ${oldToken ? 'updated' : 'set'}`)
+    spinner.successAndStop(`API credentials ${oldToken ? 'updated' : 'set'}`)
   } catch {
-    spinner.error(`API login failed`)
+    spinner.errorAndStop(`API login failed`)
   }
 }

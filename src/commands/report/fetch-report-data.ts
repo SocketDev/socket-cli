@@ -54,9 +54,9 @@ export async function fetchReportData(
 
   if (strict) {
     if (result.data.healthy) {
-      spinner.success('Report result is healthy and great!')
+      spinner.successAndStop('Report result is healthy and great!')
     } else {
-      spinner.error('Report result deemed unhealthy for project')
+      spinner.errorAndStop('Report result deemed unhealthy for project')
     }
   } else if (!result.data.healthy) {
     const severityCount = getSeverityCount(
@@ -64,9 +64,9 @@ export async function fetchReportData(
       includeAllIssues ? undefined : 'high'
     )
     const issueSummary = formatSeverityCount(severityCount)
-    spinner.success(`Report has these issues: ${issueSummary}`)
+    spinner.successAndStop(`Report has these issues: ${issueSummary}`)
   } else {
-    spinner.success('Report has no issues')
+    spinner.successAndStop('Report has no issues')
   }
 
   return result.data
