@@ -126,7 +126,9 @@ async function run(
       : process.cwd()
 
   // Note exiting earlier to skirt a hidden auth requirement
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+  if (cli.flags['dryRun']) {
+    return console.log('[DryRun] Bailing now')
+  }
 
   const socketSdk = await setupSdk()
   const supportedFiles = await socketSdk

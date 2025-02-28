@@ -66,7 +66,9 @@ async function run(
   const pkgVersion =
     versionSeparator < 1 ? 'latest' : rawPkgName.slice(versionSeparator + 1)
 
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+  if (cli.flags['dryRun']) {
+    return console.log('[DryRun] Bailing now')
+  }
 
   await getPackageInfo({
     commandName: `${parentName} ${config.commandName}`,

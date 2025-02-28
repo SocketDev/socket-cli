@@ -85,7 +85,9 @@ async function run(
     }
     subArgs.push(dir)
 
-    if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+    if (cli.flags['dryRun']) {
+      return console.log('[DryRun] Bailing now')
+    }
 
     await cmdManifestScala.run(subArgs, importMeta, { parentName })
     return
@@ -98,7 +100,9 @@ async function run(
       subArgs.push(cwd)
     }
 
-    if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+    if (cli.flags['dryRun']) {
+      return console.log('[DryRun] Bailing now')
+    }
 
     await cmdManifestGradle.run(subArgs, importMeta, { parentName })
     return

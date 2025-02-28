@@ -85,7 +85,9 @@ async function run(
   const view = Boolean(cli.flags['view'])
 
   // Note exiting earlier to skirt a hidden auth requirement
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+  if (cli.flags['dryRun']) {
+    return console.log('[DryRun] Bailing now')
+  }
 
   const socketConfig = await getSocketConfig(absoluteConfigPath)
 

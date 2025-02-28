@@ -59,7 +59,9 @@ async function run(
   let apiBaseUrl = cli.flags['apiBaseUrl'] as string | undefined
   let apiProxy = cli.flags['apiProxy'] as string | undefined
 
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+  if (cli.flags['dryRun']) {
+    return console.log('[DryRun] Bailing now')
+  }
 
   if (!isInteractive()) {
     throw new InputError(

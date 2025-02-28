@@ -60,7 +60,9 @@ async function run(
     return
   }
 
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+  if (cli.flags['dryRun']) {
+    return console.log('[DryRun] Bailing now')
+  }
 
   await viewReport(reportId, {
     all: Boolean(cli.flags['all']),

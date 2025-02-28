@@ -36,7 +36,9 @@ async function run(
     parentName
   })
 
-  if (cli.flags['dryRun']) return console.log('[DryRun] Bailing now')
+  if (cli.flags['dryRun']) {
+    return console.log('[DryRun] Bailing now')
+  }
 
   await wrapNpm(argv)
 }
