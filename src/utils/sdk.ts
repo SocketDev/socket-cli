@@ -12,6 +12,8 @@ import { AuthError } from './errors'
 import { getSetting } from './settings'
 import constants from '../constants'
 
+const { SOCKET_CLI_NO_API_TOKEN } = constants
+
 // The API server that should be used for operations.
 function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
@@ -29,14 +31,19 @@ function getDefaultHttpProxy(): string | undefined {
 // This API key should be stored globally for the duration of the CLI execution.
 let _defaultToken: string | undefined
 export function getDefaultToken(): string | undefined {
-  const key =
-    process.env['SOCKET_SECURITY_API_TOKEN'] ||
-    // Keep 'SOCKET_SECURITY_API_KEY' as an alias of 'SOCKET_SECURITY_API_TOKEN'.
-    // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
-    process.env['SOCKET_SECURITY_API_KEY'] ||
-    getSetting('apiToken') ||
-    _defaultToken
-  _defaultToken = isNonEmptyString(key) ? key : undefined
+  // Lazily access constants.ENV[SOCKET_CLI_NO_API_TOKEN].
+  if (constants.ENV[SOCKET_CLI_NO_API_TOKEN]) {
+    _defaultToken = undefined
+  } else {
+    const key =
+      process.env['SOCKET_SECURITY_API_TOKEN'] ||
+      // Keep 'SOCKET_SECURITY_API_KEY' as an alias of 'SOCKET_SECURITY_API_TOKEN'.
+      // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
+      process.env['SOCKET_SECURITY_API_KEY'] ||
+      getSetting('apiToken') ||
+      _defaultToken
+    _defaultToken = isNonEmptyString(key) ? key : undefined
+  }
   return _defaultToken
 }
 

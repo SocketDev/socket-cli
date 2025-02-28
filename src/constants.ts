@@ -42,6 +42,7 @@ type ENV = Remap<
     Readonly<{
       SOCKET_CLI_DEBUG: boolean
       SOCKET_CLI_LEGACY_BUILD: boolean
+      SOCKET_CLI_NO_API_TOKEN: boolean
       SOCKET_CLI_PUBLISHED_BUILD: boolean
       SOCKET_CLI_SENTRY_BUILD: boolean
       SOCKET_CLI_SHOW_BANNER: boolean
@@ -87,6 +88,7 @@ type Constants = Remap<
     readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
     readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
     readonly SOCKET_CLI_LEGACY_BUILD: 'SOCKET_CLI_LEGACY_BUILD'
+    readonly SOCKET_CLI_NO_API_TOKEN: 'SOCKET_CLI_NO_API_TOKEN'
     readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
     readonly SOCKET_CLI_PUBLISHED_BUILD: 'SOCKET_CLI_PUBLISHED_BUILD'
     readonly SOCKET_CLI_SAFE_WRAPPER: 'SOCKET_CLI_SAFE_WRAPPER'
@@ -140,6 +142,7 @@ const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
 const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const SOCKET_CLI_LEGACY_BUILD = 'SOCKET_CLI_LEGACY_BUILD'
+const SOCKET_CLI_NO_API_TOKEN = 'SOCKET_CLI_NO_API_TOKEN'
 const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
 const SOCKET_CLI_PUBLISHED_BUILD = 'SOCKET_CLI_PUBLISHED_BUILD'
 const SOCKET_CLI_SAFE_WRAPPER = 'SOCKET_CLI_SAFE_WRAPPER'
@@ -175,6 +178,8 @@ const LAZY_ENV = () => {
     // Inlined flag set to determine if this is the Legacy build.
     // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_LEGACY_BUILD]".
     [SOCKET_CLI_LEGACY_BUILD]: process.env[SOCKET_CLI_LEGACY_BUILD],
+    // Flag set to make the default API token `undefined`.
+    [SOCKET_CLI_NO_API_TOKEN]: envAsBoolean(env[SOCKET_CLI_NO_API_TOKEN]),
     // Inlined flag set to determine if this is a published build.
     // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_PUBLISHED_BUILD]".
     [SOCKET_CLI_PUBLISHED_BUILD]: process.env[SOCKET_CLI_PUBLISHED_BUILD],
@@ -278,6 +283,7 @@ const constants = <Constants>createConstantsObject(
     SOCKET_CLI_FIX,
     SOCKET_CLI_ISSUES_URL,
     SOCKET_CLI_LEGACY_BUILD,
+    SOCKET_CLI_NO_API_TOKEN,
     SOCKET_CLI_OPTIMIZE,
     SOCKET_CLI_PUBLISHED_BUILD,
     SOCKET_CLI_SAFE_WRAPPER,
