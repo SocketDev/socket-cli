@@ -43,7 +43,7 @@ export async function convertSbtToMaven(
     const output = await spawn(bin, ['makePom'].concat(sbtOpts), {
       cwd: target || '.'
     })
-    spinner.success()
+    spinner.successAndStop()
     if (verbose) {
       console.group('[VERBOSE] sbt stdout:')
       console.log(output)
@@ -51,7 +51,8 @@ export async function convertSbtToMaven(
     }
 
     if (output.stderr) {
-      spinner.error('There were errors while running sbt')
+      spinner.start()
+      spinner.errorAndStop('There were errors while running sbt')
       // (In verbose mode, stderr was printed above, no need to repeat it)
       if (!verbose) {
         console.group('[VERBOSE] stderr:')
@@ -68,7 +69,7 @@ export async function convertSbtToMaven(
     })
 
     if (!poms.length) {
-      spinner.error(
+      spinner.errorAndStop(
         'There were no errors from sbt but it seems to not have generated any poms either'
       )
       process.exit(1)
@@ -106,7 +107,7 @@ export async function convertSbtToMaven(
       spinner.start().success(`OK`)
     }
   } catch (e) {
-    spinner.error(
+    spinner.errorAndStop(
       'There was an unexpected error while running this' +
         (verbose ? '' : ' (use --verbose for details)')
     )

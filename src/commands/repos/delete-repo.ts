@@ -18,7 +18,7 @@ export async function deleteRepo(
   )
 
   if (result.success) {
-    spinner.success('Repository deleted successfully')
+    spinner.successAndStop('Repository deleted successfully')
   } else {
     handleUnsuccessfulApiResponse('deleteOrgRepo', result, spinner)
   }

@@ -113,7 +113,7 @@ export async function runFix() {
                 // eslint-disable-next-line no-await-in-loop
                 await editablePkgJson.save()
               } catch {
-                spinner.error(`Reverting ${name} to ${oldVersion}`)
+                spinner.errorAndStop(`Reverting ${name} to ${oldVersion}`)
                 spinner.start()
                 arb.idealTree = revertToIdealTree
               }
