@@ -48,7 +48,7 @@ export async function listRepos({
     return
   }
 
-  spinner.stop('')
+  spinner.stop()
 
   if (outputJson) {
     const data = result.data.results.map(o => ({
