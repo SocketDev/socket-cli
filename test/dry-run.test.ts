@@ -507,6 +507,25 @@ describe('dry-run on all commands', async () => {
     )
   })
 
+  cmdit(['organization', '--dry-run'], 'should support', async cmd => {
+    const { code, status, stderr, stdout } = await invoke(...cmd)
+    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+      "
+         _____         _       _        /---------------
+        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+        |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket organizations\`, cwd: <redacted>
+
+      [DryRun] Bailing now"
+    `)
+    expect(stderr).toMatchInlineSnapshot(`""`)
+
+    expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
+    expect(stdout, 'header should include command (without params)').toContain(
+      cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
+    )
+  })
+
   cmdit(['raw-npm', '--dry-run'], 'should support', async cmd => {
     const { code, status, stderr, stdout } = await invoke(...cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
