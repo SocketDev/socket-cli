@@ -172,6 +172,7 @@ export function meowOrExit({
   if (constants.ENV[SOCKET_CLI_SHOW_BANNER]) {
     console.log(getAsciiHeader(command))
   }
+
   // This exits if .printHelp() is called either by meow itself or by us.
   const cli = meow({
     argv,
