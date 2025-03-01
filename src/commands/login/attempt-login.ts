@@ -1,7 +1,6 @@
 import terminalLink from 'terminal-link'
 
 import {
-  type Separator,
   confirm,
   password,
   select
@@ -14,6 +13,9 @@ import { AuthError } from '../../utils/errors'
 import { setupSdk } from '../../utils/sdk'
 import { getSetting } from '../../utils/settings'
 
+import type {
+  Separator
+} from '@socketsecurity/registry/lib/prompts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 // TODO: this type should come from a general Socket REST API type doc
@@ -71,7 +73,6 @@ export async function attemptLogin(
   let enforcedOrgs: Array<string> = []
 
   if (enforcedChoices.length > 1) {
-    spinner.stop()
     const id = <string | null>await select({
       message:
         "Which organization's policies should Socket enforce system-wide?",
@@ -79,19 +80,18 @@ export async function attemptLogin(
         name: 'None',
         value: '',
         description: 'Pick "None" if this is a personal device'
-      })
+      }),
+      spinner
     })
-    spinner.start()
     if (id) {
       enforcedOrgs = [id]
     }
   } else if (enforcedChoices.length) {
-    spinner.stop()
     const confirmOrg = await confirm({
       message: `Should Socket enforce ${(enforcedChoices[0] as OrgChoice)?.name}'s security policies system-wide?`,
-      default: true
+      default: true,
+      spinner
     })
-    spinner.start()
     if (confirmOrg) {
       const existing = <OrgChoice>enforcedChoices[0]
       if (existing) {
