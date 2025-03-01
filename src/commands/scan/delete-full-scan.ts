@@ -8,8 +8,9 @@ export async function deleteOrgFullScan(
   fullScanId: string,
   apiToken: string
 ): Promise<void> {
-  const spinnerText = 'Deleting scan...'
-  const spinner = new Spinner({ text: spinnerText }).start()
+  const spinner = new Spinner()
+
+  spinner.start('Deleting scan...')
 
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
@@ -17,9 +18,9 @@ export async function deleteOrgFullScan(
     'Deleting scan'
   )
 
-  if (result.success) {
-    spinner.successAndStop('Scan deleted successfully')
-  } else {
+  if (!result.success) {
     handleUnsuccessfulApiResponse('deleteOrgFullScan', result, spinner)
+    return
   }
+  spinner.successAndStop('Scan deleted successfully')
 }

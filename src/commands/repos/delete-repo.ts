@@ -8,8 +8,9 @@ export async function deleteRepo(
   repoName: string,
   apiToken: string
 ): Promise<void> {
-  const spinnerText = 'Deleting repository... \n'
-  const spinner = new Spinner({ text: spinnerText }).start()
+  const spinner = new Spinner()
+
+  spinner.start('Deleting repository...')
 
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(

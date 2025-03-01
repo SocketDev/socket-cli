@@ -11,7 +11,9 @@ export async function getFullScan(
   file: string | undefined,
   apiToken: string
 ): Promise<SocketSdkResultType<'getOrgFullScan'>> {
-  const spinner = new Spinner({ text: 'Streaming scan...' }).start()
+  const spinner = new Spinner()
+
+  spinner.start('Streaming scan...')
 
   const socketSdk = await setupSdk(apiToken)
   const data = await handleApiCall(
@@ -28,6 +30,5 @@ export async function getFullScan(
   } else {
     handleUnsuccessfulApiResponse('getOrgFullScan', data, spinner)
   }
-
   return data
 }

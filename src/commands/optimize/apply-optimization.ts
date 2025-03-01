@@ -72,6 +72,7 @@ export async function applyOptimization(
     return
   }
   const spinner = new Spinner({ text: 'Socket optimizing...' })
+
   spinner.start()
 
   const state = await addOverrides(pkgEnvDetails.pkgPath, pkgEnvDetails, {
@@ -186,9 +187,10 @@ async function addOverrides(
       overridesDataByAgent.get(YARN_CLASSIC)!(pkgJson)
     )
   }
-  if (spinner) {
-    spinner.text = `Adding overrides${workspaceName ? ` to ${workspaceName}` : ''}...`
-  }
+  spinner?.setText(
+    `Adding overrides${workspaceName ? ` to ${workspaceName}` : ''}...`
+  )
+
   const depAliasMap = new Map<string, string>()
 
   const nodeRange = `>=${pkgEnvDetails.minimumNodeVersion}`

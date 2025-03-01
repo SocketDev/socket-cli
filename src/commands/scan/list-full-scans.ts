@@ -23,8 +23,9 @@ export async function listFullScans(
   },
   apiToken: string
 ): Promise<void> {
-  const spinnerText = 'Listing scans... \n'
-  const spinner = new Spinner({ text: spinnerText }).start()
+  const spinner = new Spinner()
+
+  spinner.start('Listing scans...')
 
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(

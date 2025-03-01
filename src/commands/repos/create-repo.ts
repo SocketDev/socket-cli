@@ -24,8 +24,9 @@ export async function createRepo({
   default_branch: string
   visibility: string
 }): Promise<void> {
-  const spinnerText = 'Creating repository... \n'
-  const spinner = new Spinner({ text: spinnerText }).start()
+  const spinner = new Spinner()
+
+  spinner.start('Creating repository...')
 
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
