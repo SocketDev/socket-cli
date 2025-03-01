@@ -26,7 +26,10 @@ async function printOrganizationsFromToken(
   apiToken: string,
   format: 'text' | 'json' | 'markdown' = 'text'
 ) {
-  const spinner = new Spinner({ text: 'Fetching organizations...' }).start()
+  const spinner = new Spinner()
+
+  spinner.start('Fetching organizations...')
+
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getOrganizations(),

@@ -55,9 +55,7 @@ export async function runFix() {
       const tree = arb.idealTree!
       const hasUpgrade = !!getManifestData(NPM, name)
       if (hasUpgrade) {
-        spinner.stop()
-        console.log(`Skipping ${name}. Socket Optimize package exists.`)
-        spinner.start()
+        spinner.info(`Skipping ${name}. Socket Optimize package exists.`)
         continue
       }
       const nodes = findPackageNodes(tree, name)
@@ -91,9 +89,8 @@ export async function runFix() {
             ) {
               try {
                 // eslint-disable-next-line no-await-in-loop
-                await runScript('test', [], { stdio: 'pipe' })
+                await runScript('test', [], { spinner, stdio: 'ignore' })
                 spinner.info(`Patched ${name} ${oldVersion} -> ${node.version}`)
-                spinner.start()
                 if (isTopLevel(tree, node)) {
                   for (const depField of [
                     'dependencies',
@@ -113,14 +110,11 @@ export async function runFix() {
                 // eslint-disable-next-line no-await-in-loop
                 await editablePkgJson.save()
               } catch {
-                spinner.errorAndStop(`Reverting ${name} to ${oldVersion}`)
-                spinner.start()
+                spinner.error(`Reverting ${name} to ${oldVersion}`)
                 arb.idealTree = revertToIdealTree
               }
             } else {
-              spinner.stop()
-              console.log(`Could not patch ${name} ${oldVersion}`)
-              spinner.start()
+              spinner.error(`Could not patch ${name} ${oldVersion}`)
             }
           }
         }

@@ -25,8 +25,9 @@ export async function getDiffScan(
   },
   apiToken: string
 ): Promise<void> {
-  const spinnerText = 'Getting diff scan... \n'
-  const spinner = new Spinner({ text: spinnerText }).start()
+  const spinner = new Spinner()
+
+  spinner.start('Getting diff scan...')
 
   const response = await queryAPI(
     `${orgSlug}/full-scans/diff?before=${before}&after=${after}&preview`,

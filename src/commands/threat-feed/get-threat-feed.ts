@@ -35,9 +35,9 @@ export async function getThreatFeed({
   direction: string
   filter: string
 }): Promise<void> {
-  const spinner = new Spinner({
-    text: 'Looking up the threat feed'
-  }).start()
+  const spinner = new Spinner()
+
+  spinner.start('Looking up the threat feed')
 
   const formattedQueryParams = formatQueryParams({
     per_page: perPage,

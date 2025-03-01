@@ -8,8 +8,9 @@ export async function getOrgScanMetadata(
   scanId: string,
   apiToken: string
 ): Promise<void> {
-  const spinnerText = "Getting scan's metadata... \n"
-  const spinner = new Spinner({ text: spinnerText }).start()
+  const spinner = new Spinner()
+
+  spinner.start("Getting scan's metadata...")
 
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(

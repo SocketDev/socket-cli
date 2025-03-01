@@ -43,7 +43,9 @@ export async function attemptLogin(
   apiBaseUrl ??= getSetting('apiBaseUrl') ?? undefined
   apiProxy ??= getSetting('apiProxy') ?? undefined
 
-  const spinner = new Spinner({ text: 'Verifying API key...' }).start()
+  const spinner = new Spinner()
+
+  spinner.start('Verifying API key...')
 
   let orgs: SocketSdkReturnType<'getOrganizations'>['data']
   try {

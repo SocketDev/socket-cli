@@ -22,11 +22,11 @@ export async function fetchReportData(
   includeAllIssues: boolean,
   strict: boolean
 ): Promise<void | ReportData> {
-  const socketSdk = await setupSdk()
-  const spinner = new Spinner({
-    text: `Fetching report with ID ${reportId} (this could take a while)`
-  }).start()
+  const spinner = new Spinner()
 
+  spinner.start(`Fetching report with ID ${reportId} (this could take a while)`)
+
+  const socketSdk = await setupSdk()
   let result: SocketSdkResultType<'getReport'> | undefined
   for (let retry = 1; !result; ++retry) {
     try {
@@ -41,6 +41,7 @@ export async function fetchReportData(
         !(err instanceof Error) ||
         (err.cause as any)?.cause?.response?.statusCode !== HTTP_CODE_TIMEOUT
       ) {
+        spinner.stop()
         throw err
       }
     }
@@ -50,13 +51,12 @@ export async function fetchReportData(
     return handleUnsuccessfulApiResponse('getReport', result, spinner)
   }
 
-  // Conclude the status of the API call
-
+  // Conclude the status of the API call.
   if (strict) {
     if (result.data.healthy) {
-      spinner.successAndStop('Report result is healthy and great!')
+      spinner.success('Report result is healthy and great!')
     } else {
-      spinner.errorAndStop('Report result deemed unhealthy for project')
+      spinner.error('Report result deemed unhealthy for project')
     }
   } else if (!result.data.healthy) {
     const severityCount = getSeverityCount(
@@ -64,10 +64,11 @@ export async function fetchReportData(
       includeAllIssues ? undefined : 'high'
     )
     const issueSummary = formatSeverityCount(severityCount)
-    spinner.successAndStop(`Report has these issues: ${issueSummary}`)
+    spinner.success(`Report has these issues: ${issueSummary}`)
   } else {
-    spinner.successAndStop('Report has no issues')
+    spinner.success('Report has no issues')
   }
+  spinner.stop()
 
   return result.data
 }
