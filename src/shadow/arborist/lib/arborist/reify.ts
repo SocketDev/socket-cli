@@ -56,8 +56,7 @@ const {
   NPM_REGISTRY_URL,
   OVERRIDES,
   PNPM,
-  RESOLUTIONS,
-  abortSignal
+  RESOLUTIONS
 } = constants
 
 const formatter = new ColorOrMarkdown(false)
