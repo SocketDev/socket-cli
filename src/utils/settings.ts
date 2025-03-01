@@ -4,9 +4,9 @@ import path from 'node:path'
 import process from 'node:process'
 
 import config from '@socketsecurity/config'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { safeReadFileSync } from './fs'
-import { logger } from './logging'
 import constants from '../constants'
 
 const LOCALAPPDATA = 'LOCALAPPDATA'
