@@ -1,10 +1,6 @@
 import terminalLink from 'terminal-link'
 
-import {
-  confirm,
-  password,
-  select
-} from '@socketsecurity/registry/lib/prompts'
+import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { applyLogin } from './apply-login'
@@ -13,9 +9,7 @@ import { AuthError } from '../../utils/errors'
 import { setupSdk } from '../../utils/sdk'
 import { getSetting } from '../../utils/settings'
 
-import type {
-  Separator
-} from '@socketsecurity/registry/lib/prompts'
+import type { Separator } from '@socketsecurity/registry/lib/prompts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 // TODO: this type should come from a general Socket REST API type doc
@@ -73,25 +67,33 @@ export async function attemptLogin(
   let enforcedOrgs: Array<string> = []
 
   if (enforcedChoices.length > 1) {
-    const id = <string | null>await select({
-      message:
-        "Which organization's policies should Socket enforce system-wide?",
-      choices: enforcedChoices.concat({
-        name: 'None',
-        value: '',
-        description: 'Pick "None" if this is a personal device'
-      }),
-      spinner
-    })
+    const id = <string | null>await select(
+      {
+        message:
+          "Which organization's policies should Socket enforce system-wide?",
+        choices: enforcedChoices.concat({
+          name: 'None',
+          value: '',
+          description: 'Pick "None" if this is a personal device'
+        })
+      },
+      {
+        spinner
+      }
+    )
     if (id) {
       enforcedOrgs = [id]
     }
   } else if (enforcedChoices.length) {
-    const confirmOrg = await confirm({
-      message: `Should Socket enforce ${(enforcedChoices[0] as OrgChoice)?.name}'s security policies system-wide?`,
-      default: true,
-      spinner
-    })
+    const confirmOrg = await confirm(
+      {
+        message: `Should Socket enforce ${(enforcedChoices[0] as OrgChoice)?.name}'s security policies system-wide?`,
+        default: true
+      },
+      {
+        spinner
+      }
+    )
     if (confirmOrg) {
       const existing = <OrgChoice>enforcedChoices[0]
       if (existing) {
