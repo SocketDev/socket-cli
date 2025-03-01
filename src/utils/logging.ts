@@ -1,7 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
 import isUnicodeSupported from '@socketregistry/is-unicode-supported/index.cjs'
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type LogSymbols = {
   info: string
@@ -33,21 +32,30 @@ export function getLogSymbols() {
 }
 
 export class Logger {
-  #spinnerLogger: ReturnType<typeof Spinner>
+  #logSymbols: LogSymbols
+
   constructor() {
-    this.#spinnerLogger = new Spinner()
+    this.#logSymbols = getLogSymbols()
+  }
+  #symbolLog(symbol: string, text: string) {
+    console.log(`${symbol} ${text ?? ''}`)
+    return this
   }
 
   error(text: string) {
-    this.#spinnerLogger.error(text)
+    return this.#symbolLog(this.#logSymbols.error, text)
   }
 
   info(text: string) {
-    this.#spinnerLogger.info(text)
+    return this.#symbolLog(this.#logSymbols.info, text)
+  }
+
+  success(text: string) {
+    return this.#symbolLog(this.#logSymbols.success, text)
   }
 
   warn(text: string) {
-    this.#spinnerLogger.warning(text)
+    return this.#symbolLog(this.#logSymbols.warning, text)
   }
 }
 
