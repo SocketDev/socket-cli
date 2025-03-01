@@ -1,4 +1,5 @@
-import { getLogSymbols } from './logging'
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../constants'
 
 export function isDebug() {
@@ -8,6 +9,6 @@ export function isDebug() {
 
 export function debugLog(...args: any[]) {
   if (isDebug()) {
-    console.error(getLogSymbols().info, ...args)
+    logger.info(...args)
   }
 }

@@ -1,5 +1,6 @@
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { applyLogout } from './apply-logout'
-import { logger } from '../../utils/logging'
 
 export function attemptLogout() {
   try {

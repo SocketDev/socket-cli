@@ -1,8 +1,8 @@
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
+import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { debugLog } from '../../utils/debug'
-import { getLogSymbols } from '../../utils/logging'
+import { debugLog, isDebug } from '../../utils/debug'
 import { getPackageFiles } from '../../utils/path-resolve'
 import { setupSdk } from '../../utils/sdk'
 
@@ -48,32 +48,34 @@ export async function createReport(
     supportedFiles
   )
 
-  debugLog(
-    'Uploading:',
-    packagePaths.join(`\n${getLogSymbols().info} Uploading: `)
-  )
+  const { length: packagePathsCount } = packagePaths
 
+  if (packagePathsCount && isDebug()) {
+    for (const pkgPath of packagePaths) {
+      debugLog(`Uploading: ${pkgPath}`)
+    }
+  }
   if (dryRun) {
     debugLog('[dryRun] Skipped actual upload')
     return undefined
-  } else {
-    const socketSdk = await setupSdk()
-    const spinner = new Spinner({
-      text: `Creating report with ${packagePaths.length} package files`
-    }).start()
-
-    const apiCall = socketSdk.createReportFromFilePaths(
-      packagePaths,
-      cwd,
-      socketConfig?.issueRules
-    )
-    const result = await handleApiCall(apiCall, 'creating report')
-
-    if (!result.success) {
-      handleUnsuccessfulApiResponse('createReport', result, spinner)
-      return undefined
-    }
-    spinner.successAndStop()
-    return result
   }
+  const spinner = new Spinner()
+
+  spinner.start(
+    `Creating report with ${packagePathsCount} package ${pluralize('file', packagePathsCount)}`
+  )
+
+  const apiCall = socketSdk.createReportFromFilePaths(
+    packagePaths,
+    cwd,
+    socketConfig?.issueRules
+  )
+  const result = await handleApiCall(apiCall, 'creating report')
+
+  if (!result.success) {
+    handleUnsuccessfulApiResponse('createReport', result, spinner)
+    return undefined
+  }
+  spinner.successAndStop()
+  return result
 }

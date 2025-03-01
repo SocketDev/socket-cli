@@ -7,6 +7,8 @@ import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { cmdAction } from './commands/action/cmd-action'
 import { cmdAnalytics } from './commands/analytics/cmd-analytics'
 import { cmdAuditLog } from './commands/audit-log/cmd-audit-log'
@@ -32,7 +34,6 @@ import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper'
 import constants from './constants'
 import { AuthError, InputError, captureException } from './utils/errors'
-import { getLogSymbols } from './utils/logging'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
 
 const { SOCKET, rootPkgJsonPath } = constants
@@ -103,8 +104,8 @@ void (async () => {
     } else {
       errorTitle = 'Unexpected error with no details'
     }
-    console.error(
-      `${getLogSymbols().error} ${colors.bgRed(colors.white(errorTitle + ':'))} ${errorMessage}`
+    logger.error(
+      `${colors.bgRed(colors.white(errorTitle + ':'))} ${errorMessage}`
     )
     if (errorBody) {
       console.error(`\n${errorBody}`)

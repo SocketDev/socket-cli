@@ -2,10 +2,10 @@ import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { safeReadFile } from '../../utils/fs'
-import { logger } from '../../utils/logging'
 
 export async function convertSbtToMaven(
   target: string,
@@ -76,9 +76,9 @@ export async function convertSbtToMaven(
     // TODO: what to do with multiple output files? Do we want to dump them to stdout? Raw or with separators or ?
     // TODO: maybe we can add an option to target a specific file to dump to stdout
     if (out === '-' && poms.length === 1) {
-      console.log('Result:\n```')
+      logger.log('Result:\n```')
       console.log(await safeReadFile(poms[0] as string, 'utf8'))
-      console.log('```')
+      logger.log('```')
       logger.success(`OK`)
     } else if (out === '-') {
       logger.error(

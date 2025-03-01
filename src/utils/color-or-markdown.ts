@@ -2,18 +2,17 @@ import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
 import indentString from '@socketregistry/indent-string/index.cjs'
+import { Logger } from '@socketsecurity/registry/lib/logger'
 
-import { getLogSymbols } from './logging'
+import type { LogSymbols } from '@socketsecurity/registry/lib/logger'
 
-import type { LogSymbols } from './logging'
-
-const markdownLogSymbols = <LogSymbols>{
+const markdownLogSymbols = <LogSymbols>Object.freeze({
   __proto__: null,
   info: ':information_source:',
   error: ':stop_sign:',
   success: ':white_check_mark:',
   warning: ':warning:'
-}
+})
 
 export class ColorOrMarkdown {
   public useMarkdown: boolean
@@ -77,6 +76,6 @@ export class ColorOrMarkdown {
   }
 
   get logSymbols(): LogSymbols {
-    return this.useMarkdown ? markdownLogSymbols : getLogSymbols()
+    return this.useMarkdown ? markdownLogSymbols : Logger.LOG_SYMBOLS
   }
 }
