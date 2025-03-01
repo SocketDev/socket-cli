@@ -483,8 +483,7 @@ export async function reify(
       },
       {
         input,
-        output,
-        signal: abortSignal
+        output
       }
     ))
   ) {
