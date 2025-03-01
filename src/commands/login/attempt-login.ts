@@ -71,6 +71,7 @@ export async function attemptLogin(
   let enforcedOrgs: Array<string> = []
 
   if (enforcedChoices.length > 1) {
+    spinner.stop()
     const id = <string | null>await select({
       message:
         "Which organization's policies should Socket enforce system-wide?",
@@ -80,14 +81,17 @@ export async function attemptLogin(
         description: 'Pick "None" if this is a personal device'
       })
     })
+    spinner.start()
     if (id) {
       enforcedOrgs = [id]
     }
   } else if (enforcedChoices.length) {
+    spinner.stop()
     const confirmOrg = await confirm({
       message: `Should Socket enforce ${(enforcedChoices[0] as OrgChoice)?.name}'s security policies system-wide?`,
       default: true
     })
+    spinner.start()
     if (confirmOrg) {
       const existing = <OrgChoice>enforcedChoices[0]
       if (existing) {
