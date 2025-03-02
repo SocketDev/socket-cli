@@ -1,6 +1,7 @@
 import { setTimeout as wait } from 'node:timers/promises'
 
-import { debugLog } from './debug'
+import { debugLog } from '@socketsecurity/registry/lib/debug'
+
 import constants from '../constants'
 
 const {

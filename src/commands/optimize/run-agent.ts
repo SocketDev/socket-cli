@@ -1,9 +1,9 @@
 import spawn from '@npmcli/promise-spawn'
 
+import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../../constants'
-import { isDebug } from '../../utils/debug'
 import { safeNpmInstall } from '../../utils/npm'
 
 import type { Agent } from '../../utils/package-environment-detector'
