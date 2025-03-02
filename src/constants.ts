@@ -83,6 +83,7 @@ type Constants = Remap<
     readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
     readonly NPX: 'npx'
     readonly PNPM: 'pnpm'
+    readonly REDACTED: '<redacted>'
     readonly REQUIRE: 'require'
     readonly SHADOW_BIN: 'shadow-bin'
     readonly SOCKET: 'socket'
@@ -132,13 +133,14 @@ const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
   'firstPatchedVersionIdentifier'
 const CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE = 'vulnerableVersionRange'
 const DRY_RUN_LABEL = '[DryRun]'
-const DRY_RUN_BAIL_TEXT = `${DRY_RUN_LABEL} Bailing now`
+const DRY_RUN_BAIL_TEXT = `${DRY_RUN_LABEL}: Bailing now`
 const LOCK_EXT = '.lock'
 const MODULE_SYNC = 'module-sync'
 const NPM_INJECTION = 'npm-injection'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const NPX = 'npx'
 const PNPM = 'pnpm'
+const REDACTED = '<redacted>'
 const REQUIRE = 'require'
 const SHADOW_BIN = 'shadow-bin'
 const SOCKET = 'socket'
@@ -282,6 +284,7 @@ const constants = <Constants>createConstantsObject(
     NPM_REGISTRY_URL,
     NPX,
     PNPM,
+    REDACTED,
     REQUIRE,
     SHADOW_BIN,
     SOCKET,
