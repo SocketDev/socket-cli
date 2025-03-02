@@ -2,8 +2,7 @@
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
+import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
@@ -23,7 +22,8 @@ export async function listFullScans(
   },
   apiToken: string
 ): Promise<void> {
-  const spinner = new Spinner()
+  // Lazily access constants.spinner.
+  const { spinner } = constants
 
   spinner.start('Listing scans...')
 

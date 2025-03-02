@@ -5,15 +5,14 @@ import readline from 'node:readline/promises'
 import open from 'open'
 import colors from 'yoctocolors-cjs'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
-import { suggestOrgSlug } from './suggest-org-slug.ts'
-import { suggestRepoSlug } from './suggest-repo-slug.ts'
-import { suggestBranchSlug } from './suggest_branch_slug.ts'
-import { suggestTarget } from './suggest_target.ts'
+import { suggestOrgSlug } from './suggest-org-slug'
+import { suggestRepoSlug } from './suggest-repo-slug'
+import { suggestBranchSlug } from './suggest_branch_slug'
+import { suggestTarget } from './suggest_target'
+import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { AuthError } from '../../utils/errors.ts'
-import { getPackageFilesFullScans } from '../../utils/path-resolve.ts'
+import { AuthError } from '../../utils/errors'
+import { getPackageFilesFullScans } from '../../utils/path-resolve'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 export async function createFullScan({
@@ -45,16 +44,14 @@ export async function createFullScan({
   targets: Array<string>
   tmp: boolean
 }): Promise<void> {
+  // Lazily access constants.spinner.
+  const { spinner } = constants
   const socketSdk = await setupSdk()
   const supportedFiles = await socketSdk
     .getReportSupportedFiles()
     .then(res => {
       if (!res.success) {
-        handleUnsuccessfulApiResponse(
-          'getReportSupportedFiles',
-          res,
-          new Spinner()
-        )
+        handleUnsuccessfulApiResponse('getReportSupportedFiles', res, spinner)
         assert(
           false,
           'handleUnsuccessfulApiResponse should unconditionally throw'
@@ -162,8 +159,7 @@ export async function createFullScan({
     return
   }
 
-  const spinnerText = 'Creating a scan... \n'
-  const spinner = new Spinner({ text: spinnerText }).start()
+  spinner.start('Creating a scan...')
 
   const result = await handleApiCall(
     socketSdk.createOrgFullScan(

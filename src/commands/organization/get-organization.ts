@@ -1,7 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
+import constants from '../../constants'
 import {
   getLastFiveOfApiToken,
   handleApiCall,
@@ -26,7 +25,8 @@ async function printOrganizationsFromToken(
   apiToken: string,
   format: 'text' | 'json' | 'markdown' = 'text'
 ) {
-  const spinner = new Spinner()
+  // Lazily access constants.spinner.
+  const { spinner } = constants
 
   spinner.start('Fetching organizations...')
 

@@ -5,8 +5,7 @@ import ScreenWidget from 'blessed/lib/widgets/screen'
 // @ts-ignore
 import TableWidget from 'blessed-contrib/lib/widget/table'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
+import constants from '../../constants'
 import { queryAPI } from '../../utils/api'
 
 type ThreatResult = {
@@ -35,7 +34,8 @@ export async function getThreatFeed({
   direction: string
   filter: string
 }): Promise<void> {
-  const spinner = new Spinner()
+  // Lazily access constants.spinner.
+  const { spinner } = constants
 
   spinner.start('Looking up the threat feed')
 

@@ -1,5 +1,4 @@
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
+import constants from '../../constants'
 import {
   formatSeverityCount,
   getSeverityCount
@@ -22,7 +21,8 @@ export async function fetchReportData(
   includeAllIssues: boolean,
   strict: boolean
 ): Promise<void | ReportData> {
-  const spinner = new Spinner()
+  // Lazily access constants.spinner.
+  const { spinner } = constants
 
   spinner.start(`Fetching report with ID ${reportId} (this could take a while)`)
 

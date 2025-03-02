@@ -2,8 +2,6 @@ import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
 import constants from '../../constants'
 
 export async function convertGradleToMaven(
@@ -31,7 +29,8 @@ export async function convertGradleToMaven(
     console.groupEnd()
   }
 
-  const spinner = new Spinner()
+  // Lazily access constants.spinner.
+  const { spinner } = constants
 
   spinner.start(
     `Converting gradle to maven from \`${bin}\` on \`${target}\`...`

@@ -3,8 +3,7 @@ import util from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
+import constants from '../../constants'
 import { handleAPIError, queryAPI } from '../../utils/api'
 
 export async function getDiffScan(
@@ -25,7 +24,8 @@ export async function getDiffScan(
   },
   apiToken: string
 ): Promise<void> {
-  const spinner = new Spinner()
+  // Lazily access constants.spinner.
+  const { spinner } = constants
 
   spinner.start('Getting diff scan...')
 

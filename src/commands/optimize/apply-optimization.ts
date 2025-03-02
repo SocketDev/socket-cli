@@ -5,6 +5,7 @@ import semver from 'semver'
 import { glob as tinyGlob } from 'tinyglobby'
 
 import { getManifestData } from '@socketsecurity/registry'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import {
   fetchPackageManifest,
@@ -63,7 +64,6 @@ export async function applyOptimization(
   pin: boolean,
   prod: boolean
 ) {
-  const logger = console
   const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
     logger,
     prod
@@ -71,9 +71,10 @@ export async function applyOptimization(
   if (!pkgEnvDetails) {
     return
   }
-  const spinner = new Spinner({ text: 'Socket optimizing...' })
+  // Lazily access constants.spinner.
+  const { spinner } = constants
 
-  spinner.start()
+  spinner.start('Socket optimizing...')
 
   const state = await addOverrides(pkgEnvDetails.pkgPath, pkgEnvDetails, {
     logger,

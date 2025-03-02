@@ -1,7 +1,6 @@
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
 import { fetchPackageInfo } from './fetch-package-info'
 import { formatPackageInfo } from './format-package-info'
+import constants from '../../constants'
 
 import type { SocketSdkAlert } from '../../utils/alert/severity'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -29,11 +28,15 @@ export async function getPackageInfo({
   pkgVersion: string
   strict: boolean
 }) {
-  const spinnerText =
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start(
     pkgVersion === 'latest'
       ? `Looking up data for the latest version of ${pkgName}`
       : `Looking up data for version ${pkgVersion} of ${pkgName}`
-  const spinner = new Spinner({ text: spinnerText }).start()
+  )
+
   const packageData = await fetchPackageInfo(
     pkgName,
     pkgVersion,
