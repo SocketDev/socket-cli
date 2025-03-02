@@ -83,12 +83,12 @@ describe('dry-run on all commands', async () => {
         stdout: toAsciiSafeString(thing.stdout),
         stderr: toAsciiSafeString(thing.stderr)
       }
-    } catch (e) {
+    } catch (e: any) {
       return {
         status: false,
-        code: e.code,
-        stdout: toAsciiSafeString(e.stdout),
-        stderr: toAsciiSafeString(e.stderr)
+        code: e?.code,
+        stdout: toAsciiSafeString(e?.stdout),
+        stderr: toAsciiSafeString(e?.stderr)
       }
     }
   }

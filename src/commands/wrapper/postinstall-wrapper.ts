@@ -52,7 +52,7 @@ function askQuestion(rl: readline.Interface, query: string): void {
         if (existsSync(zshRcPath)) {
           addSocketWrapper(zshRcPath)
         }
-      } catch (e) {
+      } catch (e: any) {
         throw new Error(`There was an issue setting up the alias: ${e}`)
       }
       rl.close()
