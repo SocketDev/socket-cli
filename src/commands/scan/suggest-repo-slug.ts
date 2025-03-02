@@ -4,7 +4,7 @@ import process from 'node:process'
 import { select } from '@socketsecurity/registry/lib/prompts'
 import { SocketSdk } from '@socketsecurity/sdk'
 
-import { handleApiCall } from '../../utils/api.ts'
+import { handleApiCall } from '../../utils/api'
 
 export async function suggestRepoSlug(
   socketSdk: SocketSdk,

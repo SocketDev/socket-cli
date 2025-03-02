@@ -1,7 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
-import { getOrganization } from './get-organization.ts'
-import { commonFlags, outputFlags } from '../../flags.ts'
+import { getOrganization } from './get-organization'
+import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
