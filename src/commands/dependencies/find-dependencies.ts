@@ -2,8 +2,7 @@
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
+import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
@@ -23,7 +22,11 @@ export async function findDependencies({
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
-  const spinner = new Spinner({ text: 'Searching dependencies...' }).start()
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start('Searching dependencies...')
+
   const socketSdk = await setupSdk(apiToken)
 
   const result = await handleApiCall(

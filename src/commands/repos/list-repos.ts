@@ -2,8 +2,7 @@
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
+import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
@@ -26,8 +25,10 @@ export async function listRepos({
   page: number
   apiToken: string
 }): Promise<void> {
-  const spinnerText = 'Listing repositories... \n'
-  const spinner = new Spinner({ text: spinnerText }).start()
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start('Listing repositories...')
 
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(

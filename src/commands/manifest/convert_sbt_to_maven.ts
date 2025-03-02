@@ -3,8 +3,8 @@ import path from 'node:path'
 import spawn from '@npmcli/promise-spawn'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
+import constants from '../../constants'
 import { safeReadFile } from '../../utils/fs'
 
 export async function convertSbtToMaven(
@@ -14,10 +14,11 @@ export async function convertSbtToMaven(
   verbose: boolean,
   sbtOpts: Array<string>
 ) {
+  // Lazily access constants.spinner.
+  const { spinner } = constants
   const rbin = path.resolve(bin)
   const rtarget = path.resolve(target)
   // const rout = out === '-' ? '-' : path.resolve(out)
-
   if (verbose) {
     console.group('sbt2maven:')
     console.log(`[VERBOSE] - Absolute bin path: \`${rbin}\``)
@@ -31,8 +32,6 @@ export async function convertSbtToMaven(
     // console.log(`- dst dir: \`${out}\``)
     console.groupEnd()
   }
-
-  const spinner = new Spinner()
 
   spinner.start(`Converting sbt to maven from \`${bin}\` on \`${target}\`...`)
 

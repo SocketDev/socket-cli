@@ -1,5 +1,4 @@
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
+import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
@@ -24,8 +23,10 @@ export async function updateRepo({
   default_branch: string
   visibility: string
 }): Promise<void> {
-  const spinnerText = 'Updating repository... \n'
-  const spinner = new Spinner({ text: spinnerText }).start()
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start('Updating repository...')
 
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(

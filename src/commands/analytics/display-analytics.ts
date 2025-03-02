@@ -4,11 +4,11 @@ import fs from 'node:fs/promises'
 import ScreenWidget from 'blessed/lib/widgets/screen'
 import contrib from 'blessed-contrib'
 
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
+import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
 
 type FormattedData = {
@@ -73,7 +73,10 @@ export async function displayAnalytics({
   outputJson: boolean
   filePath: string
 }): Promise<void> {
-  const spinner = new Spinner({ text: 'Fetching analytics data' }).start()
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start('Fetching analytics data')
 
   let data: undefined | { [key: string]: any }[]
   if (scope === 'org') {

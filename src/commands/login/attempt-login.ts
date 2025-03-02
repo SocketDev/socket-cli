@@ -1,7 +1,6 @@
 import terminalLink from 'terminal-link'
 
 import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { applyLogin } from './apply-login'
 import constants from '../../constants'
@@ -28,6 +27,8 @@ export async function attemptLogin(
   apiBaseUrl: string | undefined,
   apiProxy: string | undefined
 ) {
+  apiBaseUrl ??= getSetting('apiBaseUrl') ?? undefined
+  apiProxy ??= getSetting('apiProxy') ?? undefined
   const apiToken =
     (await password({
       message: `Enter your ${terminalLink(
@@ -35,11 +36,8 @@ export async function attemptLogin(
         'https://docs.socket.dev/docs/api-keys'
       )} (leave blank for a public key)`
     })) || SOCKET_PUBLIC_API_TOKEN
-
-  apiBaseUrl ??= getSetting('apiBaseUrl') ?? undefined
-  apiProxy ??= getSetting('apiProxy') ?? undefined
-
-  const spinner = new Spinner()
+  // Lazily access constants.spinner.
+  const { spinner } = constants
 
   spinner.start('Verifying API key...')
 
@@ -65,7 +63,6 @@ export async function attemptLogin(
     }))
 
   let enforcedOrgs: Array<string> = []
-
   if (enforcedChoices.length > 1) {
     const id = <string | null>await select(
       {

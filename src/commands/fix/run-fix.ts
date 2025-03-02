@@ -4,7 +4,6 @@ import {
   fetchPackagePackument,
   readPackageJson
 } from '@socketsecurity/registry/lib/packages'
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../../constants'
 import {
@@ -29,7 +28,11 @@ function isTopLevel(tree: SafeNode, node: SafeNode): boolean {
 }
 
 export async function runFix() {
-  const spinner = new Spinner().start()
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start()
+
   const cwd = process.cwd()
   const editablePkgJson = await readPackageJson(cwd, { editable: true })
   // const agentDetails = await detect()

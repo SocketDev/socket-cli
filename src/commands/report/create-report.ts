@@ -1,6 +1,6 @@
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
+import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { debugLog, isDebug } from '../../utils/debug'
 import { getPackageFiles } from '../../utils/path-resolve'
@@ -23,16 +23,14 @@ export async function createReport(
     dryRun: boolean
   }
 ): Promise<undefined | SocketSdkResultType<'createReport'>> {
+  // Lazily access constants.spinner.
+  const { spinner } = constants
   const socketSdk = await setupSdk()
   const supportedFiles = await socketSdk
     .getReportSupportedFiles()
     .then(res => {
       if (!res.success)
-        handleUnsuccessfulApiResponse(
-          'getReportSupportedFiles',
-          res,
-          new Spinner()
-        )
+        handleUnsuccessfulApiResponse('getReportSupportedFiles', res, spinner)
       return (res as SocketSdkReturnType<'getReportSupportedFiles'>).data
     })
     .catch((cause: Error) => {
@@ -40,16 +38,13 @@ export async function createReport(
         cause
       })
     })
-
   const packagePaths = await getPackageFiles(
     cwd,
     inputPaths,
     socketConfig,
     supportedFiles
   )
-
   const { length: packagePathsCount } = packagePaths
-
   if (packagePathsCount && isDebug()) {
     for (const pkgPath of packagePaths) {
       debugLog(`Uploading: ${pkgPath}`)
@@ -59,19 +54,15 @@ export async function createReport(
     debugLog('[dryRun] Skipped actual upload')
     return undefined
   }
-  const spinner = new Spinner()
-
   spinner.start(
     `Creating report with ${packagePathsCount} package ${pluralize('file', packagePathsCount)}`
   )
-
   const apiCall = socketSdk.createReportFromFilePaths(
     packagePaths,
     cwd,
     socketConfig?.issueRules
   )
   const result = await handleApiCall(apiCall, 'creating report')
-
   if (!result.success) {
     handleUnsuccessfulApiResponse('createReport', result, spinner)
     return undefined
