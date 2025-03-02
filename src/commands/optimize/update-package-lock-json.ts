@@ -9,7 +9,6 @@ import type { Logger } from '@socketsecurity/registry/lib/logger'
 const { NPM } = constants
 
 const COMMAND_TITLE = 'Socket Optimize'
-const NPM_OVERRIDE_PR_URL = 'https://github.com/npm/cli/pull/8089'
 
 export type UpdatePackageLockJsonOptions = {
   logger?: Logger | undefined
@@ -31,7 +30,7 @@ export async function updatePackageLockJson(
     spinner?.stop()
     if (pkgEnvDetails.agent === NPM) {
       logger?.log(
-        `💡 Re-run ${COMMAND_TITLE} whenever ${pkgEnvDetails.lockName} changes.\n   This can be skipped once npm ships ${NPM_OVERRIDE_PR_URL}.`
+        `💡 Re-run ${COMMAND_TITLE} whenever ${pkgEnvDetails.lockName} changes.\n   This can be skipped once npm v11.2.0 is released.`
       )
     }
   } catch (e: any) {
