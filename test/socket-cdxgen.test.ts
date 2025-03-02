@@ -3,6 +3,8 @@ import path from 'node:path'
 import spawn from '@npmcli/promise-spawn'
 import { describe, expect, it } from 'vitest'
 
+import { LOG_SYMBOLS } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../dist/constants.js'
 
 type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
@@ -63,7 +65,9 @@ describe('Socket cdxgen command', async () => {
             spawnOpts
           )
         // @ts-ignore -- toHaveStderrStartWith is defined above
-      ).rejects.toHaveStderrStartWith(`Unknown argument: ${command}`)
+      ).rejects.toHaveStderrStartWith(
+        `${LOG_SYMBOLS.error} Unknown argument: ${command}`
+      )
     })
 
     it('should not forward --unknown to cdxgen', async () => {
@@ -77,7 +81,9 @@ describe('Socket cdxgen command', async () => {
             spawnOpts
           )
         // @ts-ignore -- toHaveStderrStartWith is defined above
-      ).rejects.toHaveStderrStartWith(`Unknown argument: ${command}`)
+      ).rejects.toHaveStderrStartWith(
+        `${LOG_SYMBOLS.error} Unknown argument: ${command}`
+      )
     })
 
     it('should not forward multiple unknown commands to cdxgen', async () => {
@@ -90,7 +96,9 @@ describe('Socket cdxgen command', async () => {
             spawnOpts
           )
         // @ts-ignore -- toHaveStderrStartWith is defined above
-      ).rejects.toHaveStderrStartWith('Unknown arguments: -u, --unknown')
+      ).rejects.toHaveStderrStartWith(
+        `${LOG_SYMBOLS.error} Unknown arguments: -u, --unknown`
+      )
     })
   })
 })

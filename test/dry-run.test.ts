@@ -141,7 +141,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
           - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m"
     `)
@@ -161,7 +161,9 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket cdxgen\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`"Unknown argument: --dry-run"`)
+    expect(stderr).toMatchInlineSnapshot(
+      `"\\x1b[31m\\u2716\\ufe0f\\x1b[39m Unknown argument: --dry-run"`
+    )
 
     expect(code).toBe(2)
     expect(stdout, 'header should include command (without params)').toContain(
@@ -217,7 +219,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan get\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Specify a before and after full scan ID \\x1b[31m(missing before and after!)\\x1b[39m
 
@@ -260,7 +262,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket info\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Expecting a package name \\x1b[31m(missing!)\\x1b[39m
 
@@ -372,7 +374,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest gradle\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - The DIR arg is required \\x1b[31m(missing!)\\x1b[39m
 
@@ -395,7 +397,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest kotlin\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - The DIR arg is required \\x1b[31m(missing!)\\x1b[39m
 
@@ -418,7 +420,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest scala\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - The DIR or FILE arg is required \\x1b[31m(missing!)\\x1b[39m
 
@@ -612,7 +614,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket report view\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Need at least one report ID \\x1b[31m(missing!)\\x1b[39m
 
@@ -654,7 +656,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos create\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -677,7 +679,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos del\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -702,7 +704,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos list\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -725,7 +727,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos update\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -750,7 +752,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos view\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -823,7 +825,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan del\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -846,7 +848,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan list\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
           - Org name as the argument \\x1b[31m(missing!)\\x1b[39m"
     `)
@@ -867,7 +869,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan metadata\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -890,7 +892,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan stream\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -932,7 +934,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket wrapper\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required flags:
+      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required flags:
 
             - Must use --enabled or --disabled"
     `)
