@@ -231,7 +231,7 @@ export async function getPackagesAlerts(
     remaining -= 1
     if (spinner && remaining > 0) {
       spinner.start()
-      spinner.text = getText()
+      spinner.setText(getText())
     }
   }
   spinner?.start(getText())
