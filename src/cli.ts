@@ -108,7 +108,7 @@ void (async () => {
       `${colors.bgRed(colors.white(errorTitle + ':'))} ${errorMessage}`
     )
     if (errorBody) {
-      console.error(`\n${errorBody}`)
+      logger.error(`\n${errorBody}`)
     }
     await captureException(e)
   }

@@ -4,13 +4,14 @@ import constants from '../../constants'
 import { detectPackageEnvironment } from '../../utils/package-environment-detector'
 
 import type { PackageEnvironmentDetails } from '../../utils/package-environment-detector'
+import type { Logger } from '@socketsecurity/registry/lib/logger'
 
 const { BUN, VLT, YARN_BERRY } = constants
 
 const COMMAND_TITLE = 'Socket Optimize'
 
 export type DetectAndValidateOptions = {
-  logger?: Console | undefined
+  logger?: Logger | undefined
   prod?: boolean
 }
 export async function detectAndValidatePackageEnvironment(

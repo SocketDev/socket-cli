@@ -2,6 +2,8 @@
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
@@ -63,5 +65,5 @@ export async function listFullScans(
   })
 
   spinner.stop(`Listing scans for: ${orgSlug}`)
-  console.log(chalkTable(options, formattedResults))
+  logger.log(chalkTable(options, formattedResults))
 }

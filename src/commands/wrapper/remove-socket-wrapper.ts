@@ -1,9 +1,12 @@
 import fs from 'node:fs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 export function removeSocketWrapper(file: string): void {
   return fs.readFile(file, 'utf8', function (err, data) {
     if (err) {
-      console.error(`There was an error removing the alias: ${err}`)
+      logger.error('There was an error removing the alias:')
+      logger.error(err)
       return
     }
     const linesWithoutSocketAlias = data
@@ -16,15 +19,14 @@ export function removeSocketWrapper(file: string): void {
 
     fs.writeFile(file, updatedFileContent, function (err) {
       if (err) {
-        console.log(err)
+        logger.error(err)
         return
-      } else {
-        // TODO: pretty sure you need to source the file or restart
-        //       any terminal session before changes are reflected.
-        console.log(
-          `\nThe alias was removed from ${file}. Running 'npm install' will now run the standard npm command.\n`
-        )
       }
+      // TODO: pretty sure you need to source the file or restart
+      //       any terminal session before changes are reflected.
+      logger.log(
+        `The alias was removed from ${file}. Running 'npm install' will now run the standard npm command.`
+      )
     })
   })
 }

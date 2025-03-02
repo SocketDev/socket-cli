@@ -2,6 +2,8 @@
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
@@ -42,7 +44,7 @@ export async function findDependencies({
   spinner.stop('Organization dependencies:')
 
   if (outputJson) {
-    console.log(result.data)
+    logger.log(result.data)
     return
   }
 
@@ -58,5 +60,5 @@ export async function findDependencies({
     ]
   }
 
-  console.log(chalkTable(options, result.data.rows))
+  logger.log(chalkTable(options, result.data.rows))
 }

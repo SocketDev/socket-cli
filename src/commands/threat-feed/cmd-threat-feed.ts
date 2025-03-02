@@ -1,3 +1,5 @@
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { getThreatFeed } from './get-threat-feed'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
@@ -71,7 +73,8 @@ async function run(
   })
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   const apiToken = getDefaultToken()

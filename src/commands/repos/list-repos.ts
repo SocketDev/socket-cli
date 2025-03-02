@@ -2,6 +2,8 @@
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
@@ -59,7 +61,7 @@ export async function listRepos({
       defaultBranch: o.default_branch,
       archived: o.archived
     }))
-    console.log(JSON.stringify(data, null, 2))
+    logger.log(JSON.stringify(data, null, 2))
     return
   }
 
@@ -73,5 +75,5 @@ export async function listRepos({
     ]
   }
 
-  console.log(chalkTable(options, result.data.results))
+  logger.log(chalkTable(options, result.data.results))
 }

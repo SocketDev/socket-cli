@@ -32,9 +32,10 @@ import type {
   PackageEnvironmentDetails,
   StringKeyValueObject
 } from '../../utils/package-environment-detector'
+import type { Logger } from '@socketsecurity/registry/lib/logger'
 
 type AddOverridesOptions = {
-  logger?: Console | undefined
+  logger?: Logger | undefined
   pin?: boolean | undefined
   prod?: boolean | undefined
   spinner?: Spinner | undefined

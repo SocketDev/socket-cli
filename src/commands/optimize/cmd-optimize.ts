@@ -1,5 +1,7 @@
 import process from 'node:process'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { applyOptimization } from './apply-optimization'
 import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -58,7 +60,8 @@ async function run(
   const cwd = process.cwd()
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   await applyOptimization(

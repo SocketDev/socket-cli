@@ -1,5 +1,7 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/socketcli.py
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { runAction } from './run-action'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
@@ -59,7 +61,8 @@ async function run(
   const githubEventAfter = String(cli.flags['githubEventAfter'] || '')
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   await runAction(githubEventBefore, githubEventAfter)

@@ -1,3 +1,5 @@
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
@@ -24,5 +26,5 @@ export async function getOrgScanMetadata(
   }
 
   spinner.stop('Scan metadata:')
-  console.log(result.data)
+  logger.log(result.data)
 }

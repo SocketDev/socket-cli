@@ -3,6 +3,7 @@ import process from 'node:process'
 import colors from 'yoctocolors-cjs'
 
 import constants from '@socketsecurity/registry/lib/constants'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { PackageData } from './get-package-info'
@@ -38,9 +39,9 @@ export function formatPackageInfo(
   spinner: Spinner
 ): void {
   if (outputJson) {
-    console.log(JSON.stringify(data, undefined, 2))
+    logger.log(JSON.stringify(data, undefined, 2))
   } else {
-    console.log('\nPackage report card:')
+    logger.log('\nPackage report card:')
     const scoreResult = {
       'Supply Chain Risk': Math.floor(score.supplyChainRisk.score * 100),
       Maintenance: Math.floor(score.maintenance.score * 100),
@@ -49,9 +50,9 @@ export function formatPackageInfo(
       License: Math.floor(score.license.score * 100)
     }
     Object.entries(scoreResult).map(score =>
-      console.log(`- ${score[0]}: ${formatScore(score[1])}`)
+      logger.log(`- ${score[0]}: ${formatScore(score[1])}`)
     )
-    console.log('\n')
+    logger.log('\n')
     if (objectSome(severityCount)) {
       spinner[strict ? 'error' : 'success'](
         `Package has these issues: ${formatSeverityCount(severityCount)}`
@@ -64,18 +65,18 @@ export function formatPackageInfo(
     const format = new ColorOrMarkdown(!!outputMarkdown)
     const url = getSocketDevPackageOverviewUrl(NPM, pkgName, pkgVersion)
 
-    console.log('\n')
+    logger.log('\n')
     if (pkgVersion === 'latest') {
-      console.log(
+      logger.log(
         `Detailed info on socket.dev: ${format.hyperlink(`${pkgName}`, url, { fallbackToUrl: true })}`
       )
     } else {
-      console.log(
+      logger.log(
         `Detailed info on socket.dev: ${format.hyperlink(`${pkgName} v${pkgVersion}`, url, { fallbackToUrl: true })}`
       )
     }
     if (!outputMarkdown) {
-      console.log(
+      logger.log(
         colors.dim(
           `\nOr rerun ${colors.italic(name)} using the ${colors.italic('--json')} flag to get full JSON output`
         )
@@ -125,9 +126,9 @@ function formatPackageIssuesDetails(
       { fallbackToUrl: true }
     )
     if (uniqueIssues[issue]?.count === 1) {
-      console.log(`- ${issueWithLink}`)
+      logger.log(`- ${issueWithLink}`)
     } else {
-      console.log(`- ${issueWithLink}: ${uniqueIssues[issue]?.count}`)
+      logger.log(`- ${issueWithLink}: ${uniqueIssues[issue]?.count}`)
     }
   }
 }

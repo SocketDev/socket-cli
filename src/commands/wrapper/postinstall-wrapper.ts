@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs'
 import process from 'node:process'
 import readline from 'node:readline'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { addSocketWrapper } from './add-socket-wrapper'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup'
 import constants from '../../constants'
@@ -23,7 +25,7 @@ export function postinstallWrapper() {
 }
 
 function installSafeNpm(query: string): void {
-  console.log(`
+  logger.log(`
  _____         _       _
 |   __|___ ___| |_ ___| |_
 |__   | . |  _| '_| -_|  _|

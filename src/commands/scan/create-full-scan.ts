@@ -5,6 +5,8 @@ import readline from 'node:readline/promises'
 import open from 'open'
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { suggestOrgSlug } from './suggest-org-slug'
 import { suggestRepoSlug } from './suggest-repo-slug'
 import { suggestBranchSlug } from './suggest_branch_slug'
@@ -116,7 +118,7 @@ export async function createFullScan({
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    console.error(`
+    logger.error(`
       ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
       - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}\n
@@ -138,14 +140,14 @@ export async function createFullScan({
   }
 
   if (updatedInput) {
-    console.log(
+    logger.log(
       'Note: You can invoke this command next time to skip the interactive questions:'
     )
-    console.log('```')
-    console.log(
+    logger.log('```')
+    logger.log(
       `    socket scan create [other flags...] --repo ${repoName} --branch ${branchName} ${orgSlug} ${targets.join(' ')}`
     )
-    console.log('```')
+    logger.log('```')
   }
 
   if (!apiToken) {
@@ -155,7 +157,7 @@ export async function createFullScan({
   }
 
   if (readOnly) {
-    console.log('[ReadOnly] Bailing now')
+    logger.log('[ReadOnly] Bailing now')
     return
   }
 
@@ -186,7 +188,7 @@ export async function createFullScan({
   spinner.successAndStop('Scan created successfully')
 
   const link = colors.underline(colors.cyan(`${result.data.html_report_url}`))
-  console.log(`Available at: ${link}`)
+  logger.log(`Available at: ${link}`)
 
   const rl = readline.createInterface({
     input: process.stdin,

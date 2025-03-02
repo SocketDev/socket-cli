@@ -1,5 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { getDiffScan } from './get-diff-scan'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
@@ -80,7 +82,7 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+    logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Specify a before and after full scan ID ${!before && !after ? colors.red('(missing before and after!)') : !before ? colors.red('(missing before!)') : !after ? colors.red('(missing after!)') : colors.green('(ok)')}\n
           - To get full scans IDs, you can run the command "socket scan list <your org slug>".
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n`)
@@ -88,7 +90,8 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   const apiToken = getDefaultToken()

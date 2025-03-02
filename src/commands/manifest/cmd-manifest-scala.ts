@@ -1,5 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { convertSbtToMaven } from './convert_sbt_to_maven'
 import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -90,7 +92,7 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  // console.log('scala', argv, parentName)
+  // logger.log('scala', argv, parentName)
   const cli = meowOrExit({
     argv,
     config,
@@ -101,11 +103,11 @@ async function run(
   const verbose = Boolean(cli.flags['verbose'])
 
   if (verbose) {
-    console.group('- ', parentName, config.commandName, ':')
-    console.group('- flags:', cli.flags)
-    console.groupEnd()
-    console.log('- input:', cli.input)
-    console.groupEnd()
+    logger.group('- ', parentName, config.commandName, ':')
+    logger.group('- flags:', cli.flags)
+    logger.groupEnd()
+    logger.log('- input:', cli.input)
+    logger.groupEnd()
   }
 
   const target = cli.input[0]
@@ -117,7 +119,7 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    console.error(
+    logger.error(
       `${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - The DIR or FILE arg is required ${!target ? colors.red('(missing!)') : target === '-' ? colors.red('(stdin is not supported)') : colors.green('(ok)')}\n
       - Can only accept one DIR or FILE (make sure to escape spaces!) ${cli.input.length > 1 ? colors.red(`(received ${cli.input.length}!)`) : colors.green('(ok)')}\n`
@@ -139,11 +141,11 @@ async function run(
   }
 
   if (verbose) {
-    console.group()
-    console.log('- target:', target)
-    console.log('- gradle bin:', bin)
-    console.log('- out:', out)
-    console.groupEnd()
+    logger.group()
+    logger.log('- target:', target)
+    logger.log('- gradle bin:', bin)
+    logger.log('- out:', out)
+    logger.groupEnd()
   }
 
   let sbtOpts: Array<string> = []
@@ -155,7 +157,8 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   await convertSbtToMaven(target, bin, out, verbose, sbtOpts)

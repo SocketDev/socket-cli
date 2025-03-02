@@ -1,5 +1,6 @@
 import meow from 'meow'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
@@ -97,7 +98,7 @@ export async function meowWithSubcommands(
   // Temp disable until we clear the --json and --markdown usage
   // Lazily access constants.ENV[SOCKET_CLI_SHOW_BANNER].
   if (constants.ENV[SOCKET_CLI_SHOW_BANNER]) {
-    console.log(getAsciiHeader(name))
+    logger.log(getAsciiHeader(name))
   }
   const cli = meow(
     `
@@ -143,7 +144,7 @@ export async function meowWithSubcommands(
     }
   )
   if (!cli.flags['help'] && cli.flags['dryRun']) {
-    console.log('[DryRun]: noop, call a sub-command; ok')
+    logger.log('[DryRun]: noop, call a sub-command; ok')
     process.exitCode = 0
   } else {
     cli.showHelp()
@@ -171,7 +172,7 @@ export function meowOrExit({
   // Temp disable until we clear the --json and --markdown usage.
   // Lazily access constants.ENV[SOCKET_CLI_SHOW_BANNER].
   if (constants.ENV[SOCKET_CLI_SHOW_BANNER]) {
-    console.log(getAsciiHeader(command))
+    logger.log(getAsciiHeader(command))
   }
 
   // This exits if .printHelp() is called either by meow itself or by us.

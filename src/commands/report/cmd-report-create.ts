@@ -1,6 +1,8 @@
 import path from 'node:path'
 import process from 'node:process'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { createReport } from './create-report'
 import { getSocketConfig } from './get-socket-config'
 import { viewReport } from './view-report'
@@ -86,7 +88,8 @@ async function run(
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   const socketConfig = await getSocketConfig(absoluteConfigPath)
@@ -106,11 +109,10 @@ async function run(
         strict
       })
     } else if (json) {
-      console.log(JSON.stringify(result.data, undefined, 2))
-      return
+      logger.log(JSON.stringify(result.data, undefined, 2))
     } else {
       const format = new ColorOrMarkdown(markdown)
-      console.log(
+      logger.log(
         `New report: ${format.hyperlink(result.data.id, result.data.url, { fallbackToUrl: true })}`
       )
     }

@@ -3,6 +3,8 @@ import util from 'node:util'
 
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../../constants'
 import { handleAPIError, queryAPI } from '../../utils/api'
 
@@ -48,29 +50,29 @@ export async function getDiffScan(
   if (file && !outputJson) {
     fs.writeFile(file, JSON.stringify(data), err => {
       err
-        ? console.error(err)
-        : console.log(`Data successfully written to ${file}`)
+        ? logger.error(err)
+        : logger.log(`Data successfully written to ${file}`)
     })
     return
   }
 
   if (outputJson) {
-    console.log(`\n Diff scan result: \n`)
-    console.log(
+    logger.log(`\n Diff scan result: \n`)
+    logger.log(
       util.inspect(data, { showHidden: false, depth: null, colors: true })
     )
-    console.log(
+    logger.log(
       `\n View this diff scan in the Socket dashboard: ${colors.cyan((data as any)?.['diff_report_url'])}`
     )
     return
   }
 
-  console.log('Diff scan result:')
-  console.log(data)
-  console.log(
+  logger.log('Diff scan result:')
+  logger.log(data)
+  logger.log(
     `\n 📝 To display the detailed report in the terminal, use the --json flag \n`
   )
-  console.log(
+  logger.log(
     `\n View this diff scan in the Socket dashboard: ${colors.cyan((data as any)?.['diff_report_url'])}`
   )
 }

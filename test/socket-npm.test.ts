@@ -48,7 +48,6 @@ for (const npmDir of ['npm8', 'npm10']) {
           }
         )
         spawnPromise.process.stdout.on('data', (buffer: Buffer) => {
-          // console.log(buffer.toString('utf8'))
           // changed 13 packages, and audited 176 packages in 3s
           if (
             /changed .* packages, and audited .* packages in/.test(
@@ -64,7 +63,6 @@ for (const npmDir of ['npm8', 'npm10']) {
         })
 
         spawnPromise.process.stderr.on('data', (buffer: Buffer) => {
-          // console.error(buffer.toString('utf8'))
           if (buffer.toString().includes('Possible typosquat attack')) {
             resolve('OK')
             spawnPromise.process.kill('SIGINT')

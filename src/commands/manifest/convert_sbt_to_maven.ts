@@ -20,17 +20,17 @@ export async function convertSbtToMaven(
   const rtarget = path.resolve(target)
   // const rout = out === '-' ? '-' : path.resolve(out)
   if (verbose) {
-    console.group('sbt2maven:')
-    console.log(`[VERBOSE] - Absolute bin path: \`${rbin}\``)
-    console.log(`[VERBOSE] - Absolute target path: \`${rtarget}\``)
-    // console.log(`[VERBOSE] - Absolute out path: \`${rout}\``)
-    console.groupEnd()
+    logger.group('sbt2maven:')
+    logger.log(`[VERBOSE] - Absolute bin path: \`${rbin}\``)
+    logger.log(`[VERBOSE] - Absolute target path: \`${rtarget}\``)
+    // logger.log(`[VERBOSE] - Absolute out path: \`${rout}\``)
+    logger.groupEnd()
   } else {
-    console.group('sbt2maven:')
-    console.log(`- executing: \`${bin}\``)
-    console.log(`- src dir: \`${target}\``)
-    // console.log(`- dst dir: \`${out}\``)
-    console.groupEnd()
+    logger.group('sbt2maven:')
+    logger.log(`- executing: \`${bin}\``)
+    logger.log(`- src dir: \`${target}\``)
+    // logger.log(`- dst dir: \`${out}\``)
+    logger.groupEnd()
   }
 
   spinner.start(`Converting sbt to maven from \`${bin}\` on \`${target}\`...`)
@@ -46,17 +46,17 @@ export async function convertSbtToMaven(
     })
     spinner.stop()
     if (verbose) {
-      console.group('[VERBOSE] sbt stdout:')
-      console.log(output)
-      console.groupEnd()
+      logger.group('[VERBOSE] sbt stdout:')
+      logger.log(output)
+      logger.groupEnd()
     }
     if (output.stderr) {
       logger.error('There were errors while running sbt')
       // (In verbose mode, stderr was printed above, no need to repeat it)
       if (!verbose) {
-        console.group('[VERBOSE] stderr:')
-        console.error(output.stderr)
-        console.groupEnd()
+        logger.group('[VERBOSE] stderr:')
+        logger.error(output.stderr)
+        logger.groupEnd()
       }
       process.exit(1)
     }
@@ -76,28 +76,28 @@ export async function convertSbtToMaven(
     // TODO: maybe we can add an option to target a specific file to dump to stdout
     if (out === '-' && poms.length === 1) {
       logger.log('Result:\n```')
-      console.log(await safeReadFile(poms[0] as string, 'utf8'))
+      logger.log(await safeReadFile(poms[0] as string, 'utf8'))
       logger.log('```')
       logger.success(`OK`)
     } else if (out === '-') {
       logger.error(
         'Requested out target was stdout but there are multiple generated files'
       )
-      poms.forEach(fn => console.error('-', fn))
-      console.error('Exiting now...')
+      poms.forEach(fn => logger.error('-', fn))
+      logger.error('Exiting now...')
       process.exit(1)
     } else {
       // if (verbose) {
-      //   console.log(
+      //   logger.log(
       //     `Moving manifest file from \`${loc.replace(/^\/home\/[^/]*?\//, '~/')}\` to \`${out}\``
       //   )
       // } else {
-      //   console.log('Moving output pom file')
+      //   logger.log('Moving output pom file')
       // }
       // TODO: do we prefer fs-extra? renaming can be gnarly on windows and fs-extra's version is better
       // await renamep(loc, out)
       logger.success(`Generated ${poms.length} pom files`)
-      poms.forEach(fn => console.log('-', fn))
+      poms.forEach(fn => logger.log('-', fn))
       logger.success(`OK`)
     }
   } catch (e) {
@@ -106,9 +106,9 @@ export async function convertSbtToMaven(
         (verbose ? '' : ' (use --verbose for details)')
     )
     if (verbose) {
-      console.group('[VERBOSE] error:')
-      console.log(e)
-      console.groupEnd()
+      logger.group('[VERBOSE] error:')
+      logger.log(e)
+      logger.groupEnd()
     }
     process.exit(1)
   }

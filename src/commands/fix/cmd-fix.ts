@@ -1,3 +1,5 @@
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { runFix } from './run-fix'
 import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -40,7 +42,8 @@ async function run(
   })
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   await runFix()

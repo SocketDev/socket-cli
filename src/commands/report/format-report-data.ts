@@ -2,6 +2,8 @@ import process from 'node:process'
 
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 
 import type { ReportData } from './fetch-report-data'
@@ -15,15 +17,15 @@ export function formatReportDataOutput(
   strict: boolean
 ): void {
   if (outputJson) {
-    console.log(JSON.stringify(data, undefined, 2))
+    logger.log(JSON.stringify(data, undefined, 2))
   } else {
     const format = new ColorOrMarkdown(outputMarkdown)
-    console.log(
+    logger.log(
       '\nDetailed info on socket.dev: ' +
         format.hyperlink(reportId, data.url, { fallbackToUrl: true })
     )
     if (!outputMarkdown) {
-      console.log(
+      logger.log(
         colors.dim(
           `\nOr rerun ${colors.italic(commandName)} using the ${colors.italic('--json')} flag to get full JSON output`
         )

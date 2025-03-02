@@ -4,6 +4,8 @@ import fs from 'node:fs/promises'
 import ScreenWidget from 'blessed/lib/widgets/screen'
 import contrib from 'blessed-contrib'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
@@ -87,13 +89,13 @@ export async function displayAnalytics({
 
   if (data) {
     if (outputJson && !filePath) {
-      console.log(data)
+      logger.log(data)
     } else if (filePath) {
       try {
         await fs.writeFile(filePath, JSON.stringify(data), 'utf8')
-        console.log(`Data successfully written to ${filePath}`)
+        logger.log(`Data successfully written to ${filePath}`)
       } catch (e: any) {
-        console.error(e)
+        logger.error(e)
       }
     } else {
       const fdata =
@@ -204,7 +206,7 @@ async function fetchOrgAnalyticsData(
   spinner.stop()
 
   if (!result.data.length) {
-    console.log('No analytics data is available for this organization yet.')
+    logger.log('No analytics data is available for this organization yet.')
     return undefined
   }
 
@@ -231,7 +233,7 @@ async function fetchRepoAnalyticsData(
   spinner.stop()
 
   if (!result.data.length) {
-    console.log('No analytics data is available for this organization yet.')
+    logger.log('No analytics data is available for this organization yet.')
     return undefined
   }
 
