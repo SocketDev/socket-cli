@@ -1,6 +1,8 @@
 // This should ONLY be included in the special Sentry build!
 // Otherwise the Sentry dependency won't even be present in the manifest.
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 // Require constants with require(relConstantsPath) instead of require('./constants')
 // so Rollup doesn't generate a constants2.js chunk.
 const relConstantsPath = './constants'
@@ -11,7 +13,7 @@ if (process.env['SOCKET_CLI_SENTRY_BUILD']) {
     onFatalError(error: Error) {
       // Defer module loads until after Sentry.init is called.
       if (require(relConstantsPath).ENV.SOCKET_CLI_DEBUG) {
-        console.error('[DEBUG] [Sentry onFatalError]:', error)
+        logger.error('[DEBUG] [Sentry onFatalError]:', error)
       }
     },
     dsn: 'https://66736701db8e4ffac046bd09fa6aaced@o555220.ingest.us.sentry.io/4508846967619585',
@@ -31,7 +33,7 @@ if (process.env['SOCKET_CLI_SENTRY_BUILD']) {
   const constants = require(relConstantsPath)
   if (constants.ENV.SOCKET_CLI_DEBUG) {
     Sentry.setTag('debugging', true)
-    console.log('[DEBUG] Set up Sentry.')
+    logger.log('[DEBUG] Set up Sentry.')
   } else {
     Sentry.setTag('debugging', false)
   }
@@ -41,5 +43,5 @@ if (process.env['SOCKET_CLI_SENTRY_BUILD']) {
   } = constants
   setSentry(Sentry)
 } else if (require(relConstantsPath).ENV.SOCKET_CLI_DEBUG) {
-  console.log('[DEBUG] Sentry disabled explicitly.')
+  logger.log('[DEBUG] Sentry disabled explicitly.')
 }

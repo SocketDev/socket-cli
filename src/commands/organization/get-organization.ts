@@ -1,5 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../../constants'
 import {
   getLastFiveOfApiToken,
@@ -48,7 +50,7 @@ async function printOrganizationsFromToken(
 
   switch (format) {
     case 'json': {
-      console.log(
+      logger.log(
         JSON.stringify(
           organizations.map(o => ({
             name: o.name,
@@ -74,33 +76,33 @@ async function printOrganizationsFromToken(
         mw2 = Math.max(mw2, o.id.length)
         mw3 = Math.max(mw3, o.plan.length)
       }
-      console.log('# Organizations\n')
-      console.log(
+      logger.log('# Organizations\n')
+      logger.log(
         `List of organizations associated with your API key, ending with: ${colors.italic(lastFiveOfApiToken)}\n`
       )
-      console.log(
+      logger.log(
         `| Name${' '.repeat(mw1 - 4)} | ID${' '.repeat(mw2 - 2)} | Plan${' '.repeat(mw3 - 4)} |`
       )
-      console.log(
+      logger.log(
         `| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`
       )
       for (const o of organizations) {
-        console.log(
+        logger.log(
           `| ${(o.name || '').padEnd(mw1, ' ')} | ${(o.id || '').padEnd(mw2, ' ')} | ${(o.plan || '').padEnd(mw3, ' ')} |`
         )
       }
-      console.log(
+      logger.log(
         `| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`
       )
       return
     }
     default: {
-      console.log(
+      logger.log(
         `List of organizations associated with your API key, ending with: ${colors.italic(lastFiveOfApiToken)}\n`
       )
       // Just dump
       for (const o of organizations) {
-        console.log(
+        logger.log(
           `- Name: ${colors.bold(o.name)}, ID: ${colors.bold(o.id)}, Plan: ${colors.bold(o.plan)}`
         )
       }

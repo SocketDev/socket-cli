@@ -2,6 +2,8 @@ import path from 'node:path'
 
 import spawn from '@npmcli/promise-spawn'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../../constants'
 
 export async function convertGradleToMaven(
@@ -16,17 +18,17 @@ export async function convertGradleToMaven(
   // const rout = out === '-' ? '-' : path.resolve(out)
 
   if (verbose) {
-    console.group('gradle2maven:')
-    console.log(`[VERBOSE] - Absolute bin path: \`${rbin}\``)
-    console.log(`[VERBOSE] - Absolute target path: \`${rtarget}\``)
-    // console.log(`[VERBOSE] - Absolute out path: \`${rout}\``)
-    console.groupEnd()
+    logger.group('gradle2maven:')
+    logger.log(`[VERBOSE] - Absolute bin path: \`${rbin}\``)
+    logger.log(`[VERBOSE] - Absolute target path: \`${rtarget}\``)
+    // logger.log(`[VERBOSE] - Absolute out path: \`${rout}\``)
+    logger.groupEnd()
   } else {
-    console.group('gradle2maven:')
-    console.log(`- executing: \`${bin}\``)
-    console.log(`- src dir: \`${target}\``)
-    // console.log(`- dst dir: \`${out}\``)
-    console.groupEnd()
+    logger.group('gradle2maven:')
+    logger.log(`- executing: \`${bin}\``)
+    logger.log(`- src dir: \`${target}\``)
+    // logger.log(`- dst dir: \`${out}\``)
+    logger.groupEnd()
   }
 
   // Lazily access constants.spinner.
@@ -52,33 +54,33 @@ export async function convertGradleToMaven(
       cwd: target || '.'
     })
     if (verbose) {
-      console.group('[VERBOSE] gradle stdout:')
-      console.log(output)
-      console.groupEnd()
+      logger.group('[VERBOSE] gradle stdout:')
+      logger.log(output)
+      logger.groupEnd()
     }
     if (output.stderr) {
       spinner.errorAndStop('There were errors while running gradle')
       // (In verbose mode, stderr was printed above, no need to repeat it)
       if (!verbose) {
-        console.group('[VERBOSE] stderr:')
-        console.error(output.stderr)
-        console.groupEnd()
+        logger.group('[VERBOSE] stderr:')
+        logger.error(output.stderr)
+        logger.groupEnd()
       }
       process.exit(1)
     }
     spinner.successAndStop('Executed gradle successfully')
-    console.log('Reported exports:')
+    logger.log('Reported exports:')
     output.stdout.replace(
       /^POM file copied to: (.*)/gm,
       (_all: string, fn: string) => {
-        console.log('- ', fn)
+        logger.log('- ', fn)
         return fn
       }
     )
 
     // const loc = output.stdout?.match(/Wrote (.*?.pom)\n/)?.[1]?.trim()
     // if (!loc) {
-    //   console.error(
+    //   logger.error(
     //     'There were no errors from sbt but could not find the location of resulting .pom file either'
     //   )
     //   process.exit(1)
@@ -87,8 +89,8 @@ export async function convertGradleToMaven(
     // // Move the pom file to ...? initial cwd? loc will be an absolute path, or dump to stdout
     // if (out === '-') {
     //   spinner.start('Result:\n```')
-    //   console.log(await safeReadFile(loc, 'utf8'))
-    //   console.log('```')
+    //   logger.log(await safeReadFile(loc, 'utf8'))
+    //   logger.log('```')
     //   spinner.successAndStop(`OK`)
     // } else {
     //   spinner.start()
@@ -109,9 +111,9 @@ export async function convertGradleToMaven(
         (verbose ? '' : ' (use --verbose for details)')
     )
     if (verbose) {
-      console.group('[VERBOSE] error:')
-      console.log(e)
-      console.groupEnd()
+      logger.group('[VERBOSE] error:')
+      logger.log(e)
+      logger.groupEnd()
     }
     process.exit(1)
   }

@@ -1,3 +1,4 @@
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { Separator, select } from '@socketsecurity/registry/lib/prompts'
 
 import constants from '../../constants'
@@ -70,7 +71,7 @@ export async function getAuditLog({
     }
   }
 
-  console.log(
+  logger.log(
     logDetails[
       (await select({
         message: type

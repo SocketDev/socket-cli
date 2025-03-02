@@ -3,6 +3,7 @@ import process from 'node:process'
 
 import yargsParse from 'yargs-parser'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { runCycloneDX } from './run-cyclonedx'
@@ -141,7 +142,7 @@ async function run(
   //
   //
   // if (cli.input.length)
-  //   console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+  //   logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
   //     - Unexpected arguments\n
   //   `)
   //   config.help(parentName, config)
@@ -160,7 +161,7 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    console.error(
+    logger.error(
       `Unknown ${pluralize('argument', unknownLength)}: ${yargv._.join(', ')}`
     )
     return
@@ -171,7 +172,8 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   await runCycloneDX(yargv)

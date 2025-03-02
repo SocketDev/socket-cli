@@ -42,7 +42,6 @@ describe('Socket cdxgen command', async () => {
   describe('command forwarding', async () => {
     expect.extend({
       toHaveStderrStartWith(received, expected) {
-        // console.log('got:', received)
         const { isNot } = this
         return {
           // do not alter your "pass" based on isNot. Vitest does it for you

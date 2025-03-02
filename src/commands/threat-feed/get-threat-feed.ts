@@ -5,6 +5,8 @@ import ScreenWidget from 'blessed/lib/widgets/screen'
 // @ts-ignore
 import TableWidget from 'blessed-contrib/lib/widget/table'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../../constants'
 import { queryAPI } from '../../utils/api'
 
@@ -56,7 +58,7 @@ export async function getThreatFeed({
   spinner.stop()
 
   if (outputJson) {
-    console.log(data)
+    logger.log(data)
     return
   }
 

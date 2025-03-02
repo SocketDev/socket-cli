@@ -4,6 +4,7 @@ import { runAgentInstall } from './run-agent'
 import constants from '../../constants'
 
 import type { PackageEnvironmentDetails } from '../../utils/package-environment-detector'
+import type { Logger } from '@socketsecurity/registry/lib/logger'
 
 const { NPM } = constants
 
@@ -11,7 +12,7 @@ const COMMAND_TITLE = 'Socket Optimize'
 const NPM_OVERRIDE_PR_URL = 'https://github.com/npm/cli/pull/8089'
 
 export type UpdatePackageLockJsonOptions = {
-  logger?: Console | undefined
+  logger?: Logger | undefined
   spinner?: Spinner | undefined
 }
 export async function updatePackageLockJson(

@@ -2,6 +2,8 @@ import process from 'node:process'
 
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { createFullScan } from './create-full-scan'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
@@ -137,7 +139,7 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    console.error(`
+    logger.error(`
       ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
       - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}\n
@@ -150,7 +152,8 @@ async function run(
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   await createFullScan({

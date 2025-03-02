@@ -270,8 +270,7 @@ export async function getPackageFiles(
 export async function getPackageFilesFullScans(
   cwd: string,
   inputPaths: string[],
-  supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
-  debugLog: typeof console.error = () => {}
+  supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data']
 ): Promise<string[]> {
   debugLog(`Globbed resolving ${inputPaths.length} paths:`, inputPaths)
 

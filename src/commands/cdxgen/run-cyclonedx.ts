@@ -5,6 +5,7 @@ import process from 'node:process'
 
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { runBin } from '@socketsecurity/registry/lib/npm'
 
 import constants from '../../constants'
@@ -67,7 +68,7 @@ export async function runCycloneDX(yargv: any) {
   }
   const fullOutputPath = path.join(process.cwd(), yargv.output)
   if (existsSync(fullOutputPath)) {
-    console.log(colors.cyanBright(`${yargv.output} created!`))
+    logger.log(colors.cyanBright(`${yargv.output} created!`))
   }
 }
 

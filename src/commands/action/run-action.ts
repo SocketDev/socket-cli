@@ -3,6 +3,7 @@
 import micromatch from 'micromatch'
 import { simpleGit } from 'simple-git'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { SocketSdk } from '@socketsecurity/sdk'
 
 import { Core } from './core'
@@ -28,7 +29,7 @@ export async function runAction(
     )
   ).split('\n')
 
-  console.log({ changedFiles })
+  logger.log({ changedFiles })
   // supportedFiles have 3-level deep globs
   const patterns = Object.values(await socket.getReportSupportedFiles())
     .flatMap((i: Record<string, any>) => Object.values(i))
@@ -40,11 +41,11 @@ export async function runAction(
   const scm = new GitHub()
 
   if (scm.checkEventType() === 'comment') {
-    console.log('Comment initiated flow')
+    logger.log('Comment initiated flow')
     const comments = await scm.getCommentsForPR()
     await scm.removeCommentAlerts({ comments })
   } else if (scm.checkEventType() === 'diff') {
-    console.log('Push initiated flow')
+    logger.log('Push initiated flow')
     const core = new Core({ owner: scm.owner, repo: scm.repo, files, socket })
     const diff = await core.createNewDiff({})
     const comments = await scm.getCommentsForPR()
@@ -61,19 +62,19 @@ export async function runAction(
     if (diff.newAlerts.length === 0) {
       if (!updateOldSecurityComment) {
         newSecurityComment = false
-        console.log('No new alerts or security issue comment disabled')
+        logger.log('No new alerts or security issue comment disabled')
       } else {
-        console.log('Updated security comment with no new alerts')
+        logger.log('Updated security comment with no new alerts')
       }
     }
     if (diff.newPackages.length === 0 && diff.removedPackages.length === 0) {
       if (!updateOldOverviewComment) {
         newOverviewComment = false
-        console.log(
+        logger.log(
           'No new/removed packages or Dependency Overview comment disabled'
         )
       } else {
-        console.log('Updated overview comment with no dependencies')
+        logger.log('Updated overview comment with no dependencies')
       }
     }
     await scm.addSocketComments({

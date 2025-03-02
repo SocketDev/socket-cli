@@ -3,6 +3,8 @@ import path from 'node:path'
 
 import meow from 'meow'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { cmdManifestGradle } from './cmd-manifest-gradle'
 import { cmdManifestScala } from './cmd-manifest-scala'
 import { commonFlags } from '../../flags'
@@ -62,12 +64,12 @@ async function run(
   const verbose = !!cli.flags['verbose']
   const cwd = <string>cli.flags['cwd'] ?? process.cwd()
   if (verbose) {
-    console.group('- ', parentName, config.commandName, ':')
-    console.group('- flags:', cli.flags)
-    console.groupEnd()
-    console.log('- input:', cli.input)
-    console.log('- cwd:', cwd)
-    console.groupEnd()
+    logger.group('- ', parentName, config.commandName, ':')
+    logger.group('- flags:', cli.flags)
+    logger.groupEnd()
+    logger.log('- input:', cli.input)
+    logger.log('- cwd:', cwd)
+    logger.groupEnd()
   }
   const subArgs = []
   if (verbose) {
@@ -77,16 +79,15 @@ async function run(
   const dir = cwd
 
   if (existsSync(path.join(dir, 'build.sbt'))) {
-    console.log(
-      'Detected a Scala sbt build, running default Scala generator...'
-    )
+    logger.log('Detected a Scala sbt build, running default Scala generator...')
     if (cwd) {
       subArgs.push('--cwd', cwd)
     }
     subArgs.push(dir)
 
     if (cli.flags['dryRun']) {
-      return console.log('[DryRun] Bailing now')
+      logger.log('[DryRun] Bailing now')
+      return
     }
 
     await cmdManifestScala.run(subArgs, importMeta, { parentName })
@@ -94,14 +95,15 @@ async function run(
   }
 
   if (existsSync(path.join(dir, 'gradlew'))) {
-    console.log('Detected a gradle build, running default gradle generator...')
+    logger.log('Detected a gradle build, running default gradle generator...')
     if (cwd) {
       // This command takes the cwd as first arg.
       subArgs.push(cwd)
     }
 
     if (cli.flags['dryRun']) {
-      return console.log('[DryRun] Bailing now')
+      logger.log('[DryRun] Bailing now')
+      return
     }
 
     await cmdManifestGradle.run(subArgs, importMeta, { parentName })

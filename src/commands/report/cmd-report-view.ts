@@ -1,5 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { viewReport } from './view-report'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -54,14 +56,15 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+    logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Need at least one report ID ${!reportId ? colors.red('(missing!)') : colors.green('(ok)')}\n
       - Can only handle a single report ID ${extraInput.length < 2 ? colors.red(`(received ${extraInput.length}!)`) : colors.green('(ok)')}\n`)
     return
   }
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   await viewReport(reportId, {

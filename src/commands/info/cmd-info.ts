@@ -1,5 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { getPackageInfo } from './get-package-info'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -54,7 +56,7 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+    logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Expecting a package name ${!rawPkgName ? colors.red('(missing!)') : colors.green('(ok)')}\n
       - Can only accept one package at a time ${cli.input.length > 1 ? colors.red('(got ' + cli.input.length + '!)') : colors.green('(ok)')}\n`)
     return
@@ -67,7 +69,8 @@ async function run(
     versionSeparator < 1 ? 'latest' : rawPkgName.slice(versionSeparator + 1)
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   await getPackageInfo({

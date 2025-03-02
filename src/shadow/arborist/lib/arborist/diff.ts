@@ -65,7 +65,7 @@ export function getPackagesToQueryFromDiff(
           }
         } else {
           // TODO: Add proper debug mode.
-          // console.warn('SKIPPING META CHANGE ON', diff)
+          // logger.warn('SKIPPING META CHANGE ON', diff)
         }
       } else {
         keep = action !== 'REMOVE'

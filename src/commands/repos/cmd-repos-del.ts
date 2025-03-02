@@ -1,5 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { deleteRepo } from './delete-repo'
 import { commonFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
@@ -53,7 +55,7 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+    logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
       - Repository name as the second argument ${!repoName ? colors.red('(missing!)') : typeof repoName !== 'string' ? colors.red('(invalid!)') : colors.green('(ok)')}\n
       - At least one TARGET (e.g. \`.\` or \`./package.json\`\n`)
@@ -61,7 +63,8 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   const apiToken = getDefaultToken()

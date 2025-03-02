@@ -1,3 +1,5 @@
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { wrapNpm } from './wrap-npm'
 import constants from '../../constants'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -37,7 +39,8 @@ async function run(
   })
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   await wrapNpm(argv)

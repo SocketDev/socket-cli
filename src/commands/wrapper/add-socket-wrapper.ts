@@ -1,5 +1,7 @@
 import fs from 'node:fs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 export function addSocketWrapper(file: string): void {
   return fs.appendFile(
     file,
@@ -10,7 +12,7 @@ export function addSocketWrapper(file: string): void {
       }
       // TODO: pretty sure you need to source the file or restart
       //       any terminal session before changes are reflected.
-      console.log(`
+      logger.log(`
 The alias was added to ${file}. Running 'npm install' will now be wrapped in Socket's "safe npm" 🎉
 If you want to disable it at any time, run \`socket wrapper --disable\`
 `)

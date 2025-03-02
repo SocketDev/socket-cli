@@ -1,4 +1,6 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/scm_comments.py
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { Comment, Issue } from './classes'
 
 export type SocketComments = {
@@ -165,9 +167,9 @@ export function getIgnoreOptions({ comments }: { comments: SocketComments }) {
           const data = `${name}/${version}`
           ignoreCommands.push(data)
         }
-      } catch (error) {
-        console.error(`Unable to process ignore command for ${comment}`)
-        console.error(error)
+      } catch (e: any) {
+        logger.error(`Unable to process ignore command for ${comment}`)
+        logger.error(e)
       }
     }
   }
@@ -199,9 +201,9 @@ export function removeAlerts({
       const purl = `${fullName}/${alert.pkg_version}`
       const purlStar = `${fullName}/*`
       if (ignoreCommands.includes(purl) || ignoreCommands.includes(purlStar)) {
-        console.log(`Alerts for ${alert.pkg_name}@${alert.pkg_version} ignored`)
+        logger.log(`Alerts for ${alert.pkg_name}@${alert.pkg_version} ignored`)
       } else {
-        console.log(
+        logger.log(
           `Adding alert ${alert.type} for ${alert.pkg_name}@${alert.pkg_version}`
         )
         alerts.push(alert)

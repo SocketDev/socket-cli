@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs'
 
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { addSocketWrapper } from './add-socket-wrapper'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup'
 import { postinstallWrapper } from './postinstall-wrapper'
@@ -73,13 +75,14 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required flags:\n
+    logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required flags:\n
       - Must use --enabled or --disabled\n`)
     return
   }
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   // Lazily access constants.bashRcPath and constants.zshRcPath.
@@ -100,8 +103,6 @@ async function run(
     }
   }
   if (!existsSync(bashRcPath) && !existsSync(zshRcPath)) {
-    console.error(
-      'There was an issue setting up the alias in your bash profile'
-    )
+    logger.error('There was an issue setting up the alias in your bash profile')
   }
 }

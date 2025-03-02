@@ -1,5 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { displayAnalytics } from './display-analytics'
 import { commonFlags, outputFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
@@ -88,7 +90,7 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    console.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+    logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Scope must be "repo" or "org" ${badScope ? colors.red('(bad!)') : colors.green('(ok)')}\n
       - The time filter must either be 7, 30 or 90 ${badTime ? colors.red('(bad!)') : colors.green('(ok)')}\n
       - Repository name using --repo when scope is "repo" ${badRepo ? colors.red('(bad!)') : colors.green('(ok)')}\n`)
@@ -96,7 +98,8 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   const apiToken = getDefaultToken()

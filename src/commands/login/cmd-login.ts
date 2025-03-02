@@ -1,4 +1,5 @@
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { attemptLogin } from './attempt-login'
 import { commonFlags } from '../../flags'
@@ -60,7 +61,8 @@ async function run(
   let apiProxy = cli.flags['apiProxy'] as string | undefined
 
   if (cli.flags['dryRun']) {
-    return console.log('[DryRun] Bailing now')
+    logger.log('[DryRun] Bailing now')
+    return
   }
 
   if (!isInteractive()) {

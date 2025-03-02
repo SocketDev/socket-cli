@@ -3,6 +3,7 @@ import Module from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
 import constants from '../constants'
@@ -11,7 +12,7 @@ import { findBinPathDetailsSync, findNpmPathSync } from '../utils/path-resolve'
 const { NODE_MODULES, NPM, NPX, SOCKET_CLI_ISSUES_URL } = constants
 
 function exitWithBinPathError(binName: string): never {
-  console.error(
+  logger.error(
     `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable.`
   )
   // The exit code 127 indicates that the command or binary being executed
@@ -76,7 +77,7 @@ export function getNpmPath() {
         message += `\nSearched parent directories of ${path.dirname(npmBinPath)}.`
       }
       message += `\n\nThis is may be a bug with socket-npm related to changes to the npm CLI.\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
-      console.error(message)
+      logger.error(message)
       // The exit code 127 indicates that the command or binary being executed
       // could not be found.
       process.exit(127)

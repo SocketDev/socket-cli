@@ -1,11 +1,11 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/__init__.py
-/* eslint-disable no-await-in-loop */
 import { once } from 'node:events'
 import fs from 'node:fs'
 import path from 'node:path'
 
 import ndjson from 'ndjson'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { SocketSdk } from '@socketsecurity/sdk'
 
 import { Diff, FullScan, Issue, Package, Purl } from './classes'
@@ -384,7 +384,7 @@ export class Core {
         diff.newPackages.push(purl)
         consolidated.add(basePurl)
       }
-
+      // eslint-disable-next-line no-await-in-loop
       newScanAlerts = await this.createIssueAlerts({
         pkg,
         alerts: newScanAlerts,
@@ -401,7 +401,7 @@ export class Core {
       if (!(packageId in newPackages) && pkg.direct) {
         diff.removedPackages.push(purl)
       }
-
+      // eslint-disable-next-line no-await-in-loop
       headScanAlerts = await this.createIssueAlerts({
         pkg,
         alerts: headScanAlerts,
@@ -484,7 +484,7 @@ export class Core {
       })
 
       if (pkg.id in packages) {
-        console.log('Duplicate package?')
+        logger.log('Duplicate package?')
       } else {
         pkg = this.getLicenseDetails({ package: pkg })
         packages[pkg.id] = pkg
@@ -493,7 +493,7 @@ export class Core {
           if (!(topId in topLevelCount)) {
             topLevelCount[topId] = 1
           } else {
-            topLevelCount[topId] += 1
+            topLevelCount[topId]! += 1
           }
         }
       }
@@ -533,8 +533,8 @@ export class Core {
           headFullScan = await this.getSbomData({ fullScanId: headFullScanId })
         }
       }
-    } catch (error) {
-      console.error(error)
+    } catch (e: any) {
+      logger.error(e)
     }
 
     const newFullScan = await this.createFullScan({ params })

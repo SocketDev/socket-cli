@@ -2,6 +2,8 @@
 /* eslint-disable no-await-in-loop */
 import { Octokit } from '@octokit/rest'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { Comment } from './classes'
 import * as SCMComments from './scm_comments'
 
@@ -42,7 +44,7 @@ export class GitHub {
         if (['opened', 'synchronize'].includes(eventAction)) {
           return 'diff'
         } else {
-          console.log(`Pull request action: ${eventAction} is not supported`)
+          logger.log(`Pull request action: ${eventAction} is not supported`)
           process.exit()
         }
       case 'issue_comment':
@@ -163,28 +165,28 @@ export class GitHub {
       security: existingSecurityComment
     } = comments
     if (newOverviewComment) {
-      console.log('New Dependency Overview comment')
+      logger.log('New Dependency Overview comment')
       if (existingOverviewComment !== undefined) {
-        console.log('Previous version of Dependency Overview, updating')
+        logger.log('Previous version of Dependency Overview, updating')
         await this.updateComment({
           body: overviewComment,
           id: existingOverviewComment.id
         })
       } else {
-        console.log('No previous version of Dependency Overview, posting')
+        logger.log('No previous version of Dependency Overview, posting')
         await this.postComment({ body: overviewComment })
       }
     }
     if (newSecurityComment) {
-      console.log('New Security Issue Comment')
+      logger.log('New Security Issue Comment')
       if (existingSecurityComment !== undefined) {
-        console.log('Previous version of Security Issue comment, updating')
+        logger.log('Previous version of Security Issue comment, updating')
         await this.updateComment({
           body: securityComment,
           id: existingSecurityComment.id
         })
       } else {
-        console.log('No Previous version of Security Issue comment, posting')
+        logger.log('No Previous version of Security Issue comment, posting')
         await this.postComment({ body: securityComment })
       }
     }
