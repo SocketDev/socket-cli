@@ -102,7 +102,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
 
-      [DryRun]: noop, call a sub-command; ok"
+      [DryRun]: No-op, call a sub-command; ok"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -121,7 +121,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -180,7 +180,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket dependencies\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -199,7 +199,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan\`, cwd: <redacted>
 
-      [DryRun]: noop, call a sub-command; ok"
+      [DryRun]: No-op, call a sub-command; ok"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -242,7 +242,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -284,7 +284,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket login\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -303,7 +303,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket logout\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -322,7 +322,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest\`, cwd: <redacted>
 
-      [DryRun]: noop, call a sub-command; ok"
+      [DryRun]: No-op, call a sub-command; ok"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -442,7 +442,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket npm\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -461,7 +461,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket npx\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -480,7 +480,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket oops\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -499,7 +499,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -518,7 +518,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket organizations\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -537,7 +537,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket raw-npm\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -556,7 +556,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket raw-npx\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -575,7 +575,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket report\`, cwd: <redacted>
 
-      [DryRun]: noop, call a sub-command; ok"
+      [DryRun]: No-op, call a sub-command; ok"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -594,7 +594,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket report create\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -636,7 +636,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos\`, cwd: <redacted>
 
-      [DryRun]: noop, call a sub-command; ok"
+      [DryRun]: No-op, call a sub-command; ok"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 
@@ -914,7 +914,7 @@ describe('dry-run on all commands', async () => {
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>
 
-      [DryRun] Bailing now"
+      [DryRun]: Bailing now"
     `)
     expect(stderr).toMatchInlineSnapshot(`""`)
 

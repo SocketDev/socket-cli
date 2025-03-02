@@ -53,7 +53,7 @@ export async function createReport(
     }
   }
   if (dryRun) {
-    debugLog(`${DRY_RUN_LABEL} Skipped actual upload`)
+    debugLog(`${DRY_RUN_LABEL}: Skipped actual upload`)
     return undefined
   }
   spinner.start(

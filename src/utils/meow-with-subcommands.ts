@@ -12,9 +12,7 @@ import { MeowFlags, commonFlags } from '../flags'
 
 import type { Options } from 'meow'
 
-const { SOCKET_CLI_SHOW_BANNER } = constants
-
-const REDACTED = '<redacted>'
+const { DRY_RUN_LABEL, REDACTED, SOCKET_CLI_SHOW_BANNER } = constants
 
 interface CliAlias {
   description: string
@@ -144,7 +142,7 @@ export async function meowWithSubcommands(
     }
   )
   if (!cli.flags['help'] && cli.flags['dryRun']) {
-    logger.log('[DryRun]: noop, call a sub-command; ok')
+    logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
     process.exitCode = 0
   } else {
     cli.showHelp()
