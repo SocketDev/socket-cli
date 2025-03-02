@@ -6,12 +6,15 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { createReport } from './create-report'
 import { getSocketConfig } from './get-socket-config'
 import { viewReport } from './view-report'
+import constants from '../../constants'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
+
+const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'create',
@@ -88,7 +91,7 @@ async function run(
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (cli.flags['dryRun']) {
-    logger.log('[DryRun] Bailing now')
+    logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 

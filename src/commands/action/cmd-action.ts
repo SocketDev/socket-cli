@@ -3,10 +3,13 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { runAction } from './run-action'
+import constants from '../../constants'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
+
+const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'action',
@@ -61,7 +64,7 @@ async function run(
   const githubEventAfter = String(cli.flags['githubEventAfter'] || '')
 
   if (cli.flags['dryRun']) {
-    logger.log('[DryRun] Bailing now')
+    logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 

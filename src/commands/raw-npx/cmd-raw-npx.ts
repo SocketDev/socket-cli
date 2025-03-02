@@ -7,7 +7,7 @@ import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
-const { NPX } = constants
+const { DRY_RUN_BAIL_TEXT, NPX } = constants
 
 const config: CliCommandConfig = {
   commandName: 'raw-npx',
@@ -46,7 +46,7 @@ async function run(
   })
 
   if (cli.flags['dryRun']) {
-    logger.log('[DryRun] Bailing now')
+    logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 

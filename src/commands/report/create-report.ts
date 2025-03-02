@@ -12,6 +12,8 @@ import type {
   SocketSdkReturnType
 } from '@socketsecurity/sdk'
 
+const { DRY_RUN_LABEL } = constants
+
 export async function createReport(
   socketConfig: SocketYml | undefined,
   inputPaths: Array<string>,
@@ -51,7 +53,7 @@ export async function createReport(
     }
   }
   if (dryRun) {
-    debugLog('[dryRun] Skipped actual upload')
+    debugLog(`${DRY_RUN_LABEL} Skipped actual upload`)
     return undefined
   }
   spinner.start(

@@ -5,11 +5,14 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { createFullScan } from './create-full-scan'
+import constants from '../../constants'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
+
+const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'create',
@@ -152,7 +155,7 @@ async function run(
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (cli.flags['dryRun']) {
-    logger.log('[DryRun] Bailing now')
+    logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 

@@ -15,6 +15,8 @@ import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
+const { DRY_RUN_BAIL_TEXT } = constants
+
 const config: CliCommandConfig = {
   commandName: 'wrapper',
   description: 'Enable or disable the Socket npm/npx wrapper',
@@ -81,7 +83,7 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    logger.log('[DryRun] Bailing now')
+    logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 

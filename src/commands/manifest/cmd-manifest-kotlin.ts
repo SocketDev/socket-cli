@@ -5,11 +5,14 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertGradleToMaven } from './convert_gradle_to_maven'
+import constants from '../../constants'
 import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
+
+const { DRY_RUN_BAIL_TEXT } = constants
 
 // TODO: we may want to dedupe some pieces for all gradle languages. I think it
 //       makes sense to have separate commands for them and I think it makes
@@ -168,7 +171,7 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    logger.log('[DryRun] Bailing now')
+    logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 

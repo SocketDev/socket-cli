@@ -3,6 +3,7 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { deleteRepo } from './delete-repo'
+import constants from '../../constants'
 import { commonFlags } from '../../flags'
 import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -10,6 +11,8 @@ import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
+
+const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'del',
@@ -63,7 +66,7 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    logger.log('[DryRun] Bailing now')
+    logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 
