@@ -18,7 +18,7 @@ export async function convertSbtToMaven(
   const { spinner } = constants
   const rbin = path.resolve(bin)
   const rtarget = path.resolve(target)
-  // const rout = out === '-' ? '-' : path.resolve(out)
+
   if (verbose) {
     logger.group('sbt2maven:')
     logger.log(`[VERBOSE] - Absolute bin path: \`${rbin}\``)
@@ -44,7 +44,9 @@ export async function convertSbtToMaven(
     const output = await spawn(bin, ['makePom'].concat(sbtOpts), {
       cwd: target || '.'
     })
+
     spinner.stop()
+
     if (verbose) {
       logger.group('[VERBOSE] sbt stdout:')
       logger.log(output)
@@ -100,8 +102,9 @@ export async function convertSbtToMaven(
       poms.forEach(fn => logger.log('-', fn))
       logger.success(`OK`)
     }
-  } catch (e) {
-    spinner.errorAndStop(
+  } catch (e: any) {
+    spinner.stop()
+    logger.error(
       'There was an unexpected error while running this' +
         (verbose ? '' : ' (use --verbose for details)')
     )

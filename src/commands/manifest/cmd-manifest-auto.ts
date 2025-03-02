@@ -63,9 +63,9 @@ async function run(
     importMeta,
     parentName
   })
-
   const verbose = !!cli.flags['verbose']
   const cwd = <string>cli.flags['cwd'] ?? process.cwd()
+
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
     logger.group('- flags:', cli.flags)
@@ -74,6 +74,7 @@ async function run(
     logger.log('- cwd:', cwd)
     logger.groupEnd()
   }
+
   const subArgs = []
   if (verbose) {
     subArgs.push('--verbose')
@@ -87,12 +88,10 @@ async function run(
       subArgs.push('--cwd', cwd)
     }
     subArgs.push(dir)
-
     if (cli.flags['dryRun']) {
       logger.log(DRY_RUN_BAIL_TEXT)
       return
     }
-
     await cmdManifestScala.run(subArgs, importMeta, { parentName })
     return
   }
@@ -103,12 +102,10 @@ async function run(
       // This command takes the cwd as first arg.
       subArgs.push(cwd)
     }
-
     if (cli.flags['dryRun']) {
       logger.log(DRY_RUN_BAIL_TEXT)
       return
     }
-
     await cmdManifestGradle.run(subArgs, importMeta, { parentName })
     return
   }

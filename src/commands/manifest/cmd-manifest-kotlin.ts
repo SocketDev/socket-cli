@@ -124,8 +124,9 @@ async function run(
 
   const target = cli.input[0]
 
-  // TODO: I'm not sure it's feasible to parse source file from stdin. We could try, store contents in a file in some folder, target that folder... what would the file name be?
-
+  // TODO: I'm not sure it's feasible to parse source file from stdin. We could
+  // try, store contents in a file in some folder, target that folder... what
+  // would the file name be?
   if (!target || target === '-' || cli.input.length > 1) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
     // options or missing arguments.

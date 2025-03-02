@@ -13,26 +13,22 @@ export async function convertGradleToMaven(
   verbose: boolean,
   gradleOpts: Array<string>
 ) {
+  // Lazily access constants.spinner.
+  const { spinner } = constants
   const rbin = path.resolve(bin)
   const rtarget = path.resolve(target)
-  // const rout = out === '-' ? '-' : path.resolve(out)
 
   if (verbose) {
     logger.group('gradle2maven:')
     logger.log(`[VERBOSE] - Absolute bin path: \`${rbin}\``)
     logger.log(`[VERBOSE] - Absolute target path: \`${rtarget}\``)
-    // logger.log(`[VERBOSE] - Absolute out path: \`${rout}\``)
     logger.groupEnd()
   } else {
     logger.group('gradle2maven:')
     logger.log(`- executing: \`${bin}\``)
     logger.log(`- src dir: \`${target}\``)
-    // logger.log(`- dst dir: \`${out}\``)
     logger.groupEnd()
   }
-
-  // Lazily access constants.spinner.
-  const { spinner } = constants
 
   spinner.start(
     `Converting gradle to maven from \`${bin}\` on \`${target}\`...`
@@ -53,13 +49,16 @@ export async function convertGradleToMaven(
     const output = await spawn(bin, commandArgs, {
       cwd: target || '.'
     })
+
+    spinner.stop()
+
     if (verbose) {
       logger.group('[VERBOSE] gradle stdout:')
       logger.log(output)
       logger.groupEnd()
     }
     if (output.stderr) {
-      spinner.errorAndStop('There were errors while running gradle')
+      logger.error('There were errors while running gradle')
       // (In verbose mode, stderr was printed above, no need to repeat it)
       if (!verbose) {
         logger.group('[VERBOSE] stderr:')
@@ -68,7 +67,7 @@ export async function convertGradleToMaven(
       }
       process.exit(1)
     }
-    spinner.successAndStop('Executed gradle successfully')
+    logger.success('Executed gradle successfully')
     logger.log('Reported exports:')
     output.stdout.replace(
       /^POM file copied to: (.*)/gm,
@@ -89,8 +88,8 @@ export async function convertGradleToMaven(
     // // Move the pom file to ...? initial cwd? loc will be an absolute path, or dump to stdout
     // if (out === '-') {
     //   spinner.start('Result:\n```')
-    //   logger.log(await safeReadFile(loc, 'utf8'))
-    //   logger.log('```')
+    //   spinner.log(await safeReadFile(loc, 'utf8'))
+    //   spinner.log('```')
     //   spinner.successAndStop(`OK`)
     // } else {
     //   spinner.start()
@@ -105,8 +104,9 @@ export async function convertGradleToMaven(
     //   await renamep(loc, out)
     //   spinner.successAndStop(`OK. File should be available in \`${out}\``)
     // }
-  } catch (e) {
-    spinner.errorAndStop(
+  } catch (e: any) {
+    spinner.stop()
+    logger.error(
       'There was an unexpected error while running this' +
         (verbose ? '' : ' (use --verbose for details)')
     )
