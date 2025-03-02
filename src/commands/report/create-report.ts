@@ -1,8 +1,8 @@
+import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { debugLog, isDebug } from '../../utils/debug'
 import { getPackageFiles } from '../../utils/path-resolve'
 import { setupSdk } from '../../utils/sdk'
 

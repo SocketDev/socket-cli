@@ -7,7 +7,8 @@ import micromatch from 'micromatch'
 import { glob as tinyGlob } from 'tinyglobby'
 import which from 'which'
 
-import { debugLog } from './debug'
+import { debugLog } from '@socketsecurity/registry/lib/debug'
+
 import { directoryPatterns } from './ignore-by-default'
 import constants from '../constants'
 
