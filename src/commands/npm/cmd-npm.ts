@@ -6,7 +6,7 @@ import { meowOrExit } from '../../utils/meow-with-subcommands'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
-const { NPM } = constants
+const { DRY_RUN_BAIL_TEXT, NPM } = constants
 
 const config: CliCommandConfig = {
   commandName: 'npm',
@@ -39,7 +39,7 @@ async function run(
   })
 
   if (cli.flags['dryRun']) {
-    logger.log('[DryRun] Bailing now')
+    logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 

@@ -74,6 +74,8 @@ type Constants = Remap<
     readonly CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE: 'vulnerableVersionRange'
     readonly ENV: ENV
     readonly DIST_TYPE: 'module-sync' | 'require'
+    readonly DRY_RUN_LABEL: '[DryRun]'
+    readonly DRY_RUN_BAIL_TEXT: '[DryRun] Bailing now'
     readonly IPC: IPC
     readonly LOCK_EXT: '.lock'
     readonly MODULE_SYNC: 'module-sync'
@@ -129,6 +131,8 @@ const CLI = 'cli'
 const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
   'firstPatchedVersionIdentifier'
 const CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE = 'vulnerableVersionRange'
+const DRY_RUN_LABEL = '[DryRun]'
+const DRY_RUN_BAIL_TEXT = `${DRY_RUN_LABEL} Bailing now`
 const LOCK_EXT = '.lock'
 const MODULE_SYNC = 'module-sync'
 const NPM_INJECTION = 'npm-injection'
@@ -269,6 +273,8 @@ const constants = <Constants>createConstantsObject(
     CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
     CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE,
     DIST_TYPE: undefined,
+    DRY_RUN_LABEL,
+    DRY_RUN_BAIL_TEXT,
     ENV: undefined,
     LOCK_EXT,
     MODULE_SYNC,

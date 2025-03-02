@@ -7,14 +7,18 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { runCycloneDX } from './run-cyclonedx'
+import constants from '../../constants'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
+const { DRY_RUN_BAIL_TEXT } = constants
+
 // TODO: convert yargs to meow. Or convert all the other things to yargs.
 const toLower = (arg: string) => arg.toLowerCase()
 const arrayToLower = (arg: string[]) => arg.map(toLower)
+
 const yargsConfig = {
   configuration: {
     'camel-case-expansion': false,
@@ -172,7 +176,7 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    logger.log('[DryRun] Bailing now')
+    logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 

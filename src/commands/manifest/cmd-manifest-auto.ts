@@ -7,11 +7,14 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { cmdManifestGradle } from './cmd-manifest-gradle'
 import { cmdManifestScala } from './cmd-manifest-scala'
+import constants from '../../constants'
 import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
+
+const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'auto',
@@ -86,7 +89,7 @@ async function run(
     subArgs.push(dir)
 
     if (cli.flags['dryRun']) {
-      logger.log('[DryRun] Bailing now')
+      logger.log(DRY_RUN_BAIL_TEXT)
       return
     }
 
@@ -102,7 +105,7 @@ async function run(
     }
 
     if (cli.flags['dryRun']) {
-      logger.log('[DryRun] Bailing now')
+      logger.log(DRY_RUN_BAIL_TEXT)
       return
     }
 
