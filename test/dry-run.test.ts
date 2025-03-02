@@ -13,8 +13,6 @@ import path from 'node:path'
 import spawn from '@npmcli/promise-spawn'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { envAsBoolean } from '@socketsecurity/registry/lib/env'
-
 import constants from '../dist/constants.js'
 
 type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
@@ -25,11 +23,6 @@ const { CLI, abortSignal } = constants
 
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
-
-const spawnOpts: PromiseSpawnOptions = {
-  cwd: npmFixturesPath,
-  signal: abortSignal
-}
 
 /**
  * This is a simple template wrapper for this pattern:
@@ -44,8 +37,64 @@ function cmdit(
   it(`${title}: \`${cmd.join(' ')}\``, cb.bind(null, cmd), ...opts)
 }
 
+async function invoke(
+  entryPath: string,
+  args: Array<string>
+): Promise<{
+  status: boolean
+  code: number
+  stdout: string
+  stderr: string
+}> {
+  try {
+    const thing = await spawn(
+      // Lazily access constants.execPath.
+      constants.execPath,
+      [entryPath, ...args],
+      {
+        cwd: npmFixturesPath,
+        signal: abortSignal
+      }
+    )
+    return {
+      status: true,
+      code: 0,
+      stdout: toAsciiSafeString(normalizeLogSymbols(thing.stdout)),
+      stderr: toAsciiSafeString(normalizeLogSymbols(thing.stderr))
+    }
+  } catch (e: any) {
+    return {
+      status: false,
+      code: e?.code,
+      stdout: toAsciiSafeString(normalizeLogSymbols(e?.stdout ?? '')),
+      stderr: toAsciiSafeString(normalizeLogSymbols(e?.stderr ?? ''))
+    }
+  }
+}
+
+function normalizeLogSymbols(str: string): string {
+  return str
+    .replaceAll('✖️', '×')
+    .replaceAll('ℹ', 'i')
+    .replaceAll('✔', '√')
+    .replaceAll('⚠', '‼')
+}
+
+function toAsciiSafeString(str: string): string {
+  // eslint-disable-next-line no-control-regex
+  const asciiSafeRegex = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
+  return str.replace(asciiSafeRegex, (m: string) => {
+    const code = m.charCodeAt(0)
+    return code < 255
+      ? `\\x${code.toString(16).padStart(2, '0')}`
+      : `\\u${code.toString(16).padStart(4, '0')}`
+  })
+}
+
 describe('dry-run on all commands', async () => {
   let was: unknown
+  // Lazily access constants.rootBinPath.
+  const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
   beforeAll(() => {
     // Temp: we have to disable the banner by default until we make it work
@@ -61,40 +110,8 @@ describe('dry-run on all commands', async () => {
     }
   })
 
-  // Lazily access constants.rootBinPath.
-  const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
-
-  async function invoke(...args: Array<string>): Promise<{
-    status: boolean
-    code: number
-    stdout: Buffer
-    stderr: Buffer
-  }> {
-    try {
-      const thing = await spawn(
-        // Lazily access constants.execPath.
-        constants.execPath,
-        [entryPath, ...args],
-        spawnOpts
-      )
-      return {
-        status: true,
-        code: 0,
-        stdout: toAsciiSafeString(thing.stdout),
-        stderr: toAsciiSafeString(thing.stderr)
-      }
-    } catch (e: any) {
-      return {
-        status: false,
-        code: e?.code,
-        stdout: toAsciiSafeString(e?.stdout),
-        stderr: toAsciiSafeString(e?.stderr)
-      }
-    }
-  }
-
   cmdit(['--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -113,7 +130,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['analytics', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -132,7 +149,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['audit-log', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -141,7 +158,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
           - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m"
     `)
@@ -153,7 +170,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['cdxgen', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -162,7 +179,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket cdxgen\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(
-      `"\\x1b[31m\\u2716\\ufe0f\\x1b[39m Unknown argument: --dry-run"`
+      `"\\x1b[31m\\xd7\\x1b[39m Unknown argument: --dry-run"`
     )
 
     expect(code).toBe(2)
@@ -172,7 +189,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['dependencies', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -191,7 +208,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['diff-scan', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -210,7 +227,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['diff-scan', 'get', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -219,7 +236,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan get\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Specify a before and after full scan ID \\x1b[31m(missing before and after!)\\x1b[39m
 
@@ -234,7 +251,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['fix', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -253,7 +270,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['info', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -262,7 +279,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket info\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Expecting a package name \\x1b[31m(missing!)\\x1b[39m
 
@@ -276,7 +293,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['login', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -295,7 +312,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['logout', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -314,7 +331,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['manifest', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -333,7 +350,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['manifest', 'auto', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -365,7 +382,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['manifest', 'gradle', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -374,7 +391,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest gradle\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - The DIR arg is required \\x1b[31m(missing!)\\x1b[39m
 
@@ -388,7 +405,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['manifest', 'kotlin', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -397,7 +414,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest kotlin\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - The DIR arg is required \\x1b[31m(missing!)\\x1b[39m
 
@@ -411,7 +428,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['manifest', 'scala', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -420,7 +437,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest scala\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - The DIR or FILE arg is required \\x1b[31m(missing!)\\x1b[39m
 
@@ -434,7 +451,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['npm', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -453,7 +470,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['npx', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -472,7 +489,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['oops', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -491,7 +508,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['optimize', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -510,7 +527,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['organization', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -529,7 +546,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['raw-npm', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -548,7 +565,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['raw-npx', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -567,7 +584,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['report', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -586,7 +603,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['report', 'create', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -605,7 +622,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['report', 'view', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -614,7 +631,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket report view\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Need at least one report ID \\x1b[31m(missing!)\\x1b[39m
 
@@ -628,7 +645,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['repos', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -647,7 +664,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['repos', 'create', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -656,7 +673,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos create\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -670,7 +687,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['repos', 'del', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -679,7 +696,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos del\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -695,7 +712,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['repos', 'list', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -704,7 +721,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos list\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -718,7 +735,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['repos', 'update', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -727,7 +744,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos update\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -743,7 +760,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['repos', 'view', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -752,7 +769,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos view\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -766,7 +783,7 @@ describe('dry-run on all commands', async () => {
   })
 
   // cmdit(['scan', '--dry-run'], 'should support', async cmd => {
-  //   const { code, stderr, stdout } = await invoke(...cmd)
+  //   const { code, stderr, stdout } = await invoke(entryPath, cmd)
   //   expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
   //     "
   //        _____         _       _        /---------------
@@ -785,7 +802,7 @@ describe('dry-run on all commands', async () => {
   // })
 
   // cmdit(['scan', 'create', '--dry-run'], 'should support', async cmd => {
-  //   const { code, stderr, stdout } = await invoke(...cmd)
+  //   const { code, stderr, stdout } = await invoke(entryPath, cmd)
   //   expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
   //     "
   //        _____         _       _        /---------------
@@ -816,7 +833,7 @@ describe('dry-run on all commands', async () => {
   // })
 
   cmdit(['scan', 'del', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -825,7 +842,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan del\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -839,7 +856,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['scan', 'list', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -848,7 +865,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan list\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
           - Org name as the argument \\x1b[31m(missing!)\\x1b[39m"
     `)
@@ -860,7 +877,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['scan', 'metadata', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -869,7 +886,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan metadata\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -883,7 +900,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['scan', 'stream', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -892,7 +909,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan stream\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -906,7 +923,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['threat-feed', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -925,7 +942,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['wrapper', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(...cmd)
+    const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
@@ -934,7 +951,7 @@ describe('dry-run on all commands', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket wrapper\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\u2716\\ufe0f\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required flags:
+      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required flags:
 
             - Must use --enabled or --disabled"
     `)
@@ -945,13 +962,3 @@ describe('dry-run on all commands', async () => {
     )
   })
 })
-
-function toAsciiSafeString(str) {
-  /* eslint-disable-next-line */
-  const asciiSafeRegex = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
-  return str.replace(asciiSafeRegex, m => {
-    const code = m.charCodeAt(0)
-    if (code < 255) return '\\x' + code.toString(16).padStart(2, '0')
-    return '\\u' + code.toString(16).padStart(4, '0')
-  })
-}
