@@ -9,7 +9,7 @@ export function objectSome(obj: Record<string, any>): boolean {
 
 export function pick<T extends Record<string, any>, K extends keyof T>(
   input: T,
-  keys: K[] | ReadonlyArray<K>
+  keys: K[] | readonly K[]
 ): Pick<T, K> {
   const result: Partial<Pick<T, K>> = {}
   for (const key of keys) {

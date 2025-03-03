@@ -64,7 +64,7 @@ export const cmdThreatFeed = {
 }
 
 async function run(
-  argv: ReadonlyArray<string>,
+  argv: readonly string[],
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
