@@ -18,6 +18,7 @@
     "strict": true,
     "strictNullChecks": true,
     "target": "esnext",
+    "useUnknownInCatchVariables": true,
 
     /* New checks being tried out */
     "exactOptionalPropertyTypes": true,
