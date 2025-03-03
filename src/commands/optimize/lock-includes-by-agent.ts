@@ -7,7 +7,7 @@ import type { Agent } from '../../utils/package-environment-detector'
 export type AgentLockIncludesFn = (
   lockSrc: string,
   name: string,
-  ext?: string
+  ext?: string | undefined
 ) => boolean
 
 const { BUN, LOCK_EXT, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants

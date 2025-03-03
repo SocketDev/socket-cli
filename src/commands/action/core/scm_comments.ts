@@ -52,7 +52,7 @@ export function checkForSocketComments({
 // @SocketSecurity ignore pkg1 pkg2 ...
 // @SocketSecurity ignore ignore-all
 export function parseIgnoreCommand(line: string) {
-  const result = { packages: [] as string[], ignoreAll: false }
+  const result = { packages: <string[]>[], ignoreAll: false }
   const words = line.trim().replace(/\s+/g, ' ').split(' ')
   if (words.at(1) === 'ignore-all') {
     result.ignoreAll = true

@@ -18,13 +18,13 @@ export type PackageDetail = {
 }
 
 type GetPackagesToQueryFromDiffOptions = {
-  includeUnchanged?: boolean
-  includeUnknownOrigin?: boolean
+  includeUnchanged?: boolean | undefined
+  includeUnknownOrigin?: boolean | undefined
 }
 
 export function getPackagesToQueryFromDiff(
   diff_: Diff | null,
-  options?: GetPackagesToQueryFromDiffOptions
+  options?: GetPackagesToQueryFromDiffOptions | undefined
 ): PackageDetail[] {
   const { includeUnchanged = false, includeUnknownOrigin = false } = <
     GetPackagesToQueryFromDiffOptions

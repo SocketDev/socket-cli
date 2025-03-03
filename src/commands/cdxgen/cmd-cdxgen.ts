@@ -132,7 +132,7 @@ export const cmdCdxgen = {
 }
 
 async function run(
-  argv: readonly string[],
+  argv: string[] | Readonly<string[]>,
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
@@ -155,10 +155,10 @@ async function run(
 
   // TODO: convert to meow
   const yargv = {
-    ...yargsParse(argv as Array<string>, yargsConfig)
+    ...yargsParse(argv as string[], yargsConfig)
   } as any // as Record<string, unknown>;
 
-  const unknown: Array<string> = yargv._
+  const unknown: string[] = yargv._
   const { length: unknownLength } = unknown
   if (unknownLength) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid

@@ -20,7 +20,7 @@ const { SOCKET_IPC_HANDSHAKE } = constants
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
 type SafeNpmInstallOptions = SpawnOption & {
-  args?: string[] | undefined
+  args?: string[] | Readonly<string[]> | undefined
   ipc?: object | undefined
   spinner?: Spinner | undefined
 }

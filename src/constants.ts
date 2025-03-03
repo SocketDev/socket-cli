@@ -29,7 +29,7 @@ type Internals = Remap<
       getIPC: {
         (): Promise<IPC>
         <K extends keyof IPC | undefined>(
-          key?: K
+          key?: K | undefined
         ): Promise<K extends keyof IPC ? IPC[K] : IPC>
       }
       getSentry: () => Sentry
@@ -51,9 +51,9 @@ type ENV = Remap<
 >
 
 type IPC = Readonly<{
-  SOCKET_CLI_FIX?: string
-  SOCKET_CLI_OPTIMIZE?: boolean
-  SOCKET_CLI_SAFE_WRAPPER?: boolean
+  SOCKET_CLI_FIX?: string | undefined
+  SOCKET_CLI_OPTIMIZE?: boolean | undefined
+  SOCKET_CLI_SAFE_WRAPPER?: boolean | undefined
 }>
 
 type Constants = Remap<

@@ -16,7 +16,7 @@ const { DRY_RUN_LABEL } = constants
 
 export async function createReport(
   socketConfig: SocketYml | undefined,
-  inputPaths: Array<string>,
+  inputPaths: string[],
   {
     cwd,
     dryRun

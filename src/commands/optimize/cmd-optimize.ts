@@ -49,7 +49,7 @@ export const cmdOptimize = {
 }
 
 async function run(
-  argv: readonly string[],
+  argv: string[] | Readonly<string[]>,
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {

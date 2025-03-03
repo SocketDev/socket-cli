@@ -269,7 +269,7 @@ export class Core {
     pkg: Package
     capabilities: Record<string, string[]>
     packageId: string
-    headPackage?: Package
+    headPackage?: Package | undefined
   }): Record<string, string[]> {
     const alertTypes = {
       envVars: 'Environment',

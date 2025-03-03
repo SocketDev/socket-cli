@@ -30,9 +30,9 @@ const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
  * `it('should do: socket scan', (['socket', 'scan']) => {})`
  */
 function cmdit(
-  cmd: Array<string>,
+  cmd: string[],
   title: string,
-  cb: (cmd: Array<string>) => Promise<void>,
+  cb: (cmd: string[]) => Promise<void>,
   ...opts: any
 ) {
   it(`${title}: \`${cmd.join(' ')}\``, cb.bind(null, cmd), ...opts)
@@ -40,7 +40,7 @@ function cmdit(
 
 async function invoke(
   entryPath: string,
-  args: Array<string>
+  args: string[]
 ): Promise<{
   status: boolean
   code: number

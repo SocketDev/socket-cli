@@ -4,8 +4,10 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getNpmBinPath } from '../../shadow/npm-paths'
 
-export async function runRawNpm(argv: ReadonlyArray<string>): Promise<void> {
-  const spawnPromise = spawn(getNpmBinPath(), argv.slice(0), {
+export async function runRawNpm(
+  argv: string[] | Readonly<string[]>
+): Promise<void> {
+  const spawnPromise = spawn(getNpmBinPath(), <string[]>argv, {
     stdio: 'inherit'
   })
   // See https://nodejs.org/api/all.html#all_child_process_event-exit.

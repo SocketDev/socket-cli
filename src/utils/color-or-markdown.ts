@@ -38,8 +38,8 @@ export class ColorOrMarkdown {
       fallback = true,
       fallbackToUrl
     }: {
-      fallback?: boolean
-      fallbackToUrl?: boolean
+      fallback?: boolean | undefined
+      fallbackToUrl?: boolean | undefined
     } = {}
   ) {
     if (url) {

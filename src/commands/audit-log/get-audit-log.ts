@@ -5,13 +5,7 @@ import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
-type Choice<Value> = {
-  description?: string
-  disabled?: boolean | string
-  name?: string
-  type?: never
-  value: Value
-}
+import type { Choice } from '@socketsecurity/registry/lib/prompts'
 
 type AuditChoice = Choice<string>
 

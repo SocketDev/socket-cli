@@ -91,7 +91,7 @@ export const cmdManifestScala = {
 }
 
 async function run(
-  argv: readonly string[],
+  argv: string[] | Readonly<string[]>,
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
@@ -151,7 +151,7 @@ async function run(
     logger.groupEnd()
   }
 
-  let sbtOpts: Array<string> = []
+  let sbtOpts: string[] = []
   if (cli.flags['sbtOpts']) {
     sbtOpts = (cli.flags['sbtOpts'] as string)
       .split(' ')
