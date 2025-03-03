@@ -161,7 +161,7 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-          - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m"
+            - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
