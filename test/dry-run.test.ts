@@ -10,8 +10,9 @@
 
 import path from 'node:path'
 
-import spawn from '@npmcli/promise-spawn'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../dist/constants.js'
 

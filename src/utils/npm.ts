@@ -1,9 +1,8 @@
 import process from 'node:process'
 
-import spawn from '@npmcli/promise-spawn'
-
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { isObject } from '@socketsecurity/registry/lib/objects'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../constants'
 import { getNpmBinPath } from '../shadow/npm-paths'

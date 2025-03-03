@@ -1,9 +1,9 @@
 import path from 'node:path'
 
-import spawn from '@npmcli/promise-spawn'
 import { describe, expect, it } from 'vitest'
 
 import { LOG_SYMBOLS } from '@socketsecurity/registry/lib/logger'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../dist/constants.js'
 

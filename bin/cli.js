@@ -16,7 +16,7 @@ if (
   require(`${constants.distPath}/${CLI}.js`)
 } else {
   const path = require('node:path')
-  const spawn = require('@npmcli/promise-spawn')
+  const { spawn } = require('@socketsecurity/registry/lib/spawn')
   const { abortSignal } = constants
 
   process.exitCode = 1

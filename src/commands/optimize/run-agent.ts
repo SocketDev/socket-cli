@@ -1,6 +1,5 @@
-import spawn from '@npmcli/promise-spawn'
-
 import { isDebug } from '@socketsecurity/registry/lib/debug'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../../constants'

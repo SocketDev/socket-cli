@@ -1,6 +1,6 @@
 import process from 'node:process'
 
-import spawn from '@npmcli/promise-spawn'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { installLinks } from './link'
 import constants from '../constants'

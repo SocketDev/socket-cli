@@ -2,7 +2,6 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
-import spawn from '@npmcli/promise-spawn'
 import browserslist from 'browserslist'
 import semver from 'semver'
 import which from 'which'
@@ -11,6 +10,7 @@ import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { findUp, readFileBinary, readFileUtf8 } from './fs'

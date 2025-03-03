@@ -1,8 +1,7 @@
 import path from 'node:path'
 
-import spawn from '@npmcli/promise-spawn'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants'
 import { safeReadFile } from '../../utils/fs'
