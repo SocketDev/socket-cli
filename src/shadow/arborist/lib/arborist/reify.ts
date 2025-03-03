@@ -90,7 +90,7 @@ export function findPackageNodes(
   tree: SafeNode,
   packageName: string
 ): SafeNode[] {
-  const queue: { node: typeof tree }[] = [{ node: tree }]
+  const queue: Array<{ node: typeof tree }> = [{ node: tree }]
   const matches: SafeNode[] = []
   let sentinel = 0
   while (queue.length) {
@@ -363,10 +363,10 @@ export async function getPackagesAlerts(
 
 type CveInfoByPackage = Map<
   string,
-  {
+  Array<{
     firstPatchedVersionIdentifier: string
     vulnerableVersionRange: string
-  }[]
+  }>
 >
 
 type GetCveInfoByPackageOptions = {

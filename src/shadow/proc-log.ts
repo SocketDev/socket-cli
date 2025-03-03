@@ -16,7 +16,7 @@ type RequireTransformer<T extends keyof RequireKnownModules> = (
 
 function tryRequire<T extends keyof RequireKnownModules>(
   req: NodeJS.Require,
-  ...ids: (T | [T, RequireTransformer<T>])[]
+  ...ids: Array<T | [T, RequireTransformer<T>]>
 ): RequireKnownModules[T] | undefined {
   for (const data of ids) {
     let id: string | undefined
