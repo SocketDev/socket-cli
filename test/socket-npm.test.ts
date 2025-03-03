@@ -7,7 +7,7 @@ const { spawn, spawnSync } = require('@socketsecurity/registry/lib/spawn')
 
 const constants = require('../dist/constants.js')
 
-const { CLI, NODE_MODULES, NPM, abortSignal } = constants
+const { CLI, NODE_MODULES, NPM } = constants
 
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
@@ -24,7 +24,6 @@ for (const npmDir of ['npm8', 'npm10']) {
 
   spawnSync(NPM, ['install', '--silent'], {
     cwd: npmPath,
-    signal: abortSignal,
     stdio: 'ignore'
   })
 
@@ -42,8 +41,7 @@ for (const npmDir of ['npm8', 'npm10']) {
             cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
             env: {
               PATH: `${npmBinPath}:${process.env.PATH}`
-            },
-            signal: abortSignal
+            }
           }
         )
         spawnPromise.process.stdout.on('data', (buffer: Buffer) => {
@@ -60,14 +58,12 @@ for (const npmDir of ['npm8', 'npm10']) {
             )
           }
         })
-
         spawnPromise.process.stderr.on('data', (buffer: Buffer) => {
           if (buffer.toString().includes('Possible typosquat attack')) {
             resolve('OK')
             spawnPromise.process.kill('SIGINT')
           }
         })
-
         spawnPromise.catch(() => {
           spawnPromise.process.kill('SIGINT')
           reject(new Error('Received a SIGINT'))

@@ -17,10 +17,9 @@ if (
 } else {
   const path = require('node:path')
   const { spawn } = require('@socketsecurity/registry/lib/spawn')
-  const { abortSignal } = constants
 
   process.exitCode = 1
-  const spawnPromise = spawn(
+  spawn(
     // Lazily access constants.execPath.
     constants.execPath,
     [
@@ -39,19 +38,15 @@ if (
       ...process.argv.slice(2)
     ],
     {
-      signal: abortSignal,
       stdio: 'inherit'
     }
   )
-  // See https://nodejs.org/api/all.html#all_child_process_event-exit.
-  spawnPromise.process.on('exit', (code, signalName) => {
-    if (abortSignal.aborted) {
-      return
-    }
-    if (signalName) {
-      process.kill(process.pid, signalName)
-    } else if (code !== null) {
-      process.exit(code)
-    }
-  })
+    // See https://nodejs.org/api/all.html#all_child_process_event-exit.
+    .process.on('exit', (code, signalName) => {
+      if (signalName) {
+        process.kill(process.pid, signalName)
+      } else if (code !== null) {
+        process.exit(code)
+      }
+    })
 }
