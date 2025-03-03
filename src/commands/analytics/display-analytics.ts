@@ -148,7 +148,7 @@ async function outputAnalyticsWithToken({
     if (outputKind === 'markdown') {
       const serialized = renderMarkdown(fdata, time, repo)
 
-      if (filePath) {
+      if (filePath && filePath !== '-') {
         try {
           await fs.writeFile(filePath, serialized, 'utf8')
           logger.log(`Data successfully written to ${filePath}`)
@@ -191,32 +191,35 @@ These are the Socket.dev stats are analytics for the ${repoSlug ? `${repoSlug} r
     [
       [
         'Total critical alerts',
-        mdTableStringNumber(data['total_critical_alerts'])
+        mdTableStringNumber('Date', 'Counts', data['total_critical_alerts'])
       ],
-      ['Total high alerts', mdTableStringNumber(data['total_high_alerts'])],
+      [
+        'Total high alerts',
+        mdTableStringNumber('Date', 'Counts', data['total_high_alerts'])
+      ],
       [
         'Total critical alerts added to the main branch',
-        mdTableStringNumber(data['total_critical_added'])
+        mdTableStringNumber('Date', 'Counts', data['total_critical_added'])
       ],
       [
         'Total high alerts added to the main branch',
-        mdTableStringNumber(data['total_high_added'])
+        mdTableStringNumber('Date', 'Counts', data['total_high_added'])
       ],
       [
         'Total critical alerts prevented from the main branch',
-        mdTableStringNumber(data['total_critical_prevented'])
+        mdTableStringNumber('Date', 'Counts', data['total_critical_prevented'])
       ],
       [
         'Total high alerts prevented from the main branch',
-        mdTableStringNumber(data['total_high_prevented'])
+        mdTableStringNumber('Date', 'Counts', data['total_high_prevented'])
       ],
       [
         'Total medium alerts prevented from the main branch',
-        mdTableStringNumber(data['total_medium_prevented'])
+        mdTableStringNumber('Date', 'Counts', data['total_medium_prevented'])
       ],
       [
         'Total low alerts prevented from the main branch',
-        mdTableStringNumber(data['total_low_prevented'])
+        mdTableStringNumber('Date', 'Counts', data['total_low_prevented'])
       ]
     ]
       .map(([title, table]) => {
@@ -228,7 +231,7 @@ ${table}
       })
       .join('\n\n') +
     '\n\n## Top 5 alert types\n\n' +
-    mdTableStringNumber(data['top_five_alert_types']) +
+    mdTableStringNumber('Name', 'Counts', data['top_five_alert_types']) +
     '\n'
   )
 }

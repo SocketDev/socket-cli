@@ -1,19 +1,21 @@
 export function mdTableStringNumber(
+  title1: string,
+  title2: string,
   obj: Record<string, number | string>
 ): string {
   // | Date        | Counts |
   // | ----------- | ------ |
   // | Header      | 201464 |
   // | Paragraph   |     18 |
-  let mw1 = 4
-  let mw2 = 6
+  let mw1 = title1.length
+  let mw2 = title2.length
   for (const [key, value] of Object.entries(obj)) {
     mw1 = Math.max(mw1, key.length)
     mw2 = Math.max(mw2, String(value ?? '').length)
   }
 
   const lines = []
-  lines.push(`| Date${' '.repeat(mw1 - 4)} | Count${' '.repeat(mw2 - 6)} |`)
+  lines.push(`| ${title1.padEnd(mw1, ' ')} | ${title2.padEnd(mw2)} |`)
   lines.push(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} |`)
   for (const [key, value] of Object.entries(obj)) {
     lines.push(
