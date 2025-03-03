@@ -1,7 +1,7 @@
 // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/classes.py
 import { components } from '@socketsecurity/sdk/types/api'
 
-type IntroducedBy = [string, string][]
+type IntroducedBy = Array<[string, string]>
 
 export class Alert {
   key = ''
@@ -53,7 +53,7 @@ export class FullScan {
   commit_message = ''
   commit_hash = ''
   pull_request = 0
-  sbom_artifacts: components['schemas']['SocketArtifact'][] = []
+  sbom_artifacts: Array<components['schemas']['SocketArtifact']> = []
   packages = {}
 
   constructor(obj: Partial<FullScan> = {}) {
@@ -151,7 +151,7 @@ export class Package {
   release = ''
   id = ''
   direct = false
-  manifestFiles: { file: string }[] = []
+  manifestFiles: Array<{ file: string }> = []
   author: string[] = []
   size = 0
   score: Score
@@ -172,7 +172,7 @@ export class Package {
     release: string | undefined
     id: string | undefined
     direct: boolean | undefined
-    manifestFiles: { file: string }[] | undefined
+    manifestFiles: Array<{ file: string }> | undefined
     author: string[] | undefined
     size: number | undefined
     score: Score | undefined

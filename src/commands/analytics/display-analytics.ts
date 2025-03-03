@@ -415,7 +415,7 @@ function renderLineCharts(
   grid: contrib.grid,
   screen: Widgets.Screen,
   title: string,
-  coords: Array<number>,
+  coords: number[],
   data: Record<string, number>
 ): void {
   const line = grid.set(...coords, contrib.line, {

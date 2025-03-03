@@ -13,7 +13,7 @@ type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 type SpawnResult = ReturnType<typeof spawn>
 
 export type AgentInstallOptions = SpawnOption & {
-  args?: string[] | Readonly<string[]> | undefined
+  args?: string[] | readonly string[] | undefined
   spinner?: Spinner | undefined
 }
 
