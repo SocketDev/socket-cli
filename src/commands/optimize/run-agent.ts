@@ -32,12 +32,9 @@ export function runAgentInstall(
     ...spawnOptions
   } = <AgentInstallOptions>{ __proto__: null, ...options }
   const isSilent = !isDebug()
-  const isSpinning = spinner?.isSpinning ?? false
-  if (!isSilent) {
-    spinner?.stop()
-  }
-  let spawnPromise = spawn(agentExecPath, ['install', ...args], {
+  return spawn(agentExecPath, ['install', ...args], {
     signal: abortSignal,
+    spinner,
     stdio: isSilent ? 'ignore' : 'inherit',
     ...spawnOptions,
     env: {
@@ -45,13 +42,4 @@ export function runAgentInstall(
       ...spawnOptions.env
     }
   })
-  if (!isSilent && isSpinning) {
-    const oldSpawnPromise = spawnPromise
-    spawnPromise = <typeof oldSpawnPromise>spawnPromise.finally(() => {
-      spinner?.start()
-    })
-    spawnPromise.process = oldSpawnPromise.process
-    ;(spawnPromise as any).stdin = (spawnPromise as any).stdin
-  }
-  return spawnPromise
 }

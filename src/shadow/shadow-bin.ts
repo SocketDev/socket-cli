@@ -1,16 +1,18 @@
 import process from 'node:process'
 
+import {
+  isLoglevelFlag,
+  isProgressFlag
+} from '@socketsecurity/registry/lib/npm'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { installLinks } from './link'
 import constants from '../constants'
-import { isLoglevelFlag, isProgressFlag } from '../utils/npm'
 
 const {
   SOCKET_CLI_SAFE_WRAPPER,
   SOCKET_CLI_SENTRY_BUILD,
-  SOCKET_IPC_HANDSHAKE,
-  abortSignal
+  SOCKET_IPC_HANDSHAKE
 } = constants
 
 export default async function shadowBin(
@@ -51,16 +53,12 @@ export default async function shadowBin(
       ...otherArgs
     ],
     {
-      signal: abortSignal,
       // 'inherit' + 'ipc'
       stdio: [0, 1, 2, 'ipc']
     }
   )
   // See https://nodejs.org/api/all.html#all_child_process_event-exit.
   spawnPromise.process.on('exit', (code, signalName) => {
-    if (abortSignal.aborted) {
-      return
-    }
     if (signalName) {
       process.kill(process.pid, signalName)
     } else if (code !== null) {
