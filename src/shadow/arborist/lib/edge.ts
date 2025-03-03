@@ -40,7 +40,7 @@ export type EdgeOptions = {
   from: SafeNode
   accept?: string | undefined
   overrides?: SafeOverrideSet | undefined
-  to?: SafeNode
+  to?: SafeNode | undefined
 }
 
 export type ErrorStatus = DependencyProblem | 'OK'

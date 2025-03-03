@@ -10,7 +10,7 @@ export async function convertGradleToMaven(
   bin: string,
   _out: string,
   verbose: boolean,
-  gradleOpts: Array<string>
+  gradleOpts: string[]
 ) {
   // Lazily access constants.spinner.
   const { spinner } = constants

@@ -30,24 +30,24 @@ export type SocketArtifactAlert = {
   type: string
   severity: string
   category: string
-  action?: string
-  actionPolicyIndex?: number
-  file?: string
-  props?: any
-  start?: number
-  end?: number
+  action?: string | undefined
+  actionPolicyIndex?: number | undefined
+  file?: string | undefined
+  props?: any | undefined
+  start?: number | undefined
+  end?: number | undefined
 }
 
 export type SocketArtifact = {
   type: string
   name: string
-  namespace?: string
-  version?: string
-  subpath?: string
-  release?: string
-  id?: string
+  namespace?: string | undefined
+  version?: string | undefined
+  subpath?: string | undefined
+  release?: string | undefined
+  id?: string | undefined
   author?: string[]
-  license?: string
+  license?: string | undefined
   licenseDetails?: {
     spdxDisj: string
     provenance: string
@@ -72,8 +72,8 @@ export type SocketArtifact = {
     overall: number
   }
   alerts?: SocketArtifactAlert[]
-  size?: number
-  batchIndex?: number
+  size?: number | undefined
+  batchIndex?: number | undefined
 }
 
 const {

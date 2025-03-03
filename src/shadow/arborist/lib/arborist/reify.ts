@@ -65,7 +65,7 @@ function findBestPatchVersion(
   node: SafeNode,
   availableVersions: string[],
   vulnerableVersionRange?: string,
-  _firstPatchedVersionIdentifier?: string
+  _firstPatchedVersionIdentifier?: string | undefined
 ): string | null {
   const manifestData = getManifestData(NPM, node.name)
   let eligibleVersions
@@ -133,7 +133,7 @@ export function updateNode(
   node: SafeNode,
   packument: Packument,
   vulnerableVersionRange?: string,
-  firstPatchedVersionIdentifier?: string
+  firstPatchedVersionIdentifier?: string | undefined
 ): boolean {
   const availableVersions = Object.keys(packument.versions)
   // Find the highest non-vulnerable version within the same major range
@@ -196,15 +196,15 @@ export function updateNode(
 }
 
 type GetPackageAlertsOptions = {
-  output?: Writable
-  consolidate?: boolean
-  includeExisting?: boolean
-  includeUnfixable?: boolean
+  output?: Writable | undefined
+  consolidate?: boolean | undefined
+  includeExisting?: boolean | undefined
+  includeUnfixable?: boolean | undefined
 }
 
 export async function getPackagesAlerts(
   arb: SafeArborist,
-  options?: GetPackageAlertsOptions
+  options?: GetPackageAlertsOptions | undefined
 ): Promise<SocketPackageAlert[]> {
   const {
     consolidate = false,
@@ -370,12 +370,12 @@ type CveInfoByPackage = Map<
 >
 
 type GetCveInfoByPackageOptions = {
-  excludeUpgrades?: boolean
+  excludeUpgrades?: boolean | undefined
 }
 
 export function getCveInfoByPackage(
   alerts: SocketPackageAlert[],
-  options?: GetCveInfoByPackageOptions
+  options?: GetCveInfoByPackageOptions | undefined
 ): CveInfoByPackage | null {
   const { excludeUpgrades } = <GetCveInfoByPackageOptions>{
     __proto__: null,

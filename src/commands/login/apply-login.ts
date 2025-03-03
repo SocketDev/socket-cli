@@ -2,7 +2,7 @@ import { updateSetting } from '../../utils/settings'
 
 export function applyLogin(
   apiToken: string,
-  enforcedOrgs: Array<string>,
+  enforcedOrgs: string[],
   apiBaseUrl: string | undefined,
   apiProxy: string | undefined
 ) {

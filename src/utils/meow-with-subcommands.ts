@@ -17,20 +17,20 @@ const { DRY_RUN_LABEL, REDACTED, SOCKET_CLI_SHOW_BANNER } = constants
 interface CliAlias {
   description: string
   argv: readonly string[]
-  hidden?: boolean
+  hidden?: boolean | undefined
 }
 
 type CliAliases = Record<string, CliAlias>
 
 type CliSubcommandRun = (
-  argv: readonly string[],
+  argv: string[] | Readonly<string[]>,
   importMeta: ImportMeta,
   context: { parentName: string }
 ) => Promise<void> | void
 
 export interface CliSubcommand {
   description: string
-  hidden?: boolean
+  hidden?: boolean | undefined
   run: CliSubcommandRun
 }
 
@@ -46,7 +46,7 @@ export interface CliCommandConfig {
 }
 
 interface MeowOptions extends Options<any> {
-  aliases?: CliAliases
+  aliases?: CliAliases | undefined
   argv: readonly string[]
   name: string
 }
@@ -159,7 +159,7 @@ export function meowOrExit({
   importMeta,
   parentName
 }: {
-  allowUnknownFlags?: boolean
+  allowUnknownFlags?: boolean | undefined
   argv: ReadonlyArray<string>
   config: CliCommandConfig
   parentName: string

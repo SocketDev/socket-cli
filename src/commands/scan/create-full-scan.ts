@@ -43,7 +43,7 @@ export async function createFullScan({
   pullRequest: number | undefined
   readOnly: boolean
   repoName: string
-  targets: Array<string>
+  targets: string[]
   tmp: boolean
 }): Promise<void> {
   // Lazily access constants.spinner.

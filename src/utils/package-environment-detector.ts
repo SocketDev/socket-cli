@@ -138,7 +138,7 @@ const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
 })()
 
 export type GetPackageEnvironmentOptions = {
-  cwd?: string
+  cwd?: string | undefined
   onUnknown?: (pkgManager: string | undefined) => void
 }
 

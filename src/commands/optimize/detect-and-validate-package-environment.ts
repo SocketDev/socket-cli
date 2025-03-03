@@ -12,7 +12,7 @@ const COMMAND_TITLE = 'Socket Optimize'
 
 export type DetectAndValidateOptions = {
   logger?: Logger | undefined
-  prod?: boolean
+  prod?: boolean | undefined
 }
 export async function detectAndValidatePackageEnvironment(
   cwd: string,

@@ -96,7 +96,7 @@ export const cmdManifestGradle = {
 }
 
 async function run(
-  argv: readonly string[],
+  argv: string[] | Readonly<string[]>,
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
@@ -158,7 +158,7 @@ async function run(
     logger.groupEnd()
   }
 
-  let gradleOpts: Array<string> = []
+  let gradleOpts: string[] = []
   if (cli.flags['gradleOpts']) {
     gradleOpts = (cli.flags['gradleOpts'] as string)
       .split(' ')

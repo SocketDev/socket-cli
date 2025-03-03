@@ -5,7 +5,7 @@ export function getSocketDevAlertUrl(alertType: string): string {
 export function getSocketDevPackageOverviewUrl(
   eco: string,
   name: string,
-  version?: string
+  version?: string | undefined
 ): string {
   return `https://socket.dev/${eco}/package/${name}${version ? `/overview/${version}` : ''}`
 }

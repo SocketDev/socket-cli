@@ -9,7 +9,7 @@ type AgentListDepsOptions = { npmExecPath?: string }
 type AgentListDepsFn = (
   agentExecPath: string,
   cwd: string,
-  options?: AgentListDepsOptions
+  options?: AgentListDepsOptions | undefined
 ) => Promise<string>
 
 const { BUN, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
@@ -76,7 +76,7 @@ async function lsNpm(agentExecPath: string, cwd: string): Promise<string> {
 async function lsPnpm(
   agentExecPath: string,
   cwd: string,
-  options?: AgentListDepsOptions
+  options?: AgentListDepsOptions | undefined
 ): Promise<string> {
   const npmExecPath = options?.npmExecPath
   if (npmExecPath && npmExecPath !== NPM) {

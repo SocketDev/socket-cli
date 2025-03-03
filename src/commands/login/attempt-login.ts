@@ -8,17 +8,9 @@ import { AuthError } from '../../utils/errors'
 import { setupSdk } from '../../utils/sdk'
 import { getSetting } from '../../utils/settings'
 
-import type { Separator } from '@socketsecurity/registry/lib/prompts'
+import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
-// TODO: this type should come from a general Socket REST API type doc
-type Choice<Value> = {
-  value: Value
-  name?: string
-  description?: string
-  disabled?: boolean | string
-  type?: never
-}
 type OrgChoice = Choice<string>
 type OrgChoices = Array<Separator | OrgChoice>
 const { SOCKET_PUBLIC_API_TOKEN } = constants
@@ -62,7 +54,7 @@ export async function attemptLogin(
       value: org.id
     }))
 
-  let enforcedOrgs: Array<string> = []
+  let enforcedOrgs: string[] = []
   if (enforcedChoices.length > 1) {
     const id = <string | null>await select(
       {

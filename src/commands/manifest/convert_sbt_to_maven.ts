@@ -11,7 +11,7 @@ export async function convertSbtToMaven(
   bin: string,
   out: string,
   verbose: boolean,
-  sbtOpts: Array<string>
+  sbtOpts: string[]
 ) {
   // Lazily access constants.spinner.
   const { spinner } = constants
@@ -61,7 +61,7 @@ export async function convertSbtToMaven(
       }
       process.exit(1)
     }
-    const poms: Array<string> = []
+    const poms: string[] = []
     output.stdout.replace(/Wrote (.*?.pom)\n/g, (_all: string, fn: string) => {
       poms.push(fn)
       return fn

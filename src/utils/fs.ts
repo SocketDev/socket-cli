@@ -36,7 +36,7 @@ export type ReadFileOptions = ObjectEncodingOptions &
 
 export async function readFileBinary(
   filepath: PathLike | FileHandle,
-  options?: ReadFileOptions
+  options?: ReadFileOptions | undefined
 ): Promise<Buffer> {
   return <Buffer>await fs.readFile(filepath, <ReadFileOptions>{
     ...options,
@@ -46,7 +46,7 @@ export async function readFileBinary(
 
 export async function readFileUtf8(
   filepath: PathLike | FileHandle,
-  options?: ReadFileOptions
+  options?: ReadFileOptions | undefined
 ): Promise<string> {
   return <string>await fs.readFile(filepath, <ReadFileOptions>{
     ...options,
