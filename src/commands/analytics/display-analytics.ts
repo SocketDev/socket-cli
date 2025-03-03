@@ -3,6 +3,7 @@ import fs from 'node:fs/promises'
 // @ts-ignore
 import ScreenWidget from 'blessed/lib/widgets/screen'
 import contrib from 'blessed-contrib'
+import { stripIndents } from 'common-tags'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
@@ -182,58 +183,59 @@ function renderMarkdown(
   days: number,
   repoSlug: string
 ): string {
-  return (
-    `# Socket Alert Analytics
+  return stripIndents`
+# Socket Alert Analytics
 
 These are the Socket.dev stats are analytics for the ${repoSlug ? `${repoSlug} repo` : 'org'} of the past ${days} days
 
-` +
-    [
-      [
-        'Total critical alerts',
-        mdTableStringNumber('Date', 'Counts', data['total_critical_alerts'])
-      ],
-      [
-        'Total high alerts',
-        mdTableStringNumber('Date', 'Counts', data['total_high_alerts'])
-      ],
-      [
-        'Total critical alerts added to the main branch',
-        mdTableStringNumber('Date', 'Counts', data['total_critical_added'])
-      ],
-      [
-        'Total high alerts added to the main branch',
-        mdTableStringNumber('Date', 'Counts', data['total_high_added'])
-      ],
-      [
-        'Total critical alerts prevented from the main branch',
-        mdTableStringNumber('Date', 'Counts', data['total_critical_prevented'])
-      ],
-      [
-        'Total high alerts prevented from the main branch',
-        mdTableStringNumber('Date', 'Counts', data['total_high_prevented'])
-      ],
-      [
-        'Total medium alerts prevented from the main branch',
-        mdTableStringNumber('Date', 'Counts', data['total_medium_prevented'])
-      ],
-      [
-        'Total low alerts prevented from the main branch',
-        mdTableStringNumber('Date', 'Counts', data['total_low_prevented'])
-      ]
-    ]
-      .map(([title, table]) => {
-        return `
+${[
+  [
+    'Total critical alerts',
+    mdTableStringNumber('Date', 'Counts', data['total_critical_alerts'])
+  ],
+  [
+    'Total high alerts',
+    mdTableStringNumber('Date', 'Counts', data['total_high_alerts'])
+  ],
+  [
+    'Total critical alerts added to the main branch',
+    mdTableStringNumber('Date', 'Counts', data['total_critical_added'])
+  ],
+  [
+    'Total high alerts added to the main branch',
+    mdTableStringNumber('Date', 'Counts', data['total_high_added'])
+  ],
+  [
+    'Total critical alerts prevented from the main branch',
+    mdTableStringNumber('Date', 'Counts', data['total_critical_prevented'])
+  ],
+  [
+    'Total high alerts prevented from the main branch',
+    mdTableStringNumber('Date', 'Counts', data['total_high_prevented'])
+  ],
+  [
+    'Total medium alerts prevented from the main branch',
+    mdTableStringNumber('Date', 'Counts', data['total_medium_prevented'])
+  ],
+  [
+    'Total low alerts prevented from the main branch',
+    mdTableStringNumber('Date', 'Counts', data['total_low_prevented'])
+  ]
+]
+  .map(
+    ([title, table]) =>
+      stripIndents`
 ## ${title}
 
 ${table}
-    `.trim()
-      })
-      .join('\n\n') +
-    '\n\n## Top 5 alert types\n\n' +
-    mdTableStringNumber('Name', 'Counts', data['top_five_alert_types']) +
-    '\n'
+`
   )
+  .join('\n\n')}
+
+## Top 5 alert types
+
+${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
+`
 }
 
 function displayAnalyticsScreen(data: FormattedData): void {

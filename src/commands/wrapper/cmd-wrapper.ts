@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs'
 
+import { stripIndents } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -77,8 +78,13 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required flags:\n
-      - Must use --enabled or --disabled\n`)
+    logger.error(
+      stripIndents`
+      ${colors.bgRed(colors.white('Input error'))}: Please provide the required flags:
+
+      - Must use --enabled or --disabled
+    `
+    )
     return
   }
 

@@ -146,8 +146,11 @@ async function run(
   //
   //
   // if (cli.input.length)
-  //   logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-  //     - Unexpected arguments\n
+  //   logger.error(
+  //     stripIndents`
+  //       ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
+  //
+  //       - Unexpected arguments
   //   `)
   //   config.help(parentName, config)
   //   return

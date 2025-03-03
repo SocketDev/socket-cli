@@ -1,3 +1,4 @@
+import { stripIndents } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -54,9 +55,10 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    logger.error(`
-      ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-      - The json and markdown flags cannot be both set, pick one
+    logger.error(stripIndents`
+${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
+
+  - The json and markdown flags cannot be both set, pick one
     `)
     return
   }

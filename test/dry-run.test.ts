@@ -161,7 +161,7 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m"
+      - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
@@ -394,9 +394,9 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - The DIR arg is required \\x1b[31m(missing!)\\x1b[39m
+      - The DIR arg is required \\x1b[31m(missing!)\\x1b[39m
 
-            - Can only accept one DIR (make sure to escape spaces!) \\x1b[32m(ok)\\x1b[39m"
+      - Can only accept one DIR (make sure to escape spaces!) \\x1b[32m(ok)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
@@ -417,9 +417,9 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - The DIR arg is required \\x1b[31m(missing!)\\x1b[39m
+      - The DIR arg is required \\x1b[31m(missing!)\\x1b[39m
 
-            - Can only accept one DIR (make sure to escape spaces!) \\x1b[32m(ok)\\x1b[39m"
+      - Can only accept one DIR (make sure to escape spaces!) \\x1b[32m(ok)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
@@ -440,9 +440,9 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - The DIR or FILE arg is required \\x1b[31m(missing!)\\x1b[39m
+      - The DIR or FILE arg is required \\x1b[31m(missing!)\\x1b[39m
 
-            - Can only accept one DIR or FILE (make sure to escape spaces!) \\x1b[32m(ok)\\x1b[39m"
+      - Can only accept one DIR or FILE (make sure to escape spaces!) \\x1b[32m(ok)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
@@ -634,9 +634,9 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - Need at least one report ID \\x1b[31m(missing!)\\x1b[39m
+      - Need at least one report ID \\x1b[31m(missing!)\\x1b[39m
 
-            - Can only handle a single report ID \\x1b[31m(received 0!)\\x1b[39m"
+      - Can only handle a single report ID \\x1b[31m(received 0!)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
@@ -676,9 +676,9 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
+      - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-            - Repository name using --repoName \\x1b[31m(missing!)\\x1b[39m"
+      - Repository name using --repoName \\x1b[31m(missing!)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
@@ -699,11 +699,11 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
+      - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-            - Repository name as the second argument \\x1b[31m(missing!)\\x1b[39m
+      - Repository name as the second argument \\x1b[31m(missing!)\\x1b[39m
 
-            - At least one TARGET (e.g. \`.\` or \`./package.json\`"
+      - At least one TARGET (e.g. \`.\` or \`./package.json\`"
     `)
 
     expect(code).toBe(2)
@@ -724,9 +724,9 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
+      - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-            - At least one TARGET (e.g. \`.\` or \`./package.json\`"
+      - At least one TARGET (e.g. \`.\` or \`./package.json\`"
     `)
 
     expect(code).toBe(2)
@@ -747,11 +747,11 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
+      - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-            - Repository name using --repoName \\x1b[31m(missing!)\\x1b[39m
+      - Repository name using --repoName \\x1b[31m(missing!)\\x1b[39m
 
-            - At least one TARGET (e.g. \`.\` or \`./package.json\`"
+      - At least one TARGET (e.g. \`.\` or \`./package.json\`"
     `)
 
     expect(code).toBe(2)
@@ -772,9 +772,9 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
+      - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-            - Repository name using --repoName \\x1b[31m(missing!)\\x1b[39m"
+      - Repository name using --repoName \\x1b[31m(missing!)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
@@ -845,9 +845,9 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
+      - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-            - Full Scan ID to delete as second argument \\x1b[31m(missing!)\\x1b[39m"
+      - Full Scan ID to delete as second argument \\x1b[31m(missing!)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
@@ -868,7 +868,7 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-          - Org name as the argument \\x1b[31m(missing!)\\x1b[39m"
+      - Org name as the argument \\x1b[31m(missing!)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
@@ -889,9 +889,9 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
+      - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-            - Full Scan ID to inspect as second argument \\x1b[31m(missing!)\\x1b[39m"
+      - Full Scan ID to inspect as second argument \\x1b[31m(missing!)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
@@ -912,9 +912,9 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-            - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
+      - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-            - Full Scan ID to fetch as second argument \\x1b[31m(missing!)\\x1b[39m"
+      - Full Scan ID to fetch as second argument \\x1b[31m(missing!)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
@@ -954,7 +954,7 @@ describe('dry-run on all commands', async () => {
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required flags:
 
-            - Must use --enabled or --disabled"
+      - Must use --enabled or --disabled"
     `)
 
     expect(code).toBe(2)

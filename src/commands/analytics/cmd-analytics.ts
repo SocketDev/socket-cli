@@ -1,3 +1,4 @@
+import { stripIndents } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -95,17 +96,21 @@ async function run(
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
     logger.error(
-      `${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-      - Scope must be "repo" or "org" ${badScope ? colors.red('(bad!)') : colors.green('(ok)')}\n
-      - The time filter must either be 7, 30 or 90 ${badTime ? colors.red('(bad!)') : colors.green('(ok)')}\n
-      ${scope === 'repo' ? `- Repository name using --repo when scope is "repo" ${badRepo ? colors.red('(bad!)') : colors.green('(ok)')}` : ''}\n
-      ${badFlags ? `- The \`--json\` and \`--markdown\` flags can not be used at the same time ${badFlags ? colors.red('(bad!)') : colors.green('(ok)')}` : ''}\n
-      ${badFile ? `- The \`--file\` flag is only valid when using \`--json\` or \`--markdown\` ${badFile ? colors.red('(bad!)') : colors.green('(ok)')}` : ''}\n
+      stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
+
+      - Scope must be "repo" or "org" ${badScope ? colors.red('(bad!)') : colors.green('(ok)')}
+
+      - The time filter must either be 7, 30 or 90 ${badTime ? colors.red('(bad!)') : colors.green('(ok)')}
+
+      ${scope === 'repo' ? `- Repository name using --repo when scope is "repo" ${badRepo ? colors.red('(bad!)') : colors.green('(ok)')}` : ''}
+
+      ${badFlags ? `- The \`--json\` and \`--markdown\` flags can not be used at the same time ${badFlags ? colors.red('(bad!)') : colors.green('(ok)')}` : ''}
+
+      ${badFile ? `- The \`--file\` flag is only valid when using \`--json\` or \`--markdown\` ${badFile ? colors.red('(bad!)') : colors.green('(ok)')}` : ''}
     `
-        .trim()
         .split('\n')
         .filter(s => !!s.trim())
-        .join('\n') + '\n'
+        .join('\n')
     )
     return
   }
