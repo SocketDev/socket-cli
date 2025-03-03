@@ -33,7 +33,7 @@ export const cmdRawNpx = {
 }
 
 async function run(
-  argv: readonly string[],
+  argv: ReadonlyArray<string>,
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {

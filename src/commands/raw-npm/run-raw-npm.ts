@@ -5,7 +5,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { getNpmBinPath } from '../../shadow/npm-paths'
 
 export async function runRawNpm(
-  argv: string[] | readonly string[]
+  argv: string[] | Readonly<string[]>
 ): Promise<void> {
   const spawnPromise = spawn(getNpmBinPath(), <string[]>argv, {
     stdio: 'inherit'

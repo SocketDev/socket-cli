@@ -39,8 +39,8 @@ const depFields = [
 ]
 
 function getEntryIndexes(
-  entries: Array<[string | symbol, any]>,
-  keys: Array<string | symbol>
+  entries: [string | symbol, any][],
+  keys: (string | symbol)[]
 ): number[] {
   return keys
     .map(n => entries.findIndex(p => p[0] === n))
@@ -49,15 +49,15 @@ function getEntryIndexes(
 }
 
 function getLowestEntryIndex(
-  entries: Array<[string | symbol, any]>,
-  keys: Array<string | symbol>
+  entries: [string | symbol, any][],
+  keys: (string | symbol)[]
 ) {
   return getEntryIndexes(entries, keys)?.[0] ?? -1
 }
 
 function getHighestEntryIndex(
-  entries: Array<[string | symbol, any]>,
-  keys: Array<string | symbol>
+  entries: [string | symbol, any][],
+  keys: (string | symbol)[]
 ) {
   return getEntryIndexes(entries, keys).at(-1) ?? -1
 }

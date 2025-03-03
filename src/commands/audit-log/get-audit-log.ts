@@ -9,7 +9,7 @@ import type { Choice } from '@socketsecurity/registry/lib/prompts'
 
 type AuditChoice = Choice<string>
 
-type AuditChoices = Array<Separator | AuditChoice>
+type AuditChoices = (Separator | AuditChoice)[]
 
 export async function getAuditLog({
   apiToken,

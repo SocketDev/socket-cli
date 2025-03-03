@@ -37,7 +37,7 @@ export class Core {
     fullScanId
   }: {
     fullScanId: string
-  }): Promise<Array<components['schemas']['SocketArtifact']>> {
+  }): Promise<components['schemas']['SocketArtifact'][]> {
     const orgFullScanResponse = await this.socket.getOrgFullScan(
       this.owner,
       fullScanId,
@@ -90,8 +90,8 @@ export class Core {
   }: {
     pkg: Package
     packages: Record<string, Package>
-  }): Array<[string, string]> {
-    const introducedBy: Array<[string, string]> = []
+  }): [string, string][] {
+    const introducedBy: [string, string][] = []
 
     if (pkg.direct) {
       let manifests = pkg.manifestFiles.map(({ file }) => file).join(';')
@@ -424,7 +424,7 @@ export class Core {
   }
 
   createPackageFromSbomArtifact(
-    sbomArtifact: Array<components['schemas']['SocketArtifact']>
+    sbomArtifact: components['schemas']['SocketArtifact'][]
   ): Package[] {
     return sbomArtifact.map(
       sbomArtifact =>

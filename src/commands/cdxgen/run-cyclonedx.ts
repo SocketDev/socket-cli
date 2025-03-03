@@ -73,7 +73,7 @@ export async function runCycloneDX(yargv: any) {
 }
 
 function argvToArray(argv: {
-  [key: string]: boolean | null | number | string | Array<string | number>
+  [key: string]: boolean | null | number | string | (string | number)[]
 }): string[] {
   if (argv['help']) return ['--help']
   const result = []

@@ -22,7 +22,7 @@ interface Settings {
   apiBaseUrl?: string | null | undefined
   apiKey?: string | null | undefined
   apiProxy?: string | null | undefined
-  enforcedOrgs?: string[] | readonly string[] | null | undefined
+  enforcedOrgs?: string[] | Readonly<string[]> | null | undefined
   // apiToken is an alias for apiKey.
   apiToken?: string | null | undefined
 }

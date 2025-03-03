@@ -46,7 +46,7 @@ export const cmdScanStream: CliSubcommand = {
 }
 
 async function run(
-  argv: string[] | readonly string[],
+  argv: string[] | Readonly<string[]>,
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {

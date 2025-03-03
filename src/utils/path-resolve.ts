@@ -169,7 +169,7 @@ function ignorePatternToMinimatch(pattern: string): string {
   return `${negatedPrefix}${matchEverywherePrefix}${escapedPatternWithoutLeadingSlash}${matchInsideSuffix}`
 }
 
-function pathsToPatterns(paths: string[] | readonly string[]): string[] {
+function pathsToPatterns(paths: string[] | Readonly<string[]>): string[] {
   // TODO: Does not support `~/` paths.
   return paths.map(p => (p === '.' ? '**/*' : p))
 }

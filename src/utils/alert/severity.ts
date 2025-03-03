@@ -13,7 +13,7 @@ export type SocketSdkAlert = SocketSdkAlertList[number]['value'] extends
   : never
 
 // Ordered from most severe to least.
-const SEVERITIES_BY_ORDER: Array<SocketSdkAlert['severity']> = [
+const SEVERITIES_BY_ORDER: SocketSdkAlert['severity'][] = [
   'critical',
   'high',
   'middle',
@@ -22,8 +22,8 @@ const SEVERITIES_BY_ORDER: Array<SocketSdkAlert['severity']> = [
 
 function getDesiredSeverities(
   lowestToInclude: SocketSdkAlert['severity'] | undefined
-): Array<SocketSdkAlert['severity']> {
-  const result: Array<SocketSdkAlert['severity']> = []
+): SocketSdkAlert['severity'][] {
+  const result: SocketSdkAlert['severity'][] = []
   for (const severity of SEVERITIES_BY_ORDER) {
     result.push(severity)
     if (severity === lowestToInclude) {
