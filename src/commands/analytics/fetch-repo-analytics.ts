@@ -1,10 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import {
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../../utils/api.ts'
-import { setupSdk } from '../../utils/sdk.ts'
+import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { setupSdk } from '../../utils/sdk'
 
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'

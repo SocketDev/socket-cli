@@ -6,15 +6,15 @@ import contrib from 'blessed-contrib'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { fetchOrgAnalyticsData } from './fetch-org-analytics.ts'
-import { fetchRepoAnalyticsData } from './fetch-repo-analytics.ts' // Note: Widgets does not seem to actually work as code :'(
+import { fetchOrgAnalyticsData } from './fetch-org-analytics'
+import { fetchRepoAnalyticsData } from './fetch-repo-analytics'
 import constants from '../../constants'
-import { AuthError } from '../../utils/errors.ts'
-import { mdTableStringNumber } from '../../utils/markdown.ts'
+import { AuthError } from '../../utils/errors'
+import { mdTableStringNumber } from '../../utils/markdown'
 import { getDefaultToken } from '../../utils/sdk'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
-import type { Widgets } from 'blessed'
+import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
 
 interface FormattedData {
   top_five_alert_types: Record<string, number>
