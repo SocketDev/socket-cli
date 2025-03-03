@@ -64,7 +64,7 @@ export const cmdReposList = {
 }
 
 async function run(
-  argv: string[] | Readonly<string[]>,
+  argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
