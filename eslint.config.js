@@ -47,7 +47,11 @@ const sharedRules = {
 
 const sharedRulesForImportX = {
   ...origImportXFlatConfigs.recommended.rules,
-  'import-x/extensions': ['error', 'never', { json: 'always' }],
+  'import-x/extensions': [
+    'error',
+    'never',
+    { js: 'ignorePackages', json: 'always', mjs: 'ignorePackages' }
+  ],
   'import-x/order': [
     'warn',
     {
