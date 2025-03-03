@@ -1,3 +1,4 @@
+import { stripIndents } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -59,9 +60,11 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-      - Need at least one report ID ${!reportId ? colors.red('(missing!)') : colors.green('(ok)')}\n
-      - Can only handle a single report ID ${extraInput.length < 2 ? colors.red(`(received ${extraInput.length}!)`) : colors.green('(ok)')}\n`)
+    logger.error(stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
+
+      - Need at least one report ID ${!reportId ? colors.red('(missing!)') : colors.green('(ok)')}
+
+      - Can only handle a single report ID ${extraInput.length < 2 ? colors.red(`(received ${extraInput.length}!)`) : colors.green('(ok)')}`)
     return
   }
 

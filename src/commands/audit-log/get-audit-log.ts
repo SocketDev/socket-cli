@@ -1,3 +1,5 @@
+import { stripIndents } from 'common-tags'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { Separator, select } from '@socketsecurity/registry/lib/prompts'
 import { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -108,7 +110,6 @@ async function outputAsMarkdown(
   page: number,
   perPage: number
 ): Promise<void> {
-  let md
   try {
     const table = mdTable(auditLogs, [
       'event_id',
@@ -119,8 +120,8 @@ async function outputAsMarkdown(
       'user_agent'
     ])
 
-    md =
-      `
+    logger.log(
+      stripIndents`
 # Socket Audit Logs
 
 These are the Socket.dev audit logs as per requested query.
@@ -131,7 +132,8 @@ These are the Socket.dev audit logs as per requested query.
 - generated: ${new Date().toISOString()}
 
 ${table}
-      `.trim() + '\n'
+`
+    )
   } catch (e) {
     logger.error(
       'There was a problem converting the logs to JSON, please try without the `--json` flag'
@@ -140,8 +142,6 @@ ${table}
     process.exitCode = 1
     return
   }
-
-  logger.log(md)
 }
 
 function mdTable<

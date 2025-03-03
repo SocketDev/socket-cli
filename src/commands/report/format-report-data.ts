@@ -1,5 +1,6 @@
 import process from 'node:process'
 
+import { stripIndents } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -20,14 +21,14 @@ export function formatReportDataOutput(
     logger.log(JSON.stringify(data, undefined, 2))
   } else {
     const format = new ColorOrMarkdown(outputMarkdown)
-    logger.log(
-      '\nDetailed info on socket.dev: ' +
-        format.hyperlink(reportId, data.url, { fallbackToUrl: true })
-    )
+    logger.log(stripIndents`
+      Detailed info on socket.dev: ${format.hyperlink(reportId, data.url, {
+        fallbackToUrl: true
+      })}`)
     if (!outputMarkdown) {
       logger.log(
         colors.dim(
-          `\nOr rerun ${colors.italic(commandName)} using the ${colors.italic('--json')} flag to get full JSON output`
+          `Or rerun ${colors.italic(commandName)} using the ${colors.italic('--json')} flag to get full JSON output`
         )
       )
     }

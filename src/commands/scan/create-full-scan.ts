@@ -2,6 +2,7 @@ import assert from 'node:assert'
 import process from 'node:process'
 import readline from 'node:readline/promises'
 
+import { stripIndents } from 'common-tags'
 import open from 'open'
 import colors from 'yoctocolors-cjs'
 
@@ -118,11 +119,16 @@ export async function createFullScan({
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    logger.error(`
-      ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
-      - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}\n
-      - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}\n
+    logger.error(
+      stripIndents`
+      ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
+
+      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}
+
+      - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}
+
+      - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}
+
       - At least one TARGET (e.g. \`.\` or \`./package.json\`) ${
         !packagePaths.length
           ? colors.red(
@@ -133,9 +139,11 @@ export async function createFullScan({
                 : '(missing)'
             )
           : colors.green('(ok)')
-      }\n
-      ${!apiToken ? 'Note: was unable to make suggestions because no API Token was found; this would make command fail regardless\n' : ''}
-    `)
+      }
+
+      ${!apiToken ? 'Note: was unable to make suggestions because no API Token was found; this would make command fail regardless' : ''}
+      `
+    )
     return
   }
 

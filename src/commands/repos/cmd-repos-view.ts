@@ -1,3 +1,4 @@
+import { stripIndents } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -60,9 +61,23 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
-      - Repository name using --repoName ${!repoName ? colors.red('(missing!)') : typeof repoName !== 'string' ? colors.red('(invalid!)') : colors.green('(ok)')}\n`)
+    logger.error(
+      stripIndents`
+      ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
+
+      - Org name as the first argument ${
+        !orgSlug ? colors.red('(missing!)') : colors.green('(ok)')
+      }
+
+      - Repository name using --repoName ${
+        !repoName
+          ? colors.red('(missing!)')
+          : typeof repoName !== 'string'
+            ? colors.red('(invalid!)')
+            : colors.green('(ok)')
+      }
+    `
+    )
     return
   }
 

@@ -1,3 +1,4 @@
+import { stripIndents } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -123,9 +124,11 @@ async function run(
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
     logger.error(
-      `${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-      - The DIR or FILE arg is required ${!target ? colors.red('(missing!)') : target === '-' ? colors.red('(stdin is not supported)') : colors.green('(ok)')}\n
-      - Can only accept one DIR or FILE (make sure to escape spaces!) ${cli.input.length > 1 ? colors.red(`(received ${cli.input.length}!)`) : colors.green('(ok)')}\n`
+      stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
+
+      - The DIR or FILE arg is required ${!target ? colors.red('(missing!)') : target === '-' ? colors.red('(stdin is not supported)') : colors.green('(ok)')}
+
+      - Can only accept one DIR or FILE (make sure to escape spaces!) ${cli.input.length > 1 ? colors.red(`(received ${cli.input.length}!)`) : colors.green('(ok)')}`
     )
     return
   }
