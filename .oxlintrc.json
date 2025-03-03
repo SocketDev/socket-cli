@@ -8,13 +8,11 @@
   },
   "settings": {},
   "rules": {
-    "@typescript-eslint/array-type": ["error", { "default": "array-simple" }],
     "@typescript-eslint/no-misused-new": ["error"],
     "@typescript-eslint/no-this-alias": [
       "error",
       { "allowDestructuring": true }
     ],
-    "@typescript-eslint/return-await": ["error", "always"],
     "unicorn/no-empty-file": "off",
     "unicorn/no-new-array": "off",
     "no-control-regex": "off",

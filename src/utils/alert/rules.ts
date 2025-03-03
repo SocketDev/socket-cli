@@ -145,7 +145,7 @@ export function createAlertUXLookup(settings: SettingsType): (context: {
     if (ux) {
       return ux
     }
-    const orderedRulesCollection: NonNormalizedRule[][] = []
+    const orderedRulesCollection: Array<Array<NonNormalizedRule>> = []
     for (const settingsEntry of settings.entries) {
       const orderedRules: NonNormalizedRule[] = []
       let target = settingsEntry.start
@@ -202,9 +202,10 @@ void (async () => {
           `Failed to fetch Socket organization info: ${orgResult.error.message}`
         )
       }
-      const orgs: Array<
-        Exclude<(typeof orgResult.data.organizations)[string], undefined>
-      > = []
+      const orgs: Exclude<
+        (typeof orgResult.data.organizations)[string],
+        undefined
+      >[] = []
       for (const org of Object.values(orgResult.data.organizations)) {
         if (org) {
           orgs.push(org)

@@ -80,7 +80,7 @@ export async function displayAnalytics({
 
   spinner.start('Fetching analytics data')
 
-  let data: undefined | Array<{ [key: string]: any }>
+  let data: undefined | { [key: string]: any }[]
   if (scope === 'org') {
     data = await fetchOrgAnalyticsData(time, spinner, apiToken)
   } else if (repo) {
@@ -191,7 +191,7 @@ async function fetchOrgAnalyticsData(
   time: number,
   spinner: Spinner,
   apiToken: string
-): Promise<Array<{ [key: string]: any }> | undefined> {
+): Promise<{ [key: string]: any }[] | undefined> {
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getOrgAnalytics(time.toString()),
@@ -218,7 +218,7 @@ async function fetchRepoAnalyticsData(
   time: number,
   spinner: Spinner,
   apiToken: string
-): Promise<Array<{ [key: string]: any }> | undefined> {
+): Promise<{ [key: string]: any }[] | undefined> {
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getRepoAnalytics(repo, time.toString()),
@@ -241,7 +241,7 @@ async function fetchRepoAnalyticsData(
 }
 
 function formatData(
-  data: Array<{ [key: string]: any }>,
+  data: { [key: string]: any }[],
   scope: string
 ): FormattedData {
   const formattedData = <Omit<FormattedData, 'top_five_alert_types'>>{}

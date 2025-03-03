@@ -48,21 +48,21 @@ export type SocketArtifact = {
   id?: string | undefined
   author?: string[]
   license?: string | undefined
-  licenseDetails?: Array<{
+  licenseDetails?: {
     spdxDisj: string
     provenance: string
     filepath: string
     match_strength: number
-  }>
-  licenseAttrib?: Array<{
+  }[]
+  licenseAttrib?: {
     attribText: string
-    attribData: Array<{
+    attribData: {
       purl: string
       foundInFilepath: string
       spdxExpr: string
       foundAuthors: string[]
-    }>
-  }>
+    }[]
+  }[]
   score?: {
     supplyChain: number
     quality: number

@@ -23,7 +23,7 @@ interface CliAlias {
 type CliAliases = Record<string, CliAlias>
 
 type CliSubcommandRun = (
-  argv: string[] | readonly string[],
+  argv: string[] | Readonly<string[]>,
   importMeta: ImportMeta,
   context: { parentName: string }
 ) => Promise<void> | void
@@ -160,7 +160,7 @@ export function meowOrExit({
   parentName
 }: {
   allowUnknownFlags?: boolean | undefined
-  argv: readonly string[]
+  argv: ReadonlyArray<string>
   config: CliCommandConfig
   parentName: string
   importMeta: ImportMeta
