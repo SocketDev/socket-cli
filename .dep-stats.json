@@ -2,7 +2,6 @@
   "dependencies": {
     "@apideck/better-ajv-errors": "^0.3.6",
     "@cyclonedx/cdxgen": "^11.2.0",
-    "@npmcli/promise-spawn": "^8.0.2",
     "@octokit/rest": "^21.1.1",
     "@socketregistry/hyrious__bun.lockb": "^1.0.13",
     "@socketregistry/indent-string": "^1.0.10",
@@ -66,7 +65,6 @@
   },
   "external": {
     "@apideck/better-ajv-errors": "^0.3.6",
-    "@npmcli/promise-spawn": "^8.0.2",
     "@socketregistry/hyrious__bun.lockb": "^1.0.13",
     "@socketregistry/indent-string": "^1.0.10",
     "@socketregistry/is-interactive": "^1.0.1",

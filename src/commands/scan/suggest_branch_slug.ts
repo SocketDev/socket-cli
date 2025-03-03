@@ -1,6 +1,5 @@
-import { spawnSync } from 'node:child_process'
-
 import { select } from '@socketsecurity/registry/lib/prompts'
+import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 export async function suggestBranchSlug(
   repoDefaultBranch: string | undefined

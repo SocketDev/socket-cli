@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { builtinModules, createRequire } from 'node:module'
 import path from 'node:path'
@@ -18,6 +17,7 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 import { isRelative } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
+import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../scripts/constants.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'

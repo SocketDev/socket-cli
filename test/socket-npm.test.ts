@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-const { spawnSync } = require('node:child_process')
 const path = require('node:path')
 const process = require('node:process')
 
-const spawn = require('@npmcli/promise-spawn')
+const { spawn, spawnSync } = require('@socketsecurity/registry/lib/spawn')
 
 const constants = require('../dist/constants.js')
 

@@ -1,4 +1,4 @@
-import spawn from '@npmcli/promise-spawn'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants'
 
