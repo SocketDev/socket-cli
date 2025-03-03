@@ -6,15 +6,15 @@ import contrib from 'blessed-contrib'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { fetchOrgAnalyticsData } from './fetch-org-analytics.ts'
+import { fetchRepoAnalyticsData } from './fetch-repo-analytics.ts' // Note: Widgets does not seem to actually work as code :'(
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { AuthError } from '../../utils/errors.ts'
 import { mdTableStringNumber } from '../../utils/markdown.ts'
-import { getDefaultToken, setupSdk } from '../../utils/sdk'
+import { getDefaultToken } from '../../utils/sdk'
 
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
-import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
+import type { Widgets } from 'blessed'
 
 interface FormattedData {
   top_five_alert_types: Record<string, number>
@@ -32,22 +32,6 @@ interface FormattedData {
   total_low_prevented: Record<string, number>
 }
 
-// Note: This maps `new Date(date).getMonth()` to English three letters
-export const Months = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec'
-] as const
-
 const METRICS = [
   'total_critical_alerts',
   'total_high_alerts',
@@ -61,6 +45,22 @@ const METRICS = [
   'total_high_prevented',
   'total_medium_prevented',
   'total_low_prevented'
+] as const
+
+// Note: This maps `new Date(date).getMonth()` to English three letters
+const Months = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec'
 ] as const
 
 export async function displayAnalytics({
@@ -127,17 +127,9 @@ async function outputAnalyticsWithToken({
   if (!data) return
 
   if (outputKind === 'json') {
-    let serialized
-    try {
-      serialized = JSON.stringify(data, null, 2)
-    } catch (e) {
-      // This could be caused by circular references, which is an "us" problem
-      logger.error(
-        'There was a problem converting the data set to JSON. Please try without --json or with --markdown'
-      )
-      process.exitCode = 1
-      return
-    }
+    let serialized = renderJson(data)
+    if (!serialized) return
+
     if (filePath && filePath !== '-') {
       try {
         await fs.writeFile(filePath, serialized, 'utf8')
@@ -154,7 +146,7 @@ async function outputAnalyticsWithToken({
     const fdata = scope === 'org' ? formatDataOrg(data) : formatDataRepo(data)
 
     if (outputKind === 'markdown') {
-      const serialized = renderMarkdown(fdata)
+      const serialized = renderMarkdown(fdata, time, repo)
 
       if (filePath) {
         try {
@@ -172,9 +164,30 @@ async function outputAnalyticsWithToken({
   }
 }
 
-function renderMarkdown(data: FormattedData): string {
+function renderJson(data: unknown): string | undefined {
+  try {
+    return JSON.stringify(data, null, 2)
+  } catch (e) {
+    // This could be caused by circular references, which is an "us" problem
+    logger.error(
+      'There was a problem converting the data set to JSON. Please try without --json or with --markdown'
+    )
+    process.exitCode = 1
+    return
+  }
+}
+
+function renderMarkdown(
+  data: FormattedData,
+  days: number,
+  repoSlug: string
+): string {
   return (
-    '# Socket Alert Analytics\n\nThese are the Socket.dev stats are analytics for the org / [name] repo of the past 7/30/90 days\n\n' +
+    `# Socket Alert Analytics
+
+These are the Socket.dev stats are analytics for the ${repoSlug ? `${repoSlug} repo` : 'org'} of the past ${days} days
+
+` +
     [
       [
         'Total critical alerts',
@@ -300,59 +313,6 @@ function displayAnalyticsScreen(data: FormattedData): void {
   screen.render()
 
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
-}
-
-async function fetchOrgAnalyticsData(
-  time: number,
-  spinner: Spinner,
-  apiToken: string
-): Promise<SocketSdkReturnType<'getOrgAnalytics'>['data'] | undefined> {
-  const socketSdk = await setupSdk(apiToken)
-  const result = await handleApiCall(
-    socketSdk.getOrgAnalytics(time.toString()),
-    'fetching analytics data'
-  )
-
-  if (result.success === false) {
-    handleUnsuccessfulApiResponse('getOrgAnalytics', result, spinner)
-    return undefined
-  }
-
-  spinner.stop()
-
-  if (!result.data.length) {
-    logger.log('No analytics data is available for this organization yet.')
-    return undefined
-  }
-
-  return result.data
-}
-
-async function fetchRepoAnalyticsData(
-  repo: string,
-  time: number,
-  spinner: Spinner,
-  apiToken: string
-): Promise<SocketSdkReturnType<'getRepoAnalytics'>['data'] | undefined> {
-  const socketSdk = await setupSdk(apiToken)
-  const result = await handleApiCall(
-    socketSdk.getRepoAnalytics(repo, time.toString()),
-    'fetching analytics data'
-  )
-
-  if (result.success === false) {
-    handleUnsuccessfulApiResponse('getRepoAnalytics', result, spinner)
-    return undefined
-  }
-
-  spinner.stop()
-
-  if (!result.data.length) {
-    logger.log('No analytics data is available for this organization yet.')
-    return undefined
-  }
-
-  return result.data
 }
 
 function formatDataRepo(
