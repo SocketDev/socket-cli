@@ -5,10 +5,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { getAuditLog } from './get-audit-log'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -70,7 +68,9 @@ async function run(
     parentName
   })
 
-  const type = String(cli.flags['type'] || '')
+  const { json, markdown, page, perPage, type } = cli.flags
+
+  const logType = String(type || '')
   const [orgSlug = ''] = cli.input
 
   if (!orgSlug) {
@@ -78,8 +78,12 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-    - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n`)
+    logger.error(
+      `
+      ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n
+    `.trim()
+    )
     return
   }
 
@@ -88,20 +92,11 @@ async function run(
     return
   }
 
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
   await getAuditLog({
-    apiToken,
     orgSlug,
-    outputJson: Boolean(cli.flags['json']),
-    outputMarkdown: Boolean(cli.flags['markdown']),
-    page: Number(cli.flags['page'] || 0),
-    perPage: Number(cli.flags['perPage'] || 0),
-    type: type.charAt(0).toUpperCase() + type.slice(1)
+    outputKind: json ? 'json' : markdown ? 'markdown' : 'print',
+    page: Number(page || 0),
+    perPage: Number(perPage || 0),
+    logType: logType.charAt(0).toUpperCase() + logType.slice(1)
   })
 }

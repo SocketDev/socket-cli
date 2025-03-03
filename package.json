@@ -60,10 +60,10 @@
     "test": "run-s check test:*",
     "test:prepare": "cross-env VITEST=1 npm run build",
     "test:unit": "vitest --run",
-    "test:unit:update": "vitest --update",
+    "test:unit:update": "vitest --run --update",
     "test:unit:coverage": "vitest run --coverage",
     "test-ci": "run-s test:*",
-    "testu": "cross-env SOCKET_CLI_NO_API_TOKEN=1 run-s test:prepare test:unit:update",
+    "testu": "cross-env SOCKET_CLI_NO_API_TOKEN=1 run-s test:prepare; npm run test:unit:update --",
     "update": "run-p --aggregate-output update:**",
     "update:deps": "npx --yes npm-check-updates"
   },
