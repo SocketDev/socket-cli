@@ -17,8 +17,7 @@ export async function getDiffScan({
   depth,
   file,
   orgSlug,
-  outputJson,
-  preview
+  outputJson
 }: {
   after: string
   before: string
@@ -26,7 +25,6 @@ export async function getDiffScan({
   file: string
   orgSlug: string
   outputJson: boolean
-  preview: boolean
 }): Promise<void> {
   const apiToken = getDefaultToken()
   if (!apiToken) {
@@ -42,8 +40,7 @@ export async function getDiffScan({
     file,
     orgSlug,
     outputJson,
-    apiToken,
-    preview
+    apiToken
   })
 }
 export async function getDiffScanWithToken({
@@ -62,7 +59,6 @@ export async function getDiffScanWithToken({
   file: string
   orgSlug: string
   outputJson: boolean
-  preview: boolean
 }): Promise<void> {
   // Lazily access constants.spinner.
   const { spinner } = constants
@@ -70,7 +66,7 @@ export async function getDiffScanWithToken({
   spinner.start('Getting diff scan...')
 
   const response = await queryAPI(
-    `orgs/${orgSlug}/full-scans/diff?before=${encodeURIComponent(before)}&after=${encodeURIComponent(after)}&preview`,
+    `orgs/${orgSlug}/full-scans/diff?before=${encodeURIComponent(before)}&after=${encodeURIComponent(after)}`,
     apiToken
   )
 

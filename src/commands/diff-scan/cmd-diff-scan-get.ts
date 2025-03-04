@@ -43,12 +43,6 @@ const config: CliCommandConfig = {
       description:
         'Output result as json. This can be big. Use --file to store it to disk without truncation.'
     },
-    preview: {
-      type: 'boolean',
-      shortFlag: 'p',
-      default: true,
-      description: 'A boolean flag to persist or not the diff scan result'
-    },
     file: {
       type: 'string',
       shortFlag: 'f',
@@ -118,7 +112,6 @@ async function run(
     before,
     after,
     depth: Number(cli.flags['depth']),
-    preview: Boolean(cli.flags['preview']),
     orgSlug,
     file: String(cli.flags['file'] || '')
   })
