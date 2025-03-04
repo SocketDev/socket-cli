@@ -202,9 +202,9 @@ module.exports = [
       // The n/no-unpublished-bin rule does does not support non-trivial glob
       // patterns used in package.json "files" fields. In those cases we simplify
       // the glob patterns used.
-      'n/no-unpublished-bin': ['error'],
-      'n/no-unsupported-features/es-builtins': ['error'],
-      'n/no-unsupported-features/es-syntax': ['error'],
+      'n/no-unpublished-bin': 'error',
+      'n/no-unsupported-features/es-builtins': 'error',
+      'n/no-unsupported-features/es-syntax': 'error',
       'n/no-unsupported-features/node-builtins': [
         'error',
         {
@@ -213,7 +213,7 @@ module.exports = [
           version: constants.maintainedNodeVersions.previous
         }
       ],
-      'n/prefer-node-protocol': ['error'],
+      'n/prefer-node-protocol': 'error',
       'no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_|^this$', ignoreRestSiblings: true }
