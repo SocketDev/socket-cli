@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
-import { getPackageFiles } from './dist/path-resolve'
+import { getPackageFilesFullScans } from './dist/path-resolve'
 
 const testPath = __dirname
 const mockPath = normalizePath(path.join(testPath, 'mock'))
@@ -68,7 +68,7 @@ const sortedPromise =
     const result = await fn(...args)
     return result.sort()
   }
-const sortedGetPackageFiles = sortedPromise(getPackageFiles)
+const sortedGetPackageFiles = sortedPromise(getPackageFilesFullScans)
 
 describe('Path Resolve', () => {
   beforeEach(() => {
@@ -92,8 +92,8 @@ describe('Path Resolve', () => {
       const actual = await sortedGetPackageFiles(
         mockPath,
         ['.'],
-        undefined,
-        globPatterns
+        globPatterns,
+        undefined
       )
       expect(actual.map(normalizePath)).toEqual([`${mockPath}/package.json`])
     })
@@ -109,13 +109,13 @@ describe('Path Resolve', () => {
       const actual = await sortedGetPackageFiles(
         mockPath,
         ['**/*'],
+        globPatterns,
         {
           version: 2,
           projectIgnorePaths: ['bar/*', '!bar/package.json'],
           issueRules: {},
           githubApp: {}
-        },
-        globPatterns
+        }
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/bar/package.json`,
@@ -136,8 +136,8 @@ describe('Path Resolve', () => {
       const actual = await sortedGetPackageFiles(
         mockPath,
         ['**/*'],
-        undefined,
-        globPatterns
+        globPatterns,
+        undefined
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/bar/package.json`,
@@ -165,8 +165,8 @@ describe('Path Resolve', () => {
       const actual = await sortedGetPackageFiles(
         mockPath,
         ['**/*'],
-        undefined,
-        globPatterns
+        globPatterns,
+        undefined
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/foo/package-lock.json`,
@@ -185,8 +185,8 @@ describe('Path Resolve', () => {
       const actual = await sortedGetPackageFiles(
         mockPath,
         ['**/*'],
-        undefined,
-        globPatterns
+        globPatterns,
+        undefined
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/foo/package-lock.json`,
@@ -204,8 +204,8 @@ describe('Path Resolve', () => {
       const actual = await sortedGetPackageFiles(
         mockPath,
         ['**/*'],
-        undefined,
-        globPatterns
+        globPatterns,
+        undefined
       )
       expect(actual.map(normalizePath)).toEqual([])
     })
@@ -219,8 +219,8 @@ describe('Path Resolve', () => {
       const actual = await sortedGetPackageFiles(
         mockPath,
         ['**/*'],
-        undefined,
-        globPatterns
+        globPatterns,
+        undefined
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/package-lock.json`,
@@ -236,8 +236,8 @@ describe('Path Resolve', () => {
       const actual = await sortedGetPackageFiles(
         mockPath,
         ['**/*'],
-        undefined,
-        globPatterns
+        globPatterns,
+        undefined
       )
       expect(actual.map(normalizePath)).toEqual([`${mockPath}/package.json`])
     })
@@ -251,8 +251,8 @@ describe('Path Resolve', () => {
       const actual = await sortedGetPackageFiles(
         mockPath,
         ['**/*'],
-        undefined,
-        globPatterns
+        globPatterns,
+        undefined
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/package.json`,
@@ -274,8 +274,8 @@ describe('Path Resolve', () => {
       const actual = await sortedGetPackageFiles(
         mockPath,
         ['**/*'],
-        undefined,
-        globPatterns
+        globPatterns,
+        undefined
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockPath}/abc/package.json`,

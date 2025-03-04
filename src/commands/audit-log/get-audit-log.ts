@@ -7,6 +7,7 @@ import { SocketSdkReturnType } from '@socketsecurity/sdk'
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
+import { mdTable } from '../../utils/markdown'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 import type { Choice } from '@socketsecurity/registry/lib/prompts'
@@ -111,7 +112,7 @@ async function outputAsMarkdown(
   perPage: number
 ): Promise<void> {
   try {
-    const table = mdTable(auditLogs, [
+    const table = mdTable<any>(auditLogs, [
       'event_id',
       'created_at',
       'type',
@@ -142,46 +143,6 @@ ${table}
     process.exitCode = 1
     return
   }
-}
-
-function mdTable<
-  T extends SocketSdkReturnType<'getAuditLogEvents'>['data']['results']
->(
-  logs: T,
-  // This is saying "an array of strings and the strings are a valid key of elements of T"
-  // In turn, T is defined above as the audit log event type from our OpenAPI docs.
-  cols: Array<string & keyof T[number]>
-): string {
-  // Max col width required to fit all data in that column
-  const cws = cols.map(col => col.length)
-
-  for (const log of logs) {
-    for (let i = 0; i < cols.length; ++i) {
-      // @ts-ignore
-      const val: unknown = log[cols[i] ?? ''] ?? ''
-      cws[i] = Math.max(cws[i] ?? 0, String(val).length)
-    }
-  }
-
-  let div = '|'
-  for (const cw of cws) div += ' ' + '-'.repeat(cw) + ' |'
-
-  let header = '|'
-  for (let i = 0; i < cols.length; ++i)
-    header += ' ' + String(cols[i]).padEnd(cws[i] ?? 0, ' ') + ' |'
-
-  let body = ''
-  for (const log of logs) {
-    body += '|'
-    for (let i = 0; i < cols.length; ++i) {
-      // @ts-ignore
-      const val: unknown = log[cols[i] ?? ''] ?? ''
-      body += ' ' + String(val).padEnd(cws[i] ?? 0, ' ') + ' |'
-    }
-    body += '\n'
-  }
-
-  return [div, header, div, body.trim(), div].filter(s => !!s.trim()).join('\n')
 }
 
 async function outputAsPrint(

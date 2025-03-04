@@ -902,14 +902,14 @@ describe('dry-run on all commands', async () => {
     )
   })
 
-  cmdit(['scan', 'stream', '--dry-run'], 'should support', async cmd => {
+  cmdit(['scan', 'view', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
     expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan stream\`, cwd: <redacted>"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan view\`, cwd: <redacted>"
     `)
     expect(stderr).toMatchInlineSnapshot(`
       "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:

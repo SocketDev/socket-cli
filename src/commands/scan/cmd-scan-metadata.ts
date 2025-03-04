@@ -6,10 +6,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { getOrgScanMetadata } from './get-full-scan-metadata'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken } from '../../utils/sdk'
 
 import type {
   CliCommandConfig,
@@ -78,12 +76,9 @@ async function run(
     return
   }
 
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
-  await getOrgScanMetadata(orgSlug, fullScanId, apiToken)
+  await getOrgScanMetadata(
+    orgSlug,
+    fullScanId,
+    cli.flags['json'] ? 'json' : cli.flags['markdown'] ? 'markdown' : 'print'
+  )
 }

@@ -3,7 +3,6 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { runRawNpm } from './run-raw-npm'
 import constants from '../../constants'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
-import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -14,12 +13,9 @@ const config: CliCommandConfig = {
   description: `Temporarily disable the Socket ${NPM} wrapper`,
   hidden: false,
   flags: {},
-  help: (command, config) => `
+  help: command => `
     Usage
       $ ${command} <command>
-
-    Options
-      ${getFlagListOutput(config.flags, 6)}
 
     Examples
       $ ${command} install

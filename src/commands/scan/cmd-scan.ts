@@ -2,12 +2,12 @@ import { cmdScanCreate } from './cmd-scan-create'
 import { cmdScanDel } from './cmd-scan-del'
 import { cmdScanList } from './cmd-scan-list'
 import { cmdScanMetadata } from './cmd-scan-metadata'
-import { cmdScanStream } from './cmd-scan-stream'
+import { cmdScanView } from './cmd-scan-view'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
-const description = 'Scans related commands'
+const description = 'Full Scan related commands'
 
 export const cmdScan: CliSubcommand = {
   description,
@@ -15,12 +15,20 @@ export const cmdScan: CliSubcommand = {
     await meowWithSubcommands(
       {
         create: cmdScanCreate,
-        stream: cmdScanStream,
         list: cmdScanList,
         del: cmdScanDel,
-        metadata: cmdScanMetadata
+        metadata: cmdScanMetadata,
+        view: cmdScanView
       },
       {
+        aliases: {
+          // Backwards compat. TODO: Drop next major bump
+          stream: {
+            description: cmdScanView.description,
+            hidden: true,
+            argv: ['view'] // Original args will be appended (!)
+          }
+        },
         argv,
         description,
         importMeta,
