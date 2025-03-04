@@ -100,9 +100,10 @@ export async function getDiffScanWithToken({
     try {
       json = JSON.stringify(result, null, 2)
     } catch (e) {
+      process.exitCode = 1
       // Most likely caused by a circular reference (or OOM)
       logger.error('There was a problem converting the data to JSON')
-      process.exitCode = 1
+      logger.error(e)
       return
     }
 

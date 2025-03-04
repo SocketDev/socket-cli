@@ -34,7 +34,7 @@ async function deleteRepoWithToken(
   )
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('deleteOrgRepo', result, spinner)
+    handleUnsuccessfulApiResponse('deleteOrgRepo', result)
     return
   }
 

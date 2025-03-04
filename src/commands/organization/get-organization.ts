@@ -39,7 +39,7 @@ async function printOrganizationsFromToken(
   )
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrganizations', result, spinner)
+    handleUnsuccessfulApiResponse('getOrganizations', result)
     return
   }
 

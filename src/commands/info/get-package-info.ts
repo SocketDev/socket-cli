@@ -2,6 +2,7 @@ import process from 'node:process'
 
 import { fetchPackageInfo } from './fetch-package-info'
 import { formatPackageInfo } from './format-package-info'
+import constants from '../../constants'
 import { objectSome } from '../../utils/objects'
 
 import type { SocketSdkAlert } from '../../utils/alert/severity'
@@ -28,11 +29,22 @@ export async function getPackageInfo({
   pkgVersion: string
   strict: boolean
 }) {
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start(
+    pkgVersion === 'latest'
+      ? `Looking up data for the latest version of ${pkgName}`
+      : `Looking up data for version ${pkgVersion} of ${pkgName}`
+  )
+
   const packageData = await fetchPackageInfo(
     pkgName,
     pkgVersion,
     includeAllIssues
   )
+
+  spinner.successAndStop('Data fetched')
 
   if (packageData) {
     formatPackageInfo(packageData, {

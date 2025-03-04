@@ -33,7 +33,7 @@ export async function streamFullScan(
   )
 
   if (!data?.success) {
-    handleUnsuccessfulApiResponse('getOrgFullScan', data, spinner)
+    handleUnsuccessfulApiResponse('getOrgFullScan', data)
     return
   }
 

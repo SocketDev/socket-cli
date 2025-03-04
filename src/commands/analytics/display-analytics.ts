@@ -136,9 +136,9 @@ async function outputAnalyticsWithToken({
         await fs.writeFile(filePath, serialized, 'utf8')
         logger.log(`Data successfully written to ${filePath}`)
       } catch (e) {
+        process.exitCode = 1
         logger.error('There was an error trying to write the json to disk')
         logger.error(e)
-        process.exitCode = 1
       }
     } else {
       logger.log(serialized)
@@ -169,11 +169,11 @@ function renderJson(data: unknown): string | undefined {
   try {
     return JSON.stringify(data, null, 2)
   } catch (e) {
+    process.exitCode = 1
     // This could be caused by circular references, which is an "us" problem
     logger.error(
       'There was a problem converting the data set to JSON. Please try without --json or with --markdown'
     )
-    process.exitCode = 1
     return
   }
 }

@@ -37,7 +37,7 @@ export async function findDependencies({
   )
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('searchDependencies', result, spinner)
+    handleUnsuccessfulApiResponse('searchDependencies', result)
     return
   }
 

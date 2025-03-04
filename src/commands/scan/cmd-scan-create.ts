@@ -156,6 +156,7 @@ async function run(
   if (!apiToken && (!orgSlug || !repoName || !branchName || !targets.length)) {
     // Without api token we cannot recover because we can't request more info
     // from the server, to match and help with the current cwd/git status.
+    //
     // Use exit status of 2 to indicate incorrect usage, generally invalid
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html

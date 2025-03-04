@@ -72,7 +72,7 @@ async function updateRepoWithToken({
   )
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('updateOrgRepo', result, spinner)
+    handleUnsuccessfulApiResponse('updateOrgRepo', result)
     return
   }
 

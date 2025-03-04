@@ -142,8 +142,8 @@ export async function meowWithSubcommands(
     }
   )
   if (!cli.flags['help'] && cli.flags['dryRun']) {
-    logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
     process.exitCode = 0
+    logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
   } else {
     cli.showHelp()
   }

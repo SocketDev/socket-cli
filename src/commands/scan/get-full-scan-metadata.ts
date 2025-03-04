@@ -37,7 +37,7 @@ export async function getOrgScanMetadataWithToken(
   )
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrgFullScanMetadata', result, spinner)
+    handleUnsuccessfulApiResponse('getOrgFullScanMetadata', result)
     return
   }
 

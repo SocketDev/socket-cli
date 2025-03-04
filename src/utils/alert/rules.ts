@@ -222,7 +222,7 @@ void (async () => {
         orgs,
         settings: result.data
       }
-    } catch (e: any) {
+    } catch (e) {
       const cause = isObject(e) && 'cause' in e ? e['cause'] : undefined
       if (
         isErrnoException(cause) &&

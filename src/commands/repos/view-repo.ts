@@ -41,7 +41,7 @@ async function viewRepoWithToken(
   )
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrgRepo', result, spinner)
+    handleUnsuccessfulApiResponse('getOrgRepo', result)
     return
   }
 

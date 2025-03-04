@@ -174,7 +174,7 @@ export class SafeNode extends Node {
     try {
       result = super.canReplaceWith(node, ignorePeers)
       this.overrides = oldOverrideSet
-    } catch (e: any) {
+    } catch (e) {
       this.overrides = oldOverrideSet
       throw e
     }
@@ -255,7 +255,7 @@ export class SafeNode extends Node {
     try {
       super.parent = newParent
       this.overrides = overrides
-    } catch (e: any) {
+    } catch (e) {
       this.overrides = overrides
       throw e
     }
@@ -290,7 +290,7 @@ export class SafeNode extends Node {
     try {
       super.root = newRoot
       this.overrides = undefined
-    } catch (e: any) {
+    } catch (e) {
       this.overrides = undefined
       throw e
     }

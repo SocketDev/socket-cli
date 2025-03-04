@@ -18,7 +18,7 @@ export async function fetchOrgAnalyticsData(
   )
 
   if (result.success === false) {
-    handleUnsuccessfulApiResponse('getOrgAnalytics', result, spinner)
+    handleUnsuccessfulApiResponse('getOrgAnalytics', result)
     return undefined
   }
 

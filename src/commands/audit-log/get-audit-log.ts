@@ -94,10 +94,10 @@ async function outputAsJson(
       2
     )
   } catch (e) {
+    process.exitCode = 1
     logger.error(
       'There was a problem converting the logs to JSON, please try without the `--json` flag'
     )
-    process.exitCode = 1
     return
   }
 
@@ -136,11 +136,11 @@ ${table}
 `
     )
   } catch (e) {
+    process.exitCode = 1
     logger.error(
       'There was a problem converting the logs to JSON, please try without the `--json` flag'
     )
     logger.error(e)
-    process.exitCode = 1
     return
   }
 }
@@ -209,7 +209,7 @@ async function getAuditLogWithToken({
   )
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getAuditLogEvents', result, spinner)
+    handleUnsuccessfulApiResponse('getAuditLogEvents', result)
     return
   }
 
