@@ -9,7 +9,7 @@
   "settings": {},
   "rules": {
     "@typescript-eslint/array-type": ["error", { "default": "array-simple" }],
-    "@typescript-eslint/no-misused-new": ["error"],
+    "@typescript-eslint/no-misused-new": "error",
     "@typescript-eslint/no-this-alias": [
       "error",
       { "allowDestructuring": true }
@@ -20,6 +20,7 @@
     "no-control-regex": "off",
     "no-new": "off",
     "no-self-assign": "off",
+    "no-undef": "off",
     "no-unused-vars": "off"
   }
 }

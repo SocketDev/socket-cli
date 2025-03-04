@@ -13,6 +13,7 @@ const importXPlugin = require('eslint-plugin-import-x')
 const nodePlugin = require('eslint-plugin-n')
 const sortDestructureKeysPlugin = require('eslint-plugin-sort-destructure-keys')
 const unicornPlugin = require('eslint-plugin-unicorn')
+const globals = require('globals')
 const tsEslint = require('typescript-eslint')
 
 const constants = require('@socketsecurity/registry/lib/constants')
@@ -34,15 +35,16 @@ const sharedPlugins = {
 }
 
 const sharedRules = {
-  'no-await-in-loop': ['error'],
-  'no-control-regex': ['error'],
+  'no-await-in-loop': 'error',
+  'no-control-regex': 'error',
   'no-empty': ['error', { allowEmptyCatch: true }],
-  'no-new': ['error'],
-  'no-proto': ['error'],
+  'no-new': 'error',
+  'no-proto': 'error',
+  'no-undef': 'error',
   'no-warning-comments': ['warn', { terms: ['fixme'] }],
-  'sort-destructure-keys/sort-destructure-keys': ['error'],
+  'sort-destructure-keys/sort-destructure-keys': 'error',
   'sort-imports': ['error', { ignoreDeclarationSort: true }],
-  'unicorn/consistent-function-scoping': ['error']
+  'unicorn/consistent-function-scoping': 'error'
 }
 
 const sharedRulesForImportX = {
@@ -141,6 +143,14 @@ module.exports = [
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
     languageOptions: {
+      globals: {
+        BufferConstructor: 'readonly',
+        BufferEncoding: 'readonly',
+        NodeJS: 'readonly',
+        ...Object.fromEntries(
+          Object.entries(globals.node).map(([k]) => [k, 'readonly'])
+        )
+      },
       parser: tsParser,
       parserOptions: {
         projectService: {
@@ -160,7 +170,7 @@ module.exports = [
     rules: {
       ...sharedRules,
       '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
-      '@typescript-eslint/no-misused-new': ['error'],
+      '@typescript-eslint/no-misused-new': 'error',
       '@typescript-eslint/no-this-alias': [
         'error',
         { allowDestructuring: true }
