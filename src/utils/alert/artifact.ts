@@ -97,7 +97,7 @@ async function* createBatchGenerator(
       method: 'POST',
       headers: {
         Authorization: `Basic ${btoa(`${getPublicToken()}:`)}`
-      },
+      }
       // TODO: Fix to not abort process on network abort.
       // signal: abortSignal
     })
