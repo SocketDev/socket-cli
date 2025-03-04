@@ -6,10 +6,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { viewRepo } from './view-repo'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -21,7 +19,12 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    ...outputFlags
+    ...outputFlags,
+    repoName: {
+      description: 'The repository to check',
+      default: '',
+      type: 'string'
+    }
   },
   help: (command, config) => `
     Usage
@@ -86,12 +89,9 @@ async function run(
     return
   }
 
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
-  await viewRepo(orgSlug, repoName, apiToken)
+  await viewRepo(
+    orgSlug,
+    repoName,
+    cli.flags['json'] ? 'json' : cli.flags['markdown'] ? 'markdown' : 'print'
+  )
 }
