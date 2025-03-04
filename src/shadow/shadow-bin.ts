@@ -10,34 +10,21 @@ import { installLinks } from './link'
 import constants from '../constants'
 
 const {
-  NPM,
-  SOCKET_CLI_LEGACY_PACKAGE_NAME,
-  SOCKET_CLI_PACKAGE_NAME,
   SOCKET_CLI_SAFE_WRAPPER,
   SOCKET_CLI_SENTRY_BUILD,
-  SOCKET_CLI_SENTRY_PACKAGE_NAME,
   SOCKET_IPC_HANDSHAKE
 } = constants
 
 export default async function shadowBin(
   binName: 'npm' | 'npx',
-  args = process.argv.slice(2)
+  args = process.argv.slice(2),
+  level = 1
 ) {
   process.exitCode = 1
   const terminatorPos = args.indexOf('--')
-  const skipSocketCliUpgrade =
-    binName === NPM &&
-    args.length === 3 &&
-    args[0] === 'install' &&
-    args[1] === '-g' &&
-    (args[2] === SOCKET_CLI_PACKAGE_NAME ||
-      args[2] === SOCKET_CLI_LEGACY_PACKAGE_NAME ||
-      args[2] === SOCKET_CLI_SENTRY_PACKAGE_NAME)
-
-  let binArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
-  if (!skipSocketCliUpgrade) {
-    binArgs = binArgs.filter(a => !isProgressFlag(a))
-  }
+  const binArgs = (
+    terminatorPos === -1 ? args : args.slice(0, terminatorPos)
+  ).filter(a => !isProgressFlag(a))
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const spawnPromise = spawn(
     // Lazily access constants.execPath.
@@ -58,15 +45,11 @@ export default async function shadowBin(
       constants.npmInjectionPath,
       // Lazily access constants.shadowBinPath.
       await installLinks(constants.shadowBinPath, binName),
-      // Add `--no-progress` and `--quiet` flags to fix input being swallowed by
-      // the spinner when running the command with recent versions of npm.
-      ...(skipSocketCliUpgrade ? [] : ['--no-progress']),
-      // Add the '--quiet' flag if a loglevel flag is not provided.
-      ...(binArgs.some(isLoglevelFlag)
-        ? []
-        : skipSocketCliUpgrade
-          ? ['--loglevel', 'error']
-          : ['--quiet']),
+      // Add `--no-progress` and `--loglevel=error` flags to fix input being
+      // swallowed by the npm spinner.
+      '--no-progress',
+      // Add the '--loglevel=error' flag if a loglevel flag is not provided.
+      ...(binArgs.some(isLoglevelFlag) ? [] : ['--loglevel', 'error']),
       ...binArgs,
       ...otherArgs
     ],
@@ -85,7 +68,7 @@ export default async function shadowBin(
   })
   spawnPromise.process.send({
     [SOCKET_IPC_HANDSHAKE]: {
-      [SOCKET_CLI_SAFE_WRAPPER]: true
+      [SOCKET_CLI_SAFE_WRAPPER]: level
     }
   })
   await spawnPromise

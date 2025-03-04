@@ -3,7 +3,7 @@ import replacePlugin from '@rollup/plugin-replace'
 import { isValidPackageName } from '@socketsecurity/registry/lib/packages'
 import { isRelative } from '@socketsecurity/registry/lib/path'
 
-import baseConfig from './rollup.base.config.mjs'
+import baseConfig, { INLINED_PACKAGES } from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
 import {
   isBuiltin,
@@ -11,8 +11,7 @@ import {
   normalizeId
 } from '../scripts/utils/packages.js'
 
-const { BABEL_RUNTIME, ROLLUP_EXTERNAL_SUFFIX, SOCKET_CLI_TEST_DIST_BUILD } =
-  constants
+const { ROLLUP_EXTERNAL_SUFFIX, SOCKET_CLI_TEST_DIST_BUILD } = constants
 
 export default () => {
   // Lazily access constants.rootSrcPath
@@ -45,7 +44,7 @@ export default () => {
             const id = normalizeId(id_)
             const name = getPackageName(id)
             if (
-              name === BABEL_RUNTIME ||
+              INLINED_PACKAGES.includes(name) ||
               id.startsWith(rootSrcPath) ||
               id.endsWith('.mjs') ||
               id.endsWith('.mts') ||

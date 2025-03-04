@@ -33,7 +33,6 @@ import {
 const require = createRequire(import.meta.url)
 
 const {
-  BABEL_RUNTIME,
   CONSTANTS,
   LATEST,
   ROLLUP_ENTRY_SUFFIX,
@@ -46,6 +45,8 @@ const {
   VITEST,
   VENDOR
 } = constants
+
+export const INLINED_PACKAGES = ['@babel/runtime']
 
 const SOCKET_INTEROP = '_socketInterop'
 
@@ -71,8 +72,6 @@ const checkSocketInteropUseRegExp = new RegExp(`\\b${SOCKET_INTEROP}\\b`)
 const danglingRequiresRegExp = /^\s*require\(["'].+?["']\);?\r?\n/gm
 
 const firstUseStrictRegExp = /'use strict';?/
-
-const oraSpinnersAssignmentsRegExp = /(?<=ora[^.]+\.spinners\s*=\s*)[$\w]+/g
 
 const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
 
@@ -106,7 +105,7 @@ function getSocketVersionHash() {
 
 function isAncestorsExternal(id, depStats) {
   // Lazily access constants.rootPackageJsonPath.
-  const { dependencies: pkgDeps } = require(constants.rootPackageJsonPath)
+  const { dependencies: rootPkgDeps } = require(constants.rootPackageJsonPath)
   let currNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH)
   while (currNmIndex !== -1) {
     const nextNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH, currNmIndex + 1)
@@ -131,7 +130,7 @@ function isAncestorsExternal(id, depStats) {
       optionalDependencies[name] ??
       peerDependencies[name] ??
       version
-    const seenRange = pkgDeps[name] ?? depStats.external[name]
+    const seenRange = rootPkgDeps[name] ?? depStats.external[name]
     if (seenRange && !rangesIntersect(seenRange, range)) {
       return false
     }
@@ -178,7 +177,7 @@ export default function baseConfig(extendConfig = {}) {
         return true
       }
       if (
-        name === BABEL_RUNTIME ||
+        INLINED_PACKAGES.includes(name) ||
         id.startsWith(rootSrcPath) ||
         id.endsWith('.mjs') ||
         id.endsWith('.mts') ||
@@ -337,19 +336,6 @@ export default function baseConfig(extendConfig = {}) {
       socketModifyPlugin({
         find: danglingRequiresRegExp,
         replace: ''
-      }),
-      // Fix incorrectly set "spinners" binding caused by a transpilation bug
-      // https://github.com/sindresorhus/ora/blob/v8.1.1/index.js#L424
-      // export {default as spinners} from 'cli-spinners'
-      socketModifyPlugin({
-        find: oraSpinnersAssignmentsRegExp,
-        replace(match) {
-          return (
-            new RegExp(`(?<=${escapeRegExp(match)}\\s*=\\s*)[$\\w]+`).exec(
-              this.input
-            )?.[0] ?? match
-          )
-        }
       }),
       commonjsPlugin({
         defaultIsModuleExports: true,

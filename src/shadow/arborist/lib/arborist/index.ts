@@ -1,6 +1,6 @@
 import process from 'node:process'
 
-import { kRiskyReify, reify } from './reify'
+import { kCtorArgs, kRiskyReify, reify } from './reify'
 import constants from '../../../../constants'
 import { getArboristClassPath } from '../../../npm-paths'
 
@@ -8,17 +8,12 @@ import type { ArboristClass, ArboristReifyOptions } from './types'
 import type { SafeNode } from '../node'
 
 const {
-  SOCKET_CLI_LEGACY_PACKAGE_NAME,
-  SOCKET_CLI_PACKAGE_NAME,
-  SOCKET_CLI_SENTRY_PACKAGE_NAME,
   SOCKET_CLI_SAFE_WRAPPER,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIPC }
 } = constants
 
 export const Arborist: ArboristClass = require(getArboristClassPath())
-
-export const kCtorArgs = Symbol('ctorArgs')
 
 export const SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
   __proto__: null,
@@ -59,8 +54,6 @@ export class SafeArborist extends Arborist {
       },
       ...ctorArgs.slice(1)
     )
-    arb.actualTree = this.actualTree
-    arb.idealTree = this.idealTree
     const ret = await (arb.reify as (...args: any[]) => Promise<SafeNode>)(
       {
         ...(args.length ? args[0] : undefined),
@@ -81,21 +74,13 @@ export class SafeArborist extends Arborist {
       __proto__: null,
       ...(args.length ? args[0] : undefined)
     }
-    const { add } = options
-    const skipSocketCliUpgrade =
-      options.global &&
-      options['npmCommand'] === 'install' &&
-      Array.isArray(add) &&
-      add.length === 1 &&
-      (add[0] === SOCKET_CLI_PACKAGE_NAME ||
-        add[0] === SOCKET_CLI_LEGACY_PACKAGE_NAME ||
-        add[0] === SOCKET_CLI_SENTRY_PACKAGE_NAME)
 
-    if (
-      options.dryRun ||
-      skipSocketCliUpgrade ||
-      !(await getIPC(SOCKET_CLI_SAFE_WRAPPER))
-    ) {
+    if (options.dryRun) {
+      return await this[kRiskyReify](...args)
+    }
+    const level = await getIPC(SOCKET_CLI_SAFE_WRAPPER)
+
+    if (!level) {
       return await this[kRiskyReify](...args)
     }
     const safeArgs = [
@@ -110,6 +95,6 @@ export class SafeArborist extends Arborist {
     args[0] = options
     await super.reify(...safeArgs)
     args[0] = old
-    return await Reflect.apply(reify, this, safeArgs)
+    return await reify(this as any, args, level)
   }
 }
