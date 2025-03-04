@@ -3,13 +3,12 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getFullScan } from './get-full-scan'
+import { streamFullScan } from './stream-full-scan'
+import { viewFullScan } from './view-full-scan'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken } from '../../utils/sdk'
 
 import type {
   CliCommandConfig,
@@ -19,8 +18,8 @@ import type {
 const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
-  commandName: 'stream',
-  description: 'Stream the output of a scan',
+  commandName: 'view',
+  description: 'View the raw results of a scan',
   hidden: false,
   flags: {
     ...commonFlags,
@@ -40,7 +39,7 @@ const config: CliCommandConfig = {
   `
 }
 
-export const cmdScanStream: CliSubcommand = {
+export const cmdScanView: CliSubcommand = {
   description: config.description,
   hidden: config.hidden,
   run
@@ -82,12 +81,9 @@ async function run(
     return
   }
 
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
+  if (cli.flags['json']) {
+    await streamFullScan(orgSlug, fullScanId, file)
+  } else {
+    await viewFullScan(orgSlug, fullScanId, file)
   }
-
-  await getFullScan(orgSlug, fullScanId, file, apiToken)
 }

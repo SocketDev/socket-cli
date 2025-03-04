@@ -77,10 +77,15 @@ export async function createFullScan({
     updatedInput = true
   }
 
+  // // TODO: we'll probably use socket.json or something else soon...
+  // const absoluteConfigPath = path.join(cwd, 'socket.yml')
+  // const socketConfig = await getSocketConfig(absoluteConfigPath)
+
   const packagePaths = await getPackageFilesFullScans(
     cwd,
     targets,
     supportedFiles
+    // socketConfig
   )
 
   // We're going to need an api token to suggest data because those suggestions
@@ -88,30 +93,33 @@ export async function createFullScan({
   // If the api-token is not set, ignore it for the sake of suggestions.
   const apiToken = getDefaultToken()
 
-  if (apiToken && !orgSlug) {
-    const suggestion = await suggestOrgSlug(socketSdk)
-    if (suggestion) orgSlug = suggestion
-    updatedInput = true
-  }
-
   // If the current cwd is unknown and is used as a repo slug anyways, we will
   // first need to register the slug before we can use it.
   let repoDefaultBranch = ''
 
-  // (Don't bother asking for the rest if we didn't get an org slug above)
-  if (apiToken && orgSlug && !repoName) {
-    const suggestion = await suggestRepoSlug(socketSdk, orgSlug)
-    if (suggestion) {
-      ;({ defaultBranch: repoDefaultBranch, slug: repoName } = suggestion)
+  if (apiToken) {
+    if (!orgSlug) {
+      const suggestion = await suggestOrgSlug(socketSdk)
+      if (suggestion) orgSlug = suggestion
+      updatedInput = true
     }
-    updatedInput = true
-  }
 
-  // (Don't bother asking for the rest if we didn't get an org/repo above)
-  if (apiToken && orgSlug && repoName && !branchName) {
-    const suggestion = await suggestBranchSlug(repoDefaultBranch)
-    if (suggestion) branchName = suggestion
-    updatedInput = true
+    // (Don't bother asking for the rest if we didn't get an org slug above)
+    if (orgSlug && !repoName) {
+      const suggestion = await suggestRepoSlug(socketSdk, orgSlug)
+      if (suggestion) {
+        repoDefaultBranch = suggestion.defaultBranch
+        repoName = suggestion.slug
+      }
+      updatedInput = true
+    }
+
+    // (Don't bother asking for the rest if we didn't get an org/repo above)
+    if (orgSlug && repoName && !branchName) {
+      const suggestion = await suggestBranchSlug(repoDefaultBranch)
+      if (suggestion) branchName = suggestion
+      updatedInput = true
+    }
   }
 
   if (!orgSlug || !repoName || !branchName || !packagePaths.length) {
@@ -169,7 +177,7 @@ export async function createFullScan({
     return
   }
 
-  spinner.start('Creating a scan...')
+  spinner.start(`Creating a scan with ${packagePaths.length} packages...`)
 
   const result = await handleApiCall(
     socketSdk.createOrgFullScan(

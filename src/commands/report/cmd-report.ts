@@ -8,6 +8,7 @@ const description = '[Deprecated] Project report related commands'
 
 export const cmdReport: CliSubcommand = {
   description,
+  hidden: true, // Deprecated in favor of `scan`
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {

@@ -3,7 +3,7 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { getPackageFiles } from '../../utils/path-resolve'
+import { getPackageFilesFullScans } from '../../utils/path-resolve'
 import { setupSdk } from '../../utils/sdk'
 
 import type { SocketYml } from '@socketsecurity/config'
@@ -40,13 +40,13 @@ export async function createReport(
         cause
       })
     })
-  const packagePaths = await getPackageFiles(
+  const packagePaths = await getPackageFilesFullScans(
     cwd,
     inputPaths,
-    socketConfig,
-    supportedFiles
+    supportedFiles,
+    socketConfig
   )
-  const { length: packagePathsCount } = packagePaths
+  const packagePathsCount = packagePaths.length
   if (packagePathsCount && isDebug()) {
     for (const pkgPath of packagePaths) {
       debugLog(`Uploading: ${pkgPath}`)

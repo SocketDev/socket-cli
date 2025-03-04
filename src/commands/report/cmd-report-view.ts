@@ -7,7 +7,6 @@ import { viewReport } from './view-report'
 import constants from '../../constants'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
-import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -15,22 +14,16 @@ const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'view',
-  description: 'View a project report',
+  description: '[Deprecated] View a project report',
   hidden: false,
   flags: {
     ...commonFlags,
     ...outputFlags,
     ...validationFlags
   },
-  help: (command, config) => `
-    Usage
-      $ ${command} <report-identifier>
-
-    Options
-      ${getFlagListOutput(config.flags, 6)}
-
-    Examples
-      $ ${command} QXU8PmK7LfH608RAwfIKdbcHgwEd_ZeWJ9QEGv05FJUQ
+  help: () => `
+    This command is deprecated in favor of \`socket scan view\`.
+    It will be removed in the next major release of the CLI.
   `
 }
 
