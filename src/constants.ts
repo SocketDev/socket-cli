@@ -54,7 +54,7 @@ type ENV = Remap<
 type IPC = Readonly<{
   SOCKET_CLI_FIX?: string | undefined
   SOCKET_CLI_OPTIMIZE?: boolean | undefined
-  SOCKET_CLI_SAFE_WRAPPER?: boolean | undefined
+  SOCKET_CLI_SAFE_WRAPPER?: number | undefined
 }>
 
 type Constants = Remap<
@@ -66,7 +66,6 @@ type Constants = Remap<
     readonly ALERT_TYPE_MILD_CVE: 'mildCVE'
     readonly ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE: 'socketUpgradeAvailable'
     readonly API_V0_URL: 'https://api.socket.dev/v0'
-    readonly BABEL_RUNTIME: '@babel/runtime'
     readonly BATCH_PURL_ENDPOINT: 'https://api.socket.dev/v0/purl?alerts=true&compact=true'
     readonly BINARY_LOCK_EXT: '.lockb'
     readonly BUN: 'bun'
@@ -108,7 +107,6 @@ type Constants = Remap<
     readonly YARN_BERRY: 'yarn/berry'
     readonly YARN_CLASSIC: 'yarn/classic'
     readonly bashRcPath: string
-    readonly cdxgenBinPath: string
     readonly distPath: string
     readonly homePath: string
     readonly instrumentWithSentryPath: string
@@ -119,7 +117,6 @@ type Constants = Remap<
     readonly rootPath: string
     readonly rootPkgJsonPath: string
     readonly shadowBinPath: string
-    readonly synpBinPath: string
     readonly zshRcPath: string
   }
 >
@@ -131,7 +128,6 @@ const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
 const ALERT_TYPE_MILD_CVE = 'mildCVE'
 const ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE = 'socketUpgradeAvailable'
 const API_V0_URL = 'https://api.socket.dev/v0'
-const BABEL_RUNTIME = '@babel/runtime'
 const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
 const CLI = 'cli'
@@ -213,10 +209,6 @@ const lazyBashRcPath = () =>
   // Lazily access constants.homePath.
   path.join(constants.homePath, '.bashrc')
 
-const lazyCdxgenBinPath = () =>
-  // Lazily access constants.nmBinPath.
-  path.join(constants.nmBinPath, 'cdxgen')
-
 const lazyDistPath = () =>
   // Lazily access constants.rootDistPath and constants.DIST_TYPE.
   path.join(constants.rootDistPath, constants.DIST_TYPE)
@@ -259,10 +251,6 @@ const lazyShadowBinPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, SHADOW_BIN)
 
-const lazySynpBinPath = () =>
-  // Lazily access constants.nmBinPath.
-  path.join(constants.nmBinPath, 'synp')
-
 const lazyZshRcPath = () =>
   // Lazily access constants.homePath.
   path.join(constants.homePath, '.zshrc')
@@ -275,7 +263,6 @@ const constants = <Constants>createConstantsObject(
     ALERT_TYPE_MILD_CVE,
     ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE,
     API_V0_URL,
-    BABEL_RUNTIME,
     // Lazily defined values are initialized as `undefined` to keep their key order.
     BATCH_PURL_ENDPOINT: undefined,
     BINARY_LOCK_EXT,
@@ -317,7 +304,6 @@ const constants = <Constants>createConstantsObject(
     YARN_BERRY,
     YARN_CLASSIC,
     bashRcPath: undefined,
-    cdxgenBinPath: undefined,
     distPath: undefined,
     homePath: undefined,
     instrumentWithSentryPath: undefined,
@@ -328,7 +314,6 @@ const constants = <Constants>createConstantsObject(
     rootPath: undefined,
     rootPkgJsonPath: undefined,
     shadowBinPath: undefined,
-    synpBinPath: undefined,
     zshRcPath: undefined
   },
   {
@@ -338,7 +323,6 @@ const constants = <Constants>createConstantsObject(
       ENV: LAZY_ENV,
       bashRcPath: lazyBashRcPath,
       distPath: lazyDistPath,
-      cdxgenBinPath: lazyCdxgenBinPath,
       homePath: lazyHomePath,
       instrumentWithSentryPath: lazyInstrumentWithSentryPath,
       nmBinPath: lazyNmBinPath,
@@ -348,7 +332,6 @@ const constants = <Constants>createConstantsObject(
       rootPath: lazyRootPath,
       rootPkgJsonPath: lazyRootPkgJsonPath,
       shadowBinPath: lazyShadowBinPath,
-      synpBinPath: lazySynpBinPath,
       zshRcPath: lazyZshRcPath
     },
     internals: {

@@ -6,17 +6,11 @@ import process from 'node:process'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { runBin } from '@socketsecurity/registry/lib/npm'
 
 import constants from '../../constants'
+import shadowBin from '../../shadow/shadow-bin'
 
-const {
-  SBOM_SIGN_ALGORITHM, // Algorithm. Example: RS512
-  SBOM_SIGN_PRIVATE_KEY, // Location to the RSA private key
-  SBOM_SIGN_PUBLIC_KEY // Optional. Location to the RSA public key
-} = process.env
-
-const { NPM, PNPM, cdxgenBinPath, synpBinPath } = constants
+const { NPM, NPX, PNPM } = constants
 
 const nodejsPlatformTypes = new Set([
   'javascript',
@@ -42,25 +36,21 @@ export async function runCycloneDX(yargv: any) {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
       try {
-        await runBin(await fs.realpath(synpBinPath), [
-          '--source-file',
-          './yarn.lock'
-        ])
+        await shadowBin(
+          NPX,
+          ['synp@1.9.14', '--', '--source-file', './yarn.lock'],
+          2
+        )
         yargv.type = NPM
         cleanupPackageLock = true
       } catch {}
     }
   }
-
-  await runBin(await fs.realpath(cdxgenBinPath), argvToArray(yargv), {
-    env: {
-      NODE_ENV: '',
-      SBOM_SIGN_ALGORITHM,
-      SBOM_SIGN_PRIVATE_KEY,
-      SBOM_SIGN_PUBLIC_KEY
-    },
-    stdio: 'inherit'
-  })
+  await shadowBin(
+    NPX,
+    ['@cyclonedx/cdxgen@11.2.0', '--', ...argvToArray(yargv)],
+    2
+  )
   if (cleanupPackageLock) {
     try {
       await fs.rm('./package-lock.json')

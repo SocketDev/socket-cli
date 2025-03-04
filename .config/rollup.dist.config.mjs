@@ -16,7 +16,7 @@ import {
 import { isRelative } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
-import baseConfig from './rollup.base.config.mjs'
+import baseConfig, { INLINED_PACKAGES } from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
 import {
   getPackageName,
@@ -25,7 +25,6 @@ import {
 } from '../scripts/utils/packages.js'
 
 const {
-  BABEL_RUNTIME,
   CLI,
   CONSTANTS,
   INSTRUMENT_WITH_SENTRY,
@@ -180,8 +179,8 @@ async function updateDepStats(depStats) {
   Object.assign(
     depStats.dependencies,
     // Add existing package.json dependencies without old transitives. This
-    // preserves dependencies like '@cyclonedx/cdxgen' and 'synp' that are
-    // indirectly referenced through spawned processes and not directly imported.
+    // preserves dependencies that are indirectly referenced through spawned
+    // processes and not directly imported.
     Object.fromEntries(
       Object.entries(pkgJson.dependencies).filter(
         ({ 0: key }) => !oldDepStats?.transitives?.[key]
@@ -325,8 +324,7 @@ export default () => {
       const id = normalizeId(id_)
       const name = getPackageName(id)
       if (
-        // Inline Babel helpers.
-        name === BABEL_RUNTIME ||
+        INLINED_PACKAGES.includes(name) ||
         // Inline local src/ modules.
         id.startsWith(rootSrcPath) ||
         // Inline .mjs .mts modules.

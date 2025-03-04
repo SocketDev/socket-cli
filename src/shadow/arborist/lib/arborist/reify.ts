@@ -200,6 +200,7 @@ type GetPackageAlertsOptions = {
   consolidate?: boolean | undefined
   includeExisting?: boolean | undefined
   includeUnfixable?: boolean | undefined
+  includeUpgrades?: boolean | undefined
 }
 
 export async function getPackagesAlerts(
@@ -210,6 +211,7 @@ export async function getPackagesAlerts(
     consolidate = false,
     includeExisting = false,
     includeUnfixable = true,
+    includeUpgrades = false,
     output
   } = <GetPackageAlertsOptions>{
     __proto__: null,
@@ -256,8 +258,9 @@ export async function getPackagesAlerts(
       const fixableCve = isArtifactAlertCveFixable(alert)
       const fixableUpgrade = isArtifactAlertUpgradeFixable(alert)
       if (
-        (fixableCve || fixableUpgrade || includeUnfixable) &&
-        !(fixableUpgrade && hasOverride(pkgJson, name))
+        includeUnfixable ||
+        fixableCve ||
+        (includeUpgrades && fixableUpgrade && !hasOverride(pkgJson, name))
       ) {
         sockPkgAlerts.push({
           name,
@@ -461,6 +464,7 @@ export async function updateSocketRegistryNodes(arb: SafeArborist) {
   }
 }
 
+export const kCtorArgs = Symbol('ctorArgs')
 export const kRiskyReify = Symbol('riskyReify')
 
 type SafeArborist = ArboristClass & {
@@ -468,11 +472,15 @@ type SafeArborist = ArboristClass & {
 }
 
 export async function reify(
-  this: SafeArborist,
-  ...args: Parameters<InstanceType<ArboristClass>['reify']>
+  arb: SafeArborist,
+  args: Parameters<InstanceType<ArboristClass>['reify']>,
+  level = 1
 ): Promise<SafeNode> {
   const { stderr: output, stdin: input } = process
-  const alerts = await getPackagesAlerts(this, { output })
+  const alerts = await getPackagesAlerts(arb, {
+    output,
+    includeUnfixable: level < 2
+  })
   if (
     alerts.length &&
     !(await confirm(
@@ -488,5 +496,5 @@ export async function reify(
   ) {
     throw new Error('Socket npm exiting due to risks')
   }
-  return await this[kRiskyReify](...args)
+  return await arb[kRiskyReify](...args)
 }
