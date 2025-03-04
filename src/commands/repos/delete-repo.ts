@@ -1,8 +1,23 @@
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { setupSdk } from '../../utils/sdk'
+import { AuthError } from '../../utils/errors'
+import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 export async function deleteRepo(
+  orgSlug: string,
+  repoName: string
+): Promise<void> {
+  const apiToken = getDefaultToken()
+  if (!apiToken) {
+    throw new AuthError(
+      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+    )
+  }
+
+  await deleteRepoWithToken(orgSlug, repoName, apiToken)
+}
+
+async function deleteRepoWithToken(
   orgSlug: string,
   repoName: string,
   apiToken: string
@@ -18,9 +33,10 @@ export async function deleteRepo(
     'deleting repository'
   )
 
-  if (result.success) {
-    spinner.successAndStop('Repository deleted successfully')
-  } else {
+  if (!result.success) {
     handleUnsuccessfulApiResponse('deleteOrgRepo', result, spinner)
+    return
   }
+
+  spinner.successAndStop('Repository deleted successfully')
 }
