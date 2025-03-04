@@ -6,10 +6,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { listRepos } from './list-repos'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -96,21 +94,16 @@ async function run(
     return
   }
 
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
   await listRepos({
-    apiToken,
-    outputJson: Boolean(cli.flags['json']),
-    outputMarkdown: Boolean(cli.flags['markdown']),
-    orgSlug,
-    sort: String(cli.flags['sort'] || 'created_at'),
     direction: cli.flags['direction'] === 'asc' ? 'asc' : 'desc',
+    orgSlug,
+    outputKind: cli.flags['json']
+      ? 'json'
+      : cli.flags['markdown']
+        ? 'markdown'
+        : 'print',
     page: Number(cli.flags['page']) || 1,
-    per_page: Number(cli.flags['perPage']) || 30
+    per_page: Number(cli.flags['perPage']) || 30,
+    sort: String(cli.flags['sort'] || 'created_at')
   })
 }

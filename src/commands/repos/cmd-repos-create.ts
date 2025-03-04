@@ -6,10 +6,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { createRepo } from './create-repo'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -104,13 +102,6 @@ async function run(
     return
   }
 
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
   await createRepo({
     outputJson: Boolean(cli.flags['json']),
     outputMarkdown: Boolean(cli.flags['markdown']),
@@ -119,7 +110,6 @@ async function run(
     description: String(cli.flags['repoDescription'] || ''),
     homepage: String(cli.flags['homepage'] || ''),
     default_branch: String(cli.flags['defaultBranch'] || ''),
-    visibility: String(cli.flags['visibility'] || 'private'),
-    apiToken
+    visibility: String(cli.flags['visibility'] || 'private')
   })
 }

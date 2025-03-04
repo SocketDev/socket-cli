@@ -6,38 +6,67 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { setupSdk } from '../../utils/sdk'
+import { AuthError } from '../../utils/errors'
+import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 export async function listRepos({
-  apiToken,
   direction,
   orgSlug,
-  outputJson,
-  outputMarkdown,
+  outputKind,
   page,
   per_page,
   sort
 }: {
-  outputJson: boolean
-  outputMarkdown: boolean
-  orgSlug: string
-  sort: string
   direction: string
-  per_page: number
+  orgSlug: string
+  outputKind: 'json' | 'markdown' | 'print'
   page: number
+  per_page: number
+  sort: string
+}): Promise<void> {
+  const apiToken = getDefaultToken()
+  if (!apiToken) {
+    throw new AuthError(
+      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+    )
+  }
+
+  await listReposWithToken({
+    apiToken,
+    direction,
+    orgSlug,
+    outputKind,
+    page,
+    per_page,
+    sort
+  })
+}
+
+async function listReposWithToken({
+  apiToken,
+  direction,
+  orgSlug,
+  outputKind,
+  page,
+  per_page,
+  sort
+}: {
   apiToken: string
+  direction: string
+  orgSlug: string
+  outputKind: 'json' | 'markdown' | 'print'
+  page: number
+  per_page: number
+  sort: string
 }): Promise<void> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  spinner.start('Listing repositories...')
+  spinner.start('Fetching list of repositories...')
 
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getOrgRepoList(orgSlug, {
-      outputJson,
-      outputMarkdown,
-      orgSlug,
       sort,
       direction,
       per_page,
@@ -51,9 +80,9 @@ export async function listRepos({
     return
   }
 
-  spinner.stop()
+  spinner.stop('Fetch complete.')
 
-  if (outputJson) {
+  if (outputKind === 'json') {
     const data = result.data.results.map(o => ({
       id: o.id,
       name: o.name,
