@@ -11,6 +11,7 @@ import type { Remap } from '@socketsecurity/registry/lib/objects'
 const {
   NODE_MODULES,
   PACKAGE_JSON,
+  SOCKET_SECURITY_SCOPE,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
     createConstantsObject
@@ -91,14 +92,18 @@ type Constants = Remap<
     readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
     readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
     readonly SOCKET_CLI_LEGACY_BUILD: 'SOCKET_CLI_LEGACY_BUILD'
+    readonly SOCKET_CLI_LEGACY_PACKAGE_NAME: '@socketsecurity/cli'
     readonly SOCKET_CLI_NO_API_TOKEN: 'SOCKET_CLI_NO_API_TOKEN'
     readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
+    readonly SOCKET_CLI_PACKAGE_NAME: 'socket'
     readonly SOCKET_CLI_PUBLISHED_BUILD: 'SOCKET_CLI_PUBLISHED_BUILD'
     readonly SOCKET_CLI_SAFE_WRAPPER: 'SOCKET_CLI_SAFE_WRAPPER'
     readonly SOCKET_CLI_SENTRY_BUILD: 'SOCKET_CLI_SENTRY_BUILD'
+    readonly SOCKET_CLI_SENTRY_PACKAGE_NAME: '@socketsecurity/cli-with-sentry'
     readonly SOCKET_CLI_SHOW_BANNER: 'SOCKET_CLI_SHOW_BANNER'
     readonly SOCKET_CLI_VERSION_HASH: 'SOCKET_CLI_VERSION_HASH'
     readonly VLT: 'vlt'
+    readonly WITH_SENTRY: 'with-sentry'
     readonly YARN: 'yarn'
     readonly YARN_BERRY: 'yarn/berry'
     readonly YARN_CLASSIC: 'yarn/classic'
@@ -119,6 +124,7 @@ type Constants = Remap<
   }
 >
 
+const WITH_SENTRY = 'with-sentry'
 const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
 const ALERT_TYPE_CVE = 'cve'
 const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
@@ -148,11 +154,14 @@ const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
 const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const SOCKET_CLI_LEGACY_BUILD = 'SOCKET_CLI_LEGACY_BUILD'
+const SOCKET_CLI_LEGACY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/${CLI}`
 const SOCKET_CLI_NO_API_TOKEN = 'SOCKET_CLI_NO_API_TOKEN'
 const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
+const SOCKET_CLI_PACKAGE_NAME = SOCKET
 const SOCKET_CLI_PUBLISHED_BUILD = 'SOCKET_CLI_PUBLISHED_BUILD'
 const SOCKET_CLI_SAFE_WRAPPER = 'SOCKET_CLI_SAFE_WRAPPER'
 const SOCKET_CLI_SENTRY_BUILD = 'SOCKET_CLI_SENTRY_BUILD'
+const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_CLI_LEGACY_PACKAGE_NAME}-${WITH_SENTRY}`
 const SOCKET_CLI_SHOW_BANNER = 'SOCKET_CLI_SHOW_BANNER'
 const SOCKET_CLI_VERSION_HASH = 'SOCKET_CLI_VERSION_HASH'
 const VLT = 'vlt'
@@ -292,14 +301,18 @@ const constants = <Constants>createConstantsObject(
     SOCKET_CLI_FIX,
     SOCKET_CLI_ISSUES_URL,
     SOCKET_CLI_LEGACY_BUILD,
+    SOCKET_CLI_LEGACY_PACKAGE_NAME,
     SOCKET_CLI_NO_API_TOKEN,
     SOCKET_CLI_OPTIMIZE,
+    SOCKET_CLI_PACKAGE_NAME,
     SOCKET_CLI_PUBLISHED_BUILD,
     SOCKET_CLI_SAFE_WRAPPER,
     SOCKET_CLI_SENTRY_BUILD,
+    SOCKET_CLI_SENTRY_PACKAGE_NAME,
     SOCKET_CLI_SHOW_BANNER,
     SOCKET_CLI_VERSION_HASH,
     VLT,
+    WITH_SENTRY,
     YARN,
     YARN_BERRY,
     YARN_CLASSIC,
