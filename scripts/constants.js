@@ -7,6 +7,7 @@ const { envAsBoolean } = require('@socketsecurity/registry/lib/env')
 
 const {
   NPM,
+  NPX,
   PACKAGE_JSON,
   PACKAGE_LOCK,
   SOCKET_SECURITY_SCOPE,
@@ -19,7 +20,6 @@ const CLI = 'cli'
 const CONSTANTS = 'constants'
 const INSTRUMENT_WITH_SENTRY = `instrument-${WITH_SENTRY}`
 const MODULE_SYNC = 'module-sync'
-const NPX = 'npx'
 const REQUIRE = 'require'
 const ROLLUP_ENTRY_SUFFIX = '?commonjs-entry'
 const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
@@ -101,7 +101,6 @@ const constants = createConstantsObject(
     ENV: undefined,
     INSTRUMENT_WITH_SENTRY,
     MODULE_SYNC,
-    NPX,
     REQUIRE,
     ROLLUP_ENTRY_SUFFIX,
     ROLLUP_EXTERNAL_SUFFIX,
