@@ -7,7 +7,6 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { AuthError } from './errors'
 import constants from '../constants'
 
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type {
   SocketSdkErrorType,
   SocketSdkOperations
