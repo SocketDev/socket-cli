@@ -25,8 +25,9 @@ export default async function shadowBin(
 ) {
   process.exitCode = 1
   const terminatorPos = args.indexOf('--')
-  const skipSocketCliUpgrade = binName === NPM
-  args.length === 3 &&
+  const skipSocketCliUpgrade =
+    binName === NPM &&
+    args.length === 3 &&
     args[0] === 'install' &&
     args[1] === '-g' &&
     (args[2] === SOCKET_CLI_PACKAGE_NAME ||
