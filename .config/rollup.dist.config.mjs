@@ -36,7 +36,10 @@ const {
   SHADOW_BIN,
   SOCKET,
   SOCKET_CLI_LEGACY_BUILD,
+  SOCKET_CLI_LEGACY_PACKAGE_NAME,
+  SOCKET_CLI_PACKAGE_NAME,
   SOCKET_CLI_SENTRY_BUILD,
+  SOCKET_CLI_SENTRY_PACKAGE_NAME,
   SOCKET_CLI_TEST_DIST_BUILD,
   VENDOR,
   WITH_SENTRY,
@@ -56,8 +59,6 @@ const SOCKET_NPX = 'socket-npx'
 const SOCKET_WITH_SENTRY = `socket-${WITH_SENTRY}`
 const SOCKET_NPM_WITH_SENTRY = `${SOCKET_NPM}-${WITH_SENTRY}`
 const SOCKET_NPX_WITH_SENTRY = `${SOCKET_NPX}-${WITH_SENTRY}`
-const SOCKET_SECURITY_CLI = '@socketsecurity/cli'
-const SOCKET_SECURITY_CLI_WITH_SENTRY = `${SOCKET_SECURITY_CLI}-${WITH_SENTRY}`
 const VENDOR_JS = `${VENDOR}.js`
 
 const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
@@ -225,7 +226,7 @@ async function updatePackageJson() {
   const bin = resetBin(pkgJson.bin)
   const dependencies = resetDependencies(pkgJson.dependencies)
   editablePkgJson.update({
-    name: SOCKET,
+    name: SOCKET_CLI_PACKAGE_NAME,
     description: SOCKET_DESCRIPTION,
     bin,
     dependencies
@@ -243,7 +244,7 @@ async function updatePackageJson() {
   // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
   else if (constants.ENV[SOCKET_CLI_SENTRY_BUILD]) {
     editablePkgJson.update({
-      name: SOCKET_SECURITY_CLI_WITH_SENTRY,
+      name: SOCKET_CLI_SENTRY_PACKAGE_NAME,
       description: SOCKET_DESCRIPTION_WITH_SENTRY,
       bin: {
         [CLI_WITH_SENTRY]: bin[SOCKET],
@@ -269,14 +270,14 @@ async function updatePackageLockFile() {
   const bin = resetBin(rootPkg.bin)
   const dependencies = resetDependencies(rootPkg.dependencies)
 
-  lockJson.name = SOCKET
-  rootPkg.name = SOCKET
+  lockJson.name = SOCKET_CLI_PACKAGE_NAME
+  rootPkg.name = SOCKET_CLI_PACKAGE_NAME
   rootPkg.bin = bin
   rootPkg.dependencies = dependencies
   // Lazily access constants.ENV[SOCKET_CLI_LEGACY_BUILD].
   if (constants.ENV[SOCKET_CLI_LEGACY_BUILD]) {
-    lockJson.name = SOCKET_SECURITY_CLI
-    rootPkg.name = SOCKET_SECURITY_CLI
+    lockJson.name = SOCKET_CLI_LEGACY_PACKAGE_NAME
+    rootPkg.name = SOCKET_CLI_LEGACY_PACKAGE_NAME
     rootPkg.bin = toSortedObject({
       [CLI]: bin[SOCKET],
       ...bin
@@ -284,8 +285,8 @@ async function updatePackageLockFile() {
   }
   // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
   else if (constants.ENV[SOCKET_CLI_SENTRY_BUILD]) {
-    lockJson.name = SOCKET_SECURITY_CLI_WITH_SENTRY
-    rootPkg.name = SOCKET_SECURITY_CLI_WITH_SENTRY
+    lockJson.name = SOCKET_CLI_SENTRY_PACKAGE_NAME
+    rootPkg.name = SOCKET_CLI_SENTRY_PACKAGE_NAME
     rootPkg.bin = {
       [CLI_WITH_SENTRY]: bin[SOCKET],
       [SOCKET_WITH_SENTRY]: bin[SOCKET],
