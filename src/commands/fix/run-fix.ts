@@ -10,16 +10,16 @@ import {
   Arborist,
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   SafeArborist
-} from '../../shadow/arborist/lib/arborist'
+} from '../../shadow/npm/arborist/lib/arborist'
 import {
   findPackageNodes,
   getCveInfoByPackage,
   getPackagesAlerts,
   updateNode
-} from '../../shadow/arborist/lib/arborist/reify'
+} from '../../shadow/npm/arborist/lib/arborist/reify'
 // import { detect } from '../../utils/package-environment-detector'
 
-import type { SafeNode } from '../../shadow/arborist/lib/node'
+import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
 
 const { NPM } = constants
 

@@ -2,5 +2,5 @@
 'use strict'
 
 const constants = require('../dist/constants')
-const shadowBin = require(`${constants.distPath}/${constants.SHADOW_BIN}.js`)
+const shadowBin = require(constants.distShadowNpmBinPath)
 shadowBin(constants.NPM)

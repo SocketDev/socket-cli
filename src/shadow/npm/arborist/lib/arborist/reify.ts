@@ -16,19 +16,19 @@ import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { getPackagesToQueryFromDiff } from './diff'
-import constants from '../../../../constants'
+import constants from '../../../../../constants'
 import {
   batchScan,
   isArtifactAlertCveFixable,
   isArtifactAlertUpgradeFixable
-} from '../../../../utils/alert/artifact'
-import { uxLookup } from '../../../../utils/alert/rules'
-import { ColorOrMarkdown } from '../../../../utils/color-or-markdown'
-import { getSocketDevPackageOverviewUrl } from '../../../../utils/socket-url'
+} from '../../../../../utils/alert/artifact'
+import { uxLookup } from '../../../../../utils/alert/rules'
+import { ColorOrMarkdown } from '../../../../../utils/color-or-markdown'
+import { getSocketDevPackageOverviewUrl } from '../../../../../utils/socket-url'
 import { Edge, SafeEdge } from '../edge'
 
 import type { ArboristClass, ArboristReifyOptions } from './types'
-import type { SocketArtifact } from '../../../../utils/alert/artifact'
+import type { SocketArtifact } from '../../../../../utils/alert/artifact'
 import type { SafeNode } from '../node'
 import type { Writable } from 'node:stream'
 
@@ -110,7 +110,9 @@ export function findPackageNodes(
   return matches
 }
 
-let _translations: typeof import('../../../../../translations.json') | undefined
+let _translations:
+  | typeof import('../../../../../../translations.json')
+  | undefined
 function getTranslations() {
   if (_translations === undefined) {
     _translations = require(

@@ -8,7 +8,7 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
-import shadowBin from '../../shadow/shadow-bin'
+import shadowBin from '../../shadow/npm/bin'
 
 const { NPM, NPX, PNPM } = constants
 

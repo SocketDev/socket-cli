@@ -27,6 +27,12 @@ describe('Socket cdxgen command', async () => {
 
   it(
     'should forwards known commands to cdxgen',
+    {
+      // Skip until we think of how to handle the output test.
+      skip: true,
+      // Takes ~10s in CI
+      timeout: 20_000
+    },
     async () => {
       for (const command of ['-h', '--help']) {
         // eslint-disable-next-line no-await-in-loop
@@ -41,17 +47,15 @@ describe('Socket cdxgen command', async () => {
           'forwards commands to cdxgen'
         ).toBe(true)
       }
-    },
-    {
-      // Skip until we think of how to handle the output test.
-      skip: true,
-      // Takes ~10s in CI
-      timeout: 20_000
     }
   )
 
   describe(
     'command forwarding',
+    {
+      // Skip until we think of how to handle the output test.
+      skip: true
+    },
     async () => {
       expect.extend({
         toHaveStderrStartWith(received, expected) {
@@ -111,10 +115,6 @@ describe('Socket cdxgen command', async () => {
           `${LOG_SYMBOLS.error} Unknown arguments: -u, --unknown`
         )
       })
-    },
-    {
-      // Skip until we think of how to handle the output test.
-      skip: true
     }
   )
 })

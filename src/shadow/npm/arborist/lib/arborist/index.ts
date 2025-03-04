@@ -1,8 +1,8 @@
 import process from 'node:process'
 
 import { kCtorArgs, kRiskyReify, reify } from './reify'
-import constants from '../../../../constants'
-import { getArboristClassPath } from '../../../npm-paths'
+import constants from '../../../../../constants'
+import { getArboristClassPath } from '../../../paths'
 
 import type { ArboristClass, ArboristReifyOptions } from './types'
 import type { SafeNode } from '../node'

@@ -1,4 +1,4 @@
-import constants from '../../../../constants'
+import constants from '../../../../../constants'
 
 import type { Diff } from './types'
 import type { SafeNode } from '../node'
