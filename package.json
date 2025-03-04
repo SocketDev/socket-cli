@@ -57,6 +57,8 @@
     "lint-staged": "lint-staged",
     "precommit": "lint-staged",
     "prepare": "husky",
+    "bs": "npm run build:dist; npm exec socket --",
+    "s": "npm exec socket --",
     "test": "run-s check test:*",
     "test:prepare": "cross-env VITEST=1 npm run build",
     "test:unit": "vitest --run",
