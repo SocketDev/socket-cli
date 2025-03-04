@@ -1,10 +1,7 @@
-import process from 'node:process'
-
 import colors from 'yoctocolors-cjs'
 
 import constants from '@socketsecurity/registry/lib/constants'
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { PackageData } from './get-package-info'
 import { formatSeverityCount } from '../../utils/alert/severity'
@@ -23,69 +20,73 @@ export function formatPackageInfo(
   { data, score, severityCount }: PackageData,
   {
     name,
-    outputJson,
-    outputMarkdown,
+    outputKind,
     pkgName,
-    pkgVersion,
-    strict
+    pkgVersion
   }: {
     includeAllIssues: boolean
-    outputJson: boolean
-    outputMarkdown: boolean
+    name: string
+    outputKind: 'json' | 'markdown' | 'print'
     pkgName: string
     pkgVersion: string
-    strict: boolean
-  } & { name: string },
-  spinner: Spinner
+  }
 ): void {
-  if (outputJson) {
+  if (outputKind === 'json') {
     logger.log(JSON.stringify(data, undefined, 2))
-  } else {
-    logger.log('\nPackage report card:')
-    const scoreResult = {
-      'Supply Chain Risk': Math.floor(score.supplyChainRisk.score * 100),
-      Maintenance: Math.floor(score.maintenance.score * 100),
-      Quality: Math.floor(score.quality.score * 100),
-      Vulnerabilities: Math.floor(score.vulnerability.score * 100),
-      License: Math.floor(score.license.score * 100)
-    }
-    Object.entries(scoreResult).map(score =>
-      logger.log(`- ${score[0]}: ${formatScore(score[1])}`)
-    )
-    logger.log('\n')
-    if (objectSome(severityCount)) {
-      spinner[strict ? 'error' : 'success'](
-        `Package has these issues: ${formatSeverityCount(severityCount)}`
-      )
-      formatPackageIssuesDetails(data, outputMarkdown)
-    } else {
-      spinner.successAndStop('Package has no issues')
-    }
-
-    const format = new ColorOrMarkdown(!!outputMarkdown)
-    const url = getSocketDevPackageOverviewUrl(NPM, pkgName, pkgVersion)
-
-    logger.log('\n')
-    if (pkgVersion === 'latest') {
-      logger.log(
-        `Detailed info on socket.dev: ${format.hyperlink(`${pkgName}`, url, { fallbackToUrl: true })}`
-      )
-    } else {
-      logger.log(
-        `Detailed info on socket.dev: ${format.hyperlink(`${pkgName} v${pkgVersion}`, url, { fallbackToUrl: true })}`
-      )
-    }
-    if (!outputMarkdown) {
-      logger.log(
-        colors.dim(
-          `\nOr rerun ${colors.italic(name)} using the ${colors.italic('--json')} flag to get full JSON output`
-        )
-      )
-    }
+    return
   }
 
-  if (strict && objectSome(severityCount)) {
-    process.exit(1)
+  if (outputKind === 'markdown') {
+    logger.log(`\n# Package report for ${pkgName}\n`)
+    logger.log('Package report card:\n')
+  } else {
+    logger.log(`\nPackage report card for ${pkgName}:\n`)
+  }
+  const scoreResult = {
+    'Supply Chain Risk': Math.floor(score.supplyChainRisk.score * 100),
+    Maintenance: Math.floor(score.maintenance.score * 100),
+    Quality: Math.floor(score.quality.score * 100),
+    Vulnerabilities: Math.floor(score.vulnerability.score * 100),
+    License: Math.floor(score.license.score * 100)
+  }
+  Object.entries(scoreResult).map(score =>
+    logger.log(`- ${score[0]}: ${formatScore(score[1])}`)
+  )
+  logger.log('\n')
+
+  if (objectSome(severityCount)) {
+    if (outputKind === 'markdown') {
+      logger.log('# Issues\n')
+    }
+    logger.log(
+      `Package has these issues: ${formatSeverityCount(severityCount)}\n`
+    )
+    formatPackageIssuesDetails(data, outputKind === 'markdown')
+  } else {
+    logger.log('Package has no issues')
+  }
+
+  const format = new ColorOrMarkdown(outputKind === 'markdown')
+  const url = getSocketDevPackageOverviewUrl(NPM, pkgName, pkgVersion)
+
+  logger.log('\n')
+  if (pkgVersion === 'latest') {
+    logger.log(
+      `Detailed info on socket.dev: ${format.hyperlink(`${pkgName}`, url, { fallbackToUrl: true })}`
+    )
+  } else {
+    logger.log(
+      `Detailed info on socket.dev: ${format.hyperlink(`${pkgName} v${pkgVersion}`, url, { fallbackToUrl: true })}`
+    )
+  }
+  if (outputKind !== 'markdown') {
+    logger.log(
+      colors.dim(
+        `\nOr rerun ${colors.italic(name)} using the ${colors.italic('--json')} flag to get full JSON output`
+      )
+    )
+  } else {
+    logger.log('')
   }
 }
 
@@ -118,7 +119,7 @@ function formatPackageIssuesDetails(
     {}
   )
 
-  const format = new ColorOrMarkdown(!!outputMarkdown)
+  const format = new ColorOrMarkdown(outputMarkdown)
   for (const issue of Object.keys(uniqueIssues)) {
     const issueWithLink = format.hyperlink(
       `${uniqueIssues[issue]?.label}`,
