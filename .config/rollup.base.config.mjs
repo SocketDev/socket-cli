@@ -16,7 +16,6 @@ import {
   readPackageJsonSync
 } from '@socketsecurity/registry/lib/packages'
 import { isRelative } from '@socketsecurity/registry/lib/path'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../scripts/constants.js'
@@ -38,6 +37,9 @@ const {
   ROLLUP_ENTRY_SUFFIX,
   ROLLUP_EXTERNAL_SUFFIX,
   SLASH_NODE_MODULES_SLASH,
+  SHADOW_NPM_BIN,
+  SHADOW_NPM_INJECT,
+  SHADOW_NPM_PATHS,
   SOCKET_CLI_LEGACY_BUILD,
   SOCKET_CLI_PUBLISHED_BUILD,
   SOCKET_CLI_SENTRY_BUILD,
@@ -148,7 +150,12 @@ export default function baseConfig(extendConfig = {}) {
     overrides: pkgOverrides
     // Lazily access constants.rootPackageJsonPath.
   } = require(constants.rootPackageJsonPath)
-  const constantsSrcPath = path.join(rootSrcPath, `${CONSTANTS}.ts`)
+
+  const constantsSrcPath = path.join(rootSrcPath, `constants.ts`)
+  const shadowNpmBinSrcPath = path.join(rootSrcPath, 'shadow/npm/bin.ts')
+  const shadowNpmInjectSrcPath = path.join(rootSrcPath, 'shadow/npm/inject.ts')
+  const shadowNpmPathsSrcPath = path.join(rootSrcPath, 'shadow/npm/paths.ts')
+
   // Lazily access constants.babelConfigPath.
   const babelConfig = require(constants.babelConfigPath)
   const tsPlugin = require('rollup-plugin-ts')
@@ -383,13 +390,19 @@ function ${SOCKET_INTEROP}(e) {
     chunkFileNames: '[name].js',
     manualChunks: id_ => {
       const id = normalizeId(id_)
-      if (id === constantsSrcPath) {
-        return CONSTANTS
+      switch (id) {
+        case constantsSrcPath:
+          return CONSTANTS
+        case shadowNpmBinSrcPath:
+          return SHADOW_NPM_BIN
+        case shadowNpmInjectSrcPath:
+          return SHADOW_NPM_INJECT
+        case shadowNpmPathsSrcPath:
+          return SHADOW_NPM_PATHS
+        default: {
+          return id.includes(SLASH_NODE_MODULES_SLASH) ? VENDOR : null
+        }
       }
-      if (id.includes(SLASH_NODE_MODULES_SLASH)) {
-        return VENDOR
-      }
-      return null
     }
   }))
 

@@ -7,7 +7,7 @@ import {
   getArboristEdgeClassPath,
   getArboristNodeClassPath,
   getArboristOverrideSetClassPath
-} from '../npm-paths'
+} from '../paths'
 
 export function installSafeArborist() {
   // Override '@npmcli/arborist' module exports with patched variants based on

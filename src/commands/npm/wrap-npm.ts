@@ -1,9 +1,9 @@
 import constants from '../../constants'
 
-const { NPM, SHADOW_BIN } = constants
+const { NPM } = constants
 
 export async function wrapNpm(argv: readonly string[]) {
-  // Lazily access constants.distPath.
-  const shadowBin = require(`${constants.distPath}/${SHADOW_BIN}.js`)
+  // Lazily access constants.distShadowNpmBinPath.
+  const shadowBin = require(constants.distShadowNpmBinPath)
   await shadowBin(NPM, argv)
 }

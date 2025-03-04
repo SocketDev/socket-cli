@@ -6,8 +6,11 @@ import process from 'node:process'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
-import constants from '../constants'
-import { findBinPathDetailsSync, findNpmPathSync } from '../utils/path-resolve'
+import constants from '../../constants'
+import {
+  findBinPathDetailsSync,
+  findNpmPathSync
+} from '../../utils/path-resolve'
 
 const { NODE_MODULES, NPM, NPX, SOCKET_CLI_ISSUES_URL } = constants
 

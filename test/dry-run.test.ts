@@ -16,9 +16,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../dist/constants.js'
 
-type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
-  encoding?: BufferEncoding | undefined
-}
+type TestCollectorOptions = Exclude<Parameters<typeof it>[1], undefined>
 
 const { CLI, abortSignal } = constants
 
@@ -33,9 +31,16 @@ function cmdit(
   cmd: string[],
   title: string,
   cb: (cmd: string[]) => Promise<void>,
-  ...opts: any
+  options?: TestCollectorOptions | undefined
 ) {
-  it(`${title}: \`${cmd.join(' ')}\``, cb.bind(null, cmd), ...opts)
+  it(
+    `${title}: \`${cmd.join(' ')}\``,
+    {
+      timeout: 10_000,
+      ...options
+    },
+    cb.bind(null, cmd)
+  )
 }
 
 async function invoke(

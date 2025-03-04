@@ -2,7 +2,7 @@ import process from 'node:process'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { getNpxBinPath } from '../../shadow/npm-paths'
+import { getNpxBinPath } from '../../shadow/npm/paths'
 
 export async function runRawNpx(argv: readonly string[]): Promise<void> {
   const spawnPromise = spawn(getNpxBinPath(), <string[]>argv, {

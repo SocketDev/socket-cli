@@ -8,8 +8,8 @@ import {
   getNpxBinPath,
   isNpmBinPathShadowed,
   isNpxBinPathShadowed
-} from './npm-paths'
-import constants from '../constants'
+} from './paths'
+import constants from '../../constants'
 
 const { CLI, NPX } = constants
 

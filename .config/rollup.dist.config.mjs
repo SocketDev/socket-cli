@@ -25,23 +25,28 @@ import {
 } from '../scripts/utils/packages.js'
 
 const {
-  CLI,
   CONSTANTS,
   INSTRUMENT_WITH_SENTRY,
   MODULE_SYNC,
-  NPM_INJECTION,
   REQUIRE,
   ROLLUP_EXTERNAL_SUFFIX,
-  SHADOW_BIN,
-  SOCKET,
+  SHADOW_NPM_BIN,
+  SHADOW_NPM_INJECT,
+  SOCKET_CLI_BIN_NAME,
+  SOCKET_CLI_BIN_NAME_ALIAS,
   SOCKET_CLI_LEGACY_BUILD,
   SOCKET_CLI_LEGACY_PACKAGE_NAME,
+  SOCKET_CLI_NPM_BIN_NAME,
+  SOCKET_CLI_NPX_BIN_NAME,
   SOCKET_CLI_PACKAGE_NAME,
+  SOCKET_CLI_SENTRY_BIN_NAME,
+  SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
   SOCKET_CLI_SENTRY_BUILD,
+  SOCKET_CLI_SENTRY_NPM_BIN_NAME,
+  SOCKET_CLI_SENTRY_NPX_BIN_NAME,
   SOCKET_CLI_SENTRY_PACKAGE_NAME,
   SOCKET_CLI_TEST_DIST_BUILD,
   VENDOR,
-  WITH_SENTRY,
   depStatsPath,
   rootDistPath,
   rootPackageLockPath,
@@ -49,15 +54,9 @@ const {
   rootSrcPath
 } = constants
 
-const CLI_WITH_SENTRY = `${CLI}-${WITH_SENTRY}`
 const SENTRY_NODE = '@sentry/node'
 const SOCKET_DESCRIPTION = 'CLI tool for Socket.dev'
-const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET}\` package`
-const SOCKET_NPM = 'socket-npm'
-const SOCKET_NPX = 'socket-npx'
-const SOCKET_WITH_SENTRY = `socket-${WITH_SENTRY}`
-const SOCKET_NPM_WITH_SENTRY = `${SOCKET_NPM}-${WITH_SENTRY}`
-const SOCKET_NPX_WITH_SENTRY = `${SOCKET_NPX}-${WITH_SENTRY}`
+const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
 const VENDOR_JS = `${VENDOR}.js`
 
 const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
@@ -65,9 +64,9 @@ const distRequirePath = path.join(rootDistPath, REQUIRE)
 
 const sharedInputs = {
   cli: `${rootSrcPath}/cli.ts`,
-  [CONSTANTS]: `${rootSrcPath}/${CONSTANTS}.ts`,
-  [SHADOW_BIN]: `${rootSrcPath}/shadow/${SHADOW_BIN}.ts`,
-  [NPM_INJECTION]: `${rootSrcPath}/shadow/${NPM_INJECTION}.ts`
+  [CONSTANTS]: `${rootSrcPath}/constants.ts`,
+  [SHADOW_NPM_BIN]: `${rootSrcPath}/shadow/npm/bin.ts`,
+  [SHADOW_NPM_INJECT]: `${rootSrcPath}/shadow/npm/inject.ts`
 }
 
 const sharedOutputs = {
@@ -145,20 +144,29 @@ async function removeJsFiles(namePattern, srcPath) {
 
 function resetBin(bin) {
   const tmpBin = {
-    [SOCKET]: bin?.[SOCKET] ?? bin?.[SOCKET_WITH_SENTRY],
-    [SOCKET_NPM]: bin?.[SOCKET_NPM] ?? bin?.[SOCKET_NPM_WITH_SENTRY],
-    [SOCKET_NPX]: bin?.[SOCKET_NPX] ?? bin?.[SOCKET_NPX_WITH_SENTRY]
+    [SOCKET_CLI_BIN_NAME]:
+      bin?.[SOCKET_CLI_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_BIN_NAME],
+    [SOCKET_CLI_NPM_BIN_NAME]:
+      bin?.[SOCKET_CLI_NPM_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPM_BIN_NAME],
+    [SOCKET_CLI_NPX_BIN_NAME]:
+      bin?.[SOCKET_CLI_NPX_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPX_BIN_NAME]
   }
   const newBin = {
-    ...(tmpBin[SOCKET] ? { [SOCKET]: tmpBin.socket } : {}),
-    ...(tmpBin[SOCKET_NPM] ? { [SOCKET_NPM]: tmpBin[SOCKET_NPM] } : {}),
-    ...(tmpBin[SOCKET_NPX] ? { [SOCKET_NPX]: tmpBin[SOCKET_NPX] } : {})
+    ...(tmpBin[SOCKET_CLI_BIN_NAME]
+      ? { [SOCKET_CLI_BIN_NAME]: tmpBin.socket }
+      : {}),
+    ...(tmpBin[SOCKET_CLI_NPM_BIN_NAME]
+      ? { [SOCKET_CLI_NPM_BIN_NAME]: tmpBin[SOCKET_CLI_NPM_BIN_NAME] }
+      : {}),
+    ...(tmpBin[SOCKET_CLI_NPX_BIN_NAME]
+      ? { [SOCKET_CLI_NPX_BIN_NAME]: tmpBin[SOCKET_CLI_NPX_BIN_NAME] }
+      : {})
   }
   assert(
     util.isDeepStrictEqual(Object.keys(newBin).sort(naturalCompare), [
-      SOCKET,
-      SOCKET_NPM,
-      SOCKET_NPX
+      SOCKET_CLI_BIN_NAME,
+      SOCKET_CLI_NPM_BIN_NAME,
+      SOCKET_CLI_NPX_BIN_NAME
     ]),
     "Update the rollup Legacy and Sentry build's .bin to match the default build."
   )
@@ -235,7 +243,7 @@ async function updatePackageJson() {
     editablePkgJson.update({
       name: SOCKET_CLI_LEGACY_PACKAGE_NAME,
       bin: {
-        [CLI]: bin[SOCKET],
+        [SOCKET_CLI_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
         ...bin
       }
     })
@@ -246,10 +254,10 @@ async function updatePackageJson() {
       name: SOCKET_CLI_SENTRY_PACKAGE_NAME,
       description: SOCKET_DESCRIPTION_WITH_SENTRY,
       bin: {
-        [CLI_WITH_SENTRY]: bin[SOCKET],
-        [SOCKET_WITH_SENTRY]: bin[SOCKET],
-        [SOCKET_NPM_WITH_SENTRY]: bin[SOCKET_NPM],
-        [SOCKET_NPX_WITH_SENTRY]: bin[SOCKET_NPX]
+        [SOCKET_CLI_SENTRY_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
+        [SOCKET_CLI_SENTRY_BIN_NAME]: bin[SOCKET_CLI_BIN_NAME],
+        [SOCKET_CLI_SENTRY_NPM_BIN_NAME]: bin[SOCKET_CLI_NPM_BIN_NAME],
+        [SOCKET_CLI_SENTRY_NPX_BIN_NAME]: bin[SOCKET_CLI_NPX_BIN_NAME]
       },
       dependencies: {
         ...dependencies,
@@ -278,7 +286,7 @@ async function updatePackageLockFile() {
     lockJson.name = SOCKET_CLI_LEGACY_PACKAGE_NAME
     rootPkg.name = SOCKET_CLI_LEGACY_PACKAGE_NAME
     rootPkg.bin = toSortedObject({
-      [CLI]: bin[SOCKET],
+      [SOCKET_CLI_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
       ...bin
     })
   }
@@ -287,10 +295,10 @@ async function updatePackageLockFile() {
     lockJson.name = SOCKET_CLI_SENTRY_PACKAGE_NAME
     rootPkg.name = SOCKET_CLI_SENTRY_PACKAGE_NAME
     rootPkg.bin = {
-      [CLI_WITH_SENTRY]: bin[SOCKET],
-      [SOCKET_WITH_SENTRY]: bin[SOCKET],
-      [SOCKET_NPM_WITH_SENTRY]: bin[SOCKET_NPM],
-      [SOCKET_NPX_WITH_SENTRY]: bin[SOCKET_NPX]
+      [SOCKET_CLI_SENTRY_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
+      [SOCKET_CLI_SENTRY_BIN_NAME]: bin[SOCKET_CLI_BIN_NAME],
+      [SOCKET_CLI_SENTRY_NPM_BIN_NAME]: bin[SOCKET_CLI_NPM_BIN_NAME],
+      [SOCKET_CLI_SENTRY_NPX_BIN_NAME]: bin[SOCKET_CLI_NPX_BIN_NAME]
     }
     rootPkg.dependencies = toSortedObject({
       ...dependencies,

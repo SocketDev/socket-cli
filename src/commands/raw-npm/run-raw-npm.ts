@@ -2,7 +2,7 @@ import process from 'node:process'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { getNpmBinPath } from '../../shadow/npm-paths'
+import { getNpmBinPath } from '../../shadow/npm/paths'
 
 export async function runRawNpm(
   argv: string[] | readonly string[]

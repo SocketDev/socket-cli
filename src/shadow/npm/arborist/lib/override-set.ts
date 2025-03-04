@@ -1,7 +1,7 @@
 import npa from 'npm-package-arg'
 import semver from 'semver'
 
-import { getArboristOverrideSetClassPath } from '../../npm-paths'
+import { getArboristOverrideSetClassPath } from '../../paths'
 import { getLogger } from '../../proc-log'
 
 import type { SafeEdge } from './edge'

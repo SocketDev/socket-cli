@@ -1,7 +1,7 @@
 import { depValid } from './dep-valid'
 import { SafeNode } from './node'
 import { SafeOverrideSet } from './override-set'
-import { getArboristEdgeClassPath } from '../../npm-paths'
+import { getArboristEdgeClassPath } from '../../paths'
 
 import type { Edge as BaseEdge, DependencyProblem } from '@npmcli/arborist'
 

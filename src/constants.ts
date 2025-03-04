@@ -10,6 +10,7 @@ import type { Remap } from '@socketsecurity/registry/lib/objects'
 
 const {
   NODE_MODULES,
+  NPM,
   PACKAGE_JSON,
   SOCKET_SECURITY_SCOPE,
   kInternalsSymbol,
@@ -79,25 +80,34 @@ type Constants = Remap<
     readonly IPC: IPC
     readonly LOCK_EXT: '.lock'
     readonly MODULE_SYNC: 'module-sync'
-    readonly NPM_INJECTION: 'npm-injection'
     readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
     readonly NPX: 'npx'
     readonly PNPM: 'pnpm'
     readonly REDACTED: '<redacted>'
     readonly REQUIRE: 'require'
-    readonly SHADOW_BIN: 'shadow-bin'
+    readonly SHADOW_NPM_BIN: 'shadow-bin'
+    readonly SHADOW_NPM_INJECT: 'shadow-npm-inject'
+    readonly SHADOW_NPM_PATHS: 'shadow-npm-paths'
     readonly SOCKET: 'socket'
+    readonly SOCKET_CLI_BIN_NAME: 'socket'
+    readonly SOCKET_CLI_BIN_NAME_ALIAS: 'cli'
     readonly SOCKET_CLI_DEBUG: 'SOCKET_CLI_DEBUG'
     readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
     readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
+    readonly SOCKET_CLI_SENTRY_BIN_NAME_ALIAS: 'cli-with-sentry'
     readonly SOCKET_CLI_LEGACY_BUILD: 'SOCKET_CLI_LEGACY_BUILD'
     readonly SOCKET_CLI_LEGACY_PACKAGE_NAME: '@socketsecurity/cli'
     readonly SOCKET_CLI_NO_API_TOKEN: 'SOCKET_CLI_NO_API_TOKEN'
+    readonly SOCKET_CLI_NPM_BIN_NAME: 'socket-npm'
+    readonly SOCKET_CLI_NPX_BIN_NAME: 'socket-npx'
     readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
     readonly SOCKET_CLI_PACKAGE_NAME: 'socket'
     readonly SOCKET_CLI_PUBLISHED_BUILD: 'SOCKET_CLI_PUBLISHED_BUILD'
     readonly SOCKET_CLI_SAFE_WRAPPER: 'SOCKET_CLI_SAFE_WRAPPER'
+    readonly SOCKET_CLI_SENTRY_BIN_NAME: 'socket-with-sentry'
     readonly SOCKET_CLI_SENTRY_BUILD: 'SOCKET_CLI_SENTRY_BUILD'
+    readonly SOCKET_CLI_SENTRY_NPM_BIN_NAME: 'socket-npm-with-sentry'
+    readonly SOCKET_CLI_SENTRY_NPX_BIN_NAME: 'socket-npx-with-sentry'
     readonly SOCKET_CLI_SENTRY_PACKAGE_NAME: '@socketsecurity/cli-with-sentry'
     readonly SOCKET_CLI_SHOW_BANNER: 'SOCKET_CLI_SHOW_BANNER'
     readonly SOCKET_CLI_VERSION_HASH: 'SOCKET_CLI_VERSION_HASH'
@@ -107,11 +117,13 @@ type Constants = Remap<
     readonly YARN_BERRY: 'yarn/berry'
     readonly YARN_CLASSIC: 'yarn/classic'
     readonly bashRcPath: string
+    readonly distCliPath: string
+    readonly distInstrumentWithSentryPath: string
     readonly distPath: string
+    readonly distShadowNpmBinPath: string
+    readonly distShadowNpmInjectPath: string
     readonly homePath: string
-    readonly instrumentWithSentryPath: string
     readonly nmBinPath: string
-    readonly npmInjectionPath: string
     readonly rootBinPath: string
     readonly rootDistPath: string
     readonly rootPath: string
@@ -121,7 +133,9 @@ type Constants = Remap<
   }
 >
 
+const SOCKET = 'socket'
 const WITH_SENTRY = 'with-sentry'
+
 const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
 const ALERT_TYPE_CVE = 'cve'
 const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
@@ -138,14 +152,16 @@ const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAIL_TEXT = `${DRY_RUN_LABEL}: Bailing now`
 const LOCK_EXT = '.lock'
 const MODULE_SYNC = 'module-sync'
-const NPM_INJECTION = 'npm-injection'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const NPX = 'npx'
 const PNPM = 'pnpm'
 const REDACTED = '<redacted>'
 const REQUIRE = 'require'
-const SHADOW_BIN = 'shadow-bin'
-const SOCKET = 'socket'
+const SHADOW_NPM_BIN = 'shadow-bin'
+const SHADOW_NPM_INJECT = 'shadow-npm-inject'
+const SHADOW_NPM_PATHS = 'shadow-npm-paths'
+const SOCKET_CLI_BIN_NAME = SOCKET
+const SOCKET_CLI_BIN_NAME_ALIAS = CLI
 const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
 const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
@@ -153,10 +169,16 @@ const SOCKET_CLI_LEGACY_BUILD = 'SOCKET_CLI_LEGACY_BUILD'
 const SOCKET_CLI_LEGACY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/${CLI}`
 const SOCKET_CLI_NO_API_TOKEN = 'SOCKET_CLI_NO_API_TOKEN'
 const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
+const SOCKET_CLI_NPM_BIN_NAME = `${SOCKET}-${NPM}`
+const SOCKET_CLI_NPX_BIN_NAME = `${SOCKET}-${NPX}`
 const SOCKET_CLI_PACKAGE_NAME = SOCKET
 const SOCKET_CLI_PUBLISHED_BUILD = 'SOCKET_CLI_PUBLISHED_BUILD'
 const SOCKET_CLI_SAFE_WRAPPER = 'SOCKET_CLI_SAFE_WRAPPER'
+const SOCKET_CLI_SENTRY_BIN_NAME = `${SOCKET_CLI_BIN_NAME}-${WITH_SENTRY}`
+const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = `${SOCKET_CLI_BIN_NAME_ALIAS}-${WITH_SENTRY}`
 const SOCKET_CLI_SENTRY_BUILD = 'SOCKET_CLI_SENTRY_BUILD'
+const SOCKET_CLI_SENTRY_NPM_BIN_NAME = `${SOCKET_CLI_NPM_BIN_NAME}-${WITH_SENTRY}`
+const SOCKET_CLI_SENTRY_NPX_BIN_NAME = `${SOCKET_CLI_NPX_BIN_NAME}-${WITH_SENTRY}`
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_CLI_LEGACY_PACKAGE_NAME}-${WITH_SENTRY}`
 const SOCKET_CLI_SHOW_BANNER = 'SOCKET_CLI_SHOW_BANNER'
 const SOCKET_CLI_VERSION_HASH = 'SOCKET_CLI_VERSION_HASH'
@@ -209,23 +231,31 @@ const lazyBashRcPath = () =>
   // Lazily access constants.homePath.
   path.join(constants.homePath, '.bashrc')
 
+const lazyDistCliPath = () =>
+  // Lazily access constants.distPath.
+  path.join(constants.distPath, 'cli.js')
+
+const lazyDistInstrumentWithSentryPath = () =>
+  // Lazily access constants.rootDistPath.
+  path.join(constants.rootDistPath, 'instrument-with-sentry.js')
+
 const lazyDistPath = () =>
   // Lazily access constants.rootDistPath and constants.DIST_TYPE.
   path.join(constants.rootDistPath, constants.DIST_TYPE)
 
-const lazyHomePath = () => os.homedir()
+const lazyDistShadowNpmBinPath = () =>
+  // Lazily access constants.distPath.
+  path.join(constants.distPath, `${SHADOW_NPM_BIN}.js`)
 
-const lazyInstrumentWithSentryPath = () =>
-  // Lazily access constants.rootDistPath.
-  path.join(constants.rootDistPath, 'instrument-with-sentry.js')
+const lazyDistShadowNpmInjectPath = () =>
+  // Lazily access constants.distPath.
+  path.join(constants.distPath, `${SHADOW_NPM_INJECT}.js`)
+
+const lazyHomePath = () => os.homedir()
 
 const lazyNmBinPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, `${NODE_MODULES}/.bin`)
-
-const lazyNpmInjectionPath = () =>
-  // Lazily access constants.distPath.
-  path.join(constants.distPath, `${NPM_INJECTION}.js`)
 
 const lazyRootBinPath = () =>
   // Lazily access constants.rootPath.
@@ -238,7 +268,7 @@ const lazyRootDistPath = () =>
 const lazyRootPath = () =>
   // The '@rollup/plugin-replace' will replace "process.env.['VITEST']" with `false` and
   // it will be dead code eliminated by Rollup.
-  path.resolve(
+  path.join(
     realpathSync.native(__dirname),
     process.env['SOCKET_CLI_TEST_DIST_BUILD'] ? '../..' : '..'
   )
@@ -249,7 +279,7 @@ const lazyRootPkgJsonPath = () =>
 
 const lazyShadowBinPath = () =>
   // Lazily access constants.rootPath.
-  path.join(constants.rootPath, SHADOW_BIN)
+  path.join(constants.rootPath, SHADOW_NPM_BIN)
 
 const lazyZshRcPath = () =>
   // Lazily access constants.homePath.
@@ -276,17 +306,21 @@ const constants = <Constants>createConstantsObject(
     ENV: undefined,
     LOCK_EXT,
     MODULE_SYNC,
-    NPM_INJECTION,
     NPM_REGISTRY_URL,
     NPX,
     PNPM,
     REDACTED,
     REQUIRE,
-    SHADOW_BIN,
+    SHADOW_NPM_BIN,
+    SHADOW_NPM_INJECT,
+    SHADOW_NPM_PATHS,
     SOCKET,
+    SOCKET_CLI_BIN_NAME,
+    SOCKET_CLI_BIN_NAME_ALIAS,
     SOCKET_CLI_DEBUG,
     SOCKET_CLI_FIX,
     SOCKET_CLI_ISSUES_URL,
+    SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
     SOCKET_CLI_LEGACY_BUILD,
     SOCKET_CLI_LEGACY_PACKAGE_NAME,
     SOCKET_CLI_NO_API_TOKEN,
@@ -294,7 +328,10 @@ const constants = <Constants>createConstantsObject(
     SOCKET_CLI_PACKAGE_NAME,
     SOCKET_CLI_PUBLISHED_BUILD,
     SOCKET_CLI_SAFE_WRAPPER,
+    SOCKET_CLI_SENTRY_BIN_NAME,
     SOCKET_CLI_SENTRY_BUILD,
+    SOCKET_CLI_SENTRY_NPM_BIN_NAME,
+    SOCKET_CLI_SENTRY_NPX_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
     SOCKET_CLI_SHOW_BANNER,
     SOCKET_CLI_VERSION_HASH,
@@ -304,11 +341,13 @@ const constants = <Constants>createConstantsObject(
     YARN_BERRY,
     YARN_CLASSIC,
     bashRcPath: undefined,
+    distCliPath: undefined,
+    distInstrumentWithSentryPath: undefined,
     distPath: undefined,
+    distShadowNpmBinPath: undefined,
+    distShadowNpmInjectPath: undefined,
     homePath: undefined,
-    instrumentWithSentryPath: undefined,
     nmBinPath: undefined,
-    npmInjectionPath: undefined,
     rootBinPath: undefined,
     rootDistPath: undefined,
     rootPath: undefined,
@@ -322,11 +361,13 @@ const constants = <Constants>createConstantsObject(
       DIST_TYPE: LAZY_DIST_TYPE,
       ENV: LAZY_ENV,
       bashRcPath: lazyBashRcPath,
+      distCliPath: lazyDistCliPath,
+      distInstrumentWithSentryPath: lazyDistInstrumentWithSentryPath,
       distPath: lazyDistPath,
+      distShadowNpmBinPath: lazyDistShadowNpmBinPath,
+      distShadowNpmInjectPath: lazyDistShadowNpmInjectPath,
       homePath: lazyHomePath,
-      instrumentWithSentryPath: lazyInstrumentWithSentryPath,
       nmBinPath: lazyNmBinPath,
-      npmInjectionPath: lazyNpmInjectionPath,
       rootBinPath: lazyRootBinPath,
       rootDistPath: lazyRootDistPath,
       rootPath: lazyRootPath,
