@@ -6,10 +6,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { listFullScans } from './list-full-scans'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken } from '../../utils/sdk'
 
 import type {
   CliCommandConfig,
@@ -113,37 +111,17 @@ async function run(
     return
   }
 
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
-  await listFullScans(
+  await listFullScans({
+    direction: String(cli.flags['direction'] || ''),
+    from_time: String(cli.flags['fromTime'] || ''),
     orgSlug,
-    // TODO: refine this object to what we need
-    {
-      outputJson: cli.flags['json'],
-      outputMarkdown: cli.flags['markdown'],
-      orgSlug,
-      sort: cli.flags['sort'],
-      direction: cli.flags['direction'],
-      per_page: cli.flags['perPage'],
-      page: cli.flags['page'],
-      from_time: cli.flags['fromTime'],
-      until_time: cli.flags['untilTime']
-    } as {
-      outputJson: boolean
-      outputMarkdown: boolean
-      orgSlug: string
-      sort: string
-      direction: string
-      per_page: number
-      page: number
-      from_time: string
-      until_time: string
-    },
-    apiToken
-  )
+    outputKind: cli.flags['json']
+      ? 'json'
+      : cli.flags['markdown']
+        ? 'markdown'
+        : 'print',
+    page: Number(cli.flags['page'] || 1),
+    per_page: Number(cli.flags['perPage'] || 30),
+    sort: String(cli.flags['sort'] || '')
+  })
 }

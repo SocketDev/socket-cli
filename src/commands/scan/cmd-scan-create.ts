@@ -88,13 +88,30 @@ const config: CliCommandConfig = {
       default: false,
       description:
         'Set the visibility (true/false) of the scan in your dashboard'
+    },
+    view: {
+      type: 'boolean',
+      shortFlag: 'v',
+      default: true,
+      description:
+        'Will wait for and return the created report. Use --no-view to disable.'
     }
   },
+  // TODO: your project's "socket.yml" file's "projectIgnorePaths"
   help: (command, config) => `
     Usage
       $ ${command} [...options] <org> <TARGET> [TARGET...]
 
-    Where TARGET is a FILE or DIR that _must_ be inside the CWD.
+    Uploads the specified "package.json" and lock files for JavaScript, Python,
+    Go, Scala, Gradle, and Kotlin dependency manifests.
+    If any folder is specified, the ones found in there recursively are uploaded.
+
+    Supports globbing such as "**/package.json", "**/requirements.txt", etc.
+
+    Ignores any file specified in your project's ".gitignore" and also has a
+    sensible set of default ignores from the "ignore-by-default" module.
+
+    TARGET should be a FILE or DIR that _must_ be inside the CWD.
 
     When a FILE is given only that FILE is targeted. Otherwise any eligible
     files in the given DIR will be considered.
@@ -134,7 +151,7 @@ async function run(
 
   let { branch: branchName, repo: repoName } = cli.flags
 
-  const apiToken = getDefaultToken()
+  const apiToken = getDefaultToken() // This checks if we _can_ suggest anything
 
   if (!apiToken && (!orgSlug || !repoName || !branchName || !targets.length)) {
     // Without api token we cannot recover because we can't request more info

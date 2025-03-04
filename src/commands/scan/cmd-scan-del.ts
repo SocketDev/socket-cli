@@ -6,10 +6,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { deleteOrgFullScan } from './delete-full-scan'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -75,12 +73,5 @@ async function run(
     return
   }
 
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
-  await deleteOrgFullScan(orgSlug, fullScanId, apiToken)
+  await deleteOrgFullScan(orgSlug, fullScanId)
 }

@@ -236,46 +236,17 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
   }
 }
 
-export async function getPackageFiles(
+export async function getPackageFilesFullScans(
   cwd: string,
   inputPaths: string[],
-  config: SocketYml | undefined,
-  supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data']
+  supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
+  config?: SocketYml | undefined
 ): Promise<string[]> {
   debugLog(`Globbed resolving ${inputPaths.length} paths:`, inputPaths)
 
   const entries = await globWithGitIgnore(pathsToPatterns(inputPaths), {
     cwd,
     socketConfig: config
-  })
-
-  debugLog(
-    `Globbed resolved ${inputPaths.length} paths to ${entries.length} paths:`,
-    entries
-  )
-
-  const packageFiles = await filterGlobResultToSupportedFiles(
-    entries,
-    supportedFiles
-  )
-
-  debugLog(
-    `Mapped ${entries.length} entries to ${packageFiles.length} files:`,
-    packageFiles
-  )
-
-  return packageFiles
-}
-
-export async function getPackageFilesFullScans(
-  cwd: string,
-  inputPaths: string[],
-  supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data']
-): Promise<string[]> {
-  debugLog(`Globbed resolving ${inputPaths.length} paths:`, inputPaths)
-
-  const entries = await globWithGitIgnore(pathsToPatterns(inputPaths), {
-    cwd
   })
 
   debugLog(

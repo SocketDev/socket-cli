@@ -6,37 +6,90 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { setupSdk } from '../../utils/sdk'
+import { AuthError } from '../../utils/errors'
+import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
-export async function listFullScans(
-  orgSlug: string,
-  input: {
-    // TODO: what do we actually need for getOrgFullScanList ?
-    outputJson: boolean
-    outputMarkdown: boolean
-    orgSlug: string
-    sort: string
-    direction: string
-    per_page: number
-    page: number
-    from_time: string
-    until_time: string
-  },
+export async function listFullScans({
+  direction,
+  from_time,
+  orgSlug,
+  outputKind,
+  page,
+  per_page,
+  sort
+}: {
+  direction: string
+  from_time: string
+  orgSlug: string
+  outputKind: 'json' | 'markdown' | 'print'
+  page: number
+  per_page: number
+  sort: string
+}): Promise<void> {
+  const apiToken = getDefaultToken()
+  if (!apiToken) {
+    throw new AuthError(
+      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+    )
+  }
+
+  await listFullScansWithToken({
+    apiToken,
+    direction,
+    from_time,
+    orgSlug,
+    outputKind,
+    page,
+    per_page,
+    sort
+  })
+}
+
+async function listFullScansWithToken({
+  apiToken,
+  direction,
+  from_time,
+  orgSlug,
+  outputKind,
+  page,
+  per_page,
+  sort
+}: {
   apiToken: string
-): Promise<void> {
+  direction: string
+  from_time: string // seconds
+  orgSlug: string
+  outputKind: 'json' | 'markdown' | 'print'
+  page: number
+  per_page: number
+  sort: string
+}): Promise<void> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  spinner.start('Listing scans...')
+  spinner.start('Fetching list of scans...')
 
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
-    socketSdk.getOrgFullScanList(orgSlug, input),
+    socketSdk.getOrgFullScanList(orgSlug, {
+      sort,
+      direction,
+      per_page,
+      page,
+      from: from_time
+    }),
     'Listing scans'
   )
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('getOrgFullScanList', result, spinner)
+    return
+  }
+
+  spinner.stop(`Fetch complete`)
+
+  if (outputKind === 'json') {
+    logger.log(result.data)
     return
   }
 
@@ -64,6 +117,5 @@ export async function listFullScans(
     }
   })
 
-  spinner.stop(`Listing scans for: ${orgSlug}`)
   logger.log(chalkTable(options, formattedResults))
 }

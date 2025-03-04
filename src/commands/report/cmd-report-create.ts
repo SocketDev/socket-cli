@@ -10,7 +10,6 @@ import constants from '../../constants'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
-import { getFlagListOutput } from '../../utils/output-formatting'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -18,7 +17,7 @@ const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'create',
-  description: 'Create a project report',
+  description: '[Deprecated] Create a project report',
   hidden: false,
   flags: {
     ...commonFlags,
@@ -36,27 +35,9 @@ const config: CliCommandConfig = {
       description: 'Will wait for and return the created report'
     }
   },
-  help: (command, config) => `
-    Usage
-      $ ${command} <paths-to-package-folders-and-files>
-
-    Uploads the specified "package.json" and lock files for JavaScript, Python, and Go dependency manifests.
-    If any folder is specified, the ones found in there recursively are uploaded.
-
-    Supports globbing such as "**/package.json", "**/requirements.txt", "**/pyproject.toml", and "**/go.mod".
-
-    Ignores any file specified in your project's ".gitignore", your project's
-    "socket.yml" file's "projectIgnorePaths" and also has a sensible set of
-    default ignores from the "ignore-by-default" module.
-
-    Options
-      ${getFlagListOutput(config.flags, 6)}
-
-    Examples
-      $ ${command} .
-      $ ${command} '**/package.json'
-      $ ${command} /path/to/a/package.json /path/to/another/package.json
-      $ ${command} . --view --json
+  help: () => `
+    This command is deprecated in favor of \`socket scan create\`.
+    It will be removed in the next major release of the CLI.
   `
 }
 
