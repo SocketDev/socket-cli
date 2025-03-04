@@ -14,6 +14,7 @@ export async function convertGradleToMaven(
 ) {
   // Lazily access constants.spinner.
   const { spinner } = constants
+
   const rbin = path.resolve(bin)
   const rtarget = path.resolve(target)
 
@@ -29,10 +30,6 @@ export async function convertGradleToMaven(
     logger.groupEnd()
   }
 
-  spinner.start(
-    `Converting gradle to maven from \`${bin}\` on \`${target}\`...`
-  )
-
   try {
     // Run sbt with the init script we provide which should yield zero or more pom files.
     // We have to figure out where to store those pom files such that we can upload them and predict them through the GitHub API.
@@ -43,8 +40,13 @@ export async function convertGradleToMaven(
     const commandArgs = ['--init-script', initLocation, ...gradleOpts, 'pom']
 
     if (verbose) {
-      spinner.log('[VERBOSE] Executing:', bin, commandArgs)
+      logger.log('[VERBOSE] Executing:', bin, commandArgs)
     }
+
+    spinner.start(
+      `Converting gradle to maven from \`${bin}\` on \`${target}\`...`
+    )
+
     const output = await spawn(bin, commandArgs, {
       cwd: target || '.'
     })
@@ -64,7 +66,8 @@ export async function convertGradleToMaven(
         logger.error(output.stderr)
         logger.groupEnd()
       }
-      process.exit(1)
+      process.exitCode = 1
+      return
     }
     logger.success('Executed gradle successfully')
     logger.log('Reported exports:')
@@ -104,8 +107,7 @@ export async function convertGradleToMaven(
     //   spinner.successAndStop(`OK. File should be available in \`${out}\``)
     // }
   } catch (e: any) {
-    spinner.stop()
-    logger.error(
+    spinner.errorAndStop(
       'There was an unexpected error while running this' +
         (verbose ? '' : ' (use --verbose for details)')
     )
@@ -114,6 +116,8 @@ export async function convertGradleToMaven(
       logger.log(e)
       logger.groupEnd()
     }
-    process.exit(1)
+    process.exitCode = 1
+  } finally {
+    spinner.stop()
   }
 }

@@ -48,6 +48,15 @@ export async function findDependencies({
     return
   }
 
+  logger.log(
+    'Request details: Offset:',
+    offset,
+    ', limit:',
+    limit,
+    ', is there more data after this?',
+    result.data.end ? 'no' : 'yes'
+  )
+
   const options = {
     columns: [
       { field: 'namespace', name: colors.cyan('Namespace') },

@@ -52,6 +52,7 @@ async function run(
     parentName
   })
 
+  const { all, json, markdown, strict } = cli.flags
   const [rawPkgName = ''] = cli.input
 
   if (!rawPkgName || cli.input.length > 1) {
@@ -78,11 +79,10 @@ async function run(
 
   await getPackageInfo({
     commandName: `${parentName} ${config.commandName}`,
-    includeAllIssues: Boolean(cli.flags['all']),
-    outputJson: Boolean(cli.flags['json']),
-    outputMarkdown: Boolean(cli.flags['markdown']),
+    includeAllIssues: Boolean(all),
+    outputKind: json ? 'json' : markdown ? 'markdown' : 'print',
     pkgName,
     pkgVersion,
-    strict: Boolean(cli.flags['strict'])
+    strict: Boolean(strict)
   })
 }
