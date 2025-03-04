@@ -33,7 +33,7 @@ export async function updatePackageLockJson(
         `💡 Re-run ${COMMAND_TITLE} whenever ${pkgEnvDetails.lockName} changes.\n   This can be skipped once npm v11.2.0 is released.`
       )
     }
-  } catch (e: any) {
+  } catch (e) {
     spinner?.stop()
     logger?.error(
       `${COMMAND_TITLE}: ${pkgEnvDetails.agent} install failed to update ${pkgEnvDetails.lockName}`

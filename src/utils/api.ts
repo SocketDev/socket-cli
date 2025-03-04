@@ -2,6 +2,8 @@ import process from 'node:process'
 
 import colors from 'yoctocolors-cjs'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { AuthError } from './errors'
 import constants from '../constants'
 
@@ -15,8 +17,7 @@ const { API_V0_URL } = constants
 
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
-  result: SocketSdkErrorType<T>,
-  spinner: Spinner
+  result: SocketSdkErrorType<T>
 ) {
   // SocketSdkErrorType['error'] is not typed.
   const resultErrorMessage = (<{ error?: Error }>result).error?.message
@@ -25,10 +26,9 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
       ? resultErrorMessage
       : 'No error message returned'
   if (result.status === 401 || result.status === 403) {
-    spinner.stop()
     throw new AuthError(message)
   }
-  spinner.errorAndStop(
+  logger.error(
     `${colors.bgRed(colors.white('API returned an error:'))} ${message}`
   )
   process.exit(1)

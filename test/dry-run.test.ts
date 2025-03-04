@@ -68,7 +68,7 @@ async function invoke(
       stdout: toAsciiSafeString(normalizeLogSymbols(thing.stdout)),
       stderr: toAsciiSafeString(normalizeLogSymbols(thing.stderr))
     }
-  } catch (e: any) {
+  } catch (e) {
     return {
       status: false,
       code: e?.code,

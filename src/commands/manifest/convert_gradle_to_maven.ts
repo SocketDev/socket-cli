@@ -59,6 +59,7 @@ export async function convertGradleToMaven(
       logger.groupEnd()
     }
     if (output.stderr) {
+      process.exitCode = 1
       logger.error('There were errors while running gradle')
       // (In verbose mode, stderr was printed above, no need to repeat it)
       if (!verbose) {
@@ -66,7 +67,6 @@ export async function convertGradleToMaven(
         logger.error(output.stderr)
         logger.groupEnd()
       }
-      process.exitCode = 1
       return
     }
     logger.success('Executed gradle successfully')
@@ -106,8 +106,10 @@ export async function convertGradleToMaven(
     //   await renamep(loc, out)
     //   spinner.successAndStop(`OK. File should be available in \`${out}\``)
     // }
-  } catch (e: any) {
-    spinner.errorAndStop(
+  } catch (e) {
+    process.exitCode = 1
+    spinner.stop()
+    logger.error(
       'There was an unexpected error while running this' +
         (verbose ? '' : ' (use --verbose for details)')
     )
@@ -116,8 +118,5 @@ export async function convertGradleToMaven(
       logger.log(e)
       logger.groupEnd()
     }
-    process.exitCode = 1
-  } finally {
-    spinner.stop()
   }
 }

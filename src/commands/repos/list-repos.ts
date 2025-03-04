@@ -76,7 +76,7 @@ async function listReposWithToken({
   )
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrgRepoList', result, spinner)
+    handleUnsuccessfulApiResponse('getOrgRepoList', result)
     return
   }
 

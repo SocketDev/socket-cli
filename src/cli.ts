@@ -85,7 +85,7 @@ void (async () => {
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta
       }
     )
-  } catch (e: any) {
+  } catch (e) {
     process.exitCode = 1
     let errorBody: string | undefined
     let errorTitle: string

@@ -19,7 +19,7 @@ export async function fetchRepoAnalyticsData(
   )
 
   if (result.success === false) {
-    handleUnsuccessfulApiResponse('getRepoAnalytics', result, spinner)
+    handleUnsuccessfulApiResponse('getRepoAnalytics', result)
     return undefined
   }
 

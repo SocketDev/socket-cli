@@ -167,7 +167,7 @@ export function getIgnoreOptions({ comments }: { comments: SocketComments }) {
           const data = `${name}/${version}`
           ignoreCommands.push(data)
         }
-      } catch (e: any) {
+      } catch (e) {
         logger.error(`Unable to process ignore command for ${comment}`)
         logger.error(e)
       }

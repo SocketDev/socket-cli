@@ -11,7 +11,7 @@ describe('Error Narrowing', () => {
   it('should properly detect node errors', () => {
     try {
       readFileSync(path.join(testPath, 'enoent'))
-    } catch (e: any) {
+    } catch (e) {
       expect(isErrnoException(e)).toBe(true)
     }
   })

@@ -32,7 +32,7 @@ export async function createReport(
     .getReportSupportedFiles()
     .then(res => {
       if (!res.success)
-        handleUnsuccessfulApiResponse('getReportSupportedFiles', res, spinner)
+        handleUnsuccessfulApiResponse('getReportSupportedFiles', res)
       return (res as SocketSdkReturnType<'getReportSupportedFiles'>).data
     })
     .catch((cause: Error) => {
@@ -66,7 +66,7 @@ export async function createReport(
   )
   const result = await handleApiCall(apiCall, 'creating report')
   if (!result.success) {
-    handleUnsuccessfulApiResponse('createReport', result, spinner)
+    handleUnsuccessfulApiResponse('createReport', result)
     return undefined
   }
   spinner.successAndStop()

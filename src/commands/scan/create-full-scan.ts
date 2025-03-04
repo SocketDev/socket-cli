@@ -54,7 +54,7 @@ export async function createFullScan({
     .getReportSupportedFiles()
     .then(res => {
       if (!res.success) {
-        handleUnsuccessfulApiResponse('getReportSupportedFiles', res, spinner)
+        handleUnsuccessfulApiResponse('getReportSupportedFiles', res)
         assert(
           false,
           'handleUnsuccessfulApiResponse should unconditionally throw'
@@ -197,7 +197,7 @@ export async function createFullScan({
   )
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('CreateOrgFullScan', result, spinner)
+    handleUnsuccessfulApiResponse('CreateOrgFullScan', result)
     return
   }
 

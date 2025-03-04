@@ -1,5 +1,6 @@
 import terminalLink from 'terminal-link'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 
 import { applyLogin } from './apply-login'
@@ -41,7 +42,7 @@ export async function attemptLogin(
       throw new AuthError()
     }
     orgs = result.data
-    spinner.successAndStop('API key verified')
+    spinner.success('API key verified')
   } catch {
     spinner.errorAndStop('Invalid API key')
     return
@@ -91,13 +92,13 @@ export async function attemptLogin(
     }
   }
 
+  spinner.stop()
+
   const oldToken = getSetting('apiToken')
   try {
     applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
-    spinner.start()
-    spinner.successAndStop(`API credentials ${oldToken ? 'updated' : 'set'}`)
+    logger.success(`API credentials ${oldToken ? 'updated' : 'set'}`)
   } catch {
-    spinner.start()
-    spinner.errorAndStop(`API login failed`)
+    logger.error(`API login failed`)
   }
 }

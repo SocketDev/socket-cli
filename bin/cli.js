@@ -15,10 +15,8 @@ if (
   // Lazily access constants.distCliPath.
   require(constants.distCliPath)
 } else {
-  const path = require('node:path')
-  const { spawn } = require('@socketsecurity/registry/lib/spawn')
-
   process.exitCode = 1
+  const { spawn } = require('@socketsecurity/registry/lib/spawn')
   spawn(
     // Lazily access constants.execPath.
     constants.execPath,

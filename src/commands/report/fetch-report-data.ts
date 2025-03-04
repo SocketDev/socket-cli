@@ -48,7 +48,7 @@ export async function fetchReportData(
   }
 
   if (!result.success) {
-    return handleUnsuccessfulApiResponse('getReport', result, spinner)
+    return handleUnsuccessfulApiResponse('getReport', result)
   }
 
   // Conclude the status of the API call.

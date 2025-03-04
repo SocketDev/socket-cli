@@ -533,7 +533,7 @@ export class Core {
           headFullScan = await this.getSbomData({ fullScanId: headFullScanId })
         }
       }
-    } catch (e: any) {
+    } catch (e) {
       logger.error(e)
     }
 

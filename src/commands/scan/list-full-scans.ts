@@ -82,7 +82,7 @@ async function listFullScansWithToken({
   )
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrgFullScanList', result, spinner)
+    handleUnsuccessfulApiResponse('getOrgFullScanList', result)
     return
   }
 

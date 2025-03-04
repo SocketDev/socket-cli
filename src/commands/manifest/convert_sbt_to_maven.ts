@@ -52,6 +52,7 @@ export async function convertSbtToMaven(
       logger.groupEnd()
     }
     if (output.stderr) {
+      process.exitCode = 1
       logger.error('There were errors while running sbt')
       // (In verbose mode, stderr was printed above, no need to repeat it)
       if (!verbose) {
@@ -59,7 +60,6 @@ export async function convertSbtToMaven(
         logger.error(output.stderr)
         logger.groupEnd()
       }
-      process.exitCode = 1
       return
     }
     const poms: string[] = []
@@ -68,10 +68,10 @@ export async function convertSbtToMaven(
       return fn
     })
     if (!poms.length) {
+      process.exitCode = 1
       logger.error(
         'There were no errors from sbt but it seems to not have generated any poms either'
       )
-      process.exitCode = 1
       return
     }
     // Move the pom file to ...? initial cwd? loc will be an absolute path, or dump to stdout
@@ -83,12 +83,12 @@ export async function convertSbtToMaven(
       logger.log('```')
       logger.success(`OK`)
     } else if (out === '-') {
+      process.exitCode = 1
       logger.error(
         'Requested out target was stdout but there are multiple generated files'
       )
       poms.forEach(fn => logger.error('-', fn))
       logger.error('Exiting now...')
-      process.exitCode = 1
       return
     } else {
       // if (verbose) {
@@ -104,8 +104,10 @@ export async function convertSbtToMaven(
       poms.forEach(fn => logger.log('-', fn))
       logger.success(`OK`)
     }
-  } catch (e: any) {
-    spinner?.errorAndStop(
+  } catch (e) {
+    process.exitCode = 1
+    spinner.stop()
+    logger.error(
       'There was an unexpected error while running this' +
         (verbose ? '' : ' (use --verbose for details)')
     )
@@ -114,8 +116,5 @@ export async function convertSbtToMaven(
       logger.log(e)
       logger.groupEnd()
     }
-    process.exitCode = 1
-  } finally {
-    spinner.stop()
   }
 }

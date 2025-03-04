@@ -71,7 +71,7 @@ async function createRepoWithToken({
   )
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('createOrgRepo', result, spinner)
+    handleUnsuccessfulApiResponse('createOrgRepo', result)
     return
   }
 

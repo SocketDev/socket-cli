@@ -33,7 +33,7 @@ export async function deleteOrgFullScanWithToken(
   )
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('deleteOrgFullScan', result, spinner)
+    handleUnsuccessfulApiResponse('deleteOrgFullScan', result)
     return
   }
 
