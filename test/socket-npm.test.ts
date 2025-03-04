@@ -31,49 +31,56 @@ for (const npmDir of ['npm8', 'npm10']) {
     // Lazily access constants.rootBinPath.
     const entryPath = path.join(constants['rootBinPath'], `${CLI}.js`)
 
-    it('should bail on new typosquat', async () => {
-      const result = await new Promise<string>((resolve, reject) => {
-        const spawnPromise = spawn(
-          // Lazily access constants.execPath.
-          constants.execPath,
-          [entryPath, NPM, 'install', 'bowserify'],
-          {
-            cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
-            env: {
-              PATH: `${npmBinPath}:${process.env.PATH}`
+    it(
+      'should bail on new typosquat',
+      {
+        // About 5s on my machine. Will be slow in CI. Extend if too flaky.
+        timeout: 30_000
+      },
+      async () => {
+        const result = await new Promise<string>((resolve, reject) => {
+          const spawnPromise = spawn(
+            // Lazily access constants.execPath.
+            constants.execPath,
+            [entryPath, NPM, 'install', 'bowserify'],
+            {
+              cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
+              env: {
+                PATH: `${npmBinPath}:${process.env.PATH}`
+              }
             }
-          }
-        )
-        spawnPromise.process.stdout.on('data', (buffer: Buffer) => {
-          // changed 13 packages, and audited 176 packages in 3s
-          if (
-            /changed .* packages, and audited .* packages in/.test(
-              buffer.toString('utf8')
-            )
-          ) {
-            reject(
-              new Error(
-                'It seems npm ran anyways so the test failed to invoke socket'
+          )
+          spawnPromise.process.stdout.on('data', (buffer: Buffer) => {
+            // changed 13 packages, and audited 176 packages in 3s
+            if (
+              /changed .* packages, and audited .* packages in/.test(
+                buffer.toString('utf8')
               )
-            )
-          }
-        })
-        spawnPromise.process.stderr.on('data', (buffer: Buffer) => {
-          if (buffer.toString().includes('Possible typosquat attack')) {
-            resolve('OK')
+            ) {
+              reject(
+                new Error(
+                  'It seems npm ran anyways so the test failed to invoke socket'
+                )
+              )
+            }
+          })
+          spawnPromise.process.stderr.on('data', (buffer: Buffer) => {
+            if (buffer.toString().includes('Possible typosquat attack')) {
+              resolve('OK')
+              spawnPromise.process.kill('SIGINT')
+            }
+          })
+          spawnPromise.catch(() => {
             spawnPromise.process.kill('SIGINT')
-          }
+            reject(new Error('Received a SIGINT'))
+          })
         })
-        spawnPromise.catch(() => {
-          spawnPromise.process.kill('SIGINT')
-          reject(new Error('Received a SIGINT'))
-        })
-      })
 
-      expect(
-        result,
-        'if the promise resolves then the typo-squat attack message was seen, the promise should not reject in any way'
-      ).toBe('OK')
-    }, 30_000) // About 5s on my machine, will be slow in ci, extend if too flaky
+        expect(
+          result,
+          'if the promise resolves then the typo-squat attack message was seen, the promise should not reject in any way'
+        ).toBe('OK')
+      }
+    )
   })
 }
