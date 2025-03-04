@@ -95,7 +95,7 @@ async function outputAsJson(
     )
   } catch (e) {
     process.exitCode = 1
-    logger.error(
+    logger.fail(
       'There was a problem converting the logs to JSON, please try without the `--json` flag'
     )
     return
@@ -137,7 +137,7 @@ ${table}
     )
   } catch (e) {
     process.exitCode = 1
-    logger.error(
+    logger.fail(
       'There was a problem converting the logs to JSON, please try without the `--json` flag'
     )
     logger.error(e)

@@ -95,7 +95,7 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    logger.error(
+    logger.fail(
       stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
 
       - Scope must be "repo" or "org" ${badScope ? colors.red('(bad!)') : colors.green('(ok)')}

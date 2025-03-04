@@ -85,7 +85,7 @@ describe(
               )
             // @ts-ignore -- toHaveStderrStartWith is defined above
           ).rejects.toHaveStderrStartWith(
-            `${LOG_SYMBOLS.error} Unknown argument: ${command}`
+            `${LOG_SYMBOLS.fail} Unknown argument: ${command}`
           )
         })
 
@@ -101,7 +101,7 @@ describe(
               )
             // @ts-ignore -- toHaveStderrStartWith is defined above
           ).rejects.toHaveStderrStartWith(
-            `${LOG_SYMBOLS.error} Unknown argument: ${command}`
+            `${LOG_SYMBOLS.fail} Unknown argument: ${command}`
           )
         })
 
@@ -116,7 +116,7 @@ describe(
               )
             // @ts-ignore -- toHaveStderrStartWith is defined above
           ).rejects.toHaveStderrStartWith(
-            `${LOG_SYMBOLS.error} Unknown arguments: -u, --unknown`
+            `${LOG_SYMBOLS.fail} Unknown arguments: -u, --unknown`
           )
         })
       }

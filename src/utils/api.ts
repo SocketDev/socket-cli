@@ -28,7 +28,7 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   if (result.status === 401 || result.status === 403) {
     throw new AuthError(message)
   }
-  logger.error(
+  logger.fail(
     `${colors.bgRed(colors.white('API returned an error:'))} ${message}`
   )
   process.exit(1)

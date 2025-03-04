@@ -53,7 +53,7 @@ export async function convertSbtToMaven(
     }
     if (output.stderr) {
       process.exitCode = 1
-      logger.error('There were errors while running sbt')
+      logger.fail('There were errors while running sbt')
       // (In verbose mode, stderr was printed above, no need to repeat it)
       if (!verbose) {
         logger.group('[VERBOSE] stderr:')
@@ -69,7 +69,7 @@ export async function convertSbtToMaven(
     })
     if (!poms.length) {
       process.exitCode = 1
-      logger.error(
+      logger.fail(
         'There were no errors from sbt but it seems to not have generated any poms either'
       )
       return
@@ -84,7 +84,7 @@ export async function convertSbtToMaven(
       logger.success(`OK`)
     } else if (out === '-') {
       process.exitCode = 1
-      logger.error(
+      logger.fail(
         'Requested out target was stdout but there are multiple generated files'
       )
       poms.forEach(fn => logger.error('-', fn))
@@ -107,7 +107,7 @@ export async function convertSbtToMaven(
   } catch (e) {
     process.exitCode = 1
     spinner.stop()
-    logger.error(
+    logger.fail(
       'There was an unexpected error while running this' +
         (verbose ? '' : ' (use --verbose for details)')
     )

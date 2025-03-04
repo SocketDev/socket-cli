@@ -94,7 +94,7 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
+    logger.fail(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Specify a before and after full scan ID ${!before && !after ? colors.red('(missing before and after!)') : !before ? colors.red('(missing before!)') : !after ? colors.red('(missing after!)') : colors.green('(ok)')}\n
           - To get full scans IDs, you can run the command "socket scan list <your org slug>".
             The args are expecting a full \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\` ID.\n

@@ -55,7 +55,7 @@ View this report at: https://socket.dev/dashboard/org/${orgSlug}/sbom/${fullScan
       logger.log(`Data successfully written to ${filePath}`)
     } catch (e) {
       process.exitCode = 1
-      logger.error('There was an error trying to write the json to disk')
+      logger.fail('There was an error trying to write the json to disk')
       logger.error(e)
     }
   } else {

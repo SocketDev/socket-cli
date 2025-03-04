@@ -104,7 +104,7 @@ void (async () => {
     } else {
       errorTitle = 'Unexpected error with no details'
     }
-    logger.error(
+    logger.fail(
       `${colors.bgRed(colors.white(errorTitle + ':'))} ${errorMessage}`
     )
     if (errorBody) {
