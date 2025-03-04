@@ -32,9 +32,9 @@ export async function convertSbtToMaven(
     logger.groupEnd()
   }
 
-  spinner.start(`Converting sbt to maven from \`${bin}\` on \`${target}\`...`)
-
   try {
+    spinner.start(`Converting sbt to maven from \`${bin}\` on \`${target}\`...`)
+
     // Run sbt with the init script we provide which should yield zero or more
     // pom files. We have to figure out where to store those pom files such that
     // we can upload them and predict them through the GitHub API. We could do a
@@ -59,7 +59,8 @@ export async function convertSbtToMaven(
         logger.error(output.stderr)
         logger.groupEnd()
       }
-      process.exit(1)
+      process.exitCode = 1
+      return
     }
     const poms: string[] = []
     output.stdout.replace(/Wrote (.*?.pom)\n/g, (_all: string, fn: string) => {
@@ -70,7 +71,8 @@ export async function convertSbtToMaven(
       logger.error(
         'There were no errors from sbt but it seems to not have generated any poms either'
       )
-      process.exit(1)
+      process.exitCode = 1
+      return
     }
     // Move the pom file to ...? initial cwd? loc will be an absolute path, or dump to stdout
     // TODO: what to do with multiple output files? Do we want to dump them to stdout? Raw or with separators or ?
@@ -86,7 +88,8 @@ export async function convertSbtToMaven(
       )
       poms.forEach(fn => logger.error('-', fn))
       logger.error('Exiting now...')
-      process.exit(1)
+      process.exitCode = 1
+      return
     } else {
       // if (verbose) {
       //   logger.log(
@@ -102,8 +105,7 @@ export async function convertSbtToMaven(
       logger.success(`OK`)
     }
   } catch (e: any) {
-    spinner.stop()
-    logger.error(
+    spinner?.errorAndStop(
       'There was an unexpected error while running this' +
         (verbose ? '' : ' (use --verbose for details)')
     )
@@ -112,6 +114,8 @@ export async function convertSbtToMaven(
       logger.log(e)
       logger.groupEnd()
     }
-    process.exit(1)
+    process.exitCode = 1
+  } finally {
+    spinner.stop()
   }
 }
