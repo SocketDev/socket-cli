@@ -1,4 +1,4 @@
-import { getArboristDepValidPath } from '../../npm-paths'
+import { getArboristDepValidPath } from '../../paths'
 
 import type { SafeNode } from './node'
 

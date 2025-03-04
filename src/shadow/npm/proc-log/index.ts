@@ -1,5 +1,5 @@
-import { getNpmRequire } from './npm-paths'
-import constants from '../constants'
+import constants from '../../../constants'
+import { getNpmRequire } from '../paths'
 
 const { UNDEFINED_TOKEN } = constants
 

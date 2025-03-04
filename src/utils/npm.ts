@@ -11,7 +11,7 @@ import { isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../constants'
-import { getNpmBinPath } from '../shadow/npm-paths'
+import { getNpmBinPath } from '../shadow/npm/paths'
 
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
@@ -47,8 +47,8 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
       '--require',
-      // Lazily access constants.npmInjectionPath.
-      constants.npmInjectionPath,
+      // Lazily access constants.distShadowNpmInjectPath.
+      constants.distShadowNpmInjectPath,
       getNpmBinPath(),
       'install',
       // Even though the '--silent' flag is passed npm will still run through

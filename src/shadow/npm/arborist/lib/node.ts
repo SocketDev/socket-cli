@@ -1,7 +1,7 @@
 import semver from 'semver'
 
 import { SafeOverrideSet } from './override-set'
-import { getArboristNodeClassPath } from '../../npm-paths'
+import { getArboristNodeClassPath } from '../../paths'
 import { getLogger } from '../../proc-log'
 
 import type { SafeEdge } from './edge'

@@ -1,9 +1,9 @@
 import constants from '../../constants'
 
-const { NPX, SHADOW_BIN } = constants
+const { NPX } = constants
 
 export async function wrapNpx(argv: readonly string[]) {
-  // Lazily access constants.distPath.
-  const shadowBin = require(`${constants.distPath}/${SHADOW_BIN}.js`)
+  // Lazily access constants.distShadowNpmBinPath.
+  const shadowBin = require(constants.distShadowNpmBinPath)
   await shadowBin(NPX, argv)
 }

@@ -7,7 +7,7 @@ import {
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { installLinks } from './link'
-import constants from '../constants'
+import constants from '../../constants'
 
 const {
   SOCKET_CLI_SAFE_WRAPPER,
@@ -36,13 +36,13 @@ export default async function shadowBin(
       ...(constants.ENV[SOCKET_CLI_SENTRY_BUILD]
         ? [
             '--require',
-            // Lazily access constants.instrumentWithSentryPath.
-            constants.instrumentWithSentryPath
+            // Lazily access constants.distInstrumentWithSentryPath.
+            constants.distInstrumentWithSentryPath
           ]
         : []),
       '--require',
-      // Lazily access constants.npmInjectionPath.
-      constants.npmInjectionPath,
+      // Lazily access constants.distShadowNpmInjectPath.
+      constants.distShadowNpmInjectPath,
       // Lazily access constants.shadowBinPath.
       await installLinks(constants.shadowBinPath, binName),
       // Add `--no-progress` and `--loglevel=error` flags to fix input being

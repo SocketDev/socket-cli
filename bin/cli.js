@@ -5,15 +5,15 @@ const process = require('node:process')
 
 const constants = require('../dist/constants')
 
-const { CLI, DIST_TYPE, SOCKET_CLI_SENTRY_BUILD } = constants
+const { DIST_TYPE, SOCKET_CLI_SENTRY_BUILD } = constants
 
 if (
   DIST_TYPE === 'require' &&
   // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
   !constants.ENV[SOCKET_CLI_SENTRY_BUILD]
 ) {
-  // Lazily access constants.distPath.
-  require(`${constants.distPath}/${CLI}.js`)
+  // Lazily access constants.distCliPath.
+  require(constants.distCliPath)
 } else {
   const path = require('node:path')
   const { spawn } = require('@socketsecurity/registry/lib/spawn')
@@ -29,12 +29,12 @@ if (
       ...(constants.ENV[SOCKET_CLI_SENTRY_BUILD]
         ? [
             '--require',
-            // Lazily access constants.instrumentWithSentryPath.
-            constants.instrumentWithSentryPath
+            // Lazily access constants.distInstrumentWithSentryPath.
+            constants.distInstrumentWithSentryPath
           ]
         : []),
-      // Lazily access constants.distPath.
-      path.join(constants.distPath, `${CLI}.js`),
+      // Lazily access constants.distCliPath.
+      constants.distCliPath,
       ...process.argv.slice(2)
     ],
     {
