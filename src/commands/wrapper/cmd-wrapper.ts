@@ -78,7 +78,7 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    logger.error(
+    logger.fail(
       stripIndents`
       ${colors.bgRed(colors.white('Input error'))}: Please provide the required flags:
 
@@ -111,6 +111,6 @@ async function run(
     }
   }
   if (!existsSync(bashRcPath) && !existsSync(zshRcPath)) {
-    logger.error('There was an issue setting up the alias in your bash profile')
+    logger.fail('There was an issue setting up the alias in your bash profile')
   }
 }

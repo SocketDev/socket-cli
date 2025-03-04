@@ -99,6 +99,6 @@ export async function attemptLogin(
     applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
     logger.success(`API credentials ${oldToken ? 'updated' : 'set'}`)
   } catch {
-    logger.error(`API login failed`)
+    logger.fail(`API login failed`)
   }
 }

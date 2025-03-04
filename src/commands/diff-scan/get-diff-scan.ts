@@ -102,7 +102,7 @@ export async function getDiffScanWithToken({
     } catch (e) {
       process.exitCode = 1
       // Most likely caused by a circular reference (or OOM)
-      logger.error('There was a problem converting the data to JSON')
+      logger.fail('There was a problem converting the data to JSON')
       logger.error(e)
       return
     }
@@ -111,7 +111,7 @@ export async function getDiffScanWithToken({
       logger.log(`Writing json to \`${file}\``)
       fs.writeFile(file, JSON.stringify(result, null, 2), err => {
         if (err) {
-          logger.error(`Writing to \`${file}\` failed...`)
+          logger.fail(`Writing to \`${file}\` failed...`)
           logger.error(err)
         } else {
           logger.log(`Data successfully written to \`${file}\``)

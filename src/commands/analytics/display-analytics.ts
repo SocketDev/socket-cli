@@ -137,7 +137,7 @@ async function outputAnalyticsWithToken({
         logger.log(`Data successfully written to ${filePath}`)
       } catch (e) {
         process.exitCode = 1
-        logger.error('There was an error trying to write the json to disk')
+        logger.fail('There was an error trying to write the json to disk')
         logger.error(e)
       }
     } else {
@@ -171,7 +171,7 @@ function renderJson(data: unknown): string | undefined {
   } catch (e) {
     process.exitCode = 1
     // This could be caused by circular references, which is an "us" problem
-    logger.error(
+    logger.fail(
       'There was a problem converting the data set to JSON. Please try without --json or with --markdown'
     )
     return

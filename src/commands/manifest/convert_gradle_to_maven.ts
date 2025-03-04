@@ -60,7 +60,7 @@ export async function convertGradleToMaven(
     }
     if (output.stderr) {
       process.exitCode = 1
-      logger.error('There were errors while running gradle')
+      logger.fail('There were errors while running gradle')
       // (In verbose mode, stderr was printed above, no need to repeat it)
       if (!verbose) {
         logger.group('[VERBOSE] stderr:')
@@ -81,7 +81,7 @@ export async function convertGradleToMaven(
 
     // const loc = output.stdout?.match(/Wrote (.*?.pom)\n/)?.[1]?.trim()
     // if (!loc) {
-    //   logger.error(
+    //   logger.fail(
     //     'There were no errors from sbt but could not find the location of resulting .pom file either'
     //   )
     //   process.exit(1)
@@ -109,7 +109,7 @@ export async function convertGradleToMaven(
   } catch (e) {
     process.exitCode = 1
     spinner.stop()
-    logger.error(
+    logger.fail(
       'There was an unexpected error while running this' +
         (verbose ? '' : ' (use --verbose for details)')
     )

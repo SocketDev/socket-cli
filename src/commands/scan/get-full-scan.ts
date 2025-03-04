@@ -33,7 +33,7 @@ export async function getFullScan(
 
   if (!response.ok) {
     const err = await handleAPIError(response.status)
-    logger.error(
+    logger.fail(
       `${colors.bgRed(colors.white(response.statusText))}: Fetch error: ${err}`
     )
     return

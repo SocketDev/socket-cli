@@ -35,7 +35,7 @@ export async function updatePackageLockJson(
     }
   } catch (e) {
     spinner?.stop()
-    logger?.error(
+    logger?.fail(
       `${COMMAND_TITLE}: ${pkgEnvDetails.agent} install failed to update ${pkgEnvDetails.lockName}`
     )
     logger?.error(e)

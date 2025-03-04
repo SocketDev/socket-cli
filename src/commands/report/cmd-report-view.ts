@@ -53,7 +53,7 @@ async function run(
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    logger.error(stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
+    logger.fail(stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
 
       - Need at least one report ID ${!reportId ? colors.red('(missing!)') : colors.green('(ok)')}
 

@@ -163,7 +163,7 @@ async function addOverrides(
   ) {
     state.warnedPnpmWorkspaceRequiresNpm = true
     logger?.warn(
-      `⚠️ ${COMMAND_TITLE}: pnpm workspace support requires \`npm ls\`, falling back to \`pnpm list\``
+      `${COMMAND_TITLE}: pnpm workspace support requires \`npm ls\`, falling back to \`pnpm list\``
     )
   }
   const thingToScan = isLockScanned

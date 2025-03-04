@@ -7,6 +7,6 @@ export function attemptLogout() {
     applyLogout()
     logger.success('Successfully logged out')
   } catch {
-    logger.error('Failed to complete logout steps')
+    logger.fail('Failed to complete logout steps')
   }
 }

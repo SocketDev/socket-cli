@@ -13,7 +13,7 @@ if (process.env['SOCKET_CLI_SENTRY_BUILD']) {
     onFatalError(error: Error) {
       // Defer module loads until after Sentry.init is called.
       if (require(relConstantsPath).ENV.SOCKET_CLI_DEBUG) {
-        logger.error('[DEBUG] [Sentry onFatalError]:', error)
+        logger.fail('[DEBUG] [Sentry onFatalError]:', error)
       }
     },
     dsn: 'https://66736701db8e4ffac046bd09fa6aaced@o555220.ingest.us.sentry.io/4508846967619585',

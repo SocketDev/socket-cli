@@ -5,7 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 export function removeSocketWrapper(file: string): void {
   return fs.readFile(file, 'utf8', function (err, data) {
     if (err) {
-      logger.error('There was an error removing the alias:')
+      logger.fail('There was an error removing the alias:')
       logger.error(err)
       return
     }
