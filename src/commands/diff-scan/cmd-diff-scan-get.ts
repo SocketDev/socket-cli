@@ -4,11 +4,9 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getDiffScan } from './get-diff-scan'
 import constants from '../../constants'
-import { commonFlags, outputFlags } from '../../flags'
-import { AuthError } from '../../utils/errors'
+import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -20,35 +18,46 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    before: {
-      type: 'string',
-      shortFlag: 'b',
-      default: '',
-      description: 'The full scan ID of the base scan'
-    },
     after: {
       type: 'string',
       shortFlag: 'a',
       default: '',
       description: 'The full scan ID of the head scan'
     },
-    preview: {
+    before: {
+      type: 'string',
+      shortFlag: 'b',
+      default: '',
+      description: 'The full scan ID of the base scan'
+    },
+    depth: {
+      type: 'number',
+      default: 2,
+      description:
+        'Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)'
+    },
+    json: {
       type: 'boolean',
-      shortFlag: 'p',
-      default: true,
-      description: 'A boolean flag to persist or not the diff scan result'
+      shortFlag: 'j',
+      default: false,
+      description:
+        'Output result as json. This can be big. Use --file to store it to disk without truncation.'
     },
     file: {
       type: 'string',
       shortFlag: 'f',
       default: '',
-      description: 'Path to a local file where the output should be saved'
-    },
-    ...outputFlags
+      description:
+        'Path to a local file where the output should be saved. Use `-` to force stdout.'
+    }
   },
   help: (command, config) => `
     Usage
       $ ${command} <org slug> --before=<before> --after=<after>
+
+    This command displays the package changes between two scans. The full output
+    can be pretty large depending on the size of your repo and time range. It is
+    best stored to disk to be further analyzed by other tools.
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -88,6 +97,7 @@ async function run(
     logger.error(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
       - Specify a before and after full scan ID ${!before && !after ? colors.red('(missing before and after!)') : !before ? colors.red('(missing before!)') : !after ? colors.red('(missing after!)') : colors.green('(ok)')}\n
           - To get full scans IDs, you can run the command "socket scan list <your org slug>".
+            The args are expecting a full \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\` ID.\n
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n`)
     return
   }
@@ -97,23 +107,12 @@ async function run(
     return
   }
 
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
-  await getDiffScan(
-    {
-      outputJson: Boolean(cli.flags['json']),
-      outputMarkdown: Boolean(cli.flags['markdown']),
-      before,
-      after,
-      preview: Boolean(cli.flags['preview']),
-      orgSlug,
-      file: String(cli.flags['file'] || '')
-    },
-    apiToken
-  )
+  await getDiffScan({
+    outputJson: Boolean(cli.flags['json']),
+    before,
+    after,
+    depth: Number(cli.flags['depth']),
+    orgSlug,
+    file: String(cli.flags['file'] || '')
+  })
 }
