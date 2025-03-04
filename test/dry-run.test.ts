@@ -242,6 +242,8 @@ describe('dry-run on all commands', async () => {
             - Specify a before and after full scan ID \\x1b[31m(missing before and after!)\\x1b[39m
 
                 - To get full scans IDs, you can run the command "socket scan list <your org slug>".
+                  The args are expecting a full \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\` ID.
+
             - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m"
     `)
 
