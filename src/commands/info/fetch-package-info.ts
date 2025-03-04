@@ -1,6 +1,5 @@
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
-
 import { PackageData } from './get-package-info'
+import constants from '../../constants'
 import { getSeverityCount } from '../../utils/alert/severity'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { getPublicToken, setupSdk } from '../../utils/sdk'
@@ -8,9 +7,17 @@ import { getPublicToken, setupSdk } from '../../utils/sdk'
 export async function fetchPackageInfo(
   pkgName: string,
   pkgVersion: string,
-  includeAllIssues: boolean,
-  spinner: Spinner
+  includeAllIssues: boolean
 ): Promise<void | PackageData> {
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start(
+    pkgVersion === 'latest'
+      ? `Looking up data for the latest version of ${pkgName}`
+      : `Looking up data for version ${pkgVersion} of ${pkgName}`
+  )
+
   const socketSdk = await setupSdk(getPublicToken())
   const result = await handleApiCall(
     socketSdk.getIssuesByNPMPackage(pkgName, pkgVersion),
@@ -41,6 +48,8 @@ export async function fetchPackageInfo(
     result.data,
     includeAllIssues ? undefined : 'high'
   )
+
+  spinner?.successAndStop('Data fetched')
 
   return {
     data: result.data,
