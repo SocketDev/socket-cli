@@ -8,13 +8,9 @@ export async function updateRepo({
   description,
   homepage,
   orgSlug,
-  outputJson,
-  outputMarkdown,
   repoName,
   visibility
 }: {
-  outputJson: boolean
-  outputMarkdown: boolean
   orgSlug: string
   repoName: string
   description: string
@@ -35,8 +31,6 @@ export async function updateRepo({
     description,
     homepage,
     orgSlug,
-    outputJson,
-    outputMarkdown,
     repoName,
     visibility
   })
@@ -48,14 +42,10 @@ async function updateRepoWithToken({
   description,
   homepage,
   orgSlug,
-  outputJson,
-  outputMarkdown,
   repoName,
   visibility
 }: {
   apiToken: string
-  outputJson: boolean
-  outputMarkdown: boolean
   orgSlug: string
   repoName: string
   description: string
@@ -71,8 +61,6 @@ async function updateRepoWithToken({
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.updateOrgRepo(orgSlug, repoName, {
-      outputJson,
-      outputMarkdown,
       orgSlug,
       name: repoName,
       description,

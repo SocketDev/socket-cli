@@ -5,7 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { createRepo } from './create-repo'
 import constants from '../../constants'
-import { commonFlags, outputFlags } from '../../flags'
+import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -19,7 +19,6 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    ...outputFlags,
     repoName: {
       type: 'string',
       shortFlag: 'n',
@@ -103,8 +102,6 @@ async function run(
   }
 
   await createRepo({
-    outputJson: Boolean(cli.flags['json']),
-    outputMarkdown: Boolean(cli.flags['markdown']),
     orgSlug,
     repoName,
     description: String(cli.flags['repoDescription'] || ''),
