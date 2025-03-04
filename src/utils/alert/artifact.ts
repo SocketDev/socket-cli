@@ -98,7 +98,8 @@ async function* createBatchGenerator(
       headers: {
         Authorization: `Basic ${btoa(`${getPublicToken()}:`)}`
       },
-      signal: abortSignal
+      // TODO: Fix to not abort process on network abort.
+      // signal: abortSignal
     })
     .end(
       JSON.stringify({
