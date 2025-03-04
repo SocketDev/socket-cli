@@ -234,7 +234,7 @@ async function updatePackageJson() {
   // Lazily access constants.ENV[SOCKET_CLI_LEGACY_BUILD].
   if (constants.ENV[SOCKET_CLI_LEGACY_BUILD]) {
     editablePkgJson.update({
-      name: SOCKET_SECURITY_CLI,
+      name: SOCKET_CLI_LEGACY_PACKAGE_NAME,
       bin: {
         [CLI]: bin[SOCKET],
         ...bin
