@@ -8,6 +8,9 @@ import type { ArboristClass, ArboristReifyOptions } from './types'
 import type { SafeNode } from '../node'
 
 const {
+  SOCKET_CLI_LEGACY_PACKAGE_NAME,
+  SOCKET_CLI_PACKAGE_NAME,
+  SOCKET_CLI_SENTRY_PACKAGE_NAME,
   SOCKET_CLI_SAFE_WRAPPER,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIPC }
@@ -78,6 +81,23 @@ export class SafeArborist extends Arborist {
       __proto__: null,
       ...(args.length ? args[0] : undefined)
     }
+    const { add } = options
+    const skipSocketCliUpgrade =
+      options.global &&
+      options['npmCommand'] === 'install' &&
+      Array.isArray(add) &&
+      add.length === 1 &&
+      (add[0] === SOCKET_CLI_PACKAGE_NAME ||
+        add[0] === SOCKET_CLI_LEGACY_PACKAGE_NAME ||
+        add[0] === SOCKET_CLI_SENTRY_PACKAGE_NAME)
+
+    if (
+      options.dryRun ||
+      skipSocketCliUpgrade ||
+      !(await getIPC(SOCKET_CLI_SAFE_WRAPPER))
+    ) {
+      return await this[kRiskyReify](...args)
+    }
     const safeArgs = [
       {
         ...options,
@@ -85,9 +105,6 @@ export class SafeArborist extends Arborist {
       },
       ...args.slice(1)
     ]
-    if (options.dryRun || !(await getIPC(SOCKET_CLI_SAFE_WRAPPER))) {
-      return await this[kRiskyReify](...safeArgs)
-    }
     Object.assign(options, SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES)
     const old = args[0]
     args[0] = options
