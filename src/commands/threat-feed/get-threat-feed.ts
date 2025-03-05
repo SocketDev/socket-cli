@@ -154,7 +154,7 @@ async function getThreatFeedWithToken({
     headers: [
       ' Ecosystem',
       ' Name',
-      ' Version',
+      '  Version',
       '  Threat type',
       '  Detected at',
       ' Details'
