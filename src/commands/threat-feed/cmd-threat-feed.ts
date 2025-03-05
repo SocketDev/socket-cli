@@ -3,10 +3,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { getThreatFeed } from './get-threat-feed'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { AuthError } from '../../utils/errors'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -14,7 +12,7 @@ const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'threat-feed',
-  description: 'Look up the threat feed',
+  description: '[beta] Look at the threat feed',
   hidden: false,
   flags: {
     ...commonFlags,
@@ -37,6 +35,12 @@ const config: CliCommandConfig = {
       default: 'desc',
       description: 'Order asc or desc by the createdAt attribute.'
     },
+    ecoSystem: {
+      type: 'string',
+      shortFlag: 'e',
+      default: '',
+      description: 'Only show threats for a particular eco system'
+    },
     filter: {
       type: 'string',
       shortFlag: 'f',
@@ -50,6 +54,32 @@ const config: CliCommandConfig = {
 
     Options
       ${getFlagListOutput(config.flags, 6)}
+
+    This feature requires an Enterprise Plan with Threat Feed add-on. Please
+    contact sales@socket.dev if you would like access to this feature.
+
+    Valid filters:
+
+      - c       Do not filter
+      - u       Unreviewed
+      - fp      False Positives
+      - tp      False Positives and Unreviewed
+      - mal     Malware and Possible Malware [default]
+      - vuln    Vulnerability
+      - anom    Anomaly
+      - secret  Secret
+      - joke    Joke / Fake
+      - spy     Telemetry
+      - typo    Typo-squat
+
+    Valid eco systems:
+
+      - gem
+      - golang
+      - maven
+      - npm
+      - nuget
+      - pypi
 
     Examples
       $ ${command}
@@ -80,19 +110,16 @@ async function run(
     return
   }
 
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
   await getThreatFeed({
-    apiToken,
     direction: String(cli.flags['direction'] || 'desc'),
+    ecoSystem: String(cli.flags['ecoSystem'] || ''),
     filter: String(cli.flags['filter'] || 'mal'),
-    outputJson: Boolean(cli.flags['json']),
-    page: String(cli.flags['filter'] || '1'),
-    perPage: Number(cli.flags['per_page'] || 0)
+    outputKind: cli.flags['json']
+      ? 'json'
+      : cli.flags['markdown']
+        ? 'markdown'
+        : 'print',
+    page: String(cli.flags['page'] || '1'),
+    perPage: Number(cli.flags['perPage']) || 30
   })
 }
