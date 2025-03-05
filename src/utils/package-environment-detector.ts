@@ -245,7 +245,7 @@ export async function detectPackageEnvironment({
   }
   let lockSrc: string | undefined
   // Lazily access constants.maintainedNodeVersions.
-  let minimumNodeVersion = constants.maintainedNodeVersions.previous
+  let minimumNodeVersion = constants.maintainedNodeVersions.last
   if (pkgJson) {
     const browserField = pkgJson.browser
     if (isNonEmptyString(browserField) || isObjectObject(browserField)) {
