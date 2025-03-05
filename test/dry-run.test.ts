@@ -98,151 +98,134 @@ function toAsciiSafeString(str: string): string {
 }
 
 describe('dry-run on all commands', async () => {
-  let was: unknown
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  beforeAll(() => {
-    // Temp: we have to disable the banner by default until we make it work
-    //       properly with --json and --markdown, since otherwise the output
-    //       would be invalid.
-    was = process.env['SOCKET_CLI_SHOW_BANNER']
-    process.env['SOCKET_CLI_SHOW_BANNER'] = '1'
-  })
-
-  afterAll(() => {
-    if (was) {
-      process.env['SOCKET_CLI_SHOW_BANNER'] = was as any
-    }
-  })
-
   cmdit(['--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(
+      `"[DryRun]: No-op, call a sub-command; ok"`
+    )
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
-
-      [DryRun]: No-op, call a sub-command; ok"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['analytics', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['audit-log', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['cdxgen', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(
+      `
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket cdxgen\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(
-      `"\\x1b[31m\\xd7\\x1b[39m Unknown argument: --dry-run"`
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket cdxgen\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m Unknown argument: --dry-run"
+    `
     )
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['dependencies', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket dependencies\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket dependencies\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['diff-scan', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(
+      `"[DryRun]: No-op, call a sub-command; ok"`
+    )
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan\`, cwd: <redacted>
-
-      [DryRun]: No-op, call a sub-command; ok"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['diff-scan', 'get', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan get\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan get\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Specify a before and after full scan ID \\x1b[31m(missing before and after!)\\x1b[39m
 
@@ -253,41 +236,39 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['fix', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['info', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket info\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket info\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
             - Expecting a package name \\x1b[31m(missing!)\\x1b[39m
 
@@ -295,79 +276,68 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['login', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket login\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket login\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['logout', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket logout\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket logout\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['manifest', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(
+      `"[DryRun]: No-op, call a sub-command; ok"`
+    )
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest\`, cwd: <redacted>
-
-      [DryRun]: No-op, call a sub-command; ok"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['manifest', 'auto', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
-      "
-         _____         _       _        /---------------
-        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-        |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest auto\`, cwd: <redacted>
-
-
-        Auto-detect build and attempt to generate manifest file
+    expect(stdout).toMatchInlineSnapshot(`
+      "Auto-detect build and attempt to generate manifest file
 
         $ socket manifest auto
 
@@ -381,25 +351,31 @@ describe('dry-run on all commands', async () => {
         If that doesn't work, see \`socket manifest <lang> --help\` for config details for
         your target language."
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      "
+         _____         _       _        /---------------
+        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+        |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest auto\`, cwd: <redacted>"
+    `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['manifest', 'gradle', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest gradle\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest gradle\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - The DIR arg is required \\x1b[31m(missing!)\\x1b[39m
 
@@ -407,22 +383,22 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['manifest', 'kotlin', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest kotlin\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest kotlin\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - The DIR arg is required \\x1b[31m(missing!)\\x1b[39m
 
@@ -430,22 +406,22 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['manifest', 'scala', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest scala\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest scala\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - The DIR or FILE arg is required \\x1b[31m(missing!)\\x1b[39m
 
@@ -453,193 +429,177 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['npm', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket npm\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket npm\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['npx', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket npx\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket npx\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['oops', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket oops\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket oops\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['optimize', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['organization', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket organizations\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket organizations\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['raw-npm', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket raw-npm\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket raw-npm\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['raw-npx', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket raw-npx\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket raw-npx\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['report', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(
+      `"[DryRun]: No-op, call a sub-command; ok"`
+    )
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket report\`, cwd: <redacted>
-
-      [DryRun]: No-op, call a sub-command; ok"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket report\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['report', 'create', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket report create\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket report create\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['report', 'view', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket report view\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket report view\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - Need at least one report ID \\x1b[31m(missing!)\\x1b[39m
 
@@ -647,41 +607,41 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['repos', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(
+      `"[DryRun]: No-op, call a sub-command; ok"`
+    )
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos\`, cwd: <redacted>
-
-      [DryRun]: No-op, call a sub-command; ok"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['repos', 'create', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos create\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos create\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -689,22 +649,22 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['repos', 'del', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos del\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos del\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -714,22 +674,22 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['repos', 'list', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos list\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos list\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -737,22 +697,22 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['repos', 'update', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos update\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos update\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -762,22 +722,22 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['repos', 'view', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos view\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos view\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -785,14 +745,14 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   // cmdit(['scan', '--dry-run'], 'should support', async cmd => {
   //   const { code, stderr, stdout } = await invoke(entryPath, cmd)
-  //   expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+  //   expect(stdout).toMatchInlineSnapshot(`
   //     "
   //        _____         _       _        /---------------
   //       |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -801,17 +761,17 @@ describe('dry-run on all commands', async () => {
 
   //     [DryRun]: noop, call a sub-command; ok"
   //   `)
-  //   expect(stderr).toMatchInlineSnapshot(`""`)
+  //   expect(`\n   ${stderr}`).toMatchInlineSnapshot(`""`)
 
   //   expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-  //   expect(stdout, 'header should include command (without params)').toContain(
+  //   expect(stderr, 'header should include command (without params)').toContain(
   //     cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
   //   )
   // })
 
   // cmdit(['scan', 'create', '--dry-run'], 'should support', async cmd => {
   //   const { code, stderr, stdout } = await invoke(entryPath, cmd)
-  //   expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+  //   expect(stdout).toMatchInlineSnapshot(`
   //     "
   //        _____         _       _        /---------------
   //       |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -820,7 +780,7 @@ describe('dry-run on all commands', async () => {
 
   //     [DryRun] Bailing now"
   //   `)
-  //   expect(stderr).toMatchInlineSnapshot(`
+  //   expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
   //     "\\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
   //           - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
@@ -835,22 +795,22 @@ describe('dry-run on all commands', async () => {
   //   `)
 
   //   expect(code).toBe(2)
-  //   expect(stdout, 'header should include command (without params)').toContain(
+  //   expect(stderr, 'header should include command (without params)').toContain(
   //     cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
   //   )
   // })
 
   cmdit(['scan', 'del', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan del\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan del\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -858,43 +818,43 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['scan', 'list', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan list\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan list\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - Org name as the argument \\x1b[31m(missing!)\\x1b[39m"
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['scan', 'metadata', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan metadata\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan metadata\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -902,22 +862,22 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['scan', 'view', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan view\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan view\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
       - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
@@ -925,47 +885,45 @@ describe('dry-run on all commands', async () => {
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['threat-feed', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>
-
-      [DryRun]: Bailing now"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>"
     `)
-    expect(stderr).toMatchInlineSnapshot(`""`)
 
     expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })
 
   cmdit(['wrapper', '--dry-run'], 'should support', async cmd => {
     const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(`\n   ${stdout}`).toMatchInlineSnapshot(`
+    expect(stdout).toMatchInlineSnapshot(`""`)
+    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket wrapper\`, cwd: <redacted>"
-    `)
-    expect(stderr).toMatchInlineSnapshot(`
-      "\\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required flags:
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket wrapper\`, cwd: <redacted>
+
+      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required flags:
 
       - Must use --enabled or --disabled"
     `)
 
     expect(code).toBe(2)
-    expect(stdout, 'header should include command (without params)').toContain(
+    expect(stderr, 'header should include command (without params)').toContain(
       cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
     )
   })

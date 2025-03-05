@@ -12,7 +12,7 @@ import { MeowFlags, commonFlags } from '../flags'
 
 import type { Options } from 'meow'
 
-const { DRY_RUN_LABEL, REDACTED, SOCKET_CLI_SHOW_BANNER } = constants
+const { DRY_RUN_LABEL, REDACTED } = constants
 
 interface CliAlias {
   description: string
@@ -93,11 +93,8 @@ export async function meowWithSubcommands(
   }
   // ...else we provide basic instructions and help.
 
-  // Temp disable until we clear the --json and --markdown usage
-  // Lazily access constants.ENV[SOCKET_CLI_SHOW_BANNER].
-  if (constants.ENV[SOCKET_CLI_SHOW_BANNER]) {
-    logger.log(getAsciiHeader(name))
-  }
+  emitBanner(name)
+
   const cli = meow(
     `
     Usage
@@ -167,11 +164,8 @@ export function meowOrExit({
 }) {
   const command = `${parentName} ${config.commandName}`
   lastSeenCommand = command
-  // Temp disable until we clear the --json and --markdown usage.
-  // Lazily access constants.ENV[SOCKET_CLI_SHOW_BANNER].
-  if (constants.ENV[SOCKET_CLI_SHOW_BANNER]) {
-    logger.log(getAsciiHeader(command))
-  }
+
+  emitBanner(command)
 
   // This exits if .printHelp() is called either by meow itself or by us.
   const cli = meow({
@@ -187,6 +181,18 @@ export function meowOrExit({
     cli.showHelp()
   }
   return cli
+}
+
+export function emitBanner(name: string) {
+  // Print a banner at the top of each command.
+  // This helps with brand recognition and marketing.
+  // It also helps with debugging since it contains version and command details.
+  // Note: print over stderr to preserve stdout for flags like --json and
+  //       --markdown. If we don't do this, you can't use --json in particular
+  //       and pipe the result to other tools. By emiting the banner over stderr
+  //       you can do something like `socket scan view xyz | jq | process`.
+  //       The spinner also emits over stderr for example.
+  logger.error(getAsciiHeader(name))
 }
 
 function getAsciiHeader(command: string) {
@@ -208,7 +214,7 @@ function getAsciiHeader(command: string) {
     ? REDACTED
     : process
         .cwd()
-        .replace(new RegExp(`^${escapeRegExp(constants.homePath)}`, 'i'), '~/')
+        .replace(new RegExp(`^${escapeRegExp(constants.homePath)}`, 'i'), '~')
   const body = `
    _____         _       _        /---------------
   |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
