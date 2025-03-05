@@ -12,7 +12,7 @@ const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'threat-feed',
-  description: '[beta] Look at the threat feed',
+  description: '[beta] View the threat feed',
   hidden: false,
   flags: {
     ...commonFlags,
@@ -35,11 +35,11 @@ const config: CliCommandConfig = {
       default: 'desc',
       description: 'Order asc or desc by the createdAt attribute.'
     },
-    ecoSystem: {
+    eco: {
       type: 'string',
       shortFlag: 'e',
       default: '',
-      description: 'Only show threats for a particular eco system'
+      description: 'Only show threats for a particular ecosystem'
     },
     filter: {
       type: 'string',
@@ -52,27 +52,27 @@ const config: CliCommandConfig = {
     Usage
       $ ${command}
 
+    This feature requires a Threat Feed license. Please contact
+    sales@socket.dev if you are interested in purchasing this access.
+
     Options
       ${getFlagListOutput(config.flags, 6)}
 
-    This feature requires an Enterprise Plan with Threat Feed add-on. Please
-    contact sales@socket.dev if you would like access to this feature.
-
     Valid filters:
 
-      - c       Do not filter
-      - u       Unreviewed
-      - fp      False Positives
-      - tp      False Positives and Unreviewed
-      - mal     Malware and Possible Malware [default]
-      - vuln    Vulnerability
       - anom    Anomaly
-      - secret  Secret
+      - c       Do not filter
+      - fp      False Positives
+      - mal     Malware and Possible Malware [default]
       - joke    Joke / Fake
+      - secret  Secrets
       - spy     Telemetry
+      - tp      False Positives and Unreviewed
       - typo    Typo-squat
+      - u       Unreviewed
+      - vuln    Vulnerability
 
-    Valid eco systems:
+    Valid ecosystems:
 
       - gem
       - golang
@@ -112,7 +112,7 @@ async function run(
 
   await getThreatFeed({
     direction: String(cli.flags['direction'] || 'desc'),
-    ecoSystem: String(cli.flags['ecoSystem'] || ''),
+    ecosystem: String(cli.flags['eco'] || ''),
     filter: String(cli.flags['filter'] || 'mal'),
     outputKind: cli.flags['json']
       ? 'json'

@@ -29,14 +29,14 @@ type ThreatResult = {
 
 export async function getThreatFeed({
   direction,
-  ecoSystem,
+  ecosystem,
   filter,
   outputKind,
   page,
   perPage
 }: {
   direction: string
-  ecoSystem: string
+  ecosystem: string
   filter: string
   outputKind: 'json' | 'markdown' | 'print'
   page: string
@@ -52,7 +52,7 @@ export async function getThreatFeed({
   await getThreatFeedWithToken({
     apiToken,
     direction,
-    ecoSystem,
+    ecosystem,
     filter,
     outputKind,
     page,
@@ -63,7 +63,7 @@ export async function getThreatFeed({
 async function getThreatFeedWithToken({
   apiToken,
   direction,
-  ecoSystem,
+  ecosystem,
   filter,
   outputKind,
   page,
@@ -71,7 +71,7 @@ async function getThreatFeedWithToken({
 }: {
   apiToken: string
   direction: string
-  ecoSystem: string
+  ecosystem: string
   filter: string
   outputKind: 'json' | 'markdown' | 'print'
   page: string
@@ -82,7 +82,7 @@ async function getThreatFeedWithToken({
 
   const queryParams = new URLSearchParams([
     ['direction', direction],
-    ['ecosystem', ecoSystem],
+    ['ecosystem', ecosystem],
     ['filter', filter],
     ['page', page],
     ['per_page', String(perPage)]
@@ -168,6 +168,7 @@ async function getThreatFeedWithToken({
     if (selectedIndex !== undefined && selectedIndex >= 0) {
       const selectedRow = formattedOutput[selectedIndex]
       if (selectedRow) {
+        // Note: the spacing works around issues with the table; it refuses to pad!
         detailsBox.setContent(
           `Ecosystem: ${selectedRow[0]}\n` +
             `Name: ${selectedRow[1]}\n` +
@@ -205,26 +206,34 @@ function formatResults(data: ThreatResult[]) {
     return [
       ecosystem,
       decodeURIComponent(name),
-      ' ' + version,
-      ' ' + d.threatType,
-      ' ' + timeDiff,
+      ` ${version}`,
+      ` ${d.threatType}`,
+      ` ${timeDiff}`,
       d.locationHtmlUrl
     ]
   })
 }
 
 function msAtHome(isoTimeStamp: string): string {
-  const timeStart = new Date(isoTimeStamp).getTime()
+  const timeStart = Date.parse(isoTimeStamp)
   const timeEnd = Date.now()
+
+  const rtf = new Intl.RelativeTimeFormat('en', {
+    numeric: 'always',
+    style: 'short'
+  })
 
   const delta = timeEnd - timeStart
   if (delta < 60 * 60 * 1000) {
-    return Math.round(delta / (60 * 1000)) + ' min ago'
+    return rtf.format(-Math.round(delta / (60 * 1000)), 'minute')
+    // return Math.round(delta / (60 * 1000)) + ' min ago'
   } else if (delta < 24 * 60 * 60 * 1000) {
-    return (delta / (60 * 60 * 1000)).toFixed(1) + ' hr ago'
+    return rtf.format(-(delta / (60 * 60 * 1000)).toFixed(1), 'hour')
+    // return (delta / (60 * 60 * 1000)).toFixed(1) + ' hr ago'
   } else if (delta < 7 * 24 * 60 * 60 * 1000) {
-    return (delta / (24 * 60 * 60 * 1000)).toFixed(1) + ' day ago'
+    return rtf.format(-(delta / (24 * 60 * 60 * 1000)).toFixed(1), 'day')
+    // return (delta / (24 * 60 * 60 * 1000)).toFixed(1) + ' day ago'
   } else {
-    return isoTimeStamp.slice(0, 8)
+    return isoTimeStamp.slice(0, 10)
   }
 }
