@@ -32,18 +32,21 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
     spinner,
     ...spawnOptions
   } = <SafeNpmInstallOptions>{ __proto__: null, ...options }
+  const useIpc = isObject(ipc)
+  const useDebug = isDebug()
   const terminatorPos = args.indexOf('--')
   const npmArgs = (
     terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   ).filter(a => !isAuditFlag(a) && !isFundFlag(a) && !isProgressFlag(a))
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
-  const useIpc = isObject(ipc)
-  const useDebug = isDebug()
   const isSilent = !useDebug && !npmArgs.some(isLoglevelFlag)
+  const logLevelArgs = isSilent ? ['--silent'] : []
   const spawnPromise = spawn(
     // Lazily access constants.execPath.
     constants.execPath,
     [
+      // Lazily access constants.nodeHardenFlags.
+      ...constants.nodeHardenFlags,
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
       '--require',
@@ -59,9 +62,9 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
       // Add `--no-progress` and `--silent` flags to fix input being swallowed
       // by the spinner when running the command with recent versions of npm.
       '--no-progress',
-      // Add the '--silent' flag if a loglevel flag is not provided and the
+      // Add '--loglevel=error' if a loglevel flag is not provided and the
       // SOCKET_CLI_DEBUG environment variable is not truthy.
-      ...(isSilent ? ['--silent'] : []),
+      ...logLevelArgs,
       ...npmArgs,
       ...otherArgs
     ],
