@@ -48,7 +48,6 @@ type ENV = Remap<
       SOCKET_CLI_NO_API_TOKEN: boolean
       SOCKET_CLI_PUBLISHED_BUILD: boolean
       SOCKET_CLI_SENTRY_BUILD: boolean
-      SOCKET_CLI_SHOW_BANNER: boolean
       SOCKET_CLI_VERSION_HASH: string
     }>
 >
@@ -109,7 +108,6 @@ type Constants = Remap<
     readonly SOCKET_CLI_SENTRY_NPM_BIN_NAME: 'socket-npm-with-sentry'
     readonly SOCKET_CLI_SENTRY_NPX_BIN_NAME: 'socket-npx-with-sentry'
     readonly SOCKET_CLI_SENTRY_PACKAGE_NAME: '@socketsecurity/cli-with-sentry'
-    readonly SOCKET_CLI_SHOW_BANNER: 'SOCKET_CLI_SHOW_BANNER'
     readonly SOCKET_CLI_VERSION_HASH: 'SOCKET_CLI_VERSION_HASH'
     readonly VLT: 'vlt'
     readonly WITH_SENTRY: 'with-sentry'
@@ -179,7 +177,6 @@ const SOCKET_CLI_SENTRY_BUILD = 'SOCKET_CLI_SENTRY_BUILD'
 const SOCKET_CLI_SENTRY_NPM_BIN_NAME = `${SOCKET_CLI_NPM_BIN_NAME}-${WITH_SENTRY}`
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = `${SOCKET_CLI_NPX_BIN_NAME}-${WITH_SENTRY}`
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_CLI_LEGACY_PACKAGE_NAME}-${WITH_SENTRY}`
-const SOCKET_CLI_SHOW_BANNER = 'SOCKET_CLI_SHOW_BANNER'
 const SOCKET_CLI_VERSION_HASH = 'SOCKET_CLI_VERSION_HASH'
 const VLT = 'vlt'
 const YARN = 'yarn'
@@ -218,8 +215,6 @@ const LAZY_ENV = () => {
     // Inlined flag set to determine if this is the Sentry build.
     // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_SENTRY_BUILD]".
     [SOCKET_CLI_SENTRY_BUILD]: process.env[SOCKET_CLI_SENTRY_BUILD],
-    // Flag set to toggle the informative ASCII art banner.
-    [SOCKET_CLI_SHOW_BANNER]: envAsBoolean(env[SOCKET_CLI_SHOW_BANNER]),
     // Inlined flag set to determine the version hash of the build.
     // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_VERSION_HASH]".
     [SOCKET_CLI_VERSION_HASH]: process.env[SOCKET_CLI_VERSION_HASH]
@@ -331,7 +326,6 @@ const constants = <Constants>createConstantsObject(
     SOCKET_CLI_SENTRY_NPM_BIN_NAME,
     SOCKET_CLI_SENTRY_NPX_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
-    SOCKET_CLI_SHOW_BANNER,
     SOCKET_CLI_VERSION_HASH,
     VLT,
     WITH_SENTRY,
