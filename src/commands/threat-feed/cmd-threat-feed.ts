@@ -63,8 +63,8 @@ const config: CliCommandConfig = {
       - anom    Anomaly
       - c       Do not filter
       - fp      False Positives
-      - mal     Malware and Possible Malware [default]
       - joke    Joke / Fake
+      - mal     Malware and Possible Malware [default]
       - secret  Secrets
       - spy     Telemetry
       - tp      False Positives and Unreviewed
