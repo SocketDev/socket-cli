@@ -122,6 +122,7 @@ type Constants = Remap<
     readonly distShadowNpmInjectPath: string
     readonly homePath: string
     readonly nmBinPath: string
+    readonly nodeHardenFlags: string
     readonly rootBinPath: string
     readonly rootDistPath: string
     readonly rootPath: string
@@ -279,6 +280,14 @@ const lazyZshRcPath = () =>
   // Lazily access constants.homePath.
   path.join(constants.homePath, '.zshrc')
 
+// Harden Node security.
+// https://nodejs.org/en/learn/getting-started/security-best-practices
+const nodeHardenFlags = [
+  '--disable-proto',
+  '--frozen-intrinsics',
+  '--no-deprecation'
+]
+
 const constants = <Constants>createConstantsObject(
   {
     ALERT_TYPE_CRITICAL_CVE,
@@ -340,6 +349,7 @@ const constants = <Constants>createConstantsObject(
     distShadowNpmInjectPath: undefined,
     homePath: undefined,
     nmBinPath: undefined,
+    nodeHardenFlags,
     rootBinPath: undefined,
     rootDistPath: undefined,
     rootPath: undefined,
