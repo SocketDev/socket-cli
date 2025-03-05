@@ -43,6 +43,9 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} <org slug>
 
+    This feature requires an Enterprise Plan. To learn more about getting access
+    to this feature and many more, please visit https://socket.dev/pricing
+
     Options
       ${getFlagListOutput(config.flags, 6)}
 
