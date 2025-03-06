@@ -3,11 +3,12 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../../constants'
+import { cmdFlagsToString } from '../../utils/cmd'
 import { safeNpmInstall } from '../../utils/npm'
 
 import type { Agent } from '../../utils/package-environment-detector'
 
-const { NPM, abortSignal } = constants
+const { NPM } = constants
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 type SpawnResult = ReturnType<typeof spawn>
@@ -33,12 +34,17 @@ export function runAgentInstall(
   } = { __proto__: null, ...options } as AgentInstallOptions
   const isSilent = !isDebug()
   return spawn(agentExecPath, ['install', ...args], {
-    signal: abortSignal,
     spinner,
     stdio: isSilent ? 'ignore' : 'inherit',
     ...spawnOptions,
     env: {
       ...process.env,
+      NODE_OPTIONS: cmdFlagsToString([
+        // Lazily access constants.nodeHardenFlags.
+        ...constants.nodeHardenFlags,
+        // Lazily access constants.nodeNoWarningsFlags.
+        ...constants.nodeNoWarningsFlags
+      ]),
       ...spawnOptions.env
     }
   })
