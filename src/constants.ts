@@ -122,7 +122,7 @@ type Constants = Remap<
     readonly distShadowNpmInjectPath: string
     readonly homePath: string
     readonly nmBinPath: string
-    readonly nodeHardenFlags: string
+    readonly nodeHardenFlags: string[]
     readonly rootBinPath: string
     readonly rootDistPath: string
     readonly rootPath: string
