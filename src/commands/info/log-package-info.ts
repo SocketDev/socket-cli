@@ -1,12 +1,13 @@
+import { stripIndents } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import constants from '@socketsecurity/registry/lib/constants'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { hasKeys } from '@socketsecurity/registry/lib/objects'
 
 import { PackageData } from './get-package-info'
 import { formatSeverityCount } from '../../utils/alert/severity'
 import { ColorOrMarkdown } from '../../utils/color-or-markdown'
-import { objectSome } from '../../utils/objects'
 import {
   getSocketDevAlertUrl,
   getSocketDevPackageOverviewUrl
@@ -16,7 +17,16 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 const { NPM } = constants
 
-export function formatPackageInfo(
+function formatScore(score: number): string {
+  if (score > 80) {
+    return colors.green(`${score}`)
+  } else if (score < 80 && score > 60) {
+    return colors.yellow(`${score}`)
+  }
+  return colors.red(`${score}`)
+}
+
+export function logPackageInfo(
   { data, score, severityCount }: PackageData,
   {
     name,
@@ -35,12 +45,14 @@ export function formatPackageInfo(
     logger.log(JSON.stringify(data, undefined, 2))
     return
   }
-
   if (outputKind === 'markdown') {
-    logger.log(`\n# Package report for ${pkgName}\n`)
-    logger.log('Package report card:\n')
+    logger.log(stripIndents`
+      # Package report for ${pkgName}
+
+      Package report card:
+    `)
   } else {
-    logger.log(`\nPackage report card for ${pkgName}:\n`)
+    logger.log(`Package report card for ${pkgName}:`)
   }
   const scoreResult = {
     'Supply Chain Risk': Math.floor(score.supplyChainRisk.score * 100),
@@ -49,19 +61,19 @@ export function formatPackageInfo(
     Vulnerabilities: Math.floor(score.vulnerability.score * 100),
     License: Math.floor(score.license.score * 100)
   }
+  logger.log('\n')
   Object.entries(scoreResult).map(score =>
     logger.log(`- ${score[0]}: ${formatScore(score[1])}`)
   )
   logger.log('\n')
-
-  if (objectSome(severityCount)) {
+  if (hasKeys(severityCount)) {
     if (outputKind === 'markdown') {
       logger.log('# Issues\n')
     }
     logger.log(
       `Package has these issues: ${formatSeverityCount(severityCount)}\n`
     )
-    formatPackageIssuesDetails(data, outputKind === 'markdown')
+    logPackageIssuesDetails(data, outputKind === 'markdown')
   } else {
     logger.log('Package has no issues')
   }
@@ -90,7 +102,7 @@ export function formatPackageInfo(
   }
 }
 
-function formatPackageIssuesDetails(
+function logPackageIssuesDetails(
   packageData: SocketSdkReturnType<'getIssuesByNPMPackage'>['data'],
   outputMarkdown: boolean
 ) {
@@ -132,13 +144,4 @@ function formatPackageIssuesDetails(
       logger.log(`- ${issueWithLink}: ${uniqueIssues[issue]?.count}`)
     }
   }
-}
-
-function formatScore(score: number): string {
-  if (score > 80) {
-    return colors.green(`${score}`)
-  } else if (score < 80 && score > 60) {
-    return colors.yellow(`${score}`)
-  }
-  return colors.red(`${score}`)
 }

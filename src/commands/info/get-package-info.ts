@@ -1,9 +1,10 @@
 import process from 'node:process'
 
+import { hasKeys } from '@socketsecurity/registry/lib/objects'
+
 import { fetchPackageInfo } from './fetch-package-info'
-import { formatPackageInfo } from './format-package-info'
+import { logPackageInfo } from './log-package-info'
 import constants from '../../constants'
-import { objectSome } from '../../utils/objects'
 
 import type { SocketSdkAlert } from '../../utils/alert/severity'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -47,7 +48,7 @@ export async function getPackageInfo({
   spinner.successAndStop('Data fetched')
 
   if (packageData) {
-    formatPackageInfo(packageData, {
+    logPackageInfo(packageData, {
       name: commandName,
       includeAllIssues,
       outputKind,
@@ -55,7 +56,7 @@ export async function getPackageInfo({
       pkgVersion
     })
 
-    if (strict && objectSome(packageData.severityCount)) {
+    if (strict && hasKeys(packageData.severityCount)) {
       // Let NodeJS exit gracefully but with exit(1)
       process.exitCode = 1
     }
