@@ -11,14 +11,13 @@ type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
   encoding?: BufferEncoding | undefined
 }
 
-const { CLI, abortSignal } = constants
+const { CLI } = constants
 
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 const spawnOpts: PromiseSpawnOptions = {
-  cwd: npmFixturesPath,
-  signal: abortSignal
+  cwd: npmFixturesPath
 }
 
 describe(
