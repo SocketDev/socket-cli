@@ -41,11 +41,11 @@ function cleanupQueryStdout(stdout: string): string {
   return JSON.stringify([...names], null, 2)
 }
 
-function parseableToQueryStdout(stdout: string) {
+function parsableToQueryStdout(stdout: string) {
   if (stdout === '') {
     return ''
   }
-  // Convert the parseable stdout into a json array of unique names.
+  // Convert the parsable stdout into a json array of unique names.
   // The matchAll regexp looks for a forward (posix) or backward (win32) slash
   // and matches one or more non-slashes until the newline.
   const names = new Set(stdout.matchAll(/(?<=[/\\])[^/\\]+(?=\n)/g))
@@ -90,12 +90,14 @@ async function lsPnpm(
     stdout = (
       await spawn(
         agentExecPath,
+        // Pnpm uses the alternative spelling of parsable.
+        // https://en.wiktionary.org/wiki/parsable
         ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
         { cwd }
       )
     ).stdout
   } catch {}
-  return parseableToQueryStdout(stdout)
+  return parsableToQueryStdout(stdout)
 }
 
 async function lsVlt(agentExecPath: string, cwd: string): Promise<string> {
@@ -144,14 +146,11 @@ async function lsYarnClassic(
   return ''
 }
 
-export const lsByAgent: Record<Agent, AgentListDepsFn> = {
-  // @ts-ignore
-  __proto__: null,
-
-  [BUN]: lsBun,
-  [NPM]: lsNpm,
-  [PNPM]: lsPnpm,
-  [VLT]: lsVlt,
-  [YARN_BERRY]: lsYarnBerry,
-  [YARN_CLASSIC]: lsYarnClassic
-}
+export const lsByAgent = new Map<Agent, AgentListDepsFn>([
+  [BUN, lsBun],
+  [NPM, lsNpm],
+  [PNPM, lsPnpm],
+  [VLT, lsVlt],
+  [YARN_BERRY, lsYarnBerry],
+  [YARN_CLASSIC, lsYarnClassic]
+])
