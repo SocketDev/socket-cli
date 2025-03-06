@@ -18,10 +18,10 @@ export async function updatePackageLockJson(
   pkgEnvDetails: PackageEnvironmentDetails,
   options: UpdatePackageLockJsonOptions
 ) {
-  const { logger, spinner } = <UpdatePackageLockJsonOptions>{
+  const { logger, spinner } = {
     __proto__: null,
     ...options
-  }
+  } as UpdatePackageLockJsonOptions
   spinner?.start(`Updating ${pkgEnvDetails.lockName}...`)
   try {
     await runAgentInstall(pkgEnvDetails.agent, pkgEnvDetails.agentExecPath, {

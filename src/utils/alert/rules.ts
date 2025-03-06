@@ -259,7 +259,7 @@ void (async () => {
           // issueRules: { [issueName: string]: boolean }
           // but expecting
           // issueRules: { [issueName: string]: { action: 'defer' | 'error' | 'ignore' | 'monitor' | 'warn' } }
-          issueRules: (<unknown>socketYml.parsed.issueRules) as {
+          issueRules: socketYml.parsed.issueRules as unknown as {
             [key: string]: {
               action: 'defer' | 'error' | 'ignore' | 'monitor' | 'warn'
             }

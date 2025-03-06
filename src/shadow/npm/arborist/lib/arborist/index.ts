@@ -70,10 +70,10 @@ export class SafeArborist extends Arborist {
     this: SafeArborist,
     ...args: Parameters<InstanceType<ArboristClass>['reify']>
   ): Promise<SafeNode> {
-    const options = <ArboristReifyOptions>{
+    const options = {
       __proto__: null,
       ...(args.length ? args[0] : undefined)
-    }
+    } as ArboristReifyOptions
 
     if (options.dryRun) {
       return await this[kRiskyReify](...args)

@@ -114,7 +114,7 @@ export class SafeOverrideSet extends OverrideSet {
       // the fallback value of spec if it is.
       let spec = npa(`${edge.name}@${edge.rawSpec || edge.spec}`)
       if (spec.type === 'alias') {
-        spec = (<AliasResult>spec).subSpec
+        spec = (spec as AliasResult).subSpec
       }
       if (spec.type === 'git') {
         if (spec.gitRange && semver.intersects(spec.gitRange, rule.keySpec!)) {
@@ -124,7 +124,7 @@ export class SafeOverrideSet extends OverrideSet {
       }
       if (spec.type === 'range' || spec.type === 'version') {
         if (
-          semver.intersects((<RegistryResult>spec).fetchSpec, rule.keySpec!)
+          semver.intersects((spec as RegistryResult).fetchSpec, rule.keySpec!)
         ) {
           return rule
         }

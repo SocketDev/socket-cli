@@ -18,10 +18,10 @@ export async function detectAndValidatePackageEnvironment(
   cwd: string,
   options?: DetectAndValidateOptions | undefined
 ): Promise<void | PackageEnvironmentDetails> {
-  const { logger, prod } = <DetectAndValidateOptions>{
+  const { logger, prod } = {
     __proto__: null,
     ...options
-  }
+  } as DetectAndValidateOptions
   const details = await detectPackageEnvironment({
     cwd,
     onUnknown(pkgManager: string | undefined) {
@@ -69,5 +69,5 @@ export async function detectAndValidatePackageEnvironment(
       `${COMMAND_TITLE}: Package ${lockName} found at ${details.lockPath}`
     )
   }
-  return <PackageEnvironmentDetails>details
+  return details as PackageEnvironmentDetails
 }
