@@ -137,30 +137,12 @@ const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
   }
 })()
 
-export type GetPackageEnvironmentOptions = {
+export type DetectionOptions = {
   cwd?: string | undefined
   onUnknown?: (pkgManager: string | undefined) => void
 }
 
-export type PartialPackageEnvironmentDetails = Readonly<{
-  agent: Agent
-  agentExecPath: string
-  agentVersion: SemVer | undefined
-  lockName: string | undefined
-  lockPath: string | undefined
-  lockSrc: string | undefined
-  minimumNodeVersion: string
-  npmExecPath: string
-  pkgJson: EditablePackageJson | undefined
-  pkgPath: string | undefined
-  supported: boolean
-  targets: {
-    browser: boolean
-    node: boolean
-  }
-}>
-
-export type PackageEnvironmentDetails = Readonly<{
+export type EnvDetails = Readonly<{
   agent: Agent
   agentExecPath: string
   agentVersion: SemVer
@@ -178,12 +160,28 @@ export type PackageEnvironmentDetails = Readonly<{
   }
 }>
 
+export type PartialEnvDetails = Readonly<{
+  agent: Agent
+  agentExecPath: string
+  agentVersion: SemVer | undefined
+  lockName: string | undefined
+  lockPath: string | undefined
+  lockSrc: string | undefined
+  minimumNodeVersion: string
+  npmExecPath: string
+  pkgJson: EditablePackageJson | undefined
+  pkgPath: string | undefined
+  supported: boolean
+  targets: {
+    browser: boolean
+    node: boolean
+  }
+}>
+
 export async function detectPackageEnvironment({
   cwd = process.cwd(),
   onUnknown
-}: GetPackageEnvironmentOptions = {}): Promise<
-  PackageEnvironmentDetails | PartialPackageEnvironmentDetails
-> {
+}: DetectionOptions = {}): Promise<EnvDetails | PartialEnvDetails> {
   let lockPath = await findUp(Object.keys(LOCKS), { cwd })
   let lockName = lockPath ? path.basename(lockPath) : undefined
   const isHiddenLockFile = lockName === '.package-lock.json'
@@ -209,7 +207,7 @@ export async function detectPackageEnvironment({
   if (pkgManager) {
     const atSignIndex = pkgManager.lastIndexOf('@')
     if (atSignIndex !== -1) {
-      const name = <Agent>pkgManager.slice(0, atSignIndex)
+      const name = pkgManager.slice(0, atSignIndex) as Agent
       const version = pkgManager.slice(atSignIndex + 1)
       if (version && AGENTS.includes(name)) {
         agent = name
@@ -223,7 +221,7 @@ export async function detectPackageEnvironment({
     typeof pkgJsonPath === 'string' &&
     typeof lockName === 'string'
   ) {
-    agent = <Agent>LOCKS[lockName]
+    agent = LOCKS[lockName] as Agent
   }
   if (agent === undefined) {
     agent = NPM
@@ -258,7 +256,7 @@ export async function detectPackageEnvironment({
         minimumNodeVersion = coerced.version
       }
     }
-    const browserslistQuery = <string[] | undefined>pkgJson['browserslist']
+    const browserslistQuery = pkgJson['browserslist'] as string[] | undefined
     if (Array.isArray(browserslistQuery)) {
       const browserslistTargets = browserslist(browserslistQuery)
         .map(s => s.toLowerCase())
