@@ -3,7 +3,7 @@ import path from 'node:path'
 import constants from '../../constants'
 import { detectPackageEnvironment } from '../../utils/package-environment-detector'
 
-import type { PackageEnvironmentDetails } from '../../utils/package-environment-detector'
+import type { EnvDetails } from '../../utils/package-environment-detector'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
 
 const { BUN, VLT, YARN_BERRY } = constants
@@ -17,7 +17,7 @@ export type DetectAndValidateOptions = {
 export async function detectAndValidatePackageEnvironment(
   cwd: string,
   options?: DetectAndValidateOptions | undefined
-): Promise<void | PackageEnvironmentDetails> {
+): Promise<void | EnvDetails> {
   const { logger, prod } = {
     __proto__: null,
     ...options
@@ -69,5 +69,5 @@ export async function detectAndValidatePackageEnvironment(
       `${COMMAND_TITLE}: Package ${lockName} found at ${details.lockPath}`
     )
   }
-  return details as PackageEnvironmentDetails
+  return details as EnvDetails
 }

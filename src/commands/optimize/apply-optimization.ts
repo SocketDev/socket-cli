@@ -29,7 +29,7 @@ import constants from '../../constants'
 import type { AgentLockIncludesFn } from './lock-includes-by-agent'
 import type {
   Agent,
-  PackageEnvironmentDetails,
+  EnvDetails,
   StringKeyValueObject
 } from '../../utils/package-environment-detector'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
@@ -121,7 +121,7 @@ function createActionMessage(
 
 async function addOverrides(
   pkgPath: string,
-  pkgEnvDetails: PackageEnvironmentDetails,
+  pkgEnvDetails: EnvDetails,
   options?: AddOverridesOptions | undefined
 ): Promise<AddOverridesState> {
   const {
