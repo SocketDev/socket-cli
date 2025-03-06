@@ -100,12 +100,11 @@ export async function runFix() {
                     'optionalDependencies',
                     'peerDependencies'
                   ]) {
-                    const oldVersion = (
-                      editablePkgJson.content[depField] as any
-                    )?.[name]
+                    const { content: pkgJson } = editablePkgJson
+                    const oldVersion = (pkgJson[depField] as any)?.[name]
                     if (oldVersion) {
                       const decorator = /^[~^]/.exec(oldVersion)?.[0] ?? ''
-                      ;(editablePkgJson as any).content[depField][name] =
+                      ;(pkgJson as any)[depField][name] =
                         `${decorator}${node.version}`
                     }
                   }
