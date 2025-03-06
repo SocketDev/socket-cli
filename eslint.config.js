@@ -175,6 +175,10 @@ module.exports = [
     rules: {
       ...sharedRules,
       '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
+      '@typescript-eslint/consistent-type-assertions': [
+        'error',
+        { assertionStyle: 'as' }
+      ],
       '@typescript-eslint/no-misused-new': 'error',
       '@typescript-eslint/no-this-alias': [
         'error',

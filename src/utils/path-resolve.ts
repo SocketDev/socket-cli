@@ -49,7 +49,7 @@ async function globWithGitIgnore(
     cwd = process.cwd(),
     socketConfig,
     ...additionalOptions
-  } = <GlobWithGitIgnoreOptions>{ __proto__: null, ...options }
+  } = { __proto__: null, ...options } as GlobWithGitIgnoreOptions
   const projectIgnorePaths = socketConfig?.projectIgnorePaths
   const ignoreFiles = await tinyGlob(['**/.gitignore'], {
     absolute: true,

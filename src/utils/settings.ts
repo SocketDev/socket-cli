@@ -30,10 +30,10 @@ interface Settings {
 let _settings: Settings | undefined
 function getSettings(): Settings {
   if (_settings === undefined) {
-    _settings = <Settings>{}
+    _settings = {} as Settings
     const settingsPath = getSettingsPath()
     if (settingsPath) {
-      const raw = <string | undefined>safeReadFileSync(settingsPath, 'utf8')
+      const raw = safeReadFileSync(settingsPath, 'utf8') as string | undefined
       if (raw) {
         try {
           Object.assign(
@@ -95,10 +95,10 @@ export function findSocketYmlSync() {
   let dir = process.cwd()
   while (dir !== prevDir) {
     let ymlPath = path.join(dir, 'socket.yml')
-    let yml = <string | undefined>safeReadFileSync(ymlPath, 'utf8')
+    let yml = safeReadFileSync(ymlPath, 'utf8') as string | undefined
     if (yml === undefined) {
       ymlPath = path.join(dir, 'socket.yaml')
-      yml = <string | undefined>safeReadFileSync(ymlPath, 'utf8')
+      yml = safeReadFileSync(ymlPath, 'utf8') as string | undefined
     }
     if (typeof yml === 'string') {
       try {
@@ -119,7 +119,7 @@ export function findSocketYmlSync() {
 export function getSetting<Key extends keyof Settings>(
   key: Key
 ): Settings[Key] {
-  return getSettings()[<Key>normalizeSettingsKey(key)]
+  return getSettings()[normalizeSettingsKey(key) as Key]
 }
 
 let pendingSave = false
@@ -128,7 +128,7 @@ export function updateSetting<Key extends keyof Settings>(
   value: Settings[Key]
 ): void {
   const settings = getSettings()
-  ;(settings as any)[<Key>normalizeSettingsKey(key)] = value
+  ;(settings as any)[normalizeSettingsKey(key) as Key] = value
   if (!pendingSave) {
     pendingSave = true
     process.nextTick(() => {

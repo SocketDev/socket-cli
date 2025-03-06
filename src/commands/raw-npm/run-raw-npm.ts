@@ -7,7 +7,7 @@ import { getNpmBinPath } from '../../shadow/npm/paths'
 export async function runRawNpm(
   argv: string[] | readonly string[]
 ): Promise<void> {
-  const spawnPromise = spawn(getNpmBinPath(), <string[]>argv, {
+  const spawnPromise = spawn(getNpmBinPath(), argv as string[], {
     stdio: 'inherit'
   })
   // See https://nodejs.org/api/all.html#all_child_process_event-exit.
