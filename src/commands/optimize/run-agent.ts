@@ -6,7 +6,7 @@ import constants from '../../constants'
 import { cmdFlagsToString } from '../../utils/cmd'
 import { safeNpmInstall } from '../../utils/npm'
 
-import type { Agent } from '../../utils/package-environment-detector'
+import type { EnvDetails } from '../../utils/package-environment-detector'
 
 const { NPM } = constants
 
@@ -19,23 +19,25 @@ export type AgentInstallOptions = SpawnOption & {
 }
 
 export function runAgentInstall(
-  agent: Agent,
-  agentExecPath: string,
-  options: AgentInstallOptions
+  pkgEnvDetails: EnvDetails,
+  options?: AgentInstallOptions | undefined
 ): SpawnResult {
+  const { agent, agentExecPath } = pkgEnvDetails
   // All package managers support the "install" command.
   if (agent === NPM) {
-    return safeNpmInstall(options)
+    return safeNpmInstall({
+      agentExecPath,
+      ...options
+    })
   }
   const {
     args = [],
     spinner,
     ...spawnOptions
   } = { __proto__: null, ...options } as AgentInstallOptions
-  const isSilent = !isDebug()
   return spawn(agentExecPath, ['install', ...args], {
     spinner,
-    stdio: isSilent ? 'ignore' : 'inherit',
+    stdio: isDebug() ? 'inherit' : 'ignore',
     ...spawnOptions,
     env: {
       ...process.env,
