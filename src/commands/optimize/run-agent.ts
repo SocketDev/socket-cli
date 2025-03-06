@@ -30,7 +30,7 @@ export function runAgentInstall(
     args = [],
     spinner,
     ...spawnOptions
-  } = <AgentInstallOptions>{ __proto__: null, ...options }
+  } = { __proto__: null, ...options } as AgentInstallOptions
   const isSilent = !isDebug()
   return spawn(agentExecPath, ['install', ...args], {
     signal: abortSignal,

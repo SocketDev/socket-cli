@@ -67,7 +67,7 @@ function updatePkgJson(
   field: string,
   value: any
 ) {
-  const pkgJson = editablePkgJson.content
+  const { content: pkgJson } = editablePkgJson
   const oldValue = pkgJson[field]
   if (oldValue) {
     // The field already exists so we simply update the field value.
@@ -81,20 +81,20 @@ function updatePkgJson(
         })
       } else {
         // Properties with undefined values are omitted when saved as JSON.
-        editablePkgJson.update(<typeof pkgJson>(hasKeys(pkgJson[field])
+        editablePkgJson.update((hasKeys(pkgJson[field])
             ? {
                 [field]: {
                   ...(isObject(oldValue) ? oldValue : {}),
                   overrides: undefined
                 }
               }
-            : { [field]: undefined }))
+            : { [field]: undefined }) as typeof pkgJson)
       }
     } else if (field === OVERRIDES || field === RESOLUTIONS) {
       // Properties with undefined values are omitted when saved as JSON.
-      editablePkgJson.update(<typeof pkgJson>{
+      editablePkgJson.update({
         [field]: hasKeys(value) ? value : undefined
-      })
+      } as typeof pkgJson)
     } else {
       editablePkgJson.update({ [field]: value })
     }
@@ -159,7 +159,7 @@ function updateResolutions(
   editablePkgJson: EditablePackageJson,
   overrides: Overrides
 ) {
-  updatePkgJson(editablePkgJson, RESOLUTIONS, <PnpmOrYarnOverrides>overrides)
+  updatePkgJson(editablePkgJson, RESOLUTIONS, overrides as PnpmOrYarnOverrides)
 }
 
 function pnpmUpdatePkgJson(

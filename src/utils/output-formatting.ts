@@ -8,7 +8,7 @@ type ListDescription = string | { description: string }
 export function getFlagListOutput(
   list: Record<string, ListDescription>,
   indent: number,
-  { keyPrefix = '--', padName } = <HelpListOptions>{}
+  { keyPrefix = '--', padName } = {} as HelpListOptions
 ): string {
   return getHelpListOutput(
     {
@@ -22,7 +22,7 @@ export function getFlagListOutput(
 export function getHelpListOutput(
   list: Record<string, ListDescription>,
   indent: number,
-  { keyPrefix = '', padName = 18 } = <HelpListOptions>{}
+  { keyPrefix = '', padName = 18 } = {} as HelpListOptions
 ): string {
   let result = ''
   const names = Object.keys(list).sort()

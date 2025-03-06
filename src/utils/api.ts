@@ -19,7 +19,7 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   result: SocketSdkErrorType<T>
 ) {
   // SocketSdkErrorType['error'] is not typed.
-  const resultErrorMessage = (<{ error?: Error }>result).error?.message
+  const resultErrorMessage = (result as { error?: Error }).error?.message
   const message =
     typeof resultErrorMessage === 'string'
       ? resultErrorMessage

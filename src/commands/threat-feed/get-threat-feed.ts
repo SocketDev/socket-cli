@@ -91,9 +91,7 @@ async function getThreatFeedWithToken({
   spinner.start('Fetching Threat Feed data...')
 
   const response = await queryAPI(`threat-feed?${queryParams}`, apiToken)
-  const data = <{ results: ThreatResult[]; nextPage: string }>(
-    await response.json()
-  )
+  const data = await response.json() as { results: ThreatResult[]; nextPage: string }
 
   spinner.stop('Threat feed data fetched')
 

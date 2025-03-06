@@ -107,9 +107,7 @@ async function* createBatchGenerator(
       })
     )
   // Adds the second 'abort' listener to abortSignal.
-  const { 0: res } = <[IncomingMessage]>(
-    await events.once(req, 'response', { signal: abortSignal })
-  )
+  const { 0: res } = await events.once(req, 'response', { signal: abortSignal }) as [IncomingMessage]
   const ok = res.statusCode! >= 200 && res.statusCode! <= 299
   if (!ok) {
     throw new Error(`Socket API Error: ${res.statusCode}`)
@@ -120,7 +118,7 @@ async function* createBatchGenerator(
     signal: abortSignal
   })
   for await (const line of rli) {
-    yield <SocketArtifact>JSON.parse(line)
+    yield JSON.parse(line) as SocketArtifact
   }
 }
 

@@ -288,7 +288,7 @@ const nodeHardenFlags = [
   '--no-deprecation'
 ]
 
-const constants = <Constants>createConstantsObject(
+const constants = createConstantsObject(
   {
     ALERT_TYPE_CRITICAL_CVE,
     ALERT_TYPE_CVE,
@@ -391,6 +391,6 @@ const constants = <Constants>createConstantsObject(
     },
     mixin: registryConstants
   }
-)
+) as Constants
 
 export default constants

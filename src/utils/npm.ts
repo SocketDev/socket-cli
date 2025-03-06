@@ -31,7 +31,7 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
     ipc,
     spinner,
     ...spawnOptions
-  } = <SafeNpmInstallOptions>{ __proto__: null, ...options }
+  } = { __proto__: null, ...options } as SafeNpmInstallOptions
   const useIpc = isObject(ipc)
   const useDebug = isDebug()
   const terminatorPos = args.indexOf('--')
