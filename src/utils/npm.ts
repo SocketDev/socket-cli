@@ -20,6 +20,7 @@ const { SOCKET_IPC_HANDSHAKE } = constants
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
 type SafeNpmInstallOptions = SpawnOption & {
+  agentExecPath?: string | undefined
   args?: string[] | readonly string[] | undefined
   ipc?: object | undefined
   spinner?: Spinner | undefined
@@ -27,6 +28,7 @@ type SafeNpmInstallOptions = SpawnOption & {
 
 export function safeNpmInstall(options?: SafeNpmInstallOptions) {
   const {
+    agentExecPath = getNpmBinPath(),
     args = [],
     ipc,
     spinner,
@@ -52,7 +54,7 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
       '--require',
       // Lazily access constants.distShadowNpmInjectPath.
       constants.distShadowNpmInjectPath,
-      getNpmBinPath(),
+      agentExecPath,
       'install',
       // Avoid code paths for 'audit' and 'fund'.
       '--no-audit',
