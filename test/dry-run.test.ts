@@ -10,7 +10,7 @@
 
 import path from 'node:path'
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -18,7 +18,7 @@ import constants from '../dist/constants.js'
 
 type TestCollectorOptions = Exclude<Parameters<typeof it>[1], undefined>
 
-const { CLI, abortSignal } = constants
+const { CLI } = constants
 
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
@@ -58,8 +58,7 @@ async function invoke(
       constants.execPath,
       [entryPath, ...args],
       {
-        cwd: npmFixturesPath,
-        signal: abortSignal
+        cwd: npmFixturesPath
       }
     )
     return {
