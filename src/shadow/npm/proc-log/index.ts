@@ -51,7 +51,7 @@ export function getLogger(): Logger {
     _log = tryRequire(
       getNpmRequire(),
       [
-        ('proc-log/lib/index.js' as 'proc-log'),
+        'proc-log/lib/index.js' as 'proc-log',
         // The proc-log DefinitelyTyped definition is incorrect. The type definition
         // is really that of its export log.
         mod => (mod as any).log as RequireKnownModules['proc-log']

@@ -38,20 +38,20 @@ export async function readFileBinary(
   filepath: PathLike | FileHandle,
   options?: ReadFileOptions | undefined
 ): Promise<Buffer> {
-  return await fs.readFile(filepath, {
+  return (await fs.readFile(filepath, {
     ...options,
     encoding: 'binary'
-  } as ReadFileOptions) as Buffer
+  } as ReadFileOptions)) as Buffer
 }
 
 export async function readFileUtf8(
   filepath: PathLike | FileHandle,
   options?: ReadFileOptions | undefined
 ): Promise<string> {
-  return await fs.readFile(filepath, {
+  return (await fs.readFile(filepath, {
     ...options,
     encoding: 'utf8'
-  } as ReadFileOptions) as string
+  } as ReadFileOptions)) as string
 }
 
 export function safeReadFile(

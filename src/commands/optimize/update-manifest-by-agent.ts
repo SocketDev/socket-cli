@@ -81,14 +81,16 @@ function updatePkgJson(
         })
       } else {
         // Properties with undefined values are omitted when saved as JSON.
-        editablePkgJson.update((hasKeys(pkgJson[field])
+        editablePkgJson.update(
+          (hasKeys(pkgJson[field])
             ? {
                 [field]: {
                   ...(isObject(oldValue) ? oldValue : {}),
                   overrides: undefined
                 }
               }
-            : { [field]: undefined }) as typeof pkgJson)
+            : { [field]: undefined }) as typeof pkgJson
+        )
       }
     } else if (field === OVERRIDES || field === RESOLUTIONS) {
       // Properties with undefined values are omitted when saved as JSON.

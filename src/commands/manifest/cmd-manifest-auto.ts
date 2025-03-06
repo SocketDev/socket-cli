@@ -64,7 +64,7 @@ async function run(
     parentName
   })
   const verbose = !!cli.flags['verbose']
-  const cwd = cli.flags['cwd'] as string ?? process.cwd()
+  const cwd = (cli.flags['cwd'] as string) ?? process.cwd()
 
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')

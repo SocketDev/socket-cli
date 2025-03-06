@@ -4,7 +4,9 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getNpxBinPath } from '../../shadow/npm/paths'
 
-export async function runRawNpx(argv: readonly string[]): Promise<void> {
+export async function runRawNpx(
+  argv: string[] | readonly string[]
+): Promise<void> {
   const spawnPromise = spawn(getNpxBinPath(), argv as string[], {
     stdio: 'inherit'
   })

@@ -107,7 +107,9 @@ async function* createBatchGenerator(
       })
     )
   // Adds the second 'abort' listener to abortSignal.
-  const { 0: res } = await events.once(req, 'response', { signal: abortSignal }) as [IncomingMessage]
+  const { 0: res } = (await events.once(req, 'response', {
+    signal: abortSignal
+  })) as [IncomingMessage]
   const ok = res.statusCode! >= 200 && res.statusCode! <= 299
   if (!ok) {
     throw new Error(`Socket API Error: ${res.statusCode}`)
