@@ -168,14 +168,16 @@ async function addOverrides(
   }
   const thingToScan = isLockScanned
     ? lockSrc
-    : await lsByAgent[agent]!(agentExecPath, pkgPath, { npmExecPath })
+    : await lsByAgent.get(agent)!(agentExecPath, pkgPath, { npmExecPath })
   // The AgentDepsIncludesFn and AgentLockIncludesFn types overlap in their
   // first two parameters. AgentLockIncludesFn accepts an optional third
   // parameter which AgentDepsIncludesFn will ignore so we cast thingScanner
   // as an AgentLockIncludesFn type.
-  const thingScanner = (isLockScanned
+  const thingScanner = (
+    isLockScanned
       ? lockIncludesByAgent.get(agent)
-      : depsIncludesByAgent.get(agent)) as AgentLockIncludesFn
+      : depsIncludesByAgent.get(agent)
+  ) as AgentLockIncludesFn
   const depEntries = getDependencyEntries(pkgJson)
 
   const overridesDataObjects = [] as GetOverridesResult[]
