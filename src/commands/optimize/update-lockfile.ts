@@ -1,5 +1,3 @@
-import semver from 'semver'
-
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { runAgentInstall } from './run-agent'
@@ -9,7 +7,7 @@ import { cmdPrefixMessage } from '../../utils/cmd'
 import type { EnvDetails } from '../../utils/package-environment'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
 
-const { NPM, NPM_BUGGY_OVERRIDES_PATCHED_VERSION } = constants
+const { NPM_BUGGY_OVERRIDES_PATCHED_VERSION } = constants
 
 export type UpdateLockfileOptions = {
   cmdName?: string | undefined
