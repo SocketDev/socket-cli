@@ -1,11 +1,11 @@
 {
-  "name": "npm8",
+  "name": "npm11",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "npm": "^8.19.2"
+    "npm": "^11.2.0"
   }
 }
