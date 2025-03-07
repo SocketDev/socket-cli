@@ -10,18 +10,18 @@ const { NPM } = constants
 
 const COMMAND_TITLE = 'Socket Optimize'
 
-export type UpdatePackageLockJsonOptions = {
+export type UpdateLockfileOptions = {
   logger?: Logger | undefined
   spinner?: Spinner | undefined
 }
-export async function updatePackageLockJson(
+export async function updateLockfile(
   pkgEnvDetails: EnvDetails,
-  options: UpdatePackageLockJsonOptions
+  options: UpdateLockfileOptions
 ) {
   const { logger, spinner } = {
     __proto__: null,
     ...options
-  } as UpdatePackageLockJsonOptions
+  } as UpdateLockfileOptions
   spinner?.start(`Updating ${pkgEnvDetails.lockName}...`)
   try {
     await runAgentInstall(pkgEnvDetails, { spinner })
