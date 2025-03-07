@@ -15,7 +15,7 @@ import { getNpmBinPath } from '../shadow/npm/paths'
 
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-const { SOCKET_IPC_HANDSHAKE } = constants
+const { SOCKET_CLI_SENTRY_BUILD, SOCKET_IPC_HANDSHAKE } = constants
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
@@ -51,6 +51,14 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
       ...constants.nodeHardenFlags,
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
+      // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
+      ...(constants.ENV[SOCKET_CLI_SENTRY_BUILD]
+        ? [
+            '--require',
+            // Lazily access constants.distInstrumentWithSentryPath.
+            constants.distInstrumentWithSentryPath
+          ]
+        : []),
       '--require',
       // Lazily access constants.distShadowNpmInjectPath.
       constants.distShadowNpmInjectPath,
