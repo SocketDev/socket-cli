@@ -90,7 +90,7 @@ export async function convertGradleToMaven(
     // // Move the pom file to ...? initial cwd? loc will be an absolute path, or dump to stdout
     // if (out === '-') {
     //   spinner.start('Result:\n```')
-    //   spinner.log(await safeReadFile(loc, 'utf8'))
+    //   spinner.log(await safeReadFile(loc))
     //   spinner.log('```')
     //   spinner.successAndStop(`OK`)
     // } else {
