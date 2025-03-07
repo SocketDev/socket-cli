@@ -78,6 +78,9 @@ const config: CliCommandConfig = {
 
     Support is beta. Please report issues or give us feedback on what's missing.
 
+    This is only for SBT. If your Scala setup uses gradle, please see the help
+    sections for \`socket manifest gradle\` or \`socket cdxgen\`.
+
     Examples
 
       $ ${command} ./build.sbt
