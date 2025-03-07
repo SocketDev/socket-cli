@@ -56,7 +56,7 @@ export async function npmFix(cwd: string, options?: NpmFixOptions | undefined) {
   const editablePkgJson = await readPackageJson(cwd, { editable: true })
   if (infoByPkg) {
     for (const { 0: name, 1: infos } of infoByPkg) {
-      let revertToIdealTree = arb.idealTree!
+      const revertToIdealTree = arb.idealTree!
       arb.idealTree = null
       // eslint-disable-next-line no-await-in-loop
       await arb.buildIdealTree()

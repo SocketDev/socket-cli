@@ -128,7 +128,7 @@ async function outputAnalyticsWithToken({
   if (!data) return
 
   if (outputKind === 'json') {
-    let serialized = renderJson(data)
+    const serialized = renderJson(data)
     if (!serialized) return
 
     if (filePath && filePath !== '-') {

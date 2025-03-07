@@ -282,10 +282,10 @@ const lazyZshRcPath = () =>
 
 // Harden Node security.
 // https://nodejs.org/en/learn/getting-started/security-best-practices
-const nodeHardenFlags = [
-  '--disable-proto',
-  '--frozen-intrinsics',
-  '--no-deprecation'
+const nodeHardenFlags: string[] = [
+  //'--disable-proto', 'delete',
+  //'--frozen-intrinsics',
+  //'--no-deprecation'
 ]
 
 const constants = createConstantsObject(

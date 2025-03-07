@@ -9,22 +9,19 @@
   "settings": {},
   "rules": {
     "@typescript-eslint/array-type": ["error", { "default": "array-simple" }],
-    "@typescript-eslint/consistent-type-assertions": [
-      "error",
-      { "assertionStyle": "as" }
-    ],
     "@typescript-eslint/no-misused-new": "error",
     "@typescript-eslint/no-this-alias": [
       "error",
       { "allowDestructuring": true }
     ],
     "@typescript-eslint/return-await": ["error", "always"],
-    "unicorn/no-empty-file": "off",
-    "unicorn/no-new-array": "off",
     "no-control-regex": "off",
     "no-new": "off",
     "no-self-assign": "off",
     "no-undef": "off",
-    "no-unused-vars": "off"
+    "no-unused-vars": "off",
+    "no-var": "error",
+    "unicorn/no-empty-file": "off",
+    "unicorn/no-new-array": "off"
   }
 }
