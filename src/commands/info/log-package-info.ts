@@ -6,7 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { hasKeys } from '@socketsecurity/registry/lib/objects'
 
 import { PackageData } from './get-package-info'
-import { formatSeverityCount } from '../../utils/alert/severity'
+import { SEVERITY, formatSeverityCount } from '../../utils/alert/severity'
 import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 import {
   getSocketDevAlertUrl,
@@ -24,6 +24,45 @@ function formatScore(score: number): string {
     return colors.yellow(`${score}`)
   }
   return colors.red(`${score}`)
+}
+
+function logPackageIssuesDetails(
+  packageData: SocketSdkReturnType<'getIssuesByNPMPackage'>['data'],
+  outputMarkdown: boolean
+) {
+  const issueDetails = packageData.filter(
+    d =>
+      d.value?.severity === SEVERITY.critical ||
+      d.value?.severity === SEVERITY.high
+  )
+  const uniqueIssueDetails = issueDetails.reduce((acc, issue) => {
+    const { type } = issue
+    if (type) {
+      const details = acc.get(type)
+      if (details) {
+        details.count += 1
+      } else {
+        acc.set(type, {
+          label: issue.value?.label ?? '',
+          count: 1
+        })
+      }
+    }
+    return acc
+  }, new Map<string, { count: number; label: string }>())
+  const format = new ColorOrMarkdown(outputMarkdown)
+  for (const [type, details] of uniqueIssueDetails.entries()) {
+    const issueWithLink = format.hyperlink(
+      details.label,
+      getSocketDevAlertUrl(type),
+      { fallbackToUrl: true }
+    )
+    if (details.count === 1) {
+      logger.log(`- ${issueWithLink}`)
+    } else {
+      logger.log(`- ${issueWithLink}: ${details.count}`)
+    }
+  }
 }
 
 export function logPackageInfo(
@@ -99,49 +138,5 @@ export function logPackageInfo(
     )
   } else {
     logger.log('')
-  }
-}
-
-function logPackageIssuesDetails(
-  packageData: SocketSdkReturnType<'getIssuesByNPMPackage'>['data'],
-  outputMarkdown: boolean
-) {
-  const issueDetails = packageData.filter(
-    d => d.value?.severity === 'high' || d.value?.severity === 'critical'
-  )
-
-  const uniqueIssues = issueDetails.reduce(
-    (
-      acc: { [key: string]: { count: number; label: string | undefined } },
-      issue
-    ) => {
-      const { type } = issue
-      if (type) {
-        if (acc[type] === undefined) {
-          acc[type] = {
-            label: issue.value?.label,
-            count: 1
-          }
-        } else {
-          acc[type]!.count += 1
-        }
-      }
-      return acc
-    },
-    {}
-  )
-
-  const format = new ColorOrMarkdown(outputMarkdown)
-  for (const issue of Object.keys(uniqueIssues)) {
-    const issueWithLink = format.hyperlink(
-      `${uniqueIssues[issue]?.label}`,
-      getSocketDevAlertUrl(issue),
-      { fallbackToUrl: true }
-    )
-    if (uniqueIssues[issue]?.count === 1) {
-      logger.log(`- ${issueWithLink}`)
-    } else {
-      logger.log(`- ${issueWithLink}: ${uniqueIssues[issue]?.count}`)
-    }
   }
 }
