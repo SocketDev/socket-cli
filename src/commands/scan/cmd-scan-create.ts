@@ -149,7 +149,7 @@ async function run(
       ? String(cli.flags['cwd'])
       : process.cwd()
 
-  let { branch: branchName, repo: repoName } = cli.flags
+  const { branch: branchName, repo: repoName } = cli.flags
 
   const apiToken = getDefaultToken() // This checks if we _can_ suggest anything
 

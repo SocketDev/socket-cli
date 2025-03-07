@@ -77,7 +77,7 @@ export function processSecurityComment({
   let start = false
 
   let ignoreAll = false
-  let ignoredPackages = []
+  const ignoredPackages = []
   for (const ignoreComment of ignoreComments) {
     const parsed = parseIgnoreCommand(
       ignoreComment.body?.split('\n').at(0) ?? ''
@@ -112,7 +112,7 @@ export function processSecurityComment({
         line.split('|') as [string, string, string, string, string, string]
 
       // Parsing package link [npm/pkg](url)
-      let [_ecosystem, pkg] = packageLink
+      const [_ecosystem, pkg] = packageLink
         .slice(1, packageLink.indexOf(']'))
         .split('/', 2) as [string, string]
       const [pkgName, pkgVersion] = pkg.split('@')

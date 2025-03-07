@@ -60,8 +60,8 @@ async function run(
     parentName
   })
 
-  let apiBaseUrl = cli.flags['apiBaseUrl'] as string | undefined
-  let apiProxy = cli.flags['apiProxy'] as string | undefined
+  const apiBaseUrl = cli.flags['apiBaseUrl'] as string | undefined
+  const apiProxy = cli.flags['apiProxy'] as string | undefined
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)

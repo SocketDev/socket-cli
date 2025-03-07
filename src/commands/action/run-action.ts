@@ -57,8 +57,8 @@ export async function runAction(
     const securityComment = Messages.securityCommentTemplate(diff)
     let newSecurityComment = true
     let newOverviewComment = true
-    let updateOldSecurityComment = comments.security !== undefined
-    let updateOldOverviewComment = comments.overview !== undefined
+    const updateOldSecurityComment = comments.security !== undefined
+    const updateOldOverviewComment = comments.overview !== undefined
     if (diff.newAlerts.length === 0) {
       if (!updateOldSecurityComment) {
         newSecurityComment = false
