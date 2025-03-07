@@ -3,9 +3,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { npmFix } from './npm-fix'
 import { pnpmFix } from './pnpm-fix'
 import constants from '../../constants'
-import { detectAndValidatePackageEnvironment } from '../optimize/detect-and-validate-package-environment'
+import { detectAndValidatePackageEnvironment } from '../../utils/package-environment'
 
 const { NPM, PNPM } = constants
+
+const CMD_NAME = 'socket fix'
 
 export async function runFix() {
   // Lazily access constants.spinner.
@@ -16,6 +18,7 @@ export async function runFix() {
   const cwd = process.cwd()
 
   const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
+    cmdName: CMD_NAME,
     logger
   })
   if (!pkgEnvDetails) {

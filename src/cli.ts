@@ -36,12 +36,12 @@ import constants from './constants'
 import { AuthError, InputError, captureException } from './utils/errors'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
 
-const { SOCKET, rootPkgJsonPath } = constants
+const { SOCKET_CLI_BIN_NAME, rootPkgJsonPath } = constants
 
 // TODO: Add autocompletion using https://socket.dev/npm/package/omelette
 void (async () => {
   await updateNotifier({
-    name: SOCKET,
+    name: SOCKET_CLI_BIN_NAME,
     version: require(rootPkgJsonPath).version,
     ttl: 86_400_000 /* 24 hours in milliseconds */
   })
@@ -81,7 +81,7 @@ void (async () => {
           }
         },
         argv: process.argv.slice(2),
-        name: SOCKET,
+        name: SOCKET_CLI_BIN_NAME,
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta
       }
     )
@@ -105,7 +105,7 @@ void (async () => {
       errorTitle = 'Unexpected error with no details'
     }
     logger.fail(
-      `${colors.bgRed(colors.white(errorTitle + ':'))} ${errorMessage}`
+      `${colors.bgRed(colors.white(`${errorTitle}:`))} ${errorMessage}`
     )
     if (errorBody) {
       logger.error(`\n${errorBody}`)

@@ -7,12 +7,14 @@ import semver from 'semver'
 import which from 'which'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
+import { Logger } from '@socketsecurity/registry/lib/logger'
 import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
+import { cmdPrefixMessage } from './cmd'
 import { findUp, readFileBinary, readFileUtf8 } from './fs'
 import constants from '../constants'
 
@@ -137,7 +139,7 @@ const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
   }
 })()
 
-export type DetectionOptions = {
+export type DetectOptions = {
   cwd?: string | undefined
   onUnknown?: (pkgManager: string | undefined) => void
 }
@@ -181,7 +183,7 @@ export type PartialEnvDetails = Readonly<{
 export async function detectPackageEnvironment({
   cwd = process.cwd(),
   onUnknown
-}: DetectionOptions = {}): Promise<EnvDetails | PartialEnvDetails> {
+}: DetectOptions = {}): Promise<EnvDetails | PartialEnvDetails> {
   let lockPath = await findUp(Object.keys(LOCKS), { cwd })
   let lockName = lockPath ? path.basename(lockPath) : undefined
   const isHiddenLockFile = lockName === '.package-lock.json'
@@ -301,4 +303,83 @@ export async function detectPackageEnvironment({
     supported: targets.browser || targets.node,
     targets
   }
+}
+
+export type DetectAndValidateOptions = {
+  cmdName?: string | undefined
+  logger?: Logger | undefined
+  prod?: boolean | undefined
+}
+export async function detectAndValidatePackageEnvironment(
+  cwd: string,
+  options?: DetectAndValidateOptions | undefined
+): Promise<void | EnvDetails> {
+  const {
+    cmdName = '',
+    logger,
+    prod
+  } = {
+    __proto__: null,
+    ...options
+  } as DetectAndValidateOptions
+  const details = await detectPackageEnvironment({
+    cwd,
+    onUnknown(pkgManager: string | undefined) {
+      logger?.warn(
+        cmdPrefixMessage(
+          cmdName,
+          `Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}, defaulting to npm`
+        )
+      )
+    }
+  })
+  if (!details.supported) {
+    logger?.fail(
+      cmdPrefixMessage(cmdName, 'No supported Node or browser range detected')
+    )
+    return
+  }
+  if (details.agent === VLT) {
+    logger?.fail(
+      cmdPrefixMessage(
+        cmdName,
+        `${details.agent} does not support overrides. Soon, though ⚡`
+      )
+    )
+    return
+  }
+  const lockName = details.lockName ?? 'lock file'
+  if (details.lockName === undefined || details.lockSrc === undefined) {
+    logger?.fail(cmdPrefixMessage(cmdName, `No ${lockName} found`))
+    return
+  }
+  if (details.lockSrc.trim() === '') {
+    logger?.fail(cmdPrefixMessage(cmdName, `${lockName} is empty`))
+    return
+  }
+  if (details.pkgPath === undefined) {
+    logger?.fail(cmdPrefixMessage(cmdName, 'No package.json found'))
+    return
+  }
+  if (prod && (details.agent === BUN || details.agent === YARN_BERRY)) {
+    logger?.fail(
+      cmdPrefixMessage(
+        cmdName,
+        `--prod not supported for ${details.agent}${details.agentVersion ? `@${details.agentVersion.version}` : ''}`
+      )
+    )
+    return
+  }
+  if (
+    details.lockPath &&
+    path.relative(cwd, details.lockPath).startsWith('.')
+  ) {
+    logger?.warn(
+      cmdPrefixMessage(
+        cmdName,
+        `Package ${lockName} found at ${details.lockPath}`
+      )
+    )
+  }
+  return details as EnvDetails
 }
