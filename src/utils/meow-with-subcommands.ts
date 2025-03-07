@@ -219,7 +219,10 @@ function getAsciiHeader(command: string) {
         process
           .cwd()
           .replace(
-            new RegExp(`^${escapeRegExp(constants.homePath + path.sep)}`, 'i'),
+            new RegExp(
+              `^${escapeRegExp(constants.homePath)}(?:${path.sep}|$)`,
+              'i'
+            ),
             '~/'
           )
       )
