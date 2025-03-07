@@ -1,3 +1,5 @@
+import semver from 'semver'
+
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { runAgentInstall } from './run-agent'
@@ -26,9 +28,12 @@ export async function updateLockfile(
   try {
     await runAgentInstall(pkgEnvDetails, { spinner })
     spinner?.stop()
-    if (pkgEnvDetails.agent === NPM) {
+    if (
+      pkgEnvDetails.agent === NPM &&
+      semver.lt(pkgEnvDetails.agentVersion, '11.2.0')
+    ) {
       logger?.log(
-        `💡 Re-run ${COMMAND_TITLE} whenever ${pkgEnvDetails.lockName} changes.\n   This can be skipped once npm v11.2.0 is released.`
+        `💡 Re-run ${COMMAND_TITLE} whenever ${pkgEnvDetails.lockName} changes.\n   This can be skipped for npm >=11.2.0.`
       )
     }
   } catch (e) {
