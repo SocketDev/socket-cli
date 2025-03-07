@@ -2,7 +2,7 @@ import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import constants from '../../constants'
 
-import type { Agent } from '../../utils/package-environment-detector'
+import type { Agent } from '../../utils/package-environment'
 
 export type AgentLockIncludesFn = (
   lockSrc: string,

@@ -6,7 +6,7 @@ import constants from '../../constants'
 import { cmdFlagsToString } from '../../utils/cmd'
 import { safeNpmInstall } from '../../utils/npm'
 
-import type { EnvDetails } from '../../utils/package-environment-detector'
+import type { EnvDetails } from '../../utils/package-environment'
 
 const { NPM } = constants
 

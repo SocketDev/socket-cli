@@ -19,7 +19,7 @@ import { getAlertsMapFromPnpmLockfile } from '../../utils/lockfile/pnpm-lock-yam
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 import { runAgentInstall } from '../optimize/run-agent'
 
-import type { EnvDetails } from '../../utils/package-environment-detector'
+import type { EnvDetails } from '../../utils/package-environment'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { NPM, OVERRIDES, PNPM } = constants

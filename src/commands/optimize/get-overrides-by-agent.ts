@@ -5,7 +5,7 @@ import constants from '../../constants'
 import type {
   Agent,
   StringKeyValueObject
-} from '../../utils/package-environment-detector'
+} from '../../utils/package-environment'
 
 type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }

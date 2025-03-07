@@ -2,7 +2,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants'
 
-import type { Agent } from '../../utils/package-environment-detector'
+import type { Agent } from '../../utils/package-environment'
 
 type AgentListDepsOptions = { npmExecPath?: string }
 

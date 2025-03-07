@@ -19,7 +19,7 @@ import {
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
-import type { EnvDetails } from '../../utils/package-environment-detector'
+import type { EnvDetails } from '../../utils/package-environment'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { NPM } = constants

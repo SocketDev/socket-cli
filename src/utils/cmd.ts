@@ -13,3 +13,8 @@ export function cmdFlagsToString(args: string[]) {
   }
   return result.join(' ')
 }
+
+export function cmdPrefixMessage(cmdName: string, text: string): string {
+  const cmdPrefix = cmdName ? `${cmdName}: ` : ''
+  return `${cmdPrefix}${text}`
+}
