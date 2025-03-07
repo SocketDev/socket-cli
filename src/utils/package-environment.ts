@@ -199,7 +199,10 @@ export async function detectPackageEnvironment({
   let lockName = lockPath ? path.basename(lockPath) : undefined
   const isHiddenLockFile = lockName === HIDDEN_PACKAGE_LOCK
   const pkgJsonPath = lockPath
-    ? path.resolve(lockPath, `${isHiddenLockFile ? '../' : ''}../${PACKAGE_JSON}`)
+    ? path.resolve(
+        lockPath,
+        `${isHiddenLockFile ? '../' : ''}../${PACKAGE_JSON}`
+      )
     : await findUp(PACKAGE_JSON, { cwd })
   const pkgPath =
     pkgJsonPath && existsSync(pkgJsonPath)
