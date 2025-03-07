@@ -25,9 +25,11 @@ import type { SemVer } from 'semver'
 const {
   BINARY_LOCK_EXT,
   BUN,
+  HIDDEN_PACKAGE_LOCK,
   LOCK_EXT,
   NPM,
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
+  PACKAGE_JSON,
   PNPM,
   VLT,
   YARN,
@@ -195,10 +197,10 @@ export async function detectPackageEnvironment({
 }: DetectOptions = {}): Promise<EnvDetails | PartialEnvDetails> {
   let lockPath = await findUp(Object.keys(LOCKS), { cwd })
   let lockName = lockPath ? path.basename(lockPath) : undefined
-  const isHiddenLockFile = lockName === '.package-lock.json'
+  const isHiddenLockFile = lockName === HIDDEN_PACKAGE_LOCK
   const pkgJsonPath = lockPath
-    ? path.resolve(lockPath, `${isHiddenLockFile ? '../' : ''}../package.json`)
-    : await findUp('package.json', { cwd })
+    ? path.resolve(lockPath, `${isHiddenLockFile ? '../' : ''}../${PACKAGE_JSON}`)
+    : await findUp(PACKAGE_JSON, { cwd })
   const pkgPath =
     pkgJsonPath && existsSync(pkgJsonPath)
       ? path.dirname(pkgJsonPath)
@@ -375,7 +377,7 @@ export async function detectAndValidatePackageEnvironment(
     return
   }
   if (details.pkgPath === undefined) {
-    logger?.fail(cmdPrefixMessage(cmdName, 'No package.json found'))
+    logger?.fail(cmdPrefixMessage(cmdName, `No ${PACKAGE_JSON} found`))
     return
   }
   if (prod && (details.agent === BUN || details.agent === YARN_BERRY)) {
