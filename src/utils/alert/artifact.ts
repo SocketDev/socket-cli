@@ -5,25 +5,10 @@ import readline from 'node:readline'
 import constants from '../../constants'
 import { getPublicToken } from '../sdk'
 
+import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { IncomingMessage } from 'node:http'
 
 export type CveAlertType = 'cve' | 'mediumCVE' | 'mildCVE' | 'criticalCVE'
-
-export type ArtifactAlertCveFixable = Omit<
-  SocketArtifactAlert,
-  'props' | 'title'
-> & {
-  type: CveAlertType
-  props: {
-    firstPatchedVersionIdentifier: string
-    vulnerableVersionRange: string
-    [key: string]: any
-  }
-}
-
-export type ArtifactAlertFixable = ArtifactAlertCveFixable & {
-  type: CveAlertType | 'socketUpgradeAvailable'
-}
 
 export type SocketArtifactAlert = {
   key: string
@@ -76,6 +61,42 @@ export type SocketArtifact = {
   batchIndex?: number | undefined
 }
 
+export type CompactSocketArtifactAlert = Remap<
+  Omit<
+    SocketArtifactAlert,
+    'action' | 'actionPolicyIndex' | 'category' | 'end' | 'file' | 'start'
+  >
+>
+
+export type CompactSocketArtifact = Remap<
+  Omit<SocketArtifact, 'alerts' | 'batchIndex' | 'size'> & {
+    alerts: CompactSocketArtifactAlert[]
+  }
+>
+
+export type ArtifactAlertCve = Remap<
+  Omit<CompactSocketArtifactAlert, 'type'> & {
+    type: CveAlertType
+  }
+>
+
+export type ArtifactAlertCveFixable = Remap<
+  Omit<CompactSocketArtifactAlert, 'props'> & {
+    type: CveAlertType
+    props: {
+      firstPatchedVersionIdentifier: string
+      vulnerableVersionRange: string
+      [key: string]: any
+    }
+  }
+>
+
+export type ArtifactAlertUpgrade = Remap<
+  Omit<CompactSocketArtifactAlert, 'type'> & {
+    type: 'socketUpgradeAvailable'
+  }
+>
+
 const {
   ALERT_TYPE_CRITICAL_CVE,
   ALERT_TYPE_CVE,
@@ -89,7 +110,7 @@ const {
 
 async function* createBatchGenerator(
   chunk: string[]
-): AsyncGenerator<SocketArtifact> {
+): AsyncGenerator<CompactSocketArtifact> {
   // Adds the first 'abort' listener to abortSignal.
   const req = https
     // Lazily access constants.BATCH_PURL_ENDPOINT.
@@ -120,20 +141,20 @@ async function* createBatchGenerator(
     signal: abortSignal
   })
   for await (const line of rli) {
-    yield JSON.parse(line) as SocketArtifact
+    yield JSON.parse(line) as CompactSocketArtifact
   }
 }
 
 export async function* batchScan(
   pkgIds: string[],
   concurrencyLimit = 50
-): AsyncGenerator<SocketArtifact> {
+): AsyncGenerator<CompactSocketArtifact> {
   type GeneratorStep = {
-    generator: AsyncGenerator<SocketArtifact>
-    iteratorResult: IteratorResult<SocketArtifact>
+    generator: AsyncGenerator<CompactSocketArtifact>
+    iteratorResult: IteratorResult<CompactSocketArtifact>
   }
   type GeneratorEntry = {
-    generator: AsyncGenerator<SocketArtifact>
+    generator: AsyncGenerator<CompactSocketArtifact>
     promise: Promise<GeneratorStep>
   }
   type ResolveFn = (value: GeneratorStep) => void
@@ -161,7 +182,7 @@ export async function* batchScan(
     const generator = createBatchGenerator(chunk)
     continueGen(generator)
   }
-  const continueGen = (generator: AsyncGenerator<SocketArtifact>) => {
+  const continueGen = (generator: AsyncGenerator<CompactSocketArtifact>) => {
     let resolveFn: ResolveFn
     running.push({
       generator,
@@ -200,30 +221,39 @@ export async function* batchScan(
   }
 }
 
-export function isArtifactAlertCveFixable(
-  alert: SocketArtifactAlert
-): alert is ArtifactAlertCveFixable {
+export function isArtifactAlertCve(
+  alert: CompactSocketArtifactAlert
+): alert is ArtifactAlertCve {
   const { type } = alert
   return (
-    (type === ALERT_TYPE_CVE ||
-      type === ALERT_TYPE_MEDIUM_CVE ||
-      type === ALERT_TYPE_MILD_CVE ||
-      type === ALERT_TYPE_CRITICAL_CVE) &&
-    !!alert.props?.[CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER] &&
-    !!alert.props?.[CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE]
+    type === ALERT_TYPE_CVE ||
+    type === ALERT_TYPE_MEDIUM_CVE ||
+    type === ALERT_TYPE_MILD_CVE ||
+    type === ALERT_TYPE_CRITICAL_CVE
   )
 }
 
-export function isArtifactAlertUpgradeFixable(
-  alert: SocketArtifactAlert
-): alert is ArtifactAlertFixable {
+export function isArtifactAlertCveFixable(
+  alert: CompactSocketArtifactAlert
+): alert is ArtifactAlertCveFixable {
+  if (!isArtifactAlertCve(alert)) {
+    return false
+  }
+  const { props } = alert
+  return (
+    !!props?.[CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER] &&
+    !!props?.[CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE]
+  )
+}
+
+export function isArtifactAlertUpgrade(
+  alert: CompactSocketArtifactAlert
+): alert is ArtifactAlertUpgrade {
   return alert.type === ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE
 }
 
 export function isArtifactAlertFixable(
-  alert: SocketArtifactAlert
-): alert is ArtifactAlertFixable {
-  return (
-    isArtifactAlertUpgradeFixable(alert) || isArtifactAlertCveFixable(alert)
-  )
+  alert: CompactSocketArtifactAlert
+): alert is ArtifactAlertCveFixable | ArtifactAlertUpgrade {
+  return isArtifactAlertUpgrade(alert) || isArtifactAlertCveFixable(alert)
 }

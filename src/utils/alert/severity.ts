@@ -12,6 +12,13 @@ export type SocketSdkAlert = SocketSdkAlertList[number]['value'] extends
   ? U
   : never
 
+export enum SEVERITY {
+  critical = 'critical',
+  high = 'high',
+  middle = 'middle',
+  low = 'low'
+}
+
 // Ordered from most severe to least.
 const SEVERITIES_BY_ORDER: Array<SocketSdkAlert['severity']> = [
   'critical',

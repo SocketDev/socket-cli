@@ -39,6 +39,12 @@ export type AuditAdvisory = Omit<BaseAdvisory, 'id'> & {
   vulnerable_versions: string
 }
 
+export enum DiffAction {
+  add = 'ADD',
+  change = 'CHANGE',
+  remove = 'REMOVE'
+}
+
 export type Diff = Omit<
   BaseDiff,
   | 'actual'
