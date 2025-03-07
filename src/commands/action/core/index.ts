@@ -94,7 +94,7 @@ export class Core {
     const introducedBy: Array<[string, string]> = []
 
     if (pkg.direct) {
-      let manifests = pkg.manifestFiles.map(({ file }) => file).join(';')
+      const manifests = pkg.manifestFiles.map(({ file }) => file).join(';')
 
       introducedBy.push(['direct', manifests])
     } else {
@@ -106,7 +106,7 @@ export class Core {
         }
 
         const topPurl = `${topPackage.type}/${topPackage.name}@${topPackage.version}`
-        let manifests = topPackage.manifestFiles
+        const manifests = topPackage.manifestFiles
           .map(({ file }) => file)
           .join(';')
 

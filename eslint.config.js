@@ -41,7 +41,9 @@ const sharedRules = {
   'no-new': 'error',
   'no-proto': 'error',
   'no-undef': 'error',
+  'no-var': 'error',
   'no-warning-comments': ['warn', { terms: ['fixme'] }],
+  'prefer-const': 'error',
   'sort-destructure-keys/sort-destructure-keys': 'error',
   'sort-imports': ['error', { ignoreDeclarationSort: true }],
   'unicorn/consistent-function-scoping': 'error'
