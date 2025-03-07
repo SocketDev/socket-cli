@@ -33,7 +33,7 @@ function getSettings(): Settings {
     _settings = {} as Settings
     const settingsPath = getSettingsPath()
     if (settingsPath) {
-      const raw = safeReadFileSync(settingsPath, 'utf8') as string | undefined
+      const raw = safeReadFileSync(settingsPath)
       if (raw) {
         try {
           Object.assign(
@@ -95,10 +95,10 @@ export function findSocketYmlSync() {
   let dir = process.cwd()
   while (dir !== prevDir) {
     let ymlPath = path.join(dir, 'socket.yml')
-    let yml = safeReadFileSync(ymlPath, 'utf8') as string | undefined
+    let yml = safeReadFileSync(ymlPath)
     if (yml === undefined) {
       ymlPath = path.join(dir, 'socket.yaml')
-      yml = safeReadFileSync(ymlPath, 'utf8') as string | undefined
+      yml = safeReadFileSync(ymlPath)
     }
     if (typeof yml === 'string') {
       try {

@@ -79,7 +79,7 @@ export async function convertSbtToMaven(
     // TODO: maybe we can add an option to target a specific file to dump to stdout
     if (out === '-' && poms.length === 1) {
       logger.log('Result:\n```')
-      logger.log(await safeReadFile(poms[0] as string, 'utf8'))
+      logger.log(await safeReadFile(poms[0]!))
       logger.log('```')
       logger.success(`OK`)
     } else if (out === '-') {
