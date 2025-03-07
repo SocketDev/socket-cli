@@ -220,7 +220,7 @@ function getAsciiHeader(command: string) {
           .cwd()
           .replace(
             new RegExp(`^${escapeRegExp(constants.homePath + path.sep)}`, 'i'),
-            '/~'
+            '~/'
           )
       )
   const body = `
