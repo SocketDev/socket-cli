@@ -20,13 +20,13 @@ import { detectAndValidatePackageEnvironment } from './detect-and-validate-packa
 import { getDependencyEntries } from './get-dependency-entries'
 import { overridesDataByAgent } from './get-overrides-by-agent'
 import { getWorkspaceGlobs } from './get-workspace-globs'
-import { lockIncludesByAgent } from './lock-includes-by-agent'
+import { lockfileIncludesByAgent } from './lockfile-includes-by-agent'
 import { lsByAgent } from './ls-by-agent'
+import { updateLockfile } from './update-lockfile'
 import { updateManifestByAgent } from './update-manifest-by-agent'
-import { updatePackageLockJson } from './update-package-lock-json'
 import constants from '../../constants'
 
-import type { AgentLockIncludesFn } from './lock-includes-by-agent'
+import type { AgentLockIncludesFn } from './lockfile-includes-by-agent'
 import type {
   Agent,
   EnvDetails,
@@ -59,65 +59,6 @@ const { NPM, PNPM, YARN_CLASSIC } = constants
 const COMMAND_TITLE = 'Socket Optimize'
 
 const manifestNpmOverrides = getManifestData(NPM)
-
-export async function applyOptimization(
-  cwd: string,
-  pin: boolean,
-  prod: boolean
-) {
-  const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
-    logger,
-    prod
-  })
-  if (!pkgEnvDetails) {
-    return
-  }
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Socket optimizing...')
-
-  const state = await addOverrides(pkgEnvDetails.pkgPath, pkgEnvDetails, {
-    logger,
-    pin,
-    prod,
-    spinner
-  })
-
-  spinner.stop()
-
-  const addedCount = state.added.size
-  const updatedCount = state.updated.size
-  const pkgJsonChanged = addedCount > 0 || updatedCount > 0
-  if (pkgJsonChanged) {
-    if (updatedCount > 0) {
-      logger?.log(
-        `${createActionMessage('Updated', updatedCount, state.updatedInWorkspaces.size)}${addedCount ? '.' : '🚀'}`
-      )
-    }
-    if (addedCount > 0) {
-      logger?.log(
-        `${createActionMessage('Added', addedCount, state.addedInWorkspaces.size)} 🚀`
-      )
-    }
-  } else {
-    logger?.log('Congratulations! Already Socket.dev optimized 🎉')
-  }
-
-  if (pkgEnvDetails.agent === NPM || pkgJsonChanged) {
-    // Always update package-lock.json until the npm overrides PR lands:
-    // https://github.com/npm/cli/pull/8089
-    await updatePackageLockJson(pkgEnvDetails, { logger, spinner })
-  }
-}
-
-function createActionMessage(
-  verb: string,
-  overrideCount: number,
-  workspaceCount: number
-): string {
-  return `${verb} ${overrideCount} Socket.dev optimized ${pluralize('override', overrideCount)}${workspaceCount ? ` in ${workspaceCount} ${pluralize('workspace', workspaceCount)}` : ''}`
-}
 
 async function addOverrides(
   pkgPath: string,
@@ -175,7 +116,7 @@ async function addOverrides(
   // as an AgentLockIncludesFn type.
   const thingScanner = (
     isLockScanned
-      ? lockIncludesByAgent.get(agent)
+      ? lockfileIncludesByAgent.get(agent)
       : depsIncludesByAgent.get(agent)
   ) as AgentLockIncludesFn
   const depEntries = getDependencyEntries(pkgJson)
@@ -337,4 +278,63 @@ async function addOverrides(
     await editablePkgJson.save()
   }
   return state
+}
+
+function createActionMessage(
+  verb: string,
+  overrideCount: number,
+  workspaceCount: number
+): string {
+  return `${verb} ${overrideCount} Socket.dev optimized ${pluralize('override', overrideCount)}${workspaceCount ? ` in ${workspaceCount} ${pluralize('workspace', workspaceCount)}` : ''}`
+}
+
+export async function applyOptimization(
+  cwd: string,
+  pin: boolean,
+  prod: boolean
+) {
+  const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
+    logger,
+    prod
+  })
+  if (!pkgEnvDetails) {
+    return
+  }
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start('Socket optimizing...')
+
+  const state = await addOverrides(pkgEnvDetails.pkgPath, pkgEnvDetails, {
+    logger,
+    pin,
+    prod,
+    spinner
+  })
+
+  spinner.stop()
+
+  const addedCount = state.added.size
+  const updatedCount = state.updated.size
+  const pkgJsonChanged = addedCount > 0 || updatedCount > 0
+  if (pkgJsonChanged) {
+    if (updatedCount > 0) {
+      logger?.log(
+        `${createActionMessage('Updated', updatedCount, state.updatedInWorkspaces.size)}${addedCount ? '.' : '🚀'}`
+      )
+    }
+    if (addedCount > 0) {
+      logger?.log(
+        `${createActionMessage('Added', addedCount, state.addedInWorkspaces.size)} 🚀`
+      )
+    }
+  } else {
+    logger?.log('Congratulations! Already Socket.dev optimized 🎉')
+  }
+
+  if (pkgEnvDetails.agent === NPM || pkgJsonChanged) {
+    // Always update package-lock.json until the npm overrides PR lands:
+    // https://github.com/npm/cli/pull/8089
+    await updateLockfile(pkgEnvDetails, { logger, spinner })
+  }
 }
