@@ -97,8 +97,7 @@ export class SafeArborist extends Arborist {
       // @ts-ignore: TS gets grumpy about rest parameters.
       ...args.slice(1)
     )
-    const pkgJson = (this.actualTree ?? this.idealTree)!.package
-    const alertsMap = await getAlertsMapFromArborist(this, pkgJson, {
+    const alertsMap = await getAlertsMapFromArborist(this, {
       spinner,
       include: {
         unfixable: level < 2

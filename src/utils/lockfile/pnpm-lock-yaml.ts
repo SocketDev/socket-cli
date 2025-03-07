@@ -3,11 +3,8 @@ import { detectDepTypes } from '@pnpm/lockfile.detect-dep-types'
 import { batchScan } from '../alert/artifact'
 import { AlertsByPkgId, addArtifactToAlertsMap } from '../socket-package-alert'
 
-import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
 import type { Lockfile } from '@pnpm/lockfile-file'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
-
-type PackageJsonType = SafeNode['package']
 
 type AlertIncludeFilter = {
   critical?: boolean | undefined
@@ -25,14 +22,14 @@ type GetAlertsMapFromPnpmLockfileOptions = {
 
 export async function getAlertsMapFromPnpmLockfile(
   lockfile: Lockfile,
-  pkgJson: PackageJsonType,
   options?: GetAlertsMapFromPnpmLockfileOptions | undefined
 ): Promise<AlertsByPkgId> {
   const { include: _include, spinner } = {
     __proto__: null,
     ...options
   } as GetAlertsMapFromPnpmLockfileOptions
-  const depTypes = detectDepTypes(lockfile!)
+
+  const depTypes = detectDepTypes(lockfile)
   const pkgIds = Object.keys(depTypes)
   let { length: remaining } = pkgIds
   const alertsByPkgId: AlertsByPkgId = new Map()
@@ -43,8 +40,12 @@ export async function getAlertsMapFromPnpmLockfile(
 
   spinner?.start(getText())
 
+  const toAlertsMapOptions = {
+    overrides: lockfile.overrides,
+    ...options
+  }
   for await (const artifact of batchScan(pkgIds)) {
-    await addArtifactToAlertsMap(artifact, alertsByPkgId, pkgJson, options)
+    await addArtifactToAlertsMap(artifact, alertsByPkgId, toAlertsMapOptions)
     remaining -= 1
     if (spinner && remaining > 0) {
       spinner.start()
