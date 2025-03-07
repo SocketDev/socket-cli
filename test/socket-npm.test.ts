@@ -13,7 +13,7 @@ const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 // These aliases are defined in package.json.
-for (const npmDir of ['npm8', 'npm10']) {
+for (const npmDir of ['npm8', 'npm9', 'npm10', 'npm11']) {
   if (process.env['CI']) {
     // Skip this test in CI.
     describe('skipme', () => it('should skip', () => expect(true).toBe(true)))
@@ -22,12 +22,12 @@ for (const npmDir of ['npm8', 'npm10']) {
   const npmPath = path.join(npmFixturesPath, npmDir)
   const npmBinPath = path.join(npmPath, NODE_MODULES, '.bin')
 
-  spawnSync(NPM, ['install', '--silent'], {
-    cwd: npmPath,
-    stdio: 'ignore'
-  })
-
   describe(`Socket npm wrapper for ${npmDir}`, () => {
+    spawnSync(NPM, ['install', '--silent'], {
+      cwd: npmPath,
+      stdio: 'ignore'
+    })
+
     // Lazily access constants.rootBinPath.
     const entryPath = path.join(constants['rootBinPath'], `${CLI}.js`)
 
@@ -45,18 +45,15 @@ for (const npmDir of ['npm8', 'npm10']) {
             [entryPath, NPM, 'install', 'bowserify'],
             {
               cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
+              encoding: 'utf8',
               env: {
                 PATH: `${npmBinPath}:${process.env.PATH}`
               }
             }
           )
-          spawnPromise.process.stdout.on('data', (buffer: Buffer) => {
+          spawnPromise.process.stdout.on('data', (chunk: string) => {
             // changed 13 packages, and audited 176 packages in 3s
-            if (
-              /changed .* packages, and audited .* packages in/.test(
-                buffer.toString('utf8')
-              )
-            ) {
+            if (/changed .* packages, and audited .* packages in/.test(chunk)) {
               reject(
                 new Error(
                   'It seems npm ran anyways so the test failed to invoke socket'
@@ -64,8 +61,8 @@ for (const npmDir of ['npm8', 'npm10']) {
               )
             }
           })
-          spawnPromise.process.stderr.on('data', (buffer: Buffer) => {
-            if (buffer.toString().includes('Possible typosquat attack')) {
+          spawnPromise.process.stderr.on('data', (chunk: string) => {
+            if (chunk.includes('Possible typosquat attack')) {
               resolve('OK')
               spawnPromise.process.kill('SIGINT')
             }
