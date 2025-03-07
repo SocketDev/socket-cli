@@ -54,11 +54,11 @@ export async function readFileUtf8(
   } as ReadFileOptions)) as string
 }
 
-export function safeReadFile(
+export async function safeReadFile(
   ...args: Parameters<typeof fs.readFile>
-): ReturnType<typeof fs.readFile> | undefined {
+): Promise<ReturnType<typeof fs.readFile> | undefined> {
   try {
-    return fs.readFile(...args)
+    return await fs.readFile(...args)
   } catch {}
   return undefined
 }
