@@ -12,24 +12,24 @@ export type AgentLockIncludesFn = (
 
 const { BUN, LOCK_EXT, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
 
-function lockIncludesNpm(lockSrc: string, name: string) {
+function includesNpm(lockSrc: string, name: string) {
   // Detects the package name in the following cases:
   //   "name":
   return lockSrc.includes(`"${name}":`)
 }
 
-function lockIncludesBun(lockSrc: string, name: string, lockName?: string) {
+function includesBun(lockSrc: string, name: string, lockName?: string) {
   // This is a bit counterintuitive. When lockName ends with a .lockb
   // we treat it as a yarn.lock. When lockName ends with a .lock we
   // treat it as a package-lock.json. The bun.lock format is not identical
   // package-lock.json, however it close enough for npmLockIncludes to work.
-  const lockScanner = lockName?.endsWith(LOCK_EXT)
-    ? lockIncludesNpm
-    : lockIncludesYarn
-  return lockScanner(lockSrc, name)
+  const lockfileScanner = lockName?.endsWith(LOCK_EXT)
+    ? includesNpm
+    : includesYarn
+  return lockfileScanner(lockSrc, name)
 }
 
-function lockIncludesPnpm(lockSrc: string, name: string) {
+function includesPnpm(lockSrc: string, name: string) {
   const escapedName = escapeRegExp(name)
   return new RegExp(
     // Detects the package name in the following cases:
@@ -42,13 +42,13 @@ function lockIncludesPnpm(lockSrc: string, name: string) {
   ).test(lockSrc)
 }
 
-function lockIncludesVlt(lockSrc: string, name: string) {
+function includesVlt(lockSrc: string, name: string) {
   // Detects the package name in the following cases:
   //   "name"
   return lockSrc.includes(`"${name}"`)
 }
 
-function lockIncludesYarn(lockSrc: string, name: string) {
+function includesYarn(lockSrc: string, name: string) {
   const escapedName = escapeRegExp(name)
   return new RegExp(
     // Detects the package name in the following cases:
@@ -61,11 +61,11 @@ function lockIncludesYarn(lockSrc: string, name: string) {
   ).test(lockSrc)
 }
 
-export const lockIncludesByAgent = new Map<Agent, AgentLockIncludesFn>([
-  [BUN, lockIncludesBun],
-  [NPM, lockIncludesNpm],
-  [PNPM, lockIncludesPnpm],
-  [VLT, lockIncludesVlt],
-  [YARN_BERRY, lockIncludesYarn],
-  [YARN_CLASSIC, lockIncludesYarn]
+export const lockfileIncludesByAgent = new Map<Agent, AgentLockIncludesFn>([
+  [BUN, includesBun],
+  [NPM, includesNpm],
+  [PNPM, includesPnpm],
+  [VLT, includesVlt],
+  [YARN_BERRY, includesYarn],
+  [YARN_CLASSIC, includesYarn]
 ])
