@@ -103,6 +103,7 @@ async function lsPnpm(
 async function lsVlt(agentExecPath: string, cwd: string): Promise<string> {
   let stdout = ''
   try {
+    // See https://docs.vlt.sh/cli/commands/list#options.
     stdout = (
       await spawn(agentExecPath, ['ls', '--view', 'human', ':not(.dev)'], {
         cwd
