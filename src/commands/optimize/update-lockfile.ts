@@ -9,7 +9,7 @@ import { cmdPrefixMessage } from '../../utils/cmd'
 import type { EnvDetails } from '../../utils/package-environment'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
 
-const { NPM } = constants
+const { NPM, NPM_BUGGY_OVERRIDES_PATCHED_VERSION } = constants
 
 export type UpdateLockfileOptions = {
   cmdName?: string | undefined
@@ -32,12 +32,9 @@ export async function updateLockfile(
   try {
     await runAgentInstall(pkgEnvDetails, { spinner })
     spinner?.stop()
-    if (
-      pkgEnvDetails.agent === NPM &&
-      semver.lt(pkgEnvDetails.agentVersion, '11.2.0')
-    ) {
+    if (pkgEnvDetails.features.npmBuggyOverrides) {
       logger?.log(
-        `💡 Re-run ${cmdName ? `${cmdName} ` : ''}whenever ${pkgEnvDetails.lockName} changes.\n   This can be skipped for npm >=11.2.0.`
+        `💡 Re-run ${cmdName ? `${cmdName} ` : ''}whenever ${pkgEnvDetails.lockName} changes.\n   This can be skipped for ${pkgEnvDetails.agent} >=${NPM_BUGGY_OVERRIDES_PATCHED_VERSION}.`
       )
     }
   } catch (e) {
