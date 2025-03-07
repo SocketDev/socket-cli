@@ -5,6 +5,7 @@ import type {
   Arborist as BaseArborist,
   AuditReport as BaseAuditReport,
   Diff as BaseDiff,
+  BuildIdealTreeOptions,
   ReifyOptions
 } from '@npmcli/arborist'
 
@@ -14,12 +15,22 @@ export type ArboristClass = ArboristInstance & {
 
 export type ArboristInstance = Omit<
   typeof BaseArborist,
-  'actualTree' | 'auditReport' | 'diff' | 'idealTree' | 'reify'
+  | 'actualTree'
+  | 'auditReport'
+  | 'buildIdealTree'
+  | 'diff'
+  | 'idealTree'
+  | 'loadActual'
+  | 'loadVirtual'
+  | 'reify'
 > & {
   auditReport?: AuditReportInstance | null | undefined
   actualTree?: SafeNode | null | undefined
   diff: Diff | null
   idealTree?: SafeNode | null | undefined
+  buildIdealTree(options?: BuildIdealTreeOptions): Promise<SafeNode>
+  loadActual(options?: ArboristOptions): Promise<SafeNode>
+  loadVirtual(options?: ArboristOptions): Promise<SafeNode>
   reify(options?: ArboristReifyOptions): Promise<SafeNode>
 }
 
