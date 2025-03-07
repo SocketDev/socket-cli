@@ -2,19 +2,36 @@ import { promises as fs, readFileSync as fsReadFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import constants from '../constants'
+
+import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { Abortable } from 'node:events'
-import type { ObjectEncodingOptions, OpenMode, PathLike } from 'node:fs'
+import type {
+  ObjectEncodingOptions,
+  OpenMode,
+  PathLike,
+  PathOrFileDescriptor
+} from 'node:fs'
 import type { FileHandle } from 'node:fs/promises'
 
+const { abortSignal } = constants
+
+export type FindUpOptions = {
+  cwd?: string | undefined
+  signal?: AbortSignal | undefined
+}
 export async function findUp(
   name: string | string[],
-  { cwd = process.cwd() }: { cwd: string }
+  { cwd = process.cwd(), signal = abortSignal }: FindUpOptions
 ): Promise<string | undefined> {
   let dir = path.resolve(cwd)
   const { root } = path.parse(dir)
   const names = [name].flat()
   while (dir && dir !== root) {
     for (const name of names) {
+      if (signal?.aborted) {
+        return undefined
+      }
       const filePath = path.join(dir, name)
       try {
         // eslint-disable-next-line no-await-in-loop
@@ -29,16 +46,19 @@ export async function findUp(
   return undefined
 }
 
-export type ReadFileOptions = ObjectEncodingOptions &
-  Abortable & {
-    flag?: OpenMode | undefined
-  }
+export type ReadFileOptions = Remap<
+  ObjectEncodingOptions &
+    Abortable & {
+      flag?: OpenMode | undefined
+    }
+>
 
 export async function readFileBinary(
   filepath: PathLike | FileHandle,
   options?: ReadFileOptions | undefined
 ): Promise<Buffer> {
   return (await fs.readFile(filepath, {
+    signal: abortSignal,
     ...options,
     encoding: 'binary'
   } as ReadFileOptions)) as Buffer
@@ -48,26 +68,50 @@ export async function readFileUtf8(
   filepath: PathLike | FileHandle,
   options?: ReadFileOptions | undefined
 ): Promise<string> {
-  return (await fs.readFile(filepath, {
+  return await fs.readFile(filepath, {
+    signal: abortSignal,
     ...options,
     encoding: 'utf8'
-  } as ReadFileOptions)) as string
+  })
 }
 
 export async function safeReadFile(
-  ...args: Parameters<typeof fs.readFile>
-): Promise<ReturnType<typeof fs.readFile> | undefined> {
+  filepath: PathLike | FileHandle,
+  options?: 'utf8' | 'utf-8' | { encoding: 'utf8' | 'utf-8' } | undefined
+): Promise<string | undefined>
+export async function safeReadFile(
+  filepath: PathLike | FileHandle,
+  options?: ReadFileOptions | NodeJS.BufferEncoding | undefined
+): Promise<Awaited<ReturnType<typeof fs.readFile>> | undefined> {
   try {
-    return await fs.readFile(...args)
+    return await fs.readFile(filepath, {
+      encoding: 'utf8',
+      signal: abortSignal,
+      ...(typeof options === 'string' ? { encoding: options } : options)
+    })
   } catch {}
   return undefined
 }
 
 export function safeReadFileSync(
-  ...args: Parameters<typeof fsReadFileSync>
+  filepath: PathOrFileDescriptor,
+  options?: 'utf8' | 'utf-8' | { encoding: 'utf8' | 'utf-8' } | undefined
+): string | undefined
+export function safeReadFileSync(
+  filepath: PathOrFileDescriptor,
+  options?:
+    | {
+        encoding?: NodeJS.BufferEncoding | undefined
+        flag?: string | undefined
+      }
+    | NodeJS.BufferEncoding
+    | undefined
 ): ReturnType<typeof fsReadFileSync> | undefined {
   try {
-    return fsReadFileSync(...args)
+    return fsReadFileSync(filepath, {
+      encoding: 'utf8',
+      ...(typeof options === 'string' ? { encoding: options } : options)
+    })
   } catch {}
   return undefined
 }
