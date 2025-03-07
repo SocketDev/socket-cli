@@ -1,7 +1,10 @@
+import path from 'node:path'
+
 import meow from 'meow'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
+import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import { getLastFiveOfApiToken } from './api'
@@ -212,9 +215,14 @@ function getAsciiHeader(command: string) {
       : 'no'
   const relCwd = redacting
     ? REDACTED
-    : process
-        .cwd()
-        .replace(new RegExp(`^${escapeRegExp(constants.homePath)}`, 'i'), '~')
+    : normalizePath(
+        process
+          .cwd()
+          .replace(
+            new RegExp(`^${escapeRegExp(constants.homePath + path.sep)}`, 'i'),
+            '/~'
+          )
+      )
   const body = `
    _____         _       _        /---------------
   |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
