@@ -22,46 +22,12 @@ import type { SafeEdge } from '../../shadow/npm/arborist/lib/edge'
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-type PackageJsonType = SafeNode['package']
-
 type Packument = Exclude<
   Awaited<ReturnType<typeof fetchPackagePackument>>,
   null
 >
 
 const { LOOP_SENTINEL, NPM, NPM_REGISTRY_URL } = constants
-
-function findBestPatchVersion(
-  node: SafeNode,
-  availableVersions: string[],
-  vulnerableVersionRange?: string,
-  _firstPatchedVersionIdentifier?: string | undefined
-): string | null {
-  const manifestData = getManifestData(NPM, node.name)
-  let eligibleVersions
-  if (manifestData && manifestData.name === manifestData.package) {
-    const major = semver.major(manifestData.version)
-    eligibleVersions = availableVersions.filter(v => semver.major(v) === major)
-  } else {
-    const major = semver.major(node.version)
-    eligibleVersions = availableVersions.filter(
-      v =>
-        // Filter for versions that are within the current major version and
-        // are NOT in the vulnerable range.
-        semver.major(v) === major &&
-        (!vulnerableVersionRange ||
-          !semver.satisfies(v, vulnerableVersionRange))
-    )
-  }
-  return semver.maxSatisfying(eligibleVersions, '*')
-}
-
-function getUrlOrigin(input: string): string {
-  try {
-    return URL.parse(input)?.origin ?? ''
-  } catch {}
-  return ''
-}
 
 type DiffQueryIncludeFilter = {
   unchanged?: boolean | undefined
@@ -86,12 +52,14 @@ function getDetailsFromDiff(
   if (!diff_) {
     return details
   }
+
   const include = {
     __proto__: null,
     unchanged: false,
     unknownOrigin: false,
     ...({ __proto__: null, ...options } as DiffQueryOptions).include
   } as DiffQueryIncludeFilter
+
   const queue: Diff[] = [...diff_.children]
   let pos = 0
   let { length: queueLength } = queue
@@ -158,6 +126,38 @@ function getDetailsFromDiff(
   return details
 }
 
+function getUrlOrigin(input: string): string {
+  try {
+    return URL.parse(input)?.origin ?? ''
+  } catch {}
+  return ''
+}
+
+export function findBestPatchVersion(
+  node: SafeNode,
+  availableVersions: string[],
+  vulnerableVersionRange?: string,
+  _firstPatchedVersionIdentifier?: string | undefined
+): string | null {
+  const manifestData = getManifestData(NPM, node.name)
+  let eligibleVersions
+  if (manifestData && manifestData.name === manifestData.package) {
+    const major = semver.major(manifestData.version)
+    eligibleVersions = availableVersions.filter(v => semver.major(v) === major)
+  } else {
+    const major = semver.major(node.version)
+    eligibleVersions = availableVersions.filter(
+      v =>
+        // Filter for versions that are within the current major version and
+        // are NOT in the vulnerable range.
+        semver.major(v) === major &&
+        (!vulnerableVersionRange ||
+          !semver.satisfies(v, vulnerableVersionRange))
+    )
+  }
+  return semver.maxSatisfying(eligibleVersions, '*')
+}
+
 export function findPackageNodes(
   tree: SafeNode,
   packageName: string
@@ -198,13 +198,13 @@ type GetAlertsMapFromArboristOptions = {
 
 export async function getAlertsMapFromArborist(
   arb: SafeArborist,
-  pkgJson: PackageJsonType,
   options?: GetAlertsMapFromArboristOptions | undefined
 ): Promise<AlertsByPkgId> {
   const { include: _include, spinner } = {
     __proto__: null,
     ...options
   } as GetAlertsMapFromArboristOptions
+
   const include = {
     __proto__: null,
     critical: true,
@@ -214,6 +214,7 @@ export async function getAlertsMapFromArborist(
     upgrade: false,
     ..._include
   } as AlertIncludeFilter
+
   const needInfoOn = getDetailsFromDiff(arb.diff, {
     include: {
       unchanged: include.existing
@@ -230,8 +231,25 @@ export async function getAlertsMapFromArborist(
 
   spinner?.start(getText())
 
+  let overrides: { [key: string]: string } | undefined
+  const overridesMap = (
+    arb.actualTree ??
+    arb.idealTree ??
+    (await arb.loadActual())
+  )?.overrides?.children
+  if (overridesMap) {
+    overrides = Object.fromEntries(
+      [...overridesMap.entries()].map(([key, overrideSet]) => {
+        return [key, overrideSet.value!]
+      })
+    )
+  }
+  const toAlertsMapOptions = {
+    overrides,
+    ...options
+  }
   for await (const artifact of batchScan(pkgIds)) {
-    await addArtifactToAlertsMap(artifact, alertsByPkgId, pkgJson, options)
+    await addArtifactToAlertsMap(artifact, alertsByPkgId, toAlertsMapOptions)
     remaining -= 1
     if (spinner && remaining > 0) {
       spinner.start()
