@@ -2,6 +2,7 @@ import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
+import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
@@ -18,10 +19,7 @@ import { getSocketDevPackageOverviewUrl } from './socket-url'
 import { getTranslations } from './translations'
 import constants from '../constants'
 
-import type { SafeNode } from '../shadow/npm/arborist/lib/node'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
-
-type PackageJsonType = SafeNode['package']
 
 export type SocketPackageAlert = {
   key: string
@@ -36,23 +34,9 @@ export type SocketPackageAlert = {
 
 export type AlertsByPkgId = Map<string, SocketPackageAlert[]>
 
-const {
-  CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
-  NPM,
-  OVERRIDES,
-  PNPM,
-  RESOLUTIONS
-} = constants
+const { CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER, NPM } = constants
 
 const format = new ColorOrMarkdown(false)
-
-function hasOverride(pkgJson: PackageJsonType, name: string): boolean {
-  return !!(
-    (pkgJson as any)?.[OVERRIDES]?.[name] ||
-    (pkgJson as any)?.[RESOLUTIONS]?.[name] ||
-    (pkgJson as any)?.[PNPM]?.[OVERRIDES]?.[name]
-  )
-}
 
 type AlertIncludeFilter = {
   critical?: boolean | undefined
@@ -65,19 +49,24 @@ type AlertIncludeFilter = {
 type AddSocketArtifactAlertToAlertsMapOptions = {
   consolidate?: boolean | undefined
   include?: AlertIncludeFilter | undefined
+  overrides?: { [key: string]: string } | undefined
   spinner?: Spinner | undefined
 }
 
 export async function addArtifactToAlertsMap(
   artifact: CompactSocketArtifact,
   alertsByPkgId: AlertsByPkgId,
-  pkgJson: PackageJsonType,
   options?: AddSocketArtifactAlertToAlertsMapOptions | undefined
 ) {
+  // Make TypeScript happy.
   if (!artifact.name || !artifact.version || !artifact.alerts?.length) {
     return
   }
-  const { consolidate = false, include: _include } = {
+  const {
+    consolidate = false,
+    include: _include,
+    overrides
+  } = {
     __proto__: null,
     ...options
   } as AddSocketArtifactAlertToAlertsMapOptions
@@ -106,7 +95,7 @@ export async function addArtifactToAlertsMap(
     const fixableCve = isArtifactAlertCveFixable(alert)
     const fixableUpgrade = isArtifactAlertUpgrade(alert)
     const fixable = fixableCve || fixableUpgrade
-    const upgrade = fixableUpgrade && !hasOverride(pkgJson, name)
+    const upgrade = fixableUpgrade && !hasOwn(overrides, name)
     if (
       (include.cve && cve) ||
       (include.unfixable && !fixable) ||
@@ -127,7 +116,10 @@ export async function addArtifactToAlertsMap(
       })
     }
   }
-  if (consolidate && sockPkgAlerts.length) {
+  if (!sockPkgAlerts.length) {
+    return
+  }
+  if (consolidate) {
     const highestForCve = new Map<
       number,
       { alert: SocketPackageAlert; version: string }
@@ -167,6 +159,9 @@ export async function addArtifactToAlertsMap(
       ...[...highestForCve.values()].map(d => d.alert),
       ...[...highestForUpgrade.values()].map(d => d.alert)
     ]
+  }
+  if (!sockPkgAlerts.length) {
+    return
   }
   sockPkgAlerts.sort((a, b) => naturalCompare(a.type, b.type))
   alertsByPkgId.set(pkgId, sockPkgAlerts)
@@ -219,7 +214,9 @@ export function getCveInfoByAlertsMap(
         alert.raw.props
       infos.push({
         firstPatchedVersionIdentifier,
-        vulnerableVersionRange
+        vulnerableVersionRange: new semver.Range(
+          vulnerableVersionRange
+        ).format()
       })
     }
   }

@@ -1,8 +1,11 @@
-import { npmFix } from './run-npm-fix'
-import constants from '../../constants'
-import { detectPackageEnvironment } from '../../utils/package-environment-detector'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
-const { NPM } = constants
+import { npmFix } from './npm-fix'
+import { pnpmFix } from './pnpm-fix'
+import constants from '../../constants'
+import { detectAndValidatePackageEnvironment } from '../optimize/detect-and-validate-package-environment'
+
+const { NPM, PNPM } = constants
 
 export async function runFix() {
   // Lazily access constants.spinner.
@@ -11,9 +14,24 @@ export async function runFix() {
   spinner.start()
 
   const cwd = process.cwd()
-  const details = await detectPackageEnvironment({ cwd })
-  if (details.agent === NPM) {
-    await npmFix(cwd)
+
+  const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
+    logger
+  })
+  if (!pkgEnvDetails) {
+    spinner.stop()
+    return
   }
-  spinner.stop()
+
+  switch (pkgEnvDetails.agent) {
+    case NPM: {
+      await npmFix(pkgEnvDetails, cwd)
+      break
+    }
+    case PNPM: {
+      await pnpmFix(pkgEnvDetails, cwd)
+      break
+    }
+  }
+  spinner.successAndStop('Socket.dev fix successful')
 }
