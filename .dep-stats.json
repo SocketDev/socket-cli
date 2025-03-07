@@ -2,6 +2,7 @@
   "dependencies": {
     "@apideck/better-ajv-errors": "0.3.6",
     "@octokit/rest": "21.1.1",
+    "@pnpm/lockfile-file": "^9.1.3",
     "@socketregistry/hyrious__bun.lockb": "1.0.14",
     "@socketregistry/indent-string": "1.0.11",
     "@socketregistry/is-interactive": "1.0.2",
