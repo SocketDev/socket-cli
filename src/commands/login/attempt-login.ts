@@ -57,7 +57,7 @@ export async function attemptLogin(
 
   let enforcedOrgs: string[] = []
   if (enforcedChoices.length > 1) {
-    const id = <string | null>await select(
+    const id = (await select(
       {
         message:
           "Which organization's policies should Socket enforce system-wide?",
@@ -70,7 +70,7 @@ export async function attemptLogin(
       {
         spinner
       }
-    )
+    )) as string | null
     if (id) {
       enforcedOrgs = [id]
     }
@@ -85,7 +85,7 @@ export async function attemptLogin(
       }
     )
     if (confirmOrg) {
-      const existing = <OrgChoice>enforcedChoices[0]
+      const existing = enforcedChoices[0] as OrgChoice
       if (existing) {
         enforcedOrgs = [existing.value]
       }

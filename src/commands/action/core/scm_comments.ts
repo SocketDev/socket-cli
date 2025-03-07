@@ -52,7 +52,7 @@ export function checkForSocketComments({
 // @SocketSecurity ignore pkg1 pkg2 ...
 // @SocketSecurity ignore ignore-all
 export function parseIgnoreCommand(line: string) {
-  const result = { packages: <string[]>[], ignoreAll: false }
+  const result = { packages: [] as string[], ignoreAll: false }
   const words = line.trim().replace(/\s+/g, ' ').split(' ')
   if (words.at(1) === 'ignore-all') {
     result.ignoreAll = true
@@ -77,7 +77,7 @@ export function processSecurityComment({
   let start = false
 
   let ignoreAll = false
-  let ignoredPackages = []
+  const ignoredPackages = []
   for (const ignoreComment of ignoreComments) {
     const parsed = parseIgnoreCommand(
       ignoreComment.body?.split('\n').at(0) ?? ''
@@ -112,7 +112,7 @@ export function processSecurityComment({
         line.split('|') as [string, string, string, string, string, string]
 
       // Parsing package link [npm/pkg](url)
-      let [_ecosystem, pkg] = packageLink
+      const [_ecosystem, pkg] = packageLink
         .slice(1, packageLink.indexOf(']'))
         .split('/', 2) as [string, string]
       const [pkgName, pkgVersion] = pkg.split('@')

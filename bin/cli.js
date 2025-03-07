@@ -21,6 +21,8 @@ if (
     // Lazily access constants.execPath.
     constants.execPath,
     [
+      // Lazily access constants.nodeHardenFlags.
+      ...constants.nodeHardenFlags,
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
       // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].

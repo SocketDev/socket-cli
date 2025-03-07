@@ -2,7 +2,7 @@
 import { Diff, Issue, Purl } from './classes'
 
 export function createSecurityCommentJSON({ diff }: { diff: Diff }) {
-  let scanFailed = false
+  const scanFailed = false
 
   // Not porting this code because it's unreachable
   // https://github.com/SocketDev/socket-python-cli/blob/6d4fc56faee68d3a4764f1f80f84710635bdaf05/socketsecurity/core/messages.py#L13-L18
@@ -97,8 +97,8 @@ export function createSources(alert: Issue): [string, string] {
       manifests.push(addStr)
     }
   }
-  let manifestList = manifests.join('')
-  let sourceList = sources.join('')
+  const manifestList = manifests.join('')
+  const sourceList = sources.join('')
   const manifestStr = `<ul>${manifestList}</ul>`
   const sourcesStr = `<ul>${sourceList}</ul>`
   return [manifestStr, sourcesStr]

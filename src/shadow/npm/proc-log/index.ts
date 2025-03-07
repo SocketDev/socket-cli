@@ -23,9 +23,9 @@ function tryRequire<T extends keyof RequireKnownModules>(
     let transformer: RequireTransformer<T> | undefined
     if (Array.isArray(data)) {
       id = data[0]
-      transformer = <RequireTransformer<T>>data[1]
+      transformer = data[1] as RequireTransformer<T>
     } else {
-      id = <keyof RequireKnownModules>data
+      id = data as keyof RequireKnownModules
       transformer = mod => mod
     }
     try {
@@ -51,13 +51,13 @@ export function getLogger(): Logger {
     _log = tryRequire(
       getNpmRequire(),
       [
-        <'proc-log'>'proc-log/lib/index.js',
+        'proc-log/lib/index.js' as 'proc-log',
         // The proc-log DefinitelyTyped definition is incorrect. The type definition
         // is really that of its export log.
-        mod => <RequireKnownModules['proc-log']>(mod as any).log
+        mod => (mod as any).log as RequireKnownModules['proc-log']
       ],
-      <'npmlog'>'npmlog/lib/log.js'
+      'npmlog/lib/log.js' as 'npmlog'
     )
   }
-  return <Logger | undefined>_log
+  return _log as Logger | undefined
 }

@@ -162,16 +162,16 @@ export class SafeEdge extends Edge {
           ? this.#safeFrom?.sourceReference.root.package
           : this.#safeFrom?.root?.package
         if (pkg?.devDependencies?.[ref]) {
-          return <string>pkg.devDependencies[ref]
+          return pkg.devDependencies[ref] as string
         }
         if (pkg?.optionalDependencies?.[ref]) {
-          return <string>pkg.optionalDependencies[ref]
+          return pkg.optionalDependencies[ref] as string
         }
         if (pkg?.dependencies?.[ref]) {
-          return <string>pkg.dependencies[ref]
+          return pkg.dependencies[ref] as string
         }
         if (pkg?.peerDependencies?.[ref]) {
-          return <string>pkg.peerDependencies[ref]
+          return pkg.peerDependencies[ref] as string
         }
         throw new Error(`Unable to resolve reference ${this.overrides.value}`)
       }
@@ -262,7 +262,7 @@ export class SafeEdge extends Edge {
       // this.#to.edgesIn.delete(this)
       // is based on https://github.com/npm/cli/pull/8089.
       this.#safeTo?.deleteEdgeIn(this)
-      this.#safeTo = <SafeNode>newTo ?? null
+      this.#safeTo = (newTo as SafeNode) ?? null
       this.#safeError = null
       this.#safeTo?.addEdgeIn(this)
     } else if (hard) {

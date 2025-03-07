@@ -3,7 +3,7 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { runAgentInstall } from './run-agent'
 import constants from '../../constants'
 
-import type { PackageEnvironmentDetails } from '../../utils/package-environment-detector'
+import type { EnvDetails } from '../../utils/package-environment-detector'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
 
 const { NPM } = constants
@@ -15,18 +15,16 @@ export type UpdatePackageLockJsonOptions = {
   spinner?: Spinner | undefined
 }
 export async function updatePackageLockJson(
-  pkgEnvDetails: PackageEnvironmentDetails,
+  pkgEnvDetails: EnvDetails,
   options: UpdatePackageLockJsonOptions
 ) {
-  const { logger, spinner } = <UpdatePackageLockJsonOptions>{
+  const { logger, spinner } = {
     __proto__: null,
     ...options
-  }
+  } as UpdatePackageLockJsonOptions
   spinner?.start(`Updating ${pkgEnvDetails.lockName}...`)
   try {
-    await runAgentInstall(pkgEnvDetails.agent, pkgEnvDetails.agentExecPath, {
-      spinner
-    })
+    await runAgentInstall(pkgEnvDetails, { spinner })
     spinner?.stop()
     if (pkgEnvDetails.agent === NPM) {
       logger?.log(

@@ -157,7 +157,7 @@ async function outputAsPrint(
     const { created_at } = d
     if (created_at) {
       const name = `${new Date(created_at).toLocaleDateString('en-us', { year: 'numeric', month: 'numeric', day: 'numeric' })} - ${d.user_email} - ${d.type} - ${d.ip_address} - ${d.user_agent}`
-      data.push(<AuditChoice>{ name }, new Separator())
+      data.push({ name } as AuditChoice, new Separator())
       logDetails[name] = JSON.stringify(d.payload)
     }
   }

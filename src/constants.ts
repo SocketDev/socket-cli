@@ -122,6 +122,7 @@ type Constants = Remap<
     readonly distShadowNpmInjectPath: string
     readonly homePath: string
     readonly nmBinPath: string
+    readonly nodeHardenFlags: string[]
     readonly rootBinPath: string
     readonly rootDistPath: string
     readonly rootPath: string
@@ -279,7 +280,18 @@ const lazyZshRcPath = () =>
   // Lazily access constants.homePath.
   path.join(constants.homePath, '.zshrc')
 
-const constants = <Constants>createConstantsObject(
+// Harden Node security.
+// https://nodejs.org/en/learn/getting-started/security-best-practices
+const nodeHardenFlags: string[] = [
+  '--disable-proto',
+  'delete',
+  // TODO: We can try --frozen-intrinsics once
+  // https://github.com/SBoudrias/Inquirer.js/pull/1683 is addressed.
+  // '--frozen-intrinsics',
+  '--no-deprecation'
+]
+
+const constants = createConstantsObject(
   {
     ALERT_TYPE_CRITICAL_CVE,
     ALERT_TYPE_CVE,
@@ -340,6 +352,7 @@ const constants = <Constants>createConstantsObject(
     distShadowNpmInjectPath: undefined,
     homePath: undefined,
     nmBinPath: undefined,
+    nodeHardenFlags,
     rootBinPath: undefined,
     rootDistPath: undefined,
     rootPath: undefined,
@@ -381,6 +394,6 @@ const constants = <Constants>createConstantsObject(
     },
     mixin: registryConstants
   }
-)
+) as Constants
 
 export default constants

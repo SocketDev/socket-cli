@@ -9,7 +9,7 @@ export function getDependencyEntries(pkgJson: PackageJson) {
     optionalDependencies,
     peerDependencies
   } = pkgJson
-  return <Array<[string, NonNullable<typeof dependencies>]>>[
+  return [
     [
       'dependencies',
       dependencies ? { __proto__: null, ...dependencies } : undefined
@@ -28,5 +28,5 @@ export function getDependencyEntries(pkgJson: PackageJson) {
         ? { __proto__: null, ...optionalDependencies }
         : undefined
     ]
-  ].filter(({ 1: o }) => o)
+  ].filter(({ 1: o }) => o) as Array<[string, NonNullable<typeof dependencies>]>
 }

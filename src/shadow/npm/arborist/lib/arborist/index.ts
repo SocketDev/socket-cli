@@ -1,7 +1,11 @@
 import process from 'node:process'
 
-import { kCtorArgs, kRiskyReify, reify } from './reify'
+import { logger } from '@socketsecurity/registry/lib/logger'
+import { confirm } from '@socketsecurity/registry/lib/prompts'
+
 import constants from '../../../../../constants'
+import { getAlertsMapFromArborist } from '../../../../../utils/lockfile/package-lock-json'
+import { logAlertsMap } from '../../../../../utils/socket-package-alert'
 import { getArboristClassPath } from '../../../paths'
 
 import type { ArboristClass, ArboristReifyOptions } from './types'
@@ -12,8 +16,6 @@ const {
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIPC }
 } = constants
-
-export const Arborist: ArboristClass = require(getArboristClassPath())
 
 export const SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
   __proto__: null,
@@ -26,6 +28,12 @@ export const SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
   saveBundle: false,
   silent: true
 }
+
+export const kCtorArgs = Symbol('ctorArgs')
+
+export const kRiskyReify = Symbol('riskyReify')
+
+export const Arborist: ArboristClass = require(getArboristClassPath())
 
 // Implementation code not related to our custom behavior is based on
 // https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/index.js:
@@ -70,31 +78,45 @@ export class SafeArborist extends Arborist {
     this: SafeArborist,
     ...args: Parameters<InstanceType<ArboristClass>['reify']>
   ): Promise<SafeNode> {
-    const options = <ArboristReifyOptions>{
+    const options = {
       __proto__: null,
       ...(args.length ? args[0] : undefined)
-    }
-
-    if (options.dryRun) {
-      return await this[kRiskyReify](...args)
-    }
-    const level = await getIPC(SOCKET_CLI_SAFE_WRAPPER)
-
+    } as ArboristReifyOptions
+    const level = options.dryRun ? 0 : await getIPC(SOCKET_CLI_SAFE_WRAPPER)
     if (!level) {
       return await this[kRiskyReify](...args)
     }
-    const safeArgs = [
+    // Lazily access constants.spinner.
+    const { spinner } = constants
+    await super.reify(
       {
         ...options,
+        ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
         progress: false
       },
+      // @ts-ignore: TS gets grumpy about rest parameters.
       ...args.slice(1)
-    ]
-    Object.assign(options, SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES)
-    const old = args[0]
-    args[0] = options
-    await super.reify(...safeArgs)
-    args[0] = old
-    return await reify(this as any, args, level)
+    )
+    const pkgJson = (this.actualTree ?? this.idealTree)!.package
+    const alertsMap = await getAlertsMapFromArborist(this, pkgJson, {
+      spinner,
+      include: {
+        unfixable: level < 2
+      }
+    })
+    if (alertsMap.size) {
+      logAlertsMap(alertsMap, { output: process.stderr })
+      if (
+        !(await confirm({
+          message: 'Accept risks of installing these packages?',
+          default: false
+        }))
+      ) {
+        throw new Error('Socket npm exiting due to risks')
+      }
+    } else {
+      logger.success('Socket npm found no risks!')
+    }
+    return await this[kRiskyReify](...args)
   }
 }

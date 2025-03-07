@@ -3,11 +3,12 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../../constants'
+import { cmdFlagsToString } from '../../utils/cmd'
 import { safeNpmInstall } from '../../utils/npm'
 
-import type { Agent } from '../../utils/package-environment-detector'
+import type { EnvDetails } from '../../utils/package-environment-detector'
 
-const { NPM, abortSignal } = constants
+const { NPM } = constants
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 type SpawnResult = ReturnType<typeof spawn>
@@ -18,27 +19,34 @@ export type AgentInstallOptions = SpawnOption & {
 }
 
 export function runAgentInstall(
-  agent: Agent,
-  agentExecPath: string,
-  options: AgentInstallOptions
+  pkgEnvDetails: EnvDetails,
+  options?: AgentInstallOptions | undefined
 ): SpawnResult {
+  const { agent, agentExecPath } = pkgEnvDetails
   // All package managers support the "install" command.
   if (agent === NPM) {
-    return safeNpmInstall(options)
+    return safeNpmInstall({
+      agentExecPath,
+      ...options
+    })
   }
   const {
     args = [],
     spinner,
     ...spawnOptions
-  } = <AgentInstallOptions>{ __proto__: null, ...options }
-  const isSilent = !isDebug()
+  } = { __proto__: null, ...options } as AgentInstallOptions
   return spawn(agentExecPath, ['install', ...args], {
-    signal: abortSignal,
     spinner,
-    stdio: isSilent ? 'ignore' : 'inherit',
+    stdio: isDebug() ? 'inherit' : 'ignore',
     ...spawnOptions,
     env: {
       ...process.env,
+      NODE_OPTIONS: cmdFlagsToString([
+        // Lazily access constants.nodeHardenFlags.
+        ...constants.nodeHardenFlags,
+        // Lazily access constants.nodeNoWarningsFlags.
+        ...constants.nodeNoWarningsFlags
+      ]),
       ...spawnOptions.env
     }
   })

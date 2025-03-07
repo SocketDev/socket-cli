@@ -29,7 +29,7 @@ import constants from '../../constants'
 import type { AgentLockIncludesFn } from './lock-includes-by-agent'
 import type {
   Agent,
-  PackageEnvironmentDetails,
+  EnvDetails,
   StringKeyValueObject
 } from '../../utils/package-environment-detector'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
@@ -121,7 +121,7 @@ function createActionMessage(
 
 async function addOverrides(
   pkgPath: string,
-  pkgEnvDetails: PackageEnvironmentDetails,
+  pkgEnvDetails: EnvDetails,
   options?: AddOverridesOptions | undefined
 ): Promise<AddOverridesState> {
   const {
@@ -144,7 +144,7 @@ async function addOverrides(
       updatedInWorkspaces: new Set(),
       warnedPnpmWorkspaceRequiresNpm: false
     }
-  } = <AddOverridesOptions>{ __proto__: null, ...options }
+  } = { __proto__: null, ...options } as AddOverridesOptions
   let { pkgJson: editablePkgJson } = pkgEnvDetails
   if (editablePkgJson === undefined) {
     editablePkgJson = await readPackageJson(pkgPath, { editable: true })
@@ -168,19 +168,19 @@ async function addOverrides(
   }
   const thingToScan = isLockScanned
     ? lockSrc
-    : await lsByAgent[agent]!(agentExecPath, pkgPath, { npmExecPath })
+    : await lsByAgent.get(agent)!(agentExecPath, pkgPath, { npmExecPath })
   // The AgentDepsIncludesFn and AgentLockIncludesFn types overlap in their
   // first two parameters. AgentLockIncludesFn accepts an optional third
   // parameter which AgentDepsIncludesFn will ignore so we cast thingScanner
   // as an AgentLockIncludesFn type.
-  const thingScanner = <AgentLockIncludesFn>(
-    (isLockScanned
+  const thingScanner = (
+    isLockScanned
       ? lockIncludesByAgent.get(agent)
-      : depsIncludesByAgent.get(agent))
-  )
+      : depsIncludesByAgent.get(agent)
+  ) as AgentLockIncludesFn
   const depEntries = getDependencyEntries(pkgJson)
 
-  const overridesDataObjects = <GetOverridesResult[]>[]
+  const overridesDataObjects = [] as GetOverridesResult[]
   if (pkgJson['private'] || isWorkspace) {
     overridesDataObjects.push(overridesDataByAgent.get(agent)!(pkgJson))
   } else {
@@ -327,7 +327,7 @@ async function addOverrides(
     })
   }
   if (state.added.size > 0 || state.updated.size > 0) {
-    editablePkgJson.update(<PackageJson>Object.fromEntries(depEntries))
+    editablePkgJson.update(Object.fromEntries(depEntries) as PackageJson)
     for (const { overrides, type } of overridesDataObjects) {
       updateManifestByAgent.get(type)!(
         editablePkgJson,

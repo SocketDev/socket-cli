@@ -28,7 +28,9 @@ export async function getWorkspaceGlobs(
       path.join(pkgPath, `${PNPM_WORKSPACE}.yml`)
     ]) {
       // eslint-disable-next-line no-await-in-loop
-      const yml = <string | undefined>await safeReadFile(workspacePath, 'utf8')
+      const yml = (await safeReadFile(workspacePath, 'utf8')) as
+        | string
+        | undefined
       if (yml) {
         try {
           workspacePatterns = yamlParse(yml)?.packages

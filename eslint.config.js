@@ -41,7 +41,9 @@ const sharedRules = {
   'no-new': 'error',
   'no-proto': 'error',
   'no-undef': 'error',
+  'no-var': 'error',
   'no-warning-comments': ['warn', { terms: ['fixme'] }],
+  'prefer-const': 'error',
   'sort-destructure-keys/sort-destructure-keys': 'error',
   'sort-imports': ['error', { ignoreDeclarationSort: true }],
   'unicorn/consistent-function-scoping': 'error'
@@ -175,6 +177,10 @@ module.exports = [
     rules: {
       ...sharedRules,
       '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
+      '@typescript-eslint/consistent-type-assertions': [
+        'error',
+        { assertionStyle: 'as' }
+      ],
       '@typescript-eslint/no-misused-new': 'error',
       '@typescript-eslint/no-this-alias': [
         'error',

@@ -41,7 +41,7 @@ export function captureExceptionSync(
     return ''
   }
   debugLog('captureException: Sending exception to Sentry.')
-  return <string>Sentry.captureException(exception, hint)
+  return Sentry.captureException(exception, hint) as string
 }
 
 export function isErrnoException(
