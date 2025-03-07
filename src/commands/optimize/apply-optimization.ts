@@ -337,9 +337,7 @@ export async function applyOptimization(
     logger?.log('Congratulations! Already Socket.dev optimized 🎉')
   }
 
-  if (pkgEnvDetails.agent === NPM || pkgJsonChanged) {
-    // Always update package-lock.json until the npm overrides PR lands:
-    // https://github.com/npm/cli/pull/8089
+  if (pkgJsonChanged || pkgEnvDetails.features.npmBuggyOverrides) {
     await updateLockfile(pkgEnvDetails, { cmdName: CMD_NAME, logger, spinner })
   }
 }

@@ -80,6 +80,7 @@ type Constants = Remap<
     readonly IPC: IPC
     readonly LOCK_EXT: '.lock'
     readonly MODULE_SYNC: 'module-sync'
+    readonly NPM_BUGGY_OVERRIDES_PATCHED_VERSION: '11.2.0'
     readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
     readonly PNPM: 'pnpm'
     readonly REDACTED: '<redacted>'
@@ -151,6 +152,7 @@ const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAIL_TEXT = `${DRY_RUN_LABEL}: Bailing now`
 const LOCK_EXT = '.lock'
 const MODULE_SYNC = 'module-sync'
+const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const PNPM = 'pnpm'
 const REDACTED = '<redacted>'
@@ -316,6 +318,7 @@ const constants = createConstantsObject(
     ENV: undefined,
     LOCK_EXT,
     MODULE_SYNC,
+    NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
     NPM_REGISTRY_URL,
     PNPM,
     REDACTED,
