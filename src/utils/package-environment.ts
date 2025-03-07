@@ -18,6 +18,7 @@ import { cmdPrefixMessage } from './cmd'
 import { findUp, readFileBinary, readFileUtf8 } from './fs'
 import constants from '../constants'
 
+import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { SemVer } from 'semver'
 
@@ -26,6 +27,7 @@ const {
   BUN,
   LOCK_EXT,
   NPM,
+  NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
   PNPM,
   VLT,
   YARN,
@@ -144,41 +146,48 @@ export type DetectOptions = {
   onUnknown?: (pkgManager: string | undefined) => void
 }
 
-export type EnvDetails = Readonly<{
+type EnvBase = {
   agent: Agent
   agentExecPath: string
-  agentVersion: SemVer
-  lockName: string
-  lockPath: string
-  lockSrc: string
+  features: {
+    // Fixed by https://github.com/npm/cli/pull/8089.
+    // Landed in npm v11.2.0.
+    npmBuggyOverrides: boolean
+  }
   minimumNodeVersion: string
   npmExecPath: string
-  pkgJson: EditablePackageJson
-  pkgPath: string
-  supported: boolean
+  pkgSupported: boolean
   targets: {
     browser: boolean
     node: boolean
   }
-}>
+}
 
-export type PartialEnvDetails = Readonly<{
-  agent: Agent
-  agentExecPath: string
-  agentVersion: SemVer | undefined
-  lockName: string | undefined
-  lockPath: string | undefined
-  lockSrc: string | undefined
-  minimumNodeVersion: string
-  npmExecPath: string
-  pkgJson: EditablePackageJson | undefined
-  pkgPath: string | undefined
-  supported: boolean
-  targets: {
-    browser: boolean
-    node: boolean
-  }
-}>
+export type EnvDetails = Readonly<
+  Remap<
+    EnvBase & {
+      agentVersion: SemVer
+      lockName: string
+      lockPath: string
+      lockSrc: string
+      pkgJson: EditablePackageJson
+      pkgPath: string
+    }
+  >
+>
+
+export type PartialEnvDetails = Readonly<
+  Remap<
+    EnvBase & {
+      agentVersion: SemVer | undefined
+      lockName: string | undefined
+      lockPath: string | undefined
+      lockSrc: string | undefined
+      pkgJson: EditablePackageJson | undefined
+      pkgPath: string | undefined
+    }
+  >
+>
 
 export async function detectPackageEnvironment({
   cwd = process.cwd(),
@@ -289,6 +298,11 @@ export async function detectPackageEnvironment({
     lockName = undefined
     lockPath = undefined
   }
+  const pkgSupported = targets.browser || targets.node
+  const npmBuggyOverrides =
+    agent === NPM &&
+    !!agentVersion &&
+    semver.lt(agentVersion, NPM_BUGGY_OVERRIDES_PATCHED_VERSION)
   return {
     agent,
     agentExecPath,
@@ -300,7 +314,10 @@ export async function detectPackageEnvironment({
     npmExecPath,
     pkgJson: editablePkgJson,
     pkgPath,
-    supported: targets.browser || targets.node,
+    pkgSupported,
+    features: {
+      npmBuggyOverrides
+    },
     targets
   }
 }
@@ -333,7 +350,7 @@ export async function detectAndValidatePackageEnvironment(
       )
     }
   })
-  if (!details.supported) {
+  if (!details.pkgSupported) {
     logger?.fail(
       cmdPrefixMessage(cmdName, 'No supported Node or browser range detected')
     )
