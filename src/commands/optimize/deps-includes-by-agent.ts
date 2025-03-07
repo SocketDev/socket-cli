@@ -1,6 +1,6 @@
 import constants from '../../constants'
 
-import type { Agent } from '../../utils/package-environment-detector'
+import type { Agent } from '../../utils/package-environment'
 
 type AgentDepsIncludesFn = (stdout: string, name: string) => boolean
 

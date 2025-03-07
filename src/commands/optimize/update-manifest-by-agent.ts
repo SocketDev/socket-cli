@@ -5,7 +5,7 @@ import constants from '../../constants'
 import type {
   Agent,
   StringKeyValueObject
-} from '../../utils/package-environment-detector'
+} from '../../utils/package-environment'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 
 type NpmOverrides = { [key: string]: string | StringKeyValueObject }

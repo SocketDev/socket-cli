@@ -16,7 +16,6 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { depsIncludesByAgent } from './deps-includes-by-agent'
-import { detectAndValidatePackageEnvironment } from './detect-and-validate-package-environment'
 import { getDependencyEntries } from './get-dependency-entries'
 import { overridesDataByAgent } from './get-overrides-by-agent'
 import { getWorkspaceGlobs } from './get-workspace-globs'
@@ -25,13 +24,15 @@ import { lsByAgent } from './ls-by-agent'
 import { updateLockfile } from './update-lockfile'
 import { updateManifestByAgent } from './update-manifest-by-agent'
 import constants from '../../constants'
+import { cmdPrefixMessage } from '../../utils/cmd'
+import { detectAndValidatePackageEnvironment } from '../../utils/package-environment'
 
 import type { AgentLockIncludesFn } from './lockfile-includes-by-agent'
 import type {
   Agent,
   EnvDetails,
   StringKeyValueObject
-} from '../../utils/package-environment-detector'
+} from '../../utils/package-environment'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
 
 type AddOverridesOptions = {
@@ -56,7 +57,7 @@ type Overrides = NpmOverrides | PnpmOrYarnOverrides
 
 const { NPM, PNPM, YARN_CLASSIC } = constants
 
-const COMMAND_TITLE = 'Socket Optimize'
+const CMD_NAME = 'socket optimize'
 
 const manifestNpmOverrides = getManifestData(NPM)
 
@@ -104,7 +105,10 @@ async function addOverrides(
   ) {
     state.warnedPnpmWorkspaceRequiresNpm = true
     logger?.warn(
-      `${COMMAND_TITLE}: pnpm workspace support requires \`npm ls\`, falling back to \`pnpm list\``
+      cmdPrefixMessage(
+        CMD_NAME,
+        'pnpm workspace support requires `npm ls`, falling back to `pnpm list`'
+      )
     )
   }
   const thingToScan = isLockScanned
@@ -294,6 +298,7 @@ export async function applyOptimization(
   prod: boolean
 ) {
   const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
+    cmdName: CMD_NAME,
     logger,
     prod
   })
@@ -335,6 +340,6 @@ export async function applyOptimization(
   if (pkgEnvDetails.agent === NPM || pkgJsonChanged) {
     // Always update package-lock.json until the npm overrides PR lands:
     // https://github.com/npm/cli/pull/8089
-    await updateLockfile(pkgEnvDetails, { logger, spinner })
+    await updateLockfile(pkgEnvDetails, { cmdName: CMD_NAME, logger, spinner })
   }
 }
