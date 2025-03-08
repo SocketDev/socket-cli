@@ -47,11 +47,10 @@ export default async function shadowBin(
       constants.distShadowNpmInjectPath,
       // Lazily access constants.shadowBinPath.
       await installLinks(constants.shadowBinPath, binName),
-      // Add `--no-progress` and `--loglevel=error` flags to fix input being
-      // swallowed by the npm spinner.
+      // Add `--no-progress` to fix input being swallowed by the npm spinner.
       '--no-progress',
-      // Add the '--loglevel=error' flag if a loglevel flag is not provided.
-      ...(binArgs.some(isLoglevelFlag) ? [] : ['--loglevel', 'error']),
+      // Add the '--loglevel=silent' flag if a loglevel flag is not provided.
+      ...(binArgs.some(isLoglevelFlag) ? [] : ['--loglevel', 'silent']),
       ...binArgs,
       ...otherArgs
     ],
