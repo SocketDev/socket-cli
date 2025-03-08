@@ -26,10 +26,13 @@ export async function updateLockfile(
     __proto__: null,
     ...options
   } as UpdateLockfileOptions
-  spinner?.start(`Updating ${pkgEnvDetails.lockName}...`)
+  const isSpinning = !!spinner?.isSpinning
+  if (!isSpinning) {
+    spinner?.start()
+  }
+  spinner?.setText(`Updating ${pkgEnvDetails.lockName}...`)
   try {
     await runAgentInstall(pkgEnvDetails, { spinner })
-    spinner?.stop()
     if (pkgEnvDetails.features.npmBuggyOverrides) {
       logger?.log(
         `💡 Re-run ${cmdName ? `${cmdName} ` : ''}whenever ${pkgEnvDetails.lockName} changes.\n   This can be skipped for ${pkgEnvDetails.agent} >=${NPM_BUGGY_OVERRIDES_PATCHED_VERSION}.`
@@ -44,5 +47,10 @@ export async function updateLockfile(
       )
     )
     logger?.error(e)
+  }
+  if (isSpinning) {
+    spinner?.start()
+  } else {
+    spinner?.stop()
   }
 }
