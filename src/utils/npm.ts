@@ -42,7 +42,7 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
   ).filter(a => !isAuditFlag(a) && !isFundFlag(a) && !isProgressFlag(a))
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const isSilent = !useDebug && !npmArgs.some(isLoglevelFlag)
-  const logLevelArgs = isSilent ? ['--loglevel', 'error'] : []
+  const logLevelArgs = isSilent ? ['--loglevel', 'silent'] : []
   const spawnPromise = spawn(
     // Lazily access constants.execPath.
     constants.execPath,
@@ -67,10 +67,9 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
       // Avoid code paths for 'audit' and 'fund'.
       '--no-audit',
       '--no-fund',
-      // Add `--no-progress` flag to fix input being swallowed by the spinner
-      // when running the command with recent versions of npm.
+      // Add `--no-progress` to fix input being swallowed by the npm spinner.
       '--no-progress',
-      // Add '--loglevel=error' if a loglevel flag is not provided and the
+      // Add '--loglevel=silent' if a loglevel flag is not provided and the
       // SOCKET_CLI_DEBUG environment variable is not truthy.
       ...logLevelArgs,
       ...npmArgs,
