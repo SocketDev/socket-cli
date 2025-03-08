@@ -100,6 +100,7 @@ async function addOverrides(
   if (
     isWorkspace &&
     agent === PNPM &&
+    // npmExecPath will === the agent name IF it CANNOT be resolved.
     npmExecPath === NPM &&
     !state.warnedPnpmWorkspaceRequiresNpm
   ) {
@@ -107,7 +108,7 @@ async function addOverrides(
     logger?.warn(
       cmdPrefixMessage(
         CMD_NAME,
-        'pnpm workspace support requires `npm ls`, falling back to `pnpm list`'
+        `${agent} workspace support requires \`npm ls\`, falling back to \`${agent} list\``
       )
     )
   }
