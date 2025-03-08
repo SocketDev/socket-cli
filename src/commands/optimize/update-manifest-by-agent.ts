@@ -27,8 +27,6 @@ const {
   YARN_CLASSIC
 } = constants
 
-const PNPM_FIELD_NAME = PNPM
-
 const depFields = [
   'dependencies',
   'devDependencies',
@@ -62,7 +60,7 @@ function getHighestEntryIndex(
   return getEntryIndexes(entries, keys).at(-1) ?? -1
 }
 
-function updatePkgJson(
+function updatePkgJsonField(
   editablePkgJson: EditablePackageJson,
   field: string,
   value: any
@@ -71,21 +69,25 @@ function updatePkgJson(
   const oldValue = pkgJson[field]
   if (oldValue) {
     // The field already exists so we simply update the field value.
-    if (field === PNPM_FIELD_NAME) {
+    if (field === PNPM) {
+      const isPnpmObj = isObject(oldValue)
       if (hasKeys(value)) {
         editablePkgJson.update({
           [field]: {
-            ...(isObject(oldValue) ? oldValue : {}),
-            overrides: value
+            ...(isPnpmObj ? oldValue : {}),
+            overrides: {
+              ...(isPnpmObj ? (oldValue as any)[OVERRIDES] : {}),
+              ...value
+            }
           }
         })
       } else {
         // Properties with undefined values are omitted when saved as JSON.
         editablePkgJson.update(
-          (hasKeys(pkgJson[field])
+          (hasKeys(oldValue)
             ? {
                 [field]: {
-                  ...(isObject(oldValue) ? oldValue : {}),
+                  ...(isPnpmObj ? oldValue : {}),
                   overrides: undefined
                 }
               }
@@ -103,9 +105,7 @@ function updatePkgJson(
     return
   }
   if (
-    (field === OVERRIDES ||
-      field === PNPM_FIELD_NAME ||
-      field === RESOLUTIONS) &&
+    (field === OVERRIDES || field === PNPM || field === RESOLUTIONS) &&
     !hasKeys(value)
   ) {
     return
@@ -125,7 +125,7 @@ function updatePkgJson(
   } else if (field === RESOLUTIONS) {
     isPlacingHigher = true
     insertIndex = getHighestEntryIndex(entries, [...depFields, OVERRIDES, PNPM])
-  } else if (field === PNPM_FIELD_NAME) {
+  } else if (field === PNPM) {
     insertIndex = getLowestEntryIndex(entries, [OVERRIDES, RESOLUTIONS])
     if (insertIndex === -1) {
       isPlacingHigher = true
@@ -144,38 +144,41 @@ function updatePkgJson(
   } else if (isPlacingHigher) {
     insertIndex += 1
   }
-  entries.splice(insertIndex, 0, [field, value])
+  entries.splice(insertIndex, 0, [
+    field,
+    field === PNPM ? { [OVERRIDES]: value } : value
+  ])
   editablePkgJson.fromJSON(
     `${JSON.stringify(Object.fromEntries(entries), null, 2)}\n`
   )
 }
 
-function updateOverrides(
+function updateOverridesField(
   editablePkgJson: EditablePackageJson,
   overrides: Overrides
 ) {
-  updatePkgJson(editablePkgJson, OVERRIDES, overrides)
+  updatePkgJsonField(editablePkgJson, OVERRIDES, overrides)
 }
 
-function updateResolutions(
+function updateResolutionsField(
   editablePkgJson: EditablePackageJson,
   overrides: Overrides
 ) {
-  updatePkgJson(editablePkgJson, RESOLUTIONS, overrides as PnpmOrYarnOverrides)
+  updatePkgJsonField(editablePkgJson, RESOLUTIONS, overrides)
 }
 
-function pnpmUpdatePkgJson(
+function updatePnpmField(
   editablePkgJson: EditablePackageJson,
   overrides: Overrides
 ) {
-  updatePkgJson(editablePkgJson, PNPM_FIELD_NAME, overrides)
+  updatePkgJsonField(editablePkgJson, PNPM, overrides)
 }
 
 export const updateManifestByAgent = new Map<Agent, AgentModifyManifestFn>([
-  [BUN, updateResolutions],
-  [NPM, updateOverrides],
-  [PNPM, pnpmUpdatePkgJson],
-  [VLT, updateOverrides],
-  [YARN_BERRY, updateResolutions],
-  [YARN_CLASSIC, updateResolutions]
+  [BUN, updateResolutionsField],
+  [NPM, updateOverridesField],
+  [PNPM, updatePnpmField],
+  [VLT, updateOverridesField],
+  [YARN_BERRY, updateResolutionsField],
+  [YARN_CLASSIC, updateResolutionsField]
 ])
