@@ -28,7 +28,9 @@ export default async function shadowBin(
   ).filter(a => !isProgressFlag(a))
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const isSilent = !useDebug && !binArgs.some(isLoglevelFlag)
-  const logLevelArgs = isSilent ? ['--loglevel', 'silent'] : []
+  // The default value of loglevel is "notice". We default to "error" which is
+  // two levels quieter.
+  const logLevelArgs = isSilent ? ['--loglevel', 'error'] : []
   const spawnPromise = spawn(
     // Lazily access constants.execPath.
     constants.execPath,
@@ -50,9 +52,9 @@ export default async function shadowBin(
       constants.distShadowNpmInjectPath,
       // Lazily access constants.shadowBinPath.
       await installLinks(constants.shadowBinPath, binName),
-      // Add `--no-progress` to fix input being swallowed by the npm spinner.
+      // Add '--no-progress' to fix input being swallowed by the npm spinner.
       '--no-progress',
-      // Add '--loglevel=silent' if a loglevel flag is not provided and the
+      // Add '--loglevel=error' if a loglevel flag is not provided and the
       // SOCKET_CLI_DEBUG environment variable is not truthy.
       ...logLevelArgs,
       ...binArgs,

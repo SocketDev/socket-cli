@@ -67,7 +67,7 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
       // Avoid code paths for 'audit' and 'fund'.
       '--no-audit',
       '--no-fund',
-      // Add `--no-progress` to fix input being swallowed by the npm spinner.
+      // Add '--no-progress' to fix input being swallowed by the npm spinner.
       '--no-progress',
       // Add '--loglevel=silent' if a loglevel flag is not provided and the
       // SOCKET_CLI_DEBUG environment variable is not truthy.
