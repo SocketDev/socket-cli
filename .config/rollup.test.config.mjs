@@ -11,7 +11,7 @@ import {
   normalizeId
 } from '../scripts/utils/packages.js'
 
-const { ROLLUP_EXTERNAL_SUFFIX, SOCKET_CLI_TEST_DIST_BUILD } = constants
+const { INLINED_SOCKET_CLI_TEST_DIST_BUILD, ROLLUP_EXTERNAL_SUFFIX } = constants
 
 export default () => {
   // Lazily access constants.rootSrcPath
@@ -62,7 +62,7 @@ export default () => {
       replacePlugin({
         delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
         preventAssignment: true,
-        values: [[SOCKET_CLI_TEST_DIST_BUILD, 'true']].reduce(
+        values: [[INLINED_SOCKET_CLI_TEST_DIST_BUILD, 'true']].reduce(
           (obj, { 0: name, 1: value }) => {
             obj[`process.env.${name}`] = value
             obj[`process.env['${name}']`] = value

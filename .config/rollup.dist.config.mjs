@@ -26,6 +26,9 @@ import {
 
 const {
   CONSTANTS,
+  INLINED_SOCKET_CLI_LEGACY_BUILD,
+  INLINED_SOCKET_CLI_SENTRY_BUILD,
+  INLINED_SOCKET_CLI_TEST_DIST_BUILD,
   INSTRUMENT_WITH_SENTRY,
   MODULE_SYNC,
   REQUIRE,
@@ -34,18 +37,15 @@ const {
   SHADOW_NPM_INJECT,
   SOCKET_CLI_BIN_NAME,
   SOCKET_CLI_BIN_NAME_ALIAS,
-  SOCKET_CLI_LEGACY_BUILD,
   SOCKET_CLI_LEGACY_PACKAGE_NAME,
   SOCKET_CLI_NPM_BIN_NAME,
   SOCKET_CLI_NPX_BIN_NAME,
   SOCKET_CLI_PACKAGE_NAME,
   SOCKET_CLI_SENTRY_BIN_NAME,
   SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
-  SOCKET_CLI_SENTRY_BUILD,
   SOCKET_CLI_SENTRY_NPM_BIN_NAME,
   SOCKET_CLI_SENTRY_NPX_BIN_NAME,
   SOCKET_CLI_SENTRY_PACKAGE_NAME,
-  SOCKET_CLI_TEST_DIST_BUILD,
   VENDOR,
   depStatsPath,
   rootDistPath,
@@ -84,7 +84,7 @@ const sharedPlugins = [
   replacePlugin({
     delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
     preventAssignment: true,
-    values: [[SOCKET_CLI_TEST_DIST_BUILD, 'false']].reduce(
+    values: [[INLINED_SOCKET_CLI_TEST_DIST_BUILD, 'false']].reduce(
       (obj, { 0: name, 1: value }) => {
         obj[`process.env.${name}`] = value
         obj[`process.env['${name}']`] = value
@@ -205,8 +205,8 @@ async function updateDepStats(depStats) {
       delete depStats.dependencies[key]
     }
   }
-  // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
-  if (constants.ENV[SOCKET_CLI_SENTRY_BUILD]) {
+  // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
+  if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
     // Add Sentry as a direct dependency for this build.
     depStats.dependencies[SENTRY_NODE] = (await getSentryManifest()).version
   }
@@ -238,8 +238,8 @@ async function updatePackageJson() {
     bin,
     dependencies
   })
-  // Lazily access constants.ENV[SOCKET_CLI_LEGACY_BUILD].
-  if (constants.ENV[SOCKET_CLI_LEGACY_BUILD]) {
+  // Lazily access constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD].
+  if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
     editablePkgJson.update({
       name: SOCKET_CLI_LEGACY_PACKAGE_NAME,
       bin: {
@@ -248,8 +248,8 @@ async function updatePackageJson() {
       }
     })
   }
-  // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
-  else if (constants.ENV[SOCKET_CLI_SENTRY_BUILD]) {
+  // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
+  else if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
     editablePkgJson.update({
       name: SOCKET_CLI_SENTRY_PACKAGE_NAME,
       description: SOCKET_DESCRIPTION_WITH_SENTRY,
@@ -281,8 +281,8 @@ async function updatePackageLockFile() {
   rootPkg.name = SOCKET_CLI_PACKAGE_NAME
   rootPkg.bin = bin
   rootPkg.dependencies = dependencies
-  // Lazily access constants.ENV[SOCKET_CLI_LEGACY_BUILD].
-  if (constants.ENV[SOCKET_CLI_LEGACY_BUILD]) {
+  // Lazily access constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD].
+  if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
     lockJson.name = SOCKET_CLI_LEGACY_PACKAGE_NAME
     rootPkg.name = SOCKET_CLI_LEGACY_PACKAGE_NAME
     rootPkg.bin = toSortedObject({
@@ -290,8 +290,8 @@ async function updatePackageLockFile() {
       ...bin
     })
   }
-  // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
-  else if (constants.ENV[SOCKET_CLI_SENTRY_BUILD]) {
+  // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
+  else if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
     lockJson.name = SOCKET_CLI_SENTRY_PACKAGE_NAME
     rootPkg.name = SOCKET_CLI_SENTRY_PACKAGE_NAME
     rootPkg.bin = {
@@ -312,8 +312,8 @@ export default () => {
   const moduleSyncConfig = baseConfig({
     input: {
       ...sharedInputs,
-      // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
-      ...(constants.ENV[SOCKET_CLI_SENTRY_BUILD]
+      // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
+      ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
         ? {
             [INSTRUMENT_WITH_SENTRY]: `${rootSrcPath}/${INSTRUMENT_WITH_SENTRY}.ts`
           }
@@ -419,8 +419,8 @@ export default () => {
           ])
           await Promise.all([
             removeDtsAndMapFiles(CONSTANTS, distModuleSyncPath),
-            // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
-            ...(constants.ENV[SOCKET_CLI_SENTRY_BUILD]
+            // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
+            ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
               ? [
                   moveDtsAndMapFiles(
                     INSTRUMENT_WITH_SENTRY,

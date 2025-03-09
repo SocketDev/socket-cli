@@ -10,7 +10,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../../constants'
 import shadowBin from '../../shadow/npm/bin'
 
-const { NPM, NPX, PACKAGE_LOCK, PNPM, YARN } = constants
+const { NPM, NPX, PACKAGE_LOCK, PNPM, YARN, YARN_LOCK } = constants
 
 const nodejsPlatformTypes = new Set([
   'javascript',
@@ -29,7 +29,7 @@ export async function runCycloneDX(yargv: any) {
   if (
     yargv.type !== YARN &&
     nodejsPlatformTypes.has(yargv.type) &&
-    existsSync('./yarn.lock')
+    existsSync(`./${YARN_LOCK}`)
   ) {
     if (existsSync(`./${PACKAGE_LOCK}`)) {
       yargv.type = NPM
@@ -39,10 +39,10 @@ export async function runCycloneDX(yargv: any) {
       try {
         await shadowBin(NPX, [
           ...yesArgs,
-          'synp@1.9.14',
-          '--',
+          // The '@rollup/plugin-replace' will replace "process.env['INLINED_SYNP_VERSION']".
+          `synp@${process.env['INLINED_SYNP_VERSION']}`,
           '--source-file',
-          './yarn.lock'
+          `./${YARN_LOCK}`
         ])
         yargv.type = NPM
         cleanupPackageLock = true
@@ -51,8 +51,8 @@ export async function runCycloneDX(yargv: any) {
   }
   await shadowBin(NPX, [
     ...yesArgs,
-    '@cyclonedx/cdxgen@11.2.0',
-    '--',
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']".
+    `@cyclonedx/cdxgen@${process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']}`,
     ...argvToArray(yargv)
   ])
   if (cleanupPackageLock) {
