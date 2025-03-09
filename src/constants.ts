@@ -291,11 +291,11 @@ const nodeHardenFlags: string[] =
     : [
         '--disable-proto',
         'delete',
-        // TODO: We can try --frozen-intrinsics once
+        // We have contributed the following patches to our dependencies to make
+        // Node's --frozen-intrinsics workable.
         // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
-        // ⧖ https://github.com/pnpm/components/pull/23
-        // are addressed.
-        // '--frozen-intrinsics',
+        // √ https://github.com/pnpm/components/pull/23
+        '--frozen-intrinsics',
         '--no-deprecation'
       ]
 
