@@ -36,13 +36,14 @@ import constants from './constants'
 import { AuthError, InputError, captureException } from './utils/errors'
 import { meowWithSubcommands } from './utils/meow-with-subcommands'
 
-const { SOCKET_CLI_BIN_NAME, rootPkgJsonPath } = constants
+const { SOCKET_CLI_BIN_NAME } = constants
 
 // TODO: Add autocompletion using https://socket.dev/npm/package/omelette
 void (async () => {
   await updateNotifier({
     name: SOCKET_CLI_BIN_NAME,
-    version: require(rootPkgJsonPath).version,
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION']".
+    version: process.env['INLINED_SOCKET_CLI_VERSION']!,
     ttl: 86_400_000 /* 24 hours in milliseconds */
   })
 

@@ -10,11 +10,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { installLinks } from './link'
 import constants from '../../constants'
 
-const {
-  SOCKET_CLI_SAFE_WRAPPER,
-  SOCKET_CLI_SENTRY_BUILD,
-  SOCKET_IPC_HANDSHAKE
-} = constants
+const { SOCKET_CLI_SAFE_WRAPPER, SOCKET_IPC_HANDSHAKE } = constants
 
 export default async function shadowBin(
   binName: 'npm' | 'npx',
@@ -39,8 +35,8 @@ export default async function shadowBin(
       ...constants.nodeHardenFlags,
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
-      // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
-      ...(constants.ENV[SOCKET_CLI_SENTRY_BUILD]
+      // Lazily access process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'].
+      ...(process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']
         ? [
             '--require',
             // Lazily access constants.distInstrumentWithSentryPath.
