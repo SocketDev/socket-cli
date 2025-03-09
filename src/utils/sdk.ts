@@ -74,7 +74,13 @@ export async function setupSdk(
         }
       : undefined,
     baseUrl: apiBaseUrl,
-    // Lazily access constants.rootPkgJsonPath.
-    userAgent: createUserAgentFromPkgJson(require(constants.rootPkgJsonPath))
+    userAgent: createUserAgentFromPkgJson({
+      // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_NAME']".
+      name: process.env['INLINED_SOCKET_CLI_NAME'] as string,
+      // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION']".
+      version: process.env['INLINED_SOCKET_CLI_VERSION'] as string,
+      // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_HOMEPAGE']".
+      homepage: process.env['INLINED_SOCKET_CLI_HOMEPAGE'] as string
+    })
   })
 }

@@ -33,11 +33,15 @@ const require = createRequire(import.meta.url)
 
 const {
   CONSTANTS,
+  INLINED_CYCLONEDX_CDXGEN_VERSION,
+  INLINED_SOCKET_CLI_HOMEPAGE,
   INLINED_SOCKET_CLI_LEGACY_BUILD,
+  INLINED_SOCKET_CLI_NAME,
   INLINED_SOCKET_CLI_PUBLISHED_BUILD,
   INLINED_SOCKET_CLI_SENTRY_BUILD,
   INLINED_SOCKET_CLI_VERSION,
   INLINED_SOCKET_CLI_VERSION_HASH,
+  INLINED_SYNP_VERSION,
   LATEST,
   ROLLUP_ENTRY_SUFFIX,
   ROLLUP_EXTERNAL_SUFFIX,
@@ -291,12 +295,8 @@ export default function baseConfig(extendConfig = {}) {
               )
           ],
           [
-            INLINED_SOCKET_CLI_VERSION,
-            () => JSON.stringify(getRootPkgJsonSync().version)
-          ],
-          [
-            INLINED_SOCKET_CLI_VERSION_HASH,
-            () => JSON.stringify(getSocketCliVersionHash())
+            INLINED_SOCKET_CLI_HOMEPAGE,
+            () => JSON.stringify(getRootPkgJsonSync().homepage)
           ],
           [
             INLINED_SOCKET_CLI_LEGACY_BUILD,
@@ -305,6 +305,10 @@ export default function baseConfig(extendConfig = {}) {
                 // Lazily access constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD].
                 !!constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]
               )
+          ],
+          [
+            INLINED_SOCKET_CLI_NAME,
+            () => JSON.stringify(getRootPkgJsonSync().name)
           ],
           [
             INLINED_SOCKET_CLI_PUBLISHED_BUILD,
@@ -321,6 +325,14 @@ export default function baseConfig(extendConfig = {}) {
                 // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
                 !!constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
               )
+          ],
+          [
+            INLINED_SOCKET_CLI_VERSION,
+            () => JSON.stringify(getRootPkgJsonSync().version)
+          ],
+          [
+            INLINED_SOCKET_CLI_VERSION_HASH,
+            () => JSON.stringify(getSocketCliVersionHash())
           ],
           [
             INLINED_SYNP_VERSION,
