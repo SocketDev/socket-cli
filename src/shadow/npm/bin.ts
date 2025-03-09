@@ -18,8 +18,7 @@ const {
 
 export default async function shadowBin(
   binName: 'npm' | 'npx',
-  args = process.argv.slice(2),
-  level = 1
+  args = process.argv.slice(2)
 ) {
   process.exitCode = 1
   const useDebug = isDebug()
@@ -74,7 +73,7 @@ export default async function shadowBin(
   })
   spawnPromise.process.send({
     [SOCKET_IPC_HANDSHAKE]: {
-      [SOCKET_CLI_SAFE_WRAPPER]: level
+      [SOCKET_CLI_SAFE_WRAPPER]: binName
     }
   })
   await spawnPromise

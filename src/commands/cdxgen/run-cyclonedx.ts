@@ -36,21 +36,22 @@ export async function runCycloneDX(yargv: any) {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
       try {
-        await shadowBin(
-          NPX,
-          ['synp@1.9.14', '--', '--source-file', './yarn.lock'],
-          2
-        )
+        await shadowBin(NPX, [
+          'synp@1.9.14',
+          '--',
+          '--source-file',
+          './yarn.lock'
+        ])
         yargv.type = NPM
         cleanupPackageLock = true
       } catch {}
     }
   }
-  await shadowBin(
-    NPX,
-    ['@cyclonedx/cdxgen@11.2.0', '--', ...argvToArray(yargv)],
-    2
-  )
+  await shadowBin(NPX, [
+    '@cyclonedx/cdxgen@11.2.0',
+    '--',
+    ...argvToArray(yargv)
+  ])
   if (cleanupPackageLock) {
     try {
       await fs.rm('./package-lock.json')

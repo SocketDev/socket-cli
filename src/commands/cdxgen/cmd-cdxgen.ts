@@ -138,13 +138,12 @@ async function run(
 ): Promise<void> {
   const cli = meowOrExit({
     allowUnknownFlags: true,
-    argv: argv.filter(s => s !== '--help' && s !== '-h'), // Don't let meow take over --help
+    // Don't let meow take over --help.
+    argv: argv.filter(s => s !== '--help' && s !== '-h'),
     config,
     importMeta,
     parentName
   })
-  //
-  //
   // if (cli.input.length)
   //   logger.fail(
   //     stripIndents`
@@ -156,10 +155,10 @@ async function run(
   //   return
   // }
 
-  // TODO: convert to meow
+  // TODO: Convert to meow.
   const yargv = {
     ...yargsParse(argv as string[], yargsConfig)
-  } as any // as Record<string, unknown>;
+  } as any
 
   const unknown: string[] = yargv._
   const { length: unknownLength } = unknown
@@ -174,13 +173,13 @@ async function run(
     return
   }
 
-  if (yargv.output === undefined) {
-    yargv.output = 'socket-cdx.json'
-  }
-
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)
     return
+  }
+
+  if (yargv.output === undefined) {
+    yargv.output = 'socket-cdx.json'
   }
 
   await runCycloneDX(yargv)
