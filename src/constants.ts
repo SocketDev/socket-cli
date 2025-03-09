@@ -55,7 +55,7 @@ type ENV = Remap<
 type IPC = Readonly<{
   SOCKET_CLI_FIX?: string | undefined
   SOCKET_CLI_OPTIMIZE?: boolean | undefined
-  SOCKET_CLI_SAFE_WRAPPER?: number | undefined
+  SOCKET_CLI_SAFE_WRAPPER?: string | undefined
 }>
 
 type Constants = Remap<

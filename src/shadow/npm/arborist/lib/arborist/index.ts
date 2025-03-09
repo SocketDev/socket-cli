@@ -12,6 +12,8 @@ import type { ArboristClass, ArboristReifyOptions } from './types'
 import type { SafeNode } from '../node'
 
 const {
+  NPM,
+  NPX,
   SOCKET_CLI_SAFE_WRAPPER,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIPC }
@@ -82,10 +84,15 @@ export class SafeArborist extends Arborist {
       __proto__: null,
       ...(args.length ? args[0] : undefined)
     } as ArboristReifyOptions
-    const level = options.dryRun ? 0 : await getIPC(SOCKET_CLI_SAFE_WRAPPER)
-    if (!level) {
+    const safeWrapperName = options.dryRun
+      ? undefined
+      : await getIPC(SOCKET_CLI_SAFE_WRAPPER)
+    const isSafeNpm = safeWrapperName === NPM
+    const isSafeNpx = safeWrapperName === NPX
+    if (!safeWrapperName || (isSafeNpx && options['yes'])) {
       return await this[kRiskyReify](...args)
     }
+
     // Lazily access constants.spinner.
     const { spinner } = constants
     await super.reify(
@@ -100,7 +107,8 @@ export class SafeArborist extends Arborist {
     const alertsMap = await getAlertsMapFromArborist(this, {
       spinner,
       include: {
-        unfixable: level < 2
+        existing: isSafeNpx,
+        unfixable: isSafeNpm
       }
     })
     if (alertsMap.size) {
