@@ -37,11 +37,11 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
   const useIpc = isObject(ipc)
   const useDebug = isDebug()
   const terminatorPos = args.indexOf('--')
-  const npmArgs = (
+  const binArgs = (
     terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   ).filter(a => !isAuditFlag(a) && !isFundFlag(a) && !isProgressFlag(a))
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
-  const isSilent = !useDebug && !npmArgs.some(isLoglevelFlag)
+  const isSilent = !useDebug && !binArgs.some(isLoglevelFlag)
   const logLevelArgs = isSilent ? ['--loglevel', 'silent'] : []
   const spawnPromise = spawn(
     // Lazily access constants.execPath.
@@ -72,7 +72,7 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
       // Add '--loglevel=silent' if a loglevel flag is not provided and the
       // SOCKET_CLI_DEBUG environment variable is not truthy.
       ...logLevelArgs,
-      ...npmArgs,
+      ...binArgs,
       ...otherArgs
     ],
     {
