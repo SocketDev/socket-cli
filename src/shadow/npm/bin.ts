@@ -1,5 +1,6 @@
 import process from 'node:process'
 
+import { isDebug } from '@socketsecurity/registry/lib/debug'
 import {
   isLoglevelFlag,
   isProgressFlag
@@ -21,11 +22,14 @@ export default async function shadowBin(
   level = 1
 ) {
   process.exitCode = 1
+  const useDebug = isDebug()
   const terminatorPos = args.indexOf('--')
   const binArgs = (
     terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   ).filter(a => !isProgressFlag(a))
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
+  const isSilent = !useDebug && !binArgs.some(isLoglevelFlag)
+  const logLevelArgs = isSilent ? ['--loglevel', 'silent'] : []
   const spawnPromise = spawn(
     // Lazily access constants.execPath.
     constants.execPath,
@@ -49,8 +53,9 @@ export default async function shadowBin(
       await installLinks(constants.shadowBinPath, binName),
       // Add `--no-progress` to fix input being swallowed by the npm spinner.
       '--no-progress',
-      // Add the '--loglevel=silent' flag if a loglevel flag is not provided.
-      ...(binArgs.some(isLoglevelFlag) ? [] : ['--loglevel', 'silent']),
+      // Add '--loglevel=silent' if a loglevel flag is not provided and the
+      // SOCKET_CLI_DEBUG environment variable is not truthy.
+      ...logLevelArgs,
       ...binArgs,
       ...otherArgs
     ],
