@@ -87,7 +87,7 @@
     "chalk-table": "1.0.2",
     "cmd-shim": "7.0.0",
     "common-tags": "1.8.2",
-    "fast-content-type-parse": "2.0.1",
+    "fast-content-type-parse": "3.0.0",
     "has-flag": "4.0.0",
     "hpagent": "1.2.0",
     "ignore": "7.0.3",
@@ -174,7 +174,6 @@
     "vitest": "3.0.8"
   },
   "overrides": {
-    "agentkeepalive@>=4 <4.6.0": "4.6.0",
     "aggregate-error": "npm:@socketregistry/aggregate-error@^1",
     "es-define-property": "npm:@socketregistry/es-define-property@^1",
     "function-bind": "npm:@socketregistry/function-bind@^1",
@@ -201,7 +200,7 @@
     "undici": "^6.21.1",
     "vite": "^6.2.0",
     "xml2js": "^0.5.0",
-    "yaml": "$yaml"
+    "yaml": "2.7.0"
   },
   "engines": {
     "node": "^18.20.7 || ^20.18.3 || >=22.14.0"
