@@ -10,7 +10,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../../constants'
 import shadowBin from '../../shadow/npm/bin'
 
-const { NPM, NPX, PNPM } = constants
+const { NPM, NPX, PACKAGE_LOCK, PNPM, YARN } = constants
 
 const nodejsPlatformTypes = new Set([
   'javascript',
@@ -25,18 +25,20 @@ const nodejsPlatformTypes = new Set([
 
 export async function runCycloneDX(yargv: any) {
   let cleanupPackageLock = false
+  const yesArgs = yargv.yes ? ['--yes'] : []
   if (
-    yargv.type !== 'yarn' &&
+    yargv.type !== YARN &&
     nodejsPlatformTypes.has(yargv.type) &&
     existsSync('./yarn.lock')
   ) {
-    if (existsSync('./package-lock.json')) {
+    if (existsSync(`./${PACKAGE_LOCK}`)) {
       yargv.type = NPM
     } else {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
       try {
         await shadowBin(NPX, [
+          ...yesArgs,
           'synp@1.9.14',
           '--',
           '--source-file',
@@ -48,13 +50,14 @@ export async function runCycloneDX(yargv: any) {
     }
   }
   await shadowBin(NPX, [
+    ...yesArgs,
     '@cyclonedx/cdxgen@11.2.0',
     '--',
     ...argvToArray(yargv)
   ])
   if (cleanupPackageLock) {
     try {
-      await fs.rm('./package-lock.json')
+      await fs.rm(`./${PACKAGE_LOCK}`)
     } catch {}
   }
   const fullOutputPath = path.join(process.cwd(), yargv.output)
