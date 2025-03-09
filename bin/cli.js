@@ -5,12 +5,12 @@ const process = require('node:process')
 
 const constants = require('../dist/constants')
 
-const { DIST_TYPE, SOCKET_CLI_SENTRY_BUILD } = constants
+const { DIST_TYPE, INLINED_SOCKET_CLI_SENTRY_BUILD } = constants
 
 if (
   DIST_TYPE === 'require' &&
-  // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
-  !constants.ENV[SOCKET_CLI_SENTRY_BUILD]
+  // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
+  !constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
 ) {
   // Lazily access constants.distCliPath.
   require(constants.distCliPath)
@@ -25,8 +25,8 @@ if (
       ...constants.nodeHardenFlags,
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
-      // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
-      ...(constants.ENV[SOCKET_CLI_SENTRY_BUILD]
+      // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
+      ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
         ? [
             '--require',
             // Lazily access constants.distInstrumentWithSentryPath.

@@ -33,6 +33,11 @@ const require = createRequire(import.meta.url)
 
 const {
   CONSTANTS,
+  INLINED_SOCKET_CLI_LEGACY_BUILD,
+  INLINED_SOCKET_CLI_PUBLISHED_BUILD,
+  INLINED_SOCKET_CLI_SENTRY_BUILD,
+  INLINED_SOCKET_CLI_VERSION,
+  INLINED_SOCKET_CLI_VERSION_HASH,
   LATEST,
   ROLLUP_ENTRY_SUFFIX,
   ROLLUP_EXTERNAL_SUFFIX,
@@ -40,12 +45,8 @@ const {
   SHADOW_NPM_BIN,
   SHADOW_NPM_INJECT,
   SHADOW_NPM_PATHS,
-  SOCKET_CLI_LEGACY_BUILD,
-  SOCKET_CLI_PUBLISHED_BUILD,
-  SOCKET_CLI_SENTRY_BUILD,
-  SOCKET_CLI_VERSION_HASH,
-  VITEST,
-  VENDOR
+  VENDOR,
+  VITEST
 } = constants
 
 export const INLINED_PACKAGES = ['@babel/runtime']
@@ -82,12 +83,20 @@ const requireUrlAssignmentRegExp =
 
 const splitUrlRequiresRegExp = /require\(["']u["']\s*\+\s*["']rl["']\)/g
 
+let _rootPkgJson
+function getRootPkgJsonSync() {
+  if (_rootPkgJson === undefined) {
+    // Lazily access constants.rootPath.
+    _rootPkgJson = readPackageJsonSync(constants.rootPath)
+  }
+  return _rootPkgJson
+}
+
 let _socketVersionHash
-function getSocketVersionHash() {
+function getSocketCliVersionHash() {
   if (_socketVersionHash === undefined) {
     const randUuidSegment = randomUUID().split('-')[0]
-    // Lazily access constants.rootPath.
-    const { version } = readPackageJsonSync(constants.rootPath)
+    const { version } = getRootPkgJsonSync()
     let gitHash = ''
     try {
       gitHash = spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
@@ -98,8 +107,8 @@ function getSocketVersionHash() {
     // Mostly for development: confirms the build refreshed. For prod builds
     // the git hash should suffice to identify the build.
     _socketVersionHash = `${version}:${gitHash}:${randUuidSegment}${
-      // Lazily access constants.ENV[SOCKET_CLI_PUBLISHED_BUILD].
-      constants.ENV[SOCKET_CLI_PUBLISHED_BUILD] ? ':pub' : ':dev'
+      // Lazily access constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD].
+      constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD] ? ':pub' : ':dev'
     }`
   }
   return _socketVersionHash
@@ -275,32 +284,47 @@ export default function baseConfig(extendConfig = {}) {
         preventAssignment: true,
         values: [
           [
-            SOCKET_CLI_VERSION_HASH,
-            () => JSON.stringify(getSocketVersionHash())
-          ],
-          [
-            SOCKET_CLI_LEGACY_BUILD,
+            INLINED_CYCLONEDX_CDXGEN_VERSION,
             () =>
               JSON.stringify(
-                // Lazily access constants.ENV[SOCKET_CLI_LEGACY_BUILD].
-                !!constants.ENV[SOCKET_CLI_LEGACY_BUILD]
+                getRootPkgJsonSync().devDependencies['@cyclonedx/cdxgen']
               )
           ],
           [
-            SOCKET_CLI_PUBLISHED_BUILD,
+            INLINED_SOCKET_CLI_VERSION,
+            () => JSON.stringify(getRootPkgJsonSync().version)
+          ],
+          [
+            INLINED_SOCKET_CLI_VERSION_HASH,
+            () => JSON.stringify(getSocketCliVersionHash())
+          ],
+          [
+            INLINED_SOCKET_CLI_LEGACY_BUILD,
             () =>
               JSON.stringify(
-                // Lazily access constants.ENV[SOCKET_CLI_PUBLISHED_BUILD].
-                !!constants.ENV[SOCKET_CLI_PUBLISHED_BUILD]
+                // Lazily access constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD].
+                !!constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]
               )
           ],
           [
-            SOCKET_CLI_SENTRY_BUILD,
+            INLINED_SOCKET_CLI_PUBLISHED_BUILD,
             () =>
               JSON.stringify(
-                // Lazily access constants.ENV[SOCKET_CLI_SENTRY_BUILD].
-                !!constants.ENV[SOCKET_CLI_SENTRY_BUILD]
+                // Lazily access constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD].
+                !!constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]
               )
+          ],
+          [
+            INLINED_SOCKET_CLI_SENTRY_BUILD,
+            () =>
+              JSON.stringify(
+                // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
+                !!constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
+              )
+          ],
+          [
+            INLINED_SYNP_VERSION,
+            () => JSON.stringify(getRootPkgJsonSync().devDependencies['synp'])
           ],
           [
             VITEST,

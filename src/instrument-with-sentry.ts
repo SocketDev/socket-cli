@@ -6,8 +6,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 // Require constants with require(relConstantsPath) instead of require('./constants')
 // so Rollup doesn't generate a constants2.js chunk.
 const relConstantsPath = './constants'
-// The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_SENTRY_BUILD']".
-if (process.env['SOCKET_CLI_SENTRY_BUILD']) {
+// The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']".
+if (process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']) {
   const Sentry = require('@sentry/node')
   Sentry.init({
     onFatalError(error: Error) {
@@ -22,13 +22,15 @@ if (process.env['SOCKET_CLI_SENTRY_BUILD']) {
   })
   Sentry.setTag(
     'environment',
-    // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_PUBLISHED_BUILD']".
-    process.env['SOCKET_CLI_PUBLISHED_BUILD'] ? 'pub' : process.env['NODE_ENV']
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']".
+    process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']
+      ? 'pub'
+      : process.env['NODE_ENV']
   )
   Sentry.setTag(
     'version',
-    // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_VERSION_HASH']".
-    process.env['SOCKET_CLI_VERSION_HASH']
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION_HASH']".
+    process.env['INLINED_SOCKET_CLI_VERSION_HASH']
   )
   const constants = require(relConstantsPath)
   if (constants.ENV.SOCKET_CLI_DEBUG) {

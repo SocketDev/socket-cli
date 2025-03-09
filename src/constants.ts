@@ -12,7 +12,6 @@ const {
   NODE_MODULES,
   NPM,
   NPX,
-  PACKAGE_JSON,
   SOCKET_SECURITY_SCOPE,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
@@ -44,11 +43,7 @@ type ENV = Remap<
   RegistryEnv &
     Readonly<{
       SOCKET_CLI_DEBUG: boolean
-      SOCKET_CLI_LEGACY_BUILD: boolean
       SOCKET_CLI_NO_API_TOKEN: boolean
-      SOCKET_CLI_PUBLISHED_BUILD: boolean
-      SOCKET_CLI_SENTRY_BUILD: boolean
-      SOCKET_CLI_VERSION_HASH: string
     }>
 >
 
@@ -77,6 +72,9 @@ type Constants = Remap<
     readonly DIST_TYPE: 'module-sync' | 'require'
     readonly DRY_RUN_LABEL: '[DryRun]'
     readonly DRY_RUN_BAIL_TEXT: '[DryRun] Bailing now'
+    readonly INLINED_SOCKET_CLI_LEGACY_BUILD: 'INLINED_SOCKET_CLI_LEGACY_BUILD'
+    readonly INLINED_SOCKET_CLI_PUBLISHED_BUILD: 'INLINED_SOCKET_CLI_PUBLISHED_BUILD'
+    readonly INLINED_SOCKET_CLI_SENTRY_BUILD: 'INLINED_SOCKET_CLI_SENTRY_BUILD'
     readonly IPC: IPC
     readonly LOCK_EXT: '.lock'
     readonly MODULE_SYNC: 'module-sync'
@@ -95,26 +93,23 @@ type Constants = Remap<
     readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
     readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
     readonly SOCKET_CLI_SENTRY_BIN_NAME_ALIAS: 'cli-with-sentry'
-    readonly SOCKET_CLI_LEGACY_BUILD: 'SOCKET_CLI_LEGACY_BUILD'
     readonly SOCKET_CLI_LEGACY_PACKAGE_NAME: '@socketsecurity/cli'
     readonly SOCKET_CLI_NO_API_TOKEN: 'SOCKET_CLI_NO_API_TOKEN'
     readonly SOCKET_CLI_NPM_BIN_NAME: 'socket-npm'
     readonly SOCKET_CLI_NPX_BIN_NAME: 'socket-npx'
     readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
     readonly SOCKET_CLI_PACKAGE_NAME: 'socket'
-    readonly SOCKET_CLI_PUBLISHED_BUILD: 'SOCKET_CLI_PUBLISHED_BUILD'
     readonly SOCKET_CLI_SAFE_WRAPPER: 'SOCKET_CLI_SAFE_WRAPPER'
     readonly SOCKET_CLI_SENTRY_BIN_NAME: 'socket-with-sentry'
-    readonly SOCKET_CLI_SENTRY_BUILD: 'SOCKET_CLI_SENTRY_BUILD'
     readonly SOCKET_CLI_SENTRY_NPM_BIN_NAME: 'socket-npm-with-sentry'
     readonly SOCKET_CLI_SENTRY_NPX_BIN_NAME: 'socket-npx-with-sentry'
     readonly SOCKET_CLI_SENTRY_PACKAGE_NAME: '@socketsecurity/cli-with-sentry'
-    readonly SOCKET_CLI_VERSION_HASH: 'SOCKET_CLI_VERSION_HASH'
     readonly VLT: 'vlt'
     readonly WITH_SENTRY: 'with-sentry'
     readonly YARN: 'yarn'
     readonly YARN_BERRY: 'yarn/berry'
     readonly YARN_CLASSIC: 'yarn/classic'
+    readonly YARN_LOCK: 'yarn.lock'
     readonly bashRcPath: string
     readonly distCliPath: string
     readonly distInstrumentWithSentryPath: string
@@ -127,7 +122,6 @@ type Constants = Remap<
     readonly rootBinPath: string
     readonly rootDistPath: string
     readonly rootPath: string
-    readonly rootPkgJsonPath: string
     readonly shadowBinPath: string
     readonly zshRcPath: string
   }
@@ -150,6 +144,9 @@ const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
 const CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE = 'vulnerableVersionRange'
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAIL_TEXT = `${DRY_RUN_LABEL}: Bailing now`
+const INLINED_SOCKET_CLI_LEGACY_BUILD = 'INLINED_SOCKET_CLI_LEGACY_BUILD'
+const INLINED_SOCKET_CLI_PUBLISHED_BUILD = 'INLINED_SOCKET_CLI_PUBLISHED_BUILD'
+const INLINED_SOCKET_CLI_SENTRY_BUILD = 'INLINED_SOCKET_CLI_SENTRY_BUILD'
 const LOCK_EXT = '.lock'
 const MODULE_SYNC = 'module-sync'
 const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
@@ -165,26 +162,23 @@ const SOCKET_CLI_BIN_NAME_ALIAS = CLI
 const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
 const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
-const SOCKET_CLI_LEGACY_BUILD = 'SOCKET_CLI_LEGACY_BUILD'
 const SOCKET_CLI_LEGACY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/${CLI}`
 const SOCKET_CLI_NO_API_TOKEN = 'SOCKET_CLI_NO_API_TOKEN'
 const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
 const SOCKET_CLI_NPM_BIN_NAME = `${SOCKET}-${NPM}`
 const SOCKET_CLI_NPX_BIN_NAME = `${SOCKET}-${NPX}`
 const SOCKET_CLI_PACKAGE_NAME = SOCKET
-const SOCKET_CLI_PUBLISHED_BUILD = 'SOCKET_CLI_PUBLISHED_BUILD'
 const SOCKET_CLI_SAFE_WRAPPER = 'SOCKET_CLI_SAFE_WRAPPER'
 const SOCKET_CLI_SENTRY_BIN_NAME = `${SOCKET_CLI_BIN_NAME}-${WITH_SENTRY}`
 const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = `${SOCKET_CLI_BIN_NAME_ALIAS}-${WITH_SENTRY}`
-const SOCKET_CLI_SENTRY_BUILD = 'SOCKET_CLI_SENTRY_BUILD'
 const SOCKET_CLI_SENTRY_NPM_BIN_NAME = `${SOCKET_CLI_NPM_BIN_NAME}-${WITH_SENTRY}`
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = `${SOCKET_CLI_NPX_BIN_NAME}-${WITH_SENTRY}`
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_CLI_LEGACY_PACKAGE_NAME}-${WITH_SENTRY}`
-const SOCKET_CLI_VERSION_HASH = 'SOCKET_CLI_VERSION_HASH'
 const VLT = 'vlt'
 const YARN = 'yarn'
 const YARN_BERRY = `${YARN}/berry`
 const YARN_CLASSIC = `${YARN}/classic`
+const YARN_LOCK = `${YARN}${LOCK_EXT}`
 
 let _Sentry: any
 
@@ -205,22 +199,22 @@ const LAZY_ENV = () => {
   return Object.freeze({
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
+    // Inlined flag set to determine if this is the Legacy build.
+    // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_LEGACY_BUILD]".
+    [INLINED_SOCKET_CLI_LEGACY_BUILD]:
+      process.env[INLINED_SOCKET_CLI_LEGACY_BUILD],
+    // Inlined flag set to determine if this is a published build.
+    // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_PUBLISHED_BUILD]".
+    [INLINED_SOCKET_CLI_PUBLISHED_BUILD]:
+      process.env[INLINED_SOCKET_CLI_PUBLISHED_BUILD],
+    // Inlined flag set to determine if this is the Sentry build.
+    // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]".
+    [INLINED_SOCKET_CLI_SENTRY_BUILD]:
+      process.env[INLINED_SOCKET_CLI_SENTRY_BUILD],
     // Flag set to help debug Socket CLI.
     [SOCKET_CLI_DEBUG]: envAsBoolean(env[SOCKET_CLI_DEBUG]),
-    // Inlined flag set to determine if this is the Legacy build.
-    // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_LEGACY_BUILD]".
-    [SOCKET_CLI_LEGACY_BUILD]: process.env[SOCKET_CLI_LEGACY_BUILD],
     // Flag set to make the default API token `undefined`.
-    [SOCKET_CLI_NO_API_TOKEN]: envAsBoolean(env[SOCKET_CLI_NO_API_TOKEN]),
-    // Inlined flag set to determine if this is a published build.
-    // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_PUBLISHED_BUILD]".
-    [SOCKET_CLI_PUBLISHED_BUILD]: process.env[SOCKET_CLI_PUBLISHED_BUILD],
-    // Inlined flag set to determine if this is the Sentry build.
-    // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_SENTRY_BUILD]".
-    [SOCKET_CLI_SENTRY_BUILD]: process.env[SOCKET_CLI_SENTRY_BUILD],
-    // Inlined flag set to determine the version hash of the build.
-    // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_VERSION_HASH]".
-    [SOCKET_CLI_VERSION_HASH]: process.env[SOCKET_CLI_VERSION_HASH]
+    [SOCKET_CLI_NO_API_TOKEN]: envAsBoolean(env[SOCKET_CLI_NO_API_TOKEN])
   })
 }
 
@@ -263,16 +257,11 @@ const lazyRootDistPath = () =>
   path.join(constants.rootPath, 'dist')
 
 const lazyRootPath = () =>
-  // The '@rollup/plugin-replace' will replace "process.env.['VITEST']" with `false` and
-  // it will be dead code eliminated by Rollup.
+  // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_TEST_DIST_BUILD']".
   path.join(
     realpathSync.native(__dirname),
-    process.env['SOCKET_CLI_TEST_DIST_BUILD'] ? '../..' : '..'
+    process.env['INLINED_SOCKET_CLI_TEST_DIST_BUILD'] ? '../..' : '..'
   )
-
-const lazyRootPkgJsonPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, PACKAGE_JSON)
 
 const lazyShadowBinPath = () =>
   // Lazily access constants.rootPath.
@@ -285,8 +274,8 @@ const lazyZshRcPath = () =>
 // Harden Node security.
 // https://nodejs.org/en/learn/getting-started/security-best-practices
 const nodeHardenFlags: string[] =
-  // The '@rollup/plugin-replace' will replace "process.env[SOCKET_CLI_SENTRY_BUILD]".
-  process.env[SOCKET_CLI_SENTRY_BUILD]
+  // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]".
+  process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]
     ? []
     : [
         '--disable-proto',
@@ -318,6 +307,9 @@ const constants = createConstantsObject(
     DRY_RUN_LABEL,
     DRY_RUN_BAIL_TEXT,
     ENV: undefined,
+    INLINED_SOCKET_CLI_LEGACY_BUILD,
+    INLINED_SOCKET_CLI_PUBLISHED_BUILD,
+    INLINED_SOCKET_CLI_SENTRY_BUILD,
     LOCK_EXT,
     MODULE_SYNC,
     NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
@@ -335,24 +327,21 @@ const constants = createConstantsObject(
     SOCKET_CLI_FIX,
     SOCKET_CLI_ISSUES_URL,
     SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
-    SOCKET_CLI_LEGACY_BUILD,
     SOCKET_CLI_LEGACY_PACKAGE_NAME,
     SOCKET_CLI_NO_API_TOKEN,
     SOCKET_CLI_OPTIMIZE,
     SOCKET_CLI_PACKAGE_NAME,
-    SOCKET_CLI_PUBLISHED_BUILD,
     SOCKET_CLI_SAFE_WRAPPER,
     SOCKET_CLI_SENTRY_BIN_NAME,
-    SOCKET_CLI_SENTRY_BUILD,
     SOCKET_CLI_SENTRY_NPM_BIN_NAME,
     SOCKET_CLI_SENTRY_NPX_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
-    SOCKET_CLI_VERSION_HASH,
     VLT,
     WITH_SENTRY,
     YARN,
     YARN_BERRY,
     YARN_CLASSIC,
+    YARN_LOCK,
     bashRcPath: undefined,
     distCliPath: undefined,
     distInstrumentWithSentryPath: undefined,
@@ -365,7 +354,6 @@ const constants = createConstantsObject(
     rootBinPath: undefined,
     rootDistPath: undefined,
     rootPath: undefined,
-    rootPkgJsonPath: undefined,
     shadowBinPath: undefined,
     zshRcPath: undefined
   },
@@ -385,7 +373,6 @@ const constants = createConstantsObject(
       rootBinPath: lazyRootBinPath,
       rootDistPath: lazyRootDistPath,
       rootPath: lazyRootPath,
-      rootPkgJsonPath: lazyRootPkgJsonPath,
       shadowBinPath: lazyShadowBinPath,
       zshRcPath: lazyZshRcPath
     },

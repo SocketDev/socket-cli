@@ -192,7 +192,7 @@ export function emitBanner(name: string) {
   // It also helps with debugging since it contains version and command details.
   // Note: print over stderr to preserve stdout for flags like --json and
   //       --markdown. If we don't do this, you can't use --json in particular
-  //       and pipe the result to other tools. By emiting the banner over stderr
+  //       and pipe the result to other tools. By emitting the banner over stderr
   //       you can do something like `socket scan view xyz | jq | process`.
   //       The spinner also emits over stderr for example.
   logger.error(getAsciiHeader(name))
@@ -200,12 +200,12 @@ export function emitBanner(name: string) {
 
 function getAsciiHeader(command: string) {
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
-  // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_VERSION_HASH']".
+  // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
   const redacting = process.env['VITEST']
   const cliVersion = redacting
     ? REDACTED
-    : // The '@rollup/plugin-replace' will replace "process.env['SOCKET_CLI_VERSION_HASH']".
-      process.env['SOCKET_CLI_VERSION_HASH']
+    : // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION_HASH']".
+      process.env['INLINED_SOCKET_CLI_VERSION_HASH']
   const nodeVersion = redacting ? REDACTED : process.version
   const apiToken = getSetting('apiToken')
   const shownToken = redacting
