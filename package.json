@@ -2,7 +2,7 @@
   "name": "socket",
   "version": "0.14.59",
   "description": "CLI tool for Socket.dev",
-  "homepage": "http://github.com/SocketDev/socket-cli",
+  "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT",
   "repository": {
     "type": "git",
