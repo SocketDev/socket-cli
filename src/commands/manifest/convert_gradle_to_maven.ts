@@ -31,9 +31,11 @@ export async function convertGradleToMaven(
   }
 
   try {
-    // Run sbt with the init script we provide which should yield zero or more pom files.
-    // We have to figure out where to store those pom files such that we can upload them and predict them through the GitHub API.
-    // We could do a .socket folder. We could do a socket.pom.gz with all the poms, although I'd prefer something plain-text if it is to be committed.
+    // Run sbt with the init script we provide which should yield zero or more
+    // pom files. We have to figure out where to store those pom files such that
+    // we can upload them and predict them through the GitHub API. We could do a
+    // .socket folder. We could do a socket.pom.gz with all the poms, although
+    // I'd prefer something plain-text if it is to be committed.
 
     // Note: init.gradle will be exported by .config/rollup.dist.config.mjs
     const initLocation = path.join(constants.rootDistPath, 'init.gradle')

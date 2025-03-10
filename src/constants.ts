@@ -254,19 +254,13 @@ const lazyNodeHardenFlags = () =>
     ? []
     : // Harden Node security.
       // https://nodejs.org/en/learn/getting-started/security-best-practices
-      [
-        '--disable-proto',
-        'delete',
-        // Lazily access constants.WIN32.
-        constants.WIN32
-          ? // We have contributed the following patches to our dependencies to make
-            // Node's --frozen-intrinsics workable.
-            // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
-            // √ https://github.com/pnpm/components/pull/23
-            ['--frozen-intrinsics']
-          : [],
-        '--no-deprecation'
-      ]
+      constants.WIN32
+      ? []
+      : // We have contributed the following patches to our dependencies to make
+        // Node's --frozen-intrinsics workable.
+        // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
+        // √ https://github.com/pnpm/components/pull/23
+        ['--disable-proto', 'delete', '--frozen-intrinsics', '--no-deprecation']
 
 const lazyRootBinPath = () =>
   // Lazily access constants.rootPath.
