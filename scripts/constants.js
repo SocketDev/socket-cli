@@ -9,7 +9,7 @@ const {
   NPM,
   NPX,
   PACKAGE_JSON,
-  PACKAGE_LOCK,
+  PACKAGE_LOCK_JSON,
   SOCKET_SECURITY_SCOPE,
   kInternalsSymbol,
   [kInternalsSymbol]: { createConstantsObject }
@@ -93,7 +93,7 @@ const lazyRootPackageJsonPath = () =>
 
 const lazyRootPackageLockPath = () =>
   // Lazily access constants.rootPath.
-  path.join(constants.rootPath, PACKAGE_LOCK)
+  path.join(constants.rootPath, PACKAGE_LOCK_JSON)
 
 const lazyRootPath = () => path.resolve(__dirname, '..')
 
