@@ -10,7 +10,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../../constants'
 import shadowBin from '../../shadow/npm/bin'
 
-const { NPM, NPX, PACKAGE_LOCK, PNPM, YARN, YARN_LOCK } = constants
+const { NPM, NPX, PACKAGE_LOCK_JSON, PNPM, YARN, YARN_LOCK } = constants
 
 const nodejsPlatformTypes = new Set([
   'javascript',
@@ -31,7 +31,7 @@ export async function runCycloneDX(yargv: any) {
     nodejsPlatformTypes.has(yargv.type) &&
     existsSync(`./${YARN_LOCK}`)
   ) {
-    if (existsSync(`./${PACKAGE_LOCK}`)) {
+    if (existsSync(`./${PACKAGE_LOCK_JSON}`)) {
       yargv.type = NPM
     } else {
       // Use synp to create a package-lock.json from the yarn.lock,
@@ -57,7 +57,7 @@ export async function runCycloneDX(yargv: any) {
   ])
   if (cleanupPackageLock) {
     try {
-      await fs.rm(`./${PACKAGE_LOCK}`)
+      await fs.rm(`./${PACKAGE_LOCK_JSON}`)
     } catch {}
   }
   const fullOutputPath = path.join(process.cwd(), yargv.output)

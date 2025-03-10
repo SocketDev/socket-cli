@@ -25,7 +25,7 @@ import type { SemVer } from 'semver'
 const {
   BINARY_LOCK_EXT,
   BUN,
-  HIDDEN_PACKAGE_LOCK,
+  HIDDEN_PACKAGE_LOCK_JSON,
   LOCK_EXT,
   NPM,
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
@@ -197,7 +197,7 @@ export async function detectPackageEnvironment({
 }: DetectOptions = {}): Promise<EnvDetails | PartialEnvDetails> {
   let lockPath = await findUp(Object.keys(LOCKS), { cwd })
   let lockName = lockPath ? path.basename(lockPath) : undefined
-  const isHiddenLockFile = lockName === HIDDEN_PACKAGE_LOCK
+  const isHiddenLockFile = lockName === HIDDEN_PACKAGE_LOCK_JSON
   const pkgJsonPath = lockPath
     ? path.resolve(
         lockPath,
