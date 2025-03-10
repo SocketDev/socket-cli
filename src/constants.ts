@@ -252,7 +252,8 @@ const lazyNmBinPath = () =>
 // https://nodejs.org/en/learn/getting-started/security-best-practices
 const lazyNodeHardenFlags = () =>
   // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]".
-  process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]
+  // Lazily access constants.WIN32.
+  process.env[INLINED_SOCKET_CLI_SENTRY_BUILD] || constants.WIN32
     ? []
     : // We have contributed the following patches to our dependencies to make
       // Node's --frozen-intrinsics workable.
