@@ -248,25 +248,17 @@ const lazyNmBinPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, `${NODE_MODULES}/.bin`)
 
+// Harden Node security.
+// https://nodejs.org/en/learn/getting-started/security-best-practices
 const lazyNodeHardenFlags = () =>
   // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]".
   process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]
     ? []
-    : // Harden Node security.
-      // https://nodejs.org/en/learn/getting-started/security-best-practices
-      [
-        '--disable-proto',
-        'delete',
-        // Lazily access constants.WIN32.
-        constants.WIN32
-          ? // We have contributed the following patches to our dependencies to make
-            // Node's --frozen-intrinsics workable.
-            // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
-            // √ https://github.com/pnpm/components/pull/23
-            ['--frozen-intrinsics']
-          : [],
-        '--no-deprecation'
-      ]
+    : // We have contributed the following patches to our dependencies to make
+      // Node's --frozen-intrinsics workable.
+      // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
+      // √ https://github.com/pnpm/components/pull/23
+      ['--disable-proto', 'delete', '--frozen-intrinsics', '--no-deprecation']
 
 const lazyRootBinPath = () =>
   // Lazily access constants.rootPath.

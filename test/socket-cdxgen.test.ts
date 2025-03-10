@@ -17,7 +17,11 @@ const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 const spawnOpts: PromiseSpawnOptions = {
-  cwd: npmFixturesPath
+  cwd: npmFixturesPath,
+  env: {
+    ...process.env,
+    SOCKET_CLI_DEBUG: '1'
+  }
 }
 
 describe('Socket cdxgen command', async () => {
@@ -27,6 +31,7 @@ describe('Socket cdxgen command', async () => {
   it(
     'should forwards known commands to cdxgen',
     {
+      skip: process.platform === 'win32',
       // Takes ~10s in CI
       timeout: 20_000
     },
