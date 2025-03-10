@@ -168,7 +168,7 @@
     "rollup-plugin-ts": "^3.4.5",
     "synp": "^1.9.14",
     "type-coverage": "^2.29.7",
-    "typescript": "5.4.5",
+    "typescript": "5.8.2",
     "typescript-eslint": "^8.26.0",
     "unplugin-purge-polyfills": "^0.0.7",
     "vitest": "3.0.8"
