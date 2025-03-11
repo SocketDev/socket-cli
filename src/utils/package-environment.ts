@@ -8,7 +8,6 @@ import which from 'which'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 import { Logger } from '@socketsecurity/registry/lib/logger'
-import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -41,18 +40,17 @@ export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
 export type Agent = (typeof AGENTS)[number]
 export type StringKeyValueObject = { [key: string]: string }
 
-const binByAgent = {
-  __proto__: null,
-  [BUN]: BUN,
-  [NPM]: NPM,
-  [PNPM]: PNPM,
-  [YARN_BERRY]: YARN,
-  [YARN_CLASSIC]: YARN,
-  [VLT]: VLT
-}
+const binByAgent = new Map<Agent, string>([
+  [BUN, BUN],
+  [NPM, NPM],
+  [PNPM, PNPM],
+  [YARN_BERRY, YARN],
+  [YARN_CLASSIC, YARN],
+  [VLT, VLT]
+])
 
 async function getAgentExecPath(agent: Agent): Promise<string> {
-  const binName = binByAgent[agent]
+  const binName = binByAgent.get(agent)!
   return (await which(binName, { nothrow: true })) ?? binName
 }
 
@@ -63,6 +61,9 @@ async function getAgentVersion(
   let result
   try {
     result =
+      // Coerce version output into a valid semver version by passing it through
+      // semver.coerce which strips leading v's, carets (^), comparators (<,<=,>,>=,=),
+      // and tildes (~).
       semver.coerce(
         // All package managers support the "--version" flag.
         (await spawn(agentExecPath, ['--version'], { cwd })).stdout
@@ -97,7 +98,7 @@ type ReadLockFile =
   | ((lockPath: string) => Promise<string | undefined>)
   | ((lockPath: string, agentExecPath: string) => Promise<string | undefined>)
 
-const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
+const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   function wrapReader<T extends (...args: any[]) => Promise<any>>(
     reader: T
   ): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>> | undefined> {
@@ -115,32 +116,35 @@ const readLockFileByAgent: Record<Agent, ReadLockFile> = (() => {
     async (lockPath: string) => await readFileUtf8(lockPath)
   )
 
-  return {
-    [BUN]: wrapReader(async (lockPath: string, agentExecPath: string) => {
-      const ext = path.extname(lockPath)
-      if (ext === LOCK_EXT) {
-        return await defaultReader(lockPath)
-      }
-      if (ext === BINARY_LOCK_EXT) {
-        const lockBuffer = await binaryReader(lockPath)
-        if (lockBuffer) {
-          try {
-            return parseBunLockb(lockBuffer)
-          } catch {}
+  return new Map([
+    [
+      BUN,
+      wrapReader(async (lockPath: string, agentExecPath: string) => {
+        const ext = path.extname(lockPath)
+        if (ext === LOCK_EXT) {
+          return await defaultReader(lockPath)
         }
-        // To print a Yarn lockfile to your console without writing it to disk
-        // use `bun bun.lockb`.
-        // https://bun.sh/guides/install/yarnlock
-        return (await spawn(agentExecPath, [lockPath])).stdout.trim()
-      }
-      return undefined
-    }),
-    [NPM]: defaultReader,
-    [PNPM]: defaultReader,
-    [VLT]: defaultReader,
-    [YARN_BERRY]: defaultReader,
-    [YARN_CLASSIC]: defaultReader
-  }
+        if (ext === BINARY_LOCK_EXT) {
+          const lockBuffer = await binaryReader(lockPath)
+          if (lockBuffer) {
+            try {
+              return parseBunLockb(lockBuffer)
+            } catch {}
+          }
+          // To print a Yarn lockfile to your console without writing it to disk
+          // use `bun bun.lockb`.
+          // https://bun.sh/guides/install/yarnlock
+          return (await spawn(agentExecPath, [lockPath])).stdout.trim()
+        }
+        return undefined
+      })
+    ],
+    [NPM, defaultReader],
+    [PNPM, defaultReader],
+    [VLT, defaultReader],
+    [YARN_BERRY, defaultReader],
+    [YARN_CLASSIC, defaultReader]
+  ])
 })()
 
 export type DetectOptions = {
@@ -151,17 +155,17 @@ export type DetectOptions = {
 type EnvBase = {
   agent: Agent
   agentExecPath: string
+  agentSupported: boolean
   features: {
     // Fixed by https://github.com/npm/cli/pull/8089.
     // Landed in npm v11.2.0.
     npmBuggyOverrides: boolean
   }
-  minimumNodeVersion: string
   npmExecPath: string
   pkgSupported: boolean
-  targets: {
-    browser: boolean
-    node: boolean
+  pkgRequirements: {
+    agent: string
+    node: string
   }
 }
 
@@ -221,13 +225,14 @@ export async function detectPackageEnvironment({
   let agent: Agent | undefined
   let agentVersion: SemVer | undefined
   if (pkgManager) {
+    // A valid "packageManager" field value is "<package manager name>@<version>".
+    // https://nodejs.org/api/packages.html#packagemanager
     const atSignIndex = pkgManager.lastIndexOf('@')
     if (atSignIndex !== -1) {
       const name = pkgManager.slice(0, atSignIndex) as Agent
       const version = pkgManager.slice(atSignIndex + 1)
       if (version && AGENTS.includes(name)) {
         agent = name
-        agentVersion = semver.coerce(version) ?? undefined
       }
     }
   }
@@ -244,7 +249,6 @@ export async function detectPackageEnvironment({
     onUnknown?.(pkgManager)
   }
   const agentExecPath = await getAgentExecPath(agent)
-
   const npmExecPath =
     agent === NPM ? agentExecPath : await getAgentExecPath(NPM)
   if (agentVersion === undefined) {
@@ -253,23 +257,31 @@ export async function detectPackageEnvironment({
   if (agent === YARN_CLASSIC && (agentVersion?.major ?? 0) > 1) {
     agent = YARN_BERRY
   }
-  const targets = {
-    browser: false,
-    node: true
-  }
-  let lockSrc: string | undefined
   // Lazily access constants.maintainedNodeVersions.
-  let minimumNodeVersion = constants.maintainedNodeVersions.last
+  const { maintainedNodeVersions } = constants
+  // Lazily access constants.minimumVersionByAgent.
+  const minSupportedAgentVersion = constants.minimumVersionByAgent.get(agent)!
+  const minSupportedNodeVersion = maintainedNodeVersions.last
+  let lockSrc: string | undefined
+  let pkgMinAgentVersion = minSupportedAgentVersion
+  let pkgMinNodeVersion = minSupportedNodeVersion
   if (pkgJson) {
-    const browserField = pkgJson.browser
-    if (isNonEmptyString(browserField) || isObjectObject(browserField)) {
-      targets.browser = true
-    }
+    const agentRange = pkgJson.engines?.[agent]
     const nodeRange = pkgJson.engines?.['node']
+    if (isNonEmptyString(agentRange)) {
+      // Roughly check agent range as semver.coerce will strip leading
+      // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
+      const coerced = semver.coerce(agentRange)
+      if (coerced && semver.lt(coerced, pkgMinAgentVersion)) {
+        pkgMinAgentVersion = coerced.version
+      }
+    }
     if (isNonEmptyString(nodeRange)) {
+      // Roughly check Node range as semver.coerce will strip leading
+      // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
       const coerced = semver.coerce(nodeRange)
-      if (coerced && semver.lt(coerced, minimumNodeVersion)) {
-        minimumNodeVersion = coerced.version
+      if (coerced && semver.lt(coerced, pkgMinNodeVersion)) {
+        pkgMinNodeVersion = coerced.version
       }
     }
     const browserslistQuery = pkgJson['browserslist'] as string[] | undefined
@@ -280,50 +292,56 @@ export async function detectPackageEnvironment({
       const browserslistNodeTargets = browserslistTargets
         .filter(v => v.startsWith('node '))
         .map(v => v.slice(5 /*'node '.length*/))
-      if (!targets.browser && browserslistTargets.length) {
-        targets.browser =
-          browserslistTargets.length !== browserslistNodeTargets.length
-      }
       if (browserslistNodeTargets.length) {
         const coerced = semver.coerce(browserslistNodeTargets[0])
-        if (coerced && semver.lt(coerced, minimumNodeVersion)) {
-          minimumNodeVersion = coerced.version
+        if (coerced && semver.lt(coerced, pkgMinNodeVersion)) {
+          pkgMinNodeVersion = coerced.version
         }
       }
     }
-    // Lazily access constants.maintainedNodeVersions.
-    targets.node = constants.maintainedNodeVersions.some(v =>
-      semver.satisfies(v, `>=${minimumNodeVersion}`)
-    )
     lockSrc =
       typeof lockPath === 'string'
-        ? await readLockFileByAgent[agent](lockPath, agentExecPath)
+        ? await readLockFileByAgent.get(agent)!(lockPath, agentExecPath)
         : undefined
   } else {
     lockName = undefined
     lockPath = undefined
   }
-  const pkgSupported = targets.browser || targets.node
+  // Does system agent version meet our minimum supported agent version?
+  const agentSupported =
+    !!agentVersion &&
+    semver.satisfies(agentVersion, `>=${minSupportedAgentVersion}`)
+
+  // Does our minimum supported agent version meet the package's requirements?
+  // Does our supported Node versions meet the package's requirements?
+  const pkgSupported =
+    semver.satisfies(minSupportedAgentVersion, `>=${pkgMinAgentVersion}`) &&
+    maintainedNodeVersions.some(v =>
+      semver.satisfies(v, `>=${pkgMinNodeVersion}`)
+    )
+
   const npmBuggyOverrides =
     agent === NPM &&
     !!agentVersion &&
     semver.lt(agentVersion, NPM_BUGGY_OVERRIDES_PATCHED_VERSION)
+
   return {
     agent,
     agentExecPath,
+    agentSupported,
     agentVersion,
+    features: { npmBuggyOverrides },
     lockName,
     lockPath,
     lockSrc,
-    minimumNodeVersion,
     npmExecPath,
     pkgJson: editablePkgJson,
     pkgPath,
     pkgSupported,
-    features: {
-      npmBuggyOverrides
-    },
-    targets
+    pkgRequirements: {
+      agent: pkgMinAgentVersion,
+      node: pkgMinNodeVersion
+    }
   }
 }
 

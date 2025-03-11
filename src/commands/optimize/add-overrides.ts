@@ -127,9 +127,13 @@ export async function addOverrides(
   const depAliasMap = new Map<string, string>()
   const depEntries = getDependencyEntries(pkgJson)
 
-  const nodeRange = `>=${pkgEnvDetails.minimumNodeVersion}`
   const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
-    semver.satisfies(semver.coerce(data.engines.node)!, nodeRange)
+    semver.satisfies(
+      // Roughly check Node range as semver.coerce will strip leading
+      // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
+      semver.coerce(data.engines.node)!,
+      `>=${pkgEnvDetails.pkgRequirements.node}`
+    )
   )
 
   // Chunk package names to process them in parallel 3 at a time.
@@ -150,11 +154,15 @@ export async function addOverrides(
         : undefined
       if (origSpec) {
         let thisSpec = origSpec
-        // Add package aliases for direct dependencies to avoid npm EOVERRIDE errors.
+        // Add package aliases for direct dependencies to avoid npm EOVERRIDE
+        // errors...
         // https://docs.npmjs.com/cli/v8/using-npm/package-spec#aliases
         if (
+          // ...if the spec doesn't start with a valid Socket override.
           !(
             thisSpec.startsWith(sockOverridePrefix) &&
+            // Check the validity of the spec by passing it through npa and
+            // seeing if it will coerce to a version.
             semver.coerce(npa(thisSpec).rawSpec)?.version
           )
         ) {
@@ -210,6 +218,11 @@ export async function addOverrides(
               if (
                 pin &&
                 semver.major(
+                  // Check the validity of the spec by passing it through npa
+                  // and seeing if it will coerce to a version. semver.coerce
+                  // will strip leading v's, carets (^), comparators (<,<=,>,>=,=),
+                  // and tildes (~). If not coerced to a valid version then
+                  // default to the manifest entry version.
                   semver.coerce(npa(thisSpec).rawSpec)?.version ?? version
                 ) !== major
               ) {
