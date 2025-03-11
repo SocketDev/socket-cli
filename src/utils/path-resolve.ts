@@ -27,7 +27,7 @@ async function filterGlobResultToSupportedFiles(
   entries: string[],
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data']
 ): Promise<string[]> {
-  const patterns = ['golang', NPM, 'maven', 'pypi'].reduce(
+  const patterns = ['golang', NPM, 'maven', 'pypi', 'gem', 'nuget'].reduce(
     (r: string[], n: string) => {
       const supported = supportedFiles[n]
       r.push(
