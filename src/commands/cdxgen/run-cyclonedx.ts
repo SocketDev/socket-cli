@@ -23,9 +23,10 @@ const nodejsPlatformTypes = new Set([
   'typescript'
 ])
 
-export async function runCycloneDX(yargv: any) {
+export async function runCycloneDX(yargvWithYes: any) {
   let cleanupPackageLock = false
-  const yesArgs = yargv.yes ? ['--yes'] : []
+  const { yes, ...yargv } = { __proto__: null, ...yargvWithYes }
+  const yesArgs = yes ? ['--yes'] : []
   if (
     yargv.type !== YARN &&
     nodejsPlatformTypes.has(yargv.type) &&
