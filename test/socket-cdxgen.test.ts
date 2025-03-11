@@ -31,7 +31,6 @@ describe('Socket cdxgen command', async () => {
   it(
     'should forwards known commands to cdxgen',
     {
-      skip: process.platform === 'win32',
       // Takes ~10s in CI
       timeout: 20_000
     },
