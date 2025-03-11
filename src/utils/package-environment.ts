@@ -286,13 +286,13 @@ export async function detectPackageEnvironment({
     }
     const browserslistQuery = pkgJson['browserslist'] as string[] | undefined
     if (Array.isArray(browserslistQuery)) {
-      const browserslistTargets = browserslist(browserslistQuery)
-        .map(s => s.toLowerCase())
-        .sort(naturalCompare)
-      const browserslistNodeTargets = browserslistTargets
-        .filter(v => v.startsWith('node '))
+      // List Node targets in ascending version order.
+      const browserslistNodeTargets = browserslist(browserslistQuery)
+        .filter(v => /^node /i.test(v))
         .map(v => v.slice(5 /*'node '.length*/))
+        .sort(naturalCompare)
       if (browserslistNodeTargets.length) {
+        // browserslistNodeTargets[0] is the lowest Node target version.
         const coerced = semver.coerce(browserslistNodeTargets[0])
         if (coerced && semver.lt(coerced, pkgMinNodeVersion)) {
           pkgMinNodeVersion = coerced.version
@@ -307,7 +307,7 @@ export async function detectPackageEnvironment({
     lockName = undefined
     lockPath = undefined
   }
-  // Does system agent version meet our minimum supported agent version?
+  // Does the system agent version meet our minimum supported agent version?
   const agentSupported =
     !!agentVersion &&
     semver.satisfies(agentVersion, `>=${minSupportedAgentVersion}`)
