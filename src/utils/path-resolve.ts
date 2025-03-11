@@ -1,4 +1,4 @@
-import { existsSync, promises as fs, realpathSync, statSync } from 'node:fs'
+import { existsSync, promises as fs, statSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
@@ -8,6 +8,7 @@ import { glob as tinyGlob } from 'tinyglobby'
 import which from 'which'
 
 import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { resolveBinPath } from '@socketsecurity/registry/lib/npm'
 
 import { directoryPatterns } from './ignore-by-default'
 import constants from '../constants'
@@ -179,27 +180,29 @@ export function findBinPathDetailsSync(binName: string): {
   path: string | undefined
   shadowed: boolean
 } {
-  let shadowIndex = -1
-  const bins =
+  const binPaths =
     which.sync(binName, {
       all: true,
       nothrow: true
     }) ?? []
-  let binPath: string | undefined
-  for (let i = 0, { length } = bins; i < length; i += 1) {
-    const bin = realpathSync.native(bins[i]!)
+  let shadowIndex = -1
+  let theBinPath: string | undefined
+  for (let i = 0, { length } = binPaths; i < length; i += 1) {
+    const binPath = binPaths[i]!
     // Skip our bin directory if it's in the front.
-    if (path.dirname(bin) === shadowBinPath) {
+    if (path.dirname(binPath) === shadowBinPath) {
       shadowIndex = i
     } else {
-      binPath = bin
+      theBinPath = resolveBinPath(binPath)
       break
     }
   }
-  return { name: binName, path: binPath, shadowed: shadowIndex !== -1 }
+  return { name: binName, path: theBinPath, shadowed: shadowIndex !== -1 }
 }
 
 export function findNpmPathSync(npmBinPath: string): string | undefined {
+  // Lazily access constants.WIN32.
+  const { WIN32 } = constants
   let thePath = npmBinPath
   while (true) {
     const nmPath = path.join(thePath, NODE_MODULES)
@@ -223,8 +226,7 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
       // Optimistically look for the default location.
       (path.basename(thePath) === NPM ||
         // Chocolatey installs npm bins in the same directory as node bins.
-        // Lazily access constants.WIN32.
-        (constants.WIN32 && existsSync(path.join(thePath, `${NPM}.cmd`))))
+        (WIN32 && existsSync(path.join(thePath, `${NPM}.cmd`))))
     ) {
       return thePath
     }
