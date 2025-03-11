@@ -144,7 +144,7 @@ async function run(
   const cli = meowOrExit({
     allowUnknownFlags: true,
     // Don't let meow take over --help.
-    argv: argv.filter(isHelpFlag),
+    argv: argv.filter(a => !isHelpFlag(a)),
     config,
     importMeta,
     parentName
