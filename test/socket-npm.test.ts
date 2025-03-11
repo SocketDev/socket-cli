@@ -67,9 +67,9 @@ for (const npmDir of ['npm8', 'npm9', 'npm10', 'npm11']) {
               spawnPromise.process.kill('SIGINT')
             }
           })
-          spawnPromise.catch(() => {
+          spawnPromise.catch((e: unknown) => {
             spawnPromise.process.kill('SIGINT')
-            reject(new Error('Received a SIGINT'))
+            reject(e)
           })
         })
 
