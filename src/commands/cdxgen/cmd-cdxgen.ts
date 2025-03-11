@@ -8,6 +8,7 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { runCycloneDX } from './run-cyclonedx'
 import constants from '../../constants'
+import { isHelpFlag } from '../../utils/cmd'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -143,7 +144,7 @@ async function run(
   const cli = meowOrExit({
     allowUnknownFlags: true,
     // Don't let meow take over --help.
-    argv: argv.filter(s => s !== '--help' && s !== '-h'),
+    argv: argv.filter(isHelpFlag),
     config,
     importMeta,
     parentName
