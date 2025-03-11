@@ -30,7 +30,7 @@ export class GitHub {
     switch (process.env['GITHUB_EVENT_NAME']) {
       case 'push':
         return this.prNumber ? 'diff' : 'main'
-      case 'pull_request':
+      case 'pull_request': {
         // This env variable needs to be set in the GitHub action.
         // Add this code below to GitHub action:
         // - steps:
@@ -38,15 +38,15 @@ export class GitHub {
         //     if: github.event_name == 'pull_request'
         //     run: echo "EVENT_ACTION=${{ github.event.action }}" >> $GITHUB_ENV
         const eventAction = process.env['EVENT_ACTION']
+        if (eventAction === 'opened' || eventAction === 'synchronize') {
+          return 'diff'
+        }
         if (!eventAction) {
           throw new Error('Missing event action')
         }
-        if (['opened', 'synchronize'].includes(eventAction)) {
-          return 'diff'
-        } else {
-          logger.log(`Pull request action: ${eventAction} is not supported`)
-          process.exit()
-        }
+        logger.log(`Pull request action: ${eventAction} is not supported`)
+        process.exit()
+      }
       case 'issue_comment':
         return 'comment'
       default:

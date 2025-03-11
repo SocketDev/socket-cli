@@ -1,3 +1,5 @@
+const helpFlags = new Set(['--help', '-h'])
+
 export function cmdFlagsToString(args: string[]) {
   const result = []
   for (let i = 0, { length } = args; i < length; i += 1) {
@@ -17,4 +19,8 @@ export function cmdFlagsToString(args: string[]) {
 export function cmdPrefixMessage(cmdName: string, text: string): string {
   const cmdPrefix = cmdName ? `${cmdName}: ` : ''
   return `${cmdPrefix}${text}`
+}
+
+export function isHelpFlag(cmdArg: string) {
+  return helpFlags.has(cmdArg)
 }

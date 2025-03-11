@@ -69,10 +69,14 @@ export async function runCycloneDX(yargv: any) {
 function argvToArray(argv: {
   [key: string]: boolean | null | number | string | Array<string | number>
 }): string[] {
-  if (argv['help']) return ['--help']
+  if (argv['help']) {
+    return ['--help']
+  }
   const result = []
   for (const { 0: key, 1: value } of Object.entries(argv)) {
-    if (key === '_' || key === '--') continue
+    if (key === '_' || key === '--') {
+      continue
+    }
     if (key === 'babel' || key === 'install-deps' || key === 'validate') {
       // cdxgen documents no-babel, no-install-deps, and no-validate flags so
       // use them when relevant.
