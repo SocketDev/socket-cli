@@ -6,6 +6,7 @@ import process from 'node:process'
 import registryConstants from '@socketsecurity/registry/lib/constants'
 import { envAsBoolean } from '@socketsecurity/registry/lib/env'
 
+import type { Agent } from './utils/package-environment'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 
 const {
@@ -117,6 +118,7 @@ type Constants = Remap<
     readonly distShadowNpmBinPath: string
     readonly distShadowNpmInjectPath: string
     readonly homePath: string
+    readonly minimumVersionByAgent: Map<Agent, string>
     readonly nmBinPath: string
     readonly nodeHardenFlags: string[]
     readonly rootBinPath: string
