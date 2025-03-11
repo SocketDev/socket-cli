@@ -132,7 +132,7 @@ export async function addOverrides(
       // Roughly check Node range as semver.coerce will strip leading
       // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
       semver.coerce(data.engines.node)!,
-      `>=${pkgEnvDetails.pkgRequirements.node}`
+      pkgEnvDetails.pkgRequirements.node
     )
   )
 

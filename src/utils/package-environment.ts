@@ -266,8 +266,9 @@ export async function detectPackageEnvironment({
   let pkgMinAgentVersion = minSupportedAgentVersion
   let pkgMinNodeVersion = minSupportedNodeVersion
   if (pkgJson) {
-    const agentRange = pkgJson.engines?.[agent]
-    const nodeRange = pkgJson.engines?.['node']
+    const { engines } = pkgJson
+    const agentRange = engines?.[agent]
+    const nodeRange = engines?.['node']
     if (isNonEmptyString(agentRange)) {
       // Roughly check agent range as semver.coerce will strip leading
       // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
@@ -339,8 +340,8 @@ export async function detectPackageEnvironment({
     pkgPath,
     pkgSupported,
     pkgRequirements: {
-      agent: pkgMinAgentVersion,
-      node: pkgMinNodeVersion
+      agent: `>=${pkgMinAgentVersion}`,
+      node: `>=${pkgMinNodeVersion}`
     }
   }
 }
@@ -373,17 +374,31 @@ export async function detectAndValidatePackageEnvironment(
       )
     }
   })
-  if (!details.pkgSupported) {
-    logger?.fail(
-      cmdPrefixMessage(cmdName, 'No supported Node or browser range detected')
-    )
-    return
-  }
-  if (details.agent === VLT) {
+  const { agent, agentVersion } = details
+  if (!details.agentSupported) {
+    const minVersion = constants.minimumVersionByAgent.get(agent)!
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
-        `${details.agent} does not support overrides. Soon, though ⚡`
+        `Requires ${agent} >=${minVersion}. Current version: ${agentVersion ?? 'unknown'}.`
+      )
+    )
+    return
+  }
+  if (!details.pkgSupported) {
+    logger?.fail(
+      cmdPrefixMessage(
+        cmdName,
+        `Package engine "node" or "${agent}" range not met`
+      )
+    )
+    return
+  }
+  if (agent === VLT) {
+    logger?.fail(
+      cmdPrefixMessage(
+        cmdName,
+        `${agent} does not support overrides. Soon, though ⚡`
       )
     )
     return
@@ -401,11 +416,11 @@ export async function detectAndValidatePackageEnvironment(
     logger?.fail(cmdPrefixMessage(cmdName, `No ${PACKAGE_JSON} found`))
     return
   }
-  if (prod && (details.agent === BUN || details.agent === YARN_BERRY)) {
+  if (prod && (agent === BUN || agent === YARN_BERRY)) {
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
-        `--prod not supported for ${details.agent}${details.agentVersion ? `@${details.agentVersion.version}` : ''}`
+        `--prod not supported for ${agent}${agentVersion ? `@${agentVersion}` : ''}`
       )
     )
     return
