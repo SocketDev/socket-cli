@@ -244,12 +244,34 @@ const lazyDistShadowNpmInjectPath = () =>
 
 const lazyHomePath = () => os.homedir()
 
+const lazyMinimumVersionByAgent = () =>
+  new Map([
+    // Bun >=1.1.39 supports the text-based lockfile.
+    // https://bun.sh/blog/bun-lock-text-lockfile
+    [BUN, '1.1.39'],
+    // The npm version bundled with Node 18.
+    // https://nodejs.org/en/about/previous-releases#looking-for-the-latest-release-of-a-version-branch
+    [NPM, '10.8.2'],
+    // 8.x is the earliest version to support Node 18.
+    // https://pnpm.io/installation#compatibility
+    // https://www.npmjs.com/package/pnpm?activeTab=versions
+    [PNPM, '8.15.9'],
+    // 4.x supports >= Node 18.12.0
+    // https://github.com/yarnpkg/berry/blob/%40yarnpkg/core/4.1.0/CHANGELOG.md#400
+    [YARN_BERRY, '4.0.0'],
+    // Latest 1.x.
+    // https://www.npmjs.com/package/yarn?activeTab=versions
+    [YARN_CLASSIC, '1.22.22'],
+    // vlt does not support overrides so we don't gate on it.
+    [VLT, '*']
+  ])
+
 const lazyNmBinPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, `${NODE_MODULES}/.bin`)
 
-// Redefine nodeHardenFlags to account for the INLINED_SOCKET_CLI_SENTRY_BUILD
-// environment variable.
+// Redefine registryConstants.nodeHardenFlags to account for the
+// INLINED_SOCKET_CLI_SENTRY_BUILD environment variable.
 const lazyNodeHardenFlags = () =>
   // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]".
   // Lazily access constants.WIN32.
@@ -347,6 +369,7 @@ const constants = createConstantsObject(
     distShadowNpmBinPath: undefined,
     distShadowNpmInjectPath: undefined,
     homePath: undefined,
+    minimumVersionByAgent: undefined,
     nmBinPath: undefined,
     nodeHardenFlags: undefined,
     rootBinPath: undefined,
@@ -367,6 +390,7 @@ const constants = createConstantsObject(
       distShadowNpmBinPath: lazyDistShadowNpmBinPath,
       distShadowNpmInjectPath: lazyDistShadowNpmInjectPath,
       homePath: lazyHomePath,
+      minimumVersionByAgent: lazyMinimumVersionByAgent,
       nmBinPath: lazyNmBinPath,
       nodeHardenFlags: lazyNodeHardenFlags,
       rootBinPath: lazyRootBinPath,
