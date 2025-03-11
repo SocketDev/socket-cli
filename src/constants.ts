@@ -248,14 +248,16 @@ const lazyNmBinPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, `${NODE_MODULES}/.bin`)
 
-// Harden Node security.
-// https://nodejs.org/en/learn/getting-started/security-best-practices
+// Redefine nodeHardenFlags to account for the INLINED_SOCKET_CLI_SENTRY_BUILD
+// environment variable.
 const lazyNodeHardenFlags = () =>
   // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]".
   // Lazily access constants.WIN32.
   process.env[INLINED_SOCKET_CLI_SENTRY_BUILD] || constants.WIN32
     ? []
-    : // We have contributed the following patches to our dependencies to make
+    : // Harden Node security.
+      // https://nodejs.org/en/learn/getting-started/security-best-practices
+      // We have contributed the following patches to our dependencies to make
       // Node's --frozen-intrinsics workable.
       // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
       // √ https://github.com/pnpm/components/pull/23
