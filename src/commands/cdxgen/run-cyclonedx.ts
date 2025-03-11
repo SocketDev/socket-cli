@@ -25,7 +25,7 @@ const nodejsPlatformTypes = new Set([
 
 export async function runCycloneDX(yargvWithYes: any) {
   let cleanupPackageLock = false
-  const { yes, ...yargv } = { __proto__: null, ...yargvWithYes }
+  const { yes, ...yargv } = { __proto__: null, ...yargvWithYes } as any
   const yesArgs = yes ? ['--yes'] : []
   if (
     yargv.type !== YARN &&
