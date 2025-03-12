@@ -161,11 +161,16 @@ type EnvBase = {
     // Landed in npm v11.2.0.
     npmBuggyOverrides: boolean
   }
+  nodeSupported: boolean
+  nodeVersion: SemVer
   npmExecPath: string
-  pkgSupported: boolean
   pkgRequirements: {
     agent: string
     node: string
+  }
+  pkgSupports: {
+    agent: boolean
+    node: boolean
   }
 }
 
@@ -262,25 +267,30 @@ export async function detectPackageEnvironment({
   // Lazily access constants.minimumVersionByAgent.
   const minSupportedAgentVersion = constants.minimumVersionByAgent.get(agent)!
   const minSupportedNodeVersion = maintainedNodeVersions.last
+  const nodeVersion = semver.coerce(process.version)!
   let lockSrc: string | undefined
+  let pkgAgentRange: string | undefined
+  let pkgNodeRange: string | undefined
   let pkgMinAgentVersion = minSupportedAgentVersion
   let pkgMinNodeVersion = minSupportedNodeVersion
   if (pkgJson) {
     const { engines } = pkgJson
-    const agentRange = engines?.[agent]
-    const nodeRange = engines?.['node']
-    if (isNonEmptyString(agentRange)) {
+    const engineAgentRange = engines?.[agent]
+    const engineNodeRange = engines?.['node']
+    if (isNonEmptyString(engineAgentRange)) {
+      pkgAgentRange = engineAgentRange
       // Roughly check agent range as semver.coerce will strip leading
       // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
-      const coerced = semver.coerce(agentRange)
+      const coerced = semver.coerce(pkgAgentRange)
       if (coerced && semver.lt(coerced, pkgMinAgentVersion)) {
         pkgMinAgentVersion = coerced.version
       }
     }
-    if (isNonEmptyString(nodeRange)) {
+    if (isNonEmptyString(engineNodeRange)) {
+      pkgNodeRange = engineNodeRange
       // Roughly check Node range as semver.coerce will strip leading
       // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
-      const coerced = semver.coerce(nodeRange)
+      const coerced = semver.coerce(pkgNodeRange)
       if (coerced && semver.lt(coerced, pkgMinNodeVersion)) {
         pkgMinNodeVersion = coerced.version
       }
@@ -313,13 +323,11 @@ export async function detectPackageEnvironment({
     !!agentVersion &&
     semver.satisfies(agentVersion, `>=${minSupportedAgentVersion}`)
 
-  // Does our minimum supported agent version meet the package's requirements?
-  // Does our supported Node versions meet the package's requirements?
-  const pkgSupported =
-    semver.satisfies(minSupportedAgentVersion, `>=${pkgMinAgentVersion}`) &&
-    maintainedNodeVersions.some(v =>
-      semver.satisfies(v, `>=${pkgMinNodeVersion}`)
-    )
+  // Does the system Node version meet our minimum supported Node version?
+  const nodeSupported = semver.satisfies(
+    nodeVersion,
+    `>=${minSupportedNodeVersion}`
+  )
 
   const npmBuggyOverrides =
     agent === NPM &&
@@ -335,13 +343,25 @@ export async function detectPackageEnvironment({
     lockName,
     lockPath,
     lockSrc,
+    nodeSupported,
+    nodeVersion,
     npmExecPath,
     pkgJson: editablePkgJson,
     pkgPath,
-    pkgSupported,
     pkgRequirements: {
-      agent: `>=${pkgMinAgentVersion}`,
-      node: `>=${pkgMinNodeVersion}`
+      agent: pkgAgentRange ?? `>=${pkgMinAgentVersion}`,
+      node: pkgNodeRange ?? `>=${pkgMinNodeVersion}`
+    },
+    pkgSupports: {
+      // Does our minimum supported agent version meet the package's requirements?
+      agent: semver.satisfies(
+        minSupportedAgentVersion,
+        `>=${pkgMinAgentVersion}`
+      ),
+      // Does our supported Node versions meet the package's requirements?
+      node: maintainedNodeVersions.some(v =>
+        semver.satisfies(v, `>=${pkgMinNodeVersion}`)
+      )
     }
   }
 }
@@ -374,22 +394,42 @@ export async function detectAndValidatePackageEnvironment(
       )
     }
   })
-  const { agent, agentVersion } = details
+  const { agent, nodeVersion, pkgRequirements } = details
+  const agentVersion = details.agentVersion ?? 'unknown'
   if (!details.agentSupported) {
     const minVersion = constants.minimumVersionByAgent.get(agent)!
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
-        `Requires ${agent} >=${minVersion}. Current version: ${agentVersion ?? 'unknown'}.`
+        `Requires ${agent} >=${minVersion}. Current version: ${agentVersion}.`
       )
     )
     return
   }
-  if (!details.pkgSupported) {
+  if (!details.nodeSupported) {
+    const minVersion = constants.maintainedNodeVersions.last
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
-        `Package engine "node" or "${agent}" range not met`
+        `Requires Node >=${minVersion}. Current version: ${nodeVersion}.`
+      )
+    )
+    return
+  }
+  if (!details.pkgSupports.agent) {
+    logger?.fail(
+      cmdPrefixMessage(
+        cmdName,
+        `Package engine "${agent}" requires ${pkgRequirements.agent}. Current version: ${agentVersion}`
+      )
+    )
+    return
+  }
+  if (!details.pkgSupports.node) {
+    logger?.fail(
+      cmdPrefixMessage(
+        cmdName,
+        `Package engine "node" requires ${pkgRequirements.node}. Current version: ${nodeVersion}`
       )
     )
     return
