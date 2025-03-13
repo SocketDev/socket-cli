@@ -25,6 +25,10 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
       ? resultErrorMessage
       : 'No error message returned'
   if (result.status === 401 || result.status === 403) {
+    // Lazily access constants.spinner.
+    const { spinner } = constants
+    spinner.stop()
+
     throw new AuthError(message)
   }
   logger.fail(

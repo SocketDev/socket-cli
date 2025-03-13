@@ -1,13 +1,12 @@
-import { cmdOrganizationList } from './cmd-organization-list'
-import { cmdOrganizationPolicy } from './cmd-organization-policy'
-import { cmdOrganizationQuota } from './cmd-organization-quota'
+import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license'
+import { cmdOrganizationPolicyPolicy } from './cmd-organization-policy-security'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
-const description = 'Account details'
+const description = 'Organization policy details'
 
-export const cmdOrganization: CliSubcommand = {
+export const cmdOrganizationPolicy: CliSubcommand = {
   description,
   // Hidden because it was broken all this time (nobody could be using it)
   // and we're not sure if it's useful to anyone in its current state.
@@ -17,16 +16,15 @@ export const cmdOrganization: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        list: cmdOrganizationList,
-        quota: cmdOrganizationQuota,
-        policy: cmdOrganizationPolicy
+        license: cmdOrganizationPolicyLicense,
+        security: cmdOrganizationPolicyPolicy
       },
       {
         argv,
         description,
         defaultSub: 'list', // Backwards compat
         importMeta,
-        name: parentName + ' organization'
+        name: parentName + ' policy'
       }
     )
   }
