@@ -13,24 +13,27 @@ export function formatReportDataOutput(
   reportId: string,
   data: ReportData,
   commandName: string,
-  outputJson: boolean,
-  outputMarkdown: boolean,
-  strict: boolean
+  outputKind: 'json' | 'markdown' | 'print',
+  strict: boolean,
+  artifacts: any
 ): void {
-  if (outputJson) {
+  if (outputKind === 'json') {
     logger.log(JSON.stringify(data, undefined, 2))
   } else {
-    const format = new ColorOrMarkdown(outputMarkdown)
+    const format = new ColorOrMarkdown(outputKind === 'markdown')
     logger.log(stripIndents`
       Detailed info on socket.dev: ${format.hyperlink(reportId, data.url, {
         fallbackToUrl: true
       })}`)
-    if (!outputMarkdown) {
+    if (outputKind === 'print') {
+      logger.log(data)
       logger.log(
         colors.dim(
           `Or rerun ${colors.italic(commandName)} using the ${colors.italic('--json')} flag to get full JSON output`
         )
       )
+      logger.log('The scan:')
+      logger.log(artifacts)
     }
   }
 

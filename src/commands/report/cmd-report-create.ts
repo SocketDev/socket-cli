@@ -88,8 +88,7 @@ async function run(
       await viewReport(reportId, {
         all: includeAllIssues,
         commandName,
-        json,
-        markdown,
+        outputKind: json ? 'json' : markdown ? 'markdown' : 'print',
         strict
       })
     } else if (json) {

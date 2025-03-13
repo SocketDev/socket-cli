@@ -24,7 +24,8 @@ export async function fetchReportData(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  spinner.start(`Fetching report with ID ${reportId} (this could take a while)`)
+  spinner.log('Fetching report with ID ${reportId} (this could take a while)')
+  spinner.start(`Fetch started... (this could take a while)`)
 
   const socketSdk = await setupSdk()
   let result: SocketSdkResultType<'getReport'> | undefined
@@ -41,9 +42,10 @@ export async function fetchReportData(
         !(err instanceof Error) ||
         (err.cause as any)?.cause?.response?.statusCode !== HTTP_CODE_TIMEOUT
       ) {
-        spinner.stop()
+        spinner.stop(`Failed to fetch report`)
         throw err
       }
+      spinner?.fail(`Retrying report fetch ${retry} / ${MAX_TIMEOUT_RETRY}`)
     }
   }
 
