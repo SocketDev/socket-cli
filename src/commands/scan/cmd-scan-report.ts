@@ -34,11 +34,11 @@ const config: CliCommandConfig = {
       default: 'warn',
       description: 'Which policy level alerts should be reported'
     },
-    license: {
-      type: 'boolean',
-      default: true,
-      description: 'Report the license policy status. Default: true'
-    },
+    // license: {
+    //   type: 'boolean',
+    //   default: true,
+    //   description: 'Report the license policy status. Default: true'
+    // },
     security: {
       type: 'boolean',
       default: true,
@@ -57,10 +57,7 @@ const config: CliCommandConfig = {
     Note: By default it reports both so by default it consumes 3 quota units.
 
     Your API token will need the \`full-scans:list\` scope regardless. Additionally
-    it needs \`security-policy:read\` to report on the security policy and it needs
-    the \`license-policy:read\` scope to report on the license policy.
-
-    (Use \`--no-security\` or \`--no-license\` to omit one)
+    it needs \`security-policy:read\` to report on the security policy.
 
     By default the result is a nested object that looks like this:
       \`{[ecosystem]: {[pkgName]: {[version]: {[file]: {[type:loc]: policy}}}}\`
@@ -95,7 +92,7 @@ async function run(
   const {
     fold = 'none',
     json,
-    license,
+    // license,
     markdown,
     reportLevel = 'warn',
     security
@@ -106,8 +103,8 @@ async function run(
   if (
     !orgSlug ||
     !fullScanId ||
-    (json && markdown) ||
-    (!license && !security)
+    // (!license && !security) ||
+    (json && markdown)
   ) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
     // options or missing arguments.
@@ -122,9 +119,8 @@ async function run(
       - Full Scan ID to fetch as second argument ${!fullScanId ? colors.red('(missing!)') : colors.green('(ok)')}
 
       - Not both the --json and --markdown flags ${json && markdown ? colors.red('(pick one!)') : colors.green('(ok)')}
-
-      - At least one policy to report ${!license && !security ? colors.red('(do not omit both!)') : colors.green('(ok)')}
     `
+      // - At least one policy to report ${!license && !security ? colors.red('(do not omit both!)') : colors.green('(ok)')}
     )
     return
   }
@@ -137,7 +133,7 @@ async function run(
   await reportFullScan({
     orgSlug,
     fullScanId,
-    includeLicensePolicy: !!license,
+    includeLicensePolicy: false, // !!license,
     includeSecurityPolicy: !!security,
     outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
     filePath: file,

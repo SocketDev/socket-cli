@@ -17,24 +17,24 @@ import { getDefaultToken, setupSdk } from '../../utils/sdk'
 export async function fetchReportData(
   orgSlug: string,
   fullScanId: string,
-  includeLicensePolicy: boolean,
+  // includeLicensePolicy: boolean,
   includeSecurityPolicy: boolean
 ): Promise<
   | {
       ok: true
       scan: Array<components['schemas']['SocketArtifact']>
-      licensePolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'>
+      // licensePolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'>
       securityPolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'>
     }
   | {
       ok: false
       scan: undefined
-      licensePolicy: undefined
+      // licensePolicy: undefined
       securityPolicy: undefined
     }
 > {
   let haveScan = false
-  let haveLicensePolicy = false
+  // let haveLicensePolicy = false
   let haveSecurityPolicy = false
 
   // Lazily access constants.spinner.
@@ -43,7 +43,7 @@ export async function fetchReportData(
   function updateProgress() {
     const needs = [
       !haveScan ? 'scan' : undefined,
-      includeLicensePolicy && !haveLicensePolicy ? 'license policy' : undefined,
+      // includeLicensePolicy && !haveLicensePolicy ? 'license policy' : undefined,
       includeSecurityPolicy && !haveSecurityPolicy
         ? 'security policy'
         : undefined
@@ -54,7 +54,7 @@ export async function fetchReportData(
     }
     const haves = [
       haveScan ? 'scan' : undefined,
-      includeLicensePolicy && haveLicensePolicy ? 'license policy' : undefined,
+      // includeLicensePolicy && haveLicensePolicy ? 'license policy' : undefined,
       includeSecurityPolicy && haveSecurityPolicy
         ? 'security policy'
         : undefined
@@ -87,9 +87,13 @@ export async function fetchReportData(
   const socketSdk = await setupSdk(apiToken)
 
   // @ts-ignore
-  const [scan, licensePolicyMaybe, securityPolicyMaybe]: [
+  const [
+    scan,
+    // licensePolicyMaybe,
+    securityPolicyMaybe
+  ]: [
     undefined | Array<components['schemas']['SocketArtifact']>,
-    undefined | SocketSdkResultType<'getOrgSecurityPolicy'>,
+    // undefined | SocketSdkResultType<'getOrgSecurityPolicy'>,
     undefined | SocketSdkResultType<'getOrgSecurityPolicy'>
   ] = await Promise.all([
     (async () => {
@@ -131,16 +135,16 @@ export async function fetchReportData(
         throw e
       }
     })(),
-    includeLicensePolicy &&
-      (async () => {
-        const r = await socketSdk.getOrgSecurityPolicy(orgSlug)
-        haveLicensePolicy = true
-        updateProgress()
-        return await handleApiCall(
-          r,
-          "looking up organization's license policy"
-        )
-      })(),
+    // includeLicensePolicy &&
+    //   (async () => {
+    //     const r = await socketSdk.getOrgSecurityPolicy(orgSlug)
+    //     haveLicensePolicy = true
+    //     updateProgress()
+    //     return await handleApiCall(
+    //       r,
+    //       "looking up organization's license policy"
+    //     )
+    //   })(),
     includeSecurityPolicy &&
       (async () => {
         const r = await socketSdk.getOrgSecurityPolicy(orgSlug)
@@ -159,28 +163,28 @@ export async function fetchReportData(
     return {
       ok: false,
       scan: undefined,
-      licensePolicy: undefined,
+      // licensePolicy: undefined,
       securityPolicy: undefined
     }
   }
 
-  // Note: security->license once the api ships in the sdk
-  let licensePolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'> =
-    undefined
-  if (includeLicensePolicy) {
-    if (licensePolicyMaybe && licensePolicyMaybe.success) {
-      licensePolicy = licensePolicyMaybe
-    } else {
-      logger.error('Was unable to fetch license policy, bailing')
-      process.exitCode = 1
-      return {
-        ok: false,
-        scan: undefined,
-        licensePolicy: undefined,
-        securityPolicy: undefined
-      }
-    }
-  }
+  // // Note: security->license once the api ships in the sdk
+  // let licensePolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'> =
+  //   undefined
+  // if (includeLicensePolicy) {
+  //   if (licensePolicyMaybe && licensePolicyMaybe.success) {
+  //     licensePolicy = licensePolicyMaybe
+  //   } else {
+  //     logger.error('Was unable to fetch license policy, bailing')
+  //     process.exitCode = 1
+  //     return {
+  //       ok: false,
+  //       scan: undefined,
+  //       licensePolicy: undefined,
+  //       securityPolicy: undefined
+  //     }
+  //   }
+  // }
 
   let securityPolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'> =
     undefined
@@ -193,11 +197,16 @@ export async function fetchReportData(
       return {
         ok: false,
         scan: undefined,
-        licensePolicy: undefined,
+        // licensePolicy: undefined,
         securityPolicy: undefined
       }
     }
   }
 
-  return { ok: true, scan, licensePolicy, securityPolicy }
+  return {
+    ok: true,
+    scan,
+    // licensePolicy,
+    securityPolicy
+  }
 }

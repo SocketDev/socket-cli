@@ -39,21 +39,31 @@ export async function reportFullScan({
     return // caller should assert
   }
 
-  const { licensePolicy, ok, scan, securityPolicy } = await fetchReportData(
+  const {
+    // licensePolicy,
+    ok,
+    scan,
+    securityPolicy
+  } = await fetchReportData(
     orgSlug,
     fullScanId,
-    includeLicensePolicy,
-    includeSecurityPolicy
+    includeLicensePolicy
+    // includeSecurityPolicy
   )
 
   if (!ok) {
     return
   }
 
-  const report = generateReport(scan, licensePolicy, securityPolicy, {
-    fold,
-    reportLevel
-  })
+  const report = generateReport(
+    scan,
+    undefined, // licensePolicy,
+    securityPolicy,
+    {
+      fold,
+      reportLevel
+    }
+  )
 
   if (outputKind === 'json') {
     const obj = mapToObject(report.alerts)

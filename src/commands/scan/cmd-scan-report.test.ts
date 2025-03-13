@@ -25,7 +25,6 @@ describe('socket scan report', async () => {
           --fold            Fold reported alerts to some degree
           --help            Print this help.
           --json            Output result as json
-          --license         Report the license policy status. Default: true
           --markdown        Output result as markdown
           --reportLevel     Which policy level alerts should be reported
           --security        Report the security policy status. Default: true
@@ -35,10 +34,7 @@ describe('socket scan report', async () => {
         Note: By default it reports both so by default it consumes 3 quota units.
 
         Your API token will need the \`full-scans:list\` scope regardless. Additionally
-        it needs \`security-policy:read\` to report on the security policy and it needs
-        the \`license-policy:read\` scope to report on the license policy.
-
-        (Use \`--no-security\` or \`--no-license\` to omit one)
+        it needs \`security-policy:read\` to report on the security policy.
 
         By default the result is a nested object that looks like this:
           \`{[ecosystem]: {[pkgName]: {[version]: {[file]: {[type:loc]: policy}}}}\`
@@ -72,22 +68,20 @@ describe('socket scan report', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-      "
-         _____         _       _        /---------------
-        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-        |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan report\`, cwd: <redacted>
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+          |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan report\`, cwd: <redacted>
 
-      \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-      - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
+        - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-      - Full Scan ID to fetch as second argument \\x1b[31m(missing!)\\x1b[39m
+        - Full Scan ID to fetch as second argument \\x1b[31m(missing!)\\x1b[39m
 
-      - Not both the --json and --markdown flags \\x1b[32m(ok)\\x1b[39m
-
-      - At least one policy to report \\x1b[32m(ok)\\x1b[39m"
-    `)
+        - Not both the --json and --markdown flags \\x1b[32m(ok)\\x1b[39m"
+      `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
     }
