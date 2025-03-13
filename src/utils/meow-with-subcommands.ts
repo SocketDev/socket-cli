@@ -52,6 +52,8 @@ interface MeowOptions extends Options<any> {
   aliases?: CliAliases | undefined
   argv: readonly string[]
   name: string
+  // When no sub-command is given, default to this sub-command
+  defaultSub?: string
 }
 
 // For debugging. Whenever you call meowOrExit it will store the command here
@@ -69,11 +71,16 @@ export async function meowWithSubcommands(
   const {
     aliases = {},
     argv,
+    defaultSub,
     importMeta,
     name,
     ...additionalOptions
   } = { __proto__: null, ...options }
-  const [commandOrAliasName, ...rawCommandArgv] = argv
+  const [commandOrAliasNamex, ...rawCommandArgv] = argv
+  let commandOrAliasName = commandOrAliasNamex
+  if (!commandOrAliasName && defaultSub) {
+    commandOrAliasName = defaultSub
+  }
   // If we got at least some args, then lets find out if we can find a command.
   if (commandOrAliasName) {
     const alias = aliases[commandOrAliasName]

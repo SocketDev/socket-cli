@@ -2,6 +2,7 @@ import { cmdScanCreate } from './cmd-scan-create'
 import { cmdScanDel } from './cmd-scan-del'
 import { cmdScanList } from './cmd-scan-list'
 import { cmdScanMetadata } from './cmd-scan-metadata'
+import { cmdScanReport } from './cmd-scan-report'
 import { cmdScanView } from './cmd-scan-view'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
@@ -18,6 +19,7 @@ export const cmdScan: CliSubcommand = {
         list: cmdScanList,
         del: cmdScanDel,
         metadata: cmdScanMetadata,
+        report: cmdScanReport,
         view: cmdScanView
       },
       {
