@@ -161,9 +161,17 @@ module.exports = [
       parser: tsParser,
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['test/*.ts'],
+          allowDefaultProject: [
+            'test/*.ts',
+            // src/utils/*
+            'src/*/*.test.ts',
+            // src/commands/xyz/*
+            'src/*/*/*.test.ts'
+          ],
           defaultProject: 'tsconfig.json',
-          tsconfigRootDir: rootPath
+          tsconfigRootDir: rootPath,
+          // Need this to glob the test files in /src. Otherwise it won't work.
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 1_000_000
         }
       }
     },

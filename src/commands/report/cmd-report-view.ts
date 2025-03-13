@@ -69,8 +69,11 @@ async function run(
   await viewReport(reportId, {
     all: Boolean(cli.flags['all']),
     commandName: `${parentName} ${config.commandName}`,
-    json: Boolean(cli.flags['json']),
-    markdown: Boolean(cli.flags['markdown']),
+    outputKind: cli.flags['json']
+      ? 'json'
+      : cli.flags['markdown']
+        ? 'markdown'
+        : 'print',
     strict: Boolean(cli.flags['strict'])
   })
 }

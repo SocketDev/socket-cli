@@ -12,96 +12,17 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
+import { cmdit, invokeNpm } from './utils'
 import constants from '../dist/constants.js'
 
-type TestCollectorOptions = Exclude<Parameters<typeof it>[1], undefined>
-
 const { CLI } = constants
-
-const testPath = __dirname
-const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
-
-/**
- * This is a simple template wrapper for this pattern:
- * `it('should do: socket scan', (['socket', 'scan']) => {})`
- */
-function cmdit(
-  cmd: string[],
-  title: string,
-  cb: (cmd: string[]) => Promise<void>,
-  options?: TestCollectorOptions | undefined
-) {
-  it(
-    `${title}: \`${cmd.join(' ')}\``,
-    {
-      timeout: 10_000,
-      ...options
-    },
-    cb.bind(null, cmd)
-  )
-}
-
-async function invoke(
-  entryPath: string,
-  args: string[]
-): Promise<{
-  status: boolean
-  code: number
-  stdout: string
-  stderr: string
-}> {
-  try {
-    const thing = await spawn(
-      // Lazily access constants.execPath.
-      constants.execPath,
-      [entryPath, ...args],
-      {
-        cwd: npmFixturesPath
-      }
-    )
-    return {
-      status: true,
-      code: 0,
-      stdout: toAsciiSafeString(normalizeLogSymbols(thing.stdout)),
-      stderr: toAsciiSafeString(normalizeLogSymbols(thing.stderr))
-    }
-  } catch (e) {
-    return {
-      status: false,
-      code: e?.code,
-      stdout: toAsciiSafeString(normalizeLogSymbols(e?.stdout ?? '')),
-      stderr: toAsciiSafeString(normalizeLogSymbols(e?.stderr ?? ''))
-    }
-  }
-}
-
-function normalizeLogSymbols(str: string): string {
-  return str
-    .replaceAll('✖️', '×')
-    .replaceAll('ℹ', 'i')
-    .replaceAll('✔', '√')
-    .replaceAll('⚠', '‼')
-}
-
-function toAsciiSafeString(str: string): string {
-  // eslint-disable-next-line no-control-regex
-  const asciiSafeRegex = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
-  return str.replace(asciiSafeRegex, (m: string) => {
-    const code = m.charCodeAt(0)
-    return code < 255
-      ? `\\x${code.toString(16).padStart(2, '0')}`
-      : `\\u${code.toString(16).padStart(4, '0')}`
-  })
-}
 
 describe('dry-run on all commands', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
   cmdit(['--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(
       `"[DryRun]: No-op, call a sub-command; ok"`
     )
@@ -120,7 +41,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['analytics', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -137,7 +58,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['audit-log', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -158,7 +79,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['cdxgen', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(
       `
@@ -179,7 +100,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['dependencies', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -196,7 +117,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['diff-scan', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(
       `"[DryRun]: No-op, call a sub-command; ok"`
     )
@@ -215,7 +136,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['diff-scan', 'get', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -241,7 +162,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['fix', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -258,7 +179,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['info', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -281,7 +202,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['login', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -298,7 +219,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['logout', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -315,7 +236,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['manifest', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(
       `"[DryRun]: No-op, call a sub-command; ok"`
     )
@@ -334,7 +255,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['manifest', 'auto', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`
       "Auto-detect build and attempt to generate manifest file
 
@@ -365,7 +286,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['manifest', 'gradle', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -388,7 +309,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['manifest', 'kotlin', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -411,7 +332,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['manifest', 'scala', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -434,7 +355,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['npm', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -451,7 +372,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['npx', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -468,7 +389,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['oops', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -485,7 +406,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['optimize', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -501,25 +422,8 @@ describe('dry-run on all commands', async () => {
     )
   })
 
-  cmdit(['organization', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-      "
-         _____         _       _        /---------------
-        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-        |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket organizations\`, cwd: <redacted>"
-    `)
-
-    expect(code, 'dry-run should exit with code 0 if input is ok').toBe(0)
-    expect(stderr, 'header should include command (without params)').toContain(
-      cmd.slice(0, cmd.indexOf('--dry-run')).join(' ')
-    )
-  })
-
   cmdit(['raw-npm', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -536,7 +440,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['raw-npx', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -553,7 +457,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['report', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(
       `"[DryRun]: No-op, call a sub-command; ok"`
     )
@@ -572,7 +476,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['report', 'create', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -589,7 +493,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['report', 'view', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -612,7 +516,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['repos', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(
       `"[DryRun]: No-op, call a sub-command; ok"`
     )
@@ -631,7 +535,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['repos', 'create', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -654,7 +558,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['repos', 'del', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -679,7 +583,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['repos', 'list', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -702,7 +606,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['repos', 'update', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -727,7 +631,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['repos', 'view', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -800,7 +704,7 @@ describe('dry-run on all commands', async () => {
   // })
 
   cmdit(['scan', 'del', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -823,7 +727,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['scan', 'list', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -844,7 +748,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['scan', 'metadata', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -867,7 +771,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['scan', 'view', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -890,7 +794,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['threat-feed', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -907,7 +811,7 @@ describe('dry-run on all commands', async () => {
   })
 
   cmdit(['wrapper', '--dry-run'], 'should support', async cmd => {
-    const { code, stderr, stdout } = await invoke(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`""`)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

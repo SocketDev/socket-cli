@@ -64,3 +64,36 @@ export function mdTable<T extends Array<Record<string, string>>>(
 
   return [div, header, div, body.trim(), div].filter(s => !!s.trim()).join('\n')
 }
+
+export function mdTableOfPairs(
+  arr: Array<[string, string]>,
+  // This is saying "an array of strings and the strings are a valid key of elements of T"
+  // In turn, T is defined above as the audit log event type from our OpenAPI docs.
+  cols: string[]
+): string {
+  // Max col width required to fit all data in that column
+  const cws = cols.map(col => col.length)
+
+  for (const [key, val] of arr) {
+    cws[0] = Math.max(cws[0] ?? 0, String(key).length)
+    cws[1] = Math.max(cws[1] ?? 0, String(val ?? '').length)
+  }
+
+  let div = '|'
+  for (const cw of cws) div += ' ' + '-'.repeat(cw) + ' |'
+
+  let header = '|'
+  for (let i = 0; i < cols.length; ++i) {
+    header += ' ' + String(cols[i]).padEnd(cws[i] ?? 0, ' ') + ' |'
+  }
+
+  let body = ''
+  for (const [key, val] of arr) {
+    body += '|'
+    body += ' ' + String(key).padEnd(cws[0] ?? 0, ' ') + ' |'
+    body += ' ' + String(val ?? '').padEnd(cws[1] ?? 0, ' ') + ' |'
+    body += '\n'
+  }
+
+  return [div, header, div, body.trim(), div].filter(s => !!s.trim()).join('\n')
+}
