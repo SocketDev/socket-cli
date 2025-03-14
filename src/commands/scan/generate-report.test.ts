@@ -8,6 +8,8 @@ import type { components } from '@socketsecurity/sdk/types/api'
 describe('generate-report', () => {
   it('should accept empty args', () => {
     const result = generateReport([], undefined, undefined, {
+      orgSlug: 'fakeorg',
+      scanId: 'scan-ai-dee',
       fold: 'none',
       reportLevel: 'warn'
     })
@@ -16,6 +18,12 @@ describe('generate-report', () => {
       {
         "alerts": Map {},
         "healthy": true,
+        "options": {
+          "fold": "none",
+          "reportLevel": "warn",
+        },
+        "orgSlug": "fakeorg",
+        "scanId": "scan-ai-dee",
       }
     `)
   })
@@ -38,17 +46,25 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn'
           }
         )
 
         expect(result).toMatchInlineSnapshot(`
-      {
-        "alerts": Map {},
-        "healthy": true,
-      }
-    `)
+          {
+            "alerts": Map {},
+            "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "warn",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
+          }
+        `)
         expect(result.healthy).toBe(true)
         expect(result.alerts.size).toBe(0)
       })
@@ -69,6 +85,8 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn'
           }
@@ -81,14 +99,34 @@ describe('generate-report', () => {
                 "tslib" => Map {
                   "1.14.1" => Map {
                     "package/which.js" => Map {
-                      "envVars at 54:72" => "error",
-                      "envVars at 200:250" => "error",
+                      "envVars at 54:72" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "error",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
+                      "envVars at 200:250" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "error",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
                     },
                   },
                 },
               },
             },
             "healthy": false,
+            "options": {
+              "fold": "none",
+              "reportLevel": "warn",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
           }
         `)
         expect(result.healthy).toBe(false)
@@ -111,6 +149,8 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn'
           }
@@ -123,14 +163,34 @@ describe('generate-report', () => {
                 "tslib" => Map {
                   "1.14.1" => Map {
                     "package/which.js" => Map {
-                      "envVars at 54:72" => "warn",
-                      "envVars at 200:250" => "warn",
+                      "envVars at 54:72" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "warn",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
+                      "envVars at 200:250" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "warn",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
                     },
                   },
                 },
               },
             },
             "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "warn",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
           }
         `)
         expect(result.healthy).toBe(true)
@@ -153,17 +213,25 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn'
           }
         )
 
         expect(result).toMatchInlineSnapshot(`
-      {
-        "alerts": Map {},
-        "healthy": true,
-      }
-    `)
+          {
+            "alerts": Map {},
+            "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "warn",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
+          }
+        `)
         expect(result.healthy).toBe(true)
         expect(result.alerts.size).toBe(0)
       })
@@ -184,17 +252,25 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn'
           }
         )
 
         expect(result).toMatchInlineSnapshot(`
-      {
-        "alerts": Map {},
-        "healthy": true,
-      }
-    `)
+          {
+            "alerts": Map {},
+            "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "warn",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
+          }
+        `)
         expect(result.healthy).toBe(true)
         expect(result.alerts.size).toBe(0)
       })
@@ -215,17 +291,25 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn'
           }
         )
 
         expect(result).toMatchInlineSnapshot(`
-      {
-        "alerts": Map {},
-        "healthy": true,
-      }
-    `)
+          {
+            "alerts": Map {},
+            "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "warn",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
+          }
+        `)
         expect(result.healthy).toBe(true)
         expect(result.alerts.size).toBe(0)
       })
@@ -244,17 +328,25 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn'
           }
         )
 
         expect(result).toMatchInlineSnapshot(`
-      {
-        "alerts": Map {},
-        "healthy": true,
-      }
-    `)
+          {
+            "alerts": Map {},
+            "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "warn",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
+          }
+        `)
         expect(result.healthy).toBe(true)
         expect(result.alerts.size).toBe(0)
       })
@@ -271,17 +363,25 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'warn'
           }
         )
 
         expect(result).toMatchInlineSnapshot(`
-      {
-        "alerts": Map {},
-        "healthy": true,
-      }
-    `)
+          {
+            "alerts": Map {},
+            "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "warn",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
+          }
+        `)
         expect(result.healthy).toBe(true)
         expect(result.alerts.size).toBe(0)
       })
@@ -304,17 +404,25 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore'
           }
         )
 
         expect(result).toMatchInlineSnapshot(`
-      {
-        "alerts": Map {},
-        "healthy": true,
-      }
-    `)
+          {
+            "alerts": Map {},
+            "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "ignore",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
+          }
+        `)
         expect(result.healthy).toBe(true)
         expect(result.alerts.size).toBe(0)
       })
@@ -335,6 +443,8 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore'
           }
@@ -347,14 +457,34 @@ describe('generate-report', () => {
                 "tslib" => Map {
                   "1.14.1" => Map {
                     "package/which.js" => Map {
-                      "envVars at 54:72" => "error",
-                      "envVars at 200:250" => "error",
+                      "envVars at 54:72" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "error",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
+                      "envVars at 200:250" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "error",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
                     },
                   },
                 },
               },
             },
             "healthy": false,
+            "options": {
+              "fold": "none",
+              "reportLevel": "ignore",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
           }
         `)
         expect(result.healthy).toBe(false)
@@ -377,6 +507,8 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore'
           }
@@ -389,14 +521,34 @@ describe('generate-report', () => {
                 "tslib" => Map {
                   "1.14.1" => Map {
                     "package/which.js" => Map {
-                      "envVars at 54:72" => "warn",
-                      "envVars at 200:250" => "warn",
+                      "envVars at 54:72" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "warn",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
+                      "envVars at 200:250" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "warn",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
                     },
                   },
                 },
               },
             },
             "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "ignore",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
           }
         `)
         expect(result.healthy).toBe(true)
@@ -419,6 +571,8 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore'
           }
@@ -431,14 +585,34 @@ describe('generate-report', () => {
                 "tslib" => Map {
                   "1.14.1" => Map {
                     "package/which.js" => Map {
-                      "envVars at 54:72" => "monitor",
-                      "envVars at 200:250" => "monitor",
+                      "envVars at 54:72" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "monitor",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
+                      "envVars at 200:250" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "monitor",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
                     },
                   },
                 },
               },
             },
             "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "ignore",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
           }
         `)
         expect(result.healthy).toBe(true)
@@ -461,6 +635,8 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore'
           }
@@ -473,14 +649,34 @@ describe('generate-report', () => {
                 "tslib" => Map {
                   "1.14.1" => Map {
                     "package/which.js" => Map {
-                      "envVars at 54:72" => "ignore",
-                      "envVars at 200:250" => "ignore",
+                      "envVars at 54:72" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "ignore",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
+                      "envVars at 200:250" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "ignore",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
                     },
                   },
                 },
               },
             },
             "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "ignore",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
           }
         `)
         expect(result.healthy).toBe(true)
@@ -503,17 +699,25 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore'
           }
         )
 
         expect(result).toMatchInlineSnapshot(`
-      {
-        "alerts": Map {},
-        "healthy": true,
-      }
-    `)
+          {
+            "alerts": Map {},
+            "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "ignore",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
+          }
+        `)
         expect(result.healthy).toBe(true)
         expect(result.alerts.size).toBe(0)
       })
@@ -532,17 +736,25 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore'
           }
         )
 
         expect(result).toMatchInlineSnapshot(`
-      {
-        "alerts": Map {},
-        "healthy": true,
-      }
-    `)
+          {
+            "alerts": Map {},
+            "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "ignore",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
+          }
+        `)
         expect(result.healthy).toBe(true)
         expect(result.alerts.size).toBe(0)
       })
@@ -559,17 +771,25 @@ describe('generate-report', () => {
             }
           } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
           {
+            orgSlug: 'fakeorg',
+            scanId: 'scan-ai-dee',
             fold: 'none',
             reportLevel: 'ignore'
           }
         )
 
         expect(result).toMatchInlineSnapshot(`
-      {
-        "alerts": Map {},
-        "healthy": true,
-      }
-    `)
+          {
+            "alerts": Map {},
+            "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "ignore",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
+          }
+        `)
         expect(result.healthy).toBe(true)
         expect(result.alerts.size).toBe(0)
       })
@@ -593,6 +813,8 @@ describe('generate-report', () => {
           }
         } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
         {
+          orgSlug: 'fakeorg',
+          scanId: 'scan-ai-dee',
           fold: 'none',
           reportLevel: 'warn'
         }
@@ -605,14 +827,34 @@ describe('generate-report', () => {
               "tslib" => Map {
                 "1.14.1" => Map {
                   "package/which.js" => Map {
-                    "envVars at 54:72" => "error",
-                    "envVars at 200:250" => "error",
+                    "envVars at 54:72" => {
+                      "manifest": [
+                        "package-lock.json",
+                      ],
+                      "policy": "error",
+                      "type": "envVars",
+                      "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                    },
+                    "envVars at 200:250" => {
+                      "manifest": [
+                        "package-lock.json",
+                      ],
+                      "policy": "error",
+                      "type": "envVars",
+                      "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                    },
                   },
                 },
               },
             },
           },
           "healthy": false,
+          "options": {
+            "fold": "none",
+            "reportLevel": "warn",
+          },
+          "orgSlug": "fakeorg",
+          "scanId": "scan-ai-dee",
         }
       `)
     })
@@ -633,6 +875,8 @@ describe('generate-report', () => {
           }
         } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
         {
+          orgSlug: 'fakeorg',
+          scanId: 'scan-ai-dee',
           fold: 'file',
           reportLevel: 'warn'
         }
@@ -644,12 +888,25 @@ describe('generate-report', () => {
             "npm" => Map {
               "tslib" => Map {
                 "1.14.1" => Map {
-                  "package/which.js" => "error",
+                  "package/which.js" => {
+                    "manifest": [
+                      "package-lock.json",
+                    ],
+                    "policy": "error",
+                    "type": "envVars",
+                    "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                  },
                 },
               },
             },
           },
           "healthy": false,
+          "options": {
+            "fold": "file",
+            "reportLevel": "warn",
+          },
+          "orgSlug": "fakeorg",
+          "scanId": "scan-ai-dee",
         }
       `)
     })
@@ -670,6 +927,8 @@ describe('generate-report', () => {
           }
         } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
         {
+          orgSlug: 'fakeorg',
+          scanId: 'scan-ai-dee',
           fold: 'version',
           reportLevel: 'warn'
         }
@@ -680,11 +939,24 @@ describe('generate-report', () => {
           "alerts": Map {
             "npm" => Map {
               "tslib" => Map {
-                "1.14.1" => "error",
+                "1.14.1" => {
+                  "manifest": [
+                    "package-lock.json",
+                  ],
+                  "policy": "error",
+                  "type": "envVars",
+                  "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                },
               },
             },
           },
           "healthy": false,
+          "options": {
+            "fold": "version",
+            "reportLevel": "warn",
+          },
+          "orgSlug": "fakeorg",
+          "scanId": "scan-ai-dee",
         }
       `)
     })
@@ -705,6 +977,8 @@ describe('generate-report', () => {
           }
         } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
         {
+          orgSlug: 'fakeorg',
+          scanId: 'scan-ai-dee',
           fold: 'pkg',
           reportLevel: 'warn'
         }
@@ -714,10 +988,23 @@ describe('generate-report', () => {
         {
           "alerts": Map {
             "npm" => Map {
-              "tslib" => "error",
+              "tslib" => {
+                "manifest": [
+                  "package-lock.json",
+                ],
+                "policy": "error",
+                "type": "envVars",
+                "url": "https://socket.dev/npm/package/tslib/1.14.1",
+              },
             },
           },
           "healthy": false,
+          "options": {
+            "fold": "pkg",
+            "reportLevel": "warn",
+          },
+          "orgSlug": "fakeorg",
+          "scanId": "scan-ai-dee",
         }
       `)
     })

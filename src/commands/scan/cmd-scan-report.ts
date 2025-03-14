@@ -134,7 +134,7 @@ async function run(
     orgSlug,
     fullScanId,
     includeLicensePolicy: false, // !!license,
-    includeSecurityPolicy: !!security,
+    includeSecurityPolicy: typeof security === 'boolean' ? security : true,
     outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
     filePath: file,
     fold: fold as 'none' | 'file' | 'pkg' | 'version',
