@@ -34,6 +34,11 @@ const config: CliCommandConfig = {
       default: 'warn',
       description: 'Which policy level alerts should be reported'
     },
+    short: {
+      type: 'boolean',
+      default: false,
+      description: 'Report only the healthy status'
+    },
     // license: {
     //   type: 'boolean',
     //   default: true,
@@ -65,6 +70,8 @@ const config: CliCommandConfig = {
 
     By default only the warn and error policy level alerts are reported. You can
     override this and request more ('defer' < 'ignore' < 'monitor' < 'warn' < 'error')
+
+    Short responses: JSON: \`{healthy:bool}\`, markdown: \`healthy = bool\`, text: \`OK/ERR\`
 
     Examples
       $ ${command} FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
@@ -138,6 +145,7 @@ async function run(
     outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
     filePath: file,
     fold: fold as 'none' | 'file' | 'pkg' | 'version',
+    short: !!cli.flags['short'],
     reportLevel: reportLevel as
       | 'warn'
       | 'error'
