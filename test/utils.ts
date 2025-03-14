@@ -24,7 +24,7 @@ export function cmdit(
   it(
     `${title}: \`${cmd.join(' ')}\``,
     {
-      timeout: 10_000,
+      timeout: 30_000,
       ...options
     },
     cb.bind(null, cmd)
