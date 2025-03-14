@@ -36,7 +36,7 @@ const config: CliCommandConfig = {
     }
   },
   help: () => `
-    This command is deprecated in favor of \`socket scan create\`.
+    This command is deprecated in favor of \`socket scan view\`.
     It will be removed in the next major release of the CLI.
   `
 }
