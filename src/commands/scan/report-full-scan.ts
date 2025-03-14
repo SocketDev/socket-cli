@@ -18,7 +18,8 @@ export async function reportFullScan({
   includeSecurityPolicy,
   orgSlug,
   outputKind,
-  reportLevel
+  reportLevel,
+  short
 }: {
   orgSlug: string
   fullScanId: string
@@ -28,6 +29,7 @@ export async function reportFullScan({
   filePath: string
   fold: 'pkg' | 'version' | 'file' | 'none'
   reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'
+  short: boolean
 }): Promise<void> {
   logger.error(
     'output:',
@@ -67,15 +69,22 @@ export async function reportFullScan({
       orgSlug,
       scanId: fullScanId,
       fold,
+      short,
       reportLevel
     }
   )
+
+  if (!scanReport.healthy) {
+    process.exitCode = 1
+  }
 
   if (
     outputKind === 'json' ||
     (outputKind === 'text' && filePath && filePath.endsWith('.json'))
   ) {
-    const json = toJsonReport(scanReport)
+    const json = short
+      ? JSON.stringify(scanReport)
+      : toJsonReport(scanReport as ScanReport)
 
     if (filePath && filePath !== '-') {
       logger.log('Writing json report to', filePath)
@@ -87,7 +96,9 @@ export async function reportFullScan({
   }
 
   if (outputKind === 'markdown' || (filePath && filePath.endsWith('.md'))) {
-    const md = toMarkdownReport(scanReport)
+    const md = short
+      ? `healthy = ${scanReport.healthy}`
+      : toMarkdownReport(scanReport as ScanReport)
 
     if (filePath && filePath !== '-') {
       logger.log('Writing markdown report to', filePath)
@@ -98,7 +109,11 @@ export async function reportFullScan({
     return
   }
 
-  logger.dir(scanReport, { depth: null })
+  if (short) {
+    logger.log(scanReport.healthy ? 'OK' : 'ERR')
+  } else {
+    logger.dir(scanReport, { depth: null })
+  }
 }
 
 export function toJsonReport(report: ScanReport): string {
