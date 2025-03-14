@@ -1,15 +1,31 @@
-import { SocketSdkReturnType } from '@socketsecurity/sdk'
-import { components } from '@socketsecurity/sdk/types/api'
-
 import constants from '../../constants'
+
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { components } from '@socketsecurity/sdk/types/api'
 
 type AlertAction = 'defer' | 'ignore' | 'monitor' | 'error' | 'warn'
 type AlertKey = string
 
-type FileMap = Map<string, AlertAction | Map<AlertKey, AlertAction>>
-type VersionMap = Map<string, AlertAction | FileMap>
-type PackageMap = Map<string, AlertAction | VersionMap>
-type ViolationsMap = Map<string, PackageMap>
+type FileMap = Map<string, ReportLeafNode | Map<AlertKey, ReportLeafNode>>
+type VersionMap = Map<string, ReportLeafNode | FileMap>
+type PackageMap = Map<string, ReportLeafNode | VersionMap>
+type EcoMap = Map<string, ReportLeafNode | PackageMap>
+export type ViolationsMap = Map<string, EcoMap>
+
+export interface ScanReport {
+  orgSlug: string
+  scanId: string
+  options: { fold: string; reportLevel: string }
+  healthy: boolean
+  alerts: ViolationsMap
+}
+
+export type ReportLeafNode = {
+  type: string
+  policy: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'
+  url: string
+  manifest: string[]
+}
 
 export function generateReport(
   scan: Array<components['schemas']['SocketArtifact']>,
@@ -17,12 +33,16 @@ export function generateReport(
   securityPolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'>,
   {
     fold,
-    reportLevel
+    orgSlug,
+    reportLevel,
+    scanId
   }: {
+    orgSlug: string
+    scanId: string
     fold: 'pkg' | 'version' | 'file' | 'none'
     reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'
   }
-) {
+): ScanReport {
   const now = Date.now()
 
   // Lazily access constants.spinner.
@@ -56,13 +76,14 @@ export function generateReport(
     securityPolicy?.data.securityPolicyRules
   if (securityPolicy && securityRules) {
     // Note: reportLevel: error > warn > monitor > ignore > defer
-    scan.forEach(art => {
+    scan.forEach(artifact => {
       const {
         alerts,
         name: pkgName = '<unknown>',
         type: ecosystem,
         version = '<unknown>'
-      } = art
+      } = artifact
+
       alerts?.forEach(
         (
           alert: NonNullable<
@@ -75,6 +96,7 @@ export function generateReport(
             case 'error': {
               healthy = false
               addAlert(
+                artifact,
                 violations,
                 fold,
                 ecosystem,
@@ -88,6 +110,7 @@ export function generateReport(
             case 'warn': {
               if (reportLevel !== 'error') {
                 addAlert(
+                  artifact,
                   violations,
                   fold,
                   ecosystem,
@@ -102,6 +125,7 @@ export function generateReport(
             case 'monitor': {
               if (reportLevel !== 'warn' && reportLevel !== 'error') {
                 addAlert(
+                  artifact,
                   violations,
                   fold,
                   ecosystem,
@@ -121,6 +145,7 @@ export function generateReport(
                 reportLevel !== 'monitor'
               ) {
                 addAlert(
+                  artifact,
                   violations,
                   fold,
                   ecosystem,
@@ -137,6 +162,7 @@ export function generateReport(
               // Not sure but ignore for now. Defer to later ;)
               if (reportLevel === 'defer') {
                 addAlert(
+                  artifact,
                   violations,
                   fold,
                   ecosystem,
@@ -162,13 +188,31 @@ export function generateReport(
 
   const report = {
     healthy,
+    orgSlug,
+    scanId,
+    options: { fold, reportLevel },
     alerts: violations
   }
 
   return report
 }
 
+function createLeaf(
+  art: components['schemas']['SocketArtifact'],
+  alert: NonNullable<components['schemas']['SocketArtifact']['alerts']>[number],
+  policyAction: AlertAction
+): ReportLeafNode {
+  const leaf: ReportLeafNode = {
+    type: alert.type,
+    policy: policyAction,
+    url: `https://socket.dev/${art.type}/package/${art.name}/${art.version}`,
+    manifest: art.manifestFiles?.map(obj => obj.file) ?? []
+  }
+  return leaf
+}
+
 function addAlert(
+  art: components['schemas']['SocketArtifact'],
   violations: ViolationsMap,
   foldSetting: 'pkg' | 'version' | 'file' | 'none',
   ecosystem: string,
@@ -176,38 +220,60 @@ function addAlert(
   version: string,
   alert: NonNullable<components['schemas']['SocketArtifact']['alerts']>[number],
   policyAction: AlertAction
-) {
-  if (!violations.has(ecosystem)) {
-    violations.set(ecosystem, new Map())
-  }
-  const ecomap = violations.get(ecosystem)!
-  if (!ecomap.has(pkgName)) ecomap.set(pkgName, new Map())
-
+): void {
+  if (!violations.has(ecosystem)) violations.set(ecosystem, new Map())
+  const ecomap: EcoMap = violations.get(ecosystem)!
   if (foldSetting === 'pkg') {
-    if (policyAction === 'error') ecomap.set(pkgName, 'error')
-    else if (!ecomap.get(pkgName)) ecomap.set(pkgName, 'warn')
+    const existing = ecomap.get(pkgName) as ReportLeafNode | undefined
+    if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+      ecomap.set(pkgName, createLeaf(art, alert, policyAction))
+    }
   } else {
-    const pkgmap = ecomap.get(pkgName) as VersionMap
-    if (!pkgmap.has(version)) pkgmap.set(version, new Map())
-
+    if (!ecomap.has(pkgName)) ecomap.set(pkgName, new Map())
+    const pkgmap = ecomap.get(pkgName) as PackageMap
     if (foldSetting === 'version') {
-      if (policyAction === 'error') pkgmap.set(version, 'error')
-      else if (!pkgmap.get(version)) pkgmap.set(version, 'warn')
+      const existing = pkgmap.get(version) as ReportLeafNode | undefined
+      if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+        pkgmap.set(version, createLeaf(art, alert, policyAction))
+      }
     } else {
+      if (!pkgmap.has(version)) pkgmap.set(version, new Map())
       const file = alert.file || '<unknown>'
-      const vermap = pkgmap.get(version) as FileMap
-      if (!vermap.has(file)) vermap.set(file, new Map())
+      const vermap = pkgmap.get(version) as VersionMap
 
       if (foldSetting === 'file') {
-        if (policyAction === 'error') vermap.set(file, 'error')
-        else if (!vermap.get(file)) vermap.set(file, 'warn')
+        const existing = vermap.get(file) as ReportLeafNode | undefined
+        if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+          vermap.set(file, createLeaf(art, alert, policyAction))
+        }
       } else {
-        const filemap = vermap.get(file) as Map<AlertKey, AlertAction>
-        filemap.set(
-          `${alert.type} at ${alert.start}:${alert.end}`,
-          policyAction
-        )
+        if (!vermap.has(file)) vermap.set(file, new Map())
+        const key = `${alert.type} at ${alert.start}:${alert.end}`
+        const filemap: FileMap = vermap.get(file) as FileMap
+        const existing = filemap.get(key) as ReportLeafNode | undefined
+        if (!existing || isStricterPolicy(existing.policy, policyAction)) {
+          filemap.set(key, createLeaf(art, alert, policyAction))
+        }
       }
     }
   }
+}
+
+function isStricterPolicy(
+  was: 'error' | 'warn' | 'monitor' | 'ignore' | 'defer',
+  is: 'error' | 'warn' | 'monitor' | 'ignore' | 'defer'
+): boolean {
+  // error > warn > monitor > ignore > defer > {unknown}
+  if (was === 'error') return false
+  if (is === 'error') return true
+  if (was === 'warn') return false
+  if (is === 'warn') return false
+  if (was === 'monitor') return false
+  if (is === 'monitor') return false
+  if (was === 'ignore') return false
+  if (is === 'ignore') return false
+  if (was === 'defer') return false
+  if (is === 'defer') return false
+  // unreachable?
+  return false
 }
