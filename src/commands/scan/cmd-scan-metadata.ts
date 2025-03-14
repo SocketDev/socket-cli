@@ -18,7 +18,7 @@ const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'metadata',
-  description: "Get a full scan's metadata",
+  description: "Get a scan's metadata",
   hidden: false,
   flags: {
     ...commonFlags,

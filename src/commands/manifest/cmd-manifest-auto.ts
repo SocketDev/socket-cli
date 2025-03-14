@@ -110,6 +110,11 @@ async function run(
     return
   }
 
+  if (cli.flags['dryRun']) {
+    logger.log(DRY_RUN_BAIL_TEXT)
+    return
+  }
+
   // Show new help screen and exit.
   meow(
     `

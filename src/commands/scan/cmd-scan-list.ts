@@ -18,7 +18,7 @@ const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'list',
-  description: 'List the full scans for an organization',
+  description: 'List the scans for an organization',
   hidden: false,
   flags: {
     ...commonFlags,
