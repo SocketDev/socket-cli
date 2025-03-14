@@ -28,6 +28,7 @@ describe('socket scan report', async () => {
           --markdown        Output result as markdown
           --reportLevel     Which policy level alerts should be reported
           --security        Report the security policy status. Default: true
+          --short           Report only the healthy status
 
         This consumes 1 quota unit plus 1 for each of the requested policy types.
 
@@ -42,6 +43,8 @@ describe('socket scan report', async () => {
 
         By default only the warn and error policy level alerts are reported. You can
         override this and request more ('defer' < 'ignore' < 'monitor' < 'warn' < 'error')
+
+        Short responses: JSON: \`{healthy:bool}\`, markdown: \`healthy = bool\`, text: \`OK/ERR\`
 
         Examples
           $ socket scan report FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version"
