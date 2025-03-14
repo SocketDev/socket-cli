@@ -12,6 +12,9 @@ type PackageMap = Map<string, ReportLeafNode | VersionMap>
 type EcoMap = Map<string, ReportLeafNode | PackageMap>
 export type ViolationsMap = Map<string, EcoMap>
 
+export interface ShortScanReport {
+  healthy: boolean
+}
 export interface ScanReport {
   orgSlug: string
   scanId: string
@@ -35,14 +38,16 @@ export function generateReport(
     fold,
     orgSlug,
     reportLevel,
-    scanId
+    scanId,
+    short
   }: {
-    orgSlug: string
-    scanId: string
     fold: 'pkg' | 'version' | 'file' | 'none'
+    orgSlug: string
     reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'
+    scanId: string
+    short: boolean
   }
-): ScanReport {
+): ScanReport | ShortScanReport {
   const now = Date.now()
 
   // Lazily access constants.spinner.
@@ -95,20 +100,22 @@ export function generateReport(
           switch (action) {
             case 'error': {
               healthy = false
-              addAlert(
-                artifact,
-                violations,
-                fold,
-                ecosystem,
-                pkgName,
-                version,
-                alert,
-                action
-              )
+              if (!short) {
+                addAlert(
+                  artifact,
+                  violations,
+                  fold,
+                  ecosystem,
+                  pkgName,
+                  version,
+                  alert,
+                  action
+                )
+              }
               break
             }
             case 'warn': {
-              if (reportLevel !== 'error') {
+              if (!short && reportLevel !== 'error') {
                 addAlert(
                   artifact,
                   violations,
@@ -123,7 +130,7 @@ export function generateReport(
               break
             }
             case 'monitor': {
-              if (reportLevel !== 'warn' && reportLevel !== 'error') {
+              if (!short && reportLevel !== 'warn' && reportLevel !== 'error') {
                 addAlert(
                   artifact,
                   violations,
@@ -140,6 +147,7 @@ export function generateReport(
 
             case 'ignore': {
               if (
+                !short &&
                 reportLevel !== 'warn' &&
                 reportLevel !== 'error' &&
                 reportLevel !== 'monitor'
@@ -160,7 +168,7 @@ export function generateReport(
 
             case 'defer': {
               // Not sure but ignore for now. Defer to later ;)
-              if (reportLevel === 'defer') {
+              if (!short && reportLevel === 'defer') {
                 addAlert(
                   artifact,
                   violations,
@@ -186,13 +194,15 @@ export function generateReport(
 
   spinner.successAndStop(`Generated reported in ${Date.now() - now} ms`)
 
-  const report = {
-    healthy,
-    orgSlug,
-    scanId,
-    options: { fold, reportLevel },
-    alerts: violations
-  }
+  const report = short
+    ? { healthy }
+    : {
+        healthy,
+        orgSlug,
+        scanId,
+        options: { fold, reportLevel },
+        alerts: violations
+      }
 
   return report
 }
