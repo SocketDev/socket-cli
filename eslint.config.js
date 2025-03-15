@@ -136,21 +136,12 @@ module.exports = [
     ignores: biomeConfig.files.ignore.map(convertIgnorePatternToMinimatch)
   },
   {
-    files: ['**/*.{c,}js'],
-    ...importFlatConfigsForScript.recommended
-  },
-  {
-    files: ['**/*.mjs'],
-    ...importFlatConfigsForModule.recommended
-  },
-  {
-    files: ['src/**/*.ts', 'test/**/*.ts'],
-    ...importFlatConfigsForModule.typescript
-  },
-  {
-    files: ['src/**/*.ts', 'test/**/*.ts'],
+    files: ['**/*.ts'],
+    ...importFlatConfigsForModule.typescript,
     languageOptions: {
+      ...importFlatConfigsForModule.typescript.languageOptions,
       globals: {
+        ...importFlatConfigsForModule.typescript.languageOptions?.globals,
         BufferConstructor: 'readonly',
         BufferEncoding: 'readonly',
         NodeJS: 'readonly',
@@ -160,7 +151,10 @@ module.exports = [
       },
       parser: tsParser,
       parserOptions: {
+        ...importFlatConfigsForModule.typescript.languageOptions?.parserOptions,
         projectService: {
+          ...importFlatConfigsForModule.typescript.languageOptions
+            ?.parserOptions?.projectService,
           allowDefaultProject: [
             'test/*.ts',
             // src/utils/*
@@ -176,13 +170,16 @@ module.exports = [
       }
     },
     linterOptions: {
+      ...importFlatConfigsForModule.typescript.linterOptions,
       reportUnusedDisableDirectives: 'off'
     },
     plugins: {
+      ...importFlatConfigsForModule.typescript.plugins,
       ...sharedPlugins,
       '@typescript-eslint': tsEslint.plugin
     },
     rules: {
+      ...importFlatConfigsForModule.typescript.rules,
       ...sharedRules,
       '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
       '@typescript-eslint/consistent-type-assertions': [
@@ -212,10 +209,21 @@ module.exports = [
     }
   },
   {
-    files: ['scripts/**/*.{c,}js', 'test/**/*.{c,}js'],
+    files: ['**/*.{c,}js'],
+    ...js.configs.recommended,
+    ...importFlatConfigsForScript.recommended,
     ...nodePlugin.configs['flat/recommended-script'],
+    plugins: {
+      ...js.configs.recommended.plugins,
+      ...importFlatConfigsForScript.recommended.plugins,
+      ...nodePlugin.configs['flat/recommended-script'].plugins,
+      ...sharedPlugins
+    },
     rules: {
+      ...js.configs.recommended.rules,
+      ...importFlatConfigsForScript.recommended.rules,
       ...nodePlugin.configs['flat/recommended-script'].rules,
+      ...sharedRules,
       'n/exports-style': ['error', 'module.exports'],
       'n/no-missing-require': ['off'],
       // The n/no-unpublished-bin rule does does not support non-trivial glob
@@ -240,12 +248,14 @@ module.exports = [
     }
   },
   {
-    files: ['scripts/**/*.{c,}js', 'test/**/*.{c,}js'],
+    files: ['**/*.mjs'],
+    ...importFlatConfigsForModule.recommended,
     plugins: {
+      ...importFlatConfigsForModule.recommended.plugins,
       ...sharedPlugins
     },
     rules: {
-      ...js.configs.recommended.rules,
+      ...importFlatConfigsForModule.recommended.rules,
       ...sharedRules
     }
   }
