@@ -6,8 +6,8 @@ import { isRelative } from '@socketsecurity/registry/lib/path'
 import baseConfig, { INLINED_PACKAGES } from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
 import {
-  isBuiltin,
   getPackageName,
+  isBuiltin,
   normalizeId
 } from '../scripts/utils/packages.js'
 
