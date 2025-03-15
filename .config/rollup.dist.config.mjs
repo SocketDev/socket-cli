@@ -122,24 +122,28 @@ async function globDtsAndMapFiles(namePattern, srcPath) {
 }
 
 async function moveDtsAndMapFiles(namePattern, srcPath, destPath) {
-  for (const filepath of await globDtsAndMapFiles(namePattern, srcPath)) {
-    await fs.rename(filepath, path.join(destPath, path.basename(filepath)))
-  }
+  await Promise.all(
+    (await globDtsAndMapFiles(namePattern, srcPath)).map(p =>
+      fs.rename(p, path.join(destPath, path.basename(p)))
+    )
+  )
 }
 
 async function removeDtsAndMapFiles(namePattern, srcPath) {
-  for (const filepath of await globDtsAndMapFiles(namePattern, srcPath)) {
-    await fs.rm(filepath)
-  }
+  await Promise.all(
+    (await globDtsAndMapFiles(namePattern, srcPath)).map(p => fs.rm(p))
+  )
 }
 
 async function removeJsFiles(namePattern, srcPath) {
-  for (const filepath of await tinyGlob([`**/${namePattern}.js`], {
-    absolute: true,
-    cwd: srcPath
-  })) {
-    await fs.rm(filepath)
-  }
+  await Promise.all(
+    (
+      await tinyGlob([`**/${namePattern}.js`], {
+        absolute: true,
+        cwd: srcPath
+      })
+    ).map(p => fs.rm(p))
+  )
 }
 
 function resetBin(bin) {
@@ -358,7 +362,9 @@ export default () => {
               (basename === `${CONSTANTS}.js` ||
                 basename === `${INSTRUMENT_WITH_SENTRY}.js`)
             ) {
+              // eslint-disable-next-line no-await-in-loop
               await fs.mkdir(rootDistPath, { recursive: true })
+              // eslint-disable-next-line no-await-in-loop
               await fs.writeFile(
                 path.join(rootDistPath, basename),
                 data.code,

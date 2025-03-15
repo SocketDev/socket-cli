@@ -45,10 +45,10 @@ const {
   LATEST,
   ROLLUP_ENTRY_SUFFIX,
   ROLLUP_EXTERNAL_SUFFIX,
-  SLASH_NODE_MODULES_SLASH,
   SHADOW_NPM_BIN,
   SHADOW_NPM_INJECT,
   SHADOW_NPM_PATHS,
+  SLASH_NODE_MODULES_SLASH,
   VENDOR,
   VITEST
 } = constants
@@ -135,10 +135,10 @@ function isAncestorsExternal(id, depStats) {
       return false
     }
     const {
-      version,
       dependencies = {},
       optionalDependencies = {},
-      peerDependencies = {}
+      peerDependencies = {},
+      version
     } = readPackageJsonSync(id.slice(0, nameEnd))
     const range =
       dependencies[name] ??
@@ -234,10 +234,10 @@ export default function baseConfig(extendConfig = {}) {
         const parentNameStart = parentNmIndex + SLASH_NODE_MODULES_SLASH.length
         const parentNameEnd = getPackageNameEnd(parentId, parentNameStart)
         const {
-          version,
           dependencies = {},
           optionalDependencies = {},
-          peerDependencies = {}
+          peerDependencies = {},
+          version
         } = readPackageJsonSync(parentId.slice(0, parentNameEnd))
         const range =
           dependencies[name] ??
