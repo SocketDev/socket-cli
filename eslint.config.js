@@ -17,7 +17,7 @@ const globals = require('globals')
 const tsEslint = require('typescript-eslint')
 
 const constants = require('@socketsecurity/registry/lib/constants')
-const { BIOME_JSON, GIT_IGNORE, LATEST, TSCONFIG_JSON } = constants
+const { BIOME_JSON, GITIGNORE, LATEST, TSCONFIG_JSON } = constants
 
 const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 
@@ -25,7 +25,7 @@ const rootPath = __dirname
 const rootTsConfigPath = path.join(rootPath, TSCONFIG_JSON)
 
 const biomeConfigPath = path.join(rootPath, BIOME_JSON)
-const gitignorePath = path.join(rootPath, GIT_IGNORE)
+const gitignorePath = path.join(rootPath, GITIGNORE)
 
 const biomeConfig = require(biomeConfigPath)
 const nodeGlobalsConfig = Object.fromEntries(
