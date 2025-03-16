@@ -28,6 +28,9 @@ const biomeConfigPath = path.join(rootPath, BIOME_JSON)
 const gitignorePath = path.join(rootPath, GIT_IGNORE)
 
 const biomeConfig = require(biomeConfigPath)
+const nodeGlobalsConfig = Object.fromEntries(
+  Object.entries(globals.node).map(([k]) => [k, 'readonly'])
+)
 
 const sharedPlugins = {
   'sort-destructure-keys': sortDestructureKeysPlugin,
@@ -41,6 +44,14 @@ const sharedRules = {
   'no-new': 'error',
   'no-proto': 'error',
   'no-undef': 'error',
+  'no-unused-vars': [
+    'error',
+    {
+      argsIgnorePattern: '^_|^this$',
+      ignoreRestSiblings: true,
+      varsIgnorePattern: '^_'
+    }
+  ],
   'no-var': 'error',
   'no-warning-comments': ['warn', { terms: ['fixme'] }],
   'prefer-const': 'error',
@@ -137,29 +148,31 @@ module.exports = [
   },
   {
     files: ['**/*.ts'],
+    ...js.configs.recommended,
     ...importFlatConfigsForModule.typescript,
     languageOptions: {
+      ...js.configs.recommended.languageOptions,
       ...importFlatConfigsForModule.typescript.languageOptions,
       globals: {
+        ...js.configs.recommended.languageOptions?.globals,
         ...importFlatConfigsForModule.typescript.languageOptions?.globals,
+        ...nodeGlobalsConfig,
         BufferConstructor: 'readonly',
         BufferEncoding: 'readonly',
-        NodeJS: 'readonly',
-        ...Object.fromEntries(
-          Object.entries(globals.node).map(([k]) => [k, 'readonly'])
-        )
+        NodeJS: 'readonly'
       },
       parser: tsParser,
       parserOptions: {
+        ...js.configs.recommended.languageOptions?.parserOptions,
         ...importFlatConfigsForModule.typescript.languageOptions?.parserOptions,
         projectService: {
           ...importFlatConfigsForModule.typescript.languageOptions
             ?.parserOptions?.projectService,
           allowDefaultProject: [
             'test/*.ts',
-            // src/utils/*
+            // Allow paths like src/utils/*.test.ts.
             'src/*/*.test.ts',
-            // src/commands/xyz/*
+            // Allow paths like src/commands/optimize/*.test.ts.
             'src/*/*/*.test.ts'
           ],
           defaultProject: 'tsconfig.json',
@@ -170,15 +183,18 @@ module.exports = [
       }
     },
     linterOptions: {
+      ...js.configs.recommended.linterOptions,
       ...importFlatConfigsForModule.typescript.linterOptions,
       reportUnusedDisableDirectives: 'off'
     },
     plugins: {
+      ...js.configs.recommended.plugins,
       ...importFlatConfigsForModule.typescript.plugins,
       ...sharedPlugins,
       '@typescript-eslint': tsEslint.plugin
     },
     rules: {
+      ...js.configs.recommended.rules,
       ...importFlatConfigsForModule.typescript.rules,
       ...sharedRules,
       '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
@@ -199,13 +215,11 @@ module.exports = [
       // not awaiting promises *outside* of try/catch/finally, which is not what
       // we want), and it's nice to await before returning anyways, since you get
       // a slightly more comprehensive stack trace upon promise rejection.
-      '@typescript-eslint/return-await': ['error', 'always']
-    }
-  },
-  {
-    files: ['test/**/*.ts'],
-    rules: {
-      '@typescript-eslint/no-floating-promises': 'off'
+      '@typescript-eslint/return-await': ['error', 'always'],
+      // Disable no-redeclare and no-unused-vars rule because they don't play
+      // well with TypeScript.
+      'no-redeclare': 'off',
+      'no-unused-vars': 'off'
     }
   },
   {
@@ -213,6 +227,18 @@ module.exports = [
     ...js.configs.recommended,
     ...importFlatConfigsForScript.recommended,
     ...nodePlugin.configs['flat/recommended-script'],
+    languageOptions: {
+      ...js.configs.recommended.languageOptions,
+      ...importFlatConfigsForModule.recommended.languageOptions,
+      ...nodePlugin.configs['flat/recommended-script'].languageOptions,
+      globals: {
+        ...js.configs.recommended.languageOptions?.globals,
+        ...importFlatConfigsForModule.recommended.languageOptions?.globals,
+        ...nodePlugin.configs['flat/recommended-script'].languageOptions
+          ?.globals,
+        ...nodeGlobalsConfig
+      }
+    },
     plugins: {
       ...js.configs.recommended.plugins,
       ...importFlatConfigsForScript.recommended.plugins,
@@ -240,22 +266,36 @@ module.exports = [
           version: constants.maintainedNodeVersions.last
         }
       ],
-      'n/prefer-node-protocol': 'error',
-      'no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_|^this$', ignoreRestSiblings: true }
-      ]
+      'n/prefer-node-protocol': 'error'
     }
   },
   {
     files: ['**/*.mjs'],
+    ...js.configs.recommended,
     ...importFlatConfigsForModule.recommended,
+    ...nodePlugin.configs['flat/recommended-module'],
+    languageOptions: {
+      ...js.configs.recommended.languageOptions,
+      ...importFlatConfigsForModule.recommended.languageOptions,
+      ...nodePlugin.configs['flat/recommended-module'].languageOptions,
+      globals: {
+        ...js.configs.recommended.languageOptions?.globals,
+        ...importFlatConfigsForModule.recommended.languageOptions?.globals,
+        ...nodePlugin.configs['flat/recommended-module'].languageOptions
+          ?.globals,
+        ...nodeGlobalsConfig
+      }
+    },
     plugins: {
+      ...js.configs.recommended.plugins,
       ...importFlatConfigsForModule.recommended.plugins,
+      ...nodePlugin.configs['flat/recommended-module'].plugins,
       ...sharedPlugins
     },
     rules: {
+      ...js.configs.recommended.rules,
       ...importFlatConfigsForModule.recommended.rules,
+      ...nodePlugin.configs['flat/recommended-module'].rules,
       ...sharedRules
     }
   }
