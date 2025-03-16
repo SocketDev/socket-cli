@@ -28,6 +28,8 @@ export class GitHub {
 
   checkEventType(): 'main' | 'diff' | 'comment' | 'unsupported' {
     switch (process.env['GITHUB_EVENT_NAME']) {
+      case 'issue_comment':
+        return 'comment'
       case 'push':
         return this.prNumber ? 'diff' : 'main'
       case 'pull_request': {
@@ -47,8 +49,7 @@ export class GitHub {
         logger.log(`Pull request action: ${eventAction} is not supported`)
         process.exit()
       }
-      case 'issue_comment':
-        return 'comment'
+      // eslint-disable-next-line no-fallthrough
       default:
         throw new Error(
           `Unknown event type: ${process.env['GITHUB_EVENT_NAME']}`
