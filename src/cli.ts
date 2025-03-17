@@ -9,7 +9,6 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { cmdAction } from './commands/action/cmd-action'
 import { cmdAnalytics } from './commands/analytics/cmd-analytics'
 import { cmdAuditLog } from './commands/audit-log/cmd-audit-log'
 import { cmdCdxgen } from './commands/cdxgen/cmd-cdxgen'
@@ -50,7 +49,6 @@ void (async () => {
   try {
     await meowWithSubcommands(
       {
-        action: cmdAction,
         cdxgen: cmdCdxgen,
         fix: cmdFix,
         info: cmdInfo,
