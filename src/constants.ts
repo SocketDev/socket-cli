@@ -16,7 +16,8 @@ const {
   SOCKET_SECURITY_SCOPE,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
-    createConstantsObject
+    createConstantsObject,
+    getIpc
   }
 } = registryConstants
 
@@ -27,9 +28,9 @@ type RegistryInternals = (typeof registryConstants)['Symbol(kInternalsSymbol)']
 type Sentry = any
 
 type Internals = Remap<
-  Omit<RegistryInternals, 'getIPC'> &
+  Omit<RegistryInternals, 'getIpc'> &
     Readonly<{
-      getIPC: {
+      getIpc: {
         (): Promise<IPC>
         <K extends keyof IPC | undefined>(
           key?: K | undefined
@@ -402,6 +403,7 @@ const constants = createConstantsObject(
       zshRcPath: lazyZshRcPath
     },
     internals: {
+      getIpc,
       getSentry() {
         return _Sentry
       },
