@@ -213,7 +213,7 @@
     "translations.json"
   ],
   "lint-staged": {
-    "*.{cjs,js,json,md,mjs,ts}": [
+    "*.{cjs,cts,js,json,md,mjs,mts,ts}": [
       "npm run lint -- --fix",
       "npm run lint:fix:fast -- --no-errors-on-unmatched --files-ignore-unknown=true --colors=off"
     ]
