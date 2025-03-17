@@ -16,7 +16,7 @@ const {
   NPX,
   SOCKET_CLI_SAFE_WRAPPER,
   kInternalsSymbol,
-  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIPC }
+  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIpc }
 } = constants
 
 export const SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
@@ -86,7 +86,7 @@ export class SafeArborist extends Arborist {
     } as ArboristReifyOptions
     const safeWrapperName = options.dryRun
       ? undefined
-      : await getIPC(SOCKET_CLI_SAFE_WRAPPER)
+      : await getIpc(SOCKET_CLI_SAFE_WRAPPER)
     const isSafeNpm = safeWrapperName === NPM
     const isSafeNpx = safeWrapperName === NPX
     if (!safeWrapperName || (isSafeNpx && options['yes'])) {
