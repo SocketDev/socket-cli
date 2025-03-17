@@ -147,7 +147,7 @@ module.exports = [
     ignores: biomeConfig.files.ignore.map(convertIgnorePatternToMinimatch)
   },
   {
-    files: ['**/*.ts'],
+    files: ['**/*.{cts,mts,ts}'],
     ...js.configs.recommended,
     ...importFlatConfigsForModule.typescript,
     languageOptions: {
@@ -169,11 +169,12 @@ module.exports = [
           ...importFlatConfigsForModule.typescript.languageOptions
             ?.parserOptions?.projectService,
           allowDefaultProject: [
-            'test/*.ts',
             // Allow paths like src/utils/*.test.ts.
             'src/*/*.test.ts',
             // Allow paths like src/commands/optimize/*.test.ts.
-            'src/*/*/*.test.ts'
+            'src/*/*/*.test.ts',
+            'test/*.ts',
+            'vitest.config.mts'
           ],
           defaultProject: 'tsconfig.json',
           tsconfigRootDir: rootPath,
@@ -223,7 +224,7 @@ module.exports = [
     }
   },
   {
-    files: ['**/*.{c,}js'],
+    files: ['**/*.{cjs,js}'],
     ...js.configs.recommended,
     ...importFlatConfigsForScript.recommended,
     ...nodePlugin.configs['flat/recommended-script'],
