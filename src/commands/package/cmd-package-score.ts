@@ -2,6 +2,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { parsePackageSpecifiers } from './parse-package-specifiers'
 import { showPurlInfo } from './show-purl-info'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
@@ -30,17 +31,20 @@ const config: CliCommandConfig = {
     Show scoring details for one or more packages.
     Only a few ecosystems are supported like npm, golang, and maven.
 
-    If the first arg is an ecosystem, remaining args that are not a "purl" are
-    assumed to be scoped in that ecosystem. If the first arg is in "purl" form
-    then all args must be in purl form ("package url": \`pkg:eco/name@version\`).
+    A "purl" is a standard package formatting: \`pkg:eco/name@version\`
+    The "pkg:" prefix is automatically prepended when not present.
 
-    This command takes 100 quota units.
+    If the first arg is an ecosystem, remaining args that are not a purl are
+    assumed to be scoped in that ecosystem or to be purls.
+
+    This command takes 100 quota units (regardless of arg count).
     This command requires \`packages:list\` scope access on your API token.
 
     Examples
       $ ${command} npm webtorrent
       $ ${command} npm webtorrent@1.9.1
       $ ${command} npm/webtorrent@1.9.1
+      $ ${command} pkg:npm/webtorrent@1.9.1
       $ ${command} maven webtorrent babel
       $ ${command} npm/webtorrent golang/babel
       $ ${command} npm npm/webtorrent@1.0.1 babel
@@ -66,23 +70,21 @@ async function run(
   })
 
   const { json, markdown } = cli.flags
-  const [ecosystem, ...pkgs] = cli.input
+  const [ecosystem = '', ...pkgs] = cli.input
 
-  if (!ecosystem || !pkgs.length || !pkgs[0]) {
+  const { purls, valid } = parsePackageSpecifiers(ecosystem, pkgs)
+
+  if (!valid || !purls.length) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
     logger.fail(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-      - Expecting an ecosystem ${!ecosystem ? colors.red('(missing!)') : colors.green('(ok)')}\n
-      - Expecting at least one package ${!pkgs.length || !pkgs[0] ? colors.red('(missing!)') : colors.green('(ok)')}\n
+      - First parameter should be an ecosystem or all args must be purls ${!valid ? colors.red('(bad!)') : colors.green('(ok)')}\n
+      - Expecting at least one package ${!purls.length ? colors.red('(missing!)') : colors.green('(ok)')}\n
     `)
     return
   }
-
-  const purls = pkgs.map(pkg => {
-    return 'pkg:' + ecosystem + '/' + pkg
-  })
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)

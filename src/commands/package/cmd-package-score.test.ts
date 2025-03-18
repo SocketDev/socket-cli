@@ -29,17 +29,20 @@ describe('socket package score', async () => {
         Show scoring details for one or more packages.
         Only a few ecosystems are supported like npm, golang, and maven.
 
-        If the first arg is an ecosystem, remaining args that are not a "purl" are
-        assumed to be scoped in that ecosystem. If the first arg is in "purl" form
-        then all args must be in purl form ("package url": \`pkg:eco/name@version\`).
+        A "purl" is a standard package formatting: \`pkg:eco/name@version\`
+        The "pkg:" prefix is automatically prepended when not present.
 
-        This command takes 100 quota units.
+        If the first arg is an ecosystem, remaining args that are not a purl are
+        assumed to be scoped in that ecosystem or to be purls.
+
+        This command takes 100 quota units (regardless of arg count).
         This command requires \`packages:list\` scope access on your API token.
 
         Examples
           $ socket package score npm webtorrent
           $ socket package score npm webtorrent@1.9.1
           $ socket package score npm/webtorrent@1.9.1
+          $ socket package score pkg:npm/webtorrent@1.9.1
           $ socket package score maven webtorrent babel
           $ socket package score npm/webtorrent golang/babel
           $ socket package score npm npm/webtorrent@1.0.1 babel"
@@ -74,7 +77,7 @@ describe('socket package score', async () => {
 
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-              - Expecting an ecosystem \\x1b[31m(missing!)\\x1b[39m
+              - First parameter should be an ecosystem or all args must be purls \\x1b[31m(bad!)\\x1b[39m
 
               - Expecting at least one package \\x1b[31m(missing!)\\x1b[39m"
       `)
