@@ -2,7 +2,8 @@ import { stripIndents } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { components } from '@socketsecurity/sdk/types/api'
+
+import type { components } from '@socketsecurity/sdk/types/api'
 
 export function logPackageInfo(
   purls: string[],
@@ -32,9 +33,12 @@ export function logPackageInfo(
 
   if (outputKind === 'markdown') {
     logger.log(stripIndents`
-      # Package report
+      # Shallow Package Report
 
       This report contains the response for requesting data on some package url(s).
+
+      Please note: The listed scores are ONLY for the package itself. It does NOT
+                   reflect the scores of any dependencies, transitive or otherwise.
 
       ${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => '- ' + purl + '\n').join('')}` : ''}
 
@@ -42,6 +46,12 @@ export function logPackageInfo(
     `)
     return
   }
+
+  logger.log('\n' + colors.bold('Shallow Package Score') + '\n')
+  logger.log(
+    'Please note: The listed scores are ONLY for the package itself. It does NOT\n' +
+      '             reflect the scores of any dependencies, transitive or otherwise.'
+  )
 
   if (missing.length) {
     logger.log(

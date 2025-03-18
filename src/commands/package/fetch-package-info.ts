@@ -1,9 +1,13 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { SocketSdkResultType, SocketSdkReturnType } from '@socketsecurity/sdk'
 
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { getPublicToken, setupSdk } from '../../utils/sdk'
+
+import type {
+  SocketSdkResultType,
+  SocketSdkReturnType
+} from '@socketsecurity/sdk'
 
 export async function fetchPackageInfo(
   purls: string[]
@@ -14,7 +18,7 @@ export async function fetchPackageInfo(
   const { spinner } = constants
 
   logger.error(
-    `Requesting data for ${purls.length} package urls (purl): ${purls.join(', ')}`
+    `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`
   )
   spinner.start(`Requesting data ...`)
 

@@ -14,9 +14,10 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
-  commandName: 'score',
-  description: 'Look up info regarding a package',
-  hidden: false,
+  commandName: 'shallow',
+  description:
+    'Look up info regarding one or more packages but not their transitives',
+  hidden: true,
   flags: {
     ...commonFlags,
     ...outputFlags
@@ -28,17 +29,21 @@ const config: CliCommandConfig = {
     Options
       ${getFlagListOutput(config.flags, 6)}
 
-    Show scoring details for one or more packages.
+    Requirements
+      - quota: 100
+      - scope: \`packages:list\`
+
+    Show scoring details for one or more packages purely based on their own package.
+    This means that any dependency scores are not reflected by the score. You can
+    use the \`socket package score <pkg>\` command to get its full transitive score.
+
     Only a few ecosystems are supported like npm, golang, and maven.
 
-    A "purl" is a standard package formatting: \`pkg:eco/name@version\`
-    The "pkg:" prefix is automatically prepended when not present.
+    A "purl" is a standard package name formatting: \`pkg:eco/name@version\`
+    This command will automatically prepend "pkg:" when not present.
 
     If the first arg is an ecosystem, remaining args that are not a purl are
-    assumed to be scoped in that ecosystem or to be purls.
-
-    This command takes 100 quota units (regardless of arg count).
-    This command requires \`packages:list\` scope access on your API token.
+    assumed to be scoped to that ecosystem.
 
     Examples
       $ ${command} npm webtorrent
@@ -51,9 +56,16 @@ const config: CliCommandConfig = {
   `
 }
 
-export const cmdPackageScore = {
+export const cmdPackageShallow = {
   description: config.description,
   hidden: config.hidden,
+  alias: {
+    shallowScore: {
+      description: config.description,
+      hidden: true,
+      argv: []
+    }
+  },
   run
 }
 
@@ -92,10 +104,7 @@ async function run(
   }
 
   await showPurlInfo({
-    // commandName: `${parentName} ${config.commandName}`,
-    // includeAllIssues: Boolean(all),
     outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
     purls
-    // strict: Boolean(strict)
   })
 }
