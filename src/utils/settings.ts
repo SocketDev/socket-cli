@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
+import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -9,9 +9,13 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { safeReadFileSync } from './fs'
 import constants from '../constants'
 
+// Default app data folder env var on Win
 const LOCALAPPDATA = 'LOCALAPPDATA'
+// Default app data folder env var on Mac/Linux
+const XDG_DATA_HOME = 'XDG_DATA_HOME'
+const SOCKET_APP_DIR = 'socket/settings'
 
-const supportedApiKeys = new Set([
+const supportedApiKeys: Set<keyof Settings> = new Set([
   'apiBaseUrl',
   'apiKey',
   'apiProxy',
@@ -20,6 +24,7 @@ const supportedApiKeys = new Set([
 
 interface Settings {
   apiBaseUrl?: string | null | undefined
+  // @deprecated
   apiKey?: string | null | undefined
   apiProxy?: string | null | undefined
   enforcedOrgs?: string[] | readonly string[] | null | undefined
@@ -27,43 +32,57 @@ interface Settings {
   apiToken?: string | null | undefined
 }
 
-let _settings: Settings | undefined
+let settings: Settings | undefined
+let settingsPath: string | undefined
+let warnedSettingPathWin32Missing = false
+let pendingSave = false
+
 function getSettings(): Settings {
-  if (_settings === undefined) {
-    _settings = {} as Settings
+  if (settings === undefined) {
+    settings = {} as Settings
     const settingsPath = getSettingsPath()
     if (settingsPath) {
       const raw = safeReadFileSync(settingsPath)
       if (raw) {
         try {
           Object.assign(
-            _settings,
+            settings,
             JSON.parse(Buffer.from(raw, 'base64').toString())
           )
         } catch {
           logger.warn(`Failed to parse settings at ${settingsPath}`)
         }
       } else {
-        mkdirSync(path.dirname(settingsPath), { recursive: true })
+        fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
       }
     }
   }
-  return _settings
+  return settings
 }
 
-let _settingsPath: string | undefined
-let _warnedSettingPathWin32Missing = false
 function getSettingsPath(): string | undefined {
-  if (_settingsPath === undefined) {
+  // Get the OS app data folder:
+  // - Win: %LOCALAPPDATA% or fail?
+  // - Mac: %XDG_DATA_HOME% or fallback to "~/Library/Application Support/"
+  // - Linux: %XDG_DATA_HOME% or fallback to "~/.local/share/"
+  // Note: LOCALAPPDATA is typically: C:\Users\USERNAME\AppData
+  // Note: XDG stands for "X Desktop Group", nowadays "freedesktop.org"
+  //       On most systems that path is: $HOME/.local/share
+  // Then append `socket/settings`, so:
+  // - Win: %LOCALAPPDATA%\socket\settings or return undefined
+  // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
+  // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
+
+  if (settingsPath === undefined) {
     // Lazily access constants.WIN32.
     const { WIN32 } = constants
     let dataHome: string | undefined = WIN32
       ? process.env[LOCALAPPDATA]
-      : process.env['XDG_DATA_HOME']
+      : process.env[XDG_DATA_HOME]
     if (!dataHome) {
       if (WIN32) {
-        if (!_warnedSettingPathWin32Missing) {
-          _warnedSettingPathWin32Missing = true
+        if (!warnedSettingPathWin32Missing) {
+          warnedSettingPathWin32Missing = true
           logger.warn(`Missing %${LOCALAPPDATA}%`)
         }
       } else {
@@ -75,19 +94,17 @@ function getSettingsPath(): string | undefined {
         )
       }
     }
-    _settingsPath = dataHome
-      ? path.join(dataHome, 'socket/settings')
-      : undefined
+    settingsPath = dataHome ? path.join(dataHome, SOCKET_APP_DIR) : undefined
   }
-  return _settingsPath
+  return settingsPath
 }
 
-function normalizeSettingsKey(key: string): string {
+function normalizeSettingsKey(key: keyof Settings): keyof Settings {
   const normalizedKey = key === 'apiToken' ? 'apiKey' : key
-  if (!supportedApiKeys.has(normalizedKey)) {
+  if (!supportedApiKeys.has(normalizedKey as keyof Settings)) {
     throw new Error(`Invalid settings key: ${normalizedKey}`)
   }
-  return normalizedKey
+  return normalizedKey as keyof Settings
 }
 
 export function findSocketYmlSync() {
@@ -122,20 +139,19 @@ export function getSetting<Key extends keyof Settings>(
   return getSettings()[normalizeSettingsKey(key) as Key]
 }
 
-let pendingSave = false
 export function updateSetting<Key extends keyof Settings>(
   key: Key,
   value: Settings[Key]
 ): void {
   const settings = getSettings()
-  ;(settings as any)[normalizeSettingsKey(key) as Key] = value
+  settings[normalizeSettingsKey(key) as Key] = value
   if (!pendingSave) {
     pendingSave = true
     process.nextTick(() => {
       pendingSave = false
       const settingsPath = getSettingsPath()
       if (settingsPath) {
-        writeFileSync(
+        fs.writeFileSync(
           settingsPath,
           Buffer.from(JSON.stringify(settings)).toString('base64')
         )
