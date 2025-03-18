@@ -17,7 +17,7 @@ const { API_V0_URL } = constants
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
   result: SocketSdkErrorType<T>
-) {
+): never {
   // SocketSdkErrorType['error'] is not typed.
   const resultErrorMessage = (result as { error?: Error }).error?.message
   const message =

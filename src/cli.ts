@@ -24,6 +24,7 @@ import { cmdNpx } from './commands/npx/cmd-npx'
 import { cmdOops } from './commands/oops/cmd-oops'
 import { cmdOptimize } from './commands/optimize/cmd-optimize'
 import { cmdOrganization } from './commands/organization/cmd-organization'
+import { cmdPackage } from './commands/package/cmd-package'
 import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm'
 import { cmdRawNpx } from './commands/raw-npx/cmd-raw-npx'
 import { cmdReport } from './commands/report/cmd-report'
@@ -59,6 +60,7 @@ void (async () => {
         oops: cmdOops,
         optimize: cmdOptimize,
         organization: cmdOrganization,
+        package: cmdPackage,
         'raw-npm': cmdRawNpm,
         'raw-npx': cmdRawNpx,
         report: cmdReport,
