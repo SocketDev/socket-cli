@@ -1,12 +1,13 @@
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { components } from '@socketsecurity/sdk/types/api'
 
 import constants from '../../constants'
 import { handleAPIError, queryAPI } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken } from '../../utils/sdk'
+
+import type { components } from '@socketsecurity/sdk/types/api'
 
 export async function getFullScan(
   orgSlug: string,

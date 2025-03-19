@@ -69,8 +69,8 @@ async function listReposWithToken({
     socketSdk.getOrgRepoList(orgSlug, {
       sort,
       direction,
-      per_page,
-      page
+      per_page: String(per_page),
+      page: String(page)
     }),
     'listing repositories'
   )

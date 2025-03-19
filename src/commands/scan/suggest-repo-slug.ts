@@ -23,8 +23,8 @@ export async function suggestRepoSlug(
       // There's no guarantee that the cwd is part of this page. If it's not
       // then do an additional request and specific search for it instead.
       // This way we can offer the tip of "do you want to create [cwd]?".
-      perPage: 10,
-      page: 0
+      perPage: '10',
+      page: '0'
     }),
     'looking up known repos'
   )
