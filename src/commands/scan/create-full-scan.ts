@@ -186,9 +186,9 @@ export async function createFullScan({
         repo: repoName,
         branch: branchName,
         commit_message: commitMessage,
-        make_default_branch: defaultBranch,
-        set_as_pending_head: pendingHead,
-        tmp
+        make_default_branch: String(defaultBranch),
+        set_as_pending_head: String(pendingHead),
+        tmp: String(tmp)
       },
       packagePaths,
       cwd

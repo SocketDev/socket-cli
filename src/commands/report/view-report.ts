@@ -1,8 +1,8 @@
-import { components } from '@socketsecurity/sdk/types/api'
-
 import { fetchReportData } from './fetch-report-data'
 import { formatReportDataOutput } from './format-report-data'
 import { getFullScan } from '../scan/get-full-scan'
+
+import type { components } from '@socketsecurity/sdk/types/api'
 
 export async function viewReport(
   reportId: string,

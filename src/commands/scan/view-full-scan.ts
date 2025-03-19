@@ -1,10 +1,11 @@
 import fs from 'node:fs/promises'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { components } from '@socketsecurity/sdk/types/api'
 
 import { getFullScan } from './get-full-scan'
 import { mdTable } from '../../utils/markdown'
+
+import type { components } from '@socketsecurity/sdk/types/api'
 
 export async function viewFullScan(
   orgSlug: string,
