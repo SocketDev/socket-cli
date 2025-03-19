@@ -1,8 +1,5 @@
-import { setTimeout as wait } from 'node:timers/promises'
-
 import { isObject } from '@socketsecurity/registry/lib/objects'
 
-import constants from '../../constants'
 import { isErrnoException } from '../errors'
 import { getPublicToken, setupSdk } from '../sdk'
 import { findSocketYmlSync, getSetting } from '../settings'
@@ -38,8 +35,6 @@ type NonNormalizedResolvedRule =
   | boolean
 
 type RuleActionUX = { block: boolean; display: boolean }
-
-const { abortSignal } = constants
 
 const ERROR_UX: RuleActionUX = {
   block: true,
@@ -184,89 +179,81 @@ let _uxLookup: AlertUxLookup | undefined
 export async function uxLookup(
   settings: AlertUxLookupSettings
 ): Promise<AlertUxLookupResult> {
-  while (_uxLookup === undefined) {
-    // eslint-disable-next-line no-await-in-loop
-    await wait(1, { signal: abortSignal })
-  }
-  return _uxLookup(settings)
-}
-
-// Start initializing the AlertUxLookupResult immediately.
-void (async () => {
-  const { orgs, settings } = await (async () => {
-    try {
-      const sockSdk = await setupSdk(getPublicToken())
-      const orgResult = await sockSdk.getOrganizations()
-      if (!orgResult.success) {
-        throw new Error(
-          `Failed to fetch Socket organization info: ${orgResult.error.message}`
-        )
-      }
-      const orgs: Array<
-        Exclude<(typeof orgResult.data.organizations)[string], undefined>
-      > = []
-      for (const org of Object.values(orgResult.data.organizations)) {
-        if (org) {
-          orgs.push(org)
+  if (_uxLookup === undefined) {
+    const { orgs, settings } = await (async () => {
+      try {
+        const sockSdk = await setupSdk(getPublicToken())
+        const orgResult = await sockSdk.getOrganizations()
+        if (!orgResult.success) {
+          throw new Error(
+            `Failed to fetch Socket organization info: ${orgResult.error.message}`
+          )
         }
-      }
-      const result = await sockSdk.postSettings(
-        orgs.map(org => ({ organization: org.id }))
-      )
-      if (!result.success) {
-        throw new Error(
-          `Failed to fetch API key settings: ${result.error.message}`
-        )
-      }
-      return {
-        orgs,
-        settings: result.data
-      }
-    } catch (e) {
-      const cause = isObject(e) && 'cause' in e ? e['cause'] : undefined
-      if (
-        isErrnoException(cause) &&
-        (cause.code === 'ENOTFOUND' || cause.code === 'ECONNREFUSED')
-      ) {
-        throw new Error(
-          'Unable to connect to socket.dev, ensure internet connectivity before retrying',
-          {
-            cause: e
+        const orgs: Array<
+          Exclude<(typeof orgResult.data.organizations)[string], undefined>
+        > = []
+        for (const org of Object.values(orgResult.data.organizations)) {
+          if (org) {
+            orgs.push(org)
           }
+        }
+        const result = await sockSdk.postSettings(
+          orgs.map(org => ({ organization: org.id }))
         )
+        if (!result.success) {
+          throw new Error(
+            `Failed to fetch API key settings: ${result.error.message}`
+          )
+        }
+        return {
+          orgs,
+          settings: result.data
+        }
+      } catch (e) {
+        const cause = isObject(e) && 'cause' in e ? e['cause'] : undefined
+        if (
+          isErrnoException(cause) &&
+          (cause.code === 'ENOTFOUND' || cause.code === 'ECONNREFUSED')
+        ) {
+          throw new Error(
+            'Unable to connect to socket.dev, ensure internet connectivity before retrying',
+            {
+              cause: e
+            }
+          )
+        }
+        throw e
       }
-      throw e
+    })()
+    // Remove any organizations not being enforced.
+    const enforcedOrgs = getSetting('enforcedOrgs') ?? []
+    for (const { 0: i, 1: org } of orgs.entries()) {
+      if (!enforcedOrgs.includes(org.id)) {
+        settings.entries.splice(i, 1)
+      }
     }
-  })()
-
-  // Remove any organizations not being enforced.
-  const enforcedOrgs = getSetting('enforcedOrgs') ?? []
-  for (const { 0: i, 1: org } of orgs.entries()) {
-    if (!enforcedOrgs.includes(org.id)) {
-      settings.entries.splice(i, 1)
-    }
-  }
-
-  const socketYml = findSocketYmlSync()
-  if (socketYml) {
-    settings.entries.push({
-      start: socketYml.path,
-      settings: {
-        [socketYml.path]: {
-          deferTo: null,
-          // TODO: TypeScript complains about the type not matching. We should
-          // figure out why are providing
-          // issueRules: { [issueName: string]: boolean }
-          // but expecting
-          // issueRules: { [issueName: string]: { action: 'defer' | 'error' | 'ignore' | 'monitor' | 'warn' } }
-          issueRules: socketYml.parsed.issueRules as unknown as {
-            [key: string]: {
-              action: 'defer' | 'error' | 'ignore' | 'monitor' | 'warn'
+    const socketYml = findSocketYmlSync()
+    if (socketYml) {
+      settings.entries.push({
+        start: socketYml.path,
+        settings: {
+          [socketYml.path]: {
+            deferTo: null,
+            // TODO: TypeScript complains about the type not matching. We should
+            // figure out why are providing
+            // issueRules: { [issueName: string]: boolean }
+            // but expecting
+            // issueRules: { [issueName: string]: { action: 'defer' | 'error' | 'ignore' | 'monitor' | 'warn' } }
+            issueRules: socketYml.parsed.issueRules as unknown as {
+              [key: string]: {
+                action: 'defer' | 'error' | 'ignore' | 'monitor' | 'warn'
+              }
             }
           }
         }
-      }
-    })
+      })
+    }
+    _uxLookup = createAlertUXLookup(settings)
   }
-  _uxLookup = createAlertUXLookup(settings)
-})()
+  return _uxLookup(settings)
+}
