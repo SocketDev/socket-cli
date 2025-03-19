@@ -1,6 +1,6 @@
 import process from 'node:process'
 
-import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
+import { HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { SOCKET_PUBLIC_API_TOKEN } from '@socketsecurity/registry/lib/constants'
@@ -67,9 +67,7 @@ export async function setupSdk(
     throw new AuthError('You need to provide an API key')
   }
   return new SocketSdk(apiToken, {
-    agent: proxy
-      ? new HttpsProxyAgent({ proxy })
-      : undefined,
+    agent: proxy ? new HttpsProxyAgent({ proxy }) : undefined,
     baseUrl: apiBaseUrl,
     userAgent: createUserAgentFromPkgJson({
       // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_NAME']".
