@@ -4,12 +4,13 @@ import util from 'node:util'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 import constants from '../../constants'
 import { handleAPIError, handleApiCall, queryAPI } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken } from '../../utils/sdk'
+
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function getDiffScan({
   after,

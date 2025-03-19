@@ -74,8 +74,8 @@ async function listFullScansWithToken({
     socketSdk.getOrgFullScanList(orgSlug, {
       sort,
       direction,
-      per_page,
-      page,
+      per_page: String(per_page),
+      page: String(page),
       from: from_time
     }),
     'Listing scans'

@@ -2,7 +2,6 @@ import { stripIndents } from 'common-tags'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { Separator, select } from '@socketsecurity/registry/lib/prompts'
-import { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
@@ -11,6 +10,7 @@ import { mdTable } from '../../utils/markdown'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 import type { Choice } from '@socketsecurity/registry/lib/prompts'
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 type AuditChoice = Choice<string>
 
@@ -198,12 +198,14 @@ async function getAuditLogWithToken({
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
     socketSdk.getAuditLogEvents(orgSlug, {
-      outputJson: outputKind === 'json', // I'm not sure this is used at all
-      outputMarkdown: outputKind === 'markdown', // I'm not sure this is used at all
+      // I'm not sure this is used at all.
+      outputJson: String(outputKind === 'json'),
+      // I'm not sure this is used at all.
+      outputMarkdown: String(outputKind === 'markdown'),
       orgSlug,
       type: logType,
-      page,
-      per_page: perPage
+      page: String(page),
+      per_page: String(perPage)
     }),
     `Looking up audit log for ${orgSlug}\n`
   )

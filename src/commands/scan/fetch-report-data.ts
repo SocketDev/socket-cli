@@ -1,13 +1,17 @@
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { SocketSdkResultType, SocketSdkReturnType } from '@socketsecurity/sdk'
-import { components } from '@socketsecurity/sdk/types/api'
 
 import constants from '../../constants'
 import { handleAPIError, handleApiCall, queryAPI } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
+
+import type {
+  SocketSdkResultType,
+  SocketSdkReturnType
+} from '@socketsecurity/sdk'
+import type { components } from '@socketsecurity/sdk/types/api'
 
 /**
  * This fetches all the relevant pieces of data to generate a report, given a
