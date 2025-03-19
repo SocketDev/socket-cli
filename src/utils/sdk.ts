@@ -68,10 +68,7 @@ export async function setupSdk(
   }
   return new SocketSdk(apiToken, {
     agent: proxy
-      ? {
-          http: new HttpProxyAgent({ proxy }),
-          https: new HttpsProxyAgent({ proxy })
-        }
+      ? new HttpsProxyAgent({ proxy })
       : undefined,
     baseUrl: apiBaseUrl,
     userAgent: createUserAgentFromPkgJson({
