@@ -9,7 +9,7 @@ import type {
   SocketSdkReturnType
 } from '@socketsecurity/sdk'
 
-export async function fetchPackageInfo(
+export async function fetchPurlsShallowScore(
   purls: string[]
 ): Promise<SocketSdkReturnType<'batchPackageFetch'>> {
   const socketSdk = await setupSdk(getPublicToken())
