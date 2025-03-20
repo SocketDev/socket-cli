@@ -1,18 +1,18 @@
-import { fetchPackageInfo } from './fetch-package-info'
-import { logPackageInfo } from './log-package-info'
+import { fetchPurlsShallowScore } from './fetch-purls-shallow-score'
+import { outputPurlsShallowScore } from './output-purls-shallow-score'
 
 import type { components } from '@socketsecurity/sdk/types/api'
 
-export async function showPurlInfo({
+export async function handlePurlsShallowScore({
   outputKind,
   purls
 }: {
   outputKind: 'json' | 'markdown' | 'text'
   purls: string[]
 }) {
-  const packageData = await fetchPackageInfo(purls)
+  const packageData = await fetchPurlsShallowScore(purls)
   if (packageData) {
-    logPackageInfo(
+    outputPurlsShallowScore(
       purls,
       packageData.data as Array<components['schemas']['SocketArtifact']>,
       outputKind

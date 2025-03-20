@@ -48,7 +48,10 @@ export function getDefaultToken(): string | undefined {
 }
 
 export function getPublicToken(): string {
-  return getDefaultToken() ?? SOCKET_PUBLIC_API_TOKEN
+  return (
+    (process.env['SOCKET_SECURITY_API_TOKEN'] || getDefaultToken()) ??
+    SOCKET_PUBLIC_API_TOKEN
+  )
 }
 
 export async function setupSdk(
