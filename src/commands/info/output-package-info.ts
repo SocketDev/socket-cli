@@ -5,7 +5,7 @@ import constants from '@socketsecurity/registry/lib/constants'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { hasKeys } from '@socketsecurity/registry/lib/objects'
 
-import { PackageData } from './get-package-info'
+import { PackageData } from './handle-package-info'
 import { SEVERITY, formatSeverityCount } from '../../utils/alert/severity'
 import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 import {
@@ -26,7 +26,7 @@ function formatScore(score: number): string {
   return colors.red(`${score}`)
 }
 
-function logPackageIssuesDetails(
+function outputPackageIssuesDetails(
   packageData: SocketSdkReturnType<'getIssuesByNPMPackage'>['data'],
   outputMarkdown: boolean
 ) {
@@ -65,7 +65,7 @@ function logPackageIssuesDetails(
   }
 }
 
-export function logPackageInfo(
+export function outputPackageInfo(
   { data, score, severityCount }: PackageData,
   {
     name,
@@ -112,7 +112,7 @@ export function logPackageInfo(
     logger.log(
       `Package has these issues: ${formatSeverityCount(severityCount)}\n`
     )
-    logPackageIssuesDetails(data, outputKind === 'markdown')
+    outputPackageIssuesDetails(data, outputKind === 'markdown')
   } else {
     logger.log('Package has no issues')
   }
