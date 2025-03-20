@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getSecurityPolicy } from './get-security-policy'
+import { handleSecurityPolicy } from './handle-security-policy'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -80,7 +80,7 @@ ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields
     return
   }
 
-  await getSecurityPolicy(
+  await handleSecurityPolicy(
     orgSlug,
     json ? 'json' : markdown ? 'markdown' : 'text'
   )
