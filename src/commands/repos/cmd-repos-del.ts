@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { deleteRepo } from './delete-repo'
+import { handleDeleteRepo } from './handle-delete-repo'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -72,5 +72,5 @@ async function run(
     return
   }
 
-  await deleteRepo(orgSlug, repoName)
+  await handleDeleteRepo(orgSlug, repoName)
 }
