@@ -25,8 +25,7 @@ export async function fetchAuditLog({
     )
   }
 
-  return await fetchAuditLogWithToken({
-    apiToken,
+  return await fetchAuditLogWithToken(apiToken, {
     logType,
     orgSlug,
     outputKind,
@@ -35,21 +34,22 @@ export async function fetchAuditLog({
   })
 }
 
-export async function fetchAuditLogWithToken({
-  apiToken,
-  logType,
-  orgSlug,
-  outputKind,
-  page,
-  perPage
-}: {
-  apiToken: string
-  outputKind: 'json' | 'markdown' | 'print'
-  orgSlug: string
-  page: number
-  perPage: number
-  logType: string
-}): Promise<SocketSdkReturnType<'getAuditLogEvents'>['data'] | void> {
+export async function fetchAuditLogWithToken(
+  apiToken: string,
+  {
+    logType,
+    orgSlug,
+    outputKind,
+    page,
+    perPage
+  }: {
+    outputKind: 'json' | 'markdown' | 'print'
+    orgSlug: string
+    page: number
+    perPage: number
+    logType: string
+  }
+): Promise<SocketSdkReturnType<'getAuditLogEvents'>['data'] | void> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
