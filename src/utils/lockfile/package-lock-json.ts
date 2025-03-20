@@ -11,7 +11,8 @@ import constants from '../../constants'
 import { SafeArborist } from '../../shadow/npm/arborist/lib/arborist'
 import { DiffAction } from '../../shadow/npm/arborist/lib/arborist/types'
 import { Edge } from '../../shadow/npm/arborist/lib/edge'
-import { batchScan } from '../alert/artifact'
+import { getPublicToken, setupSdk } from '../../utils/sdk'
+import { CompactSocketArtifact } from '../alert/artifact'
 import {
   type AlertsByPkgId,
   addArtifactToAlertsMap
@@ -244,12 +245,30 @@ export async function getAlertsMapFromArborist(
       })
     )
   }
+
+  const socketSdk = await setupSdk(getPublicToken())
+
   const toAlertsMapOptions = {
     overrides,
     ...options
   }
-  for await (const artifact of batchScan(pkgIds)) {
-    await addArtifactToAlertsMap(artifact, alertsByPkgId, toAlertsMapOptions)
+
+  for await (const batchPackageFetchResult of socketSdk.batchPackageStream(
+    {
+      alerts: 'true',
+      compact: 'true'
+    },
+    {
+      components: pkgIds.map(id => ({ purl: `pkg:npm/${id}` }))
+    }
+  )) {
+    if (batchPackageFetchResult.success) {
+      await addArtifactToAlertsMap(
+        batchPackageFetchResult.data as CompactSocketArtifact,
+        alertsByPkgId,
+        toAlertsMapOptions
+      )
+    }
     remaining -= 1
     if (spinner && remaining > 0) {
       spinner.start()
