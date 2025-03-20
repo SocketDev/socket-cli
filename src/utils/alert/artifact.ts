@@ -10,7 +10,7 @@ export type ArtifactAlertCve = Remap<
 >
 
 export type ArtifactAlertCveFixable = Remap<
-  Omit<CompactSocketArtifactAlert, 'props'> & {
+  Omit<CompactSocketArtifactAlert, 'props' | 'type'> & {
     type: CveAlertType
     props: {
       firstPatchedVersionIdentifier: string
