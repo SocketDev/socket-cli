@@ -12,7 +12,6 @@ import type { Remap } from '@socketsecurity/registry/lib/objects'
 const {
   NODE_MODULES,
   NPM,
-  NPX,
   SOCKET_SECURITY_SCOPE,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
