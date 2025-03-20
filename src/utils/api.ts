@@ -6,8 +6,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { AuthError } from './errors'
-import constants from '../constants'
 import { getSetting } from './settings'
+import constants from '../constants'
 
 import type {
   SocketSdkErrorType,
