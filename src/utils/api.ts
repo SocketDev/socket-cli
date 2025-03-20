@@ -3,16 +3,16 @@ import process from 'node:process'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { AuthError } from './errors'
 import constants from '../constants'
+import { getSetting } from './settings'
 
 import type {
   SocketSdkErrorType,
   SocketSdkOperations
 } from '@socketsecurity/sdk'
-
-const { API_V0_URL } = constants
 
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
@@ -55,6 +55,8 @@ export async function handleAPIError(code: number) {
     return 'One of the options passed might be incorrect.'
   } else if (code === 403) {
     return 'You might be trying to access an organization that is not linked to the API key you are logged in with.'
+  } else {
+    ;`Server responded with status code ${code}`
   }
 }
 
@@ -63,7 +65,15 @@ export function getLastFiveOfApiToken(token: string): string {
   return token.slice(-9, -4)
 }
 
+// The API server that should be used for operations.
+function getDefaultApiBaseUrl(): string | undefined {
+  const baseUrl =
+    process.env['SOCKET_SECURITY_API_BASE_URL'] || getSetting('apiBaseUrl')
+  return isNonEmptyString(baseUrl) ? baseUrl : undefined
+}
+
 export async function queryAPI(path: string, apiToken: string) {
+  const API_V0_URL = getDefaultApiBaseUrl()
   return await fetch(`${API_V0_URL}/${path}`, {
     method: 'GET',
     headers: {
