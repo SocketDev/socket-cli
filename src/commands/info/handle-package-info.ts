@@ -3,8 +3,7 @@ import process from 'node:process'
 import { hasKeys } from '@socketsecurity/registry/lib/objects'
 
 import { fetchPackageInfo } from './fetch-package-info'
-import { logPackageInfo } from './log-package-info'
-import constants from '../../constants'
+import { outputPackageInfo } from './output-package-info'
 
 import type { SocketSdkAlert } from '../../utils/alert/severity'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -15,7 +14,7 @@ export interface PackageData {
   score: SocketSdkReturnType<'getScoreByNPMPackage'>['data']
 }
 
-export async function getPackageInfo({
+export async function handlePackageInfo({
   commandName,
   includeAllIssues,
   outputKind,
@@ -30,25 +29,14 @@ export async function getPackageInfo({
   pkgVersion: string
   strict: boolean
 }) {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start(
-    pkgVersion === 'latest'
-      ? `Looking up data for the latest version of ${pkgName}`
-      : `Looking up data for version ${pkgVersion} of ${pkgName}`
-  )
-
   const packageData = await fetchPackageInfo(
     pkgName,
     pkgVersion,
     includeAllIssues
   )
 
-  spinner.successAndStop('Data fetched')
-
   if (packageData) {
-    logPackageInfo(packageData, {
+    outputPackageInfo(packageData, {
       name: commandName,
       includeAllIssues,
       outputKind,
