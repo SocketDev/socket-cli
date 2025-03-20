@@ -6,12 +6,7 @@ import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
-import {
-  CompactSocketArtifact,
-  isArtifactAlertCve,
-  isArtifactAlertCveFixable,
-  isArtifactAlertUpgrade
-} from './alert/artifact'
+import { CompactSocketArtifact, isArtifactAlertCve } from './alert/artifact'
 import { uxLookup } from './alert/rules'
 import { SEVERITY } from './alert/severity'
 import { ColorOrMarkdown } from './color-or-markdown'
@@ -34,7 +29,12 @@ export type SocketPackageAlert = {
 
 export type AlertsByPkgId = Map<string, SocketPackageAlert[]>
 
-const { CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER, NPM } = constants
+const {
+  ALERT_FIX_TYPE_CVE,
+  ALERT_FIX_TYPE_UPGRADE,
+  CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
+  NPM
+} = constants
 
 const format = new ColorOrMarkdown(false)
 
@@ -62,6 +62,7 @@ export async function addArtifactToAlertsMap(
   if (!artifact.name || !artifact.version || !artifact.alerts?.length) {
     return
   }
+
   const {
     consolidate = false,
     include: _include,
@@ -70,6 +71,7 @@ export async function addArtifactToAlertsMap(
     __proto__: null,
     ...options
   } as AddSocketArtifactAlertToAlertsMapOptions
+
   const include = {
     __proto__: null,
     critical: true,
@@ -79,6 +81,7 @@ export async function addArtifactToAlertsMap(
     upgrade: false,
     ..._include
   } as AlertIncludeFilter
+
   const name = resolvePackageName(artifact)
   const { version } = artifact
   const pkgId = `${name}@${version}`
@@ -90,10 +93,11 @@ export async function addArtifactToAlertsMap(
       package: { name, version },
       alert: { type: alert.type }
     })
+    const fixType = alert.fix?.type ?? ''
     const critical = alert.severity === SEVERITY.critical
     const cve = isArtifactAlertCve(alert)
-    const fixableCve = isArtifactAlertCveFixable(alert)
-    const fixableUpgrade = isArtifactAlertUpgrade(alert)
+    const fixableCve = fixType === ALERT_FIX_TYPE_CVE
+    const fixableUpgrade = fixType === ALERT_FIX_TYPE_UPGRADE
     const fixable = fixableCve || fixableUpgrade
     const upgrade = fixableUpgrade && !hasOwn(overrides, name)
     if (
@@ -130,11 +134,11 @@ export async function addArtifactToAlertsMap(
     >()
     const unfixableAlerts: SocketPackageAlert[] = []
     for (const sockPkgAlert of sockPkgAlerts) {
-      if (isArtifactAlertCveFixable(sockPkgAlert.raw)) {
+      const alert = sockPkgAlert.raw
+      const fixType = alert.fix?.type ?? ''
+      if (fixType === ALERT_FIX_TYPE_CVE) {
         const patchedVersion =
-          sockPkgAlert.raw.props[
-            CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER
-          ]
+          alert.props[CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER]
         const patchedMajor = semver.major(patchedVersion)
         const oldHighest = highestForCve.get(patchedMajor)
         const highest = oldHighest?.version ?? '0.0.0'
@@ -144,7 +148,7 @@ export async function addArtifactToAlertsMap(
             version: patchedVersion
           })
         }
-      } else if (isArtifactAlertUpgrade(sockPkgAlert.raw)) {
+      } else if (fixType === ALERT_FIX_TYPE_UPGRADE) {
         const oldHighest = highestForUpgrade.get(major)
         const highest = oldHighest?.version ?? '0.0.0'
         if (semver.gt(version, highest)) {
@@ -192,12 +196,13 @@ export function getCveInfoByAlertsMap(
     ...({ __proto__: null, ...options } as GetCveInfoByPackageOptions).exclude
   }
   let infoByPkg: CveInfoByPkgId | null = null
-  for (const [pkgId, alerts] of alertsMap) {
+  for (const [pkgId, sockPkgAlerts] of alertsMap) {
     const purlObj = PackageURL.fromString(`pkg:npm/${pkgId}`)
     const name = resolvePackageName(purlObj)
-    for (const alert of alerts) {
+    for (const sockPkgAlert of sockPkgAlerts) {
+      const alert = sockPkgAlert.raw
       if (
-        !isArtifactAlertCveFixable(alert.raw) ||
+        alert.fix?.type !== ALERT_FIX_TYPE_CVE ||
         (exclude.upgrade && getManifestData(NPM, name))
       ) {
         continue
@@ -211,7 +216,7 @@ export function getCveInfoByAlertsMap(
         infoByPkg.set(name, infos)
       }
       const { firstPatchedVersionIdentifier, vulnerableVersionRange } =
-        alert.raw.props
+        alert.props
       infos.push({
         firstPatchedVersionIdentifier,
         vulnerableVersionRange: new semver.Range(

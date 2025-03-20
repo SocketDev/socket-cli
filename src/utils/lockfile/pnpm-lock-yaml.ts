@@ -28,8 +28,19 @@ export async function getAlertsMapFromPnpmLockfile(
 ): Promise<AlertsByPkgId> {
   const { include: _include, spinner } = {
     __proto__: null,
+    consolidate: false,
     ...options
   } as GetAlertsMapFromPnpmLockfileOptions
+
+  const include = {
+    __proto__: null,
+    critical: true,
+    cve: true,
+    existing: false,
+    unfixable: true,
+    upgrade: false,
+    ..._include
+  } as AlertIncludeFilter
 
   const depTypes = detectDepTypes(lockfile)
   const pkgIds = Object.keys(depTypes)
@@ -53,7 +64,8 @@ export async function getAlertsMapFromPnpmLockfile(
   for await (const batchPackageFetchResult of socketSdk.batchPackageStream(
     {
       alerts: 'true',
-      compact: 'true'
+      compact: 'true',
+      fixable: include.unfixable ? 'false' : 'true'
     },
     {
       components: pkgIds.map(id => ({ purl: `pkg:npm/${id}` }))
