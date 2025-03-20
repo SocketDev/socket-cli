@@ -2,53 +2,20 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants'
-import {
-  getLastFiveOfApiToken,
-  handleApiCall,
-  handleUnsuccessfulApiResponse
-} from '../../utils/api'
-import { AuthError } from '../../utils/errors'
-import { getDefaultToken, setupSdk } from '../../utils/sdk'
+import { getLastFiveOfApiToken } from '../../utils/api'
+import { getDefaultToken } from '../../utils/sdk'
 
-export async function getOrganization(
-  format: 'text' | 'json' | 'markdown' = 'text'
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+
+export async function outputOrganizationList(
+  data: SocketSdkReturnType<'getOrganizations'>['data'],
+  outputKind: 'text' | 'json' | 'markdown' = 'text'
 ): Promise<void> {
+  const organizations = Object.values(data.organizations)
   const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-  await printOrganizationsFromToken(apiToken, format)
-}
+  const lastFiveOfApiToken = getLastFiveOfApiToken(apiToken ?? '?????')
 
-async function printOrganizationsFromToken(
-  apiToken: string,
-  format: 'text' | 'json' | 'markdown' = 'text'
-) {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Fetching organizations...')
-
-  const socketSdk = await setupSdk(apiToken)
-  const result = await handleApiCall(
-    socketSdk.getOrganizations(),
-    'looking up organizations'
-  )
-
-  if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrganizations', result)
-    return
-  }
-
-  spinner.stop()
-
-  const organizations = Object.values(result.data.organizations)
-  const lastFiveOfApiToken = getLastFiveOfApiToken(apiToken)
-
-  switch (format) {
+  switch (outputKind) {
     case 'json': {
       logger.log(
         JSON.stringify(

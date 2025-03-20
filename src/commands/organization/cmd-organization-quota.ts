@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getQuota } from './get-quota'
+import { handleQuota } from './handle-quota'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -68,5 +68,5 @@ ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields
     return
   }
 
-  await getQuota(json ? 'json' : markdown ? 'markdown' : 'text')
+  await handleQuota(json ? 'json' : markdown ? 'markdown' : 'text')
 }
