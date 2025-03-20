@@ -6,8 +6,6 @@ const registryConstants = require('@socketsecurity/registry/lib/constants')
 const { envAsBoolean } = require('@socketsecurity/registry/lib/env')
 
 const {
-  NPM,
-  NPX,
   PACKAGE_JSON,
   PACKAGE_LOCK_JSON,
   SOCKET_SECURITY_SCOPE,
@@ -15,7 +13,6 @@ const {
   [kInternalsSymbol]: { createConstantsObject }
 } = registryConstants
 
-const WITH_SENTRY = 'with-sentry'
 const CLI = 'cli'
 const CONSTANTS = 'constants'
 const INLINED_CYCLONEDX_CDXGEN_VERSION = 'INLINED_CYCLONEDX_CDXGEN_VERSION'
@@ -28,7 +25,7 @@ const INLINED_SOCKET_CLI_TEST_DIST_BUILD = 'INLINED_SOCKET_CLI_TEST_DIST_BUILD'
 const INLINED_SOCKET_CLI_VERSION = 'INLINED_SOCKET_CLI_VERSION'
 const INLINED_SOCKET_CLI_VERSION_HASH = 'INLINED_SOCKET_CLI_VERSION_HASH'
 const INLINED_SYNP_VERSION = 'INLINED_SYNP_VERSION'
-const INSTRUMENT_WITH_SENTRY = `instrument-${WITH_SENTRY}`
+const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
 const MODULE_SYNC = 'module-sync'
 const REQUIRE = 'require'
 const ROLLUP_ENTRY_SUFFIX = '?commonjs-entry'
@@ -38,18 +35,19 @@ const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 const SHADOW_NPM_PATHS = 'shadow-npm-paths'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
 const SOCKET = 'socket'
-const SOCKET_CLI_BIN_NAME = SOCKET
-const SOCKET_CLI_BIN_NAME_ALIAS = CLI
-const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = `${SOCKET_CLI_BIN_NAME_ALIAS}-${WITH_SENTRY}`
-const SOCKET_CLI_LEGACY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/${CLI}`
-const SOCKET_CLI_NPM_BIN_NAME = `${SOCKET}-${NPM}`
-const SOCKET_CLI_NPX_BIN_NAME = `${SOCKET}-${NPX}`
-const SOCKET_CLI_PACKAGE_NAME = SOCKET
-const SOCKET_CLI_SENTRY_BIN_NAME = `${SOCKET_CLI_BIN_NAME}-${WITH_SENTRY}`
-const SOCKET_CLI_SENTRY_NPM_BIN_NAME = `${SOCKET_CLI_NPM_BIN_NAME}-${WITH_SENTRY}`
-const SOCKET_CLI_SENTRY_NPX_BIN_NAME = `${SOCKET_CLI_NPX_BIN_NAME}-${WITH_SENTRY}`
-const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_CLI_LEGACY_PACKAGE_NAME}-${WITH_SENTRY}`
+const SOCKET_CLI_BIN_NAME = 'socket'
+const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
+const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
+const SOCKET_CLI_LEGACY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli`
+const SOCKET_CLI_NPM_BIN_NAME = 'socket-npm'
+const SOCKET_CLI_NPX_BIN_NAME = 'socket-npx'
+const SOCKET_CLI_PACKAGE_NAME = 'socket'
+const SOCKET_CLI_SENTRY_BIN_NAME = 'socket-with-sentry'
+const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
+const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
+const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli-with-sentry`
 const VENDOR = 'vendor'
+const WITH_SENTRY = 'with-sentry'
 
 const LAZY_ENV = () => {
   const { env } = process
