@@ -41,7 +41,6 @@ export async function fetchPackageInfo(
 
   if (result.success) {
     return result
-  } else {
-    handleUnsuccessfulApiResponse('batchPackageFetch', result)
   }
+  handleUnsuccessfulApiResponse('batchPackageFetch', result)
 }
