@@ -2,7 +2,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getDiffScan } from './get-diff-scan'
+import { handleDiffScan } from './handle-diff-scan'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -85,8 +85,8 @@ async function run(
     parentName
   })
 
-  const before = String(cli.flags['before'] || '')
-  const after = String(cli.flags['after'] || '')
+  const { after, before, depth, file, json, markdown } = cli.flags
+
   const [orgSlug = ''] = cli.input
 
   if (!before || !after || cli.input.length < 1) {
@@ -107,12 +107,12 @@ async function run(
     return
   }
 
-  await getDiffScan({
-    outputJson: Boolean(cli.flags['json']),
-    before,
-    after,
-    depth: Number(cli.flags['depth']),
+  await handleDiffScan({
+    before: String(before || ''),
+    after: String(after || ''),
+    depth: Number(depth),
     orgSlug,
-    file: String(cli.flags['file'] || '')
+    outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
+    file: String(file || '')
   })
 }
