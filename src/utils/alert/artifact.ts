@@ -103,6 +103,7 @@ const {
   ALERT_TYPE_MEDIUM_CVE,
   ALERT_TYPE_MILD_CVE,
   ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE,
+  API_V0_URL,
   CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
   CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE,
   abortSignal
@@ -113,15 +114,20 @@ async function* createBatchGenerator(
 ): AsyncGenerator<CompactSocketArtifact> {
   // Adds the first 'abort' listener to abortSignal.
   const req = https
-    // Lazily access constants.BATCH_PURL_ENDPOINT.
-    .request(constants.BATCH_PURL_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${btoa(`${getPublicToken()}:`)}`
+    .request(
+      `${API_V0_URL}purl?${new URLSearchParams([
+        ['alerts', 'true'],
+        ['compact', 'true']
+      ])}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${btoa(`${getPublicToken()}:`)}`
+        }
+        // TODO: Fix to not abort process on network abort.
+        // signal: abortSignal
       }
-      // TODO: Fix to not abort process on network abort.
-      // signal: abortSignal
-    })
+    )
     .end(
       JSON.stringify({
         components: chunk.map(id => ({ purl: `pkg:npm/${id}` }))
