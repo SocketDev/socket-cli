@@ -3,40 +3,44 @@ import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
-export async function deleteRepo(
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+
+export async function fetchViewRepo(
   orgSlug: string,
   repoName: string
-): Promise<void> {
+): Promise<SocketSdkReturnType<'getOrgRepo'>['data'] | undefined> {
   const apiToken = getDefaultToken()
   if (!apiToken) {
     throw new AuthError(
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
-
-  await deleteRepoWithToken(orgSlug, repoName, apiToken)
+  return await fetchViewRepoWithToken(orgSlug, repoName, apiToken)
 }
 
-async function deleteRepoWithToken(
+async function fetchViewRepoWithToken(
   orgSlug: string,
   repoName: string,
   apiToken: string
-): Promise<void> {
+): Promise<SocketSdkReturnType<'getOrgRepo'>['data'] | undefined> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  spinner.start('Deleting repository...')
-
   const socketSdk = await setupSdk(apiToken)
+
+  spinner.start('Fetching repository data...')
+
   const result = await handleApiCall(
-    socketSdk.deleteOrgRepo(orgSlug, repoName),
-    'deleting repository'
+    socketSdk.getOrgRepo(orgSlug, repoName),
+    'fetching repository'
   )
 
+  spinner.successAndStop('Received response while fetched repository data.')
+
   if (!result.success) {
-    handleUnsuccessfulApiResponse('deleteOrgRepo', result)
+    handleUnsuccessfulApiResponse('getOrgRepo', result)
     return
   }
 
-  spinner.successAndStop('Repository deleted successfully')
+  return result.data
 }

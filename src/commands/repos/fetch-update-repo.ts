@@ -3,7 +3,9 @@ import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
-export async function updateRepo({
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+
+export async function fetchUpdateRepo({
   default_branch,
   description,
   homepage,
@@ -17,7 +19,7 @@ export async function updateRepo({
   homepage: string
   default_branch: string
   visibility: string
-}): Promise<void> {
+}): Promise<SocketSdkReturnType<'updateOrgRepo'>['data'] | undefined> {
   const apiToken = getDefaultToken()
   if (!apiToken) {
     throw new AuthError(
@@ -25,8 +27,7 @@ export async function updateRepo({
     )
   }
 
-  await updateRepoWithToken({
-    apiToken,
+  return await fetchUpdateRepoWithToken(apiToken, {
     default_branch,
     description,
     homepage,
@@ -36,27 +37,28 @@ export async function updateRepo({
   })
 }
 
-async function updateRepoWithToken({
-  apiToken,
-  default_branch,
-  description,
-  homepage,
-  orgSlug,
-  repoName,
-  visibility
-}: {
-  apiToken: string
-  orgSlug: string
-  repoName: string
-  description: string
-  homepage: string
-  default_branch: string
-  visibility: string
-}): Promise<void> {
+async function fetchUpdateRepoWithToken(
+  apiToken: string,
+  {
+    default_branch,
+    description,
+    homepage,
+    orgSlug,
+    repoName,
+    visibility
+  }: {
+    orgSlug: string
+    repoName: string
+    description: string
+    homepage: string
+    default_branch: string
+    visibility: string
+  }
+): Promise<SocketSdkReturnType<'updateOrgRepo'>['data'] | undefined> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  spinner.start('Updating repository...')
+  spinner.start('Sending request to update a repository...')
 
   const socketSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
@@ -71,10 +73,12 @@ async function updateRepoWithToken({
     'updating repository'
   )
 
+  spinner.successAndStop('Received response trying to update a repository')
+
   if (!result.success) {
     handleUnsuccessfulApiResponse('updateOrgRepo', result)
     return
   }
 
-  spinner.successAndStop('Repository updated successfully')
+  return result.data
 }

@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { listRepos } from './list-repos'
+import { handleListRepos } from './handle-list-repos'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -94,7 +94,7 @@ async function run(
     return
   }
 
-  await listRepos({
+  await handleListRepos({
     direction: cli.flags['direction'] === 'asc' ? 'asc' : 'desc',
     orgSlug,
     outputKind: cli.flags['json']

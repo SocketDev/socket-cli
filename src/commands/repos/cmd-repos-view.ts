@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { viewRepo } from './view-repo'
+import { handleViewRepo } from './handle-view-repo'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -56,7 +56,8 @@ async function run(
     parentName
   })
 
-  const repoName = cli.flags['repoName']
+  const { json, markdown, repoName } = cli.flags
+
   const [orgSlug = ''] = cli.input
 
   if (!repoName || typeof repoName !== 'string' || !orgSlug) {
@@ -89,9 +90,9 @@ async function run(
     return
   }
 
-  await viewRepo(
+  await handleViewRepo(
     orgSlug,
     repoName,
-    cli.flags['json'] ? 'json' : cli.flags['markdown'] ? 'markdown' : 'print'
+    json ? 'json' : markdown ? 'markdown' : 'text'
   )
 }

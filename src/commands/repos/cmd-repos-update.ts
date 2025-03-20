@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { updateRepo } from './update-repo'
+import { handleUpdateRepo } from './handle-update-repo'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -103,7 +103,7 @@ async function run(
     return
   }
 
-  await updateRepo({
+  await handleUpdateRepo({
     orgSlug,
     repoName,
     description: String(cli.flags['repoDescription'] || ''),
