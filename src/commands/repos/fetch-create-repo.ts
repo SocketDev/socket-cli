@@ -3,7 +3,9 @@ import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
-export async function createRepo({
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+
+export async function fetchCreateRepo({
   default_branch,
   description,
   homepage,
@@ -17,7 +19,7 @@ export async function createRepo({
   homepage: string
   default_branch: string
   visibility: string
-}): Promise<void> {
+}): Promise<SocketSdkReturnType<'createOrgRepo'>['data'] | undefined> {
   const apiToken = getDefaultToken()
   if (!apiToken) {
     throw new AuthError(
@@ -25,8 +27,7 @@ export async function createRepo({
     )
   }
 
-  await createRepoWithToken({
-    apiToken,
+  return await fetchCreateRepoWithToken(apiToken, {
     default_branch,
     description,
     homepage,
@@ -36,29 +37,31 @@ export async function createRepo({
   })
 }
 
-async function createRepoWithToken({
-  apiToken,
-  default_branch,
-  description,
-  homepage,
-  orgSlug,
-  repoName,
-  visibility
-}: {
-  apiToken: string
-  orgSlug: string
-  repoName: string
-  description: string
-  homepage: string
-  default_branch: string
-  visibility: string
-}): Promise<void> {
+async function fetchCreateRepoWithToken(
+  apiToken: string,
+  {
+    default_branch,
+    description,
+    homepage,
+    orgSlug,
+    repoName,
+    visibility
+  }: {
+    orgSlug: string
+    repoName: string
+    description: string
+    homepage: string
+    default_branch: string
+    visibility: string
+  }
+): Promise<SocketSdkReturnType<'createOrgRepo'>['data'] | undefined> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  spinner.start('Creating repository...')
-
   const socketSdk = await setupSdk(apiToken)
+
+  spinner.start('Sending request ot create a repository...')
+
   const result = await handleApiCall(
     socketSdk.createOrgRepo(orgSlug, {
       name: repoName,
@@ -70,10 +73,12 @@ async function createRepoWithToken({
     'creating repository'
   )
 
+  spinner.successAndStop('Received response requesting to create a repository.')
+
   if (!result.success) {
     handleUnsuccessfulApiResponse('createOrgRepo', result)
     return
   }
 
-  spinner.successAndStop('Repository created successfully')
+  return result.data
 }
