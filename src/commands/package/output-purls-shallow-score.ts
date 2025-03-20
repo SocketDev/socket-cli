@@ -5,7 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import type { components } from '@socketsecurity/sdk/types/api'
 
-export function logPackageInfo(
+export function outputPurlsShallowScore(
   purls: string[],
   packageData: Array<components['schemas']['SocketArtifact']>,
   outputKind: 'json' | 'markdown' | 'text'
