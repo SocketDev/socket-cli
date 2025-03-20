@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { createRepo } from './create-repo'
+import { handleCreateRepo } from './handle-create-repo'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -101,7 +101,7 @@ async function run(
     return
   }
 
-  await createRepo({
+  await handleCreateRepo({
     orgSlug,
     repoName,
     description: String(cli.flags['repoDescription'] || ''),
