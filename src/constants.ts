@@ -57,17 +57,17 @@ type IPC = Readonly<{
 type Constants = Remap<
   Omit<typeof registryConstants, 'Symbol(kInternalsSymbol)' | 'ENV' | 'IPC'> & {
     readonly 'Symbol(kInternalsSymbol)': Internals
+    readonly ALERT_FIX_TYPE_CVE: 'cve'
+    readonly ALERT_FIX_TYPE_UPGRADE: 'upgrade'
     readonly ALERT_TYPE_CRITICAL_CVE: 'criticalCVE'
     readonly ALERT_TYPE_CVE: 'cve'
     readonly ALERT_TYPE_MEDIUM_CVE: 'mediumCVE'
     readonly ALERT_TYPE_MILD_CVE: 'mildCVE'
-    readonly ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE: 'socketUpgradeAvailable'
     readonly API_V0_URL: 'https://api.socket.dev/v0/'
     readonly BINARY_LOCK_EXT: '.lockb'
     readonly BUN: 'bun'
     readonly CLI: 'cli'
     readonly CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER: 'firstPatchedVersionIdentifier'
-    readonly CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE: 'vulnerableVersionRange'
     readonly ENV: ENV
     readonly DIST_TYPE: 'module-sync' | 'require'
     readonly DRY_RUN_LABEL: '[DryRun]'
@@ -131,18 +131,18 @@ type Constants = Remap<
 const SOCKET = 'socket'
 const WITH_SENTRY = 'with-sentry'
 
+const ALERT_FIX_TYPE_CVE = 'cve'
+const ALERT_FIX_TYPE_UPGRADE = 'upgrade'
 const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
 const ALERT_TYPE_CVE = 'cve'
 const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
 const ALERT_TYPE_MILD_CVE = 'mildCVE'
-const ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE = 'socketUpgradeAvailable'
 const API_V0_URL = 'https://api.socket.dev/v0/'
 const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
 const CLI = 'cli'
 const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
   'firstPatchedVersionIdentifier'
-const CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE = 'vulnerableVersionRange'
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAIL_TEXT = `${DRY_RUN_LABEL}: Bailing now`
 const INLINED_SOCKET_CLI_LEGACY_BUILD = 'INLINED_SOCKET_CLI_LEGACY_BUILD'
@@ -304,17 +304,17 @@ const lazyZshRcPath = () =>
 
 const constants = createConstantsObject(
   {
+    ALERT_FIX_TYPE_CVE,
+    ALERT_FIX_TYPE_UPGRADE,
     ALERT_TYPE_CRITICAL_CVE,
     ALERT_TYPE_CVE,
     ALERT_TYPE_MEDIUM_CVE,
     ALERT_TYPE_MILD_CVE,
-    ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE,
     API_V0_URL,
     BINARY_LOCK_EXT,
     BUN,
     CLI,
     CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
-    CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE,
     // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
     DRY_RUN_LABEL,

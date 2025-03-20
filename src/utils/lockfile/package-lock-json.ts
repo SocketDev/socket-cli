@@ -13,14 +13,12 @@ import { DiffAction } from '../../shadow/npm/arborist/lib/arborist/types'
 import { Edge } from '../../shadow/npm/arborist/lib/edge'
 import { getPublicToken, setupSdk } from '../../utils/sdk'
 import { CompactSocketArtifact } from '../alert/artifact'
-import {
-  type AlertsByPkgId,
-  addArtifactToAlertsMap
-} from '../socket-package-alert'
+import { addArtifactToAlertsMap } from '../socket-package-alert'
 
 import type { Diff } from '../../shadow/npm/arborist/lib/arborist/types'
 import type { SafeEdge } from '../../shadow/npm/arborist/lib/edge'
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
+import type { AlertsByPkgId } from '../socket-package-alert'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 type Packument = Exclude<
@@ -203,6 +201,7 @@ export async function getAlertsMapFromArborist(
 ): Promise<AlertsByPkgId> {
   const { include: _include, spinner } = {
     __proto__: null,
+    consolidate: false,
     ...options
   } as GetAlertsMapFromArboristOptions
 
@@ -256,7 +255,8 @@ export async function getAlertsMapFromArborist(
   for await (const batchPackageFetchResult of socketSdk.batchPackageStream(
     {
       alerts: 'true',
-      compact: 'true'
+      compact: 'true',
+      fixable: include.unfixable ? 'false' : 'true'
     },
     {
       components: pkgIds.map(id => ({ purl: `pkg:npm/${id}` }))
