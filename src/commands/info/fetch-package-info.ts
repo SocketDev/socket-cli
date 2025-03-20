@@ -1,8 +1,9 @@
-import { PackageData } from './handle-package-info'
 import constants from '../../constants'
 import { getSeverityCount } from '../../utils/alert/severity'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { getPublicToken, setupSdk } from '../../utils/sdk'
+
+import type { PackageData } from './handle-package-info'
 
 export async function fetchPackageInfo(
   pkgName: string,

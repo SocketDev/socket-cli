@@ -5,7 +5,6 @@ import constants from '@socketsecurity/registry/lib/constants'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { hasKeys } from '@socketsecurity/registry/lib/objects'
 
-import { PackageData } from './handle-package-info'
 import { SEVERITY, formatSeverityCount } from '../../utils/alert/severity'
 import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 import {
@@ -13,6 +12,7 @@ import {
   getSocketDevPackageOverviewUrl
 } from '../../utils/socket-url'
 
+import type { PackageData } from './handle-package-info'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 const { NPM } = constants
