@@ -5,90 +5,21 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants'
-import { handleAPIError, handleApiCall, queryAPI } from '../../utils/api'
-import { AuthError } from '../../utils/errors'
-import { getDefaultToken } from '../../utils/sdk'
-
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
-export async function getDiffScan({
-  after,
-  before,
-  depth,
-  file,
-  orgSlug,
-  outputJson
-}: {
-  after: string
-  before: string
-  depth: number
-  file: string
-  orgSlug: string
-  outputJson: boolean
-}): Promise<void> {
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
-  await getDiffScanWithToken({
-    after,
-    before,
+export async function outputDiffScan(
+  result: SocketSdkReturnType<'GetOrgDiffScan'>['data'],
+  {
     depth,
     file,
-    orgSlug,
-    outputJson,
-    apiToken
-  })
-}
-export async function getDiffScanWithToken({
-  after,
-  apiToken,
-  before,
-  depth,
-  file,
-  orgSlug,
-  outputJson
-}: {
-  after: string
-  apiToken: string
-  depth: number
-  before: string
-  file: string
-  orgSlug: string
-  outputJson: boolean
-}): Promise<void> {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Getting diff scan...')
-
-  const response = await queryAPI(
-    `orgs/${orgSlug}/full-scans/diff?before=${encodeURIComponent(before)}&after=${encodeURIComponent(after)}`,
-    apiToken
-  )
-
-  if (!response.ok) {
-    const err = await handleAPIError(response.status)
-    spinner.errorAndStop(
-      `${colors.bgRed(colors.white(response.statusText))}: ${err}`
-    )
-    return
+    outputKind
+  }: {
+    depth: number
+    file: string
+    outputKind: 'json' | 'markdown' | 'text'
   }
-
-  const result = await handleApiCall(
-    (await response.json()) as Promise<
-      SocketSdkReturnType<'GetOrgDiffScan'>['data']
-    >,
-    'Deserializing json'
-  )
-
-  spinner.stop()
-
-  const dashboardUrl = (result as any)?.['diff_report_url']
+): Promise<void> {
+  const dashboardUrl = result.diff_report_url
   const dashboardMessage = dashboardUrl
     ? `\n View this diff scan in the Socket dashboard: ${colors.cyan(dashboardUrl)}`
     : ''
@@ -96,7 +27,7 @@ export async function getDiffScanWithToken({
   // When forcing json, or dumping to file, serialize to string such that it
   // won't get truncated. The only way to dump the full raw JSON to stdout is
   // to use `--json --file -` (the dash is a standard notation for stdout)
-  if (outputJson || file) {
+  if (outputKind === 'json' || file) {
     let json
     try {
       json = JSON.stringify(result, null, 2)
