@@ -63,8 +63,7 @@ type Constants = Remap<
     readonly ALERT_TYPE_MEDIUM_CVE: 'mediumCVE'
     readonly ALERT_TYPE_MILD_CVE: 'mildCVE'
     readonly ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE: 'socketUpgradeAvailable'
-    readonly API_V0_URL: 'https://api.socket.dev/v0'
-    readonly BATCH_PURL_ENDPOINT: 'https://api.socket.dev/v0/purl?alerts=true&compact=true'
+    readonly API_V0_URL: 'https://api.socket.dev/v0/'
     readonly BINARY_LOCK_EXT: '.lockb'
     readonly BUN: 'bun'
     readonly CLI: 'cli'
@@ -138,7 +137,7 @@ const ALERT_TYPE_CVE = 'cve'
 const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
 const ALERT_TYPE_MILD_CVE = 'mildCVE'
 const ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE = 'socketUpgradeAvailable'
-const API_V0_URL = 'https://api.socket.dev/v0'
+const API_V0_URL = 'https://api.socket.dev/v0/'
 const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
 const CLI = 'cli'
@@ -160,37 +159,30 @@ const REQUIRE = 'require'
 const SHADOW_NPM_BIN = 'shadow-bin'
 const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 const SHADOW_NPM_PATHS = 'shadow-npm-paths'
-const SOCKET_CLI_BIN_NAME = SOCKET
-const SOCKET_CLI_BIN_NAME_ALIAS = CLI
+const SOCKET_CLI_BIN_NAME = 'socket'
+const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
 const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
 const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
-const SOCKET_CLI_LEGACY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/${CLI}`
+const SOCKET_CLI_LEGACY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli`
 const SOCKET_CLI_NO_API_TOKEN = 'SOCKET_CLI_NO_API_TOKEN'
 const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
-const SOCKET_CLI_NPM_BIN_NAME = `${SOCKET}-${NPM}`
-const SOCKET_CLI_NPX_BIN_NAME = `${SOCKET}-${NPX}`
-const SOCKET_CLI_PACKAGE_NAME = SOCKET
+const SOCKET_CLI_NPM_BIN_NAME = 'socket-npm'
+const SOCKET_CLI_NPX_BIN_NAME = 'socket-npx'
+const SOCKET_CLI_PACKAGE_NAME = 'socket'
 const SOCKET_CLI_SAFE_WRAPPER = 'SOCKET_CLI_SAFE_WRAPPER'
-const SOCKET_CLI_SENTRY_BIN_NAME = `${SOCKET_CLI_BIN_NAME}-${WITH_SENTRY}`
-const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = `${SOCKET_CLI_BIN_NAME_ALIAS}-${WITH_SENTRY}`
-const SOCKET_CLI_SENTRY_NPM_BIN_NAME = `${SOCKET_CLI_NPM_BIN_NAME}-${WITH_SENTRY}`
-const SOCKET_CLI_SENTRY_NPX_BIN_NAME = `${SOCKET_CLI_NPX_BIN_NAME}-${WITH_SENTRY}`
-const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_CLI_LEGACY_PACKAGE_NAME}-${WITH_SENTRY}`
+const SOCKET_CLI_SENTRY_BIN_NAME = 'socket-with-sentry'
+const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
+const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
+const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
+const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli-with-sentry`
 const VLT = 'vlt'
 const YARN = 'yarn'
-const YARN_BERRY = `${YARN}/berry`
-const YARN_CLASSIC = `${YARN}/classic`
-const YARN_LOCK = `${YARN}${LOCK_EXT}`
+const YARN_BERRY = 'yarn/berry'
+const YARN_CLASSIC = 'yarn/classic'
+const YARN_LOCK = 'yarn.lock'
 
 let _Sentry: any
-
-const LAZY_BATCH_PURL_ENDPOINT = () => {
-  const query = new URLSearchParams()
-  query.append('alerts', 'true')
-  query.append('compact', 'true')
-  return `${API_V0_URL}/purl?${query}`
-}
 
 const LAZY_DIST_TYPE = () =>
   registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? MODULE_SYNC : REQUIRE
@@ -204,20 +196,20 @@ const LAZY_ENV = () => {
     ...registryConstants.ENV,
     // Inlined flag set to determine if this is the Legacy build.
     // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_LEGACY_BUILD]".
-    [INLINED_SOCKET_CLI_LEGACY_BUILD]:
-      process.env[INLINED_SOCKET_CLI_LEGACY_BUILD],
+    INLINED_SOCKET_CLI_LEGACY_BUILD:
+      process.env['INLINED_SOCKET_CLI_LEGACY_BUILD'],
     // Inlined flag set to determine if this is a published build.
     // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_PUBLISHED_BUILD]".
-    [INLINED_SOCKET_CLI_PUBLISHED_BUILD]:
-      process.env[INLINED_SOCKET_CLI_PUBLISHED_BUILD],
+    INLINED_SOCKET_CLI_PUBLISHED_BUILD:
+      process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'],
     // Inlined flag set to determine if this is the Sentry build.
     // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]".
-    [INLINED_SOCKET_CLI_SENTRY_BUILD]:
-      process.env[INLINED_SOCKET_CLI_SENTRY_BUILD],
+    INLINED_SOCKET_CLI_SENTRY_BUILD:
+      process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'],
     // Flag set to help debug Socket CLI.
-    [SOCKET_CLI_DEBUG]: envAsBoolean(env[SOCKET_CLI_DEBUG]),
+    SOCKET_CLI_DEBUG: envAsBoolean(env['SOCKET_CLI_DEBUG']),
     // Flag set to make the default API token `undefined`.
-    [SOCKET_CLI_NO_API_TOKEN]: envAsBoolean(env[SOCKET_CLI_NO_API_TOKEN])
+    SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN'])
   })
 }
 
@@ -278,7 +270,7 @@ const lazyNmBinPath = () =>
 const lazyNodeHardenFlags = () =>
   // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]".
   // Lazily access constants.WIN32.
-  process.env[INLINED_SOCKET_CLI_SENTRY_BUILD] || constants.WIN32
+  process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'] || constants.WIN32
     ? []
     : // Harden Node security.
       // https://nodejs.org/en/learn/getting-started/security-best-practices
@@ -319,13 +311,12 @@ const constants = createConstantsObject(
     ALERT_TYPE_MILD_CVE,
     ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE,
     API_V0_URL,
-    // Lazily defined values are initialized as `undefined` to keep their key order.
-    BATCH_PURL_ENDPOINT: undefined,
     BINARY_LOCK_EXT,
     BUN,
     CLI,
     CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
     CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE,
+    // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
     DRY_RUN_LABEL,
     DRY_RUN_BAIL_TEXT,
@@ -352,6 +343,8 @@ const constants = createConstantsObject(
     SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
     SOCKET_CLI_LEGACY_PACKAGE_NAME,
     SOCKET_CLI_NO_API_TOKEN,
+    SOCKET_CLI_NPM_BIN_NAME,
+    SOCKET_CLI_NPX_BIN_NAME,
     SOCKET_CLI_OPTIMIZE,
     SOCKET_CLI_PACKAGE_NAME,
     SOCKET_CLI_SAFE_WRAPPER,
@@ -383,7 +376,6 @@ const constants = createConstantsObject(
   },
   {
     getters: {
-      BATCH_PURL_ENDPOINT: LAZY_BATCH_PURL_ENDPOINT,
       DIST_TYPE: LAZY_DIST_TYPE,
       ENV: LAZY_ENV,
       bashRcPath: lazyBashRcPath,
