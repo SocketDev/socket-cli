@@ -12,15 +12,16 @@ import type {
 export async function fetchPurlsShallowScore(
   purls: string[]
 ): Promise<SocketSdkReturnType<'batchPackageFetch'>> {
-  const socketSdk = await setupSdk(getPublicToken())
+  logger.error(
+    `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`
+  )
 
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  logger.error(
-    `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`
-  )
   spinner.start(`Requesting data ...`)
+
+  const socketSdk = await setupSdk(getPublicToken())
 
   const result: Awaited<SocketSdkResultType<'batchPackageFetch'>> =
     await handleApiCall(
