@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getOrganization } from './get-organization'
+import { handleOrganizationList } from './handle-organization-list'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -68,5 +68,5 @@ ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields
     return
   }
 
-  await getOrganization(json ? 'json' : markdown ? 'markdown' : 'text')
+  await handleOrganizationList(json ? 'json' : markdown ? 'markdown' : 'text')
 }
