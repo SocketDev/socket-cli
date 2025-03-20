@@ -1,7 +1,9 @@
-import { PackageData } from './get-package-info'
+import constants from '../../constants'
 import { getSeverityCount } from '../../utils/alert/severity'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { getPublicToken, setupSdk } from '../../utils/sdk'
+
+import type { PackageData } from './handle-package-info'
 
 export async function fetchPackageInfo(
   pkgName: string,
@@ -9,6 +11,16 @@ export async function fetchPackageInfo(
   includeAllIssues: boolean
 ): Promise<void | PackageData> {
   const socketSdk = await setupSdk(getPublicToken())
+
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start(
+    pkgVersion === 'latest'
+      ? `Looking up data for the latest version of ${pkgName}`
+      : `Looking up data for version ${pkgVersion} of ${pkgName}`
+  )
+
   const result = await handleApiCall(
     socketSdk.getIssuesByNPMPackage(pkgName, pkgVersion),
     'looking up package'
@@ -17,6 +29,8 @@ export async function fetchPackageInfo(
     socketSdk.getScoreByNPMPackage(pkgName, pkgVersion),
     'looking up package score'
   )
+
+  spinner.successAndStop('Data fetched')
 
   if (result.success === false) {
     return handleUnsuccessfulApiResponse('getIssuesByNPMPackage', result)
