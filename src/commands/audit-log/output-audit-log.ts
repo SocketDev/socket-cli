@@ -3,11 +3,7 @@ import { stripIndents } from 'common-tags'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { Separator, select } from '@socketsecurity/registry/lib/prompts'
 
-import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { AuthError } from '../../utils/errors'
 import { mdTable } from '../../utils/markdown'
-import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 import type { Choice } from '@socketsecurity/registry/lib/prompts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -16,41 +12,29 @@ type AuditChoice = Choice<string>
 
 type AuditChoices = Array<Separator | AuditChoice>
 
-export async function getAuditLog({
-  logType,
-  orgSlug,
-  outputKind,
-  page,
-  perPage
-}: {
-  outputKind: 'json' | 'markdown' | 'print'
-  orgSlug: string
-  page: number
-  perPage: number
-  logType: string
-}): Promise<void> {
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
-  const auditLogs = await getAuditLogWithToken({
-    apiToken,
+export async function outputAuditLog(
+  auditLogs: SocketSdkReturnType<'getAuditLogEvents'>['data'],
+  {
+    logType,
     orgSlug,
     outputKind,
     page,
-    perPage,
-    logType
-  })
-  if (!auditLogs) return
-
-  if (outputKind === 'json')
+    perPage
+  }: {
+    outputKind: 'json' | 'markdown' | 'print'
+    orgSlug: string
+    page: number
+    perPage: number
+    logType: string
+  }
+): Promise<void> {
+  if (outputKind === 'json') {
     await outputAsJson(auditLogs.results, orgSlug, logType, page, perPage)
-  else if (outputKind === 'markdown')
+  } else if (outputKind === 'markdown') {
     await outputAsMarkdown(auditLogs.results, orgSlug, logType, page, perPage)
-  else await outputAsPrint(auditLogs.results, orgSlug, logType)
+  } else {
+    await outputAsPrint(auditLogs.results, orgSlug, logType)
+  }
 }
 
 async function outputAsJson(
@@ -173,49 +157,4 @@ async function outputAsPrint(
       })) as any
     ]
   )
-}
-
-async function getAuditLogWithToken({
-  apiToken,
-  logType,
-  orgSlug,
-  outputKind,
-  page,
-  perPage
-}: {
-  apiToken: string
-  outputKind: 'json' | 'markdown' | 'print'
-  orgSlug: string
-  page: number
-  perPage: number
-  logType: string
-}): Promise<SocketSdkReturnType<'getAuditLogEvents'>['data'] | void> {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start(`Looking up audit log for ${orgSlug}`)
-
-  const socketSdk = await setupSdk(apiToken)
-  const result = await handleApiCall(
-    socketSdk.getAuditLogEvents(orgSlug, {
-      // I'm not sure this is used at all.
-      outputJson: String(outputKind === 'json'),
-      // I'm not sure this is used at all.
-      outputMarkdown: String(outputKind === 'markdown'),
-      orgSlug,
-      type: logType,
-      page: String(page),
-      per_page: String(perPage)
-    }),
-    `Looking up audit log for ${orgSlug}\n`
-  )
-
-  if (!result.success) {
-    handleUnsuccessfulApiResponse('getAuditLogEvents', result)
-    return
-  }
-
-  spinner.stop()
-
-  return result.data
 }
