@@ -1,6 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { findDependencies } from './find-dependencies'
+import { handleDependencies } from './handle-dependencies'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -61,15 +61,16 @@ async function run(
     parentName
   })
 
+  const { json, limit, markdown, offset } = cli.flags
+
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 
-  // TODO: markdown flag is ignored
-  await findDependencies({
-    limit: Number(cli.flags['limit'] || 0) || 0,
-    offset: Number(cli.flags['offset'] || 0) || 0,
-    outputJson: Boolean(cli.flags['json'])
+  await handleDependencies({
+    limit: Number(limit || 0) || 0,
+    offset: Number(offset || 0) || 0,
+    outputKind: json ? 'json' : markdown ? 'markdown' : 'text'
   })
 }
