@@ -13,7 +13,7 @@ import { suggestTarget } from './suggest_target'
 import constants from '../../constants'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken, setupSdk } from '../../utils/sdk'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -172,20 +172,17 @@ async function run(
   // If the current cwd is unknown and is used as a repo slug anyways, we will
   // first need to register the slug before we can use it.
   let repoDefaultBranch = ''
-
   // Only do suggestions with an apiToken and when not in dryRun mode
   if (apiToken && !dryRun) {
-    const sockSdk = await setupSdk()
-
     if (!orgSlug) {
-      const suggestion = await suggestOrgSlug(sockSdk)
+      const suggestion = await suggestOrgSlug()
       if (suggestion) orgSlug = suggestion
       updatedInput = true
     }
 
     // (Don't bother asking for the rest if we didn't get an org slug above)
     if (orgSlug && !repoName) {
-      const suggestion = await suggestRepoSlug(sockSdk, orgSlug)
+      const suggestion = await suggestRepoSlug(orgSlug)
       if (suggestion) {
         repoDefaultBranch = suggestion.defaultBranch
         repoName = suggestion.slug
@@ -201,7 +198,7 @@ async function run(
     }
   }
 
-  if (updatedInput) {
+  if (updatedInput && repoName && branchName && orgSlug && targets?.length) {
     logger.error(
       'Note: You can invoke this command next time to skip the interactive questions:'
     )
@@ -209,7 +206,7 @@ async function run(
     logger.error(
       `    socket scan create [other flags...] --repo ${repoName} --branch ${branchName} ${orgSlug} ${targets.join(' ')}`
     )
-    logger.error('```')
+    logger.error('```\n')
   }
 
   if (!orgSlug || !repoName || !branchName || !targets.length) {
