@@ -57,8 +57,6 @@ type IPC = Readonly<{
 type Constants = Remap<
   Omit<typeof registryConstants, 'Symbol(kInternalsSymbol)' | 'ENV' | 'IPC'> & {
     readonly 'Symbol(kInternalsSymbol)': Internals
-    readonly ALERT_FIX_TYPE_CVE: 'cve'
-    readonly ALERT_FIX_TYPE_UPGRADE: 'upgrade'
     readonly ALERT_TYPE_CRITICAL_CVE: 'criticalCVE'
     readonly ALERT_TYPE_CVE: 'cve'
     readonly ALERT_TYPE_MEDIUM_CVE: 'mediumCVE'
@@ -128,8 +126,6 @@ type Constants = Remap<
   }
 >
 
-const ALERT_FIX_TYPE_CVE = 'cve'
-const ALERT_FIX_TYPE_UPGRADE = 'upgrade'
 const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
 const ALERT_TYPE_CVE = 'cve'
 const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
@@ -303,8 +299,6 @@ const lazyZshRcPath = () =>
 
 const constants = createConstantsObject(
   {
-    ALERT_FIX_TYPE_CVE,
-    ALERT_FIX_TYPE_UPGRADE,
     ALERT_TYPE_CRITICAL_CVE,
     ALERT_TYPE_CVE,
     ALERT_TYPE_MEDIUM_CVE,

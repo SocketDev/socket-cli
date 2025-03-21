@@ -185,29 +185,35 @@ export async function uxLookup(
         const sockSdk = await setupSdk(getPublicToken())
         const orgResult = await sockSdk.getOrganizations()
         if (!orgResult.success) {
+          if (orgResult.status === 429) {
+            throw new Error(
+              `API token quota exceeded: ${orgResult.error}`
+            )
+          }
           throw new Error(
-            `Failed to fetch Socket organization info: ${orgResult.error.message}`
+            `Failed to fetch Socket organization info: ${orgResult.error}`
           )
         }
+        const { organizations } = orgResult.data
         const orgs: Array<
-          Exclude<(typeof orgResult.data.organizations)[string], undefined>
+          Exclude<(typeof organizations)[string], undefined>
         > = []
-        for (const org of Object.values(orgResult.data.organizations)) {
+        for (const org of Object.values(organizations)) {
           if (org) {
             orgs.push(org)
           }
         }
-        const result = await sockSdk.postSettings(
+        const settingsResult = await sockSdk.postSettings(
           orgs.map(org => ({ organization: org.id }))
         )
-        if (!result.success) {
+        if (!settingsResult.success) {
           throw new Error(
-            `Failed to fetch API key settings: ${result.error.message}`
+            `Failed to fetch API key settings: ${settingsResult.error}`
           )
         }
         return {
           orgs,
-          settings: result.data
+          settings: settingsResult.data
         }
       } catch (e) {
         const cause = isObject(e) && 'cause' in e ? e['cause'] : undefined

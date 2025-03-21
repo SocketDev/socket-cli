@@ -10,7 +10,7 @@ import TableWidget from 'blessed-contrib/lib/widget/table'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
-import { queryAPI } from '../../utils/api'
+import { queryApi } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken } from '../../utils/sdk'
 
@@ -90,7 +90,7 @@ async function getThreatFeedWithToken({
 
   spinner.start('Fetching Threat Feed data...')
 
-  const response = await queryAPI(`threat-feed?${queryParams}`, apiToken)
+  const response = await queryApi(`threat-feed?${queryParams}`, apiToken)
   const data = (await response.json()) as {
     results: ThreatResult[]
     nextPage: string

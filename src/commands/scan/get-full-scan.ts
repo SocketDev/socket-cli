@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
-import { handleAPIError, queryAPI } from '../../utils/api'
+import { handleApiError, queryApi } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken } from '../../utils/sdk'
 
@@ -25,7 +25,7 @@ export async function getFullScan(
 
   spinner.start('Fetching full-scan...')
 
-  const response = await queryAPI(
+  const response = await queryApi(
     `orgs/${orgSlug}/full-scans/${encodeURIComponent(fullScanId)}`,
     apiToken
   )
@@ -33,7 +33,7 @@ export async function getFullScan(
   spinner.stop('Fetch complete.')
 
   if (!response.ok) {
-    const err = await handleAPIError(response.status)
+    const err = await handleApiError(response.status)
     logger.fail(
       `${colors.bgRed(colors.white(response.statusText))}: Fetch error: ${err}`
     )
