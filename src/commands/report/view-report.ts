@@ -1,6 +1,6 @@
 import { fetchReportData } from './fetch-report-data'
 import { formatReportDataOutput } from './format-report-data'
-import { getFullScan } from '../scan/get-full-scan'
+import { fetchScan } from '../scan/fetch-scan'
 
 import type { components } from '@socketsecurity/sdk/types/api'
 
@@ -21,7 +21,7 @@ export async function viewReport(
   const result = await fetchReportData(reportId, all, strict)
 
   const artifacts: Array<components['schemas']['SocketArtifact']> | undefined =
-    await getFullScan('socketdev', reportId)
+    await fetchScan('socketdev', reportId)
 
   if (result) {
     formatReportDataOutput(

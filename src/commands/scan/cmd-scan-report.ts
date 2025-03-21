@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { reportFullScan } from './report-full-scan'
+import { handleScanReport } from './handle-scan-report'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -105,11 +105,11 @@ async function run(
     security
   } = cli.flags
 
-  const [orgSlug = '', fullScanId = '', file = '-'] = cli.input
+  const [orgSlug = '', scanId = '', file = '-'] = cli.input
 
   if (
     !orgSlug ||
-    !fullScanId ||
+    !scanId ||
     // (!license && !security) ||
     (json && markdown)
   ) {
@@ -123,7 +123,7 @@ async function run(
 
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}
 
-      - Full Scan ID to fetch as second argument ${!fullScanId ? colors.red('(missing!)') : colors.green('(ok)')}
+      - Full Scan ID to fetch as second argument ${!scanId ? colors.red('(missing!)') : colors.green('(ok)')}
 
       - Not both the --json and --markdown flags ${json && markdown ? colors.red('(pick one!)') : colors.green('(ok)')}
     `
@@ -137,9 +137,9 @@ async function run(
     return
   }
 
-  await reportFullScan({
+  await handleScanReport({
     orgSlug,
-    fullScanId,
+    scanId: scanId,
     includeLicensePolicy: false, // !!license,
     includeSecurityPolicy: typeof security === 'boolean' ? security : true,
     outputKind: json ? 'json' : markdown ? 'markdown' : 'text',

@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { listFullScans } from './list-full-scans'
+import { handleListScans } from './handle-list-scans'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -111,7 +111,7 @@ async function run(
     return
   }
 
-  await listFullScans({
+  await handleListScans({
     direction: String(cli.flags['direction'] || ''),
     from_time: String(cli.flags['fromTime'] || ''),
     orgSlug,

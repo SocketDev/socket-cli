@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
-import { getPackageFilesFullScans } from './dist/path-resolve'
+import { getPackageFilesForScan } from './dist/path-resolve'
 
 const testPath = __dirname
 const rootNmPath = path.join(testPath, '../node_modules')
@@ -79,7 +79,7 @@ const sortedPromise =
     const result = await fn(...args)
     return result.sort()
   }
-const sortedGetPackageFilesFullScans = sortedPromise(getPackageFilesFullScans)
+const sortedGetPackageFilesFullScans = sortedPromise(getPackageFilesForScan)
 
 describe('Path Resolve', () => {
   beforeEach(() => {
@@ -94,7 +94,7 @@ describe('Path Resolve', () => {
     }
   })
 
-  describe('getPackageFilesFullScans()', () => {
+  describe('getPackageFilesForScan()', () => {
     it('should handle a "." inputPath', async () => {
       mockTestFs({
         [`${mockFixturePath}/package.json`]: '{}'
