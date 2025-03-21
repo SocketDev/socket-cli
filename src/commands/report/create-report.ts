@@ -3,7 +3,7 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { getPackageFilesFullScans } from '../../utils/path-resolve'
+import { getPackageFilesForScan } from '../../utils/path-resolve'
 import { setupSdk } from '../../utils/sdk'
 
 import type { SocketYml } from '@socketsecurity/config'
@@ -40,7 +40,7 @@ export async function createReport(
         cause
       })
     })
-  const packagePaths = await getPackageFilesFullScans(
+  const packagePaths = await getPackageFilesForScan(
     cwd,
     inputPaths,
     supportedFiles,

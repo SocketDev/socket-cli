@@ -5,11 +5,15 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { createFullScan } from './create-full-scan'
+import { handleCreateNewScan } from './handle-create-new-scan'
+import { suggestOrgSlug } from './suggest-org-slug'
+import { suggestRepoSlug } from './suggest-repo-slug'
+import { suggestBranchSlug } from './suggest_branch_slug'
+import { suggestTarget } from './suggest_target'
 import constants from '../../constants'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
-import { getDefaultToken } from '../../utils/sdk'
+import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -142,27 +146,78 @@ async function run(
     parentName
   })
 
-  const [orgSlug = '', ...targets] = cli.input
-
+  const { cwd: cwdOverride, dryRun } = cli.flags
   const cwd =
-    cli.flags['cwd'] && cli.flags['cwd'] !== 'process.cwd()'
-      ? String(cli.flags['cwd'])
+    cwdOverride && cwdOverride !== 'process.cwd()'
+      ? String(cwdOverride)
       : process.cwd()
+  let { branch: branchName, repo: repoName } = cli.flags
+  let [orgSlug = '', ...targets] = cli.input
 
-  const { branch: branchName, repo: repoName } = cli.flags
+  // We're going to need an api token to suggest data because those suggestions
+  // must come from data we already know. Don't error on missing api token yet.
+  // If the api-token is not set, ignore it for the sake of suggestions.
+  const apiToken = getDefaultToken()
 
-  const apiToken = getDefaultToken() // This checks if we _can_ suggest anything
+  // If we updated any inputs then we should print the command line to repeat
+  // the command without requiring user input, as a suggestion.
+  let updatedInput = false
 
-  if (!apiToken && (!orgSlug || !repoName || !branchName || !targets.length)) {
-    // Without api token we cannot recover because we can't request more info
-    // from the server, to match and help with the current cwd/git status.
-    //
+  if (!targets.length && !dryRun) {
+    const received = await suggestTarget()
+    targets = received ?? []
+    updatedInput = true
+  }
+
+  // If the current cwd is unknown and is used as a repo slug anyways, we will
+  // first need to register the slug before we can use it.
+  let repoDefaultBranch = ''
+
+  // Only do suggestions with an apiToken and when not in dryRun mode
+  if (apiToken && !dryRun) {
+    const sockSdk = await setupSdk()
+
+    if (!orgSlug) {
+      const suggestion = await suggestOrgSlug(sockSdk)
+      if (suggestion) orgSlug = suggestion
+      updatedInput = true
+    }
+
+    // (Don't bother asking for the rest if we didn't get an org slug above)
+    if (orgSlug && !repoName) {
+      const suggestion = await suggestRepoSlug(sockSdk, orgSlug)
+      if (suggestion) {
+        repoDefaultBranch = suggestion.defaultBranch
+        repoName = suggestion.slug
+      }
+      updatedInput = true
+    }
+
+    // (Don't bother asking for the rest if we didn't get an org/repo above)
+    if (orgSlug && repoName && !branchName) {
+      const suggestion = await suggestBranchSlug(repoDefaultBranch)
+      if (suggestion) branchName = suggestion
+      updatedInput = true
+    }
+  }
+
+  if (updatedInput) {
+    logger.error(
+      'Note: You can invoke this command next time to skip the interactive questions:'
+    )
+    logger.error('```')
+    logger.error(
+      `    socket scan create [other flags...] --repo ${repoName} --branch ${branchName} ${orgSlug} ${targets.join(' ')}`
+    )
+    logger.error('```')
+  }
+
+  if (!orgSlug || !repoName || !branchName || !targets.length) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
-    logger.fail(
-      stripIndents`
+    logger.fail(stripIndents`
       ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
 
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}
@@ -171,30 +226,26 @@ async function run(
 
       - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}
 
-      - At least one TARGET (e.g. \`.\` or \`./package.json\`) ${!targets.length ? '(missing)' : colors.green('(ok)')}
+      - At least one TARGET (e.g. \`.\` or \`./package.json\`) ${!targets.length ? colors.red('(missing)') : colors.green('(ok)')}
 
-      (Additionally, no API Token was set so we cannot auto-discover these details)
-    `
-    )
+      ${!apiToken ? 'Note: was unable to make suggestions because no API Token was found; this would make the command fail regardless' : ''}
+    `)
     return
   }
 
   // Note exiting earlier to skirt a hidden auth requirement
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 
-  await createFullScan({
+  await handleCreateNewScan({
     branchName: branchName as string,
-    commitHash: (cli.flags['commitHash'] as string) ?? '',
     commitMessage: (cli.flags['commitMessage'] as string) ?? '',
-    committers: (cli.flags['committers'] as string) ?? '',
     cwd,
     defaultBranch: Boolean(cli.flags['defaultBranch']),
     orgSlug,
     pendingHead: Boolean(cli.flags['pendingHead']),
-    pullRequest: (cli.flags['pullRequest'] as number) ?? undefined,
     readOnly: Boolean(cli.flags['readOnly']),
     repoName: repoName as string,
     targets,
