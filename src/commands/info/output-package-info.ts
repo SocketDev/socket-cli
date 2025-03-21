@@ -5,7 +5,7 @@ import constants from '@socketsecurity/registry/lib/constants'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { hasKeys } from '@socketsecurity/registry/lib/objects'
 
-import { SEVERITY, formatSeverityCount } from '../../utils/alert/severity'
+import { ALERT_SEVERITY, formatSeverityCount } from '../../utils/alert/severity'
 import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 import {
   getSocketDevAlertUrl,
@@ -32,8 +32,8 @@ function outputPackageIssuesDetails(
 ) {
   const issueDetails = packageData.filter(
     d =>
-      d.value?.severity === SEVERITY.critical ||
-      d.value?.severity === SEVERITY.high
+      d.value?.severity === ALERT_SEVERITY.critical ||
+      d.value?.severity === ALERT_SEVERITY.high
   )
   const uniqueIssueDetails = issueDetails.reduce((acc, issue) => {
     const { type } = issue

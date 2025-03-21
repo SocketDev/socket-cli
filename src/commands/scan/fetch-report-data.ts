@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
-import { handleAPIError, handleApiCall, queryAPI } from '../../utils/api'
+import { handleApiCall, handleApiError, queryApi } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
@@ -102,7 +102,7 @@ export async function fetchReportData(
   ] = await Promise.all([
     (async () => {
       try {
-        const response = await queryAPI(
+        const response = await queryApi(
           `orgs/${orgSlug}/full-scans/${encodeURIComponent(fullScanId)}`,
           apiToken
         )
@@ -111,7 +111,7 @@ export async function fetchReportData(
         updateProgress()
 
         if (!response.ok) {
-          const err = await handleAPIError(response.status)
+          const err = await handleApiError(response.status)
           logger.fail(
             `${colors.bgRed(colors.white(response.statusText))}: Fetch error: ${err}`
           )
