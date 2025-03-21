@@ -1,5 +1,20 @@
 {
-  "entry": ["scripts/**/*.js", "src/**/*.ts", "test/**/*.test.ts"],
-  "project": ["scripts/**/*", "src/**/*", "test/**/*"],
-  "ignore": ["dist/**/*"]
+  "entry": [
+    ".config/*.{js,mjs}",
+    "bin/*.js",
+    "scripts/**/*.js",
+    "shadow-bin/**",
+    "src/**/*.ts",
+    "test/**/*.test.ts",
+    "*.js"
+  ],
+  "project": [
+    ".config/**",
+    "bin/**",
+    "scripts/**",
+    "shadow-bin/**",
+    "src/**",
+    "test/**"
+  ],
+  "ignore": ["dist/**"]
 }
