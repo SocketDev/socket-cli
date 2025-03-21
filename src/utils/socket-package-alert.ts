@@ -7,8 +7,9 @@ import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
 import { CompactSocketArtifact, isArtifactAlertCve } from './alert/artifact'
+import { ALERT_FIX_TYPE } from './alert/fix'
 import { uxLookup } from './alert/rules'
-import { SEVERITY } from './alert/severity'
+import { ALERT_SEVERITY } from './alert/severity'
 import { ColorOrMarkdown } from './color-or-markdown'
 import { getSocketDevPackageOverviewUrl } from './socket-url'
 import { getTranslations } from './translations'
@@ -29,12 +30,7 @@ export type SocketPackageAlert = {
 
 export type AlertsByPkgId = Map<string, SocketPackageAlert[]>
 
-const {
-  ALERT_FIX_TYPE_CVE,
-  ALERT_FIX_TYPE_UPGRADE,
-  CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
-  NPM
-} = constants
+const { CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER, NPM } = constants
 
 const format = new ColorOrMarkdown(false)
 
@@ -53,16 +49,15 @@ type AddSocketArtifactAlertToAlertsMapOptions = {
   spinner?: Spinner | undefined
 }
 
-export async function addArtifactToAlertsMap(
+export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
   artifact: CompactSocketArtifact,
-  alertsByPkgId: AlertsByPkgId,
+  alertsByPkgId: T,
   options?: AddSocketArtifactAlertToAlertsMapOptions | undefined
-) {
+): Promise<T> {
   // Make TypeScript happy.
   if (!artifact.name || !artifact.version || !artifact.alerts?.length) {
-    return
+    return alertsByPkgId
   }
-
   const {
     consolidate = false,
     include: _include,
@@ -94,10 +89,10 @@ export async function addArtifactToAlertsMap(
       alert: { type: alert.type }
     })
     const fixType = alert.fix?.type ?? ''
-    const critical = alert.severity === SEVERITY.critical
+    const critical = alert.severity === ALERT_SEVERITY.critical
     const cve = isArtifactAlertCve(alert)
-    const fixableCve = fixType === ALERT_FIX_TYPE_CVE
-    const fixableUpgrade = fixType === ALERT_FIX_TYPE_UPGRADE
+    const fixableCve = fixType === ALERT_FIX_TYPE.cve
+    const fixableUpgrade = fixType === ALERT_FIX_TYPE.upgrade
     const fixable = fixableCve || fixableUpgrade
     const upgrade = fixableUpgrade && !hasOwn(overrides, name)
     if (
@@ -121,7 +116,7 @@ export async function addArtifactToAlertsMap(
     }
   }
   if (!sockPkgAlerts.length) {
-    return
+    return alertsByPkgId
   }
   if (consolidate) {
     const highestForCve = new Map<
@@ -136,7 +131,7 @@ export async function addArtifactToAlertsMap(
     for (const sockPkgAlert of sockPkgAlerts) {
       const alert = sockPkgAlert.raw
       const fixType = alert.fix?.type ?? ''
-      if (fixType === ALERT_FIX_TYPE_CVE) {
+      if (fixType === ALERT_FIX_TYPE.cve) {
         const patchedVersion =
           alert.props[CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER]
         const patchedMajor = semver.major(patchedVersion)
@@ -148,7 +143,7 @@ export async function addArtifactToAlertsMap(
             version: patchedVersion
           })
         }
-      } else if (fixType === ALERT_FIX_TYPE_UPGRADE) {
+      } else if (fixType === ALERT_FIX_TYPE.upgrade) {
         const oldHighest = highestForUpgrade.get(major)
         const highest = oldHighest?.version ?? '0.0.0'
         if (semver.gt(version, highest)) {
@@ -164,11 +159,11 @@ export async function addArtifactToAlertsMap(
       ...[...highestForUpgrade.values()].map(d => d.alert)
     ]
   }
-  if (!sockPkgAlerts.length) {
-    return
+  if (sockPkgAlerts.length) {
+    sockPkgAlerts.sort((a, b) => naturalCompare(a.type, b.type))
+    alertsByPkgId.set(pkgId, sockPkgAlerts)
   }
-  sockPkgAlerts.sort((a, b) => naturalCompare(a.type, b.type))
-  alertsByPkgId.set(pkgId, sockPkgAlerts)
+  return alertsByPkgId
 }
 
 type CveExcludeFilter = {
@@ -202,7 +197,7 @@ export function getCveInfoByAlertsMap(
     for (const sockPkgAlert of sockPkgAlerts) {
       const alert = sockPkgAlert.raw
       if (
-        alert.fix?.type !== ALERT_FIX_TYPE_CVE ||
+        alert.fix?.type !== ALERT_FIX_TYPE.cve ||
         (exclude.upgrade && getManifestData(NPM, name))
       ) {
         continue

@@ -50,7 +50,7 @@ export async function handleApiCall<T>(
   return result
 }
 
-export async function handleAPIError(code: number) {
+export async function handleApiError(code: number) {
   if (code === 400) {
     return 'One of the options passed might be incorrect.'
   } else if (code === 403) {
@@ -72,7 +72,7 @@ function getDefaultApiBaseUrl(): string | undefined {
   return isNonEmptyString(baseUrl) ? baseUrl : undefined
 }
 
-export async function queryAPI(path: string, apiToken: string) {
+export async function queryApi(path: string, apiToken: string) {
   const API_V0_URL = getDefaultApiBaseUrl()
   return await fetch(`${API_V0_URL}/${path}`, {
     method: 'GET',

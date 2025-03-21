@@ -1,7 +1,7 @@
 import colors from 'yoctocolors-cjs'
 
 import constants from '../../constants'
-import { handleAPIError, handleApiCall, queryAPI } from '../../utils/api'
+import { handleApiCall, handleApiError, queryApi } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken } from '../../utils/sdk'
 
@@ -47,7 +47,7 @@ export async function fetchDiffScanWithToken(
 
   spinner.start('Fetching diff-scan...')
 
-  const response = await queryAPI(
+  const response = await queryApi(
     `orgs/${orgSlug}/full-scans/diff?before=${encodeURIComponent(before)}&after=${encodeURIComponent(after)}`,
     apiToken
   )
@@ -55,7 +55,7 @@ export async function fetchDiffScanWithToken(
   spinner?.successAndStop('Received diff-scan response')
 
   if (!response.ok) {
-    const err = await handleAPIError(response.status)
+    const err = await handleApiError(response.status)
     spinner.errorAndStop(
       `${colors.bgRed(colors.white(response.statusText))}: ${err}`
     )
