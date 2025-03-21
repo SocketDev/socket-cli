@@ -2,63 +2,44 @@ import fs from 'node:fs/promises'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { fetchReportData } from './fetch-report-data'
 import { generateReport } from './generate-report'
 import { mapToObject } from '../../utils/map-to-object'
 import { mdTable } from '../../utils/markdown'
 import { walkNestedMap } from '../../utils/walk-nested-map'
 
 import type { ReportLeafNode, ScanReport } from './generate-report'
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { components } from '@socketsecurity/sdk/types/api'
 
-export async function reportFullScan({
-  filePath,
-  fold,
-  fullScanId,
-  includeLicensePolicy,
-  includeSecurityPolicy,
-  orgSlug,
-  outputKind,
-  reportLevel,
-  short
-}: {
-  orgSlug: string
-  fullScanId: string
-  includeLicensePolicy: boolean
-  includeSecurityPolicy: boolean
-  outputKind: 'json' | 'markdown' | 'text'
-  filePath: string
-  fold: 'pkg' | 'version' | 'file' | 'none'
-  reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'
-  short: boolean
-}): Promise<void> {
-  logger.error(
-    'output:',
-    outputKind,
-    ', file:',
+export async function outputScanReport(
+  scan: Array<components['schemas']['SocketArtifact']>,
+  // licensePolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'>,
+  securityPolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'>,
+  {
     filePath,
-    ', fold:',
     fold,
-    ', reportLevel:',
-    reportLevel
-  )
-  if (!includeLicensePolicy && !includeSecurityPolicy) {
-    return // caller should assert
-  }
-
-  const {
-    // licensePolicy,
-    ok,
-    scan,
-    securityPolicy
-  } = await fetchReportData(
+    includeLicensePolicy,
+    includeSecurityPolicy,
     orgSlug,
-    fullScanId,
-    // includeLicensePolicy
-    includeSecurityPolicy
-  )
-
-  if (!ok) {
-    return
+    outputKind,
+    reportLevel,
+    scanId,
+    short
+  }: {
+    orgSlug: string
+    scanId: string
+    includeLicensePolicy: boolean
+    includeSecurityPolicy: boolean
+    outputKind: 'json' | 'markdown' | 'text'
+    filePath: string
+    fold: 'pkg' | 'version' | 'file' | 'none'
+    reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'
+    short: boolean
+  }
+): Promise<void> {
+  if (!includeLicensePolicy && !includeSecurityPolicy) {
+    process.exitCode = 1
+    return // caller should assert
   }
 
   const scanReport = generateReport(
@@ -67,10 +48,10 @@ export async function reportFullScan({
     securityPolicy,
     {
       orgSlug,
-      scanId: fullScanId,
+      scanId,
       fold,
-      short,
-      reportLevel
+      reportLevel,
+      short
     }
   )
 

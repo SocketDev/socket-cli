@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { deleteOrgFullScan } from './delete-full-scan'
+import { handleDeleteScan } from './handle-delete-scan'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -51,9 +51,9 @@ async function run(
     parentName
   })
 
-  const [orgSlug = '', fullScanId = ''] = cli.input
+  const [orgSlug = '', scanId = ''] = cli.input
 
-  if (!orgSlug || !fullScanId) {
+  if (!orgSlug || !scanId) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
@@ -63,7 +63,7 @@ async function run(
 
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}
 
-      - Full Scan ID to delete as second argument ${!fullScanId ? colors.red('(missing!)') : colors.green('(ok)')}`
+      - Full Scan ID to delete as second argument ${!scanId ? colors.red('(missing!)') : colors.green('(ok)')}`
     )
     return
   }
@@ -73,5 +73,5 @@ async function run(
     return
   }
 
-  await deleteOrgFullScan(orgSlug, fullScanId)
+  await handleDeleteScan(orgSlug, scanId)
 }

@@ -2,20 +2,16 @@ import fs from 'node:fs/promises'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getFullScan } from './get-full-scan'
 import { mdTable } from '../../utils/markdown'
 
 import type { components } from '@socketsecurity/sdk/types/api'
 
-export async function viewFullScan(
+export async function outputScanView(
+  artifacts: Array<components['schemas']['SocketArtifact']>,
   orgSlug: string,
-  fullScanId: string,
+  scanId: string,
   filePath: string
 ): Promise<void> {
-  const artifacts: Array<components['schemas']['SocketArtifact']> | undefined =
-    await getFullScan(orgSlug, fullScanId)
-  if (!artifacts) return
-
   const display = artifacts.map(art => {
     const author = Array.isArray(art.author)
       ? `${art.author[0]}${art.author.length > 1 ? ' et.al.' : ''}`
@@ -43,11 +39,11 @@ export async function viewFullScan(
 
 These are the artifacts and their scores found.
 
-Sscan ID: ${fullScanId}
+Scan ID: ${scanId}
 
 ${md}
 
-View this report at: https://socket.dev/dashboard/org/${orgSlug}/sbom/${fullScanId}
+View this report at: https://socket.dev/dashboard/org/${orgSlug}/sbom/${scanId}
   `.trim() + '\n'
 
   if (filePath && filePath !== '-') {

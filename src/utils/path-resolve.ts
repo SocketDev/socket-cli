@@ -248,7 +248,7 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
   }
 }
 
-export async function getPackageFilesFullScans(
+export async function getPackageFilesForScan(
   cwd: string,
   inputPaths: string[],
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
