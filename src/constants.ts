@@ -128,9 +128,6 @@ type Constants = Remap<
   }
 >
 
-const SOCKET = 'socket'
-const WITH_SENTRY = 'with-sentry'
-
 const ALERT_FIX_TYPE_CVE = 'cve'
 const ALERT_FIX_TYPE_UPGRADE = 'upgrade'
 const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
@@ -158,6 +155,7 @@ const REQUIRE = 'require'
 const SHADOW_NPM_BIN = 'shadow-bin'
 const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 const SHADOW_NPM_PATHS = 'shadow-npm-paths'
+const SOCKET = 'socket'
 const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
 const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
@@ -176,6 +174,7 @@ const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli-with-sentry`
 const VLT = 'vlt'
+const WITH_SENTRY = 'with-sentry'
 const YARN = 'yarn'
 const YARN_BERRY = 'yarn/berry'
 const YARN_CLASSIC = 'yarn/classic'
