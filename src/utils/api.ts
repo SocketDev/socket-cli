@@ -77,7 +77,7 @@ export async function queryApi(path: string, apiToken: string) {
   return await fetch(`${API_V0_URL}/${path}`, {
     method: 'GET',
     headers: {
-      Authorization: `Basic ${btoa(`${apiToken}:${apiToken}`)}`
+      Authorization: `Basic ${btoa(`${apiToken}:`)}`
     }
   })
 }
