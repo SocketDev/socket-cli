@@ -66,7 +66,7 @@ export function getLastFiveOfApiToken(token: string): string {
 }
 
 // The API server that should be used for operations.
-function getDefaultApiBaseUrl(): string | undefined {
+export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
     process.env['SOCKET_SECURITY_API_BASE_URL'] || getSetting('apiBaseUrl')
   return isNonEmptyString(baseUrl) ? baseUrl : undefined
