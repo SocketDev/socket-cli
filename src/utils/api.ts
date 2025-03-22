@@ -16,17 +16,14 @@ import type {
 
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
-  result: SocketSdkErrorType<T>
+  sockSdkError: SocketSdkErrorType<T>
 ): never {
-  // SocketSdkErrorType['error'] is not typed.
-  const resultErrorMessage = (result as { error?: Error }).error?.message
-  const message =
-    typeof resultErrorMessage === 'string'
-      ? resultErrorMessage
-      : 'No error message returned'
-  if (result.status === 401 || result.status === 403) {
+  const message = sockSdkError.error || 'No error message returned'
+  const { status } = sockSdkError
+  if (status === 401 || status === 403) {
     // Lazily access constants.spinner.
     const { spinner } = constants
+
     spinner.stop()
 
     throw new AuthError(message)

@@ -186,18 +186,15 @@ export async function uxLookup(
         const orgResult = await sockSdk.getOrganizations()
         if (!orgResult.success) {
           if (orgResult.status === 429) {
-            throw new Error(
-              `API token quota exceeded: ${orgResult.error}`
-            )
+            throw new Error(`API token quota exceeded: ${orgResult.error}`)
           }
           throw new Error(
             `Failed to fetch Socket organization info: ${orgResult.error}`
           )
         }
         const { organizations } = orgResult.data
-        const orgs: Array<
-          Exclude<(typeof organizations)[string], undefined>
-        > = []
+        const orgs: Array<Exclude<(typeof organizations)[string], undefined>> =
+          []
         for (const org of Object.values(organizations)) {
           if (org) {
             orgs.push(org)
