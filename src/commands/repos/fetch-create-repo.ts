@@ -58,12 +58,12 @@ async function fetchCreateRepoWithToken(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
 
   spinner.start('Sending request ot create a repository...')
 
   const result = await handleApiCall(
-    socketSdk.createOrgRepo(orgSlug, {
+    sockSdk.createOrgRepo(orgSlug, {
       name: repoName,
       description,
       homepage,

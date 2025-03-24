@@ -10,7 +10,7 @@ export async function fetchPackageInfo(
   pkgVersion: string,
   includeAllIssues: boolean
 ): Promise<void | PackageData> {
-  const socketSdk = await setupSdk(getPublicToken())
+  const sockSdk = await setupSdk(getPublicToken())
 
   // Lazily access constants.spinner.
   const { spinner } = constants
@@ -22,11 +22,11 @@ export async function fetchPackageInfo(
   )
 
   const result = await handleApiCall(
-    socketSdk.getIssuesByNPMPackage(pkgName, pkgVersion),
+    sockSdk.getIssuesByNPMPackage(pkgName, pkgVersion),
     'looking up package'
   )
   const scoreResult = await handleApiCall(
-    socketSdk.getScoreByNPMPackage(pkgName, pkgVersion),
+    sockSdk.getScoreByNPMPackage(pkgName, pkgVersion),
     'looking up package score'
   )
 

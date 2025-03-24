@@ -23,12 +23,12 @@ async function fetchQuotaWithToken(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
 
   spinner.start('Fetching organization quota...')
 
   const result = await handleApiCall(
-    socketSdk.getQuota(),
+    sockSdk.getQuota(),
     'looking up organization quota'
   )
 

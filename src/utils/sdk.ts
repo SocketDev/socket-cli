@@ -12,7 +12,7 @@ import { getConfigValue } from './config'
 import { AuthError } from './errors'
 import constants from '../constants'
 
-const { SOCKET_CLI_NO_API_TOKEN } = constants
+const { SOCKET_CLI_NO_API_TOKEN, SOCKET_SECURITY_API_TOKEN } = constants
 
 // The API server that should be used for operations.
 function getDefaultApiBaseUrl(): string | undefined {
@@ -36,11 +36,9 @@ export function getDefaultToken(): string | undefined {
     _defaultToken = undefined
   } else {
     const key =
-      process.env['SOCKET_SECURITY_API_TOKEN'] ||
-      // Keep 'SOCKET_SECURITY_API_KEY' as an alias of 'SOCKET_SECURITY_API_TOKEN'.
-      // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
-      process.env['SOCKET_SECURITY_API_KEY'] ||
-      getConfigValue('apiToken') ||
+      // Lazily access constants.ENV[SOCKET_SECURITY_API_TOKEN].
+      constants.ENV[SOCKET_SECURITY_API_TOKEN] ||
+      getSetting('apiToken') ||
       _defaultToken
     _defaultToken = isNonEmptyString(key) ? key : undefined
   }
@@ -49,7 +47,8 @@ export function getDefaultToken(): string | undefined {
 
 export function getPublicToken(): string {
   return (
-    (process.env['SOCKET_SECURITY_API_TOKEN'] || getDefaultToken()) ??
+    // Lazily access constants.ENV[SOCKET_SECURITY_API_TOKEN].
+    (constants.ENV[SOCKET_SECURITY_API_TOKEN] || getDefaultToken()) ??
     SOCKET_PUBLIC_API_TOKEN
   )
 }

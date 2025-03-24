@@ -21,7 +21,7 @@ export async function fetchOrganization(): Promise<
 async function fetchOrganizationWithToken(
   apiToken: string
 ): Promise<SocketSdkReturnType<'getOrganizations'>['data'] | undefined> {
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
 
   // Lazily access constants.spinner.
   const { spinner } = constants
@@ -29,7 +29,7 @@ async function fetchOrganizationWithToken(
   spinner.start('Fetching organization list...')
 
   const result = await handleApiCall(
-    socketSdk.getOrganizations(),
+    sockSdk.getOrganizations(),
     'looking up organizations'
   )
 
