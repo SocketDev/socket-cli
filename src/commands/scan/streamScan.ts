@@ -5,9 +5,9 @@ import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 import type { SocketSdkResultType } from '@socketsecurity/sdk'
 
-export async function streamFullScan(
+export async function streamScan(
   orgSlug: string,
-  fullScanId: string,
+  scanId: string,
   file: string | undefined
 ): Promise<SocketSdkResultType<'getOrgFullScan'> | undefined> {
   // Lazily access constants.spinner.
@@ -20,26 +20,23 @@ export async function streamFullScan(
     )
   }
 
+  const sockSdk = await setupSdk(apiToken)
+
   spinner.start('Fetching scan...')
 
-  const sockSdk = await setupSdk(apiToken)
   const data = await handleApiCall(
-    sockSdk.getOrgFullScan(
-      orgSlug,
-      fullScanId,
-      file === '-' ? undefined : file
-    ),
+    sockSdk.getOrgFullScan(orgSlug, scanId, file === '-' ? undefined : file),
     'Fetching a scan'
+  )
+
+  spinner?.successAndStop(
+    file ? `Full scan details written to ${file}` : 'stdout'
   )
 
   if (!data?.success) {
     handleUnsuccessfulApiResponse('getOrgFullScan', data)
     return
   }
-
-  spinner?.successAndStop(
-    file ? `Full scan details written to ${file}` : 'stdout'
-  )
 
   return data
 }
