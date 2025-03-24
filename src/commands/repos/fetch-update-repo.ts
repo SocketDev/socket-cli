@@ -60,9 +60,9 @@ async function fetchUpdateRepoWithToken(
 
   spinner.start('Sending request to update a repository...')
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
-    socketSdk.updateOrgRepo(orgSlug, repoName, {
+    sockSdk.updateOrgRepo(orgSlug, repoName, {
       orgSlug,
       name: repoName,
       description,

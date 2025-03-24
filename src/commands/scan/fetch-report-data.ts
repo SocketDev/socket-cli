@@ -88,7 +88,7 @@ export async function fetchReportData(
 
   updateProgress()
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
 
   // @ts-ignore
   const [
@@ -141,7 +141,7 @@ export async function fetchReportData(
     })(),
     // includeLicensePolicy &&
     //   (async () => {
-    //     const r = await socketSdk.getOrgSecurityPolicy(orgSlug)
+    //     const r = await sockSdk.getOrgSecurityPolicy(orgSlug)
     //     haveLicensePolicy = true
     //     updateProgress()
     //     return await handleApiCall(
@@ -151,7 +151,7 @@ export async function fetchReportData(
     //   })(),
     includeSecurityPolicy &&
       (async () => {
-        const r = await socketSdk.getOrgSecurityPolicy(orgSlug)
+        const r = await sockSdk.getOrgSecurityPolicy(orgSlug)
         haveSecurityPolicy = true
         updateProgress()
         return await handleApiCall(

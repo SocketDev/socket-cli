@@ -30,9 +30,9 @@ export async function getOrgScanMetadataWithToken(
 
   spinner.start('Fetching meta data for a full scan...')
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
-    socketSdk.getOrgFullScanMetadata(orgSlug, scanId),
+    sockSdk.getOrgFullScanMetadata(orgSlug, scanId),
     'Listing scans'
   )
 

@@ -40,10 +40,10 @@ async function fetchDependenciesWithToken(
 
   spinner.start('Fetching organization dependencies...')
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
 
   const result = await handleApiCall(
-    socketSdk.searchDependencies({ limit, offset }),
+    sockSdk.searchDependencies({ limit, offset }),
     'Searching dependencies'
   )
 

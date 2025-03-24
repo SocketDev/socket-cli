@@ -7,7 +7,7 @@ import { SocketSdk } from '@socketsecurity/sdk'
 import { handleApiCall } from '../../utils/api'
 
 export async function suggestRepoSlug(
-  socketSdk: SocketSdk,
+  sockSdk: SocketSdk,
   orgSlug: string
 ): Promise<{
   slug: string
@@ -16,7 +16,7 @@ export async function suggestRepoSlug(
   // Same as above, but if there's a repo with the same name as cwd then
   // default the selection to that name.
   const result = await handleApiCall(
-    socketSdk.getOrgRepoList(orgSlug, {
+    sockSdk.getOrgRepoList(orgSlug, {
       orgSlug,
       sort: 'name',
       direction: 'asc',
@@ -39,7 +39,7 @@ export async function suggestRepoSlug(
     if (!cwdIsKnown && currentDirName) {
       // Do an explicit request so we can assert that the cwd exists or not
       const result = await handleApiCall(
-        socketSdk.getOrgRepo(orgSlug, currentDirName),
+        sockSdk.getOrgRepo(orgSlug, currentDirName),
         'checking if current cwd is a known repo'
       )
       if (result.success) {

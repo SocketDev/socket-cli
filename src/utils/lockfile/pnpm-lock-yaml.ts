@@ -54,14 +54,14 @@ export async function getAlertsMapFromPnpmLockfile(
 
   spinner?.start(getText())
 
-  const socketSdk = await setupSdk(getPublicToken())
+  const sockSdk = await setupSdk(getPublicToken())
 
   const toAlertsMapOptions = {
     overrides: lockfile.overrides,
     ...options
   }
 
-  for await (const batchPackageFetchResult of socketSdk.batchPackageStream(
+  for await (const batchPackageFetchResult of sockSdk.batchPackageStream(
     {
       alerts: 'true',
       compact: 'true',
