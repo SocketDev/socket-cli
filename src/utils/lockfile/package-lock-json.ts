@@ -127,7 +127,10 @@ function getDetailsFromDiff(
 
 function getUrlOrigin(input: string): string {
   try {
-    return URL.parse(input)?.origin ?? ''
+    // TODO: URL.parse is available in Node 22.1.0. We can use it when we drop Node 18.
+    // https://nodejs.org/docs/latest-v22.x/api/url.html#urlparseinput-base
+    // return URL.parse(input)?.origin ?? ''
+    return new URL(input).origin ?? ''
   } catch {}
   return ''
 }
