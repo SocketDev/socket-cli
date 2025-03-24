@@ -3,6 +3,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { outputConfigList } from './output-config-list'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
+import { supportedConfigKeys } from '../../utils/config'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -29,6 +30,12 @@ const config: CliCommandConfig = {
 
     Options
       ${getFlagListOutput(config.flags, 6)}
+
+    Keys:
+
+${Array.from(supportedConfigKeys.entries())
+  .map(([key, desc]) => `     - ${key} -- ${desc}`)
+  .join('\n')}
 
     Examples
       $ ${command} FakeOrg --repoName=test-repo

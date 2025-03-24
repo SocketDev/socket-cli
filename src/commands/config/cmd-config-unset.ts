@@ -6,10 +6,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleConfigUnset } from './handle-config-unset'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { LocalConfig, supportedConfigKeys } from '../../utils/config'
+import { supportedConfigKeys } from '../../utils/config'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
+import type { LocalConfig } from '../../utils/config'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const { DRY_RUN_BAIL_TEXT } = constants
@@ -28,6 +29,12 @@ const config: CliCommandConfig = {
 
     Options
       ${getFlagListOutput(config.flags, 6)}
+
+    Keys:
+
+${Array.from(supportedConfigKeys.entries())
+  .map(([key, desc]) => `     - ${key} -- ${desc}`)
+  .join('\n')}
 
     Examples
       $ ${command} FakeOrg --repoName=test-repo

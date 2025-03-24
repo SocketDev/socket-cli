@@ -6,10 +6,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleConfigSet } from './handle-config-set'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { LocalConfig, supportedConfigKeys } from '../../utils/config'
+import { supportedConfigKeys } from '../../utils/config'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
+import type { LocalConfig } from '../../utils/config'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const { DRY_RUN_BAIL_TEXT } = constants
