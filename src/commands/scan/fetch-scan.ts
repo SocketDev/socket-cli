@@ -9,9 +9,9 @@ import { getDefaultToken } from '../../utils/sdk'
 
 import type { components } from '@socketsecurity/sdk/types/api'
 
-export async function getFullScan(
+export async function fetchScan(
   orgSlug: string,
-  fullScanId: string
+  scanId: string
 ): Promise<Array<components['schemas']['SocketArtifact']> | undefined> {
   // Lazily access constants.spinner.
   const { spinner } = constants
@@ -26,7 +26,7 @@ export async function getFullScan(
   spinner.start('Fetching full-scan...')
 
   const response = await queryApi(
-    `orgs/${orgSlug}/full-scans/${encodeURIComponent(fullScanId)}`,
+    `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}`,
     apiToken
   )
 

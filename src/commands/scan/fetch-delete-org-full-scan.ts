@@ -3,10 +3,12 @@ import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
-export async function deleteOrgFullScan(
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+
+export async function fetchDeleteOrgFullScan(
   orgSlug: string,
-  fullScanId: string
-): Promise<void> {
+  scanId: string
+): Promise<SocketSdkReturnType<'deleteOrgFullScan'>['data'] | void> {
   const apiToken = getDefaultToken()
   if (!apiToken) {
     throw new AuthError(
@@ -14,28 +16,32 @@ export async function deleteOrgFullScan(
     )
   }
 
-  await deleteOrgFullScanWithToken(orgSlug, fullScanId, apiToken)
+  await fetchDeleteOrgFullScanWithToken(apiToken, orgSlug, scanId)
 }
-export async function deleteOrgFullScanWithToken(
+
+async function fetchDeleteOrgFullScanWithToken(
+  apiToken: string,
   orgSlug: string,
-  fullScanId: string,
-  apiToken: string
-): Promise<void> {
+  scanId: string
+): Promise<SocketSdkReturnType<'deleteOrgFullScan'>['data'] | void> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  spinner.start('Deleting scan...')
-
   const sockSdk = await setupSdk(apiToken)
+
+  spinner.start('Requesting the scan to be deleted...')
+
   const result = await handleApiCall(
-    sockSdk.deleteOrgFullScan(orgSlug, fullScanId),
+    sockSdk.deleteOrgFullScan(orgSlug, scanId),
     'Deleting scan'
   )
+
+  spinner.successAndStop('Received response for deleting a scan.')
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('deleteOrgFullScan', result)
     return
   }
 
-  spinner.successAndStop('Scan deleted successfully')
+  return result.data
 }
