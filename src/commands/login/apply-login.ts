@@ -1,4 +1,4 @@
-import { updateSetting } from '../../utils/settings'
+import { updateConfigValue } from '../../utils/config'
 
 export function applyLogin(
   apiToken: string,
@@ -6,8 +6,8 @@ export function applyLogin(
   apiBaseUrl: string | undefined,
   apiProxy: string | undefined
 ) {
-  updateSetting('enforcedOrgs', enforcedOrgs)
-  updateSetting('apiToken', apiToken)
-  updateSetting('apiBaseUrl', apiBaseUrl)
-  updateSetting('apiProxy', apiProxy)
+  updateConfigValue('enforcedOrgs', enforcedOrgs)
+  updateConfigValue('apiToken', apiToken)
+  updateConfigValue('apiBaseUrl', apiBaseUrl)
+  updateConfigValue('apiProxy', apiProxy)
 }

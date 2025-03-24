@@ -5,8 +5,8 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
+import { getConfigValue } from './config'
 import { AuthError } from './errors'
-import { getSetting } from './settings'
 import constants from '../constants'
 
 import type {
@@ -65,7 +65,7 @@ export function getLastFiveOfApiToken(token: string): string {
 // The API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    process.env['SOCKET_SECURITY_API_BASE_URL'] || getSetting('apiBaseUrl')
+    process.env['SOCKET_SECURITY_API_BASE_URL'] || getConfigValue('apiBaseUrl')
   return isNonEmptyString(baseUrl) ? baseUrl : undefined
 }
 

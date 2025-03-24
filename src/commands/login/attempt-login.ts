@@ -5,9 +5,9 @@ import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 
 import { applyLogin } from './apply-login'
 import constants from '../../constants'
+import { getConfigValue } from '../../utils/config'
 import { AuthError } from '../../utils/errors'
 import { setupSdk } from '../../utils/sdk'
-import { getSetting } from '../../utils/settings'
 
 import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -20,8 +20,8 @@ export async function attemptLogin(
   apiBaseUrl: string | undefined,
   apiProxy: string | undefined
 ) {
-  apiBaseUrl ??= getSetting('apiBaseUrl') ?? undefined
-  apiProxy ??= getSetting('apiProxy') ?? undefined
+  apiBaseUrl ??= getConfigValue('apiBaseUrl') ?? undefined
+  apiProxy ??= getConfigValue('apiProxy') ?? undefined
   const apiToken =
     (await password({
       message: `Enter your ${terminalLink(
@@ -94,7 +94,7 @@ export async function attemptLogin(
 
   spinner.stop()
 
-  const oldToken = getSetting('apiToken')
+  const oldToken = getConfigValue('apiToken')
   try {
     applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
     logger.success(`API credentials ${oldToken ? 'updated' : 'set'}`)
