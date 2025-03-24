@@ -26,6 +26,13 @@ describe('socket config unset', async () => {
           --json            Output result as json
           --markdown        Output result as markdown
 
+        Keys:
+
+         - apiBaseUrl -- Base URL of the API endpoint
+         - apiToken -- The API token required to access most API endpoints
+         - apiProxy -- A proxy through which to access the API
+         - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
+
         Examples
           $ socket config unset FakeOrg --repoName=test-repo"
     `
