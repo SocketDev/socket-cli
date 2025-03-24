@@ -152,7 +152,7 @@
     "npm-run-all2": "^7.0.2",
     "oxlint": "0.16.2",
     "read-package-up": "^11.0.0",
-    "rollup": "4.36.0",
+    "rollup": "4.37.0",
     "rollup-plugin-ts": "^3.4.5",
     "synp": "^1.9.14",
     "type-coverage": "^2.29.7",
