@@ -27,13 +27,13 @@ export async function fetchReportData(
   spinner.log('Fetching report with ID ${reportId} (this could take a while)')
   spinner.start(`Fetch started... (this could take a while)`)
 
-  const socketSdk = await setupSdk()
+  const sockSdk = await setupSdk()
   let result: SocketSdkResultType<'getReport'> | undefined
   for (let retry = 1; !result; ++retry) {
     try {
       // eslint-disable-next-line no-await-in-loop
       result = await handleApiCall(
-        socketSdk.getReport(reportId),
+        sockSdk.getReport(reportId),
         'fetching report'
       )
     } catch (err) {

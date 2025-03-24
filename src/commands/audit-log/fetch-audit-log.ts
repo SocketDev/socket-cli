@@ -55,9 +55,9 @@ export async function fetchAuditLogWithToken(
 
   spinner.start(`Looking up audit log for ${orgSlug}`)
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
-    socketSdk.getAuditLogEvents(orgSlug, {
+    sockSdk.getAuditLogEvents(orgSlug, {
       // I'm not sure this is used at all.
       outputJson: String(outputKind === 'json'),
       // I'm not sure this is used at all.

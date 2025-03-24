@@ -11,9 +11,9 @@ export async function fetchOrgAnalyticsData(
   spinner: Spinner,
   apiToken: string
 ): Promise<SocketSdkReturnType<'getOrgAnalytics'>['data'] | undefined> {
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
-    socketSdk.getOrgAnalytics(time.toString()),
+    sockSdk.getOrgAnalytics(time.toString()),
     'fetching analytics data'
   )
 

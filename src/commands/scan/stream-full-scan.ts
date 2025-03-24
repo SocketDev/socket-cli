@@ -22,9 +22,9 @@ export async function streamFullScan(
 
   spinner.start('Fetching scan...')
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
   const data = await handleApiCall(
-    socketSdk.getOrgFullScan(
+    sockSdk.getOrgFullScan(
       orgSlug,
       fullScanId,
       file === '-' ? undefined : file

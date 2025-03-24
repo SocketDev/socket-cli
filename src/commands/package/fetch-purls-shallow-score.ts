@@ -21,11 +21,11 @@ export async function fetchPurlsShallowScore(
 
   spinner.start(`Requesting data ...`)
 
-  const socketSdk = await setupSdk(getPublicToken())
+  const sockSdk = await setupSdk(getPublicToken())
 
   const result: Awaited<SocketSdkResultType<'batchPackageFetch'>> =
     await handleApiCall(
-      socketSdk.batchPackageFetch(
+      sockSdk.batchPackageFetch(
         {
           alerts: 'true'
           // compact: false,

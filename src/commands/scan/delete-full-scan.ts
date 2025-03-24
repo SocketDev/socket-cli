@@ -26,9 +26,9 @@ export async function deleteOrgFullScanWithToken(
 
   spinner.start('Deleting scan...')
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
-    socketSdk.deleteOrgFullScan(orgSlug, fullScanId),
+    sockSdk.deleteOrgFullScan(orgSlug, fullScanId),
     'Deleting scan'
   )
 

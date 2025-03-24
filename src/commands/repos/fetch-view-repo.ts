@@ -26,12 +26,12 @@ async function fetchViewRepoWithToken(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
 
   spinner.start('Fetching repository data...')
 
   const result = await handleApiCall(
-    socketSdk.getOrgRepo(orgSlug, repoName),
+    sockSdk.getOrgRepo(orgSlug, repoName),
     'fetching repository'
   )
 

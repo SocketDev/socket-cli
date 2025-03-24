@@ -69,9 +69,9 @@ async function listFullScansWithToken({
 
   spinner.start('Fetching list of scans...')
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
-    socketSdk.getOrgFullScanList(orgSlug, {
+    sockSdk.getOrgFullScanList(orgSlug, {
       sort,
       direction,
       per_page: String(per_page),
