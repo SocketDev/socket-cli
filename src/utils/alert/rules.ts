@@ -1,8 +1,8 @@
 import { isObject } from '@socketsecurity/registry/lib/objects'
 
+import { findSocketYmlSync, getConfigValue } from '../config'
 import { isErrnoException } from '../errors'
 import { getPublicToken, setupSdk } from '../sdk'
-import { findSocketYmlSync, getSetting } from '../settings'
 
 import type { SocketSdkResultType } from '@socketsecurity/sdk'
 
@@ -229,7 +229,7 @@ export async function uxLookup(
       }
     })()
     // Remove any organizations not being enforced.
-    const enforcedOrgs = getSetting('enforcedOrgs') ?? []
+    const enforcedOrgs = getConfigValue('enforcedOrgs') ?? []
     for (const { 0: i, 1: org } of orgs.entries()) {
       if (!enforcedOrgs.includes(org.id)) {
         settings.entries.splice(i, 1)

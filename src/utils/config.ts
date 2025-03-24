@@ -9,58 +9,66 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { safeReadFileSync } from './fs'
 import constants from '../constants'
 
+export interface LocalConfig {
+  apiBaseUrl?: string | null | undefined
+  // @deprecated ; use apiToken
+  apiKey?: string | null | undefined
+  apiProxy?: string | null | undefined
+  // apiToken replaced apiKey.
+  apiToken?: string | null | undefined
+  defaultOrg?: string
+  enforcedOrgs?: string[] | readonly string[] | null | undefined
+  // Ignore.
+  test?: unknown
+}
+
 // Default app data folder env var on Win
 const LOCALAPPDATA = 'LOCALAPPDATA'
 // Default app data folder env var on Mac/Linux
 const XDG_DATA_HOME = 'XDG_DATA_HOME'
-const SOCKET_APP_DIR = 'socket/settings'
+const SOCKET_APP_DIR = 'socket/settings' // It used to be settings...
 
-const supportedApiKeys: Set<keyof Settings> = new Set([
-  'apiBaseUrl',
-  'apiKey',
-  'apiProxy',
-  'enforcedOrgs'
+export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
+  ['apiBaseUrl', 'Base URL of the API endpoint'],
+  ['apiToken', 'The API token required to access most API endpoints'],
+  ['apiProxy', 'A proxy through which to access the API'],
+  [
+    'enforcedOrgs',
+    'Orgs in this list have their security policies enforced on this machine'
+  ]
 ])
 
-interface Settings {
-  apiBaseUrl?: string | null | undefined
-  // @deprecated
-  apiKey?: string | null | undefined
-  apiProxy?: string | null | undefined
-  enforcedOrgs?: string[] | readonly string[] | null | undefined
-  // apiToken is an alias for apiKey.
-  apiToken?: string | null | undefined
-}
+export const sensitiveConfigKeys: Set<keyof LocalConfig> = new Set(['apiToken'])
 
-let settings: Settings | undefined
-let settingsPath: string | undefined
-let warnedSettingPathWin32Missing = false
+let cachedConfig: LocalConfig | undefined
+let configPath: string | undefined
+let warnedConfigPathWin32Missing = false
 let pendingSave = false
 
-function getSettings(): Settings {
-  if (settings === undefined) {
-    settings = {} as Settings
-    const settingsPath = getSettingsPath()
-    if (settingsPath) {
-      const raw = safeReadFileSync(settingsPath)
+function getConfigValues(): LocalConfig {
+  if (cachedConfig === undefined) {
+    cachedConfig = {} as LocalConfig
+    const configPath = getConfigPath()
+    if (configPath) {
+      const raw = safeReadFileSync(configPath)
       if (raw) {
         try {
           Object.assign(
-            settings,
+            cachedConfig,
             JSON.parse(Buffer.from(raw, 'base64').toString())
           )
         } catch {
-          logger.warn(`Failed to parse settings at ${settingsPath}`)
+          logger.warn(`Failed to parse config at ${configPath}`)
         }
       } else {
-        fs.mkdirSync(path.dirname(settingsPath), { recursive: true })
+        fs.mkdirSync(path.dirname(configPath), { recursive: true })
       }
     }
   }
-  return settings
+  return cachedConfig
 }
 
-function getSettingsPath(): string | undefined {
+function getConfigPath(): string | undefined {
   // Get the OS app data folder:
   // - Win: %LOCALAPPDATA% or fail?
   // - Mac: %XDG_DATA_HOME% or fallback to "~/Library/Application Support/"
@@ -73,7 +81,7 @@ function getSettingsPath(): string | undefined {
   // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
   // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
 
-  if (settingsPath === undefined) {
+  if (configPath === undefined) {
     // Lazily access constants.WIN32.
     const { WIN32 } = constants
     let dataHome: string | undefined = WIN32
@@ -81,8 +89,8 @@ function getSettingsPath(): string | undefined {
       : process.env[XDG_DATA_HOME]
     if (!dataHome) {
       if (WIN32) {
-        if (!warnedSettingPathWin32Missing) {
-          warnedSettingPathWin32Missing = true
+        if (!warnedConfigPathWin32Missing) {
+          warnedConfigPathWin32Missing = true
           logger.warn(`Missing %${LOCALAPPDATA}%`)
         }
       } else {
@@ -94,17 +102,21 @@ function getSettingsPath(): string | undefined {
         )
       }
     }
-    settingsPath = dataHome ? path.join(dataHome, SOCKET_APP_DIR) : undefined
+    configPath = dataHome ? path.join(dataHome, SOCKET_APP_DIR) : undefined
   }
-  return settingsPath
+  return configPath
 }
 
-function normalizeSettingsKey(key: keyof Settings): keyof Settings {
+function normalizeConfigKey(key: keyof LocalConfig): keyof LocalConfig {
   const normalizedKey = key === 'apiToken' ? 'apiKey' : key
-  if (!supportedApiKeys.has(normalizedKey as keyof Settings)) {
-    throw new Error(`Invalid settings key: ${normalizedKey}`)
+  if (
+    normalizedKey !== 'apiKey' &&
+    normalizedKey !== 'test' &&
+    !supportedConfigKeys.has(normalizedKey as keyof LocalConfig)
+  ) {
+    throw new Error(`Invalid config key: ${normalizedKey}`)
   }
-  return normalizedKey as keyof Settings
+  return normalizedKey as keyof LocalConfig
 }
 
 export function findSocketYmlSync() {
@@ -133,27 +145,27 @@ export function findSocketYmlSync() {
   return null
 }
 
-export function getSetting<Key extends keyof Settings>(
+export function getConfigValue<Key extends keyof LocalConfig>(
   key: Key
-): Settings[Key] {
-  return getSettings()[normalizeSettingsKey(key) as Key]
+): LocalConfig[Key] {
+  return getConfigValues()[normalizeConfigKey(key) as Key]
 }
 
-export function updateSetting<Key extends keyof Settings>(
-  key: Key,
-  value: Settings[Key]
+export function updateConfigValue<Key extends keyof LocalConfig>(
+  key: keyof LocalConfig,
+  value: LocalConfig[Key]
 ): void {
-  const settings = getSettings()
-  settings[normalizeSettingsKey(key) as Key] = value
+  const localConfig = getConfigValues()
+  localConfig[normalizeConfigKey(key) as Key] = value
   if (!pendingSave) {
     pendingSave = true
     process.nextTick(() => {
       pendingSave = false
-      const settingsPath = getSettingsPath()
-      if (settingsPath) {
+      const configPath = getConfigPath()
+      if (configPath) {
         fs.writeFileSync(
-          settingsPath,
-          Buffer.from(JSON.stringify(settings)).toString('base64')
+          configPath,
+          Buffer.from(JSON.stringify(localConfig)).toString('base64')
         )
       }
     })

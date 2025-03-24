@@ -8,8 +8,8 @@ import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import { getLastFiveOfApiToken } from './api'
+import { getConfigValue } from './config'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting'
-import { getSetting } from './settings'
 import constants from '../constants'
 import { MeowFlags, commonFlags } from '../flags'
 
@@ -214,7 +214,7 @@ function getAsciiHeader(command: string) {
     : // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION_HASH']".
       process.env['INLINED_SOCKET_CLI_VERSION_HASH']
   const nodeVersion = redacting ? REDACTED : process.version
-  const apiToken = getSetting('apiToken')
+  const apiToken = getConfigValue('apiToken')
   const shownToken = redacting
     ? REDACTED
     : apiToken
