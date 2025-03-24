@@ -4,7 +4,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import registryConstants from '@socketsecurity/registry/lib/constants'
-import { envAsBoolean } from '@socketsecurity/registry/lib/env'
+import { envAsBoolean, envAsString } from '@socketsecurity/registry/lib/env'
 
 import type { Agent } from './utils/package-environment'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
@@ -45,6 +45,7 @@ type ENV = Remap<
     Readonly<{
       SOCKET_CLI_DEBUG: boolean
       SOCKET_CLI_NO_API_TOKEN: boolean
+      SOCKET_SECURITY_API_TOKEN: string
     }>
 >
 
@@ -102,6 +103,7 @@ type Constants = Remap<
     readonly SOCKET_CLI_SENTRY_NPM_BIN_NAME: 'socket-npm-with-sentry'
     readonly SOCKET_CLI_SENTRY_NPX_BIN_NAME: 'socket-npx-with-sentry'
     readonly SOCKET_CLI_SENTRY_PACKAGE_NAME: '@socketsecurity/cli-with-sentry'
+    readonly SOCKET_SECURITY_API_TOKEN: 'SOCKET_SECURITY_API_TOKEN'
     readonly VLT: 'vlt'
     readonly WITH_SENTRY: 'with-sentry'
     readonly YARN: 'yarn'
@@ -169,6 +171,7 @@ const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
 const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli-with-sentry`
+const SOCKET_SECURITY_API_TOKEN = 'SOCKET_SECURITY_API_TOKEN'
 const VLT = 'vlt'
 const WITH_SENTRY = 'with-sentry'
 const YARN = 'yarn'
@@ -203,7 +206,14 @@ const LAZY_ENV = () => {
     // Flag set to help debug Socket CLI.
     SOCKET_CLI_DEBUG: envAsBoolean(env['SOCKET_CLI_DEBUG']),
     // Flag set to make the default API token `undefined`.
-    SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN'])
+    SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN']),
+    // Flag set to set the API token.
+    // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
+    SOCKET_SECURITY_API_TOKEN:
+      envAsString(env['SOCKET_SECURITY_API_TOKEN']) ||
+      // Keep 'SOCKET_SECURITY_API_KEY' as an alias of 'SOCKET_SECURITY_API_TOKEN'.
+      // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
+      envAsString(env['SOCKET_SECURITY_API_KEY'])
   })
 }
 
@@ -344,6 +354,7 @@ const constants = createConstantsObject(
     SOCKET_CLI_SENTRY_NPM_BIN_NAME,
     SOCKET_CLI_SENTRY_NPX_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
+    SOCKET_SECURITY_API_TOKEN,
     VLT,
     WITH_SENTRY,
     YARN,
