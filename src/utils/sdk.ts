@@ -8,8 +8,8 @@ import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
+import { getConfigValue } from './config'
 import { AuthError } from './errors'
-import { getSetting } from './settings'
 import constants from '../constants'
 
 const { SOCKET_CLI_NO_API_TOKEN, SOCKET_SECURITY_API_TOKEN } = constants
@@ -17,14 +17,14 @@ const { SOCKET_CLI_NO_API_TOKEN, SOCKET_SECURITY_API_TOKEN } = constants
 // The API server that should be used for operations.
 function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    process.env['SOCKET_SECURITY_API_BASE_URL'] || getSetting('apiBaseUrl')
+    process.env['SOCKET_SECURITY_API_BASE_URL'] || getConfigValue('apiBaseUrl')
   return isNonEmptyString(baseUrl) ? baseUrl : undefined
 }
 
 // The API server that should be used for operations.
 function getDefaultHttpProxy(): string | undefined {
   const apiProxy =
-    process.env['SOCKET_SECURITY_API_PROXY'] || getSetting('apiProxy')
+    process.env['SOCKET_SECURITY_API_PROXY'] || getConfigValue('apiProxy')
   return isNonEmptyString(apiProxy) ? apiProxy : undefined
 }
 
@@ -38,7 +38,7 @@ export function getDefaultToken(): string | undefined {
     const key =
       // Lazily access constants.ENV[SOCKET_SECURITY_API_TOKEN].
       constants.ENV[SOCKET_SECURITY_API_TOKEN] ||
-      getSetting('apiToken') ||
+      getConfigValue('apiToken') ||
       _defaultToken
     _defaultToken = isNonEmptyString(key) ? key : undefined
   }
