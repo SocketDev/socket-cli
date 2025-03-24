@@ -20,7 +20,7 @@ import type { components } from '@socketsecurity/sdk/types/api'
  */
 export async function fetchReportData(
   orgSlug: string,
-  fullScanId: string,
+  scanId: string,
   // includeLicensePolicy: boolean,
   includeSecurityPolicy: boolean
 ): Promise<
@@ -103,7 +103,7 @@ export async function fetchReportData(
     (async () => {
       try {
         const response = await queryApi(
-          `orgs/${orgSlug}/full-scans/${encodeURIComponent(fullScanId)}`,
+          `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}`,
           apiToken
         )
 

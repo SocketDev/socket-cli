@@ -3,8 +3,8 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { streamFullScan } from './stream-full-scan'
-import { viewFullScan } from './view-full-scan'
+import { handleScanView } from './handle-scan-view'
+import { streamScan } from './streamScan'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -57,9 +57,9 @@ async function run(
     parentName
   })
 
-  const [orgSlug = '', fullScanId = '', file = '-'] = cli.input
+  const [orgSlug = '', scanId = '', file = '-'] = cli.input
 
-  if (!orgSlug || !fullScanId) {
+  if (!orgSlug || !scanId) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
@@ -70,7 +70,7 @@ async function run(
 
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}
 
-      - Full Scan ID to fetch as second argument ${!fullScanId ? colors.red('(missing!)') : colors.green('(ok)')}
+      - Full Scan ID to fetch as second argument ${!scanId ? colors.red('(missing!)') : colors.green('(ok)')}
     `
     )
     return
@@ -82,8 +82,8 @@ async function run(
   }
 
   if (cli.flags['json']) {
-    await streamFullScan(orgSlug, fullScanId, file)
+    await streamScan(orgSlug, scanId, file)
   } else {
-    await viewFullScan(orgSlug, fullScanId, file)
+    await handleScanView(orgSlug, scanId, file)
   }
 }

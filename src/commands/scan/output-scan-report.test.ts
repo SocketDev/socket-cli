@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { toJsonReport, toMarkdownReport } from './report-full-scan'
+import { toJsonReport, toMarkdownReport } from './output-scan-report'
 
 import type { ScanReport } from './generate-report'
 
-describe('report-full-scan', () => {
+describe('output-scan-report', () => {
   describe('toJsonReport', () => {
     it('should be able to generate a healthy json report', () => {
       expect(toJsonReport(getHealthyReport())).toMatchInlineSnapshot(`
