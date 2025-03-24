@@ -53,12 +53,12 @@ async function fetchListReposWithToken(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
 
   spinner.start('Fetching list of repositories...')
 
   const result = await handleApiCall(
-    socketSdk.getOrgRepoList(orgSlug, {
+    sockSdk.getOrgRepoList(orgSlug, {
       sort,
       direction,
       per_page: String(per_page),

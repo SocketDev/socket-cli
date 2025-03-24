@@ -25,12 +25,12 @@ async function fetchSecurityPolicyWithToken(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
 
   spinner.start('Fetching organization quota...')
 
   const result = await handleApiCall(
-    socketSdk.getOrgSecurityPolicy(orgSlug),
+    sockSdk.getOrgSecurityPolicy(orgSlug),
     'looking up organization quota'
   )
 

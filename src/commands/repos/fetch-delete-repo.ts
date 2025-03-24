@@ -27,12 +27,12 @@ async function fetchDeleteRepoWithToken(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
 
   spinner.start('Sending request to delete a repository...')
 
   const result = await handleApiCall(
-    socketSdk.deleteOrgRepo(orgSlug, repoName),
+    sockSdk.deleteOrgRepo(orgSlug, repoName),
     'deleting repository'
   )
 

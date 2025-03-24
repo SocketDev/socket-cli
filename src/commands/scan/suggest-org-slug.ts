@@ -4,10 +4,10 @@ import { SocketSdk } from '@socketsecurity/sdk'
 import { handleApiCall } from '../../utils/api'
 
 export async function suggestOrgSlug(
-  socketSdk: SocketSdk
+  sockSdk: SocketSdk
 ): Promise<string | void> {
   const result = await handleApiCall(
-    socketSdk.getOrganizations(),
+    sockSdk.getOrganizations(),
     'looking up organizations'
   )
   // Ignore a failed request here. It was not the primary goal of

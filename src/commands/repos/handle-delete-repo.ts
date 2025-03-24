@@ -27,9 +27,9 @@ async function deleteRepoWithToken(
 
   spinner.start('Deleting repository...')
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
-    socketSdk.deleteOrgRepo(orgSlug, repoName),
+    sockSdk.deleteOrgRepo(orgSlug, repoName),
     'deleting repository'
   )
 

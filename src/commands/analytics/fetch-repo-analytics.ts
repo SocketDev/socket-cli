@@ -12,9 +12,9 @@ export async function fetchRepoAnalyticsData(
   spinner: Spinner,
   apiToken: string
 ): Promise<SocketSdkReturnType<'getRepoAnalytics'>['data'] | undefined> {
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
-    socketSdk.getRepoAnalytics(repo, time.toString()),
+    sockSdk.getRepoAnalytics(repo, time.toString()),
     'fetching analytics data'
   )
 
