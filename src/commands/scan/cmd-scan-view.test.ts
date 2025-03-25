@@ -63,11 +63,11 @@ describe('socket scan view', async () => {
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan view\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m:
 
-        - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
+          - Org name as the first argument (\\x1b[31mmissing\\x1b[39m)
 
-        - Scan ID to fetch as second argument \\x1b[31m(missing!)\\x1b[39m"
+          - Scan ID to delete (\\x1b[31mmissing\\x1b[39m)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
