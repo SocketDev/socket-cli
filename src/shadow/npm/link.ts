@@ -36,8 +36,8 @@ export async function installLinks(
         path.join(realBinPath, binName)
       )
     }
-    process.env['PATH'] =
-      `${realBinPath}${path.delimiter}${process.env['PATH']}`
+    const { env } = process
+    env['PATH'] = `${realBinPath}${path.delimiter}${env['PATH']}`
   }
   return binPath
 }
