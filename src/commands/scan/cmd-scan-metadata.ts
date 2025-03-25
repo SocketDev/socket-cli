@@ -6,6 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleOrgScanMetadata } from './handle-scan-metadata'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
+import { getConfigValue } from '../../utils/config'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -54,7 +55,9 @@ async function run(
     parentName
   })
 
-  const [orgSlug = '', scanId = ''] = cli.input
+  const defaultOrgSlug = getConfigValue('defaultOrg')
+  const orgSlug = defaultOrgSlug || cli.input[0] || ''
+  const scanId = (defaultOrgSlug ? cli.input[0] : cli.input[1]) || ''
 
   if (!orgSlug || !scanId) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
@@ -64,9 +67,9 @@ async function run(
     logger.fail(
       stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
 
-      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}
+      ${defaultOrgSlug ? '' : `- Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}`}
 
-      - Full Scan ID to inspect as second argument ${!scanId ? colors.red('(missing!)') : colors.green('(ok)')}`
+      - Scan ID to inspect as second argument ${!scanId ? colors.red('(missing!)') : colors.green('(ok)')}`
     )
     return
   }

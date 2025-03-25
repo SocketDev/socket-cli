@@ -6,6 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleScanReport } from './handle-scan-report'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
+import { getConfigValue } from '../../utils/config'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -105,7 +106,10 @@ async function run(
     security
   } = cli.flags
 
-  const [orgSlug = '', scanId = '', file = '-'] = cli.input
+  const defaultOrgSlug = getConfigValue('defaultOrg')
+  const orgSlug = defaultOrgSlug || cli.input[0] || ''
+  const scanId = (defaultOrgSlug ? cli.input[0] : cli.input[1]) || ''
+  const file = (defaultOrgSlug ? cli.input[1] : cli.input[2]) || '-'
 
   if (
     !orgSlug ||
@@ -121,9 +125,9 @@ async function run(
       stripIndents`
       ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
 
-      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}
+      ${defaultOrgSlug ? '' : `- Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}`}
 
-      - Full Scan ID to fetch as second argument ${!scanId ? colors.red('(missing!)') : colors.green('(ok)')}
+      - Scan ID to fetch ${!scanId ? colors.red('(missing!)') : colors.green('(ok)')}
 
       - Not both the --json and --markdown flags ${json && markdown ? colors.red('(pick one!)') : colors.green('(ok)')}
     `
