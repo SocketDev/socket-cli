@@ -14,6 +14,8 @@ import type {
   SocketSdkOperations
 } from '@socketsecurity/sdk'
 
+const { SOCKET_SECURITY_API_BASE_URL } = constants
+
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
   sockSdkError: SocketSdkErrorType<T>
@@ -65,7 +67,8 @@ export function getLastFiveOfApiToken(token: string): string {
 // The API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    process.env['SOCKET_SECURITY_API_BASE_URL'] || getConfigValue('apiBaseUrl')
+    // Lazily access constants.ENV[SOCKET_SECURITY_API_BASE_URL].
+    constants.ENV[SOCKET_SECURITY_API_BASE_URL] || getConfigValue('apiBaseUrl')
   return isNonEmptyString(baseUrl) ? baseUrl : undefined
 }
 
