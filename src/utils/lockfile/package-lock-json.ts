@@ -223,6 +223,7 @@ export async function getAlertsMapFromArborist(
       unchanged: include.existing
     }
   })
+
   const pkgIds = arrayUnique(needInfoOn.map(d => d.node.pkgid))
   let { length: remaining } = pkgIds
   const alertsByPkgId: AlertsByPkgId = new Map()

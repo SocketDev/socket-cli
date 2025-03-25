@@ -14,7 +14,7 @@ const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 // These aliases are defined in package.json.
 for (const npmDir of ['npm8', 'npm9', 'npm10', 'npm11']) {
-  if (process.env['CI']) {
+  if (process.env.CI) {
     // Skip this test in CI.
     describe('skipme', () => it('should skip', () => expect(true).toBe(true)))
     continue

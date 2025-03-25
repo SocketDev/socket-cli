@@ -13,6 +13,5 @@ export async function handleConfigSet({
   value: string
 }) {
   updateConfigValue(key, value)
-
   await outputConfigSet(key, value, outputKind)
 }

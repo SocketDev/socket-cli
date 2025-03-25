@@ -25,7 +25,9 @@ if (process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']) {
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']".
     process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']
       ? 'pub'
-      : process.env['NODE_ENV']
+      : // The NODE_ENV convention is used by apps to define the runtime environment.
+        // https://nodejs.org/en/learn/getting-started/nodejs-the-difference-between-development-and-production
+        process.env['NODE_ENV']
   )
   Sentry.setTag(
     'version',
