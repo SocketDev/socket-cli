@@ -7,36 +7,31 @@ import { cmdit, invokeNpm } from '../../../test/utils'
 
 const { CLI } = constants
 
-describe('socket scan list', async () => {
+describe('socket repos view', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
   cmdit(
-    ['scan', 'list', '--help', '--config', '{}'],
+    ['repos', 'view', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "List the scans for an organization
+      "View repositories in an organization
 
         Usage
-          $ socket scan list <org slug>
+          $ socket repos view <org slug>
 
         Options
-          --direction       Direction option (\`desc\` or \`asc\`) - Default is \`desc\`
           --dryRun          Do input validation for a command and exit 0 when input is ok
-          --fromTime        From time - as a unix timestamp
           --help            Print this help.
           --json            Output result as json
           --markdown        Output result as markdown
-          --page            Page number - Default is 1
-          --perPage         Results per page - Default is 30
-          --sort            Sorting option (\`name\` or \`created_at\`) - default is \`created_at\`
-          --untilTime       Until time - as a unix timestamp
+          --repoName        The repository to check
 
         Examples
-          $ socket scan list FakeOrg"
+          $ socket repos view FakeOrg"
     `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -44,18 +39,18 @@ describe('socket scan list', async () => {
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan list\`, cwd: <redacted>"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos view\`, cwd: <redacted>"
     `)
 
       expect(code, 'help should exit with code 2').toBe(2)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket scan list`'
+        '`socket repos view`'
       )
     }
   )
 
   cmdit(
-    ['scan', 'list', '--dry-run', '--config', '{}'],
+    ['repos', 'view', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
@@ -65,11 +60,12 @@ describe('socket scan list', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan list\`, cwd: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos view\`, cwd: <redacted>
 
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-        - Org name as the argument \\x1b[31m(missing!)\\x1b[39m"
+        - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
+        - Repository name using --repoName \\x1b[31m(missing!)\\x1b[39m"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -77,7 +73,7 @@ describe('socket scan list', async () => {
   )
 
   cmdit(
-    ['scan', 'list', 'fakeorg', '--dry-run', '--config', '{}'],
+    ['repos', 'view', 'a', '--repoName', 'b', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
@@ -87,7 +83,7 @@ describe('socket scan list', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan list\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos view\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

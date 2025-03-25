@@ -1,6 +1,4 @@
 // import { meowOrExit } from '../../utils/meow-with-subcommands'
-import process from 'node:process'
-
 import yargsParse from 'yargs-parser'
 
 import { logger } from '@socketsecurity/registry/lib/logger'

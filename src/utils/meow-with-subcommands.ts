@@ -1,4 +1,5 @@
 import path from 'node:path'
+import process from 'node:process'
 
 import meow from 'meow'
 
@@ -8,7 +9,7 @@ import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import { getLastFiveOfApiToken } from './api'
-import { getConfigValue } from './config'
+import { getConfigValue, overrideCachedConfig } from './config'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting'
 import constants from '../constants'
 import { MeowFlags, commonFlags } from '../flags'
@@ -81,29 +82,11 @@ export async function meowWithSubcommands(
   if (!commandOrAliasName && defaultSub) {
     commandOrAliasName = defaultSub
   }
-  // If we got at least some args, then lets find out if we can find a command.
-  if (commandOrAliasName) {
-    const alias = aliases[commandOrAliasName]
-    // First: Resolve argv data from alias if its an alias that's been given.
-    const [commandName, ...commandArgv] = alias
-      ? [...alias.argv, ...rawCommandArgv]
-      : [commandOrAliasName, ...rawCommandArgv]
-    // Second: Find a command definition using that data.
-    const commandDefinition = commandName ? subcommands[commandName] : undefined
-    // Third: If a valid command has been found, then we run it...
-    if (commandDefinition) {
-      return await commandDefinition.run(commandArgv, importMeta, {
-        parentName: name
-      })
-    }
-  }
-  const flags = {
+
+  const flags: MeowFlags = {
     ...commonFlags,
     ...additionalOptions.flags
   }
-  // ...else we provide basic instructions and help.
-
-  emitBanner(name)
 
   const cli = meow(
     `
@@ -145,9 +128,44 @@ export async function meowWithSubcommands(
       importMeta,
       ...additionalOptions,
       flags,
-      autoHelp: false // otherwise we can't exit(0)
+      // Do not strictly check for flags here.
+      allowUnknownFlags: true,
+      // We will emit help when we're ready
+      // Plus, if we allow this then meow() can just exit here.
+      autoHelp: false
     }
   )
+
+  // Hard override the config if instructed to do so.
+  // The env var overrides the --flag, which overrides the persisted config
+  // Also, when either of these are used, config updates won't persist.
+  if (process.env['SOCKET_CLI_CONFIG']) {
+    overrideCachedConfig(JSON.parse(process.env['SOCKET_CLI_CONFIG']))
+  } else if (cli.flags['config']) {
+    overrideCachedConfig(JSON.parse(String(cli.flags['config'] || '')))
+  }
+
+  // If we got at least some args, then lets find out if we can find a command.
+  if (commandOrAliasName) {
+    const alias = aliases[commandOrAliasName]
+    // First: Resolve argv data from alias if its an alias that's been given.
+    const [commandName, ...commandArgv] = alias
+      ? [...alias.argv, ...rawCommandArgv]
+      : [commandOrAliasName, ...rawCommandArgv]
+    // Second: Find a command definition using that data.
+    const commandDefinition = commandName ? subcommands[commandName] : undefined
+    // Third: If a valid command has been found, then we run it...
+    if (commandDefinition) {
+      return await commandDefinition.run(commandArgv, importMeta, {
+        parentName: name
+      })
+    }
+  }
+
+  // ...else we provide basic instructions and help.
+
+  emitBanner(name)
+
   if (!cli.flags['help'] && cli.flags['dryRun']) {
     process.exitCode = 0
     logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
