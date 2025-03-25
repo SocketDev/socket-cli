@@ -1,4 +1,5 @@
 import semver from 'semver'
+import colors from 'yoctocolors-cjs'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
@@ -6,7 +7,11 @@ import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
-import { CompactSocketArtifact, isArtifactAlertCve } from './alert/artifact'
+import {
+  CompactSocketArtifact,
+  CompactSocketArtifactAlert,
+  isArtifactAlertCve
+} from './alert/artifact'
 import { ALERT_FIX_TYPE } from './alert/fix'
 import { uxLookup } from './alert/rules'
 import { ALERT_SEVERITY } from './alert/severity'
@@ -24,7 +29,7 @@ export type SocketPackageAlert = {
   critical: boolean
   display: boolean
   fixable: boolean
-  raw: any
+  raw: CompactSocketArtifactAlert
   upgrade: boolean
 }
 
@@ -223,6 +228,93 @@ export function getCveInfoByAlertsMap(
   return infoByPkg
 }
 
+enum ALERT_SEVERITY_COLOR {
+  critical = 'magenta',
+  high = 'red',
+  middle = 'yellow',
+  low = 'white'
+}
+
+const enum ALERT_SEVERITY_ORDER {
+  critical = 0,
+  high = 1,
+  middle = 2,
+  low = 3,
+  none = 4
+}
+
+function alertsHaveSeverity(
+  alerts: SocketPackageAlert[],
+  severity: `${ALERT_SEVERITY}`
+): boolean {
+  return alerts.find(a => a.raw.severity === severity) !== undefined
+}
+
+function alertSeverityComparator(
+  a: SocketPackageAlert,
+  b: SocketPackageAlert
+): number {
+  return getAlertSeverityOrder(a) - getAlertSeverityOrder(b)
+}
+
+function getAlertsSeverityOrder(alerts: SocketPackageAlert[]): number {
+  return alertsHaveSeverity(alerts, ALERT_SEVERITY.critical)
+    ? 0
+    : alertsHaveSeverity(alerts, ALERT_SEVERITY.high)
+      ? 1
+      : alertsHaveSeverity(alerts, ALERT_SEVERITY.middle)
+        ? 2
+        : alertsHaveSeverity(alerts, ALERT_SEVERITY.low)
+          ? 3
+          : 4
+}
+
+function getAlertSeverityOrder(alert: SocketPackageAlert): number {
+  const { severity } = alert.raw
+  return severity === ALERT_SEVERITY.critical
+    ? 0
+    : severity === ALERT_SEVERITY.high
+      ? 1
+      : severity === ALERT_SEVERITY.middle
+        ? 2
+        : severity === ALERT_SEVERITY.low
+          ? 3
+          : 4
+}
+
+type RiskCounts = {
+  middle: number
+  low: number
+}
+
+function getHiddenRiskCounts(hiddenAlerts: SocketPackageAlert[]): RiskCounts {
+  let hiddenMidCount = 0
+  let hiddenLowCount = 0
+  for (const alert of hiddenAlerts) {
+    const order = getAlertSeverityOrder(alert)
+    if (order === ALERT_SEVERITY_ORDER.middle) {
+      hiddenMidCount += 1
+    } else if (order === ALERT_SEVERITY_ORDER.low) {
+      hiddenLowCount += 1
+    }
+  }
+  return {
+    middle: hiddenMidCount,
+    low: hiddenLowCount
+  }
+}
+
+function getHiddenRisksDescription(riskCounts: RiskCounts): string {
+  const descriptions: string[] = []
+  if (riskCounts.middle) {
+    descriptions.push(`${riskCounts.middle} moderate`)
+  }
+  if (riskCounts.low) {
+    descriptions.push(`${riskCounts.low} low`)
+  }
+  return `(${descriptions.join('; ')})`
+}
+
 type LogAlertsMapOptions = {
   output?: NodeJS.WriteStream | undefined
 }
@@ -236,17 +328,38 @@ export function logAlertsMap(
     ...options
   } as LogAlertsMapOptions
   const translations = getTranslations()
-  for (const [pkgId, alerts] of alertsMap) {
-    const purlObj = PackageURL.fromString(`pkg:npm/${pkgId}`)
+  const sortedEntries = [...alertsMap.entries()].sort(
+    (a, b) => getAlertsSeverityOrder(a[1]) - getAlertsSeverityOrder(b[1])
+  )
+  const hiddenEntries: typeof sortedEntries = []
+  for (let i = 0, { length } = sortedEntries; i < length; i += 1) {
+    const { 0: pkgId, 1: alerts } = sortedEntries[i]!
+    const hiddenAlerts: typeof alerts = []
+    const filteredAlerts = alerts.filter(a => {
+      const keep = getAlertSeverityOrder(a) <= ALERT_SEVERITY_ORDER.high
+      if (!keep) {
+        hiddenAlerts.push(a)
+      }
+      return keep
+    })
+    if (hiddenAlerts.length) {
+      hiddenEntries.push([pkgId, hiddenAlerts.sort(alertSeverityComparator)])
+    }
+    if (!filteredAlerts.length) {
+      continue
+    }
     const lines = new Set()
-    for (const alert of alerts) {
+    const sortedAlerts = filteredAlerts.sort(alertSeverityComparator)
+    for (const alert of sortedAlerts) {
       const { type } = alert
+      const severity = alert.raw.severity ?? ''
       const attributes = [
+        ...(severity ? [colors[ALERT_SEVERITY_COLOR[severity]](severity)] : []),
         ...(alert.fixable ? ['fixable'] : []),
         ...(alert.block ? [] : ['non-blocking'])
       ]
       const maybeAttributes = attributes.length
-        ? ` (${attributes.join('; ')})`
+        ? ` ${colors.italic(`(${attributes.join('; ')})`)}`
         : ''
       // Based data from { pageProps: { alertTypes } } of:
       // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
@@ -256,18 +369,35 @@ export function logAlertsMap(
       // TODO: emoji seems to mis-align terminals sometimes
       lines.add(`  ${title}${maybeAttributes}${maybeDesc}`)
     }
+
+    const purlObj = PackageURL.fromString(`pkg:npm/${pkgId}`)
     output.write(
-      `(socket) ${format.hyperlink(
+      `${i ? '\n' : ''}${format.hyperlink(
         pkgId,
         getSocketDevPackageOverviewUrl(
           NPM,
           resolvePackageName(purlObj),
           purlObj.version
         )
-      )} contains risks:\n`
+      )} contains risks${hiddenAlerts.length ? colors.italic(` ${getHiddenRisksDescription(getHiddenRiskCounts(alerts))}`) : ''}:\n`
     )
     for (const line of lines) {
       output.write(`${line}\n`)
     }
+  }
+  const { length: hiddenEntriesCount } = hiddenEntries
+  if (hiddenEntriesCount) {
+    const totalRiskCounts = {
+      middle: 0,
+      low: 0
+    }
+    for (const { 1: alerts } of hiddenEntries) {
+      const riskCounts = getHiddenRiskCounts(alerts)
+      totalRiskCounts.middle += riskCounts.middle
+      totalRiskCounts.low += riskCounts.low
+    }
+    output.write(
+      `\n${hiddenEntriesCount} packages hidden containing risks ${colors.italic(getHiddenRisksDescription(totalRiskCounts))}\n\n`
+    )
   }
 }
