@@ -11,10 +11,13 @@ describe('socket manifest scala', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['manifest', 'scala', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
-      `
+  cmdit(
+    ['manifest', 'scala', '--help', '--config', '{}'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `
       "[beta] Generate a manifest file (\`pom.xml\`) from Scala's \`build.sbt\` file
 
         Usage
@@ -60,8 +63,8 @@ describe('socket manifest scala', async () => {
           $ socket manifest scala ./build.sbt
           $ socket manifest scala --bin=/usr/bin/sbt ./build.sbt"
     `
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -69,14 +72,15 @@ describe('socket manifest scala', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest scala\`, cwd: <redacted>"
     `)
 
-    expect(code, 'help should exit with code 2').toBe(2)
-    expect(stderr, 'header should include command (without params)').toContain(
-      '`socket manifest scala`'
-    )
-  })
+      expect(code, 'help should exit with code 2').toBe(2)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket manifest scala`'
+      )
+    }
+  )
 
   cmdit(
-    ['manifest', 'scala', '--dry-run'],
+    ['manifest', 'scala', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
@@ -100,7 +104,7 @@ describe('socket manifest scala', async () => {
   )
 
   cmdit(
-    ['manifest', 'scala', 'mootools', '--dry-run'],
+    ['manifest', 'scala', 'mootools', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

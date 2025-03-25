@@ -11,10 +11,13 @@ describe('socket config unset', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['config', 'unset', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
-      `
+  cmdit(
+    ['config', 'unset', '--help', '--config', '{}'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `
       "Clear the value of a local CLI config item
 
         Usage
@@ -37,8 +40,8 @@ describe('socket config unset', async () => {
         Examples
           $ socket config unset FakeOrg --repoName=test-repo"
     `
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -46,14 +49,15 @@ describe('socket config unset', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket config unset\`, cwd: <redacted>"
     `)
 
-    expect(code, 'help should exit with code 2').toBe(2)
-    expect(stderr, 'header should include command (without params)').toContain(
-      '`socket config unset`'
-    )
-  })
+      expect(code, 'help should exit with code 2').toBe(2)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket config unset`'
+      )
+    }
+  )
 
   cmdit(
-    ['config', 'unset', '--dry-run'],
+    ['config', 'unset', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
@@ -75,7 +79,7 @@ describe('socket config unset', async () => {
   )
 
   cmdit(
-    ['config', 'unset', 'test', '--dry-run'],
+    ['config', 'unset', 'test', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

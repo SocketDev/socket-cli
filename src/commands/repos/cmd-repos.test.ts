@@ -7,24 +7,35 @@ import { cmdit, invokeNpm } from '../../../test/utils'
 
 const { CLI } = constants
 
-describe('socket raw-npx', async () => {
+describe('socket repos', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
   cmdit(
-    ['raw-npx', '--help', '--config', '{}'],
+    ['repos', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Temporarily disable the Socket npx wrapper
+      "Repositories related commands
 
         Usage
-          $ socket raw-npx <command>
+          $ socket repos <command>
+
+        Commands
+          create            Create a repository in an organization
+          del               Delete a repository in an organization
+          list              List repositories in an organization
+          update            Update a repository in an organization
+          view              View repositories in an organization
+
+        Options
+          --dryRun          Do input validation for a command and exit 0 when input is ok
+          --help            Print this help.
 
         Examples
-          $ socket raw-npx install"
+          $ socket repos --help"
     `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -32,28 +43,28 @@ describe('socket raw-npx', async () => {
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket raw-npx\`, cwd: <redacted>"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos\`, cwd: <redacted>"
     `)
 
       expect(code, 'help should exit with code 2').toBe(2)
-      expect(stderr, 'banner includes base command').toContain(
-        '`socket raw-npx`'
-      )
+      expect(stderr, 'banner includes base command').toContain('`socket repos`')
     }
   )
 
   cmdit(
-    ['raw-npx', '--dry-run', '--config', '{}'],
+    ['repos', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(
+        `"[DryRun]: No-op, call a sub-command; ok"`
+      )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket raw-npx\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

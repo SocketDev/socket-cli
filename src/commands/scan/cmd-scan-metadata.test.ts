@@ -11,10 +11,13 @@ describe('socket scan metadata', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['scan', 'metadata', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
-      `
+  cmdit(
+    ['scan', 'metadata', '--help', '--config', '{}'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `
       "Get a scan's metadata
 
         Usage
@@ -29,8 +32,8 @@ describe('socket scan metadata', async () => {
         Examples
           $ socket scan metadata FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0"
     `
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -38,14 +41,15 @@ describe('socket scan metadata', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan metadata\`, cwd: <redacted>"
     `)
 
-    expect(code, 'help should exit with code 2').toBe(2)
-    expect(stderr, 'header should include command (without params)').toContain(
-      '`socket scan metadata`'
-    )
-  })
+      expect(code, 'help should exit with code 2').toBe(2)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket scan metadata`'
+      )
+    }
+  )
 
   cmdit(
-    ['scan', 'metadata', '--dry-run'],
+    ['scan', 'metadata', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
@@ -69,7 +73,7 @@ describe('socket scan metadata', async () => {
   )
 
   cmdit(
-    ['scan', 'metadata', 'fakeorg', 'scanidee', '--dry-run'],
+    ['scan', 'metadata', 'fakeorg', 'scanidee', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
