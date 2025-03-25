@@ -11,10 +11,13 @@ describe('socket organization', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['organization', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
-      `
+  cmdit(
+    ['organization', '--help', '--config', '{}'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `
       "Account details
 
         Usage
@@ -30,8 +33,8 @@ describe('socket organization', async () => {
         Examples
           $ socket organization --help"
     `
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -39,14 +42,15 @@ describe('socket organization', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization\`, cwd: <redacted>"
     `)
 
-    expect(code, 'help should exit with code 2').toBe(2)
-    expect(stderr, 'header should include command (without params)').toContain(
-      '`socket organization`'
-    )
-  })
+      expect(code, 'help should exit with code 2').toBe(2)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket organization`'
+      )
+    }
+  )
 
   cmdit(
-    ['organization', '--dry-run'],
+    ['organization', '--dry-run', '--config', '{}'],
     'should be ok with org name and id',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

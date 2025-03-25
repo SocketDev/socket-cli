@@ -81,14 +81,12 @@ describe('socket cdxgen', async () => {
 
     // expect(code, 'help should exit with code 2').toBe(2)
     expect(code, 'help should exit with code 2').toBe(0) // cdxgen special case
-    expect(stderr, 'header should include command (without params)').toContain(
-      '`socket cdxgen`'
-    )
+    expect(stderr, 'banner includes base command').toContain('`socket cdxgen`')
   })
 
   // cdxgen does not support --dry-run
   // cmdit(
-  //   ['cdxgen', '--dry-run'],
+  //   ['cdxgen', '--help', '--config', '{}'],
   //   'should require args with just dry-run',
   //   async cmd => {
   //     const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

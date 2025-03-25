@@ -11,10 +11,13 @@ describe('socket login', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['login', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
-      `
+  cmdit(
+    ['login', '--help', '--config', '{}'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `
       "Socket API login
 
         Usage
@@ -32,8 +35,8 @@ describe('socket login', async () => {
           $ socket login
           $ socket login --api-proxy=http://localhost:1234"
     `
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -41,14 +44,13 @@ describe('socket login', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket login\`, cwd: <redacted>"
     `)
 
-    expect(code, 'help should exit with code 2').toBe(2)
-    expect(stderr, 'header should include command (without params)').toContain(
-      '`socket login`'
-    )
-  })
+      expect(code, 'help should exit with code 2').toBe(2)
+      expect(stderr, 'banner includes base command').toContain('`socket login`')
+    }
+  )
 
   cmdit(
-    ['login', 'mootools', '--dry-run'],
+    ['login', 'mootools', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

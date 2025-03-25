@@ -12,27 +12,27 @@ describe('socket organization list', async () => {
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
   cmdit(
-    ['organization', 'policy', '--help'],
+    ['organization', 'policy', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Organization policy details
+        "Organization policy details
 
-        Usage
-          $ socket organization policy <command>
+          Usage
+            $ socket organization policy <command>
 
-        Commands
-        
+          Commands
+            (none)
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help.
 
-        Examples
-          $ socket organization policy --help"
-    `
+          Examples
+            $ socket organization policy --help"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -43,10 +43,29 @@ describe('socket organization list', async () => {
     `)
 
       expect(code, 'help should exit with code 2').toBe(2)
-      expect(
-        stderr,
-        'header should include command (without params)'
-      ).toContain('`socket organization policy`')
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket organization policy`'
+      )
+    }
+  )
+
+  cmdit(
+    ['organization', 'policy', '--dry-run', '--config', '{}'],
+    'should support --dry-run',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `"[DryRun]: No-op, call a sub-command; ok"`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      "
+         _____         _       _        /---------------
+        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+        |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy\`, cwd: <redacted>"
+    `)
+
+      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     }
   )
 })
