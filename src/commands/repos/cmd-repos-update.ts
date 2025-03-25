@@ -6,6 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleUpdateRepo } from './handle-update-repo'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
+import { getConfigValue } from '../../utils/config'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -81,7 +82,8 @@ async function run(
   })
 
   const repoName = cli.flags['repoName']
-  const [orgSlug = ''] = cli.input
+  const defaultOrgSlug = getConfigValue('defaultOrg')
+  const orgSlug = defaultOrgSlug || cli.input[0] || ''
 
   if (!repoName || typeof repoName !== 'string' || !orgSlug) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
@@ -90,11 +92,10 @@ async function run(
     process.exitCode = 2
     logger.fail(stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
 
-      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}
+      ${defaultOrgSlug ? '' : `- Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}`}
 
       - Repository name using --repoName ${!repoName ? colors.red('(missing!)') : typeof repoName !== 'string' ? colors.red('(invalid!)') : colors.green('(ok)')}
-
-      - At least one TARGET (e.g. \`.\` or \`./package.json\``)
+    `)
     return
   }
 

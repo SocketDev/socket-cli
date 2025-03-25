@@ -8,7 +8,7 @@ import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands'
 
-const description = 'Full Scan related commands'
+const description = 'Scan related commands'
 
 export const cmdScan: CliSubcommand = {
   description,

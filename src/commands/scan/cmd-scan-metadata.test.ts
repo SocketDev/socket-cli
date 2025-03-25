@@ -61,7 +61,7 @@ describe('socket scan metadata', async () => {
 
         - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-        - Full Scan ID to inspect as second argument \\x1b[31m(missing!)\\x1b[39m"
+        - Scan ID to inspect as second argument \\x1b[31m(missing!)\\x1b[39m"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
