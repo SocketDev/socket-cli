@@ -11,10 +11,13 @@ describe('socket config', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['config', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
-      `
+  cmdit(
+    ['config', '--help', '--config', '{}'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `
       "Commands related to the local CLI configuration
 
         Usage
@@ -33,8 +36,8 @@ describe('socket config', async () => {
         Examples
           $ socket config --help"
     `
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -42,14 +45,15 @@ describe('socket config', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>"
     `)
 
-    expect(code, 'help should exit with code 2').toBe(2)
-    expect(stderr, 'header should include command (without params)').toContain(
-      '`socket config`'
-    )
-  })
+      expect(code, 'help should exit with code 2').toBe(2)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket config`'
+      )
+    }
+  )
 
   cmdit(
-    ['config', '--dry-run'],
+    ['config', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

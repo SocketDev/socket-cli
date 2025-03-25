@@ -11,10 +11,13 @@ describe('socket manifest auto', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['manifest', 'auto', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
-      `
+  cmdit(
+    ['manifest', 'auto', '--help', '--config', '{}'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `
       "Auto-detect build and attempt to generate manifest file
 
         Usage
@@ -30,8 +33,8 @@ describe('socket manifest auto', async () => {
         supported case then it will try to generate the manifest file for that
         language with the default or detected settings."
     `
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -39,14 +42,15 @@ describe('socket manifest auto', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest auto\`, cwd: <redacted>"
     `)
 
-    expect(code, 'help should exit with code 2').toBe(2)
-    expect(stderr, 'header should include command (without params)').toContain(
-      '`socket manifest auto`'
-    )
-  })
+      expect(code, 'help should exit with code 2').toBe(2)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket manifest auto`'
+      )
+    }
+  )
 
   cmdit(
-    ['manifest', 'auto', '--dry-run'],
+    ['manifest', 'auto', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

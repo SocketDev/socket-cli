@@ -11,10 +11,13 @@ describe('socket optimize', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['optimize', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
-      `
+  cmdit(
+    ['optimize', '--help', '--config', '{}'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `
       "Optimize dependencies with @socketregistry overrides
 
         Usage
@@ -30,8 +33,8 @@ describe('socket optimize', async () => {
           $ socket optimize
           $ socket optimize --pin"
     `
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -39,14 +42,15 @@ describe('socket optimize', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>"
     `)
 
-    expect(code, 'help should exit with code 2').toBe(2)
-    expect(stderr, 'header should include command (without params)').toContain(
-      '`socket optimize`'
-    )
-  })
+      expect(code, 'help should exit with code 2').toBe(2)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket optimize`'
+      )
+    }
+  )
 
   cmdit(
-    ['optimize', '--dry-run'],
+    ['optimize', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

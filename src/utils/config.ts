@@ -41,13 +41,21 @@ export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
 export const sensitiveConfigKeys: Set<keyof LocalConfig> = new Set(['apiToken'])
 
 let cachedConfig: LocalConfig | undefined
+// When using --config or SOCKET_CLI_CONFIG_OVERRIDE, do not persist the config
+let readOnlyConfig = false
 let configPath: string | undefined
 let warnedConfigPathWin32Missing = false
 let pendingSave = false
 
+export function overrideCachedConfig(config: unknown) {
+  cachedConfig = config as LocalConfig
+  readOnlyConfig = true
+}
+
 function getConfigValues(): LocalConfig {
   if (cachedConfig === undefined) {
     cachedConfig = {} as LocalConfig
+    // Order: env var > --config flag > file
     const configPath = getConfigPath()
     if (configPath) {
       const raw = safeReadFileSync(configPath)
@@ -157,7 +165,11 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
 ): void {
   const localConfig = getConfigValues()
   localConfig[normalizeConfigKey(key) as Key] = value
-  if (!pendingSave) {
+  if (readOnlyConfig) {
+    logger.error(
+      'Not persisting config change; current config overridden through env var or flag'
+    )
+  } else if (!pendingSave) {
     pendingSave = true
     process.nextTick(() => {
       pendingSave = false

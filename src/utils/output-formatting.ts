@@ -1,12 +1,16 @@
+import type { MeowFlags } from '../flags'
+
 type HelpListOptions = {
   keyPrefix: string
   padName: number
 }
 
-type ListDescription = string | { description: string }
+type ListDescription =
+  | { description: string }
+  | { description: string; hidden: boolean }
 
 export function getFlagListOutput(
-  list: Record<string, ListDescription>,
+  list: MeowFlags,
   indent: number,
   { keyPrefix = '--', padName } = {} as HelpListOptions
 ): string {
@@ -27,16 +31,17 @@ export function getHelpListOutput(
   let result = ''
   const names = Object.keys(list).sort()
   for (const name of names) {
-    const rawDescription = list[name]
+    const entry = list[name]
+    if (entry && 'hidden' in entry && entry?.hidden) {
+      continue
+    }
     const description =
-      (typeof rawDescription === 'object'
-        ? rawDescription.description
-        : rawDescription) || ''
+      (typeof entry === 'object' ? entry.description : entry) || ''
     result +=
       ''.padEnd(indent) +
       (keyPrefix + name).padEnd(padName) +
       description +
       '\n'
   }
-  return result.trim()
+  return result.trim() || '(none)'
 }

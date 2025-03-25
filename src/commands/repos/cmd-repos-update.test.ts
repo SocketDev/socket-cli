@@ -7,37 +7,33 @@ import { cmdit, invokeNpm } from '../../../test/utils'
 
 const { CLI } = constants
 
-describe('socket diff-scan get', async () => {
+describe('socket repos update', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
   cmdit(
-    ['diff-scan', 'get', '--help', '--config', '{}'],
+    ['repos', 'update', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Get a diff scan for an organization
+      "Update a repository in an organization
 
         Usage
-          $ socket diff-scan get <org slug> --before=<before> --after=<after>
-
-        This command displays the package changes between two scans. The full output
-        can be pretty large depending on the size of your repo and time range. It is
-        best stored to disk to be further analyzed by other tools.
+          $ socket repos update <org slug>
 
         Options
-          --after           The full scan ID of the head scan
-          --before          The full scan ID of the base scan
-          --depth           Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)
+          --defaultBranch   Repository default branch
           --dryRun          Do input validation for a command and exit 0 when input is ok
-          --file            Path to a local file where the output should be saved. Use \`-\` to force stdout.
           --help            Print this help.
-          --json            Output result as json. This can be big. Use --file to store it to disk without truncation.
+          --homepage        Repository url
+          --repoDescription Repository description
+          --repoName        Repository name
+          --visibility      Repository visibility (Default Private)
 
         Examples
-          $ socket diff-scan get FakeCorp --before=aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 --after=aaa1aa1a-aaaa-1111-1a1a-1111111a11a1"
+          $ socket repos update FakeOrg"
     `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -45,18 +41,18 @@ describe('socket diff-scan get', async () => {
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan get\`, cwd: <redacted>"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos update\`, cwd: <redacted>"
     `)
 
       expect(code, 'help should exit with code 2').toBe(2)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket diff-scan get`'
+        '`socket repos update`'
       )
     }
   )
 
   cmdit(
-    ['diff-scan', 'get', '--dry-run', '--config', '{}'],
+    ['repos', 'update', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
@@ -66,16 +62,15 @@ describe('socket diff-scan get', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan get\`, cwd: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos update\`, cwd: <redacted>
 
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
 
-              - Specify a before and after full scan ID \\x1b[31m(missing before and after!)\\x1b[39m
+        - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-                  - To get full scans IDs, you can run the command "socket scan list <your org slug>".
-                    The args are expecting a full \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\` ID.
+        - Repository name using --repoName \\x1b[31m(missing!)\\x1b[39m
 
-              - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m"
+        - At least one TARGET (e.g. \`.\` or \`./package.json\`"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -83,18 +78,7 @@ describe('socket diff-scan get', async () => {
   )
 
   cmdit(
-    [
-      'diff-scan',
-      'get',
-      'fakeorg',
-      '--dry-run',
-      '--config',
-      '{}',
-      '--before',
-      'x',
-      '--after',
-      'y'
-    ],
+    ['repos', 'update', 'a', '--repoName', 'b', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
@@ -104,7 +88,7 @@ describe('socket diff-scan get', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan get\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos update\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

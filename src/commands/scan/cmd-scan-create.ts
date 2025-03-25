@@ -11,6 +11,7 @@ import { suggestRepoSlug } from './suggest-repo-slug'
 import { suggestBranchSlug } from './suggest_branch_slug'
 import { suggestTarget } from './suggest_target'
 import constants from '../../constants'
+import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
@@ -24,6 +25,7 @@ const config: CliCommandConfig = {
   description: 'Create a scan',
   hidden: false,
   flags: {
+    ...commonFlags,
     repo: {
       type: 'string',
       shortFlag: 'r',
