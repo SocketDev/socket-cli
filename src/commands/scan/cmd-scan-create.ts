@@ -11,6 +11,7 @@ import { suggestRepoSlug } from './suggest-repo-slug'
 import { suggestBranchSlug } from './suggest_branch_slug'
 import { suggestTarget } from './suggest_target'
 import constants from '../../constants'
+import { getConfigValue } from '../../utils/config'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
@@ -147,12 +148,15 @@ async function run(
   })
 
   const { cwd: cwdOverride, dryRun } = cli.flags
+  const defaultOrgSlug = getConfigValue('defaultOrg')
+  let orgSlug = defaultOrgSlug || cli.input[0] || ''
+  let targets = cli.input.slice(defaultOrgSlug ? 0 : 1)
+
   const cwd =
     cwdOverride && cwdOverride !== 'process.cwd()'
       ? String(cwdOverride)
       : process.cwd()
   let { branch: branchName, repo: repoName } = cli.flags
-  let [orgSlug = '', ...targets] = cli.input
 
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
@@ -217,7 +221,7 @@ async function run(
     logger.fail(stripIndents`
       ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
 
-      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}
+      ${defaultOrgSlug ? '' : `- Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}`}
 
       - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}
 
