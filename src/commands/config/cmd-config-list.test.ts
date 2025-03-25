@@ -30,8 +30,8 @@ describe('socket config get', async () => {
         Keys:
 
          - apiBaseUrl -- Base URL of the API endpoint
-         - apiToken -- The API token required to access most API endpoints
          - apiProxy -- A proxy through which to access the API
+         - apiToken -- The API token required to access most API endpoints
          - defaultOrg -- The default org slug to use when appropriate; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.
          - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
 

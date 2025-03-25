@@ -22,7 +22,7 @@ export interface LocalConfig {
   test?: unknown
 }
 
-// Dugefault app data folder env var on Win
+// Default app data folder env var on Win
 const LOCALAPPDATA = 'LOCALAPPDATA'
 // Default app data folder env var on Mac/Linux
 const XDG_DATA_HOME = 'XDG_DATA_HOME'
@@ -30,8 +30,8 @@ const SOCKET_APP_DIR = 'socket/settings' // It used to be settings...
 
 export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
   ['apiBaseUrl', 'Base URL of the API endpoint'],
-  ['apiToken', 'The API token required to access most API endpoints'],
   ['apiProxy', 'A proxy through which to access the API'],
+  ['apiToken', 'The API token required to access most API endpoints'],
   [
     'defaultOrg',
     'The default org slug to use when appropriate; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.'
