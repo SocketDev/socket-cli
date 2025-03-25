@@ -1,5 +1,3 @@
-import process from 'node:process'
-
 import { stripIndents } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
