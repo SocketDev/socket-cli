@@ -1,3 +1,4 @@
+import { cmdConfigAuto } from './cmd-config-auto'
 import { cmdConfigGet } from './cmd-config-get'
 import { cmdConfigList } from './cmd-config-list'
 import { cmdConfigSet } from './cmd-config-set'
@@ -14,10 +15,11 @@ export const cmdConfig: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        unset: cmdConfigUnset,
+        auto: cmdConfigAuto,
         get: cmdConfigGet,
         list: cmdConfigList,
-        set: cmdConfigSet
+        set: cmdConfigSet,
+        unset: cmdConfigUnset
       },
       {
         argv,

@@ -18,7 +18,7 @@ describe('socket scan', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Full Scan related commands
+        "Scan related commands
 
           Usage
             $ socket scan <command>

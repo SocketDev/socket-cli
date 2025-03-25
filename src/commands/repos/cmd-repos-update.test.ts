@@ -68,9 +68,7 @@ describe('socket repos update', async () => {
 
         - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-        - Repository name using --repoName \\x1b[31m(missing!)\\x1b[39m
-
-        - At least one TARGET (e.g. \`.\` or \`./package.json\`"
+        - Repository name using --repoName \\x1b[31m(missing!)\\x1b[39m"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

@@ -24,6 +24,7 @@ describe('socket config', async () => {
           $ socket config <command>
 
         Commands
+          auto              Automatically discover and set the correct value config item
           get               Get the value of a local CLI config item
           list              Show all local CLI config items and their values
           set               Update the value of a local CLI config item

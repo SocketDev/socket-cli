@@ -85,7 +85,7 @@ describe('socket scan report', async () => {
 
         - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-        - Full Scan ID to fetch as second argument \\x1b[31m(missing!)\\x1b[39m
+        - Scan ID to fetch \\x1b[31m(missing!)\\x1b[39m
 
         - Not both the --json and --markdown flags \\x1b[32m(ok)\\x1b[39m"
       `)
