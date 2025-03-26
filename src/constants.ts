@@ -4,7 +4,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import registryConstants from '@socketsecurity/registry/lib/constants'
-import { envAsBoolean } from '@socketsecurity/registry/lib/env'
+import { envAsBoolean, envAsString } from '@socketsecurity/registry/lib/env'
 
 import type { Agent } from './utils/package-environment'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
@@ -45,6 +45,7 @@ type ENV = Remap<
     Readonly<{
       SOCKET_CLI_DEBUG: boolean
       SOCKET_CLI_NO_API_TOKEN: boolean
+      SOCKET_SECURITY_API_TOKEN: string
     }>
 >
 
@@ -61,13 +62,11 @@ type Constants = Remap<
     readonly ALERT_TYPE_CVE: 'cve'
     readonly ALERT_TYPE_MEDIUM_CVE: 'mediumCVE'
     readonly ALERT_TYPE_MILD_CVE: 'mildCVE'
-    readonly ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE: 'socketUpgradeAvailable'
     readonly API_V0_URL: 'https://api.socket.dev/v0/'
     readonly BINARY_LOCK_EXT: '.lockb'
     readonly BUN: 'bun'
     readonly CLI: 'cli'
     readonly CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER: 'firstPatchedVersionIdentifier'
-    readonly CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE: 'vulnerableVersionRange'
     readonly ENV: ENV
     readonly DIST_TYPE: 'module-sync' | 'require'
     readonly DRY_RUN_LABEL: '[DryRun]'
@@ -104,6 +103,7 @@ type Constants = Remap<
     readonly SOCKET_CLI_SENTRY_NPM_BIN_NAME: 'socket-npm-with-sentry'
     readonly SOCKET_CLI_SENTRY_NPX_BIN_NAME: 'socket-npx-with-sentry'
     readonly SOCKET_CLI_SENTRY_PACKAGE_NAME: '@socketsecurity/cli-with-sentry'
+    readonly SOCKET_SECURITY_API_TOKEN: 'SOCKET_SECURITY_API_TOKEN'
     readonly VLT: 'vlt'
     readonly WITH_SENTRY: 'with-sentry'
     readonly YARN: 'yarn'
@@ -128,21 +128,16 @@ type Constants = Remap<
   }
 >
 
-const SOCKET = 'socket'
-const WITH_SENTRY = 'with-sentry'
-
 const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
 const ALERT_TYPE_CVE = 'cve'
 const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
 const ALERT_TYPE_MILD_CVE = 'mildCVE'
-const ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE = 'socketUpgradeAvailable'
 const API_V0_URL = 'https://api.socket.dev/v0/'
 const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
 const CLI = 'cli'
 const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
   'firstPatchedVersionIdentifier'
-const CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE = 'vulnerableVersionRange'
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAIL_TEXT = `${DRY_RUN_LABEL}: Bailing now`
 const INLINED_SOCKET_CLI_LEGACY_BUILD = 'INLINED_SOCKET_CLI_LEGACY_BUILD'
@@ -158,6 +153,7 @@ const REQUIRE = 'require'
 const SHADOW_NPM_BIN = 'shadow-bin'
 const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 const SHADOW_NPM_PATHS = 'shadow-npm-paths'
+const SOCKET = 'socket'
 const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
 const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
@@ -175,7 +171,9 @@ const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
 const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli-with-sentry`
+const SOCKET_SECURITY_API_TOKEN = 'SOCKET_SECURITY_API_TOKEN'
 const VLT = 'vlt'
+const WITH_SENTRY = 'with-sentry'
 const YARN = 'yarn'
 const YARN_BERRY = 'yarn/berry'
 const YARN_CLASSIC = 'yarn/classic'
@@ -208,7 +206,14 @@ const LAZY_ENV = () => {
     // Flag set to help debug Socket CLI.
     SOCKET_CLI_DEBUG: envAsBoolean(env['SOCKET_CLI_DEBUG']),
     // Flag set to make the default API token `undefined`.
-    SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN'])
+    SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN']),
+    // Flag set to set the API token.
+    // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
+    SOCKET_SECURITY_API_TOKEN:
+      envAsString(env['SOCKET_SECURITY_API_TOKEN']) ||
+      // Keep 'SOCKET_SECURITY_API_KEY' as an alias of 'SOCKET_SECURITY_API_TOKEN'.
+      // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
+      envAsString(env['SOCKET_SECURITY_API_KEY'])
   })
 }
 
@@ -308,13 +313,11 @@ const constants = createConstantsObject(
     ALERT_TYPE_CVE,
     ALERT_TYPE_MEDIUM_CVE,
     ALERT_TYPE_MILD_CVE,
-    ALERT_TYPE_SOCKET_UPGRADE_AVAILABLE,
     API_V0_URL,
     BINARY_LOCK_EXT,
     BUN,
     CLI,
     CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
-    CVE_ALERT_PROPS_VULNERABLE_VERSION_RANGE,
     // Lazily defined values are initialized as `undefined` to keep their key order.
     DIST_TYPE: undefined,
     DRY_RUN_LABEL,
@@ -351,6 +354,7 @@ const constants = createConstantsObject(
     SOCKET_CLI_SENTRY_NPM_BIN_NAME,
     SOCKET_CLI_SENTRY_NPX_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
+    SOCKET_SECURITY_API_TOKEN,
     VLT,
     WITH_SENTRY,
     YARN,

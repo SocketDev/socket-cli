@@ -2,9 +2,10 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getDiffScan } from './get-diff-scan'
+import { handleDiffScan } from './handle-diff-scan'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
+import { getConfigValue } from '../../utils/config'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -22,13 +23,13 @@ const config: CliCommandConfig = {
       type: 'string',
       shortFlag: 'a',
       default: '',
-      description: 'The full scan ID of the head scan'
+      description: 'The scan ID of the head scan'
     },
     before: {
       type: 'string',
       shortFlag: 'b',
       default: '',
-      description: 'The full scan ID of the base scan'
+      description: 'The scan ID of the base scan'
     },
     depth: {
       type: 'number',
@@ -85,9 +86,10 @@ async function run(
     parentName
   })
 
-  const before = String(cli.flags['before'] || '')
-  const after = String(cli.flags['after'] || '')
-  const [orgSlug = ''] = cli.input
+  const { after, before, depth, file, json, markdown } = cli.flags
+
+  const defaultOrgSlug = getConfigValue('defaultOrg')
+  const orgSlug = defaultOrgSlug || cli.input[0] || ''
 
   if (!before || !after || cli.input.length < 1) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
@@ -95,10 +97,9 @@ async function run(
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
     logger.fail(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-      - Specify a before and after full scan ID ${!before && !after ? colors.red('(missing before and after!)') : !before ? colors.red('(missing before!)') : !after ? colors.red('(missing after!)') : colors.green('(ok)')}\n
-          - To get full scans IDs, you can run the command "socket scan list <your org slug>".
+      - Specify a before and after scan ID ${!before && !after ? colors.red('(missing before and after!)') : !before ? colors.red('(missing before!)') : !after ? colors.red('(missing after!)') : colors.green('(ok)')}\n          - To get scans IDs, you can run the command "socket scan list <your org slug>".
             The args are expecting a full \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\` ID.\n
-      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n`)
+      ${defaultOrgSlug ? `- Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n` : ''}`)
     return
   }
 
@@ -107,12 +108,12 @@ async function run(
     return
   }
 
-  await getDiffScan({
-    outputJson: Boolean(cli.flags['json']),
-    before,
-    after,
-    depth: Number(cli.flags['depth']),
+  await handleDiffScan({
+    before: String(before || ''),
+    after: String(after || ''),
+    depth: Number(depth),
     orgSlug,
-    file: String(cli.flags['file'] || '')
+    outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
+    file: String(file || '')
   })
 }

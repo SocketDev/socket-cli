@@ -11,10 +11,13 @@ describe('socket scan del', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['scan', 'del', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
-      `
+  cmdit(
+    ['scan', 'del', '--help', '--config', '{}'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `
       "Delete a scan
 
         Usage
@@ -29,8 +32,8 @@ describe('socket scan del', async () => {
         Examples
           $ socket scan del FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0"
     `
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -38,14 +41,15 @@ describe('socket scan del', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan del\`, cwd: <redacted>"
     `)
 
-    expect(code, 'help should exit with code 2').toBe(2)
-    expect(stderr, 'header should include command (without params)').toContain(
-      '`socket scan del`'
-    )
-  })
+      expect(code, 'help should exit with code 2').toBe(2)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket scan del`'
+      )
+    }
+  )
 
   cmdit(
-    ['scan', 'del', '--dry-run'],
+    ['scan', 'del', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
@@ -61,7 +65,7 @@ describe('socket scan del', async () => {
 
         - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-        - Full Scan ID to delete as second argument \\x1b[31m(missing!)\\x1b[39m"
+        - Scan ID to delete \\x1b[31m(missing!)\\x1b[39m"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -69,7 +73,7 @@ describe('socket scan del', async () => {
   )
 
   cmdit(
-    ['scan', 'del', 'fakeorg', 'scanidee', '--dry-run'],
+    ['scan', 'del', 'fakeorg', 'scanidee', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

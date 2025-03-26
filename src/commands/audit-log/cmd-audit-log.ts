@@ -3,9 +3,10 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getAuditLog } from './get-audit-log'
+import { handleAuditLog } from './handle-audit-log'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
+import { getConfigValue } from '../../utils/config'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -73,9 +74,10 @@ async function run(
   })
 
   const { json, markdown, page, perPage, type } = cli.flags
-
   const logType = String(type || '')
-  const [orgSlug = ''] = cli.input
+
+  const defaultOrgSlug = getConfigValue('defaultOrg')
+  const orgSlug = defaultOrgSlug || cli.input[0] || ''
 
   if (!orgSlug) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
@@ -96,7 +98,7 @@ async function run(
     return
   }
 
-  await getAuditLog({
+  await handleAuditLog({
     orgSlug,
     outputKind: json ? 'json' : markdown ? 'markdown' : 'print',
     page: Number(page || 0),

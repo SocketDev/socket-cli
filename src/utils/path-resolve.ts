@@ -205,22 +205,32 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
   const { WIN32 } = constants
   let thePath = npmBinPath
   while (true) {
-    const nmPath = path.join(thePath, NODE_MODULES)
+    const libNmNpmPath = path.join(thePath, 'lib', NODE_MODULES, NPM)
+    // mise puts its npm bin in a path like:
+    //   /Users/SomeUsername/.local/share/mise/installs/node/vX.X.X/bin/npm.
+    // HOWEVER, the location of the npm install is:
+    //   /Users/SomeUsername/.local/share/mise/installs/node/vX.X.X/lib/node_modules/npm.
     if (
-      // npm bin paths may look like:
-      // /usr/local/share/npm/bin/npm
-      // /Users/SomeUsername/.nvm/versions/node/vX.X.X/bin/npm
-      // C:\Users\SomeUsername\AppData\Roaming\npm\bin\npm.cmd
-      // OR
-      // C:\Program Files\nodejs\npm.cmd
-      //
-      // In all cases the npm path contains a node_modules folder:
-      // /usr/local/share/npm/bin/npm/node_modules
-      // C:\Program Files\nodejs\node_modules
-      //
       // Use existsSync here because statsSync, even with { throwIfNoEntry: false },
       // will throw an ENOTDIR error for paths like ./a-file-that-exists/a-directory-that-does-not.
       // See https://github.com/nodejs/node/issues/56993.
+      existsSync(libNmNpmPath) &&
+      statSync(libNmNpmPath, { throwIfNoEntry: false })?.isDirectory()
+    ) {
+      thePath = path.join(libNmNpmPath, NPM)
+    }
+    const nmPath = path.join(thePath, NODE_MODULES)
+    if (
+      // npm bin paths may look like:
+      //   /usr/local/share/npm/bin/npm
+      //   /Users/SomeUsername/.nvm/versions/node/vX.X.X/bin/npm
+      //   C:\Users\SomeUsername\AppData\Roaming\npm\bin\npm.cmd
+      // OR
+      //   C:\Program Files\nodejs\npm.cmd
+      //
+      // In practically all cases the npm path contains a node_modules folder:
+      //   /usr/local/share/npm/bin/npm/node_modules
+      //   C:\Program Files\nodejs\node_modules
       existsSync(nmPath) &&
       statSync(nmPath, { throwIfNoEntry: false })?.isDirectory() &&
       // Optimistically look for the default location.
@@ -238,7 +248,7 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
   }
 }
 
-export async function getPackageFilesFullScans(
+export async function getPackageFilesForScan(
   cwd: string,
   inputPaths: string[],
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],

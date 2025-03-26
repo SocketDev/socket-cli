@@ -3,6 +3,13 @@ import { stringJoinWithSeparateFinalSeparator } from '../strings'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
+export enum ALERT_SEVERITY {
+  critical = 'critical',
+  high = 'high',
+  middle = 'middle',
+  low = 'low'
+}
+
 export type SocketSdkAlertList =
   SocketSdkReturnType<'getIssuesByNPMPackage'>['data']
 
@@ -12,20 +19,9 @@ export type SocketSdkAlert = SocketSdkAlertList[number]['value'] extends
   ? U
   : never
 
-export enum SEVERITY {
-  critical = 'critical',
-  high = 'high',
-  middle = 'middle',
-  low = 'low'
-}
-
 // Ordered from most severe to least.
-const SEVERITIES_BY_ORDER: Array<SocketSdkAlert['severity']> = [
-  'critical',
-  'high',
-  'middle',
-  'low'
-]
+const SEVERITIES_BY_ORDER: ReadonlyArray<SocketSdkAlert['severity']> =
+  Object.freeze(['critical', 'high', 'middle', 'low'])
 
 function getDesiredSeverities(
   lowestToInclude: SocketSdkAlert['severity'] | undefined
@@ -66,8 +62,9 @@ export function getSeverityCount(
     if (!value) {
       continue
     }
-    if (severityCount[value.severity] !== undefined) {
-      severityCount[value.severity] += 1
+    const { severity } = value
+    if (severityCount[severity] !== undefined) {
+      severityCount[severity] += 1
     }
   }
   return severityCount

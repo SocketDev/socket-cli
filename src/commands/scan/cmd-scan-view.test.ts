@@ -11,10 +11,13 @@ describe('socket scan view', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['scan', 'view', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
-      `
+  cmdit(
+    ['scan', 'view', '--help', '--config', '{}'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `
       "View the raw results of a scan
 
         Usage
@@ -31,8 +34,8 @@ describe('socket scan view', async () => {
         Examples
           $ socket scan view FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 ./stream.txt"
     `
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -40,14 +43,15 @@ describe('socket scan view', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan view\`, cwd: <redacted>"
     `)
 
-    expect(code, 'help should exit with code 2').toBe(2)
-    expect(stderr, 'header should include command (without params)').toContain(
-      '`socket scan view`'
-    )
-  })
+      expect(code, 'help should exit with code 2').toBe(2)
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket scan view`'
+      )
+    }
+  )
 
   cmdit(
-    ['scan', 'view', '--dry-run'],
+    ['scan', 'view', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
@@ -63,7 +67,7 @@ describe('socket scan view', async () => {
 
         - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
 
-        - Full Scan ID to fetch as second argument \\x1b[31m(missing!)\\x1b[39m"
+        - Scan ID to fetch as second argument \\x1b[31m(missing!)\\x1b[39m"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -71,7 +75,7 @@ describe('socket scan view', async () => {
   )
 
   cmdit(
-    ['scan', 'view', 'fakeorg', 'scanidee', '--dry-run'],
+    ['scan', 'view', 'fakeorg', 'scanidee', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

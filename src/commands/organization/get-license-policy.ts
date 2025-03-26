@@ -28,10 +28,10 @@ async function getLicensePolicyWithToken(
 
   spinner.start('Fetching organization quota...')
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
   const result = await handleApiCall(
-    // socketSdk.getOrgLicensePolicy(orgSlug),
-    socketSdk.getOrgSecurityPolicy(orgSlug), // tmp
+    // sockSdk.getOrgLicensePolicy(orgSlug),
+    sockSdk.getOrgSecurityPolicy(orgSlug),
     "looking up organization's license policy"
   )
 

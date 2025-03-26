@@ -3,7 +3,7 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { getPackageFilesFullScans } from '../../utils/path-resolve'
+import { getPackageFilesForScan } from '../../utils/path-resolve'
 import { setupSdk } from '../../utils/sdk'
 
 import type { SocketYml } from '@socketsecurity/config'
@@ -27,8 +27,8 @@ export async function createReport(
 ): Promise<undefined | SocketSdkResultType<'createReport'>> {
   // Lazily access constants.spinner.
   const { spinner } = constants
-  const socketSdk = await setupSdk()
-  const supportedFiles = await socketSdk
+  const sockSdk = await setupSdk()
+  const supportedFiles = await sockSdk
     .getReportSupportedFiles()
     .then(res => {
       if (!res.success)
@@ -40,7 +40,7 @@ export async function createReport(
         cause
       })
     })
-  const packagePaths = await getPackageFilesFullScans(
+  const packagePaths = await getPackageFilesForScan(
     cwd,
     inputPaths,
     supportedFiles,
@@ -59,7 +59,7 @@ export async function createReport(
   spinner.start(
     `Creating report with ${packagePathsCount} package ${pluralize('file', packagePathsCount)}`
   )
-  const apiCall = socketSdk.createReportFromFilePaths(
+  const apiCall = sockSdk.createReportFromFilePaths(
     packagePaths,
     cwd,
     socketConfig?.issueRules

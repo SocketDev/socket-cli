@@ -3,9 +3,10 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { viewRepo } from './view-repo'
+import { handleViewRepo } from './handle-view-repo'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
+import { getConfigValue } from '../../utils/config'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -56,8 +57,10 @@ async function run(
     parentName
   })
 
-  const repoName = cli.flags['repoName']
-  const [orgSlug = ''] = cli.input
+  const { json, markdown, repoName } = cli.flags
+
+  const defaultOrgSlug = getConfigValue('defaultOrg')
+  const orgSlug = defaultOrgSlug || cli.input[0] || ''
 
   if (!repoName || typeof repoName !== 'string' || !orgSlug) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
@@ -68,11 +71,13 @@ async function run(
       stripIndents`
       ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
 
-      - Org name as the first argument ${
-        !orgSlug ? colors.red('(missing!)') : colors.green('(ok)')
-      }
-
-      - Repository name using --repoName ${
+      ${
+        defaultOrgSlug
+          ? ''
+          : `- Org name as the first argument ${
+              !orgSlug ? colors.red('(missing!)') : colors.green('(ok)')
+            }\n`
+      }- Repository name using --repoName ${
         !repoName
           ? colors.red('(missing!)')
           : typeof repoName !== 'string'
@@ -89,9 +94,9 @@ async function run(
     return
   }
 
-  await viewRepo(
+  await handleViewRepo(
     orgSlug,
     repoName,
-    cli.flags['json'] ? 'json' : cli.flags['markdown'] ? 'markdown' : 'print'
+    json ? 'json' : markdown ? 'markdown' : 'text'
   )
 }

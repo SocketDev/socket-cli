@@ -3,9 +3,10 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { listRepos } from './list-repos'
+import { handleListRepos } from './handle-list-repos'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
+import { getConfigValue } from '../../utils/config'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -74,7 +75,8 @@ async function run(
     parentName
   })
 
-  const [orgSlug = ''] = cli.input
+  const defaultOrgSlug = getConfigValue('defaultOrg')
+  const orgSlug = defaultOrgSlug || cli.input[0] || ''
 
   if (!orgSlug) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
@@ -84,8 +86,7 @@ async function run(
     logger.fail(stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
 
       - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}
-
-      - At least one TARGET (e.g. \`.\` or \`./package.json\``)
+    `)
     return
   }
 
@@ -94,7 +95,7 @@ async function run(
     return
   }
 
-  await listRepos({
+  await handleListRepos({
     direction: cli.flags['direction'] === 'asc' ? 'asc' : 'desc',
     orgSlug,
     outputKind: cli.flags['json']

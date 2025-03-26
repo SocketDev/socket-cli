@@ -2,7 +2,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getPackageInfo } from './get-package-info'
+import { handlePackageInfo } from './handle-package-info'
 import constants from '../../constants'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -77,7 +77,7 @@ async function run(
     return
   }
 
-  await getPackageInfo({
+  await handlePackageInfo({
     commandName: `${parentName} ${config.commandName}`,
     includeAllIssues: Boolean(all),
     outputKind: json ? 'json' : markdown ? 'markdown' : 'print',

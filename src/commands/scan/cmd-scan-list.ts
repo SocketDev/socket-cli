@@ -3,9 +3,10 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { listFullScans } from './list-full-scans'
+import { handleListScans } from './handle-list-scans'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
+import { getConfigValue } from '../../utils/config'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -91,7 +92,8 @@ async function run(
     parentName
   })
 
-  const orgSlug = cli.input[0]
+  const defaultOrgSlug = getConfigValue('defaultOrg')
+  const orgSlug = defaultOrgSlug || cli.input[0] || ''
 
   if (!orgSlug) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
@@ -111,7 +113,7 @@ async function run(
     return
   }
 
-  await listFullScans({
+  await handleListScans({
     direction: String(cli.flags['direction'] || ''),
     from_time: String(cli.flags['fromTime'] || ''),
     orgSlug,

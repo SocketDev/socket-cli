@@ -1,13 +1,13 @@
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'
-import { SocketSdk } from '@socketsecurity/sdk'
 
 import { handleApiCall } from '../../utils/api'
+import { setupSdk } from '../../utils/sdk'
 
-export async function suggestOrgSlug(
-  socketSdk: SocketSdk
-): Promise<string | void> {
+export async function suggestOrgSlug(): Promise<string | void> {
+  const sockSdk = await setupSdk()
   const result = await handleApiCall(
-    socketSdk.getOrganizations(),
+    sockSdk.getOrganizations(),
     'looking up organizations'
   )
   // Ignore a failed request here. It was not the primary goal of
@@ -33,6 +33,8 @@ export async function suggestOrgSlug(
       return proceed
     }
   } else {
-    // TODO: in verbose mode, report this error to stderr
+    logger.fail(
+      'Failed to lookup organization list from API, unable to suggest.'
+    )
   }
 }

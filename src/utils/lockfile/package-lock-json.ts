@@ -11,15 +11,14 @@ import constants from '../../constants'
 import { SafeArborist } from '../../shadow/npm/arborist/lib/arborist'
 import { DiffAction } from '../../shadow/npm/arborist/lib/arborist/types'
 import { Edge } from '../../shadow/npm/arborist/lib/edge'
-import { batchScan } from '../alert/artifact'
-import {
-  type AlertsByPkgId,
-  addArtifactToAlertsMap
-} from '../socket-package-alert'
+import { getPublicToken, setupSdk } from '../../utils/sdk'
+import { CompactSocketArtifact } from '../alert/artifact'
+import { addArtifactToAlertsMap } from '../socket-package-alert'
 
 import type { Diff } from '../../shadow/npm/arborist/lib/arborist/types'
 import type { SafeEdge } from '../../shadow/npm/arborist/lib/edge'
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
+import type { AlertsByPkgId } from '../socket-package-alert'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 type Packument = Exclude<
@@ -128,7 +127,10 @@ function getDetailsFromDiff(
 
 function getUrlOrigin(input: string): string {
   try {
-    return URL.parse(input)?.origin ?? ''
+    // TODO: URL.parse is available in Node 22.1.0. We can use it when we drop Node 18.
+    // https://nodejs.org/docs/latest-v22.x/api/url.html#urlparseinput-base
+    // return URL.parse(input)?.origin ?? ''
+    return new URL(input).origin ?? ''
   } catch {}
   return ''
 }
@@ -202,6 +204,7 @@ export async function getAlertsMapFromArborist(
 ): Promise<AlertsByPkgId> {
   const { include: _include, spinner } = {
     __proto__: null,
+    consolidate: false,
     ...options
   } as GetAlertsMapFromArboristOptions
 
@@ -244,12 +247,31 @@ export async function getAlertsMapFromArborist(
       })
     )
   }
+
+  const sockSdk = await setupSdk(getPublicToken())
+
   const toAlertsMapOptions = {
     overrides,
     ...options
   }
-  for await (const artifact of batchScan(pkgIds)) {
-    await addArtifactToAlertsMap(artifact, alertsByPkgId, toAlertsMapOptions)
+
+  for await (const batchPackageFetchResult of sockSdk.batchPackageStream(
+    {
+      alerts: 'true',
+      compact: 'true',
+      fixable: include.unfixable ? 'false' : 'true'
+    },
+    {
+      components: pkgIds.map(id => ({ purl: `pkg:npm/${id}` }))
+    }
+  )) {
+    if (batchPackageFetchResult.success) {
+      await addArtifactToAlertsMap(
+        batchPackageFetchResult.data as CompactSocketArtifact,
+        alertsByPkgId,
+        toAlertsMapOptions
+      )
+    }
     remaining -= 1
     if (spinner && remaining > 0) {
       spinner.start()

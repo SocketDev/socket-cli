@@ -12,72 +12,71 @@ describe('socket manifest gradle', async () => {
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
   cmdit(
-    ['manifest', 'gradle', '--help'],
+    ['manifest', 'gradle', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "[beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Gradle/Java/Kotlin/etc project
+        "[beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Gradle/Java/Kotlin/etc project
 
-        Usage
-          $ socket manifest gradle [--gradle=path/to/gradle/binary] [--out=path/to/result] DIR
+          Usage
+            $ socket manifest gradle [--gradle=path/to/gradle/binary] [--out=path/to/result] DIR
 
-        Options
-          --bin             Location of gradlew binary to use, default: CWD/gradlew
-          --cwd             Set the cwd, defaults to process.cwd()
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --gradleOpts      Additional options to pass on to ./gradlew, see \`./gradlew --help\`
-          --help            Print this help.
-          --out             Path of output file; where to store the resulting manifest, see also --stdout
-          --stdout          Print resulting pom.xml to stdout (supersedes --out)
-          --task            Task to target. By default targets all.
-          --verbose         Print debug messages
+          Options
+            --bin             Location of gradlew binary to use, default: CWD/gradlew
+            --cwd             Set the cwd, defaults to process.cwd()
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --gradleOpts      Additional options to pass on to ./gradlew, see \`./gradlew --help\`
+            --help            Print this help.
+            --out             Path of output file; where to store the resulting manifest, see also --stdout
+            --stdout          Print resulting pom.xml to stdout (supersedes --out)
+            --task            Task to target. By default targets all.
+            --verbose         Print debug messages
 
-        Uses gradle, preferably through your local project \`gradlew\`, to generate a
-        \`pom.xml\` file for each task. If you have no \`gradlew\` you can try the
-        global \`gradle\` binary but that may not work (hard to predict).
+          Uses gradle, preferably through your local project \`gradlew\`, to generate a
+          \`pom.xml\` file for each task. If you have no \`gradlew\` you can try the
+          global \`gradle\` binary but that may not work (hard to predict).
 
-        The \`pom.xml\` is a manifest file similar to \`package.json\` for npm or
-        or requirements.txt for PyPi), but specifically for Maven, which is Java's
-        dependency repository. Languages like Kotlin and Scala piggy back on it too.
+          The \`pom.xml\` is a manifest file similar to \`package.json\` for npm or
+          or requirements.txt for PyPi), but specifically for Maven, which is Java's
+          dependency repository. Languages like Kotlin and Scala piggy back on it too.
 
-        There are some caveats with the gradle to \`pom.xml\` conversion:
+          There are some caveats with the gradle to \`pom.xml\` conversion:
 
-        - each task will generate its own xml file and by default it generates one xml
-          for every task.
+          - each task will generate its own xml file and by default it generates one xml
+            for every task.
 
-        - it's possible certain features don't translate well into the xml. If you
-          think something is missing that could be supported please reach out.
+          - it's possible certain features don't translate well into the xml. If you
+            think something is missing that could be supported please reach out.
 
-        - it works with your \`gradlew\` from your repo and local settings and config
+          - it works with your \`gradlew\` from your repo and local settings and config
 
-        Support is beta. Please report issues or give us feedback on what's missing.
+          Support is beta. Please report issues or give us feedback on what's missing.
 
-        Examples
+          Examples
 
-          $ socket manifest gradle .
-          $ socket manifest gradle --gradlew=../gradlew ."
-    `
+            $ socket manifest gradle .
+            $ socket manifest gradle --gradlew=../gradlew ."
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-      "
-         _____         _       _        /---------------
-        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-        |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest gradle\`, cwd: <redacted>"
-    `)
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+          |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest gradle\`, cwd: <redacted>"
+      `)
 
       expect(code, 'help should exit with code 2').toBe(2)
-      expect(
-        stderr,
-        'header should include command (without params)'
-      ).toContain('`socket manifest gradle`')
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket manifest gradle`'
+      )
     }
   )
 
   cmdit(
-    ['manifest', 'gradle', '--dry-run'],
+    ['manifest', 'gradle', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
@@ -101,7 +100,7 @@ describe('socket manifest gradle', async () => {
   )
 
   cmdit(
-    ['manifest', 'gradle', 'mootools', '--dry-run'],
+    ['manifest', 'gradle', 'mootools', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

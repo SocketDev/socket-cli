@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
-import { handleAPIError, handleApiCall, queryAPI } from '../../utils/api'
+import { handleApiCall, handleApiError, queryApi } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
@@ -20,7 +20,7 @@ import type { components } from '@socketsecurity/sdk/types/api'
  */
 export async function fetchReportData(
   orgSlug: string,
-  fullScanId: string,
+  scanId: string,
   // includeLicensePolicy: boolean,
   includeSecurityPolicy: boolean
 ): Promise<
@@ -88,7 +88,7 @@ export async function fetchReportData(
 
   updateProgress()
 
-  const socketSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk(apiToken)
 
   // @ts-ignore
   const [
@@ -102,8 +102,8 @@ export async function fetchReportData(
   ] = await Promise.all([
     (async () => {
       try {
-        const response = await queryAPI(
-          `orgs/${orgSlug}/full-scans/${encodeURIComponent(fullScanId)}`,
+        const response = await queryApi(
+          `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}`,
           apiToken
         )
 
@@ -111,7 +111,7 @@ export async function fetchReportData(
         updateProgress()
 
         if (!response.ok) {
-          const err = await handleAPIError(response.status)
+          const err = await handleApiError(response.status)
           logger.fail(
             `${colors.bgRed(colors.white(response.statusText))}: Fetch error: ${err}`
           )
@@ -141,7 +141,7 @@ export async function fetchReportData(
     })(),
     // includeLicensePolicy &&
     //   (async () => {
-    //     const r = await socketSdk.getOrgSecurityPolicy(orgSlug)
+    //     const r = await sockSdk.getOrgSecurityPolicy(orgSlug)
     //     haveLicensePolicy = true
     //     updateProgress()
     //     return await handleApiCall(
@@ -151,7 +151,7 @@ export async function fetchReportData(
     //   })(),
     includeSecurityPolicy &&
       (async () => {
-        const r = await socketSdk.getOrgSecurityPolicy(orgSlug)
+        const r = await sockSdk.getOrgSecurityPolicy(orgSlug)
         haveSecurityPolicy = true
         updateProgress()
         return await handleApiCall(

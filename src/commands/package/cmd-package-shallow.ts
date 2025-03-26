@@ -2,8 +2,8 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { handlePurlsShallowScore } from './handle-purls-shallow-score'
 import { parsePackageSpecifiers } from './parse-package-specifiers'
-import { showPurlInfo } from './show-purl-info'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -103,7 +103,7 @@ async function run(
     return
   }
 
-  await showPurlInfo({
+  await handlePurlsShallowScore({
     outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
     purls
   })

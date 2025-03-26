@@ -7,9 +7,18 @@ type NumberFlag = Flag<'number', number> | Flag<'number', number[], true>
 type AnyFlag = StringFlag | BooleanFlag | NumberFlag
 
 // Note: we use this description in getFlagListOutput, meow doesn't care
-export type MeowFlags = Record<string, AnyFlag & { description: string }>
+export type MeowFlags = Record<
+  string,
+  AnyFlag & { description: string; hidden?: boolean }
+>
 
 export const commonFlags: MeowFlags = {
+  config: {
+    type: 'string',
+    default: '',
+    hidden: true,
+    description: 'Override the local config with this JSON'
+  },
   help: {
     type: 'boolean',
     default: false,

@@ -11,31 +11,34 @@ describe('socket scan', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['scan', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
+  cmdit(
+    ['scan', '--help', '--config', '{}'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `
+        "Scan related commands
+
+          Usage
+            $ socket scan <command>
+
+          Commands
+            create            Create a scan
+            del               Delete a scan
+            list              List the scans for an organization
+            metadata          Get a scan's metadata
+            view              View the raw results of a scan
+
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help.
+
+          Examples
+            $ socket scan --help"
       `
-      "Full Scan related commands
-
-        Usage
-          $ socket scan <command>
-
-        Commands
-          create            Create a scan
-          del               Delete a scan
-          list              List the scans for an organization
-          metadata          Get a scan's metadata
-          view              View the raw results of a scan
-
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-
-        Examples
-          $ socket scan --help"
-    `
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -43,14 +46,13 @@ describe('socket scan', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan\`, cwd: <redacted>"
     `)
 
-    expect(code, 'help should exit with code 2').toBe(2)
-    expect(stderr, 'header should include command (without params)').toContain(
-      '`socket scan`'
-    )
-  })
+      expect(code, 'help should exit with code 2').toBe(2)
+      expect(stderr, 'banner includes base command').toContain('`socket scan`')
+    }
+  )
 
   cmdit(
-    ['scan', '--dry-run'],
+    ['scan', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

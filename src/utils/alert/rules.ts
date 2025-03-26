@@ -1,8 +1,8 @@
 import { isObject } from '@socketsecurity/registry/lib/objects'
 
+import { findSocketYmlSync, getConfigValue } from '../config'
 import { isErrnoException } from '../errors'
 import { getPublicToken, setupSdk } from '../sdk'
-import { findSocketYmlSync, getSetting } from '../settings'
 
 import type { SocketSdkResultType } from '@socketsecurity/sdk'
 
@@ -185,29 +185,32 @@ export async function uxLookup(
         const sockSdk = await setupSdk(getPublicToken())
         const orgResult = await sockSdk.getOrganizations()
         if (!orgResult.success) {
+          if (orgResult.status === 429) {
+            throw new Error(`API token quota exceeded: ${orgResult.error}`)
+          }
           throw new Error(
-            `Failed to fetch Socket organization info: ${orgResult.error.message}`
+            `Failed to fetch Socket organization info: ${orgResult.error}`
           )
         }
-        const orgs: Array<
-          Exclude<(typeof orgResult.data.organizations)[string], undefined>
-        > = []
-        for (const org of Object.values(orgResult.data.organizations)) {
+        const { organizations } = orgResult.data
+        const orgs: Array<Exclude<(typeof organizations)[string], undefined>> =
+          []
+        for (const org of Object.values(organizations)) {
           if (org) {
             orgs.push(org)
           }
         }
-        const result = await sockSdk.postSettings(
+        const settingsResult = await sockSdk.postSettings(
           orgs.map(org => ({ organization: org.id }))
         )
-        if (!result.success) {
+        if (!settingsResult.success) {
           throw new Error(
-            `Failed to fetch API key settings: ${result.error.message}`
+            `Failed to fetch API key settings: ${settingsResult.error}`
           )
         }
         return {
           orgs,
-          settings: result.data
+          settings: settingsResult.data
         }
       } catch (e) {
         const cause = isObject(e) && 'cause' in e ? e['cause'] : undefined
@@ -226,7 +229,7 @@ export async function uxLookup(
       }
     })()
     // Remove any organizations not being enforced.
-    const enforcedOrgs = getSetting('enforcedOrgs') ?? []
+    const enforcedOrgs = getConfigValue('enforcedOrgs') ?? []
     for (const { 0: i, 1: org } of orgs.entries()) {
       if (!enforcedOrgs.includes(org.id)) {
         settings.entries.splice(i, 1)

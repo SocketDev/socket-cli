@@ -8,23 +8,23 @@ import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
+import { getConfigValue } from './config'
 import { AuthError } from './errors'
-import { getSetting } from './settings'
 import constants from '../constants'
 
-const { SOCKET_CLI_NO_API_TOKEN } = constants
+const { SOCKET_CLI_NO_API_TOKEN, SOCKET_SECURITY_API_TOKEN } = constants
 
 // The API server that should be used for operations.
 function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    process.env['SOCKET_SECURITY_API_BASE_URL'] || getSetting('apiBaseUrl')
+    process.env['SOCKET_SECURITY_API_BASE_URL'] || getConfigValue('apiBaseUrl')
   return isNonEmptyString(baseUrl) ? baseUrl : undefined
 }
 
 // The API server that should be used for operations.
 function getDefaultHttpProxy(): string | undefined {
   const apiProxy =
-    process.env['SOCKET_SECURITY_API_PROXY'] || getSetting('apiProxy')
+    process.env['SOCKET_SECURITY_API_PROXY'] || getConfigValue('apiProxy')
   return isNonEmptyString(apiProxy) ? apiProxy : undefined
 }
 
@@ -36,11 +36,9 @@ export function getDefaultToken(): string | undefined {
     _defaultToken = undefined
   } else {
     const key =
-      process.env['SOCKET_SECURITY_API_TOKEN'] ||
-      // Keep 'SOCKET_SECURITY_API_KEY' as an alias of 'SOCKET_SECURITY_API_TOKEN'.
-      // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
-      process.env['SOCKET_SECURITY_API_KEY'] ||
-      getSetting('apiToken') ||
+      // Lazily access constants.ENV[SOCKET_SECURITY_API_TOKEN].
+      constants.ENV[SOCKET_SECURITY_API_TOKEN] ||
+      getConfigValue('apiToken') ||
       _defaultToken
     _defaultToken = isNonEmptyString(key) ? key : undefined
   }
@@ -48,7 +46,11 @@ export function getDefaultToken(): string | undefined {
 }
 
 export function getPublicToken(): string {
-  return getDefaultToken() ?? SOCKET_PUBLIC_API_TOKEN
+  return (
+    // Lazily access constants.ENV[SOCKET_SECURITY_API_TOKEN].
+    (constants.ENV[SOCKET_SECURITY_API_TOKEN] || getDefaultToken()) ??
+    SOCKET_PUBLIC_API_TOKEN
+  )
 }
 
 export async function setupSdk(

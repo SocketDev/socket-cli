@@ -1,22 +1,22 @@
 import path from 'node:path'
 import process from 'node:process'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'
-import { SocketSdk } from '@socketsecurity/sdk'
 
 import { handleApiCall } from '../../utils/api'
+import { setupSdk } from '../../utils/sdk'
 
-export async function suggestRepoSlug(
-  socketSdk: SocketSdk,
-  orgSlug: string
-): Promise<{
+export async function suggestRepoSlug(orgSlug: string): Promise<{
   slug: string
   defaultBranch: string
 } | void> {
+  const sockSdk = await setupSdk()
+
   // Same as above, but if there's a repo with the same name as cwd then
   // default the selection to that name.
   const result = await handleApiCall(
-    socketSdk.getOrgRepoList(orgSlug, {
+    sockSdk.getOrgRepoList(orgSlug, {
       orgSlug,
       sort: 'name',
       direction: 'asc',
@@ -28,6 +28,7 @@ export async function suggestRepoSlug(
     }),
     'looking up known repos'
   )
+
   // Ignore a failed request here. It was not the primary goal of
   // running this command and reporting it only leads to end-user confusion.
   if (result.success) {
@@ -39,7 +40,7 @@ export async function suggestRepoSlug(
     if (!cwdIsKnown && currentDirName) {
       // Do an explicit request so we can assert that the cwd exists or not
       const result = await handleApiCall(
-        socketSdk.getOrgRepo(orgSlug, currentDirName),
+        sockSdk.getOrgRepo(orgSlug, currentDirName),
         'checking if current cwd is a known repo'
       )
       if (result.success) {
@@ -92,7 +93,7 @@ export async function suggestRepoSlug(
       return { slug: repoName, defaultBranch: repoDefaultBranch }
     }
   } else {
-    // TODO: in verbose mode, report this error to stderr
+    logger.fail('Failed to lookup repo list from API, unable to suggest.')
   }
 }
 

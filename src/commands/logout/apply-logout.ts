@@ -1,8 +1,8 @@
-import { updateSetting } from '../../utils/settings'
+import { updateConfigValue } from '../../utils/config'
 
 export function applyLogout() {
-  updateSetting('apiToken', null)
-  updateSetting('apiBaseUrl', null)
-  updateSetting('apiProxy', null)
-  updateSetting('enforcedOrgs', null)
+  updateConfigValue('apiToken', null)
+  updateConfigValue('apiBaseUrl', null)
+  updateConfigValue('apiProxy', null)
+  updateConfigValue('enforcedOrgs', null)
 }
