@@ -11,7 +11,9 @@ export async function handleDependencies({
   outputKind: 'json' | 'markdown' | 'text'
 }): Promise<void> {
   const data = await fetchDependencies({ limit, offset })
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputDependencies(data, { limit, offset, outputKind })
 }

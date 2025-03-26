@@ -26,7 +26,9 @@ export async function handleListScans({
     per_page,
     sort
   })
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputListScans(data, outputKind)
 }

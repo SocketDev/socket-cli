@@ -6,7 +6,9 @@ export async function handleDeleteScan(
   scanId: string
 ): Promise<void> {
   const data = await fetchDeleteOrgFullScan(orgSlug, scanId)
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputDeleteScan(data)
 }

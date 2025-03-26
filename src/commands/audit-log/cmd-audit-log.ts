@@ -77,13 +77,15 @@ async function run(
   const defaultOrgSlug = getConfigValue('defaultOrg')
   const orgSlug = defaultOrgSlug || cli.input[0] || ''
 
-  const waswasInput = handleBadInput({
+  const wasBadInput = handleBadInput({
     test: orgSlug,
     message: 'Org name should be the first arg',
     pass: 'ok',
     fail: 'missing'
   })
-  if (waswasInput) return
+  if (wasBadInput) {
+    return
+  }
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)

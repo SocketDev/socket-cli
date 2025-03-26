@@ -178,7 +178,9 @@ async function run(
   if (apiToken && !dryRun) {
     if (!orgSlug) {
       const suggestion = await suggestOrgSlug()
-      if (suggestion) orgSlug = suggestion
+      if (suggestion) {
+        orgSlug = suggestion
+      }
       updatedInput = true
     }
 
@@ -195,7 +197,9 @@ async function run(
     // (Don't bother asking for the rest if we didn't get an org/repo above)
     if (orgSlug && repoName && !branchName) {
       const suggestion = await suggestBranchSlug(repoDefaultBranch)
-      if (suggestion) branchName = suggestion
+      if (suggestion) {
+        branchName = suggestion
+      }
       updatedInput = true
     }
   }
@@ -245,7 +249,9 @@ async function run(
       fail: 'missing'
     }
   )
-  if (wasBadInput) return
+  if (wasBadInput) {
+    return
+  }
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (dryRun) {

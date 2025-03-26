@@ -125,11 +125,15 @@ async function outputAnalyticsWithToken({
   }
 
   // A message should already have been printed if we have no data here
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   if (outputKind === 'json') {
     const serialized = renderJson(data)
-    if (!serialized) return
+    if (!serialized) {
+      return
+    }
 
     if (filePath && filePath !== '-') {
       try {

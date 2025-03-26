@@ -20,8 +20,9 @@ export function handleBadInput(
     ''
   ]
   for (const data of arr) {
-    if (data.hide) continue
-
+    if (data.hide) {
+      continue
+    }
     const lines = data.message.split('\n')
 
     // If the message has newlines then format the first line with the input

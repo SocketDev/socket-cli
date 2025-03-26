@@ -5,7 +5,9 @@ export async function handleQuota(
   outputKind: 'text' | 'json' | 'markdown' = 'text'
 ): Promise<void> {
   const data = await fetchQuota()
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputQuota(data, outputKind)
 }

@@ -25,8 +25,9 @@ export async function outputScanMetadata(
           'commit_hash',
           'html_report_url'
         ].includes(key)
-      )
+      ) {
         continue
+      }
       logger.log(`- ${key}:`, value)
     }
     if (outputKind === 'markdown') {
