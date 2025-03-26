@@ -5,7 +5,9 @@ export async function handleOrganizationList(
   outputKind: 'text' | 'json' | 'markdown' = 'text'
 ): Promise<void> {
   const data = await fetchOrganization()
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputOrganizationList(data, outputKind)
 }

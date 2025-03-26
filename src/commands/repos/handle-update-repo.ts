@@ -24,7 +24,9 @@ export async function handleUpdateRepo({
     repoName,
     visibility
   })
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputUpdateRepo(data)
 }

@@ -7,7 +7,9 @@ export async function handleOrgScanMetadata(
   outputKind: 'json' | 'markdown' | 'print'
 ): Promise<void> {
   const data = await fetchScanMetadata(orgSlug, scanId)
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputScanMetadata(data, scanId, outputKind)
 }

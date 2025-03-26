@@ -111,7 +111,9 @@ async function run(
       fail: 'missing'
     }
   )
-  if (wasBadInput) return
+  if (wasBadInput) {
+    return
+  }
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)
