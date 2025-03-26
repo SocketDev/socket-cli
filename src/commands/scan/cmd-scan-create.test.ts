@@ -85,6 +85,7 @@ describe('socket scan create', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
@@ -92,7 +93,6 @@ describe('socket scan create', async () => {
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan create\`, cwd: <redacted>"
       `)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     }
