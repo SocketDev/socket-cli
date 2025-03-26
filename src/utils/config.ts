@@ -42,8 +42,8 @@ export const sensitiveConfigKeys: Set<keyof LocalConfig> = new Set(['apiToken'])
 let _cachedConfig: LocalConfig | undefined
 // When using --config or SOCKET_CLI_CONFIG_OVERRIDE, do not persist the config.
 let _readOnlyConfig = false
-export function overrideCachedConfig(config: unknown) {
-  _cachedConfig = config as LocalConfig
+export function overrideCachedConfig(config: object) {
+  _cachedConfig = { ...config } as LocalConfig
   _readOnlyConfig = true
   // Normalize apiKey to apiToken.
   if (_cachedConfig['apiKey']) {
@@ -177,7 +177,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
   const localConfig = getConfigValues()
   localConfig[normalizeConfigKey(key) as Key] = value
   if (_readOnlyConfig) {
-    logger.error(
+    logger.warn(
       'Not persisting config change; current config overridden through env var or flag'
     )
   } else if (!_pendingSave) {
