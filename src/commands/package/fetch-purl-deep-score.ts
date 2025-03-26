@@ -3,7 +3,7 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
-import { handleAPIError, handleApiCall, queryAPI } from '../../utils/api'
+import { handleApiCall, handleApiError, queryApi } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
 import { getDefaultToken } from '../../utils/sdk'
 
@@ -19,14 +19,14 @@ export async function fetchPurlDeepScore(purl: string) {
   }
 
   spinner.start('Getting deep package score...')
-  const response = await queryAPI(
+  const response = await queryApi(
     `purl/score/${encodeURIComponent(purl)}`,
     apiToken
   )
   spinner?.successAndStop('Received deep package score response.')
 
   if (!response.ok) {
-    const err = await handleAPIError(response.status)
+    const err = await handleApiError(response.status)
     logger.log('\nThere was an error', err)
     spinner.errorAndStop(
       `${colors.bgRed(colors.white(response.statusText))}: ${err}`
