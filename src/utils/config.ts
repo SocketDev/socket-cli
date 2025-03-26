@@ -13,6 +13,10 @@ const { LOCALAPPDATA, SOCKET_APP_DIR, XDG_DATA_HOME } = constants
 
 export interface LocalConfig {
   apiBaseUrl?: string | null | undefined
+  // @deprecated ; use apiToken. when loading a config, if this prop exists it
+  //               is deleted and set to apiToken instead, and then persisted.
+  //               should only happen once for legacy users.
+  apiKey?: string | null | undefined
   apiProxy?: string | null | undefined
   apiToken?: string | null | undefined
   defaultOrg?: string
@@ -41,6 +45,11 @@ let _readOnlyConfig = false
 export function overrideCachedConfig(config: unknown) {
   _cachedConfig = config as LocalConfig
   _readOnlyConfig = true
+  // Normalize apiKey to apiToken.
+  if (_cachedConfig['apiKey']) {
+    _cachedConfig['apiToken'] = _cachedConfig['apiKey']
+    delete _cachedConfig['apiKey']
+  }
 }
 
 function getConfigValues(): LocalConfig {
@@ -58,6 +67,13 @@ function getConfigValues(): LocalConfig {
           )
         } catch {
           logger.warn(`Failed to parse config at ${configPath}`)
+        }
+        // Normalize apiKey to apiToken and persist it.
+        // This is a one time migration per user.
+        if (_cachedConfig['apiKey']) {
+          const token = _cachedConfig['apiKey']
+          delete _cachedConfig['apiKey']
+          updateConfigValue('apiToken', token)
         }
       } else {
         fs.mkdirSync(path.dirname(configPath), { recursive: true })
@@ -111,12 +127,13 @@ function getConfigPath(): string | undefined {
 }
 
 function normalizeConfigKey(key: keyof LocalConfig): keyof LocalConfig {
-  const externalKey = (key as string) === 'apiKey' ? 'apiToken' : key
-  if (!supportedConfigKeys.has(externalKey)) {
-    throw new Error(`Invalid config key: ${key}`)
+  // Note: apiKey was the old name of the token. When we load a config with
+  //       property apiKey, we'll copy that to apiToken and delete the old property.
+  const normalizedKey = key === 'apiKey' ? 'apiToken' : key
+  if (!supportedConfigKeys.has(normalizedKey)) {
+    throw new Error(`Invalid config key: ${normalizedKey}`)
   }
-  const internalKey = key === 'apiToken' ? 'apiKey' : key
-  return internalKey as keyof LocalConfig
+  return normalizedKey
 }
 
 export function findSocketYmlSync() {
