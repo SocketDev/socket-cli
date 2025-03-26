@@ -48,7 +48,7 @@ export async function pnpmFix(
     include: {
       existing: true,
       unfixable: false,
-      upgrade: false
+      upgradable: false
     }
   })
 

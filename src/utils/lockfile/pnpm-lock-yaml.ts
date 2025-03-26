@@ -4,19 +4,11 @@ import { getPublicToken, setupSdk } from '../sdk'
 import { addArtifactToAlertsMap } from '../socket-package-alert'
 
 import type { CompactSocketArtifact } from '../alert/artifact'
-import type { AlertsByPkgId } from '../socket-package-alert'
+import type { AlertIncludeFilter, AlertsByPkgId } from '../socket-package-alert'
 import type { Lockfile } from '@pnpm/lockfile-file'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-type AlertIncludeFilter = {
-  critical?: boolean | undefined
-  cve?: boolean | undefined
-  existing?: boolean | undefined
-  unfixable?: boolean | undefined
-  upgrade?: boolean | undefined
-}
-
-type GetAlertsMapFromPnpmLockfileOptions = {
+export type GetAlertsMapFromPnpmLockfileOptions = {
   consolidate?: boolean | undefined
   include?: AlertIncludeFilter | undefined
   spinner?: Spinner | undefined
@@ -34,11 +26,12 @@ export async function getAlertsMapFromPnpmLockfile(
 
   const include = {
     __proto__: null,
+    blocked: true,
     critical: true,
     cve: true,
     existing: false,
     unfixable: true,
-    upgrade: false,
+    upgradable: false,
     ..._include
   } as AlertIncludeFilter
 
