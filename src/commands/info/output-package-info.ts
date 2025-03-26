@@ -68,16 +68,16 @@ function outputPackageIssuesDetails(
 export function outputPackageInfo(
   { data, score, severityCount }: PackageData,
   {
-    name,
+    commandName,
     outputKind,
     pkgName,
     pkgVersion
   }: {
-    includeAllIssues: boolean
-    name: string
+    commandName: string
     outputKind: 'json' | 'markdown' | 'print'
     pkgName: string
     pkgVersion: string
+    includeAllIssues?: boolean | undefined
   }
 ): void {
   if (outputKind === 'json') {
@@ -133,7 +133,7 @@ export function outputPackageInfo(
   if (outputKind !== 'markdown') {
     logger.log(
       colors.dim(
-        `\nOr rerun ${colors.italic(name)} using the ${colors.italic('--json')} flag to get full JSON output`
+        `\nOr rerun ${colors.italic(commandName)} using the ${colors.italic('--json')} flag to get full JSON output`
       )
     )
   } else {
