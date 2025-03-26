@@ -3,6 +3,7 @@ import fs from 'node:fs/promises'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { generateReport } from './generate-report'
+import constants from '../../constants'
 import { mapToObject } from '../../utils/map-to-object'
 import { mdTable } from '../../utils/markdown'
 import { walkNestedMap } from '../../utils/walk-nested-map'
@@ -51,7 +52,9 @@ export async function outputScanReport(
       scanId,
       fold,
       reportLevel,
-      short
+      short,
+      // Lazily access constants.spinner.
+      spinner: constants.spinner
     }
   )
 
