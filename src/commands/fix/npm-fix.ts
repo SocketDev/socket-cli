@@ -53,7 +53,7 @@ export async function npmFix(
     include: {
       existing: true,
       unfixable: false,
-      upgrade: false
+      upgradable: false
     }
   })
 
