@@ -37,7 +37,7 @@ export async function handlePackageInfo({
 
   if (packageData) {
     outputPackageInfo(packageData, {
-      name: commandName,
+      commandName,
       includeAllIssues,
       outputKind,
       pkgName,
