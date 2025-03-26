@@ -80,7 +80,9 @@ describe('socket scan create', async () => {
       '--repo',
       'xyz',
       '--branch',
-      'abc'
+      'abc',
+      '--config',
+      '{"apiKey": "abc"}'
     ],
     'should require args with just dry-run',
     async cmd => {

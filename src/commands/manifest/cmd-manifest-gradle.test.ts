@@ -88,11 +88,11 @@ describe('socket manifest gradle', async () => {
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest gradle\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m:
 
-        - The DIR arg is required \\x1b[31m(missing!)\\x1b[39m
+          - The DIR arg is required (\\x1b[31mmissing\\x1b[39m)
 
-        - Can only accept one DIR (make sure to escape spaces!) \\x1b[32m(ok)\\x1b[39m"
+          - Can only accept one DIR (make sure to escape spaces!) (\\x1b[31mreceived 0\\x1b[39m)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

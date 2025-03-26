@@ -18,29 +18,29 @@ describe('socket config get', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Show all local CLI config items and their values
+        "Show all local CLI config items and their values
 
-        Usage
-          $ socket config list <org slug>
+          Usage
+            $ socket config list <org slug>
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --full            Show full tokens in plaintext (unsafe)
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --full            Show full tokens in plaintext (unsafe)
+            --help            Print this help.
+            --json            Output result as json
+            --markdown        Output result as markdown
 
-        Keys:
+          Keys:
 
-         - apiBaseUrl -- Base URL of the API endpoint
-         - apiProxy -- A proxy through which to access the API
-         - apiToken -- The API token required to access most API endpoints
-         - defaultOrg -- The default org slug to use when appropriate; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.
-         - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
+           - apiBaseUrl -- Base URL of the API endpoint
+           - apiProxy -- A proxy through which to access the API
+           - apiToken -- The API token required to access most API endpoints
+           - defaultOrg -- The default org slug to use when appropriate; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.
+           - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
 
-        Examples
-          $ socket config list FakeOrg --repoName=test-repo"
-    `
+          Examples
+            $ socket config list FakeOrg --repoName=test-repo"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

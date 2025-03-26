@@ -1,11 +1,10 @@
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleDiffScan } from './handle-diff-scan'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
 import { getConfigValue } from '../../utils/config'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -91,17 +90,28 @@ async function run(
   const defaultOrgSlug = getConfigValue('defaultOrg')
   const orgSlug = defaultOrgSlug || cli.input[0] || ''
 
-  if (!before || !after || cli.input.length < 1) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    logger.fail(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-      - Specify a before and after scan ID ${!before && !after ? colors.red('(missing before and after!)') : !before ? colors.red('(missing before!)') : !after ? colors.red('(missing after!)') : colors.green('(ok)')}\n          - To get scans IDs, you can run the command "socket scan list <your org slug>".
-            The args are expecting a full \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\` ID.\n
-      ${defaultOrgSlug ? `- Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}\n` : ''}`)
-    return
-  }
+  const wasBadInput = handleBadInput(
+    {
+      test: !!(before && after),
+      message:
+        'Specify a before and after scan ID\nThe args are expecting a full `aaa0aa0a-aaaa-0000-0a0a-0000000a00a0` scan ID.',
+      pass: 'ok',
+      fail:
+        !before && !after
+          ? 'missing before and after'
+          : !before
+            ? 'missing before'
+            : 'missing after'
+    },
+    {
+      test: !!orgSlug,
+      hide: !!defaultOrgSlug,
+      message: 'Org name as the first argument',
+      pass: 'ok',
+      fail: 'missing'
+    }
+  )
+  if (wasBadInput) return
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)

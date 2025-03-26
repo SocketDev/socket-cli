@@ -1,8 +1,5 @@
 import { existsSync } from 'node:fs'
 
-import { stripIndents } from 'common-tags'
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { addSocketWrapper } from './add-socket-wrapper'
@@ -11,6 +8,7 @@ import { postinstallWrapper } from './postinstall-wrapper'
 import { removeSocketWrapper } from './remove-socket-wrapper'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -72,21 +70,24 @@ async function run(
     parentName
   })
 
-  const { enable } = cli.flags
-  if (!enable && !cli.flags['disable']) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    logger.fail(
-      stripIndents`
-      ${colors.bgRed(colors.white('Input error'))}: Please provide the required flags:
+  const { disable, enable } = cli.flags
 
-      - Must use --enabled or --disabled
-    `
-    )
-    return
-  }
+  const wasBadInput = handleBadInput(
+    {
+      test: enable || disable,
+      message: 'Must use --enabled or --disable',
+      pass: 'ok',
+      fail: 'missing'
+    },
+    {
+      hide: !enable || !disable,
+      test: !enable || !disable,
+      message: 'Do not use both --enable and --disable',
+      pass: 'ok',
+      fail: 'missing'
+    }
+  )
+  if (wasBadInput) return
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)
