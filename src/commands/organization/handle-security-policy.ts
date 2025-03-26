@@ -6,7 +6,9 @@ export async function handleSecurityPolicy(
   outputKind: 'text' | 'json' | 'markdown'
 ): Promise<void> {
   const data = await fetchSecurityPolicy(orgSlug)
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await getSecurityPolicy(data, outputKind)
 }

@@ -21,7 +21,9 @@ export async function handleAuditLog({
     perPage,
     logType
   })
-  if (!auditLogs) return
+  if (!auditLogs) {
+    return
+  }
 
   await outputAuditLog(auditLogs, {
     logType,

@@ -60,7 +60,7 @@
     "bs": "npm run build:dist; npm exec socket --",
     "s": "npm exec socket --",
     "test": "run-s check test:*",
-    "test:prepare": "cross-env VITEST=1 npm run build",
+    "test:prepare": "cross-env VITEST=1 npm run build && del-cli 'test/**/node_modules'",
     "test:unit": "vitest --run",
     "test:unit:update": "vitest --run --update",
     "test:unit:coverage": "vitest run --coverage",

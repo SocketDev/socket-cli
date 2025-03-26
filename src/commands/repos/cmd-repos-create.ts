@@ -98,7 +98,9 @@ async function run(
       fail: typeof repoName !== 'string' ? 'missing' : 'invalid'
     }
   )
-  if (wasBadInput) return
+  if (wasBadInput) {
+    return
+  }
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)

@@ -18,7 +18,7 @@ import { addArtifactToAlertsMap } from '../socket-package-alert'
 import type { Diff } from '../../shadow/npm/arborist/lib/arborist/types'
 import type { SafeEdge } from '../../shadow/npm/arborist/lib/edge'
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
-import type { AlertsByPkgId } from '../socket-package-alert'
+import type { AlertIncludeFilter, AlertsByPkgId } from '../socket-package-alert'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 type Packument = Exclude<
@@ -184,15 +184,7 @@ export function findPackageNodes(
   return matches
 }
 
-type AlertIncludeFilter = {
-  critical?: boolean | undefined
-  cve?: boolean | undefined
-  existing?: boolean | undefined
-  unfixable?: boolean | undefined
-  upgrade?: boolean | undefined
-}
-
-type GetAlertsMapFromArboristOptions = {
+export type GetAlertsMapFromArboristOptions = {
   consolidate?: boolean | undefined
   include?: AlertIncludeFilter | undefined
   spinner?: Spinner | undefined
@@ -210,11 +202,12 @@ export async function getAlertsMapFromArborist(
 
   const include = {
     __proto__: null,
+    blocked: true,
     critical: true,
     cve: true,
     existing: false,
     unfixable: true,
-    upgrade: false,
+    upgradable: false,
     ..._include
   } as AlertIncludeFilter
 
@@ -252,8 +245,9 @@ export async function getAlertsMapFromArborist(
   const sockSdk = await setupSdk(getPublicToken())
 
   const toAlertsMapOptions = {
-    overrides,
-    ...options
+    ...options,
+    include,
+    overrides
   }
 
   for await (const batchPackageFetchResult of sockSdk.batchPackageStream(

@@ -40,6 +40,7 @@ const sharedPlugins = {
 }
 
 const sharedRules = {
+  curly: 'error',
   'no-await-in-loop': 'error',
   'no-control-regex': 'error',
   'no-empty': ['error', { allowEmptyCatch: true }],

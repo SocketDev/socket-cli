@@ -22,15 +22,32 @@ import constants from '../constants'
 
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
+export enum ALERT_SEVERITY_COLOR {
+  critical = 'magenta',
+  high = 'red',
+  middle = 'yellow',
+  low = 'white'
+}
+
+export const enum ALERT_SEVERITY_ORDER {
+  critical = 0,
+  high = 1,
+  middle = 2,
+  low = 3,
+  none = 4
+}
+
 export type SocketPackageAlert = {
+  name: string
+  version: string
   key: string
   type: string
-  block: boolean
+  blocked: boolean
   critical: boolean
   display: boolean
   fixable: boolean
   raw: CompactSocketArtifactAlert
-  upgrade: boolean
+  upgradable: boolean
 }
 
 export type AlertsByPkgId = Map<string, SocketPackageAlert[]>
@@ -39,15 +56,92 @@ const { CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER, NPM } = constants
 
 const format = new ColorOrMarkdown(false)
 
-type AlertIncludeFilter = {
+function alertsHaveSeverity(
+  alerts: SocketPackageAlert[],
+  severity: `${ALERT_SEVERITY}`
+): boolean {
+  return alerts.find(a => a.raw.severity === severity) !== undefined
+}
+
+function alertSeverityComparator(
+  a: SocketPackageAlert,
+  b: SocketPackageAlert
+): number {
+  return getAlertSeverityOrder(a) - getAlertSeverityOrder(b)
+}
+
+function getAlertSeverityOrder(alert: SocketPackageAlert): number {
+  const { severity } = alert.raw
+  return severity === ALERT_SEVERITY.critical
+    ? 0
+    : severity === ALERT_SEVERITY.high
+      ? 1
+      : severity === ALERT_SEVERITY.middle
+        ? 2
+        : severity === ALERT_SEVERITY.low
+          ? 3
+          : 4
+}
+
+function getAlertsSeverityOrder(alerts: SocketPackageAlert[]): number {
+  return alertsHaveSeverity(alerts, ALERT_SEVERITY.critical)
+    ? 0
+    : alertsHaveSeverity(alerts, ALERT_SEVERITY.high)
+      ? 1
+      : alertsHaveSeverity(alerts, ALERT_SEVERITY.middle)
+        ? 2
+        : alertsHaveSeverity(alerts, ALERT_SEVERITY.low)
+          ? 3
+          : 4
+}
+
+export type RiskCounts = {
+  middle: number
+  low: number
+}
+
+function getHiddenRiskCounts(hiddenAlerts: SocketPackageAlert[]): RiskCounts {
+  let hiddenMidCount = 0
+  let hiddenLowCount = 0
+  for (const alert of hiddenAlerts) {
+    const order = getAlertSeverityOrder(alert)
+    if (order === ALERT_SEVERITY_ORDER.middle) {
+      hiddenMidCount += 1
+    } else if (order === ALERT_SEVERITY_ORDER.low) {
+      hiddenLowCount += 1
+    }
+  }
+  return {
+    middle: hiddenMidCount,
+    low: hiddenLowCount
+  }
+}
+
+function getHiddenRisksDescription(riskCounts: RiskCounts): string {
+  const descriptions: string[] = []
+  if (riskCounts.middle) {
+    descriptions.push(`${riskCounts.middle} ${getSeverityLabel('middle')}`)
+  }
+  if (riskCounts.low) {
+    descriptions.push(`${riskCounts.low} ${getSeverityLabel('low')}`)
+  }
+  return `(${descriptions.join('; ')})`
+}
+
+function getSeverityLabel(severity: `${ALERT_SEVERITY}`): string {
+  return severity === 'middle' ? 'moderate' : severity
+}
+
+export type AlertIncludeFilter = {
+  blocked?: boolean | undefined
   critical?: boolean | undefined
   cve?: boolean | undefined
   existing?: boolean | undefined
   unfixable?: boolean | undefined
-  upgrade?: boolean | undefined
+  upgradable?: boolean | undefined
 }
 
-type AddSocketArtifactAlertToAlertsMapOptions = {
+export type AddSocketArtifactAlertToAlertsMapOptions = {
   consolidate?: boolean | undefined
   include?: AlertIncludeFilter | undefined
   overrides?: { [key: string]: string } | undefined
@@ -74,11 +168,12 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
 
   const include = {
     __proto__: null,
+    blocked: true,
     critical: true,
     cve: true,
     existing: false,
     unfixable: true,
-    upgrade: false,
+    upgradable: false,
     ..._include
   } as AlertIncludeFilter
 
@@ -86,37 +181,39 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
   const { version } = artifact
   const pkgId = `${name}@${version}`
   const major = semver.major(version)
-  let sockPkgAlerts = []
+  let sockPkgAlerts: SocketPackageAlert[] = []
   for (const alert of artifact.alerts) {
     // eslint-disable-next-line no-await-in-loop
     const ux = await uxLookup({
       package: { name, version },
       alert: { type: alert.type }
     })
-    const fixType = alert.fix?.type ?? ''
+    const blocked = ux.block
     const critical = alert.severity === ALERT_SEVERITY.critical
     const cve = isArtifactAlertCve(alert)
+    const fixType = alert.fix?.type ?? ''
     const fixableCve = fixType === ALERT_FIX_TYPE.cve
     const fixableUpgrade = fixType === ALERT_FIX_TYPE.upgrade
     const fixable = fixableCve || fixableUpgrade
-    const upgrade = fixableUpgrade && !hasOwn(overrides, name)
+    const upgradable = fixableUpgrade && !hasOwn(overrides, name)
     if (
+      (include.blocked && blocked) ||
+      (include.critical && critical) ||
       (include.cve && cve) ||
       (include.unfixable && !fixable) ||
-      (include.critical && critical) ||
-      (include.upgrade && upgrade)
+      (include.upgradable && upgradable)
     ) {
       sockPkgAlerts.push({
         name,
         version,
         key: alert.key,
         type: alert.type,
-        block: ux.block,
+        blocked,
         critical,
         display: ux.display,
         fixable,
         raw: alert,
-        upgrade
+        upgradable
       })
     }
   }
@@ -171,11 +268,11 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
   return alertsByPkgId
 }
 
-type CveExcludeFilter = {
-  upgrade?: boolean | undefined
+export type CveExcludeFilter = {
+  upgradable?: boolean | undefined
 }
 
-type CveInfoByPkgId = Map<
+export type CveInfoByPkgId = Map<
   string,
   Array<{
     firstPatchedVersionIdentifier: string
@@ -183,7 +280,7 @@ type CveInfoByPkgId = Map<
   }>
 >
 
-type GetCveInfoByPackageOptions = {
+export type GetCveInfoByPackageOptions = {
   exclude?: CveExcludeFilter | undefined
 }
 
@@ -192,7 +289,7 @@ export function getCveInfoByAlertsMap(
   options?: GetCveInfoByPackageOptions | undefined
 ): CveInfoByPkgId | null {
   const exclude = {
-    upgrade: true,
+    upgradable: true,
     ...({ __proto__: null, ...options } as GetCveInfoByPackageOptions).exclude
   }
   let infoByPkg: CveInfoByPkgId | null = null
@@ -203,7 +300,7 @@ export function getCveInfoByAlertsMap(
       const alert = sockPkgAlert.raw
       if (
         alert.fix?.type !== ALERT_FIX_TYPE.cve ||
-        (exclude.upgrade && getManifestData(NPM, name))
+        (exclude.upgradable && getManifestData(NPM, name))
       ) {
         continue
       }
@@ -228,94 +325,7 @@ export function getCveInfoByAlertsMap(
   return infoByPkg
 }
 
-enum ALERT_SEVERITY_COLOR {
-  critical = 'magenta',
-  high = 'red',
-  middle = 'yellow',
-  low = 'white'
-}
-
-const enum ALERT_SEVERITY_ORDER {
-  critical = 0,
-  high = 1,
-  middle = 2,
-  low = 3,
-  none = 4
-}
-
-function alertsHaveSeverity(
-  alerts: SocketPackageAlert[],
-  severity: `${ALERT_SEVERITY}`
-): boolean {
-  return alerts.find(a => a.raw.severity === severity) !== undefined
-}
-
-function alertSeverityComparator(
-  a: SocketPackageAlert,
-  b: SocketPackageAlert
-): number {
-  return getAlertSeverityOrder(a) - getAlertSeverityOrder(b)
-}
-
-function getAlertsSeverityOrder(alerts: SocketPackageAlert[]): number {
-  return alertsHaveSeverity(alerts, ALERT_SEVERITY.critical)
-    ? 0
-    : alertsHaveSeverity(alerts, ALERT_SEVERITY.high)
-      ? 1
-      : alertsHaveSeverity(alerts, ALERT_SEVERITY.middle)
-        ? 2
-        : alertsHaveSeverity(alerts, ALERT_SEVERITY.low)
-          ? 3
-          : 4
-}
-
-function getAlertSeverityOrder(alert: SocketPackageAlert): number {
-  const { severity } = alert.raw
-  return severity === ALERT_SEVERITY.critical
-    ? 0
-    : severity === ALERT_SEVERITY.high
-      ? 1
-      : severity === ALERT_SEVERITY.middle
-        ? 2
-        : severity === ALERT_SEVERITY.low
-          ? 3
-          : 4
-}
-
-type RiskCounts = {
-  middle: number
-  low: number
-}
-
-function getHiddenRiskCounts(hiddenAlerts: SocketPackageAlert[]): RiskCounts {
-  let hiddenMidCount = 0
-  let hiddenLowCount = 0
-  for (const alert of hiddenAlerts) {
-    const order = getAlertSeverityOrder(alert)
-    if (order === ALERT_SEVERITY_ORDER.middle) {
-      hiddenMidCount += 1
-    } else if (order === ALERT_SEVERITY_ORDER.low) {
-      hiddenLowCount += 1
-    }
-  }
-  return {
-    middle: hiddenMidCount,
-    low: hiddenLowCount
-  }
-}
-
-function getHiddenRisksDescription(riskCounts: RiskCounts): string {
-  const descriptions: string[] = []
-  if (riskCounts.middle) {
-    descriptions.push(`${riskCounts.middle} moderate`)
-  }
-  if (riskCounts.low) {
-    descriptions.push(`${riskCounts.low} low`)
-  }
-  return `(${descriptions.join('; ')})`
-}
-
-type LogAlertsMapOptions = {
+export type LogAlertsMapOptions = {
   output?: NodeJS.WriteStream | undefined
 }
 
@@ -355,8 +365,8 @@ export function logAlertsMap(
       const severity = alert.raw.severity ?? ''
       const attributes = [
         ...(severity ? [colors[ALERT_SEVERITY_COLOR[severity]](severity)] : []),
-        ...(alert.fixable ? ['fixable'] : []),
-        ...(alert.block ? [] : ['non-blocking'])
+        ...(alert.blocked ? [colors.bold(colors.red('blocked'))] : []),
+        ...(alert.fixable ? ['fixable'] : [])
       ]
       const maybeAttributes = attributes.length
         ? ` ${colors.italic(`(${attributes.join('; ')})`)}`
@@ -379,10 +389,22 @@ export function logAlertsMap(
           resolvePackageName(purlObj),
           purlObj.version
         )
-      )} contains risks${hiddenAlerts.length ? colors.italic(` ${getHiddenRisksDescription(getHiddenRiskCounts(alerts))}`) : ''}:\n`
+      )}:\n`
     )
     for (const line of lines) {
       output.write(`${line}\n`)
+    }
+    const { length: hiddenAlertsCount } = hiddenAlerts
+    if (hiddenAlertsCount) {
+      if (hiddenAlertsCount === 1) {
+        output.write(
+          `  +1 Hidden ${getSeverityLabel(hiddenAlerts[0]!.raw.severity ?? 'low')} risk alert\n`
+        )
+      } else {
+        output.write(
+          `  +${hiddenAlertsCount} Hidden alerts ${colors.italic(getHiddenRisksDescription(getHiddenRiskCounts(hiddenAlerts)))}\n`
+        )
+      }
     }
   }
   const { length: hiddenEntriesCount } = hiddenEntries
@@ -397,7 +419,7 @@ export function logAlertsMap(
       totalRiskCounts.low += riskCounts.low
     }
     output.write(
-      `\n${hiddenEntriesCount} packages hidden containing risks ${colors.italic(getHiddenRisksDescription(totalRiskCounts))}\n\n`
+      `\n+${hiddenEntriesCount} Packages with hidden alerts ${colors.italic(getHiddenRisksDescription(totalRiskCounts))}\n\n`
     )
   }
 }
