@@ -11,10 +11,11 @@ import constants from '../constants'
 
 export interface LocalConfig {
   apiBaseUrl?: string | null | undefined
-  // @deprecated ; use apiToken
+  // @deprecated ; use apiToken. when loading a config, if this prop exists it
+  //               is deleted and set to apiToken instead, and then persisted.
+  //               should only happen once for legacy users.
   apiKey?: string | null | undefined
   apiProxy?: string | null | undefined
-  // apiToken replaced apiKey.
   apiToken?: string | null | undefined
   defaultOrg?: string
   enforcedOrgs?: string[] | readonly string[] | null | undefined
@@ -54,6 +55,12 @@ let pendingSave = false
 export function overrideCachedConfig(config: unknown) {
   cachedConfig = config as LocalConfig
   readOnlyConfig = true
+
+  // Normalize apiKey to apiToken
+  if (cachedConfig['apiKey']) {
+    cachedConfig['apiToken'] = cachedConfig['apiKey']
+    delete cachedConfig['apiKey']
+  }
 }
 
 function getConfigValues(): LocalConfig {
@@ -71,6 +78,13 @@ function getConfigValues(): LocalConfig {
           )
         } catch {
           logger.warn(`Failed to parse config at ${configPath}`)
+        }
+        // Normalize apiKey to apiToken and persist; one time migration per user
+        if (cachedConfig['apiKey']) {
+          const token = cachedConfig['apiKey']
+          delete cachedConfig['apiKey']
+          // Persist it
+          updateConfigValue('apiToken', token)
         }
       } else {
         fs.mkdirSync(path.dirname(configPath), { recursive: true })
@@ -120,9 +134,10 @@ function getConfigPath(): string | undefined {
 }
 
 function normalizeConfigKey(key: keyof LocalConfig): keyof LocalConfig {
-  const normalizedKey = key === 'apiToken' ? 'apiKey' : key
+  // Note: apiKey was the old name of the token. When we load a config with
+  //       property apiKey, we'll copy that to apiToken and delete the old prop
+  const normalizedKey = key === 'apiKey' ? 'apiToken' : key
   if (
-    normalizedKey !== 'apiKey' &&
     normalizedKey !== 'test' &&
     !supportedConfigKeys.has(normalizedKey as keyof LocalConfig)
   ) {
