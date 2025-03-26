@@ -1,11 +1,9 @@
-import { stripIndents } from 'common-tags'
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { viewReport } from './view-report'
 import constants from '../../constants'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -45,21 +43,32 @@ async function run(
     parentName
   })
 
-  const [reportId, ...extraInput] = cli.input
+  const { json, markdown } = cli.flags
+  const [reportId = '', ...extraInput] = cli.input
 
-  // Validate the input.
-  if (extraInput.length || !reportId) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    logger.fail(stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
-
-      - Need at least one report ID ${!reportId ? colors.red('(missing!)') : colors.green('(ok)')}
-
-      - Can only handle a single report ID ${extraInput.length < 2 ? colors.red(`(received ${extraInput.length}!)`) : colors.green('(ok)')}`)
-    return
-  }
+  const wasBadInput = handleBadInput(
+    {
+      test: reportId,
+      message: 'Need at least one report ID',
+      pass: 'ok',
+      fail: 'missing'
+    },
+    {
+      hide: extraInput.length === 0,
+      test: extraInput.length === 0,
+      message: 'Can only handle a single report ID',
+      pass: 'ok',
+      fail: 'received ' + (extraInput.length + 1)
+    },
+    {
+      hide: !json || !markdown,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      pass: 'ok',
+      fail: 'omit one'
+    }
+  )
+  if (wasBadInput) return
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)
@@ -69,11 +78,7 @@ async function run(
   await viewReport(reportId, {
     all: Boolean(cli.flags['all']),
     commandName: `${parentName} ${config.commandName}`,
-    outputKind: cli.flags['json']
-      ? 'json'
-      : cli.flags['markdown']
-        ? 'markdown'
-        : 'print',
+    outputKind: json ? 'json' : markdown ? 'markdown' : 'print',
     strict: Boolean(cli.flags['strict'])
   })
 }

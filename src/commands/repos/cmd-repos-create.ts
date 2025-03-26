@@ -1,11 +1,10 @@
-import { stripIndents } from 'common-tags'
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateRepo } from './handle-create-repo'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
+import { getConfigValue } from '../../utils/config'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -81,20 +80,25 @@ async function run(
   })
 
   const repoName = cli.flags['repoName']
-  const [orgSlug = ''] = cli.input
+  const defaultOrgSlug = getConfigValue('defaultOrg')
+  const orgSlug = defaultOrgSlug || cli.input[0] || ''
 
-  if (!repoName || typeof repoName !== 'string' || !orgSlug) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    logger.fail(stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
-
-      - Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}
-
-      - Repository name using --repoName ${!repoName ? colors.red('(missing!)') : typeof repoName !== 'string' ? colors.red('(invalid!)') : colors.green('(ok)')}`)
-    return
-  }
+  const wasBadInput = handleBadInput(
+    {
+      hide: defaultOrgSlug,
+      test: orgSlug,
+      message: 'Org name as the first argument',
+      pass: 'ok',
+      fail: 'missing'
+    },
+    {
+      test: repoName,
+      message: 'Repository name using --repoNam',
+      pass: 'ok',
+      fail: typeof repoName !== 'string' ? 'missing' : 'invalid'
+    }
+  )
+  if (wasBadInput) return
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)
@@ -103,7 +107,7 @@ async function run(
 
   await handleCreateRepo({
     orgSlug,
-    repoName,
+    repoName: String(repoName),
     description: String(cli.flags['repoDescription'] || ''),
     homepage: String(cli.flags['homepage'] || ''),
     default_branch: String(cli.flags['defaultBranch'] || ''),
