@@ -1,5 +1,4 @@
-import constants from '../../constants'
-
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { components } from '@socketsecurity/sdk/types/api'
 
@@ -39,20 +38,20 @@ export function generateReport(
     orgSlug,
     reportLevel,
     scanId,
-    short
+    short,
+    spinner
   }: {
     fold: 'pkg' | 'version' | 'file' | 'none'
     orgSlug: string
     reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'
     scanId: string
-    short: boolean
+    short?: boolean | undefined
+    spinner?: Spinner | undefined
   }
 ): ScanReport | ShortScanReport {
   const now = Date.now()
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-  spinner.start('Generating report...')
+  spinner?.start('Generating report...')
 
   // Create an object that includes:
   //   healthy: boolean
@@ -192,7 +191,7 @@ export function generateReport(
     })
   }
 
-  spinner.successAndStop(`Generated reported in ${Date.now() - now} ms`)
+  spinner?.successAndStop(`Generated reported in ${Date.now() - now} ms`)
 
   const report = short
     ? { healthy }
