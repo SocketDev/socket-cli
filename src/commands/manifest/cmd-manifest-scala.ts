@@ -135,7 +135,9 @@ async function run(
       fail: 'received ' + cli.input.length
     }
   )
-  if (wasBadInput) return
+  if (wasBadInput) {
+    return
+  }
 
   let bin: string = 'sbt'
   if (cli.flags['bin']) {

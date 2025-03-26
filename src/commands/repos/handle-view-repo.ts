@@ -7,7 +7,9 @@ export async function handleViewRepo(
   outputKind: 'json' | 'markdown' | 'text'
 ): Promise<void> {
   const data = await fetchViewRepo(orgSlug, repoName)
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputViewRepo(data, outputKind)
 }

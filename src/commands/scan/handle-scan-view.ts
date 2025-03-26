@@ -7,7 +7,9 @@ export async function handleScanView(
   filePath: string
 ): Promise<void> {
   const data = await fetchScan(orgSlug, scanId)
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputScanView(data, orgSlug, scanId, filePath)
 }

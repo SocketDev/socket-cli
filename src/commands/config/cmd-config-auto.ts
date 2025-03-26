@@ -71,7 +71,9 @@ async function run(
     pass: 'ok',
     fail: key ? 'invalid config key' : 'missing'
   })
-  if (wasBadInput) return
+  if (wasBadInput) {
+    return
+  }
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)

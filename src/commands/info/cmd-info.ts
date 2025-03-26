@@ -69,7 +69,9 @@ async function run(
       fail: 'got ' + cli.input.length
     }
   )
-  if (wasBadInput) return
+  if (wasBadInput) {
+    return
+  }
 
   const versionSeparator = rawPkgName.lastIndexOf('@')
   const pkgName =

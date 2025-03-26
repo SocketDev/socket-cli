@@ -23,7 +23,9 @@ export async function handleListRepos({
     per_page,
     sort
   })
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputListRepos(data, outputKind)
 }

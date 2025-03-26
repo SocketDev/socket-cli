@@ -38,7 +38,9 @@ export async function handleScanReport({
     // includeLicensePolicy
     includeSecurityPolicy
   )
-  if (!ok) return
+  if (!ok) {
+    return
+  }
 
   await outputScanReport(scan, securityPolicy, {
     filePath,

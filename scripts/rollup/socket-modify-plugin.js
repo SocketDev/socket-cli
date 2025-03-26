@@ -14,7 +14,9 @@ function socketModifyPlugin({
   return {
     name: 'socket-modify',
     renderChunk(code, { fileName }) {
-      if (!filter(fileName)) return null
+      if (!filter(fileName)) {
+        return null
+      }
       const s = new MagicString(code)
       const { global } = find
       find.lastIndex = 0

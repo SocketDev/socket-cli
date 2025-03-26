@@ -24,7 +24,9 @@ export async function handleCreateRepo({
     repoName,
     visibility
   })
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputCreateRepo(data)
 }

@@ -31,8 +31,9 @@ export async function createReport(
   const supportedFiles = await sockSdk
     .getReportSupportedFiles()
     .then(res => {
-      if (!res.success)
+      if (!res.success) {
         handleUnsuccessfulApiResponse('getReportSupportedFiles', res)
+      }
       return (res as SocketSdkReturnType<'getReportSupportedFiles'>).data
     })
     .catch((cause: Error) => {

@@ -25,9 +25,12 @@ export function outputPurlsShallowScore(
     set.add('pkg:' + data.type + '/' + data.name)
   })
   const missing = purls.filter(purl => {
-    if (set.has(purl)) return false
-    if (purl.endsWith('@latest') && set.has(purl.slice(0, -'@latest'.length)))
+    if (set.has(purl)) {
       return false
+    }
+    if (purl.endsWith('@latest') && set.has(purl.slice(0, -'@latest'.length))) {
+      return false
+    }
     return true // not found
   })
 
@@ -94,11 +97,16 @@ function formatReportCard(
 
 function formatScore(score: number, noColor = false, pad = false): string {
   const padded = String(score).padStart(pad ? 3 : 0, ' ')
-
-  if (noColor) return padded
-  else if (score >= 80) return colors.green(padded)
-  else if (score >= 60) return colors.yellow(padded)
-  else return colors.red(padded)
+  if (noColor) {
+    return padded
+  }
+  if (score >= 80) {
+    return colors.green(padded)
+  }
+  if (score >= 60) {
+    return colors.yellow(padded)
+  }
+  return colors.red(padded)
 }
 
 function getAlertString(
@@ -107,57 +115,55 @@ function getAlertString(
 ) {
   if (!alerts?.length) {
     return noColor ? `- Alerts: none!` : `- Alerts: ${colors.green('none')}!`
-  } else {
-    const bad = alerts
-      .filter(alert => alert.severity !== 'low' && alert.severity !== 'middle')
-      .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
-    const mid = alerts
-      .filter(alert => alert.severity === 'middle')
-      .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
-    const low = alerts
-      .filter(alert => alert.severity === 'low')
-      .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+  }
+  const bad = alerts
+    .filter(alert => alert.severity !== 'low' && alert.severity !== 'middle')
+    .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+  const mid = alerts
+    .filter(alert => alert.severity === 'middle')
+    .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+  const low = alerts
+    .filter(alert => alert.severity === 'low')
+    .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
 
-    // We need to create the no-color string regardless because the actual string
-    // contains a bunch of invisible ANSI chars which would screw up length checks.
-    const colorless = `- Alerts (${bad.length}/${mid.length.toString()}/${low.length}):`
+  // We need to create the no-color string regardless because the actual string
+  // contains a bunch of invisible ANSI chars which would screw up length checks.
+  const colorless = `- Alerts (${bad.length}/${mid.length.toString()}/${low.length}):`
 
-    if (noColor) {
-      return (
-        colorless +
-        ' '.repeat(Math.max(0, 20 - colorless.length)) +
-        '  ' +
-        [
-          bad.map(alert => `[${alert.severity}] ` + alert.type).join(', '),
-          mid.map(alert => `[${alert.severity}] ` + alert.type).join(', '),
-          low.map(alert => `[${alert.severity}] ` + alert.type).join(', ')
-        ]
-          .filter(Boolean)
-          .join(', ')
-      )
-    }
-
+  if (noColor) {
     return (
-      `- Alerts (${colors.red(bad.length.toString())}/${colors.yellow(mid.length.toString())}/${low.length}):` +
+      colorless +
       ' '.repeat(Math.max(0, 20 - colorless.length)) +
       '  ' +
       [
-        bad
-          .map(alert =>
-            colors.red(colors.dim(`[${alert.severity}] `) + alert.type)
-          )
-          .join(', '),
-        mid
-          .map(alert =>
-            colors.yellow(colors.dim(`[${alert.severity}] `) + alert.type)
-          )
-          .join(', '),
-        low
-          .map(alert => colors.dim(`[${alert.severity}] `) + alert.type)
-          .join(', ')
+        bad.map(alert => `[${alert.severity}] ` + alert.type).join(', '),
+        mid.map(alert => `[${alert.severity}] ` + alert.type).join(', '),
+        low.map(alert => `[${alert.severity}] ` + alert.type).join(', ')
       ]
         .filter(Boolean)
         .join(', ')
     )
   }
+  return (
+    `- Alerts (${colors.red(bad.length.toString())}/${colors.yellow(mid.length.toString())}/${low.length}):` +
+    ' '.repeat(Math.max(0, 20 - colorless.length)) +
+    '  ' +
+    [
+      bad
+        .map(alert =>
+          colors.red(colors.dim(`[${alert.severity}] `) + alert.type)
+        )
+        .join(', '),
+      mid
+        .map(alert =>
+          colors.yellow(colors.dim(`[${alert.severity}] `) + alert.type)
+        )
+        .join(', '),
+      low
+        .map(alert => colors.dim(`[${alert.severity}] `) + alert.type)
+        .join(', ')
+    ]
+      .filter(Boolean)
+      .join(', ')
+  )
 }

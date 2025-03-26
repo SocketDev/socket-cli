@@ -230,7 +230,9 @@ function addAlert(
   alert: NonNullable<components['schemas']['SocketArtifact']['alerts']>[number],
   policyAction: AlertAction
 ): void {
-  if (!violations.has(ecosystem)) violations.set(ecosystem, new Map())
+  if (!violations.has(ecosystem)) {
+    violations.set(ecosystem, new Map())
+  }
   const ecomap: EcoMap = violations.get(ecosystem)!
   if (foldSetting === 'pkg') {
     const existing = ecomap.get(pkgName) as ReportLeafNode | undefined
@@ -238,7 +240,9 @@ function addAlert(
       ecomap.set(pkgName, createLeaf(art, alert, policyAction))
     }
   } else {
-    if (!ecomap.has(pkgName)) ecomap.set(pkgName, new Map())
+    if (!ecomap.has(pkgName)) {
+      ecomap.set(pkgName, new Map())
+    }
     const pkgmap = ecomap.get(pkgName) as PackageMap
     if (foldSetting === 'version') {
       const existing = pkgmap.get(version) as ReportLeafNode | undefined
@@ -246,7 +250,9 @@ function addAlert(
         pkgmap.set(version, createLeaf(art, alert, policyAction))
       }
     } else {
-      if (!pkgmap.has(version)) pkgmap.set(version, new Map())
+      if (!pkgmap.has(version)) {
+        pkgmap.set(version, new Map())
+      }
       const file = alert.file || '<unknown>'
       const vermap = pkgmap.get(version) as VersionMap
 
@@ -256,7 +262,9 @@ function addAlert(
           vermap.set(file, createLeaf(art, alert, policyAction))
         }
       } else {
-        if (!vermap.has(file)) vermap.set(file, new Map())
+        if (!vermap.has(file)) {
+          vermap.set(file, new Map())
+        }
         const key = `${alert.type} at ${alert.start}:${alert.end}`
         const filemap: FileMap = vermap.get(file) as FileMap
         const existing = filemap.get(key) as ReportLeafNode | undefined
@@ -273,16 +281,36 @@ function isStricterPolicy(
   is: 'error' | 'warn' | 'monitor' | 'ignore' | 'defer'
 ): boolean {
   // error > warn > monitor > ignore > defer > {unknown}
-  if (was === 'error') return false
-  if (is === 'error') return true
-  if (was === 'warn') return false
-  if (is === 'warn') return false
-  if (was === 'monitor') return false
-  if (is === 'monitor') return false
-  if (was === 'ignore') return false
-  if (is === 'ignore') return false
-  if (was === 'defer') return false
-  if (is === 'defer') return false
+  if (was === 'error') {
+    return false
+  }
+  if (is === 'error') {
+    return true
+  }
+  if (was === 'warn') {
+    return false
+  }
+  if (is === 'warn') {
+    return false
+  }
+  if (was === 'monitor') {
+    return false
+  }
+  if (is === 'monitor') {
+    return false
+  }
+  if (was === 'ignore') {
+    return false
+  }
+  if (is === 'ignore') {
+    return false
+  }
+  if (was === 'defer') {
+    return false
+  }
+  if (is === 'defer') {
+    return false
+  }
   // unreachable?
   return false
 }
