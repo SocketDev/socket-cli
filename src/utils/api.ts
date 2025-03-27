@@ -14,8 +14,6 @@ import type {
   SocketSdkOperations
 } from '@socketsecurity/sdk'
 
-const { SOCKET_SECURITY_API_BASE_URL } = constants
-
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
   sockSdkError: SocketSdkErrorType<T>
@@ -54,8 +52,10 @@ export async function handleApiError(code: number) {
     return 'One of the options passed might be incorrect.'
   } else if (code === 403) {
     return 'You might be trying to access an organization that is not linked to the API key you are logged in with.'
+  } else if (code === 404) {
+    return 'The requested Socket API endpoint was not found (404). This could be a temporary problem caused by an incident or a bug in the CLI. If the problem persists please let us know.'
   } else {
-    ;`Server responded with status code ${code}`
+    return `Server responded with status code ${code}`
   }
 }
 
@@ -67,9 +67,13 @@ export function getLastFiveOfApiToken(token: string): string {
 // The API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    // Lazily access constants.ENV[SOCKET_SECURITY_API_BASE_URL].
-    constants.ENV[SOCKET_SECURITY_API_BASE_URL] || getConfigValue('apiBaseUrl')
-  return isNonEmptyString(baseUrl) ? baseUrl : undefined
+    process.env['SOCKET_SECURITY_API_BASE_URL'] || getConfigValue('apiBaseUrl')
+  if (isNonEmptyString(baseUrl)) {
+    return baseUrl
+  }
+  // Lazily access constants.API_V0_URL.
+  const API_V0_URL = constants.API_V0_URL
+  return API_V0_URL
 }
 
 export async function queryApi(path: string, apiToken: string) {
