@@ -1,11 +1,9 @@
-import { stripIndents } from 'common-tags'
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertSbtToMaven } from './convert_sbt_to_maven'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -116,23 +114,28 @@ async function run(
     logger.groupEnd()
   }
 
-  const target = cli.input[0]
+  const [target = ''] = cli.input
 
   // TODO: I'm not sure it's feasible to parse source file from stdin. We could
-  // try, store contents in a file in some folder, target that folder... what
-  // would the file name be?
-  if (!target || target === '-' || cli.input.length > 1) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    logger.fail(
-      stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
+  //       try, store contents in a file in some folder, target that folder... what
+  //       would the file name be?
 
-      - The DIR or FILE arg is required ${!target ? colors.red('(missing!)') : target === '-' ? colors.red('(stdin is not supported)') : colors.green('(ok)')}
-
-      - Can only accept one DIR or FILE (make sure to escape spaces!) ${cli.input.length > 1 ? colors.red(`(received ${cli.input.length}!)`) : colors.green('(ok)')}`
-    )
+  const wasBadInput = handleBadInput(
+    {
+      test: target && target !== '-',
+      message: 'The DIR arg is required',
+      pass: 'ok',
+      fail: target === '-' ? 'stdin is not supported' : 'missing'
+    },
+    {
+      test: cli.input.length === 1,
+      hide: cli.input.length === 1,
+      message: 'Can only accept one DIR (make sure to escape spaces!)',
+      pass: 'ok',
+      fail: 'received ' + cli.input.length
+    }
+  )
+  if (wasBadInput) {
     return
   }
 

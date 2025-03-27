@@ -14,7 +14,7 @@ const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 // These aliases are defined in package.json.
 for (const npmDir of ['npm8', 'npm9', 'npm10', 'npm11']) {
-  if (process.env['CI']) {
+  if (process.env.CI) {
     // Skip this test in CI.
     describe('skipme', () => it('should skip', () => expect(true).toBe(true)))
     continue
@@ -42,34 +42,28 @@ for (const npmDir of ['npm8', 'npm9', 'npm10', 'npm11']) {
           const spawnPromise = spawn(
             // Lazily access constants.execPath.
             constants.execPath,
-            [entryPath, NPM, 'install', 'bowserify'],
+            [entryPath, NPM, 'install', 'bowserify', '--no-audit', '--no-fund'],
             {
               cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
-              encoding: 'utf8',
               env: {
                 PATH: `${npmBinPath}:${process.env.PATH}`
               }
             }
           )
-          spawnPromise.process.stdout.on('data', (chunk: string) => {
-            // changed 13 packages, and audited 176 packages in 3s
-            if (/changed .* packages, and audited .* packages in/.test(chunk)) {
-              reject(
-                new Error(
-                  'It seems npm ran anyways so the test failed to invoke socket'
-                )
+          spawnPromise.process.stdout.on('data', () => {
+            reject(
+              new Error(
+                'It seems npm ran anyways so the test failed to invoke socket'
               )
-            }
-          })
-          spawnPromise.process.stderr.on('data', (chunk: string) => {
-            if (chunk.includes('Possible typosquat attack')) {
-              resolve('OK')
-              spawnPromise.process.kill('SIGINT')
-            }
+            )
           })
           spawnPromise.catch((e: unknown) => {
             spawnPromise.process.kill('SIGINT')
-            reject(e)
+            if (e?.['stderr'].includes('typosquat')) {
+              resolve('OK')
+            } else {
+              reject(e)
+            }
           })
         })
 

@@ -1,11 +1,10 @@
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handlePurlsShallowScore } from './handle-purls-shallow-score'
 import { parsePackageSpecifiers } from './parse-package-specifiers'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -86,15 +85,29 @@ async function run(
 
   const { purls, valid } = parsePackageSpecifiers(ecosystem, pkgs)
 
-  if (!valid || !purls.length) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    logger.fail(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-      - First parameter should be an ecosystem or all args must be purls ${!valid ? colors.red('(bad!)') : colors.green('(ok)')}\n
-      - Expecting at least one package ${!purls.length ? colors.red('(missing!)') : colors.green('(ok)')}\n
-    `)
+  const wasBadInput = handleBadInput(
+    {
+      test: valid,
+      message:
+        'First parameter should be an ecosystem or all args must be purls',
+      pass: 'ok',
+      fail: 'bad'
+    },
+    {
+      test: purls.length > 0,
+      message: 'Expecting at least one package',
+      pass: 'ok',
+      fail: 'missing'
+    },
+    {
+      hide: !json || !markdown,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      pass: 'ok',
+      fail: 'omit one'
+    }
+  )
+  if (wasBadInput) {
     return
   }
 

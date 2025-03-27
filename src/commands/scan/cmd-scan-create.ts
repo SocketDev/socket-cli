@@ -1,6 +1,3 @@
-import { stripIndents } from 'common-tags'
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateNewScan } from './handle-create-new-scan'
@@ -11,6 +8,7 @@ import { suggestTarget } from './suggest_target'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
 import { getConfigValue } from '../../utils/config'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
@@ -180,7 +178,9 @@ async function run(
   if (apiToken && !dryRun) {
     if (!orgSlug) {
       const suggestion = await suggestOrgSlug()
-      if (suggestion) orgSlug = suggestion
+      if (suggestion) {
+        orgSlug = suggestion
+      }
       updatedInput = true
     }
 
@@ -197,7 +197,9 @@ async function run(
     // (Don't bother asking for the rest if we didn't get an org/repo above)
     if (orgSlug && repoName && !branchName) {
       const suggestion = await suggestBranchSlug(repoDefaultBranch)
-      if (suggestion) branchName = suggestion
+      if (suggestion) {
+        branchName = suggestion
+      }
       updatedInput = true
     }
   }
@@ -213,24 +215,41 @@ async function run(
     logger.error('```\n')
   }
 
-  if (!orgSlug || !repoName || !branchName || !targets.length) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    logger.fail(stripIndents`
-      ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
-
-      ${defaultOrgSlug ? '' : `- Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}`}
-
-      - Repository name using --repo ${!repoName ? colors.red('(missing!)') : colors.green('(ok)')}
-
-      - Branch name using --branch ${!branchName ? colors.red('(missing!)') : colors.green('(ok)')}
-
-      - At least one TARGET (e.g. \`.\` or \`./package.json\`) ${!targets.length ? colors.red('(missing)') : colors.green('(ok)')}
-
-      ${!apiToken ? 'Note: was unable to make suggestions because no API Token was found; this would make the command fail regardless' : ''}
-    `)
+  const wasBadInput = handleBadInput(
+    {
+      hide: defaultOrgSlug,
+      test: orgSlug,
+      message: 'Org name as the first argument',
+      pass: 'ok',
+      fail: 'missing'
+    },
+    {
+      test: repoName,
+      message: 'Repository name using --repo',
+      pass: 'ok',
+      fail: typeof repoName !== 'string' ? 'missing' : 'invalid'
+    },
+    {
+      test: branchName,
+      message: 'Repository name using --branch',
+      pass: 'ok',
+      fail: typeof repoName !== 'string' ? 'missing' : 'invalid'
+    },
+    {
+      test: targets.length,
+      message: 'At least one TARGET (e.g. `.` or `./package.json`)',
+      pass: 'ok',
+      fail: 'missing'
+    },
+    {
+      hide: apiToken,
+      test: apiToken,
+      message: 'This command requires an API token for access`)',
+      pass: 'ok',
+      fail: 'missing'
+    }
+  )
+  if (wasBadInput) {
     return
   }
 

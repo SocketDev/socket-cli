@@ -1,10 +1,9 @@
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handlePackageInfo } from './handle-package-info'
 import constants from '../../constants'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -55,14 +54,22 @@ async function run(
   const { all, json, markdown, strict } = cli.flags
   const [rawPkgName = ''] = cli.input
 
-  if (!rawPkgName || cli.input.length > 1) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    logger.fail(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-      - Expecting a package name ${!rawPkgName ? colors.red('(missing!)') : colors.green('(ok)')}\n
-      - Can only accept one package at a time ${cli.input.length > 1 ? colors.red('(got ' + cli.input.length + '!)') : colors.green('(ok)')}\n`)
+  const wasBadInput = handleBadInput(
+    {
+      test: rawPkgName,
+      message: 'Expecting a package name',
+      pass: 'ok',
+      fail: 'missing'
+    },
+    {
+      test: cli.input.length === 1,
+      hide: cli.input.length === 1,
+      message: 'Can only accept one package at a time',
+      pass: 'ok',
+      fail: 'got ' + cli.input.length
+    }
+  )
+  if (wasBadInput) {
     return
   }
 

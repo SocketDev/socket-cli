@@ -65,10 +65,9 @@ describe('socket organization list', async () => {
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[37mInput error\\x1b[39m\\x1b[49m: Please provide the required fields:
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m:
 
-        - Org name as the first argument \\x1b[31m(missing!)\\x1b[39m
-        - The json and markdown flags cannot be both set \\x1b[32m(ok)\\x1b[39m"
+          - Org name as the first argument (\\x1b[31mmissing\\x1b[39m)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if input bad').toBe(2)

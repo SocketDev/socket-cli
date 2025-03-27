@@ -1,7 +1,6 @@
 import process from 'node:process'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { confirm } from '@socketsecurity/registry/lib/prompts'
 
 import constants from '../../../../../constants'
 import { getAlertsMapFromArborist } from '../../../../../utils/lockfile/package-lock-json'
@@ -14,6 +13,7 @@ import type { SafeNode } from '../node'
 const {
   NPM,
   NPX,
+  SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_SAFE_WRAPPER,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIpc }
@@ -84,17 +84,10 @@ export class SafeArborist extends Arborist {
       __proto__: null,
       ...(args.length ? args[0] : undefined)
     } as ArboristReifyOptions
-    const safeWrapperName = options.dryRun
-      ? undefined
-      : await getIpc(SOCKET_CLI_SAFE_WRAPPER)
-    const isSafeNpm = safeWrapperName === NPM
-    const isSafeNpx = safeWrapperName === NPX
-    if (!safeWrapperName || (isSafeNpx && options['yes'])) {
+    const binName = await getIpc(SOCKET_CLI_SAFE_WRAPPER)
+    if (!binName) {
       return await this[kRiskyReify](...args)
     }
-
-    // Lazily access constants.spinner.
-    const { spinner } = constants
     await super.reify(
       {
         ...options,
@@ -104,25 +97,36 @@ export class SafeArborist extends Arborist {
       // @ts-ignore: TS gets grumpy about rest parameters.
       ...args.slice(1)
     )
+    // Lazily access constants.spinner.
+    const { spinner } = constants
+    const isSafeNpm = binName === NPM
+    const isSafeNpx = binName === NPX
     const alertsMap = await getAlertsMapFromArborist(this, {
       spinner,
-      include: {
-        existing: isSafeNpx,
-        unfixable: isSafeNpm
-      }
+      include:
+        options.dryRun ||
+        options['yes'] ||
+        // Lazily access constants.ENV[SOCKET_CLI_ACCEPT_RISKS].
+        constants.ENV[SOCKET_CLI_ACCEPT_RISKS]
+          ? {
+              blocked: true,
+              critical: false,
+              cve: false,
+              unfixable: false
+            }
+          : {
+              existing: isSafeNpx,
+              unfixable: isSafeNpm
+            }
     })
     if (alertsMap.size) {
+      process.exitCode = 1
       logAlertsMap(alertsMap, { output: process.stderr })
-      if (
-        !(await confirm({
-          message: 'Accept risks of installing these packages?',
-          default: false
-        }))
-      ) {
-        throw new Error('Socket npm exiting due to risks')
-      }
+      throw new Error(
+        `Socket ${binName} exiting due to risks.\nRerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1 to accept risks.`
+      )
     } else {
-      logger.success('Socket npm found no risks!')
+      logger.success(`Socket ${binName} found no risks!`)
     }
     return await this[kRiskyReify](...args)
   }

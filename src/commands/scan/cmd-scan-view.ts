@@ -1,6 +1,3 @@
-import { stripIndents } from 'common-tags'
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleScanView } from './handle-scan-view'
@@ -8,6 +5,7 @@ import { streamScan } from './streamScan'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { getConfigValue } from '../../utils/config'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -63,20 +61,22 @@ async function run(
   const scanId = (defaultOrgSlug ? cli.input[0] : cli.input[1]) || ''
   const file = (defaultOrgSlug ? cli.input[1] : cli.input[2]) || '-'
 
-  if (!orgSlug || !scanId) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    logger.fail(
-      stripIndents`
-      ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
-
-      ${defaultOrgSlug ? '' : `- Org name as the first argument ${!orgSlug ? colors.red('(missing!)') : colors.green('(ok)')}`}
-
-      - Scan ID to fetch as second argument ${!scanId ? colors.red('(missing!)') : colors.green('(ok)')}
-    `
-    )
+  const wasBadInput = handleBadInput(
+    {
+      hide: defaultOrgSlug,
+      test: orgSlug,
+      message: 'Org name as the first argument',
+      pass: 'ok',
+      fail: 'missing'
+    },
+    {
+      test: scanId,
+      message: 'Scan ID to delete',
+      pass: 'ok',
+      fail: 'missing'
+    }
+  )
+  if (wasBadInput) {
     return
   }
 

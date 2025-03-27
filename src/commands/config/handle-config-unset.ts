@@ -11,6 +11,5 @@ export async function handleConfigUnset({
   outputKind: 'json' | 'markdown' | 'text'
 }) {
   updateConfigValue(key, undefined)
-
   await outputConfigUnset(key, outputKind)
 }

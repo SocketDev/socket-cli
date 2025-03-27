@@ -9,24 +9,19 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { safeReadFileSync } from './fs'
 import constants from '../constants'
 
+const { LOCALAPPDATA, SOCKET_APP_DIR, XDG_DATA_HOME } = constants
+
 export interface LocalConfig {
   apiBaseUrl?: string | null | undefined
-  // @deprecated ; use apiToken
+  // @deprecated ; use apiToken. when loading a config, if this prop exists it
+  //               is deleted and set to apiToken instead, and then persisted.
+  //               should only happen once for legacy users.
   apiKey?: string | null | undefined
   apiProxy?: string | null | undefined
-  // apiToken replaced apiKey.
   apiToken?: string | null | undefined
   defaultOrg?: string
   enforcedOrgs?: string[] | readonly string[] | null | undefined
-  // Ignore.
-  test?: unknown
 }
-
-// Default app data folder env var on Win
-const LOCALAPPDATA = 'LOCALAPPDATA'
-// Default app data folder env var on Mac/Linux
-const XDG_DATA_HOME = 'XDG_DATA_HOME'
-const SOCKET_APP_DIR = 'socket/settings' // It used to be settings...
 
 export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
   ['apiBaseUrl', 'Base URL of the API endpoint'],
@@ -44,21 +39,22 @@ export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
 
 export const sensitiveConfigKeys: Set<keyof LocalConfig> = new Set(['apiToken'])
 
-let cachedConfig: LocalConfig | undefined
-// When using --config or SOCKET_CLI_CONFIG_OVERRIDE, do not persist the config
-let readOnlyConfig = false
-let configPath: string | undefined
-let warnedConfigPathWin32Missing = false
-let pendingSave = false
-
-export function overrideCachedConfig(config: unknown) {
-  cachedConfig = config as LocalConfig
-  readOnlyConfig = true
+let _cachedConfig: LocalConfig | undefined
+// When using --config or SOCKET_CLI_CONFIG_OVERRIDE, do not persist the config.
+let _readOnlyConfig = false
+export function overrideCachedConfig(config: object) {
+  _cachedConfig = { ...config } as LocalConfig
+  _readOnlyConfig = true
+  // Normalize apiKey to apiToken.
+  if (_cachedConfig['apiKey']) {
+    _cachedConfig['apiToken'] = _cachedConfig['apiKey']
+    delete _cachedConfig['apiKey']
+  }
 }
 
 function getConfigValues(): LocalConfig {
-  if (cachedConfig === undefined) {
-    cachedConfig = {} as LocalConfig
+  if (_cachedConfig === undefined) {
+    _cachedConfig = {} as LocalConfig
     // Order: env var > --config flag > file
     const configPath = getConfigPath()
     if (configPath) {
@@ -66,20 +62,29 @@ function getConfigValues(): LocalConfig {
       if (raw) {
         try {
           Object.assign(
-            cachedConfig,
+            _cachedConfig,
             JSON.parse(Buffer.from(raw, 'base64').toString())
           )
         } catch {
           logger.warn(`Failed to parse config at ${configPath}`)
+        }
+        // Normalize apiKey to apiToken and persist it.
+        // This is a one time migration per user.
+        if (_cachedConfig['apiKey']) {
+          const token = _cachedConfig['apiKey']
+          delete _cachedConfig['apiKey']
+          updateConfigValue('apiToken', token)
         }
       } else {
         fs.mkdirSync(path.dirname(configPath), { recursive: true })
       }
     }
   }
-  return cachedConfig
+  return _cachedConfig
 }
 
+let _configPath: string | undefined
+let _warnedConfigPathWin32Missing = false
 function getConfigPath(): string | undefined {
   // Get the OS app data folder:
   // - Win: %LOCALAPPDATA% or fail?
@@ -93,16 +98,18 @@ function getConfigPath(): string | undefined {
   // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
   // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
 
-  if (configPath === undefined) {
+  if (_configPath === undefined) {
     // Lazily access constants.WIN32.
     const { WIN32 } = constants
     let dataHome: string | undefined = WIN32
-      ? process.env[LOCALAPPDATA]
-      : process.env[XDG_DATA_HOME]
+      ? // Lazily access constants.ENV[LOCALAPPDATA]
+        constants.ENV[LOCALAPPDATA]
+      : // Lazily access constants.ENV[XDG_DATA_HOME]
+        constants.ENV[XDG_DATA_HOME]
     if (!dataHome) {
       if (WIN32) {
-        if (!warnedConfigPathWin32Missing) {
-          warnedConfigPathWin32Missing = true
+        if (!_warnedConfigPathWin32Missing) {
+          _warnedConfigPathWin32Missing = true
           logger.warn(`Missing %${LOCALAPPDATA}%`)
         }
       } else {
@@ -114,21 +121,19 @@ function getConfigPath(): string | undefined {
         )
       }
     }
-    configPath = dataHome ? path.join(dataHome, SOCKET_APP_DIR) : undefined
+    _configPath = dataHome ? path.join(dataHome, SOCKET_APP_DIR) : undefined
   }
-  return configPath
+  return _configPath
 }
 
 function normalizeConfigKey(key: keyof LocalConfig): keyof LocalConfig {
-  const normalizedKey = key === 'apiToken' ? 'apiKey' : key
-  if (
-    normalizedKey !== 'apiKey' &&
-    normalizedKey !== 'test' &&
-    !supportedConfigKeys.has(normalizedKey as keyof LocalConfig)
-  ) {
+  // Note: apiKey was the old name of the token. When we load a config with
+  //       property apiKey, we'll copy that to apiToken and delete the old property.
+  const normalizedKey = key === 'apiKey' ? 'apiToken' : key
+  if (!supportedConfigKeys.has(normalizedKey)) {
     throw new Error(`Invalid config key: ${normalizedKey}`)
   }
-  return normalizedKey as keyof LocalConfig
+  return normalizedKey
 }
 
 export function findSocketYmlSync() {
@@ -160,23 +165,25 @@ export function findSocketYmlSync() {
 export function getConfigValue<Key extends keyof LocalConfig>(
   key: Key
 ): LocalConfig[Key] {
-  return getConfigValues()[normalizeConfigKey(key) as Key]
+  const localConfig = getConfigValues()
+  return localConfig[normalizeConfigKey(key)] as LocalConfig[Key]
 }
 
+let _pendingSave = false
 export function updateConfigValue<Key extends keyof LocalConfig>(
   key: keyof LocalConfig,
   value: LocalConfig[Key]
 ): void {
   const localConfig = getConfigValues()
   localConfig[normalizeConfigKey(key) as Key] = value
-  if (readOnlyConfig) {
-    logger.error(
+  if (_readOnlyConfig) {
+    logger.warn(
       'Not persisting config change; current config overridden through env var or flag'
     )
-  } else if (!pendingSave) {
-    pendingSave = true
+  } else if (!_pendingSave) {
+    _pendingSave = true
     process.nextTick(() => {
-      pendingSave = false
+      _pendingSave = false
       const configPath = getConfigPath()
       if (configPath) {
         fs.writeFileSync(

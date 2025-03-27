@@ -66,7 +66,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(0)
+        expect(result['alerts']?.size).toBe(0)
       })
 
       it('should return a sick report with alert when an alert violates at error', () => {
@@ -130,7 +130,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(false)
-        expect(result.alerts.size).toBe(1)
+        expect(result['alerts']?.size).toBe(1)
       })
 
       it('should return a healthy report with alert when an alert violates at warn', () => {
@@ -194,7 +194,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(1)
+        expect(result['alerts']?.size).toBe(1)
       })
 
       it('should return a healthy report without alerts when an alert violates at monitor', () => {
@@ -233,7 +233,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(0)
+        expect(result['alerts']?.size).toBe(0)
       })
 
       it('should return a healthy report without alerts when an alert violates at ignore', () => {
@@ -272,7 +272,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(0)
+        expect(result['alerts']?.size).toBe(0)
       })
 
       it('should return a healthy report without alerts when an alert violates at defer', () => {
@@ -311,7 +311,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(0)
+        expect(result['alerts']?.size).toBe(0)
       })
 
       it('should return a healthy report without alerts when an alert has no policy value', () => {
@@ -348,7 +348,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(0)
+        expect(result['alerts']?.size).toBe(0)
       })
 
       it('should return a healthy report without alerts when an alert has no policy entry', () => {
@@ -383,7 +383,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(0)
+        expect(result['alerts']?.size).toBe(0)
       })
     })
 
@@ -424,7 +424,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(0)
+        expect(result['alerts']?.size).toBe(0)
       })
 
       it('should return a sick report with alert when an alert violates at error', () => {
@@ -488,7 +488,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(false)
-        expect(result.alerts.size).toBe(1)
+        expect(result['alerts']?.size).toBe(1)
       })
 
       it('should return a healthy report with alert when an alert violates at warn', () => {
@@ -552,7 +552,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(1)
+        expect(result['alerts']?.size).toBe(1)
       })
 
       it('should return a healthy report with alert when an alert violates at monitor', () => {
@@ -616,7 +616,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(1)
+        expect(result['alerts']?.size).toBe(1)
       })
 
       it('should return a healthy report with alert when an alert violates at ignore', () => {
@@ -680,7 +680,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(1)
+        expect(result['alerts']?.size).toBe(1)
       })
 
       it('should return a healthy report without alerts when an alert violates at defer', () => {
@@ -719,7 +719,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(0)
+        expect(result['alerts']?.size).toBe(0)
       })
 
       it('should return a healthy report without alerts when an alert has no policy value', () => {
@@ -756,7 +756,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(0)
+        expect(result['alerts']?.size).toBe(0)
       })
 
       it('should return a healthy report without alerts when an alert has no policy entry', () => {
@@ -791,7 +791,7 @@ describe('generate-report', () => {
           }
         `)
         expect(result.healthy).toBe(true)
-        expect(result.alerts.size).toBe(0)
+        expect(result['alerts']?.size).toBe(0)
       })
     })
   })

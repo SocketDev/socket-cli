@@ -1,12 +1,10 @@
-import { stripIndents } from 'common-tags'
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleViewRepo } from './handle-view-repo'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { getConfigValue } from '../../utils/config'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -62,30 +60,22 @@ async function run(
   const defaultOrgSlug = getConfigValue('defaultOrg')
   const orgSlug = defaultOrgSlug || cli.input[0] || ''
 
-  if (!repoName || typeof repoName !== 'string' || !orgSlug) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    logger.fail(
-      stripIndents`
-      ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
-
-      ${
-        defaultOrgSlug
-          ? ''
-          : `- Org name as the first argument ${
-              !orgSlug ? colors.red('(missing!)') : colors.green('(ok)')
-            }\n`
-      }- Repository name using --repoName ${
-        !repoName
-          ? colors.red('(missing!)')
-          : typeof repoName !== 'string'
-            ? colors.red('(invalid!)')
-            : colors.green('(ok)')
-      }
-    `
-    )
+  const wasBadInput = handleBadInput(
+    {
+      hide: defaultOrgSlug,
+      test: orgSlug,
+      message: 'Org name as the first argument',
+      pass: 'ok',
+      fail: 'missing'
+    },
+    {
+      test: repoName,
+      message: 'Repository name using --repoName',
+      pass: 'ok',
+      fail: typeof repoName !== 'string' ? 'missing' : 'invalid'
+    }
+  )
+  if (wasBadInput) {
     return
   }
 
@@ -96,7 +86,7 @@ async function run(
 
   await handleViewRepo(
     orgSlug,
-    repoName,
+    String(repoName),
     json ? 'json' : markdown ? 'markdown' : 'text'
   )
 }

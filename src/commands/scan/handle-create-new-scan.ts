@@ -45,7 +45,9 @@ export async function handleCreateNewScan({
   }
 
   const supportedFileNames = await fetchSupportedScanFileNames()
-  if (!supportedFileNames) return
+  if (!supportedFileNames) {
+    return
+  }
 
   const packagePaths = await getPackageFilesForScan(
     cwd,
@@ -81,7 +83,9 @@ export async function handleCreateNewScan({
     tmp,
     cwd
   )
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputCreateNewScan(data)
 }
