@@ -6,7 +6,9 @@ export async function handlePurlDeepScore(
   outputKind: 'json' | 'markdown' | 'text'
 ) {
   const data = await fetchPurlDeepScore(purl)
-  if (!data) return
+  if (!data) {
+    return
+  }
 
   await outputPurlScore(purl, data, outputKind)
 }
