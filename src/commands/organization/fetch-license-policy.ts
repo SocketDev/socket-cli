@@ -5,9 +5,9 @@ import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
-export async function fetchSecurityPolicy(
+export async function fetchLicensePolicy(
   orgSlug: string
-): Promise<SocketSdkReturnType<'getOrgSecurityPolicy'>['data'] | undefined> {
+): Promise<SocketSdkReturnType<'getOrgLicensePolicy'>['data'] | undefined> {
   const apiToken = getDefaultToken()
   if (!apiToken) {
     throw new AuthError(
@@ -15,29 +15,29 @@ export async function fetchSecurityPolicy(
     )
   }
 
-  return await fetchSecurityPolicyWithToken(apiToken, orgSlug)
+  return await fetchLicensePolicyWithToken(apiToken, orgSlug)
 }
 
-async function fetchSecurityPolicyWithToken(
+async function fetchLicensePolicyWithToken(
   apiToken: string,
   orgSlug: string
-): Promise<SocketSdkReturnType<'getOrgSecurityPolicy'>['data'] | undefined> {
+): Promise<SocketSdkReturnType<'getOrgLicensePolicy'>['data'] | undefined> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
   const sockSdk = await setupSdk(apiToken)
 
-  spinner.start('Fetching organization security policy...')
+  spinner.start('Fetching organization license policy...')
 
   const result = await handleApiCall(
-    sockSdk.getOrgSecurityPolicy(orgSlug),
+    sockSdk.getOrgLicensePolicy(orgSlug),
     'looking up organization quota'
   )
 
-  spinner?.successAndStop('Received organization security policy response.')
+  spinner.successAndStop('Received organization license policy response.')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrgSecurityPolicy', result)
+    handleUnsuccessfulApiResponse('getOrgLicensePolicy', result)
     return
   }
 

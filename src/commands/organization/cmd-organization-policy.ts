@@ -1,3 +1,4 @@
+import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license'
 import { cmdOrganizationPolicyPolicy } from './cmd-organization-policy-security'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
@@ -15,7 +16,8 @@ export const cmdOrganizationPolicy: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        security: cmdOrganizationPolicyPolicy
+        security: cmdOrganizationPolicyPolicy,
+        license: cmdOrganizationPolicyLicense
       },
       {
         argv,
