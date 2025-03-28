@@ -4,7 +4,7 @@ import { mdTableOfPairs } from '../../utils/markdown'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
-export async function getSecurityPolicy(
+export async function outputSecurityPolicy(
   data: SocketSdkReturnType<'getOrgSecurityPolicy'>['data'],
   outputKind: 'text' | 'json' | 'markdown'
 ): Promise<void> {
