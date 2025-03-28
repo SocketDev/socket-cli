@@ -77,11 +77,19 @@ export function getDefaultApiBaseUrl(): string | undefined {
 }
 
 export async function queryApi(path: string, apiToken: string) {
-  const API_V0_URL = getDefaultApiBaseUrl()
-  return await fetch(`${API_V0_URL}/${path}`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Basic ${btoa(`${apiToken}:`)}`
+  const API_V0_URL = getDefaultApiBaseUrl() || ''
+  if (!API_V0_URL) {
+    logger.warn(
+      'API endpoint is not set and default was empty. Request is likely to fail.'
+    )
+  }
+  return await fetch(
+    `${API_V0_URL}${API_V0_URL.endsWith('/') ? '' : '/'}${path}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Basic ${btoa(`${apiToken}:`)}`
+      }
     }
-  })
+  )
 }

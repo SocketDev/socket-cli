@@ -1,3 +1,4 @@
+import { cmdPackageScore } from './cmd-package-score'
 import { cmdPackageShallow } from './cmd-package-shallow'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands'
 
@@ -11,14 +12,15 @@ export const cmdPackage: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
+        score: cmdPackageScore,
         shallow: cmdPackageShallow
       },
       {
         aliases: {
-          pkg: {
+          deep: {
             description,
             hidden: true,
-            argv: []
+            argv: ['score']
           }
         },
         argv,
