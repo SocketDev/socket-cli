@@ -199,7 +199,7 @@ export async function outputPurlScore(
       logger.log('- Vulnerability: ' + score.vulnerability)
       logger.log('- License: ' + score.license)
       logger.log('')
-      logger.log('### Capabilities')
+      logger.log('### Lowest score source')
       logger.log('')
       logger.log(
         'These are the packages with the lowest recorded score. If there is more than one with the lowest score, just one is shown here. This may help you figure out the source of low scores.'
