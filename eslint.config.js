@@ -8,7 +8,9 @@ const {
 } = require('@eslint/compat')
 const js = require('@eslint/js')
 const tsParser = require('@typescript-eslint/parser')
-const { createOxcImportResolver } = require('eslint-import-resolver-oxc')
+const {
+  createTypeScriptImportResolver
+} = require('eslint-import-resolver-typescript')
 const importXPlugin = require('eslint-plugin-import-x')
 const nodePlugin = require('eslint-plugin-n')
 const sortDestructureKeysPlugin = require('eslint-plugin-sort-destructure-keys')
@@ -118,11 +120,8 @@ function getImportXFlatConfigs(isEsm) {
       settings: {
         ...origImportXFlatConfigs.typescript.settings,
         'import-x/resolver-next': [
-          createOxcImportResolver({
-            tsConfig: {
-              configFile: rootTsConfigPath,
-              references: 'auto'
-            }
+          createTypeScriptImportResolver({
+            project: rootTsConfigPath
           })
         ]
       },
