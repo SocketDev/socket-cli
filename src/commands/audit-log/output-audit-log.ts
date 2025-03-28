@@ -88,7 +88,7 @@ async function outputAsJson(
   logger.log(json)
 }
 
-async function outputAsMarkdown(
+export async function outputAsMarkdown(
   auditLogs: SocketSdkReturnType<'getAuditLogEvents'>['data']['results'],
   orgSlug: string,
   logType: string,

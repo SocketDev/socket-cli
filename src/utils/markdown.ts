@@ -31,7 +31,8 @@ export function mdTable<T extends Array<Record<string, string>>>(
   logs: T,
   // This is saying "an array of strings and the strings are a valid key of elements of T"
   // In turn, T is defined above as the audit log event type from our OpenAPI docs.
-  cols: Array<string & keyof T[number]>
+  cols: Array<string & keyof T[number]>,
+  titles: string[] = cols
 ): string {
   // Max col width required to fit all data in that column
   const cws = cols.map(col => col.length)
@@ -40,7 +41,11 @@ export function mdTable<T extends Array<Record<string, string>>>(
     for (let i = 0, { length } = cols; i < length; i += 1) {
       // @ts-ignore
       const val: unknown = log[cols[i] ?? ''] ?? ''
-      cws[i] = Math.max(cws[i] ?? 0, String(val).length)
+      cws[i] = Math.max(
+        cws[i] ?? 0,
+        String(val).length,
+        (titles[i] || '').length
+      )
     }
   }
 
@@ -50,8 +55,8 @@ export function mdTable<T extends Array<Record<string, string>>>(
   }
 
   let header = '|'
-  for (let i = 0, { length } = cols; i < length; i += 1) {
-    header += ' ' + String(cols[i]).padEnd(cws[i] ?? 0, ' ') + ' |'
+  for (let i = 0, { length } = titles; i < length; i += 1) {
+    header += ' ' + String(titles[i]).padEnd(cws[i] ?? 0, ' ') + ' |'
   }
 
   let body = ''
