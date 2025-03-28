@@ -1,5 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { mdTable } from '../../utils/markdown'
+
 export async function outputPurlScore(
   purl: string,
   data: unknown,
@@ -167,9 +169,9 @@ export async function outputPurlScore(
         logger.log('These are the alerts found for this package:')
       }
       logger.log('')
-      selfAlerts.forEach(alert => {
-        logger.log(`- [${alert.severity}] ${alert.name}`)
-      })
+      logger.log(
+        mdTable(selfAlerts, ['severity', 'name'], ['Severity', 'Alert Name'])
+      )
     } else {
       logger.log('There are currently no alerts for this package.')
     }
@@ -231,11 +233,14 @@ export async function outputPurlScore(
       if (alerts.length) {
         logger.log('These are the alerts found:')
         logger.log('')
-        alerts.forEach(alert => {
-          logger.log(
-            `- [${alert.severity}] ${alert.name} (at least in ${alert.example})`
+
+        logger.log(
+          mdTable(
+            alerts,
+            ['severity', 'name', 'example'],
+            ['Severity', 'Alert Name', 'Example package reporting it']
           )
-        })
+        )
       } else {
         logger.log(
           'This package had no alerts and neither did any of its direct/transitive dependencies.'
