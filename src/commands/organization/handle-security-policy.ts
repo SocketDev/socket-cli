@@ -1,5 +1,5 @@
 import { fetchSecurityPolicy } from './fetch-security-policy'
-import { getSecurityPolicy } from './output-security-policy'
+import { outputSecurityPolicy } from './output-security-policy'
 
 export async function handleSecurityPolicy(
   orgSlug: string,
@@ -10,5 +10,5 @@ export async function handleSecurityPolicy(
     return
   }
 
-  await getSecurityPolicy(data, outputKind)
+  await outputSecurityPolicy(data, outputKind)
 }
