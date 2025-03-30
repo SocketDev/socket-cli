@@ -3,7 +3,7 @@
     "@apideck/better-ajv-errors": "0.3.6",
     "@pnpm/lockfile.detect-dep-types": "^1001.0.6",
     "@pnpm/lockfile.fs": "^1001.1.8",
-    "@pnpm/logger": "^5.2.0",
+    "@pnpm/logger": "^1000.0.0",
     "@socketregistry/hyrious__bun.lockb": "1.0.16",
     "@socketregistry/indent-string": "1.0.12",
     "@socketregistry/is-interactive": "1.0.5",
@@ -29,7 +29,7 @@
     "tiny-updater": "3.5.3",
     "tinyglobby": "0.2.12",
     "which": "5.0.0",
-    "yaml": "2.7.0",
+    "yaml": "2.7.1",
     "yargs-parser": "21.1.1",
     "yoctocolors-cjs": "2.1.2"
   },
