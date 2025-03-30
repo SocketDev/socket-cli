@@ -51,7 +51,7 @@ export async function attemptLogin(
   const enforcedChoices: OrgChoices = Object.values(orgs.organizations)
     .filter(org => org?.plan === 'enterprise')
     .map(org => ({
-      name: org.name,
+      name: org.name ?? 'undefined',
       value: org.id
     }))
 
