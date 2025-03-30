@@ -18,7 +18,6 @@ export default () => {
   const { rootSrcPath } = constants
   return baseConfig({
     input: {
-      'alert-rules': `${rootSrcPath}/utils/alert/rules.ts`,
       errors: `${rootSrcPath}/utils/errors.ts`,
       'path-resolve': `${rootSrcPath}/utils/path-resolve.ts`
     },
