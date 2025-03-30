@@ -5,7 +5,7 @@ import { addArtifactToAlertsMap } from '../socket-package-alert'
 
 import type { CompactSocketArtifact } from '../alert/artifact'
 import type { AlertIncludeFilter, AlertsByPkgId } from '../socket-package-alert'
-import type { Lockfile } from '@pnpm/lockfile-file'
+import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type GetAlertsMapFromPnpmLockfileOptions = {
@@ -15,7 +15,7 @@ export type GetAlertsMapFromPnpmLockfileOptions = {
 }
 
 export async function getAlertsMapFromPnpmLockfile(
-  lockfile: Lockfile,
+  lockfile: LockfileObject,
   options?: GetAlertsMapFromPnpmLockfileOptions | undefined
 ): Promise<AlertsByPkgId> {
   const { include: _include, spinner } = {

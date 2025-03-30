@@ -72,8 +72,9 @@
   },
   "dependencies": {
     "@apideck/better-ajv-errors": "0.3.6",
-    "@pnpm/lockfile-file": "^9.1.3",
-    "@pnpm/lockfile.detect-dep-types": "^1001.0.5",
+    "@pnpm/lockfile.detect-dep-types": "^1001.0.6",
+    "@pnpm/lockfile.fs": "^1001.1.8",
+    "@pnpm/logger": "^5.2.0",
     "@socketregistry/hyrious__bun.lockb": "1.0.16",
     "@socketregistry/indent-string": "1.0.12",
     "@socketregistry/is-interactive": "1.0.5",
