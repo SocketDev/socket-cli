@@ -1,4 +1,4 @@
-import { readWantedLockfile } from '@pnpm/lockfile-file'
+import { readWantedLockfile } from '@pnpm/lockfile.fs'
 
 import { getManifestData } from '@socketsecurity/registry'
 import {
