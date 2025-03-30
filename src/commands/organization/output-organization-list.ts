@@ -39,7 +39,7 @@ export async function outputOrganizationList(
       let mw2 = 2
       let mw3 = 4
       for (const o of organizations) {
-        mw1 = Math.max(mw1, o.name.length)
+        mw1 = Math.max(mw1, o.name?.length ?? 0)
         mw2 = Math.max(mw2, o.id.length)
         mw3 = Math.max(mw3, o.plan.length)
       }
@@ -70,7 +70,7 @@ export async function outputOrganizationList(
       // Just dump
       for (const o of organizations) {
         logger.log(
-          `- Name: ${colors.bold(o.name)}, ID: ${colors.bold(o.id)}, Plan: ${colors.bold(o.plan)}`
+          `- Name: ${colors.bold(o.name ?? 'undefined')}, ID: ${colors.bold(o.id)}, Plan: ${colors.bold(o.plan)}`
         )
       }
     }

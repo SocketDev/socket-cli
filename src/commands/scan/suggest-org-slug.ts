@@ -16,18 +16,22 @@ export async function suggestOrgSlug(): Promise<string | void> {
     const proceed = await select<string>({
       message:
         'Missing org name; do you want to use any of these orgs for this scan?',
-      choices: Array.from(Object.values(result.data.organizations))
-        .map(({ name: slug }) => ({
-          name: 'Yes [' + slug + ']',
-          value: slug,
-          description: `Use "${slug}" as the organization`
-        }))
-        .concat({
+      choices: [
+        ...Object.values(result.data.organizations).map(org => {
+          const slug = org.name ?? 'undefined'
+          return {
+            name: `Yes [${slug}]`,
+            value: slug,
+            description: `Use "${slug}" as the organization`
+          }
+        }),
+        {
           name: 'No',
           value: '',
           description:
             'Do not use any of these organizations (will end in a no-op)'
-        })
+        }
+      ]
     })
     if (proceed) {
       return proceed
