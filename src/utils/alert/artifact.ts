@@ -29,10 +29,7 @@ export type ArtifactAlertUpgrade = Remap<
 export type CveAlertType = 'cve' | 'mediumCVE' | 'mildCVE' | 'criticalCVE'
 
 export type CompactSocketArtifactAlert = Remap<
-  Omit<
-    SocketArtifactAlert,
-    'action' | 'actionPolicyIndex' | 'category' | 'end' | 'file' | 'start'
-  >
+  Omit<SocketArtifactAlert, 'category' | 'end' | 'file' | 'start'>
 >
 
 export type CompactSocketArtifact = Remap<
