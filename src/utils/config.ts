@@ -136,9 +136,8 @@ function normalizeConfigKey(key: keyof LocalConfig): keyof LocalConfig {
   return normalizedKey
 }
 
-export function findSocketYmlSync() {
+export function findSocketYmlSync(dir = process.cwd()) {
   let prevDir = null
-  let dir = process.cwd()
   while (dir !== prevDir) {
     let ymlPath = path.join(dir, 'socket.yml')
     let yml = safeReadFileSync(ymlPath)
