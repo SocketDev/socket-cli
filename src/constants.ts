@@ -47,6 +47,7 @@ type ENV = Remap<
       SOCKET_CLI_ACCEPT_RISKS: boolean
       SOCKET_CLI_DEBUG: boolean
       SOCKET_CLI_NO_API_TOKEN: boolean
+      SOCKET_CLI_VIEW_ALL_RISKS: boolean
       SOCKET_SECURITY_API_BASE_URL: string
       SOCKET_SECURITY_API_TOKEN: string
       XDG_DATA_HOME: string
@@ -110,6 +111,7 @@ type Constants = Remap<
     readonly SOCKET_CLI_SENTRY_NPM_BIN_NAME: 'socket-npm-with-sentry'
     readonly SOCKET_CLI_SENTRY_NPX_BIN_NAME: 'socket-npx-with-sentry'
     readonly SOCKET_CLI_SENTRY_PACKAGE_NAME: '@socketsecurity/cli-with-sentry'
+    readonly SOCKET_CLI_VIEW_ALL_RISKS: 'SOCKET_CLI_VIEW_ALL_RISKS'
     readonly SOCKET_SECURITY_API_BASE_URL: 'SOCKET_SECURITY_API_BASE_URL'
     readonly SOCKET_SECURITY_API_TOKEN: 'SOCKET_SECURITY_API_TOKEN'
     readonly VLT: 'vlt'
@@ -183,6 +185,7 @@ const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
 const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli-with-sentry`
+const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
 const SOCKET_SECURITY_API_BASE_URL = 'SOCKET_SECURITY_API_BASE_URL'
 const SOCKET_SECURITY_API_TOKEN = 'SOCKET_SECURITY_API_TOKEN'
 const VLT = 'vlt'
@@ -221,12 +224,14 @@ const LAZY_ENV = () => {
     // non-roaming application data, like temporary files, cached data, and program
     // settings, that are specific to the current machine and user.
     LOCALAPPDATA: envAsString(env['LOCALAPPDATA']),
-    // Flag to accepts risks of previous safe npm/npx run.
+    // Flag to accepts risks of safe-npm and safe-npx run.
     SOCKET_CLI_ACCEPT_RISKS: envAsBoolean(env['SOCKET_CLI_ACCEPT_RISKS']),
     // Flag to help debug Socket CLI.
     SOCKET_CLI_DEBUG: envAsBoolean(env['SOCKET_CLI_DEBUG']),
     // Flag to make the default API token `undefined`.
     SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN']),
+    // Flag to view all risks of safe-npm and safe-npx run.
+    SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env['SOCKET_CLI_VIEW_ALL_RISKS']),
     // Flag to change the base URL for all API-calls.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_SECURITY_API_BASE_URL: envAsString(
@@ -386,6 +391,7 @@ const constants = createConstantsObject(
     SOCKET_CLI_SENTRY_NPM_BIN_NAME,
     SOCKET_CLI_SENTRY_NPX_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
+    SOCKET_CLI_VIEW_ALL_RISKS,
     SOCKET_SECURITY_API_BASE_URL,
     SOCKET_SECURITY_API_TOKEN,
     VLT,

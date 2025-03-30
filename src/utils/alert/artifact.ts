@@ -1,17 +1,23 @@
 import constants from '../../constants'
 
 import type { Remap } from '@socketsecurity/registry/lib/objects'
-import type { components } from '@socketsecurity/sdk/types/api'
+import type { components, operations } from '@socketsecurity/sdk/types/api'
+
+export type ALERT_TYPE = keyof NonNullable<
+  operations['getOrgSecurityPolicy']['responses']['200']['content']['application/json']['securityPolicyRules']
+>
+
+export type CVE_ALERT_TYPE = 'cve' | 'mediumCVE' | 'mildCVE' | 'criticalCVE'
 
 export type ArtifactAlertCve = Remap<
   Omit<CompactSocketArtifactAlert, 'type'> & {
-    type: CveAlertType
+    type: CVE_ALERT_TYPE
   }
 >
 
 export type ArtifactAlertCveFixable = Remap<
   Omit<CompactSocketArtifactAlert, 'props' | 'type'> & {
-    type: CveAlertType
+    type: CVE_ALERT_TYPE
     props: {
       firstPatchedVersionIdentifier: string
       vulnerableVersionRange: string
@@ -26,8 +32,6 @@ export type ArtifactAlertUpgrade = Remap<
   }
 >
 
-export type CveAlertType = 'cve' | 'mediumCVE' | 'mildCVE' | 'criticalCVE'
-
 export type CompactSocketArtifactAlert = Remap<
   Omit<SocketArtifactAlert, 'category' | 'end' | 'file' | 'start'>
 >
@@ -38,10 +42,16 @@ export type CompactSocketArtifact = Remap<
   }
 >
 
-export type SocketArtifact = components['schemas']['SocketArtifact']
+export type SocketArtifact = Remap<
+  Omit<components['schemas']['SocketArtifact'], 'alerts'> & {
+    alerts?: SocketArtifactAlert[]
+  }
+>
 
 export type SocketArtifactAlert = Remap<
-  Omit<components['schemas']['SocketAlert'], 'props'> & {
+  Omit<components['schemas']['SocketAlert'], 'action' | 'props' | 'type'> & {
+    type: ALERT_TYPE
+    action?: 'error' | 'monitor' | 'warn' | 'ignore'
     props?: any | undefined
   }
 >

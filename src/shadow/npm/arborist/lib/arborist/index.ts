@@ -1,5 +1,7 @@
 import process from 'node:process'
 
+import { stripIndents } from 'common-tags'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../../../../constants'
@@ -15,6 +17,7 @@ const {
   NPX,
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_SAFE_WRAPPER,
+  SOCKET_CLI_VIEW_ALL_RISKS,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIpc }
 } = constants
@@ -121,9 +124,17 @@ export class SafeArborist extends Arborist {
     })
     if (alertsMap.size) {
       process.exitCode = 1
-      logAlertsMap(alertsMap, { output: process.stderr })
+      logAlertsMap(alertsMap, {
+        // Lazily access constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS].
+        hideAt: constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS] ? 'none' : 'middle',
+        output: process.stderr
+      })
       throw new Error(
-        `Socket ${binName} exiting due to risks.\nRerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1 to accept risks.`
+        stripIndents`
+          Socket ${binName} exiting due to risks.
+          To view all risks rerun with environment variable ${SOCKET_CLI_VIEW_ALL_RISKS}=1.
+          To accept risks rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.
+        `
       )
     } else {
       logger.success(`Socket ${binName} found no risks!`)
