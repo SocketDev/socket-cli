@@ -7,19 +7,20 @@ import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
-import {
-  CompactSocketArtifact,
-  CompactSocketArtifactAlert,
-  isArtifactAlertCve
-} from './alert/artifact'
+import { isArtifactAlertCve } from './alert/artifact'
 import { ALERT_FIX_TYPE } from './alert/fix'
-import { uxLookup } from './alert/rules'
 import { ALERT_SEVERITY } from './alert/severity'
 import { ColorOrMarkdown } from './color-or-markdown'
 import { getSocketDevPackageOverviewUrl } from './socket-url'
 import { getTranslations } from './translations'
 import constants from '../constants'
+import { findSocketYmlSync } from './config'
 
+import type {
+  ALERT_TYPE,
+  CompactSocketArtifact,
+  CompactSocketArtifactAlert
+} from './alert/artifact'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export enum ALERT_SEVERITY_COLOR {
@@ -29,7 +30,7 @@ export enum ALERT_SEVERITY_COLOR {
   low = 'white'
 }
 
-export const enum ALERT_SEVERITY_ORDER {
+export enum ALERT_SEVERITY_ORDER {
   critical = 0,
   high = 1,
   middle = 2,
@@ -44,7 +45,6 @@ export type SocketPackageAlert = {
   type: string
   blocked: boolean
   critical: boolean
-  display: boolean
   fixable: boolean
   raw: CompactSocketArtifactAlert
   upgradable: boolean
@@ -55,6 +55,10 @@ export type AlertsByPkgId = Map<string, SocketPackageAlert[]>
 const { CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER, NPM } = constants
 
 const format = new ColorOrMarkdown(false)
+
+function alertsHaveBlocked(alerts: SocketPackageAlert[]): boolean {
+  return alerts.find(a => a.blocked) !== undefined
+}
 
 function alertsHaveSeverity(
   alerts: SocketPackageAlert[],
@@ -84,7 +88,8 @@ function getAlertSeverityOrder(alert: SocketPackageAlert): number {
 }
 
 function getAlertsSeverityOrder(alerts: SocketPackageAlert[]): number {
-  return alertsHaveSeverity(alerts, ALERT_SEVERITY.critical)
+  return alertsHaveBlocked(alerts) ||
+    alertsHaveSeverity(alerts, ALERT_SEVERITY.critical)
     ? 0
     : alertsHaveSeverity(alerts, ALERT_SEVERITY.high)
       ? 1
@@ -96,29 +101,46 @@ function getAlertsSeverityOrder(alerts: SocketPackageAlert[]): number {
 }
 
 export type RiskCounts = {
+  critical: number
+  high: number
   middle: number
   low: number
 }
 
 function getHiddenRiskCounts(hiddenAlerts: SocketPackageAlert[]): RiskCounts {
-  let hiddenMidCount = 0
-  let hiddenLowCount = 0
+  const riskCounts = {
+    critical: 0,
+    high: 0,
+    middle: 0,
+    low: 0
+  }
   for (const alert of hiddenAlerts) {
-    const order = getAlertSeverityOrder(alert)
-    if (order === ALERT_SEVERITY_ORDER.middle) {
-      hiddenMidCount += 1
-    } else if (order === ALERT_SEVERITY_ORDER.low) {
-      hiddenLowCount += 1
+    switch (getAlertSeverityOrder(alert)) {
+      case ALERT_SEVERITY_ORDER.critical:
+        riskCounts.critical += 1
+        break
+      case ALERT_SEVERITY_ORDER.high:
+        riskCounts.high += 1
+        break
+      case ALERT_SEVERITY_ORDER.middle:
+        riskCounts.middle += 1
+        break
+      case ALERT_SEVERITY_ORDER.low:
+        riskCounts.low += 1
+        break
     }
   }
-  return {
-    middle: hiddenMidCount,
-    low: hiddenLowCount
-  }
+  return riskCounts
 }
 
 function getHiddenRisksDescription(riskCounts: RiskCounts): string {
   const descriptions: string[] = []
+  if (riskCounts.critical) {
+    descriptions.push(`${riskCounts.critical} ${getSeverityLabel('critical')}`)
+  }
+  if (riskCounts.high) {
+    descriptions.push(`${riskCounts.high} ${getSeverityLabel('high')}`)
+  }
   if (riskCounts.middle) {
     descriptions.push(`${riskCounts.middle} ${getSeverityLabel('middle')}`)
   }
@@ -181,14 +203,22 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
   const { version } = artifact
   const pkgId = `${name}@${version}`
   const major = semver.major(version)
+  const socketYml = findSocketYmlSync()
+  const enabledState = {
+    __proto__: null,
+    ...socketYml?.parsed.issueRules
+  } as Partial<Record<ALERT_TYPE, boolean>>
   let sockPkgAlerts: SocketPackageAlert[] = []
   for (const alert of artifact.alerts) {
-    // eslint-disable-next-line no-await-in-loop
-    const ux = await uxLookup({
-      package: { name, version },
-      alert: { type: alert.type }
-    })
-    const blocked = ux.block
+    const action = alert.action ?? ''
+    const enabledFlag = enabledState[alert.type]
+    if (
+      (action === 'ignore' && enabledFlag !== true) ||
+      enabledFlag === false
+    ) {
+      continue
+    }
+    const blocked = action === 'error'
     const critical = alert.severity === ALERT_SEVERITY.critical
     const cve = isArtifactAlertCve(alert)
     const fixType = alert.fix?.type ?? ''
@@ -210,7 +240,6 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
         type: alert.type,
         blocked,
         critical,
-        display: ux.display,
         fixable,
         raw: alert,
         upgradable
@@ -326,6 +355,7 @@ export function getCveInfoByAlertsMap(
 }
 
 export type LogAlertsMapOptions = {
+  hideAt?: `${ALERT_SEVERITY}` | 'none' | undefined
   output?: NodeJS.WriteStream | undefined
 }
 
@@ -333,7 +363,7 @@ export function logAlertsMap(
   alertsMap: AlertsByPkgId,
   options: LogAlertsMapOptions
 ) {
-  const { output = process.stderr } = {
+  const { hideAt = 'middle', output = process.stderr } = {
     __proto__: null,
     ...options
   } as LogAlertsMapOptions
@@ -342,11 +372,16 @@ export function logAlertsMap(
     (a, b) => getAlertsSeverityOrder(a[1]) - getAlertsSeverityOrder(b[1])
   )
   const hiddenEntries: typeof sortedEntries = []
-  for (let i = 0, { length } = sortedEntries; i < length; i += 1) {
+  for (
+    let i = 0, prevDimmed = false, { length } = sortedEntries;
+    i < length;
+    i += 1
+  ) {
     const { 0: pkgId, 1: alerts } = sortedEntries[i]!
     const hiddenAlerts: typeof alerts = []
     const filteredAlerts = alerts.filter(a => {
-      const keep = getAlertSeverityOrder(a) <= ALERT_SEVERITY_ORDER.high
+      const keep =
+        a.blocked || getAlertSeverityOrder(a) < ALERT_SEVERITY_ORDER[hideAt]
       if (!keep) {
         hiddenAlerts.push(a)
       }
@@ -358,13 +393,18 @@ export function logAlertsMap(
     if (!filteredAlerts.length) {
       continue
     }
-    const lines = new Set()
+    const lines = new Set<string>()
     const sortedAlerts = filteredAlerts.sort(alertSeverityComparator)
+    const isDimmed = !sortedAlerts.find(
+      a => a.blocked || getAlertSeverityOrder(a) < ALERT_SEVERITY_ORDER.middle
+    )
     for (const alert of sortedAlerts) {
       const { type } = alert
       const severity = alert.raw.severity ?? ''
       const attributes = [
-        ...(severity ? [colors[ALERT_SEVERITY_COLOR[severity]](severity)] : []),
+        ...(severity
+          ? [colors[ALERT_SEVERITY_COLOR[severity]](getSeverityLabel(severity))]
+          : []),
         ...(alert.blocked ? [colors.bold(colors.red('blocked'))] : []),
         ...(alert.fixable ? ['fixable'] : [])
       ]
@@ -376,21 +416,29 @@ export function logAlertsMap(
       const info = (translations.alerts as any)[type]
       const title = info?.title ?? type
       const maybeDesc = info?.description ? ` - ${info.description}` : ''
+      const content = `${title}${maybeAttributes}${maybeDesc}`
       // TODO: emoji seems to mis-align terminals sometimes
-      lines.add(`  ${title}${maybeAttributes}${maybeDesc}`)
+      if (isDimmed) {
+        lines.add(`  ${colors.dim(content)}`)
+      } else {
+        lines.add(`  ${content}`)
+      }
     }
 
     const purlObj = PackageURL.fromString(`pkg:npm/${pkgId}`)
-    output.write(
-      `${i ? '\n' : ''}${format.hyperlink(
-        pkgId,
-        getSocketDevPackageOverviewUrl(
-          NPM,
-          resolvePackageName(purlObj),
-          purlObj.version
-        )
-      )}:\n`
+    const hyperlink = format.hyperlink(
+      pkgId,
+      getSocketDevPackageOverviewUrl(
+        NPM,
+        resolvePackageName(purlObj),
+        purlObj.version
+      )
     )
+    if (isDimmed) {
+      output.write(`${prevDimmed ? '' : '\n'}${colors.dim(`${hyperlink}:`)}\n`)
+    } else {
+      output.write(`${i ? '\n' : ''}${hyperlink}:\n`)
+    }
     for (const line of lines) {
       output.write(`${line}\n`)
     }
@@ -398,28 +446,34 @@ export function logAlertsMap(
     if (hiddenAlertsCount) {
       if (hiddenAlertsCount === 1) {
         output.write(
-          `  +1 Hidden ${getSeverityLabel(hiddenAlerts[0]!.raw.severity ?? 'low')} risk alert\n`
+          `  ${colors.dim(`+1 Hidden ${getSeverityLabel(hiddenAlerts[0]!.raw.severity ?? 'low')} risk alert`)}\n`
         )
       } else {
         output.write(
-          `  +${hiddenAlertsCount} Hidden alerts ${colors.italic(getHiddenRisksDescription(getHiddenRiskCounts(hiddenAlerts)))}\n`
+          `  ${colors.dim(`+${hiddenAlertsCount} Hidden alerts ${colors.italic(getHiddenRisksDescription(getHiddenRiskCounts(hiddenAlerts)))}`)}\n`
         )
       }
     }
+    prevDimmed = isDimmed
   }
   const { length: hiddenEntriesCount } = hiddenEntries
   if (hiddenEntriesCount) {
     const totalRiskCounts = {
+      critical: 0,
+      high: 0,
       middle: 0,
       low: 0
     }
     for (const { 1: alerts } of hiddenEntries) {
       const riskCounts = getHiddenRiskCounts(alerts)
+      totalRiskCounts.critical += riskCounts.critical
+      totalRiskCounts.high += riskCounts.high
       totalRiskCounts.middle += riskCounts.middle
       totalRiskCounts.low += riskCounts.low
     }
     output.write(
-      `\n+${hiddenEntriesCount} Packages with hidden alerts ${colors.italic(getHiddenRisksDescription(totalRiskCounts))}\n\n`
+      `\n${colors.dim(`+${hiddenEntriesCount} Packages with hidden alerts ${colors.italic(getHiddenRisksDescription(totalRiskCounts))}`)}\n`
     )
   }
+  output.write('\n')
 }
