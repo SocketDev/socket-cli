@@ -133,3 +133,67 @@ Index: /blessed/lib/tput.js
          break;
      }
  
+Index: /blessed/vendor/tng.js
+===================================================================
+--- /blessed/vendor/tng.js
++++ /blessed/vendor/tng.js
+@@ -47,13 +47,9 @@
+     : buf.readUInt16BE(0) === 0xffd8 ? 'jpg'
+     : path.extname(this.file).slice(1).toLowerCase() || 'png';
+ 
+   if (this.format !== 'png') {
+-    try {
+-      return this.toPNG(buf);
+-    } catch (e) {
+-      throw e;
+-    }
++    return this.toPNG(buf);
+   }
+ 
+   chunks = this.parseRaw(buf);
+   idat = this.parseChunks(chunks);
+@@ -67,9 +63,8 @@
+ PNG.prototype.parseRaw = function(buf) {
+   var chunks = []
+     , index = 0
+     , i = 0
+-    , buf
+     , len
+     , type
+     , name
+     , data
+@@ -480,9 +475,8 @@
+     , filter_type
+     , scanline
+     , flat
+     , offset
+-    , k
+     , end_offset
+     , skip
+     , j
+     , k
+@@ -591,11 +585,11 @@
+   return bmp;
+ };
+ 
+ PNG.prototype.createCellmap = function(bmp, options) {
+-  var bmp = bmp || this.bmp
+-    , options = options || this.options
+-    , cellmap = []
++  bmp = bmp || this.bmp
++  options = options || this.options
++  var cellmap = []
+     , scale = options.scale || 0.20
+     , height = bmp.length
+     , width = bmp[0].length
+     , cmwidth = options.width
+@@ -604,9 +598,8 @@
+     , x
+     , y
+     , xx
+     , yy
+-    , scale
+     , xs
+     , ys;
+ 
+   if (cmwidth) {

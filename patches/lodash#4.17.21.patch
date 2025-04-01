@@ -1,0 +1,46 @@
+Index: /lodash/_getRawTag.js
+===================================================================
+--- /lodash/_getRawTag.js
++++ /lodash/_getRawTag.js
+@@ -26,11 +26,12 @@
+ function getRawTag(value) {
+   var isOwn = hasOwnProperty.call(value, symToStringTag),
+       tag = value[symToStringTag];
+ 
++  var unmasked
+   try {
+     value[symToStringTag] = undefined;
+-    var unmasked = true;
++    unmasked = true;
+   } catch (e) {}
+ 
+   var result = nativeObjectToString.call(value);
+   if (unmasked) {
+Index: /lodash/lodash.js
+===================================================================
+--- /lodash/lodash.js
++++ /lodash/lodash.js
+@@ -8,9 +8,8 @@
+  */
+ ;(function() {
+ 
+   /** Used as a safe reference for `undefined` in pre-ES5 environments. */
+-  var undefined;
+ 
+   /** Used as the semantic version number. */
+   var VERSION = '4.17.21';
+ 
+@@ -6048,11 +6047,12 @@
+     function getRawTag(value) {
+       var isOwn = hasOwnProperty.call(value, symToStringTag),
+           tag = value[symToStringTag];
+ 
++      var unmasked
+       try {
+         value[symToStringTag] = undefined;
+-        var unmasked = true;
++        unmasked = true;
+       } catch (e) {}
+ 
+       var result = nativeObjectToString.call(value);
+       if (unmasked) {
