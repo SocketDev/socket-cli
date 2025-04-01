@@ -5,8 +5,8 @@ import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 
 import { applyLogin } from './apply-login'
 import constants from '../../constants'
+import { handleUnsuccessfulApiResponse } from '../../utils/api'
 import { getConfigValue } from '../../utils/config'
-import { AuthError } from '../../utils/errors'
 import { setupSdk } from '../../utils/sdk'
 
 import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
@@ -32,21 +32,23 @@ export async function attemptLogin(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
+  const sdk = await setupSdk(apiToken, apiBaseUrl, apiProxy)
+
   spinner.start('Verifying API key...')
 
-  let orgs: SocketSdkReturnType<'getOrganizations'>['data']
-  try {
-    const sdk = await setupSdk(apiToken, apiBaseUrl, apiProxy)
-    const result = await sdk.getOrganizations()
-    if (!result.success) {
-      throw new AuthError()
-    }
-    orgs = result.data
-    spinner.success('API key verified')
-  } catch {
-    spinner.errorAndStop('Invalid API key')
+  const result = await sdk.getOrganizations()
+
+  spinner.successAndStop('Received response')
+
+  if (!result.success) {
+    logger.fail('Authentication failed...')
+    handleUnsuccessfulApiResponse('getOrganizations', result)
     return
   }
+
+  logger.success('API key verified')
+
+  const orgs: SocketSdkReturnType<'getOrganizations'>['data'] = result.data
 
   const enforcedChoices: OrgChoices = Object.values(orgs.organizations)
     .filter(org => org?.plan === 'enterprise')

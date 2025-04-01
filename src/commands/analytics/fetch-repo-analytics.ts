@@ -9,10 +9,9 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 export async function fetchRepoAnalyticsData(
   repo: string,
   time: number,
-  spinner: Spinner,
-  apiToken: string
+  spinner: Spinner
 ): Promise<SocketSdkReturnType<'getRepoAnalytics'>['data'] | undefined> {
-  const sockSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk()
   const result = await handleApiCall(
     sockSdk.getRepoAnalytics(repo, time.toString()),
     'fetching analytics data'
