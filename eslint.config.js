@@ -262,9 +262,9 @@ module.exports = [
       'n/no-unsupported-features/node-builtins': [
         'error',
         {
-          ignores: ['test', 'test.describe'],
+          ignores: ['fs.promises.cp', 'test', 'test.describe'],
           // Lazily access constants.maintainedNodeVersions.
-          version: constants.maintainedNodeVersions.last
+          version: constants.maintainedNodeVersions.current
         }
       ],
       'n/prefer-node-protocol': 'error'

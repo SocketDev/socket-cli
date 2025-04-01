@@ -9,7 +9,6 @@
       "**/.type-coverage",
       "**/.vscode",
       "**/coverage",
-      "**/dist",
       "**/package.json",
       "**/package-lock.json"
     ],
