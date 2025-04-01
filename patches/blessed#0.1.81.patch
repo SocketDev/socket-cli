@@ -1,0 +1,135 @@
+Index: /blessed/lib/program.js
+===================================================================
+--- /blessed/lib/program.js
++++ /blessed/lib/program.js
+@@ -194,9 +194,9 @@
+   function caret(data) {
+     return data.replace(/[\0\x80\x1b-\x1f\x7f\x01-\x1a]/g, function(ch) {
+       switch (ch) {
+         case '\0':
+-        case '\200':
++        case '\x80':
+           ch = '@';
+           break;
+         case '\x1b':
+           ch = '[';
+@@ -1910,9 +1910,9 @@
+ 
+ //Program.prototype.pad =
+ Program.prototype.nul = function() {
+   //if (this.has('pad')) return this.put.pad();
+-  return this._write('\200');
++  return this._write('\x80');
+ };
+ 
+ Program.prototype.bel =
+ Program.prototype.bell = function() {
+Index: /blessed/lib/tput.js
+===================================================================
+--- /blessed/lib/tput.js
++++ /blessed/lib/tput.js
+@@ -365,9 +365,9 @@
+   l = i + h.numCount * 2;
+   o = 0;
+   for (; i < l; i += 2) {
+     v = Tput.numbers[o++];
+-    if (data[i + 1] === 0377 && data[i] === 0377) {
++    if (data[i + 1] === 0xFF && data[i] === 0xFF) {
+       info.numbers[v] = -1;
+     } else {
+       info.numbers[v] = (data[i + 1] << 8) | data[i];
+     }
+@@ -378,9 +378,9 @@
+   l = i + h.strCount * 2;
+   o = 0;
+   for (; i < l; i += 2) {
+     v = Tput.strings[o++];
+-    if (data[i + 1] === 0377 && data[i] === 0377) {
++    if (data[i + 1] === 0xFF && data[i] === 0xFF) {
+       info.strings[v] = -1;
+     } else {
+       info.strings[v] = (data[i + 1] << 8) | data[i];
+     }
+@@ -532,9 +532,9 @@
+   // Numbers Section
+   var _numbers = [];
+   l = i + h.numCount * 2;
+   for (; i < l; i += 2) {
+-    if (data[i + 1] === 0377 && data[i] === 0377) {
++    if (data[i + 1] === 0xFF && data[i] === 0xFF) {
+       _numbers.push(-1);
+     } else {
+       _numbers.push((data[i + 1] << 8) | data[i]);
+     }
+@@ -543,9 +543,9 @@
+   // Strings Section
+   var _strings = [];
+   l = i + h.strCount * 2;
+   for (; i < l; i += 2) {
+-    if (data[i + 1] === 0377 && data[i] === 0377) {
++    if (data[i + 1] === 0xFF && data[i] === 0xFF) {
+       _strings.push(-1);
+     } else {
+       _strings.push((data[i + 1] << 8) | data[i]);
+     }
+@@ -842,9 +842,9 @@
+ 
+     // '\e' -> ^[
+     // '\n' -> \n
+     // '\r' -> \r
+-    // '\0' -> \200 (special case)
++    // '\0' -> \x80 (special case)
+     if (read(/^\\([eEnlrtbfs\^\\,:0]|.)/, true)) {
+       switch (ch) {
+         case 'e':
+         case 'E':
+@@ -883,9 +883,9 @@
+         case ':':
+           ch = ':';
+           break;
+         case '0':
+-          ch = '\200';
++          ch = '\x80';
+           break;
+         case 'a':
+           ch = '\x07';
+           break;
+@@ -1900,9 +1900,9 @@
+ //    case '\r':
+ //      out += '\\r';
+ //      i++;
+ //      break;
+-//    case '\200':
++//    case '\x80':
+ //      out += '\\0';
+ //      i++;
+ //      break;
+ //    case '\f':
+@@ -2093,12 +2093,12 @@
+       && info.name.indexOf('screen') === 0
+       && process.env.TERMCAP
+       && ~process.env.TERMCAP.indexOf('screen')
+       && ~process.env.TERMCAP.indexOf('hhII00')) {
+-    if (~info.strings.enter_alt_charset_mode.indexOf('\016')
+-        || ~info.strings.enter_alt_charset_mode.indexOf('\017')
+-        || ~info.strings.set_attributes.indexOf('\016')
+-        || ~info.strings.set_attributes.indexOf('\017')) {
++    if (~info.strings.enter_alt_charset_mode.indexOf('\x0E')
++        || ~info.strings.enter_alt_charset_mode.indexOf('\x0F')
++        || ~info.strings.set_attributes.indexOf('\x0E')
++        || ~info.strings.set_attributes.indexOf('\x0F')) {
+       return true;
+     }
+   }
+ 
+@@ -2275,9 +2275,9 @@
+       case 's': // string
+         break;
+       case 'c': // char
+         param = isFinite(param)
+-          ? String.fromCharCode(param || 0200)
++          ? String.fromCharCode(param || 0x80)
+           : '';
+         break;
+     }
+ 
