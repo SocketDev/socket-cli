@@ -1,0 +1,15 @@
+Index: /string_decoder/index.js
+===================================================================
+--- /string_decoder/index.js
++++ /string_decoder/index.js
+@@ -138,9 +138,9 @@
+   }
+ 
+   charStr += buffer.toString(this.encoding, 0, end);
+ 
+-  var end = charStr.length - 1;
++  end = charStr.length - 1;
+   var charCode = charStr.charCodeAt(end);
+   // CESU-8: lead surrogate (D800-DBFF) is also the incomplete character
+   if (charCode >= 0xD800 && charCode <= 0xDBFF) {
+     var size = this.surrogateSize;
