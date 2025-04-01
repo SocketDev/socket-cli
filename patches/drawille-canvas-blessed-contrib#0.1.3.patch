@@ -8,10 +8,11 @@ Index: /drawille-canvas-blessed-contrib/index.js
  
  
 -function Context(width, height, canvasClass) { 
-+function Context(width, height, canvasClass) {
-   var canvasClass = canvasClass || Canvas;
+-  var canvasClass = canvasClass || Canvas;
 -  this._canvas = new canvasClass(width, height);  
 -  this.canvas = this._canvas; //compatability  
++function Context(width, height, canvasClass) {
++  canvasClass = canvasClass || Canvas;
 +  this._canvas = new canvasClass(width, height);
 +  this.canvas = this._canvas; //compatability
    this._matrix = mat2d.create();

@@ -15,6 +15,7 @@ export async function runRawNpm(
     if (signalName) {
       process.kill(process.pid, signalName)
     } else if (code !== null) {
+      // eslint-disable-next-line n/no-process-exit
       process.exit(code)
     }
   })
