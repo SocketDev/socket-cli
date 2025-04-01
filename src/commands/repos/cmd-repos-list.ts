@@ -7,6 +7,7 @@ import { getConfigValue } from '../../utils/config'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -73,16 +74,36 @@ async function run(
     parentName
   })
 
+  const { json, markdown } = cli.flags
   const defaultOrgSlug = getConfigValue('defaultOrg')
   const orgSlug = defaultOrgSlug || cli.input[0] || ''
+  const apiToken = getDefaultToken()
 
-  const wasBadInput = handleBadInput({
-    hide: defaultOrgSlug,
-    test: orgSlug,
-    message: 'Org name as the first argument',
-    pass: 'ok',
-    fail: 'missing'
-  })
+  const wasBadInput = handleBadInput(
+    {
+      nook: true,
+      test: orgSlug,
+      message: 'Org name as the first argument',
+      pass: 'ok',
+      fail: 'missing'
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message:
+        'The `--json` and `--markdown` flags can not be used at the same time',
+      pass: 'ok',
+      fail: 'bad'
+    },
+    {
+      nook: true,
+      test: apiToken,
+      message:
+        'You need to be logged in to use this command. See `socket login`.',
+      pass: 'ok',
+      fail: 'missing API token'
+    }
+  )
   if (wasBadInput) {
     return
   }
@@ -95,11 +116,7 @@ async function run(
   await handleListRepos({
     direction: cli.flags['direction'] === 'asc' ? 'asc' : 'desc',
     orgSlug,
-    outputKind: cli.flags['json']
-      ? 'json'
-      : cli.flags['markdown']
-        ? 'markdown'
-        : 'print',
+    outputKind: json ? 'json' : markdown ? 'markdown' : 'print',
     page: Number(cli.flags['page']) || 1,
     per_page: Number(cli.flags['perPage']) || 30,
     sort: String(cli.flags['sort'] || 'created_at')

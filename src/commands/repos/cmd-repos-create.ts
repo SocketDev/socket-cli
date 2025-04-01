@@ -7,6 +7,7 @@ import { getConfigValue } from '../../utils/config'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -82,10 +83,11 @@ async function run(
   const repoName = cli.flags['repoName']
   const defaultOrgSlug = getConfigValue('defaultOrg')
   const orgSlug = defaultOrgSlug || cli.input[0] || ''
+  const apiToken = getDefaultToken()
 
   const wasBadInput = handleBadInput(
     {
-      hide: defaultOrgSlug,
+      nook: true,
       test: orgSlug,
       message: 'Org name as the first argument',
       pass: 'ok',
@@ -96,6 +98,14 @@ async function run(
       message: 'Repository name using --repoNam',
       pass: 'ok',
       fail: typeof repoName !== 'string' ? 'missing' : 'invalid'
+    },
+    {
+      nook: true,
+      test: apiToken,
+      message:
+        'You need to be logged in to use this command. See `socket login`.',
+      pass: 'ok',
+      fail: 'missing API token'
     }
   )
   if (wasBadInput) {

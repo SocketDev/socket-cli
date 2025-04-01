@@ -42,7 +42,7 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '--dry-run', '--config', '{}'],
+    ['fix', '--dry-run', '--config', '{"apiToken":"anything"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

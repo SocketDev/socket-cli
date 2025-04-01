@@ -73,7 +73,9 @@ describe('socket diff-scan get', async () => {
           - Specify a before and after scan ID (\\x1b[31mmissing before and after\\x1b[39m)
             The args are expecting a full \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\` scan ID.
 
-          - Org name as the first argument (\\x1b[31mmissing\\x1b[39m)"
+          - Org name as the first argument (\\x1b[31mmissing\\x1b[39m)
+
+          - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -87,7 +89,7 @@ describe('socket diff-scan get', async () => {
       'fakeorg',
       '--dry-run',
       '--config',
-      '{}',
+      '{"apiToken":"anything"}',
       '--before',
       'x',
       '--after',

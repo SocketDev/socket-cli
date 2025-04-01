@@ -8,6 +8,7 @@ import { getConfigValue } from '../../utils/config'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type {
   CliCommandConfig,
@@ -56,14 +57,16 @@ async function run(
     parentName
   })
 
+  const { json, markdown } = cli.flags
   const defaultOrgSlug = getConfigValue('defaultOrg')
   const orgSlug = defaultOrgSlug || cli.input[0] || ''
   const scanId = (defaultOrgSlug ? cli.input[0] : cli.input[1]) || ''
   const file = (defaultOrgSlug ? cli.input[1] : cli.input[2]) || '-'
+  const apiToken = getDefaultToken()
 
   const wasBadInput = handleBadInput(
     {
-      hide: defaultOrgSlug,
+      nook: true,
       test: orgSlug,
       message: 'Org name as the first argument',
       pass: 'ok',
@@ -74,6 +77,22 @@ async function run(
       message: 'Scan ID to delete',
       pass: 'ok',
       fail: 'missing'
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message:
+        'The `--json` and `--markdown` flags can not be used at the same time',
+      pass: 'ok',
+      fail: 'bad'
+    },
+    {
+      nook: true,
+      test: apiToken,
+      message:
+        'You need to be logged in to use this command. See `socket login`.',
+      pass: 'ok',
+      fail: 'missing API token'
     }
   )
   if (wasBadInput) {
@@ -85,7 +104,7 @@ async function run(
     return
   }
 
-  if (cli.flags['json']) {
+  if (json) {
     await streamScan(orgSlug, scanId, file)
   } else {
     await handleScanView(orgSlug, scanId, file)

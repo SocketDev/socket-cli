@@ -50,7 +50,7 @@ describe('socket package', async () => {
   )
 
   cmdit(
-    ['package', '--dry-run', '--config', '{}'],
+    ['package', '--dry-run', '--config', '{"apiToken":"anything"}'],
     'should be ok with org name and id',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

@@ -104,7 +104,14 @@ describe('socket manifest scala', async () => {
   )
 
   cmdit(
-    ['manifest', 'scala', 'mootools', '--dry-run', '--config', '{}'],
+    [
+      'manifest',
+      'scala',
+      'mootools',
+      '--dry-run',
+      '--config',
+      '{"apiToken":"anything"}'
+    ],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
