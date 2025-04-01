@@ -66,7 +66,8 @@ const VENDOR_JS = `${VENDOR}.js`
 const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
 const distRequirePath = path.join(rootDistPath, REQUIRE)
 
-const requireBlessedWidgets = /require\(["'].\/widgets\/["']\s*\+\s*file\)/
+const injectBlessedTermInfoRegExp = /__dirname\s*\+\s*["']\/..\/usr\//g
+const requireBlessedWidgetsRegExp = /require\s*\(\s*["'].\/widgets\//g
 
 const sharedInputs = {
   cli: `${rootSrcPath}/cli.ts`,
@@ -100,11 +101,15 @@ const sharedPlugins = [
       {}
     )
   }),
-  // Replace 'blessed' package dynamic require call paths to point to
-  // ./dist/blessed/lib/widgets.
+  // Replace 'blessed' this.injectTerminfo calls to point to ./dist/blessed/usr.
   socketModifyPlugin({
-    find: requireBlessedWidgets,
-    replace: 'require(`../blessed/lib/widgets/${file}`)'
+    find: injectBlessedTermInfoRegExp,
+    replace: "__dirname + '/../blessed/usr/"
+  }),
+  // Replace require calls for 'blessed' widgets to point to ./dist/blessed/lib/widgets.
+  socketModifyPlugin({
+    find: requireBlessedWidgetsRegExp,
+    replace: "require('../blessed/lib/widgets/"
   })
 ]
 
