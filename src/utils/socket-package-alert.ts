@@ -371,9 +371,10 @@ export function logAlertsMap(
   const sortedEntries = [...alertsMap.entries()].sort(
     (a, b) => getAlertsSeverityOrder(a[1]) - getAlertsSeverityOrder(b[1])
   )
+  let mentionedHiddenCount = 0
   const hiddenEntries: typeof sortedEntries = []
   for (
-    let i = 0, prevDimmed = false, { length } = sortedEntries;
+    let i = 0, prevBelowTheFold = false, { length } = sortedEntries;
     i < length;
     i += 1
   ) {
@@ -395,7 +396,7 @@ export function logAlertsMap(
     }
     const lines = new Set<string>()
     const sortedAlerts = filteredAlerts.sort(alertSeverityComparator)
-    const isDimmed = !sortedAlerts.find(
+    const isBelowTheFold = !sortedAlerts.find(
       a => a.blocked || getAlertSeverityOrder(a) < ALERT_SEVERITY_ORDER.middle
     )
     for (const alert of sortedAlerts) {
@@ -418,11 +419,7 @@ export function logAlertsMap(
       const maybeDesc = info?.description ? ` - ${info.description}` : ''
       const content = `${title}${maybeAttributes}${maybeDesc}`
       // TODO: emoji seems to mis-align terminals sometimes
-      if (isDimmed) {
-        lines.add(`  ${colors.dim(content)}`)
-      } else {
-        lines.add(`  ${content}`)
-      }
+      lines.add(`  ${content}`)
     }
 
     const purlObj = PackageURL.fromString(`pkg:npm/${pkgId}`)
@@ -434,8 +431,8 @@ export function logAlertsMap(
         purlObj.version
       )
     )
-    if (isDimmed) {
-      output.write(`${prevDimmed ? '' : '\n'}${colors.dim(`${hyperlink}:`)}\n`)
+    if (isBelowTheFold) {
+      output.write(`${prevBelowTheFold ? '' : '\n'}${hyperlink}:\n`)
     } else {
       output.write(`${i ? '\n' : ''}${hyperlink}:\n`)
     }
@@ -444,6 +441,7 @@ export function logAlertsMap(
     }
     const { length: hiddenAlertsCount } = hiddenAlerts
     if (hiddenAlertsCount) {
+      mentionedHiddenCount += 1
       if (hiddenAlertsCount === 1) {
         output.write(
           `  ${colors.dim(`+1 Hidden ${getSeverityLabel(hiddenAlerts[0]!.raw.severity ?? 'low')} risk alert`)}\n`
@@ -454,10 +452,10 @@ export function logAlertsMap(
         )
       }
     }
-    prevDimmed = isDimmed
+    prevBelowTheFold = isBelowTheFold
   }
-  const { length: hiddenEntriesCount } = hiddenEntries
-  if (hiddenEntriesCount) {
+  const additionalHiddenCount = hiddenEntries.length - mentionedHiddenCount
+  if (additionalHiddenCount) {
     const totalRiskCounts = {
       critical: 0,
       high: 0,
@@ -472,7 +470,7 @@ export function logAlertsMap(
       totalRiskCounts.low += riskCounts.low
     }
     output.write(
-      `\n${colors.dim(`+${hiddenEntriesCount} Packages with hidden alerts ${colors.italic(getHiddenRisksDescription(totalRiskCounts))}`)}\n`
+      `\n${colors.dim(`+${additionalHiddenCount} Packages with hidden alerts ${colors.italic(getHiddenRisksDescription(totalRiskCounts))}`)}\n`
     )
   }
   output.write('\n')
