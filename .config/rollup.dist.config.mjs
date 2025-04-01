@@ -18,10 +18,13 @@ import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
 import baseConfig, { INLINED_PACKAGES } from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
+import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
   getPackageName,
+  getPackageNameEnd,
   isBuiltin,
-  normalizeId
+  normalizeId,
+  resolveId
 } from '../scripts/utils/packages.js'
 
 const {
@@ -35,6 +38,7 @@ const {
   ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_NPM_BIN,
   SHADOW_NPM_INJECT,
+  SLASH_NODE_MODULES_SLASH,
   SOCKET_CLI_BIN_NAME,
   SOCKET_CLI_BIN_NAME_ALIAS,
   SOCKET_CLI_LEGACY_PACKAGE_NAME,
@@ -61,6 +65,8 @@ const VENDOR_JS = `${VENDOR}.js`
 
 const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
 const distRequirePath = path.join(rootDistPath, REQUIRE)
+
+const requireBlessedWidgets = /require\(["'].\/widgets\/["']\s*\+\s*file\)/
 
 const sharedInputs = {
   cli: `${rootSrcPath}/cli.ts`,
@@ -93,8 +99,46 @@ const sharedPlugins = [
       },
       {}
     )
+  }),
+  // Replace 'blessed' package dynamic require call paths to point to
+  // ./dist/blessed/lib/widgets.
+  socketModifyPlugin({
+    find: requireBlessedWidgets,
+    replace: 'require(`../blessed/lib/widgets/${file}`)'
   })
 ]
+
+async function copyBlessedWidgets() {
+  const blessedDestPath = path.join(rootDistPath, 'blessed')
+  const blessedDestLibPath = path.join(blessedDestPath, 'lib')
+  const blessedNmPath = path.join(rootPath, 'node_modules/blessed')
+  const blessedNmLibPath = path.join(blessedNmPath, 'lib')
+  const blessedNmVendorPath = path.join(blessedNmPath, 'vendor')
+  const blessedNmWidgetsPath = path.join(blessedNmLibPath, 'widgets')
+  const libFiles = [
+    'alias.js',
+    'colors.js',
+    'events.js',
+    'helpers.js',
+    'program.js',
+    'tput.js',
+    'unicode.js'
+  ]
+  await Promise.all([
+    ...libFiles.map(n =>
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins
+      fs.cp(path.join(blessedNmLibPath, n), path.join(blessedDestLibPath, n))
+    ),
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins
+    fs.cp(blessedNmVendorPath, path.join(blessedDestPath, 'vendor'), {
+      recursive: true
+    }),
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins
+    fs.cp(blessedNmWidgetsPath, path.join(blessedDestLibPath, 'widgets'), {
+      recursive: true
+    })
+  ])
+}
 
 async function copyInitGradle() {
   const filepath = path.join(rootSrcPath, 'commands/manifest/init.gradle')
@@ -119,6 +163,21 @@ async function globDtsAndMapFiles(namePattern, srcPath) {
     absolute: true,
     cwd: srcPath
   })
+}
+
+function isAncestorsExternal(id) {
+  let currNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH)
+  while (currNmIndex !== -1) {
+    const nextNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH, currNmIndex + 1)
+    const nameStart = currNmIndex + SLASH_NODE_MODULES_SLASH.length
+    const nameEnd = getPackageNameEnd(id, nameStart)
+    const name = id.slice(nameStart, nameEnd)
+    if (INLINED_PACKAGES.includes(name)) {
+      return false
+    }
+    currNmIndex = nextNmIndex
+  }
+  return true
 }
 
 async function moveDtsAndMapFiles(namePattern, srcPath, destPath) {
@@ -329,7 +388,7 @@ export default () => {
         dir: path.relative(rootPath, distModuleSyncPath)
       }
     ],
-    external(id_) {
+    external(id_, parentId_) {
       if (id_.endsWith(ROLLUP_EXTERNAL_SUFFIX) || isBuiltin(id_)) {
         return true
       }
@@ -347,6 +406,14 @@ export default () => {
         // Inline anything else that isn't a valid package name.
         !isValidPackageName(name)
       ) {
+        return false
+      }
+      const parentId = parentId_ ? resolveId(parentId_) : undefined
+      if (parentId && !isAncestorsExternal(parentId)) {
+        return false
+      }
+      const resolvedId = resolveId(id, parentId)
+      if (!isAncestorsExternal(resolvedId)) {
         return false
       }
       return true
@@ -375,7 +442,11 @@ export default () => {
           }
         },
         async writeBundle() {
-          await Promise.all([copyInitGradle(), updatePackageJson()])
+          await Promise.all([
+            copyInitGradle(),
+            copyBlessedWidgets(),
+            updatePackageJson()
+          ])
           // Update package-lock.json AFTER package.json.
           await updatePackageLockFile()
         }

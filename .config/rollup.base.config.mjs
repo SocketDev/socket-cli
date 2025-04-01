@@ -53,7 +53,31 @@ const {
   VITEST
 } = constants
 
-export const INLINED_PACKAGES = ['@babel/runtime']
+export const INLINED_PACKAGES = [
+  '@babel/runtime',
+  // 'blessed' package dependencies.
+  'ansi-escapes',
+  'ansi-regex',
+  'blessed',
+  'blessed-contrib',
+  'bresenham',
+  'buffers',
+  'cardinal',
+  'chalk',
+  'charm',
+  'cli-table3',
+  'drawille-blessed-contrib',
+  'drawille-canvas-blessed-contrib',
+  'esprima',
+  'event-stream',
+  'gl-matrix',
+  'has-flag',
+  'node-emoji',
+  'png-js',
+  'readable-stream',
+  'supports-hyperlinks',
+  'x256'
+]
 
 const SOCKET_INTEROP = '_socketInterop'
 
@@ -131,7 +155,7 @@ function isAncestorsExternal(id, depStats) {
       currNmIndex + SLASH_NODE_MODULES_SLASH.length,
       nextNmIndex === -1 ? id.length : nextNmIndex
     )
-    if (isEsmId(nameSlashFilename, id)) {
+    if (INLINED_PACKAGES.includes(name) || isEsmId(nameSlashFilename, id)) {
       return false
     }
     const {

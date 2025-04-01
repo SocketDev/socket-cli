@@ -13,6 +13,7 @@ module.exports = {
         regenerator: false,
         version: '^7.25.7'
       }
-    ]
+    ],
+    './scripts/babel/transform-set-proto-plugin.js'
   ]
 }
