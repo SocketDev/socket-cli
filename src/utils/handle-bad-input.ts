@@ -2,6 +2,8 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { failMsgWithBadge } from './fail-msg-with-badge'
+
 export function handleBadInput(
   ...arr: Array<{
     message: string
@@ -16,7 +18,10 @@ export function handleBadInput(
   }
 
   const msg = [
-    `${colors.bgRed(colors.bold(colors.white(' Input error: ')))} ${colors.bold('Please review the input requirements and try again')}:`,
+    failMsgWithBadge(
+      'Input error',
+      'Please review the input requirements and try again'
+    ),
     ''
   ]
   for (const data of arr) {

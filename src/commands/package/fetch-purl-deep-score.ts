@@ -1,10 +1,9 @@
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
 import { handleApiCall, handleApiError, queryApi } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { getDefaultToken } from '../../utils/sdk'
 
 export async function fetchPurlDeepScore(purl: string) {
@@ -42,9 +41,7 @@ export async function fetchPurlDeepScore(purl: string) {
 
   if (!result.ok) {
     const err = await handleApiError(result.status)
-    logger.fail(
-      `${colors.bgRed(colors.bold(colors.white(' ' + result.statusText + ' ')))}: ${err}`
-    )
+    logger.fail(failMsgWithBadge(result.statusText, err))
     process.exitCode = 1
     return
   }
