@@ -8,9 +8,6 @@ import { AuthError } from '../../utils/errors'
 import { getDefaultToken } from '../../utils/sdk'
 
 export async function fetchPurlDeepScore(purl: string) {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
   const apiToken = getDefaultToken()
   if (!apiToken) {
     throw new AuthError(
@@ -18,13 +15,17 @@ export async function fetchPurlDeepScore(purl: string) {
     )
   }
 
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
   spinner.start('Getting deep package score...')
+
   let result
   try {
     result = await queryApi(`purl/score/${encodeURIComponent(purl)}`, apiToken)
-    spinner?.successAndStop('Received deep package score response.')
+    spinner.successAndStop('Received deep package score response.')
   } catch (e) {
-    spinner?.failAndStop('The request was unsuccessful.')
+    spinner.failAndStop('The request was unsuccessful.')
     const msg = (e as undefined | { message: string })?.message
     if (msg) {
       logger.fail(msg)

@@ -73,7 +73,7 @@ export async function fetchReportData(
         `Fetching ${needs.join(needs.length > 2 ? ', ' : ' and ')}...${haves.length ? ` Completed fetching ${haves.join(haves.length > 2 ? ', ' : ' and ')}.` : ''}`
       )
     } else {
-      spinner?.successAndStop(
+      spinner.successAndStop(
         `Completed fetching ${haves.join(haves.length > 2 ? ', ' : ' and ')}.`
       )
     }

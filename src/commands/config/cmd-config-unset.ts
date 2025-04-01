@@ -60,12 +60,22 @@ async function run(
   const { json, markdown } = cli.flags
   const [key = ''] = cli.input
 
-  const wasBadInput = handleBadInput({
-    test: supportedConfigKeys.has(key as keyof LocalConfig) || key === 'test',
-    message: 'Config key should be the first arg',
-    pass: 'ok',
-    fail: key ? 'invalid config key' : 'missing'
-  })
+  const wasBadInput = handleBadInput(
+    {
+      test: supportedConfigKeys.has(key as keyof LocalConfig) || key === 'test',
+      message: 'Config key should be the first arg',
+      pass: 'ok',
+      fail: key ? 'invalid config key' : 'missing'
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message:
+        'The `--json` and `--markdown` flags can not be used at the same time',
+      pass: 'ok',
+      fail: 'bad'
+    }
+  )
   if (wasBadInput) {
     return
   }

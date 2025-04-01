@@ -5,7 +5,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 export async function outputScanMetadata(
   data: SocketSdkReturnType<'getOrgFullScanMetadata'>['data'],
   scanId: string,
-  outputKind: 'json' | 'markdown' | 'print'
+  outputKind: 'json' | 'markdown' | 'text'
 ): Promise<void> {
   if (outputKind === 'json') {
     logger.log(data)

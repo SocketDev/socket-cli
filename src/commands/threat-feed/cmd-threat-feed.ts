@@ -1,10 +1,13 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getThreatFeed } from './get-threat-feed'
+import { handleThreatFeed } from './handle-threat-feed'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
+import { getConfigValue } from '../../utils/config'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -105,20 +108,49 @@ async function run(
     parentName
   })
 
+  const { json, markdown } = cli.flags
+  const defaultOrgSlug = getConfigValue('defaultOrg')
+  const orgSlug = defaultOrgSlug || cli.input[0] || ''
+  const apiToken = getDefaultToken()
+
+  const wasBadInput = handleBadInput(
+    {
+      nook: true,
+      test: orgSlug,
+      message: 'Org name as the first argument',
+      pass: 'ok',
+      fail: 'missing'
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      pass: 'ok',
+      fail: 'omit one'
+    },
+    {
+      nook: true,
+      test: apiToken,
+      message:
+        'You need to be logged in to use this command. See `socket login`.',
+      pass: 'ok',
+      fail: 'missing API token'
+    }
+  )
+  if (wasBadInput) {
+    return
+  }
+
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 
-  await getThreatFeed({
+  await handleThreatFeed({
     direction: String(cli.flags['direction'] || 'desc'),
     ecosystem: String(cli.flags['eco'] || ''),
     filter: String(cli.flags['filter'] || 'mal'),
-    outputKind: cli.flags['json']
-      ? 'json'
-      : cli.flags['markdown']
-        ? 'markdown'
-        : 'print',
+    outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
     page: String(cli.flags['page'] || '1'),
     perPage: Number(cli.flags['perPage']) || 30
   })

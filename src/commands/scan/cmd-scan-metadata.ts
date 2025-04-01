@@ -7,6 +7,7 @@ import { getConfigValue } from '../../utils/config'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type {
   CliCommandConfig,
@@ -53,13 +54,15 @@ async function run(
     parentName
   })
 
+  const { json, markdown } = cli.flags
   const defaultOrgSlug = getConfigValue('defaultOrg')
   const orgSlug = defaultOrgSlug || cli.input[0] || ''
   const scanId = (defaultOrgSlug ? cli.input[0] : cli.input[1]) || ''
+  const apiToken = getDefaultToken()
 
   const wasBadInput = handleBadInput(
     {
-      hide: defaultOrgSlug,
+      nook: true,
       test: orgSlug,
       message: 'Org name as the first argument',
       pass: 'ok',
@@ -70,6 +73,21 @@ async function run(
       message: 'Scan ID to inspect as argument',
       pass: 'ok',
       fail: 'missing'
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      pass: 'ok',
+      fail: 'omit one'
+    },
+    {
+      nook: true,
+      test: apiToken,
+      message:
+        'You need to be logged in to use this command. See `socket login`.',
+      pass: 'ok',
+      fail: 'missing API token'
     }
   )
   if (wasBadInput) {
@@ -84,6 +102,6 @@ async function run(
   await handleOrgScanMetadata(
     orgSlug,
     scanId,
-    cli.flags['json'] ? 'json' : cli.flags['markdown'] ? 'markdown' : 'print'
+    json ? 'json' : markdown ? 'markdown' : 'text'
   )
 }

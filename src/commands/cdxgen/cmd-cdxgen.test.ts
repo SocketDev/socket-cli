@@ -86,7 +86,7 @@ describe('socket cdxgen', async () => {
 
   // cdxgen does not support --dry-run
   // cmdit(
-  //   ['cdxgen', '--help', '--config', '{}'],
+  //   ['cdxgen', '--help', '--config', '{"apiToken":"anything"}'],
   //   'should require args with just dry-run',
   //   async cmd => {
   //     const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

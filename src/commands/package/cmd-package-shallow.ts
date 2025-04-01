@@ -100,7 +100,7 @@ async function run(
       fail: 'missing'
     },
     {
-      hide: !json || !markdown,
+      nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       pass: 'ok',

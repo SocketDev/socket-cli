@@ -80,7 +80,7 @@ async function run(
       fail: 'missing'
     },
     {
-      hide: !enable || !disable,
+      nook: true,
       test: !enable || !disable,
       message: 'Do not use both --enable and --disable',
       pass: 'ok',

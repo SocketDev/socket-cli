@@ -1,13 +1,13 @@
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handlePurlDeepScore } from './handle-purl-deep-score'
 import { parsePackageSpecifiers } from './parse-package-specifiers'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -76,18 +76,40 @@ async function run(
 
   const { json, markdown } = cli.flags
   const [ecosystem = '', purl] = cli.input
+  const apiToken = getDefaultToken()
 
   const { purls, valid } = parsePackageSpecifiers(ecosystem, purl ? [purl] : [])
 
-  if (!valid || !purls.length) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    logger.fail(`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:\n
-      - First parameter should be an ecosystem or the arg must be a purl ${!valid ? colors.red('(bad!)') : colors.green('(ok)')}\n
-      - Expecting the package to check ${!purls.length ? colors.red('(missing!)') : colors.green('(ok)')}\n
-    `)
+  const wasBadInput = handleBadInput(
+    {
+      test: valid,
+      message: 'First parameter must be an ecosystem or the whole purl',
+      pass: 'ok',
+      fail: 'bad'
+    },
+    {
+      test: purls.length === 1,
+      message: 'Expecting at least one package',
+      pass: 'ok',
+      fail: purls.length === 0 ? 'missing' : 'too many'
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      pass: 'ok',
+      fail: 'omit one'
+    },
+    {
+      nook: true,
+      test: apiToken,
+      message:
+        'You need to be logged in to use this command. See `socket login`.',
+      pass: 'ok',
+      fail: 'missing API token'
+    }
+  )
+  if (wasBadInput) {
     return
   }
 

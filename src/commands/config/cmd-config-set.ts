@@ -79,6 +79,14 @@ async function run(
         'Key value should be the remaining args (use `unset` to unset a value)',
       pass: 'ok',
       fail: 'missing'
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message:
+        'The `--json` and `--markdown` flags can not be used at the same time',
+      pass: 'ok',
+      fail: 'bad'
     }
   )
   if (wasBadInput) {

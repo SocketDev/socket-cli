@@ -100,7 +100,14 @@ describe('socket manifest gradle', async () => {
   )
 
   cmdit(
-    ['manifest', 'gradle', 'mootools', '--dry-run', '--config', '{}'],
+    [
+      'manifest',
+      'gradle',
+      'mootools',
+      '--dry-run',
+      '--config',
+      '{"apiToken":"anything"}'
+    ],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

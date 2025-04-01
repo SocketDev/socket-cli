@@ -43,7 +43,7 @@ describe('socket raw-npx', async () => {
   )
 
   cmdit(
-    ['raw-npx', '--dry-run', '--config', '{}'],
+    ['raw-npx', '--dry-run', '--config', '{"apiToken":"anything"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

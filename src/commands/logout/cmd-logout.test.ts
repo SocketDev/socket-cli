@@ -42,7 +42,7 @@ describe('socket logout', async () => {
   )
 
   cmdit(
-    ['logout', 'mootools', '--dry-run', '--config', '{}'],
+    ['logout', 'mootools', '--dry-run', '--config', '{"apiToken":"anything"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
