@@ -40,7 +40,7 @@ export async function fetchThreatFeed({
 
   const response = await queryApi(`threat-feed?${queryParams}`, apiToken)
 
-  spinner.successAndStop('Threat feed data fetched')
+  spinner.successAndStop('Received response while fetching Threat Feed data.')
 
   const data = await response.json()
 

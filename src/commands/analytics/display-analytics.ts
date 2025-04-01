@@ -10,9 +10,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { fetchOrgAnalyticsData } from './fetch-org-analytics'
 import { fetchRepoAnalyticsData } from './fetch-repo-analytics'
 import constants from '../../constants'
-import { AuthError } from '../../utils/errors'
 import { mdTableStringNumber } from '../../utils/markdown'
-import { getDefaultToken } from '../../utils/sdk'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
@@ -77,38 +75,6 @@ export async function displayAnalytics({
   outputKind: 'json' | 'markdown' | 'print'
   filePath: string
 }): Promise<void> {
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API token.'
-    )
-  }
-
-  await outputAnalyticsWithToken({
-    apiToken,
-    filePath,
-    outputKind,
-    repo,
-    scope,
-    time
-  })
-}
-
-async function outputAnalyticsWithToken({
-  apiToken,
-  filePath,
-  outputKind,
-  repo,
-  scope,
-  time
-}: {
-  apiToken: string
-  scope: string
-  time: number
-  repo: string
-  outputKind: 'json' | 'markdown' | 'print'
-  filePath: string
-}): Promise<void> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
@@ -119,9 +85,9 @@ async function outputAnalyticsWithToken({
     | SocketSdkReturnType<'getOrgAnalytics'>['data']
     | SocketSdkReturnType<'getRepoAnalytics'>['data']
   if (scope === 'org') {
-    data = await fetchOrgAnalyticsData(time, spinner, apiToken)
+    data = await fetchOrgAnalyticsData(time, spinner)
   } else if (repo) {
-    data = await fetchRepoAnalyticsData(repo, time, spinner, apiToken)
+    data = await fetchRepoAnalyticsData(repo, time, spinner)
   }
 
   // A message should already have been printed if we have no data here
