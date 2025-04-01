@@ -18,22 +18,26 @@ describe('socket dependencies', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Search for any dependency that is being used in your organization
+        "Search for any dependency that is being used in your organization
 
-        Usage
-          socket dependencies
+          Usage
+            socket dependencies
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --json            Output result as json
-          --limit           Maximum number of dependencies returned
-          --markdown        Output result as markdown
-          --offset          Page number
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: none (does need token with access to target org)
 
-        Examples
-          socket dependencies --limit 20 --offset 10"
-    `
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help.
+            --json            Output result as json
+            --limit           Maximum number of dependencies returned
+            --markdown        Output result as markdown
+            --offset          Page number
+
+          Examples
+            socket dependencies --limit 20 --offset 10"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

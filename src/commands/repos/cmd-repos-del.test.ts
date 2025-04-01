@@ -18,18 +18,22 @@ describe('socket repos del', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Delete a repository in an organization
+        "Delete a repository in an organization
 
-        Usage
-          $ socket repos del <org slug> <repo slug>
+          Usage
+            $ socket repos del <org slug> <repo slug>
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: repo:delete
 
-        Examples
-          $ socket repos del FakeOrg test-repo"
-    `
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help.
+
+          Examples
+            $ socket repos del FakeOrg test-repo"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

@@ -18,26 +18,30 @@ describe('socket scan list', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "List the scans for an organization
+        "List the scans for an organization
 
-        Usage
-          $ socket scan list <org slug>
+          Usage
+            $ socket scan list <org slug>
 
-        Options
-          --direction       Direction option (\`desc\` or \`asc\`) - Default is \`desc\`
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --fromTime        From time - as a unix timestamp
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
-          --page            Page number - Default is 1
-          --perPage         Results per page - Default is 30
-          --sort            Sorting option (\`name\` or \`created_at\`) - default is \`created_at\`
-          --untilTime       Until time - as a unix timestamp
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: full-scans:list
 
-        Examples
-          $ socket scan list FakeOrg"
-    `
+          Options
+            --direction       Direction option (\`desc\` or \`asc\`) - Default is \`desc\`
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --fromTime        From time - as a unix timestamp
+            --help            Print this help.
+            --json            Output result as json
+            --markdown        Output result as markdown
+            --page            Page number - Default is 1
+            --perPage         Results per page - Default is 30
+            --sort            Sorting option (\`name\` or \`created_at\`) - default is \`created_at\`
+            --untilTime       Until time - as a unix timestamp
+
+          Examples
+            $ socket scan list FakeOrg"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

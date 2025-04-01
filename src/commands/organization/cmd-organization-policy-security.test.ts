@@ -23,6 +23,10 @@ describe('socket organization policy security', async () => {
           Usage
             $ socket organization policy security <org slug>
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: security-policy:read
+
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help.

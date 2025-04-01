@@ -37,6 +37,10 @@ const config: CliCommandConfig = {
     Usage
       ${command}
 
+    API Token Requirements
+      - Quota: 1 unit
+      - Permissions: none (does need token with access to target org)
+
     Options
       ${getFlagListOutput(config.flags, 6)}
 

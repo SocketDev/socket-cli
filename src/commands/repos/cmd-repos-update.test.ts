@@ -18,23 +18,27 @@ describe('socket repos update', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Update a repository in an organization
+        "Update a repository in an organization
 
-        Usage
-          $ socket repos update <org slug>
+          Usage
+            $ socket repos update <org slug>
 
-        Options
-          --defaultBranch   Repository default branch
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --homepage        Repository url
-          --repoDescription Repository description
-          --repoName        Repository name
-          --visibility      Repository visibility (Default Private)
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: repo:update
 
-        Examples
-          $ socket repos update FakeOrg"
-    `
+          Options
+            --defaultBranch   Repository default branch
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help.
+            --homepage        Repository url
+            --repoDescription Repository description
+            --repoName        Repository name
+            --visibility      Repository visibility (Default Private)
+
+          Examples
+            $ socket repos update FakeOrg"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

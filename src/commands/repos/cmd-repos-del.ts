@@ -24,6 +24,10 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} <org slug> <repo slug>
 
+    API Token Requirements
+      - Quota: 1 unit
+      - Permissions: repo:delete
+
     Options
       ${getFlagListOutput(config.flags, 6)}
 

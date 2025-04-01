@@ -18,42 +18,42 @@ describe('socket package score', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Look up score for one package which reflects all of its transitive dependencies as well
+        "Look up score for one package which reflects all of its transitive dependencies as well
 
-        Usage
-          $ socket package score <<ecosystem> <name> | <purl>>
+          Usage
+            $ socket package score <<ecosystem> <name> | <purl>>
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
+          API Token Requirements
+            - Quota: 100 units
+            - Permissions: packages:list
 
-        Requirements
-          - quota: 100
-          - scope: \`packages:list\`
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help.
+            --json            Output result as json
+            --markdown        Output result as markdown
 
-        Show deep scoring details for one package. The score will reflect the package
-        itself, any of its dependencies, and any of its transitive dependencies.
+          Show deep scoring details for one package. The score will reflect the package
+          itself, any of its dependencies, and any of its transitive dependencies.
 
-        When you want to know whether to trust a package, this is the command to run.
+          When you want to know whether to trust a package, this is the command to run.
 
-        See also the \`socket package shallow\` command, which returns the shallow
-        score for any number of packages. That will not reflect the dependency scores.
+          See also the \`socket package shallow\` command, which returns the shallow
+          score for any number of packages. That will not reflect the dependency scores.
 
-        Only a few ecosystems are supported like npm, golang, and maven.
+          Only a few ecosystems are supported like npm, golang, and maven.
 
-        A "purl" is a standard package name formatting: \`pkg:eco/name@version\`
-        This command will automatically prepend "pkg:" when not present.
+          A "purl" is a standard package name formatting: \`pkg:eco/name@version\`
+          This command will automatically prepend "pkg:" when not present.
 
-        The version is optional but when given should be a direct match.
+          The version is optional but when given should be a direct match.
 
-        Examples
-          $ socket package score npm babel-cli
-          $ socket package score npm babel-cli@1.9.1
-          $ socket package score npm/babel-cli@1.9.1
-          $ socket package score pkg:npm/babel-cli@1.9.1"
-    `
+          Examples
+            $ socket package score npm babel-cli
+            $ socket package score npm babel-cli@1.9.1
+            $ socket package score npm/babel-cli@1.9.1
+            $ socket package score pkg:npm/babel-cli@1.9.1"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

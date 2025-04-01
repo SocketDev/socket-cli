@@ -18,21 +18,25 @@ describe('socket repos view', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "View repositories in an organization
+        "View repositories in an organization
 
-        Usage
-          $ socket repos view <org slug>
+          Usage
+            $ socket repos view <org slug>
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
-          --repoName        The repository to check
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: repo:list
 
-        Examples
-          $ socket repos view FakeOrg"
-    `
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help.
+            --json            Output result as json
+            --markdown        Output result as markdown
+            --repoName        The repository to check
+
+          Examples
+            $ socket repos view FakeOrg"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

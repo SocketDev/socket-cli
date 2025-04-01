@@ -43,6 +43,10 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} <org slug>
 
+    API Token Requirements
+      - Quota: 1 unit
+      - Permissions: audit-log:list
+
     This feature requires an Enterprise Plan. To learn more about getting access
     to this feature and many more, please visit https://socket.dev/pricing
 

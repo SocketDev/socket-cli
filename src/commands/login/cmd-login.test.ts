@@ -18,23 +18,26 @@ describe('socket login', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Socket API login
+        "Socket API login
 
-        Usage
-          $ socket login
+          Usage
+            $ socket login
 
-        Logs into the Socket API by prompting for an API key
+          API Token Requirements
+            - Quota: 1 unit
 
-        Options
-          --apiBaseUrl      API server to connect to for login
-          --apiProxy        Proxy to use when making connection to API server
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
+          Logs into the Socket API by prompting for an API key
 
-        Examples
-          $ socket login
-          $ socket login --api-proxy=http://localhost:1234"
-    `
+          Options
+            --apiBaseUrl      API server to connect to for login
+            --apiProxy        Proxy to use when making connection to API server
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help.
+
+          Examples
+            $ socket login
+            $ socket login --api-proxy=http://localhost:1234"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
