@@ -16,12 +16,12 @@ export async function fetchPurlsShallowScore(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`
   )
 
+  const sockSdk = await setupSdk(getPublicToken())
+
   // Lazily access constants.spinner.
   const { spinner } = constants
 
   spinner.start(`Requesting data ...`)
-
-  const sockSdk = await setupSdk(getPublicToken())
 
   const result: Awaited<SocketSdkResultType<'batchPackageFetch'>> =
     await handleApiCall(

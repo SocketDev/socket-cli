@@ -22,10 +22,10 @@ async function fetchLicensePolicyWithToken(
   apiToken: string,
   orgSlug: string
 ): Promise<SocketSdkReturnType<'getOrgLicensePolicy'>['data'] | undefined> {
+  const sockSdk = await setupSdk(apiToken)
+
   // Lazily access constants.spinner.
   const { spinner } = constants
-
-  const sockSdk = await setupSdk(apiToken)
 
   spinner.start('Fetching organization license policy...')
 

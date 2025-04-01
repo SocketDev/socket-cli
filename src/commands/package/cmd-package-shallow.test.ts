@@ -95,7 +95,15 @@ describe('socket package shallow', async () => {
   )
 
   cmdit(
-    ['package', 'shallow', 'npm', 'babel', '--dry-run', '--config', '{}'],
+    [
+      'package',
+      'shallow',
+      'npm',
+      'babel',
+      '--dry-run',
+      '--config',
+      '{"apiToken":"anything"}'
+    ],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

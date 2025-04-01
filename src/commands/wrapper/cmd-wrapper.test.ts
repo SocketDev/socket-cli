@@ -72,7 +72,7 @@ describe('socket wrapper', async () => {
   )
 
   cmdit(
-    ['wrapper', '--dry-run', '--enable'],
+    ['wrapper', '--dry-run', '--enable', '--config', '{"apiToken":"anything"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

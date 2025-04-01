@@ -45,7 +45,7 @@ export async function fetchReportData(
         spinner.stop(`Failed to fetch report`)
         throw err
       }
-      spinner?.fail(`Retrying report fetch ${retry} / ${MAX_TIMEOUT_RETRY}`)
+      spinner.fail(`Retrying report fetch ${retry} / ${MAX_TIMEOUT_RETRY}`)
     }
   }
 

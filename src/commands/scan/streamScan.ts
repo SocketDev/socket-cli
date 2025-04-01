@@ -29,7 +29,7 @@ export async function streamScan(
     'Fetching a scan'
   )
 
-  spinner?.successAndStop(
+  spinner.successAndStop(
     file ? `Full scan details written to ${file}` : 'stdout'
   )
 

@@ -79,7 +79,14 @@ describe('socket config get', async () => {
   )
 
   cmdit(
-    ['config', 'test', 'test', '--dry-run', '--config', '{}'],
+    [
+      'config',
+      'test',
+      'test',
+      '--dry-run',
+      '--config',
+      '{"apiToken":"anything"}'
+    ],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

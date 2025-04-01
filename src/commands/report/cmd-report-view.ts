@@ -54,14 +54,14 @@ async function run(
       fail: 'missing'
     },
     {
-      hide: extraInput.length === 0,
+      nook: true,
       test: extraInput.length === 0,
       message: 'Can only handle a single report ID',
       pass: 'ok',
       fail: 'received ' + (extraInput.length + 1)
     },
     {
-      hide: !json || !markdown,
+      nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       pass: 'ok',

@@ -40,7 +40,7 @@ describe('socket report create', async () => {
   )
 
   cmdit(
-    ['report', 'create', '--dry-run', '--config', '{}'],
+    ['report', 'create', '--dry-run', '--config', '{"apiToken":"anything"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

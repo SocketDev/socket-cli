@@ -5,7 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 export function handleBadInput(
   ...arr: Array<{
     message: string
-    hide?: unknown // Truthy checked through !!
+    nook?: unknown // Only display error when test is not OK
     test: unknown // Truthy checked through !!
     pass: string
     fail: string
@@ -20,7 +20,8 @@ export function handleBadInput(
     ''
   ]
   for (const data of arr) {
-    if (data.hide) {
+    // If nook, then ignore when test is ok
+    if (data.nook && data.test) {
       continue
     }
     const lines = data.message.split('\n')
