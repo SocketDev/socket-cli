@@ -1,7 +1,8 @@
-import colors from 'yoctocolors-cjs'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
 import { handleApiCall, handleApiError, queryApi } from '../../utils/api'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { getDefaultToken } from '../../utils/sdk'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -31,9 +32,7 @@ export async function fetchDiffScan({
 
   if (!response.ok) {
     const err = await handleApiError(response.status)
-    spinner.errorAndStop(
-      `${colors.bgRed(colors.white(response.statusText))}: ${err}`
-    )
+    logger.fail(failMsgWithBadge(response.statusText, err))
     return
   }
 

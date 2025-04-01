@@ -147,16 +147,6 @@ async function run(
     importMeta,
     parentName
   })
-  // if (cli.input.length)
-  //   logger.fail(
-  //     stripIndents`
-  //       ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
-  //
-  //       - Unexpected arguments
-  //   `)
-  //   config.help(parentName, config)
-  //   return
-  // }
 
   // TODO: Convert to meow.
   const yargv = {

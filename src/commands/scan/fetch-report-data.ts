@@ -1,10 +1,9 @@
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
 import { handleApiCall, handleApiError, queryApi } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
 import type {
@@ -37,6 +36,15 @@ export async function fetchReportData(
       securityPolicy: undefined
     }
 > {
+  const apiToken = getDefaultToken()
+  if (!apiToken) {
+    throw new AuthError(
+      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+    )
+  }
+
+  const sockSdk = await setupSdk(apiToken)
+
   let haveScan = false
   // let haveLicensePolicy = false
   let haveSecurityPolicy = false
@@ -79,16 +87,7 @@ export async function fetchReportData(
     }
   }
 
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
   updateProgress()
-
-  const sockSdk = await setupSdk(apiToken)
 
   // @ts-ignore
   const [
@@ -113,7 +112,7 @@ export async function fetchReportData(
         if (!response.ok) {
           const err = await handleApiError(response.status)
           logger.fail(
-            `${colors.bgRed(colors.white(response.statusText))}: Fetch error: ${err}`
+            failMsgWithBadge(response.statusText, `Fetch error: ${err}`)
           )
           return undefined
         }

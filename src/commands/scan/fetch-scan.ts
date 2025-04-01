@@ -1,10 +1,9 @@
-import colors from 'yoctocolors-cjs'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
 import { handleApiError, queryApi } from '../../utils/api'
 import { AuthError } from '../../utils/errors'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { getDefaultToken } from '../../utils/sdk'
 
 import type { components } from '@socketsecurity/sdk/types/api'
@@ -23,20 +22,18 @@ export async function fetchScan(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  spinner.start('Fetching full-scan...')
+  spinner.start('Fetching scan data...')
 
   const response = await queryApi(
     `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}`,
     apiToken
   )
 
-  spinner.stop('Fetch complete.')
+  spinner.successAndStop('Received response while fetching scan data.')
 
   if (!response.ok) {
     const err = await handleApiError(response.status)
-    logger.fail(
-      `${colors.bgRed(colors.white(response.statusText))}: Fetch error: ${err}`
-    )
+    logger.fail(failMsgWithBadge(response.statusText, `Fetch error: ${err}`))
     return
   }
 
