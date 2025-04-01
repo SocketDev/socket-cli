@@ -320,7 +320,7 @@ function displayAnalyticsScreen(data: FormattedData): void {
   })
 
   screen.render()
-
+  // eslint-disable-next-line n/no-process-exit
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 }
 

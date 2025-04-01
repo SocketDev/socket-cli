@@ -20,6 +20,7 @@ function exitWithBinPathError(binName: string): never {
   )
   // The exit code 127 indicates that the command or binary being executed
   // could not be found.
+  // eslint-disable-next-line n/no-process-exit
   process.exit(127)
 }
 
@@ -83,6 +84,7 @@ export function getNpmPath() {
       logger.fail(message)
       // The exit code 127 indicates that the command or binary being executed
       // could not be found.
+      // eslint-disable-next-line n/no-process-exit
       process.exit(127)
     }
   }

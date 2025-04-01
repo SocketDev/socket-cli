@@ -38,6 +38,7 @@ export function formatReportDataOutput(
   }
 
   if (strict && !data.healthy) {
+    // eslint-disable-next-line n/no-process-exit
     process.exit(1)
   }
 }

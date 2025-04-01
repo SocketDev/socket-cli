@@ -37,6 +37,7 @@ export async function outputThreatFeed(
   // Register these keys first so you can always exit, even when it gets stuck
   // If we don't do this and the code crashes, the user must hard-kill the
   // node process just to exit it. That's very bad UX.
+  // eslint-disable-next-line n/no-process-exit
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 
   const table: any = new TableWidget({
