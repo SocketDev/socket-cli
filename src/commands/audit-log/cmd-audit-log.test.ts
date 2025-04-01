@@ -69,7 +69,9 @@ describe('socket audit-log', async () => {
 
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m:
 
-          - Org name should be the first arg (\\x1b[31mmissing\\x1b[39m)"
+          - Org name should be the first arg (\\x1b[31mmissing\\x1b[39m)
+
+          - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -77,7 +79,13 @@ describe('socket audit-log', async () => {
   )
 
   cmdit(
-    ['audit-log', 'fakeorg', '--dry-run', '--config', '{}'],
+    [
+      'audit-log',
+      'fakeorg',
+      '--dry-run',
+      '--config',
+      '{"apiToken":"anything"}'
+    ],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)

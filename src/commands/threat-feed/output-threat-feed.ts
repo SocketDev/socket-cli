@@ -1,5 +1,3 @@
-import process from 'node:process'
-
 // @ts-ignore
 import BoxWidget from 'blessed/lib/widgets/box'
 // @ts-ignore
@@ -9,101 +7,37 @@ import TableWidget from 'blessed-contrib/lib/widget/table'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants'
-import { queryApi } from '../../utils/api'
-import { AuthError } from '../../utils/errors'
-import { getDefaultToken } from '../../utils/sdk'
+import { ThreadFeedResponse, ThreatResult } from './types'
 
-import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
+import type { Widgets } from 'blessed'
 
-type ThreatResult = {
-  createdAt: string
-  description: string
-  id: number
-  locationHtmlUrl: string
-  packageHtmlUrl: string
-  purl: string
-  removedAt: string
-  threatType: string
-}
-
-export async function getThreatFeed({
-  direction,
-  ecosystem,
-  filter,
-  outputKind,
-  page,
-  perPage
-}: {
-  direction: string
-  ecosystem: string
-  filter: string
-  outputKind: 'json' | 'markdown' | 'print'
-  page: string
-  perPage: number
-}): Promise<void> {
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
+export async function outputThreatFeed(
+  data: ThreadFeedResponse,
+  {
+    outputKind
+  }: {
+    outputKind: 'json' | 'markdown' | 'text'
   }
-
-  await getThreatFeedWithToken({
-    apiToken,
-    direction,
-    ecosystem,
-    filter,
-    outputKind,
-    page,
-    perPage
-  })
-}
-
-async function getThreatFeedWithToken({
-  apiToken,
-  direction,
-  ecosystem,
-  filter,
-  outputKind,
-  page,
-  perPage
-}: {
-  apiToken: string
-  direction: string
-  ecosystem: string
-  filter: string
-  outputKind: 'json' | 'markdown' | 'print'
-  page: string
-  perPage: number
-}): Promise<void> {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  const queryParams = new URLSearchParams([
-    ['direction', direction],
-    ['ecosystem', ecosystem],
-    ['filter', filter],
-    ['page', page],
-    ['per_page', String(perPage)]
-  ])
-
-  spinner.start('Fetching Threat Feed data...')
-
-  const response = await queryApi(`threat-feed?${queryParams}`, apiToken)
-  const data = (await response.json()) as {
-    results: ThreatResult[]
-    nextPage: string
-  }
-
-  spinner.stop('Threat feed data fetched')
-
+) {
   if (outputKind === 'json') {
     logger.log(data)
     return
   }
 
+  if (!data?.results?.length) {
+    logger.error('Did not receive any data to display...')
+    return
+  }
+
+  const formattedOutput = formatResults(data.results)
+  const descriptions = data.results.map(d => d.description)
+
+  // Note: this temporarily takes over the terminal (just like `man` does).
   const screen: Widgets.Screen = new ScreenWidget()
+  // Register these keys first so you can always exit, even when it gets stuck
+  // If we don't do this and the code crashes, the user must hard-kill the
+  // node process just to exit it. That's very bad UX.
+  screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 
   const table: any = new TableWidget({
     keys: 'true',
@@ -142,15 +76,6 @@ async function getThreatFeedWithToken({
     }
   })
 
-  // allow control the table with the keyboard
-  table.focus()
-
-  screen.append(table)
-  screen.append(detailsBox)
-
-  const formattedOutput = formatResults(data.results)
-  const descriptions = data.results.map(d => d.description)
-
   table.setData({
     headers: [
       ' Ecosystem',
@@ -162,6 +87,12 @@ async function getThreatFeedWithToken({
     ],
     data: formattedOutput
   })
+
+  // allow control the table with the keyboard
+  table.focus()
+
+  screen.append(table)
+  screen.append(detailsBox)
 
   // Update details box when selection changes
   table.rows.on('select item', () => {
@@ -186,12 +117,11 @@ async function getThreatFeedWithToken({
 
   screen.render()
 
-  screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
   screen.key(['return'], () => {
     const selectedIndex = table.rows.selected
     screen.destroy()
     const selectedRow = formattedOutput[selectedIndex]
-    console.log(selectedRow)
+    logger.log('Last selection:\n', selectedRow)
   })
 }
 

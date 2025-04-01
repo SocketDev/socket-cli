@@ -128,8 +128,8 @@ async function run(
       fail: target === '-' ? 'stdin is not supported' : 'missing'
     },
     {
+      nook: true,
       test: cli.input.length === 1,
-      hide: cli.input.length === 1,
       message: 'Can only accept one DIR (make sure to escape spaces!)',
       pass: 'ok',
       fail: 'received ' + cli.input.length

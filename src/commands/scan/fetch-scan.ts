@@ -13,15 +13,15 @@ export async function fetchScan(
   orgSlug: string,
   scanId: string
 ): Promise<Array<components['schemas']['SocketArtifact']> | undefined> {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
   const apiToken = getDefaultToken()
   if (!apiToken) {
     throw new AuthError(
       'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
     )
   }
+
+  // Lazily access constants.spinner.
+  const { spinner } = constants
 
   spinner.start('Fetching full-scan...')
 

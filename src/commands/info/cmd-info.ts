@@ -62,11 +62,19 @@ async function run(
       fail: 'missing'
     },
     {
+      nook: true,
       test: cli.input.length === 1,
-      hide: cli.input.length === 1,
       message: 'Can only accept one package at a time',
       pass: 'ok',
       fail: 'got ' + cli.input.length
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message:
+        'The `--json` and `--markdown` flags can not be used at the same time',
+      pass: 'ok',
+      fail: 'bad'
     }
   )
   if (wasBadInput) {

@@ -1,13 +1,14 @@
-import { stripIndents } from 'common-tags'
-import colors from 'yoctocolors-cjs'
+import assert from 'node:assert'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { displayAnalytics } from './display-analytics'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -84,34 +85,54 @@ async function run(
 
   const { file, json, markdown, repo, scope, time } = cli.flags
 
-  const badScope = scope !== 'org' && scope !== 'repo'
-  const badTime = time !== 7 && time !== 30 && time !== 90
-  const badRepo = scope === 'repo' && !repo
-  const badFile = file !== '-' && !json && !markdown
-  const badFlags = json && markdown
+  const apiToken = getDefaultToken()
 
-  if (badScope || badTime || badRepo || badFile || badFlags) {
-    // Use exit status of 2 to indicate incorrect usage, generally invalid
-    // options or missing arguments.
-    // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
-    process.exitCode = 2
-    logger.fail(
-      stripIndents`${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
-
-      - Scope must be "repo" or "org" ${badScope ? colors.red('(bad!)') : colors.green('(ok)')}
-
-      - The time filter must either be 7, 30 or 90 ${badTime ? colors.red('(bad!)') : colors.green('(ok)')}
-
-      ${scope === 'repo' ? `- Repository name using --repo when scope is "repo" ${badRepo ? colors.red('(bad!)') : colors.green('(ok)')}` : ''}
-
-      ${badFlags ? `- The \`--json\` and \`--markdown\` flags can not be used at the same time ${badFlags ? colors.red('(bad!)') : colors.green('(ok)')}` : ''}
-
-      ${badFile ? `- The \`--file\` flag is only valid when using \`--json\` or \`--markdown\` ${badFile ? colors.red('(bad!)') : colors.green('(ok)')}` : ''}
-    `
-        .split('\n')
-        .filter(s => !!s.trim())
-        .join('\n')
-    )
+  const wasBadInput = handleBadInput(
+    {
+      test: scope === 'org' || scope === 'repo',
+      message: 'Scope must be "repo" or "org"',
+      pass: 'ok',
+      fail: 'bad'
+    },
+    {
+      test: time === 7 || time === 30 || time === 90,
+      message: 'The time filter must either be 7, 30 or 90',
+      pass: 'ok',
+      fail: 'bad'
+    },
+    {
+      nook: true,
+      test: scope === 'org' || repo,
+      message: 'When scope=repo, repo name should be set through --repo',
+      pass: 'ok',
+      fail: 'missing'
+    },
+    {
+      nook: true,
+      test: file === '-' || json || markdown,
+      message:
+        'The `--file` flag is only valid when using `--json` or `--markdown`',
+      pass: 'ok',
+      fail: 'bad'
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message:
+        'The `--json` and `--markdown` flags can not be used at the same time',
+      pass: 'ok',
+      fail: 'bad'
+    },
+    {
+      nook: true,
+      test: apiToken,
+      message:
+        'You need to be logged in to use this command. See `socket login`.',
+      pass: 'ok',
+      fail: 'missing API token'
+    }
+  )
+  if (wasBadInput) {
     return
   }
 
@@ -120,6 +141,9 @@ async function run(
     return
   }
 
+  assert(assertScope(scope))
+  assert(assertTime(time))
+
   return await displayAnalytics({
     scope,
     time,
@@ -127,4 +151,12 @@ async function run(
     outputKind: json ? 'json' : markdown ? 'markdown' : 'print',
     filePath: String(file || '')
   })
+}
+
+function assertScope(scope: unknown): scope is 'org' | 'repo' {
+  return scope === 'org' || scope === 'repo'
+}
+
+function assertTime(time: unknown): time is 7 | 30 | 90 {
+  return time === 7 || time === 30 || time === 90
 }

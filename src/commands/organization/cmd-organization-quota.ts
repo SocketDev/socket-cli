@@ -6,6 +6,7 @@ import { commonFlags, outputFlags } from '../../flags'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -48,14 +49,25 @@ async function run(
 
   const json = Boolean(cli.flags['json'])
   const markdown = Boolean(cli.flags['markdown'])
+  const apiToken = getDefaultToken()
 
-  const wasBadInput = handleBadInput({
-    hide: !json || !markdown,
-    test: !json || !markdown,
-    message: 'The json and markdown flags cannot be both set, pick one',
-    pass: 'ok',
-    fail: 'omit one'
-  })
+  const wasBadInput = handleBadInput(
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      pass: 'ok',
+      fail: 'omit one'
+    },
+    {
+      nook: true,
+      test: apiToken,
+      message:
+        'You need to be logged in to use this command. See `socket login`.',
+      pass: 'ok',
+      fail: 'missing API token'
+    }
+  )
   if (wasBadInput) {
     return
   }

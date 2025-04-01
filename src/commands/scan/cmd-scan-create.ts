@@ -217,7 +217,7 @@ async function run(
 
   const wasBadInput = handleBadInput(
     {
-      hide: defaultOrgSlug,
+      nook: true,
       test: orgSlug,
       message: 'Org name as the first argument',
       pass: 'ok',
@@ -242,7 +242,7 @@ async function run(
       fail: 'missing'
     },
     {
-      hide: apiToken,
+      nook: true,
       test: apiToken,
       message: 'This command requires an API token for access`)',
       pass: 'ok',

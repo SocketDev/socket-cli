@@ -3,8 +3,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleDependencies } from './handle-dependencies'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
+import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
+import { getDefaultToken } from '../../utils/sdk'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -62,6 +64,30 @@ async function run(
   })
 
   const { json, limit, markdown, offset } = cli.flags
+
+  const apiToken = getDefaultToken()
+
+  const wasBadInput = handleBadInput(
+    {
+      nook: true,
+      test: !json || !markdown,
+      message:
+        'The `--json` and `--markdown` flags can not be used at the same time',
+      pass: 'ok',
+      fail: 'bad'
+    },
+    {
+      nook: true,
+      test: apiToken,
+      message:
+        'You need to be logged in to use this command. See `socket login`.',
+      pass: 'ok',
+      fail: 'missing API token'
+    }
+  )
+  if (wasBadInput) {
+    return
+  }
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)
