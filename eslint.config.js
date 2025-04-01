@@ -40,6 +40,7 @@ const sharedPlugins = {
 }
 
 const sharedRules = {
+  'unicorn/consistent-function-scoping': 'error',
   curly: 'error',
   'no-await-in-loop': 'error',
   'no-control-regex': 'error',
@@ -59,8 +60,7 @@ const sharedRules = {
   'no-warning-comments': ['warn', { terms: ['fixme'] }],
   'prefer-const': 'error',
   'sort-destructure-keys/sort-destructure-keys': 'error',
-  'sort-imports': ['error', { ignoreDeclarationSort: true }],
-  'unicorn/consistent-function-scoping': 'error'
+  'sort-imports': ['error', { ignoreDeclarationSort: true }]
 }
 
 const sharedRulesForImportX = {
@@ -98,6 +98,26 @@ const sharedRulesForImportX = {
       }
     }
   ]
+}
+
+const sharedRulesForNode = {
+  'n/exports-style': ['error', 'module.exports'],
+  'n/no-missing-require': ['off'],
+  // The n/no-unpublished-bin rule does does not support non-trivial glob
+  // patterns used in package.json "files" fields. In those cases we simplify
+  // the glob patterns used.
+  'n/no-unpublished-bin': 'error',
+  'n/no-unsupported-features/es-builtins': 'error',
+  'n/no-unsupported-features/es-syntax': 'error',
+  'n/no-unsupported-features/node-builtins': [
+    'error',
+    {
+      ignores: ['fs.promises.cp', 'readline/promises', 'test', 'test.describe'],
+      // Lazily access constants.maintainedNodeVersions.
+      version: constants.maintainedNodeVersions.current
+    }
+  ],
+  'n/prefer-node-protocol': 'error'
 }
 
 function getImportXFlatConfigs(isEsm) {
@@ -140,12 +160,21 @@ function getImportXFlatConfigs(isEsm) {
 const importFlatConfigsForScript = getImportXFlatConfigs(false)
 const importFlatConfigsForModule = getImportXFlatConfigs(true)
 
+const biomeIgnores = {
+  name: 'Imported biome.json ignore patterns',
+  ignores: biomeConfig.files.ignore.map(convertIgnorePatternToMinimatch)
+}
+const gitIgnores = includeIgnoreFile(gitignorePath)
+
+if (process.env.LINT_DIST) {
+  const isNotDistGlobPattern = p => !p.endsWith('/dist')
+  biomeIgnores.ignores = biomeIgnores.ignores?.filter(isNotDistGlobPattern)
+  gitIgnores.ignores = gitIgnores.ignores?.filter(isNotDistGlobPattern)
+}
+
 module.exports = [
-  includeIgnoreFile(gitignorePath),
-  {
-    name: 'Imported biome.json ignore patterns',
-    ignores: biomeConfig.files.ignore.map(convertIgnorePatternToMinimatch)
-  },
+  gitIgnores,
+  biomeIgnores,
   {
     files: ['**/*.{cts,mts,ts}'],
     ...js.configs.recommended,
@@ -191,12 +220,15 @@ module.exports = [
     plugins: {
       ...js.configs.recommended.plugins,
       ...importFlatConfigsForModule.typescript.plugins,
+      ...nodePlugin.configs['flat/recommended-module'].plugins,
       ...sharedPlugins,
       '@typescript-eslint': tsEslint.plugin
     },
     rules: {
       ...js.configs.recommended.rules,
       ...importFlatConfigsForModule.typescript.rules,
+      ...nodePlugin.configs['flat/recommended-module'].rules,
+      ...sharedRulesForNode,
       ...sharedRules,
       '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
       '@typescript-eslint/consistent-type-assertions': [
@@ -217,8 +249,10 @@ module.exports = [
       // we want), and it's nice to await before returning anyways, since you get
       // a slightly more comprehensive stack trace upon promise rejection.
       '@typescript-eslint/return-await': ['error', 'always'],
-      // Disable no-redeclare and no-unused-vars rule because they don't play
-      // well with TypeScript.
+      // Disable the following rules because they don't play well with TypeScript.
+      'n/hashbang': 'off',
+      'n/no-extraneous-import': 'off',
+      'n/no-missing-import': 'off',
       'no-redeclare': 'off',
       'no-unused-vars': 'off'
     }
@@ -250,24 +284,8 @@ module.exports = [
       ...js.configs.recommended.rules,
       ...importFlatConfigsForScript.recommended.rules,
       ...nodePlugin.configs['flat/recommended-script'].rules,
-      ...sharedRules,
-      'n/exports-style': ['error', 'module.exports'],
-      'n/no-missing-require': ['off'],
-      // The n/no-unpublished-bin rule does does not support non-trivial glob
-      // patterns used in package.json "files" fields. In those cases we simplify
-      // the glob patterns used.
-      'n/no-unpublished-bin': 'error',
-      'n/no-unsupported-features/es-builtins': 'error',
-      'n/no-unsupported-features/es-syntax': 'error',
-      'n/no-unsupported-features/node-builtins': [
-        'error',
-        {
-          ignores: ['fs.promises.cp', 'test', 'test.describe'],
-          // Lazily access constants.maintainedNodeVersions.
-          version: constants.maintainedNodeVersions.current
-        }
-      ],
-      'n/prefer-node-protocol': 'error'
+      ...sharedRulesForNode,
+      ...sharedRules
     }
   },
   {
@@ -297,6 +315,7 @@ module.exports = [
       ...js.configs.recommended.rules,
       ...importFlatConfigsForModule.recommended.rules,
       ...nodePlugin.configs['flat/recommended-module'].rules,
+      ...sharedRulesForNode,
       ...sharedRules
     }
   }

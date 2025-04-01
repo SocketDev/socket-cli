@@ -127,14 +127,11 @@ async function copyBlessedWidgets() {
   ]
   await Promise.all([
     ...libFiles.map(n =>
-      // eslint-disable-next-line n/no-unsupported-features/node-builtins
       fs.cp(path.join(blessedNmLibPath, n), path.join(blessedDestLibPath, n))
     ),
-    // eslint-disable-next-line n/no-unsupported-features/node-builtins
     fs.cp(blessedNmVendorPath, path.join(blessedDestPath, 'vendor'), {
       recursive: true
     }),
-    // eslint-disable-next-line n/no-unsupported-features/node-builtins
     fs.cp(blessedNmWidgetsPath, path.join(blessedDestLibPath, 'widgets'), {
       recursive: true
     })

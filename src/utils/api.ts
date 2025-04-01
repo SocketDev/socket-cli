@@ -31,6 +31,7 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   logger.fail(
     `${colors.bgRed(colors.white('API returned an error:'))} ${message}`
   )
+  // eslint-disable-next-line n/no-process-exit
   process.exit(1)
 }
 

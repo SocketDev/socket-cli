@@ -86,6 +86,7 @@ export async function convertGradleToMaven(
     //   logger.fail(
     //     'There were no errors from sbt but could not find the location of resulting .pom file either'
     //   )
+    //   // eslint-disable-next-line n/no-process-exit
     //   process.exit(1)
     // }
     //
