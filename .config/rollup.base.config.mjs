@@ -92,7 +92,7 @@ const customResolver = nodeResolve({
 })
 
 const requireAssignmentsRegExp =
-  /(?<=\s*=\s*)require\(["'](?!node:|@socket(?:registry|security)\/|\.).+?["']\)(?=;?\r?\n)/g
+  /(?<=\s*=\s*)require\(["'](?!node:|@socket(?:override|registry|security)\/|\.).+?["']\)(?=;?\r?\n)/g
 
 const checkRequireAssignmentRegExp = new RegExp(
   requireAssignmentsRegExp.source,
