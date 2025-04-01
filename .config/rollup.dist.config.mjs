@@ -111,30 +111,14 @@ const sharedPlugins = [
 async function copyBlessedWidgets() {
   // Copy blessed package files to dist.
   const blessedDestPath = path.join(rootDistPath, 'blessed')
-  const blessedDestLibPath = path.join(blessedDestPath, 'lib')
   const blessedNmPath = path.join(rootPath, 'node_modules/blessed')
-  const blessedNmLibPath = path.join(blessedNmPath, 'lib')
-  const blessedNmVendorPath = path.join(blessedNmPath, 'vendor')
-  const blessedNmWidgetsPath = path.join(blessedNmLibPath, 'widgets')
-  const libFiles = [
-    'alias.js',
-    'colors.js',
-    'events.js',
-    'helpers.js',
-    'program.js',
-    'tput.js',
-    'unicode.js'
-  ]
+  const folders = ['lib', 'usr', 'vendor']
   await Promise.all([
-    ...libFiles.map(n =>
-      fs.cp(path.join(blessedNmLibPath, n), path.join(blessedDestLibPath, n))
-    ),
-    fs.cp(blessedNmVendorPath, path.join(blessedDestPath, 'vendor'), {
-      recursive: true
-    }),
-    fs.cp(blessedNmWidgetsPath, path.join(blessedDestLibPath, 'widgets'), {
-      recursive: true
-    })
+    ...folders.map(f =>
+      fs.cp(path.join(blessedNmPath, f), path.join(blessedDestPath, f), {
+        recursive: true
+      })
+    )
   ])
   // Add 'use strict' directive to js files.
   const jsFiles = await tinyGlob(['**/*.js'], {
