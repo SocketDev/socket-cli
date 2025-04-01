@@ -81,7 +81,7 @@
     "@socketregistry/packageurl-js": "1.0.5",
     "@socketsecurity/config": "2.1.3",
     "@socketsecurity/registry": "1.0.137",
-    "@socketsecurity/sdk": "1.4.17",
+    "@socketsecurity/sdk": "1.4.19",
     "blessed": "0.1.81",
     "blessed-contrib": "4.11.0",
     "browserslist": "4.24.4",
