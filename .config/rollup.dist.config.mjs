@@ -109,6 +109,7 @@ const sharedPlugins = [
 ]
 
 async function copyBlessedWidgets() {
+  // Copy blessed package files to dist.
   const blessedDestPath = path.join(rootDistPath, 'blessed')
   const blessedDestLibPath = path.join(blessedDestPath, 'lib')
   const blessedNmPath = path.join(rootPath, 'node_modules/blessed')
@@ -138,6 +139,17 @@ async function copyBlessedWidgets() {
       recursive: true
     })
   ])
+  // Add 'use strict' directive to js files.
+  const jsFiles = await tinyGlob(['**/*.js'], {
+    absolute: true,
+    cwd: blessedDestPath
+  })
+  await Promise.all(
+    jsFiles.map(async p => {
+      const content = await fs.readFile(p, 'utf8')
+      await fs.writeFile(p, `'use strict'\n\n${content}`, 'utf8')
+    })
+  )
 }
 
 async function copyInitGradle() {
