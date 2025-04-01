@@ -177,6 +177,13 @@ async function globDtsAndMapFiles(namePattern, srcPath) {
   })
 }
 
+async function globJsFiles(namePattern, srcPath) {
+  return await tinyGlob([`**/${namePattern}.js`], {
+    absolute: true,
+    cwd: srcPath
+  })
+}
+
 function isAncestorsExternal(id) {
   let currNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH)
   while (currNmIndex !== -1) {
@@ -200,6 +207,14 @@ async function moveDtsAndMapFiles(namePattern, srcPath, destPath) {
   )
 }
 
+async function moveJsFiles(namePattern, srcPath, destPath) {
+  await Promise.all(
+    (await globJsFiles(namePattern, srcPath)).map(p =>
+      fs.rename(p, path.join(destPath, path.basename(p)))
+    )
+  )
+}
+
 async function removeDtsAndMapFiles(namePattern, srcPath) {
   await Promise.all(
     (await globDtsAndMapFiles(namePattern, srcPath)).map(p => fs.rm(p))
@@ -208,12 +223,7 @@ async function removeDtsAndMapFiles(namePattern, srcPath) {
 
 async function removeJsFiles(namePattern, srcPath) {
   await Promise.all(
-    (
-      await tinyGlob([`**/${namePattern}.js`], {
-        absolute: true,
-        cwd: srcPath
-      })
-    ).map(p => fs.rm(p))
+    (await globJsFiles(namePattern, srcPath)).map(p => fs.rm(p))
   )
 }
 
@@ -500,14 +510,22 @@ export default () => {
         async writeBundle() {
           await Promise.all([
             updateDepStats(requireConfig.meta.depStats),
+            moveDtsAndMapFiles(CONSTANTS, distModuleSyncPath, rootDistPath),
+            moveDtsAndMapFiles(VENDOR, distRequirePath, distModuleSyncPath),
+            moveJsFiles(VENDOR, distRequirePath, distModuleSyncPath)
+          ])
+          await Promise.all([
+            removeDtsAndMapFiles(CONSTANTS, distModuleSyncPath),
             removeDtsAndMapFiles(
               `!(${[...keptRequireDtsMapFiles].sort(naturalCompare).join('|')})`,
               distRequirePath
             ),
-            moveDtsAndMapFiles(CONSTANTS, distModuleSyncPath, rootDistPath)
-          ])
-          await Promise.all([
-            removeDtsAndMapFiles(CONSTANTS, distModuleSyncPath),
+            // Stub out the ./dist/require/vendor.js file.
+            fs.writeFile(
+              path.join(distRequirePath, VENDOR_JS),
+              createStubCode(`../${MODULE_SYNC}/${VENDOR_JS}`),
+              'utf8'
+            ),
             // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
             ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
               ? [
