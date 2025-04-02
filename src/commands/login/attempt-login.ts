@@ -59,34 +59,25 @@ export async function attemptLogin(
 
   let enforcedOrgs: string[] = []
   if (enforcedChoices.length > 1) {
-    const id = (await select(
-      {
-        message:
-          "Which organization's policies should Socket enforce system-wide?",
-        choices: enforcedChoices.concat({
-          name: 'None',
-          value: '',
-          description: 'Pick "None" if this is a personal device'
-        })
-      },
-      {
-        spinner
-      }
-    )) as string | null
+    const id = (await select({
+      message:
+        "Which organization's policies should Socket enforce system-wide?",
+      choices: enforcedChoices.concat({
+        name: 'None',
+        value: '',
+        description: 'Pick "None" if this is a personal device'
+      })
+    })) as string | null
     if (id) {
       enforcedOrgs = [id]
     }
   } else if (enforcedChoices.length) {
-    const confirmOrg = await confirm(
-      {
+    if (
+      await confirm({
         message: `Should Socket enforce ${(enforcedChoices[0] as OrgChoice)?.name}'s security policies system-wide?`,
         default: true
-      },
-      {
-        spinner
-      }
-    )
-    if (confirmOrg) {
+      })
+    ) {
       const existing = enforcedChoices[0] as OrgChoice
       if (existing) {
         enforcedOrgs = [existing.value]
