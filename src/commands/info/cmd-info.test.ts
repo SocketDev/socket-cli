@@ -18,23 +18,23 @@ describe('socket info', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Look up info regarding a package
+        "Look up info regarding a package
 
-        Usage
-          $ socket info <name>
+          Usage
+            $ socket info <name>
 
-        Options
-          --all             Include all issues
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
-          --strict          Exits with an error code if any matching issues are found
+          Options
+            --all             Include all issues
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
+            --json            Output result as json
+            --markdown        Output result as markdown
+            --strict          Exits with an error code if any matching issues are found
 
-        Examples
-          $ socket info webtorrent
-          $ socket info webtorrent@1.9.1"
-    `
+          Examples
+            $ socket info webtorrent
+            $ socket info webtorrent@1.9.1"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

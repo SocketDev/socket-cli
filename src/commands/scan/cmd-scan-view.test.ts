@@ -18,22 +18,22 @@ describe('socket scan view', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "View the raw results of a scan
+        "View the raw results of a scan
 
-        Usage
-          $ socket scan view <org slug> <scan ID> [path to output file]
+          Usage
+            $ socket scan view <org slug> <scan ID> [path to output file]
 
-        When no output path is given the contents is sent to stdout.
+          When no output path is given the contents is sent to stdout.
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
+            --json            Output result as json
+            --markdown        Output result as markdown
 
-        Examples
-          $ socket scan view FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 ./stream.txt"
-    `
+          Examples
+            $ socket scan view FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 ./stream.txt"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

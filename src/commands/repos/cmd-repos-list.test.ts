@@ -18,24 +18,24 @@ describe('socket repos list', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "List repositories in an organization
+        "List repositories in an organization
 
-        Usage
-          $ socket repos list <org slug>
+          Usage
+            $ socket repos list <org slug>
 
-        Options
-          --direction       Direction option
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
-          --page            Page number
-          --perPage         Number of results per page
-          --sort            Sorting option
+          Options
+            --direction       Direction option
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
+            --json            Output result as json
+            --markdown        Output result as markdown
+            --page            Page number
+            --perPage         Number of results per page
+            --sort            Sorting option
 
-        Examples
-          $ socket repos list FakeOrg"
-    `
+          Examples
+            $ socket repos list FakeOrg"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

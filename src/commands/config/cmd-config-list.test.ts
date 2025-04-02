@@ -26,7 +26,7 @@ describe('socket config get', async () => {
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --full            Show full tokens in plaintext (unsafe)
-            --help            Print this help.
+            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
 

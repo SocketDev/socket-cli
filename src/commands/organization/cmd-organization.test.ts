@@ -18,21 +18,21 @@ describe('socket organization', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Account details
+        "Account details
 
-        Usage
-          $ socket organization <command>
+          Usage
+            $ socket organization <command>
 
-        Commands
-          list              List organizations associated with the API key used
+          Commands
+            list              List organizations associated with the API key used
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
 
-        Examples
-          $ socket organization --help"
-    `
+          Examples
+            $ socket organization --help"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

@@ -18,15 +18,15 @@ describe('socket fix', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Fix "fixable" Socket alerts
+        "Fix "fixable" Socket alerts
 
-        Usage
-          $ socket fix
+          Usage
+            $ socket fix
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help."
-    `
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

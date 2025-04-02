@@ -18,20 +18,20 @@ describe('socket scan del', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Delete a scan
+        "Delete a scan
 
-        Usage
-          $ socket scan del <org slug> <scan ID>
+          Usage
+            $ socket scan del <org slug> <scan ID>
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
+            --json            Output result as json
+            --markdown        Output result as markdown
 
-        Examples
-          $ socket scan del FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0"
-    `
+          Examples
+            $ socket scan del FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
