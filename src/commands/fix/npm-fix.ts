@@ -54,7 +54,8 @@ export async function npmFix(
       existing: true,
       unfixable: false,
       upgradable: false
-    }
+    },
+    nothrow: true
   })
 
   const infoByPkg = getCveInfoByAlertsMap(alertsMap)

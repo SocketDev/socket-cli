@@ -49,7 +49,8 @@ export async function pnpmFix(
       existing: true,
       unfixable: false,
       upgradable: false
-    }
+    },
+    nothrow: true
   })
 
   const infoByPkg = getCveInfoByAlertsMap(alertsMap)
