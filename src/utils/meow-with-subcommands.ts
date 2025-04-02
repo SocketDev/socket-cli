@@ -77,8 +77,8 @@ export async function meowWithSubcommands(
     name,
     ...additionalOptions
   } = { __proto__: null, ...options }
-  const [commandOrAliasNamex, ...rawCommandArgv] = argv
-  let commandOrAliasName = commandOrAliasNamex
+  const [commandOrAliasName_, ...rawCommandArgv] = argv
+  let commandOrAliasName = commandOrAliasName_
   if (!commandOrAliasName && defaultSub) {
     commandOrAliasName = defaultSub
   }
@@ -163,9 +163,9 @@ export async function meowWithSubcommands(
   }
 
   // ...else we provide basic instructions and help.
-
-  emitBanner(name)
-
+  if (!cli.flags['silent']) {
+    emitBanner(name)
+  }
   if (!cli.flags['help'] && cli.flags['dryRun']) {
     process.exitCode = 0
     logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
@@ -193,8 +193,6 @@ export function meowOrExit({
   const command = `${parentName} ${config.commandName}`
   lastSeenCommand = command
 
-  emitBanner(command)
-
   // This exits if .printHelp() is called either by meow itself or by us.
   const cli = meow({
     argv,
@@ -205,6 +203,10 @@ export function meowOrExit({
     allowUnknownFlags: Boolean(allowUnknownFlags),
     autoHelp: false // otherwise we can't exit(0)
   })
+
+  if (!cli.flags['silent']) {
+    emitBanner(command)
+  }
   if (cli.flags['help']) {
     cli.showHelp()
   }

@@ -15,7 +15,12 @@ import { getNpmBinPath } from '../shadow/npm/paths'
 
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-const { SOCKET_IPC_HANDSHAKE } = constants
+const {
+  NPM,
+  SOCKET_CLI_SAFE_BIN,
+  SOCKET_CLI_SAFE_PROGRESS,
+  SOCKET_IPC_HANDSHAKE
+} = constants
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
@@ -37,9 +42,11 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
   const useIpc = isObject(ipc)
   const useDebug = isDebug()
   const terminatorPos = args.indexOf('--')
-  const binArgs = (
-    terminatorPos === -1 ? args : args.slice(0, terminatorPos)
-  ).filter(a => !isAuditFlag(a) && !isFundFlag(a) && !isProgressFlag(a))
+  const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
+  const progressArg = rawBinArgs.findLast(isProgressFlag) !== '--no-progress'
+  const binArgs = rawBinArgs.filter(
+    a => !isAuditFlag(a) && !isFundFlag(a) && !isProgressFlag(a)
+  )
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const isSilent = !useDebug && !binArgs.some(isLoglevelFlag)
   const logLevelArgs = isSilent ? ['--loglevel', 'silent'] : []
@@ -89,7 +96,13 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
     }
   )
   if (useIpc) {
-    spawnPromise.process.send({ [SOCKET_IPC_HANDSHAKE]: ipc })
+    spawnPromise.process.send({
+      [SOCKET_IPC_HANDSHAKE]: {
+        [SOCKET_CLI_SAFE_BIN]: NPM,
+        [SOCKET_CLI_SAFE_PROGRESS]: progressArg,
+        ...ipc
+      }
+    })
   }
   return spawnPromise
 }
