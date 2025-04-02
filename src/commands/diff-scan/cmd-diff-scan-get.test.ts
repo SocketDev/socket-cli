@@ -18,27 +18,27 @@ describe('socket diff-scan get', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Get a diff scan for an organization
+        "Get a diff scan for an organization
 
-        Usage
-          $ socket diff-scan get <org slug> --before=<before> --after=<after>
+          Usage
+            $ socket diff-scan get <org slug> --before=<before> --after=<after>
 
-        This command displays the package changes between two scans. The full output
-        can be pretty large depending on the size of your repo and time range. It is
-        best stored to disk to be further analyzed by other tools.
+          This command displays the package changes between two scans. The full output
+          can be pretty large depending on the size of your repo and time range. It is
+          best stored to disk to be further analyzed by other tools.
 
-        Options
-          --after           The scan ID of the head scan
-          --before          The scan ID of the base scan
-          --depth           Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --file            Path to a local file where the output should be saved. Use \`-\` to force stdout.
-          --help            Print this help.
-          --json            Output result as json. This can be big. Use --file to store it to disk without truncation.
+          Options
+            --after           The scan ID of the head scan
+            --before          The scan ID of the base scan
+            --depth           Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --file            Path to a local file where the output should be saved. Use \`-\` to force stdout.
+            --help            Print this help
+            --json            Output result as json. This can be big. Use --file to store it to disk without truncation.
 
-        Examples
-          $ socket diff-scan get FakeCorp --before=aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 --after=aaa1aa1a-aaaa-1111-1a1a-1111111a11a1"
-    `
+          Examples
+            $ socket diff-scan get FakeCorp --before=aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 --after=aaa1aa1a-aaaa-1111-1a1a-1111111a11a1"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

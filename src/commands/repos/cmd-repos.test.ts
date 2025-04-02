@@ -18,25 +18,25 @@ describe('socket repos', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Repositories related commands
+        "Repositories related commands
 
-        Usage
-          $ socket repos <command>
+          Usage
+            $ socket repos <command>
 
-        Commands
-          create            Create a repository in an organization
-          del               Delete a repository in an organization
-          list              List repositories in an organization
-          update            Update a repository in an organization
-          view              View repositories in an organization
+          Commands
+            create            Create a repository in an organization
+            del               Delete a repository in an organization
+            list              List repositories in an organization
+            update            Update a repository in an organization
+            view              View repositories in an organization
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
 
-        Examples
-          $ socket repos --help"
-    `
+          Examples
+            $ socket repos --help"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

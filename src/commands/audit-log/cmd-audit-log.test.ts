@@ -18,26 +18,26 @@ describe('socket audit-log', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Look up the audit log for an organization
+        "Look up the audit log for an organization
 
-        Usage
-          $ socket audit-log <org slug>
+          Usage
+            $ socket audit-log <org slug>
 
-        This feature requires an Enterprise Plan. To learn more about getting access
-        to this feature and many more, please visit https://socket.dev/pricing
+          This feature requires an Enterprise Plan. To learn more about getting access
+          to this feature and many more, please visit https://socket.dev/pricing
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
-          --page            Page number - default is 1
-          --perPage         Results per page - default is 30
-          --type            Type of log event
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
+            --json            Output result as json
+            --markdown        Output result as markdown
+            --page            Page number - default is 1
+            --perPage         Results per page - default is 30
+            --type            Type of log event
 
-        Examples
-          $ socket audit-log FakeOrg"
-    `
+          Examples
+            $ socket audit-log FakeOrg"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

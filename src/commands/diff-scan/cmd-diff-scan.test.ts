@@ -18,21 +18,21 @@ describe('socket diff-scan', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Diff scans related commands
+        "Diff scans related commands
 
-        Usage
-          $ socket diff-scan <command>
+          Usage
+            $ socket diff-scan <command>
 
-        Commands
-          get               Get a diff scan for an organization
+          Commands
+            get               Get a diff scan for an organization
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
 
-        Examples
-          $ socket diff-scan --help"
-    `
+          Examples
+            $ socket diff-scan --help"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

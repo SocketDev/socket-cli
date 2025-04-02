@@ -18,20 +18,20 @@ describe('socket scan metadata', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Get a scan's metadata
+        "Get a scan's metadata
 
-        Usage
-          $ socket scan metadata <org slug> <scan id>
+          Usage
+            $ socket scan metadata <org slug> <scan id>
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
+            --json            Output result as json
+            --markdown        Output result as markdown
 
-        Examples
-          $ socket scan metadata FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0"
-    `
+          Examples
+            $ socket scan metadata FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
