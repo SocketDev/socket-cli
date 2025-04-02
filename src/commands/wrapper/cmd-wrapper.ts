@@ -59,7 +59,7 @@ async function run(
 ): Promise<void> {
   // I don't think meow would mess with this but ...
   if (argv[0] === '--postinstall') {
-    postinstallWrapper()
+    await postinstallWrapper()
     return
   }
 
