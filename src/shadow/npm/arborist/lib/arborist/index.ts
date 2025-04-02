@@ -132,8 +132,8 @@ export class SafeArborist extends Arborist {
       throw new Error(
         stripIndents`
           Socket ${binName} exiting due to risks.
-          To view all risks rerun with environment variable ${SOCKET_CLI_VIEW_ALL_RISKS}=1.
-          To accept risks rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.
+          View all risks - Rerun with environment variable ${SOCKET_CLI_VIEW_ALL_RISKS}=1.
+          Accept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.
         `
       )
     } else {
