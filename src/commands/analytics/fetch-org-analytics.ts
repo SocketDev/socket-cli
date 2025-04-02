@@ -18,14 +18,13 @@ export async function fetchOrgAnalyticsData(
 
   if (result.success === false) {
     handleUnsuccessfulApiResponse('getOrgAnalytics', result)
-    return undefined
   }
 
   spinner.stop()
 
   if (!result.data.length) {
     logger.log('No analytics data is available for this organization yet.')
-    return undefined
+    return
   }
 
   return result.data

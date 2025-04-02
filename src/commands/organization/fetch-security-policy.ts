@@ -23,7 +23,6 @@ export async function fetchSecurityPolicy(
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('getOrgSecurityPolicy', result)
-    return
   }
 
   return result.data

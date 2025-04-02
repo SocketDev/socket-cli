@@ -24,7 +24,6 @@ export async function fetchViewRepo(
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('getOrgRepo', result)
-    return
   }
 
   return result.data

@@ -27,7 +27,6 @@ export async function fetchDependencies({
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('searchDependencies', result)
-    return
   }
 
   return result.data

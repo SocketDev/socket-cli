@@ -23,7 +23,6 @@ export async function fetchLicensePolicy(
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('getOrgLicensePolicy', result)
-    return
   }
 
   return result.data

@@ -23,7 +23,6 @@ export async function fetchQuota(): Promise<
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('getQuota', result)
-    return
   }
 
   return result.data

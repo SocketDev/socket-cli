@@ -24,7 +24,6 @@ export async function fetchDeleteOrgFullScan(
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('deleteOrgFullScan', result)
-    return
   }
 
   return result.data
