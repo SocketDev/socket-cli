@@ -196,11 +196,11 @@ export async function getAlertsMapFromArborist(
   options_?: GetAlertsMapFromArboristOptions | undefined
 ): Promise<AlertsByPkgId> {
   const options = {
-      __proto__: null,
-      consolidate: false,
-      nothrow: false,
-      ...options_
-    } as GetAlertsMapFromArboristOptions
+    __proto__: null,
+    consolidate: false,
+    nothrow: false,
+    ...options_
+  } as GetAlertsMapFromArboristOptions
 
   const include = {
     __proto__: null,
@@ -274,7 +274,9 @@ export async function getAlertsMapFromArborist(
     } else if (!options.nothrow) {
       const statusCode = batchResult.status ?? 'unknown'
       const statusMessage = batchResult.error ?? 'No status message'
-      throw new Error(`Socket API server error (${statusCode}): ${statusMessage}`)
+      throw new Error(
+        `Socket API server error (${statusCode}): ${statusMessage}`
+      )
     }
     remaining -= 1
     if (spinner && remaining > 0) {
