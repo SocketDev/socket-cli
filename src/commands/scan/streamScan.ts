@@ -27,7 +27,6 @@ export async function streamScan(
 
   if (!data?.success) {
     handleUnsuccessfulApiResponse('getOrgFullScan', data)
-    return
   }
 
   return data

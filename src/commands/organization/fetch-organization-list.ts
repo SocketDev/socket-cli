@@ -23,7 +23,6 @@ export async function fetchOrganization(): Promise<
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('getOrganizations', result)
-    return
   }
 
   return result.data

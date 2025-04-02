@@ -43,7 +43,6 @@ export async function fetchCreateOrgFullScan(
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('CreateOrgFullScan', result)
-    return
   }
 
   return result.data
