@@ -25,7 +25,6 @@ export async function fetchSupportedScanFileNames(): Promise<
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('getReportSupportedFiles', result)
-    return
   }
 
   return result.data

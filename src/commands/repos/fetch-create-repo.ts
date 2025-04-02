@@ -41,7 +41,6 @@ export async function fetchCreateRepo({
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('createOrgRepo', result)
-    return
   }
 
   return result.data

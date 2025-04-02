@@ -42,7 +42,6 @@ export async function fetchUpdateRepo({
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('updateOrgRepo', result)
-    return
   }
 
   return result.data

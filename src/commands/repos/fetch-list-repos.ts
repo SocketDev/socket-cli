@@ -38,7 +38,6 @@ export async function fetchListRepos({
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('getOrgRepoList', result)
-    return
   }
 
   return result.data

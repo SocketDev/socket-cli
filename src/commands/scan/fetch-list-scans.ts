@@ -41,7 +41,6 @@ export async function fetchListScans({
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('getOrgFullScanList', result)
-    return
   }
 
   return result.data

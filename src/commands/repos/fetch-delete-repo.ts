@@ -24,7 +24,6 @@ export async function fetchDeleteRepo(
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('deleteOrgRepo', result)
-    return
   }
 
   return result.data

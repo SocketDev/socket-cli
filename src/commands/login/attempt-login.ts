@@ -43,7 +43,6 @@ export async function attemptLogin(
   if (!result.success) {
     logger.fail('Authentication failed...')
     handleUnsuccessfulApiResponse('getOrganizations', result)
-    return
   }
 
   logger.success('API key verified')

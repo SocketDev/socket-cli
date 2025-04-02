@@ -33,11 +33,11 @@ export async function fetchPackageInfo(
   spinner.successAndStop('Data fetched')
 
   if (result.success === false) {
-    return handleUnsuccessfulApiResponse('getIssuesByNPMPackage', result)
+    handleUnsuccessfulApiResponse('getIssuesByNPMPackage', result)
   }
 
   if (scoreResult.success === false) {
-    return handleUnsuccessfulApiResponse('getScoreByNPMPackage', scoreResult)
+    handleUnsuccessfulApiResponse('getScoreByNPMPackage', scoreResult)
   }
 
   const severityCount = getSeverityCount(

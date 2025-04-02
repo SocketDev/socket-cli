@@ -42,7 +42,6 @@ export async function fetchPurlsShallowScore(
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('batchPackageFetch', result)
-    return
   }
 
   return result

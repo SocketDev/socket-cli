@@ -24,7 +24,6 @@ export async function fetchScanMetadata(
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('getOrgFullScanMetadata', result)
-    return
   }
 
   return result.data
