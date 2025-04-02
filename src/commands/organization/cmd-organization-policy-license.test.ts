@@ -18,7 +18,7 @@ describe('socket organization policy license', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Retrieve the license policy of an organization.
+        "Retrieve the license policy of an organization
 
           Usage
             $ socket organization policy license <org slug>
