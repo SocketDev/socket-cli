@@ -1,8 +1,5 @@
 import fs from 'node:fs/promises'
 
-// @ts-ignore
-import ScreenWidget from 'blessed/lib/widgets/screen'
-import contrib from 'blessed-contrib'
 import { stripIndents } from 'common-tags'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -14,6 +11,7 @@ import { mdTableStringNumber } from '../../utils/markdown'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
+import type { grid as ContribGrid } from 'blessed-contrib'
 
 interface FormattedData {
   top_five_alert_types: Record<string, number>
@@ -209,7 +207,9 @@ ${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
 }
 
 function displayAnalyticsScreen(data: FormattedData): void {
+  const ScreenWidget = require('blessed/lib/widgets/screen')
   const screen: Widgets.Screen = new ScreenWidget({})
+  const contrib = require('blessed-contrib')
   const grid = new contrib.grid({ rows: 5, cols: 4, screen })
 
   renderLineCharts(
@@ -384,12 +384,13 @@ function formatDate(date: string): string {
 }
 
 function renderLineCharts(
-  grid: contrib.grid,
+  grid: ContribGrid,
   screen: Widgets.Screen,
   title: string,
   coords: number[],
   data: Record<string, number>
 ): void {
+  const contrib = require('blessed-contrib')
   const line = grid.set(...coords, contrib.line, {
     style: { line: 'cyan', text: 'cyan', baseline: 'black' },
     xLabelPadding: 0,

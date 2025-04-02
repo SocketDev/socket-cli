@@ -1,0 +1,27 @@
+Index: /blessed-contrib/lib/server-utils.js
+===================================================================
+--- /blessed-contrib/lib/server-utils.js
++++ /blessed-contrib/lib/server-utils.js
+@@ -1,8 +1,6 @@
+ 'use strict';
+-var url = require('url')
+-  , contrib = require('../index')
+-  , blessed = require('blessed');
++var url = require('url');
+ 
+ function OutputBuffer(options) {
+   this.isTTY = true;
+   this.columns = options.cols;
+@@ -52,10 +50,12 @@
+   }
+ 
+   res.writeHead(200, {'Content-Type': 'text/plain'});
+ 
++  var contrib = require('../index')
+   var output = new contrib.OutputBuffer({res: res, cols: cols, rows: rows});
+   var input = new contrib.InputBuffer(); //required to run under forever since it replaces stdin to non-tty
++  var blessed = require('blessed')
+   var program = blessed.program({output: output, input: input});
+ 
+   if (query.terminal) program.terminal = query.terminal;
+   if (query.isOSX) program.isOSXTerm = query.isOSX;

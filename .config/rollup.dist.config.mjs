@@ -16,9 +16,11 @@ import {
 import { isRelative } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
-import baseConfig, { INLINED_PACKAGES } from './rollup.base.config.mjs'
+import baseConfig, {
+  EXTERNAL_PACKAGES,
+  INLINED_PACKAGES
+} from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
-import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
   getPackageName,
   getPackageNameEnd,
@@ -66,9 +68,6 @@ const VENDOR_JS = `${VENDOR}.js`
 const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
 const distRequirePath = path.join(rootDistPath, REQUIRE)
 
-const injectBlessedTermInfoRegExp = /__dirname\s*\+\s*["']\/..\/usr\//g
-const requireBlessedWidgetsRegExp = /require\s*\(\s*["'].\/widgets\//g
-
 const sharedInputs = {
   cli: `${rootSrcPath}/cli.ts`,
   [CONSTANTS]: `${rootSrcPath}/constants.ts`,
@@ -100,16 +99,6 @@ const sharedPlugins = [
       },
       {}
     )
-  }),
-  // Replace 'blessed' this.injectTerminfo calls to point to ./dist/blessed/usr.
-  socketModifyPlugin({
-    find: injectBlessedTermInfoRegExp,
-    replace: "__dirname + '/../blessed/usr/"
-  }),
-  // Replace require calls for 'blessed' widgets to point to ./dist/blessed/lib/widgets.
-  socketModifyPlugin({
-    find: requireBlessedWidgetsRegExp,
-    replace: "require('../blessed/lib/widgets/"
   })
 ]
 
@@ -402,6 +391,9 @@ export default () => {
       }
       const id = normalizeId(id_)
       const name = getPackageName(id)
+      if (EXTERNAL_PACKAGES.includes(name)) {
+        return true
+      }
       if (
         INLINED_PACKAGES.includes(name) ||
         // Inline local src/ modules.
