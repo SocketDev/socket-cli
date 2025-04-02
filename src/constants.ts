@@ -49,6 +49,7 @@ type ENV = Remap<
       SOCKET_CLI_NO_API_TOKEN: boolean
       SOCKET_CLI_VIEW_ALL_RISKS: boolean
       SOCKET_SECURITY_API_BASE_URL: string
+      SOCKET_SECURITY_API_PROXY: string
       SOCKET_SECURITY_API_TOKEN: string
       XDG_DATA_HOME: string
     }>
@@ -57,7 +58,8 @@ type ENV = Remap<
 type IPC = Readonly<{
   SOCKET_CLI_FIX?: string | undefined
   SOCKET_CLI_OPTIMIZE?: boolean | undefined
-  SOCKET_CLI_SAFE_WRAPPER?: string | undefined
+  SOCKET_CLI_SAFE_BIN?: string | undefined
+  SOCKET_CLI_SAFE_PROGRESS?: boolean | undefined
 }>
 
 type Constants = Remap<
@@ -106,13 +108,15 @@ type Constants = Remap<
     readonly SOCKET_CLI_NPX_BIN_NAME: 'socket-npx'
     readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
     readonly SOCKET_CLI_PACKAGE_NAME: 'socket'
-    readonly SOCKET_CLI_SAFE_WRAPPER: 'SOCKET_CLI_SAFE_WRAPPER'
+    readonly SOCKET_CLI_SAFE_BIN: 'SOCKET_CLI_SAFE_BIN'
+    readonly SOCKET_CLI_SAFE_PROGRESS: 'SOCKET_CLI_SAFE_PROGRESS'
     readonly SOCKET_CLI_SENTRY_BIN_NAME: 'socket-with-sentry'
     readonly SOCKET_CLI_SENTRY_NPM_BIN_NAME: 'socket-npm-with-sentry'
     readonly SOCKET_CLI_SENTRY_NPX_BIN_NAME: 'socket-npx-with-sentry'
     readonly SOCKET_CLI_SENTRY_PACKAGE_NAME: '@socketsecurity/cli-with-sentry'
     readonly SOCKET_CLI_VIEW_ALL_RISKS: 'SOCKET_CLI_VIEW_ALL_RISKS'
     readonly SOCKET_SECURITY_API_BASE_URL: 'SOCKET_SECURITY_API_BASE_URL'
+    readonly SOCKET_SECURITY_API_PROXY: 'SOCKET_SECURITY_API_PROXY'
     readonly SOCKET_SECURITY_API_TOKEN: 'SOCKET_SECURITY_API_TOKEN'
     readonly VLT: 'vlt'
     readonly WITH_SENTRY: 'with-sentry'
@@ -179,7 +183,8 @@ const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
 const SOCKET_CLI_NPM_BIN_NAME = 'socket-npm'
 const SOCKET_CLI_NPX_BIN_NAME = 'socket-npx'
 const SOCKET_CLI_PACKAGE_NAME = 'socket'
-const SOCKET_CLI_SAFE_WRAPPER = 'SOCKET_CLI_SAFE_WRAPPER'
+const SOCKET_CLI_SAFE_BIN = 'SOCKET_CLI_SAFE_BIN'
+const SOCKET_CLI_SAFE_PROGRESS = 'SOCKET_CLI_SAFE_PROGRESS'
 const SOCKET_CLI_SENTRY_BIN_NAME = 'socket-with-sentry'
 const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
 const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
@@ -187,6 +192,7 @@ const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli-with-sentry`
 const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
 const SOCKET_SECURITY_API_BASE_URL = 'SOCKET_SECURITY_API_BASE_URL'
+const SOCKET_SECURITY_API_PROXY = 'SOCKET_SECURITY_API_PROXY'
 const SOCKET_SECURITY_API_TOKEN = 'SOCKET_SECURITY_API_TOKEN'
 const VLT = 'vlt'
 const WITH_SENTRY = 'with-sentry'
@@ -237,6 +243,9 @@ const LAZY_ENV = () => {
     SOCKET_SECURITY_API_BASE_URL: envAsString(
       env['SOCKET_SECURITY_API_BASE_URL']
     ),
+    // Flag to set the proxy all requests are routed through.
+    // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
+    SOCKET_SECURITY_API_PROXY: envAsString(env['SOCKET_SECURITY_API_PROXY']),
     // Flag to set the API token.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
     SOCKET_SECURITY_API_TOKEN:
@@ -386,13 +395,15 @@ const constants = createConstantsObject(
     SOCKET_CLI_NPX_BIN_NAME,
     SOCKET_CLI_OPTIMIZE,
     SOCKET_CLI_PACKAGE_NAME,
-    SOCKET_CLI_SAFE_WRAPPER,
+    SOCKET_CLI_SAFE_BIN,
+    SOCKET_CLI_SAFE_PROGRESS,
     SOCKET_CLI_SENTRY_BIN_NAME,
     SOCKET_CLI_SENTRY_NPM_BIN_NAME,
     SOCKET_CLI_SENTRY_NPX_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
     SOCKET_CLI_VIEW_ALL_RISKS,
     SOCKET_SECURITY_API_BASE_URL,
+    SOCKET_SECURITY_API_PROXY,
     SOCKET_SECURITY_API_TOKEN,
     VLT,
     WITH_SENTRY,

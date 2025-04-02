@@ -16,7 +16,8 @@ const {
   NPM,
   NPX,
   SOCKET_CLI_ACCEPT_RISKS,
-  SOCKET_CLI_SAFE_WRAPPER,
+  SOCKET_CLI_SAFE_BIN,
+  SOCKET_CLI_SAFE_PROGRESS,
   SOCKET_CLI_VIEW_ALL_RISKS,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIpc }
@@ -87,7 +88,8 @@ export class SafeArborist extends Arborist {
       __proto__: null,
       ...(args.length ? args[0] : undefined)
     } as ArboristReifyOptions
-    const binName = await getIpc(SOCKET_CLI_SAFE_WRAPPER)
+    const ipc = await getIpc()
+    const binName = ipc[SOCKET_CLI_SAFE_BIN]
     if (!binName) {
       return await this[kRiskyReify](...args)
     }
@@ -100,8 +102,12 @@ export class SafeArborist extends Arborist {
       // @ts-ignore: TS gets grumpy about rest parameters.
       ...args.slice(1)
     )
-    // Lazily access constants.spinner.
-    const { spinner } = constants
+    const progress = ipc[SOCKET_CLI_SAFE_PROGRESS]
+    const spinner =
+      options['silent'] || !progress
+        ? undefined
+        : // Lazily access constants.spinner.
+          constants.spinner
     const isSafeNpm = binName === NPM
     const isSafeNpx = binName === NPX
     const alertsMap = await getAlertsMapFromArborist(this, {
@@ -136,8 +142,11 @@ export class SafeArborist extends Arborist {
           Accept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.
         `
       )
-    } else {
+    } else if (!options['silent']) {
       logger.success(`Socket ${binName} found no risks!`)
+      if (binName === NPX) {
+        logger.log(`Running ${options.add![0]}`)
+      }
     }
     return await this[kRiskyReify](...args)
   }

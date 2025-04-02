@@ -2,6 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { wrapNpm } from './wrap-npm'
 import constants from '../../constants'
+import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -12,7 +13,9 @@ const config: CliCommandConfig = {
   commandName: 'npm',
   description: `${NPM} wrapper functionality`,
   hidden: false,
-  flags: {},
+  flags: {
+    ...commonFlags
+  },
   help: (command, _config) => `
     Usage
       $ ${command}

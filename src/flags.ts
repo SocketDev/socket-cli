@@ -19,16 +19,23 @@ export const commonFlags: MeowFlags = {
     hidden: true,
     description: 'Override the local config with this JSON'
   },
-  help: {
-    type: 'boolean',
-    default: false,
-    shortFlag: 'h',
-    description: 'Print this help.'
-  },
   dryRun: {
     type: 'boolean',
     default: false,
     description: 'Do input validation for a command and exit 0 when input is ok'
+  },
+  help: {
+    type: 'boolean',
+    default: false,
+    shortFlag: 'h',
+    description: 'Print this help'
+  },
+  silent: {
+    type: 'boolean',
+    default: false,
+    hidden: true,
+    shortFlag: 's',
+    description: 'Make the CLI less chatty'
   }
 }
 
