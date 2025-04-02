@@ -18,51 +18,51 @@ describe('socket manifest scala', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "[beta] Generate a manifest file (\`pom.xml\`) from Scala's \`build.sbt\` file
+        "[beta] Generate a manifest file (\`pom.xml\`) from Scala's \`build.sbt\` file
 
-        Usage
-          $ socket manifest scala [--sbt=path/to/sbt/binary] [--out=path/to/result] FILE|DIR
+          Usage
+            $ socket manifest scala [--sbt=path/to/sbt/binary] [--out=path/to/result] FILE|DIR
 
-        Options
-          --bin             Location of sbt binary to use
-          --cwd             Set the cwd, defaults to process.cwd()
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --out             Path of output file; where to store the resulting manifest, see also --stdout
-          --sbtOpts         Additional options to pass on to sbt, as per \`sbt --help\`
-          --stdout          Print resulting pom.xml to stdout (supersedes --out)
-          --verbose         Print debug messages
+          Options
+            --bin             Location of sbt binary to use
+            --cwd             Set the cwd, defaults to process.cwd()
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
+            --out             Path of output file; where to store the resulting manifest, see also --stdout
+            --sbtOpts         Additional options to pass on to sbt, as per \`sbt --help\`
+            --stdout          Print resulting pom.xml to stdout (supersedes --out)
+            --verbose         Print debug messages
 
-        Uses \`sbt makePom\` to generate a \`pom.xml\` from your \`build.sbt\` file.
-        This xml file is the dependency manifest (like a package.json
-        for Node.js or requirements.txt for PyPi), but specifically for Scala.
+          Uses \`sbt makePom\` to generate a \`pom.xml\` from your \`build.sbt\` file.
+          This xml file is the dependency manifest (like a package.json
+          for Node.js or requirements.txt for PyPi), but specifically for Scala.
 
-        There are some caveats with \`build.sbt\` to \`pom.xml\` conversion:
+          There are some caveats with \`build.sbt\` to \`pom.xml\` conversion:
 
-        - the xml is exported as socket.pom.xml as to not confuse existing build tools
-          but it will first hit your /target/sbt<version> folder (as a different name)
+          - the xml is exported as socket.pom.xml as to not confuse existing build tools
+            but it will first hit your /target/sbt<version> folder (as a different name)
 
-        - the pom.xml format (standard by Scala) does not support certain sbt features
-          - \`excludeAll()\`, \`dependencyOverrides\`, \`force()\`, \`relativePath\`
-          - For details: https://www.scala-sbt.org/1.x/docs/Library-Management.html
+          - the pom.xml format (standard by Scala) does not support certain sbt features
+            - \`excludeAll()\`, \`dependencyOverrides\`, \`force()\`, \`relativePath\`
+            - For details: https://www.scala-sbt.org/1.x/docs/Library-Management.html
 
-        - it uses your sbt settings and local configuration verbatim
+          - it uses your sbt settings and local configuration verbatim
 
-        - it can only export one target per run, so if you have multiple targets like
-          development and production, you must run them separately.
+          - it can only export one target per run, so if you have multiple targets like
+            development and production, you must run them separately.
 
-        You can optionally configure the path to the \`sbt\` bin to invoke.
+          You can optionally configure the path to the \`sbt\` bin to invoke.
 
-        Support is beta. Please report issues or give us feedback on what's missing.
+          Support is beta. Please report issues or give us feedback on what's missing.
 
-        This is only for SBT. If your Scala setup uses gradle, please see the help
-        sections for \`socket manifest gradle\` or \`socket cdxgen\`.
+          This is only for SBT. If your Scala setup uses gradle, please see the help
+          sections for \`socket manifest gradle\` or \`socket cdxgen\`.
 
-        Examples
+          Examples
 
-          $ socket manifest scala ./build.sbt
-          $ socket manifest scala --bin=/usr/bin/sbt ./build.sbt"
-    `
+            $ socket manifest scala ./build.sbt
+            $ socket manifest scala --bin=/usr/bin/sbt ./build.sbt"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

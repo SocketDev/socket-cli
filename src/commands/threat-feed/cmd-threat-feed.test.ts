@@ -18,52 +18,52 @@ describe('socket threat-feed', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "[beta] View the threat feed
+        "[beta] View the threat feed
 
-        Usage
-          $ socket threat-feed
+          Usage
+            $ socket threat-feed
 
-        This feature requires a Threat Feed license. Please contact
-        sales@socket.dev if you are interested in purchasing this access.
+          This feature requires a Threat Feed license. Please contact
+          sales@socket.dev if you are interested in purchasing this access.
 
-        Options
-          --direction       Order asc or desc by the createdAt attribute.
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --eco             Only show threats for a particular ecosystem
-          --filter          Filter what type of threats to return
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
-          --page            Page token
-          --perPage         Number of items per page
+          Options
+            --direction       Order asc or desc by the createdAt attribute.
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --eco             Only show threats for a particular ecosystem
+            --filter          Filter what type of threats to return
+            --help            Print this help
+            --json            Output result as json
+            --markdown        Output result as markdown
+            --page            Page token
+            --perPage         Number of items per page
 
-        Valid filters:
+          Valid filters:
 
-          - anom    Anomaly
-          - c       Do not filter
-          - fp      False Positives
-          - joke    Joke / Fake
-          - mal     Malware and Possible Malware [default]
-          - secret  Secrets
-          - spy     Telemetry
-          - tp      False Positives and Unreviewed
-          - typo    Typo-squat
-          - u       Unreviewed
-          - vuln    Vulnerability
+            - anom    Anomaly
+            - c       Do not filter
+            - fp      False Positives
+            - joke    Joke / Fake
+            - mal     Malware and Possible Malware [default]
+            - secret  Secrets
+            - spy     Telemetry
+            - tp      False Positives and Unreviewed
+            - typo    Typo-squat
+            - u       Unreviewed
+            - vuln    Vulnerability
 
-        Valid ecosystems:
+          Valid ecosystems:
 
-          - gem
-          - golang
-          - maven
-          - npm
-          - nuget
-          - pypi
+            - gem
+            - golang
+            - maven
+            - npm
+            - nuget
+            - pypi
 
-        Examples
-          $ socket threat-feed
-          $ socket threat-feed --perPage=5 --page=2 --direction=asc --filter=joke"
-    `
+          Examples
+            $ socket threat-feed
+            $ socket threat-feed --perPage=5 --page=2 --direction=asc --filter=joke"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

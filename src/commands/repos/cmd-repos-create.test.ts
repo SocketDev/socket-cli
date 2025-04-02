@@ -18,23 +18,23 @@ describe('socket repos create', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Create a repository in an organization
+        "Create a repository in an organization
 
-        Usage
-          $ socket repos create <org slug>
+          Usage
+            $ socket repos create <org slug>
 
-        Options
-          --defaultBranch   Repository default branch
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --homepage        Repository url
-          --repoDescription Repository description
-          --repoName        Repository name
-          --visibility      Repository visibility (Default Private)
+          Options
+            --defaultBranch   Repository default branch
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
+            --homepage        Repository url
+            --repoDescription Repository description
+            --repoName        Repository name
+            --visibility      Repository visibility (Default Private)
 
-        Examples
-          $ socket repos create FakeOrg --repoName=test-repo"
-    `
+          Examples
+            $ socket repos create FakeOrg --repoName=test-repo"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

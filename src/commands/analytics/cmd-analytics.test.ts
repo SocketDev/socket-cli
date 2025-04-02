@@ -18,29 +18,29 @@ describe('socket analytics', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Look up analytics data
+        "Look up analytics data
 
-        Usage
-          $ socket analytics --scope=<scope> --time=<time filter>
+          Usage
+            $ socket analytics --scope=<scope> --time=<time filter>
 
-        Default parameters are set to show the organization-level analytics over the
-        last 7 days.
+          Default parameters are set to show the organization-level analytics over the
+          last 7 days.
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --file            Path to a local file to save the output. Only valid with --json/--markdown. Defaults to stdout.
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
-          --repo            Name of the repository. Only valid when scope=repo
-          --scope           Scope of the analytics data - either 'org' or 'repo', default: org
-          --time            Time filter - either 7, 30 or 90, default: 7
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --file            Path to a local file to save the output. Only valid with --json/--markdown. Defaults to stdout.
+            --help            Print this help
+            --json            Output result as json
+            --markdown        Output result as markdown
+            --repo            Name of the repository. Only valid when scope=repo
+            --scope           Scope of the analytics data - either 'org' or 'repo', default: org
+            --time            Time filter - either 7, 30 or 90, default: 7
 
-        Examples
-          $ socket analytics --scope=org --time=7
-          $ socket analytics --scope=org --time=30
-          $ socket analytics --scope=repo --repo=test-repo --time=30"
-    `
+          Examples
+            $ socket analytics --scope=org --time=7
+            $ socket analytics --scope=org --time=30
+            $ socket analytics --scope=repo --repo=test-repo --time=30"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

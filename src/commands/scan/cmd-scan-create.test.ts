@@ -17,44 +17,44 @@ describe('socket scan create', async () => {
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-      "Create a scan
+        "Create a scan
 
-        Usage
-          $ socket scan create [...options] <org> <TARGET> [TARGET...]
+          Usage
+            $ socket scan create [...options] <org> <TARGET> [TARGET...]
 
-        Uploads the specified "package.json" and lock files for JavaScript, Python,
-        Go, Scala, Gradle, and Kotlin dependency manifests.
-        If any folder is specified, the ones found in there recursively are uploaded.
+          Uploads the specified "package.json" and lock files for JavaScript, Python,
+          Go, Scala, Gradle, and Kotlin dependency manifests.
+          If any folder is specified, the ones found in there recursively are uploaded.
 
-        Supports globbing such as "**/package.json", "**/requirements.txt", etc.
+          Supports globbing such as "**/package.json", "**/requirements.txt", etc.
 
-        Ignores any file specified in your project's ".gitignore" and also has a
-        sensible set of default ignores from the "ignore-by-default" module.
+          Ignores any file specified in your project's ".gitignore" and also has a
+          sensible set of default ignores from the "ignore-by-default" module.
 
-        TARGET should be a FILE or DIR that _must_ be inside the CWD.
+          TARGET should be a FILE or DIR that _must_ be inside the CWD.
 
-        When a FILE is given only that FILE is targeted. Otherwise any eligible
-        files in the given DIR will be considered.
+          When a FILE is given only that FILE is targeted. Otherwise any eligible
+          files in the given DIR will be considered.
 
-        Options
-          --branch          Branch name
-          --commitHash      Commit hash
-          --commitMessage   Commit message
-          --committers      Committers
-          --cwd             working directory, defaults to process.cwd()
-          --defaultBranch   Make default branch
-          --dryRun          run input validation part of command without any concrete side effects
-          --help            Print this help.
-          --pendingHead     Set as pending head
-          --pullRequest     Commit hash
-          --readOnly        Similar to --dry-run except it can read from remote, stops before it would create an actual report
-          --repo            Repository name
-          --tmp             Set the visibility (true/false) of the scan in your dashboard
-          --view            Will wait for and return the created report. Use --no-view to disable.
+          Options
+            --branch          Branch name
+            --commitHash      Commit hash
+            --commitMessage   Commit message
+            --committers      Committers
+            --cwd             working directory, defaults to process.cwd()
+            --defaultBranch   Make default branch
+            --dryRun          run input validation part of command without any concrete side effects
+            --help            Print this help
+            --pendingHead     Set as pending head
+            --pullRequest     Commit hash
+            --readOnly        Similar to --dry-run except it can read from remote, stops before it would create an actual report
+            --repo            Repository name
+            --tmp             Set the visibility (true/false) of the scan in your dashboard
+            --view            Will wait for and return the created report. Use --no-view to disable.
 
-        Examples
-          $ socket scan create --repo=test-repo --branch=main FakeOrg ./package.json"
-    `)
+          Examples
+            $ socket scan create --repo=test-repo --branch=main FakeOrg ./package.json"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------

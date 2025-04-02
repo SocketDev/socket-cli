@@ -18,21 +18,21 @@ describe('socket wrapper', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Enable or disable the Socket npm/npx wrapper
+        "Enable or disable the Socket npm/npx wrapper
 
-        Usage
-          $ socket wrapper <flag>
+          Usage
+            $ socket wrapper <flag>
 
-        Options
-          --disable         Disables the Socket npm/npx wrapper
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --enable          Enables the Socket npm/npx wrapper
-          --help            Print this help.
+          Options
+            --disable         Disables the Socket npm/npx wrapper
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --enable          Enables the Socket npm/npx wrapper
+            --help            Print this help
 
-        Examples
-          $ socket wrapper --enable
-          $ socket wrapper --disable"
-    `
+          Examples
+            $ socket wrapper --enable
+            $ socket wrapper --disable"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
