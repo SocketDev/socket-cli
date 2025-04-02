@@ -54,6 +54,10 @@ export type AlertsByPkgId = Map<string, SocketPackageAlert[]>
 
 const { CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER, NPM } = constants
 
+const MIN_ABOVE_THE_FOLD_COUNT = 3
+
+const MIN_ABOVE_THE_FOLD_ALERT_COUNT = 1
+
 const format = new ColorOrMarkdown(false)
 
 function alertsHaveBlocked(alerts: SocketPackageAlert[]): boolean {
@@ -367,20 +371,20 @@ export function logAlertsMap(
     __proto__: null,
     ...options
   } as LogAlertsMapOptions
+
   const translations = getTranslations()
   const sortedEntries = [...alertsMap.entries()].sort(
     (a, b) => getAlertsSeverityOrder(a[1]) - getAlertsSeverityOrder(b[1])
   )
-  let mentionedHiddenCount = 0
-  const hiddenEntries: typeof sortedEntries = []
-  for (
-    let i = 0, prevBelowTheFold = false, { length } = sortedEntries;
-    i < length;
-    i += 1
-  ) {
+
+  const aboveTheFoldPkgIds = new Set<string>()
+  const viewableAlertsByPkgId = new Map<string, SocketPackageAlert[]>()
+  const hiddenAlertsByPkgId = new Map<string, SocketPackageAlert[]>()
+
+  for (let i = 0, { length } = sortedEntries; i < length; i += 1) {
     const { 0: pkgId, 1: alerts } = sortedEntries[i]!
     const hiddenAlerts: typeof alerts = []
-    const filteredAlerts = alerts.filter(a => {
+    const viewableAlerts = alerts.filter(a => {
       const keep =
         a.blocked || getAlertSeverityOrder(a) < ALERT_SEVERITY_ORDER[hideAt]
       if (!keep) {
@@ -389,17 +393,68 @@ export function logAlertsMap(
       return keep
     })
     if (hiddenAlerts.length) {
-      hiddenEntries.push([pkgId, hiddenAlerts.sort(alertSeverityComparator)])
+      hiddenAlertsByPkgId.set(pkgId, hiddenAlerts.sort(alertSeverityComparator))
     }
-    if (!filteredAlerts.length) {
+    if (!viewableAlerts.length) {
       continue
     }
+    viewableAlerts.sort(alertSeverityComparator)
+    viewableAlertsByPkgId.set(pkgId, viewableAlerts)
+    if (
+      viewableAlerts.find(
+        (a: SocketPackageAlert) =>
+          a.blocked || getAlertSeverityOrder(a) < ALERT_SEVERITY_ORDER.middle
+      )
+    ) {
+      aboveTheFoldPkgIds.add(pkgId)
+    }
+  }
+
+  // If MIN_ABOVE_THE_FOLD_COUNT is NOT met add more from viewable pkg ids.
+  for (const { 0: pkgId } of viewableAlertsByPkgId.entries()) {
+    if (aboveTheFoldPkgIds.size >= MIN_ABOVE_THE_FOLD_COUNT) {
+      break
+    }
+    aboveTheFoldPkgIds.add(pkgId)
+  }
+  // If MIN_ABOVE_THE_FOLD_COUNT is STILL NOT met add more from hidden pkg ids.
+  for (const { 0: pkgId, 1: hiddenAlerts } of hiddenAlertsByPkgId.entries()) {
+    if (aboveTheFoldPkgIds.size >= MIN_ABOVE_THE_FOLD_COUNT) {
+      break
+    }
+    aboveTheFoldPkgIds.add(pkgId)
+    const viewableAlerts = viewableAlertsByPkgId.get(pkgId) ?? []
+    if (viewableAlerts.length < MIN_ABOVE_THE_FOLD_ALERT_COUNT) {
+      const neededCount = MIN_ABOVE_THE_FOLD_ALERT_COUNT - viewableAlerts.length
+      let removedHiddenAlerts: SocketPackageAlert[] | undefined
+      if (hiddenAlerts.length - neededCount > 0) {
+        removedHiddenAlerts = hiddenAlerts.splice(
+          0,
+          MIN_ABOVE_THE_FOLD_ALERT_COUNT
+        )
+      } else {
+        removedHiddenAlerts = hiddenAlerts
+        hiddenAlertsByPkgId.delete(pkgId)
+      }
+      viewableAlertsByPkgId.set(pkgId, [
+        ...viewableAlerts,
+        ...removedHiddenAlerts
+      ])
+    }
+  }
+
+  const mentionedPkgIdsWithHiddenAlerts = new Set<string>()
+  for (
+    let i = 0,
+      prevAboveTheFold = true,
+      entries = [...viewableAlertsByPkgId.entries()],
+      { length } = entries;
+    i < length;
+    i += 1
+  ) {
+    const { 0: pkgId, 1: alerts } = entries[i]!
     const lines = new Set<string>()
-    const sortedAlerts = filteredAlerts.sort(alertSeverityComparator)
-    const isBelowTheFold = !sortedAlerts.find(
-      a => a.blocked || getAlertSeverityOrder(a) < ALERT_SEVERITY_ORDER.middle
-    )
-    for (const alert of sortedAlerts) {
+    for (const alert of alerts) {
       const { type } = alert
       const severity = alert.raw.severity ?? ''
       const attributes = [
@@ -421,7 +476,6 @@ export function logAlertsMap(
       // TODO: emoji seems to mis-align terminals sometimes
       lines.add(`  ${content}`)
     }
-
     const purlObj = PackageURL.fromString(`pkg:npm/${pkgId}`)
     const hyperlink = format.hyperlink(
       pkgId,
@@ -431,17 +485,20 @@ export function logAlertsMap(
         purlObj.version
       )
     )
-    if (isBelowTheFold) {
-      output.write(`${prevBelowTheFold ? '' : '\n'}${hyperlink}:\n`)
-    } else {
+    const isAboveTheFold = aboveTheFoldPkgIds.has(pkgId)
+    if (isAboveTheFold) {
+      aboveTheFoldPkgIds.add(pkgId)
       output.write(`${i ? '\n' : ''}${hyperlink}:\n`)
+    } else {
+      output.write(`${prevAboveTheFold ? '\n' : ''}${hyperlink}:\n`)
     }
     for (const line of lines) {
       output.write(`${line}\n`)
     }
+    const hiddenAlerts = hiddenAlertsByPkgId.get(pkgId) ?? []
     const { length: hiddenAlertsCount } = hiddenAlerts
     if (hiddenAlertsCount) {
-      mentionedHiddenCount += 1
+      mentionedPkgIdsWithHiddenAlerts.add(pkgId)
       if (hiddenAlertsCount === 1) {
         output.write(
           `  ${colors.dim(`+1 Hidden ${getSeverityLabel(hiddenAlerts[0]!.raw.severity ?? 'low')} risk alert`)}\n`
@@ -452,9 +509,11 @@ export function logAlertsMap(
         )
       }
     }
-    prevBelowTheFold = isBelowTheFold
+    prevAboveTheFold = isAboveTheFold
   }
-  const additionalHiddenCount = hiddenEntries.length - mentionedHiddenCount
+
+  const additionalHiddenCount =
+    hiddenAlertsByPkgId.size - mentionedPkgIdsWithHiddenAlerts.size
   if (additionalHiddenCount) {
     const totalRiskCounts = {
       critical: 0,
@@ -462,7 +521,10 @@ export function logAlertsMap(
       middle: 0,
       low: 0
     }
-    for (const { 1: alerts } of hiddenEntries) {
+    for (const { 0: pkgId, 1: alerts } of hiddenAlertsByPkgId.entries()) {
+      if (mentionedPkgIdsWithHiddenAlerts.has(pkgId)) {
+        continue
+      }
       const riskCounts = getHiddenRiskCounts(alerts)
       totalRiskCounts.critical += riskCounts.critical
       totalRiskCounts.high += riskCounts.high
@@ -470,7 +532,7 @@ export function logAlertsMap(
       totalRiskCounts.low += riskCounts.low
     }
     output.write(
-      `\n${colors.dim(`+${additionalHiddenCount} Packages with hidden alerts ${colors.italic(getHiddenRisksDescription(totalRiskCounts))}`)}\n`
+      `${aboveTheFoldPkgIds.size ? '\n' : ''}${colors.dim(`${aboveTheFoldPkgIds.size ? '+' : ''}${additionalHiddenCount} Packages with hidden alerts ${colors.italic(getHiddenRisksDescription(totalRiskCounts))}`)}\n`
     )
   }
   output.write('\n')
