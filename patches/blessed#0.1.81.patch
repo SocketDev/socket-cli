@@ -1,7 +1,44 @@
+Index: /blessed/lib/gpmclient.js
+===================================================================
+--- /blessed/lib/gpmclient.js
++++ /blessed/lib/gpmclient.js
+@@ -189,9 +189,9 @@
+     });
+   }
+ }
+ 
+-GpmClient.prototype.__proto__ = EventEmitter.prototype;
++Object.setPrototypeOf(GpmClient.prototype, EventEmitter.prototype);
+ 
+ GpmClient.prototype.stop = function() {
+   if (this.gpm) {
+     this.gpm.end();
 Index: /blessed/lib/program.js
 ===================================================================
 --- /blessed/lib/program.js
 +++ /blessed/lib/program.js
+@@ -34,9 +34,9 @@
+   Program.bind(this);
+ 
+   EventEmitter.call(this);
+ 
+-  if (!options || options.__proto__ !== Object.prototype) {
++  if (!options || Object.getPrototypeOf(options) !== Object.prototype) {
+     options = {
+       input: arguments[0],
+       output: arguments[1]
+     };
+@@ -150,9 +150,9 @@
+     });
+   });
+ };
+ 
+-Program.prototype.__proto__ = EventEmitter.prototype;
++Object.setPrototypeOf(Program.prototype, EventEmitter.prototype);
+ 
+ Program.prototype.type = 'program';
+ 
+ Program.prototype.log = function() {
 @@ -194,9 +194,9 @@
    function caret(data) {
      return data.replace(/[\0\x80\x1b-\x1f\x7f\x01-\x1a]/g, function(ch) {
@@ -133,6 +170,516 @@ Index: /blessed/lib/tput.js
          break;
      }
  
+Index: /blessed/lib/widgets/ansiimage.js
+===================================================================
+--- /blessed/lib/widgets/ansiimage.js
++++ /blessed/lib/widgets/ansiimage.js
+@@ -52,9 +52,9 @@
+     self.stop();
+   });
+ }
+ 
+-ANSIImage.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(ANSIImage.prototype, Box.prototype);
+ 
+ ANSIImage.prototype.type = 'ansiimage';
+ 
+ ANSIImage.curl = function(url) {
+Index: /blessed/lib/widgets/bigtext.js
+===================================================================
+--- /blessed/lib/widgets/bigtext.js
++++ /blessed/lib/widgets/bigtext.js
+@@ -35,9 +35,9 @@
+     this.font = this.fontBold;
+   }
+ }
+ 
+-BigText.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(BigText.prototype, Box.prototype);
+ 
+ BigText.prototype.type = 'bigtext';
+ 
+ BigText.prototype.loadFont = function(filename) {
+Index: /blessed/lib/widgets/box.js
+===================================================================
+--- /blessed/lib/widgets/box.js
++++ /blessed/lib/widgets/box.js
+@@ -22,9 +22,9 @@
+   options = options || {};
+   Element.call(this, options);
+ }
+ 
+-Box.prototype.__proto__ = Element.prototype;
++Object.setPrototypeOf(Box.prototype, Element.prototype);
+ 
+ Box.prototype.type = 'box';
+ 
+ /**
+Index: /blessed/lib/widgets/button.js
+===================================================================
+--- /blessed/lib/widgets/button.js
++++ /blessed/lib/widgets/button.js
+@@ -42,9 +42,9 @@
+     });
+   }
+ }
+ 
+-Button.prototype.__proto__ = Input.prototype;
++Object.setPrototypeOf(Button.prototype, Input.prototype);
+ 
+ Button.prototype.type = 'button';
+ 
+ Button.prototype.press = function() {
+Index: /blessed/lib/widgets/checkbox.js
+===================================================================
+--- /blessed/lib/widgets/checkbox.js
++++ /blessed/lib/widgets/checkbox.js
+@@ -55,9 +55,9 @@
+     self.screen.program.lrestoreCursor('checkbox', true);
+   });
+ }
+ 
+-Checkbox.prototype.__proto__ = Input.prototype;
++Object.setPrototypeOf(Checkbox.prototype, Input.prototype);
+ 
+ Checkbox.prototype.type = 'checkbox';
+ 
+ Checkbox.prototype.render = function() {
+Index: /blessed/lib/widgets/element.js
+===================================================================
+--- /blessed/lib/widgets/element.js
++++ /blessed/lib/widgets/element.js
+@@ -220,9 +220,9 @@
+     this.focus();
+   }
+ }
+ 
+-Element.prototype.__proto__ = Node.prototype;
++Object.setPrototypeOf(Element.prototype, Node.prototype);
+ 
+ Element.prototype.type = 'element';
+ 
+ Element.prototype.__defineGetter__('focused', function() {
+Index: /blessed/lib/widgets/filemanager.js
+===================================================================
+--- /blessed/lib/widgets/filemanager.js
++++ /blessed/lib/widgets/filemanager.js
+@@ -64,9 +64,9 @@
+     });
+   });
+ }
+ 
+-FileManager.prototype.__proto__ = List.prototype;
++Object.setPrototypeOf(FileManager.prototype, List.prototype);
+ 
+ FileManager.prototype.type = 'file-manager';
+ 
+ FileManager.prototype.refresh = function(cwd, callback) {
+Index: /blessed/lib/widgets/form.js
+===================================================================
+--- /blessed/lib/widgets/form.js
++++ /blessed/lib/widgets/form.js
+@@ -64,9 +64,9 @@
+     });
+   }
+ }
+ 
+-Form.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(Form.prototype, Box.prototype);
+ 
+ Form.prototype.type = 'form';
+ 
+ Form.prototype._refresh = function() {
+Index: /blessed/lib/widgets/image.js
+===================================================================
+--- /blessed/lib/widgets/image.js
++++ /blessed/lib/widgets/image.js
+@@ -49,9 +49,9 @@
+ 
+   throw new Error('`type` must either be `ansi` or `overlay`.');
+ }
+ 
+-Image.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(Image.prototype, Box.prototype);
+ 
+ Image.prototype.type = 'image';
+ 
+ /**
+Index: /blessed/lib/widgets/input.js
+===================================================================
+--- /blessed/lib/widgets/input.js
++++ /blessed/lib/widgets/input.js
+@@ -22,9 +22,9 @@
+   options = options || {};
+   Box.call(this, options);
+ }
+ 
+-Input.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(Input.prototype, Box.prototype);
+ 
+ Input.prototype.type = 'input';
+ 
+ /**
+Index: /blessed/lib/widgets/layout.js
+===================================================================
+--- /blessed/lib/widgets/layout.js
++++ /blessed/lib/widgets/layout.js
+@@ -37,9 +37,9 @@
+     this.renderer = options.renderer;
+   }
+ }
+ 
+-Layout.prototype.__proto__ = Element.prototype;
++Object.setPrototypeOf(Layout.prototype, Element.prototype);
+ 
+ Layout.prototype.type = 'layout';
+ 
+ Layout.prototype.isRendered = function(el) {
+Index: /blessed/lib/widgets/line.js
+===================================================================
+--- /blessed/lib/widgets/line.js
++++ /blessed/lib/widgets/line.js
+@@ -44,9 +44,9 @@
+ 
+   this.style.border = this.style;
+ }
+ 
+-Line.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(Line.prototype, Box.prototype);
+ 
+ Line.prototype.type = 'line';
+ 
+ /**
+Index: /blessed/lib/widgets/list.js
+===================================================================
+--- /blessed/lib/widgets/list.js
++++ /blessed/lib/widgets/list.js
+@@ -220,9 +220,9 @@
+     self.removeItem(el);
+   });
+ }
+ 
+-List.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(List.prototype, Box.prototype);
+ 
+ List.prototype.type = 'list';
+ 
+ List.prototype.createItem = function(content) {
+Index: /blessed/lib/widgets/listbar.js
+===================================================================
+--- /blessed/lib/widgets/listbar.js
++++ /blessed/lib/widgets/listbar.js
+@@ -102,9 +102,9 @@
+     self.select(self.selected);
+   });
+ }
+ 
+-Listbar.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(Listbar.prototype, Box.prototype);
+ 
+ Listbar.prototype.type = 'listbar';
+ 
+ Listbar.prototype.__defineGetter__('selected', function() {
+Index: /blessed/lib/widgets/listtable.js
+===================================================================
+--- /blessed/lib/widgets/listtable.js
++++ /blessed/lib/widgets/listtable.js
+@@ -74,9 +74,9 @@
+     self.screen.render();
+   });
+ }
+ 
+-ListTable.prototype.__proto__ = List.prototype;
++Object.setPrototypeOf(ListTable.prototype, List.prototype);
+ 
+ ListTable.prototype.type = 'list-table';
+ 
+ ListTable.prototype._calculateMaxes = Table.prototype._calculateMaxes;
+Index: /blessed/lib/widgets/loading.js
+===================================================================
+--- /blessed/lib/widgets/loading.js
++++ /blessed/lib/widgets/loading.js
+@@ -35,9 +35,9 @@
+     content: '|'
+   });
+ }
+ 
+-Loading.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(Loading.prototype, Box.prototype);
+ 
+ Loading.prototype.type = 'loading';
+ 
+ Loading.prototype.load = function(text) {
+Index: /blessed/lib/widgets/log.js
+===================================================================
+--- /blessed/lib/widgets/log.js
++++ /blessed/lib/widgets/log.js
+@@ -45,9 +45,9 @@
+     }
+   });
+ }
+ 
+-Log.prototype.__proto__ = ScrollableText.prototype;
++Object.setPrototypeOf(Log.prototype, ScrollableText.prototype);
+ 
+ Log.prototype.type = 'log';
+ 
+ Log.prototype.log =
+Index: /blessed/lib/widgets/message.js
+===================================================================
+--- /blessed/lib/widgets/message.js
++++ /blessed/lib/widgets/message.js
+@@ -25,9 +25,9 @@
+ 
+   Box.call(this, options);
+ }
+ 
+-Message.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(Message.prototype, Box.prototype);
+ 
+ Message.prototype.type = 'message';
+ 
+ Message.prototype.log =
+Index: /blessed/lib/widgets/node.js
+===================================================================
+--- /blessed/lib/widgets/node.js
++++ /blessed/lib/widgets/node.js
+@@ -76,9 +76,9 @@
+ }
+ 
+ Node.uid = 0;
+ 
+-Node.prototype.__proto__ = EventEmitter.prototype;
++Object.setPrototypeOf(Node.prototype, EventEmitter.prototype);
+ 
+ Node.prototype.type = 'node';
+ 
+ Node.prototype.insert = function(element, i) {
+Index: /blessed/lib/widgets/overlayimage.js
+===================================================================
+--- /blessed/lib/widgets/overlayimage.js
++++ /blessed/lib/widgets/overlayimage.js
+@@ -115,9 +115,9 @@
+     this.setImage(this.options.file || this.options.img);
+   }
+ }
+ 
+-OverlayImage.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(OverlayImage.prototype, Box.prototype);
+ 
+ OverlayImage.prototype.type = 'overlayimage';
+ 
+ OverlayImage.w3mdisplay = '/usr/lib/w3m/w3mimgdisplay';
+Index: /blessed/lib/widgets/progressbar.js
+===================================================================
+--- /blessed/lib/widgets/progressbar.js
++++ /blessed/lib/widgets/progressbar.js
+@@ -91,9 +91,9 @@
+     });
+   }
+ }
+ 
+-ProgressBar.prototype.__proto__ = Input.prototype;
++Object.setPrototypeOf(ProgressBar.prototype, Input.prototype);
+ 
+ ProgressBar.prototype.type = 'progress-bar';
+ 
+ ProgressBar.prototype.render = function() {
+Index: /blessed/lib/widgets/prompt.js
+===================================================================
+--- /blessed/lib/widgets/prompt.js
++++ /blessed/lib/widgets/prompt.js
+@@ -66,9 +66,9 @@
+     mouse: true
+   });
+ }
+ 
+-Prompt.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(Prompt.prototype, Box.prototype);
+ 
+ Prompt.prototype.type = 'prompt';
+ 
+ Prompt.prototype.input =
+Index: /blessed/lib/widgets/question.js
+===================================================================
+--- /blessed/lib/widgets/question.js
++++ /blessed/lib/widgets/question.js
+@@ -57,9 +57,9 @@
+     mouse: true
+   });
+ }
+ 
+-Question.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(Question.prototype, Box.prototype);
+ 
+ Question.prototype.type = 'question';
+ 
+ Question.prototype.ask = function(text, callback) {
+Index: /blessed/lib/widgets/radiobutton.js
+===================================================================
+--- /blessed/lib/widgets/radiobutton.js
++++ /blessed/lib/widgets/radiobutton.js
+@@ -41,9 +41,9 @@
+     });
+   });
+ }
+ 
+-RadioButton.prototype.__proto__ = Checkbox.prototype;
++Object.setPrototypeOf(RadioButton.prototype, Checkbox.prototype);
+ 
+ RadioButton.prototype.type = 'radio-button';
+ 
+ RadioButton.prototype.render = function() {
+Index: /blessed/lib/widgets/radioset.js
+===================================================================
+--- /blessed/lib/widgets/radioset.js
++++ /blessed/lib/widgets/radioset.js
+@@ -24,9 +24,9 @@
+   // options.style = this.parent.style;
+   Box.call(this, options);
+ }
+ 
+-RadioSet.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(RadioSet.prototype, Box.prototype);
+ 
+ RadioSet.prototype.type = 'radio-set';
+ 
+ /**
+Index: /blessed/lib/widgets/screen.js
+===================================================================
+--- /blessed/lib/widgets/screen.js
++++ /blessed/lib/widgets/screen.js
+@@ -240,9 +240,9 @@
+     });
+   });
+ };
+ 
+-Screen.prototype.__proto__ = Node.prototype;
++Object.setPrototypeOf(Screen.prototype, Node.prototype);
+ 
+ Screen.prototype.type = 'screen';
+ 
+ Screen.prototype.__defineGetter__('title', function() {
+Index: /blessed/lib/widgets/scrollablebox.js
+===================================================================
+--- /blessed/lib/widgets/scrollablebox.js
++++ /blessed/lib/widgets/scrollablebox.js
+@@ -167,9 +167,9 @@
+ 
+   self._recalculateIndex();
+ }
+ 
+-ScrollableBox.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(ScrollableBox.prototype, Box.prototype);
+ 
+ ScrollableBox.prototype.type = 'scrollable-box';
+ 
+ // XXX Potentially use this in place of scrollable checks elsewhere.
+Index: /blessed/lib/widgets/scrollabletext.js
+===================================================================
+--- /blessed/lib/widgets/scrollabletext.js
++++ /blessed/lib/widgets/scrollabletext.js
+@@ -23,9 +23,9 @@
+   options.alwaysScroll = true;
+   ScrollableBox.call(this, options);
+ }
+ 
+-ScrollableText.prototype.__proto__ = ScrollableBox.prototype;
++Object.setPrototypeOf(ScrollableText.prototype, ScrollableBox.prototype);
+ 
+ ScrollableText.prototype.type = 'scrollable-text';
+ 
+ /**
+Index: /blessed/lib/widgets/table.js
+===================================================================
+--- /blessed/lib/widgets/table.js
++++ /blessed/lib/widgets/table.js
+@@ -53,9 +53,9 @@
+     self.screen.render();
+   });
+ }
+ 
+-Table.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(Table.prototype, Box.prototype);
+ 
+ Table.prototype.type = 'table';
+ 
+ Table.prototype._calculateMaxes = function() {
+Index: /blessed/lib/widgets/terminal.js
+===================================================================
+--- /blessed/lib/widgets/terminal.js
++++ /blessed/lib/widgets/terminal.js
+@@ -51,9 +51,9 @@
+ 
+   this.bootstrap();
+ }
+ 
+-Terminal.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(Terminal.prototype, Box.prototype);
+ 
+ Terminal.prototype.type = 'terminal';
+ 
+ Terminal.prototype.bootstrap = function() {
+Index: /blessed/lib/widgets/text.js
+===================================================================
+--- /blessed/lib/widgets/text.js
++++ /blessed/lib/widgets/text.js
+@@ -23,9 +23,9 @@
+   options.shrink = true;
+   Element.call(this, options);
+ }
+ 
+-Text.prototype.__proto__ = Element.prototype;
++Object.setPrototypeOf(Text.prototype, Element.prototype);
+ 
+ Text.prototype.type = 'text';
+ 
+ /**
+Index: /blessed/lib/widgets/textarea.js
+===================================================================
+--- /blessed/lib/widgets/textarea.js
++++ /blessed/lib/widgets/textarea.js
+@@ -64,9 +64,9 @@
+     });
+   }
+ }
+ 
+-Textarea.prototype.__proto__ = Input.prototype;
++Object.setPrototypeOf(Textarea.prototype, Input.prototype);
+ 
+ Textarea.prototype.type = 'textarea';
+ 
+ Textarea.prototype._updateCursor = function(get) {
+Index: /blessed/lib/widgets/textbox.js
+===================================================================
+--- /blessed/lib/widgets/textbox.js
++++ /blessed/lib/widgets/textbox.js
+@@ -29,9 +29,9 @@
+   this.secret = options.secret;
+   this.censor = options.censor;
+ }
+ 
+-Textbox.prototype.__proto__ = Textarea.prototype;
++Object.setPrototypeOf(Textbox.prototype, Textarea.prototype);
+ 
+ Textbox.prototype.type = 'textbox';
+ 
+ Textbox.prototype.__olistener = Textbox.prototype._listener;
+Index: /blessed/lib/widgets/video.js
+===================================================================
+--- /blessed/lib/widgets/video.js
++++ /blessed/lib/widgets/video.js
+@@ -104,9 +104,9 @@
+     self.screen.render();
+   });
+ }
+ 
+-Video.prototype.__proto__ = Box.prototype;
++Object.setPrototypeOf(Video.prototype, Box.prototype);
+ 
+ Video.prototype.type = 'video';
+ 
+ Video.prototype.exists = function(program) {
 Index: /blessed/vendor/tng.js
 ===================================================================
 --- /blessed/vendor/tng.js

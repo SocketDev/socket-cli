@@ -1,10 +1,3 @@
-// @ts-ignore
-import BoxWidget from 'blessed/lib/widgets/box'
-// @ts-ignore
-import ScreenWidget from 'blessed/lib/widgets/screen'
-// @ts-ignore
-import TableWidget from 'blessed-contrib/lib/widget/table'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { ThreadFeedResponse, ThreatResult } from './types'
@@ -33,6 +26,7 @@ export async function outputThreatFeed(
   const descriptions = data.results.map(d => d.description)
 
   // Note: this temporarily takes over the terminal (just like `man` does).
+  const ScreenWidget = require('blessed/lib/widgets/screen')
   const screen: Widgets.Screen = new ScreenWidget()
   // Register these keys first so you can always exit, even when it gets stuck
   // If we don't do this and the code crashes, the user must hard-kill the
@@ -40,6 +34,7 @@ export async function outputThreatFeed(
   // eslint-disable-next-line n/no-process-exit
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 
+  const TableWidget = require('blessed-contrib/lib/widget/table')
   const table: any = new TableWidget({
     keys: 'true',
     fg: 'white',
@@ -61,6 +56,7 @@ export async function outputThreatFeed(
   })
 
   // Create details box at the bottom
+  const BoxWidget = require('blessed/lib/widgets/box')
   const detailsBox: Widgets.BoxElement = new BoxWidget({
     bottom: 0,
     height: '30%',

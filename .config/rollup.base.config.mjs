@@ -6,6 +6,7 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
+import MagicString from 'magic-string'
 import { readPackageUpSync } from 'read-package-up'
 import rangesIntersect from 'semver/ranges/intersects.js'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
@@ -16,6 +17,7 @@ import {
   readPackageJsonSync
 } from '@socketsecurity/registry/lib/packages'
 import { isRelative } from '@socketsecurity/registry/lib/path'
+import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../scripts/constants.js'
@@ -53,12 +55,13 @@ const {
   VITEST
 } = constants
 
+export const EXTERNAL_PACKAGES = ['blessed']
+
 export const INLINED_PACKAGES = [
   '@babel/runtime',
-  // 'blessed' package dependencies.
+  // 'blessed-contrib' package dependencies.
   'ansi-escapes',
   'ansi-regex',
-  'blessed',
   'blessed-contrib',
   'bresenham',
   'buffers',
@@ -98,6 +101,7 @@ const checkRequireAssignmentRegExp = new RegExp(
   requireAssignmentsRegExp.source,
   ''
 )
+
 const checkSocketInteropUseRegExp = new RegExp(`\\b${SOCKET_INTEROP}\\b`)
 
 const danglingRequiresRegExp = /^\s*require\(["'].+?["']\);?\r?\n/gm
@@ -106,8 +110,11 @@ const firstUseStrictRegExp = /'use strict';?/
 
 const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
 
+const requireBlessedAssignmentRegExp =
+  /(?<=var +)[$\w]+(?= *= *require\(["']blessed["']\))/
+
 const requireUrlAssignmentRegExp =
-  /(?<=var +)[$\w]+(?= *= *require\('node:url'\))/
+  /(?<=var +)[$\w]+(?= *= *require\(["']node:url["']\))/
 
 const splitUrlRequiresRegExp = /require\(["']u["']\s*\+\s*["']rl["']\)/g
 
@@ -217,7 +224,11 @@ export default function baseConfig(extendConfig = {}) {
       }
       const id = normalizeId(id_)
       const name = getPackageName(id)
-      if (pkgOverrides[name] || isBlessedPackageName(name)) {
+      if (
+        pkgOverrides[name] ||
+        isBlessedPackageName(name) ||
+        EXTERNAL_PACKAGES.includes(name)
+      ) {
         return true
       }
       if (
@@ -404,13 +415,47 @@ export default function baseConfig(extendConfig = {}) {
         find: danglingRequiresRegExp,
         replace: ''
       }),
+      // Replace hoisted requires of ./dist/blessed modules with lazily loaded
+      // variants.
+      {
+        name: 'modify-blessed-requires',
+        renderChunk(code) {
+          const s = new MagicString(code)
+          const varName = requireBlessedAssignmentRegExp.exec(code)?.[0]
+          if (varName) {
+            const varNameAssignmentRegExp = new RegExp(
+              `var\\s+${escapeRegExp(varName)}\\s*=.+`,
+              'g'
+            )
+            let match
+            while ((match = varNameAssignmentRegExp.exec(code)) !== null) {
+              s.overwrite(match.index, match.index + match[0].length, '')
+            }
+            const varNameRegExp = new RegExp(
+              `(?<!var\\s+)\\b${escapeRegExp(varName)}\\b`,
+              'g'
+            )
+            while ((match = varNameRegExp.exec(code)) !== null) {
+              s.overwrite(
+                match.index,
+                match.index + match[0].length,
+                "require('../blessed/lib/blessed')"
+              )
+            }
+          }
+          return {
+            code: s.toString(),
+            map: s.generateMap()
+          }
+        }
+      },
       commonjsPlugin({
         defaultIsModuleExports: true,
         extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
         ignoreDynamicRequires: true,
         ignoreGlobal: true,
         ignoreTryCatch: true,
-        strictRequires: 'auto'
+        strictRequires: true
       }),
       // Wrap require calls with SOCKET_INTEROP helper.
       socketModifyPlugin({
