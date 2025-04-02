@@ -28,10 +28,6 @@ export async function fetchPurlsShallowScore(
       sockSdk.batchPackageFetch(
         {
           alerts: 'true'
-          // compact: false,
-          // fixable: false,
-          // licenseattrib: false,
-          // licensedetails: false
         },
         { components: purls.map(purl => ({ purl })) }
       ),
