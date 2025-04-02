@@ -27,7 +27,7 @@ describe('socket threat-feed', async () => {
           sales@socket.dev if you are interested in purchasing this access.
 
           Options
-            --direction       Order asc or desc by the createdAt attribute.
+            --direction       Order asc or desc by the createdAt attribute
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --eco             Only show threats for a particular ecosystem
             --filter          Filter what type of threats to return

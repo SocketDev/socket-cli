@@ -31,7 +31,7 @@ describe('socket manifest gradle', async () => {
             --help            Print this help
             --out             Path of output file; where to store the resulting manifest, see also --stdout
             --stdout          Print resulting pom.xml to stdout (supersedes --out)
-            --task            Task to target. By default targets all.
+            --task            Task to target. By default targets all
             --verbose         Print debug messages
 
           Uses gradle, preferably through your local project \`gradlew\`, to generate a

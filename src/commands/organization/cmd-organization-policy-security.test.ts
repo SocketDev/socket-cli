@@ -18,7 +18,7 @@ describe('socket organization policy security', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Retrieve the security policy of an organization.
+        "Retrieve the security policy of an organization
 
           Usage
             $ socket organization policy security <org slug>
