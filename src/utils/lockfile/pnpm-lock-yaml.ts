@@ -79,7 +79,9 @@ export async function getAlertsMapFromPnpmLockfile(
     } else if (!options.nothrow) {
       const statusCode = batchResult.status ?? 'unknown'
       const statusMessage = batchResult.error ?? 'No status message'
-      throw new Error(`Socket API server error (${statusCode}): ${statusMessage}`)
+      throw new Error(
+        `Socket API server error (${statusCode}): ${statusMessage}`
+      )
     }
     remaining -= 1
     if (spinner && remaining > 0) {
