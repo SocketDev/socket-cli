@@ -32,7 +32,7 @@ describe('socket analytics', async () => {
 
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
-            --file            Path to a local file to save the output. Only valid with --json/--markdown. Defaults to stdout.
+            --file            Filepath to save output. Only valid with --json/--markdown. Defaults to stdout.
             --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
