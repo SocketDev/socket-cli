@@ -1,6 +1,7 @@
 import { readWantedLockfile } from '@pnpm/lockfile.fs'
 
 import { getManifestData } from '@socketsecurity/registry'
+import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
   readPackageJson
@@ -25,15 +26,20 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 const { NPM, OVERRIDES, PNPM } = constants
 
 type PnpmFixOptions = {
+  cwd?: string | undefined
   spinner?: Spinner | undefined
+  testScript?: string | undefined
 }
 
 export async function pnpmFix(
   pkgEnvDetails: EnvDetails,
-  cwd: string,
   options?: PnpmFixOptions | undefined
 ) {
-  const { spinner } = { __proto__: null, ...options } as PnpmFixOptions
+  const {
+    cwd = process.cwd(),
+    spinner,
+    testScript = 'test'
+  } = { __proto__: null, ...options } as PnpmFixOptions
 
   spinner?.start()
 
@@ -125,6 +131,8 @@ export async function pnpmFix(
                 }
               }
             })
+            // eslint-disable-next-line no-await-in-loop
+            await runScript(testScript, [], { spinner, stdio: 'ignore' })
 
             spinner?.info(`Patched ${name} ${oldVersion} -> ${node.version}`)
 

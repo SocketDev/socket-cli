@@ -15,7 +15,12 @@ const config: CliCommandConfig = {
   description: 'Fix "fixable" Socket alerts',
   hidden: true,
   flags: {
-    ...commonFlags
+    ...commonFlags,
+    testScript: {
+      type: 'string',
+      default: 'test',
+      description: 'The test script to run for each fix attempt'
+    }
   },
   help: (command, config) => `
     Usage
@@ -49,5 +54,7 @@ async function run(
     return
   }
 
-  await runFix()
+  await runFix({
+    testScript: cli.flags['testScript'] as string | undefined
+  })
 }
