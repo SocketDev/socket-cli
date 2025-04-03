@@ -38,7 +38,6 @@ export async function handleCreateNewScan({
     cwd,
     targets,
     supportedFileNames
-    // socketConfig
   )
 
   handleBadInput({

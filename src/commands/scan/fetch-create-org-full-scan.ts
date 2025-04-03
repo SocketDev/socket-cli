@@ -20,7 +20,9 @@ export async function fetchCreateOrgFullScan(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  spinner.start(`Creating a scan with ${packagePaths.length} packages...`)
+  spinner.start(
+    `Sending request to create a scan with ${packagePaths.length} packages...`
+  )
 
   const result = await handleApiCall(
     sockSdk.createOrgFullScan(
@@ -39,7 +41,7 @@ export async function fetchCreateOrgFullScan(
     'Creating scan'
   )
 
-  spinner.successAndStop('Scan created successfully')
+  spinner.successAndStop('Completed request to create a new scan.')
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('CreateOrgFullScan', result)
