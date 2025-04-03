@@ -255,7 +255,7 @@ export async function getPackageFilesForScan(
   config?: SocketYml | undefined
 ): Promise<string[]> {
   debugLog(
-    `getPackageFilesForScan: resolving ${inputPaths.length} paths:`,
+    `getPackageFilesForScan: resolving ${inputPaths.length} paths:\n`,
     inputPaths
   )
 
@@ -272,7 +272,7 @@ export async function getPackageFilesForScan(
   if (isDebug()) {
     spinner.stop()
     debugLog(
-      `Resolved ${inputPaths.length} paths to ${entries.length} local paths`,
+      `Resolved ${inputPaths.length} paths to ${entries.length} local paths:\n`,
       entries
     )
     spinner.start('Searching for files now...')
@@ -290,7 +290,7 @@ export async function getPackageFilesForScan(
   spinner.successAndStop(
     `Found ${packageFiles.length} local file${packageFiles.length === 1 ? '' : 's'}`
   )
-  debugLog('Absolute paths:', packageFiles)
+  debugLog('Absolute paths:\n', packageFiles)
 
   return packageFiles
 }

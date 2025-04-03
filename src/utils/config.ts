@@ -29,7 +29,7 @@ export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
   ['apiToken', 'The API token required to access most API endpoints'],
   [
     'defaultOrg',
-    'The default org slug to use when appropriate; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.'
+    'The default org slug to use; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.'
   ],
   [
     'enforcedOrgs',

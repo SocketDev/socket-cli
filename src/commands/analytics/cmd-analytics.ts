@@ -26,7 +26,7 @@ const config: CliCommandConfig = {
       shortFlag: 'f',
       default: '-',
       description:
-        'Path to a local file to save the output. Only valid with --json/--markdown. Defaults to stdout.'
+        'Filepath to save output. Only valid with --json/--markdown. Defaults to stdout.'
     },
     repo: {
       type: 'string',

@@ -86,7 +86,7 @@ function getDetailsFromDiff(
             existing = oldNode
           }
         } else {
-          debugLog('SKIPPING META CHANGE ON', diff)
+          debugLog('SKIPPING META CHANGE ON\n', diff)
         }
       } else {
         keep = action !== DiffAction.remove
