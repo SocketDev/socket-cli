@@ -12,7 +12,7 @@ export function checkSocketWrapperSetup(file: string): boolean {
 
   if (linesWithSocketAlias.length) {
     logger.log(
-      `The Socket npm/npx wrapper is set up in your bash profile (${file}).`
+      `The Socket npm/npx wrapper is set up in your bash profile (${file})`
     )
     return true
   }

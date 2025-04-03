@@ -35,7 +35,7 @@ export async function discoverConfigValue(
       success: false,
       value: undefined,
       message:
-        'When uncertain, unset this key. Otherwise ask your network administrator.'
+        'When uncertain, unset this key. Otherwise ask your network administrator'
     }
   }
 

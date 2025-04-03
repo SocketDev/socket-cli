@@ -38,7 +38,7 @@ export async function suggestOrgSlug(): Promise<string | void> {
     }
   } else {
     logger.fail(
-      'Failed to lookup organization list from API, unable to suggest.'
+      'Failed to lookup organization list from API, unable to suggest'
     )
   }
 }

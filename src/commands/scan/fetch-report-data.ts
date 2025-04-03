@@ -82,7 +82,7 @@ export async function fetchReportData(
       )
     } else {
       spinner.successAndStop(
-        `Completed fetching ${haves.join(haves.length > 2 ? ', ' : ' and ')}.`
+        `Completed fetching ${haves.join(haves.length > 2 ? ', ' : ' and ')}`
       )
     }
   }
@@ -133,7 +133,7 @@ export async function fetchReportData(
         return data
       } catch (e) {
         spinner.errorAndStop(
-          'There was an issue while fetching full scan data.'
+          'There was an issue while fetching full scan data'
         )
         throw e
       }
