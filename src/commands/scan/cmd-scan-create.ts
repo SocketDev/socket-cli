@@ -149,7 +149,10 @@ async function run(
     parentName
   })
 
-  const { cwd: cwdOverride, dryRun } = cli.flags
+  const { cwd: cwdOverride, dryRun } = cli.flags as {
+    cwd: string
+    dryRun: boolean
+  }
   const defaultOrgSlug = getConfigValue('defaultOrg')
   let orgSlug = defaultOrgSlug || cli.input[0] || ''
   let targets = cli.input.slice(defaultOrgSlug ? 0 : 1)
@@ -158,7 +161,10 @@ async function run(
     cwdOverride && cwdOverride !== 'process.cwd()'
       ? String(cwdOverride)
       : process.cwd()
-  let { branch: branchName, repo: repoName } = cli.flags
+  let { branch: branchName = '', repo: repoName = '' } = cli.flags as {
+    branch: string
+    repo: string
+  }
 
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
@@ -265,13 +271,13 @@ async function run(
 
   await handleCreateNewScan({
     branchName: branchName as string,
-    commitMessage: (cli.flags['commitMessage'] as string) ?? '',
+    commitMessage: (cli.flags['commitMessage'] as string | undefined) ?? '',
     cwd,
     defaultBranch: Boolean(cli.flags['defaultBranch']),
     orgSlug,
     pendingHead: Boolean(cli.flags['pendingHead']),
     readOnly: Boolean(cli.flags['readOnly']),
-    repoName: repoName as string,
+    repoName: repoName,
     targets,
     tmp: Boolean(cli.flags['tmp'])
   })
