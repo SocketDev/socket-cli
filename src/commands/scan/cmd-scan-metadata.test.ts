@@ -23,6 +23,10 @@ describe('socket scan metadata', async () => {
           Usage
             $ socket scan metadata <org slug> <scan id>
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: full-scans:list
+
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help

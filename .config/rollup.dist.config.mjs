@@ -107,13 +107,13 @@ async function copyBlessedWidgets() {
   const blessedDestPath = path.join(rootDistPath, 'blessed')
   const blessedNmPath = path.join(rootPath, 'node_modules/blessed')
   const folders = ['lib', 'usr', 'vendor']
-  await Promise.all([
-    ...folders.map(f =>
+  await Promise.all(
+    folders.map(f =>
       fs.cp(path.join(blessedNmPath, f), path.join(blessedDestPath, f), {
         recursive: true
       })
     )
-  ])
+  )
   // Add 'use strict' directive to js files.
   const jsFiles = await tinyGlob(['**/*.js'], {
     absolute: true,

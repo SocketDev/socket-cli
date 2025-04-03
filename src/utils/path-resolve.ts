@@ -7,7 +7,7 @@ import micromatch from 'micromatch'
 import { glob as tinyGlob } from 'tinyglobby'
 import which from 'which'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
 import { resolveBinPath } from '@socketsecurity/registry/lib/npm'
 
 import { directoryPatterns } from './ignore-by-default'
@@ -233,26 +233,42 @@ export async function getPackageFilesForScan(
   inputPaths: string[],
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data']
 ): Promise<string[]> {
-  debugLog(`Globbed resolving ${inputPaths.length} paths:`, inputPaths)
+  debugLog(
+    `getPackageFilesForScan: resolving ${inputPaths.length} paths:`,
+    inputPaths
+  )
+
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start('Searching for local files to include in scan...')
 
   const entries = await globWithGitIgnore(pathsToPatterns(inputPaths), {
     cwd
   })
 
-  debugLog(
-    `Globbed resolved ${inputPaths.length} paths to ${entries.length} paths:`,
-    entries
-  )
+  if (isDebug()) {
+    spinner.stop()
+    debugLog(
+      `Resolved ${inputPaths.length} paths to ${entries.length} local paths`,
+      entries
+    )
+    spinner.start('Searching for files now...')
+  } else {
+    spinner.start(
+      `Resolved ${inputPaths.length} paths to ${entries.length} local paths, searching for files now...`
+    )
+  }
 
   const packageFiles = await filterGlobResultToSupportedFiles(
     entries,
     supportedFiles
   )
 
-  debugLog(
-    `Mapped ${entries.length} entries to ${packageFiles.length} files:`,
-    packageFiles
+  spinner.successAndStop(
+    `Found ${packageFiles.length} local file${packageFiles.length === 1 ? '' : 's'}`
   )
+  debugLog('Absolute paths:', packageFiles)
 
   return packageFiles
 }

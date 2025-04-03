@@ -20,7 +20,7 @@ const config: CliCommandConfig = {
   commandName: 'report',
   description:
     'Check whether a scan result passes the organizational policies (security, license)',
-  hidden: true, // [beta]
+  hidden: false,
   flags: {
     ...commonFlags,
     ...outputFlags,
@@ -54,15 +54,12 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} <org slug> <scan ID> [path to output file]
 
+    API Token Requirements
+      - Quota: 3 units
+      - Permissions: full-scans:list security-policy:read
+
     Options
       ${getFlagListOutput(config.flags, 6)}
-
-    This consumes 1 quota unit plus 1 for each of the requested policy types.
-
-    Note: By default it reports both so by default it consumes 3 quota units.
-
-    Your API token will need the \`full-scans:list\` scope regardless. Additionally
-    it needs \`security-policy:read\` to report on the security policy.
 
     By default the result is a nested object that looks like this:
       \`{[ecosystem]: {[pkgName]: {[version]: {[file]: {[type:loc]: policy}}}}\`

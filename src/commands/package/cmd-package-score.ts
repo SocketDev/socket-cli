@@ -26,12 +26,12 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} <<ecosystem> <name> | <purl>>
 
+    API Token Requirements
+      - Quota: 100 units
+      - Permissions: packages:list
+
     Options
       ${getFlagListOutput(config.flags, 6)}
-
-    Requirements
-      - quota: 100
-      - scope: \`packages:list\`
 
     Show deep scoring details for one package. The score will reflect the package
     itself, any of its dependencies, and any of its transitive dependencies.

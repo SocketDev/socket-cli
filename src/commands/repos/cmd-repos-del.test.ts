@@ -23,6 +23,10 @@ describe('socket repos del', async () => {
           Usage
             $ socket repos del <org slug> <repo slug>
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: repo:delete
+
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help

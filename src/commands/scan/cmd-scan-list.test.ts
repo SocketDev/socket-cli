@@ -23,6 +23,10 @@ describe('socket scan list', async () => {
           Usage
             $ socket scan list <org slug>
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: full-scans:list
+
           Options
             --direction       Direction option (\`desc\` or \`asc\`) - Default is \`desc\`
             --dryRun          Do input validation for a command and exit 0 when input is ok
