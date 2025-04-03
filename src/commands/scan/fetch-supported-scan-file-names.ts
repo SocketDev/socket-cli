@@ -1,3 +1,5 @@
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
@@ -19,9 +21,8 @@ export async function fetchSupportedScanFileNames(): Promise<
     'fetching supported scan file types'
   )
 
-  spinner.successAndStop(
-    'Received response while fetched supported scan file types.'
-  )
+  spinner.stop()
+  logger.success('Received response while fetched supported scan file types.')
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('getReportSupportedFiles', result)

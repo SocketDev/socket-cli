@@ -1,5 +1,6 @@
 import process from 'node:process'
 
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
@@ -27,7 +28,7 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
 
     throw new AuthError(message)
   }
-  logger.fail(failMsgWithBadge('API returned an error:', message))
+  logger.fail(failMsgWithBadge('API returned an error', message))
   // eslint-disable-next-line n/no-process-exit
   process.exit(1)
 }
@@ -40,6 +41,7 @@ export async function handleApiCall<T>(
   try {
     result = await value
   } catch (cause) {
+    debugLog('handleApiCall[', description, '] error:\n', cause)
     throw new Error(`Failed ${description}`, { cause })
   }
   return result
