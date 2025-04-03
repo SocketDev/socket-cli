@@ -1,0 +1,180 @@
+{
+  "results": [
+    {
+      "event_id": "123112",
+      "created_at": "2025-04-02T01:47:26.914Z",
+      "updated_at": "2025-04-02T01:47:26.914Z",
+      "country_code": "",
+      "organization_id": "1381",
+      "ip_address": "",
+      "payload": {
+        "settingKey": "vantaViewSelector",
+        "settingValue": {
+          "ignoreAlerts": "",
+          "ignoreIngress": ""
+        }
+      },
+      "status_code": 0,
+      "type": "updateOrganizationSetting",
+      "user_agent": "",
+      "user_id": "7d8b2478-abcd-4cc9-abcd-c869de8fc924",
+      "user_email": "person@socket.dev",
+      "user_image": "",
+      "organization_name": "SocketDev"
+    },
+    {
+      "event_id": "122421",
+      "created_at": "2025-03-31T15:19:55.299Z",
+      "updated_at": "2025-03-31T15:19:55.299Z",
+      "country_code": "",
+      "organization_id": "1381",
+      "ip_address": "123.123.321.213",
+      "payload": {
+        "name": "zero-access",
+        "token": "sktsec_...LZEh_api",
+        "scopes": []
+      },
+      "status_code": 0,
+      "type": "createApiToken",
+      "user_agent": "",
+      "user_id": "e110f7e0-abcd-41bb-abcd-5745be143db8",
+      "user_email": "person@socket.dev",
+      "user_image": "",
+      "organization_name": "SocketDev"
+    },
+    {
+      "event_id": "121392",
+      "created_at": "2025-03-27T16:24:36.344Z",
+      "updated_at": "2025-03-27T16:24:36.344Z",
+      "country_code": "",
+      "organization_id": "1381",
+      "ip_address": "",
+      "payload": {
+        "settingKey": "sso",
+        "settingValue": {
+          "defaultMemberRole": "member"
+        }
+      },
+      "status_code": 0,
+      "type": "updateOrganizationSetting",
+      "user_agent": "super ai .com",
+      "user_id": "6dc7b702-abcd-438a-abcd-51e227962ebd",
+      "user_email": "person@socket.dev",
+      "user_image": "",
+      "organization_name": "SocketDev"
+    },
+    {
+      "event_id": "121391",
+      "created_at": "2025-03-27T16:24:33.912Z",
+      "updated_at": "2025-03-27T16:24:33.912Z",
+      "country_code": "",
+      "organization_id": "1381",
+      "ip_address": "",
+      "payload": {
+        "settingKey": "sso",
+        "settingValue": {
+          "defaultMemberRole": "member",
+          "requireSSOOnLogin": true
+        }
+      },
+      "status_code": 0,
+      "type": "updateOrganizationSetting",
+      "user_agent": "",
+      "user_id": "6dc7b702-abcd-438a-abcd-51e227962ebd",
+      "user_email": "person@socket.dev",
+      "user_image": "",
+      "organization_name": "SocketDev"
+    },
+    {
+      "event_id": "120287",
+      "created_at": "2025-03-24T21:52:12.879Z",
+      "updated_at": "2025-03-24T21:52:12.879Z",
+      "country_code": "",
+      "organization_id": "1381",
+      "ip_address": "",
+      "payload": {
+        "alertKey": "Q2URU2WWK6G4jQd3ReRfK-ZUo4xkF_CffmpkhbfgOd3c",
+        "alertTriageNote": "",
+        "alertTriageState": null
+      },
+      "status_code": 0,
+      "type": "updateAlertTriage",
+      "user_agent": "",
+      "user_id": "b5d98911-abcd-425b-abcd-c71534f0ef88",
+      "user_email": "person@socket.dev",
+      "user_image": "",
+      "organization_name": "SocketDev"
+    },
+    {
+      "event_id": "118431",
+      "created_at": "2025-03-17T15:57:29.885Z",
+      "updated_at": "2025-03-17T15:57:29.885Z",
+      "country_code": "",
+      "organization_id": "1381",
+      "ip_address": "",
+      "payload": {
+        "settingKey": "licensePolicy",
+        "settingValue": {
+          "allow": {
+            "strings": ["0BSD", "ADSL", "AFL-1.1"]
+          },
+          "options": {
+            "strings": ["toplevelOnly"]
+          }
+        }
+      },
+      "status_code": 0,
+      "type": "updateOrganizationSetting",
+      "user_agent": "",
+      "user_id": "7d8b2478-abcd-4cc9-abcd-c869de8fc924",
+      "user_email": "person@socket.dev",
+      "user_image": "",
+      "organization_name": "SocketDev"
+    },
+    {
+      "event_id": "116928",
+      "created_at": "2025-03-10T22:53:35.734Z",
+      "updated_at": "2025-03-10T22:53:35.734Z",
+      "country_code": "",
+      "organization_id": "1381",
+      "ip_address": "",
+      "payload": {
+        "token": "sktsec_...wnTa_api",
+        "scopes": [
+          "report",
+          "repo",
+          "full-scans",
+          "packages",
+          "audit-log",
+          "integration",
+          "threat-feed",
+          "security-policy",
+          "alerts",
+          "dependencies",
+          "historical"
+        ],
+        "oldScopes": [
+          "report",
+          "repo",
+          "full-scans",
+          "packages",
+          "audit-log",
+          "integration",
+          "threat-feed",
+          "security-policy",
+          "alerts",
+          "dependencies",
+          "historical"
+        ]
+      },
+      "status_code": 0,
+      "type": "updateApiTokenScopes",
+      "user_agent": "",
+      "user_id": "1fc4346e-abcd-4537-abcd-113e0e9609b5",
+      "user_email": "person@socket.dev",
+      "user_image": "",
+      "organization_name": "SocketDev"
+    }
+  ],
+  "nextPage": "2"
+}
