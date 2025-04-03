@@ -23,6 +23,10 @@ describe('socket repos update', async () => {
           Usage
             $ socket repos update <org slug>
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: repo:update
+
           Options
             --defaultBranch   Repository default branch
             --dryRun          Do input validation for a command and exit 0 when input is ok

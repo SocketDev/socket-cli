@@ -23,15 +23,15 @@ describe('socket package shallow', async () => {
           Usage
             $ socket package shallow <<ecosystem> <name> [<name> ...] | <purl> [<purl> ...]>
 
+          API Token Requirements
+            - Quota: 100 units
+            - Permissions: packages:list
+
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
-
-          Requirements
-            - quota: 100
-            - scope: \`packages:list\`
 
           Show scoring details for one or more packages purely based on their own package.
           This means that any dependency scores are not reflected by the score. You can

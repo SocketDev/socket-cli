@@ -29,6 +29,10 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} <org slug> <scan ID> [path to output file]
 
+    API Token Requirements
+      - Quota: 1 unit
+      - Permissions: full-scans:list
+
     When no output path is given the contents is sent to stdout.
 
     Options

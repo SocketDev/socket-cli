@@ -65,6 +65,10 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} <org slug>
 
+    API Token Requirements
+      - Quota: 1 unit
+      - Permissions: full-scans:list
+
     Options
       ${getFlagListOutput(config.flags, 6)}
 

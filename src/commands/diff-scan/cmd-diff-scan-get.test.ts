@@ -23,6 +23,10 @@ describe('socket diff-scan get', async () => {
           Usage
             $ socket diff-scan get <org slug> --before=<before> --after=<after>
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: full-scans:list
+
           This command displays the package changes between two scans. The full output
           can be pretty large depending on the size of your repo and time range. It is
           best stored to disk to be further analyzed by other tools.
