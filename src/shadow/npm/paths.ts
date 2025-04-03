@@ -16,7 +16,7 @@ const { NODE_MODULES, NPM, NPX, SOCKET_CLI_ISSUES_URL } = constants
 
 function exitWithBinPathError(binName: string): never {
   logger.fail(
-    `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable.`
+    `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`
   )
   // The exit code 127 indicates that the command or binary being executed
   // could not be found.

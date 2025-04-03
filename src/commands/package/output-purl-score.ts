@@ -243,7 +243,7 @@ export async function outputPurlScore(
         )
       } else {
         logger.log(
-          'This package had no alerts and neither did any of its direct/transitive dependencies.'
+          'This package had no alerts and neither did any of its direct/transitive dependencies'
         )
       }
       logger.log('')

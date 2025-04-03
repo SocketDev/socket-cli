@@ -101,7 +101,7 @@ async function run(
     {
       test: !!(before && after),
       message:
-        'Specify a before and after scan ID\nThe args are expecting a full `aaa0aa0a-aaaa-0000-0a0a-0000000a00a0` scan ID.',
+        'Specify a before and after scan ID.\nThe args are expecting a full `aaa0aa0a-aaaa-0000-0a0a-0000000a00a0` scan ID.',
       pass: 'ok',
       fail:
         !before && !after
