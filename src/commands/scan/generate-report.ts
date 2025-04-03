@@ -31,7 +31,6 @@ export type ReportLeafNode = {
 
 export function generateReport(
   scan: Array<components['schemas']['SocketArtifact']>,
-  _licensePolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'>,
   securityPolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'>,
   {
     fold,
@@ -71,6 +70,14 @@ export function generateReport(
   //   - warn: healthy unchanged, add alerts to report
   //   - monitor/ignore: no action
   //   - defer: unknown (no action)
+
+  // Note: the server will emit alerts for license policy violations but
+  //       those are only included if you set the flag when requesting the scan
+  //       data. The alerts map to a single security policy key that determines
+  //       what to do with any violation, regardless of the concrete license.
+  //       That rule is called "License Policy Violation".
+  // The license policy part is implicitly handled here. Either they are
+  // included and may show up, or they are not and won't show up.
 
   const violations = new Map()
 

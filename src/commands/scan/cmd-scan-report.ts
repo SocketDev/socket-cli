@@ -39,15 +39,10 @@ const config: CliCommandConfig = {
       default: false,
       description: 'Report only the healthy status'
     },
-    // license: {
-    //   type: 'boolean',
-    //   default: true,
-    //   description: 'Report the license policy status. Default: true'
-    // },
-    security: {
+    license: {
       type: 'boolean',
-      default: true,
-      description: 'Report the security policy status. Default: true'
+      default: false,
+      description: 'Also report the license policy status. Default: false'
     }
   },
   help: (command, config) => `
@@ -55,7 +50,7 @@ const config: CliCommandConfig = {
       $ ${command} <org slug> <scan ID> [path to output file]
 
     API Token Requirements
-      - Quota: 3 units
+      - Quota: 2 units
       - Permissions: full-scans:list security-policy:read
 
     Options
@@ -72,6 +67,7 @@ const config: CliCommandConfig = {
 
     Examples
       $ ${command} FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
+      $ ${command} FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short
   `
 }
 
@@ -96,10 +92,9 @@ async function run(
   const {
     fold = 'none',
     json,
-    // license,
+    license,
     markdown,
-    reportLevel = 'warn',
-    security
+    reportLevel = 'warn'
   } = cli.flags
 
   const defaultOrgSlug = getConfigValue('defaultOrg')
@@ -150,8 +145,7 @@ async function run(
   await handleScanReport({
     orgSlug,
     scanId: scanId,
-    includeLicensePolicy: false, // !!license,
-    includeSecurityPolicy: typeof security === 'boolean' ? security : true,
+    includeLicensePolicy: !!license,
     outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
     filePath: file,
     fold: fold as 'none' | 'file' | 'pkg' | 'version',

@@ -5,7 +5,6 @@ export async function handleScanReport({
   filePath,
   fold,
   includeLicensePolicy,
-  includeSecurityPolicy,
   orgSlug,
   outputKind,
   reportLevel,
@@ -15,28 +14,16 @@ export async function handleScanReport({
   orgSlug: string
   scanId: string
   includeLicensePolicy: boolean
-  includeSecurityPolicy: boolean
   outputKind: 'json' | 'markdown' | 'text'
   filePath: string
   fold: 'pkg' | 'version' | 'file' | 'none'
   reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'
   short: boolean
 }): Promise<void> {
-  if (!includeLicensePolicy && !includeSecurityPolicy) {
-    process.exitCode = 1
-    return // caller should assert
-  }
-
-  const {
-    // licensePolicy,
-    ok,
-    scan,
-    securityPolicy
-  } = await fetchReportData(
+  const { ok, scan, securityPolicy } = await fetchReportData(
     orgSlug,
     scanId,
-    // includeLicensePolicy
-    includeSecurityPolicy
+    includeLicensePolicy
   )
   if (!ok) {
     return
@@ -47,7 +34,6 @@ export async function handleScanReport({
     fold,
     scanId: scanId,
     includeLicensePolicy,
-    includeSecurityPolicy,
     orgSlug,
     outputKind,
     reportLevel,
