@@ -28,7 +28,7 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
 
     throw new AuthError(message)
   }
-  logger.fail(failMsgWithBadge('API returned an error', message))
+  logger.fail(failMsgWithBadge('Socket API returned an error', message))
   // eslint-disable-next-line n/no-process-exit
   process.exit(1)
 }
@@ -40,23 +40,24 @@ export async function handleApiCall<T>(
   let result: T
   try {
     result = await value
-  } catch (cause) {
-    debugLog('handleApiCall[', description, '] error:\n', cause)
-    throw new Error(`Failed ${description}`, { cause })
+  } catch (e) {
+    debugLog(`handleApiCall[${description}] error:\n`, e)
+    throw new Error(`Failed ${description}`, { cause: e })
   }
   return result
 }
 
 export async function handleApiError(code: number) {
   if (code === 400) {
-    return 'One of the options passed might be incorrect.'
-  } else if (code === 403) {
-    return 'Your API token may not have the required permissions for this command or you might be trying to access (data from) an organization that is not linked to the API key you are logged in with.'
-  } else if (code === 404) {
-    return 'The requested Socket API endpoint was not found (404) or there was no result for the requested parameters. This could be a temporary problem caused by an incident or a bug in the CLI. If the problem persists please let us know.'
-  } else {
-    return `Server responded with status code ${code}`
+    return 'One of the options passed might be incorrect'
   }
+  if (code === 403) {
+    return 'Your API token may not have the required permissions for this command or you might be trying to access (data from) an organization that is not linked to the API key you are logged in with'
+  }
+  if (code === 404) {
+    return 'The requested Socket API endpoint was not found (404) or there was no result for the requested parameters. This could be a temporary problem caused by an incident or a bug in the CLI. If the problem persists please let us know.'
+  }
+  return `Server responded with status code ${code}`
 }
 
 export function getLastFiveOfApiToken(token: string): string {

@@ -100,7 +100,7 @@ export async function outputAsJson(
       'There was a problem converting the logs to JSON, please try without the `--json` flag'
     )
     if (isDebug()) {
-      debugLog('Error:', e)
+      debugLog('Error:\n', e)
     }
     return '{}'
   }
@@ -150,7 +150,7 @@ ${table}
       'There was a problem converting the logs to Markdown, please try the `--json` flag'
     )
     if (isDebug()) {
-      debugLog('Error:', e)
+      debugLog('Error:\n', e)
     }
     // logger.error(e)
     return ''
