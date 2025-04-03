@@ -68,11 +68,11 @@ describe('output-scan-report', () => {
         "# Scan Policy Report
 
         This report tells you whether the results of a Socket scan results violate the
-        security or license policy set by your organization.
+        security policy set by your organization.
 
         ## Health status
 
-        The scan *PASSES* all requirements set by your security and license policy.
+        The scan *PASSES* all requirements set by your security policy.
 
         ## Settings
 
@@ -82,6 +82,7 @@ describe('output-scan-report', () => {
         - Scan ID: scan-ai-dee
         - Alert folding: none
         - Minimal policy level for alert to be included in report: warn
+        - Include license alerts: no
 
         ## Alerts
 
@@ -95,7 +96,7 @@ describe('output-scan-report', () => {
         "# Scan Policy Report
 
         This report tells you whether the results of a Socket scan results violate the
-        security or license policy set by your organization.
+        security policy set by your organization.
 
         ## Health status
 
@@ -109,6 +110,7 @@ describe('output-scan-report', () => {
         - Scan ID: scan-ai-dee
         - Alert folding: none
         - Minimal policy level for alert to be included in report: warn
+        - Include license alerts: no
 
         ## Alerts
 

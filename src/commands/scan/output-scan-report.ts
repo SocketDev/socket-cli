@@ -14,13 +14,11 @@ import type { components } from '@socketsecurity/sdk/types/api'
 
 export async function outputScanReport(
   scan: Array<components['schemas']['SocketArtifact']>,
-  // licensePolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'>,
   securityPolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'>,
   {
     filePath,
     fold,
     includeLicensePolicy,
-    includeSecurityPolicy,
     orgSlug,
     outputKind,
     reportLevel,
@@ -30,7 +28,6 @@ export async function outputScanReport(
     orgSlug: string
     scanId: string
     includeLicensePolicy: boolean
-    includeSecurityPolicy: boolean
     outputKind: 'json' | 'markdown' | 'text'
     filePath: string
     fold: 'pkg' | 'version' | 'file' | 'none'
@@ -38,25 +35,15 @@ export async function outputScanReport(
     short: boolean
   }
 ): Promise<void> {
-  if (!includeLicensePolicy && !includeSecurityPolicy) {
-    process.exitCode = 1
-    return // caller should assert
-  }
-
-  const scanReport = generateReport(
-    scan,
-    undefined, // licensePolicy,
-    securityPolicy,
-    {
-      orgSlug,
-      scanId,
-      fold,
-      reportLevel,
-      short,
-      // Lazily access constants.spinner.
-      spinner: constants.spinner
-    }
-  )
+  const scanReport = generateReport(scan, securityPolicy, {
+    orgSlug,
+    scanId,
+    fold,
+    reportLevel,
+    short,
+    // Lazily access constants.spinner.
+    spinner: constants.spinner
+  })
 
   if (!scanReport.healthy) {
     process.exitCode = 1
@@ -68,7 +55,7 @@ export async function outputScanReport(
   ) {
     const json = short
       ? JSON.stringify(scanReport)
-      : toJsonReport(scanReport as ScanReport)
+      : toJsonReport(scanReport as ScanReport, includeLicensePolicy)
 
     if (filePath && filePath !== '-') {
       logger.log('Writing json report to', filePath)
@@ -82,7 +69,7 @@ export async function outputScanReport(
   if (outputKind === 'markdown' || (filePath && filePath.endsWith('.md'))) {
     const md = short
       ? `healthy = ${scanReport.healthy}`
-      : toMarkdownReport(scanReport as ScanReport)
+      : toMarkdownReport(scanReport as ScanReport, includeLicensePolicy)
 
     if (filePath && filePath !== '-') {
       logger.log('Writing markdown report to', filePath)
@@ -100,11 +87,15 @@ export async function outputScanReport(
   }
 }
 
-export function toJsonReport(report: ScanReport): string {
+export function toJsonReport(
+  report: ScanReport,
+  includeLicensePolicy: boolean
+): string {
   const obj = mapToObject(report.alerts)
 
   const json = JSON.stringify(
     {
+      includeLicensePolicy,
       ...report,
       alerts: obj
     },
@@ -115,7 +106,10 @@ export function toJsonReport(report: ScanReport): string {
   return json
 }
 
-export function toMarkdownReport(report: ScanReport): string {
+export function toMarkdownReport(
+  report: ScanReport,
+  includeLicensePolicy: boolean
+): string {
   const flatData = Array.from(walkNestedMap(report.alerts)).map(
     ({ keys, value }: { keys: string[]; value: ReportLeafNode }) => {
       const { manifest, policy, type, url } = value
@@ -135,13 +129,13 @@ export function toMarkdownReport(report: ScanReport): string {
 # Scan Policy Report
 
 This report tells you whether the results of a Socket scan results violate the
-security or license policy set by your organization.
+security${includeLicensePolicy ? ' or license' : ''} policy set by your organization.
 
 ## Health status
 
 ${
   report.healthy
-    ? 'The scan *PASSES* all requirements set by your security and license policy.'
+    ? `The scan *PASSES* all requirements set by your security${includeLicensePolicy ? ' and license' : ''} policy.`
     : 'The scan *VIOLATES* one or more policies set to the "error" level.'
 }
 
@@ -153,6 +147,7 @@ Configuration used to generate this report:
 - Scan ID: ${report.scanId}
 - Alert folding: ${report.options.fold === 'none' ? 'none' : `up to ${report.options.fold}`}
 - Minimal policy level for alert to be included in report: ${report.options.reportLevel === 'defer' ? 'everything' : report.options.reportLevel}
+- Include license alerts: ${includeLicensePolicy ? 'yes' : 'no'}
 
 ## Alerts
 
