@@ -105,9 +105,7 @@ export async function fetchReportData(
 
         return data
       } catch (e) {
-        spinner.errorAndStop(
-          'There was an issue while fetching full scan data'
-        )
+        spinner.errorAndStop('There was an issue while fetching full scan data')
         throw e
       }
     })(),

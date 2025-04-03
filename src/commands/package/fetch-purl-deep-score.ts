@@ -6,6 +6,8 @@ import { AuthError } from '../../utils/errors'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { getDefaultToken } from '../../utils/sdk'
 
+const { SOCKET_CLI_ISSUES_URL } = constants
+
 export async function fetchPurlDeepScore(purl: string) {
   const apiToken = getDefaultToken()
   if (!apiToken) {
@@ -52,7 +54,7 @@ export async function fetchPurlDeepScore(purl: string) {
     return JSON.parse(data)
   } catch (e) {
     throw new Error(
-      'Was unable to JSON parse the input from the server. It may not have been a proper JSON response. Please report this problem.'
+      `Unable to parse JSON response from the Socket API.\nPlease report to ${SOCKET_CLI_ISSUES_URL}`
     )
   }
 }
