@@ -23,6 +23,10 @@ describe('socket repos list', async () => {
           Usage
             $ socket repos list <org slug>
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: repo:list
+
           Options
             --direction       Direction option
             --dryRun          Do input validation for a command and exit 0 when input is ok

@@ -23,6 +23,10 @@ describe('socket repos create', async () => {
           Usage
             $ socket repos create <org slug>
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: repo:create
+
           Options
             --defaultBranch   Repository default branch
             --dryRun          Do input validation for a command and exit 0 when input is ok

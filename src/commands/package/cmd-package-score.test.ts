@@ -23,15 +23,15 @@ describe('socket package score', async () => {
           Usage
             $ socket package score <<ecosystem> <name> | <purl>>
 
+          API Token Requirements
+            - Quota: 100 units
+            - Permissions: packages:list
+
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
-
-          Requirements
-            - quota: 100
-            - scope: \`packages:list\`
 
           Show deep scoring details for one package. The score will reflect the package
           itself, any of its dependencies, and any of its transitive dependencies.

@@ -23,6 +23,10 @@ describe('socket scan del', async () => {
           Usage
             $ socket scan del <org slug> <scan ID>
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: full-scans:delete
+
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help

@@ -23,6 +23,10 @@ describe('socket analytics', async () => {
           Usage
             $ socket analytics --scope=<scope> --time=<time filter>
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: report:write
+
           Default parameters are set to show the organization-level analytics over the
           last 7 days.
 

@@ -23,6 +23,10 @@ describe('socket dependencies', async () => {
           Usage
             socket dependencies
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: none (does need token with access to target org)
+
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
