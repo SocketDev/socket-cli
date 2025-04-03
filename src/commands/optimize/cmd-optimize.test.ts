@@ -18,21 +18,21 @@ describe('socket optimize', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Optimize dependencies with @socketregistry overrides
+        "Optimize dependencies with @socketregistry overrides
 
-        Usage
-          $ socket optimize
+          Usage
+            $ socket optimize
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --pin             Pin overrides to their latest version
-          --prod            Only add overrides for production dependencies
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
+            --pin             Pin overrides to their latest version
+            --prod            Only add overrides for production dependencies
 
-        Examples
-          $ socket optimize
-          $ socket optimize --pin"
-    `
+          Examples
+            $ socket optimize
+            $ socket optimize --pin"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

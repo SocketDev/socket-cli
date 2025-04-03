@@ -1,7 +1,6 @@
 import constants from '../../constants'
 import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { AuthError } from '../../utils/errors'
-import { getDefaultToken, setupSdk } from '../../utils/sdk'
+import { setupSdk } from '../../utils/sdk'
 
 import type { SocketSdkResultType } from '@socketsecurity/sdk'
 
@@ -13,14 +12,7 @@ export async function streamScan(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
-  }
-
-  const sockSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk()
 
   spinner.start('Fetching scan...')
 
@@ -35,7 +27,6 @@ export async function streamScan(
 
   if (!data?.success) {
     handleUnsuccessfulApiResponse('getOrgFullScan', data)
-    return
   }
 
   return data

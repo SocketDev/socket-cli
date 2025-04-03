@@ -28,10 +28,10 @@ describe('socket manifest kotlin', async () => {
             --cwd             Set the cwd, defaults to process.cwd()
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --gradleOpts      Additional options to pass on to ./gradlew, see \`./gradlew --help\`
-            --help            Print this help.
+            --help            Print this help
             --out             Path of output file; where to store the resulting manifest, see also --stdout
             --stdout          Print resulting pom.xml to stdout (supersedes --out)
-            --task            Task to target. By default targets all.
+            --task            Task to target. By default targets all
             --verbose         Print debug messages
 
           Uses gradle, preferably through your local project \`gradlew\`, to generate a
@@ -88,7 +88,7 @@ describe('socket manifest kotlin', async () => {
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest kotlin\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m:
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
 
           - The DIR arg is required (\\x1b[31mmissing\\x1b[39m)
 

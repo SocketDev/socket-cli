@@ -18,25 +18,25 @@ describe('socket config', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Commands related to the local CLI configuration
+        "Commands related to the local CLI configuration
 
-        Usage
-          $ socket config <command>
+          Usage
+            $ socket config <command>
 
-        Commands
-          auto              Automatically discover and set the correct value config item
-          get               Get the value of a local CLI config item
-          list              Show all local CLI config items and their values
-          set               Update the value of a local CLI config item
-          unset             Clear the value of a local CLI config item
+          Commands
+            auto              Automatically discover and set the correct value config item
+            get               Get the value of a local CLI config item
+            list              Show all local CLI config items and their values
+            set               Update the value of a local CLI config item
+            unset             Clear the value of a local CLI config item
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
 
-        Examples
-          $ socket config --help"
-    `
+          Examples
+            $ socket config --help"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

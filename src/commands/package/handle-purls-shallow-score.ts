@@ -11,11 +11,13 @@ export async function handlePurlsShallowScore({
   purls: string[]
 }) {
   const packageData = await fetchPurlsShallowScore(purls)
-  if (packageData) {
-    outputPurlsShallowScore(
-      purls,
-      packageData.data as Array<components['schemas']['SocketArtifact']>,
-      outputKind
-    )
+  if (!packageData) {
+    return
   }
+
+  outputPurlsShallowScore(
+    purls,
+    packageData.data as Array<components['schemas']['SocketArtifact']>,
+    outputKind
+  )
 }

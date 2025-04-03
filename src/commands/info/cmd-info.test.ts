@@ -18,23 +18,23 @@ describe('socket info', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Look up info regarding a package
+        "Look up info regarding a package
 
-        Usage
-          $ socket info <name>
+          Usage
+            $ socket info <name>
 
-        Options
-          --all             Include all issues
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --json            Output result as json
-          --markdown        Output result as markdown
-          --strict          Exits with an error code if any matching issues are found
+          Options
+            --all             Include all issues
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
+            --json            Output result as json
+            --markdown        Output result as markdown
+            --strict          Exits with an error code if any matching issues are found
 
-        Examples
-          $ socket info webtorrent
-          $ socket info webtorrent@1.9.1"
-    `
+          Examples
+            $ socket info webtorrent
+            $ socket info webtorrent@1.9.1"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -62,7 +62,7 @@ describe('socket info', async () => {
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket info\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m:
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
 
           - Expecting a package name (\\x1b[31mmissing\\x1b[39m)
 

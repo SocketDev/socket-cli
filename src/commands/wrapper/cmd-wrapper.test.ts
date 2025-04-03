@@ -18,21 +18,21 @@ describe('socket wrapper', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Enable or disable the Socket npm/npx wrapper
+        "Enable or disable the Socket npm/npx wrapper
 
-        Usage
-          $ socket wrapper <flag>
+          Usage
+            $ socket wrapper <flag>
 
-        Options
-          --disable         Disables the Socket npm/npx wrapper
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --enable          Enables the Socket npm/npx wrapper
-          --help            Print this help.
+          Options
+            --disable         Disables the Socket npm/npx wrapper
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --enable          Enables the Socket npm/npx wrapper
+            --help            Print this help
 
-        Examples
-          $ socket wrapper --enable
-          $ socket wrapper --disable"
-    `
+          Examples
+            $ socket wrapper --enable
+            $ socket wrapper --disable"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
@@ -62,7 +62,7 @@ describe('socket wrapper', async () => {
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket wrapper\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m:
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
 
           - Must use --enabled or --disable (\\x1b[31mmissing\\x1b[39m)"
       `)

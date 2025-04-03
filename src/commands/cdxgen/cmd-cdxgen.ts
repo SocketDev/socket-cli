@@ -32,7 +32,7 @@ const yargsConfig = {
     only: arrayToLower,
     profile: toLower,
     standard: arrayToLower,
-    type: toLower
+    type: arrayToLower
   },
   default: {
     //author: ['OWASP Foundation'],
@@ -55,7 +55,7 @@ const yargsConfig = {
     //'server-host': '127.0.0.1',
     //'server-port': '9090',
     //'spec-version': '1.5',
-    type: 'js'
+    type: ['js']
     //validate: true,
   },
   alias: {
@@ -73,7 +73,8 @@ const yargsConfig = {
     { key: 'exclude', type: 'string' },
     { key: 'filter', type: 'string' },
     { key: 'only', type: 'string' },
-    { key: 'standard', type: 'string' }
+    { key: 'standard', type: 'string' },
+    { key: 'type', type: 'string' }
   ],
   boolean: [
     'auto-compositions',
@@ -147,16 +148,6 @@ async function run(
     importMeta,
     parentName
   })
-  // if (cli.input.length)
-  //   logger.fail(
-  //     stripIndents`
-  //       ${colors.bgRed(colors.white('Input error'))}: Please provide the required fields:
-  //
-  //       - Unexpected arguments
-  //   `)
-  //   config.help(parentName, config)
-  //   return
-  // }
 
   // TODO: Convert to meow.
   const yargv = {

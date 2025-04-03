@@ -18,21 +18,21 @@ describe('socket manifest auto', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Auto-detect build and attempt to generate manifest file
+        "Auto-detect build and attempt to generate manifest file
 
-        Usage
-          $ socket manifest auto
+          Usage
+            $ socket manifest auto
 
-        Options
-          --cwd             Set the cwd, defaults to process.cwd()
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
-          --verbose         Enable debug output, may help when running into errors
+          Options
+            --cwd             Set the cwd, defaults to process.cwd()
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
+            --verbose         Enable debug output, may help when running into errors
 
-        Tries to figure out what language your current repo uses. If it finds a
-        supported case then it will try to generate the manifest file for that
-        language with the default or detected settings."
-    `
+          Tries to figure out what language your current repo uses. If it finds a
+          supported case then it will try to generate the manifest file for that
+          language with the default or detected settings."
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

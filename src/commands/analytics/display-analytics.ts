@@ -1,8 +1,5 @@
 import fs from 'node:fs/promises'
 
-// @ts-ignore
-import ScreenWidget from 'blessed/lib/widgets/screen'
-import contrib from 'blessed-contrib'
 import { stripIndents } from 'common-tags'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -10,12 +7,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { fetchOrgAnalyticsData } from './fetch-org-analytics'
 import { fetchRepoAnalyticsData } from './fetch-repo-analytics'
 import constants from '../../constants'
-import { AuthError } from '../../utils/errors'
 import { mdTableStringNumber } from '../../utils/markdown'
-import { getDefaultToken } from '../../utils/sdk'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
+import type { grid as ContribGrid } from 'blessed-contrib'
 
 interface FormattedData {
   top_five_alert_types: Record<string, number>
@@ -77,38 +73,6 @@ export async function displayAnalytics({
   outputKind: 'json' | 'markdown' | 'print'
   filePath: string
 }): Promise<void> {
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API token.'
-    )
-  }
-
-  await outputAnalyticsWithToken({
-    apiToken,
-    filePath,
-    outputKind,
-    repo,
-    scope,
-    time
-  })
-}
-
-async function outputAnalyticsWithToken({
-  apiToken,
-  filePath,
-  outputKind,
-  repo,
-  scope,
-  time
-}: {
-  apiToken: string
-  scope: string
-  time: number
-  repo: string
-  outputKind: 'json' | 'markdown' | 'print'
-  filePath: string
-}): Promise<void> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
@@ -119,9 +83,9 @@ async function outputAnalyticsWithToken({
     | SocketSdkReturnType<'getOrgAnalytics'>['data']
     | SocketSdkReturnType<'getRepoAnalytics'>['data']
   if (scope === 'org') {
-    data = await fetchOrgAnalyticsData(time, spinner, apiToken)
+    data = await fetchOrgAnalyticsData(time, spinner)
   } else if (repo) {
-    data = await fetchRepoAnalyticsData(repo, time, spinner, apiToken)
+    data = await fetchRepoAnalyticsData(repo, time, spinner)
   }
 
   // A message should already have been printed if we have no data here
@@ -243,7 +207,9 @@ ${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
 }
 
 function displayAnalyticsScreen(data: FormattedData): void {
+  const ScreenWidget = require('blessed/lib/widgets/screen')
   const screen: Widgets.Screen = new ScreenWidget({})
+  const contrib = require('blessed-contrib')
   const grid = new contrib.grid({ rows: 5, cols: 4, screen })
 
   renderLineCharts(
@@ -418,12 +384,13 @@ function formatDate(date: string): string {
 }
 
 function renderLineCharts(
-  grid: contrib.grid,
+  grid: ContribGrid,
   screen: Widgets.Screen,
   title: string,
   coords: number[],
   data: Record<string, number>
 ): void {
+  const contrib = require('blessed-contrib')
   const line = grid.set(...coords, contrib.line, {
     style: { line: 'cyan', text: 'cyan', baseline: 'black' },
     xLabelPadding: 0,

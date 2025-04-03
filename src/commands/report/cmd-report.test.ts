@@ -18,22 +18,22 @@ describe('socket report', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "[Deprecated] Project report related commands
+        "[Deprecated] Project report related commands
 
-        Usage
-          $ socket report <command>
+          Usage
+            $ socket report <command>
 
-        Commands
-          create            [Deprecated] Create a project report
-          view              [Deprecated] View a project report
+          Commands
+            create            [Deprecated] Create a project report
+            view              [Deprecated] View a project report
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
 
-        Examples
-          $ socket report --help"
-    `
+          Examples
+            $ socket report --help"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

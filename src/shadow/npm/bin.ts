@@ -10,7 +10,8 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { installLinks } from './link'
 import constants from '../../constants'
 
-const { SOCKET_CLI_SAFE_WRAPPER, SOCKET_IPC_HANDSHAKE } = constants
+const { SOCKET_CLI_SAFE_BIN, SOCKET_CLI_SAFE_PROGRESS, SOCKET_IPC_HANDSHAKE } =
+  constants
 
 export default async function shadowBin(
   binName: 'npm' | 'npx',
@@ -19,9 +20,9 @@ export default async function shadowBin(
   process.exitCode = 1
   const useDebug = isDebug()
   const terminatorPos = args.indexOf('--')
-  const binArgs = (
-    terminatorPos === -1 ? args : args.slice(0, terminatorPos)
-  ).filter(a => !isProgressFlag(a))
+  const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
+  const progressArg = rawBinArgs.findLast(isProgressFlag) !== '--no-progress'
+  const binArgs = rawBinArgs.filter(a => !isProgressFlag(a))
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const isSilent = !useDebug && !binArgs.some(isLoglevelFlag)
   // The default value of loglevel is "notice". We default to "error" which is
@@ -72,7 +73,8 @@ export default async function shadowBin(
   })
   spawnPromise.process.send({
     [SOCKET_IPC_HANDSHAKE]: {
-      [SOCKET_CLI_SAFE_WRAPPER]: binName
+      [SOCKET_CLI_SAFE_BIN]: binName,
+      [SOCKET_CLI_SAFE_PROGRESS]: progressArg
     }
   })
   await spawnPromise

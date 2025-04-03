@@ -37,7 +37,7 @@ describe('socket diff-scan get', async () => {
             --depth           Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --file            Path to a local file where the output should be saved. Use \`-\` to force stdout.
-            --help            Print this help.
+            --help            Print this help
             --json            Output result as json. This can be big. Use --file to store it to disk without truncation.
 
           Examples
@@ -72,7 +72,7 @@ describe('socket diff-scan get', async () => {
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan get\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m:
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
 
           - Specify a before and after scan ID (\\x1b[31mmissing before and after\\x1b[39m)
             The args are expecting a full \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\` scan ID.

@@ -48,7 +48,7 @@ describe('socket scan create', async () => {
             --cwd             working directory, defaults to process.cwd()
             --defaultBranch   Make default branch
             --dryRun          run input validation part of command without any concrete side effects
-            --help            Print this help.
+            --help            Print this help
             --pendingHead     Set as pending head
             --pullRequest     Commit hash
             --readOnly        Similar to --dry-run except it can read from remote, stops before it would create an actual report

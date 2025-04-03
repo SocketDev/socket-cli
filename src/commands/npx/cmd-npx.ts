@@ -2,6 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { wrapNpx } from './wrap-npx'
 import constants from '../../constants'
+import { commonFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -12,7 +13,9 @@ const config: CliCommandConfig = {
   commandName: 'npx',
   description: `${NPX} wrapper functionality`,
   hidden: false,
-  flags: {},
+  flags: {
+    ...commonFlags
+  },
   help: (command, _config) => `
     Usage
       $ ${command}

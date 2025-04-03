@@ -11,7 +11,7 @@ import type {
 
 export async function fetchPurlsShallowScore(
   purls: string[]
-): Promise<SocketSdkReturnType<'batchPackageFetch'>> {
+): Promise<SocketSdkReturnType<'batchPackageFetch'> | undefined> {
   logger.error(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`
   )
@@ -28,10 +28,6 @@ export async function fetchPurlsShallowScore(
       sockSdk.batchPackageFetch(
         {
           alerts: 'true'
-          // compact: false,
-          // fixable: false,
-          // licenseattrib: false,
-          // licensedetails: false
         },
         { components: purls.map(purl => ({ purl })) }
       ),
@@ -40,8 +36,9 @@ export async function fetchPurlsShallowScore(
 
   spinner.successAndStop('Request completed')
 
-  if (result.success) {
-    return result
+  if (!result.success) {
+    handleUnsuccessfulApiResponse('batchPackageFetch', result)
   }
-  handleUnsuccessfulApiResponse('batchPackageFetch', result)
+
+  return result
 }

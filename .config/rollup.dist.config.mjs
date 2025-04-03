@@ -16,9 +16,11 @@ import {
 import { isRelative } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
-import baseConfig, { INLINED_PACKAGES } from './rollup.base.config.mjs'
+import baseConfig, {
+  EXTERNAL_PACKAGES,
+  INLINED_PACKAGES
+} from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
-import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
   getPackageName,
   getPackageNameEnd,
@@ -66,8 +68,6 @@ const VENDOR_JS = `${VENDOR}.js`
 const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
 const distRequirePath = path.join(rootDistPath, REQUIRE)
 
-const requireBlessedWidgets = /require\(["'].\/widgets\/["']\s*\+\s*file\)/
-
 const sharedInputs = {
   cli: `${rootSrcPath}/cli.ts`,
   [CONSTANTS]: `${rootSrcPath}/constants.ts`,
@@ -99,43 +99,21 @@ const sharedPlugins = [
       },
       {}
     )
-  }),
-  // Replace 'blessed' package dynamic require call paths to point to
-  // ./dist/blessed/lib/widgets.
-  socketModifyPlugin({
-    find: requireBlessedWidgets,
-    replace: 'require(`../blessed/lib/widgets/${file}`)'
   })
 ]
 
 async function copyBlessedWidgets() {
   // Copy blessed package files to dist.
   const blessedDestPath = path.join(rootDistPath, 'blessed')
-  const blessedDestLibPath = path.join(blessedDestPath, 'lib')
   const blessedNmPath = path.join(rootPath, 'node_modules/blessed')
-  const blessedNmLibPath = path.join(blessedNmPath, 'lib')
-  const blessedNmVendorPath = path.join(blessedNmPath, 'vendor')
-  const blessedNmWidgetsPath = path.join(blessedNmLibPath, 'widgets')
-  const libFiles = [
-    'alias.js',
-    'colors.js',
-    'events.js',
-    'helpers.js',
-    'program.js',
-    'tput.js',
-    'unicode.js'
-  ]
-  await Promise.all([
-    ...libFiles.map(n =>
-      fs.cp(path.join(blessedNmLibPath, n), path.join(blessedDestLibPath, n))
-    ),
-    fs.cp(blessedNmVendorPath, path.join(blessedDestPath, 'vendor'), {
-      recursive: true
-    }),
-    fs.cp(blessedNmWidgetsPath, path.join(blessedDestLibPath, 'widgets'), {
-      recursive: true
-    })
-  ])
+  const folders = ['lib', 'usr', 'vendor']
+  await Promise.all(
+    folders.map(f =>
+      fs.cp(path.join(blessedNmPath, f), path.join(blessedDestPath, f), {
+        recursive: true
+      })
+    )
+  )
   // Add 'use strict' directive to js files.
   const jsFiles = await tinyGlob(['**/*.js'], {
     absolute: true,
@@ -413,6 +391,9 @@ export default () => {
       }
       const id = normalizeId(id_)
       const name = getPackageName(id)
+      if (EXTERNAL_PACKAGES.includes(name)) {
+        return true
+      }
       if (
         INLINED_PACKAGES.includes(name) ||
         // Inline local src/ modules.

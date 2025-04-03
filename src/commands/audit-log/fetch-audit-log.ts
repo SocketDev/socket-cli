@@ -40,7 +40,6 @@ export async function fetchAuditLog({
 
   if (!result.success) {
     handleUnsuccessfulApiResponse('getAuditLogEvents', result)
-    return
   }
 
   spinner.stop()

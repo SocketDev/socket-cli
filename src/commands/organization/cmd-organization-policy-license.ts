@@ -16,7 +16,7 @@ const { DRY_RUN_BAIL_TEXT } = constants
 // TODO: secret toplevel alias `socket license policy`?
 const config: CliCommandConfig = {
   commandName: 'license',
-  description: 'Retrieve the license policy of an organization.',
+  description: 'Retrieve the license policy of an organization',
   hidden: true,
   flags: {
     ...commonFlags,

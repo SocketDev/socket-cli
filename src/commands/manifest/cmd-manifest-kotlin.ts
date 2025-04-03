@@ -52,7 +52,7 @@ const config: CliCommandConfig = {
     task: {
       type: 'string',
       default: 'all',
-      description: 'Task to target. By default targets all.'
+      description: 'Task to target. By default targets all'
     },
     verbose: {
       type: 'boolean',

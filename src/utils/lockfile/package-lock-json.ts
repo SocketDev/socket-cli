@@ -187,17 +187,19 @@ export function findPackageNodes(
 export type GetAlertsMapFromArboristOptions = {
   consolidate?: boolean | undefined
   include?: AlertIncludeFilter | undefined
+  nothrow?: boolean | undefined
   spinner?: Spinner | undefined
 }
 
 export async function getAlertsMapFromArborist(
   arb: SafeArborist,
-  options?: GetAlertsMapFromArboristOptions | undefined
+  options_?: GetAlertsMapFromArboristOptions | undefined
 ): Promise<AlertsByPkgId> {
-  const { include: _include, spinner } = {
+  const options = {
     __proto__: null,
     consolidate: false,
-    ...options
+    nothrow: false,
+    ...options_
   } as GetAlertsMapFromArboristOptions
 
   const include = {
@@ -208,8 +210,10 @@ export async function getAlertsMapFromArborist(
     existing: false,
     unfixable: true,
     upgradable: false,
-    ..._include
+    ...options.include
   } as AlertIncludeFilter
+
+  const { spinner } = options
 
   const needInfoOn = getDetailsFromDiff(arb.diff, {
     include: {
@@ -245,12 +249,13 @@ export async function getAlertsMapFromArborist(
   const sockSdk = await setupSdk(getPublicToken())
 
   const toAlertsMapOptions = {
-    ...options,
+    overrides,
+    consolidate: options.consolidate,
     include,
-    overrides
+    spinner
   }
 
-  for await (const batchPackageFetchResult of sockSdk.batchPackageStream(
+  for await (const batchResult of sockSdk.batchPackageStream(
     {
       alerts: 'true',
       compact: 'true',
@@ -260,11 +265,17 @@ export async function getAlertsMapFromArborist(
       components: pkgIds.map(id => ({ purl: `pkg:npm/${id}` }))
     }
   )) {
-    if (batchPackageFetchResult.success) {
+    if (batchResult.success) {
       await addArtifactToAlertsMap(
-        batchPackageFetchResult.data as CompactSocketArtifact,
+        batchResult.data as CompactSocketArtifact,
         alertsByPkgId,
         toAlertsMapOptions
+      )
+    } else if (!options.nothrow) {
+      const statusCode = batchResult.status ?? 'unknown'
+      const statusMessage = batchResult.error ?? 'No status message'
+      throw new Error(
+        `Socket API server error (${statusCode}): ${statusMessage}`
       )
     }
     remaining -= 1

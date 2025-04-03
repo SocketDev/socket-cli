@@ -5,8 +5,8 @@ import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 
 import { applyLogin } from './apply-login'
 import constants from '../../constants'
+import { handleUnsuccessfulApiResponse } from '../../utils/api'
 import { getConfigValue } from '../../utils/config'
-import { AuthError } from '../../utils/errors'
 import { setupSdk } from '../../utils/sdk'
 
 import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
@@ -32,21 +32,22 @@ export async function attemptLogin(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
+  const sdk = await setupSdk(apiToken, apiBaseUrl, apiProxy)
+
   spinner.start('Verifying API key...')
 
-  let orgs: SocketSdkReturnType<'getOrganizations'>['data']
-  try {
-    const sdk = await setupSdk(apiToken, apiBaseUrl, apiProxy)
-    const result = await sdk.getOrganizations()
-    if (!result.success) {
-      throw new AuthError()
-    }
-    orgs = result.data
-    spinner.success('API key verified')
-  } catch {
-    spinner.errorAndStop('Invalid API key')
-    return
+  const result = await sdk.getOrganizations()
+
+  spinner.successAndStop('Received response')
+
+  if (!result.success) {
+    logger.fail('Authentication failed...')
+    handleUnsuccessfulApiResponse('getOrganizations', result)
   }
+
+  logger.success('API key verified')
+
+  const orgs: SocketSdkReturnType<'getOrganizations'>['data'] = result.data
 
   const enforcedChoices: OrgChoices = Object.values(orgs.organizations)
     .filter(org => org?.plan === 'enterprise')
@@ -57,34 +58,25 @@ export async function attemptLogin(
 
   let enforcedOrgs: string[] = []
   if (enforcedChoices.length > 1) {
-    const id = (await select(
-      {
-        message:
-          "Which organization's policies should Socket enforce system-wide?",
-        choices: enforcedChoices.concat({
-          name: 'None',
-          value: '',
-          description: 'Pick "None" if this is a personal device'
-        })
-      },
-      {
-        spinner
-      }
-    )) as string | null
+    const id = (await select({
+      message:
+        "Which organization's policies should Socket enforce system-wide?",
+      choices: enforcedChoices.concat({
+        name: 'None',
+        value: '',
+        description: 'Pick "None" if this is a personal device'
+      })
+    })) as string | null
     if (id) {
       enforcedOrgs = [id]
     }
   } else if (enforcedChoices.length) {
-    const confirmOrg = await confirm(
-      {
+    if (
+      await confirm({
         message: `Should Socket enforce ${(enforcedChoices[0] as OrgChoice)?.name}'s security policies system-wide?`,
         default: true
-      },
-      {
-        spinner
-      }
-    )
-    if (confirmOrg) {
+      })
+    ) {
       const existing = enforcedChoices[0] as OrgChoice
       if (existing) {
         enforcedOrgs = [existing.value]

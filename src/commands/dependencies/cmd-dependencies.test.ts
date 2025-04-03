@@ -29,7 +29,7 @@ describe('socket dependencies', async () => {
 
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
-            --help            Print this help.
+            --help            Print this help
             --json            Output result as json
             --limit           Maximum number of dependencies returned
             --markdown        Output result as markdown

@@ -32,11 +32,11 @@ describe('socket threat-feed', async () => {
           sales@socket.dev if you are interested in purchasing this access.
 
           Options
-            --direction       Order asc or desc by the createdAt attribute.
+            --direction       Order asc or desc by the createdAt attribute
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --eco             Only show threats for a particular ecosystem
             --filter          Filter what type of threats to return
-            --help            Print this help.
+            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
             --page            Page token
@@ -98,7 +98,7 @@ describe('socket threat-feed', async () => {
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m:
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
 
           - Org name as the first argument (\\x1b[31mmissing\\x1b[39m)
 

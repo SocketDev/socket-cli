@@ -11,17 +11,19 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 export type GetAlertsMapFromPnpmLockfileOptions = {
   consolidate?: boolean | undefined
   include?: AlertIncludeFilter | undefined
+  nothrow?: boolean | undefined
   spinner?: Spinner | undefined
 }
 
 export async function getAlertsMapFromPnpmLockfile(
   lockfile: LockfileObject,
-  options?: GetAlertsMapFromPnpmLockfileOptions | undefined
+  options_?: GetAlertsMapFromPnpmLockfileOptions | undefined
 ): Promise<AlertsByPkgId> {
-  const { include: _include, spinner } = {
+  const options = {
     __proto__: null,
     consolidate: false,
-    ...options
+    nothrow: false,
+    ...options_
   } as GetAlertsMapFromPnpmLockfileOptions
 
   const include = {
@@ -32,8 +34,10 @@ export async function getAlertsMapFromPnpmLockfile(
     existing: false,
     unfixable: true,
     upgradable: false,
-    ..._include
+    ...options.include
   } as AlertIncludeFilter
+
+  const { spinner } = options
 
   const depTypes = detectDepTypes(lockfile)
   const pkgIds = Object.keys(depTypes)
@@ -51,10 +55,12 @@ export async function getAlertsMapFromPnpmLockfile(
 
   const toAlertsMapOptions = {
     overrides: lockfile.overrides,
-    ...options
+    consolidate: options.consolidate,
+    include,
+    spinner
   }
 
-  for await (const batchPackageFetchResult of sockSdk.batchPackageStream(
+  for await (const batchResult of sockSdk.batchPackageStream(
     {
       alerts: 'true',
       compact: 'true',
@@ -64,11 +70,17 @@ export async function getAlertsMapFromPnpmLockfile(
       components: pkgIds.map(id => ({ purl: `pkg:npm/${id}` }))
     }
   )) {
-    if (batchPackageFetchResult.success) {
+    if (batchResult.success) {
       await addArtifactToAlertsMap(
-        batchPackageFetchResult.data as CompactSocketArtifact,
+        batchResult.data as CompactSocketArtifact,
         alertsByPkgId,
         toAlertsMapOptions
+      )
+    } else if (!options.nothrow) {
+      const statusCode = batchResult.status ?? 'unknown'
+      const statusMessage = batchResult.error ?? 'No status message'
+      throw new Error(
+        `Socket API server error (${statusCode}): ${statusMessage}`
       )
     }
     remaining -= 1

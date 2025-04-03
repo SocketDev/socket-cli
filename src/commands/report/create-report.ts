@@ -55,7 +55,7 @@ export async function createReport(
   }
   if (dryRun) {
     debugLog(`${DRY_RUN_LABEL}: Skipped actual upload`)
-    return undefined
+    return
   }
   spinner.start(
     `Creating report with ${packagePathsCount} package ${pluralize('file', packagePathsCount)}`
@@ -68,7 +68,6 @@ export async function createReport(
   const result = await handleApiCall(apiCall, 'creating report')
   if (!result.success) {
     handleUnsuccessfulApiResponse('createReport', result)
-    return undefined
   }
   spinner.successAndStop()
   return result

@@ -36,7 +36,7 @@ const config: CliCommandConfig = {
       type: 'string',
       shortFlag: 'd',
       default: 'desc',
-      description: 'Order asc or desc by the createdAt attribute.'
+      description: 'Order asc or desc by the createdAt attribute'
     },
     eco: {
       type: 'string',

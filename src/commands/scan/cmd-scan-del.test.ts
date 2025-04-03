@@ -29,7 +29,7 @@ describe('socket scan del', async () => {
 
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
-            --help            Print this help.
+            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
 
@@ -65,7 +65,7 @@ describe('socket scan del', async () => {
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan del\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m:
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
 
           - Org name as the first argument (\\x1b[31mmissing\\x1b[39m)
 

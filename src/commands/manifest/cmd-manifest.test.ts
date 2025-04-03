@@ -18,24 +18,24 @@ describe('socket manifest', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Generate a dependency manifest for given file or dir
+        "Generate a dependency manifest for given file or dir
 
-        Usage
-          $ socket manifest <command>
+          Usage
+            $ socket manifest <command>
 
-        Commands
-          auto              Auto-detect build and attempt to generate manifest file
-          gradle            [beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Gradle/Java/Kotlin/etc project
-          kotlin            [beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Kotlin project
-          scala             [beta] Generate a manifest file (\`pom.xml\`) from Scala's \`build.sbt\` file
+          Commands
+            auto              Auto-detect build and attempt to generate manifest file
+            gradle            [beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Gradle/Java/Kotlin/etc project
+            kotlin            [beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Kotlin project
+            scala             [beta] Generate a manifest file (\`pom.xml\`) from Scala's \`build.sbt\` file
 
-        Options
-          --dryRun          Do input validation for a command and exit 0 when input is ok
-          --help            Print this help.
+          Options
+            --dryRun          Do input validation for a command and exit 0 when input is ok
+            --help            Print this help
 
-        Examples
-          $ socket manifest --help"
-    `
+          Examples
+            $ socket manifest --help"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
