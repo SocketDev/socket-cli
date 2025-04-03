@@ -20,7 +20,7 @@ const config: CliCommandConfig = {
   commandName: 'report',
   description:
     'Check whether a scan result passes the organizational policies (security, license)',
-  hidden: true, // [beta]
+  hidden: false,
   flags: {
     ...commonFlags,
     ...outputFlags,
