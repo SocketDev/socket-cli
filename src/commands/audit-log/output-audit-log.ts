@@ -1,16 +1,14 @@
-import { stripIndents } from 'common-tags'
+import process from 'node:process'
 
+import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { Separator, select } from '@socketsecurity/registry/lib/prompts'
 
+import constants from '../../constants'
 import { mdTable } from '../../utils/markdown'
 
-import type { Choice } from '@socketsecurity/registry/lib/prompts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
-type AuditChoice = Choice<string>
-
-type AuditChoices = Array<Separator | AuditChoice>
+const { REDACTED } = constants
 
 export async function outputAuditLog(
   auditLogs: SocketSdkReturnType<'getAuditLogEvents'>['data'],
@@ -29,27 +27,46 @@ export async function outputAuditLog(
   }
 ): Promise<void> {
   if (outputKind === 'json') {
-    await outputAsJson(auditLogs.results, orgSlug, logType, page, perPage)
-  } else if (outputKind === 'markdown') {
-    await outputAsMarkdown(auditLogs.results, orgSlug, logType, page, perPage)
+    logger.log(
+      await outputAsJson(auditLogs.results, {
+        logType,
+        orgSlug,
+        page,
+        perPage
+      })
+    )
   } else {
-    await outputAsPrint(auditLogs.results, orgSlug, logType)
+    logger.log(
+      await outputAsMarkdown(auditLogs.results, {
+        logType,
+        orgSlug,
+        page,
+        perPage
+      })
+    )
   }
 }
 
-async function outputAsJson(
+export async function outputAsJson(
   auditLogs: SocketSdkReturnType<'getAuditLogEvents'>['data']['results'],
-  orgSlug: string,
-  logType: string,
-  page: number,
-  perPage: number
-): Promise<void> {
+  {
+    logType,
+    orgSlug,
+    page,
+    perPage
+  }: {
+    orgSlug: string
+    page: number
+    perPage: number
+    logType: string
+  }
+): Promise<string> {
   let json
   try {
     json = JSON.stringify(
       {
         desc: 'Audit logs for given query',
-        generated: new Date().toISOString(),
+        generated: process.env['VITEST'] ? REDACTED : new Date().toISOString(),
         org: orgSlug,
         logType,
         page,
@@ -82,19 +99,29 @@ async function outputAsJson(
     logger.fail(
       'There was a problem converting the logs to JSON, please try without the `--json` flag'
     )
-    return
+    if (isDebug()) {
+      debugLog('Error:', e)
+    }
+    return '{}'
   }
 
-  logger.log(json)
+  return json
 }
 
 export async function outputAsMarkdown(
   auditLogs: SocketSdkReturnType<'getAuditLogEvents'>['data']['results'],
-  orgSlug: string,
-  logType: string,
-  page: number,
-  perPage: number
-): Promise<void> {
+  {
+    logType,
+    orgSlug,
+    page,
+    perPage
+  }: {
+    orgSlug: string
+    page: number
+    perPage: number
+    logType: string
+  }
+): Promise<string> {
   try {
     const table = mdTable<any>(auditLogs, [
       'event_id',
@@ -105,8 +132,7 @@ export async function outputAsMarkdown(
       'user_agent'
     ])
 
-    logger.log(
-      stripIndents`
+    return `
 # Socket Audit Logs
 
 These are the Socket.dev audit logs as per requested query.
@@ -114,47 +140,19 @@ These are the Socket.dev audit logs as per requested query.
 - type filter: ${logType || '(none)'}
 - page: ${page}
 - per page: ${perPage}
-- generated: ${new Date().toISOString()}
+- generated: ${process.env['VITEST'] ? REDACTED : new Date().toISOString()}
 
 ${table}
 `
-    )
   } catch (e) {
     process.exitCode = 1
     logger.fail(
-      'There was a problem converting the logs to JSON, please try without the `--json` flag'
+      'There was a problem converting the logs to Markdown, please try the `--json` flag'
     )
-    logger.error(e)
-    return
-  }
-}
-
-async function outputAsPrint(
-  auditLogs: SocketSdkReturnType<'getAuditLogEvents'>['data']['results'],
-  orgSlug: string,
-  logType: string
-): Promise<void> {
-  const data: AuditChoices = []
-  const logDetails: { [key: string]: string } = {}
-
-  for (const d of auditLogs) {
-    const { created_at } = d
-    if (created_at) {
-      const name = `${new Date(created_at).toLocaleDateString('en-us', { year: 'numeric', month: 'numeric', day: 'numeric' })} - ${d.user_email} - ${d.type} - ${d.ip_address} - ${d.user_agent}`
-      data.push({ name } as AuditChoice, new Separator())
-      logDetails[name] = JSON.stringify(d.payload)
+    if (isDebug()) {
+      debugLog('Error:', e)
     }
+    // logger.error(e)
+    return ''
   }
-
-  logger.log(
-    logDetails[
-      (await select({
-        message: logType
-          ? `\n Audit log for: ${orgSlug} with type: ${logType}\n`
-          : `\n Audit log for: ${orgSlug}\n`,
-        choices: data,
-        pageSize: 30
-      })) as any
-    ]
-  )
 }
