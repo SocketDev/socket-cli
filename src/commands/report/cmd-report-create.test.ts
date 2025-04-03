@@ -44,13 +44,15 @@ describe('socket report create', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket report create\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket report create\`, cwd: <redacted>
+
+        \\x1b[31m\\xd7\\x1b[39m This command has been sunset. Instead, please look at \`socket scan create\` to create scans and \`socket scan report\` to view a report of your scans."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

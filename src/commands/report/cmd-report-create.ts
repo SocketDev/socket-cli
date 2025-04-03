@@ -1,18 +1,9 @@
-import path from 'node:path'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { createReport } from './create-report'
-import { getSocketConfig } from './get-socket-config'
-import { viewReport } from './view-report'
-import constants from '../../constants'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
-import { ColorOrMarkdown } from '../../utils/color-or-markdown'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
-
-const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'create',
@@ -51,52 +42,14 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string }
 ): Promise<void> {
-  const cli = meowOrExit({
+  meowOrExit({
     argv,
     config,
     importMeta,
     parentName
   })
 
-  // TODO: Allow setting a custom cwd and/or configFile path?
-  const cwd = process.cwd()
-  const absoluteConfigPath = path.join(cwd, 'socket.yml')
-
-  const dryRun = Boolean(cli.flags['dryRun'])
-  const json = Boolean(cli.flags['json'])
-  const markdown = Boolean(cli.flags['markdown'])
-  const strict = Boolean(cli.flags['strict'])
-  const includeAllIssues = Boolean(cli.flags['all'])
-  const view = Boolean(cli.flags['view'])
-
-  // Note exiting earlier to skirt a hidden auth requirement
-  if (cli.flags['dryRun']) {
-    logger.log(DRY_RUN_BAIL_TEXT)
-    return
-  }
-
-  const socketConfig = await getSocketConfig(absoluteConfigPath)
-
-  const result = await createReport(socketConfig, cli.input, { cwd, dryRun })
-
-  const commandName = `${parentName} ${config.commandName}`
-
-  if (result?.success) {
-    if (view) {
-      const reportId = result.data.id
-      await viewReport(reportId, {
-        all: includeAllIssues,
-        commandName,
-        outputKind: json ? 'json' : markdown ? 'markdown' : 'print',
-        strict
-      })
-    } else if (json) {
-      logger.log(JSON.stringify(result.data, undefined, 2))
-    } else {
-      const format = new ColorOrMarkdown(markdown)
-      logger.log(
-        `New report: ${format.hyperlink(result.data.id, result.data.url, { fallbackToUrl: true })}`
-      )
-    }
-  }
+  logger.fail(
+    'This command has been sunset. Instead, please look at `socket scan create` to create scans and `socket scan report` to view a report of your scans.'
+  )
 }

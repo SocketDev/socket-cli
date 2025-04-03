@@ -28,6 +28,7 @@ describe('socket scan', async () => {
             del               Delete a scan
             list              List the scans for an organization
             metadata          Get a scan's metadata
+            report            Check whether a scan result passes the organizational policies (security, license)
             view              View the raw results of a scan
 
           Options
