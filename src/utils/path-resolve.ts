@@ -13,13 +13,8 @@ import { resolveBinPath } from '@socketsecurity/registry/lib/npm'
 import { directoryPatterns } from './ignore-by-default'
 import constants from '../constants'
 
-import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { GlobOptions } from 'tinyglobby'
-
-type GlobWithGitIgnoreOptions = GlobOptions & {
-  socketConfig?: SocketYml | undefined
-}
 
 const { NODE_MODULES, NPM, shadowBinPath } = constants
 
@@ -42,16 +37,8 @@ async function filterGlobResultToSupportedFiles(
   return entries.filter(p => micromatch.some(p, patterns))
 }
 
-async function globWithGitIgnore(
-  patterns: string[],
-  options: GlobWithGitIgnoreOptions
-) {
-  const {
-    cwd = process.cwd(),
-    socketConfig,
-    ...additionalOptions
-  } = { __proto__: null, ...options } as GlobWithGitIgnoreOptions
-  const projectIgnorePaths = socketConfig?.projectIgnorePaths
+async function globWithGitIgnore(patterns: string[], options: GlobOptions) {
+  const { cwd = process.cwd(), ...additionalOptions } = options
   const ignoreFiles = await tinyGlob(['**/.gitignore'], {
     absolute: true,
     cwd,
@@ -59,13 +46,6 @@ async function globWithGitIgnore(
   })
   const ignores = [
     ...directoryPatterns(),
-    ...(Array.isArray(projectIgnorePaths)
-      ? ignoreFileLinesToGlobPatterns(
-          projectIgnorePaths,
-          path.join(cwd, '.gitignore'),
-          cwd
-        )
-      : []),
     ...(
       await Promise.all(
         ignoreFiles.map(async filepath =>
@@ -251,14 +231,12 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
 export async function getPackageFilesForScan(
   cwd: string,
   inputPaths: string[],
-  supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
-  config?: SocketYml | undefined
+  supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data']
 ): Promise<string[]> {
   debugLog(`Globbed resolving ${inputPaths.length} paths:`, inputPaths)
 
   const entries = await globWithGitIgnore(pathsToPatterns(inputPaths), {
-    cwd,
-    socketConfig: config
+    cwd
   })
 
   debugLog(
