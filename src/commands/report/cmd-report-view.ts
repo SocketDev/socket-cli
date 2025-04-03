@@ -1,6 +1,5 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 
