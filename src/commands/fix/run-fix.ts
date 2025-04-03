@@ -9,13 +9,11 @@ const { NPM, PNPM } = constants
 
 const CMD_NAME = 'socket fix'
 
-export async function runFix() {
+export async function runFix({ cwd = process.cwd(), testScript = 'test' }) {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
   spinner.start()
-
-  const cwd = process.cwd()
 
   const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
     cmdName: CMD_NAME,
@@ -28,11 +26,15 @@ export async function runFix() {
 
   switch (pkgEnvDetails.agent) {
     case NPM: {
-      await npmFix(pkgEnvDetails, cwd)
+      await npmFix(pkgEnvDetails, {
+        testScript
+      })
       break
     }
     case PNPM: {
-      await pnpmFix(pkgEnvDetails, cwd)
+      await pnpmFix(pkgEnvDetails, {
+        testScript
+      })
       break
     }
   }
