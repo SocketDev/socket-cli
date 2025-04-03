@@ -24,7 +24,7 @@ describe('socket scan report', async () => {
             $ socket scan report <org slug> <scan ID> [path to output file]
 
           API Token Requirements
-            - Quota: 3 units
+            - Quota: 2 units
             - Permissions: full-scans:list security-policy:read
 
           Options
@@ -32,9 +32,9 @@ describe('socket scan report', async () => {
             --fold            Fold reported alerts to some degree
             --help            Print this help
             --json            Output result as json
+            --license         Also report the license policy status. Default: false
             --markdown        Output result as markdown
             --reportLevel     Which policy level alerts should be reported
-            --security        Report the security policy status. Default: true
             --short           Report only the healthy status
 
           By default the result is a nested object that looks like this:
@@ -47,7 +47,8 @@ describe('socket scan report', async () => {
           Short responses: JSON: \`{healthy:bool}\`, markdown: \`healthy = bool\`, text: \`OK/ERR\`
 
           Examples
-            $ socket scan report FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version"
+            $ socket scan report FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
+            $ socket scan report FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short"
       `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

@@ -7,7 +7,7 @@ import type { components } from '@socketsecurity/sdk/types/api'
 
 describe('generate-report', () => {
   it('should accept empty args', () => {
-    const result = generateReport([], undefined, undefined, {
+    const result = generateReport([], undefined, {
       orgSlug: 'fakeorg',
       scanId: 'scan-ai-dee',
       fold: 'none',
@@ -33,7 +33,6 @@ describe('generate-report', () => {
       it('should return a healthy report without alerts when there are no violations', () => {
         const result = generateReport(
           getSimpleCleanScan(),
-          undefined,
           {
             success: true,
             data: {
@@ -72,7 +71,6 @@ describe('generate-report', () => {
       it('should return a sick report with alert when an alert violates at error', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -136,7 +134,6 @@ describe('generate-report', () => {
       it('should return a healthy report with alert when an alert violates at warn', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -200,7 +197,6 @@ describe('generate-report', () => {
       it('should return a healthy report without alerts when an alert violates at monitor', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -239,7 +235,6 @@ describe('generate-report', () => {
       it('should return a healthy report without alerts when an alert violates at ignore', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -278,7 +273,6 @@ describe('generate-report', () => {
       it('should return a healthy report without alerts when an alert violates at defer', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -317,7 +311,6 @@ describe('generate-report', () => {
       it('should return a healthy report without alerts when an alert has no policy value', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -354,7 +347,6 @@ describe('generate-report', () => {
       it('should return a healthy report without alerts when an alert has no policy entry', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -391,7 +383,6 @@ describe('generate-report', () => {
       it('should return a healthy report without alerts when there are no violations', () => {
         const result = generateReport(
           getSimpleCleanScan(),
-          undefined,
           {
             success: true,
             data: {
@@ -430,7 +421,6 @@ describe('generate-report', () => {
       it('should return a sick report with alert when an alert violates at error', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -494,7 +484,6 @@ describe('generate-report', () => {
       it('should return a healthy report with alert when an alert violates at warn', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -558,7 +547,6 @@ describe('generate-report', () => {
       it('should return a healthy report with alert when an alert violates at monitor', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -622,7 +610,6 @@ describe('generate-report', () => {
       it('should return a healthy report with alert when an alert violates at ignore', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -686,7 +673,6 @@ describe('generate-report', () => {
       it('should return a healthy report without alerts when an alert violates at defer', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -725,7 +711,6 @@ describe('generate-report', () => {
       it('should return a healthy report without alerts when an alert has no policy value', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -762,7 +747,6 @@ describe('generate-report', () => {
       it('should return a healthy report without alerts when an alert has no policy entry', () => {
         const result = generateReport(
           getScanWithEnvVars(),
-          undefined,
           {
             success: true,
             data: {
@@ -800,7 +784,6 @@ describe('generate-report', () => {
     it('should not fold anything when fold=none', () => {
       const result = generateReport(
         getScanWithEnvVars(),
-        undefined,
         {
           success: true,
           data: {
@@ -862,7 +845,6 @@ describe('generate-report', () => {
     it('should fold the file locations when fold=file', () => {
       const result = generateReport(
         getScanWithEnvVars(),
-        undefined,
         {
           success: true,
           data: {
@@ -914,7 +896,6 @@ describe('generate-report', () => {
     it('should fold the files up when fold=version', () => {
       const result = generateReport(
         getScanWithEnvVars(),
-        undefined,
         {
           success: true,
           data: {
@@ -964,7 +945,6 @@ describe('generate-report', () => {
     it('should fold the versions up when fold=pkg', () => {
       const result = generateReport(
         getScanWithEnvVars(),
-        undefined,
         {
           success: true,
           data: {
