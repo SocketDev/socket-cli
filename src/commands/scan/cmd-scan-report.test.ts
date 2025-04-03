@@ -23,6 +23,10 @@ describe('socket scan report', async () => {
           Usage
             $ socket scan report <org slug> <scan ID> [path to output file]
 
+          API Token Requirements
+            - Quota: 3 units
+            - Permissions: full-scans:list security-policy:read
+
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --fold            Fold reported alerts to some degree
@@ -32,13 +36,6 @@ describe('socket scan report', async () => {
             --reportLevel     Which policy level alerts should be reported
             --security        Report the security policy status. Default: true
             --short           Report only the healthy status
-
-          This consumes 1 quota unit plus 1 for each of the requested policy types.
-
-          Note: By default it reports both so by default it consumes 3 quota units.
-
-          Your API token will need the \`full-scans:list\` scope regardless. Additionally
-          it needs \`security-policy:read\` to report on the security policy.
 
           By default the result is a nested object that looks like this:
             \`{[ecosystem]: {[pkgName]: {[version]: {[file]: {[type:loc]: policy}}}}\`

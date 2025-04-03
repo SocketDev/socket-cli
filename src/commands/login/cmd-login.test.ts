@@ -23,6 +23,9 @@ describe('socket login', async () => {
           Usage
             $ socket login
 
+          API Token Requirements
+            - Quota: 1 unit
+
           Logs into the Socket API by prompting for an API key
 
           Options

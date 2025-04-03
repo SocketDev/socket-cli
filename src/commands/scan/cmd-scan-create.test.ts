@@ -22,6 +22,10 @@ describe('socket scan create', async () => {
           Usage
             $ socket scan create [...options] <org> <TARGET> [TARGET...]
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: full-scans:create
+
           Uploads the specified "package.json" and lock files for JavaScript, Python,
           Go, Scala, Gradle, and Kotlin dependency manifests.
           If any folder is specified, the ones found in there recursively are uploaded.

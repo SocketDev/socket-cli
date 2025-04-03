@@ -23,6 +23,11 @@ describe('socket threat-feed', async () => {
           Usage
             $ socket threat-feed
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: threat-feed:list
+            - Special access
+
           This feature requires a Threat Feed license. Please contact
           sales@socket.dev if you are interested in purchasing this access.
 
