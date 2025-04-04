@@ -1,5 +1,5 @@
 import { outputConfigGet } from './output-config-get'
-import { getConfigValue } from '../../utils/config'
+import { getConfigValue, isReadOnlyConfig } from '../../utils/config'
 
 import type { LocalConfig } from '../../utils/config'
 
@@ -11,6 +11,7 @@ export async function handleConfigGet({
   outputKind: 'json' | 'markdown' | 'text'
 }) {
   const value = getConfigValue(key)
+  const readOnly = isReadOnlyConfig()
 
-  await outputConfigGet(key, value, outputKind)
+  await outputConfigGet(key, value, readOnly, outputKind)
 }
