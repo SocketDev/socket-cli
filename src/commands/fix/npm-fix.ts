@@ -31,6 +31,7 @@ function isTopLevel(tree: SafeNode, node: SafeNode): boolean {
 type NpmFixOptions = {
   cwd?: string | undefined
   spinner?: Spinner | undefined
+  test?: boolean | undefined
   testScript?: string | undefined
 }
 
@@ -41,6 +42,7 @@ export async function npmFix(
   const {
     cwd = process.cwd(),
     spinner,
+    test = false,
     testScript = 'test'
   } = { __proto__: null, ...options } as NpmFixOptions
 
@@ -117,8 +119,10 @@ export async function npmFix(
           )
         ) {
           try {
-            // eslint-disable-next-line no-await-in-loop
-            await runScript(testScript, [], { spinner, stdio: 'ignore' })
+            if (test) {
+              // eslint-disable-next-line no-await-in-loop
+              await runScript(testScript, [], { spinner, stdio: 'ignore' })
+            }
 
             spinner?.info(`Patched ${name} ${oldVersion} -> ${node.version}`)
 

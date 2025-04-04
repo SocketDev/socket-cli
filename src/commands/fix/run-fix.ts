@@ -5,38 +5,51 @@ import { pnpmFix } from './pnpm-fix'
 import constants from '../../constants'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment'
 
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+
 const { NPM, PNPM } = constants
 
 const CMD_NAME = 'socket fix'
 
-export async function runFix({ cwd = process.cwd(), testScript = 'test' }) {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
+type RunFixOptions = {
+  cwd?: string | undefined
+  spinner?: Spinner | undefined
+  test?: boolean | undefined
+  testScript?: string | undefined
+}
 
-  spinner.start()
-
+export async function runFix({
+  cwd = process.cwd(),
+  spinner,
+  test = false,
+  testScript = 'test'
+}: RunFixOptions) {
   const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
     cmdName: CMD_NAME,
     logger
   })
   if (!pkgEnvDetails) {
-    spinner.stop()
+    spinner?.stop()
     return
   }
-
+  logger.info(`Fixing packages for ${pkgEnvDetails.agent}`)
   switch (pkgEnvDetails.agent) {
     case NPM: {
       await npmFix(pkgEnvDetails, {
+        spinner,
+        test,
         testScript
       })
       break
     }
     case PNPM: {
       await pnpmFix(pkgEnvDetails, {
+        spinner,
+        test,
         testScript
       })
       break
     }
   }
-  spinner.successAndStop('Socket.dev fix successful')
+  // spinner.successAndStop('Socket.dev fix successful')
 }

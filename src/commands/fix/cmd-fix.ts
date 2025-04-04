@@ -16,6 +16,11 @@ const config: CliCommandConfig = {
   hidden: true,
   flags: {
     ...commonFlags,
+    test: {
+      type: 'boolean',
+      default: true,
+      description: 'Very the fix by running unit tests'
+    },
     testScript: {
       type: 'string',
       default: 'test',
@@ -54,7 +59,12 @@ async function run(
     return
   }
 
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
   await runFix({
+    spinner,
+    test: Boolean(cli.flags['test']),
     testScript: cli.flags['testScript'] as string | undefined
   })
 }
