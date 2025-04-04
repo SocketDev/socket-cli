@@ -258,12 +258,16 @@ export async function pnpmFix(
               const commitMsg = `fix: upgrade ${name} to ${targetVersion}`
               const { owner, repo } = getRepoInfo()
               // eslint-disable-next-line no-await-in-loop
-              await spawn('git', [
-                'remote',
-                'set-url',
-                'origin',
-                `https://x-access-token:${process.env['SOCKET_AUTOFIX_PAT']}@github.com/${owner}/${repo}`
-              ], { cwd })
+              await spawn(
+                'git',
+                [
+                  'remote',
+                  'set-url',
+                  'origin',
+                  `https://x-access-token:${process.env['SOCKET_AUTOFIX_PAT']}@github.com/${owner}/${repo}`
+                ],
+                { cwd }
+              )
               // eslint-disable-next-line no-await-in-loop
               await commitAndPushFix(branchName, commitMsg, cwd)
               // eslint-disable-next-line no-await-in-loop
