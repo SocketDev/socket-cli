@@ -40,16 +40,50 @@ export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
 export const sensitiveConfigKeys: Set<keyof LocalConfig> = new Set(['apiToken'])
 
 let _cachedConfig: LocalConfig | undefined
-// When using --config or SOCKET_CLI_CONFIG_OVERRIDE, do not persist the config.
+// When using --config or SOCKET_CLI_CONFIG, do not persist the config.
 let _readOnlyConfig = false
-export function overrideCachedConfig(config: object) {
-  _cachedConfig = { ...config } as LocalConfig
+
+export function overrideCachedConfig(
+  jsonConfig: unknown
+): { ok: true; message: undefined } | { ok: false; message: string } {
+  let config
+  try {
+    config = JSON.parse(String(jsonConfig))
+    if (!config || typeof config !== 'object') {
+      // Just throw to reuse the error message. `null` is valid json,
+      // so are primitive values. They're not valid config objects :)
+      throw new Error()
+    }
+  } catch {
+    return {
+      ok: false,
+      message:
+        "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again."
+    }
+  }
+
+  // @ts-ignore if you want to override an illegal object, so be it?
+  _cachedConfig = config as LocalConfig
   _readOnlyConfig = true
+
   // Normalize apiKey to apiToken.
   if (_cachedConfig['apiKey']) {
+    if (_cachedConfig['apiToken']) {
+      logger.warn(
+        'Note: The config override had both apiToken and apiKey. Using the apiToken value. Remove the apiKey to get rid of this message.'
+      )
+    }
     _cachedConfig['apiToken'] = _cachedConfig['apiKey']
     delete _cachedConfig['apiKey']
   }
+
+  return { ok: true, message: undefined }
+}
+
+export function overrideConfigApiToken(apiToken: string | undefined) {
+  // Set token to the local cached config and mark it read-only so it doesn't persist
+  _cachedConfig = { ...config, apiToken } as LocalConfig
+  _readOnlyConfig = true
 }
 
 function getConfigValues(): LocalConfig {
@@ -166,6 +200,9 @@ export function getConfigValue<Key extends keyof LocalConfig>(
 ): LocalConfig[Key] {
   const localConfig = getConfigValues()
   return localConfig[normalizeConfigKey(key)] as LocalConfig[Key]
+}
+export function isReadOnlyConfig() {
+  return _readOnlyConfig
 }
 
 let _pendingSave = false

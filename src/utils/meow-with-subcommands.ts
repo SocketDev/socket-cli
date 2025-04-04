@@ -9,10 +9,11 @@ import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import { getLastFiveOfApiToken } from './api'
-import { getConfigValue, overrideCachedConfig } from './config'
+import { overrideCachedConfig, overrideConfigApiToken } from './config'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting'
 import constants from '../constants'
 import { MeowFlags, commonFlags } from '../flags'
+import { getDefaultToken } from './sdk'
 
 import type { Options } from 'meow'
 
@@ -139,10 +140,48 @@ export async function meowWithSubcommands(
   // Hard override the config if instructed to do so.
   // The env var overrides the --flag, which overrides the persisted config
   // Also, when either of these are used, config updates won't persist.
+  let configOverrideResult
   if (process.env['SOCKET_CLI_CONFIG']) {
-    overrideCachedConfig(JSON.parse(process.env['SOCKET_CLI_CONFIG']))
+    configOverrideResult = overrideCachedConfig(
+      process.env['SOCKET_CLI_CONFIG']
+    )
   } else if (cli.flags['config']) {
-    overrideCachedConfig(JSON.parse(String(cli.flags['config'] || '')))
+    configOverrideResult = overrideCachedConfig(
+      String(cli.flags['config'] || '')
+    )
+  }
+  if (
+    // Note: these are SOCKET_SECURITY prefixed because they're not specific to
+    //       the CLI. For the sake of consistency we'll also support the env
+    //       keys that do have the SOCKET_CLI prefix, it's an easy mistake.
+    // In case multiple are supplied, the tokens supersede the keys and the
+    // security prefix supersedes the cli prefix. "Adventure mode" ;)
+    process.env['SOCKET_CLI_API_KEY'] ||
+    process.env['SOCKET_SECURITY_API_KEY'] ||
+    process.env['SOCKET_CLI_API_TOKEN'] ||
+    process.env['SOCKET_SECURITY_API_TOKEN']
+  ) {
+    // This will set the token (even if there was a config override) and
+    // set it to readOnly, making sure the temp token won't be persisted.
+    overrideConfigApiToken(
+      process.env['SOCKET_CLI_API_KEY'] ||
+        process.env['SOCKET_SECURITY_API_KEY'] ||
+        process.env['SOCKET_CLI_API_TOKEN'] ||
+        process.env['SOCKET_SECURITY_API_TOKEN'] ||
+        undefined
+    )
+  }
+  if (process.env['SOCKET_CLI_NO_API_TOKEN']) {
+    // This overrides the config override and even the explicit token env var.
+    // The config will be marked as readOnly to prevent persisting it.
+    overrideConfigApiToken(undefined)
+  }
+
+  if (configOverrideResult?.ok === false) {
+    emitBanner(name)
+    logger.fail(configOverrideResult.message)
+    process.exitCode = 2
+    return
   }
 
   // If we got at least some args, then lets find out if we can find a command.
@@ -234,7 +273,7 @@ function getAsciiHeader(command: string) {
     : // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION_HASH']".
       process.env['INLINED_SOCKET_CLI_VERSION_HASH']
   const nodeVersion = redacting ? REDACTED : process.version
-  const apiToken = getConfigValue('apiToken')
+  const apiToken = getDefaultToken()
   const shownToken = redacting
     ? REDACTED
     : apiToken

@@ -33,7 +33,8 @@ export function cmdit(
 
 export async function invokeNpm(
   entryPath: string,
-  args: string[]
+  args: string[],
+  env = {}
 ): Promise<{
   status: boolean
   code: number
@@ -46,7 +47,8 @@ export async function invokeNpm(
       constants.execPath,
       [entryPath, ...args],
       {
-        cwd: npmFixturesPath
+        cwd: npmFixturesPath,
+        env: { ...process.env, ...env }
       }
     )
     return {
