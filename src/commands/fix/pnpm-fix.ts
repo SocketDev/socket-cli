@@ -237,7 +237,10 @@ export async function pnpmFix(
             // eslint-disable-next-line no-await-in-loop
             await editablePkgJson.save()
             // eslint-disable-next-line no-await-in-loop
-            await runAgentInstall(pkgEnvDetails, { spinner })
+            await runAgentInstall(pkgEnvDetails, {
+              args: ['--no-frozen-lockfile'],
+              spinner
+            })
 
             if (test) {
               spinner?.info(`Testing ${fixSpec}`)
@@ -292,7 +295,10 @@ export async function pnpmFix(
             // eslint-disable-next-line no-await-in-loop
             await editablePkgJson.save()
             // eslint-disable-next-line no-await-in-loop
-            await runAgentInstall(pkgEnvDetails, { spinner })
+            await runAgentInstall(pkgEnvDetails, {
+              args: ['--no-frozen-lockfile'],
+              spinner
+            })
             spinner?.stop()
             logger.error(`Failed to fix ${oldSpec}`)
           }
