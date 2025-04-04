@@ -6,7 +6,7 @@ import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 import { applyLogin } from './apply-login'
 import constants from '../../constants'
 import { handleUnsuccessfulApiResponse } from '../../utils/api'
-import { getConfigValue } from '../../utils/config'
+import { getConfigValue, isReadOnlyConfig } from '../../utils/config'
 import { setupSdk } from '../../utils/sdk'
 
 import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
@@ -86,10 +86,18 @@ export async function attemptLogin(
 
   spinner.stop()
 
-  const oldToken = getConfigValue('apiToken')
+  const previousPersistedToken = getConfigValue('apiToken')
   try {
     applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
-    logger.success(`API credentials ${oldToken ? 'updated' : 'set'}`)
+    logger.success(
+      `API credentials ${previousPersistedToken === apiToken ? 'refreshed' : previousPersistedToken ? 'updated' : 'set'}`
+    )
+    if (!isReadOnlyConfig()) {
+      logger.log('')
+      logger.warn(
+        'Note: config is in read-only mode, at least one key was overridden through flag/env, so the login was not persisted!'
+      )
+    }
   } catch {
     logger.fail(`API login failed`)
   }

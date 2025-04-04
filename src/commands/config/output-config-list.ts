@@ -2,6 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import {
   getConfigValue,
+  isReadOnlyConfig,
   sensitiveConfigKeys,
   supportedConfigKeys
 } from '../../utils/config'
@@ -13,6 +14,7 @@ export async function outputConfigList({
   full: boolean
   outputKind: 'json' | 'markdown' | 'text'
 }) {
+  const readOnly = isReadOnlyConfig()
   if (outputKind === 'json') {
     const obj: Record<string, unknown> = {}
     for (const key of supportedConfigKeys.keys()) {
@@ -29,7 +31,8 @@ export async function outputConfigList({
         {
           success: true,
           full,
-          config: obj
+          config: obj,
+          readOnly
         },
         null,
         2
@@ -55,6 +58,12 @@ export async function outputConfigList({
           `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${Array.isArray(value) ? value.join(', ') || '<none>' : (value ?? '<none>')}`
         )
       }
+    }
+    if (readOnly) {
+      logger.log('')
+      logger.log(
+        'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.'
+      )
     }
   }
 }
