@@ -93,7 +93,9 @@ async function createPullRequest({
   base?: string
   body?: string
 }) {
-  const octokit = new Octokit({ auth: process.env['GITHUB_TOKEN'] })
+  const octokit = new Octokit({
+    auth: process.env['SOCKET_AUTOFIX_PAT'] ?? process.env['GITHUB_TOKEN']
+  })
   await octokit.pulls.create({
     owner,
     repo,
