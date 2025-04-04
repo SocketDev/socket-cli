@@ -296,7 +296,7 @@ export async function pnpmFix(
                   'remote',
                   'set-url',
                   'origin',
-                  `https://x-access-token:${process.env['SOCKET_AUTOFIX_PAT']}@github.com/${owner}/${repo}`
+                  `https://x-access-token:${process.env['SOCKET_AUTOFIX_PAT'] ?? process.env['GITHUB_TOKEN']}@github.com/${owner}/${repo}`
                 ],
                 { cwd }
               )
