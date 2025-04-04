@@ -2,8 +2,6 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateNewScan } from './handle-create-new-scan'
 import { suggestOrgSlug } from './suggest-org-slug'
-import { suggestRepoSlug } from './suggest-repo-slug'
-import { suggestBranchSlug } from './suggest_branch_slug'
 import { suggestTarget } from './suggest_target'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
@@ -27,13 +25,13 @@ const config: CliCommandConfig = {
     repo: {
       type: 'string',
       shortFlag: 'r',
-      default: '',
+      default: 'socket-default-repository',
       description: 'Repository name'
     },
     branch: {
       type: 'string',
       shortFlag: 'b',
-      default: '',
+      default: 'socket-default-branch',
       description: 'Branch name'
     },
     commitMessage: {
@@ -104,7 +102,7 @@ const config: CliCommandConfig = {
       shortFlag: 'v',
       default: true,
       description:
-        'Will wait for and return the created report. Use --no-view to disable.'
+        'Will wait for and return the created scan details. Use --no-view to disable.'
     }
   },
   // TODO: your project's "socket.yml" file's "projectIgnorePaths"
@@ -191,7 +189,7 @@ async function run(
     cwdOverride && cwdOverride !== 'process.cwd()'
       ? String(cwdOverride)
       : process.cwd()
-  let { branch: branchName = '', repo: repoName = '' } = cli.flags as {
+  const { branch: branchName = '', repo: repoName = '' } = cli.flags as {
     branch: string
     repo: string
   }
@@ -213,7 +211,6 @@ async function run(
 
   // If the current cwd is unknown and is used as a repo slug anyways, we will
   // first need to register the slug before we can use it.
-  let repoDefaultBranch = ''
   // Only do suggestions with an apiToken and when not in dryRun mode
   if (apiToken && !dryRun) {
     if (!orgSlug) {
@@ -223,34 +220,15 @@ async function run(
       }
       updatedInput = true
     }
-
-    // (Don't bother asking for the rest if we didn't get an org slug above)
-    if (orgSlug && !repoName) {
-      const suggestion = await suggestRepoSlug(orgSlug)
-      if (suggestion) {
-        repoDefaultBranch = suggestion.defaultBranch
-        repoName = suggestion.slug
-      }
-      updatedInput = true
-    }
-
-    // (Don't bother asking for the rest if we didn't get an org/repo above)
-    if (orgSlug && repoName && !branchName) {
-      const suggestion = await suggestBranchSlug(repoDefaultBranch)
-      if (suggestion) {
-        branchName = suggestion
-      }
-      updatedInput = true
-    }
   }
 
-  if (updatedInput && repoName && branchName && orgSlug && targets?.length) {
+  if (updatedInput && orgSlug && targets?.length) {
     logger.error(
       'Note: You can invoke this command next time to skip the interactive questions:'
     )
     logger.error('```')
     logger.error(
-      `    socket scan create [other flags...] --repo ${repoName} --branch ${branchName} ${defaultOrgSlug ? '' : orgSlug} ${targets.join(' ')}`
+      `    socket scan create [other flags...] ${defaultOrgSlug ? '' : orgSlug} ${targets.join(' ')}`
     )
     logger.error('```\n')
   }
@@ -262,18 +240,6 @@ async function run(
       message: 'Org name as the first argument',
       pass: 'ok',
       fail: 'missing'
-    },
-    {
-      test: repoName,
-      message: 'Repository name using --repo',
-      pass: 'ok',
-      fail: typeof repoName !== 'string' ? 'missing' : 'invalid'
-    },
-    {
-      test: branchName,
-      message: 'Repository name using --branch',
-      pass: 'ok',
-      fail: typeof repoName !== 'string' ? 'missing' : 'invalid'
     },
     {
       test: targets.length,
