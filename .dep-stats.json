@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@apideck/better-ajv-errors": "0.3.6",
+    "@octokit/rest": "^21.1.1",
     "@pnpm/lockfile.detect-dep-types": "^1001.0.6",
     "@pnpm/lockfile.fs": "^1001.1.8",
     "@pnpm/logger": "^1000.0.0",
@@ -33,6 +34,17 @@
   },
   "devDependencies": {},
   "esm": {
+    "@octokit/auth-token": "^5.0.0",
+    "@octokit/core": "^6.1.4",
+    "@octokit/endpoint": "^10.1.3",
+    "@octokit/graphql": "^8.1.2",
+    "@octokit/plugin-paginate-rest": "^11.4.2",
+    "@octokit/plugin-request-log": "^5.3.1",
+    "@octokit/plugin-rest-endpoint-methods": "^13.3.0",
+    "@octokit/request": "^9.2.2",
+    "@octokit/request-error": "^6.1.7",
+    "@octokit/rest": "^21.1.1",
+    "before-after-hook": "^3.0.2",
     "bundle-name": "^4.1.0",
     "default-browser": "^5.2.1",
     "default-browser-id": "^5.0.0",
@@ -45,6 +57,7 @@
     "open": "10.1.0",
     "run-applescript": "^7.0.0",
     "tiny-updater": "3.5.3",
+    "universal-user-agent": "^7.0.2",
     "when-exit": "^2.1.4"
   },
   "external": {
@@ -54,6 +67,7 @@
     "chalk-table": "1.0.2",
     "cmd-shim": "7.0.0",
     "common-tags": "1.8.2",
+    "fast-content-type-parse": "^2.0.0",
     "hpagent": "1.2.0",
     "ignore": "7.0.3",
     "micromatch": "4.0.8",
@@ -64,5 +78,7 @@
     "yargs-parser": "21.1.1",
     "yoctocolors-cjs": "2.1.2"
   },
-  "transitives": {}
+  "transitives": {
+    "fast-content-type-parse": "^2.0.0"
+  }
 }
