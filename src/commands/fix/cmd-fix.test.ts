@@ -26,6 +26,7 @@ describe('socket fix', async () => {
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
+            --test            Very the fix by running unit tests
             --testScript      The test script to run for each fix attempt"
       `
       )
