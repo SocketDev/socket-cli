@@ -81,6 +81,36 @@ export async function commitAndPushFix(
   await spawn('git', ['push', '--set-upstream', 'origin', branchName], { cwd })
 }
 
+async function waitForBranchToBeReadable(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  branch: string
+) {
+  const maxRetries = 10
+  const delay = 1500
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      const ref = await octokit.git.getRef({
+        owner,
+        repo,
+        ref: `heads/${branch}`
+      })
+      if (ref) {
+        return
+      }
+    } catch (err) {
+      // Still not ready
+    }
+    // eslint-disable-next-line no-await-in-loop
+    await new Promise(resolve => setTimeout(resolve, delay))
+  }
+
+  throw new Error(`Branch "${branch}" never became visible to GitHub API`)
+}
+
 async function createPullRequest({
   base = 'main',
   body,
@@ -99,7 +129,9 @@ async function createPullRequest({
   const octokit = new Octokit({
     auth: process.env['SOCKET_AUTOFIX_PAT'] ?? process.env['GITHUB_TOKEN']
   })
-  await new Promise(resolve => setTimeout(resolve, 3000)) // 3s
+
+  await waitForBranchToBeReadable(octokit, owner, repo, head)
+
   await octokit.pulls.create({
     owner,
     repo,
