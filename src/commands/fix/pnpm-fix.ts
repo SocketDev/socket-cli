@@ -72,6 +72,9 @@ export async function commitAndPushFix(
     return
   }
 
+  const baseBranch = process.env['GITHUB_REF_NAME'] ?? 'main'
+
+  await spawn('git', ['checkout', baseBranch], { cwd })
   await spawn('git', ['checkout', '-b', branchName], { cwd })
   await spawn('git', ['add', 'package.json', 'pnpm-lock.yaml'], { cwd })
   await spawn('git', ['commit', '-m', commitMsg], { cwd })
@@ -96,6 +99,7 @@ async function createPullRequest({
   const octokit = new Octokit({
     auth: process.env['SOCKET_AUTOFIX_PAT'] ?? process.env['GITHUB_TOKEN']
   })
+  await new Promise(resolve => setTimeout(resolve, 3000)) // 3s
   await octokit.pulls.create({
     owner,
     repo,
