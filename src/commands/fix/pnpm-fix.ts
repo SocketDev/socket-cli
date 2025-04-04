@@ -74,7 +74,13 @@ export async function commitAndPushFix(
 
   const baseBranch = process.env['GITHUB_REF_NAME'] ?? 'main'
 
-  await spawn('git', ['checkout', baseBranch], { cwd })
+  try {
+    await spawn('git', ['checkout', baseBranch], { cwd })
+    await spawn('git', ['pull', '--ff-only'], { cwd })
+  } catch (err) {
+    logger.warn(`Could not switch to ${baseBranch}. Proceeding with current HEAD.`)
+  }
+
   await spawn('git', ['checkout', '-b', branchName], { cwd })
   await spawn('git', ['add', 'package.json', 'pnpm-lock.yaml'], { cwd })
   await spawn('git', ['commit', '-m', commitMsg], { cwd })
