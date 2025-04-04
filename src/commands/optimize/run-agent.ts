@@ -37,13 +37,13 @@ export function runAgentInstall(
   } = { __proto__: null, ...options } as AgentInstallOptions
   return spawn(agentExecPath, ['install', ...args], {
     spinner,
-    stdio: isDebug() ? 'inherit' : 'ignore',
+    stdio: isDebug() ? 'inherit' : 'inherit',
     ...spawnOptions,
     env: {
       ...process.env,
       NODE_OPTIONS: cmdFlagsToString([
         // Lazily access constants.nodeHardenFlags.
-        ...constants.nodeHardenFlags,
+        // ...constants.nodeHardenFlags,
         // Lazily access constants.nodeNoWarningsFlags.
         ...constants.nodeNoWarningsFlags
       ]),
