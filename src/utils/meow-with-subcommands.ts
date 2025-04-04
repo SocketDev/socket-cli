@@ -150,31 +150,27 @@ export async function meowWithSubcommands(
       String(cli.flags['config'] || '')
     )
   }
-  if (
+
+  if (process.env['SOCKET_CLI_NO_API_TOKEN']) {
+    // This overrides the config override and even the explicit token env var.
+    // The config will be marked as readOnly to prevent persisting it.
+    overrideConfigApiToken(undefined)
+  } else {
     // Note: these are SOCKET_SECURITY prefixed because they're not specific to
     //       the CLI. For the sake of consistency we'll also support the env
     //       keys that do have the SOCKET_CLI prefix, it's an easy mistake.
     // In case multiple are supplied, the tokens supersede the keys and the
     // security prefix supersedes the cli prefix. "Adventure mode" ;)
-    process.env['SOCKET_CLI_API_KEY'] ||
-    process.env['SOCKET_SECURITY_API_KEY'] ||
-    process.env['SOCKET_CLI_API_TOKEN'] ||
-    process.env['SOCKET_SECURITY_API_TOKEN']
-  ) {
-    // This will set the token (even if there was a config override) and
-    // set it to readOnly, making sure the temp token won't be persisted.
-    overrideConfigApiToken(
+    const tokenOverride =
       process.env['SOCKET_CLI_API_KEY'] ||
-        process.env['SOCKET_SECURITY_API_KEY'] ||
-        process.env['SOCKET_CLI_API_TOKEN'] ||
-        process.env['SOCKET_SECURITY_API_TOKEN'] ||
-        undefined
-    )
-  }
-  if (process.env['SOCKET_CLI_NO_API_TOKEN']) {
-    // This overrides the config override and even the explicit token env var.
-    // The config will be marked as readOnly to prevent persisting it.
-    overrideConfigApiToken(undefined)
+      process.env['SOCKET_SECURITY_API_KEY'] ||
+      process.env['SOCKET_CLI_API_TOKEN'] ||
+      process.env['SOCKET_SECURITY_API_TOKEN']
+    if (tokenOverride) {
+      // This will set the token (even if there was a config override) and
+      // set it to readOnly, making sure the temp token won't be persisted.
+      overrideConfigApiToken(tokenOverride)
+    }
   }
 
   if (configOverrideResult?.ok === false) {

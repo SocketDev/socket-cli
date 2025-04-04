@@ -80,9 +80,12 @@ export function overrideCachedConfig(
   return { ok: true, message: undefined }
 }
 
-export function overrideConfigApiToken(apiToken: string | undefined) {
+export function overrideConfigApiToken(apiToken: unknown) {
   // Set token to the local cached config and mark it read-only so it doesn't persist
-  _cachedConfig = { ...config, apiToken } as LocalConfig
+  _cachedConfig = {
+    ...config,
+    ...(apiToken === undefined ? {} : { apiToken: String(apiToken) })
+  } as LocalConfig
   _readOnlyConfig = true
 }
 
