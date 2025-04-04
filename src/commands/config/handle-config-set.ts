@@ -1,5 +1,5 @@
 import { outputConfigSet } from './output-config-set'
-import { updateConfigValue } from '../../utils/config'
+import { isReadOnlyConfig, updateConfigValue } from '../../utils/config'
 
 import type { LocalConfig } from '../../utils/config'
 
@@ -13,5 +13,7 @@ export async function handleConfigSet({
   value: string
 }) {
   updateConfigValue(key, value)
-  await outputConfigSet(key, value, outputKind)
+  const readOnly = isReadOnlyConfig()
+
+  await outputConfigSet(key, value, readOnly, outputKind)
 }
