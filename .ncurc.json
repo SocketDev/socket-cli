@@ -2,6 +2,7 @@
   "loglevel": "minimal",
   "reject": [
     "eslint-plugin-unicorn",
+    "fast-content-type-parse",
     "has-flag",
     "terminal-link",
     "typescript"
