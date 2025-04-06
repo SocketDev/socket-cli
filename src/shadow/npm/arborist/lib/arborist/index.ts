@@ -102,6 +102,8 @@ export class SafeArborist extends Arborist {
       // @ts-ignore: TS gets grumpy about rest parameters.
       ...args.slice(1)
     )
+    // Lazily access constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS].
+    const acceptAllRisks = constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS]
     const progress = ipc[SOCKET_CLI_SAFE_PROGRESS]
     const spinner =
       options['silent'] || !progress
@@ -115,8 +117,7 @@ export class SafeArborist extends Arborist {
       include:
         options.dryRun ||
         options['yes'] ||
-        // Lazily access constants.ENV[SOCKET_CLI_ACCEPT_RISKS].
-        constants.ENV[SOCKET_CLI_ACCEPT_RISKS]
+        acceptAllRisks
           ? {
               blocked: true,
               critical: false,
@@ -131,8 +132,7 @@ export class SafeArborist extends Arborist {
     if (alertsMap.size) {
       process.exitCode = 1
       logAlertsMap(alertsMap, {
-        // Lazily access constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS].
-        hideAt: constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS] ? 'none' : 'middle',
+        hideAt: acceptAllRisks ? 'none' : 'middle',
         output: process.stderr
       })
       throw new Error(
@@ -143,7 +143,7 @@ export class SafeArborist extends Arborist {
         `
       )
     } else if (!options['silent']) {
-      logger.success(`Socket ${binName} found no risks!`)
+      logger.success(`Socket ${binName} ${acceptAllRisks ? 'accepted all' : 'found no'} risks`)
       if (binName === NPX) {
         logger.log(`Running ${options.add![0]}`)
       }
