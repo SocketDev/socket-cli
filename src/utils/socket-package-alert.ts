@@ -17,6 +17,7 @@ import constants from '../constants'
 import { findSocketYmlSync } from './config'
 
 import type {
+  ALERT_ACTION,
   ALERT_TYPE,
   CompactSocketArtifact,
   CompactSocketArtifactAlert
@@ -159,6 +160,7 @@ function getSeverityLabel(severity: `${ALERT_SEVERITY}`): string {
 }
 
 export type AlertIncludeFilter = {
+  actions?: ALERT_ACTION[] | undefined
   blocked?: boolean | undefined
   critical?: boolean | undefined
   cve?: boolean | undefined
@@ -194,6 +196,7 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
 
   const include = {
     __proto__: null,
+    actions: undefined,
     blocked: true,
     critical: true,
     cve: true,

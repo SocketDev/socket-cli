@@ -28,6 +28,7 @@ export async function getAlertsMapFromPnpmLockfile(
 
   const include = {
     __proto__: null,
+    actions: undefined,
     blocked: true,
     critical: true,
     cve: true,
