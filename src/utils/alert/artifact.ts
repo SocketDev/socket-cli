@@ -3,6 +3,8 @@ import constants from '../../constants'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { components, operations } from '@socketsecurity/sdk/types/api'
 
+export type ALERT_ACTION = 'error' | 'monitor' | 'warn' | 'ignore'
+
 export type ALERT_TYPE = keyof NonNullable<
   operations['getOrgSecurityPolicy']['responses']['200']['content']['application/json']['securityPolicyRules']
 >
