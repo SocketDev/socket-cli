@@ -379,11 +379,20 @@ export function updatePackageJsonFromNode(
       'optionalDependencies',
       'peerDependencies'
     ]) {
-      const { content: pkgJson } = editablePkgJson
-      const oldVersion = (pkgJson[depField] as any)?.[name]
-      if (oldVersion) {
-        const decorator = /^[~^]/.exec(oldVersion)?.[0] ?? ''
-        ;(pkgJson as any)[depField][name] = `${decorator}${version}`
+      const oldValue = editablePkgJson.content[depField] as
+        | { [key: string]: string }
+        | undefined
+      if (oldValue) {
+        const oldVersion = oldValue[name]
+        if (oldVersion) {
+          const rangeDecorator = /^[~^]/.exec(oldVersion)?.[0] ?? ''
+          editablePkgJson.update({
+            [depField]: {
+              ...oldValue,
+              [name]: `${rangeDecorator}${version}`
+            }
+          })
+        }
       }
     }
   }

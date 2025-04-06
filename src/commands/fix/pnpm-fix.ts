@@ -24,9 +24,12 @@ import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 import { runAgentInstall } from '../optimize/run-agent'
 
 import type { EnvDetails } from '../../utils/package-environment'
+import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { CI, NPM, OVERRIDES, PNPM } = constants
+
+type StringKeyedObject = { [key: string]: string }
 
 type InstallOptions = {
   spinner?: Spinner | undefined
@@ -126,14 +129,18 @@ export async function pnpmFix(
           ? packument.versions[targetVersion]
           : undefined
         if (targetVersion && targetPackument) {
-          const oldPnpm = (pkgJson as any)[PNPM]
-          const oldOverrides = oldPnpm?.[OVERRIDES] as
+          const oldPnpm = pkgJson[PNPM] as StringKeyedObject | undefined
+          const pnpmKeyCount = oldPnpm ? Object.keys(oldPnpm).length : 0
+          const oldOverrides = (oldPnpm as StringKeyedObject)?.[OVERRIDES] as
             | Record<string, string>
             | undefined
+          const overridesCount = oldOverrides
+            ? Object.keys(oldOverrides).length
+            : 0
           const overrideKey = `${node.name}@${vulnerableVersionRange}`
           const overrideRange = `^${targetVersion}`
           const fixSpec = `${name}@${overrideRange}`
-          const data = {
+          const updateData = {
             [PNPM]: {
               ...oldPnpm,
               [OVERRIDES]: {
@@ -142,14 +149,46 @@ export async function pnpmFix(
               }
             }
           }
+          const revertData = {
+            [PNPM]: pnpmKeyCount
+              ? {
+                  ...oldPnpm,
+                  [OVERRIDES]:
+                    overridesCount === 1
+                      ? undefined
+                      : {
+                          [overrideKey]: undefined,
+                          ...oldOverrides
+                        }
+                }
+              : undefined,
+            ...(pkgJson.dependencies
+              ? { dependencies: pkgJson.dependencies }
+              : undefined),
+            ...(pkgJson.optionalDependencies
+              ? { optionalDependencies: pkgJson.optionalDependencies }
+              : undefined),
+            ...(pkgJson.peerDependencies
+              ? { peerDependencies: pkgJson.peerDependencies }
+              : undefined)
+          } as PackageJson
+
+          spinner?.start()
+          spinner?.info(`Installing ${fixSpec}`)
+
+          let saved = false
+          let installed = false
           try {
-            editablePkgJson.update(data)
-            spinner?.start()
-            spinner?.info(`Installing ${fixSpec}`)
+            editablePkgJson.update(updateData)
+            updatePackageJsonFromNode(editablePkgJson, tree, node)
             // eslint-disable-next-line no-await-in-loop
             await editablePkgJson.save()
+            saved = true
+
             // eslint-disable-next-line no-await-in-loop
             await install(pkgEnvDetails, { spinner })
+            installed = true
+
             if (test) {
               spinner?.info(`Testing ${fixSpec}`)
               // eslint-disable-next-line no-await-in-loop
@@ -160,34 +199,20 @@ export async function pnpmFix(
               // eslint-disable-next-line no-await-in-loop
               await openGitHubPullRequest(name, targetVersion, cwd)
             }
-            updatePackageJsonFromNode(editablePkgJson, tree, node)
             // eslint-disable-next-line no-await-in-loop
             await editablePkgJson.save()
             spinner?.info(`Fixed ${name}`)
           } catch {
             spinner?.error(`Reverting ${fixSpec}`)
-            const pnpmKeyCount = Object.keys(data[PNPM]).length
-            const overrideCount = Object.keys(data[PNPM][OVERRIDES]).length
-            editablePkgJson.update(
-              pnpmKeyCount === 1 && overrideCount === 1
-                ? { [PNPM]: undefined as any }
-                : {
-                    [PNPM]: {
-                      ...oldPnpm,
-                      [OVERRIDES]:
-                        overrideCount === 1
-                          ? undefined
-                          : {
-                              [overrideKey]: undefined,
-                              ...oldOverrides
-                            }
-                    }
-                  }
-            )
-            // eslint-disable-next-line no-await-in-loop
-            await editablePkgJson.save()
-            // eslint-disable-next-line no-await-in-loop
-            await install(pkgEnvDetails, { spinner })
+            if (saved) {
+              editablePkgJson.update(revertData)
+              // eslint-disable-next-line no-await-in-loop
+              await editablePkgJson.save()
+            }
+            if (installed) {
+              // eslint-disable-next-line no-await-in-loop
+              await install(pkgEnvDetails, { spinner })
+            }
             spinner?.stop()
             logger.error(`Failed to fix ${oldSpec}`)
           }
