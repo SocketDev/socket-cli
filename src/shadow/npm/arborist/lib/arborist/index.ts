@@ -119,9 +119,11 @@ export class SafeArborist extends Arborist {
         options['yes'] ||
         acceptAllRisks
           ? {
+              actions: ['error'],
               blocked: true,
               critical: false,
               cve: false,
+              existing: true,
               unfixable: false
             }
           : {

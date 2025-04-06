@@ -207,6 +207,7 @@ export async function getAlertsMapFromArborist(
 
   const include = {
     __proto__: null,
+    actions: undefined,
     blocked: true,
     critical: true,
     cve: true,
@@ -262,7 +263,8 @@ export async function getAlertsMapFromArborist(
     {
       alerts: 'true',
       compact: 'true',
-      fixable: include.unfixable ? 'false' : 'true'
+      ...(include.actions ? { actions: include.actions.join(',') } : {}),
+      ...(include.unfixable ? {} : { fixable: 'true' })
     },
     {
       components: pkgIds.map(id => ({ purl: `pkg:npm/${id}` }))
