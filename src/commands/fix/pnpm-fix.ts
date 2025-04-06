@@ -1,4 +1,3 @@
-import { Octokit } from '@octokit/rest'
 import { readWantedLockfile } from '@pnpm/lockfile.fs'
 
 import { getManifestData } from '@socketsecurity/registry'
@@ -8,8 +7,8 @@ import {
   fetchPackagePackument,
   readPackageJson
 } from '@socketsecurity/registry/lib/packages'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
+import { openGitHubPullRequest } from './open-pr'
 import constants from '../../constants'
 import {
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
@@ -17,144 +16,32 @@ import {
 } from '../../shadow/npm/arborist/lib/arborist'
 import {
   findBestPatchVersion,
-  findPackageNodes
-} from '../../utils/lockfile/package-lock-json'
-import { getAlertsMapFromPnpmLockfile } from '../../utils/lockfile/pnpm-lock-yaml'
+  findPackageNodes,
+  updatePackageJsonFromNode
+} from '../../utils/arborist-helpers'
+import { getAlertsMapFromPnpmLockfile } from '../../utils/pnpm-lock-yaml'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 import { runAgentInstall } from '../optimize/run-agent'
 
 import type { EnvDetails } from '../../utils/package-environment'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-const { NPM, OVERRIDES, PNPM } = constants
+const { CI, NPM, OVERRIDES, PNPM } = constants
 
-async function branchExists(branchName: string, cwd: string): Promise<boolean> {
-  try {
-    await spawn('git', ['rev-parse', '--verify', branchName], {
-      cwd,
-      stdio: 'ignore'
-    })
-    return true
-  } catch {
-    return false
-  }
+type InstallOptions = {
+  spinner?: Spinner | undefined
 }
 
-async function remoteBranchExists(
-  branchName: string,
-  cwd: string
-): Promise<boolean> {
-  try {
-    const result = await spawn(
-      'git',
-      ['ls-remote', '--heads', 'origin', branchName],
-      {
-        cwd,
-        stdio: 'pipe'
-      }
-    )
-    return !!result.stdout.trim()
-  } catch {
-    return false
-  }
-}
-
-export async function commitAndPushFix(
-  branchName: string,
-  commitMsg: string,
-  cwd: string
-) {
-  const localExists = await branchExists(branchName, cwd)
-  const remoteExists = await remoteBranchExists(branchName, cwd)
-
-  if (localExists || remoteExists) {
-    logger.warn(`Branch "${branchName}" already exists. Skipping creation.`)
-    return
-  }
-
-  const baseBranch = process.env['GITHUB_REF_NAME'] ?? 'main'
-
-  try {
-    await spawn('git', ['checkout', baseBranch], { cwd })
-    await spawn('git', ['pull', '--ff-only'], { cwd })
-  } catch (err) {
-    logger.warn(`Could not switch to ${baseBranch}. Proceeding with current HEAD.`)
-  }
-
-  await spawn('git', ['checkout', '-b', branchName], { cwd })
-  await spawn('git', ['add', 'package.json', 'pnpm-lock.yaml'], { cwd })
-  await spawn('git', ['commit', '-m', commitMsg], { cwd })
-  await spawn('git', ['push', '--set-upstream', 'origin', branchName], { cwd })
-}
-
-async function waitForBranchToBeReadable(
-  octokit: Octokit,
-  owner: string,
-  repo: string,
-  branch: string
-) {
-  const maxRetries = 10
-  const delay = 1500
-
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      const ref = await octokit.git.getRef({
-        owner,
-        repo,
-        ref: `heads/${branch}`
-      })
-      if (ref) {
-        return
-      }
-    } catch (err) {
-      // Still not ready
-    }
-    // eslint-disable-next-line no-await-in-loop
-    await new Promise(resolve => setTimeout(resolve, delay))
-  }
-
-  throw new Error(`Branch "${branch}" never became visible to GitHub API`)
-}
-
-async function createPullRequest({
-  base = 'main',
-  body,
-  head,
-  owner,
-  repo,
-  title
-}: {
-  owner: string
-  repo: string
-  title: string
-  head: string
-  base?: string
-  body?: string
-}) {
-  const octokit = new Octokit({
-    auth: process.env['SOCKET_AUTOFIX_PAT'] ?? process.env['GITHUB_TOKEN']
+async function install(
+  pkgEnvDetails: EnvDetails,
+  options: InstallOptions
+): Promise<void> {
+  const { spinner } = { __proto__: null, ...options } as InstallOptions
+  await runAgentInstall(pkgEnvDetails, {
+    args: ['--no-frozen-lockfile'],
+    spinner,
+    stdio: 'ignore'
   })
-
-  await waitForBranchToBeReadable(octokit, owner, repo, head)
-
-  await octokit.pulls.create({
-    owner,
-    repo,
-    title,
-    head,
-    base,
-    ...(body ? { body } : {})
-  })
-}
-
-function getRepoInfo(): { owner: string; repo: string } {
-  const repoString = process.env['GITHUB_REPOSITORY']
-  if (!repoString || !repoString.includes('/')) {
-    throw new Error('GITHUB_REPOSITORY is not set or invalid')
-  }
-  const { 0: owner, 1: repo } = repoString.split('/') as [string, string]
-  return { owner, repo }
 }
 
 type PnpmFixOptions = {
@@ -166,7 +53,7 @@ type PnpmFixOptions = {
 
 export async function pnpmFix(
   pkgEnvDetails: EnvDetails,
-  options?: PnpmFixOptions | undefined
+  options?: PnpmFixOptions
 ) {
   const {
     cwd = process.cwd(),
@@ -177,31 +64,24 @@ export async function pnpmFix(
 
   const lockfile = await readWantedLockfile(cwd, { ignoreIncompatible: false })
   if (!lockfile) {
-    spinner?.stop()
-    return
+    return spinner?.stop()
   }
 
   const alertsMap = await getAlertsMapFromPnpmLockfile(lockfile, {
     consolidate: true,
-    include: {
-      existing: true,
-      unfixable: false,
-      upgradable: false
-    },
+    include: { existing: true, unfixable: false, upgradable: false },
     nothrow: true
   })
 
   const infoByPkg = getCveInfoByAlertsMap(alertsMap)
   if (!infoByPkg) {
-    spinner?.stop()
-    return
+    return spinner?.stop()
   }
 
   const arb = new SafeArborist({
     path: cwd,
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
   })
-
   await arb.loadActual()
 
   const editablePkgJson = await readPackageJson(cwd, { editable: true })
@@ -212,14 +92,12 @@ export async function pnpmFix(
   for (const { 0: name, 1: infos } of infoByPkg) {
     const tree = arb.actualTree!
 
-    const hasUpgrade = !!getManifestData(NPM, name)
-    if (hasUpgrade) {
+    if (getManifestData(NPM, name)) {
       logger.info(`Skipping ${name}. Socket Optimize package exists.`)
       continue
     }
 
     const nodes = findPackageNodes(tree, name)
-
     const packument =
       nodes.length && infos.length
         ? // eslint-disable-next-line no-await-in-loop
@@ -229,19 +107,15 @@ export async function pnpmFix(
       continue
     }
 
-    for (let i = 0, { length: nodesLength } = nodes; i < nodesLength; i += 1) {
-      const node = nodes[i]!
-      for (
-        let j = 0, { length: infosLength } = infos;
-        j < infosLength;
-        j += 1
-      ) {
-        const { firstPatchedVersionIdentifier, vulnerableVersionRange } =
-          infos[j]!
+    for (const node of nodes) {
+      for (const {
+        firstPatchedVersionIdentifier,
+        vulnerableVersionRange
+      } of infos) {
+        spinner?.stop()
         const { version: oldVersion } = node
         const oldSpec = `${name}@${oldVersion}`
         const availableVersions = Object.keys(packument.versions)
-        // Find the highest non-vulnerable version within the same major range
         const targetVersion = findBestPatchVersion(
           node,
           availableVersions,
@@ -251,14 +125,10 @@ export async function pnpmFix(
         const targetPackument = targetVersion
           ? packument.versions[targetVersion]
           : undefined
-
-        spinner?.stop()
-
-        // Check targetVersion to make TypeScript happy.
         if (targetVersion && targetPackument) {
           const oldPnpm = (pkgJson as any)[PNPM]
           const oldOverrides = oldPnpm?.[OVERRIDES] as
-            | { [key: string]: string }
+            | Record<string, string>
             | undefined
           const overrideKey = `${node.name}@${vulnerableVersionRange}`
           const overrideRange = `^${targetVersion}`
@@ -274,86 +144,50 @@ export async function pnpmFix(
           }
           try {
             editablePkgJson.update(data)
-
             spinner?.start()
             spinner?.info(`Installing ${fixSpec}`)
-
             // eslint-disable-next-line no-await-in-loop
             await editablePkgJson.save()
             // eslint-disable-next-line no-await-in-loop
-            await runAgentInstall(pkgEnvDetails, {
-              args: ['--no-frozen-lockfile'],
-              spinner
-            })
-
+            await install(pkgEnvDetails, { spinner })
             if (test) {
               spinner?.info(`Testing ${fixSpec}`)
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
-            try {
-              const branchName = `fix-${name}-${targetVersion.replace(/\./g, '-')}`
-              const commitMsg = `fix: upgrade ${name} to ${targetVersion}`
-              const { owner, repo } = getRepoInfo()
+            // Lazily access constants.ENV[CI].
+            if (constants.ENV[CI]) {
               // eslint-disable-next-line no-await-in-loop
-              await spawn(
-                'git',
-                [
-                  'remote',
-                  'set-url',
-                  'origin',
-                  `https://x-access-token:${process.env['SOCKET_AUTOFIX_PAT'] ?? process.env['GITHUB_TOKEN']}@github.com/${owner}/${repo}`
-                ],
-                { cwd }
-              )
-              // eslint-disable-next-line no-await-in-loop
-              await commitAndPushFix(branchName, commitMsg, cwd)
-              // eslint-disable-next-line no-await-in-loop
-              await createPullRequest({
-                owner,
-                repo,
-                title: commitMsg,
-                head: branchName,
-                base: process.env['GITHUB_REF_NAME'] ?? 'master',
-                body: `This PR fixes a security issue in \`${name}\` by upgrading to \`${targetVersion}\`.`
-              })
-            } catch (e) {
-              console.log(e)
+              await openGitHubPullRequest(name, targetVersion, cwd)
             }
-            logger.success(`Fixed ${name}`)
+            updatePackageJsonFromNode(editablePkgJson, tree, node)
+            // eslint-disable-next-line no-await-in-loop
+            await editablePkgJson.save()
+            spinner?.info(`Fixed ${name}`)
           } catch {
             spinner?.error(`Reverting ${fixSpec}`)
-
             const pnpmKeyCount = Object.keys(data[PNPM]).length
-            const pnpmOverridesKeyCount = Object.keys(
-              data[PNPM][OVERRIDES]
-            ).length
-            if (pnpmKeyCount === 1 && pnpmOverridesKeyCount === 1) {
-              editablePkgJson.update({
-                // Setting to `undefined` will remove the property.
-                [PNPM]: undefined as any
-              })
-            } else {
-              editablePkgJson.update({
-                [PNPM]: {
-                  ...oldPnpm,
-                  [OVERRIDES]:
-                    pnpmOverridesKeyCount === 1
-                      ? undefined
-                      : {
-                          [overrideKey]: undefined,
-                          ...oldOverrides
-                        }
-                }
-              })
-            }
+            const overrideCount = Object.keys(data[PNPM][OVERRIDES]).length
+            editablePkgJson.update(
+              pnpmKeyCount === 1 && overrideCount === 1
+                ? { [PNPM]: undefined as any }
+                : {
+                    [PNPM]: {
+                      ...oldPnpm,
+                      [OVERRIDES]:
+                        overrideCount === 1
+                          ? undefined
+                          : {
+                              [overrideKey]: undefined,
+                              ...oldOverrides
+                            }
+                    }
+                  }
+            )
             // eslint-disable-next-line no-await-in-loop
             await editablePkgJson.save()
             // eslint-disable-next-line no-await-in-loop
-            await runAgentInstall(pkgEnvDetails, {
-              args: ['--no-frozen-lockfile'],
-              spinner
-            })
+            await install(pkgEnvDetails, { spinner })
             spinner?.stop()
             logger.error(`Failed to fix ${oldSpec}`)
           }

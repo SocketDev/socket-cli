@@ -5,7 +5,7 @@ import { stripIndents } from 'common-tags'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../../../../constants'
-import { getAlertsMapFromArborist } from '../../../../../utils/lockfile/package-lock-json'
+import { getAlertsMapFromArborist } from '../../../../../utils/arborist-helpers'
 import { logAlertsMap } from '../../../../../utils/socket-package-alert'
 import { getArboristClassPath } from '../../../paths'
 
