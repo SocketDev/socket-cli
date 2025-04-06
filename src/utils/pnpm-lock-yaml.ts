@@ -1,10 +1,10 @@
 import { detectDepTypes } from '@pnpm/lockfile.detect-dep-types'
 
-import { getPublicToken, setupSdk } from '../sdk'
-import { addArtifactToAlertsMap } from '../socket-package-alert'
+import { getPublicToken, setupSdk } from './sdk'
+import { addArtifactToAlertsMap } from './socket-package-alert'
 
-import type { CompactSocketArtifact } from '../alert/artifact'
-import type { AlertIncludeFilter, AlertsByPkgId } from '../socket-package-alert'
+import type { CompactSocketArtifact } from './alert/artifact'
+import type { AlertIncludeFilter, AlertsByPkgId } from './socket-package-alert'
 import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
