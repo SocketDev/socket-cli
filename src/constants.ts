@@ -43,6 +43,10 @@ type Internals = Remap<
 type ENV = Remap<
   RegistryEnv &
     Readonly<{
+      GITHUB_ACTIONS: boolean
+      GITHUB_REF_NAME: string
+      GITHUB_REF_TYPE: string
+      GITHUB_REPOSITORY: string
       LOCALAPPDATA: string
       SOCKET_CLI_ACCEPT_RISKS: boolean
       SOCKET_CLI_DEBUG: boolean
@@ -51,6 +55,7 @@ type ENV = Remap<
       SOCKET_SECURITY_API_BASE_URL: string
       SOCKET_SECURITY_API_PROXY: string
       SOCKET_SECURITY_API_TOKEN: string
+      SOCKET_SECURITY_GITHUB_PAT: string
       XDG_DATA_HOME: string
     }>
 >
@@ -78,6 +83,10 @@ type Constants = Remap<
     readonly DIST_TYPE: 'module-sync' | 'require'
     readonly DRY_RUN_LABEL: '[DryRun]'
     readonly DRY_RUN_BAIL_TEXT: '[DryRun] Bailing now'
+    readonly GITHUB_ACTIONS: 'GITHUB_ACTIONS'
+    readonly GITHUB_REF_NAME: 'GITHUB_REF_NAME'
+    readonly GITHUB_REF_TYPE: 'GITHUB_REF_TYPE'
+    readonly GITHUB_REPOSITORY: 'GITHUB_REPOSITORY'
     readonly INLINED_SOCKET_CLI_LEGACY_BUILD: 'INLINED_SOCKET_CLI_LEGACY_BUILD'
     readonly INLINED_SOCKET_CLI_PUBLISHED_BUILD: 'INLINED_SOCKET_CLI_PUBLISHED_BUILD'
     readonly INLINED_SOCKET_CLI_SENTRY_BUILD: 'INLINED_SOCKET_CLI_SENTRY_BUILD'
@@ -118,6 +127,7 @@ type Constants = Remap<
     readonly SOCKET_SECURITY_API_BASE_URL: 'SOCKET_SECURITY_API_BASE_URL'
     readonly SOCKET_SECURITY_API_PROXY: 'SOCKET_SECURITY_API_PROXY'
     readonly SOCKET_SECURITY_API_TOKEN: 'SOCKET_SECURITY_API_TOKEN'
+    readonly SOCKET_SECURITY_GITHUB_PAT: 'SOCKET_SECURITY_GITHUB_PAT'
     readonly VLT: 'vlt'
     readonly WITH_SENTRY: 'with-sentry'
     readonly XDG_DATA_HOME: 'XDG_DATA_HOME'
@@ -155,6 +165,10 @@ const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
   'firstPatchedVersionIdentifier'
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAIL_TEXT = `${DRY_RUN_LABEL}: Bailing now`
+const GITHUB_ACTIONS = 'GITHUB_ACTIONS'
+const GITHUB_REF_NAME = 'GITHUB_REF_NAME'
+const GITHUB_REF_TYPE = 'GITHUB_REF_TYPE'
+const GITHUB_REPOSITORY = 'GITHUB_REPOSITORY'
 const INLINED_SOCKET_CLI_LEGACY_BUILD = 'INLINED_SOCKET_CLI_LEGACY_BUILD'
 const INLINED_SOCKET_CLI_PUBLISHED_BUILD = 'INLINED_SOCKET_CLI_PUBLISHED_BUILD'
 const INLINED_SOCKET_CLI_SENTRY_BUILD = 'INLINED_SOCKET_CLI_SENTRY_BUILD'
@@ -194,6 +208,7 @@ const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
 const SOCKET_SECURITY_API_BASE_URL = 'SOCKET_SECURITY_API_BASE_URL'
 const SOCKET_SECURITY_API_PROXY = 'SOCKET_SECURITY_API_PROXY'
 const SOCKET_SECURITY_API_TOKEN = 'SOCKET_SECURITY_API_TOKEN'
+const SOCKET_SECURITY_GITHUB_PAT = 'SOCKET_SECURITY_GITHUB_PAT'
 const VLT = 'vlt'
 const WITH_SENTRY = 'with-sentry'
 const XDG_DATA_HOME = 'XDG_DATA_HOME'
@@ -214,6 +229,21 @@ const LAZY_ENV = () => {
   return Object.freeze({
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
+    // Always set to true when GitHub Actions is running the workflow. This variable
+    // can be used to differentiate when tests are being run locally or by GitHub Actions.
+    // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+    GITHUB_ACTIONS: envAsBoolean(env['GITHUB_ACTIONS']),
+    // The short ref name of the branch or tag that triggered the GitHub workflow run.
+    // This value matches the branch or tag name shown on GitHub. For example, feature-branch-1.
+    // For pull requests, the format is <pr_number>/merge.
+    // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+    GITHUB_REF_NAME: envAsString(env['GITHUB_REF_NAME']),
+    // The type of ref that triggered the workflow run. Valid values are branch or tag.
+    // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+    GITHUB_REF_TYPE: envAsString(env['GITHUB_REF_TYPE']),
+    // The owner and repository name. For example, octocat/Hello-World.
+    // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+    GITHUB_REPOSITORY: envAsString(env['GITHUB_REPOSITORY']),
     // Inlined flag to determine if this is the Legacy build.
     // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_LEGACY_BUILD]".
     INLINED_SOCKET_CLI_LEGACY_BUILD:
@@ -253,6 +283,10 @@ const LAZY_ENV = () => {
       // Keep 'SOCKET_SECURITY_API_KEY' as an alias of 'SOCKET_SECURITY_API_TOKEN'.
       // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
       envAsString(env['SOCKET_SECURITY_API_KEY']),
+    // A classic GitHub personal access token with the "repo" scope or a fine-grained
+    // access token with read/write permissions set for "Contents" and "Pull Request".
+    // https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+    SOCKET_SECURITY_GITHUB_PAT: envAsString(env['SOCKET_SECURITY_GITHUB_PAT']),
     // The location of the base directory on Linux and MacOS used to store
     // user-specific data files, defaulting to $HOME/.local/share if not set or empty.
     XDG_DATA_HOME: envAsString(env['XDG_DATA_HOME'])
@@ -366,6 +400,10 @@ const constants = createConstantsObject(
     DRY_RUN_LABEL,
     DRY_RUN_BAIL_TEXT,
     ENV: undefined,
+    GITHUB_ACTIONS,
+    GITHUB_REF_NAME,
+    GITHUB_REF_TYPE,
+    GITHUB_REPOSITORY,
     INLINED_SOCKET_CLI_LEGACY_BUILD,
     INLINED_SOCKET_CLI_PUBLISHED_BUILD,
     INLINED_SOCKET_CLI_SENTRY_BUILD,
@@ -405,6 +443,7 @@ const constants = createConstantsObject(
     SOCKET_SECURITY_API_BASE_URL,
     SOCKET_SECURITY_API_PROXY,
     SOCKET_SECURITY_API_TOKEN,
+    SOCKET_SECURITY_GITHUB_PAT,
     VLT,
     WITH_SENTRY,
     XDG_DATA_HOME,

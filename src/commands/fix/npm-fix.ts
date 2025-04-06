@@ -1,10 +1,12 @@
 import { getManifestData } from '@socketsecurity/registry'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
   readPackageJson
 } from '@socketsecurity/registry/lib/packages'
 
+import { openGitHubPullRequest } from './open-pr'
 import constants from '../../constants'
 import {
   Arborist,
@@ -14,18 +16,32 @@ import {
 import {
   findPackageNodes,
   getAlertsMapFromArborist,
-  updateNode
-} from '../../utils/lockfile/package-lock-json'
+  updateNode,
+  updatePackageJsonFromNode
+} from '../../utils/arborist-helpers'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
 import type { EnvDetails } from '../../utils/package-environment'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-const { NPM } = constants
+const { CI, NPM } = constants
 
-function isTopLevel(tree: SafeNode, node: SafeNode): boolean {
-  return tree.children.get(node.name) === node
+type InstallOptions = {
+  cwd?: string | undefined
+}
+
+async function install(
+  idealTree: SafeNode,
+  options: InstallOptions
+): Promise<void> {
+  const { cwd = process.cwd() } = {
+    __proto__: null,
+    ...options
+  } as InstallOptions
+  const arb2 = new Arborist({ path: cwd })
+  arb2.idealTree = idealTree
+  await arb2.reify()
 }
 
 type NpmFixOptions = {
@@ -78,9 +94,9 @@ export async function npmFix(
   for (const { 0: name, 1: infos } of infoByPkg) {
     const revertToIdealTree = arb.idealTree!
     arb.idealTree = null
+
     // eslint-disable-next-line no-await-in-loop
     await arb.buildIdealTree()
-
     const tree = arb.idealTree!
 
     const hasUpgrade = !!getManifestData(NPM, name)
@@ -100,16 +116,14 @@ export async function npmFix(
       continue
     }
 
-    for (let i = 0, { length: nodesLength } = nodes; i < nodesLength; i += 1) {
-      const node = nodes[i]!
-      for (
-        let j = 0, { length: infosLength } = infos;
-        j < infosLength;
-        j += 1
-      ) {
-        const { firstPatchedVersionIdentifier, vulnerableVersionRange } =
-          infos[j]!
+    for (const node of nodes) {
+      for (const {
+        firstPatchedVersionIdentifier,
+        vulnerableVersionRange
+      } of infos) {
+        spinner?.stop()
         const { version: oldVersion } = node
+        const oldSpec = `${name}@${oldVersion}`
         if (
           updateNode(
             node,
@@ -118,45 +132,42 @@ export async function npmFix(
             firstPatchedVersionIdentifier
           )
         ) {
+          const targetVersion = node.package.version!
+          const fixSpec = `${name}@^${targetVersion}`
           try {
+            spinner?.start()
+            spinner?.info(`Installing ${fixSpec}`)
+            // eslint-disable-next-line no-await-in-loop
+            await install(arb.idealTree!, { cwd })
             if (test) {
+              spinner?.info(`Testing ${fixSpec}`)
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
-
-            spinner?.info(`Patched ${name} ${oldVersion} -> ${node.version}`)
-
-            if (isTopLevel(tree, node)) {
-              for (const depField of [
-                'dependencies',
-                'optionalDependencies',
-                'peerDependencies'
-              ]) {
-                const { content: pkgJson } = editablePkgJson
-                const oldVersion = (pkgJson[depField] as any)?.[name]
-                if (oldVersion) {
-                  const decorator = /^[~^]/.exec(oldVersion)?.[0] ?? ''
-                  ;(pkgJson as any)[depField][name] =
-                    `${decorator}${node.version}`
-                }
-              }
+            // Lazily access constants.ENV[CI].
+            if (constants.ENV[CI]) {
+              // eslint-disable-next-line no-await-in-loop
+              await openGitHubPullRequest(name, targetVersion, cwd)
             }
+            updatePackageJsonFromNode(editablePkgJson, tree, node)
             // eslint-disable-next-line no-await-in-loop
             await editablePkgJson.save()
+            spinner?.info(`Fixed ${name}`)
           } catch {
-            spinner?.error(`Reverting ${name} to ${oldVersion}`)
+            spinner?.error(`Reverting ${fixSpec}`)
             arb.idealTree = revertToIdealTree
+            // eslint-disable-next-line no-await-in-loop
+            await install(arb.idealTree!, { cwd })
+            spinner?.stop()
+            logger.error(`Failed to fix ${oldSpec}`)
           }
         } else {
-          spinner?.error(`Could not patch ${name} ${oldVersion}`)
+          spinner?.stop()
+          logger.error(`Could not patch ${oldSpec}`)
         }
       }
     }
   }
-
-  const arb2 = new Arborist({ path: cwd })
-  arb2.idealTree = arb.idealTree
-  await arb2.reify()
 
   spinner?.stop()
 }

@@ -5,20 +5,23 @@ import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
-import { fetchPackagePackument } from '@socketsecurity/registry/lib/packages'
+import {
+  EditablePackageJson,
+  fetchPackagePackument
+} from '@socketsecurity/registry/lib/packages'
 
-import constants from '../../constants'
-import { SafeArborist } from '../../shadow/npm/arborist/lib/arborist'
-import { DiffAction } from '../../shadow/npm/arborist/lib/arborist/types'
-import { Edge } from '../../shadow/npm/arborist/lib/edge'
-import { getPublicToken, setupSdk } from '../../utils/sdk'
-import { CompactSocketArtifact } from '../alert/artifact'
-import { addArtifactToAlertsMap } from '../socket-package-alert'
+import constants from '../constants'
+import { SafeArborist } from '../shadow/npm/arborist/lib/arborist'
+import { DiffAction } from '../shadow/npm/arborist/lib/arborist/types'
+import { Edge } from '../shadow/npm/arborist/lib/edge'
+import { getPublicToken, setupSdk } from '../utils/sdk'
+import { CompactSocketArtifact } from './alert/artifact'
+import { addArtifactToAlertsMap } from './socket-package-alert'
 
-import type { Diff } from '../../shadow/npm/arborist/lib/arborist/types'
-import type { SafeEdge } from '../../shadow/npm/arborist/lib/edge'
-import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
-import type { AlertIncludeFilter, AlertsByPkgId } from '../socket-package-alert'
+import type { AlertIncludeFilter, AlertsByPkgId } from './socket-package-alert'
+import type { Diff } from '../shadow/npm/arborist/lib/arborist/types'
+import type { SafeEdge } from '../shadow/npm/arborist/lib/edge'
+import type { SafeNode } from '../shadow/npm/arborist/lib/node'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 type Packument = Exclude<
@@ -290,6 +293,10 @@ export async function getAlertsMapFromArborist(
   return alertsByPkgId
 }
 
+export function isTopLevel(tree: SafeNode, node: SafeNode): boolean {
+  return tree.children.get(node.name) === node
+}
+
 export function updateNode(
   node: SafeNode,
   packument: Packument,
@@ -356,4 +363,26 @@ export function updateNode(
     }
   }
   return true
+}
+
+export function updatePackageJsonFromNode(
+  editablePkgJson: EditablePackageJson,
+  tree: SafeNode,
+  node: SafeNode
+) {
+  if (isTopLevel(tree, node)) {
+    const { name, version } = node
+    for (const depField of [
+      'dependencies',
+      'optionalDependencies',
+      'peerDependencies'
+    ]) {
+      const { content: pkgJson } = editablePkgJson
+      const oldVersion = (pkgJson[depField] as any)?.[name]
+      if (oldVersion) {
+        const decorator = /^[~^]/.exec(oldVersion)?.[0] ?? ''
+        ;(pkgJson as any)[depField][name] = `${decorator}${version}`
+      }
+    }
+  }
 }
