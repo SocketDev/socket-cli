@@ -27,18 +27,18 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { CI, NPM } = constants
 
-type InstallOptions = {
+type SaveAndInstallOptions = {
   cwd?: string | undefined
 }
 
-async function install(
+async function saveAndInstall(
   idealTree: SafeNode,
-  options: InstallOptions
+  options: SaveAndInstallOptions
 ): Promise<void> {
   const { cwd = process.cwd() } = {
     __proto__: null,
     ...options
-  } as InstallOptions
+  } as SaveAndInstallOptions
   const arb2 = new Arborist({ path: cwd })
   arb2.idealTree = idealTree
   await arb2.reify()
@@ -134,11 +134,18 @@ export async function npmFix(
         ) {
           const targetVersion = node.package.version!
           const fixSpec = `${name}@^${targetVersion}`
+
+          spinner?.start()
+          spinner?.info(`Installing ${fixSpec}`)
+
+          let saved = false
+          let installed = false
           try {
-            spinner?.start()
-            spinner?.info(`Installing ${fixSpec}`)
             // eslint-disable-next-line no-await-in-loop
-            await install(arb.idealTree!, { cwd })
+            await saveAndInstall(arb.idealTree!, { cwd })
+            saved = true
+            installed = true
+
             if (test) {
               spinner?.info(`Testing ${fixSpec}`)
               // eslint-disable-next-line no-await-in-loop
@@ -155,9 +162,11 @@ export async function npmFix(
             spinner?.info(`Fixed ${name}`)
           } catch {
             spinner?.error(`Reverting ${fixSpec}`)
-            arb.idealTree = revertToIdealTree
-            // eslint-disable-next-line no-await-in-loop
-            await install(arb.idealTree!, { cwd })
+            if (saved || installed) {
+              arb.idealTree = revertToIdealTree
+              // eslint-disable-next-line no-await-in-loop
+              await saveAndInstall(arb.idealTree!, { cwd })
+            }
             spinner?.stop()
             logger.error(`Failed to fix ${oldSpec}`)
           }
