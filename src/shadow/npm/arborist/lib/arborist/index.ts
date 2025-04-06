@@ -102,8 +102,10 @@ export class SafeArborist extends Arborist {
       // @ts-ignore: TS gets grumpy about rest parameters.
       ...args.slice(1)
     )
+    // Lazily access constants.ENV[SOCKET_CLI_ACCEPT_RISKS].
+    const acceptRisks = constants.ENV[SOCKET_CLI_ACCEPT_RISKS]
     // Lazily access constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS].
-    const acceptAllRisks = constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS]
+    const viewAllRisks = constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS]
     const progress = ipc[SOCKET_CLI_SAFE_PROGRESS]
     const spinner =
       options['silent'] || !progress
@@ -115,9 +117,7 @@ export class SafeArborist extends Arborist {
     const alertsMap = await getAlertsMapFromArborist(this, {
       spinner,
       include:
-        options.dryRun ||
-        options['yes'] ||
-        acceptAllRisks
+        acceptRisks || options.dryRun || options['yes']
           ? {
               actions: ['error'],
               blocked: true,
@@ -134,18 +134,26 @@ export class SafeArborist extends Arborist {
     if (alertsMap.size) {
       process.exitCode = 1
       logAlertsMap(alertsMap, {
-        hideAt: acceptAllRisks ? 'none' : 'middle',
+        hideAt: viewAllRisks ? 'none' : 'middle',
         output: process.stderr
       })
       throw new Error(
         stripIndents`
-          Socket ${binName} exiting due to risks.
-          View all risks - Rerun with environment variable ${SOCKET_CLI_VIEW_ALL_RISKS}=1.
-          Accept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.
+          Socket ${binName} exiting due to risks.${
+            viewAllRisks
+              ? ''
+              : `\nView all risks - Rerun with environment variable ${SOCKET_CLI_VIEW_ALL_RISKS}=1.`
+          }${
+            acceptRisks
+              ? ''
+              : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
+          }
         `
       )
     } else if (!options['silent']) {
-      logger.success(`Socket ${binName} ${acceptAllRisks ? 'accepted all' : 'found no'} risks`)
+      logger.success(
+        `Socket ${binName} ${acceptRisks ? 'accepted' : 'found no'} risks`
+      )
       if (binName === NPX) {
         logger.log(`Running ${options.add![0]}`)
       }
