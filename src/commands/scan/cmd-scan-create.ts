@@ -235,11 +235,14 @@ async function run(
 
   const wasBadInput = handleBadInput(
     {
-      nook: true,
-      test: orgSlug,
+      nook: !!defaultOrgSlug,
+      test: orgSlug && orgSlug !== '.',
       message: 'Org name as the first argument',
       pass: 'ok',
-      fail: 'missing'
+      fail:
+        orgSlug === '.'
+          ? 'dot is an invalid org, most likely you forget the org name here?'
+          : 'missing'
     },
     {
       test: targets.length,
