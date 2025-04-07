@@ -172,7 +172,7 @@ function ignorePatternToMinimatch(pattern: string): string {
 
 function pathsToPatterns(paths: string[] | readonly string[]): string[] {
   // TODO: Does not support `~/` paths.
-  return paths.map(p => (p === '.' ? '**/*' : p))
+  return paths.map(p => (p === '.' || p === './' ? '**/*' : p))
 }
 
 export function findBinPathDetailsSync(binName: string): {
@@ -262,9 +262,11 @@ export async function getPackageFilesForScan(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
+  const pats = pathsToPatterns(inputPaths)
+
   spinner.start('Searching for local files to include in scan...')
 
-  const entries = await globWithGitIgnore(pathsToPatterns(inputPaths), {
+  const entries = await globWithGitIgnore(pats, {
     cwd,
     socketConfig: config
   })
