@@ -9,12 +9,15 @@ import { getPackageFilesForScan } from '../../utils/path-resolve'
 
 export async function handleCreateNewScan({
   branchName,
+  commitHash,
   commitMessage,
+  committers,
   cwd,
   defaultBranch,
   orgSlug,
   outputKind,
   pendingHead,
+  pullRequest,
   readOnly,
   repoName,
   report,
@@ -22,11 +25,14 @@ export async function handleCreateNewScan({
   tmp
 }: {
   branchName: string
+  commitHash: string
   commitMessage: string
+  committers: string
   cwd: string
   defaultBranch: boolean
   orgSlug: string
   pendingHead: boolean
+  pullRequest: number
   outputKind: 'json' | 'markdown' | 'text'
   readOnly: boolean
   repoName: string
@@ -66,13 +72,18 @@ export async function handleCreateNewScan({
   const data = await fetchCreateOrgFullScan(
     packagePaths,
     orgSlug,
-    repoName,
-    branchName,
-    commitMessage,
     defaultBranch,
     pendingHead,
     tmp,
-    cwd
+    cwd,
+    {
+      commitHash,
+      commitMessage,
+      committers,
+      pullRequest,
+      repoName,
+      branchName
+    }
   )
   if (!data) {
     return

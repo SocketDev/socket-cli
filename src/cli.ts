@@ -80,8 +80,8 @@ void (async () => {
       {
         aliases: {
           ci: {
-            description: 'Alias for "report create --view --strict"',
-            argv: ['report', 'create', '--view', '--strict']
+            description: 'Alias for "scan create --report"',
+            argv: ['scan', 'create', '--report']
           }
         },
         argv: process.argv.slice(2),

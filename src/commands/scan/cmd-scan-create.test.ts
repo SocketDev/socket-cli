@@ -63,7 +63,6 @@ describe('socket scan create', async () => {
             --repo            Repository name
             --report          Wait for the scan creation to complete, then basically run \`socket scan report\` on it
             --tmp             Set the visibility (true/false) of the scan in your dashboard
-            --view            Will wait for and return the created scan details. Use --no-view to disable.
 
           Examples
             $ socket scan create --repo=test-repo --branch=main FakeOrg ./package.json"
