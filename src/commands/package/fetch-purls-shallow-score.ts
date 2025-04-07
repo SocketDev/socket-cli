@@ -12,7 +12,7 @@ import type {
 export async function fetchPurlsShallowScore(
   purls: string[]
 ): Promise<SocketSdkReturnType<'batchPackageFetch'> | undefined> {
-  logger.error(
+  logger.info(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`
   )
 

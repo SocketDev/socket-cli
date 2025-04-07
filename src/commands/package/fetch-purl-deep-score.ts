@@ -9,6 +9,8 @@ import { getDefaultToken } from '../../utils/sdk'
 const { SOCKET_CLI_ISSUES_URL } = constants
 
 export async function fetchPurlDeepScore(purl: string) {
+  logger.info(`Requesting deep score data for this purl: ${purl}`)
+
   const apiToken = getDefaultToken()
   if (!apiToken) {
     throw new AuthError(

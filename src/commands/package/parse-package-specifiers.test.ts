@@ -21,6 +21,19 @@ describe('parse-package-specifiers', async () => {
     `)
   })
 
+  it('should support npm scoped packages', () => {
+    expect(
+      parsePackageSpecifiers('npm', ['@babel/core'])
+    ).toMatchInlineSnapshot(`
+      {
+        "purls": [
+          "pkg:npm/@babel/core",
+        ],
+        "valid": true,
+      }
+    `)
+  })
+
   it('should parse a simple purl without prefix', () => {
     expect(parsePackageSpecifiers('npm/babel', [])).toMatchInlineSnapshot(`
       {
@@ -52,7 +65,7 @@ describe('parse-package-specifiers', async () => {
     ).toMatchInlineSnapshot(`
       {
         "purls": [
-          "pkg:golang/foo",
+          "pkg:npm/golang/foo",
           "pkg:npm/babel",
           "pkg:npm/tenko",
         ],
