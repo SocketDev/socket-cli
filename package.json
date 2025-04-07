@@ -92,7 +92,7 @@
     "chalk-table": "1.0.2",
     "cmd-shim": "7.0.0",
     "common-tags": "1.8.2",
-    "fast-content-type-parse": "^2.0.0",
+    "fast-content-type-parse": "^3.0.0",
     "hpagent": "1.2.0",
     "ignore": "7.0.3",
     "meow": "13.2.0",
