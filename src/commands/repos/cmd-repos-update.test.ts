@@ -21,7 +21,7 @@ describe('socket repos update', async () => {
         "Update a repository in an organization
 
           Usage
-            $ socket repos update <org slug>
+            $ socket repos update <org slug> --repo-name=<name>
 
           API Token Requirements
             - Quota: 1 unit

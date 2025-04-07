@@ -21,7 +21,7 @@ describe('socket scan metadata', async () => {
         "Get a scan's metadata
 
           Usage
-            $ socket scan metadata <org slug> <scan id>
+            $ socket scan metadata <org slug> <scan ID>
 
           API Token Requirements
             - Quota: 1 unit

@@ -26,7 +26,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} <org slug> <scan id>
+      $ ${command} <org slug> <scan ID>
 
     API Token Requirements
       - Quota: 1 unit
