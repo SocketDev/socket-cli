@@ -19,9 +19,6 @@ export function parsePackageSpecifiers(
       } else if (pkg.startsWith('pkg:')) {
         // keep
         purls.push(pkg)
-      } else if (pkg.includes('/')) {
-        // Looks like this arg was already namespaced
-        purls.push('pkg:' + pkg)
       } else {
         purls.push('pkg:' + ecosystem + '/' + pkg)
       }
