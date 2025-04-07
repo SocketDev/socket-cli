@@ -2,11 +2,9 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateNewScan } from './handle-create-new-scan'
 import { suggestOrgSlug } from './suggest-org-slug'
-import { suggestRepoSlug } from './suggest-repo-slug'
-import { suggestBranchSlug } from './suggest_branch_slug'
 import { suggestTarget } from './suggest_target'
 import constants from '../../constants'
-import { commonFlags } from '../../flags'
+import { commonFlags, outputFlags } from '../../flags'
 import { getConfigValue } from '../../utils/config'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -23,16 +21,17 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
+    ...outputFlags,
     repo: {
       type: 'string',
       shortFlag: 'r',
-      default: '',
+      default: 'socket-default-repository',
       description: 'Repository name'
     },
     branch: {
       type: 'string',
       shortFlag: 'b',
-      default: '',
+      default: 'socket-default-branch',
       description: 'Branch name'
     },
     commitMessage: {
@@ -51,6 +50,18 @@ const config: CliCommandConfig = {
       type: 'string',
       description: 'working directory, defaults to process.cwd()'
     },
+    defaultBranch: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.'
+    },
+    pendingHead: {
+      type: 'boolean',
+      default: true,
+      description:
+        'Designate this full-scan as the latest scan of a given branch. This must be set to have it show up in the dashboard.'
+    },
     dryRun: {
       type: 'boolean',
       description:
@@ -67,23 +78,17 @@ const config: CliCommandConfig = {
       default: '',
       description: 'Committers'
     },
-    defaultBranch: {
-      type: 'boolean',
-      shortFlag: 'db',
-      default: false,
-      description: 'Make default branch'
-    },
-    pendingHead: {
-      type: 'boolean',
-      shortFlag: 'ph',
-      default: false,
-      description: 'Set as pending head'
-    },
     readOnly: {
       type: 'boolean',
       default: false,
       description:
         'Similar to --dry-run except it can read from remote, stops before it would create an actual report'
+    },
+    report: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Wait for the scan creation to complete, then basically run `socket scan report` on it'
     },
     tmp: {
       type: 'boolean',
@@ -97,7 +102,7 @@ const config: CliCommandConfig = {
       shortFlag: 'v',
       default: true,
       description:
-        'Will wait for and return the created report. Use --no-view to disable.'
+        'Will wait for and return the created scan details. Use --no-view to disable.'
     }
   },
   // TODO: your project's "socket.yml" file's "projectIgnorePaths"
@@ -122,6 +127,12 @@ const config: CliCommandConfig = {
 
     When a FILE is given only that FILE is targeted. Otherwise any eligible
     files in the given DIR will be considered.
+
+    Note: for a first run you probably want to set --defaultBranch to indicate
+          the default branch name, like "main" or "master".
+
+    Note: --pendingHead is enabled by default and makes a scan show up in your
+          dashboard. You can use \`--no-pendingHead\` to have it not show up.
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -149,9 +160,26 @@ async function run(
     parentName
   })
 
-  const { cwd: cwdOverride, dryRun } = cli.flags as {
+  const {
+    cwd: cwdOverride,
+    defaultBranch,
+    dryRun,
+    json,
+    markdown,
+    pendingHead,
+    readOnly,
+    report,
+    tmp
+  } = cli.flags as {
     cwd: string
     dryRun: boolean
+    report: boolean
+    json: boolean
+    markdown: boolean
+    defaultBranch: boolean
+    pendingHead: boolean
+    readOnly: boolean
+    tmp: boolean
   }
   const defaultOrgSlug = getConfigValue('defaultOrg')
   let orgSlug = defaultOrgSlug || cli.input[0] || ''
@@ -161,7 +189,7 @@ async function run(
     cwdOverride && cwdOverride !== 'process.cwd()'
       ? String(cwdOverride)
       : process.cwd()
-  let { branch: branchName = '', repo: repoName = '' } = cli.flags as {
+  const { branch: branchName = '', repo: repoName = '' } = cli.flags as {
     branch: string
     repo: string
   }
@@ -183,7 +211,6 @@ async function run(
 
   // If the current cwd is unknown and is used as a repo slug anyways, we will
   // first need to register the slug before we can use it.
-  let repoDefaultBranch = ''
   // Only do suggestions with an apiToken and when not in dryRun mode
   if (apiToken && !dryRun) {
     if (!orgSlug) {
@@ -193,34 +220,15 @@ async function run(
       }
       updatedInput = true
     }
-
-    // (Don't bother asking for the rest if we didn't get an org slug above)
-    if (orgSlug && !repoName) {
-      const suggestion = await suggestRepoSlug(orgSlug)
-      if (suggestion) {
-        repoDefaultBranch = suggestion.defaultBranch
-        repoName = suggestion.slug
-      }
-      updatedInput = true
-    }
-
-    // (Don't bother asking for the rest if we didn't get an org/repo above)
-    if (orgSlug && repoName && !branchName) {
-      const suggestion = await suggestBranchSlug(repoDefaultBranch)
-      if (suggestion) {
-        branchName = suggestion
-      }
-      updatedInput = true
-    }
   }
 
-  if (updatedInput && repoName && branchName && orgSlug && targets?.length) {
+  if (updatedInput && orgSlug && targets?.length) {
     logger.error(
       'Note: You can invoke this command next time to skip the interactive questions:'
     )
     logger.error('```')
     logger.error(
-      `    socket scan create [other flags...] --repo ${repoName} --branch ${branchName} ${orgSlug} ${targets.join(' ')}`
+      `    socket scan create [other flags...] ${defaultOrgSlug ? '' : orgSlug} ${targets.join(' ')}`
     )
     logger.error('```\n')
   }
@@ -234,22 +242,17 @@ async function run(
       fail: 'missing'
     },
     {
-      test: repoName,
-      message: 'Repository name using --repo',
-      pass: 'ok',
-      fail: typeof repoName !== 'string' ? 'missing' : 'invalid'
-    },
-    {
-      test: branchName,
-      message: 'Repository name using --branch',
-      pass: 'ok',
-      fail: typeof repoName !== 'string' ? 'missing' : 'invalid'
-    },
-    {
       test: targets.length,
       message: 'At least one TARGET (e.g. `.` or `./package.json`)',
       pass: 'ok',
       fail: 'missing'
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      pass: 'ok',
+      fail: 'omit one'
     },
     {
       nook: true,
@@ -273,12 +276,14 @@ async function run(
     branchName: branchName as string,
     commitMessage: (cli.flags['commitMessage'] as string | undefined) ?? '',
     cwd,
-    defaultBranch: Boolean(cli.flags['defaultBranch']),
+    defaultBranch: Boolean(defaultBranch),
     orgSlug,
-    pendingHead: Boolean(cli.flags['pendingHead']),
-    readOnly: Boolean(cli.flags['readOnly']),
+    outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
+    pendingHead: Boolean(pendingHead),
+    readOnly: Boolean(readOnly),
     repoName: repoName,
+    report,
     targets,
-    tmp: Boolean(cli.flags['tmp'])
+    tmp: Boolean(tmp)
   })
 }

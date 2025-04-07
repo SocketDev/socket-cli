@@ -2,6 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names'
+import { handleScanReport } from './handle-scan-report'
 import { outputCreateNewScan } from './output-create-new-scan'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { getPackageFilesForScan } from '../../utils/path-resolve'
@@ -12,9 +13,11 @@ export async function handleCreateNewScan({
   cwd,
   defaultBranch,
   orgSlug,
+  outputKind,
   pendingHead,
   readOnly,
   repoName,
+  report,
   targets,
   tmp
 }: {
@@ -24,8 +27,10 @@ export async function handleCreateNewScan({
   defaultBranch: boolean
   orgSlug: string
   pendingHead: boolean
+  outputKind: 'json' | 'markdown' | 'text'
   readOnly: boolean
   repoName: string
+  report: boolean
   targets: string[]
   tmp: boolean
 }): Promise<void> {
@@ -68,5 +73,23 @@ export async function handleCreateNewScan({
     return
   }
 
-  await outputCreateNewScan(data)
+  if (report) {
+    if (data?.id) {
+      await handleScanReport({
+        filePath: '-',
+        fold: 'version',
+        includeLicensePolicy: true,
+        orgSlug,
+        outputKind,
+        reportLevel: 'error',
+        scanId: data.id,
+        short: false
+      })
+    } else {
+      logger.fail('Failure: Server did not respond with a scan ID')
+      process.exitCode = 1
+    }
+  } else {
+    await outputCreateNewScan(data, outputKind)
+  }
 }

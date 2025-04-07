@@ -40,21 +40,30 @@ describe('socket scan create', async () => {
           When a FILE is given only that FILE is targeted. Otherwise any eligible
           files in the given DIR will be considered.
 
+          Note: for a first run you probably want to set --defaultBranch to indicate
+                the default branch name, like "main" or "master".
+
+          Note: --pendingHead is enabled by default and makes a scan show up in your
+                dashboard. You can use \`--no-pendingHead\` to have it not show up.
+
           Options
             --branch          Branch name
             --commitHash      Commit hash
             --commitMessage   Commit message
             --committers      Committers
             --cwd             working directory, defaults to process.cwd()
-            --defaultBranch   Make default branch
+            --defaultBranch   Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
             --dryRun          run input validation part of command without any concrete side effects
             --help            Print this help
-            --pendingHead     Set as pending head
+            --json            Output result as json
+            --markdown        Output result as markdown
+            --pendingHead     Designate this full-scan as the latest scan of a given branch. This must be set to have it show up in the dashboard.
             --pullRequest     Commit hash
             --readOnly        Similar to --dry-run except it can read from remote, stops before it would create an actual report
             --repo            Repository name
+            --report          Wait for the scan creation to complete, then basically run \`socket scan report\` on it
             --tmp             Set the visibility (true/false) of the scan in your dashboard
-            --view            Will wait for and return the created report. Use --no-view to disable.
+            --view            Will wait for and return the created scan details. Use --no-view to disable.
 
           Examples
             $ socket scan create --repo=test-repo --branch=main FakeOrg ./package.json"
