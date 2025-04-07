@@ -1,6 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { commonFlags, outputFlags, validationFlags } from '../../flags'
+import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -11,8 +11,7 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    ...outputFlags,
-    ...validationFlags
+    ...outputFlags
   },
   help: () => `
     This command is deprecated in favor of \`socket scan view\`.

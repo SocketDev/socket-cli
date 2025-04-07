@@ -21,7 +21,7 @@ describe('socket repos create', async () => {
         "Create a repository in an organization
 
           Usage
-            $ socket repos create <org slug>
+            $ socket repos create <org slug> --repo-name=<name>
 
           API Token Requirements
             - Quota: 1 unit

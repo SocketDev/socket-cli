@@ -1,6 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { commonFlags, outputFlags, validationFlags } from '../../flags'
+import { commonFlags, outputFlags } from '../../flags'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
@@ -11,19 +11,7 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    ...outputFlags,
-    ...validationFlags,
-    dryRun: {
-      type: 'boolean',
-      default: false,
-      description: 'Only output what will be done without actually doing it'
-    },
-    view: {
-      type: 'boolean',
-      shortFlag: 'v',
-      default: false,
-      description: 'Will wait for and return the created report'
-    }
+    ...outputFlags
   },
   help: () => `
     This command is deprecated in favor of \`socket scan view\`.
