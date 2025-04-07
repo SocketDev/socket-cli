@@ -72,7 +72,7 @@ async function run(
       pass: 'ok',
       fail:
         orgSlug === '.'
-          ? 'dot is an invalid org, most likely you forget the org name here?'
+          ? 'dot is an invalid org, most likely you forgot the org name here?'
           : 'missing'
     },
     {
