@@ -78,7 +78,7 @@ async function run(
       test: repoName,
       message: 'Repository name using --repoName',
       pass: 'ok',
-      fail: typeof repoName !== 'string' ? 'missing' : 'invalid'
+      fail: 'missing'
     },
     {
       nook: true,
