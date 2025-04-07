@@ -22,12 +22,6 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags,
     ...outputFlags,
-    repo: {
-      type: 'string',
-      shortFlag: 'r',
-      default: 'socket-default-repository',
-      description: 'Repository name'
-    },
     branch: {
       type: 'string',
       shortFlag: 'b',
@@ -46,6 +40,12 @@ const config: CliCommandConfig = {
       default: '',
       description: 'Commit hash'
     },
+    committers: {
+      type: 'string',
+      shortFlag: 'c',
+      default: '',
+      description: 'Committers'
+    },
     cwd: {
       type: 'string',
       description: 'working directory, defaults to process.cwd()'
@@ -56,33 +56,33 @@ const config: CliCommandConfig = {
       description:
         'Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.'
     },
+    dryRun: {
+      type: 'boolean',
+      description:
+        'Run input validation part of command without any concrete side effects'
+    },
     pendingHead: {
       type: 'boolean',
       default: true,
       description:
         'Designate this full-scan as the latest scan of a given branch. This must be set to have it show up in the dashboard.'
     },
-    dryRun: {
-      type: 'boolean',
-      description:
-        'run input validation part of command without any concrete side effects'
-    },
     pullRequest: {
       type: 'number',
       shortFlag: 'pr',
       description: 'Commit hash'
-    },
-    committers: {
-      type: 'string',
-      shortFlag: 'c',
-      default: '',
-      description: 'Committers'
     },
     readOnly: {
       type: 'boolean',
       default: false,
       description:
         'Similar to --dry-run except it can read from remote, stops before it would create an actual report'
+    },
+    repo: {
+      type: 'string',
+      shortFlag: 'r',
+      default: 'socket-default-repository',
+      description: 'Repository name'
     },
     report: {
       type: 'boolean',
@@ -96,13 +96,6 @@ const config: CliCommandConfig = {
       default: false,
       description:
         'Set the visibility (true/false) of the scan in your dashboard'
-    },
-    view: {
-      type: 'boolean',
-      shortFlag: 'v',
-      default: true,
-      description:
-        'Will wait for and return the created scan details. Use --no-view to disable.'
     }
   },
   // TODO: your project's "socket.yml" file's "projectIgnorePaths"
@@ -162,12 +155,16 @@ async function run(
 
   const {
     branch: branchName = '',
+    commitHash,
+    commitMessage,
+    committers,
     cwd: cwdOverride,
     defaultBranch,
     dryRun,
     json,
     markdown,
     pendingHead,
+    pullRequest,
     readOnly,
     repo: repoName = '',
     report,
@@ -175,11 +172,15 @@ async function run(
   } = cli.flags as {
     branch: string
     cwd: string
+    commitHash: string
+    commitMessage: string
+    committers: string
     defaultBranch: boolean
     dryRun: boolean
     json: boolean
     markdown: boolean
     pendingHead: boolean
+    pullRequest: number
     readOnly: boolean
     repo: string
     report: boolean
@@ -274,12 +275,15 @@ async function run(
 
   await handleCreateNewScan({
     branchName: branchName as string,
-    commitMessage: (cli.flags['commitMessage'] as string | undefined) ?? '',
+    commitHash: (commitHash && String(commitHash)) || '',
+    commitMessage: (commitMessage && String(commitMessage)) || '',
+    committers: (committers && String(committers)) || '',
     cwd,
     defaultBranch: Boolean(defaultBranch),
     orgSlug,
     outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
     pendingHead: Boolean(pendingHead),
+    pullRequest: Number(pullRequest),
     readOnly: Boolean(readOnly),
     repoName: repoName,
     report,
