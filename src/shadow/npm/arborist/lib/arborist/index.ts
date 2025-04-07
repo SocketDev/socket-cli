@@ -5,7 +5,7 @@ import { stripIndents } from 'common-tags'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../../../../constants'
-import { getAlertsMapFromArborist } from '../../../../../utils/lockfile/package-lock-json'
+import { getAlertsMapFromArborist } from '../../../../../utils/arborist-helpers'
 import { logAlertsMap } from '../../../../../utils/socket-package-alert'
 import { getArboristClassPath } from '../../../paths'
 
@@ -102,6 +102,10 @@ export class SafeArborist extends Arborist {
       // @ts-ignore: TS gets grumpy about rest parameters.
       ...args.slice(1)
     )
+    // Lazily access constants.ENV[SOCKET_CLI_ACCEPT_RISKS].
+    const acceptRisks = constants.ENV[SOCKET_CLI_ACCEPT_RISKS]
+    // Lazily access constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS].
+    const viewAllRisks = constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS]
     const progress = ipc[SOCKET_CLI_SAFE_PROGRESS]
     const spinner =
       options['silent'] || !progress
@@ -113,14 +117,13 @@ export class SafeArborist extends Arborist {
     const alertsMap = await getAlertsMapFromArborist(this, {
       spinner,
       include:
-        options.dryRun ||
-        options['yes'] ||
-        // Lazily access constants.ENV[SOCKET_CLI_ACCEPT_RISKS].
-        constants.ENV[SOCKET_CLI_ACCEPT_RISKS]
+        acceptRisks || options.dryRun || options['yes']
           ? {
+              actions: ['error'],
               blocked: true,
               critical: false,
               cve: false,
+              existing: true,
               unfixable: false
             }
           : {
@@ -131,19 +134,26 @@ export class SafeArborist extends Arborist {
     if (alertsMap.size) {
       process.exitCode = 1
       logAlertsMap(alertsMap, {
-        // Lazily access constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS].
-        hideAt: constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS] ? 'none' : 'middle',
+        hideAt: viewAllRisks ? 'none' : 'middle',
         output: process.stderr
       })
       throw new Error(
         stripIndents`
-          Socket ${binName} exiting due to risks.
-          View all risks - Rerun with environment variable ${SOCKET_CLI_VIEW_ALL_RISKS}=1.
-          Accept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.
+          Socket ${binName} exiting due to risks.${
+            viewAllRisks
+              ? ''
+              : `\nView all risks - Rerun with environment variable ${SOCKET_CLI_VIEW_ALL_RISKS}=1.`
+          }${
+            acceptRisks
+              ? ''
+              : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
+          }
         `
       )
     } else if (!options['silent']) {
-      logger.success(`Socket ${binName} found no risks!`)
+      logger.success(
+        `Socket ${binName} ${acceptRisks ? 'accepted' : 'found no'} risks`
+      )
       if (binName === NPX) {
         logger.log(`Running ${options.add![0]}`)
       }

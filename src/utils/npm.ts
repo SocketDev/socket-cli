@@ -39,7 +39,16 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
     spinner,
     ...spawnOptions
   } = { __proto__: null, ...options } as SafeNpmInstallOptions
+  let stdio = spawnOptions.stdio
   const useIpc = isObject(ipc)
+  // Include 'ipc' in the spawnOptions.stdio when an options.ipc object is provided.
+  // See https://github.com/nodejs/node/blob/v23.6.0/lib/child_process.js#L161-L166
+  // and https://github.com/nodejs/node/blob/v23.6.0/lib/internal/child_process.js#L238.
+  if (typeof stdio === 'string') {
+    stdio = useIpc ? [stdio, stdio, stdio, 'ipc'] : [stdio, stdio, stdio]
+  } else if (useIpc && Array.isArray(stdio) && !stdio.includes('ipc')) {
+    stdio = stdio.concat('ipc')
+  }
   const useDebug = isDebug()
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
@@ -84,11 +93,8 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
     ],
     {
       spinner,
-      // Set stdio to include 'ipc'.
-      // See https://github.com/nodejs/node/blob/v23.6.0/lib/child_process.js#L161-L166
-      // and https://github.com/nodejs/node/blob/v23.6.0/lib/internal/child_process.js#L238.
-      stdio: useIpc ? [0, 1, 2, 'ipc'] : 'inherit',
       ...spawnOptions,
+      stdio,
       env: {
         ...process.env,
         ...spawnOptions.env

@@ -1,4 +1,3 @@
-import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
@@ -37,13 +36,13 @@ export function runAgentInstall(
   } = { __proto__: null, ...options } as AgentInstallOptions
   return spawn(agentExecPath, ['install', ...args], {
     spinner,
-    stdio: isDebug() ? 'inherit' : 'inherit',
+    stdio: 'inherit',
     ...spawnOptions,
     env: {
       ...process.env,
       NODE_OPTIONS: cmdFlagsToString([
         // Lazily access constants.nodeHardenFlags.
-        // ...constants.nodeHardenFlags,
+        ...constants.nodeHardenFlags,
         // Lazily access constants.nodeNoWarningsFlags.
         ...constants.nodeNoWarningsFlags
       ]),
