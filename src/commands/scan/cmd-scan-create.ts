@@ -59,7 +59,7 @@ const config: CliCommandConfig = {
     dryRun: {
       type: 'boolean',
       description:
-        'run input validation part of command without any concrete side effects'
+        'Run input validation part of command without any concrete side effects'
     },
     pendingHead: {
       type: 'boolean',
