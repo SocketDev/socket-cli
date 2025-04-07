@@ -15,8 +15,8 @@ const { DRY_RUN_BAIL_TEXT } = constants
 const config: CliCommandConfig = {
   commandName: 'shallow',
   description:
-    'Look up info regarding one or more packages but not their transitives',
-  hidden: true,
+    '[beta] Look up info regarding one or more packages but not their transitives',
+  hidden: false,
   flags: {
     ...commonFlags,
     ...outputFlags

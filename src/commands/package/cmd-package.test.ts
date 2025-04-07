@@ -24,7 +24,8 @@ describe('socket package', async () => {
             $ socket package <command>
 
           Commands
-            (none)
+            score             [beta] Look up score for one package which reflects all of its transitive dependencies as well
+            shallow           [beta] Look up info regarding one or more packages but not their transitives
 
           Options
             --dryRun          Do input validation for a command and exit 0 when input is ok
