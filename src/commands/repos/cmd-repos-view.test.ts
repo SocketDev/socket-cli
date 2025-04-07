@@ -21,7 +21,7 @@ describe('socket repos view', async () => {
         "View repositories in an organization
 
           Usage
-            $ socket repos view <org slug>
+            $ socket repos view <org slug> --repo-name=<name>
 
           API Token Requirements
             - Quota: 1 unit
