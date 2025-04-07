@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { cmdAnalytics } from './commands/analytics/cmd-analytics'
@@ -107,9 +108,10 @@ void (async () => {
     } else {
       errorTitle = 'Unexpected error with no details'
     }
+    logger.error('\n') // Any-spinner-newline
     logger.fail(failMsgWithBadge(errorTitle, errorMessage))
     if (errorBody) {
-      logger.error(`\n${errorBody}`)
+      debugLog(`${errorBody}`)
     }
     await captureException(e)
   }
