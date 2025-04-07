@@ -45,13 +45,18 @@ export async function handleCreateNewScan({
     supportedFileNames
   )
 
-  handleBadInput({
-    nook: true,
-    test: packagePaths.length > 0,
-    pass: 'ok',
-    fail: 'found none',
-    message: 'TARGET must contain matching / supported file types for a scan'
-  })
+  if (
+    handleBadInput({
+      nook: true,
+      test: packagePaths.length > 0,
+      pass: 'ok',
+      fail: 'found no eligible files to scan',
+      message:
+        'TARGET (file/dir) must contain matching / supported file types for a scan'
+    })
+  ) {
+    return
+  }
 
   if (readOnly) {
     logger.log('[ReadOnly] Bailing now')
