@@ -55,7 +55,7 @@ describe('socket report create', async () => {
         \\x1b[31m\\xd7\\x1b[39m This command has been sunset. Instead, please look at \`socket scan create\` to create scans and \`socket scan report\` to view a report of your scans."
       `)
 
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+      expect(code).toBe(1)
     }
   )
 })

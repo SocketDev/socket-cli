@@ -52,4 +52,6 @@ async function run(
   logger.fail(
     'This command has been sunset. Instead, please look at `socket scan create` to create scans and `socket scan report` to view a report of your scans.'
   )
+
+  process.exitCode = 1
 }
