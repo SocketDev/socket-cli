@@ -8,7 +8,7 @@ const description = 'Commands relating to looking up published packages'
 
 export const cmdPackage: CliSubcommand = {
   description,
-  hidden: true, // [beta]
+  hidden: false,
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {

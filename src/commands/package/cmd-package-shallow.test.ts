@@ -18,7 +18,7 @@ describe('socket package shallow', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Look up info regarding one or more packages but not their transitives
+        "[beta] Look up info regarding one or more packages but not their transitives
 
           Usage
             $ socket package shallow <<ecosystem> <name> [<name> ...] | <purl> [<purl> ...]>

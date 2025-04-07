@@ -23,6 +23,8 @@ describe('socket info', async () => {
           Usage
             $ socket info <name>
 
+          Note: this command will be deprecated in favor of \`socket package score\` soon
+
           Options
             --all             Include all issues
             --dryRun          Do input validation for a command and exit 0 when input is ok
