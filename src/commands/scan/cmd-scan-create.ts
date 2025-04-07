@@ -161,6 +161,7 @@ async function run(
   })
 
   const {
+    branch: branchName = '',
     cwd: cwdOverride,
     defaultBranch,
     dryRun,
@@ -168,17 +169,20 @@ async function run(
     markdown,
     pendingHead,
     readOnly,
+    repo: repoName = '',
     report,
     tmp
   } = cli.flags as {
+    branch: string
     cwd: string
+    defaultBranch: boolean
     dryRun: boolean
-    report: boolean
     json: boolean
     markdown: boolean
-    defaultBranch: boolean
     pendingHead: boolean
     readOnly: boolean
+    repo: string
+    report: boolean
     tmp: boolean
   }
   const defaultOrgSlug = getConfigValue('defaultOrg')
@@ -189,10 +193,6 @@ async function run(
     cwdOverride && cwdOverride !== 'process.cwd()'
       ? String(cwdOverride)
       : process.cwd()
-  const { branch: branchName = '', repo: repoName = '' } = cli.flags as {
-    branch: string
-    repo: string
-  }
 
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
