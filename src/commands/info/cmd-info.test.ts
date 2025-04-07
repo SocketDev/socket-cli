@@ -23,7 +23,7 @@ describe('socket info', async () => {
           Usage
             $ socket info <name>
 
-          Note: this command will be deprecated in favor of \`socket package score\` soon.
+          Note: this command will be deprecated in favor of \`socket package score\` soon
 
           Options
             --all             Include all issues

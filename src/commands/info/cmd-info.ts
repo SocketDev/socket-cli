@@ -24,7 +24,7 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} <name>
 
-    Note: this command will be deprecated in favor of \`socket package score\` soon.
+    Note: this command will be deprecated in favor of \`socket package score\` soon
 
     Options
       ${getFlagListOutput(config.flags, 6)}
