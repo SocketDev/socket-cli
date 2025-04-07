@@ -72,7 +72,7 @@ describe('socket repos update', async () => {
 
           - Org name as the first argument (\\x1b[31mmissing\\x1b[39m)
 
-          - Repository name using --repoName (\\x1b[31minvalid\\x1b[39m)
+          - Repository name using --repoName (\\x1b[31mmissing\\x1b[39m)
 
           - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)"
       `)

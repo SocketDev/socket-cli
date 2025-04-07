@@ -245,7 +245,7 @@ async function run(
       test: targets.length,
       message: 'At least one TARGET (e.g. `.` or `./package.json`)',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing (or perhaps you forgot the org slug?)'
     },
     {
       nook: true,
@@ -259,7 +259,7 @@ async function run(
       test: apiToken,
       message: 'This command requires an API token for access`)',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing (try `socket login`)'
     }
   )
   if (wasBadInput) {
