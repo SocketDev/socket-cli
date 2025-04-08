@@ -62,7 +62,7 @@ async function run(
 
   const wasBadInput = handleBadInput(
     {
-      test: supportedConfigKeys.has(key as keyof LocalConfig) || key === 'test',
+      test: key === 'test' || supportedConfigKeys.has(key as keyof LocalConfig),
       message: 'Config key should be the first arg',
       pass: 'ok',
       fail: key ? 'invalid config key' : 'missing'

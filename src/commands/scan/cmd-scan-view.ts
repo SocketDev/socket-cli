@@ -71,7 +71,7 @@ async function run(
   const wasBadInput = handleBadInput(
     {
       nook: !!defaultOrgSlug,
-      test: orgSlug && orgSlug !== '.',
+      test: !!orgSlug && orgSlug !== '.',
       message: 'Org name as the first argument',
       pass: 'ok',
       fail:
@@ -80,7 +80,7 @@ async function run(
           : 'missing'
     },
     {
-      test: scanId,
+      test: !!scanId,
       message: 'Scan ID to delete',
       pass: 'ok',
       fail: 'missing'
@@ -95,7 +95,7 @@ async function run(
     },
     {
       nook: true,
-      test: apiToken,
+      test: !!apiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',

@@ -237,7 +237,7 @@ async function run(
   const wasBadInput = handleBadInput(
     {
       nook: !!defaultOrgSlug,
-      test: orgSlug && orgSlug !== '.',
+      test: !!orgSlug && orgSlug !== '.',
       message: 'Org name as the first argument',
       pass: 'ok',
       fail:
@@ -246,7 +246,7 @@ async function run(
           : 'missing'
     },
     {
-      test: targets.length,
+      test: !!targets.length,
       message: 'At least one TARGET (e.g. `.` or `./package.json`)',
       pass: 'ok',
       fail: 'missing (or perhaps you forgot the org slug?)'
@@ -260,7 +260,7 @@ async function run(
     },
     {
       nook: true,
-      test: apiToken,
+      test: !!apiToken,
       message: 'This command requires an API token for access',
       pass: 'ok',
       fail: 'missing (try `socket login`)'
