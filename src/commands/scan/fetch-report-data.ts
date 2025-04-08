@@ -1,3 +1,4 @@
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
@@ -24,7 +25,7 @@ export async function fetchReportData(
   | {
       ok: true
       scan: Array<components['schemas']['SocketArtifact']>
-      securityPolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'>
+      securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>
     }
   | {
       ok: false
@@ -41,29 +42,85 @@ export async function fetchReportData(
 
   const sockSdk = await setupSdk(apiToken)
 
-  let haveScan = false
-  let haveSecurityPolicy = false
+  let scanStatus = 'requested..'
+  let policyStatus = 'requested..'
+  let finishedFetching = false
 
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  function updateProgress() {
-    const needs = [
-      !haveScan ? 'scan' : undefined,
-      !haveSecurityPolicy ? 'security policy' : undefined
-    ].filter(Boolean)
-    const haves = [
-      haveScan ? 'scan' : undefined,
-      haveSecurityPolicy ? 'security policy' : undefined
-    ].filter(Boolean)
+  function updateScan(desc: string) {
+    scanStatus = desc
+    updateProgress()
+  }
 
-    if (needs.length) {
-      spinner.start(
-        `Fetching ${needs.join(' and ')}...${haves.length ? ` Completed fetching ${haves.join(' and ')}.` : ''}`
+  function updatePolicy(desc: string) {
+    policyStatus = desc
+    updateProgress()
+  }
+
+  function updateProgress() {
+    if (finishedFetching) {
+      spinner.stop()
+      logger.info(
+        `Scan result: ${scanStatus}. Security policy: ${policyStatus}.`
       )
     } else {
-      spinner.successAndStop(`Completed fetching ${haves.join(' and ')}.`)
+      spinner.start(
+        `Scan result: ${scanStatus}. Security policy: ${policyStatus}.`
+      )
     }
+  }
+
+  async function fetchScanResult(apiToken: string) {
+    const response = await queryApi(
+      `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
+      apiToken
+    )
+    updateScan('received response')
+
+    if (!response.ok) {
+      spinner.stop()
+      const err = await handleApiError(response.status)
+      logger.fail(failMsgWithBadge(response.statusText, `Fetch error: ${err}`))
+      debugLog(err)
+      updateScan(`request resulted in status code ${response.status}`)
+      return undefined
+    }
+
+    updateScan(`ok, downloading response..`)
+    const jsons = await response.text()
+    updateScan(`received`)
+
+    const lines = jsons.split('\n').filter(Boolean)
+    const data = lines.map(line => {
+      try {
+        return JSON.parse(line)
+      } catch {
+        scanStatus = `received invalid JSON response`
+        spinner.stop()
+        logger.error(
+          'Response was not valid JSON but it ought to be (please report if this persists)'
+        )
+        debugLog(line)
+        updateProgress()
+        return
+      }
+    }) as unknown as Array<components['schemas']['SocketArtifact']>
+
+    return data
+  }
+
+  async function fetchSecurityPolicy() {
+    const r = await sockSdk.getOrgSecurityPolicy(orgSlug)
+    updatePolicy('received response')
+
+    const s = await handleApiCall(
+      r,
+      "looking up organization's security policy"
+    )
+    updatePolicy('received')
+    return s
   }
 
   updateProgress()
@@ -72,53 +129,21 @@ export async function fetchReportData(
     undefined | Array<components['schemas']['SocketArtifact']>,
     SocketSdkResultType<'getOrgSecurityPolicy'>
   ] = await Promise.all([
-    (async () => {
-      try {
-        const response = await queryApi(
-          `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
-          apiToken
-        )
-
-        haveScan = true
-        updateProgress()
-
-        if (!response.ok) {
-          const err = await handleApiError(response.status)
-          logger.fail(
-            failMsgWithBadge(response.statusText, `Fetch error: ${err}`)
-          )
-          return undefined
-        }
-
-        const jsons = await response.text()
-        const lines = jsons.split('\n').filter(Boolean)
-        const data = lines.map(line => {
-          try {
-            return JSON.parse(line)
-          } catch {
-            console.error(
-              'At least one line item was returned that could not be parsed as JSON...'
-            )
-            return
-          }
-        }) as unknown as Array<components['schemas']['SocketArtifact']>
-
-        return data
-      } catch (e) {
-        spinner.errorAndStop('There was an issue while fetching full scan data')
-        throw e
-      }
-    })(),
-    (async () => {
-      const r = await sockSdk.getOrgSecurityPolicy(orgSlug)
-      haveSecurityPolicy = true
-      updateProgress()
-      return await handleApiCall(r, "looking up organization's security policy")
-    })()
-  ]).finally(() => spinner.stop())
+    fetchScanResult(apiToken).catch(e => {
+      updateScan(`failure; unknown blocking problem occurred`)
+      throw e
+    }),
+    fetchSecurityPolicy().catch(e => {
+      updatePolicy(`failure; unknown blocking problem occurred`)
+      throw e
+    })
+  ]).finally(() => {
+    finishedFetching = true
+    updateProgress()
+  })
 
   if (!Array.isArray(scan)) {
-    logger.error('Was unable to fetch scan, bailing')
+    logger.error('Was unable to fetch scan result, bailing')
     process.exitCode = 1
     return {
       ok: false,
@@ -127,11 +152,7 @@ export async function fetchReportData(
     }
   }
 
-  let securityPolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'> =
-    undefined
-  if (securityPolicyMaybe && securityPolicyMaybe.success) {
-    securityPolicy = securityPolicyMaybe
-  } else {
+  if (!securityPolicyMaybe?.success) {
     logger.error('Was unable to fetch security policy, bailing')
     process.exitCode = 1
     return {
@@ -144,6 +165,6 @@ export async function fetchReportData(
   return {
     ok: true,
     scan,
-    securityPolicy
+    securityPolicy: securityPolicyMaybe
   }
 }
