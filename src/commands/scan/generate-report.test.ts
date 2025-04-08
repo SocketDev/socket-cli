@@ -7,12 +7,16 @@ import type { components } from '@socketsecurity/sdk/types/api'
 
 describe('generate-report', () => {
   it('should accept empty args', () => {
-    const result = generateReport([], {data: {securityPolicyRules: []}}, {
-      orgSlug: 'fakeorg',
-      scanId: 'scan-ai-dee',
-      fold: 'none',
-      reportLevel: 'warn'
-    })
+    const result = generateReport(
+      [],
+      { data: { securityPolicyRules: [] } },
+      {
+        orgSlug: 'fakeorg',
+        scanId: 'scan-ai-dee',
+        fold: 'none',
+        reportLevel: 'warn'
+      }
+    )
 
     expect(result).toMatchInlineSnapshot(`
       {

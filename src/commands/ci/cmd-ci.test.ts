@@ -7,40 +7,44 @@ import { cmdit, invokeNpm } from '../../../test/utils'
 
 const { CLI } = constants
 
-describe('socket oops', async () => {
+describe('socket ci', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
   cmdit(
-    ['oops', '--help', '--config', '{}'],
+    ['ci', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Trigger an intentional error (for development)
+        "Create a new scan and report whether it passes your security policy
 
-        Usage
-          $ socket oops oops
+          Usage
+            $ socket ci
 
-        Don't run me."
-    `
+          This command is intended to use in CI runs to allow automated systems to
+          accept or reject a current build. When the scan does not pass your security
+          policy, the exit code will be non-zero.
+
+          It will use the default org for the set API token."
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-      "
-         _____         _       _        /---------------
-        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-        |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket oops\`, cwd: <redacted>"
-    `)
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+          |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket ci\`, cwd: <redacted>"
+      `)
 
       expect(code, 'help should exit with code 2').toBe(2)
-      expect(stderr, 'banner includes base command').toContain('`socket oops`')
+      expect(stderr, 'banner includes base command').toContain('`socket ci`')
     }
   )
 
   cmdit(
-    ['oops', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['ci', '--dry-run', '--config', '{"apiToken":"anything"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
@@ -50,7 +54,7 @@ describe('socket oops', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket oops\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket ci\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
