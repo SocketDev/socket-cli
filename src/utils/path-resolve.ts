@@ -9,6 +9,7 @@ import which from 'which'
 
 import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
 import { resolveBinPath } from '@socketsecurity/registry/lib/npm'
+import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { directoryPatterns } from './ignore-by-default'
 import constants from '../constants'
@@ -262,11 +263,11 @@ export async function getPackageFilesForScan(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  const pats = pathsToPatterns(inputPaths)
+  const patterns = pathsToPatterns(inputPaths)
 
   spinner.start('Searching for local files to include in scan...')
 
-  const entries = await globWithGitIgnore(pats, {
+  const entries = await globWithGitIgnore(patterns, {
     cwd,
     socketConfig: config
   })
@@ -290,7 +291,7 @@ export async function getPackageFilesForScan(
   )
 
   spinner.successAndStop(
-    `Found ${packageFiles.length} local file${packageFiles.length === 1 ? '' : 's'}`
+    `Found ${packageFiles.length} local ${pluralize('file', packageFiles.length)}`
   )
   debugLog('Absolute paths:\n', packageFiles)
 
