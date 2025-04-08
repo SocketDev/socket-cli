@@ -1,6 +1,7 @@
 import { readWantedLockfile } from '@pnpm/lockfile.fs'
 
 import { getManifestData } from '@socketsecurity/registry'
+import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
@@ -16,6 +17,7 @@ import {
 } from '../../shadow/npm/arborist/lib/arborist'
 import {
   findBestPatchVersion,
+  findPackageNode,
   findPackageNodes,
   updatePackageJsonFromNode
 } from '../../utils/arborist-helpers'
@@ -81,28 +83,27 @@ export async function pnpmFix(
     return spinner?.stop()
   }
 
+  const editablePkgJson = await readPackageJson(cwd, { editable: true })
+  const { content: pkgJson } = editablePkgJson
+
   const arb = new SafeArborist({
     path: cwd,
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
   })
   await arb.loadActual()
 
-  const editablePkgJson = await readPackageJson(cwd, { editable: true })
-  const { content: pkgJson } = editablePkgJson
-
   spinner?.stop()
 
   for (const { 0: name, 1: infos } of infoByPkg) {
-    const tree = arb.actualTree!
-
     if (getManifestData(NPM, name)) {
       logger.info(`Skipping ${name}. Socket Optimize package exists.`)
       continue
     }
-
-    const nodes = findPackageNodes(tree, name)
+    const specs = arrayUnique(
+      findPackageNodes(arb.actualTree!, name).map(n => `${n.name}@${n.version}`)
+    )
     const packument =
-      nodes.length && infos.length
+      specs.length && infos.length
         ? // eslint-disable-next-line no-await-in-loop
           await fetchPackagePackument(name)
         : null
@@ -110,13 +111,19 @@ export async function pnpmFix(
       continue
     }
 
-    for (const node of nodes) {
+    for (const spec of specs) {
+      const lastAtSignIndex = spec.lastIndexOf('@')
+      const name = spec.slice(0, lastAtSignIndex)
+      const oldVersion = spec.slice(lastAtSignIndex + 1)
       for (const {
         firstPatchedVersionIdentifier,
         vulnerableVersionRange
       } of infos) {
+        const node = findPackageNode(arb.idealTree!, name, oldVersion)
+        if (!node) {
+          continue
+        }
         spinner?.stop()
-        const { version: oldVersion } = node
         const oldSpec = `${name}@${oldVersion}`
         const availableVersions = Object.keys(packument.versions)
         const targetVersion = findBestPatchVersion(
@@ -180,7 +187,7 @@ export async function pnpmFix(
           let installed = false
           try {
             editablePkgJson.update(updateData)
-            updatePackageJsonFromNode(editablePkgJson, tree, node)
+            updatePackageJsonFromNode(editablePkgJson, arb.actualTree!, node)
             // eslint-disable-next-line no-await-in-loop
             await editablePkgJson.save()
             saved = true
@@ -194,14 +201,14 @@ export async function pnpmFix(
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
+
+            spinner?.info(`Fixed ${name}`)
+
             // Lazily access constants.ENV[CI].
             if (constants.ENV[CI]) {
               // eslint-disable-next-line no-await-in-loop
               await openGitHubPullRequest(name, targetVersion, cwd)
             }
-            // eslint-disable-next-line no-await-in-loop
-            await editablePkgJson.save()
-            spinner?.info(`Fixed ${name}`)
           } catch {
             spinner?.error(`Reverting ${fixSpec}`)
             if (saved) {
@@ -212,6 +219,9 @@ export async function pnpmFix(
             if (installed) {
               // eslint-disable-next-line no-await-in-loop
               await install(pkgEnvDetails, { spinner })
+              arb.actualTree = null
+              // eslint-disable-next-line no-await-in-loop
+              await arb.loadActual()
             }
             spinner?.stop()
             logger.error(`Failed to fix ${oldSpec}`)
