@@ -12,6 +12,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { cmdAnalytics } from './commands/analytics/cmd-analytics'
 import { cmdAuditLog } from './commands/audit-log/cmd-audit-log'
 import { cmdCdxgen } from './commands/cdxgen/cmd-cdxgen'
+import { cmdCI } from './commands/ci/cmd-ci'
 import { cmdConfig } from './commands/config/cmd-config'
 import { cmdScanCreate } from './commands/dependencies/cmd-dependencies'
 import { cmdDiffScan } from './commands/diff-scan/cmd-diff-scan'
@@ -53,6 +54,7 @@ void (async () => {
     await meowWithSubcommands(
       {
         cdxgen: cmdCdxgen,
+        ci: cmdCI,
         config: cmdConfig,
         fix: cmdFix,
         info: cmdInfo,
@@ -78,12 +80,7 @@ void (async () => {
         manifest: cmdManifest
       },
       {
-        aliases: {
-          ci: {
-            description: 'Alias for "report create --view --strict"',
-            argv: ['report', 'create', '--view', '--strict']
-          }
-        },
+        aliases: {},
         argv: process.argv.slice(2),
         name: SOCKET_CLI_BIN_NAME,
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta

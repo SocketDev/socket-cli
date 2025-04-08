@@ -14,7 +14,7 @@ import type { components } from '@socketsecurity/sdk/types/api'
 
 export async function outputScanReport(
   scan: Array<components['schemas']['SocketArtifact']>,
-  securityPolicy: undefined | SocketSdkReturnType<'getOrgSecurityPolicy'>,
+  securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>,
   {
     filePath,
     fold,
