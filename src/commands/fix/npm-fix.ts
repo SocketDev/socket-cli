@@ -1,4 +1,5 @@
 import { getManifestData } from '@socketsecurity/registry'
+import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
@@ -14,6 +15,7 @@ import {
   SafeArborist
 } from '../../shadow/npm/arborist/lib/arborist'
 import {
+  findPackageNode,
   findPackageNodes,
   getAlertsMapFromArborist,
   updateNode,
@@ -23,22 +25,23 @@ import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
 import type { EnvDetails } from '../../utils/package-environment'
+import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { CI, NPM } = constants
 
-type SaveAndInstallOptions = {
+type InstallOptions = {
   cwd?: string | undefined
 }
 
-async function saveAndInstall(
+async function install(
   idealTree: SafeNode,
-  options: SaveAndInstallOptions
+  options: InstallOptions
 ): Promise<void> {
   const { cwd = process.cwd() } = {
     __proto__: null,
     ...options
-  } as SaveAndInstallOptions
+  } as InstallOptions
   const arb2 = new Arborist({ path: cwd })
   arb2.idealTree = idealTree
   await arb2.reify()
@@ -68,7 +71,7 @@ export async function npmFix(
     path: cwd,
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
   })
-
+  // Calling arb.reify() creates the arb.diff object and nulls-out arb.idealTree.
   await arb.reify()
 
   const alertsMap = await getAlertsMapFromArborist(arb, {
@@ -87,28 +90,24 @@ export async function npmFix(
     return
   }
 
+  const editablePkgJson = await readPackageJson(cwd, { editable: true })
+  const { content: pkgJson } = editablePkgJson
+
   await arb.buildIdealTree()
 
-  const editablePkgJson = await readPackageJson(cwd, { editable: true })
+  spinner?.stop()
 
   for (const { 0: name, 1: infos } of infoByPkg) {
-    const revertToIdealTree = arb.idealTree!
-    arb.idealTree = null
-
-    // eslint-disable-next-line no-await-in-loop
-    await arb.buildIdealTree()
-    const tree = arb.idealTree!
-
     const hasUpgrade = !!getManifestData(NPM, name)
     if (hasUpgrade) {
       spinner?.info(`Skipping ${name}. Socket Optimize package exists.`)
       continue
     }
-
-    const nodes = findPackageNodes(tree, name)
-
+    const specs = arrayUnique(
+      findPackageNodes(arb.idealTree!, name).map(n => `${n.name}@${n.version}`)
+    )
     const packument =
-      nodes.length && infos.length
+      specs.length && infos.length
         ? // eslint-disable-next-line no-await-in-loop
           await fetchPackagePackument(name)
         : null
@@ -116,13 +115,23 @@ export async function npmFix(
       continue
     }
 
-    for (const node of nodes) {
+    for (const spec of specs) {
+      const lastAtSignIndex = spec.lastIndexOf('@')
+      const name = spec.slice(0, lastAtSignIndex)
+      const oldVersion = spec.slice(lastAtSignIndex + 1)
       for (const {
         firstPatchedVersionIdentifier,
         vulnerableVersionRange
       } of infos) {
+        const revertTree = arb.idealTree!
+        arb.idealTree = null
+        // eslint-disable-next-line no-await-in-loop
+        await arb.buildIdealTree()
+        const node = findPackageNode(arb.idealTree!, name, oldVersion)
+        if (!node) {
+          continue
+        }
         spinner?.stop()
-        const { version: oldVersion } = node
         const oldSpec = `${name}@${oldVersion}`
         if (
           updateNode(
@@ -134,6 +143,17 @@ export async function npmFix(
         ) {
           const targetVersion = node.package.version!
           const fixSpec = `${name}@^${targetVersion}`
+          const revertData = {
+            ...(pkgJson.dependencies
+              ? { dependencies: pkgJson.dependencies }
+              : undefined),
+            ...(pkgJson.optionalDependencies
+              ? { optionalDependencies: pkgJson.optionalDependencies }
+              : undefined),
+            ...(pkgJson.peerDependencies
+              ? { peerDependencies: pkgJson.peerDependencies }
+              : undefined)
+          } as PackageJson
 
           spinner?.start()
           spinner?.info(`Installing ${fixSpec}`)
@@ -141,9 +161,13 @@ export async function npmFix(
           let saved = false
           let installed = false
           try {
+            updatePackageJsonFromNode(editablePkgJson, arb.idealTree!, node)
             // eslint-disable-next-line no-await-in-loop
-            await saveAndInstall(arb.idealTree!, { cwd })
+            await editablePkgJson.save()
             saved = true
+
+            // eslint-disable-next-line no-await-in-loop
+            await install(arb.idealTree!, { cwd })
             installed = true
 
             if (test) {
@@ -151,21 +175,22 @@ export async function npmFix(
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
+            spinner?.info(`Fixed ${name}`)
             // Lazily access constants.ENV[CI].
             if (constants.ENV[CI]) {
               // eslint-disable-next-line no-await-in-loop
               await openGitHubPullRequest(name, targetVersion, cwd)
             }
-            updatePackageJsonFromNode(editablePkgJson, tree, node)
-            // eslint-disable-next-line no-await-in-loop
-            await editablePkgJson.save()
-            spinner?.info(`Fixed ${name}`)
           } catch {
             spinner?.error(`Reverting ${fixSpec}`)
-            if (saved || installed) {
-              arb.idealTree = revertToIdealTree
+            if (saved) {
+              editablePkgJson.update(revertData)
               // eslint-disable-next-line no-await-in-loop
-              await saveAndInstall(arb.idealTree!, { cwd })
+              await editablePkgJson.save()
+            }
+            if (installed) {
+              // eslint-disable-next-line no-await-in-loop
+              await install(revertTree, { cwd })
             }
             spinner?.stop()
             logger.error(`Failed to fix ${oldSpec}`)
