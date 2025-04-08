@@ -106,14 +106,14 @@ async function run(
     },
     {
       nook: true,
-      test: scope === 'org' || repo,
+      test: scope === 'org' || !!repo,
       message: 'When scope=repo, repo name should be set through --repo',
       pass: 'ok',
       fail: 'missing'
     },
     {
       nook: true,
-      test: file === '-' || json || markdown,
+      test: file === '-' || !!json || !!markdown,
       message:
         'The `--file` flag is only valid when using `--json` or `--markdown`',
       pass: 'ok',
@@ -129,7 +129,7 @@ async function run(
     },
     {
       nook: true,
-      test: apiToken,
+      test: !!apiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',

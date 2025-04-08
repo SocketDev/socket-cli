@@ -58,7 +58,7 @@ async function run(
 
   const wasBadInput = handleBadInput(
     {
-      test: rawPkgName,
+      test: !!rawPkgName,
       message: 'Expecting a package name',
       pass: 'ok',
       fail: 'missing'

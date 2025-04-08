@@ -74,7 +74,7 @@ async function run(
 
   const wasBadInput = handleBadInput(
     {
-      test: enable || disable,
+      test: !!(enable || disable),
       message: 'Must use --enabled or --disable',
       pass: 'ok',
       fail: 'missing'
