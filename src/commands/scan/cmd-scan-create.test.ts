@@ -62,7 +62,7 @@ describe('socket scan create', async () => {
             --readOnly        Similar to --dry-run except it can read from remote, stops before it would create an actual report
             --repo            Repository name
             --report          Wait for the scan creation to complete, then basically run \`socket scan report\` on it
-            --tmp             Set the visibility (true/false) of the scan in your dashboard
+            --tmp             Set the visibility (true/false) of the scan in your dashboard. Can not be used when --pendingHead is set.
 
           Examples
             $ socket scan create --repo=test-repo --branch=main FakeOrg ./package.json"

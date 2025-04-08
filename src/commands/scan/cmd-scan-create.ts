@@ -95,7 +95,7 @@ const config: CliCommandConfig = {
       shortFlag: 't',
       default: false,
       description:
-        'Set the visibility (true/false) of the scan in your dashboard'
+        'Set the visibility (true/false) of the scan in your dashboard. Can not be used when --pendingHead is set.'
     }
   },
   // TODO: your project's "socket.yml" file's "projectIgnorePaths"
@@ -154,7 +154,7 @@ async function run(
   })
 
   const {
-    branch: branchName = '',
+    branch: branchName = 'socket-default-branch',
     commitHash,
     commitMessage,
     committers,
@@ -166,7 +166,7 @@ async function run(
     pendingHead,
     pullRequest,
     readOnly,
-    repo: repoName = '',
+    repo: repoName = 'socket-default-repository',
     report,
     tmp
   } = cli.flags as {
@@ -264,6 +264,27 @@ async function run(
       message: 'This command requires an API token for access',
       pass: 'ok',
       fail: 'missing (try `socket login`)'
+    },
+    {
+      nook: true,
+      test: !pendingHead || !tmp,
+      message: 'Can not use --pendingHead and --tmp at the same time',
+      pass: 'ok',
+      fail: 'remove at least one flag'
+    },
+    {
+      nook: true,
+      test: !pendingHead || !!branchName,
+      message: 'When --pendingHead is set, --branch is mandatory',
+      pass: 'ok',
+      fail: 'missing branch name'
+    },
+    {
+      nook: true,
+      test: !defaultBranch || !!branchName,
+      message: 'When --defaultBranch is set, --branch is mandatory',
+      pass: 'ok',
+      fail: 'missing branch name'
     }
   )
   if (wasBadInput) {
