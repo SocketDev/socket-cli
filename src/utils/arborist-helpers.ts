@@ -163,9 +163,33 @@ export function findBestPatchVersion(
   return semver.maxSatisfying(eligibleVersions, '*')
 }
 
+export function findPackageNode(
+  tree: SafeNode,
+  name: string,
+  version?: string | undefined
+): SafeNode | undefined {
+  const queue: Array<{ node: typeof tree }> = [{ node: tree }]
+  let sentinel = 0
+  while (queue.length) {
+    if (sentinel++ === LOOP_SENTINEL) {
+      throw new Error('Detected infinite loop in findPackageNodes')
+    }
+    const { node: currentNode } = queue.pop()!
+    const node = currentNode.children.get(name)
+    if (node && (typeof version !== 'string' || node.version === version)) {
+      return node as unknown as SafeNode
+    }
+    const children = [...currentNode.children.values()]
+    for (let i = children.length - 1; i >= 0; i -= 1) {
+      queue.push({ node: children[i] as unknown as SafeNode })
+    }
+  }
+}
+
 export function findPackageNodes(
   tree: SafeNode,
-  packageName: string
+  name: string,
+  version?: string | undefined
 ): SafeNode[] {
   const queue: Array<{ node: typeof tree }> = [{ node: tree }]
   const matches: SafeNode[] = []
@@ -175,8 +199,8 @@ export function findPackageNodes(
       throw new Error('Detected infinite loop in findPackageNodes')
     }
     const { node: currentNode } = queue.pop()!
-    const node = currentNode.children.get(packageName)
-    if (node) {
+    const node = currentNode.children.get(name)
+    if (node && (typeof version !== 'string' || node.version === version)) {
       matches.push(node as unknown as SafeNode)
     }
     const children = [...currentNode.children.values()]
@@ -321,39 +345,49 @@ export function updateNode(
     // No suitable patch version found.
     return false
   }
-  // Use Object.defineProperty to override the version.
+  // Object.defineProperty is needed to set the version property and replace
+  // the old value with targetVersion.
   Object.defineProperty(node, 'version', {
     configurable: true,
     enumerable: true,
     get: () => targetVersion
   })
+  // Update package.version associated with the node.
   node.package.version = targetVersion
-  // Update resolved and clear integrity for the new version.
+  // Update node.resolved.
   const purlObj = PackageURL.fromString(`pkg:npm/${node.name}`)
   node.resolved = `${NPM_REGISTRY_URL}/${node.name}/-/${purlObj.name}-${targetVersion}.tgz`
+  // Update node.integrity with the targetPackument.dist.integrity value if available
+  // else delete node.integrity so a new value is resolved for the target version.
   const { integrity } = targetPackument.dist
   if (integrity) {
     node.integrity = integrity
   } else {
     delete node.integrity
   }
-  if ('deprecated' in targetPackument) {
+  // Update node.package.deprecated based on targetPackument.deprecated.
+  if (hasOwn(targetPackument, 'deprecated')) {
     node.package['deprecated'] = targetPackument.deprecated as string
   } else {
     delete node.package['deprecated']
   }
+  // Update node.package.dependencies.
   const newDeps = { ...targetPackument.dependencies }
   const { dependencies: oldDeps } = node.package
   node.package.dependencies = newDeps
   if (oldDeps) {
     for (const oldDepName of Object.keys(oldDeps)) {
       if (!hasOwn(newDeps, oldDepName)) {
+        // Detach old edges for dependencies that don't exist on the updated
+        // node.package.dependencies.
         node.edgesOut.get(oldDepName)?.detach()
       }
     }
   }
   for (const newDepName of Object.keys(newDeps)) {
     if (!hasOwn(oldDeps, newDepName)) {
+      // Add new edges for dependencies that don't exist on the old
+      // node.package.dependencies.
       node.addEdgeOut(
         new Edge({
           from: node,
