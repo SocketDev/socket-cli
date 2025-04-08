@@ -1,4 +1,4 @@
-name: Type Checks
+tabname: Type Checks
 
 on:
   push:
