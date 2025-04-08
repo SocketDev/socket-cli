@@ -122,7 +122,7 @@ async function run(
 
   const wasBadInput = handleBadInput(
     {
-      test: target && target !== '-',
+      test: !!target && target !== '-',
       message: 'The DIR arg is required',
       pass: 'ok',
       fail: target === '-' ? 'stdin is not supported' : 'missing'

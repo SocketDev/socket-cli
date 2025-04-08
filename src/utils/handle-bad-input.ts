@@ -5,15 +5,15 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { failMsgWithBadge } from './fail-msg-with-badge'
 
 export function handleBadInput(
-  ...arr: Array<{
-    message: string
-    nook?: unknown // Only display error when test is not OK
-    test: unknown // Truthy checked through !!
-    pass: string
+  ...checks: Array<{
     fail: string
+    message: string
+    pass: string
+    test: boolean
+    nook?: boolean | undefined
   }>
 ) {
-  if (arr.every(data => !!data.test)) {
+  if (checks.every(d => d.test)) {
     return false
   }
 
@@ -24,17 +24,17 @@ export function handleBadInput(
     ),
     ''
   ]
-  for (const data of arr) {
+  for (const d of checks) {
     // If nook, then ignore when test is ok
-    if (data.nook && data.test) {
+    if (d.nook && d.test) {
       continue
     }
-    const lines = data.message.split('\n')
+    const lines = d.message.split('\n')
 
     // If the message has newlines then format the first line with the input
     // expectation and teh rest indented below it
     msg.push(
-      `  - ${lines[0]} (${data.test ? colors.green(data.pass) : colors.red(data.fail)})`
+      `  - ${lines[0]} (${d.test ? colors.green(d.pass) : colors.red(d.fail)})`
     )
     if (lines.length > 1) {
       msg.push(...lines.slice(1).map(str => `    ${str}`))
