@@ -25,13 +25,13 @@ import { getAlertsMapFromPnpmLockfile } from '../../utils/pnpm-lock-yaml'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 import { runAgentInstall } from '../optimize/run-agent'
 
+import type { RangeStyle } from './types'
+import type { StringKeyValueObject } from '../../types'
 import type { EnvDetails } from '../../utils/package-environment'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { CI, NPM, OVERRIDES, PNPM } = constants
-
-type StringKeyedObject = { [key: string]: string }
 
 type InstallOptions = {
   spinner?: Spinner | undefined
@@ -51,6 +51,7 @@ async function install(
 
 type PnpmFixOptions = {
   cwd?: string | undefined
+  rangeStyle?: RangeStyle | undefined
   spinner?: Spinner | undefined
   test?: boolean | undefined
   testScript?: string | undefined
@@ -136,9 +137,9 @@ export async function pnpmFix(
           ? packument.versions[targetVersion]
           : undefined
         if (targetVersion && targetPackument) {
-          const oldPnpm = pkgJson[PNPM] as StringKeyedObject | undefined
+          const oldPnpm = pkgJson[PNPM] as StringKeyValueObject | undefined
           const pnpmKeyCount = oldPnpm ? Object.keys(oldPnpm).length : 0
-          const oldOverrides = (oldPnpm as StringKeyedObject)?.[OVERRIDES] as
+          const oldOverrides = (oldPnpm as StringKeyValueObject)?.[OVERRIDES] as
             | Record<string, string>
             | undefined
           const overridesCount = oldOverrides

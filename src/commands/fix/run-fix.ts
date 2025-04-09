@@ -5,6 +5,7 @@ import { pnpmFix } from './pnpm-fix'
 import constants from '../../constants'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment'
 
+import type { RangeStyle } from './types'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { NPM, PNPM } = constants
@@ -13,6 +14,7 @@ const CMD_NAME = 'socket fix'
 
 type RunFixOptions = {
   cwd?: string | undefined
+  rangeStyle?: RangeStyle | undefined
   spinner?: Spinner | undefined
   test?: boolean | undefined
   testScript?: string | undefined
@@ -20,6 +22,7 @@ type RunFixOptions = {
 
 export async function runFix({
   cwd = process.cwd(),
+  rangeStyle,
   spinner,
   test = false,
   testScript = 'test'
@@ -36,6 +39,7 @@ export async function runFix({
   switch (pkgEnvDetails.agent) {
     case NPM: {
       await npmFix(pkgEnvDetails, {
+        rangeStyle,
         spinner,
         test,
         testScript
@@ -44,6 +48,7 @@ export async function runFix({
     }
     case PNPM: {
       await pnpmFix(pkgEnvDetails, {
+        rangeStyle,
         spinner,
         test,
         testScript
