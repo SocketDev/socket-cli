@@ -23,6 +23,7 @@ import {
 } from '../../utils/arborist-helpers'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 
+import type { RangeStyle } from './types'
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
 import type { EnvDetails } from '../../utils/package-environment'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
@@ -49,6 +50,7 @@ async function install(
 
 type NpmFixOptions = {
   cwd?: string | undefined
+  rangeStyle?: RangeStyle | undefined
   spinner?: Spinner | undefined
   test?: boolean | undefined
   testScript?: string | undefined
