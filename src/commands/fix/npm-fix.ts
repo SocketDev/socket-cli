@@ -1,6 +1,5 @@
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
@@ -97,8 +96,6 @@ export async function npmFix(
 
   await arb.buildIdealTree()
 
-  spinner?.stop()
-
   for (const { 0: name, 1: infos } of infoByPkg) {
     const hasUpgrade = !!getManifestData(NPM, name)
     if (hasUpgrade) {
@@ -133,7 +130,6 @@ export async function npmFix(
         if (!node) {
           continue
         }
-        spinner?.stop()
         const oldSpec = `${name}@${oldVersion}`
         if (
           updateNode(
@@ -157,7 +153,6 @@ export async function npmFix(
               : undefined)
           } as PackageJson
 
-          spinner?.start()
           spinner?.info(`Installing ${fixSpec}`)
 
           let saved = false
@@ -177,7 +172,8 @@ export async function npmFix(
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
-            spinner?.info(`Fixed ${name}`)
+            spinner?.successAndStop(`Fixed ${name}`)
+            spinner?.start()
             // Lazily access constants.ENV[CI].
             if (constants.ENV[CI]) {
               // eslint-disable-next-line no-await-in-loop
@@ -194,16 +190,13 @@ export async function npmFix(
               // eslint-disable-next-line no-await-in-loop
               await install(revertTree, { cwd })
             }
-            spinner?.stop()
-            logger.error(`Failed to fix ${oldSpec}`)
+            spinner?.failAndStop(`Failed to fix ${oldSpec}`)
           }
         } else {
-          spinner?.stop()
-          logger.error(`Could not patch ${oldSpec}`)
+          spinner?.failAndStop(`Could not patch ${oldSpec}`)
         }
       }
     }
   }
-
   spinner?.stop()
 }

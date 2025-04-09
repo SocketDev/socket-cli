@@ -56,5 +56,6 @@ export async function runFix({
       break
     }
   }
+  spinner?.stop()
   // spinner.successAndStop('Socket.dev fix successful')
 }
