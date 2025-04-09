@@ -21,7 +21,7 @@ describe('socket manifest gradle', async () => {
         "[beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Gradle/Java/Kotlin/etc project
 
           Usage
-            $ socket manifest gradle [--gradle=path/to/gradle/binary] [--out=path/to/result] DIR
+            $ socket manifest gradle [--bin=path/to/gradle/binary] [--out=path/to/result] DIR
 
           Options
             --bin             Location of gradlew binary to use, default: CWD/gradlew
@@ -57,7 +57,7 @@ describe('socket manifest gradle', async () => {
           Examples
 
             $ socket manifest gradle .
-            $ socket manifest gradle --gradlew=../gradlew ."
+            $ socket manifest gradle --bin=../gradlew ."
       `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
