@@ -20,14 +20,22 @@ describe('socket fix', async () => {
         `
         "Fix "fixable" Socket alerts
 
-          Usage
-            $ socket fix
+              Usage
+                $ socket fix
 
-          Options
-            --dryRun          Do input validation for a command and exit 0 when input is ok
-            --help            Print this help
-            --test            Very the fix by running unit tests
-            --testScript      The test script to run for each fix attempt"
+              Options
+                --dryRun          Do input validation for a command and exit 0 when input is ok
+                --help            Print this help
+                --rangeStyle      Define how updated dependency versions should be written in package.json.
+          Available styles:
+            *\\x09caret - Use ^ range for compatible updates (e.g. ^1.2.3)
+            *\\x09gt - Use >= to allow any newer version (e.g. >=1.2.3)
+            *\\x09lt - Use < to allow only lower versions (e.g. <1.2.3)
+            *\\x09pin - Use the exact version (e.g. 1.2.3)
+            *\\x09preserve - Retain the existing version range as-is
+            *\\x09tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
+                --test            Very the fix by running unit tests
+                --testScript      The test script to run for each fix attempt"
       `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
