@@ -56,7 +56,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} [--gradle=path/to/gradle/binary] [--out=path/to/result] DIR
+      $ ${command} [--bin=path/to/gradle/binary] [--out=path/to/result] DIR
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -84,7 +84,7 @@ const config: CliCommandConfig = {
     Examples
 
       $ ${command} .
-      $ ${command} --gradlew=../gradlew .
+      $ ${command} --bin=../gradlew .
   `
 }
 
