@@ -23,13 +23,11 @@ import { updateManifestByAgent } from './update-manifest-by-agent'
 import constants from '../../constants'
 import { cmdPrefixMessage } from '../../utils/cmd'
 
+import type { GetOverridesResult } from './get-overrides-by-agent'
 import type { AgentLockIncludesFn } from './lockfile-includes-by-agent'
-import type {
-  Agent,
-  EnvDetails,
-  StringKeyValueObject
-} from '../../utils/package-environment'
+import type { EnvDetails } from '../../utils/package-environment'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
+import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
 type AddOverridesOptions = {
   logger?: Logger | undefined
@@ -45,11 +43,6 @@ type AddOverridesState = {
   updatedInWorkspaces: Set<string>
   warnedPnpmWorkspaceRequiresNpm: boolean
 }
-type GetOverridesResult = { type: Agent; overrides: Overrides }
-type NpmOverrides = { [key: string]: string | StringKeyValueObject }
-type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
-type PnpmOrYarnOverrides = { [key: string]: string }
-type Overrides = NpmOverrides | PnpmOrYarnOverrides
 
 const { NPM, PNPM, YARN_CLASSIC } = constants
 

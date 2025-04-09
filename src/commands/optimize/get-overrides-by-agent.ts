@@ -1,18 +1,8 @@
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
-
 import constants from '../../constants'
 
-import type {
-  Agent,
-  StringKeyValueObject
-} from '../../utils/package-environment'
-
-type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
-type NpmOverrides = { [key: string]: string | StringKeyValueObject }
-type PnpmOrYarnOverrides = { [key: string]: string }
-type Overrides = NpmOverrides | PnpmOrYarnOverrides
-type GetOverrides = (pkgJson: PackageJson) => GetOverridesResult
-type GetOverridesResult = { type: Agent; overrides: Overrides }
+import type { Overrides } from './types'
+import type { Agent } from '../../utils/package-environment'
+import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
 const {
   BUN,
@@ -62,6 +52,10 @@ function getOverridesDataClassic(pkgJson: PackageJson) {
   const overrides = (pkgJson as any)?.[RESOLUTIONS] ?? {}
   return { type: YARN_CLASSIC, overrides }
 }
+
+export type GetOverrides = (pkgJson: PackageJson) => GetOverridesResult
+
+export type GetOverridesResult = { type: Agent; overrides: Overrides }
 
 export const overridesDataByAgent = new Map<Agent, GetOverrides>([
   [BUN, getOverridesDataBun],
