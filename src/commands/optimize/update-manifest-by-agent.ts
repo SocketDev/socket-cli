@@ -2,15 +2,10 @@ import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
 
 import constants from '../../constants'
 
-import type {
-  Agent,
-  StringKeyValueObject
-} from '../../utils/package-environment'
+import type { Overrides } from './types'
+import type { Agent } from '../../utils/package-environment'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 
-type NpmOverrides = { [key: string]: string | StringKeyValueObject }
-type PnpmOrYarnOverrides = { [key: string]: string }
-type Overrides = NpmOverrides | PnpmOrYarnOverrides
 type AgentModifyManifestFn = (
   pkgJson: EditablePackageJson,
   overrides: Overrides

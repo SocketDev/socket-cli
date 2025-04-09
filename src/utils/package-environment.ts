@@ -38,7 +38,6 @@ const {
 
 export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
 export type Agent = (typeof AGENTS)[number]
-export type StringKeyValueObject = { [key: string]: string }
 
 const binByAgent = new Map<Agent, string>([
   [BUN, BUN],
