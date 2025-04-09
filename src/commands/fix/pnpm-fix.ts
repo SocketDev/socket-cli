@@ -2,7 +2,6 @@ import { readWantedLockfile } from '@pnpm/lockfile.fs'
 
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
@@ -70,7 +69,7 @@ export async function pnpmFix(
 
   const lockfile = await readWantedLockfile(cwd, { ignoreIncompatible: false })
   if (!lockfile) {
-    return spinner?.stop()
+    return
   }
 
   const alertsMap = await getAlertsMapFromPnpmLockfile(lockfile, {
@@ -81,8 +80,10 @@ export async function pnpmFix(
 
   const infoByPkg = getCveInfoByAlertsMap(alertsMap)
   if (!infoByPkg) {
-    return spinner?.stop()
+    return
   }
+
+  spinner?.start()
 
   const editablePkgJson = await readPackageJson(cwd, { editable: true })
   const { content: pkgJson } = editablePkgJson
@@ -93,11 +94,9 @@ export async function pnpmFix(
   })
   await arb.loadActual()
 
-  spinner?.stop()
-
   for (const { 0: name, 1: infos } of infoByPkg) {
     if (getManifestData(NPM, name)) {
-      logger.info(`Skipping ${name}. Socket Optimize package exists.`)
+      spinner?.info(`Skipping ${name}. Socket Optimize package exists.`)
       continue
     }
     const specs = arrayUnique(
@@ -124,7 +123,6 @@ export async function pnpmFix(
         if (!node) {
           continue
         }
-        spinner?.stop()
         const oldSpec = `${name}@${oldVersion}`
         const availableVersions = Object.keys(packument.versions)
         const targetVersion = findBestPatchVersion(
@@ -181,7 +179,6 @@ export async function pnpmFix(
               : undefined)
           } as PackageJson
 
-          spinner?.start()
           spinner?.info(`Installing ${fixSpec}`)
 
           let saved = false
@@ -203,7 +200,8 @@ export async function pnpmFix(
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
 
-            spinner?.info(`Fixed ${name}`)
+            spinner?.successAndStop(`Fixed ${name}`)
+            spinner?.start()
 
             // Lazily access constants.ENV[CI].
             if (constants.ENV[CI]) {
@@ -224,16 +222,13 @@ export async function pnpmFix(
               // eslint-disable-next-line no-await-in-loop
               await arb.loadActual()
             }
-            spinner?.stop()
-            logger.error(`Failed to fix ${oldSpec}`)
+            spinner?.failAndStop(`Failed to fix ${oldSpec}`)
           }
         } else {
-          spinner?.stop()
-          logger.error(`Could not patch ${oldSpec}`)
+          spinner?.failAndStop(`Could not patch ${oldSpec}`)
         }
       }
     }
   }
-
   spinner?.stop()
 }
