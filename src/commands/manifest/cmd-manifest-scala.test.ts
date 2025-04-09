@@ -21,7 +21,7 @@ describe('socket manifest scala', async () => {
         "[beta] Generate a manifest file (\`pom.xml\`) from Scala's \`build.sbt\` file
 
           Usage
-            $ socket manifest scala [--sbt=path/to/sbt/binary] [--out=path/to/result] FILE|DIR
+            $ socket manifest scala [--bin=path/to/sbt/binary] [--out=path/to/result] FILE|DIR
 
           Options
             --bin             Location of sbt binary to use

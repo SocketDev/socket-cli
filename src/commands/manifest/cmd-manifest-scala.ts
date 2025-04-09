@@ -49,7 +49,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} [--sbt=path/to/sbt/binary] [--out=path/to/result] FILE|DIR
+      $ ${command} [--bin=path/to/sbt/binary] [--out=path/to/result] FILE|DIR
 
     Options
       ${getFlagListOutput(config.flags, 6)}
