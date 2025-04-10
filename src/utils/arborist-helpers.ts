@@ -170,20 +170,20 @@ export function findPackageNode(
   name: string,
   version?: string | undefined
 ): SafeNode | undefined {
-  const queue: Array<{ node: typeof tree }> = [{ node: tree }]
+  const queue: Array<typeof tree> = [tree]
   let sentinel = 0
   while (queue.length) {
     if (sentinel++ === LOOP_SENTINEL) {
       throw new Error('Detected infinite loop in findPackageNodes')
     }
-    const { node: currentNode } = queue.pop()!
+    const currentNode = queue.pop()!
     const node = currentNode.children.get(name)
     if (node && (typeof version !== 'string' || node.version === version)) {
       return node as unknown as SafeNode
     }
     const children = [...currentNode.children.values()]
     for (let i = children.length - 1; i >= 0; i -= 1) {
-      queue.push({ node: children[i] as unknown as SafeNode })
+      queue.push(children[i] as unknown as SafeNode)
     }
   }
 }
@@ -193,21 +193,21 @@ export function findPackageNodes(
   name: string,
   version?: string | undefined
 ): SafeNode[] {
-  const queue: Array<{ node: typeof tree }> = [{ node: tree }]
+  const queue: Array<typeof tree> = [tree]
   const matches: SafeNode[] = []
   let sentinel = 0
   while (queue.length) {
     if (sentinel++ === LOOP_SENTINEL) {
       throw new Error('Detected infinite loop in findPackageNodes')
     }
-    const { node: currentNode } = queue.pop()!
+    const currentNode = queue.pop()!
     const node = currentNode.children.get(name)
     if (node && (typeof version !== 'string' || node.version === version)) {
       matches.push(node as unknown as SafeNode)
     }
     const children = [...currentNode.children.values()]
     for (let i = children.length - 1; i >= 0; i -= 1) {
-      queue.push({ node: children[i] as unknown as SafeNode })
+      queue.push(children[i] as unknown as SafeNode)
     }
   }
   return matches
