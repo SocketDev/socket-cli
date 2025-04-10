@@ -1,14 +1,12 @@
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
+import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 
-type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
-
-export function getDependencyEntries(pkgJson: PackageJson) {
+export function getDependencyEntries(editablePkgJson: EditablePackageJson) {
   const {
     dependencies,
     devDependencies,
     optionalDependencies,
     peerDependencies
-  } = pkgJson
+  } = editablePkgJson.content
   return [
     [
       'dependencies',

@@ -240,7 +240,7 @@ function resetDependencies(deps) {
 
 async function updateDepStats(depStats) {
   const editablePkgJson = await readPackageJson(rootPath, { editable: true })
-  const { content: pkgJson } = editablePkgJson
+
   const oldDepStats = existsSync(depStatsPath)
     ? await readJson(depStatsPath)
     : undefined
@@ -250,7 +250,7 @@ async function updateDepStats(depStats) {
     // preserves dependencies that are indirectly referenced through spawned
     // processes and not directly imported.
     Object.fromEntries(
-      Object.entries(pkgJson.dependencies).filter(
+      Object.entries(editablePkgJson.content.dependencies).filter(
         ({ 0: key }) => !oldDepStats?.transitives?.[key]
       )
     )
@@ -259,9 +259,9 @@ async function updateDepStats(depStats) {
   delete depStats.dependencies[SENTRY_NODE]
   // Remove transitives from dependencies.
   for (const key of Object.keys(oldDepStats?.transitives ?? {})) {
-    if (pkgJson.dependencies[key]) {
-      depStats.transitives[key] = pkgJson.dependencies[key]
-      depStats.external[key] = pkgJson.dependencies[key]
+    if (editablePkgJson.content.dependencies[key]) {
+      depStats.transitives[key] = editablePkgJson.content.dependencies[key]
+      depStats.external[key] = editablePkgJson.content.dependencies[key]
       delete depStats.dependencies[key]
     }
   }
@@ -289,9 +289,8 @@ async function updateDepStats(depStats) {
 
 async function updatePackageJson() {
   const editablePkgJson = await readPackageJson(rootPath, { editable: true })
-  const { content: pkgJson } = editablePkgJson
-  const bin = resetBin(pkgJson.bin)
-  const dependencies = resetDependencies(pkgJson.dependencies)
+  const bin = resetBin(editablePkgJson.content.bin)
+  const dependencies = resetDependencies(editablePkgJson.content.dependencies)
   editablePkgJson.update({
     name: SOCKET_CLI_PACKAGE_NAME,
     description: SOCKET_DESCRIPTION,

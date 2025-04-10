@@ -407,10 +407,11 @@ export function updatePackageJsonFromNode(
   editablePkgJson: EditablePackageJson,
   tree: SafeNode,
   node: SafeNode,
+  targetVersion: string,
   rangeStyle?: RangeStyle | undefined
 ) {
   if (isTopLevel(tree, node)) {
-    const { name, version } = node
+    const { name } = node
     for (const depField of [
       'dependencies',
       'optionalDependencies',
@@ -420,12 +421,12 @@ export function updatePackageJsonFromNode(
         | { [key: string]: string }
         | undefined
       if (oldValue) {
-        const oldVersion = oldValue[name]
-        if (oldVersion) {
+        const refRange = oldValue[name]
+        if (refRange) {
           editablePkgJson.update({
             [depField]: {
               ...oldValue,
-              [name]: applyRange(oldVersion, version, rangeStyle)
+              [name]: applyRange(refRange, targetVersion, rangeStyle)
             }
           })
         }

@@ -84,7 +84,6 @@ export async function npmFix(
   }
 
   const editablePkgJson = await readPackageJson(cwd, { editable: true })
-  const { content: pkgJson } = editablePkgJson
 
   await arb.buildIdealTree()
 
@@ -138,14 +137,17 @@ export async function npmFix(
           targetVersion = node.package.version!
           const fixSpec = `${name}@^${targetVersion}`
           const revertData = {
-            ...(pkgJson.dependencies
-              ? { dependencies: pkgJson.dependencies }
+            ...(editablePkgJson.content.dependencies
+              ? { dependencies: editablePkgJson.content.dependencies }
               : undefined),
-            ...(pkgJson.optionalDependencies
-              ? { optionalDependencies: pkgJson.optionalDependencies }
+            ...(editablePkgJson.content.optionalDependencies
+              ? {
+                  optionalDependencies:
+                    editablePkgJson.content.optionalDependencies
+                }
               : undefined),
-            ...(pkgJson.peerDependencies
-              ? { peerDependencies: pkgJson.peerDependencies }
+            ...(editablePkgJson.content.peerDependencies
+              ? { peerDependencies: editablePkgJson.content.peerDependencies }
               : undefined)
           } as PackageJson
 
@@ -156,6 +158,7 @@ export async function npmFix(
               editablePkgJson,
               arb.idealTree!,
               node,
+              targetVersion,
               rangeStyle
             )
             // eslint-disable-next-line no-await-in-loop
