@@ -249,6 +249,7 @@ export async function pnpmFix(
             // eslint-disable-next-line no-await-in-loop
             prResponse = await openGitHubPullRequest(name, targetVersion, cwd)
           } catch (e) {
+            console.log(e)
             logger.error('Failed to open pull request', e)
           }
           if (prResponse && autoMerge) {
