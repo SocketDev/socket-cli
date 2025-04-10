@@ -3,6 +3,7 @@ import { readWantedLockfile } from '@pnpm/lockfile.fs'
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { isDebug } from '@socketsecurity/registry/lib/debug'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
@@ -26,6 +27,7 @@ import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 import { runAgentInstall } from '../optimize/run-agent'
 
 import type { NormalizedFixOptions } from './types'
+import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
 import type { StringKeyValueObject } from '../../types'
 import type { EnvDetails } from '../../utils/package-environment'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
@@ -34,22 +36,29 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 const { CI, NPM, OVERRIDES, PNPM } = constants
 
 type InstallOptions = {
+  cwd?: string | undefined
   spinner?: Spinner | undefined
+}
+
+async function getActualTree(cwd: string = process.cwd()): Promise<SafeNode> {
+  const arb = new SafeArborist({
+    path: cwd,
+    ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
+  })
+  return await arb.loadActual()
 }
 
 async function install(
   pkgEnvDetails: EnvDetails,
-  arb: SafeArborist,
   options: InstallOptions
-): Promise<void> {
-  const { spinner } = { __proto__: null, ...options } as InstallOptions
+): Promise<SafeNode> {
+  const { cwd, spinner } = { __proto__: null, ...options } as InstallOptions
   await runAgentInstall(pkgEnvDetails, {
     args: ['--no-frozen-lockfile'],
     spinner,
     stdio: isDebug() ? 'inherit' : 'ignore'
   })
-  arb.actualTree = null
-  await arb.loadActual()
+  return await getActualTree(cwd)
 }
 
 export async function pnpmFix(
@@ -84,11 +93,7 @@ export async function pnpmFix(
   const editablePkgJson = await readPackageJson(cwd, { editable: true })
   const { content: pkgJson } = editablePkgJson
 
-  const arb = new SafeArborist({
-    path: cwd,
-    ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
-  })
-  await arb.loadActual()
+  let actualTree = await getActualTree(cwd)
 
   for (const { 0: name, 1: infos } of infoByPkg) {
     if (getManifestData(NPM, name)) {
@@ -96,7 +101,7 @@ export async function pnpmFix(
       continue
     }
     const specs = arrayUnique(
-      findPackageNodes(arb.actualTree!, name).map(n => `${n.name}@${n.version}`)
+      findPackageNodes(actualTree, name).map(n => `${n.name}@${n.version}`)
     )
     const packument =
       specs.length && infos.length
@@ -115,7 +120,7 @@ export async function pnpmFix(
         firstPatchedVersionIdentifier,
         vulnerableVersionRange
       } of infos) {
-        const node = findPackageNode(arb.actualTree!, name, oldVersion)
+        const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
           continue
         }
@@ -130,6 +135,9 @@ export async function pnpmFix(
         const targetPackument = targetVersion
           ? packument.versions[targetVersion]
           : undefined
+        let failed = false
+        let installed = false
+        let saved = false
         if (targetVersion && targetPackument) {
           const oldPnpm = pkgJson[PNPM] as StringKeyValueObject | undefined
           const pnpmKeyCount = oldPnpm ? Object.keys(oldPnpm).length : 0
@@ -177,13 +185,11 @@ export async function pnpmFix(
 
           spinner?.info(`Installing ${fixSpec}`)
 
-          let saved = false
-          let installed = false
           try {
             editablePkgJson.update(updateData)
             updatePackageJsonFromNode(
               editablePkgJson,
-              arb.actualTree!,
+              actualTree,
               node,
               rangeStyle
             )
@@ -192,7 +198,7 @@ export async function pnpmFix(
             saved = true
 
             // eslint-disable-next-line no-await-in-loop
-            await install(pkgEnvDetails, arb, { spinner })
+            actualTree = await install(pkgEnvDetails, { spinner })
             installed = true
 
             if (test) {
@@ -203,21 +209,8 @@ export async function pnpmFix(
 
             spinner?.successAndStop(`Fixed ${name}`)
             spinner?.start()
-
-            // Lazily access constants.ENV[CI].
-            if (constants.ENV[CI]) {
-              // eslint-disable-next-line no-await-in-loop
-              const prResponse = await openGitHubPullRequest(
-                name,
-                targetVersion,
-                cwd
-              )
-              if (autoMerge) {
-                // eslint-disable-next-line no-await-in-loop
-                await enableAutoMerge(prResponse.data)
-              }
-            }
           } catch (e) {
+            failed = true
             spinner?.error(`Reverting ${fixSpec}`, e)
             if (saved) {
               editablePkgJson.update(revertData)
@@ -226,12 +219,36 @@ export async function pnpmFix(
             }
             if (installed) {
               // eslint-disable-next-line no-await-in-loop
-              await install(pkgEnvDetails, arb, { spinner })
+              actualTree = await install(pkgEnvDetails, { spinner })
             }
             spinner?.failAndStop(`Failed to fix ${oldSpec}`)
           }
         } else {
+          failed = true
           spinner?.failAndStop(`Could not patch ${oldSpec}`)
+        }
+        if (
+          !failed &&
+          // Check targetVersion to make TypeScript happy.
+          targetVersion &&
+          // Lazily access constants.ENV[CI].
+          constants.ENV[CI]
+        ) {
+          let prResponse
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            prResponse = await openGitHubPullRequest(name, targetVersion, cwd)
+          } catch (e) {
+            logger.error('Failed to open pull request', e)
+          }
+          if (prResponse && autoMerge) {
+            try {
+              // eslint-disable-next-line no-await-in-loop
+              await enableAutoMerge(prResponse.data)
+            } catch (e) {
+              logger.error('Failed to enable auto-merge in pull request', e)
+            }
+          }
         }
       }
     }

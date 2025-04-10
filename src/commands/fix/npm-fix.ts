@@ -1,5 +1,6 @@
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
@@ -122,6 +123,10 @@ export async function npmFix(
           continue
         }
         const oldSpec = `${name}@${oldVersion}`
+        let targetVersion: string | undefined
+        let failed = false
+        let installed = false
+        let saved = false
         if (
           updateNode(
             node,
@@ -130,7 +135,7 @@ export async function npmFix(
             firstPatchedVersionIdentifier
           )
         ) {
-          const targetVersion = node.package.version!
+          targetVersion = node.package.version!
           const fixSpec = `${name}@^${targetVersion}`
           const revertData = {
             ...(pkgJson.dependencies
@@ -146,8 +151,6 @@ export async function npmFix(
 
           spinner?.info(`Installing ${fixSpec}`)
 
-          let saved = false
-          let installed = false
           try {
             updatePackageJsonFromNode(
               editablePkgJson,
@@ -170,20 +173,8 @@ export async function npmFix(
             }
             spinner?.successAndStop(`Fixed ${name}`)
             spinner?.start()
-            // Lazily access constants.ENV[CI].
-            if (constants.ENV[CI]) {
-              // eslint-disable-next-line no-await-in-loop
-              const prResponse = await openGitHubPullRequest(
-                name,
-                targetVersion,
-                cwd
-              )
-              if (autoMerge) {
-                // eslint-disable-next-line no-await-in-loop
-                await enableAutoMerge(prResponse.data)
-              }
-            }
           } catch {
+            failed = true
             spinner?.error(`Reverting ${fixSpec}`)
             if (saved) {
               editablePkgJson.update(revertData)
@@ -197,7 +188,32 @@ export async function npmFix(
             spinner?.failAndStop(`Failed to fix ${oldSpec}`)
           }
         } else {
+          failed = true
           spinner?.failAndStop(`Could not patch ${oldSpec}`)
+        }
+
+        if (
+          !failed &&
+          // Check targetVersion to make TypeScript happy.
+          targetVersion &&
+          // Lazily access constants.ENV[CI].
+          constants.ENV[CI]
+        ) {
+          let prResponse
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            prResponse = await openGitHubPullRequest(name, targetVersion, cwd)
+          } catch (e) {
+            logger.error('Failed to open pull request', e)
+          }
+          if (prResponse && autoMerge) {
+            try {
+              // eslint-disable-next-line no-await-in-loop
+              await enableAutoMerge(prResponse.data)
+            } catch (e) {
+              logger.error('Failed to enable auto-merge in pull request', e)
+            }
+          }
         }
       }
     }
