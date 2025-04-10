@@ -2,6 +2,7 @@ import { readWantedLockfile } from '@pnpm/lockfile.fs'
 
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
+import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
@@ -44,7 +45,7 @@ async function install(
   await runAgentInstall(pkgEnvDetails, {
     args: ['--no-frozen-lockfile'],
     spinner,
-    stdio: 'ignore'
+    stdio: isDebug() ? 'inherit' : 'ignore'
   })
 }
 
