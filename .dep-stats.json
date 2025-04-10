@@ -32,7 +32,10 @@
     "yargs-parser": "21.1.1",
     "yoctocolors-cjs": "2.1.2"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@octokit/openapi-types": "^24.2.0",
+    "@octokit/types": "^13.10.0"
+  },
   "esm": {
     "@octokit/auth-token": "^5.0.0",
     "@octokit/core": "^6.1.4",

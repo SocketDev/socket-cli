@@ -5,6 +5,11 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants'
 
+import type { components } from '@octokit/openapi-types'
+import type { OctokitResponse } from '@octokit/types'
+
+type PullsCreateResponseData = components['schemas']['pull-request']
+
 const {
   GITHUB_ACTIONS,
   GITHUB_REF_NAME,
@@ -79,11 +84,44 @@ function getOctokit() {
   return _octokit
 }
 
+export async function enableAutoMerge(
+  prResponseData: PullsCreateResponseData
+): Promise<void> {
+  const octokit = getOctokit()
+  const { node_id: prId, number: prNumber } = prResponseData
+
+  try {
+    await octokit.graphql(
+      `
+      mutation EnableAutoMerge($pullRequestId: ID!) {
+        enablePullRequestAutoMerge(input: {
+          pullRequestId: $pullRequestId,
+          mergeMethod: SQUASH
+        }) {
+          pullRequest {
+            number
+            autoMergeRequest {
+              enabledAt
+            }
+          }
+        }
+      }
+      `,
+      {
+        pullRequestId: prId
+      }
+    )
+    logger.info(`Auto-merge enabled for PR #${prNumber}`)
+  } catch (e) {
+    logger.error(`Failed to enable auto-merge for PR #${prNumber}:`, e)
+  }
+}
+
 export async function openGitHubPullRequest(
   name: string,
   targetVersion: string,
   cwd = process.cwd()
-) {
+): Promise<OctokitResponse<PullsCreateResponseData>> {
   // Lazily access constants.ENV[GITHUB_ACTIONS].
   if (constants.ENV[GITHUB_ACTIONS]) {
     // Lazily access constants.ENV[SOCKET_SECURITY_GITHUB_PAT].
@@ -116,7 +154,7 @@ export async function openGitHubPullRequest(
       await spawn('git', ['push', '--set-upstream', 'origin', branch], { cwd })
     }
     const octokit = getOctokit()
-    await octokit.pulls.create({
+    return await octokit.pulls.create({
       owner,
       repo,
       title: commitMsg,
