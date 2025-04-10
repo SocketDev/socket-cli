@@ -39,6 +39,7 @@ type InstallOptions = {
 
 async function install(
   pkgEnvDetails: EnvDetails,
+  arb: SafeArborist,
   options: InstallOptions
 ): Promise<void> {
   const { spinner } = { __proto__: null, ...options } as InstallOptions
@@ -47,6 +48,8 @@ async function install(
     spinner,
     stdio: isDebug() ? 'inherit' : 'ignore'
   })
+  arb.actualTree = null
+  await arb.loadActual()
 }
 
 export async function pnpmFix(
@@ -189,7 +192,7 @@ export async function pnpmFix(
             saved = true
 
             // eslint-disable-next-line no-await-in-loop
-            await install(pkgEnvDetails, { spinner })
+            await install(pkgEnvDetails, arb, { spinner })
             installed = true
 
             if (test) {
@@ -223,10 +226,7 @@ export async function pnpmFix(
             }
             if (installed) {
               // eslint-disable-next-line no-await-in-loop
-              await install(pkgEnvDetails, { spinner })
-              arb.actualTree = null
-              // eslint-disable-next-line no-await-in-loop
-              await arb.loadActual()
+              await install(pkgEnvDetails, arb, { spinner })
             }
             spinner?.failAndStop(`Failed to fix ${oldSpec}`)
           }
