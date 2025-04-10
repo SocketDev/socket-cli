@@ -111,7 +111,7 @@ export async function pnpmFix(
         firstPatchedVersionIdentifier,
         vulnerableVersionRange
       } of infos) {
-        const node = findPackageNode(arb.idealTree!, name, oldVersion)
+        const node = findPackageNode(arb.actualTree!, name, oldVersion)
         if (!node) {
           continue
         }
