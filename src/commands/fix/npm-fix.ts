@@ -6,7 +6,8 @@ import {
   readPackageJson
 } from '@socketsecurity/registry/lib/packages'
 
-import { openGitHubPullRequest } from './open-pr'
+import { enableAutoMerge, openGitHubPullRequest } from './open-pr'
+import { NormalizedFixOptions } from './types'
 import constants from '../../constants'
 import {
   Arborist,
@@ -22,11 +23,9 @@ import {
 } from '../../utils/arborist-helpers'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 
-import type { RangeStyle } from './types'
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
 import type { EnvDetails } from '../../utils/package-environment'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { CI, NPM } = constants
 
@@ -47,25 +46,17 @@ async function install(
   await arb2.reify()
 }
 
-type NpmFixOptions = {
-  cwd?: string | undefined
-  rangeStyle?: RangeStyle | undefined
-  spinner?: Spinner | undefined
-  test?: boolean | undefined
-  testScript?: string | undefined
-}
-
 export async function npmFix(
   _pkgEnvDetails: EnvDetails,
-  options?: NpmFixOptions | undefined
-) {
-  const {
-    cwd = process.cwd(),
+  {
+    autoMerge,
+    cwd,
+    rangeStyle,
     spinner,
-    test = false,
-    testScript = 'test'
-  } = { __proto__: null, ...options } as NpmFixOptions
-
+    test,
+    testScript
+  }: NormalizedFixOptions
+) {
   spinner?.start()
 
   const arb = new SafeArborist({
@@ -158,7 +149,12 @@ export async function npmFix(
           let saved = false
           let installed = false
           try {
-            updatePackageJsonFromNode(editablePkgJson, arb.idealTree!, node)
+            updatePackageJsonFromNode(
+              editablePkgJson,
+              arb.idealTree!,
+              node,
+              rangeStyle
+            )
             // eslint-disable-next-line no-await-in-loop
             await editablePkgJson.save()
             saved = true
@@ -177,7 +173,15 @@ export async function npmFix(
             // Lazily access constants.ENV[CI].
             if (constants.ENV[CI]) {
               // eslint-disable-next-line no-await-in-loop
-              await openGitHubPullRequest(name, targetVersion, cwd)
+              const prResponse = await openGitHubPullRequest(
+                name,
+                targetVersion,
+                cwd
+              )
+              if (autoMerge) {
+                // eslint-disable-next-line no-await-in-loop
+                await enableAutoMerge(prResponse.data)
+              }
             }
           } catch {
             spinner?.error(`Reverting ${fixSpec}`)

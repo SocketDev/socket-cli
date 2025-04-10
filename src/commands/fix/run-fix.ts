@@ -2,60 +2,33 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { npmFix } from './npm-fix'
 import { pnpmFix } from './pnpm-fix'
+import { assignDefaultFixOptions } from './shared'
 import constants from '../../constants'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment'
 
-import type { RangeStyle } from './types'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { FixOptions } from './types'
 
 const { NPM, PNPM } = constants
 
 const CMD_NAME = 'socket fix'
 
-type RunFixOptions = {
-  cwd?: string | undefined
-  rangeStyle?: RangeStyle | undefined
-  spinner?: Spinner | undefined
-  test?: boolean | undefined
-  testScript?: string | undefined
-}
-
-export async function runFix({
-  cwd = process.cwd(),
-  rangeStyle,
-  spinner,
-  test = false,
-  testScript = 'test'
-}: RunFixOptions) {
-  const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
+export async function runFix(options_: FixOptions) {
+  const options = assignDefaultFixOptions({
+    __proto__: null,
+    ...options_
+  } as FixOptions)
+  const pkgEnvDetails = await detectAndValidatePackageEnvironment(options.cwd, {
     cmdName: CMD_NAME,
     logger
   })
   if (!pkgEnvDetails) {
-    spinner?.stop()
     return
   }
   logger.info(`Fixing packages for ${pkgEnvDetails.agent}`)
-  switch (pkgEnvDetails.agent) {
-    case NPM: {
-      await npmFix(pkgEnvDetails, {
-        rangeStyle,
-        spinner,
-        test,
-        testScript
-      })
-      break
-    }
-    case PNPM: {
-      await pnpmFix(pkgEnvDetails, {
-        rangeStyle,
-        spinner,
-        test,
-        testScript
-      })
-      break
-    }
+  const { agent } = pkgEnvDetails
+  if (agent === NPM) {
+    await npmFix(pkgEnvDetails, options)
+  } else if (agent === PNPM) {
+    await pnpmFix(pkgEnvDetails, options)
   }
-  spinner?.stop()
-  // spinner.successAndStop('Socket.dev fix successful')
 }
