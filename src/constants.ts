@@ -359,7 +359,7 @@ const lazyNodeHardenFlags = () =>
       // Node's --frozen-intrinsics workable.
       // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
       // √ https://github.com/pnpm/components/pull/23
-      ['--disable-proto', 'delete', '--frozen-intrinsics', '--no-deprecation']
+      ['--disable-proto', 'throw', '--frozen-intrinsics', '--no-deprecation']
 
 const lazyRootBinPath = () =>
   // Lazily access constants.rootPath.
