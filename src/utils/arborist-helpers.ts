@@ -170,7 +170,7 @@ export function findPackageNode(
   name: string,
   version?: string | undefined
 ): SafeNode | undefined {
-  const queue: Array<typeof tree> = [tree]
+  const queue: SafeNode[] = [tree]
   let sentinel = 0
   while (queue.length) {
     if (sentinel++ === LOOP_SENTINEL) {
@@ -193,7 +193,7 @@ export function findPackageNodes(
   name: string,
   version?: string | undefined
 ): SafeNode[] {
-  const queue: Array<typeof tree> = [tree]
+  const queue: SafeNode[] = [tree]
   const matches: SafeNode[] = []
   let sentinel = 0
   while (queue.length) {
