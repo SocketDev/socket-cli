@@ -213,8 +213,8 @@ export async function pnpmFix(
                 await enableAutoMerge(prResponse.data)
               }
             }
-          } catch {
-            spinner?.error(`Reverting ${fixSpec}`)
+          } catch (e) {
+            spinner?.error(`Reverting ${fixSpec}`, e)
             if (saved) {
               editablePkgJson.update(revertData)
               // eslint-disable-next-line no-await-in-loop
