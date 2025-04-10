@@ -1,10 +1,11 @@
 import { stripIndent } from 'common-tags'
+import terminalLink from 'terminal-link'
 
 import { joinOr } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { runFix } from './run-fix'
-import { RangeStyles } from './types'
+import { RangeStyles } from './shared'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
 import { handleBadInput } from '../../utils/handle-bad-input'
@@ -22,6 +23,14 @@ const config: CliCommandConfig = {
   hidden: true,
   flags: {
     ...commonFlags,
+    autoMerge: {
+      type: 'boolean',
+      default: true,
+      description: `Enable auto-merge for pull requests that Socket opens.\n                        See ${terminalLink(
+        'GitHub documentation',
+        'https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository'
+      )} for managing auto-merge for pull requests in your repository.`
+    },
     rangeStyle: {
       type: 'string',
       default: 'preserve',
@@ -39,7 +48,7 @@ const config: CliCommandConfig = {
     test: {
       type: 'boolean',
       default: true,
-      description: 'Very the fix by running unit tests'
+      description: 'Verify the fix by running unit tests'
     },
     testScript: {
       type: 'string',
@@ -93,6 +102,7 @@ async function run(
   const { spinner } = constants
 
   await runFix({
+    autoMerge: Boolean(cli.flags['autoMerge']),
     spinner,
     rangeStyle: (cli.flags['rangeStyle'] ?? undefined) as
       | RangeStyle

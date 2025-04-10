@@ -24,6 +24,8 @@ describe('socket fix', async () => {
                 $ socket fix
 
               Options
+                --autoMerge       Enable auto-merge for pull requests that Socket opens.
+                                  See GitHub documentation (\\u200bhttps://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository\\u200b) for managing auto-merge for pull requests in your repository.
                 --dryRun          Do input validation for a command and exit 0 when input is ok
                 --help            Print this help
                 --rangeStyle      Define how updated dependency versions should be written in package.json.
@@ -34,7 +36,7 @@ describe('socket fix', async () => {
             *\\x09pin - Use the exact version (e.g. 1.2.3)
             *\\x09preserve - Retain the existing version range as-is
             *\\x09tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
-                --test            Very the fix by running unit tests
+                --test            Verify the fix by running unit tests
                 --testScript      The test script to run for each fix attempt"
       `
       )

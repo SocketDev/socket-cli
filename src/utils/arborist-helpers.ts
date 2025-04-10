@@ -17,8 +17,10 @@ import { Edge } from '../shadow/npm/arborist/lib/edge'
 import { getPublicToken, setupSdk } from '../utils/sdk'
 import { CompactSocketArtifact } from './alert/artifact'
 import { addArtifactToAlertsMap } from './socket-package-alert'
+import { applyRange } from '../commands/fix/shared'
 
 import type { AlertIncludeFilter, AlertsByPkgId } from './socket-package-alert'
+import type { RangeStyle } from '../commands/fix/types'
 import type { Diff } from '../shadow/npm/arborist/lib/arborist/types'
 import type { SafeEdge } from '../shadow/npm/arborist/lib/edge'
 import type { SafeNode } from '../shadow/npm/arborist/lib/node'
@@ -404,7 +406,8 @@ export function updateNode(
 export function updatePackageJsonFromNode(
   editablePkgJson: EditablePackageJson,
   tree: SafeNode,
-  node: SafeNode
+  node: SafeNode,
+  rangeStyle?: RangeStyle | undefined
 ) {
   if (isTopLevel(tree, node)) {
     const { name, version } = node
@@ -419,11 +422,10 @@ export function updatePackageJsonFromNode(
       if (oldValue) {
         const oldVersion = oldValue[name]
         if (oldVersion) {
-          const rangeDecorator = /^[~^]/.exec(oldVersion)?.[0] ?? ''
           editablePkgJson.update({
             [depField]: {
               ...oldValue,
-              [name]: `${rangeDecorator}${version}`
+              [name]: applyRange(oldVersion, version, rangeStyle)
             }
           })
         }
