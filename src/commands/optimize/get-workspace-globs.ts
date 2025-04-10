@@ -2,15 +2,13 @@ import path from 'node:path'
 
 import { parse as yamlParse } from 'yaml'
 
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../../constants'
 import { safeReadFile } from '../../utils/fs'
 
 import type { Agent } from '../../utils/package-environment'
-
-type PackageJson = Awaited<ReturnType<typeof readPackageJson>>
+import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 
 const { PNPM } = constants
 
@@ -19,7 +17,7 @@ const PNPM_WORKSPACE = `${PNPM}-workspace`
 export async function getWorkspaceGlobs(
   agent: Agent,
   pkgPath: string,
-  pkgJson: PackageJson
+  editablePkgJson: EditablePackageJson
 ): Promise<string[] | undefined> {
   let workspacePatterns
   if (agent === PNPM) {
@@ -39,7 +37,7 @@ export async function getWorkspaceGlobs(
       }
     }
   } else {
-    workspacePatterns = pkgJson['workspaces']
+    workspacePatterns = editablePkgJson.content['workspaces']
   }
   return Array.isArray(workspacePatterns)
     ? workspacePatterns

@@ -11,6 +11,7 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 
 import { enableAutoMerge, openGitHubPullRequest } from './open-pr'
+import { applyRange } from './shared'
 import constants from '../../constants'
 import {
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
@@ -91,7 +92,6 @@ export async function pnpmFix(
   spinner?.start()
 
   const editablePkgJson = await readPackageJson(cwd, { editable: true })
-  const { content: pkgJson } = editablePkgJson
 
   let actualTree = await getActualTree(cwd)
 
@@ -139,16 +139,22 @@ export async function pnpmFix(
         let installed = false
         let saved = false
         if (targetVersion && targetPackument) {
-          const oldPnpm = pkgJson[PNPM] as StringKeyValueObject | undefined
-          const pnpmKeyCount = oldPnpm ? Object.keys(oldPnpm).length : 0
+          const oldPnpm = editablePkgJson.content[PNPM] as
+            | StringKeyValueObject
+            | undefined
+          const oldPnpmKeyCount = oldPnpm ? Object.keys(oldPnpm).length : 0
           const oldOverrides = (oldPnpm as StringKeyValueObject)?.[OVERRIDES] as
             | Record<string, string>
             | undefined
-          const overridesCount = oldOverrides
+          const oldOverridesCount = oldOverrides
             ? Object.keys(oldOverrides).length
             : 0
           const overrideKey = `${node.name}@${vulnerableVersionRange}`
-          const overrideRange = `^${targetVersion}`
+          const overrideRange = applyRange(
+            oldOverrides?.[overrideKey] ?? targetVersion,
+            targetVersion,
+            rangeStyle
+          )
           const fixSpec = `${name}@${overrideRange}`
           const updateData = {
             [PNPM]: {
@@ -160,11 +166,11 @@ export async function pnpmFix(
             }
           }
           const revertData = {
-            [PNPM]: pnpmKeyCount
+            [PNPM]: oldPnpmKeyCount
               ? {
                   ...oldPnpm,
                   [OVERRIDES]:
-                    overridesCount === 1
+                    oldOverridesCount === 1
                       ? undefined
                       : {
                           [overrideKey]: undefined,
@@ -172,14 +178,17 @@ export async function pnpmFix(
                         }
                 }
               : undefined,
-            ...(pkgJson.dependencies
-              ? { dependencies: pkgJson.dependencies }
+            ...(editablePkgJson.content.dependencies
+              ? { dependencies: editablePkgJson.content.dependencies }
               : undefined),
-            ...(pkgJson.optionalDependencies
-              ? { optionalDependencies: pkgJson.optionalDependencies }
+            ...(editablePkgJson.content.optionalDependencies
+              ? {
+                  optionalDependencies:
+                    editablePkgJson.content.optionalDependencies
+                }
               : undefined),
-            ...(pkgJson.peerDependencies
-              ? { peerDependencies: pkgJson.peerDependencies }
+            ...(editablePkgJson.content.peerDependencies
+              ? { peerDependencies: editablePkgJson.content.peerDependencies }
               : undefined)
           } as PackageJson
 
@@ -191,6 +200,7 @@ export async function pnpmFix(
               editablePkgJson,
               actualTree,
               node,
+              targetVersion,
               rangeStyle
             )
             // eslint-disable-next-line no-await-in-loop
