@@ -80,10 +80,12 @@ export async function addOverrides(
   if (editablePkgJson === undefined) {
     editablePkgJson = await readPackageJson(pkgPath, { editable: true })
   }
-  const { content: pkgJson } = editablePkgJson
-
   const workspaceName = path.relative(rootPath, pkgPath)
-  const workspaceGlobs = await getWorkspaceGlobs(agent, pkgPath, pkgJson)
+  const workspaceGlobs = await getWorkspaceGlobs(
+    agent,
+    pkgPath,
+    editablePkgJson
+  )
   const isRoot = pkgPath === rootPath
   const isLockScanned = isRoot && !prod
   const isWorkspace = !!workspaceGlobs
@@ -104,12 +106,12 @@ export async function addOverrides(
   }
 
   const overridesDataObjects = [] as GetOverridesResult[]
-  if (pkgJson['private'] || isWorkspace) {
-    overridesDataObjects.push(overridesDataByAgent.get(agent)!(pkgJson))
+  if (editablePkgJson.content['private'] || isWorkspace) {
+    overridesDataObjects.push(overridesDataByAgent.get(agent)!(editablePkgJson))
   } else {
     overridesDataObjects.push(
-      overridesDataByAgent.get(NPM)!(pkgJson),
-      overridesDataByAgent.get(YARN_CLASSIC)!(pkgJson)
+      overridesDataByAgent.get(NPM)!(editablePkgJson),
+      overridesDataByAgent.get(YARN_CLASSIC)!(editablePkgJson)
     )
   }
 
@@ -118,7 +120,7 @@ export async function addOverrides(
   )
 
   const depAliasMap = new Map<string, string>()
-  const depEntries = getDependencyEntries(pkgJson)
+  const depEntries = getDependencyEntries(editablePkgJson)
 
   const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
     semver.satisfies(

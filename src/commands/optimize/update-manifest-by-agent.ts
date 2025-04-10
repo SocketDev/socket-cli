@@ -60,8 +60,7 @@ function updatePkgJsonField(
   field: string,
   value: any
 ) {
-  const { content: pkgJson } = editablePkgJson
-  const oldValue = pkgJson[field]
+  const oldValue = editablePkgJson.content[field]
   if (oldValue) {
     // The field already exists so we simply update the field value.
     if (field === PNPM) {
@@ -86,14 +85,14 @@ function updatePkgJsonField(
                   overrides: undefined
                 }
               }
-            : { [field]: undefined }) as typeof pkgJson
+            : { [field]: undefined }) as typeof editablePkgJson.content
         )
       }
     } else if (field === OVERRIDES || field === RESOLUTIONS) {
       // Properties with undefined values are omitted when saved as JSON.
       editablePkgJson.update({
         [field]: hasKeys(value) ? value : undefined
-      } as typeof pkgJson)
+      } as typeof editablePkgJson.content)
     } else {
       editablePkgJson.update({ [field]: value })
     }
@@ -108,7 +107,7 @@ function updatePkgJsonField(
   // Since the field doesn't exist we want to insert it into the package.json
   // in a place that makes sense, e.g. close to the "dependencies" field. If
   // we can't find a place to insert the field we'll add it to the bottom.
-  const entries = Object.entries(pkgJson)
+  const entries = Object.entries(editablePkgJson.content)
   let insertIndex = -1
   let isPlacingHigher = false
   if (field === OVERRIDES) {
