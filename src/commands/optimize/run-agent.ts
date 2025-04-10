@@ -7,7 +7,7 @@ import { safeNpmInstall } from '../../utils/npm'
 
 import type { EnvDetails } from '../../utils/package-environment'
 
-const { NPM } = constants
+const { NPM, PNPM } = constants
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 type SpawnResult = ReturnType<typeof spawn>
@@ -34,6 +34,8 @@ export function runAgentInstall(
     spinner,
     ...spawnOptions
   } = { __proto__: null, ...options } as AgentInstallOptions
+  const skipNodeHardenFlags =
+    pkgEnvDetails.agent === PNPM && pkgEnvDetails.agentVersion.major < 11
   return spawn(agentExecPath, ['install', ...args], {
     spinner,
     stdio: 'inherit',
@@ -41,8 +43,10 @@ export function runAgentInstall(
     env: {
       ...process.env,
       NODE_OPTIONS: cmdFlagsToString([
-        // Lazily access constants.nodeHardenFlags.
-        ...constants.nodeHardenFlags,
+        ...(skipNodeHardenFlags
+          ? []
+          : // Lazily access constants.nodeHardenFlags.
+            constants.nodeHardenFlags),
         // Lazily access constants.nodeNoWarningsFlags.
         ...constants.nodeNoWarningsFlags
       ]),
