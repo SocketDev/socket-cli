@@ -35,7 +35,7 @@ export function runAgentInstall(
     ...spawnOptions
   } = { __proto__: null, ...options } as AgentInstallOptions
   const skipNodeHardenFlags =
-    pkgEnvDetails.agent === PNPM && pkgEnvDetails.agentVersion.major < 11
+    agent === PNPM && pkgEnvDetails.agentVersion.major < 11
   return spawn(agentExecPath, ['install', ...args], {
     spinner,
     stdio: 'inherit',
