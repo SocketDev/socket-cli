@@ -8,7 +8,7 @@ import {
   readPackageJson
 } from '@socketsecurity/registry/lib/packages'
 
-import { openGitHubPullRequest } from './open-pr'
+import { enableAutoMerge, openGitHubPullRequest } from './open-pr'
 import constants from '../../constants'
 import {
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
@@ -24,7 +24,7 @@ import { getAlertsMapFromPnpmLockfile } from '../../utils/pnpm-lock-yaml'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 import { runAgentInstall } from '../optimize/run-agent'
 
-import type { RangeStyle } from './types'
+import type { NormalizedFixOptions } from './types'
 import type { StringKeyValueObject } from '../../types'
 import type { EnvDetails } from '../../utils/package-environment'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
@@ -48,25 +48,17 @@ async function install(
   })
 }
 
-type PnpmFixOptions = {
-  cwd?: string | undefined
-  rangeStyle?: RangeStyle | undefined
-  spinner?: Spinner | undefined
-  test?: boolean | undefined
-  testScript?: string | undefined
-}
-
 export async function pnpmFix(
   pkgEnvDetails: EnvDetails,
-  options?: PnpmFixOptions
-) {
-  const {
-    cwd = process.cwd(),
+  {
+    autoMerge,
+    cwd,
+    rangeStyle,
     spinner,
-    test = false,
-    testScript = 'test'
-  } = { __proto__: null, ...options } as PnpmFixOptions
-
+    test,
+    testScript
+  }: NormalizedFixOptions
+) {
   const lockfile = await readWantedLockfile(cwd, { ignoreIncompatible: false })
   if (!lockfile) {
     return
@@ -185,7 +177,12 @@ export async function pnpmFix(
           let installed = false
           try {
             editablePkgJson.update(updateData)
-            updatePackageJsonFromNode(editablePkgJson, arb.actualTree!, node)
+            updatePackageJsonFromNode(
+              editablePkgJson,
+              arb.actualTree!,
+              node,
+              rangeStyle
+            )
             // eslint-disable-next-line no-await-in-loop
             await editablePkgJson.save()
             saved = true
@@ -206,7 +203,15 @@ export async function pnpmFix(
             // Lazily access constants.ENV[CI].
             if (constants.ENV[CI]) {
               // eslint-disable-next-line no-await-in-loop
-              await openGitHubPullRequest(name, targetVersion, cwd)
+              const prResponse = await openGitHubPullRequest(
+                name,
+                targetVersion,
+                cwd
+              )
+              if (autoMerge) {
+                // eslint-disable-next-line no-await-in-loop
+                await enableAutoMerge(prResponse.data)
+              }
             }
           } catch {
             spinner?.error(`Reverting ${fixSpec}`)
