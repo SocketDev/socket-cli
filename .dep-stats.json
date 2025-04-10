@@ -10,8 +10,8 @@
     "@socketregistry/is-interactive": "1.0.5",
     "@socketregistry/packageurl-js": "1.0.5",
     "@socketsecurity/config": "2.1.3",
-    "@socketsecurity/registry": "1.0.140",
-    "@socketsecurity/sdk": "1.4.26",
+    "@socketsecurity/registry": "1.0.141",
+    "@socketsecurity/sdk": "1.4.27",
     "browserslist": "4.24.4",
     "chalk-table": "1.0.2",
     "cmd-shim": "7.0.0",
@@ -33,8 +33,8 @@
     "yoctocolors-cjs": "2.1.2"
   },
   "devDependencies": {
-    "@octokit/openapi-types": "^24.2.0",
-    "@octokit/types": "^13.10.0"
+    "@octokit/openapi-types": "^25.0.0",
+    "@octokit/types": "^14.0.0"
   },
   "esm": {
     "@octokit/auth-token": "^5.0.0",
