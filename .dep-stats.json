@@ -10,7 +10,7 @@
     "@socketregistry/is-interactive": "1.0.5",
     "@socketregistry/packageurl-js": "1.0.5",
     "@socketsecurity/config": "2.1.3",
-    "@socketsecurity/registry": "1.0.141",
+    "@socketsecurity/registry": "1.0.142",
     "@socketsecurity/sdk": "1.4.28",
     "browserslist": "4.24.4",
     "chalk-table": "1.0.2",
