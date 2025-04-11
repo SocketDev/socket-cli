@@ -6,29 +6,17 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
-// import MagicString from 'magic-string'
-import { readPackageUpSync } from 'read-package-up'
-import rangesIntersect from 'semver/ranges/intersects.js'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
-import {
-  isBlessedPackageName,
-  isValidPackageName,
-  readPackageJsonSync
-} from '@socketsecurity/registry/lib/packages'
-import { isRelative } from '@socketsecurity/registry/lib/path'
-// import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
+import { readPackageJsonSync } from '@socketsecurity/registry/lib/packages'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../scripts/constants.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
   getPackageName,
-  getPackageNameEnd,
   isBuiltin,
-  isEsmId,
-  normalizeId,
-  resolveId
+  normalizeId
 } from '../scripts/utils/packages.js'
 
 const require = createRequire(import.meta.url)
@@ -44,7 +32,6 @@ const {
   INLINED_SOCKET_CLI_VERSION,
   INLINED_SOCKET_CLI_VERSION_HASH,
   INLINED_SYNP_VERSION,
-  LATEST,
   ROLLUP_ENTRY_SUFFIX,
   ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_NPM_BIN,
@@ -55,31 +42,14 @@ const {
   VITEST
 } = constants
 
-export const EXTERNAL_PACKAGES = ['blessed']
-
-export const INLINED_PACKAGES = [
-  '@babel/runtime'
-  // 'blessed-contrib',
-  // // 'blessed-contrib' package dependencies.
-  // 'ansi-escapes',
-  // 'ansi-regex',
-  // 'bresenham',
-  // 'buffers',
-  // 'cardinal',
-  // 'chalk',
-  // 'charm',
-  // 'cli-table3',
-  // 'drawille-blessed-contrib',
-  // 'drawille-canvas-blessed-contrib',
-  // 'esprima',
-  // 'event-stream',
-  // 'gl-matrix',
-  // 'has-flag',
-  // 'node-emoji',
-  // 'png-js',
-  // 'readable-stream',
-  // 'supports-hyperlinks',
-  // 'x256'
+export const EXTERNAL_PACKAGES = [
+  '@socketregistry/hyrious__bun.lockb',
+  '@socketregistry/indent-string',
+  '@socketregistry/is-interactive',
+  '@socketregistry/packageurl-js',
+  '@socketsecurity/registry',
+  '@socketsecurity/sdk',
+  'blessed'
 ]
 
 const SOCKET_INTEROP = '_socketInterop'
@@ -110,8 +80,9 @@ const firstUseStrictRegExp = /'use strict';?/
 
 const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
 
-// const blessedRequiresRegExp =
-//   /(?<=require\(["'])blessed(?:\/[^"']+)?(?=["']\))/g
+// eslint-disable-next-line no-unused-vars
+const blessedRequiresRegExp =
+  /(?<=require\(["'])blessed(?:\/[^"']+)?(?=["']\))/g
 
 const requireUrlAssignmentRegExp =
   /(?<=var +)[$\w]+(?= *= *require\(["']node:url["']\))/
@@ -149,52 +120,9 @@ function getSocketCliVersionHash() {
   return _socketVersionHash
 }
 
-function isAncestorsExternal(id, depStats) {
-  // Lazily access constants.rootPackageJsonPath.
-  const { dependencies: rootPkgDeps } = require(constants.rootPackageJsonPath)
-  let currNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH)
-  while (currNmIndex !== -1) {
-    const nextNmIndex = id.indexOf(SLASH_NODE_MODULES_SLASH, currNmIndex + 1)
-    const nameStart = currNmIndex + SLASH_NODE_MODULES_SLASH.length
-    const nameEnd = getPackageNameEnd(id, nameStart)
-    const name = id.slice(nameStart, nameEnd)
-    const nameSlashFilename = id.slice(
-      currNmIndex + SLASH_NODE_MODULES_SLASH.length,
-      nextNmIndex === -1 ? id.length : nextNmIndex
-    )
-    if (INLINED_PACKAGES.includes(name) || isEsmId(nameSlashFilename, id)) {
-      return false
-    }
-    const {
-      dependencies = {},
-      optionalDependencies = {},
-      peerDependencies = {},
-      version
-    } = readPackageJsonSync(id.slice(0, nameEnd))
-    const range =
-      dependencies[name] ??
-      optionalDependencies[name] ??
-      peerDependencies[name] ??
-      version
-    const seenRange = rootPkgDeps[name] ?? depStats.external[name]
-    if (seenRange && !rangesIntersect(seenRange, range)) {
-      return false
-    }
-    currNmIndex = nextNmIndex
-  }
-  return true
-}
-
 export default function baseConfig(extendConfig = {}) {
   // Lazily access constants.rootSrcPath.
   const { rootSrcPath } = constants
-  const {
-    dependencies: pkgDeps,
-    devDependencies: pkgDevDeps,
-    overrides: pkgOverrides
-    // Lazily access constants.rootPackageJsonPath.
-  } = require(constants.rootPackageJsonPath)
-
   const constantsSrcPath = path.join(rootSrcPath, `constants.ts`)
   const shadowNpmBinSrcPath = path.join(rootSrcPath, 'shadow/npm/bin.ts')
   const shadowNpmInjectSrcPath = path.join(rootSrcPath, 'shadow/npm/inject.ts')
@@ -204,98 +132,27 @@ export default function baseConfig(extendConfig = {}) {
   const babelConfig = require(constants.babelConfigPath)
   const tsPlugin = require('rollup-plugin-ts')
 
-  const depStats = {
-    dependencies: { __proto__: null },
-    devDependencies: { __proto__: null },
-    esm: { __proto__: null },
-    external: { __proto__: null },
-    transitives: { __proto__: null }
-  }
-
   const config = {
-    __proto__: {
-      meta: {
-        depStats
-      }
-    },
-    external(id_, parentId_) {
+    external(id_) {
       if (id_.endsWith(ROLLUP_EXTERNAL_SUFFIX) || isBuiltin(id_)) {
         return true
       }
       const id = normalizeId(id_)
-      const name = getPackageName(id)
-      if (
-        pkgOverrides[name] ||
-        isBlessedPackageName(name) ||
-        EXTERNAL_PACKAGES.includes(name)
-      ) {
-        return true
-      }
-      if (
-        INLINED_PACKAGES.includes(name) ||
-        id.startsWith(rootSrcPath) ||
-        id.endsWith('.mjs') ||
-        id.endsWith('.mts') ||
-        isRelative(id) ||
-        !isValidPackageName(name)
-      ) {
-        return false
-      }
-      const parentId = parentId_ ? resolveId(parentId_) : undefined
-      if (parentId && !isAncestorsExternal(parentId, depStats)) {
-        return false
-      }
-      const resolvedId = resolveId(id, parentId)
-      if (!isAncestorsExternal(resolvedId, depStats)) {
-        return false
-      }
-      if (isEsmId(resolvedId, parentId)) {
-        const parentPkg = parentId
-          ? readPackageUpSync({ cwd: path.dirname(parentId) })?.packageJson
-          : undefined
-        depStats.esm[name] =
-          pkgDeps[name] ??
-          pkgDevDeps[name] ??
-          parentPkg?.dependencies?.[name] ??
-          parentPkg?.optionalDependencies?.[name] ??
-          parentPkg?.peerDependencies?.[name] ??
-          readPackageUpSync({ cwd: path.dirname(resolvedId) })?.packageJson
-            ?.version ??
-          LATEST
-        return false
-      }
-      const parentNmIndex = parentId.lastIndexOf(SLASH_NODE_MODULES_SLASH)
-      if (parentNmIndex !== -1) {
-        const parentNameStart = parentNmIndex + SLASH_NODE_MODULES_SLASH.length
-        const parentNameEnd = getPackageNameEnd(parentId, parentNameStart)
-        const {
-          dependencies = {},
-          optionalDependencies = {},
-          peerDependencies = {},
-          version
-        } = readPackageJsonSync(parentId.slice(0, parentNameEnd))
-        const range =
-          dependencies[name] ??
-          optionalDependencies[name] ??
-          peerDependencies[name] ??
-          version
-        const seenRange = pkgDeps[name] ?? depStats.external[name]
-        if (seenRange) {
-          return rangesIntersect(seenRange, range)
-        }
-        depStats.external[name] = range
-        depStats.transitives[name] = range
-      } else if (pkgDeps[name]) {
-        depStats.external[name] = pkgDeps[name]
-        depStats.dependencies[name] = pkgDeps[name]
-      } else if (pkgDevDeps[name]) {
-        depStats.devDependencies[name] = pkgDevDeps[name]
-      }
-      return true
+      return (
+        id.endsWith('.d.cts') ||
+        id.endsWith('.d.mts') ||
+        id.endsWith('.d.ts') ||
+        EXTERNAL_PACKAGES.includes(getPackageName(id))
+      )
     },
     onwarn(warning, warn) {
-      // Suppress THIS_IS_UNDEFINED warnings.
-      if (warning.code === 'THIS_IS_UNDEFINED') {
+      // Suppress FILE_NAME_CONFLICT, INVALID_ANNOTATION, and THIS_IS_UNDEFINED
+      // warnings.
+      if (
+        warning.code === 'FILE_NAME_CONFLICT' ||
+        warning.code === 'INVALID_ANNOTATION' ||
+        warning.code === 'THIS_IS_UNDEFINED'
+      ) {
         return
       }
       // Forward other warnings.

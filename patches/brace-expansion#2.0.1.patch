@@ -1,0 +1,15 @@
+Index: /brace-expansion/index.js
+===================================================================
+--- /brace-expansion/index.js
++++ /brace-expansion/index.js
+@@ -103,9 +103,9 @@
+   var post = m.post.length
+     ? expand(m.post, false)
+     : [''];
+ 
+-  if (/\$$/.test(m.pre)) {    
++  if (m.pre.endsWith('$')) {
+     for (var k = 0; k < post.length; k++) {
+       var expansion = pre+ '{' + m.body + '}' + post[k];
+       expansions.push(expansion);
+     }
