@@ -110,8 +110,7 @@ const firstUseStrictRegExp = /'use strict';?/
 
 const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
 
-const requireBlessedAssignmentRegExp =
-  /(?<=var +)[$\w]+(?= *= *require\(["']blessed["']\))/
+const blessedRequiresRegExp = /(?<=require\(["'])blessed(?:\/[^"']+)?(?=["']\))/g
 
 const requireUrlAssignmentRegExp =
   /(?<=var +)[$\w]+(?= *= *require\(["']node:url["']\))/
@@ -415,40 +414,11 @@ export default function baseConfig(extendConfig = {}) {
         find: danglingRequiresRegExp,
         replace: ''
       }),
-      // Replace hoisted requires of ./dist/blessed modules with lazily loaded
-      // variants.
-      {
-        name: 'modify-blessed-requires',
-        renderChunk(code) {
-          const s = new MagicString(code)
-          const varName = requireBlessedAssignmentRegExp.exec(code)?.[0]
-          if (varName) {
-            const varNameAssignmentRegExp = new RegExp(
-              `var\\s+${escapeRegExp(varName)}\\s*=.+`,
-              'g'
-            )
-            let match
-            while ((match = varNameAssignmentRegExp.exec(code)) !== null) {
-              s.overwrite(match.index, match.index + match[0].length, '')
-            }
-            const varNameRegExp = new RegExp(
-              `(?<!var\\s+)\\b${escapeRegExp(varName)}\\b`,
-              'g'
-            )
-            while ((match = varNameRegExp.exec(code)) !== null) {
-              s.overwrite(
-                match.index,
-                match.index + match[0].length,
-                "require('../blessed/lib/blessed')"
-              )
-            }
-          }
-          return {
-            code: s.toString(),
-            map: s.generateMap()
-          }
-        }
-      },
+      // Replace require('blessed/lib/widgets/xyz') with require('../blessed/lib/widgets/xyz').
+      socketModifyPlugin({
+        find: blessedRequiresRegExp,
+        replace: (id) => `../${id}`
+      }),
       commonjsPlugin({
         defaultIsModuleExports: true,
         extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
