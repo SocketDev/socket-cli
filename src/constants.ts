@@ -355,11 +355,17 @@ const lazyNodeHardenFlags = () =>
     ? []
     : // Harden Node security.
       // https://nodejs.org/en/learn/getting-started/security-best-practices
-      // We have contributed the following patches to our dependencies to make
-      // Node's --frozen-intrinsics workable.
-      // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
-      // √ https://github.com/pnpm/components/pull/23
-      ['--disable-proto', 'throw', '--frozen-intrinsics', '--no-deprecation']
+      [
+        '--disable-proto',
+        'throw',
+        // We have contributed the following patches to our dependencies to make
+        // Node's --frozen-intrinsics workable.
+        // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
+        // √ https://github.com/pnpm/components/pull/23
+        // TODO: Investigate why @octokit/rest errors with it enabled.
+        // '--frozen-intrinsics',
+        '--no-deprecation'
+      ]
 
 const lazyRootBinPath = () =>
   // Lazily access constants.rootPath.
