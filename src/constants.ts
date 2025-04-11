@@ -56,6 +56,7 @@ type ENV = Remap<
       SOCKET_SECURITY_API_PROXY: string
       SOCKET_SECURITY_API_TOKEN: string
       SOCKET_SECURITY_GITHUB_PAT: string
+      TERM: string
       XDG_DATA_HOME: string
     }>
 >
@@ -128,6 +129,7 @@ type Constants = Remap<
     readonly SOCKET_SECURITY_API_PROXY: 'SOCKET_SECURITY_API_PROXY'
     readonly SOCKET_SECURITY_API_TOKEN: 'SOCKET_SECURITY_API_TOKEN'
     readonly SOCKET_SECURITY_GITHUB_PAT: 'SOCKET_SECURITY_GITHUB_PAT'
+    readonly TERM: 'TERM'
     readonly VLT: 'vlt'
     readonly WITH_SENTRY: 'with-sentry'
     readonly XDG_DATA_HOME: 'XDG_DATA_HOME'
@@ -136,6 +138,11 @@ type Constants = Remap<
     readonly YARN_CLASSIC: 'yarn/classic'
     readonly YARN_LOCK: 'yarn.lock'
     readonly bashRcPath: string
+    readonly blessedOptions: {
+      smartCSR: boolean
+      term: string
+      useBCE: boolean
+    }
     readonly distCliPath: string
     readonly distInstrumentWithSentryPath: string
     readonly distPath: string
@@ -209,6 +216,7 @@ const SOCKET_SECURITY_API_BASE_URL = 'SOCKET_SECURITY_API_BASE_URL'
 const SOCKET_SECURITY_API_PROXY = 'SOCKET_SECURITY_API_PROXY'
 const SOCKET_SECURITY_API_TOKEN = 'SOCKET_SECURITY_API_TOKEN'
 const SOCKET_SECURITY_GITHUB_PAT = 'SOCKET_SECURITY_GITHUB_PAT'
+const TERM = 'TERM'
 const VLT = 'vlt'
 const WITH_SENTRY = 'with-sentry'
 const XDG_DATA_HOME = 'XDG_DATA_HOME'
@@ -287,6 +295,8 @@ const LAZY_ENV = () => {
     // access token with read/write permissions set for "Contents" and "Pull Request".
     // https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
     SOCKET_SECURITY_GITHUB_PAT: envAsString(env['SOCKET_SECURITY_GITHUB_PAT']),
+    // Specifies the type of terminal or terminal emulator being used by the process.
+    TERM: envAsString(env['TERM']),
     // The location of the base directory on Linux and MacOS used to store
     // user-specific data files, defaulting to $HOME/.local/share if not set or empty.
     XDG_DATA_HOME: envAsString(env['XDG_DATA_HOME'])
@@ -296,6 +306,14 @@ const LAZY_ENV = () => {
 const lazyBashRcPath = () =>
   // Lazily access constants.homePath.
   path.join(constants.homePath, '.bashrc')
+
+const lazyBlessedOptions = () =>
+  Object.freeze({
+    smartCSR: true,
+    // Lazily access constants.WIN32.
+    term: constants.WIN32 ? 'windows-ansi' : 'xterm',
+    useBCE: true
+  })
 
 const lazyDistCliPath = () =>
   // Lazily access constants.distPath.
@@ -451,6 +469,7 @@ const constants = createConstantsObject(
     SOCKET_SECURITY_API_PROXY,
     SOCKET_SECURITY_API_TOKEN,
     SOCKET_SECURITY_GITHUB_PAT,
+    TERM,
     VLT,
     WITH_SENTRY,
     XDG_DATA_HOME,
@@ -459,6 +478,7 @@ const constants = createConstantsObject(
     YARN_CLASSIC,
     YARN_LOCK,
     bashRcPath: undefined,
+    blessedOptions: undefined,
     distCliPath: undefined,
     distInstrumentWithSentryPath: undefined,
     distPath: undefined,
@@ -479,6 +499,7 @@ const constants = createConstantsObject(
       DIST_TYPE: LAZY_DIST_TYPE,
       ENV: LAZY_ENV,
       bashRcPath: lazyBashRcPath,
+      blessedOptions: lazyBlessedOptions,
       distCliPath: lazyDistCliPath,
       distInstrumentWithSentryPath: lazyDistInstrumentWithSentryPath,
       distPath: lazyDistPath,

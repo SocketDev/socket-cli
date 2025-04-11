@@ -1,7 +1,8 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { ThreadFeedResponse, ThreatResult } from './types'
+import constants from '../../constants'
 
+import type { ThreadFeedResponse, ThreatResult } from './types'
 import type { Widgets } from 'blessed'
 
 export async function outputThreatFeed(
@@ -27,7 +28,10 @@ export async function outputThreatFeed(
 
   // Note: this temporarily takes over the terminal (just like `man` does).
   const ScreenWidget = require('blessed/lib/widgets/screen')
-  const screen: Widgets.Screen = new ScreenWidget()
+  // Lazily access constants.blessedOptions.
+  const screen: Widgets.Screen = new ScreenWidget({
+    ...constants.blessedOptions
+  })
   // Register these keys first so you can always exit, even when it gets stuck
   // If we don't do this and the code crashes, the user must hard-kill the
   // node process just to exit it. That's very bad UX.
