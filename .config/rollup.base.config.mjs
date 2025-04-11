@@ -59,27 +59,27 @@ export const EXTERNAL_PACKAGES = ['blessed']
 
 export const INLINED_PACKAGES = [
   '@babel/runtime',
-  'blessed-contrib',
-  // 'blessed-contrib' package dependencies.
-  'ansi-escapes',
-  'ansi-regex',
-  'bresenham',
-  'buffers',
-  'cardinal',
-  'chalk',
-  'charm',
-  'cli-table3',
-  'drawille-blessed-contrib',
-  'drawille-canvas-blessed-contrib',
-  'esprima',
-  'event-stream',
-  'gl-matrix',
-  'has-flag',
-  'node-emoji',
-  'png-js',
-  'readable-stream',
-  'supports-hyperlinks',
-  'x256'
+  // 'blessed-contrib',
+  // // 'blessed-contrib' package dependencies.
+  // 'ansi-escapes',
+  // 'ansi-regex',
+  // 'bresenham',
+  // 'buffers',
+  // 'cardinal',
+  // 'chalk',
+  // 'charm',
+  // 'cli-table3',
+  // 'drawille-blessed-contrib',
+  // 'drawille-canvas-blessed-contrib',
+  // 'esprima',
+  // 'event-stream',
+  // 'gl-matrix',
+  // 'has-flag',
+  // 'node-emoji',
+  // 'png-js',
+  // 'readable-stream',
+  // 'supports-hyperlinks',
+  // 'x256'
 ]
 
 const SOCKET_INTEROP = '_socketInterop'
@@ -415,10 +415,10 @@ export default function baseConfig(extendConfig = {}) {
         replace: ''
       }),
       // Replace require('blessed/lib/widgets/xyz') with require('../blessed/lib/widgets/xyz').
-      socketModifyPlugin({
-        find: blessedRequiresRegExp,
-        replace: (id) => `../${id}`
-      }),
+      // socketModifyPlugin({
+      //   find: blessedRequiresRegExp,
+      //   replace: (id) => `../${id}`
+      // }),
       commonjsPlugin({
         defaultIsModuleExports: true,
         extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
