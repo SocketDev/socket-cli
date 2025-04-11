@@ -117,7 +117,7 @@ export async function openGitHubPullRequest(
       owner,
       repo,
       title: commitMsg,
-      head: branch,
+      head: `${owner}:${branch}`,
       base: baseBranch,
       body: `[socket] Upgrade \`${name}\` to ${version}`
     })
