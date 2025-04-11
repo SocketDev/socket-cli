@@ -59,10 +59,10 @@ export const EXTERNAL_PACKAGES = ['blessed']
 
 export const INLINED_PACKAGES = [
   '@babel/runtime',
+  'blessed-contrib',
   // 'blessed-contrib' package dependencies.
   'ansi-escapes',
   'ansi-regex',
-  'blessed-contrib',
   'bresenham',
   'buffers',
   'cardinal',
