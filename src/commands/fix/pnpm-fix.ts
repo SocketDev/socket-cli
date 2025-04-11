@@ -11,10 +11,14 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 
 import {
+  checkoutBaseBranchIfAvailable,
+  getBaseBranch,
+  getSocketBranchName
+} from './git'
+import {
   doesPullRequestExistForBranch,
   enableAutoMerge,
   getGitHubRepoInfo,
-  getSocketBranchName,
   openGitHubPullRequest
 } from './open-pr'
 import { applyRange } from './shared'
@@ -203,6 +207,13 @@ export async function pnpmFix(
 
         spinner?.info(`Installing ${fixSpec}`)
 
+        const { owner, repo } = getGitHubRepoInfo()
+        const baseBranch = getBaseBranch()
+        const branch = getSocketBranchName(name, targetVersion)
+
+        // eslint-disable-next-line no-await-in-loop
+        await checkoutBaseBranchIfAvailable(baseBranch, cwd)
+
         let installed = false
         let saved = false
         try {
@@ -244,8 +255,6 @@ export async function pnpmFix(
           return
         }
 
-        const { owner, repo } = getGitHubRepoInfo()
-        const branch = getSocketBranchName(name, targetVersion)
         if (
           // Lazily access constants.ENV[CI].
           constants.ENV[CI] &&
@@ -258,6 +267,7 @@ export async function pnpmFix(
             prResponse = await openGitHubPullRequest(
               owner,
               repo,
+              baseBranch,
               branch,
               name,
               targetVersion,
