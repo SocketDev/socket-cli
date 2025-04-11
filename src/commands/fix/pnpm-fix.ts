@@ -203,7 +203,6 @@ export async function pnpmFix(
 
         spinner?.info(`Installing ${fixSpec}`)
 
-        let failed = false
         let installed = false
         let saved = false
         try {
@@ -231,7 +230,6 @@ export async function pnpmFix(
           spinner?.successAndStop(`Fixed ${name}`)
           spinner?.start()
         } catch (e) {
-          failed = true
           spinner?.error(`Reverting ${fixSpec}`, e)
           if (saved) {
             editablePkgJson.update(revertData)
@@ -243,12 +241,12 @@ export async function pnpmFix(
             actualTree = await install(pkgEnvDetails, { spinner })
           }
           spinner?.failAndStop(`Failed to fix ${oldSpec}`)
+          return
         }
 
         const { owner, repo } = getGitHubRepoInfo()
         const branch = getSocketBranchName(name, targetVersion)
         if (
-          !failed &&
           // Lazily access constants.ENV[CI].
           constants.ENV[CI] &&
           // eslint-disable-next-line no-await-in-loop
