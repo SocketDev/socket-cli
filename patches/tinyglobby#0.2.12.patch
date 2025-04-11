@@ -1,0 +1,27 @@
+Index: /tinyglobby/package.json
+===================================================================
+--- /tinyglobby/package.json
++++ /tinyglobby/package.json
+@@ -2,14 +2,9 @@
+   "name": "tinyglobby",
+   "version": "0.2.12",
+   "description": "A fast and minimal alternative to globby and fast-glob",
+   "main": "dist/index.js",
+-  "module": "dist/index.mjs",
+   "types": "dist/index.d.ts",
+-  "exports": {
+-    "import": "./dist/index.mjs",
+-    "require": "./dist/index.js"
+-  },
+   "sideEffects": false,
+   "files": [
+     "dist"
+   ],
+@@ -61,5 +56,5 @@
+     "test:coverage": "node --experimental-transform-types --test --experimental-test-coverage",
+     "test:only": "node --experimental-transform-types --test --test-only",
+     "typecheck": "tsc --noEmit"
+   }
+-}
+\ No newline at end of file
++}
