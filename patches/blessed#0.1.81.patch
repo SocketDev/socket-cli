@@ -444,7 +444,28 @@ Index: /blessed/lib/widgets/node.js
 ===================================================================
 --- /blessed/lib/widgets/node.js
 +++ /blessed/lib/widgets/node.js
-@@ -76,9 +76,9 @@
+@@ -15,10 +15,8 @@
+  */
+ 
+ function Node(options) {
+   var self = this;
+-  var Screen = require('./screen');
+-
+   if (!(this instanceof Node)) {
+     return new Node(options);
+   }
+ 
+@@ -29,8 +27,9 @@
+ 
+   this.screen = this.screen || options.screen;
+ 
+   if (!this.screen) {
++    var Screen = require('./screen');
+     if (this.type === 'screen') {
+       this.screen = this;
+     } else if (Screen.total === 1) {
+       this.screen = Screen.global;
+@@ -76,9 +75,9 @@
  }
  
  Node.uid = 0;
@@ -549,7 +570,30 @@ Index: /blessed/lib/widgets/screen.js
 ===================================================================
 --- /blessed/lib/widgets/screen.js
 +++ /blessed/lib/widgets/screen.js
-@@ -240,9 +240,9 @@
+@@ -17,22 +17,16 @@
+   , unicode = require('../unicode');
+ 
+ var nextTick = global.setImmediate || process.nextTick.bind(process);
+ 
+-var helpers = require('../helpers');
+-
+ var Node = require('./node');
+-var Log = require('./log');
+-var Element = require('./element');
+-var Box = require('./box');
+ 
+ /**
+  * Screen
+  */
+ 
+ function Screen(options) {
+   var self = this;
+-
+   if (!(this instanceof Node)) {
+     return new Screen(options);
+   }
+ 
+@@ -240,9 +234,9 @@
      });
    });
  };
@@ -560,6 +604,57 @@ Index: /blessed/lib/widgets/screen.js
  Screen.prototype.type = 'screen';
  
  Screen.prototype.__defineGetter__('title', function() {
+@@ -333,8 +327,9 @@
+ 
+ Screen.prototype.postEnter = function() {
+   var self = this;
+   if (this.options.debug) {
++    var Log = require('./log');
+     this.debugLog = new Log({
+       screen: this,
+       parent: this,
+       hidden: true,
+@@ -378,8 +373,9 @@
+   }
+ 
+   if (this.options.warnings) {
+     this.on('warning', function(text) {
++      var Box = require('./box');
+       var warning = new Box({
+         screen: self,
+         parent: self,
+         left: 'center',
+@@ -476,8 +472,9 @@
+   this.program.on('mouse', function(data) {
+     if (self.lockKeys) return;
+ 
+     if (self._needsClickableSort) {
++      var helpers = require('../helpers');
+       self.clickable = helpers.hsort(self.clickable);
+       self._needsClickableSort = false;
+     }
+ 
+@@ -619,9 +616,9 @@
+ 
+   if (this._hoverText) {
+     return;
+   }
+-
++  var Box = require('./box');
+   this._hoverText = new Box({
+     screen: this,
+     left: 0,
+     top: 0,
+@@ -2071,8 +2068,9 @@
+     attr &= ~(0x1ff << 9);
+     attr |= 7 << 9;
+     attr |= 8 << 18;
+   } else if (typeof cursor.shape === 'object' && cursor.shape) {
++    var Element = require('./element');
+     cattr = Element.prototype.sattr.call(cursor, cursor.shape);
+ 
+     if (cursor.shape.bold || cursor.shape.underline
+         || cursor.shape.blink || cursor.shape.inverse
 Index: /blessed/lib/widgets/scrollablebox.js
 ===================================================================
 --- /blessed/lib/widgets/scrollablebox.js
