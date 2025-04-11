@@ -16,6 +16,7 @@ export type RangeStyle =
 
 export type FixOptions = {
   autoMerge?: boolean | undefined
+  autoPilot?: boolean | undefined
   cwd?: string | undefined
   rangeStyle?: RangeStyle | undefined
   spinner?: Spinner | undefined
