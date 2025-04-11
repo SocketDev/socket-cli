@@ -160,7 +160,6 @@ export async function npmFix(
 
         spinner?.info(`Installing ${fixSpec}`)
 
-        let failed = false
         let installed = false
         let saved = false
         try {
@@ -187,7 +186,6 @@ export async function npmFix(
           spinner?.successAndStop(`Fixed ${name}`)
           spinner?.start()
         } catch {
-          failed = true
           spinner?.error(`Reverting ${fixSpec}`)
           if (saved) {
             editablePkgJson.update(revertData)
@@ -199,12 +197,12 @@ export async function npmFix(
             await install(revertTree, { cwd })
           }
           spinner?.failAndStop(`Failed to fix ${oldSpec}`)
+          return
         }
 
         const { owner, repo } = getGitHubRepoInfo()
         const branch = getSocketBranchName(name, targetVersion)
         if (
-          !failed &&
           // Lazily access constants.ENV[CI].
           constants.ENV[CI] &&
           // eslint-disable-next-line no-await-in-loop
