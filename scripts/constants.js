@@ -73,10 +73,6 @@ const lazyBabelConfigPath = () =>
   // Lazily access constants.rootConfigPath.
   path.join(constants.rootConfigPath, 'babel.config.js')
 
-const lazyDepStatsPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, '.dep-stats.json')
-
 const lazyRootConfigPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, '.config')
@@ -142,7 +138,6 @@ const constants = createConstantsObject(
     VENDOR,
     WITH_SENTRY,
     babelConfigPath: undefined,
-    depStatsPath: undefined,
     rootConfigPath: undefined,
     rootDistPath: undefined,
     rootPackageJsonPath: undefined,
@@ -154,7 +149,6 @@ const constants = createConstantsObject(
     getters: {
       ENV: LAZY_ENV,
       babelConfigPath: lazyBabelConfigPath,
-      depStatsPath: lazyDepStatsPath,
       rootConfigPath: lazyRootConfigPath,
       rootDistPath: lazyRootDistPath,
       rootPackageJsonPath: lazyRootPackageJsonPath,
