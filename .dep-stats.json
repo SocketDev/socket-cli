@@ -12,6 +12,8 @@
     "@socketsecurity/config": "2.1.3",
     "@socketsecurity/registry": "1.0.143",
     "@socketsecurity/sdk": "1.4.28",
+    "blessed": "0.1.81",
+    "blessed-contrib": "4.11.0",
     "browserslist": "4.24.4",
     "chalk-table": "1.0.2",
     "cmd-shim": "7.0.0",
@@ -66,6 +68,7 @@
   "external": {
     "@pnpm/lockfile.detect-dep-types": "^1001.0.7",
     "@pnpm/lockfile.fs": "^1001.1.9",
+    "blessed-contrib": "4.11.0",
     "browserslist": "4.24.4",
     "chalk-table": "1.0.2",
     "cmd-shim": "7.0.0",
