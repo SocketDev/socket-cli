@@ -356,8 +356,9 @@ const lazyNodeHardenFlags = () =>
     : // Harden Node security.
       // https://nodejs.org/en/learn/getting-started/security-best-practices
       [
-        '--disable-proto',
-        'throw',
+        // TODO: Investigate why dist/blessed errors with it enabled.
+        // '--disable-proto',
+        // 'throw',
         // We have contributed the following patches to our dependencies to make
         // Node's --frozen-intrinsics workable.
         // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
