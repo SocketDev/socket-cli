@@ -10,43 +10,8 @@ import type { OctokitResponse } from '@octokit/types'
 
 type PullsCreateResponseData = components['schemas']['pull-request']
 
-const {
-  GITHUB_ACTIONS,
-  GITHUB_REF_NAME,
-  GITHUB_REPOSITORY,
-  SOCKET_SECURITY_GITHUB_PAT
-} = constants
-
-async function branchExists(
-  branch: string,
-  cwd: string | undefined = process.cwd()
-): Promise<boolean> {
-  try {
-    await spawn(
-      'git',
-      ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`],
-      {
-        cwd,
-        stdio: 'ignore'
-      }
-    )
-    return true
-  } catch {}
-  return false
-}
-
-async function checkoutBaseBranchIfAvailable(
-  baseBranch: string,
-  cwd: string | undefined = process.cwd()
-) {
-  try {
-    await spawn('git', ['checkout', baseBranch], { cwd })
-    await spawn('git', ['reset', '--hard', `origin/${baseBranch}`], { cwd })
-    logger.info(`Checked out and reset to ${baseBranch}`)
-  } catch {
-    logger.warn(`Could not switch to ${baseBranch}. Proceeding with HEAD.`)
-  }
-}
+const { GITHUB_ACTIONS, GITHUB_REPOSITORY, SOCKET_SECURITY_GITHUB_PAT } =
+  constants
 
 type GitHubRepoInfo = {
   owner: string
@@ -125,13 +90,10 @@ export function getGitHubRepoInfo(): GitHubRepoInfo {
   }
 }
 
-export function getSocketBranchName(name: string, version: string): string {
-  return `socket-fix-${name}-${version.replace(/\./g, '-')}`
-}
-
 export async function openGitHubPullRequest(
   owner: string,
   repo: string,
+  baseBranch: string,
   branch: string,
   name: string,
   version: string,
@@ -144,30 +106,12 @@ export async function openGitHubPullRequest(
     if (!pat) {
       throw new Error('Missing SOCKET_SECURITY_GITHUB_PAT environment variable')
     }
-    const baseBranch =
-      // Lazily access constants.ENV[GITHUB_REF_NAME].
-      constants.ENV[GITHUB_REF_NAME] ??
-      // GitHub defaults to branch name "main"
-      // https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches#about-the-default-branch
-      'main'
-
     const commitMsg = `chore: upgrade ${name} to ${version}`
     const url = `https://x-access-token:${pat}@github.com/${owner}/${repo}`
 
     await spawn('git', ['remote', 'set-url', 'origin', url], {
       cwd
     })
-
-    if (await branchExists(branch, cwd)) {
-      logger.warn(`Branch "${branch}" already exists. Skipping creation.`)
-    } else {
-      await checkoutBaseBranchIfAvailable(baseBranch, cwd)
-      await spawn('git', ['checkout', '-b', branch], { cwd })
-      await spawn('git', ['add', 'package.json', 'pnpm-lock.yaml'], { cwd })
-      await spawn('git', ['commit', '-m', commitMsg], { cwd })
-      await spawn('git', ['push', '--set-upstream', 'origin', branch], { cwd })
-    }
-
     const octokit = getOctokit()
     return await octokit.pulls.create({
       owner,
