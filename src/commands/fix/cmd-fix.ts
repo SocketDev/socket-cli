@@ -23,9 +23,14 @@ const config: CliCommandConfig = {
   hidden: true,
   flags: {
     ...commonFlags,
+    autoPilot: {
+      type: 'boolean',
+      default: false,
+      description: `Shorthand for --autoMerge --test`
+    },
     autoMerge: {
       type: 'boolean',
-      default: true,
+      default: false,
       description: `Enable auto-merge for pull requests that Socket opens.\n                        See ${terminalLink(
         'GitHub documentation',
         'https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository'
@@ -47,7 +52,7 @@ const config: CliCommandConfig = {
     },
     test: {
       type: 'boolean',
-      default: true,
+      default: false,
       description: 'Verify the fix by running unit tests'
     },
     testScript: {
@@ -103,6 +108,7 @@ async function run(
 
   await runFix({
     autoMerge: Boolean(cli.flags['autoMerge']),
+    autoPilot: Boolean(cli.flags['autoPilot']),
     spinner,
     rangeStyle: (cli.flags['rangeStyle'] ?? undefined) as
       | RangeStyle

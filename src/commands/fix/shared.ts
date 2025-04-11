@@ -5,8 +5,11 @@ import type { FixOptions, NormalizedFixOptions, RangeStyle } from './types'
 export function assignDefaultFixOptions(
   options: FixOptions
 ): NormalizedFixOptions {
+  if (options.autoPilot === undefined) {
+    options.autoPilot = false
+  }
   if (options.autoMerge === undefined) {
-    options.autoMerge = false
+    options.autoMerge = !!options.autoPilot
   }
   if (options.cwd === undefined) {
     options.cwd = process.cwd()
@@ -15,7 +18,7 @@ export function assignDefaultFixOptions(
     options.rangeStyle = 'preserve'
   }
   if (options.test === undefined) {
-    options.test = !!options.testScript
+    options.test = !!options.autoPilot || !!options.testScript
   }
   if (options.testScript === undefined) {
     options.testScript = 'test'
