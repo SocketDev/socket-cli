@@ -40,16 +40,9 @@ async function checkoutBaseBranchIfAvailable(
   cwd: string | undefined = process.cwd()
 ) {
   try {
-    const currentBranch = (
-      await spawn('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd })
-    ).stdout.trim()
-    if (currentBranch === baseBranch) {
-      logger.info(`Already on ${baseBranch}`)
-      return
-    }
-    logger.info(`Switching branch from ${currentBranch} to ${baseBranch}...`)
     await spawn('git', ['checkout', baseBranch], { cwd })
-    logger.info(`Checked out ${baseBranch}`)
+    await spawn('git', ['reset', '--hard', `origin/${baseBranch}`], { cwd })
+    logger.info(`Checked out and reset to ${baseBranch}`)
   } catch {
     logger.warn(`Could not switch to ${baseBranch}. Proceeding with HEAD.`)
   }
@@ -58,19 +51,6 @@ async function checkoutBaseBranchIfAvailable(
 type GitHubRepoInfo = {
   owner: string
   repo: string
-}
-
-function getGitHubRepoInfo(): GitHubRepoInfo {
-  // Lazily access constants.ENV[GITHUB_REPOSITORY].
-  const ownerSlashRepo = constants.ENV[GITHUB_REPOSITORY]
-  const slashIndex = ownerSlashRepo.indexOf('/')
-  if (slashIndex === -1) {
-    throw new Error('GITHUB_REPOSITORY environment variable not set')
-  }
-  return {
-    owner: ownerSlashRepo.slice(0, slashIndex),
-    repo: ownerSlashRepo.slice(slashIndex + 1)
-  }
 }
 
 let _octokit: Octokit | undefined
@@ -82,6 +62,21 @@ function getOctokit() {
     })
   }
   return _octokit
+}
+
+export async function doesPullRequestExistForBranch(
+  owner: string,
+  repo: string,
+  branch: string
+): Promise<boolean> {
+  const octokit = getOctokit()
+  const { data: prs } = await octokit.pulls.list({
+    owner,
+    repo,
+    head: `${owner}:${branch}`,
+    state: 'open'
+  })
+  return prs.length > 0
 }
 
 export async function enableAutoMerge(
@@ -117,9 +112,29 @@ export async function enableAutoMerge(
   }
 }
 
+export function getGitHubRepoInfo(): GitHubRepoInfo {
+  // Lazily access constants.ENV[GITHUB_REPOSITORY].
+  const ownerSlashRepo = constants.ENV[GITHUB_REPOSITORY]
+  const slashIndex = ownerSlashRepo.indexOf('/')
+  if (slashIndex === -1) {
+    throw new Error('GITHUB_REPOSITORY environment variable not set')
+  }
+  return {
+    owner: ownerSlashRepo.slice(0, slashIndex),
+    repo: ownerSlashRepo.slice(slashIndex + 1)
+  }
+}
+
+export function getSocketBranchName(name: string, version: string): string {
+  return `socket-fix-${name}-${version.replace(/\./g, '-')}`
+}
+
 export async function openGitHubPullRequest(
+  owner: string,
+  repo: string,
+  branch: string,
   name: string,
-  targetVersion: string,
+  version: string,
   cwd = process.cwd()
 ): Promise<OctokitResponse<PullsCreateResponseData>> {
   // Lazily access constants.ENV[GITHUB_ACTIONS].
@@ -135,9 +150,8 @@ export async function openGitHubPullRequest(
       // GitHub defaults to branch name "main"
       // https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches#about-the-default-branch
       'main'
-    const branch = `socket-fix-${name}-${targetVersion.replace(/\./g, '-')}`
-    const commitMsg = `chore: upgrade ${name} to ${targetVersion}`
-    const { owner, repo } = getGitHubRepoInfo()
+
+    const commitMsg = `chore: upgrade ${name} to ${version}`
     const url = `https://x-access-token:${pat}@github.com/${owner}/${repo}`
 
     await spawn('git', ['remote', 'set-url', 'origin', url], {
@@ -153,6 +167,7 @@ export async function openGitHubPullRequest(
       await spawn('git', ['commit', '-m', commitMsg], { cwd })
       await spawn('git', ['push', '--set-upstream', 'origin', branch], { cwd })
     }
+
     const octokit = getOctokit()
     return await octokit.pulls.create({
       owner,
@@ -160,7 +175,7 @@ export async function openGitHubPullRequest(
       title: commitMsg,
       head: branch,
       base: baseBranch,
-      body: `[socket] Upgrade \`${name}\` to ${targetVersion}`
+      body: `[socket] Upgrade \`${name}\` to ${version}`
     })
   } else {
     throw new Error(

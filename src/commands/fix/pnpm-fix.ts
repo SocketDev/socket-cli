@@ -10,7 +10,13 @@ import {
   readPackageJson
 } from '@socketsecurity/registry/lib/packages'
 
-import { enableAutoMerge, openGitHubPullRequest } from './open-pr'
+import {
+  doesPullRequestExistForBranch,
+  enableAutoMerge,
+  getGitHubRepoInfo,
+  getSocketBranchName,
+  openGitHubPullRequest
+} from './open-pr'
 import { applyRange } from './shared'
 import constants from '../../constants'
 import {
@@ -124,6 +130,7 @@ export async function pnpmFix(
         if (!node) {
           continue
         }
+
         const oldSpec = `${name}@${oldVersion}`
         const availableVersions = Object.keys(packument.versions)
         const targetVersion = findBestPatchVersion(
@@ -135,119 +142,129 @@ export async function pnpmFix(
         const targetPackument = targetVersion
           ? packument.versions[targetVersion]
           : undefined
+
+        if (!(targetVersion && targetPackument)) {
+          spinner?.failAndStop(`Could not patch ${oldSpec}`)
+          return
+        }
+
+        const oldPnpm = editablePkgJson.content[PNPM] as
+          | StringKeyValueObject
+          | undefined
+        const oldPnpmKeyCount = oldPnpm ? Object.keys(oldPnpm).length : 0
+        const oldOverrides = (oldPnpm as StringKeyValueObject)?.[OVERRIDES] as
+          | Record<string, string>
+          | undefined
+        const oldOverridesCount = oldOverrides
+          ? Object.keys(oldOverrides).length
+          : 0
+        const overrideKey = `${node.name}@${vulnerableVersionRange}`
+        const overrideRange = applyRange(
+          oldOverrides?.[overrideKey] ?? targetVersion,
+          targetVersion,
+          rangeStyle
+        )
+        const fixSpec = `${name}@${overrideRange}`
+        const updateData = {
+          [PNPM]: {
+            ...oldPnpm,
+            [OVERRIDES]: {
+              [overrideKey]: overrideRange,
+              ...oldOverrides
+            }
+          }
+        }
+        const revertData = {
+          [PNPM]: oldPnpmKeyCount
+            ? {
+                ...oldPnpm,
+                [OVERRIDES]:
+                  oldOverridesCount === 1
+                    ? undefined
+                    : {
+                        [overrideKey]: undefined,
+                        ...oldOverrides
+                      }
+              }
+            : undefined,
+          ...(editablePkgJson.content.dependencies
+            ? { dependencies: editablePkgJson.content.dependencies }
+            : undefined),
+          ...(editablePkgJson.content.optionalDependencies
+            ? {
+                optionalDependencies:
+                  editablePkgJson.content.optionalDependencies
+              }
+            : undefined),
+          ...(editablePkgJson.content.peerDependencies
+            ? { peerDependencies: editablePkgJson.content.peerDependencies }
+            : undefined)
+        } as PackageJson
+
+        spinner?.info(`Installing ${fixSpec}`)
+
         let failed = false
         let installed = false
         let saved = false
-        if (targetVersion && targetPackument) {
-          const oldPnpm = editablePkgJson.content[PNPM] as
-            | StringKeyValueObject
-            | undefined
-          const oldPnpmKeyCount = oldPnpm ? Object.keys(oldPnpm).length : 0
-          const oldOverrides = (oldPnpm as StringKeyValueObject)?.[OVERRIDES] as
-            | Record<string, string>
-            | undefined
-          const oldOverridesCount = oldOverrides
-            ? Object.keys(oldOverrides).length
-            : 0
-          const overrideKey = `${node.name}@${vulnerableVersionRange}`
-          const overrideRange = applyRange(
-            oldOverrides?.[overrideKey] ?? targetVersion,
+        try {
+          editablePkgJson.update(updateData)
+          updatePackageJsonFromNode(
+            editablePkgJson,
+            actualTree,
+            node,
             targetVersion,
             rangeStyle
           )
-          const fixSpec = `${name}@${overrideRange}`
-          const updateData = {
-            [PNPM]: {
-              ...oldPnpm,
-              [OVERRIDES]: {
-                [overrideKey]: overrideRange,
-                ...oldOverrides
-              }
-            }
+          // eslint-disable-next-line no-await-in-loop
+          await editablePkgJson.save()
+          saved = true
+
+          // eslint-disable-next-line no-await-in-loop
+          actualTree = await install(pkgEnvDetails, { spinner })
+          installed = true
+
+          if (test) {
+            spinner?.info(`Testing ${fixSpec}`)
+            // eslint-disable-next-line no-await-in-loop
+            await runScript(testScript, [], { spinner, stdio: 'ignore' })
           }
-          const revertData = {
-            [PNPM]: oldPnpmKeyCount
-              ? {
-                  ...oldPnpm,
-                  [OVERRIDES]:
-                    oldOverridesCount === 1
-                      ? undefined
-                      : {
-                          [overrideKey]: undefined,
-                          ...oldOverrides
-                        }
-                }
-              : undefined,
-            ...(editablePkgJson.content.dependencies
-              ? { dependencies: editablePkgJson.content.dependencies }
-              : undefined),
-            ...(editablePkgJson.content.optionalDependencies
-              ? {
-                  optionalDependencies:
-                    editablePkgJson.content.optionalDependencies
-                }
-              : undefined),
-            ...(editablePkgJson.content.peerDependencies
-              ? { peerDependencies: editablePkgJson.content.peerDependencies }
-              : undefined)
-          } as PackageJson
-
-          spinner?.info(`Installing ${fixSpec}`)
-
-          try {
-            editablePkgJson.update(updateData)
-            updatePackageJsonFromNode(
-              editablePkgJson,
-              actualTree,
-              node,
-              targetVersion,
-              rangeStyle
-            )
+          spinner?.successAndStop(`Fixed ${name}`)
+          spinner?.start()
+        } catch (e) {
+          failed = true
+          spinner?.error(`Reverting ${fixSpec}`, e)
+          if (saved) {
+            editablePkgJson.update(revertData)
             // eslint-disable-next-line no-await-in-loop
             await editablePkgJson.save()
-            saved = true
-
+          }
+          if (installed) {
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { spinner })
-            installed = true
-
-            if (test) {
-              spinner?.info(`Testing ${fixSpec}`)
-              // eslint-disable-next-line no-await-in-loop
-              await runScript(testScript, [], { spinner, stdio: 'ignore' })
-            }
-
-            spinner?.successAndStop(`Fixed ${name}`)
-            spinner?.start()
-          } catch (e) {
-            failed = true
-            spinner?.error(`Reverting ${fixSpec}`, e)
-            if (saved) {
-              editablePkgJson.update(revertData)
-              // eslint-disable-next-line no-await-in-loop
-              await editablePkgJson.save()
-            }
-            if (installed) {
-              // eslint-disable-next-line no-await-in-loop
-              actualTree = await install(pkgEnvDetails, { spinner })
-            }
-            spinner?.failAndStop(`Failed to fix ${oldSpec}`)
           }
-        } else {
-          failed = true
-          spinner?.failAndStop(`Could not patch ${oldSpec}`)
+          spinner?.failAndStop(`Failed to fix ${oldSpec}`)
         }
+
+        const { owner, repo } = getGitHubRepoInfo()
+        const branch = getSocketBranchName(name, targetVersion)
         if (
           !failed &&
-          // Check targetVersion to make TypeScript happy.
-          targetVersion &&
           // Lazily access constants.ENV[CI].
-          constants.ENV[CI]
+          constants.ENV[CI] &&
+          // eslint-disable-next-line no-await-in-loop
+          !(await doesPullRequestExistForBranch(owner, repo, branch))
         ) {
           let prResponse
           try {
             // eslint-disable-next-line no-await-in-loop
-            prResponse = await openGitHubPullRequest(name, targetVersion, cwd)
+            prResponse = await openGitHubPullRequest(
+              owner,
+              repo,
+              branch,
+              name,
+              targetVersion,
+              cwd
+            )
           } catch (e) {
             logger.error('Failed to open pull request', e)
           }

@@ -7,7 +7,13 @@ import {
   readPackageJson
 } from '@socketsecurity/registry/lib/packages'
 
-import { enableAutoMerge, openGitHubPullRequest } from './open-pr'
+import {
+  doesPullRequestExistForBranch,
+  enableAutoMerge,
+  getGitHubRepoInfo,
+  getSocketBranchName,
+  openGitHubPullRequest
+} from './open-pr'
 import { NormalizedFixOptions } from './types'
 import constants from '../../constants'
 import {
@@ -121,91 +127,100 @@ export async function npmFix(
         if (!node) {
           continue
         }
+
         const oldSpec = `${name}@${oldVersion}`
-        let targetVersion: string | undefined
-        let failed = false
-        let installed = false
-        let saved = false
         if (
-          updateNode(
+          !updateNode(
             node,
             packument,
             vulnerableVersionRange,
             firstPatchedVersionIdentifier
           )
         ) {
-          targetVersion = node.package.version!
-          const fixSpec = `${name}@^${targetVersion}`
-          const revertData = {
-            ...(editablePkgJson.content.dependencies
-              ? { dependencies: editablePkgJson.content.dependencies }
-              : undefined),
-            ...(editablePkgJson.content.optionalDependencies
-              ? {
-                  optionalDependencies:
-                    editablePkgJson.content.optionalDependencies
-                }
-              : undefined),
-            ...(editablePkgJson.content.peerDependencies
-              ? { peerDependencies: editablePkgJson.content.peerDependencies }
-              : undefined)
-          } as PackageJson
-
-          spinner?.info(`Installing ${fixSpec}`)
-
-          try {
-            updatePackageJsonFromNode(
-              editablePkgJson,
-              arb.idealTree!,
-              node,
-              targetVersion,
-              rangeStyle
-            )
-            // eslint-disable-next-line no-await-in-loop
-            await editablePkgJson.save()
-            saved = true
-
-            // eslint-disable-next-line no-await-in-loop
-            await install(arb.idealTree!, { cwd })
-            installed = true
-
-            if (test) {
-              spinner?.info(`Testing ${fixSpec}`)
-              // eslint-disable-next-line no-await-in-loop
-              await runScript(testScript, [], { spinner, stdio: 'ignore' })
-            }
-            spinner?.successAndStop(`Fixed ${name}`)
-            spinner?.start()
-          } catch {
-            failed = true
-            spinner?.error(`Reverting ${fixSpec}`)
-            if (saved) {
-              editablePkgJson.update(revertData)
-              // eslint-disable-next-line no-await-in-loop
-              await editablePkgJson.save()
-            }
-            if (installed) {
-              // eslint-disable-next-line no-await-in-loop
-              await install(revertTree, { cwd })
-            }
-            spinner?.failAndStop(`Failed to fix ${oldSpec}`)
-          }
-        } else {
-          failed = true
           spinner?.failAndStop(`Could not patch ${oldSpec}`)
+          return
         }
 
+        const targetVersion = node.package.version!
+        const fixSpec = `${name}@^${targetVersion}`
+        const revertData = {
+          ...(editablePkgJson.content.dependencies
+            ? { dependencies: editablePkgJson.content.dependencies }
+            : undefined),
+          ...(editablePkgJson.content.optionalDependencies
+            ? {
+                optionalDependencies:
+                  editablePkgJson.content.optionalDependencies
+              }
+            : undefined),
+          ...(editablePkgJson.content.peerDependencies
+            ? { peerDependencies: editablePkgJson.content.peerDependencies }
+            : undefined)
+        } as PackageJson
+
+        spinner?.info(`Installing ${fixSpec}`)
+
+        let failed = false
+        let installed = false
+        let saved = false
+        try {
+          updatePackageJsonFromNode(
+            editablePkgJson,
+            arb.idealTree!,
+            node,
+            targetVersion,
+            rangeStyle
+          )
+          // eslint-disable-next-line no-await-in-loop
+          await editablePkgJson.save()
+          saved = true
+
+          // eslint-disable-next-line no-await-in-loop
+          await install(arb.idealTree!, { cwd })
+          installed = true
+
+          if (test) {
+            spinner?.info(`Testing ${fixSpec}`)
+            // eslint-disable-next-line no-await-in-loop
+            await runScript(testScript, [], { spinner, stdio: 'ignore' })
+          }
+          spinner?.successAndStop(`Fixed ${name}`)
+          spinner?.start()
+        } catch {
+          failed = true
+          spinner?.error(`Reverting ${fixSpec}`)
+          if (saved) {
+            editablePkgJson.update(revertData)
+            // eslint-disable-next-line no-await-in-loop
+            await editablePkgJson.save()
+          }
+          if (installed) {
+            // eslint-disable-next-line no-await-in-loop
+            await install(revertTree, { cwd })
+          }
+          spinner?.failAndStop(`Failed to fix ${oldSpec}`)
+        }
+
+        const { owner, repo } = getGitHubRepoInfo()
+        const branch = getSocketBranchName(name, targetVersion)
         if (
           !failed &&
-          // Check targetVersion to make TypeScript happy.
-          targetVersion &&
           // Lazily access constants.ENV[CI].
-          constants.ENV[CI]
+          constants.ENV[CI] &&
+          // eslint-disable-next-line no-await-in-loop
+          !(await doesPullRequestExistForBranch(owner, repo, branch))
         ) {
           let prResponse
           try {
             // eslint-disable-next-line no-await-in-loop
-            prResponse = await openGitHubPullRequest(name, targetVersion, cwd)
+            prResponse = await openGitHubPullRequest(
+              owner,
+              repo,
+              branch,
+              name,
+              targetVersion,
+              cwd
+            )
           } catch (e) {
             logger.error('Failed to open pull request', e)
           }
