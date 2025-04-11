@@ -6,7 +6,7 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
-import MagicString from 'magic-string'
+// import MagicString from 'magic-string'
 import { readPackageUpSync } from 'read-package-up'
 import rangesIntersect from 'semver/ranges/intersects.js'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
@@ -17,7 +17,7 @@ import {
   readPackageJsonSync
 } from '@socketsecurity/registry/lib/packages'
 import { isRelative } from '@socketsecurity/registry/lib/path'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
+// import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../scripts/constants.js'
@@ -58,7 +58,7 @@ const {
 export const EXTERNAL_PACKAGES = ['blessed']
 
 export const INLINED_PACKAGES = [
-  '@babel/runtime',
+  '@babel/runtime'
   // 'blessed-contrib',
   // // 'blessed-contrib' package dependencies.
   // 'ansi-escapes',
@@ -110,7 +110,8 @@ const firstUseStrictRegExp = /'use strict';?/
 
 const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
 
-const blessedRequiresRegExp = /(?<=require\(["'])blessed(?:\/[^"']+)?(?=["']\))/g
+// const blessedRequiresRegExp =
+//   /(?<=require\(["'])blessed(?:\/[^"']+)?(?=["']\))/g
 
 const requireUrlAssignmentRegExp =
   /(?<=var +)[$\w]+(?= *= *require\(["']node:url["']\))/
