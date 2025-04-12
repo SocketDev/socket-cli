@@ -15,56 +15,7 @@ function getPkgNameFromPurlObj(purlObj: PackageURL): string {
   return `${purlObj.namespace ? `${purlObj.namespace}/` : ''}${purlObj.name}`
 }
 
-export async function branchExists(
-  branch: string,
-  cwd: string | undefined = process.cwd()
-): Promise<boolean> {
-  try {
-    await spawn(
-      'git',
-      ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`],
-      {
-        cwd,
-        stdio: 'ignore'
-      }
-    )
-    return true
-  } catch {}
-  return false
-}
-
-export async function checkoutBaseBranchIfAvailable(
-  baseBranch: string,
-  cwd: string | undefined = process.cwd()
-) {
-  try {
-    await spawn('git', ['fetch', '--depth=1', 'origin', baseBranch], { cwd })
-    await spawn('git', ['checkout', baseBranch], { cwd })
-    await spawn('git', ['reset', '--hard', `origin/${baseBranch}`], { cwd })
-    logger.info(`Checked out and reset to ${baseBranch}`)
-  } catch (e) {
-    logger.warn(`Could not switch to ${baseBranch}. Proceeding with HEAD.`)
-    debugLog(e)
-  }
-}
-
-export async function createAndPushBranchIfNeeded(
-  branch: string,
-  commitMsg: string,
-  cwd: string = process.cwd()
-): Promise<boolean> {
-  if (await branchExists(branch, cwd)) {
-    logger.warn(`Branch "${branch}" already exists. Skipping creation.`)
-    return false
-  }
-  await spawn('git', ['checkout', '-b', branch], { cwd })
-  await spawn('git', ['add', 'package.json', 'pnpm-lock.yaml'], { cwd })
-  await spawn('git', ['commit', '-m', commitMsg], { cwd })
-  await spawn('git', ['push', '--set-upstream', 'origin', branch], { cwd })
-  return true
-}
-
-export function getBaseBranch() {
+export function getBaseGitBranch() {
   // Lazily access constants.ENV[GITHUB_REF_NAME].
   return (
     constants.ENV[GITHUB_REF_NAME] ??
@@ -108,4 +59,69 @@ export function getSocketCommitMessage(
   const purlObj = PackageURL.fromString(purl)
   const pkgName = getPkgNameFromPurlObj(purlObj)
   return `socket: Bump ${pkgName} from ${purlObj.version} to ${toVersion}`
+}
+
+export async function gitBranchExists(
+  branch: string,
+  cwd: string | undefined = process.cwd()
+): Promise<boolean> {
+  try {
+    await spawn(
+      'git',
+      ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`],
+      {
+        cwd,
+        stdio: 'ignore'
+      }
+    )
+    return true
+  } catch {}
+  return false
+}
+
+export async function gitCheckoutBaseBranchIfAvailable(
+  baseBranch: string,
+  cwd = process.cwd()
+) {
+  try {
+    await gitHardReset()
+    await spawn('git', ['fetch', '--depth=1', 'origin', baseBranch], { cwd })
+    await spawn('git', ['checkout', baseBranch], { cwd })
+    await spawn('git', ['reset', '--hard', `origin/${baseBranch}`], { cwd })
+    logger.info(`Checked out and reset to ${baseBranch}`)
+  } catch (e) {
+    logger.warn(`Could not switch to ${baseBranch}. Proceeding with HEAD.`)
+    debugLog(e)
+  }
+}
+
+export async function gitCreateAndPushBranchIfNeeded(
+  branch: string,
+  commitMsg: string,
+  cwd = process.cwd()
+): Promise<boolean> {
+  if (await gitBranchExists(branch, cwd)) {
+    logger.warn(`Branch "${branch}" already exists. Skipping creation.`)
+    return false
+  }
+  await spawn('git', ['checkout', '-b', branch], { cwd })
+  await spawn('git', ['add', 'package.json', 'pnpm-lock.yaml'], { cwd })
+  await spawn('git', ['commit', '-m', commitMsg], { cwd })
+  await spawn('git', ['push', '--set-upstream', 'origin', branch], { cwd })
+  return true
+}
+
+export async function gitHardReset(cwd = process.cwd()) {
+  await spawn('git', ['reset', '--hard'], { cwd })
+}
+
+export async function isInGitRepo(cwd = process.cwd()): Promise<boolean> {
+  try {
+    await spawn('git', ['rev-parse', '--is-inside-work-tree'], {
+      cwd,
+      stdio: 'ignore'
+    })
+    return true
+  } catch {}
+  return false
 }
