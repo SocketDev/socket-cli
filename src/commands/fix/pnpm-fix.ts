@@ -182,7 +182,7 @@ export async function pnpmFix(
         // Lazily access constants.ENV[CI].
         if (constants.ENV[CI]) {
           ;({ owner, repo } = getGitHubEnvRepoInfo())
-          branch = getSocketBranchName(name, toVersion)
+          branch = getSocketBranchName(fromPurl, toVersion)
           // eslint-disable-next-line no-await-in-loop
           shouldOpenPr = !(await doesPullRequestExistForBranch(
             owner,
