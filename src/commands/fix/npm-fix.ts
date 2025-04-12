@@ -7,11 +7,13 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 
 import {
-  checkoutBaseBranchIfAvailable,
-  createAndPushBranchIfNeeded,
-  getBaseBranch,
+  getBaseGitBranch,
   getSocketBranchName,
-  getSocketCommitMessage
+  getSocketCommitMessage,
+  gitCheckoutBaseBranchIfAvailable,
+  gitCreateAndPushBranchIfNeeded,
+  gitHardReset,
+  isInGitRepo
 } from './git'
 import {
   doesPullRequestExistForBranch,
@@ -98,6 +100,7 @@ export async function npmFix(
   const editablePkgJson = await readPackageJson(cwd, { editable: true })
   // Lazily access constants.ENV[CI].
   const isCi = constants.ENV[CI]
+  const isRepo = await isInGitRepo(cwd)
 
   await arb.buildIdealTree()
 
@@ -180,10 +183,10 @@ export async function npmFix(
 
         spinner?.info(`Installing ${toSpec}`)
 
-        const baseBranch = getBaseBranch()
+        const baseBranch = getBaseGitBranch()
 
         // eslint-disable-next-line no-await-in-loop
-        await checkoutBaseBranchIfAvailable(baseBranch, cwd)
+        await gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)
 
         let error: unknown
         let errored = false
@@ -219,17 +222,17 @@ export async function npmFix(
 
         if (!errored && shouldOpenPr) {
           // eslint-disable-next-line no-await-in-loop
-          await createAndPushBranchIfNeeded(
+          await gitCreateAndPushBranchIfNeeded(
             branch!,
             getSocketCommitMessage(fromPurl, toVersion),
             cwd
           )
           // eslint-disable-next-line no-await-in-loop
           const prResponse = await openGitHubPullRequest(
-            owner!,
-            repo!,
+            owner,
+            repo,
             baseBranch,
-            branch!,
+            branch,
             fromPurl,
             toVersion,
             cwd
@@ -244,12 +247,18 @@ export async function npmFix(
           if (errored) {
             spinner?.error(`Reverting ${toSpec}`, error)
           }
+          if (isRepo) {
+            // eslint-disable-next-line no-await-in-loop
+            await gitHardReset(cwd)
+          }
           if (saved) {
             editablePkgJson.update(revertData)
-            // eslint-disable-next-line no-await-in-loop
-            await editablePkgJson.save()
+            if (!isRepo) {
+              // eslint-disable-next-line no-await-in-loop
+              await editablePkgJson.save()
+            }
           }
-          if (installed) {
+          if (!isRepo && installed) {
             // eslint-disable-next-line no-await-in-loop
             await install(revertTree, { cwd })
           }

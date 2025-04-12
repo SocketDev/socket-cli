@@ -10,11 +10,13 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 
 import {
-  checkoutBaseBranchIfAvailable,
-  createAndPushBranchIfNeeded,
-  getBaseBranch,
+  getBaseGitBranch,
   getSocketBranchName,
-  getSocketCommitMessage
+  getSocketCommitMessage,
+  gitCheckoutBaseBranchIfAvailable,
+  gitCreateAndPushBranchIfNeeded,
+  gitHardReset,
+  isInGitRepo
 } from './git'
 import {
   doesPullRequestExistForBranch,
@@ -105,6 +107,7 @@ export async function pnpmFix(
   const editablePkgJson = await readPackageJson(cwd, { editable: true })
   // Lazily access constants.ENV[CI].
   const isCi = constants.ENV[CI]
+  const isRepo = await isInGitRepo(cwd)
 
   let actualTree = await getActualTree(cwd)
 
@@ -178,6 +181,7 @@ export async function pnpmFix(
         const toSpec = `${name}@${toVersionRange}`
 
         const branch = isCi ? getSocketBranchName(fromPurl, toVersion) : ''
+        const baseBranch = isCi ? getBaseGitBranch() : ''
         const { owner, repo } = isCi
           ? getGitHubEnvRepoInfo()
           : { owner: '', repo: '' }
@@ -225,10 +229,10 @@ export async function pnpmFix(
 
         spinner?.info(`Installing ${toSpec}`)
 
-        const baseBranch = getBaseBranch()
-
-        // eslint-disable-next-line no-await-in-loop
-        await checkoutBaseBranchIfAvailable(baseBranch, cwd)
+        if (isCi) {
+          // eslint-disable-next-line no-await-in-loop
+          await gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)
+        }
 
         let error: unknown
         let errored = false
@@ -265,17 +269,17 @@ export async function pnpmFix(
 
         if (!errored && shouldOpenPr) {
           // eslint-disable-next-line no-await-in-loop
-          await createAndPushBranchIfNeeded(
+          await gitCreateAndPushBranchIfNeeded(
             branch!,
             getSocketCommitMessage(fromPurl, toVersion),
             cwd
           )
           // eslint-disable-next-line no-await-in-loop
           const prResponse = await openGitHubPullRequest(
-            owner!,
-            repo!,
+            owner,
+            repo,
             baseBranch,
-            branch!,
+            branch,
             fromPurl,
             toVersion,
             cwd
@@ -290,12 +294,21 @@ export async function pnpmFix(
           if (errored) {
             spinner?.error(`Reverting ${toSpec}`, error)
           }
+          if (isRepo) {
+            // eslint-disable-next-line no-await-in-loop
+            await gitHardReset(cwd)
+          }
           if (saved) {
             editablePkgJson.update(revertData)
-            // eslint-disable-next-line no-await-in-loop
-            await editablePkgJson.save()
+            if (!isRepo) {
+              // eslint-disable-next-line no-await-in-loop
+              await editablePkgJson.save()
+            }
           }
-          if (installed) {
+          if (isRepo) {
+            // eslint-disable-next-line no-await-in-loop
+            actualTree = await getActualTree(cwd)
+          } else if (installed) {
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { spinner })
           }
