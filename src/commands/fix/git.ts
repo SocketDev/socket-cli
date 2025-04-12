@@ -1,4 +1,5 @@
 import { PackageURL } from '@socketregistry/packageurl-js'
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -37,11 +38,13 @@ export async function checkoutBaseBranchIfAvailable(
   cwd: string | undefined = process.cwd()
 ) {
   try {
+    await spawn('git', ['fetch', '--depth=1', 'origin', baseBranch], { cwd })
     await spawn('git', ['checkout', baseBranch], { cwd })
     await spawn('git', ['reset', '--hard', `origin/${baseBranch}`], { cwd })
     logger.info(`Checked out and reset to ${baseBranch}`)
-  } catch {
+  } catch (e) {
     logger.warn(`Could not switch to ${baseBranch}. Proceeding with HEAD.`)
+    debugLog(e)
   }
 }
 
