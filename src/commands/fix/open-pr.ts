@@ -4,6 +4,7 @@ import {
 } from '@octokit/graphql'
 import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
+import { stripIndents } from 'common-tags'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -70,7 +71,7 @@ export async function enableAutoMerge({
   const octokitGraphql = getOctokitGraphql()
   try {
     await octokitGraphql(
-      `
+      stripIndents`
       mutation EnableAutoMerge($pullRequestId: ID!) {
         enablePullRequestAutoMerge(input: {
           pullRequestId: $pullRequestId,
@@ -94,7 +95,9 @@ export async function enableAutoMerge({
   } catch (e) {
     let message = `Failed to enable auto-merge for PR #${prNumber}`
     if (e instanceof GraphqlResponseError && e.errors) {
-      const details = e.errors.map(({ message }) => ` - ${message}`).join('\n')
+      const details = e.errors
+        .map(({ message }) => ` - ${message.trim()}`)
+        .join('\n')
       message += `:\n${details}`
     }
     logger.error(message)
@@ -153,7 +156,7 @@ export async function openGitHubPullRequest(
           const details = restErrors
             .map(
               restErr =>
-                `- ${restErr.message ?? `${restErr.resource}.${restErr.field} (${restErr.code})`}`
+                `- ${restErr.message?.trim() ?? `${restErr.resource}.${restErr.field} (${restErr.code})`}`
             )
             .join('\n')
           message += `:\n${details}`
