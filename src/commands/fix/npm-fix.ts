@@ -1,6 +1,5 @@
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
@@ -9,15 +8,18 @@ import {
 
 import {
   checkoutBaseBranchIfAvailable,
+  createAndPushBranchIfNeeded,
   getBaseBranch,
-  getSocketBranchName
+  getSocketBranchName,
+  getSocketCommitMessage
 } from './git'
 import {
   doesPullRequestExistForBranch,
   enableAutoMerge,
-  getGitHubRepoInfo,
+  getGitHubEnvRepoInfo,
   openGitHubPullRequest
 } from './open-pr'
+import { applyRange } from './shared'
 import { NormalizedFixOptions } from './types'
 import constants from '../../constants'
 import {
@@ -118,7 +120,9 @@ export async function npmFix(
     for (const spec of specs) {
       const lastAtSignIndex = spec.lastIndexOf('@')
       const name = spec.slice(0, lastAtSignIndex)
-      const oldVersion = spec.slice(lastAtSignIndex + 1)
+      const fromVersion = spec.slice(lastAtSignIndex + 1)
+      const fromSpec = `${name}@${fromVersion}`
+      const fromPurl = `pkg:npm/${fromSpec}`
       for (const {
         firstPatchedVersionIdentifier,
         vulnerableVersionRange
@@ -127,12 +131,11 @@ export async function npmFix(
         arb.idealTree = null
         // eslint-disable-next-line no-await-in-loop
         await arb.buildIdealTree()
-        const node = findPackageNode(arb.idealTree!, name, oldVersion)
+        const node = findPackageNode(arb.idealTree!, name, fromVersion)
         if (!node) {
           continue
         }
 
-        const oldSpec = `${name}@${oldVersion}`
         if (
           !updateNode(
             node,
@@ -141,11 +144,13 @@ export async function npmFix(
             firstPatchedVersionIdentifier
           )
         ) {
-          spinner?.failAndStop(`Could not patch ${oldSpec}`)
+          spinner?.failAndStop(`Could not patch ${fromSpec}`)
           return
         }
 
-        const targetVersion = node.package.version!
+        const toVersion = node.package.version!
+        const toVersionRange = applyRange(fromVersion, toVersion, rangeStyle)
+        const toSpec = `${name}@${toVersionRange}`
 
         let branch: string | undefined
         let owner: string | undefined
@@ -153,8 +158,8 @@ export async function npmFix(
         let shouldOpenPr = false
         // Lazily access constants.ENV[CI].
         if (constants.ENV[CI]) {
-          ;({ owner, repo } = getGitHubRepoInfo())
-          branch = getSocketBranchName(name, targetVersion)
+          ;({ owner, repo } = getGitHubEnvRepoInfo())
+          branch = getSocketBranchName(name, toVersion)
           // eslint-disable-next-line no-await-in-loop
           shouldOpenPr = !(await doesPullRequestExistForBranch(
             owner,
@@ -163,7 +168,6 @@ export async function npmFix(
           ))
         }
 
-        const fixSpec = `${name}@^${targetVersion}`
         const revertData = {
           ...(editablePkgJson.content.dependencies
             ? { dependencies: editablePkgJson.content.dependencies }
@@ -179,7 +183,7 @@ export async function npmFix(
             : undefined)
         } as PackageJson
 
-        spinner?.info(`Installing ${fixSpec}`)
+        spinner?.info(`Installing ${toSpec}`)
 
         const baseBranch = getBaseBranch()
 
@@ -193,7 +197,7 @@ export async function npmFix(
             editablePkgJson,
             arb.idealTree!,
             node,
-            targetVersion,
+            toVersion,
             rangeStyle
           )
           // eslint-disable-next-line no-await-in-loop
@@ -205,14 +209,14 @@ export async function npmFix(
           installed = true
 
           if (test) {
-            spinner?.info(`Testing ${fixSpec}`)
+            spinner?.info(`Testing ${toSpec}`)
             // eslint-disable-next-line no-await-in-loop
             await runScript(testScript, [], { spinner, stdio: 'ignore' })
           }
           spinner?.successAndStop(`Fixed ${name}`)
           spinner?.start()
         } catch {
-          spinner?.error(`Reverting ${fixSpec}`)
+          spinner?.error(`Reverting ${toSpec}`)
           if (saved) {
             editablePkgJson.update(revertData)
             // eslint-disable-next-line no-await-in-loop
@@ -222,33 +226,30 @@ export async function npmFix(
             // eslint-disable-next-line no-await-in-loop
             await install(revertTree, { cwd })
           }
-          spinner?.failAndStop(`Failed to fix ${oldSpec}`)
+          spinner?.failAndStop(`Failed to fix ${fromSpec}`)
           return
         }
 
         if (shouldOpenPr) {
-          let prResponse
-          try {
-            // eslint-disable-next-line no-await-in-loop
-            prResponse = await openGitHubPullRequest(
-              owner!,
-              repo!,
-              baseBranch,
-              branch!,
-              name,
-              targetVersion,
-              cwd
-            )
-          } catch (e) {
-            logger.error('Failed to open pull request', e)
-          }
+          // eslint-disable-next-line no-await-in-loop
+          await createAndPushBranchIfNeeded(
+            branch!,
+            getSocketCommitMessage(fromPurl, toVersion),
+            cwd
+          )
+          // eslint-disable-next-line no-await-in-loop
+          const prResponse = await openGitHubPullRequest(
+            owner!,
+            repo!,
+            baseBranch,
+            branch!,
+            fromPurl,
+            toVersion,
+            cwd
+          )
           if (prResponse && autoMerge) {
-            try {
-              // eslint-disable-next-line no-await-in-loop
-              await enableAutoMerge(prResponse.data)
-            } catch (e) {
-              logger.error('Failed to enable auto-merge in pull request', e)
-            }
+            // eslint-disable-next-line no-await-in-loop
+            await enableAutoMerge(prResponse.data)
           }
         }
       }

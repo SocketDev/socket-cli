@@ -1,9 +1,18 @@
+import { PackageURL } from '@socketregistry/packageurl-js'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants'
 
 const { GITHUB_REF_NAME } = constants
+
+function formatBranchName(str: string): string {
+  return str.replace(/[-_.]+/g, '-').replace(/[-a-zA-Z0-9]+/g, '') ?? ''
+}
+
+function getPkgNameFromPurlObj(purlObj: PackageURL): string {
+  return `${purlObj.namespace ? `${purlObj.namespace}/` : ''}${purlObj.name}`
+}
 
 export async function branchExists(
   branch: string,
@@ -62,6 +71,38 @@ export function getBaseBranch() {
   )
 }
 
-export function getSocketBranchName(name: string, version: string): string {
-  return `socket-fix-${name}-${version.replace(/\./g, '-')}`
+export function getSocketBranchName(purl: string, toVersion: string): string {
+  const purlObj = PackageURL.fromString(purl)
+  const namespace = formatBranchName(purlObj.namespace ?? '')
+  const name = formatBranchName(purlObj.name)
+  const version = formatBranchName(toVersion)
+  const fullName = `${namespace ? `${namespace}-` : ''}${name}`
+  return `socket-fix-${fullName}-${version}`
+}
+
+export function getSocketPullRequestTitle(
+  purl: string,
+  toVersion: string
+): string {
+  const purlObj = PackageURL.fromString(purl)
+  const pkgName = getPkgNameFromPurlObj(purlObj)
+  return `Bump ${pkgName} from ${purlObj.version} to ${toVersion}`
+}
+
+export function getSocketPullRequestBody(
+  purl: string,
+  toVersion: string
+): string {
+  const purlObj = PackageURL.fromString(purl)
+  const pkgName = getPkgNameFromPurlObj(purlObj)
+  return `Bumps [${pkgName}](https://socket.dev/${purlObj.type}/package/${pkgName}) from ${purlObj.version} to ${toVersion}.`
+}
+
+export function getSocketCommitMessage(
+  purl: string,
+  toVersion: string
+): string {
+  const purlObj = PackageURL.fromString(purl)
+  const pkgName = getPkgNameFromPurlObj(purlObj)
+  return `socket: Bump ${pkgName} from ${purlObj.version} to ${toVersion}`
 }

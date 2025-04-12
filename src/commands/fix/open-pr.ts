@@ -1,8 +1,14 @@
+import {
+  GraphqlResponseError,
+  graphql as OctokitGraphql
+} from '@octokit/graphql'
+import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
+import { getSocketPullRequestBody, getSocketPullRequestTitle } from './git'
 import constants from '../../constants'
 
 import type { components } from '@octokit/openapi-types'
@@ -29,6 +35,19 @@ function getOctokit() {
   return _octokit
 }
 
+let _octokitGraphql: typeof OctokitGraphql | undefined
+export function getOctokitGraphql() {
+  if (!_octokitGraphql) {
+    _octokitGraphql = OctokitGraphql.defaults({
+      headers: {
+        // Lazily access constants.ENV[SOCKET_SECURITY_GITHUB_PAT].
+        authorization: `token ${constants.ENV[SOCKET_SECURITY_GITHUB_PAT]}`
+      }
+    })
+  }
+  return _octokitGraphql
+}
+
 export async function doesPullRequestExistForBranch(
   owner: string,
   repo: string,
@@ -44,14 +63,13 @@ export async function doesPullRequestExistForBranch(
   return prs.length > 0
 }
 
-export async function enableAutoMerge(
-  prResponseData: PullsCreateResponseData
-): Promise<void> {
-  const octokit = getOctokit()
-  const { node_id: prId, number: prNumber } = prResponseData
-
+export async function enableAutoMerge({
+  node_id: prId,
+  number: prNumber
+}: PullsCreateResponseData): Promise<boolean> {
+  const octokitGraphql = getOctokitGraphql()
   try {
-    await octokit.graphql(
+    await octokitGraphql(
       `
       mutation EnableAutoMerge($pullRequestId: ID!) {
         enablePullRequestAutoMerge(input: {
@@ -72,17 +90,24 @@ export async function enableAutoMerge(
       }
     )
     logger.info(`Auto-merge enabled for PR #${prNumber}`)
+    return true
   } catch (e) {
-    logger.error(`Failed to enable auto-merge for PR #${prNumber}:`, e)
+    let message = `Failed to enable auto-merge for PR #${prNumber}`
+    if (e instanceof GraphqlResponseError && e.errors) {
+      const details = e.errors.map(({ message }) => ` - ${message}`).join('\n')
+      message += `:\n${details}`
+    }
+    logger.error(message)
+    return false
   }
 }
 
-export function getGitHubRepoInfo(): GitHubRepoInfo {
+export function getGitHubEnvRepoInfo(): GitHubRepoInfo {
   // Lazily access constants.ENV[GITHUB_REPOSITORY].
   const ownerSlashRepo = constants.ENV[GITHUB_REPOSITORY]
   const slashIndex = ownerSlashRepo.indexOf('/')
   if (slashIndex === -1) {
-    throw new Error('GITHUB_REPOSITORY environment variable not set')
+    throw new Error('Missing GITHUB_REPOSITORY environment variable')
   }
   return {
     owner: ownerSlashRepo.slice(0, slashIndex),
@@ -95,10 +120,10 @@ export async function openGitHubPullRequest(
   repo: string,
   baseBranch: string,
   branch: string,
-  name: string,
-  version: string,
+  purl: string,
+  toVersion: string,
   cwd = process.cwd()
-): Promise<OctokitResponse<PullsCreateResponseData>> {
+): Promise<OctokitResponse<PullsCreateResponseData> | null> {
   // Lazily access constants.ENV[GITHUB_ACTIONS].
   if (constants.ENV[GITHUB_ACTIONS]) {
     // Lazily access constants.ENV[SOCKET_SECURITY_GITHUB_PAT].
@@ -111,17 +136,32 @@ export async function openGitHubPullRequest(
       cwd
     })
     const octokit = getOctokit()
-    return await octokit.pulls.create({
-      owner,
-      repo,
-      title: `chore: upgrade ${name} to ${version}`,
-      head: branch,
-      base: baseBranch,
-      body: `[socket] Upgrade \`${name}\` to ${version}`
-    })
-  } else {
-    throw new Error(
-      'Unsupported CI platform or missing GITHUB_ACTIONS environment variable'
-    )
+    try {
+      return await octokit.pulls.create({
+        owner,
+        repo,
+        title: getSocketPullRequestTitle(purl, toVersion),
+        head: branch,
+        base: baseBranch,
+        body: getSocketPullRequestBody(purl, toVersion)
+      })
+    } catch (e) {
+      let message = `Failed to open pull request`
+      if (e instanceof RequestError) {
+        const restErrors = (e.response?.data as any)?.['errors']
+        if (Array.isArray(restErrors)) {
+          const details = restErrors
+            .map(
+              restErr =>
+                `- ${restErr.message ?? `${restErr.resource}.${restErr.field} (${restErr.code})`}`
+            )
+            .join('\n')
+          message += `:\n${details}`
+        }
+      }
+      logger.error(message)
+      return null
+    }
   }
+  throw new Error('Missing GITHUB_ACTIONS environment variable')
 }

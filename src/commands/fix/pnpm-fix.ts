@@ -3,7 +3,6 @@ import { readWantedLockfile } from '@pnpm/lockfile.fs'
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { isDebug } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
@@ -14,12 +13,13 @@ import {
   checkoutBaseBranchIfAvailable,
   createAndPushBranchIfNeeded,
   getBaseBranch,
-  getSocketBranchName
+  getSocketBranchName,
+  getSocketCommitMessage
 } from './git'
 import {
   doesPullRequestExistForBranch,
   enableAutoMerge,
-  getGitHubRepoInfo,
+  getGitHubEnvRepoInfo,
   openGitHubPullRequest
 } from './open-pr'
 import { applyRange } from './shared'
@@ -126,47 +126,33 @@ export async function pnpmFix(
     for (const spec of specs) {
       const lastAtSignIndex = spec.lastIndexOf('@')
       const name = spec.slice(0, lastAtSignIndex)
-      const oldVersion = spec.slice(lastAtSignIndex + 1)
+      const fromVersion = spec.slice(lastAtSignIndex + 1)
+      const fromSpec = `${name}@${fromVersion}`
+      const fromPurl = `pkg:npm/${fromSpec}`
+
       for (const {
         firstPatchedVersionIdentifier,
         vulnerableVersionRange
       } of infos) {
-        const node = findPackageNode(actualTree, name, oldVersion)
+        const node = findPackageNode(actualTree, name, fromVersion)
         if (!node) {
           continue
         }
 
-        const oldSpec = `${name}@${oldVersion}`
         const availableVersions = Object.keys(packument.versions)
-        const targetVersion = findBestPatchVersion(
+        const toVersion = findBestPatchVersion(
           node,
           availableVersions,
           vulnerableVersionRange,
           firstPatchedVersionIdentifier
         )
-        const targetPackument = targetVersion
-          ? packument.versions[targetVersion]
+        const targetPackument = toVersion
+          ? packument.versions[toVersion]
           : undefined
 
-        if (!(targetVersion && targetPackument)) {
-          spinner?.failAndStop(`Could not patch ${oldSpec}`)
+        if (!(toVersion && targetPackument)) {
+          spinner?.failAndStop(`Could not patch ${fromSpec}`)
           return
-        }
-
-        let branch: string | undefined
-        let owner: string | undefined
-        let repo: string | undefined
-        let shouldOpenPr = false
-        // Lazily access constants.ENV[CI].
-        if (constants.ENV[CI]) {
-          ;({ owner, repo } = getGitHubRepoInfo())
-          branch = getSocketBranchName(name, targetVersion)
-          // eslint-disable-next-line no-await-in-loop
-          shouldOpenPr = !(await doesPullRequestExistForBranch(
-            owner,
-            repo,
-            branch
-          ))
         }
 
         const oldPnpm = editablePkgJson.content[PNPM] as
@@ -179,22 +165,42 @@ export async function pnpmFix(
         const oldOverridesCount = oldOverrides
           ? Object.keys(oldOverrides).length
           : 0
-        const overrideKey = `${node.name}@${vulnerableVersionRange}`
-        const overrideRange = applyRange(
-          oldOverrides?.[overrideKey] ?? targetVersion,
-          targetVersion,
+
+        const overrideKey = `${name}@${vulnerableVersionRange}`
+
+        const toVersionRange = applyRange(
+          oldOverrides?.[overrideKey] ?? fromVersion,
+          toVersion,
           rangeStyle
         )
-        const fixSpec = `${name}@${overrideRange}`
+        const toSpec = `${name}@${toVersionRange}`
+
+        let branch: string | undefined
+        let owner: string | undefined
+        let repo: string | undefined
+        let shouldOpenPr = false
+        // Lazily access constants.ENV[CI].
+        if (constants.ENV[CI]) {
+          ;({ owner, repo } = getGitHubEnvRepoInfo())
+          branch = getSocketBranchName(name, toVersion)
+          // eslint-disable-next-line no-await-in-loop
+          shouldOpenPr = !(await doesPullRequestExistForBranch(
+            owner,
+            repo,
+            branch
+          ))
+        }
+
         const updateData = {
           [PNPM]: {
             ...oldPnpm,
             [OVERRIDES]: {
-              [overrideKey]: overrideRange,
+              [overrideKey]: toVersionRange,
               ...oldOverrides
             }
           }
         }
+
         const revertData = {
           [PNPM]: oldPnpmKeyCount
             ? {
@@ -222,7 +228,7 @@ export async function pnpmFix(
             : undefined)
         } as PackageJson
 
-        spinner?.info(`Installing ${fixSpec}`)
+        spinner?.info(`Installing ${toSpec}`)
 
         const baseBranch = getBaseBranch()
 
@@ -237,7 +243,7 @@ export async function pnpmFix(
             editablePkgJson,
             actualTree,
             node,
-            targetVersion,
+            toVersion,
             rangeStyle
           )
           // eslint-disable-next-line no-await-in-loop
@@ -249,14 +255,14 @@ export async function pnpmFix(
           installed = true
 
           if (test) {
-            spinner?.info(`Testing ${fixSpec}`)
+            spinner?.info(`Testing ${toSpec}`)
             // eslint-disable-next-line no-await-in-loop
             await runScript(testScript, [], { spinner, stdio: 'ignore' })
           }
           spinner?.successAndStop(`Fixed ${name}`)
           spinner?.start()
         } catch (e) {
-          spinner?.error(`Reverting ${fixSpec}`, e)
+          spinner?.error(`Reverting ${toSpec}`, e)
           if (saved) {
             editablePkgJson.update(revertData)
             // eslint-disable-next-line no-await-in-loop
@@ -266,7 +272,7 @@ export async function pnpmFix(
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { spinner })
           }
-          spinner?.failAndStop(`Failed to fix ${oldSpec}`)
+          spinner?.failAndStop(`Failed to fix ${fromSpec}`)
           return
         }
 
@@ -274,33 +280,22 @@ export async function pnpmFix(
           // eslint-disable-next-line no-await-in-loop
           await createAndPushBranchIfNeeded(
             branch!,
-            `fix: upgrade ${name} to ${targetVersion}`,
+            getSocketCommitMessage(fromPurl, toVersion),
             cwd
           )
-
-          let prResponse
-          try {
-            // eslint-disable-next-line no-await-in-loop
-            prResponse = await openGitHubPullRequest(
-              owner!,
-              repo!,
-              baseBranch,
-              branch!,
-              name,
-              targetVersion,
-              cwd
-            )
-          } catch (e) {
-            logger.error('Failed to open pull request', e)
-          }
-
+          // eslint-disable-next-line no-await-in-loop
+          const prResponse = await openGitHubPullRequest(
+            owner!,
+            repo!,
+            baseBranch,
+            branch!,
+            fromPurl,
+            toVersion,
+            cwd
+          )
           if (prResponse && autoMerge) {
-            try {
-              // eslint-disable-next-line no-await-in-loop
-              await enableAutoMerge(prResponse.data)
-            } catch (e) {
-              logger.error('Failed to enable auto-merge in pull request', e)
-            }
+            // eslint-disable-next-line no-await-in-loop
+            await enableAutoMerge(prResponse.data)
           }
         }
       }
