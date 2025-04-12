@@ -104,12 +104,19 @@ export async function pnpmFix(
 
   spinner?.start()
 
-  const editablePkgJson = await readPackageJson(cwd, { editable: true })
   // Lazily access constants.ENV[CI].
   const isCi = constants.ENV[CI]
-  const isRepo = await isInGitRepo(cwd)
+  const {
+    0: editablePkgJson,
+    1: isRepo,
+    2: initialTree
+  } = await Promise.all([
+    readPackageJson(cwd, { editable: true }),
+    isInGitRepo(cwd),
+    getActualTree(cwd)
+  ])
 
-  let actualTree = await getActualTree(cwd)
+  let actualTree = initialTree
 
   for (const { 0: name, 1: infos } of infoByPkg) {
     if (getManifestData(NPM, name)) {

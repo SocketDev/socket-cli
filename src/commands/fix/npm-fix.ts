@@ -97,10 +97,12 @@ export async function npmFix(
     return
   }
 
-  const editablePkgJson = await readPackageJson(cwd, { editable: true })
   // Lazily access constants.ENV[CI].
   const isCi = constants.ENV[CI]
-  const isRepo = await isInGitRepo(cwd)
+  const { 0: editablePkgJson, 1: isRepo } = await Promise.all([
+    readPackageJson(cwd, { editable: true }),
+    isInGitRepo(cwd)
+  ])
 
   await arb.buildIdealTree()
 
