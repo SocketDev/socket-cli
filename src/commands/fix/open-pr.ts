@@ -106,9 +106,7 @@ export async function openGitHubPullRequest(
     if (!pat) {
       throw new Error('Missing SOCKET_SECURITY_GITHUB_PAT environment variable')
     }
-    const commitMsg = `chore: upgrade ${name} to ${version}`
     const url = `https://x-access-token:${pat}@github.com/${owner}/${repo}`
-
     await spawn('git', ['remote', 'set-url', 'origin', url], {
       cwd
     })
@@ -116,8 +114,8 @@ export async function openGitHubPullRequest(
     return await octokit.pulls.create({
       owner,
       repo,
-      title: commitMsg,
-      head: `${owner}:${branch}`,
+      title: `chore: upgrade ${name} to ${version}`,
+      head: branch,
       base: baseBranch,
       body: `[socket] Upgrade \`${name}\` to ${version}`
     })
