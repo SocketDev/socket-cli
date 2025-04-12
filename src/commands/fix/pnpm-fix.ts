@@ -12,6 +12,7 @@ import {
 
 import {
   checkoutBaseBranchIfAvailable,
+  createAndPushBranchIfNeeded,
   getBaseBranch,
   getSocketBranchName
 } from './git'
@@ -152,6 +153,22 @@ export async function pnpmFix(
           return
         }
 
+        let branch: string | undefined
+        let owner: string | undefined
+        let repo: string | undefined
+        let shouldOpenPr = false
+        // Lazily access constants.ENV[CI].
+        if (constants.ENV[CI]) {
+          ;({ owner, repo } = getGitHubRepoInfo())
+          branch = getSocketBranchName(name, targetVersion)
+          // eslint-disable-next-line no-await-in-loop
+          shouldOpenPr = !(await doesPullRequestExistForBranch(
+            owner,
+            repo,
+            branch
+          ))
+        }
+
         const oldPnpm = editablePkgJson.content[PNPM] as
           | StringKeyValueObject
           | undefined
@@ -207,9 +224,7 @@ export async function pnpmFix(
 
         spinner?.info(`Installing ${fixSpec}`)
 
-        const { owner, repo } = getGitHubRepoInfo()
         const baseBranch = getBaseBranch()
-        const branch = getSocketBranchName(name, targetVersion)
 
         // eslint-disable-next-line no-await-in-loop
         await checkoutBaseBranchIfAvailable(baseBranch, cwd)
@@ -255,20 +270,22 @@ export async function pnpmFix(
           return
         }
 
-        if (
-          // Lazily access constants.ENV[CI].
-          constants.ENV[CI] &&
+        if (shouldOpenPr) {
           // eslint-disable-next-line no-await-in-loop
-          !(await doesPullRequestExistForBranch(owner, repo, branch))
-        ) {
+          await createAndPushBranchIfNeeded(
+            branch!,
+            `fix: upgrade ${name} to ${targetVersion}`,
+            cwd
+          )
+
           let prResponse
           try {
             // eslint-disable-next-line no-await-in-loop
             prResponse = await openGitHubPullRequest(
-              owner,
-              repo,
+              owner!,
+              repo!,
               baseBranch,
-              branch,
+              branch!,
               name,
               targetVersion,
               cwd
@@ -276,6 +293,7 @@ export async function pnpmFix(
           } catch (e) {
             logger.error('Failed to open pull request', e)
           }
+
           if (prResponse && autoMerge) {
             try {
               // eslint-disable-next-line no-await-in-loop
