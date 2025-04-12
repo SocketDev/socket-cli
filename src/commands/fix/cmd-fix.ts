@@ -1,4 +1,4 @@
-import { stripIndent } from 'common-tags'
+import { stripIndents } from 'common-tags'
 import terminalLink from 'terminal-link'
 
 import { joinOr } from '@socketsecurity/registry/lib/arrays'
@@ -39,7 +39,7 @@ const config: CliCommandConfig = {
     rangeStyle: {
       type: 'string',
       default: 'preserve',
-      description: stripIndent`
+      description: stripIndents`
       Define how updated dependency versions should be written in package.json.
       Available styles:
         *	caret - Use ^ range for compatible updates (e.g. ^1.2.3)
