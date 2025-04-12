@@ -301,7 +301,9 @@ function ${SOCKET_INTEROP}(e) {
   let c = 0
   for (const k in e ?? {}) {
     c = c === 0 && k === 'default' ? 1 : 0
-    if (!c && k !== '__esModule') break
+    if (!c && k !== '__esModule') {
+      break
+    }
   }
   return c ? e.default : e
 }`
