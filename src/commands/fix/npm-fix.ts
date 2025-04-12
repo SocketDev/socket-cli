@@ -146,6 +146,23 @@ export async function npmFix(
         }
 
         const targetVersion = node.package.version!
+
+        let branch: string | undefined
+        let owner: string | undefined
+        let repo: string | undefined
+        let shouldOpenPr = false
+        // Lazily access constants.ENV[CI].
+        if (constants.ENV[CI]) {
+          ;({ owner, repo } = getGitHubRepoInfo())
+          branch = getSocketBranchName(name, targetVersion)
+          // eslint-disable-next-line no-await-in-loop
+          shouldOpenPr = !(await doesPullRequestExistForBranch(
+            owner,
+            repo,
+            branch
+          ))
+        }
+
         const fixSpec = `${name}@^${targetVersion}`
         const revertData = {
           ...(editablePkgJson.content.dependencies
@@ -164,9 +181,7 @@ export async function npmFix(
 
         spinner?.info(`Installing ${fixSpec}`)
 
-        const { owner, repo } = getGitHubRepoInfo()
         const baseBranch = getBaseBranch()
-        const branch = getSocketBranchName(name, targetVersion)
 
         // eslint-disable-next-line no-await-in-loop
         await checkoutBaseBranchIfAvailable(baseBranch, cwd)
@@ -211,20 +226,15 @@ export async function npmFix(
           return
         }
 
-        if (
-          // Lazily access constants.ENV[CI].
-          constants.ENV[CI] &&
-          // eslint-disable-next-line no-await-in-loop
-          !(await doesPullRequestExistForBranch(owner, repo, branch))
-        ) {
+        if (shouldOpenPr) {
           let prResponse
           try {
             // eslint-disable-next-line no-await-in-loop
             prResponse = await openGitHubPullRequest(
-              owner,
-              repo,
+              owner!,
+              repo!,
               baseBranch,
-              branch,
+              branch!,
               name,
               targetVersion,
               cwd
