@@ -96,6 +96,8 @@ export async function npmFix(
   }
 
   const editablePkgJson = await readPackageJson(cwd, { editable: true })
+  // Lazily access constants.ENV[CI].
+  const isCi = constants.ENV[CI]
 
   await arb.buildIdealTree()
 
@@ -144,29 +146,22 @@ export async function npmFix(
             firstPatchedVersionIdentifier
           )
         ) {
-          spinner?.failAndStop(`Could not patch ${fromSpec}`)
-          return
+          spinner?.fail(`Could not patch ${fromSpec}`)
+          continue
         }
 
         const toVersion = node.package.version!
         const toVersionRange = applyRange(fromVersion, toVersion, rangeStyle)
         const toSpec = `${name}@${toVersionRange}`
 
-        let branch: string | undefined
-        let owner: string | undefined
-        let repo: string | undefined
-        let shouldOpenPr = false
-        // Lazily access constants.ENV[CI].
-        if (constants.ENV[CI]) {
-          ;({ owner, repo } = getGitHubEnvRepoInfo())
-          branch = getSocketBranchName(fromPurl, toVersion)
-          // eslint-disable-next-line no-await-in-loop
-          shouldOpenPr = !(await doesPullRequestExistForBranch(
-            owner,
-            repo,
-            branch
-          ))
-        }
+        const branch = isCi ? getSocketBranchName(fromPurl, toVersion) : ''
+        const { owner, repo } = isCi
+          ? getGitHubEnvRepoInfo()
+          : { owner: '', repo: '' }
+        const shouldOpenPr = isCi
+          ? // eslint-disable-next-line no-await-in-loop
+            !(await doesPullRequestExistForBranch(owner, repo, branch))
+          : false
 
         const revertData = {
           ...(editablePkgJson.content.dependencies
@@ -190,6 +185,8 @@ export async function npmFix(
         // eslint-disable-next-line no-await-in-loop
         await checkoutBaseBranchIfAvailable(baseBranch, cwd)
 
+        let error: unknown
+        let errored = false
         let installed = false
         let saved = false
         try {
@@ -215,22 +212,12 @@ export async function npmFix(
           }
           spinner?.successAndStop(`Fixed ${name}`)
           spinner?.start()
-        } catch {
-          spinner?.error(`Reverting ${toSpec}`)
-          if (saved) {
-            editablePkgJson.update(revertData)
-            // eslint-disable-next-line no-await-in-loop
-            await editablePkgJson.save()
-          }
-          if (installed) {
-            // eslint-disable-next-line no-await-in-loop
-            await install(revertTree, { cwd })
-          }
-          spinner?.failAndStop(`Failed to fix ${fromSpec}`)
-          return
+        } catch (e) {
+          error = e
+          errored = true
         }
 
-        if (shouldOpenPr) {
+        if (!errored && shouldOpenPr) {
           // eslint-disable-next-line no-await-in-loop
           await createAndPushBranchIfNeeded(
             branch!,
@@ -250,6 +237,24 @@ export async function npmFix(
           if (prResponse && autoMerge) {
             // eslint-disable-next-line no-await-in-loop
             await enableAutoMerge(prResponse.data)
+          }
+        }
+
+        if (errored || isCi) {
+          if (errored) {
+            spinner?.error(`Reverting ${toSpec}`, error)
+          }
+          if (saved) {
+            editablePkgJson.update(revertData)
+            // eslint-disable-next-line no-await-in-loop
+            await editablePkgJson.save()
+          }
+          if (installed) {
+            // eslint-disable-next-line no-await-in-loop
+            await install(revertTree, { cwd })
+          }
+          if (errored) {
+            spinner?.failAndStop(`Failed to fix ${fromSpec}`)
           }
         }
       }
