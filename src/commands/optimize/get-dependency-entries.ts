@@ -1,12 +1,12 @@
-import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
+import type { EnvDetails } from '../../utils/package-environment'
 
-export function getDependencyEntries(editablePkgJson: EditablePackageJson) {
+export function getDependencyEntries(pkgEnvDetails: EnvDetails) {
   const {
     dependencies,
     devDependencies,
     optionalDependencies,
     peerDependencies
-  } = editablePkgJson.content
+  } = pkgEnvDetails.editablePkgJson.content
   return [
     [
       'dependencies',

@@ -1,7 +1,7 @@
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { runAgentInstall } from './run-agent'
 import constants from '../../constants'
+import { runAgentInstall } from '../../utils/agent'
 import { cmdPrefixMessage } from '../../utils/cmd'
 
 import type { EnvDetails } from '../../utils/package-environment'
@@ -14,6 +14,7 @@ export type UpdateLockfileOptions = {
   logger?: Logger | undefined
   spinner?: Spinner | undefined
 }
+
 export async function updateLockfile(
   pkgEnvDetails: EnvDetails,
   options: UpdateLockfileOptions

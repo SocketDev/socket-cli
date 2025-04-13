@@ -2,15 +2,13 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { npmFix } from './npm-fix'
 import { pnpmFix } from './pnpm-fix'
-import { assignDefaultFixOptions } from './shared'
+import { CMD_NAME, assignDefaultFixOptions } from './shared'
 import constants from '../../constants'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment'
 
 import type { FixOptions } from './types'
 
 const { NPM, PNPM } = constants
-
-const CMD_NAME = 'socket fix'
 
 export async function runFix(options_: FixOptions) {
   const options = assignDefaultFixOptions({

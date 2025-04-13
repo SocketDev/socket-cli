@@ -37,6 +37,7 @@ const {
 } = constants
 
 export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
+
 export type Agent = (typeof AGENTS)[number]
 
 const binByAgent = new Map<Agent, string>([
@@ -146,11 +147,6 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   ])
 })()
 
-export type DetectOptions = {
-  cwd?: string | undefined
-  onUnknown?: (pkgManager: string | undefined) => void
-}
-
 type EnvBase = {
   agent: Agent
   agentExecPath: string
@@ -177,10 +173,10 @@ export type EnvDetails = Readonly<
   Remap<
     EnvBase & {
       agentVersion: SemVer
+      editablePkgJson: EditablePackageJson
       lockName: string
       lockPath: string
       lockSrc: string
-      pkgJson: EditablePackageJson
       pkgPath: string
     }
   >
@@ -190,14 +186,19 @@ export type PartialEnvDetails = Readonly<
   Remap<
     EnvBase & {
       agentVersion: SemVer | undefined
+      editablePkgJson: EditablePackageJson | undefined
       lockName: string | undefined
       lockPath: string | undefined
       lockSrc: string | undefined
-      pkgJson: EditablePackageJson | undefined
       pkgPath: string | undefined
     }
   >
 >
+
+export type DetectOptions = {
+  cwd?: string | undefined
+  onUnknown?: (pkgManager: string | undefined) => void
+}
 
 export async function detectPackageEnvironment({
   cwd = process.cwd(),
@@ -338,6 +339,7 @@ export async function detectPackageEnvironment({
     agentExecPath,
     agentSupported,
     agentVersion,
+    editablePkgJson,
     features: { npmBuggyOverrides },
     lockName,
     lockPath,
@@ -345,7 +347,6 @@ export async function detectPackageEnvironment({
     nodeSupported,
     nodeVersion,
     npmExecPath,
-    pkgJson: editablePkgJson,
     pkgPath,
     pkgRequirements: {
       agent: pkgAgentRange ?? `>=${pkgMinAgentVersion}`,
@@ -370,6 +371,7 @@ export type DetectAndValidateOptions = {
   logger?: Logger | undefined
   prod?: boolean | undefined
 }
+
 export async function detectAndValidatePackageEnvironment(
   cwd: string,
   options?: DetectAndValidateOptions | undefined
