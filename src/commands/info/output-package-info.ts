@@ -1,4 +1,4 @@
-import { stripIndents } from 'common-tags'
+import { codeBlock } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import constants from '@socketsecurity/registry/lib/constants'
@@ -85,7 +85,7 @@ export function outputPackageInfo(
     return
   }
   if (outputKind === 'markdown') {
-    logger.log(stripIndents`
+    logger.log(codeBlock`
       # Package report for ${pkgName}
 
       Package report card:

@@ -4,7 +4,7 @@ import {
 } from '@octokit/graphql'
 import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
-import { stripIndents } from 'common-tags'
+import { codeBlock } from 'common-tags'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -71,7 +71,7 @@ export async function enableAutoMerge({
   const octokitGraphql = getOctokitGraphql()
   try {
     await octokitGraphql(
-      stripIndents`
+      codeBlock`
       mutation EnableAutoMerge($pullRequestId: ID!) {
         enablePullRequestAutoMerge(input: {
           pullRequestId: $pullRequestId,

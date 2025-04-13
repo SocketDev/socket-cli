@@ -1,6 +1,6 @@
 import process from 'node:process'
 
-import { stripIndents } from 'common-tags'
+import { codeBlock } from 'common-tags'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
@@ -138,7 +138,7 @@ export class SafeArborist extends Arborist {
         output: process.stderr
       })
       throw new Error(
-        stripIndents`
+        codeBlock`
           Socket ${binName} exiting due to risks.${
             viewAllRisks
               ? ''
