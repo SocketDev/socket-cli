@@ -2,26 +2,23 @@ import path from 'node:path'
 
 import npa from 'npm-package-arg'
 import semver from 'semver'
-import { glob as tinyGlob } from 'tinyglobby'
 
 import { getManifestData } from '@socketsecurity/registry'
 import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
-import {
-  fetchPackageManifest,
-  readPackageJson
-} from '@socketsecurity/registry/lib/packages'
+import { fetchPackageManifest } from '@socketsecurity/registry/lib/packages'
 import { pEach } from '@socketsecurity/registry/lib/promises'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { depsIncludesByAgent } from './deps-includes-by-agent'
 import { getDependencyEntries } from './get-dependency-entries'
 import { overridesDataByAgent } from './get-overrides-by-agent'
-import { getWorkspaceGlobs } from './get-workspace-globs'
 import { lockfileIncludesByAgent } from './lockfile-includes-by-agent'
 import { lsByAgent } from './ls-by-agent'
+import { CMD_NAME } from './shared'
 import { updateManifestByAgent } from './update-manifest-by-agent'
 import constants from '../../constants'
 import { cmdPrefixMessage } from '../../utils/cmd'
+import { globWorkspace } from '../../utils/glob'
 
 import type { GetOverridesResult } from './get-overrides-by-agent'
 import type { AgentLockIncludesFn } from './lockfile-includes-by-agent'
@@ -46,18 +43,15 @@ type AddOverridesState = {
 
 const { NPM, PNPM, YARN_CLASSIC } = constants
 
-const CMD_NAME = 'socket optimize'
-
 const manifestNpmOverrides = getManifestData(NPM)
 
 export async function addOverrides(
-  pkgPath: string,
   pkgEnvDetails: EnvDetails,
+  pkgPath: string,
   options?: AddOverridesOptions | undefined
 ): Promise<AddOverridesState> {
   const {
     agent,
-    agentExecPath,
     lockName,
     lockSrc,
     npmExecPath,
@@ -76,19 +70,11 @@ export async function addOverrides(
       warnedPnpmWorkspaceRequiresNpm: false
     }
   } = { __proto__: null, ...options } as AddOverridesOptions
-  let { pkgJson: editablePkgJson } = pkgEnvDetails
-  if (editablePkgJson === undefined) {
-    editablePkgJson = await readPackageJson(pkgPath, { editable: true })
-  }
   const workspaceName = path.relative(rootPath, pkgPath)
-  const workspaceGlobs = await getWorkspaceGlobs(
-    agent,
-    pkgPath,
-    editablePkgJson
-  )
+  const workspacePkgJsonPaths = await globWorkspace(pkgEnvDetails)
   const isRoot = pkgPath === rootPath
   const isLockScanned = isRoot && !prod
-  const isWorkspace = !!workspaceGlobs
+  const isWorkspace = workspacePkgJsonPaths.length > 0
   if (
     isWorkspace &&
     agent === PNPM &&
@@ -106,12 +92,12 @@ export async function addOverrides(
   }
 
   const overridesDataObjects = [] as GetOverridesResult[]
-  if (editablePkgJson.content['private'] || isWorkspace) {
-    overridesDataObjects.push(overridesDataByAgent.get(agent)!(editablePkgJson))
+  if (isWorkspace || pkgEnvDetails.editablePkgJson.content['private']) {
+    overridesDataObjects.push(overridesDataByAgent.get(agent)!(pkgEnvDetails))
   } else {
     overridesDataObjects.push(
-      overridesDataByAgent.get(NPM)!(editablePkgJson),
-      overridesDataByAgent.get(YARN_CLASSIC)!(editablePkgJson)
+      overridesDataByAgent.get(NPM)!(pkgEnvDetails),
+      overridesDataByAgent.get(YARN_CLASSIC)!(pkgEnvDetails)
     )
   }
 
@@ -120,7 +106,7 @@ export async function addOverrides(
   )
 
   const depAliasMap = new Map<string, string>()
-  const depEntries = getDependencyEntries(editablePkgJson)
+  const depEntries = getDependencyEntries(pkgEnvDetails)
 
   const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
     semver.satisfies(
@@ -183,7 +169,7 @@ export async function addOverrides(
       ) as AgentLockIncludesFn
       const thingToScan = isLockScanned
         ? lockSrc
-        : await lsByAgent.get(agent)!(agentExecPath, pkgPath, { npmExecPath })
+        : await lsByAgent.get(agent)!(pkgEnvDetails, pkgPath, { npmExecPath })
       // Chunk package names to process them in parallel 3 at a time.
       await pEach(overridesDataObjects, 3, async ({ overrides, type }) => {
         const overrideExists = hasOwn(overrides, origPkgName)
@@ -241,17 +227,12 @@ export async function addOverrides(
     }
   })
 
-  if (workspaceGlobs) {
-    const workspacePkgJsonPaths = await tinyGlob(workspaceGlobs, {
-      absolute: true,
-      cwd: pkgPath!,
-      ignore: ['**/node_modules/**', '**/bower_components/**']
-    })
+  if (isWorkspace) {
     // Chunk package names to process them in parallel 3 at a time.
     await pEach(workspacePkgJsonPaths, 3, async workspacePkgJsonPath => {
       const otherState = await addOverrides(
-        path.dirname(workspacePkgJsonPath),
         pkgEnvDetails,
+        path.dirname(workspacePkgJsonPath),
         {
           logger,
           pin,
@@ -282,14 +263,13 @@ export async function addOverrides(
   }
 
   if (state.added.size > 0 || state.updated.size > 0) {
-    editablePkgJson.update(Object.fromEntries(depEntries) as PackageJson)
+    pkgEnvDetails.editablePkgJson.update(
+      Object.fromEntries(depEntries) as PackageJson
+    )
     for (const { overrides, type } of overridesDataObjects) {
-      updateManifestByAgent.get(type)!(
-        editablePkgJson,
-        toSortedObject(overrides)
-      )
+      updateManifestByAgent.get(type)!(pkgEnvDetails, toSortedObject(overrides))
     }
-    await editablePkgJson.save()
+    await pkgEnvDetails.editablePkgJson.save()
   }
 
   return state

@@ -3,13 +3,8 @@ import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
 import constants from '../../constants'
 
 import type { Overrides } from './types'
-import type { Agent } from '../../utils/package-environment'
+import type { Agent, EnvDetails } from '../../utils/package-environment'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
-
-type AgentModifyManifestFn = (
-  pkgJson: EditablePackageJson,
-  overrides: Overrides
-) => void
 
 const {
   BUN,
@@ -147,26 +142,25 @@ function updatePkgJsonField(
   )
 }
 
-function updateOverridesField(
-  editablePkgJson: EditablePackageJson,
-  overrides: Overrides
-) {
-  updatePkgJsonField(editablePkgJson, OVERRIDES, overrides)
+function updateOverridesField(pkgEnvDetails: EnvDetails, overrides: Overrides) {
+  updatePkgJsonField(pkgEnvDetails.editablePkgJson, OVERRIDES, overrides)
 }
 
 function updateResolutionsField(
-  editablePkgJson: EditablePackageJson,
+  pkgEnvDetails: EnvDetails,
   overrides: Overrides
 ) {
-  updatePkgJsonField(editablePkgJson, RESOLUTIONS, overrides)
+  updatePkgJsonField(pkgEnvDetails.editablePkgJson, RESOLUTIONS, overrides)
 }
 
-function updatePnpmField(
-  editablePkgJson: EditablePackageJson,
-  overrides: Overrides
-) {
-  updatePkgJsonField(editablePkgJson, PNPM, overrides)
+function updatePnpmField(pkgEnvDetails: EnvDetails, overrides: Overrides) {
+  updatePkgJsonField(pkgEnvDetails.editablePkgJson, PNPM, overrides)
 }
+
+export type AgentModifyManifestFn = (
+  pkgEnvDetails: EnvDetails,
+  overrides: Overrides
+) => void
 
 export const updateManifestByAgent = new Map<Agent, AgentModifyManifestFn>([
   [BUN, updateResolutionsField],

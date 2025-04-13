@@ -1,15 +1,16 @@
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import constants from '../../constants'
-import { cmdFlagsToString } from '../../utils/cmd'
-import { safeNpmInstall } from '../../utils/npm'
+import constants from '../constants'
+import { cmdFlagsToString } from './cmd'
+import { safeNpmInstall } from './npm'
 
-import type { EnvDetails } from '../../utils/package-environment'
+import type { EnvDetails } from './package-environment'
 
 const { NPM, PNPM } = constants
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
+
 type SpawnResult = ReturnType<typeof spawn>
 
 export type AgentInstallOptions = SpawnOption & {
