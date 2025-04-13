@@ -1,4 +1,4 @@
-import { stripIndents } from 'common-tags'
+import { codeBlock } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -35,7 +35,7 @@ export function outputPurlsShallowScore(
   })
 
   if (outputKind === 'markdown') {
-    logger.log(stripIndents`
+    logger.log(codeBlock`
       # Shallow Package Report
 
       This report contains the response for requesting data on some package url(s).
