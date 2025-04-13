@@ -39,6 +39,7 @@ type AddOverridesState = {
   updated: Set<string>
   updatedInWorkspaces: Set<string>
   warnedPnpmWorkspaceRequiresNpm: boolean
+  workspacePkgJsonPaths: string[]
 }
 
 const { NPM, PNPM, YARN_CLASSIC } = constants
@@ -67,14 +68,14 @@ export async function addOverrides(
       addedInWorkspaces: new Set(),
       updated: new Set(),
       updatedInWorkspaces: new Set(),
-      warnedPnpmWorkspaceRequiresNpm: false
+      warnedPnpmWorkspaceRequiresNpm: false,
+      workspacePkgJsonPaths: await globWorkspace(pkgEnvDetails)
     }
   } = { __proto__: null, ...options } as AddOverridesOptions
-  const workspaceName = path.relative(rootPath, pkgPath)
-  const workspacePkgJsonPaths = await globWorkspace(pkgEnvDetails)
-  const isRoot = pkgPath === rootPath
-  const isLockScanned = isRoot && !prod
-  const isWorkspace = workspacePkgJsonPaths.length > 0
+  const isWorkspace = state.workspacePkgJsonPaths.length > 0
+  const isWorkspaceRoot = pkgPath === rootPath
+  const isLockScanned = isWorkspaceRoot && !prod
+  const workspaceName = isWorkspaceRoot ? '' : path.relative(rootPath, pkgPath)
   if (
     isWorkspace &&
     agent === PNPM &&
@@ -157,7 +158,7 @@ export async function addOverrides(
         depAliasMap.set(origPkgName, thisSpec)
       }
     }
-    if (isRoot) {
+    if (isWorkspaceRoot) {
       // The AgentDepsIncludesFn and AgentLockIncludesFn types overlap in their
       // first two parameters. AgentLockIncludesFn accepts an optional third
       // parameter which AgentDepsIncludesFn will ignore so we cast thingScanner
@@ -229,7 +230,7 @@ export async function addOverrides(
 
   if (isWorkspace) {
     // Chunk package names to process them in parallel 3 at a time.
-    await pEach(workspacePkgJsonPaths, 3, async workspacePkgJsonPath => {
+    await pEach(state.workspacePkgJsonPaths, 3, async workspacePkgJsonPath => {
       const otherState = await addOverrides(
         pkgEnvDetails,
         path.dirname(workspacePkgJsonPath),
@@ -237,7 +238,8 @@ export async function addOverrides(
           logger,
           pin,
           prod,
-          spinner
+          spinner,
+          state
         }
       )
       for (const key of [

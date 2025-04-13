@@ -118,6 +118,11 @@ export function getGitHubEnvRepoInfo(): GitHubRepoInfo {
   }
 }
 
+export type OpenGitHubPullRequestOptions = {
+  cwd?: string | undefined
+  workspaceName?: string | undefined
+}
+
 export async function openGitHubPullRequest(
   owner: string,
   repo: string,
@@ -125,8 +130,12 @@ export async function openGitHubPullRequest(
   branch: string,
   purl: string,
   toVersion: string,
-  cwd = process.cwd()
+  options?: OpenGitHubPullRequestOptions | undefined
 ): Promise<OctokitResponse<PullsCreateResponseData> | null> {
+  const { cwd = process.cwd(), workspaceName } = {
+    __proto__: null,
+    ...options
+  } as OpenGitHubPullRequestOptions
   // Lazily access constants.ENV[GITHUB_ACTIONS].
   if (constants.ENV[GITHUB_ACTIONS]) {
     // Lazily access constants.ENV[SOCKET_SECURITY_GITHUB_PAT].
@@ -143,10 +152,10 @@ export async function openGitHubPullRequest(
       return await octokit.pulls.create({
         owner,
         repo,
-        title: getSocketPullRequestTitle(purl, toVersion),
+        title: getSocketPullRequestTitle(purl, toVersion, workspaceName),
         head: branch,
         base: baseBranch,
-        body: getSocketPullRequestBody(purl, toVersion)
+        body: getSocketPullRequestBody(purl, toVersion, workspaceName)
       })
     } catch (e) {
       let message = `Failed to open pull request`
