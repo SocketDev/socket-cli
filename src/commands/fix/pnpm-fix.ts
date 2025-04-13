@@ -30,6 +30,7 @@ import {
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   SafeArborist
 } from '../../shadow/npm/arborist/lib/arborist'
+import { runAgentInstall } from '../../utils/agent'
 import {
   findBestPatchVersion,
   findPackageNode,
@@ -38,7 +39,6 @@ import {
 } from '../../utils/arborist-helpers'
 import { getAlertsMapFromPnpmLockfile } from '../../utils/pnpm-lock-yaml'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
-import { runAgentInstall } from '../optimize/run-agent'
 
 import type { NormalizedFixOptions } from './types'
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'

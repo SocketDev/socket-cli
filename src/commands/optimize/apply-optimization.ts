@@ -2,11 +2,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { addOverrides } from './add-overrides'
+import { CMD_NAME } from './shared'
 import { updateLockfile } from './update-lockfile'
 import constants from '../../constants'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment'
-
-const CMD_NAME = 'socket optimize'
 
 function createActionMessage(
   verb: string,
@@ -34,7 +33,7 @@ export async function applyOptimization(
 
   spinner.start('Socket optimizing...')
 
-  const state = await addOverrides(pkgEnvDetails.pkgPath, pkgEnvDetails, {
+  const state = await addOverrides(pkgEnvDetails, pkgEnvDetails.pkgPath, {
     logger,
     pin,
     prod,

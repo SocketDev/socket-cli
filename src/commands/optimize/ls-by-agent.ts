@@ -2,15 +2,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants'
 
-import type { Agent } from '../../utils/package-environment'
-
-type AgentListDepsOptions = { npmExecPath?: string }
-
-type AgentListDepsFn = (
-  agentExecPath: string,
-  cwd: string,
-  options?: AgentListDepsOptions | undefined
-) => Promise<string>
+import type { Agent, EnvDetails } from '../../utils/package-environment'
 
 const { BUN, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
 
@@ -60,21 +52,23 @@ async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
   return cleanupQueryStdout(stdout)
 }
 
-async function lsBun(agentExecPath: string, cwd: string): Promise<string> {
+async function lsBun(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
   try {
     // Bun does not support filtering by production packages yet.
     // https://github.com/oven-sh/bun/issues/8283
-    return (await spawn(agentExecPath!, ['pm', 'ls', '--all'], { cwd })).stdout
+    return (
+      await spawn(pkgEnvDetails.agentExecPath, ['pm', 'ls', '--all'], { cwd })
+    ).stdout
   } catch {}
   return ''
 }
 
-async function lsNpm(agentExecPath: string, cwd: string): Promise<string> {
-  return await npmQuery(agentExecPath, cwd)
+async function lsNpm(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
+  return await npmQuery(pkgEnvDetails.agentExecPath, cwd)
 }
 
 async function lsPnpm(
-  agentExecPath: string,
+  pkgEnvDetails: EnvDetails,
   cwd: string,
   options?: AgentListDepsOptions | undefined
 ): Promise<string> {
@@ -89,7 +83,7 @@ async function lsPnpm(
   try {
     stdout = (
       await spawn(
-        agentExecPath,
+        pkgEnvDetails.agentExecPath,
         // Pnpm uses the alternative spelling of parsable.
         // https://en.wiktionary.org/wiki/parsable
         ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
@@ -100,21 +94,25 @@ async function lsPnpm(
   return parsableToQueryStdout(stdout)
 }
 
-async function lsVlt(agentExecPath: string, cwd: string): Promise<string> {
+async function lsVlt(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
   let stdout = ''
   try {
     // See https://docs.vlt.sh/cli/commands/list#options.
     stdout = (
-      await spawn(agentExecPath, ['ls', '--view', 'human', ':not(.dev)'], {
-        cwd
-      })
+      await spawn(
+        pkgEnvDetails.agentExecPath,
+        ['ls', '--view', 'human', ':not(.dev)'],
+        {
+          cwd
+        }
+      )
     ).stdout
   } catch {}
   return cleanupQueryStdout(stdout)
 }
 
 async function lsYarnBerry(
-  agentExecPath: string,
+  pkgEnvDetails: EnvDetails,
   cwd: string
 ): Promise<string> {
   try {
@@ -122,9 +120,13 @@ async function lsYarnBerry(
       // Yarn Berry does not support filtering by production packages yet.
       // https://github.com/yarnpkg/berry/issues/5117
       (
-        await spawn(agentExecPath, ['info', '--recursive', '--name-only'], {
-          cwd
-        })
+        await spawn(
+          pkgEnvDetails.agentExecPath,
+          ['info', '--recursive', '--name-only'],
+          {
+            cwd
+          }
+        )
       ).stdout.trim()
     )
   } catch {}
@@ -132,7 +134,7 @@ async function lsYarnBerry(
 }
 
 async function lsYarnClassic(
-  agentExecPath: string,
+  pkgEnvDetails: EnvDetails,
   cwd: string
 ): Promise<string> {
   try {
@@ -141,11 +143,19 @@ async function lsYarnClassic(
     // > Fix: Excludes dev dependencies from the yarn list output when the
     //   environment is production
     return (
-      await spawn(agentExecPath, ['list', '--prod'], { cwd })
+      await spawn(pkgEnvDetails.agentExecPath, ['list', '--prod'], { cwd })
     ).stdout.trim()
   } catch {}
   return ''
 }
+
+export type AgentListDepsOptions = { npmExecPath?: string }
+
+export type AgentListDepsFn = (
+  pkgEnvDetails: EnvDetails,
+  cwd: string,
+  options?: AgentListDepsOptions | undefined
+) => Promise<string>
 
 export const lsByAgent = new Map<Agent, AgentListDepsFn>([
   [BUN, lsBun],

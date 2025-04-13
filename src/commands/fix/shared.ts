@@ -2,6 +2,8 @@ import semver from 'semver'
 
 import type { FixOptions, NormalizedFixOptions, RangeStyle } from './types'
 
+export const CMD_NAME = 'socket fix'
+
 export function assignDefaultFixOptions(
   options: FixOptions
 ): NormalizedFixOptions {
