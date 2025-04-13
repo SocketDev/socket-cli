@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 
-import { stripIndents } from 'common-tags'
+import { codeBlock } from 'common-tags'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
@@ -151,7 +151,7 @@ function renderMarkdown(
   days: number,
   repoSlug: string
 ): string {
-  return stripIndents`
+  return codeBlock`
 # Socket Alert Analytics
 
 These are the Socket.dev stats are analytics for the ${repoSlug ? `${repoSlug} repo` : 'org'} of the past ${days} days
@@ -192,7 +192,7 @@ ${[
 ]
   .map(
     ([title, table]) =>
-      stripIndents`
+      codeBlock`
 ## ${title}
 
 ${table}

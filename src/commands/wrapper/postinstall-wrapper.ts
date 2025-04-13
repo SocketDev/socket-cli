@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 
-import { stripIndents } from 'common-tags'
+import { codeBlock } from 'common-tags'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm } from '@socketsecurity/registry/lib/prompts'
@@ -17,7 +17,7 @@ export async function postinstallWrapper() {
     (existsSync(zshRcPath) && checkSocketWrapperSetup(zshRcPath))
 
   if (!socketWrapperEnabled) {
-    await installSafeNpm(stripIndents`
+    await installSafeNpm(codeBlock`
       The Socket CLI is now successfully installed! 🎉
 
       To better protect yourself against supply-chain attacks, our "safe npm" wrapper can warn you about malicious packages whenever you run 'npm install'.
