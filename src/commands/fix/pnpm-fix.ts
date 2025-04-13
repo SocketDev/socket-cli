@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { readWantedLockfile } from '@pnpm/lockfile.fs'
 
 import { getManifestData } from '@socketsecurity/registry'
@@ -37,6 +39,7 @@ import {
   findPackageNodes,
   updatePackageJsonFromNode
 } from '../../utils/arborist-helpers'
+import { globWorkspace } from '../../utils/glob'
 import { getAlertsMapFromPnpmLockfile } from '../../utils/pnpm-lock-yaml'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 
@@ -86,7 +89,9 @@ export async function pnpmFix(
     testScript
   }: NormalizedFixOptions
 ) {
-  const lockfile = await readWantedLockfile(cwd, { ignoreIncompatible: false })
+  const lockfile = await readWantedLockfile(pkgEnvDetails.pkgPath, {
+    ignoreIncompatible: false
+  })
   if (!lockfile) {
     return
   }
@@ -106,15 +111,21 @@ export async function pnpmFix(
 
   // Lazily access constants.ENV[CI].
   const isCi = constants.ENV[CI]
+  const { pkgPath: rootPath } = pkgEnvDetails
+
   const {
-    0: editablePkgJson,
-    1: isRepo,
+    0: isRepo,
+    1: workspacePkgJsonPaths,
     2: initialTree
   } = await Promise.all([
-    readPackageJson(cwd, { editable: true }),
     isInGitRepo(cwd),
+    globWorkspace(pkgEnvDetails),
     getActualTree(cwd)
   ])
+  const pkgJsonPaths = [
+    pkgEnvDetails.editablePkgJson.filename!,
+    ...workspacePkgJsonPaths
+  ]
 
   let actualTree = initialTree
 
@@ -167,160 +178,182 @@ export async function pnpmFix(
           continue
         }
 
-        const oldPnpm = editablePkgJson.content[PNPM] as
-          | StringKeyValueObject
-          | undefined
-        const oldPnpmKeyCount = oldPnpm ? Object.keys(oldPnpm).length : 0
-        const oldOverrides = (oldPnpm as StringKeyValueObject)?.[OVERRIDES] as
-          | Record<string, string>
-          | undefined
-        const oldOverridesCount = oldOverrides
-          ? Object.keys(oldOverrides).length
-          : 0
+        for (const pkgJsonPath of pkgJsonPaths) {
+          const isWorkspaceRoot =
+            pkgJsonPath === pkgEnvDetails.editablePkgJson.filename
+          const workspaceName = isWorkspaceRoot
+            ? ''
+            : path.relative(rootPath, path.dirname(pkgJsonPath))
+          const editablePkgJson = isWorkspaceRoot
+            ? pkgEnvDetails.editablePkgJson
+            : // eslint-disable-next-line no-await-in-loop
+              await readPackageJson(pkgJsonPath, { editable: true })
 
-        const overrideKey = `${name}@${vulnerableVersionRange}`
+          const oldPnpm = editablePkgJson.content[PNPM] as
+            | StringKeyValueObject
+            | undefined
+          const oldPnpmKeyCount = oldPnpm ? Object.keys(oldPnpm).length : 0
+          const oldOverrides = (oldPnpm as StringKeyValueObject)?.[OVERRIDES] as
+            | Record<string, string>
+            | undefined
+          const oldOverridesCount = oldOverrides
+            ? Object.keys(oldOverrides).length
+            : 0
 
-        const toVersionRange = applyRange(
-          oldOverrides?.[overrideKey] ?? fromVersion,
-          toVersion,
-          rangeStyle
-        )
-        const toSpec = `${name}@${toVersionRange}`
-
-        const branch = isCi ? getSocketBranchName(fromPurl, toVersion) : ''
-        const baseBranch = isCi ? getBaseGitBranch() : ''
-        const { owner, repo } = isCi
-          ? getGitHubEnvRepoInfo()
-          : { owner: '', repo: '' }
-        const shouldOpenPr = isCi
-          ? // eslint-disable-next-line no-await-in-loop
-            !(await doesPullRequestExistForBranch(owner, repo, branch))
-          : false
-
-        const updateData = {
-          [PNPM]: {
-            ...oldPnpm,
-            [OVERRIDES]: {
-              [overrideKey]: toVersionRange,
-              ...oldOverrides
-            }
-          }
-        }
-
-        const revertData = {
-          [PNPM]: oldPnpmKeyCount
-            ? {
-                ...oldPnpm,
-                [OVERRIDES]:
-                  oldOverridesCount === 1
-                    ? undefined
-                    : {
-                        [overrideKey]: undefined,
-                        ...oldOverrides
-                      }
-              }
-            : undefined,
-          ...(editablePkgJson.content.dependencies
-            ? { dependencies: editablePkgJson.content.dependencies }
-            : undefined),
-          ...(editablePkgJson.content.optionalDependencies
-            ? {
-                optionalDependencies:
-                  editablePkgJson.content.optionalDependencies
-              }
-            : undefined),
-          ...(editablePkgJson.content.peerDependencies
-            ? { peerDependencies: editablePkgJson.content.peerDependencies }
-            : undefined)
-        } as PackageJson
-
-        spinner?.info(`Installing ${toSpec}`)
-
-        if (isCi) {
-          // eslint-disable-next-line no-await-in-loop
-          await gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)
-        }
-
-        let error: unknown
-        let errored = false
-        let installed = false
-        let saved = false
-        try {
-          editablePkgJson.update(updateData)
-          updatePackageJsonFromNode(
-            editablePkgJson,
-            actualTree,
-            node,
+          const overrideKey = `${name}@${vulnerableVersionRange}`
+          const toVersionRange = applyRange(
+            oldOverrides?.[overrideKey] ?? fromVersion,
             toVersion,
             rangeStyle
           )
-          // eslint-disable-next-line no-await-in-loop
-          await editablePkgJson.save()
-          saved = true
+          const toSpec = `${name}@${toVersionRange}`
 
-          // eslint-disable-next-line no-await-in-loop
-          actualTree = await install(pkgEnvDetails, { spinner })
-          installed = true
+          const branch = isCi
+            ? getSocketBranchName(fromPurl, toVersion, workspaceName)
+            : ''
+          const baseBranch = isCi ? getBaseGitBranch() : ''
+          const { owner, repo } = isCi
+            ? getGitHubEnvRepoInfo()
+            : { owner: '', repo: '' }
+          const shouldOpenPr = isCi
+            ? // eslint-disable-next-line no-await-in-loop
+              !(await doesPullRequestExistForBranch(owner, repo, branch))
+            : false
 
-          if (test) {
-            spinner?.info(`Testing ${toSpec}`)
-            // eslint-disable-next-line no-await-in-loop
-            await runScript(testScript, [], { spinner, stdio: 'ignore' })
-          }
-          spinner?.successAndStop(`Fixed ${name}`)
-          spinner?.start()
-        } catch (e) {
-          error = e
-          errored = true
-        }
+          const updateData = isWorkspaceRoot
+            ? {
+                [PNPM]: {
+                  ...oldPnpm,
+                  [OVERRIDES]: {
+                    [overrideKey]: toVersionRange,
+                    ...oldOverrides
+                  }
+                }
+              }
+            : {}
 
-        if (!errored && shouldOpenPr) {
-          // eslint-disable-next-line no-await-in-loop
-          await gitCreateAndPushBranchIfNeeded(
-            branch!,
-            getSocketCommitMessage(fromPurl, toVersion),
-            cwd
-          )
-          // eslint-disable-next-line no-await-in-loop
-          const prResponse = await openGitHubPullRequest(
-            owner,
-            repo,
-            baseBranch,
-            branch,
-            fromPurl,
-            toVersion,
-            cwd
-          )
-          if (prResponse && autoMerge) {
-            // eslint-disable-next-line no-await-in-loop
-            await enableAutoMerge(prResponse.data)
-          }
-        }
+          const revertData = {
+            ...(isWorkspaceRoot
+              ? {
+                  [PNPM]: oldPnpmKeyCount
+                    ? {
+                        ...oldPnpm,
+                        [OVERRIDES]:
+                          oldOverridesCount === 1
+                            ? undefined
+                            : {
+                                [overrideKey]: undefined,
+                                ...oldOverrides
+                              }
+                      }
+                    : undefined
+                }
+              : {}),
+            ...(editablePkgJson.content.dependencies
+              ? { dependencies: editablePkgJson.content.dependencies }
+              : undefined),
+            ...(editablePkgJson.content.optionalDependencies
+              ? {
+                  optionalDependencies:
+                    editablePkgJson.content.optionalDependencies
+                }
+              : undefined),
+            ...(editablePkgJson.content.peerDependencies
+              ? { peerDependencies: editablePkgJson.content.peerDependencies }
+              : undefined)
+          } as PackageJson
 
-        if (errored || isCi) {
-          if (errored) {
-            spinner?.error(`Reverting ${toSpec}`, error)
-          }
-          if (isRepo) {
+          spinner?.info(`Installing ${toSpec}`)
+
+          if (isCi) {
             // eslint-disable-next-line no-await-in-loop
-            await gitHardReset(cwd)
+            await gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)
           }
-          if (saved) {
-            editablePkgJson.update(revertData)
-            if (!isRepo) {
-              // eslint-disable-next-line no-await-in-loop
-              await editablePkgJson.save()
-            }
-          }
-          if (isRepo) {
+
+          let error: unknown
+          let errored = false
+          let installed = false
+          let saved = false
+          try {
+            editablePkgJson.update(updateData)
+            updatePackageJsonFromNode(
+              editablePkgJson,
+              actualTree,
+              node,
+              toVersion,
+              rangeStyle
+            )
             // eslint-disable-next-line no-await-in-loop
-            actualTree = await getActualTree(cwd)
-          } else if (installed) {
+            await editablePkgJson.save()
+            saved = true
+
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { spinner })
+            installed = true
+
+            if (test) {
+              spinner?.info(`Testing ${toSpec}`)
+              // eslint-disable-next-line no-await-in-loop
+              await runScript(testScript, [], { spinner, stdio: 'ignore' })
+            }
+            spinner?.successAndStop(`Fixed ${name}`)
+            spinner?.start()
+          } catch (e) {
+            error = e
+            errored = true
           }
-          if (errored) {
-            spinner?.failAndStop(`Failed to fix ${fromSpec}`)
+
+          if (!errored && shouldOpenPr) {
+            // eslint-disable-next-line no-await-in-loop
+            await gitCreateAndPushBranchIfNeeded(
+              branch!,
+              getSocketCommitMessage(fromPurl, toVersion, workspaceName),
+              cwd
+            )
+            // eslint-disable-next-line no-await-in-loop
+            const prResponse = await openGitHubPullRequest(
+              owner,
+              repo,
+              baseBranch,
+              branch,
+              fromPurl,
+              toVersion,
+              {
+                cwd,
+                workspaceName
+              }
+            )
+            if (prResponse && autoMerge) {
+              // eslint-disable-next-line no-await-in-loop
+              await enableAutoMerge(prResponse.data)
+            }
+          }
+
+          if (errored || isCi) {
+            if (errored) {
+              spinner?.error(`Reverting ${toSpec}`, error)
+            }
+            if (isRepo) {
+              // eslint-disable-next-line no-await-in-loop
+              await gitHardReset(cwd)
+            }
+            if (saved) {
+              editablePkgJson.update(revertData)
+              if (!isRepo) {
+                // eslint-disable-next-line no-await-in-loop
+                await editablePkgJson.save()
+              }
+            }
+            if (isRepo) {
+              // eslint-disable-next-line no-await-in-loop
+              actualTree = await getActualTree(cwd)
+            } else if (installed) {
+              // eslint-disable-next-line no-await-in-loop
+              actualTree = await install(pkgEnvDetails, { spinner })
+            }
+            if (errored) {
+              spinner?.failAndStop(`Failed to fix ${fromSpec}`)
+            }
           }
         }
       }
