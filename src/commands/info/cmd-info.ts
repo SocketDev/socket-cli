@@ -14,7 +14,7 @@ const { DRY_RUN_BAIL_TEXT } = constants
 const config: CliCommandConfig = {
   commandName: 'info',
   description: 'Look up info regarding a package',
-  hidden: false,
+  hidden: true, // Deprecated
   flags: {
     ...commonFlags,
     ...outputFlags,
