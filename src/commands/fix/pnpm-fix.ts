@@ -26,7 +26,6 @@ import {
   getGitHubEnvRepoInfo,
   openGitHubPullRequest
 } from './open-pr'
-import { applyRange } from './shared'
 import constants from '../../constants'
 import {
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
@@ -34,13 +33,17 @@ import {
 } from '../../shadow/npm/arborist/lib/arborist'
 import { runAgentInstall } from '../../utils/agent'
 import {
+  getAlertsMapFromPnpmLockfile,
+  getAlertsMapFromPurls
+} from '../../utils/alerts-map'
+import {
   findBestPatchVersion,
   findPackageNode,
   findPackageNodes,
   updatePackageJsonFromNode
 } from '../../utils/arborist-helpers'
 import { globWorkspace } from '../../utils/glob'
-import { getAlertsMapFromPnpmLockfile } from '../../utils/pnpm-lock-yaml'
+import { applyRange } from '../../utils/semver'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 
 import type { NormalizedFixOptions } from './types'
@@ -83,6 +86,7 @@ export async function pnpmFix(
   {
     autoMerge,
     cwd,
+    purls,
     rangeStyle,
     spinner,
     test,
@@ -96,11 +100,15 @@ export async function pnpmFix(
     return
   }
 
-  const alertsMap = await getAlertsMapFromPnpmLockfile(lockfile, {
+  const alertMapOptions = {
     consolidate: true,
     include: { existing: true, unfixable: false, upgradable: false },
     nothrow: true
-  })
+  }
+
+  const alertsMap = purls.length
+    ? await getAlertsMapFromPurls(purls, alertMapOptions)
+    : await getAlertsMapFromPnpmLockfile(lockfile, alertMapOptions)
 
   const infoByPkg = getCveInfoByAlertsMap(alertsMap)
   if (!infoByPkg) {

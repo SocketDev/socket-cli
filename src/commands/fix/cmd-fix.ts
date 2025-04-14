@@ -5,15 +5,15 @@ import { joinOr } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { runFix } from './run-fix'
-import { RangeStyles } from './shared'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
+import { RangeStyles } from '../../utils/semver'
 
-import type { RangeStyle } from './types'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
+import type { RangeStyle } from '../../utils/semver'
 
 const { DRY_RUN_BAIL_TEXT } = constants
 
@@ -35,6 +35,13 @@ const config: CliCommandConfig = {
         'GitHub documentation',
         'https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository'
       )} for managing auto-merge for pull requests in your repository.`
+    },
+    purl: {
+      type: 'string',
+      default: [],
+      description: `User provided PURL to fix`,
+      isMultiple: true,
+      shortFlag: 'p'
     },
     rangeStyle: {
       type: 'string',
@@ -109,6 +116,7 @@ async function run(
   await runFix({
     autoMerge: Boolean(cli.flags['autoMerge']),
     autoPilot: Boolean(cli.flags['autoPilot']),
+    purls: Array.isArray(cli.flags['purl']) ? cli.flags['purl'] : [],
     spinner,
     rangeStyle: (cli.flags['rangeStyle'] ?? undefined) as
       | RangeStyle
