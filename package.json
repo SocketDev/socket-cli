@@ -136,7 +136,7 @@
     "dev-null-cli": "2.0.0",
     "eslint": "9.24.0",
     "eslint-import-resolver-typescript": "4.3.2",
-    "eslint-plugin-import-x": "4.10.2",
+    "eslint-plugin-import-x": "4.10.3",
     "eslint-plugin-n": "17.17.0",
     "eslint-plugin-sort-destructure-keys": "2.0.0",
     "eslint-plugin-unicorn": "56.0.1",
