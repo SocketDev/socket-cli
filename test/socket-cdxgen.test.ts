@@ -74,7 +74,7 @@ describe('Socket cdxgen command', async () => {
             [entryPath, 'cdxgen', '-y', command],
             spawnOpts
           )
-        // @ts-ignore -- toHaveStderrInclude is defined above
+        // @ts-ignore toHaveStderrInclude is defined above
       ).rejects.toHaveStderrInclude(
         `${LOG_SYMBOLS.fail} Unknown argument: ${command}`
       )
@@ -90,7 +90,7 @@ describe('Socket cdxgen command', async () => {
             [entryPath, 'cdxgen', '--yes', command],
             spawnOpts
           )
-        // @ts-ignore -- toHaveStderrInclude is defined above
+        // @ts-ignore toHaveStderrInclude is defined above
       ).rejects.toHaveStderrInclude(
         `${LOG_SYMBOLS.fail} Unknown argument: ${command}`
       )
@@ -105,7 +105,7 @@ describe('Socket cdxgen command', async () => {
             [entryPath, 'cdxgen', '-y', '-u', '-h', '--unknown'],
             spawnOpts
           )
-        // @ts-ignore -- toHaveStderrInclude is defined above
+        // @ts-ignore toHaveStderrInclude is defined above
       ).rejects.toHaveStderrInclude(
         `${LOG_SYMBOLS.fail} Unknown arguments: -u, --unknown`
       )

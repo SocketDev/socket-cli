@@ -37,8 +37,7 @@ export async function outputSecurityPolicy(
   const rules = data.securityPolicyRules
   const entries: Array<
     [string, { action: 'defer' | 'error' | 'warn' | 'monitor' | 'ignore' }]
-    // @ts-ignore -- not sure why TS is complaining tbh but it does not like it
-  > = Object.entries(rules)
+  > = rules ? Object.entries(rules) : []
   const mapped: Array<[string, string]> = entries.map(([key, value]) => [
     key,
     value.action

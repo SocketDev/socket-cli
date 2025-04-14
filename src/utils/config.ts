@@ -62,7 +62,7 @@ export function overrideCachedConfig(
     }
   }
 
-  // @ts-ignore if you want to override an illegal object, so be it?
+  // @ts-ignore Override an illegal object.
   _cachedConfig = config as LocalConfig
   _readOnlyConfig = true
 
