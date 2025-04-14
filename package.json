@@ -80,7 +80,7 @@
     "@socketregistry/indent-string": "1.0.12",
     "@socketregistry/is-interactive": "1.0.5",
     "@socketregistry/packageurl-js": "1.0.5",
-    "@socketsecurity/registry": "1.0.143",
+    "@socketsecurity/registry": "1.0.144",
     "@socketsecurity/sdk": "1.4.28",
     "blessed": "0.1.81"
   },
