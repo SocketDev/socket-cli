@@ -92,7 +92,7 @@ export async function attemptLogin(
     logger.success(
       `API credentials ${previousPersistedToken === apiToken ? 'refreshed' : previousPersistedToken ? 'updated' : 'set'}`
     )
-    if (!isReadOnlyConfig()) {
+    if (isReadOnlyConfig()) {
       logger.log('')
       logger.warn(
         'Note: config is in read-only mode, at least one key was overridden through flag/env, so the login was not persisted!'
