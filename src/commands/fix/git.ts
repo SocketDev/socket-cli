@@ -48,7 +48,8 @@ export function getSocketPullRequestTitle(
 ): string {
   const purlObj = PackageURL.fromString(purl)
   const pkgName = getPkgNameFromPurlObj(purlObj)
-  return `Bump ${pkgName} from ${purlObj.version} to ${toVersion}${workspaceName ? ` in ${workspaceName}` : ''}`
+  const workspaceDetails = workspaceName ? ` in ${workspaceName}` : ''
+  return `Bump ${pkgName} from ${purlObj.version} to ${toVersion}${workspaceDetails}`
 }
 
 export function getSocketPullRequestBody(
@@ -58,7 +59,8 @@ export function getSocketPullRequestBody(
 ): string {
   const purlObj = PackageURL.fromString(purl)
   const pkgName = getPkgNameFromPurlObj(purlObj)
-  return `Bumps [${pkgName}](https://socket.dev/${purlObj.type}/package/${pkgName}) from ${purlObj.version} to ${toVersion}${workspaceName ? ` in ${workspaceName}` : ''}.`
+  const workspaceDetails = workspaceName ? ` in ${workspaceName}` : ''
+  return `Bumps [${pkgName}](https://socket.dev/${purlObj.type}/package/${pkgName}) from ${purlObj.version} to ${toVersion}${workspaceDetails}.`
 }
 
 export function getSocketCommitMessage(
@@ -68,7 +70,8 @@ export function getSocketCommitMessage(
 ): string {
   const purlObj = PackageURL.fromString(purl)
   const pkgName = getPkgNameFromPurlObj(purlObj)
-  return `socket: Bump ${pkgName} from ${purlObj.version} to ${toVersion}${workspaceName ? ` in ${workspaceName}` : ''}`
+  const workspaceDetails = workspaceName ? ` in ${workspaceName}` : ''
+  return `socket: Bump ${pkgName} from ${purlObj.version} to ${toVersion}${workspaceDetails}`
 }
 
 export async function gitBranchExists(
