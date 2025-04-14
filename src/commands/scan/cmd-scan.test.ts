@@ -26,6 +26,7 @@ describe('socket scan', async () => {
           Commands
             create            Create a scan
             del               Delete a scan
+            diff              See what changed between two Scans
             list              List the scans for an organization
             metadata          Get a scan's metadata
             report            Check whether a scan result passes the organizational policies (security, license)
