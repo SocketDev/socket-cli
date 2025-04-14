@@ -106,7 +106,6 @@ async function run(
     logger.groupEnd()
   }
 
-  const { cwd = process.cwd() } = cli.flags
   const [target = ''] = cli.input
 
   // TODO: I'm not sure it's feasible to parse source file from stdin. We could
@@ -132,12 +131,7 @@ async function run(
     return
   }
 
-  let bin: string
-  if (cli.flags['bin']) {
-    bin = cli.flags['bin'] as string
-  } else {
-    bin = path.join(target, 'gradlew')
-  }
+  const { bin = path.join(target, 'gradlew'), cwd = process.cwd() } = cli.flags
 
   if (verbose) {
     logger.group()
@@ -159,5 +153,11 @@ async function run(
     return
   }
 
-  await convertGradleToMaven(target, bin, cwd, verbose, gradleOpts)
+  await convertGradleToMaven(
+    target,
+    String(bin),
+    String(cwd),
+    verbose,
+    gradleOpts
+  )
 }

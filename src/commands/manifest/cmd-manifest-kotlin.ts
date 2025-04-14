@@ -158,5 +158,11 @@ async function run(
     return
   }
 
-  await convertGradleToMaven(target, bin, cwd, verbose, gradleOpts)
+  await convertGradleToMaven(
+    target,
+    String(bin),
+    String(cwd),
+    verbose,
+    gradleOpts
+  )
 }
