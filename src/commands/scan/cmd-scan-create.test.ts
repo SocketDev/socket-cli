@@ -40,6 +40,9 @@ describe('socket scan create', async () => {
           When a FILE is given only that FILE is targeted. Otherwise any eligible
           files in the given DIR will be considered.
 
+          The --repo and --branch flags tell Socket to associate this Scan with that
+          repo/branch. The names will show up on your dashboard on the Socket website.
+
           Note: for a first run you probably want to set --defaultBranch to indicate
                 the default branch name, like "main" or "master".
 
