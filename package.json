@@ -95,7 +95,7 @@
     "@babel/preset-typescript": "7.27.0",
     "@babel/runtime": "7.27.0",
     "@biomejs/biome": "1.9.4",
-    "@cyclonedx/cdxgen": "11.2.3",
+    "@cyclonedx/cdxgen": "11.2.4",
     "@eslint/compat": "1.2.8",
     "@eslint/js": "9.24.0",
     "@octokit/graphql": "8.2.2",
