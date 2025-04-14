@@ -4,6 +4,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import config from '@socketsecurity/config'
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { safeReadFileSync } from './fs'
@@ -46,6 +47,8 @@ let _readOnlyConfig = false
 export function overrideCachedConfig(
   jsonConfig: unknown
 ): { ok: true; message: undefined } | { ok: false; message: string } {
+  debugLog('Overriding entire config, marking config as read-only')
+
   let config
   try {
     config = JSON.parse(String(jsonConfig))
@@ -81,6 +84,7 @@ export function overrideCachedConfig(
 }
 
 export function overrideConfigApiToken(apiToken: unknown) {
+  debugLog('Overriding API token, marking config as read-only')
   // Set token to the local cached config and mark it read-only so it doesn't persist
   _cachedConfig = {
     ...config,
