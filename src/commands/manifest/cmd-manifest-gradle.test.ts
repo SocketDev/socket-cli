@@ -29,8 +29,6 @@ describe('socket manifest gradle', async () => {
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --gradleOpts      Additional options to pass on to ./gradlew, see \`./gradlew --help\`
             --help            Print this help
-            --out             Path of output file; where to store the resulting manifest, see also --stdout
-            --stdout          Print resulting pom.xml to stdout (supersedes --out)
             --task            Task to target. By default targets all
             --verbose         Print debug messages
 
