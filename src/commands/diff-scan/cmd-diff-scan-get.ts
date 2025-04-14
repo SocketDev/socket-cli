@@ -138,7 +138,9 @@ async function run(
     return
   }
 
-  logger.fail('Warning: this command is deprecated in favor of `socket scan diff` and will be removed in the next major bump.')
+  logger.fail(
+    'Warning: this command is deprecated in favor of `socket scan diff` and will be removed in the next major bump.'
+  )
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)
