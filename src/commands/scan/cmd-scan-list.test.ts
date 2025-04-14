@@ -28,6 +28,7 @@ describe('socket scan list', async () => {
             - Permissions: full-scans:list
 
           Options
+            --branch          Filter to show only scans with this branch name
             --direction       Direction option (\`desc\` or \`asc\`) - Default is \`desc\`
             --dryRun          Do input validation for a command and exit 0 when input is ok
             --fromTime        From time - as a unix timestamp
@@ -36,6 +37,7 @@ describe('socket scan list', async () => {
             --markdown        Output result as markdown
             --page            Page number - Default is 1
             --perPage         Results per page - Default is 30
+            --repo            Filter to show only scans with this repository name
             --sort            Sorting option (\`name\` or \`created_at\`) - default is \`created_at\`
             --untilTime       Until time - as a unix timestamp
 
