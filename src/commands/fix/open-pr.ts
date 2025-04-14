@@ -129,7 +129,7 @@ export async function openGitHubPullRequest(
   baseBranch: string,
   branch: string,
   purl: string,
-  toVersion: string,
+  newVersion: string,
   options?: OpenGitHubPullRequestOptions | undefined
 ): Promise<OctokitResponse<PullsCreateResponseData> | null> {
   const { cwd = process.cwd(), workspaceName } = {
@@ -152,10 +152,10 @@ export async function openGitHubPullRequest(
       return await octokit.pulls.create({
         owner,
         repo,
-        title: getSocketPullRequestTitle(purl, toVersion, workspaceName),
+        title: getSocketPullRequestTitle(purl, newVersion, workspaceName),
         head: branch,
         base: baseBranch,
-        body: getSocketPullRequestBody(purl, toVersion, workspaceName)
+        body: getSocketPullRequestBody(purl, newVersion, workspaceName)
       })
     } catch (e) {
       let message = `Failed to open pull request`
