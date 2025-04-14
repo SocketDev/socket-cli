@@ -2,7 +2,6 @@ import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
-import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import {
@@ -11,124 +10,21 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 
 import constants from '../constants'
-import { SafeArborist } from '../shadow/npm/arborist/lib/arborist'
+import { applyRange } from './semver'
 import { DiffAction } from '../shadow/npm/arborist/lib/arborist/types'
 import { Edge } from '../shadow/npm/arborist/lib/edge'
-import { getPublicToken, setupSdk } from '../utils/sdk'
-import { CompactSocketArtifact } from './alert/artifact'
-import { addArtifactToAlertsMap } from './socket-package-alert'
-import { applyRange } from '../commands/fix/shared'
 
-import type { AlertIncludeFilter, AlertsByPkgId } from './socket-package-alert'
-import type { RangeStyle } from '../commands/fix/types'
+import type { RangeStyle } from './semver'
 import type { Diff } from '../shadow/npm/arborist/lib/arborist/types'
 import type { SafeEdge } from '../shadow/npm/arborist/lib/edge'
 import type { SafeNode } from '../shadow/npm/arborist/lib/node'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-type Packument = Exclude<
+export type Packument = Exclude<
   Awaited<ReturnType<typeof fetchPackagePackument>>,
   null
 >
 
 const { LOOP_SENTINEL, NPM, NPM_REGISTRY_URL } = constants
-
-type DiffQueryIncludeFilter = {
-  unchanged?: boolean | undefined
-  unknownOrigin?: boolean | undefined
-}
-
-type DiffQueryOptions = {
-  include?: DiffQueryIncludeFilter | undefined
-}
-
-type PackageDetail = {
-  node: SafeNode
-  existing?: SafeNode | undefined
-}
-
-function getDetailsFromDiff(
-  diff_: Diff | null,
-  options?: DiffQueryOptions | undefined
-): PackageDetail[] {
-  const details: PackageDetail[] = []
-  // `diff_` is `null` when `npm install --package-lock-only` is passed.
-  if (!diff_) {
-    return details
-  }
-
-  const include = {
-    __proto__: null,
-    unchanged: false,
-    unknownOrigin: false,
-    ...({ __proto__: null, ...options } as DiffQueryOptions).include
-  } as DiffQueryIncludeFilter
-
-  const queue: Diff[] = [...diff_.children]
-  let pos = 0
-  let { length: queueLength } = queue
-  while (pos < queueLength) {
-    if (pos === LOOP_SENTINEL) {
-      throw new Error('Detected infinite loop while walking Arborist diff')
-    }
-    const diff = queue[pos++]!
-    const { action } = diff
-    if (action) {
-      // The `pkgNode`, i.e. the `ideal` node, will be `undefined` if the diff
-      // action is 'REMOVE'
-      // The `oldNode`, i.e. the `actual` node, will be `undefined` if the diff
-      // action is 'ADD'.
-      const { actual: oldNode, ideal: pkgNode } = diff
-      let existing: SafeNode | undefined
-      let keep = false
-      if (action === DiffAction.change) {
-        if (pkgNode?.package.version !== oldNode?.package.version) {
-          keep = true
-          if (
-            oldNode?.package.name &&
-            oldNode.package.name === pkgNode?.package.name
-          ) {
-            existing = oldNode
-          }
-        } else {
-          debugLog('SKIPPING META CHANGE ON\n', diff)
-        }
-      } else {
-        keep = action !== DiffAction.remove
-      }
-      if (keep && pkgNode?.resolved && (!oldNode || oldNode.resolved)) {
-        if (
-          include.unknownOrigin ||
-          getUrlOrigin(pkgNode.resolved) === NPM_REGISTRY_URL
-        ) {
-          details.push({
-            node: pkgNode,
-            existing
-          })
-        }
-      }
-    }
-    for (const child of diff.children) {
-      queue[queueLength++] = child
-    }
-  }
-  if (include.unchanged) {
-    const { unchanged } = diff_!
-    for (let i = 0, { length } = unchanged; i < length; i += 1) {
-      const pkgNode = unchanged[i]!
-      if (
-        include.unknownOrigin ||
-        getUrlOrigin(pkgNode.resolved!) === NPM_REGISTRY_URL
-      ) {
-        details.push({
-          node: pkgNode,
-          existing: pkgNode
-        })
-      }
-    }
-  }
-  return details
-}
 
 function getUrlOrigin(input: string): string {
   try {
@@ -213,112 +109,101 @@ export function findPackageNodes(
   return matches
 }
 
-export type GetAlertsMapFromArboristOptions = {
-  consolidate?: boolean | undefined
-  include?: AlertIncludeFilter | undefined
-  nothrow?: boolean | undefined
-  spinner?: Spinner | undefined
+export type DiffQueryIncludeFilter = {
+  unchanged?: boolean | undefined
+  unknownOrigin?: boolean | undefined
 }
 
-export async function getAlertsMapFromArborist(
-  arb: SafeArborist,
-  options_?: GetAlertsMapFromArboristOptions | undefined
-): Promise<AlertsByPkgId> {
-  const options = {
-    __proto__: null,
-    consolidate: false,
-    nothrow: false,
-    ...options_
-  } as GetAlertsMapFromArboristOptions
+export type DiffQueryOptions = {
+  include?: DiffQueryIncludeFilter | undefined
+}
+
+export type PackageDetail = {
+  node: SafeNode
+  existing?: SafeNode | undefined
+}
+
+export function getDetailsFromDiff(
+  diff_: Diff | null,
+  options?: DiffQueryOptions | undefined
+): PackageDetail[] {
+  const details: PackageDetail[] = []
+  // `diff_` is `null` when `npm install --package-lock-only` is passed.
+  if (!diff_) {
+    return details
+  }
 
   const include = {
     __proto__: null,
-    actions: undefined,
-    blocked: true,
-    critical: true,
-    cve: true,
-    existing: false,
-    unfixable: true,
-    upgradable: false,
-    ...options.include
-  } as AlertIncludeFilter
+    unchanged: false,
+    unknownOrigin: false,
+    ...({ __proto__: null, ...options } as DiffQueryOptions).include
+  } as DiffQueryIncludeFilter
 
-  const { spinner } = options
-
-  const needInfoOn = getDetailsFromDiff(arb.diff, {
-    include: {
-      unchanged: include.existing
+  const queue: Diff[] = [...diff_.children]
+  let pos = 0
+  let { length: queueLength } = queue
+  while (pos < queueLength) {
+    if (pos === LOOP_SENTINEL) {
+      throw new Error('Detected infinite loop while walking Arborist diff')
     }
-  })
-
-  const pkgIds = arrayUnique(needInfoOn.map(d => d.node.pkgid))
-  let { length: remaining } = pkgIds
-  const alertsByPkgId: AlertsByPkgId = new Map()
-  if (!remaining) {
-    return alertsByPkgId
-  }
-
-  const getText = () => `Looking up data for ${remaining} packages`
-
-  spinner?.start(getText())
-
-  let overrides: { [key: string]: string } | undefined
-  const overridesMap = (
-    arb.actualTree ??
-    arb.idealTree ??
-    (await arb.loadActual())
-  )?.overrides?.children
-  if (overridesMap) {
-    overrides = Object.fromEntries(
-      [...overridesMap.entries()].map(([key, overrideSet]) => {
-        return [key, overrideSet.value!]
-      })
-    )
-  }
-
-  const sockSdk = await setupSdk(getPublicToken())
-
-  const toAlertsMapOptions = {
-    overrides,
-    consolidate: options.consolidate,
-    include,
-    spinner
-  }
-
-  for await (const batchResult of sockSdk.batchPackageStream(
-    {
-      alerts: 'true',
-      compact: 'true',
-      ...(include.actions ? { actions: include.actions.join(',') } : {}),
-      ...(include.unfixable ? {} : { fixable: 'true' })
-    },
-    {
-      components: pkgIds.map(id => ({ purl: `pkg:npm/${id}` }))
+    const diff = queue[pos++]!
+    const { action } = diff
+    if (action) {
+      // The `pkgNode`, i.e. the `ideal` node, will be `undefined` if the diff
+      // action is 'REMOVE'
+      // The `oldNode`, i.e. the `actual` node, will be `undefined` if the diff
+      // action is 'ADD'.
+      const { actual: oldNode, ideal: pkgNode } = diff
+      let existing: SafeNode | undefined
+      let keep = false
+      if (action === DiffAction.change) {
+        if (pkgNode?.package.version !== oldNode?.package.version) {
+          keep = true
+          if (
+            oldNode?.package.name &&
+            oldNode.package.name === pkgNode?.package.name
+          ) {
+            existing = oldNode
+          }
+        } else {
+          debugLog('SKIPPING META CHANGE ON\n', diff)
+        }
+      } else {
+        keep = action !== DiffAction.remove
+      }
+      if (keep && pkgNode?.resolved && (!oldNode || oldNode.resolved)) {
+        if (
+          include.unknownOrigin ||
+          getUrlOrigin(pkgNode.resolved) === NPM_REGISTRY_URL
+        ) {
+          details.push({
+            node: pkgNode,
+            existing
+          })
+        }
+      }
     }
-  )) {
-    if (batchResult.success) {
-      await addArtifactToAlertsMap(
-        batchResult.data as CompactSocketArtifact,
-        alertsByPkgId,
-        toAlertsMapOptions
-      )
-    } else if (!options.nothrow) {
-      const statusCode = batchResult.status ?? 'unknown'
-      const statusMessage = batchResult.error ?? 'No status message'
-      throw new Error(
-        `Socket API server error (${statusCode}): ${statusMessage}`
-      )
-    }
-    remaining -= 1
-    if (spinner && remaining > 0) {
-      spinner.start()
-      spinner.setText(getText())
+    for (const child of diff.children) {
+      queue[queueLength++] = child
     }
   }
-
-  spinner?.stop()
-
-  return alertsByPkgId
+  if (include.unchanged) {
+    const { unchanged } = diff_!
+    for (let i = 0, { length } = unchanged; i < length; i += 1) {
+      const pkgNode = unchanged[i]!
+      if (
+        include.unknownOrigin ||
+        getUrlOrigin(pkgNode.resolved!) === NPM_REGISTRY_URL
+      ) {
+        details.push({
+          node: pkgNode,
+          existing: pkgNode
+        })
+      }
+    }
+  }
+  return details
 }
 
 export function isTopLevel(tree: SafeNode, node: SafeNode): boolean {
