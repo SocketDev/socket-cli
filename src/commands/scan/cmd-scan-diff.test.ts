@@ -43,7 +43,8 @@ describe('socket scan diff', async () => {
             --markdown        Output result as markdown
 
           Examples
-            $ socket scan diff FakeCorp --before=aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 --after=aaa1aa1a-aaaa-1111-1a1a-1111111a11a1"
+            $ socket scan diff FakeCorp aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
+            $ socket scan diff FakeCorp aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json"
       `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
