@@ -27,7 +27,7 @@ export function getBaseGitBranch() {
 
 export function getSocketBranchName(
   purl: string,
-  toVersion: string,
+  newVersion: string,
   workspaceName?: string | undefined
 ): string {
   const purlObj = PackageURL.fromString(purl)
@@ -38,40 +38,40 @@ export function getSocketBranchName(
     ? `${formatBranchName(purlObj.namespace)}-`
     : ''
   const fullName = `${maybeWorkspaceName}${maybeNamespace}${formatBranchName(purlObj.name)}`
-  return `socket-fix-${fullName}-${formatBranchName(toVersion)}`
+  return `socket-fix-${fullName}-${formatBranchName(newVersion)}`
 }
 
 export function getSocketPullRequestTitle(
   purl: string,
-  toVersion: string,
+  newVersion: string,
   workspaceName?: string | undefined
 ): string {
   const purlObj = PackageURL.fromString(purl)
   const pkgName = getPkgNameFromPurlObj(purlObj)
   const workspaceDetails = workspaceName ? ` in ${workspaceName}` : ''
-  return `Bump ${pkgName} from ${purlObj.version} to ${toVersion}${workspaceDetails}`
+  return `Bump ${pkgName} from ${purlObj.version} to ${newVersion}${workspaceDetails}`
 }
 
 export function getSocketPullRequestBody(
   purl: string,
-  toVersion: string,
+  newVersion: string,
   workspaceName?: string | undefined
 ): string {
   const purlObj = PackageURL.fromString(purl)
   const pkgName = getPkgNameFromPurlObj(purlObj)
   const workspaceDetails = workspaceName ? ` in ${workspaceName}` : ''
-  return `Bumps [${pkgName}](https://socket.dev/${purlObj.type}/package/${pkgName}) from ${purlObj.version} to ${toVersion}${workspaceDetails}.`
+  return `Bumps [${pkgName}](https://socket.dev/${purlObj.type}/package/${pkgName}) from ${purlObj.version} to ${newVersion}${workspaceDetails}.`
 }
 
 export function getSocketCommitMessage(
   purl: string,
-  toVersion: string,
+  newVersion: string,
   workspaceName?: string | undefined
 ): string {
   const purlObj = PackageURL.fromString(purl)
   const pkgName = getPkgNameFromPurlObj(purlObj)
   const workspaceDetails = workspaceName ? ` in ${workspaceName}` : ''
-  return `socket: Bump ${pkgName} from ${purlObj.version} to ${toVersion}${workspaceDetails}`
+  return `socket: Bump ${pkgName} from ${purlObj.version} to ${newVersion}${workspaceDetails}`
 }
 
 export async function gitBranchExists(
