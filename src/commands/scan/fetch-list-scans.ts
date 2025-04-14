@@ -5,18 +5,22 @@ import { setupSdk } from '../../utils/sdk'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchListScans({
+  branch,
   direction,
   from_time,
   orgSlug,
   page,
   per_page,
+  repo,
   sort
 }: {
+  branch: string
   direction: string
   from_time: string
   orgSlug: string
   page: number
   per_page: number
+  repo: string
   sort: string
 }): Promise<SocketSdkReturnType<'getOrgFullScanList'>['data'] | void> {
   const sockSdk = await setupSdk()
@@ -28,6 +32,8 @@ export async function fetchListScans({
 
   const result = await handleApiCall(
     sockSdk.getOrgFullScanList(orgSlug, {
+      ...(branch ? { branch } : {}),
+      ...(repo ? { repo } : {}),
       sort,
       direction,
       per_page: String(per_page),
