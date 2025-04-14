@@ -29,9 +29,8 @@ export async function outputLicensePolicy(
   logger.log('')
   logger.log('This is the license policy for your organization:')
   logger.log('')
-  const rules = data.license_policy
-  // @ts-ignore -- not sure what it's complaining about
-  const entries = Object.entries(rules)
+  const rules = data.license_policy!
+  const entries = rules ? Object.entries(rules) : []
   const mapped: Array<[string, string]> = entries.map(
     ([key, value]) => [key, value.allowed ? ' yes' : ' no'] as const
   )

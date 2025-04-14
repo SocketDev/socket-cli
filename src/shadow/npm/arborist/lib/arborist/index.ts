@@ -99,7 +99,7 @@ export class SafeArborist extends Arborist {
         ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
         progress: false
       },
-      // @ts-ignore: TS gets grumpy about rest parameters.
+      // @ts-ignore: TypeScript gets grumpy about rest parameters.
       ...args.slice(1)
     )
     // Lazily access constants.ENV[SOCKET_CLI_ACCEPT_RISKS].
