@@ -34,16 +34,6 @@ const config: CliCommandConfig = {
       description:
         'Additional options to pass on to ./gradlew, see `./gradlew --help`'
     },
-    out: {
-      type: 'string',
-      default: './socket.pom.xml',
-      description:
-        'Path of output file; where to store the resulting manifest, see also --stdout'
-    },
-    stdout: {
-      type: 'boolean',
-      description: 'Print resulting pom.xml to stdout (supersedes --out)'
-    },
     task: {
       type: 'string',
       default: 'all',
@@ -116,6 +106,7 @@ async function run(
     logger.groupEnd()
   }
 
+  const { cwd = process.cwd() } = cli.flags
   const [target = ''] = cli.input
 
   // TODO: I'm not sure it's feasible to parse source file from stdin. We could
@@ -148,19 +139,10 @@ async function run(
     bin = path.join(target, 'gradlew')
   }
 
-  let out: string = './socket.pom.xml'
-  if (cli.flags['out']) {
-    out = cli.flags['out'] as string
-  }
-  if (cli.flags['stdout']) {
-    out = '-'
-  }
-
   if (verbose) {
     logger.group()
     logger.log('- target:', target)
     logger.log('- gradle bin:', bin)
-    logger.log('- out:', out)
     logger.groupEnd()
   }
 
@@ -177,5 +159,5 @@ async function run(
     return
   }
 
-  await convertGradleToMaven(target, bin, out, verbose, gradleOpts)
+  await convertGradleToMaven(target, bin, cwd, verbose, gradleOpts)
 }
