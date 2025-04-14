@@ -285,9 +285,10 @@ export async function pnpmFix(
               rangeStyle
             )
             // eslint-disable-next-line no-await-in-loop
-            await editablePkgJson.save()
+            if (!await editablePkgJson.save()) {
+              continue
+            }
             saved = true
-
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { spinner })
             installed = true
