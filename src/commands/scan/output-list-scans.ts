@@ -19,6 +19,7 @@ export async function outputListScans(
     columns: [
       { field: 'id', name: colors.magenta('ID') },
       { field: 'report_url', name: colors.magenta('Scan URL') },
+      { field: 'repo', name: colors.magenta('Repo') },
       { field: 'branch', name: colors.magenta('Branch') },
       { field: 'created_at', name: colors.magenta('Created at') }
     ]
@@ -35,6 +36,7 @@ export async function outputListScans(
             day: 'numeric'
           })
         : '',
+      repo: d.repo,
       branch: d.branch
     }
   })

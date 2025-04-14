@@ -23,12 +23,9 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags,
     ...outputFlags,
-    sort: {
+    branch: {
       type: 'string',
-      shortFlag: 's',
-      default: 'created_at',
-      description:
-        'Sorting option (`name` or `created_at`) - default is `created_at`'
+      description: 'Filter to show only scans with this branch name'
     },
     direction: {
       type: 'string',
@@ -36,11 +33,11 @@ const config: CliCommandConfig = {
       default: 'desc',
       description: 'Direction option (`desc` or `asc`) - Default is `desc`'
     },
-    perPage: {
-      type: 'number',
-      shortFlag: 'pp',
-      default: 30,
-      description: 'Results per page - Default is 30'
+    fromTime: {
+      type: 'string',
+      shortFlag: 'f',
+      default: '',
+      description: 'From time - as a unix timestamp'
     },
     page: {
       type: 'number',
@@ -48,11 +45,22 @@ const config: CliCommandConfig = {
       default: 1,
       description: 'Page number - Default is 1'
     },
-    fromTime: {
+    perPage: {
+      type: 'number',
+      shortFlag: 'pp',
+      default: 30,
+      description: 'Results per page - Default is 30'
+    },
+    repo: {
       type: 'string',
-      shortFlag: 'f',
-      default: '',
-      description: 'From time - as a unix timestamp'
+      description: 'Filter to show only scans with this repository name'
+    },
+    sort: {
+      type: 'string',
+      shortFlag: 's',
+      default: 'created_at',
+      description:
+        'Sorting option (`name` or `created_at`) - default is `created_at`'
     },
     untilTime: {
       type: 'string',
@@ -95,7 +103,7 @@ async function run(
     parentName
   })
 
-  const { json, markdown } = cli.flags
+  const { branch, json, markdown, repo } = cli.flags
   const defaultOrgSlug = getConfigValue('defaultOrg')
   const orgSlug = defaultOrgSlug || cli.input[0] || ''
   const apiToken = getDefaultToken()
@@ -137,12 +145,14 @@ async function run(
   }
 
   await handleListScans({
+    branch: branch ? String(branch) : '',
     direction: String(cli.flags['direction'] || ''),
     from_time: String(cli.flags['fromTime'] || ''),
     orgSlug,
     outputKind: json ? 'json' : markdown ? 'markdown' : 'print',
     page: Number(cli.flags['page'] || 1),
     per_page: Number(cli.flags['perPage'] || 30),
+    repo: repo ? String(repo) : '',
     sort: String(cli.flags['sort'] || '')
   })
 }
