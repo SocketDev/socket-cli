@@ -184,6 +184,7 @@ export async function pnpmFix(
           const workspaceName = isWorkspaceRoot
             ? ''
             : path.relative(rootPath, path.dirname(pkgJsonPath))
+          const workspaceDetails = workspaceName ? ` in ${workspaceName}` : ''
           const editablePkgJson = isWorkspaceRoot
             ? pkgEnvDetails.editablePkgJson
             : // eslint-disable-next-line no-await-in-loop
@@ -263,7 +264,7 @@ export async function pnpmFix(
               : undefined)
           } as PackageJson
 
-          spinner?.info(`Installing ${toSpec}`)
+          spinner?.info(`Installing ${toSpec}${workspaceDetails}`)
 
           if (isCi) {
             // eslint-disable-next-line no-await-in-loop
@@ -292,11 +293,11 @@ export async function pnpmFix(
             installed = true
 
             if (test) {
-              spinner?.info(`Testing ${toSpec}`)
+              spinner?.info(`Testing ${toSpec}${workspaceDetails}`)
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
-            spinner?.successAndStop(`Fixed ${name}`)
+            spinner?.successAndStop(`Fixed ${name}${workspaceDetails}`)
             spinner?.start()
           } catch (e) {
             error = e
@@ -331,7 +332,7 @@ export async function pnpmFix(
 
           if (errored || isCi) {
             if (errored) {
-              spinner?.error(`Reverting ${toSpec}`, error)
+              spinner?.error(`Reverting ${toSpec}${workspaceDetails}`, error)
             }
             if (isRepo) {
               // eslint-disable-next-line no-await-in-loop
@@ -352,7 +353,7 @@ export async function pnpmFix(
               actualTree = await install(pkgEnvDetails, { spinner })
             }
             if (errored) {
-              spinner?.failAndStop(`Failed to fix ${fromSpec}`)
+              spinner?.failAndStop(`Failed to fix ${fromSpec}${workspaceDetails}`)
             }
           }
         }
