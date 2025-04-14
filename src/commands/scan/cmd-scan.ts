@@ -1,5 +1,6 @@
 import { cmdScanCreate } from './cmd-scan-create'
 import { cmdScanDel } from './cmd-scan-del'
+import { cmdScanDiff } from './cmd-scan-diff'
 import { cmdScanList } from './cmd-scan-list'
 import { cmdScanMetadata } from './cmd-scan-metadata'
 import { cmdScanReport } from './cmd-scan-report'
@@ -18,6 +19,7 @@ export const cmdScan: CliSubcommand = {
         create: cmdScanCreate,
         list: cmdScanList,
         del: cmdScanDel,
+        diff: cmdScanDiff,
         metadata: cmdScanMetadata,
         report: cmdScanReport,
         view: cmdScanView
