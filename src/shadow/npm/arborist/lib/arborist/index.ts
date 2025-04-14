@@ -5,7 +5,7 @@ import { codeBlock } from 'common-tags'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../../../../constants'
-import { getAlertsMapFromArborist } from '../../../../../utils/arborist-helpers'
+import { getAlertsMapFromArborist } from '../../../../../utils/alerts-map'
 import { logAlertsMap } from '../../../../../utils/socket-package-alert'
 import { getArboristClassPath } from '../../../paths'
 

@@ -23,7 +23,6 @@ import {
   getGitHubEnvRepoInfo,
   openGitHubPullRequest
 } from './open-pr'
-import { applyRange } from './shared'
 import { NormalizedFixOptions } from './types'
 import constants from '../../constants'
 import {
@@ -32,13 +31,17 @@ import {
   SafeArborist
 } from '../../shadow/npm/arborist/lib/arborist'
 import {
+  getAlertsMapFromArborist,
+  getAlertsMapFromPurls
+} from '../../utils/alerts-map'
+import {
   findPackageNode,
   findPackageNodes,
-  getAlertsMapFromArborist,
   updateNode,
   updatePackageJsonFromNode
 } from '../../utils/arborist-helpers'
 import { globWorkspace } from '../../utils/glob'
+import { applyRange } from '../../utils/semver'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
@@ -69,6 +72,7 @@ export async function npmFix(
   {
     autoMerge,
     cwd,
+    purls,
     rangeStyle,
     spinner,
     test,
@@ -84,7 +88,7 @@ export async function npmFix(
   // Calling arb.reify() creates the arb.diff object and nulls-out arb.idealTree.
   await arb.reify()
 
-  const alertsMap = await getAlertsMapFromArborist(arb, {
+  const alertMapOptions = {
     consolidate: true,
     include: {
       existing: true,
@@ -92,7 +96,11 @@ export async function npmFix(
       upgradable: false
     },
     nothrow: true
-  })
+  }
+
+  const alertsMap = purls.length
+    ? await getAlertsMapFromPurls(purls, alertMapOptions)
+    : await getAlertsMapFromArborist(arb, alertMapOptions)
 
   const infoByPkg = getCveInfoByAlertsMap(alertsMap)
   if (!infoByPkg) {

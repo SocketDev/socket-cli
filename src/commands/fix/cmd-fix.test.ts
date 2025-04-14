@@ -29,6 +29,7 @@ describe('socket fix', async () => {
                 --autoPilot       Shorthand for --autoMerge --test
                 --dryRun          Do input validation for a command and exit 0 when input is ok
                 --help            Print this help
+                --purl            User provided PURL to fix
                 --rangeStyle      Define how updated dependency versions should be written in package.json.
           Available styles:
             *\\x09caret - Use ^ range for compatible updates (e.g. ^1.2.3)
