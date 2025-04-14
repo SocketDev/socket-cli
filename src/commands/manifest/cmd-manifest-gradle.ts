@@ -34,16 +34,6 @@ const config: CliCommandConfig = {
       description:
         'Additional options to pass on to ./gradlew, see `./gradlew --help`'
     },
-    out: {
-      type: 'string',
-      default: './socket.pom.xml',
-      description:
-        'Path of output file; where to store the resulting manifest, see also --stdout'
-    },
-    stdout: {
-      type: 'boolean',
-      description: 'Print resulting pom.xml to stdout (supersedes --out)'
-    },
     task: {
       type: 'string',
       default: 'all',
@@ -141,26 +131,12 @@ async function run(
     return
   }
 
-  let bin: string
-  if (cli.flags['bin']) {
-    bin = cli.flags['bin'] as string
-  } else {
-    bin = path.join(target, 'gradlew')
-  }
-
-  let out: string = './socket.pom.xml'
-  if (cli.flags['out']) {
-    out = cli.flags['out'] as string
-  }
-  if (cli.flags['stdout']) {
-    out = '-'
-  }
+  const { bin = path.join(target, 'gradlew'), cwd = process.cwd() } = cli.flags
 
   if (verbose) {
     logger.group()
     logger.log('- target:', target)
     logger.log('- gradle bin:', bin)
-    logger.log('- out:', out)
     logger.groupEnd()
   }
 
@@ -177,5 +153,11 @@ async function run(
     return
   }
 
-  await convertGradleToMaven(target, bin, out, verbose, gradleOpts)
+  await convertGradleToMaven(
+    target,
+    String(bin),
+    String(cwd),
+    verbose,
+    gradleOpts
+  )
 }

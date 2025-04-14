@@ -1,5 +1,9 @@
+import fs from 'node:fs'
 import path from 'node:path'
 
+import colors from 'yoctocolors-cjs'
+
+import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -8,30 +12,49 @@ import constants from '../../constants'
 export async function convertGradleToMaven(
   target: string,
   bin: string,
-  _out: string,
+  cwd: string,
   verbose: boolean,
   gradleOpts: string[]
 ) {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  const rbin = path.resolve(bin)
-  const rtarget = path.resolve(target)
-
   if (verbose) {
-    logger.group('gradle2maven:')
-    logger.log(`[VERBOSE] - Absolute bin path: \`${rbin}\``)
-    logger.log(`[VERBOSE] - Absolute target path: \`${rtarget}\``)
-    logger.groupEnd()
-  } else {
-    logger.group('gradle2maven:')
-    logger.log(`- executing: \`${bin}\``)
-    logger.log(`- src dir: \`${target}\``)
-    logger.groupEnd()
+    logger.log('[VERBOSE] Resolving:', [cwd, bin])
   }
+  const rbin = path.resolve(cwd, bin)
+  if (verbose) {
+    logger.log('[VERBOSE] Resolving:', [cwd, target])
+  }
+  const rtarget = path.resolve(cwd, target)
+
+  const binExists = fs.existsSync(rbin)
+
+  const targetExists = fs.existsSync(rtarget)
+
+  logger.group('gradle2maven:')
+  if (verbose || isDebug()) {
+    logger.log(
+      `[VERBOSE] - Absolute bin path: \`${rbin}\` (${binExists ? 'found' : colors.red('not found!')})`
+    )
+    logger.log(
+      `[VERBOSE] - Absolute target path: \`${rtarget}\` (${targetExists ? 'found' : colors.red('not found!')})`
+    )
+  } else {
+    logger.log(`- executing: \`${rbin}\``)
+    if (!binExists) {
+      logger.warn(
+        'Warning: It appears the executable could not be found at this location. An error might be printed later because of that.'
+      )
+    }
+    logger.log(`- src dir: \`${rtarget}\``)
+    if (!targetExists) {
+      logger.warn(
+        'Warning: It appears the src dir could not be found at this location. An error might be printed later because of that.'
+      )
+    }
+  }
+  logger.groupEnd()
 
   try {
-    // Run sbt with the init script we provide which should yield zero or more
+    // Run gradlew with the init script we provide which should yield zero or more
     // pom files. We have to figure out where to store those pom files such that
     // we can upload them and predict them through the GitHub API. We could do a
     // .socket folder. We could do a socket.pom.gz with all the poms, although
@@ -42,30 +65,25 @@ export async function convertGradleToMaven(
     const commandArgs = ['--init-script', initLocation, ...gradleOpts, 'pom']
 
     if (verbose) {
-      logger.log('[VERBOSE] Executing:', bin, commandArgs)
+      logger.log('[VERBOSE] Executing:', [bin], ', args:', commandArgs)
     }
 
-    spinner.start(
-      `Converting gradle to maven from \`${bin}\` on \`${target}\`...`
+    logger.log(
+      `Converting gradle to maven from \`${bin}\` on \`${target}\` ...`
     )
-
-    const output = await spawn(bin, commandArgs, {
-      cwd: target || '.'
-    })
-
-    spinner.stop()
+    const output = await execGradleWithSpinner(rbin, commandArgs, rtarget, cwd)
 
     if (verbose) {
       logger.group('[VERBOSE] gradle stdout:')
       logger.log(output)
       logger.groupEnd()
     }
-    if (output.stderr) {
+    if (output.code !== 0) {
       process.exitCode = 1
-      logger.fail('There were errors while running gradle')
+      logger.fail(`Gradle exited with exit code ${output.code}`)
       // (In verbose mode, stderr was printed above, no need to repeat it)
       if (!verbose) {
-        logger.group('[VERBOSE] stderr:')
+        logger.group('stderr:')
         logger.error(output.stderr)
         logger.groupEnd()
       }
@@ -80,46 +98,53 @@ export async function convertGradleToMaven(
         return fn
       }
     )
-
-    // const loc = output.stdout?.match(/Wrote (.*?.pom)\n/)?.[1]?.trim()
-    // if (!loc) {
-    //   logger.fail(
-    //     'There were no errors from sbt but could not find the location of resulting .pom file either'
-    //   )
-    //   // eslint-disable-next-line n/no-process-exit
-    //   process.exit(1)
-    // }
-    //
-    // // Move the pom file to ...? initial cwd? loc will be an absolute path, or dump to stdout
-    // if (out === '-') {
-    //   spinner.start('Result:\n```')
-    //   spinner.log(await safeReadFile(loc))
-    //   spinner.log('```')
-    //   spinner.successAndStop(`OK`)
-    // } else {
-    //   spinner.start()
-    //   if (verbose) {
-    //     spinner.log(
-    //       `Moving manifest file from \`${loc.replace(/^\/home\/[^/]*?\//, '~/')}\` to \`${out}\``
-    //     )
-    //   } else {
-    //     spinner.log('Moving output pom file')
-    //   }
-    //   // TODO: do we prefer fs-extra? renaming can be gnarly on windows and fs-extra's version is better
-    //   await renamep(loc, out)
-    //   spinner.successAndStop(`OK. File should be available in \`${out}\``)
-    // }
+    logger.log('')
+    logger.log(
+      'Next step is to generate a Scan by running the `socket scan create` command on the same directory'
+    )
   } catch (e) {
     process.exitCode = 1
-    spinner.stop()
     logger.fail(
-      'There was an unexpected error while running this' +
-        (verbose ? '' : ' (use --verbose for details)')
+      'There was an unexpected error while generating manifests' +
+        (verbose ? '' : '  (use --verbose for details)')
     )
     if (verbose) {
       logger.group('[VERBOSE] error:')
       logger.log(e)
       logger.groupEnd()
+    }
+  }
+}
+
+async function execGradleWithSpinner(
+  bin: string,
+  commandArgs: string[],
+  target: string,
+  cwd: string
+): Promise<{ code: number; stdout: string; stderr: string }> {
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  let pass = false
+  try {
+    spinner.start(
+      `Running gradlew... (this can take a while, it depends on how long gradlew has to run)`
+    )
+    const output = await spawn(bin, commandArgs, {
+      // We can pipe the output through to have the user see the result
+      // of running gradlew, but then we can't (easily) gather the output
+      // to discover the generated files... probably a flag we should allow?
+      // stdio: isDebug() ? 'inherit' : undefined,
+      cwd: target || cwd
+    })
+    pass = true
+    const { code, stderr, stdout } = output
+    return { code, stdout, stderr }
+  } finally {
+    if (pass) {
+      spinner.successAndStop('Completed gradlew execution')
+    } else {
+      spinner.failAndStop('There was an error while trying to run gradlew.')
     }
   }
 }
