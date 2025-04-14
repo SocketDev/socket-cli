@@ -2,7 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleDiffScan } from './handle-diff-scan'
 import constants from '../../constants'
-import { commonFlags } from '../../flags'
+import { commonFlags, outputFlags } from '../../flags'
 import { getConfigValue } from '../../utils/config'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -13,36 +13,21 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
 const { DRY_RUN_BAIL_TEXT } = constants
 
+const SOCKET_SBOM_URL_PREFIX =
+  'https://socket.dev/dashboard/org/SocketDev/sbom/'
+
 const config: CliCommandConfig = {
-  commandName: 'get',
-  description: 'Get a diff scan for an organization',
+  commandName: 'diff',
+  description: 'See what changed between two Scans',
   hidden: false,
   flags: {
     ...commonFlags,
-    after: {
-      type: 'string',
-      shortFlag: 'a',
-      default: '',
-      description: 'The scan ID of the head scan'
-    },
-    before: {
-      type: 'string',
-      shortFlag: 'b',
-      default: '',
-      description: 'The scan ID of the base scan'
-    },
+    ...outputFlags,
     depth: {
       type: 'number',
       default: 2,
       description:
         'Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)'
-    },
-    json: {
-      type: 'boolean',
-      shortFlag: 'j',
-      default: false,
-      description:
-        'Output result as json. This can be big. Use --file to store it to disk without truncation.'
     },
     file: {
       type: 'string',
@@ -54,7 +39,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} <org slug> --before=<before> --after=<after>
+      $ ${command} <org slug> <ID1> <ID2>
 
     API Token Requirements
       - Quota: 1 unit
@@ -62,17 +47,21 @@ const config: CliCommandConfig = {
 
     This command displays the package changes between two scans. The full output
     can be pretty large depending on the size of your repo and time range. It is
-    best stored to disk to be further analyzed by other tools.
+    best stored to disk (with --json) to be further analyzed by other tools.
+
+    Note: First Scan ID is assumed to be the older ID. This is only relevant for
+          the added/removed list (similar to diffing two files with git).
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command} FakeCorp --before=aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 --after=aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
+      $ ${command} FakeCorp aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
+      $ ${command} FakeCorp aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json
   `
 }
 
-export const cmdDiffScanGet = {
+export const cmdScanDiff = {
   description: config.description,
   hidden: config.hidden,
   run
@@ -90,25 +79,34 @@ async function run(
     parentName
   })
 
-  const { after, before, depth, file, json, markdown } = cli.flags
+  const { depth, file, json, markdown } = cli.flags
 
   const defaultOrgSlug = getConfigValue('defaultOrg')
   const orgSlug = defaultOrgSlug || cli.input[0] || ''
+
+  let id1 = cli.input[defaultOrgSlug ? 0 : 1] || ''
+  let id2 = cli.input[defaultOrgSlug ? 1 : 2] || ''
+  if (id1.startsWith(SOCKET_SBOM_URL_PREFIX)) {
+    id1 = id1.slice(SOCKET_SBOM_URL_PREFIX.length)
+  }
+  if (id2.startsWith(SOCKET_SBOM_URL_PREFIX)) {
+    id2 = id2.slice(SOCKET_SBOM_URL_PREFIX.length)
+  }
 
   const apiToken = getDefaultToken()
 
   const wasBadInput = handleBadInput(
     {
-      test: !!(before && after),
+      test: !!(id1 && id2),
       message:
-        'Specify a before and after scan ID.\nThe args are expecting a full `aaa0aa0a-aaaa-0000-0a0a-0000000a00a0` scan ID.',
+        'Specify two Scan IDs.\nA Scan ID looks like `aaa0aa0a-aaaa-0000-0a0a-0000000a00a0`.',
       pass: 'ok',
       fail:
-        !before && !after
-          ? 'missing before and after'
-          : !before
-            ? 'missing before'
-            : 'missing after'
+        !id1 && !id2
+          ? 'missing both Scan IDs'
+          : !id2
+            ? 'missing second Scan ID'
+            : 'missing first Scan ID' // Not sure how this can happen but ok.
     },
     {
       test: !!orgSlug,
@@ -138,16 +136,14 @@ async function run(
     return
   }
 
-  logger.fail('Warning: this command is deprecated in favor of `socket scan diff` and will be removed in the next major bump.')
-
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 
   await handleDiffScan({
-    before: String(before || ''),
-    after: String(after || ''),
+    id1: String(id1 || ''),
+    id2: String(id2 || ''),
     depth: Number(depth),
     orgSlug,
     outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
