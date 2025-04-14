@@ -7,7 +7,7 @@ export function attemptLogout() {
   try {
     applyLogout()
     logger.success('Successfully logged out')
-    if (!isReadOnlyConfig()) {
+    if (isReadOnlyConfig()) {
       logger.log('')
       logger.warn(
         'Note: config is in read-only mode, at least one key was overridden through flag/env, so the logout was not persisted!'
