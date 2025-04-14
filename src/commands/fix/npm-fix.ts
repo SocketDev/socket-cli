@@ -225,9 +225,9 @@ export async function npmFix(
               rangeStyle
             )
             // eslint-disable-next-line no-await-in-loop
-            await editablePkgJson.save()
-            saved = true
-
+            if (await editablePkgJson.save()) {
+              saved = true
+            }
             // eslint-disable-next-line no-await-in-loop
             await install(arb.idealTree!, { cwd })
             installed = true
