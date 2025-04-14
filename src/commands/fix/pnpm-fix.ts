@@ -134,11 +134,11 @@ export async function pnpmFix(
       spinner?.info(`Skipping ${name}. Socket Optimize package exists.`)
       continue
     }
-    const specs = arrayUnique(
-      findPackageNodes(actualTree, name).map(n => `${n.name}@${n.version}`)
+    const oldVersions = arrayUnique(
+      findPackageNodes(actualTree, name).map(n => n.version)
     )
     const packument =
-      specs.length && infos.length
+      oldVersions.length && infos.length
         ? // eslint-disable-next-line no-await-in-loop
           await fetchPackagePackument(name)
         : null
@@ -146,35 +146,42 @@ export async function pnpmFix(
       continue
     }
 
-    for (const spec of specs) {
-      const lastAtSignIndex = spec.lastIndexOf('@')
-      const name = spec.slice(0, lastAtSignIndex)
-      const fromVersion = spec.slice(lastAtSignIndex + 1)
-      const fromSpec = `${name}@${fromVersion}`
-      const fromPurl = `pkg:npm/${fromSpec}`
+    const failedSpecs = new Set<string>()
+    const fixedSpecs = new Set<string>()
+    const installedSpecs = new Set<string>()
+    const testedSpecs = new Set<string>()
+    const unavailableSpecs = new Set<string>()
+    const revertedSpecs = new Set<string>()
+
+    for (const oldVersion of oldVersions) {
+      const oldSpec = `${name}@${oldVersion}`
+      const oldPurl = `pkg:npm/${oldSpec}`
 
       for (const {
         firstPatchedVersionIdentifier,
         vulnerableVersionRange
       } of infos) {
-        const node = findPackageNode(actualTree, name, fromVersion)
+        const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
           continue
         }
 
         const availableVersions = Object.keys(packument.versions)
-        const toVersion = findBestPatchVersion(
+        const newVersion = findBestPatchVersion(
           node,
           availableVersions,
           vulnerableVersionRange,
           firstPatchedVersionIdentifier
         )
-        const targetPackument = toVersion
-          ? packument.versions[toVersion]
+        const newVersionPackument = newVersion
+          ? packument.versions[newVersion]
           : undefined
 
-        if (!(toVersion && targetPackument)) {
-          spinner?.fail(`Could not patch ${fromSpec}`)
+        if (!(newVersion && newVersionPackument)) {
+          if (!unavailableSpecs.has(oldSpec)) {
+            unavailableSpecs.add(oldSpec)
+            spinner?.fail(`No update available for ${oldSpec}`)
+          }
           continue
         }
 
@@ -202,15 +209,16 @@ export async function pnpmFix(
             : 0
 
           const overrideKey = `${name}@${vulnerableVersionRange}`
-          const toVersionRange = applyRange(
-            oldOverrides?.[overrideKey] ?? fromVersion,
-            toVersion,
+          const newVersionRange = applyRange(
+            oldOverrides?.[overrideKey] ?? oldVersion,
+            newVersion,
             rangeStyle
           )
-          const toSpec = `${name}@${toVersionRange}`
+          const newSpec = `${name}@${newVersionRange}`
+          const newSpecKey = `${workspaceName ? `${workspaceName}>` : ''}${newSpec}`
 
           const branch = isCi
-            ? getSocketBranchName(fromPurl, toVersion, workspaceName)
+            ? getSocketBranchName(oldPurl, newVersion, workspaceName)
             : ''
           const baseBranch = isCi ? getBaseGitBranch() : ''
           const { owner, repo } = isCi
@@ -226,7 +234,7 @@ export async function pnpmFix(
                 [PNPM]: {
                   ...oldPnpm,
                   [OVERRIDES]: {
-                    [overrideKey]: toVersionRange,
+                    [overrideKey]: newVersionRange,
                     ...oldOverrides
                   }
                 }
@@ -264,7 +272,10 @@ export async function pnpmFix(
               : undefined)
           } as PackageJson
 
-          spinner?.info(`Installing ${toSpec}${workspaceDetails}`)
+          if (!installedSpecs.has(newSpecKey)) {
+            installedSpecs.add(newSpecKey)
+            spinner?.info(`Installing ${newSpec}${workspaceDetails}`)
+          }
 
           if (isCi) {
             // eslint-disable-next-line no-await-in-loop
@@ -281,11 +292,11 @@ export async function pnpmFix(
               editablePkgJson,
               actualTree,
               node,
-              toVersion,
+              newVersion,
               rangeStyle
             )
             // eslint-disable-next-line no-await-in-loop
-            if (!await editablePkgJson.save()) {
+            if (!(await editablePkgJson.save())) {
               continue
             }
             saved = true
@@ -294,12 +305,19 @@ export async function pnpmFix(
             installed = true
 
             if (test) {
-              spinner?.info(`Testing ${toSpec}${workspaceDetails}`)
+              if (!testedSpecs.has(newSpecKey)) {
+                testedSpecs.add(newSpecKey)
+                spinner?.info(`Testing ${newSpec}${workspaceDetails}`)
+              }
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
-            spinner?.successAndStop(`Fixed ${name}${workspaceDetails}`)
-            spinner?.start()
+
+            if (!fixedSpecs.has(newSpecKey)) {
+              fixedSpecs.add(newSpecKey)
+              spinner?.successAndStop(`Fixed ${name}${workspaceDetails}`)
+              spinner?.start()
+            }
           } catch (e) {
             error = e
             errored = true
@@ -309,7 +327,7 @@ export async function pnpmFix(
             // eslint-disable-next-line no-await-in-loop
             await gitCreateAndPushBranchIfNeeded(
               branch!,
-              getSocketCommitMessage(fromPurl, toVersion, workspaceName),
+              getSocketCommitMessage(oldPurl, newVersion, workspaceName),
               cwd
             )
             // eslint-disable-next-line no-await-in-loop
@@ -318,8 +336,8 @@ export async function pnpmFix(
               repo,
               baseBranch,
               branch,
-              fromPurl,
-              toVersion,
+              oldPurl,
+              newVersion,
               {
                 cwd,
                 workspaceName
@@ -333,7 +351,10 @@ export async function pnpmFix(
 
           if (errored || isCi) {
             if (errored) {
-              spinner?.error(`Reverting ${toSpec}${workspaceDetails}`, error)
+              if (!revertedSpecs.has(newSpecKey)) {
+                revertedSpecs.add(newSpecKey)
+                spinner?.error(`Reverting ${newSpec}${workspaceDetails}`, error)
+              }
             }
             if (isRepo) {
               // eslint-disable-next-line no-await-in-loop
@@ -354,7 +375,12 @@ export async function pnpmFix(
               actualTree = await install(pkgEnvDetails, { spinner })
             }
             if (errored) {
-              spinner?.failAndStop(`Failed to fix ${fromSpec}${workspaceDetails}`)
+              if (!failedSpecs.has(newSpecKey)) {
+                failedSpecs.add(newSpecKey)
+                spinner?.failAndStop(
+                  `Update failed for ${oldSpec}${workspaceDetails}`
+                )
+              }
             }
           }
         }
