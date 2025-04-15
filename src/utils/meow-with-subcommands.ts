@@ -89,7 +89,7 @@ export async function meowWithSubcommands(
     ...additionalOptions.flags
   }
 
-  // No further args or first arg is a flag (shrug)z
+  // No further args or first arg is a flag (shrug)
   if (
     name === 'socket' &&
     (!commandOrAliasName || commandOrAliasName?.startsWith('-'))
