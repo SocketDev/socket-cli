@@ -220,11 +220,10 @@ export async function detectPackageEnvironment({
   const editablePkgJson = pkgPath
     ? await readPackageJson(pkgPath, { editable: true })
     : undefined
-  const pkgJson = editablePkgJson?.content
   // Read Corepack `packageManager` field in package.json:
   // https://nodejs.org/api/packages.html#packagemanager
-  const pkgManager = isNonEmptyString(pkgJson?.packageManager)
-    ? pkgJson.packageManager
+  const pkgManager = isNonEmptyString(editablePkgJson?.content?.packageManager)
+    ? editablePkgJson.content.packageManager
     : undefined
 
   let agent: Agent | undefined
@@ -273,8 +272,8 @@ export async function detectPackageEnvironment({
   let pkgNodeRange: string | undefined
   let pkgMinAgentVersion = minSupportedAgentVersion
   let pkgMinNodeVersion = minSupportedNodeVersion
-  if (pkgJson) {
-    const { engines } = pkgJson
+  if (editablePkgJson?.content) {
+    const { engines } = editablePkgJson.content
     const engineAgentRange = engines?.[agent]
     const engineNodeRange = engines?.['node']
     if (isNonEmptyString(engineAgentRange)) {
@@ -295,7 +294,9 @@ export async function detectPackageEnvironment({
         pkgMinNodeVersion = coerced.version
       }
     }
-    const browserslistQuery = pkgJson['browserslist'] as string[] | undefined
+    const browserslistQuery = editablePkgJson.content['browserslist'] as
+      | string[]
+      | undefined
     if (Array.isArray(browserslistQuery)) {
       // List Node targets in ascending version order.
       const browserslistNodeTargets = browserslist(browserslistQuery)
