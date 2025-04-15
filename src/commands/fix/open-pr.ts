@@ -55,13 +55,16 @@ export async function doesPullRequestExistForBranch(
   branch: string
 ): Promise<boolean> {
   const octokit = getOctokit()
-  const { data: prs } = await octokit.pulls.list({
-    owner,
-    repo,
-    head: `${owner}:${branch}`,
-    state: 'open'
-  })
-  return prs.length > 0
+  try {
+    const { data: prs } = await octokit.pulls.list({
+      owner,
+      repo,
+      head: `${owner}:${branch}`,
+      state: 'open'
+    })
+    return prs.length > 0
+  } catch {}
+  return false
 }
 
 export async function enableAutoMerge({

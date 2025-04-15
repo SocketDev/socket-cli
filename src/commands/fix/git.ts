@@ -1,8 +1,9 @@
-import { glob as tinyGlob } from 'tinyglobby'
+import path from 'node:path'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants'
@@ -120,20 +121,30 @@ export async function gitCreateAndPushBranchIfNeeded(
     return false
   }
   await spawn('git', ['checkout', '-b', branch], { cwd })
-  const relFilepaths = await tinyGlob(
-    '**/{package.json,package-lock.json,pnpm-lock.yaml}',
-    { cwd }
-  )
-  if (relFilepaths.length) {
-    await spawn('git', ['add', ...relFilepaths], { cwd })
+  const moddedFilepaths = (await gitModifiedFiles(cwd)).filter(p => {
+    const basename = path.basename(p)
+    return (
+      basename === 'package.json' ||
+      basename === 'package-lock.json' ||
+      basename === 'pnpm-lock.yaml'
+    )
+  })
+  if (moddedFilepaths.length) {
+    await spawn('git', ['add', ...moddedFilepaths], { cwd })
   }
   await spawn('git', ['commit', '-m', commitMsg], { cwd })
   await spawn('git', ['push', '--set-upstream', 'origin', branch], { cwd })
   return true
 }
 
-export async function gitHardReset(cwd = process.cwd()) {
+export async function gitHardReset(cwd = process.cwd()): Promise<void> {
   await spawn('git', ['reset', '--hard'], { cwd })
+}
+
+async function gitModifiedFiles(cwd = process.cwd()): Promise<string[]> {
+  const { stdout } = await spawn('git', ['diff', '--name-only'], { cwd })
+  const rawFiles = stdout?.trim().split('\n') ?? []
+  return rawFiles.map(relPath => normalizePath(relPath))
 }
 
 export async function isInGitRepo(cwd = process.cwd()): Promise<boolean> {
