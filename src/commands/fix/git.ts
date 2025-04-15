@@ -1,3 +1,5 @@
+import { glob as tinyGlob } from 'tinyglobby'
+
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -118,7 +120,13 @@ export async function gitCreateAndPushBranchIfNeeded(
     return false
   }
   await spawn('git', ['checkout', '-b', branch], { cwd })
-  await spawn('git', ['add', 'package.json', 'pnpm-lock.yaml'], { cwd })
+  const relFilepaths = await tinyGlob(
+    '**/{package.json,package-lock.json,pnpm-lock.yaml}',
+    { cwd }
+  )
+  if (relFilepaths.length) {
+    await spawn('git', ['add', ...relFilepaths], { cwd })
+  }
   await spawn('git', ['commit', '-m', commitMsg], { cwd })
   await spawn('git', ['push', '--set-upstream', 'origin', branch], { cwd })
   return true
