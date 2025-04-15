@@ -4,7 +4,7 @@ import { readWantedLockfile } from '@pnpm/lockfile.fs'
 
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
@@ -135,6 +135,8 @@ export async function pnpmFix(
     ...workspacePkgJsonPaths
   ]
 
+  debugLog('workspacePkgJsonPaths', workspacePkgJsonPaths)
+
   let actualTree = initialTree
 
   for (const { 0: name, 1: infos } of infoByPkg) {
@@ -193,6 +195,7 @@ export async function pnpmFix(
           continue
         }
 
+        debugLog('pkgJsonPaths', pkgJsonPaths)
         for (const pkgJsonPath of pkgJsonPaths) {
           const isWorkspaceRoot =
             pkgJsonPath === pkgEnvDetails.editablePkgJson.filename
@@ -337,7 +340,7 @@ export async function pnpmFix(
           if (!errored && shouldOpenPr) {
             // eslint-disable-next-line no-await-in-loop
             await gitCreateAndPushBranchIfNeeded(
-              branch!,
+              branch,
               getSocketCommitMessage(oldPurl, newVersion, workspaceName),
               cwd
             )
