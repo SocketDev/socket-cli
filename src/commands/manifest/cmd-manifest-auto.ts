@@ -111,14 +111,16 @@ async function run(
     return
   }
 
-  if (existsSync(path.join(dir, 'environment.yml'))) {
+  const envyml = path.join(dir, 'environment.yml')
+  const hasEnvyml = existsSync(envyml)
+  const envyaml = path.join(dir, 'environment.yaml')
+  const hasEnvyaml = !hasEnvyml && existsSync(envyaml)
+  if (hasEnvyml || hasEnvyaml) {
     logger.log(
       'Detected an environment.yml file, running default Conda generator...'
     )
-    if (cwd) {
-      // This command takes the cwd as first arg.
-      subArgs.push(cwd)
-    }
+    // This command takes the TARGET as first arg.
+    subArgs.push(hasEnvyml ? envyml : hasEnvyaml ? envyaml : '')
     if (cli.flags['dryRun']) {
       logger.log(DRY_RUN_BAIL_TEXT)
       return
