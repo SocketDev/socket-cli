@@ -298,6 +298,7 @@ export function updatePackageJsonFromNode(
   let result = false
   if (!isTopLevel(tree, node)) {
     debugLog('not top level', node)
+    debugLog('tree.children', tree.children)
     return result
   }
   const { name } = node
