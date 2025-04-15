@@ -296,29 +296,34 @@ export function updatePackageJsonFromNode(
   rangeStyle?: RangeStyle | undefined
 ): boolean {
   let result = false
-  if (isTopLevel(tree, node)) {
-    const { name } = node
-    for (const depField of [
-      'dependencies',
-      'optionalDependencies',
-      'peerDependencies'
-    ]) {
-      const depObject = editablePkgJson.content[depField] as
-        | { [key: string]: string }
-        | undefined
-      if (depObject) {
-        const oldRange = depObject[name]
-        if (oldRange) {
-          const newRange = applyRange(oldRange, targetVersion, rangeStyle)
-          if (oldRange !== newRange) {
-            result = true
-            editablePkgJson.update({
-              [depField]: {
-                ...depObject,
-                [name]: newRange
-              }
-            })
-          }
+  if (!isTopLevel(tree, node)) {
+    debugLog('not top level', node)
+    return result
+  }
+  const { name } = node
+  debugLog('name', name)
+  debugLog('editablePkgJson.content', editablePkgJson.content)
+
+  for (const depField of [
+    'dependencies',
+    'optionalDependencies',
+    'peerDependencies'
+  ]) {
+    const depObject = editablePkgJson.content[depField] as
+      | { [key: string]: string }
+      | undefined
+    if (depObject) {
+      const oldRange = depObject[name]
+      if (oldRange) {
+        const newRange = applyRange(oldRange, targetVersion, rangeStyle)
+        if (oldRange !== newRange) {
+          result = true
+          editablePkgJson.update({
+            [depField]: {
+              ...depObject,
+              [name]: newRange
+            }
+          })
         }
       }
     }
