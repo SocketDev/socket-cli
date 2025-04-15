@@ -11,7 +11,10 @@ import constants from '../../constants'
 const { GITHUB_REF_NAME } = constants
 
 function formatBranchName(str: string): string {
-  return str.replace(/[-_.]+/g, '-').replace(/[^-a-zA-Z0-9]+/g, '') ?? ''
+  return str
+    .replace(/[\\/-_.]+/g, '-')
+    .replace(/[^-a-zA-Z0-9]+/g, '')
+    .replace(/^-+|-+$/g, '')
 }
 
 function getPkgNameFromPurlObj(purlObj: PackageURL): string {
