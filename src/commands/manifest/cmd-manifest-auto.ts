@@ -5,6 +5,7 @@ import meow from 'meow'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { cmdManifestConda } from './cmd-manifest-conda'
 import { cmdManifestGradle } from './cmd-manifest-gradle'
 import { cmdManifestScala } from './cmd-manifest-scala'
 import constants from '../../constants'
@@ -107,6 +108,22 @@ async function run(
       return
     }
     await cmdManifestGradle.run(subArgs, importMeta, { parentName })
+    return
+  }
+
+  if (existsSync(path.join(dir, 'environment.yml'))) {
+    logger.log(
+      'Detected an environment.yml file, running default Conda generator...'
+    )
+    if (cwd) {
+      // This command takes the cwd as first arg.
+      subArgs.push(cwd)
+    }
+    if (cli.flags['dryRun']) {
+      logger.log(DRY_RUN_BAIL_TEXT)
+      return
+    }
+    await cmdManifestConda.run(subArgs, importMeta, { parentName })
     return
   }
 

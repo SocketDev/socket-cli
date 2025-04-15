@@ -4,19 +4,13 @@
 
 ## Dev
 
-First build the bundle:
-
-```
-npm run build:dist
-```
-
-Then run it like these examples:
+Run it like these examples:
 
 ```
 # Scala:
-npm exec socket manifest scala -- --bin ~/apps/sbt/bin/sbt ~/socket/repos/scala/akka
+npm run bs manifest scala -- --bin ~/apps/sbt/bin/sbt ~/socket/repos/scala/akka
 # Gradle/Kotlin
-npm exec socket manifest yolo -- --cwd  ~/socket/repos/kotlin/kotlinx.coroutines
+npm run bs manifest yolo -- --cwd  ~/socket/repos/kotlin/kotlinx.coroutines
 ```
 
 And upload with this:
