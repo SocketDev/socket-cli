@@ -27,12 +27,12 @@ describe('socket logout', async () => {
     `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-      "
-         _____         _       _        /---------------
-        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-        |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket logout\`, cwd: <redacted>"
-    `)
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket logout\`, cwd: <redacted>"
+      `)
 
       expect(code, 'help should exit with code 2').toBe(2)
       expect(stderr, 'banner includes base command').toContain(
@@ -51,7 +51,7 @@ describe('socket logout', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket logout\`, cwd: <redacted>"
       `)
 
