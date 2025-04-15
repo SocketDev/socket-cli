@@ -119,7 +119,7 @@ async function run(
   }
 
   logger.error(
-    "Warning: We don't actually support Conda at this time. This package extracts a pip block which we can scan as-if it were pypi. Use at your own risk."
+    "Warning: We don't actually support Conda at this time. This command extracts a pip block which we can scan as-if it were pypi. Use at your own risk."
   )
 
   if (cli.flags['dryRun']) {
