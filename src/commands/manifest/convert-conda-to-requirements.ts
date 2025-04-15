@@ -32,6 +32,21 @@ export async function convertCondaToRequirements(
         }
         reject(e)
       })
+      process.stdin.on('close', () => {
+        if (buf.length === 0) {
+          if (verbose) {
+            logger.error('stdin closed explicitly without data received')
+          }
+          reject(new Error('No data received from stdin'))
+        } else {
+          if (verbose) {
+            logger.error(
+              'warning: stdin closed explicitly with some data received'
+            )
+          }
+          resolve(buf.join(''))
+        }
+      })
     })
 
     if (!contents) {
