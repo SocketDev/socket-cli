@@ -42,12 +42,12 @@ describe('socket fix', async () => {
       `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-      "
-         _____         _       _        /---------------
-        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-        |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>"
-    `)
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>"
+      `)
 
       expect(code, 'help should exit with code 2').toBe(2)
       expect(stderr, 'banner includes base command').toContain('`socket fix`')
@@ -64,7 +64,7 @@ describe('socket fix', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>"
       `)
 
