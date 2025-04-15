@@ -163,16 +163,15 @@ export async function pnpmFix(
     const unavailableSpecs = new Set<string>()
     const revertedSpecs = new Set<string>()
 
-    for (const oldVersion of oldVersions) {
-      const oldSpec = `${name}@${oldVersion}`
-      const oldPurl = `pkg:npm/${oldSpec}`
+    for (const pkgJsonPath of pkgJsonPaths) {
+      for (const oldVersion of oldVersions) {
+        const oldSpec = `${name}@${oldVersion}`
+        const oldPurl = `pkg:npm/${oldSpec}`
 
-      for (const {
-        firstPatchedVersionIdentifier,
-        vulnerableVersionRange
-      } of infos) {
-        debugLog('pkgJsonPaths', pkgJsonPaths)
-        for (const pkgJsonPath of pkgJsonPaths) {
+        for (const {
+          firstPatchedVersionIdentifier,
+          vulnerableVersionRange
+        } of infos) {
           const node = findPackageNode(actualTree, name, oldVersion)
           if (!node) {
             continue

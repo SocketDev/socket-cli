@@ -148,14 +148,14 @@ export async function npmFix(
     const unavailableSpecs = new Set<string>()
     const revertedSpecs = new Set<string>()
 
-    for (const oldVersion of oldVersions) {
-      const oldSpec = `${name}@${oldVersion}`
-      const oldPurl = `pkg:npm/${oldSpec}`
-      for (const {
-        firstPatchedVersionIdentifier,
-        vulnerableVersionRange
-      } of infos) {
-        for (const pkgJsonPath of pkgJsonPaths) {
+    for (const pkgJsonPath of pkgJsonPaths) {
+      for (const oldVersion of oldVersions) {
+        const oldSpec = `${name}@${oldVersion}`
+        const oldPurl = `pkg:npm/${oldSpec}`
+        for (const {
+          firstPatchedVersionIdentifier,
+          vulnerableVersionRange
+        } of infos) {
           const revertTree = arb.idealTree!
           arb.idealTree = null
           // eslint-disable-next-line no-await-in-loop
