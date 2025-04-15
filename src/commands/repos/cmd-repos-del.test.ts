@@ -28,7 +28,6 @@ describe('socket repos del', async () => {
             - Permissions: repo:delete
 
           Options
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
 
           Examples

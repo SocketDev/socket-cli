@@ -30,7 +30,6 @@ describe('socket scan list', async () => {
           Options
             --branch          Filter to show only scans with this branch name
             --direction       Direction option (\`desc\` or \`asc\`) - Default is \`desc\`
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --fromTime        From time - as a unix timestamp
             --help            Print this help
             --json            Output result as json

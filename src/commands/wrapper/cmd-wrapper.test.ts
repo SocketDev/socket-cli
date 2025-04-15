@@ -25,7 +25,6 @@ describe('socket wrapper', async () => {
 
           Options
             --disable         Disables the Socket npm/npx wrapper
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --enable          Enables the Socket npm/npx wrapper
             --help            Print this help
 

@@ -22,6 +22,7 @@ export const commonFlags: MeowFlags = {
   dryRun: {
     type: 'boolean',
     default: false,
+    hidden: true, // Only show in root command
     description: 'Do input validation for a command and exit 0 when input is ok'
   },
   help: {
