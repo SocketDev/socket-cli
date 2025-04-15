@@ -20,6 +20,7 @@ export async function handleCI(): Promise<void> {
     committers: '',
     cwd: process.cwd(),
     defaultBranch: false,
+    interactive: false,
     orgSlug,
     outputKind: 'json',
     pendingHead: true, // when true, requires branch name set, tmp false
