@@ -37,6 +37,12 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} FILE
 
+    Warning: While we don't support Conda necessarily, this tool extracts the pip
+             block from an environment.yml and outputs it as a requirements.txt
+             which you can scan as if it were a pypi package.
+
+    USE AT YOUR OWN RISK
+
     Note: FILE can be a dash (-) to indicate stdin. This way you can pipe the
           contents of a file to have it processed.
 
@@ -111,6 +117,10 @@ async function run(
   if (wasBadInput) {
     return
   }
+
+  logger.error(
+    'Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk.'
+  )
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)
