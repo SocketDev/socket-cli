@@ -31,7 +31,6 @@ describe('socket audit-log', async () => {
           to this feature and many more, please visit https://socket.dev/pricing
 
           Options
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
