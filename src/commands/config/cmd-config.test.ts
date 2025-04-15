@@ -31,7 +31,6 @@ describe('socket config', async () => {
             unset             Clear the value of a local CLI config item
 
           Options
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
 
           Examples

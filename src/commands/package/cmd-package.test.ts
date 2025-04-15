@@ -28,7 +28,6 @@ describe('socket package', async () => {
             shallow           [beta] Look up info regarding one or more packages but not their transitives
 
           Options
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
 
           Examples

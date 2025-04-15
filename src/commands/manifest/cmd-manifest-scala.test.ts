@@ -26,7 +26,6 @@ describe('socket manifest scala', async () => {
           Options
             --bin             Location of sbt binary to use
             --cwd             Set the cwd, defaults to process.cwd()
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
             --out             Path of output file; where to store the resulting manifest, see also --stdout
             --sbtOpts         Additional options to pass on to sbt, as per \`sbt --help\`

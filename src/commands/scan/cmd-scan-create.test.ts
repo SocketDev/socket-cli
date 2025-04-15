@@ -56,7 +56,6 @@ describe('socket scan create', async () => {
             --committers      Committers
             --cwd             working directory, defaults to process.cwd()
             --defaultBranch   Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
-            --dryRun          Run input validation part of command without any concrete side effects
             --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown

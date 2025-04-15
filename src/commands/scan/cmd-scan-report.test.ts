@@ -28,7 +28,6 @@ describe('socket scan report', async () => {
             - Permissions: full-scans:list security-policy:read
 
           Options
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --fold            Fold reported alerts to some degree
             --help            Print this help
             --json            Output result as json

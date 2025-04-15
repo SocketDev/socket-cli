@@ -28,7 +28,6 @@ describe('socket organization policy license', async () => {
             - Permissions: license-policy:read
 
           Options
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown

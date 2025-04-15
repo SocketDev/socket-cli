@@ -27,7 +27,6 @@ describe('socket diff-scan', async () => {
             get               Get a diff scan for an organization
 
           Options
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
 
           Examples

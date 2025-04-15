@@ -25,7 +25,6 @@ describe('socket manifest auto', async () => {
 
           Options
             --cwd             Set the cwd, defaults to process.cwd()
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
             --verbose         Enable debug output, may help when running into errors
 
