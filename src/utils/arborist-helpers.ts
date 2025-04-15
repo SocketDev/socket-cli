@@ -294,7 +294,8 @@ export function updatePackageJsonFromNode(
   node: SafeNode,
   targetVersion: string,
   rangeStyle?: RangeStyle | undefined
-) {
+): boolean {
+  let result = false
   if (isTopLevel(tree, node)) {
     const { name } = node
     for (const depField of [
@@ -302,20 +303,25 @@ export function updatePackageJsonFromNode(
       'optionalDependencies',
       'peerDependencies'
     ]) {
-      const oldValue = editablePkgJson.content[depField] as
+      const depObject = editablePkgJson.content[depField] as
         | { [key: string]: string }
         | undefined
-      if (oldValue) {
-        const refRange = oldValue[name]
-        if (refRange) {
-          editablePkgJson.update({
-            [depField]: {
-              ...oldValue,
-              [name]: applyRange(refRange, targetVersion, rangeStyle)
-            }
-          })
+      if (depObject) {
+        const oldRange = depObject[name]
+        if (oldRange) {
+          const newRange = applyRange(oldRange, targetVersion, rangeStyle)
+          if (oldRange !== newRange) {
+            result = true
+            editablePkgJson.update({
+              [depField]: {
+                ...depObject,
+                [name]: newRange
+              }
+            })
+          }
         }
       }
     }
   }
+  return result
 }
