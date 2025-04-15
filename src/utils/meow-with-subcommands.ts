@@ -9,7 +9,12 @@ import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import { getLastFiveOfApiToken } from './api'
-import { overrideCachedConfig, overrideConfigApiToken } from './config'
+import {
+  getConfigValue,
+  isReadOnlyConfig,
+  overrideCachedConfig,
+  overrideConfigApiToken
+} from './config'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting'
 import constants from '../constants'
 import { MeowFlags, commonFlags } from '../flags'
@@ -284,6 +289,8 @@ function getAsciiHeader(command: string) {
       process.env['INLINED_SOCKET_CLI_VERSION_HASH']
   const nodeVersion = redacting ? REDACTED : process.version
   const apiToken = getDefaultToken()
+  const defaultOrg = getConfigValue('defaultOrg')
+  const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
   const shownToken = redacting
     ? REDACTED
     : apiToken
@@ -305,7 +312,7 @@ function getAsciiHeader(command: string) {
   const body = `
    _____         _       _        /---------------
   |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
-  |__   | . |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${shownToken}
+  |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${shownToken}${defaultOrg ? `, default org: ${redacting ? REDACTED : defaultOrg}` : ''}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}`.trimStart()
   return `   ${body}\n`
 }
