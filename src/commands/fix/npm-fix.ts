@@ -195,17 +195,6 @@ export async function npmFix(
           const newSpec = `${name}@${newVersionRange}`
           const newSpecKey = `${workspaceName ? `${workspaceName}>` : ''}${newSpec}`
 
-          const branch = isCi
-            ? getSocketBranchName(oldPurl, newVersion, workspaceName)
-            : ''
-          const { owner, repo } = isCi
-            ? getGitHubEnvRepoInfo()
-            : { owner: '', repo: '' }
-          const shouldOpenPr = isCi
-            ? // eslint-disable-next-line no-await-in-loop
-              !(await doesPullRequestExistForBranch(owner, repo, branch))
-            : false
-
           const revertData = {
             ...(editablePkgJson.content.dependencies
               ? { dependencies: editablePkgJson.content.dependencies }
@@ -221,32 +210,47 @@ export async function npmFix(
               : undefined)
           } as PackageJson
 
-          if (!installedSpecs.has(newSpecKey)) {
-            testedSpecs.add(newSpecKey)
-            spinner?.info(`Installing ${newSpec}${workspaceDetails}`)
+          const branch = isCi
+            ? getSocketBranchName(oldPurl, newVersion, workspaceName)
+            : ''
+          const baseBranch = isCi ? getBaseGitBranch() : ''
+          const { owner, repo } = isCi
+            ? getGitHubEnvRepoInfo()
+            : { owner: '', repo: '' }
+          const shouldOpenPr = isCi
+            ? // eslint-disable-next-line no-await-in-loop
+              !(await doesPullRequestExistForBranch(owner, repo, branch))
+            : false
+
+          if (isCi) {
+            // eslint-disable-next-line no-await-in-loop
+            await gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)
           }
 
-          const baseBranch = getBaseGitBranch()
-
-          // eslint-disable-next-line no-await-in-loop
-          await gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)
+          updatePackageJsonFromNode(
+            editablePkgJson,
+            arb.idealTree!,
+            node,
+            newVersion,
+            rangeStyle
+          )
 
           let error: unknown
           let errored = false
           let installed = false
           let saved = false
+
+          // eslint-disable-next-line no-await-in-loop
+          if (await editablePkgJson.save()) {
+            saved = true
+          }
+
+          if (!installedSpecs.has(newSpecKey)) {
+            testedSpecs.add(newSpecKey)
+            spinner?.info(`Installing ${newSpec}${workspaceDetails}`)
+          }
+
           try {
-            updatePackageJsonFromNode(
-              editablePkgJson,
-              arb.idealTree!,
-              node,
-              newVersion,
-              rangeStyle
-            )
-            // eslint-disable-next-line no-await-in-loop
-            if (await editablePkgJson.save()) {
-              saved = true
-            }
             // eslint-disable-next-line no-await-in-loop
             await install(arb.idealTree!, { cwd })
             installed = true
