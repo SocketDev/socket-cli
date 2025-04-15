@@ -129,6 +129,8 @@ export async function gitCreateAndPushBranchIfNeeded(
       basename === 'pnpm-lock.yaml'
     )
   })
+  debugLog('branch', branch)
+  debugLog('gitCreateAndPushBranchIfNeeded > moddedFilepaths', moddedFilepaths)
   if (moddedFilepaths.length) {
     await spawn('git', ['add', ...moddedFilepaths], { cwd })
   }
@@ -141,7 +143,9 @@ export async function gitHardReset(cwd = process.cwd()): Promise<void> {
   await spawn('git', ['reset', '--hard'], { cwd })
 }
 
-async function gitUnstagedModifiedFiles(cwd = process.cwd()): Promise<string[]> {
+async function gitUnstagedModifiedFiles(
+  cwd = process.cwd()
+): Promise<string[]> {
   const { stdout } = await spawn('git', ['diff', '--name-only'], { cwd })
   const rawFiles = stdout?.trim().split('\n') ?? []
   return rawFiles.map(relPath => normalizePath(relPath))
