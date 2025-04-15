@@ -56,6 +56,12 @@ const config: CliCommandConfig = {
       description:
         'Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.'
     },
+    interactive: {
+      type: 'boolean',
+      default: true,
+      description:
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+    },
     pendingHead: {
       type: 'boolean',
       default: true,
@@ -159,6 +165,7 @@ async function run(
     cwd: cwdOverride,
     defaultBranch,
     dryRun,
+    interactive = true,
     json,
     markdown,
     pendingHead,
@@ -175,6 +182,7 @@ async function run(
     committers: string
     defaultBranch: boolean
     dryRun: boolean
+    interactive: boolean
     json: boolean
     markdown: boolean
     pendingHead: boolean
@@ -202,7 +210,7 @@ async function run(
   // the command without requiring user input, as a suggestion.
   let updatedInput = false
 
-  if (!targets.length && !dryRun) {
+  if (!targets.length && !dryRun && interactive) {
     const received = await suggestTarget()
     targets = received ?? []
     updatedInput = true
@@ -211,7 +219,7 @@ async function run(
   // If the current cwd is unknown and is used as a repo slug anyways, we will
   // first need to register the slug before we can use it.
   // Only do suggestions with an apiToken and when not in dryRun mode
-  if (apiToken && !dryRun) {
+  if (apiToken && !dryRun && interactive) {
     if (!orgSlug) {
       const suggestion = await suggestOrgSlug()
       if (suggestion) {
@@ -302,6 +310,7 @@ async function run(
     committers: (committers && String(committers)) || '',
     cwd,
     defaultBranch: Boolean(defaultBranch),
+    interactive: Boolean(interactive),
     orgSlug,
     outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
     pendingHead: Boolean(pendingHead),

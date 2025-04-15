@@ -57,6 +57,7 @@ describe('socket scan create', async () => {
             --cwd             working directory, defaults to process.cwd()
             --defaultBranch   Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
             --help            Print this help
+            --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown
             --pendingHead     Designate this full-scan as the latest scan of a given branch. This must be set to have it show up in the dashboard.
