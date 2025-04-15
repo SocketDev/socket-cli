@@ -8,7 +8,8 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputCreateNewScan(
   data: SocketSdkReturnType<'CreateOrgFullScan'>['data'],
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: 'json' | 'markdown' | 'text',
+  interactive: boolean
 ) {
   if (!data.id) {
     logger.fail('Did not receive a scan ID from the API...')
@@ -47,10 +48,11 @@ export async function outputCreateNewScan(
   logger.log(`Available at: ${link}`)
 
   if (
-    await confirm({
+    interactive &&
+    (await confirm({
       message: 'Would you like to open it in your browser?',
       default: false
-    })
+    }))
   ) {
     await open(`${data.html_report_url}`)
   }
