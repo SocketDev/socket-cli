@@ -172,8 +172,12 @@ export async function pnpmFix(
           firstPatchedVersionIdentifier,
           vulnerableVersionRange
         } of infos) {
+          debugLog('name', name)
+          debugLog('oldVersion', oldVersion)
+          debugLog('pkgJsonPath', pkgJsonPath)
           const node = findPackageNode(actualTree, name, oldVersion)
           if (!node) {
+            debugLog('skipping no node', pkgJsonPath)
             continue
           }
 
