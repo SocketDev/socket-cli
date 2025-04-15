@@ -31,7 +31,6 @@ describe('socket analytics', async () => {
           last 7 days.
 
           Options
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --file            Filepath to save output. Only valid with --json/--markdown. Defaults to stdout.
             --help            Print this help
             --json            Output result as json

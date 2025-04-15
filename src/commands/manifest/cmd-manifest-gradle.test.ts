@@ -26,7 +26,6 @@ describe('socket manifest gradle', async () => {
           Options
             --bin             Location of gradlew binary to use, default: CWD/gradlew
             --cwd             Set the cwd, defaults to process.cwd()
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --gradleOpts      Additional options to pass on to ./gradlew, see \`./gradlew --help\`
             --help            Print this help
             --task            Task to target. By default targets all

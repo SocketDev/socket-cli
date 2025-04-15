@@ -33,7 +33,6 @@ describe('socket scan', async () => {
             view              View the raw results of a scan
 
           Options
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
 
           Examples

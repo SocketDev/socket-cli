@@ -29,7 +29,6 @@ describe('socket repos update', async () => {
 
           Options
             --defaultBranch   Repository default branch
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
             --homepage        Repository url
             --repoDescription Repository description
