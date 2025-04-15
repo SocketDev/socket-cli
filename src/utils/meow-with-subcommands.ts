@@ -89,6 +89,20 @@ export async function meowWithSubcommands(
     ...additionalOptions.flags
   }
 
+  // No further args or first arg is a flag (shrug)z
+  if (
+    name === 'socket' &&
+    (!commandOrAliasName || commandOrAliasName?.startsWith('-'))
+  ) {
+    flags['dryRun'] = {
+      type: 'boolean',
+      default: false,
+      hidden: false, // Only show on root
+      description:
+        'Do input validation for a command and exit 0 when input is ok. Every command should support this flag (not shown on help screens)'
+    }
+  }
+
   const cli = meow(
     `
     Usage

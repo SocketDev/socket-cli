@@ -27,7 +27,6 @@ describe('socket organization list', async () => {
             (none)
 
           Options
-            --dryRun          Do input validation for a command and exit 0 when input is ok
             --help            Print this help
 
           Examples
