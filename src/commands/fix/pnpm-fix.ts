@@ -225,18 +225,6 @@ export async function pnpmFix(
           const newSpec = `${name}@${newVersionRange}`
           const newSpecKey = `${workspaceName ? `${workspaceName}>` : ''}${newSpec}`
 
-          const branch = isCi
-            ? getSocketBranchName(oldPurl, newVersion, workspaceName)
-            : ''
-          const baseBranch = isCi ? getBaseGitBranch() : ''
-          const { owner, repo } = isCi
-            ? getGitHubEnvRepoInfo()
-            : { owner: '', repo: '' }
-          const shouldOpenPr = isCi
-            ? // eslint-disable-next-line no-await-in-loop
-              !(await doesPullRequestExistForBranch(owner, repo, branch))
-            : false
-
           const updateData = isWorkspaceRoot
             ? {
                 [PNPM]: {
@@ -247,7 +235,7 @@ export async function pnpmFix(
                   }
                 }
               }
-            : {}
+            : undefined
 
           const revertData = {
             ...(isWorkspaceRoot
@@ -280,34 +268,50 @@ export async function pnpmFix(
               : undefined)
           } as PackageJson
 
-          if (!installedSpecs.has(newSpecKey)) {
-            installedSpecs.add(newSpecKey)
-            spinner?.info(`Installing ${newSpec}${workspaceDetails}`)
-          }
+          const branch = isCi
+            ? getSocketBranchName(oldPurl, newVersion, workspaceName)
+            : ''
+          const baseBranch = isCi ? getBaseGitBranch() : ''
+          const { owner, repo } = isCi
+            ? getGitHubEnvRepoInfo()
+            : { owner: '', repo: '' }
+          const shouldOpenPr = isCi
+            ? // eslint-disable-next-line no-await-in-loop
+              !(await doesPullRequestExistForBranch(owner, repo, branch))
+            : false
 
           if (isCi) {
             // eslint-disable-next-line no-await-in-loop
             await gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)
           }
 
+          if (updateData) {
+            editablePkgJson.update(updateData)
+          }
+
+          updatePackageJsonFromNode(
+            editablePkgJson,
+            actualTree,
+            node,
+            newVersion,
+            rangeStyle
+          )
+
           let error: unknown
           let errored = false
           let installed = false
-          let saved = false
+
+          // eslint-disable-next-line no-await-in-loop
+          if (!(await editablePkgJson.save())) {
+            continue
+          }
+
+          if (!installedSpecs.has(newSpecKey)) {
+            installedSpecs.add(newSpecKey)
+            spinner?.info(`Installing ${newSpec}${workspaceDetails}`)
+          }
+
           try {
-            editablePkgJson.update(updateData)
-            updatePackageJsonFromNode(
-              editablePkgJson,
-              actualTree,
-              node,
-              newVersion,
-              rangeStyle
-            )
-            // eslint-disable-next-line no-await-in-loop
-            if (!(await editablePkgJson.save())) {
-              continue
-            }
-            saved = true
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { spinner })
             installed = true
@@ -320,7 +324,6 @@ export async function pnpmFix(
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
-
             if (!fixedSpecs.has(newSpecKey)) {
               fixedSpecs.add(newSpecKey)
               spinner?.successAndStop(`Fixed ${name}${workspaceDetails}`)
@@ -364,21 +367,15 @@ export async function pnpmFix(
                 spinner?.error(`Reverting ${newSpec}${workspaceDetails}`, error)
               }
             }
+            editablePkgJson.update(revertData)
             if (isRepo) {
               // eslint-disable-next-line no-await-in-loop
               await gitHardReset(cwd)
-            }
-            if (saved) {
-              editablePkgJson.update(revertData)
-              if (!isRepo) {
-                // eslint-disable-next-line no-await-in-loop
-                await editablePkgJson.save()
-              }
-            }
-            if (isRepo) {
               // eslint-disable-next-line no-await-in-loop
               actualTree = await getActualTree(cwd)
             } else if (installed) {
+              // eslint-disable-next-line no-await-in-loop
+              await editablePkgJson.save()
               // eslint-disable-next-line no-await-in-loop
               actualTree = await install(pkgEnvDetails, { spinner })
             }
