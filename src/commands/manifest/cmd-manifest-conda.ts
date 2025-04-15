@@ -87,10 +87,10 @@ async function run(
 
   const wasBadInput = handleBadInput(
     {
-      test: !!target && target !== '-',
+      test: !!target,
       message: 'The FILE arg is required',
       pass: 'ok',
-      fail: target === '-' ? 'stdin is not supported' : 'missing'
+      fail: 'missing'
     },
     {
       nook: true,
