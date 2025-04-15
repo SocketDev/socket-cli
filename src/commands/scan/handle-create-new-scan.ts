@@ -14,6 +14,7 @@ export async function handleCreateNewScan({
   committers,
   cwd,
   defaultBranch,
+  interactive,
   orgSlug,
   outputKind,
   pendingHead,
@@ -30,6 +31,7 @@ export async function handleCreateNewScan({
   committers: string
   cwd: string
   defaultBranch: boolean
+  interactive: boolean
   orgSlug: string
   pendingHead: boolean
   pullRequest: number
@@ -106,6 +108,6 @@ export async function handleCreateNewScan({
       process.exitCode = 1
     }
   } else {
-    await outputCreateNewScan(data, outputKind)
+    await outputCreateNewScan(data, outputKind, interactive)
   }
 }
