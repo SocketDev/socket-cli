@@ -276,7 +276,7 @@ export async function npmFix(
           if (!errored && shouldOpenPr) {
             // eslint-disable-next-line no-await-in-loop
             await gitCreateAndPushBranchIfNeeded(
-              branch!,
+              branch,
               getSocketCommitMessage(oldPurl, newVersion, workspaceName),
               cwd
             )

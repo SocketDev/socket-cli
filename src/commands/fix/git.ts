@@ -121,7 +121,7 @@ export async function gitCreateAndPushBranchIfNeeded(
     return false
   }
   await spawn('git', ['checkout', '-b', branch], { cwd })
-  const moddedFilepaths = (await gitModifiedFiles(cwd)).filter(p => {
+  const moddedFilepaths = (await gitUnstagedModifiedFiles(cwd)).filter(p => {
     const basename = path.basename(p)
     return (
       basename === 'package.json' ||
@@ -141,7 +141,7 @@ export async function gitHardReset(cwd = process.cwd()): Promise<void> {
   await spawn('git', ['reset', '--hard'], { cwd })
 }
 
-async function gitModifiedFiles(cwd = process.cwd()): Promise<string[]> {
+async function gitUnstagedModifiedFiles(cwd = process.cwd()): Promise<string[]> {
   const { stdout } = await spawn('git', ['diff', '--name-only'], { cwd })
   const rawFiles = stdout?.trim().split('\n') ?? []
   return rawFiles.map(relPath => normalizePath(relPath))
