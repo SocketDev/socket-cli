@@ -292,20 +292,22 @@ export async function pnpmFix(
             editablePkgJson.update(updateData)
           }
 
-          updatePackageJsonFromNode(
+          const modded = updatePackageJsonFromNode(
             editablePkgJson,
             actualTree,
             node,
             newVersion,
             rangeStyle
           )
-
+          debugLog('updatePackageJsonFromNode', modded)
+          debugLog(branch, editablePkgJson.filename)
           let error: unknown
           let errored = false
           let installed = false
 
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save())) {
+            debugLog(`Skipping nothing changed in ${editablePkgJson.filename}`)
             continue
           }
 
@@ -337,6 +339,7 @@ export async function pnpmFix(
             errored = true
           }
 
+          debugLog('check "shouldOpenPr":', shouldOpenPr)
           debugLog('check "errored":', errored)
           if (!errored && shouldOpenPr) {
             debugLog('1: gitCreateAndPushBranchIfNeeded')
