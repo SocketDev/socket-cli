@@ -155,30 +155,32 @@ export async function npmFix(
         firstPatchedVersionIdentifier,
         vulnerableVersionRange
       } of infos) {
-        const revertTree = arb.idealTree!
-        arb.idealTree = null
-        // eslint-disable-next-line no-await-in-loop
-        await arb.buildIdealTree()
-        const node = findPackageNode(arb.idealTree!, name, oldVersion)
-        if (!node) {
-          continue
-        }
-        if (
-          !updateNode(
-            node,
-            packument,
-            vulnerableVersionRange,
-            firstPatchedVersionIdentifier
-          )
-        ) {
-          if (!unavailableSpecs.has(oldSpec)) {
-            unavailableSpecs.add(oldSpec)
-            spinner?.fail(`No update available for ${oldSpec}`)
-          }
-          continue
-        }
-
         for (const pkgJsonPath of pkgJsonPaths) {
+          const revertTree = arb.idealTree!
+          arb.idealTree = null
+          // eslint-disable-next-line no-await-in-loop
+          await arb.buildIdealTree()
+
+          const node = findPackageNode(arb.idealTree!, name, oldVersion)
+          if (!node) {
+            continue
+          }
+
+          if (
+            !updateNode(
+              node,
+              packument,
+              vulnerableVersionRange,
+              firstPatchedVersionIdentifier
+            )
+          ) {
+            if (!unavailableSpecs.has(oldSpec)) {
+              unavailableSpecs.add(oldSpec)
+              spinner?.fail(`No update available for ${oldSpec}`)
+            }
+            continue
+          }
+
           const isWorkspaceRoot =
             pkgJsonPath === pkgEnvDetails.editablePkgJson.filename
           const workspaceName = isWorkspaceRoot

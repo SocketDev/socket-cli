@@ -171,32 +171,32 @@ export async function pnpmFix(
         firstPatchedVersionIdentifier,
         vulnerableVersionRange
       } of infos) {
-        const node = findPackageNode(actualTree, name, oldVersion)
-        if (!node) {
-          continue
-        }
-
-        const availableVersions = Object.keys(packument.versions)
-        const newVersion = findBestPatchVersion(
-          node,
-          availableVersions,
-          vulnerableVersionRange,
-          firstPatchedVersionIdentifier
-        )
-        const newVersionPackument = newVersion
-          ? packument.versions[newVersion]
-          : undefined
-
-        if (!(newVersion && newVersionPackument)) {
-          if (!unavailableSpecs.has(oldSpec)) {
-            unavailableSpecs.add(oldSpec)
-            spinner?.fail(`No update available for ${oldSpec}`)
-          }
-          continue
-        }
-
         debugLog('pkgJsonPaths', pkgJsonPaths)
         for (const pkgJsonPath of pkgJsonPaths) {
+          const node = findPackageNode(actualTree, name, oldVersion)
+          if (!node) {
+            continue
+          }
+
+          const availableVersions = Object.keys(packument.versions)
+          const newVersion = findBestPatchVersion(
+            node,
+            availableVersions,
+            vulnerableVersionRange,
+            firstPatchedVersionIdentifier
+          )
+          const newVersionPackument = newVersion
+            ? packument.versions[newVersion]
+            : undefined
+
+          if (!(newVersion && newVersionPackument)) {
+            if (!unavailableSpecs.has(oldSpec)) {
+              unavailableSpecs.add(oldSpec)
+              spinner?.fail(`No update available for ${oldSpec}`)
+            }
+            continue
+          }
+
           const isWorkspaceRoot =
             pkgJsonPath === pkgEnvDetails.editablePkgJson.filename
           const workspaceName = isWorkspaceRoot
