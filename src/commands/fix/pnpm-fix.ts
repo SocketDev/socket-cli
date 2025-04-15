@@ -337,13 +337,16 @@ export async function pnpmFix(
             errored = true
           }
 
+          debugLog('check "errored":', errored)
           if (!errored && shouldOpenPr) {
+            debugLog('1: gitCreateAndPushBranchIfNeeded')
             // eslint-disable-next-line no-await-in-loop
             await gitCreateAndPushBranchIfNeeded(
               branch,
               getSocketCommitMessage(oldPurl, newVersion, workspaceName),
               cwd
             )
+            debugLog('2: openGitHubPullRequest')
             // eslint-disable-next-line no-await-in-loop
             const prResponse = await openGitHubPullRequest(
               owner,

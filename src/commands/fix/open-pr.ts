@@ -6,6 +6,7 @@ import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
 import { codeBlock } from 'common-tags'
 
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -14,7 +15,6 @@ import constants from '../../constants'
 
 import type { components } from '@octokit/openapi-types'
 import type { OctokitResponse } from '@octokit/types'
-import { debugLog } from '@socketsecurity/registry/lib/debug'
 
 type PullsCreateResponseData = components['schemas']['pull-request']
 
