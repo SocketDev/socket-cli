@@ -6,7 +6,6 @@ import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
 import { codeBlock } from 'common-tags'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
