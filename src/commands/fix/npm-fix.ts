@@ -2,6 +2,7 @@ import path from 'node:path'
 
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
@@ -167,6 +168,10 @@ export async function npmFix(
 
           const node = findPackageNode(arb.idealTree!, name, oldVersion)
           if (!node) {
+            debugLog(
+              `Skipping ${oldSpec}, no node found in arborist.idealTree`,
+              pkgJsonPath
+            )
             continue
           }
 
