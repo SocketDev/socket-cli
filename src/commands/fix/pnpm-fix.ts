@@ -16,9 +16,7 @@ import {
   getSocketBranchName,
   getSocketCommitMessage,
   gitCheckoutBaseBranchIfAvailable,
-  gitCreateAndPushBranchIfNeeded,
-  gitHardReset,
-  isInGitRepo
+  gitCreateAndPushBranchIfNeeded
 } from './git'
 import {
   doesPullRequestExistForBranch,
@@ -121,11 +119,16 @@ export async function pnpmFix(
 
   // Lazily access constants.ENV[CI].
   const isCi = constants.ENV[CI]
+  const workspacePkgJsonPaths = await globWorkspace(
+    pkgEnvDetails.agent,
+    rootPath
+  )
 
-  const { 0: isRepo, 1: workspacePkgJsonPaths } = await Promise.all([
-    isInGitRepo(cwd),
-    globWorkspace(pkgEnvDetails.agent, rootPath)
-  ])
+  const baseBranch = isCi ? getBaseGitBranch() : ''
+
+  const { owner, repo } = isCi
+    ? getGitHubEnvRepoInfo()
+    : { owner: '', repo: '' }
 
   const pkgJsonPaths = [
     ...workspacePkgJsonPaths,
@@ -133,27 +136,18 @@ export async function pnpmFix(
     pkgEnvDetails.editablePkgJson.filename!
   ]
 
-  let actualTree
+  let actualTree = await getActualTree(cwd)
 
   for (const { 0: name, 1: infos } of infoByPkg) {
     if (getManifestData(NPM, name)) {
       spinner?.info(`Skipping ${name}. Socket Optimize package exists.`)
       continue
     }
-    // eslint-disable-next-line no-await-in-loop
-    await Promise.all([
-      removeNodeModules(cwd),
-      ...(isRepo ? [gitHardReset(cwd)] : [])
-    ])
-    // eslint-disable-next-line no-await-in-loop
-    actualTree = await install(pkgEnvDetails, { spinner })
-
     const oldVersions = arrayUnique(
       findPackageNodes(actualTree, name)
-        .map(n => n.version)
+        .map(n => n.target?.version ?? n.version)
         .filter(Boolean)
     )
-    debugLog(name, 'oldVersions', oldVersions)
     const packument =
       oldVersions.length && infos.length
         ? // eslint-disable-next-line no-await-in-loop
@@ -179,14 +173,6 @@ export async function pnpmFix(
           firstPatchedVersionIdentifier,
           vulnerableVersionRange
         } of infos) {
-          // eslint-disable-next-line no-await-in-loop
-          await Promise.all([
-            removeNodeModules(cwd),
-            ...(isRepo ? [gitHardReset(cwd)] : [])
-          ])
-          // eslint-disable-next-line no-await-in-loop
-          actualTree = await install(pkgEnvDetails, { spinner })
-
           const node = findPackageNode(actualTree, name, oldVersion)
           if (!node) {
             debugLog(
@@ -292,19 +278,10 @@ export async function pnpmFix(
           const branch = isCi
             ? getSocketBranchName(oldPurl, newVersion, workspaceName)
             : ''
-          const baseBranch = isCi ? getBaseGitBranch() : ''
-          const { owner, repo } = isCi
-            ? getGitHubEnvRepoInfo()
-            : { owner: '', repo: '' }
           const shouldOpenPr = isCi
             ? // eslint-disable-next-line no-await-in-loop
               !(await doesPullRequestExistForBranch(owner, repo, branch))
             : false
-
-          if (isCi) {
-            // eslint-disable-next-line no-await-in-loop
-            await gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)
-          }
 
           if (updateData) {
             editablePkgJson.update(updateData)
@@ -397,18 +374,19 @@ export async function pnpmFix(
                 spinner?.error(`Reverting ${newSpec}${workspaceDetails}`, error)
               }
             }
+
             editablePkgJson.update(revertData)
             // eslint-disable-next-line no-await-in-loop
             await Promise.all([
               removeNodeModules(cwd),
-              ...(isRepo
-                ? [gitHardReset(cwd)]
-                : installed
-                  ? [editablePkgJson.save()]
-                  : [])
+              ...(isCi
+                ? [gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)]
+                : []),
+              ...(installed && !isCi ? [editablePkgJson.save()] : [])
             ])
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { spinner })
+
             if (errored) {
               if (!failedSpecs.has(newSpecKey)) {
                 failedSpecs.add(newSpecKey)
