@@ -40,6 +40,7 @@ import {
   updateNode,
   updatePackageJsonFromNode
 } from '../../utils/arborist-helpers'
+import { removeNodeModules } from '../../utils/fs'
 import { globWorkspace } from '../../utils/glob'
 import { applyRange } from '../../utils/semver'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
@@ -79,10 +80,12 @@ export async function npmFix(
     testScript
   }: NormalizedFixOptions
 ) {
+  const { pkgPath: rootPath } = pkgEnvDetails
+
   spinner?.start()
 
   const arb = new SafeArborist({
-    path: pkgEnvDetails.pkgPath,
+    path: rootPath,
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
   })
   // Calling arb.reify() creates the arb.diff object and nulls-out arb.idealTree.
@@ -110,15 +113,16 @@ export async function npmFix(
 
   // Lazily access constants.ENV[CI].
   const isCi = constants.ENV[CI]
-  const { pkgPath: rootPath } = pkgEnvDetails
 
   const { 0: isRepo, 1: workspacePkgJsonPaths } = await Promise.all([
     isInGitRepo(cwd),
-    globWorkspace(pkgEnvDetails)
+    globWorkspace(pkgEnvDetails.agent, rootPath)
   ])
+
   const pkgJsonPaths = [
-    pkgEnvDetails.editablePkgJson.filename!,
-    ...workspacePkgJsonPaths
+    ...workspacePkgJsonPaths,
+    // Process the workspace root last since it will add an override to package.json.
+    pkgEnvDetails.editablePkgJson.filename!
   ]
 
   await arb.buildIdealTree()
@@ -308,6 +312,8 @@ export async function npmFix(
                 spinner?.error(`Reverting ${newSpec}${workspaceDetails}`, error)
               }
             }
+            // eslint-disable-next-line no-await-in-loop
+            await removeNodeModules(cwd)
             if (isRepo) {
               // eslint-disable-next-line no-await-in-loop
               await gitHardReset(cwd)

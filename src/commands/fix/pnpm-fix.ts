@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises'
 import path from 'node:path'
 
 import { readWantedLockfile } from '@pnpm/lockfile.fs'
@@ -42,6 +43,7 @@ import {
   findPackageNodes,
   updatePackageJsonFromNode
 } from '../../utils/arborist-helpers'
+import { removeNodeModules } from '../../utils/fs'
 import { globWorkspace } from '../../utils/glob'
 import { applyRange } from '../../utils/semver'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
@@ -93,7 +95,8 @@ export async function pnpmFix(
     testScript
   }: NormalizedFixOptions
 ) {
-  const lockfile = await readWantedLockfile(pkgEnvDetails.pkgPath, {
+  const { pkgPath: rootPath } = pkgEnvDetails
+  const lockfile = await readWantedLockfile(rootPath, {
     ignoreIncompatible: false
   })
   if (!lockfile) {
@@ -119,7 +122,6 @@ export async function pnpmFix(
 
   // Lazily access constants.ENV[CI].
   const isCi = constants.ENV[CI]
-  const { pkgPath: rootPath } = pkgEnvDetails
 
   const {
     0: isRepo,
@@ -127,12 +129,14 @@ export async function pnpmFix(
     2: initialTree
   } = await Promise.all([
     isInGitRepo(cwd),
-    globWorkspace(pkgEnvDetails),
+    globWorkspace(pkgEnvDetails.agent, rootPath),
     getActualTree(cwd)
   ])
+
   const pkgJsonPaths = [
-    pkgEnvDetails.editablePkgJson.filename!,
-    ...workspacePkgJsonPaths
+    ...workspacePkgJsonPaths,
+    // Process the workspace root last since it will add an override to package.json.
+    pkgEnvDetails.editablePkgJson.filename!
   ]
 
   debugLog('workspacePkgJsonPaths', workspacePkgJsonPaths)
@@ -380,6 +384,8 @@ export async function pnpmFix(
               }
             }
             editablePkgJson.update(revertData)
+            // eslint-disable-next-line no-await-in-loop
+            await removeNodeModules(cwd)
             if (isRepo) {
               // eslint-disable-next-line no-await-in-loop
               await gitHardReset(cwd)
