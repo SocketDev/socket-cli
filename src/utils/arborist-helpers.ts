@@ -10,7 +10,7 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 
 import constants from '../constants'
-import { applyRange } from './semver'
+import { applyRange, getMajor } from './semver'
 import { DiffAction } from '../shadow/npm/arborist/lib/arborist/types'
 import { Edge } from '../shadow/npm/arborist/lib/edge'
 
@@ -45,39 +45,26 @@ export function findBestPatchVersion(
   const manifestData = getManifestData(NPM, node.name)
   let eligibleVersions
   if (manifestData && manifestData.name === manifestData.package) {
-    const major = semver.major(manifestData.version)
-    eligibleVersions = availableVersions.filter(v => {
-      const coerced = semver.coerce(v)
-      if (coerced) {
-        try {
-          return semver.major(coerced) === major
-        } catch (e) {
-          debugLog(`Error parsing '${v}'`, e)
-        }
-      }
-      return false
-    })
+    const major = getMajor(manifestData.version)
+    if (typeof major !== 'number') {
+      return null
+    }
+    eligibleVersions = availableVersions.filter(v => getMajor(v) === major)
   } else {
-    const major = semver.major(node.version)
-    eligibleVersions = availableVersions.filter(v => {
-      const coerced = semver.coerce(v)
-      try {
+    const major = getMajor(node.version)
+    if (typeof major !== 'number') {
+      return null
+    }
+    eligibleVersions = availableVersions.filter(
+      v =>
         // Filter for versions that are within the current major version and
         // are NOT in the vulnerable range.
-        if (coerced) {
-          return (
-            semver.major(coerced) === major &&
-            (!vulnerableVersionRange ||
-              !semver.satisfies(v, vulnerableVersionRange))
-          )
-        }
-      } catch (e) {
-        debugLog(`Error parsing '${v}'`, e)
-      }
-      return false
-    })
+        getMajor(v) === major &&
+        (!vulnerableVersionRange ||
+          !semver.satisfies(v, vulnerableVersionRange))
+    )
   }
-  return semver.maxSatisfying(eligibleVersions, '*')
+  return eligibleVersions ? semver.maxSatisfying(eligibleVersions, '*') : null
 }
 
 export function findPackageNode(
