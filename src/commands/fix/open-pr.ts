@@ -63,7 +63,6 @@ export async function doesPullRequestExistForBranch(
       head: `${owner}:${branch}`,
       state: 'open'
     })
-    debugLog('doesPullRequestExistForBranch > prs', prs)
     return prs.length > 0
   } catch {}
   return false
