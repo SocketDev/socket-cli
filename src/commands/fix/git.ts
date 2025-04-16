@@ -132,8 +132,6 @@ export async function gitCreateAndPushBranchIfNeeded(
       basename === 'pnpm-lock.yaml'
     )
   })
-  debugLog('branch', branch)
-  debugLog('gitCreateAndPushBranchIfNeeded > moddedFilepaths', moddedFilepaths)
   if (moddedFilepaths.length) {
     await spawn('git', ['add', ...moddedFilepaths], { cwd })
   }

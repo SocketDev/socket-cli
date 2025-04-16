@@ -297,14 +297,9 @@ export function updatePackageJsonFromNode(
 ): boolean {
   let result = false
   if (!isTopLevel(tree, node)) {
-    debugLog('not top level', node)
-    debugLog('tree.children', tree.children)
     return result
   }
   const { name } = node
-  debugLog('name', name)
-  debugLog('editablePkgJson.content', editablePkgJson.content)
-
   for (const depField of [
     'dependencies',
     'optionalDependencies',
