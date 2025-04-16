@@ -46,17 +46,36 @@ export function findBestPatchVersion(
   let eligibleVersions
   if (manifestData && manifestData.name === manifestData.package) {
     const major = semver.major(manifestData.version)
-    eligibleVersions = availableVersions.filter(v => semver.major(v) === major)
+    eligibleVersions = availableVersions.filter(v => {
+      const coerced = semver.coerce(v)
+      if (coerced) {
+        try {
+          return semver.major(coerced) === major
+        } catch (e) {
+          debugLog(`Error parsing '${v}'`, e)
+        }
+      }
+      return false
+    })
   } else {
     const major = semver.major(node.version)
-    eligibleVersions = availableVersions.filter(
-      v =>
+    eligibleVersions = availableVersions.filter(v => {
+      const coerced = semver.coerce(v)
+      try {
         // Filter for versions that are within the current major version and
         // are NOT in the vulnerable range.
-        semver.major(v) === major &&
-        (!vulnerableVersionRange ||
-          !semver.satisfies(v, vulnerableVersionRange))
-    )
+        if (coerced) {
+          return (
+            semver.major(coerced) === major &&
+            (!vulnerableVersionRange ||
+              !semver.satisfies(v, vulnerableVersionRange))
+          )
+        }
+      } catch (e) {
+        debugLog(`Error parsing '${v}'`, e)
+      }
+      return false
+    })
   }
   return semver.maxSatisfying(eligibleVersions, '*')
 }
