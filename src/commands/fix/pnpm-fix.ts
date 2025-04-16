@@ -139,8 +139,6 @@ export async function pnpmFix(
     pkgEnvDetails.editablePkgJson.filename!
   ]
 
-  debugLog('workspacePkgJsonPaths', workspacePkgJsonPaths)
-
   let actualTree = initialTree
 
   for (const { 0: name, 1: infos } of infoByPkg) {
@@ -176,9 +174,6 @@ export async function pnpmFix(
           firstPatchedVersionIdentifier,
           vulnerableVersionRange
         } of infos) {
-          debugLog('name', name)
-          debugLog('oldVersion', oldVersion)
-          debugLog('pkgJsonPath', pkgJsonPath)
           const node = findPackageNode(actualTree, name, oldVersion)
           if (!node) {
             debugLog('skipping no node', pkgJsonPath)
@@ -307,7 +302,7 @@ export async function pnpmFix(
             rangeStyle
           )
           debugLog('updatePackageJsonFromNode', modded)
-          debugLog(branch, editablePkgJson.filename)
+
           let error: unknown
           let errored = false
           let installed = false
@@ -346,17 +341,13 @@ export async function pnpmFix(
             errored = true
           }
 
-          debugLog('check "shouldOpenPr":', shouldOpenPr)
-          debugLog('check "errored":', errored)
           if (!errored && shouldOpenPr) {
-            debugLog('1: gitCreateAndPushBranchIfNeeded')
             // eslint-disable-next-line no-await-in-loop
             await gitCreateAndPushBranchIfNeeded(
               branch,
               getSocketCommitMessage(oldPurl, newVersion, workspaceName),
               cwd
             )
-            debugLog('2: openGitHubPullRequest')
             // eslint-disable-next-line no-await-in-loop
             const prResponse = await openGitHubPullRequest(
               owner,
