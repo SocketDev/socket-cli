@@ -2,7 +2,10 @@ import { promises as fs, readFileSync as fsReadFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 
+import { remove } from '@socketsecurity/registry/lib/fs'
+
 import constants from '../constants'
+import { globNodeModules } from './glob'
 
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { Abortable } from 'node:events'
@@ -16,10 +19,16 @@ import type { FileHandle } from 'node:fs/promises'
 
 const { abortSignal } = constants
 
+export async function removeNodeModules(cwd = process.cwd()) {
+  const nodeModulesPaths = await globNodeModules(cwd)
+  await Promise.all(nodeModulesPaths.map(p => remove(p)))
+}
+
 export type FindUpOptions = {
   cwd?: string | undefined
   signal?: AbortSignal | undefined
 }
+
 export async function findUp(
   name: string | string[],
   { cwd = process.cwd(), signal = abortSignal }: FindUpOptions
@@ -79,6 +88,7 @@ export async function safeReadFile(
   filepath: PathLike | FileHandle,
   options?: 'utf8' | 'utf-8' | { encoding: 'utf8' | 'utf-8' } | undefined
 ): Promise<string | undefined>
+
 export async function safeReadFile(
   filepath: PathLike | FileHandle,
   options?: ReadFileOptions | NodeJS.BufferEncoding | undefined
@@ -97,6 +107,7 @@ export function safeReadFileSync(
   filepath: PathOrFileDescriptor,
   options?: 'utf8' | 'utf-8' | { encoding: 'utf8' | 'utf-8' } | undefined
 ): string | undefined
+
 export function safeReadFileSync(
   filepath: PathOrFileDescriptor,
   options?:
