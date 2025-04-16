@@ -15,8 +15,9 @@ import {
   getBaseGitBranch,
   getSocketBranchName,
   getSocketCommitMessage,
-  gitCheckoutBaseBranchIfAvailable,
-  gitCreateAndPushBranchIfNeeded
+  gitCleanFdx,
+  gitCreateAndPushBranchIfNeeded,
+  gitHardReset
 } from './git'
 import {
   doesPullRequestExistForBranch,
@@ -352,24 +353,19 @@ export async function pnpmFix(
 
           if (errored) {
             editablePkgJson.update(revertData)
-
             // eslint-disable-next-line no-await-in-loop
             await Promise.all([removeNodeModules(cwd), editablePkgJson.save()])
-
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { spinner })
-
             spinner?.failAndStop(
               `Update failed for ${oldSpec} in ${workspaceName}`,
               error
             )
           } else if (isCi) {
             // eslint-disable-next-line no-await-in-loop
-            await Promise.all([
-              removeNodeModules(cwd),
-              gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)
-            ])
-
+            await gitHardReset(baseBranch, cwd)
+            // eslint-disable-next-line no-await-in-loop
+            await gitCleanFdx(cwd)
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { spinner })
           }
