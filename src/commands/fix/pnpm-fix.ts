@@ -122,14 +122,9 @@ export async function pnpmFix(
   // Lazily access constants.ENV[CI].
   const isCi = constants.ENV[CI]
 
-  const {
-    0: isRepo,
-    1: workspacePkgJsonPaths,
-    2: initialTree
-  } = await Promise.all([
+  const { 0: isRepo, 1: workspacePkgJsonPaths } = await Promise.all([
     isInGitRepo(cwd),
-    globWorkspace(pkgEnvDetails.agent, rootPath),
-    getActualTree(cwd)
+    globWorkspace(pkgEnvDetails.agent, rootPath)
   ])
 
   const pkgJsonPaths = [
@@ -138,15 +133,20 @@ export async function pnpmFix(
     pkgEnvDetails.editablePkgJson.filename!
   ]
 
-  let actualTree = initialTree
+  let actualTree
 
   for (const { 0: name, 1: infos } of infoByPkg) {
     if (getManifestData(NPM, name)) {
       spinner?.info(`Skipping ${name}. Socket Optimize package exists.`)
       continue
     }
+    // eslint-disable-next-line no-await-in-loop
+    actualTree = await getActualTree(cwd)
+
     const oldVersions = arrayUnique(
-      findPackageNodes(actualTree, name).map(n => n.version)
+      findPackageNodes(actualTree, name)
+        .map(n => n.version)
+        .filter(Boolean)
     )
     debugLog(name, 'oldVersions', oldVersions)
     const packument =
