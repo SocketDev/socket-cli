@@ -126,16 +126,21 @@ export async function npmFix(
     pkgEnvDetails.editablePkgJson.filename!
   ]
 
-  await arb.buildIdealTree()
-
   for (const { 0: name, 1: infos } of infoByPkg) {
     const hasUpgrade = !!getManifestData(NPM, name)
     if (hasUpgrade) {
       spinner?.info(`Skipping ${name}. Socket Optimize package exists.`)
       continue
     }
+
+    arb.idealTree = null
+    // eslint-disable-next-line no-await-in-loop
+    await arb.buildIdealTree()
+
     const oldVersions = arrayUnique(
-      findPackageNodes(arb.idealTree!, name).map(n => n.version)
+      findPackageNodes(arb.idealTree!, name)
+        .map(n => n.version)
+        .filter(Boolean)
     )
     const packument =
       oldVersions.length && infos.length
