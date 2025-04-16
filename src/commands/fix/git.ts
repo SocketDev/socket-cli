@@ -120,10 +120,9 @@ export async function gitCreateAndPushBranchIfNeeded(
   cwd = process.cwd()
 ): Promise<boolean> {
   if (await gitBranchExists(branch, cwd)) {
-    logger.warn(`Branch "${branch}" already exists. Skipping creation.`)
-    return false
+    logger.warn(`Branch "${branch}" already exists, skipping creation.`)
+    return true
   }
-  await spawn('git', ['checkout', '-b', branch], { cwd })
   const moddedFilepaths = (await gitUnstagedModifiedFiles(cwd)).filter(p => {
     const basename = path.basename(p)
     return (
@@ -132,9 +131,12 @@ export async function gitCreateAndPushBranchIfNeeded(
       basename === 'pnpm-lock.yaml'
     )
   })
-  if (moddedFilepaths.length) {
-    await spawn('git', ['add', ...moddedFilepaths], { cwd })
+  if (!moddedFilepaths.length) {
+    logger.warn('Nothing to commit, skipping push.')
+    return false
   }
+  await spawn('git', ['checkout', '-b', branch], { cwd })
+  await spawn('git', ['add', ...moddedFilepaths], { cwd })
   await spawn('git', ['commit', '-m', commitMsg], { cwd })
   await spawn('git', ['push', '--set-upstream', 'origin', branch], { cwd })
   return true
