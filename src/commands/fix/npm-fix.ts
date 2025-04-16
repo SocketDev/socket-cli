@@ -312,19 +312,15 @@ export async function npmFix(
                 spinner?.error(`Reverting ${newSpec}${workspaceDetails}`, error)
               }
             }
-            // eslint-disable-next-line no-await-in-loop
-            await removeNodeModules(cwd)
-            if (isRepo) {
-              // eslint-disable-next-line no-await-in-loop
-              await gitHardReset(cwd)
-            }
             if (saved) {
               editablePkgJson.update(revertData)
-              if (!isRepo) {
-                // eslint-disable-next-line no-await-in-loop
-                await editablePkgJson.save()
-              }
             }
+            // eslint-disable-next-line no-await-in-loop
+            await Promise.all([
+              removeNodeModules(cwd),
+              ...(isRepo ? [gitHardReset(cwd)] : []),
+              ...(saved && !isRepo ? [editablePkgJson.save()] : [])
+            ])
             if (!isRepo && installed) {
               // eslint-disable-next-line no-await-in-loop
               await install(revertTree, { cwd })
