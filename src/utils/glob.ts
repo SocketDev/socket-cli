@@ -7,12 +7,13 @@ import micromatch from 'micromatch'
 import { glob as tinyGlob } from 'tinyglobby'
 import { parse as yamlParse } from 'yaml'
 
+import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../constants'
 import { safeReadFile } from './fs'
 
-import type { EnvDetails } from './package-environment'
+import type { Agent } from './package-environment'
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { GlobOptions } from 'tinyglobby'
@@ -39,12 +40,15 @@ const ignoredDirs = [
 
 const ignoredDirPatterns = ignoredDirs.map(i => `**/${i}`)
 
-async function getWorkspaceGlobs(pkgEnvDetails: EnvDetails): Promise<string[]> {
+async function getWorkspaceGlobs(
+  agent: Agent,
+  cwd = process.cwd()
+): Promise<string[]> {
   let workspacePatterns
-  if (pkgEnvDetails.agent === PNPM) {
+  if (agent === PNPM) {
     for (const workspacePath of [
-      path.join(pkgEnvDetails.pkgPath, `${PNPM_WORKSPACE}.yaml`),
-      path.join(pkgEnvDetails.pkgPath, `${PNPM_WORKSPACE}.yml`)
+      path.join(cwd, `${PNPM_WORKSPACE}.yaml`),
+      path.join(cwd, `${PNPM_WORKSPACE}.yml`)
     ]) {
       // eslint-disable-next-line no-await-in-loop
       const yml = await safeReadFile(workspacePath)
@@ -58,7 +62,9 @@ async function getWorkspaceGlobs(pkgEnvDetails: EnvDetails): Promise<string[]> {
       }
     }
   } else {
-    workspacePatterns = pkgEnvDetails.editablePkgJson.content['workspaces']
+    workspacePatterns = (await readPackageJson(cwd, { throws: false }))?.[
+      'workspaces'
+    ]
   }
   return Array.isArray(workspacePatterns)
     ? workspacePatterns
@@ -239,14 +245,22 @@ export async function globWithGitIgnore(
   return absolute ? filtered.map(p => path.resolve(cwd, p)) : filtered
 }
 
+export async function globNodeModules(cwd = process.cwd()): Promise<string[]> {
+  return await tinyGlob('**/node_modules/**', {
+    absolute: true,
+    cwd
+  })
+}
+
 export async function globWorkspace(
-  pkgEnvDetails: EnvDetails
+  agent: Agent,
+  cwd = process.cwd()
 ): Promise<string[]> {
-  const workspaceGlobs = await getWorkspaceGlobs(pkgEnvDetails)
+  const workspaceGlobs = await getWorkspaceGlobs(agent, cwd)
   return workspaceGlobs.length
     ? await tinyGlob(workspaceGlobs, {
         absolute: true,
-        cwd: pkgEnvDetails.pkgPath,
+        cwd,
         ignore: ['**/node_modules/**', '**/bower_components/**']
       })
     : []
