@@ -173,6 +173,9 @@ export async function pnpmFix(
           firstPatchedVersionIdentifier,
           vulnerableVersionRange
         } of infos) {
+          // eslint-disable-next-line no-await-in-loop
+          actualTree = await getActualTree()
+
           const node = findPackageNode(actualTree, name, oldVersion)
           if (!node) {
             debugLog(
