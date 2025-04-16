@@ -307,9 +307,13 @@ export async function npmFix(
                 workspaceName
               }
             )
-            if (prResponse && autoMerge) {
-              // eslint-disable-next-line no-await-in-loop
-              await enableAutoMerge(prResponse.data)
+            if (prResponse) {
+              const { data } = prResponse
+              spinner?.info(`PR #${data.number} opened.`)
+              if (autoMerge) {
+                // eslint-disable-next-line no-await-in-loop
+                await enableAutoMerge(data)
+              }
             }
           }
 
