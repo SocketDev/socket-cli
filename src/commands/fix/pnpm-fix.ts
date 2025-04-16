@@ -375,18 +375,16 @@ export async function pnpmFix(
             }
             editablePkgJson.update(revertData)
             // eslint-disable-next-line no-await-in-loop
-            await removeNodeModules(cwd)
-            if (isRepo) {
-              // eslint-disable-next-line no-await-in-loop
-              await gitHardReset(cwd)
-              // eslint-disable-next-line no-await-in-loop
-              actualTree = await getActualTree(cwd)
-            } else if (installed) {
-              // eslint-disable-next-line no-await-in-loop
-              await editablePkgJson.save()
-              // eslint-disable-next-line no-await-in-loop
-              actualTree = await install(pkgEnvDetails, { spinner })
-            }
+            await Promise.all([
+              removeNodeModules(cwd),
+              ...(isRepo
+                ? [gitHardReset(cwd)]
+                : installed
+                  ? [editablePkgJson.save()]
+                  : [])
+            ])
+            // eslint-disable-next-line no-await-in-loop
+            actualTree = await install(pkgEnvDetails, { spinner })
             if (errored) {
               if (!failedSpecs.has(newSpecKey)) {
                 failedSpecs.add(newSpecKey)
