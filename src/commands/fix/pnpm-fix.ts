@@ -350,27 +350,25 @@ export async function pnpmFix(
             errored = true
           }
 
-          if (errored || isCi) {
+          if (errored) {
             editablePkgJson.update(revertData)
-
+            // eslint-disable-next-line no-await-in-loop
+            await Promise.all([removeNodeModules(cwd), editablePkgJson.save()])
+            // eslint-disable-next-line no-await-in-loop
+            actualTree = await install(pkgEnvDetails, { spinner })
+            spinner?.failAndStop(
+              `Update failed for ${oldSpec} in ${workspaceName}`,
+              error
+            )
+          } else if (isCi) {
             // eslint-disable-next-line no-await-in-loop
             await Promise.all([
               removeNodeModules(cwd),
-              ...(isCi
-                ? [gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)]
-                : []),
-              ...(isCi ? [] : [editablePkgJson.save()])
+              // Reset to base branch to isolate next PR
+              gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)
             ])
-
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { spinner })
-
-            if (errored) {
-              spinner?.failAndStop(
-                `Update failed for ${oldSpec} in ${workspaceName}`,
-                error
-              )
-            }
           }
         }
       }
