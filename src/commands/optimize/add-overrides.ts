@@ -69,7 +69,7 @@ export async function addOverrides(
       updated: new Set(),
       updatedInWorkspaces: new Set(),
       warnedPnpmWorkspaceRequiresNpm: false,
-      workspacePkgJsonPaths: await globWorkspace(pkgEnvDetails)
+      workspacePkgJsonPaths: await globWorkspace(agent, rootPath)
     }
   } = { __proto__: null, ...options } as AddOverridesOptions
   const isWorkspace = state.workspacePkgJsonPaths.length > 0
