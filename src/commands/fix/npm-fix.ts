@@ -14,8 +14,7 @@ import {
   getSocketBranchName,
   getSocketCommitMessage,
   gitCheckoutBaseBranchIfAvailable,
-  gitCreateAndPushBranchIfNeeded,
-  gitHardReset
+  gitCreateAndPushBranchIfNeeded
 } from './git'
 import {
   doesPullRequestExistForBranch,
@@ -251,7 +250,6 @@ export async function npmFix(
 
           let error: unknown
           let errored = false
-          let installed = false
           let saved = false
 
           // eslint-disable-next-line no-await-in-loop
@@ -267,7 +265,6 @@ export async function npmFix(
           try {
             // eslint-disable-next-line no-await-in-loop
             await install(arb.idealTree!, { cwd })
-            installed = true
 
             if (test) {
               if (!testedSpecs.has(newSpecKey)) {
