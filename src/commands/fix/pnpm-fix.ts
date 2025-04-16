@@ -175,7 +175,10 @@ export async function pnpmFix(
         } of infos) {
           const node = findPackageNode(actualTree, name, oldVersion)
           if (!node) {
-            debugLog('skipping no node', pkgJsonPath)
+            debugLog(
+              `Skipping ${oldSpec}, no node found in arborist.actualTree`,
+              pkgJsonPath
+            )
             continue
           }
 
@@ -300,7 +303,7 @@ export async function pnpmFix(
             newVersion,
             rangeStyle
           )
-          debugLog('updatePackageJsonFromNode', modded)
+          debugLog(`Updated package.json from node: ${modded}`)
 
           let error: unknown
           let errored = false
