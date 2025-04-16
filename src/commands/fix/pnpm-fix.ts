@@ -148,6 +148,7 @@ export async function pnpmFix(
     const oldVersions = arrayUnique(
       findPackageNodes(actualTree, name).map(n => n.version)
     )
+    debugLog(name, 'oldVersions', oldVersions)
     const packument =
       oldVersions.length && infos.length
         ? // eslint-disable-next-line no-await-in-loop
@@ -369,9 +370,13 @@ export async function pnpmFix(
                 workspaceName
               }
             )
-            if (prResponse && autoMerge) {
-              // eslint-disable-next-line no-await-in-loop
-              await enableAutoMerge(prResponse.data)
+            if (prResponse) {
+              const { data } = prResponse
+              spinner?.info(`PR #${data.number} opened.`)
+              if (autoMerge) {
+                // eslint-disable-next-line no-await-in-loop
+                await enableAutoMerge(data)
+              }
             }
           }
 
