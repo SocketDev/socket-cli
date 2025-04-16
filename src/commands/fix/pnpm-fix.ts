@@ -141,7 +141,12 @@ export async function pnpmFix(
       continue
     }
     // eslint-disable-next-line no-await-in-loop
-    actualTree = await getActualTree(cwd)
+    await Promise.all([
+      removeNodeModules(cwd),
+      ...(isRepo ? [gitHardReset(cwd)] : [])
+    ])
+    // eslint-disable-next-line no-await-in-loop
+    actualTree = await install(pkgEnvDetails, { spinner })
 
     const oldVersions = arrayUnique(
       findPackageNodes(actualTree, name)
@@ -175,7 +180,12 @@ export async function pnpmFix(
           vulnerableVersionRange
         } of infos) {
           // eslint-disable-next-line no-await-in-loop
-          actualTree = await getActualTree()
+          await Promise.all([
+            removeNodeModules(cwd),
+            ...(isRepo ? [gitHardReset(cwd)] : [])
+          ])
+          // eslint-disable-next-line no-await-in-loop
+          actualTree = await install(pkgEnvDetails, { spinner })
 
           const node = findPackageNode(actualTree, name, oldVersion)
           if (!node) {
