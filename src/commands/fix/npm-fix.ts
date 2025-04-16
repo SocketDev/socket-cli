@@ -15,8 +15,7 @@ import {
   getSocketCommitMessage,
   gitCheckoutBaseBranchIfAvailable,
   gitCreateAndPushBranchIfNeeded,
-  gitHardReset,
-  isInGitRepo
+  gitHardReset
 } from './git'
 import {
   doesPullRequestExistForBranch,
@@ -114,11 +113,10 @@ export async function npmFix(
 
   // Lazily access constants.ENV[CI].
   const isCi = constants.ENV[CI]
-
-  const { 0: isRepo, 1: workspacePkgJsonPaths } = await Promise.all([
-    isInGitRepo(cwd),
-    globWorkspace(pkgEnvDetails.agent, rootPath)
-  ])
+  const workspacePkgJsonPaths = await globWorkspace(
+    pkgEnvDetails.agent,
+    rootPath
+  )
 
   const pkgJsonPaths = [
     ...workspacePkgJsonPaths,
@@ -139,7 +137,7 @@ export async function npmFix(
 
     const oldVersions = arrayUnique(
       findPackageNodes(arb.idealTree!, name)
-        .map(n => n.version)
+        .map(n => n.target?.version ?? n.version)
         .filter(Boolean)
     )
     const packument =
@@ -335,13 +333,14 @@ export async function npmFix(
             // eslint-disable-next-line no-await-in-loop
             await Promise.all([
               removeNodeModules(cwd),
-              ...(isRepo ? [gitHardReset(cwd)] : []),
-              ...(saved && !isRepo ? [editablePkgJson.save()] : [])
+              ...(isCi
+                ? [gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)]
+                : []),
+              ...(saved && !isCi ? [editablePkgJson.save()] : [])
             ])
-            if (!isRepo && installed) {
-              // eslint-disable-next-line no-await-in-loop
-              await install(revertTree, { cwd })
-            }
+            // eslint-disable-next-line no-await-in-loop
+            await install(revertTree, { cwd })
+
             if (errored) {
               if (!failedSpecs.has(newSpecKey)) {
                 failedSpecs.add(newSpecKey)
