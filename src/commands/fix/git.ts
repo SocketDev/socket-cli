@@ -114,6 +114,10 @@ export async function gitCheckoutBaseBranchIfAvailable(
   }
 }
 
+export async function gitCleanFdx(cwd = process.cwd()): Promise<void> {
+  await spawn('git', ['clean', '-fdx'], { cwd })
+}
+
 export async function gitCreateAndPushBranchIfNeeded(
   branch: string,
   commitMsg: string,
@@ -142,8 +146,11 @@ export async function gitCreateAndPushBranchIfNeeded(
   return true
 }
 
-export async function gitHardReset(cwd = process.cwd()): Promise<void> {
-  await spawn('git', ['reset', '--hard'], { cwd })
+export async function gitHardReset(
+  branch = 'HEAD',
+  cwd = process.cwd()
+): Promise<void> {
+  await spawn('git', ['reset', '--hard', branch], { cwd })
 }
 
 async function gitUnstagedModifiedFiles(
