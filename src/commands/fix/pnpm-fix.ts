@@ -158,10 +158,11 @@ export async function pnpmFix(
         ? 'root'
         : path.relative(rootPath, path.dirname(pkgJsonPath))
 
-      const editablePkgJson = isWorkspaceRoot
-        ? pkgEnvDetails.editablePkgJson
-        : // eslint-disable-next-line no-await-in-loop
-          await readPackageJson(pkgJsonPath, { editable: true })
+      // Always re-read the editable package.json to avoid stale mutations across iterations
+      // eslint-disable-next-line no-await-in-loop
+      const editablePkgJson = await readPackageJson(pkgJsonPath, {
+        editable: true
+      })
 
       // Get current overrides for revert logic
       const oldPnpmSection = editablePkgJson.content[PNPM] as
