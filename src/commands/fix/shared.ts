@@ -2,6 +2,16 @@ import type { FixOptions, NormalizedFixOptions } from './types'
 
 export const CMD_NAME = 'socket fix'
 
+export const alertMapOptions = Object.freeze({
+  consolidate: true,
+  include: {
+    existing: true,
+    unfixable: false,
+    upgradable: false
+  },
+  nothrow: true
+})
+
 export function assignDefaultFixOptions(
   options: FixOptions
 ): NormalizedFixOptions {

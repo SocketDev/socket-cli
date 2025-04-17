@@ -19,11 +19,6 @@ import type { Diff } from '../shadow/npm/arborist/lib/arborist/types'
 import type { SafeEdge } from '../shadow/npm/arborist/lib/edge'
 import type { SafeNode } from '../shadow/npm/arborist/lib/node'
 
-export type Packument = Exclude<
-  Awaited<ReturnType<typeof fetchPackagePackument>>,
-  null
->
-
 const { LOOP_SENTINEL, NPM, NPM_REGISTRY_URL } = constants
 
 function getUrlOrigin(input: string): string {
@@ -216,56 +211,44 @@ export function isTopLevel(tree: SafeNode, node: SafeNode): boolean {
   return tree.children.get(node.name) === node
 }
 
+export type Packument = Exclude<
+  Awaited<ReturnType<typeof fetchPackagePackument>>,
+  null
+>
+
 export function updateNode(
   node: SafeNode,
-  packument: Packument,
-  vulnerableVersionRange?: string,
-  firstPatchedVersionIdentifier?: string | undefined
-): boolean {
-  const availableVersions = Object.keys(packument.versions)
-  // Find the highest non-vulnerable version within the same major range
-  const targetVersion = findBestPatchVersion(
-    node,
-    availableVersions,
-    vulnerableVersionRange,
-    firstPatchedVersionIdentifier
-  )
-  const targetPackument = targetVersion
-    ? packument.versions[targetVersion]
-    : undefined
-  // Check !targetVersion to make TypeScript happy.
-  if (!targetVersion || !targetPackument) {
-    // No suitable patch version found.
-    return false
-  }
+  newVersion: string,
+  newVersionPackument: Packument['versions'][number]
+): void {
   // Object.defineProperty is needed to set the version property and replace
-  // the old value with targetVersion.
+  // the old value with newVersion.
   Object.defineProperty(node, 'version', {
     configurable: true,
     enumerable: true,
-    get: () => targetVersion
+    get: () => newVersion
   })
   // Update package.version associated with the node.
-  node.package.version = targetVersion
+  node.package.version = newVersion
   // Update node.resolved.
   const purlObj = PackageURL.fromString(`pkg:npm/${node.name}`)
-  node.resolved = `${NPM_REGISTRY_URL}/${node.name}/-/${purlObj.name}-${targetVersion}.tgz`
+  node.resolved = `${NPM_REGISTRY_URL}/${node.name}/-/${purlObj.name}-${newVersion}.tgz`
   // Update node.integrity with the targetPackument.dist.integrity value if available
   // else delete node.integrity so a new value is resolved for the target version.
-  const { integrity } = targetPackument.dist
+  const { integrity } = newVersionPackument.dist
   if (integrity) {
     node.integrity = integrity
   } else {
     delete node.integrity
   }
   // Update node.package.deprecated based on targetPackument.deprecated.
-  if (hasOwn(targetPackument, 'deprecated')) {
-    node.package['deprecated'] = targetPackument.deprecated as string
+  if (hasOwn(newVersionPackument, 'deprecated')) {
+    node.package['deprecated'] = newVersionPackument.deprecated as string
   } else {
     delete node.package['deprecated']
   }
   // Update node.package.dependencies.
-  const newDeps = { ...targetPackument.dependencies }
+  const newDeps = { ...newVersionPackument.dependencies }
   const { dependencies: oldDeps } = node.package
   node.package.dependencies = newDeps
   if (oldDeps) {
@@ -291,14 +274,13 @@ export function updateNode(
       )
     }
   }
-  return true
 }
 
 export function updatePackageJsonFromNode(
   editablePkgJson: EditablePackageJson,
   tree: SafeNode,
   node: SafeNode,
-  targetVersion: string,
+  newVersion: string,
   rangeStyle?: RangeStyle | undefined
 ): boolean {
   let result = false
@@ -317,7 +299,7 @@ export function updatePackageJsonFromNode(
     if (depObject) {
       const oldRange = depObject[name]
       if (oldRange) {
-        const newRange = applyRange(oldRange, targetVersion, rangeStyle)
+        const newRange = applyRange(oldRange, newVersion, rangeStyle)
         if (oldRange !== newRange) {
           result = true
           editablePkgJson.update({
