@@ -3,6 +3,7 @@ import path from 'node:path'
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
@@ -13,8 +14,9 @@ import {
   getBaseGitBranch,
   getSocketBranchName,
   getSocketCommitMessage,
-  gitCheckoutBaseBranchIfAvailable,
-  gitCreateAndPushBranchIfNeeded
+  gitCleanFdx,
+  gitCreateAndPushBranchIfNeeded,
+  gitHardReset
 } from './git'
 import {
   doesPullRequestExistForBranch,
@@ -22,7 +24,7 @@ import {
   getGitHubEnvRepoInfo,
   openGitHubPullRequest
 } from './open-pr'
-import { NormalizedFixOptions } from './types'
+import { alertMapOptions } from './shared'
 import constants from '../../constants'
 import {
   Arborist,
@@ -34,6 +36,7 @@ import {
   getAlertsMapFromPurls
 } from '../../utils/alerts-map'
 import {
+  findBestPatchVersion,
   findPackageNode,
   findPackageNodes,
   updateNode,
@@ -44,6 +47,7 @@ import { globWorkspace } from '../../utils/glob'
 import { applyRange } from '../../utils/semver'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
 
+import type { NormalizedFixOptions } from './types'
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
 import type { EnvDetails } from '../../utils/package-environment'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
@@ -62,9 +66,9 @@ async function install(
     __proto__: null,
     ...options
   } as InstallOptions
-  const arb2 = new Arborist({ path: cwd })
-  arb2.idealTree = idealTree
-  await arb2.reify()
+  const arb = new Arborist({ path: cwd })
+  arb.idealTree = idealTree
+  await arb.reify()
 }
 
 export async function npmFix(
@@ -79,26 +83,15 @@ export async function npmFix(
     testScript
   }: NormalizedFixOptions
 ) {
-  const { pkgPath: rootPath } = pkgEnvDetails
-
   spinner?.start()
 
+  const { pkgPath: rootPath } = pkgEnvDetails
   const arb = new SafeArborist({
     path: rootPath,
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
   })
   // Calling arb.reify() creates the arb.diff object and nulls-out arb.idealTree.
   await arb.reify()
-
-  const alertMapOptions = {
-    consolidate: true,
-    include: {
-      existing: true,
-      unfixable: false,
-      upgradable: false
-    },
-    nothrow: true
-  }
 
   const alertsMap = purls.length
     ? await getAlertsMapFromPurls(purls, alertMapOptions)
@@ -107,6 +100,7 @@ export async function npmFix(
   const infoByPkg = getCveInfoByAlertsMap(alertsMap)
   if (!infoByPkg) {
     spinner?.stop()
+    logger.info('No fixable vulnerabilities found.')
     return
   }
 
@@ -116,7 +110,6 @@ export async function npmFix(
     pkgEnvDetails.agent,
     rootPath
   )
-
   const pkgJsonPaths = [
     ...workspacePkgJsonPaths,
     // Process the workspace root last since it will add an override to package.json.
@@ -124,122 +117,108 @@ export async function npmFix(
   ]
 
   for (const { 0: name, 1: infos } of infoByPkg) {
-    const hasUpgrade = !!getManifestData(NPM, name)
-    if (hasUpgrade) {
-      spinner?.info(`Skipping ${name}. Socket Optimize package exists.`)
+    debugLog(`Processing vulnerable package: ${name}`)
+
+    if (getManifestData(NPM, name)) {
+      spinner?.info(`Socket Optimize package for ${name} exists, skipping`)
       continue
     }
-
-    arb.idealTree = null
+    if (!infos.length) {
+      debugLog(`No vulnerability info found for ${name}`)
+      continue
+    }
     // eslint-disable-next-line no-await-in-loop
-    await arb.buildIdealTree()
-
-    const oldVersions = arrayUnique(
-      findPackageNodes(arb.idealTree!, name)
-        .map(n => n.target?.version ?? n.version)
-        .filter(Boolean)
-    )
-    const packument =
-      oldVersions.length && infos.length
-        ? // eslint-disable-next-line no-await-in-loop
-          await fetchPackagePackument(name)
-        : null
+    const packument = await fetchPackagePackument(name)
     if (!packument) {
+      debugLog(`No packument found for ${name}`)
       continue
     }
 
-    const failedSpecs = new Set<string>()
+    const availableVersions = Object.keys(packument.versions)
     const fixedSpecs = new Set<string>()
-    const installedSpecs = new Set<string>()
-    const testedSpecs = new Set<string>()
-    const unavailableSpecs = new Set<string>()
-    const revertedSpecs = new Set<string>()
 
     for (const pkgJsonPath of pkgJsonPaths) {
+      const pkgPath = path.dirname(pkgJsonPath)
+      const isWorkspaceRoot =
+        pkgJsonPath === pkgEnvDetails.editablePkgJson.filename
+      const workspaceName = isWorkspaceRoot
+        ? 'root'
+        : path.relative(rootPath, pkgPath)
+
+      debugLog(`Checking workspace: ${workspaceName}`)
+
+      arb.idealTree = null
+      // eslint-disable-next-line no-await-in-loop
+      await arb.buildIdealTree()
+
+      const oldVersions = arrayUnique(
+        findPackageNodes(arb.idealTree!, name)
+          .map(n => n.target?.version ?? n.version)
+          .filter(Boolean)
+      )
+      if (!oldVersions.length) {
+        debugLog(`Lockfile entries not found for ${name}`)
+        continue
+      }
+
+      // Always re-read the editable package.json to avoid stale mutations
+      // across iterations.
+      // eslint-disable-next-line no-await-in-loop
+      const editablePkgJson = await readPackageJson(pkgJsonPath, {
+        editable: true
+      })
+
       for (const oldVersion of oldVersions) {
         const oldSpec = `${name}@${oldVersion}`
         const oldPurl = `pkg:npm/${oldSpec}`
+
+        const node = findPackageNode(arb.idealTree!, name, oldVersion)
+        if (!node) {
+          debugLog(`Arborist node not found, skipping ${oldSpec}`)
+          continue
+        }
+
         for (const {
           firstPatchedVersionIdentifier,
           vulnerableVersionRange
         } of infos) {
-          const revertTree = arb.idealTree!
-          arb.idealTree = null
-          // eslint-disable-next-line no-await-in-loop
-          await arb.buildIdealTree()
+          const newVersion = findBestPatchVersion(
+            node,
+            availableVersions,
+            vulnerableVersionRange,
+            firstPatchedVersionIdentifier
+          )
+          const newVersionPackument = newVersion
+            ? packument.versions[newVersion]
+            : undefined
 
-          const node = findPackageNode(arb.idealTree!, name, oldVersion)
-          if (!node) {
-            debugLog(
-              `Skipping ${oldSpec}, no node found in arborist.idealTree`,
-              pkgJsonPath
-            )
+          if (!(newVersion && newVersionPackument)) {
+            spinner?.fail(`No update found for ${oldSpec}.`)
             continue
           }
 
-          if (
-            !updateNode(
-              node,
-              packument,
-              vulnerableVersionRange,
-              firstPatchedVersionIdentifier
-            )
-          ) {
-            if (!unavailableSpecs.has(oldSpec)) {
-              unavailableSpecs.add(oldSpec)
-              spinner?.fail(`No update available for ${oldSpec}`)
-            }
-            continue
-          }
-
-          const isWorkspaceRoot =
-            pkgJsonPath === pkgEnvDetails.editablePkgJson.filename
-          const workspaceName = isWorkspaceRoot
-            ? ''
-            : path.relative(rootPath, path.dirname(pkgJsonPath))
-          const workspaceDetails = workspaceName ? ` in ${workspaceName}` : ''
-          const editablePkgJson = isWorkspaceRoot
-            ? pkgEnvDetails.editablePkgJson
-            : // eslint-disable-next-line no-await-in-loop
-              await readPackageJson(pkgJsonPath, { editable: true })
-
-          const newVersion = node.package.version!
           const newVersionRange = applyRange(oldVersion, newVersion, rangeStyle)
           const newSpec = `${name}@${newVersionRange}`
-          const newSpecKey = `${workspaceName ? `${workspaceName}>` : ''}${newSpec}`
+          const newSpecKey = `${workspaceName}:${newSpec}`
 
-          const revertData = {
-            ...(editablePkgJson.content.dependencies
-              ? { dependencies: editablePkgJson.content.dependencies }
-              : undefined),
-            ...(editablePkgJson.content.optionalDependencies
-              ? {
-                  optionalDependencies:
-                    editablePkgJson.content.optionalDependencies
-                }
-              : undefined),
-            ...(editablePkgJson.content.peerDependencies
-              ? { peerDependencies: editablePkgJson.content.peerDependencies }
-              : undefined)
-          } as PackageJson
-
-          const branch = isCi
-            ? getSocketBranchName(oldPurl, newVersion, workspaceName)
-            : ''
-          const baseBranch = isCi ? getBaseGitBranch() : ''
-          const { owner, repo } = isCi
-            ? getGitHubEnvRepoInfo()
-            : { owner: '', repo: '' }
-          const shouldOpenPr = isCi
-            ? // eslint-disable-next-line no-await-in-loop
-              !(await doesPullRequestExistForBranch(owner, repo, branch))
-            : false
-
-          if (isCi) {
-            // eslint-disable-next-line no-await-in-loop
-            await gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)
+          if (fixedSpecs.has(newSpecKey)) {
+            debugLog(`Already fixed ${newSpec} in ${workspaceName}, skipping`)
+            continue
           }
 
+          const revertData = {
+            ...(editablePkgJson.content.dependencies && {
+              dependencies: editablePkgJson.content.dependencies
+            }),
+            ...(editablePkgJson.content.optionalDependencies && {
+              optionalDependencies: editablePkgJson.content.optionalDependencies
+            }),
+            ...(editablePkgJson.content.peerDependencies && {
+              peerDependencies: editablePkgJson.content.peerDependencies
+            })
+          } as PackageJson
+
+          updateNode(node, newVersion, newVersionPackument)
           updatePackageJsonFromNode(
             editablePkgJson,
             arb.idealTree!,
@@ -247,109 +226,108 @@ export async function npmFix(
             newVersion,
             rangeStyle
           )
-
-          let error: unknown
-          let errored = false
-          let saved = false
-
           // eslint-disable-next-line no-await-in-loop
-          if (await editablePkgJson.save()) {
-            saved = true
+          if (!(await editablePkgJson.save())) {
+            debugLog(`Nothing changed for ${workspaceName}, skipping install`)
+            continue
           }
 
-          if (!installedSpecs.has(newSpecKey)) {
-            testedSpecs.add(newSpecKey)
-            spinner?.info(`Installing ${newSpec}${workspaceDetails}`)
-          }
+          spinner?.info(`Installing ${newSpec} in ${workspaceName}`)
 
+          let error
+          let errored = false
           try {
             // eslint-disable-next-line no-await-in-loop
             await install(arb.idealTree!, { cwd })
-
             if (test) {
-              if (!testedSpecs.has(newSpecKey)) {
-                testedSpecs.add(newSpecKey)
-                spinner?.info(`Testing ${newSpec}${workspaceDetails}`)
-              }
+              spinner?.info(`Testing ${newSpec} in ${workspaceName}`)
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
-            if (!fixedSpecs.has(newSpecKey)) {
-              fixedSpecs.add(newSpecKey)
-              spinner?.successAndStop(`Fixed ${name}${workspaceDetails}`)
-              spinner?.start()
-            }
+            fixedSpecs.add(newSpecKey)
+            spinner?.successAndStop(`Fixed ${name} in ${workspaceName}`)
+            spinner?.start()
           } catch (e) {
-            error = e
             errored = true
+            error = e
           }
 
-          if (
-            !errored &&
-            shouldOpenPr &&
-            // eslint-disable-next-line no-await-in-loop
-            (await gitCreateAndPushBranchIfNeeded(
-              branch,
-              getSocketCommitMessage(oldPurl, newVersion, workspaceName),
-              cwd
-            ))
-          ) {
-            // eslint-disable-next-line no-await-in-loop
-            const prResponse = await openGitHubPullRequest(
-              owner,
-              repo,
-              baseBranch,
-              branch,
+          const baseBranch = isCi ? getBaseGitBranch() : ''
+          if (!errored && isCi) {
+            const branch = getSocketBranchName(
               oldPurl,
               newVersion,
-              {
-                cwd,
-                workspaceName
-              }
+              workspaceName
             )
-            if (prResponse) {
-              const { data } = prResponse
-              spinner?.info(`PR #${data.number} opened.`)
-              if (autoMerge) {
+            try {
+              const { owner, repo } = getGitHubEnvRepoInfo()
+              if (
                 // eslint-disable-next-line no-await-in-loop
-                await enableAutoMerge(data)
+                (await doesPullRequestExistForBranch(owner, repo, branch)) ||
+                // eslint-disable-next-line no-await-in-loop
+                !(await gitCreateAndPushBranchIfNeeded(
+                  branch,
+                  getSocketCommitMessage(oldPurl, newVersion, workspaceName),
+                  cwd
+                ))
+              ) {
+                continue
               }
+              // eslint-disable-next-line no-await-in-loop
+              const prResponse = await openGitHubPullRequest(
+                owner,
+                repo,
+                baseBranch,
+                branch,
+                oldPurl,
+                newVersion,
+                {
+                  cwd,
+                  workspaceName
+                }
+              )
+              if (prResponse) {
+                const { data } = prResponse
+                spinner?.info(`Opened PR #${data.number}.`)
+                if (autoMerge) {
+                  // eslint-disable-next-line no-await-in-loop
+                  await enableAutoMerge(data)
+                }
+              }
+            } catch (e) {
+              error = e
+              errored = true
             }
           }
 
-          if (errored || isCi) {
-            if (errored) {
-              if (!revertedSpecs.has(newSpecKey)) {
-                revertedSpecs.add(newSpecKey)
-                spinner?.error(`Reverting ${newSpec}${workspaceDetails}`, error)
-              }
-            }
-            if (saved) {
+          if (isCi) {
+            // eslint-disable-next-line no-await-in-loop
+            await gitHardReset(baseBranch, cwd)
+            // eslint-disable-next-line no-await-in-loop
+            await gitCleanFdx(cwd)
+            // eslint-disable-next-line no-await-in-loop
+            await install(arb.idealTree!, { cwd })
+          }
+          if (errored) {
+            if (!isCi) {
               editablePkgJson.update(revertData)
+              // eslint-disable-next-line no-await-in-loop
+              await Promise.all([
+                removeNodeModules(cwd),
+                editablePkgJson.save()
+              ])
+              // eslint-disable-next-line no-await-in-loop
+              await install(arb.idealTree!, { cwd })
             }
-            // eslint-disable-next-line no-await-in-loop
-            await Promise.all([
-              removeNodeModules(cwd),
-              ...(isCi
-                ? [gitCheckoutBaseBranchIfAvailable(baseBranch, cwd)]
-                : []),
-              ...(saved && !isCi ? [editablePkgJson.save()] : [])
-            ])
-            // eslint-disable-next-line no-await-in-loop
-            await install(revertTree, { cwd })
-
-            if (errored) {
-              if (!failedSpecs.has(newSpecKey)) {
-                failedSpecs.add(newSpecKey)
-                spinner?.failAndStop(
-                  `Update failed for ${oldSpec}${workspaceDetails}`
-                )
-              }
-            }
+            spinner?.failAndStop(
+              `Update failed for ${oldSpec} in ${workspaceName}`,
+              error
+            )
           }
         }
       }
     }
   }
+
   spinner?.stop()
 }
