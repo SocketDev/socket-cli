@@ -2,7 +2,6 @@ import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
-import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import {
   EditablePackageJson,
