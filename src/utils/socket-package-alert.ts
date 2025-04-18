@@ -3,6 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -324,6 +325,7 @@ export function getCveInfoByAlertsMap(
   alertsMap: AlertsByPkgId,
   options?: GetCveInfoByPackageOptions | undefined
 ): CveInfoByPkgId | null {
+  debugLog('getCveInfoByAlertsMap')
   const exclude = {
     upgradable: true,
     ...({ __proto__: null, ...options } as GetCveInfoByPackageOptions).exclude
@@ -350,6 +352,7 @@ export function getCveInfoByAlertsMap(
       }
       const { firstPatchedVersionIdentifier, vulnerableVersionRange } =
         alert.props
+      debugLog({ firstPatchedVersionIdentifier, vulnerableVersionRange })
       infos.push({
         firstPatchedVersionIdentifier,
         vulnerableVersionRange: new semver.Range(
