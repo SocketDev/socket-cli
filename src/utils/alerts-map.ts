@@ -1,4 +1,5 @@
 import { detectDepTypes } from '@pnpm/lockfile.detect-dep-types'
+import semver from 'semver'
 
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 
@@ -89,7 +90,12 @@ export async function getAlertsMapFromPnpmLockfile(
   } as GetAlertsMapFromPnpmLockfileOptions
 
   const depTypes = detectDepTypes(lockfile)
-  const purls = Object.keys(depTypes).map(id => `pkg:npm/${id}`)
+  const purls = Object.keys(depTypes).map(id => {
+    const lastAtSignIndex = id.lastIndexOf('@')
+    const name = id.slice(0, lastAtSignIndex)
+    const version = id.slice(lastAtSignIndex + 1)
+    return `pkg:npm/${name}@${semver.coerce(version)}`
+  })
 
   return await getAlertsMapFromPurls(purls, {
     overrides: lockfile.overrides,
