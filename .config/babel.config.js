@@ -1,6 +1,9 @@
 'use strict'
 
+const path = require('node:path')
+
 module.exports = {
+  presets: ['@babel/preset-typescript'],
   plugins: [
     '@babel/plugin-proposal-export-default-from',
     '@babel/plugin-transform-export-namespace-from',
@@ -14,6 +17,6 @@ module.exports = {
         version: '^7.25.7'
       }
     ],
-    './scripts/babel/transform-set-proto-plugin.js'
+    path.resolve('./scripts/babel/transform-set-proto-plugin.js')
   ]
 }

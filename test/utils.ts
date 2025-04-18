@@ -57,7 +57,7 @@ export async function invokeNpm(
       stdout: toAsciiSafeString(normalizeLogSymbols(thing.stdout)),
       stderr: toAsciiSafeString(normalizeLogSymbols(thing.stderr))
     }
-  } catch (e) {
+  } catch (e: any) {
     return {
       status: false,
       code: e?.code,

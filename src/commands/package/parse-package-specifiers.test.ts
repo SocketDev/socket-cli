@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import { parsePackageSpecifiers } from './parse-package-specifiers'
-import constants from '../../../dist/constants.js'
 
 describe('parse-package-specifiers', async () => {
   it('should parse a simple `npm babel`', () => {

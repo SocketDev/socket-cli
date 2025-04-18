@@ -89,7 +89,7 @@ export async function outputScanReport(
 
 export function toJsonReport(
   report: ScanReport,
-  includeLicensePolicy: boolean
+  includeLicensePolicy?: boolean | undefined
 ): string {
   const obj = mapToObject(report.alerts)
 
@@ -108,7 +108,7 @@ export function toJsonReport(
 
 export function toMarkdownReport(
   report: ScanReport,
-  includeLicensePolicy: boolean
+  includeLicensePolicy?: boolean | undefined
 ): string {
   const flatData = Array.from(walkNestedMap(report.alerts)).map(
     ({ keys, value }: { keys: string[]; value: ReportLeafNode }) => {

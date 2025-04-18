@@ -1,7 +1,14 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "declaration": true,
+    "declarationDir": "../dist/types",
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
     "module": "preserve",
-    "moduleResolution": "bundler"
-  }
+    "moduleResolution": "bundler",
+    "noEmit": false,
+    "rootDir": "../src"
+  },
+  "include": ["../src/**/*.ts"]
 }
