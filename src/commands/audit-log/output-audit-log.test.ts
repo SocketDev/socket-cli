@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest'
 import FIXTURE from './audit-fixture.json' with { type: 'json' }
 import { outputAsJson, outputAsMarkdown } from './output-audit-log'
 
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+
+type AuditLogs = SocketSdkReturnType<'getAuditLogEvents'>['data']['results']
+
 describe('output-audit-log', () => {
   describe('json', () => {
     it('should return formatted json string', async () => {
@@ -86,15 +90,12 @@ describe('output-audit-log', () => {
     })
 
     it('should return empty object string on error', async () => {
-      const r = await outputAsJson(
-        {},
-        {
-          logType: '',
-          orgSlug: 'noorgslug',
-          page: 1,
-          perPage: 10
-        }
-      )
+      const r = await outputAsJson({} as AuditLogs, {
+        logType: '',
+        orgSlug: 'noorgslug',
+        page: 1,
+        perPage: 10
+      })
       expect(r).toMatchInlineSnapshot(`"{}"`)
     })
   })
@@ -137,15 +138,12 @@ describe('output-audit-log', () => {
     })
 
     it('should return empty string on error', async () => {
-      const r = await outputAsMarkdown(
-        {},
-        {
-          logType: '',
-          orgSlug: 'noorgslug',
-          page: 1,
-          perPage: 10
-        }
-      )
+      const r = await outputAsMarkdown({} as AuditLogs, {
+        logType: '',
+        orgSlug: 'noorgslug',
+        page: 1,
+        perPage: 10
+      })
       expect(r).toMatchInlineSnapshot(`""`)
     })
   })

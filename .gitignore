@@ -3,7 +3,7 @@
 Thumbs.db
 /.env
 /.nvm
-/.tap
+/.rollup.cache
 /.type-coverage
 /.vscode
 /coverage

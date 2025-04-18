@@ -2,7 +2,7 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import constants from '../../../dist/constants.js'
+import constants from '../../../src/constants'
 import { cmdit, invokeNpm } from '../../../test/utils'
 
 const { CLI } = constants
@@ -112,7 +112,7 @@ describe('socket manifest conda', async () => {
       ],
       'should print raw text without flags',
       async cmd => {
-        const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+        const { stderr, stdout } = await invokeNpm(entryPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`
           "qgrid==1.3.0
           mplstereonet
@@ -140,7 +140,7 @@ describe('socket manifest conda', async () => {
       ],
       'should print a json blurb with --json flag',
       async cmd => {
-        const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+        const { stderr, stdout } = await invokeNpm(entryPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`
           "{
             "ok": true,
@@ -170,7 +170,7 @@ describe('socket manifest conda', async () => {
       ],
       'should print a markdown blurb with --markdown flag',
       async cmd => {
-        const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+        const { stderr, stdout } = await invokeNpm(entryPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`
           "# Converted Conda file
 

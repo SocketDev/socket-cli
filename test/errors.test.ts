@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { isErrnoException } from './dist/errors'
+import { isErrnoException } from '../src/utils/errors'
 
 const testPath = __dirname
 

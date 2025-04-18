@@ -81,7 +81,6 @@ type Constants = Remap<
     readonly CLI: 'cli'
     readonly CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER: 'firstPatchedVersionIdentifier'
     readonly ENV: ENV
-    readonly DIST_TYPE: 'module-sync' | 'require'
     readonly DRY_RUN_LABEL: '[DryRun]'
     readonly DRY_RUN_BAIL_TEXT: '[DryRun] Bailing now'
     readonly GITHUB_ACTIONS: 'GITHUB_ACTIONS'
@@ -94,12 +93,10 @@ type Constants = Remap<
     readonly IPC: IPC
     readonly LOCALAPPDATA: 'LOCALAPPDATA'
     readonly LOCK_EXT: '.lock'
-    readonly MODULE_SYNC: 'module-sync'
     readonly NPM_BUGGY_OVERRIDES_PATCHED_VERSION: '11.2.0'
     readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
     readonly PNPM: 'pnpm'
     readonly REDACTED: '<redacted>'
-    readonly REQUIRE: 'require'
     readonly SHADOW_NPM_BIN: 'shadow-bin'
     readonly SHADOW_NPM_INJECT: 'shadow-npm-inject'
     readonly SHADOW_NPM_PATHS: 'shadow-npm-paths'
@@ -145,7 +142,6 @@ type Constants = Remap<
     }
     readonly distCliPath: string
     readonly distInstrumentWithSentryPath: string
-    readonly distPath: string
     readonly distShadowNpmBinPath: string
     readonly distShadowNpmInjectPath: string
     readonly homePath: string
@@ -181,7 +177,6 @@ const INLINED_SOCKET_CLI_PUBLISHED_BUILD = 'INLINED_SOCKET_CLI_PUBLISHED_BUILD'
 const INLINED_SOCKET_CLI_SENTRY_BUILD = 'INLINED_SOCKET_CLI_SENTRY_BUILD'
 const LOCALAPPDATA = 'LOCALAPPDATA'
 const LOCK_EXT = '.lock'
-const MODULE_SYNC = 'module-sync'
 const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const PNPM = 'pnpm'
@@ -226,9 +221,6 @@ const YARN_CLASSIC = 'yarn/classic'
 const YARN_LOCK = 'yarn.lock'
 
 let _Sentry: any
-
-const LAZY_DIST_TYPE = () =>
-  registryConstants.SUPPORTS_NODE_REQUIRE_MODULE ? MODULE_SYNC : REQUIRE
 
 const LAZY_ENV = () => {
   const { env } = process
@@ -316,24 +308,20 @@ const lazyBlessedOptions = () =>
   })
 
 const lazyDistCliPath = () =>
-  // Lazily access constants.distPath.
-  path.join(constants.distPath, 'cli.js')
+  // Lazily access constants.rootDistPath.
+  path.join(constants.rootDistPath, 'cli.js')
 
 const lazyDistInstrumentWithSentryPath = () =>
   // Lazily access constants.rootDistPath.
   path.join(constants.rootDistPath, 'instrument-with-sentry.js')
 
-const lazyDistPath = () =>
-  // Lazily access constants.rootDistPath and constants.DIST_TYPE.
-  path.join(constants.rootDistPath, constants.DIST_TYPE)
-
 const lazyDistShadowNpmBinPath = () =>
-  // Lazily access constants.distPath.
-  path.join(constants.distPath, `${SHADOW_NPM_BIN}.js`)
+  // Lazily access constants.rootDistPath.
+  path.join(constants.rootDistPath, `${SHADOW_NPM_BIN}.js`)
 
 const lazyDistShadowNpmInjectPath = () =>
-  // Lazily access constants.distPath.
-  path.join(constants.distPath, `${SHADOW_NPM_INJECT}.js`)
+  // Lazily access constants.rootDistPath.
+  path.join(constants.rootDistPath, `${SHADOW_NPM_INJECT}.js`)
 
 const lazyHomePath = () => os.homedir()
 
@@ -394,12 +382,7 @@ const lazyRootDistPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'dist')
 
-const lazyRootPath = () =>
-  path.join(
-    realpathSync.native(__dirname),
-    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_TEST_DIST_BUILD']".
-    process.env['INLINED_SOCKET_CLI_TEST_DIST_BUILD'] ? '../..' : '..'
-  )
+const lazyRootPath = () => path.join(realpathSync.native(__dirname), '..')
 
 const lazyShadowBinPath = () =>
   // Lazily access constants.rootPath.
@@ -409,7 +392,7 @@ const lazyZshRcPath = () =>
   // Lazily access constants.homePath.
   path.join(constants.homePath, '.zshrc')
 
-const constants = createConstantsObject(
+const constants: Constants = createConstantsObject(
   {
     ALERT_TYPE_CRITICAL_CVE,
     ALERT_TYPE_CVE,
@@ -420,8 +403,6 @@ const constants = createConstantsObject(
     BUN,
     CLI,
     CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
-    // Lazily defined values are initialized as `undefined` to keep their key order.
-    DIST_TYPE: undefined,
     DRY_RUN_LABEL,
     DRY_RUN_BAIL_TEXT,
     ENV: undefined,
@@ -434,7 +415,6 @@ const constants = createConstantsObject(
     INLINED_SOCKET_CLI_SENTRY_BUILD,
     LOCALAPPDATA,
     LOCK_EXT,
-    MODULE_SYNC,
     NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
     NPM_REGISTRY_URL,
     PNPM,
@@ -481,7 +461,6 @@ const constants = createConstantsObject(
     blessedOptions: undefined,
     distCliPath: undefined,
     distInstrumentWithSentryPath: undefined,
-    distPath: undefined,
     distShadowNpmBinPath: undefined,
     distShadowNpmInjectPath: undefined,
     homePath: undefined,
@@ -496,13 +475,11 @@ const constants = createConstantsObject(
   },
   {
     getters: {
-      DIST_TYPE: LAZY_DIST_TYPE,
       ENV: LAZY_ENV,
       bashRcPath: lazyBashRcPath,
       blessedOptions: lazyBlessedOptions,
       distCliPath: lazyDistCliPath,
       distInstrumentWithSentryPath: lazyDistInstrumentWithSentryPath,
-      distPath: lazyDistPath,
       distShadowNpmBinPath: lazyDistShadowNpmBinPath,
       distShadowNpmInjectPath: lazyDistShadowNpmInjectPath,
       homePath: lazyHomePath,
