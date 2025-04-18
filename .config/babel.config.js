@@ -14,7 +14,7 @@ module.exports = {
         corejs: false,
         helpers: true,
         regenerator: false,
-        version: '^7.25.7'
+        version: '^7.26.10'
       }
     ],
     path.resolve('./scripts/babel/transform-set-proto-plugin.js')

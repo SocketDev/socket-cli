@@ -42,12 +42,7 @@ const {
   VITEST
 } = constants
 
-export const EXTERNAL_PACKAGES = [
-  '@socketsecurity/registry',
-  'blessed'
-]
-
-const SOCKET_INTEROP = '_socketInterop'
+export const EXTERNAL_PACKAGES = ['@socketsecurity/registry', 'blessed']
 
 const builtinAliases = builtinModules.reduce((o, n) => {
   o[n] = `node:${n}`
@@ -59,20 +54,6 @@ const customResolver = nodeResolve({
   extensions: ['.mjs', '.js', '.json', '.ts'],
   preferBuiltins: true
 })
-
-const requireAssignmentsRegExp =
-  /(?<=\s*=\s*)require\(["'](?!node:|@socket(?:override|registry|security)\/|\.).+?["']\)(?=;?\r?\n)/g
-
-const checkRequireAssignmentRegExp = new RegExp(
-  requireAssignmentsRegExp.source,
-  ''
-)
-
-const checkSocketInteropUseRegExp = new RegExp(`\\b${SOCKET_INTEROP}\\b`)
-
-const danglingRequiresRegExp = /^\s*require\(["'].+?["']\);?\r?\n/gm
-
-const firstUseStrictRegExp = /'use strict';?/
 
 const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
 
@@ -153,10 +134,8 @@ export default function baseConfig(extendConfig = {}) {
       )
     },
     onwarn(warning, warn) {
-      // Suppress FILE_NAME_CONFLICT, INVALID_ANNOTATION, and THIS_IS_UNDEFINED
-      // warnings.
+      // Suppress INVALID_ANNOTATION and THIS_IS_UNDEFINED warnings.
       if (
-        warning.code === 'FILE_NAME_CONFLICT' ||
         warning.code === 'INVALID_ANNOTATION' ||
         warning.code === 'THIS_IS_UNDEFINED'
       ) {
@@ -305,44 +284,11 @@ export default function baseConfig(extendConfig = {}) {
           return requireUrlAssignmentRegExp.exec(this.input)?.[0] ?? match
         }
       }),
-      // Remove dangling require calls, e.g. require calls not associated with
-      // an import binding:
-      //   require('node:util')
-      //   require('graceful-fs')
-      socketModifyPlugin({
-        find: danglingRequiresRegExp,
-        replace: ''
-      }),
       // Replace require('blessed/lib/widgets/xyz') with require('../blessed/lib/widgets/xyz').
       // socketModifyPlugin({
       //   find: blessedRequiresRegExp,
-      //   replace: (id) => `../${id}`
+      //   replace: (id) => `./${id}`
       // }),
-      // Wrap require calls with SOCKET_INTEROP helper.
-      socketModifyPlugin({
-        find: requireAssignmentsRegExp,
-        replace: match => `${SOCKET_INTEROP}(${match})`
-      }),
-      // Add CJS interop helper for "default" only exports.
-      socketModifyPlugin({
-        find: firstUseStrictRegExp,
-        replace(match) {
-          return checkRequireAssignmentRegExp.test(this.input) ||
-            checkSocketInteropUseRegExp.test(this.input)
-            ? `${match}\n
-function ${SOCKET_INTEROP}(e) {
-  let c = 0
-  for (const k in e ?? {}) {
-    c = c === 0 && k === 'default' ? 1 : 0
-    if (!c && k !== '__esModule') {
-      break
-    }
-  }
-  return c ? e.default : e
-}`
-            : match
-        }
-      }),
       ...(extendConfig.plugins ?? [])
     ]
   }
@@ -377,26 +323,6 @@ function ${SOCKET_INTEROP}(e) {
     }
     return o
   })
-
-  // Replace hard-coded absolute paths in source with hard-coded relative paths.
-  const replaceAbsPathsOutputPlugin = (() => {
-    const { name, renderChunk } = replacePlugin({
-      delimiters: ['(?<=["\'])', '/'],
-      preventAssignment: false,
-      values: {
-        // Lazily access constants.rootPath.
-        [constants.rootPath]: '../../'
-      }
-    })
-    return { name, renderChunk }
-  })()
-
-  for (const o of output) {
-    o.plugins = [
-      ...(Array.isArray(o.plugins) ? o.plugins : []),
-      replaceAbsPathsOutputPlugin
-    ]
-  }
 
   config.output = output
   return config
