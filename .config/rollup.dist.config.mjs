@@ -3,7 +3,6 @@ import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 import util from 'node:util'
 
-import replacePlugin from '@rollup/plugin-replace'
 import { glob as tinyGlob } from 'tinyglobby'
 
 import { readJson, writeJson } from '@socketsecurity/registry/lib/fs'
@@ -18,15 +17,8 @@ import baseConfig from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
 
 const {
-  CONSTANTS,
   INLINED_SOCKET_CLI_LEGACY_BUILD,
   INLINED_SOCKET_CLI_SENTRY_BUILD,
-  INLINED_SOCKET_CLI_TEST_DIST_BUILD,
-  INSTRUMENT_WITH_SENTRY,
-  MODULE_SYNC,
-  REQUIRE,
-  SHADOW_NPM_BIN,
-  SHADOW_NPM_INJECT,
   SOCKET_CLI_BIN_NAME,
   SOCKET_CLI_BIN_NAME_ALIAS,
   SOCKET_CLI_LEGACY_PACKAGE_NAME,
@@ -38,7 +30,6 @@ const {
   SOCKET_CLI_SENTRY_NPM_BIN_NAME,
   SOCKET_CLI_SENTRY_NPX_BIN_NAME,
   SOCKET_CLI_SENTRY_PACKAGE_NAME,
-  VENDOR,
   rootDistPath,
   rootPackageLockPath,
   rootPath,
@@ -48,44 +39,6 @@ const {
 const SENTRY_NODE = '@sentry/node'
 const SOCKET_DESCRIPTION = 'CLI tool for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
-const VENDOR_JS = `${VENDOR}.js`
-
-const distModuleSyncPath = path.join(rootDistPath, MODULE_SYNC)
-const distRequirePath = path.join(rootDistPath, REQUIRE)
-
-const sharedInputs = {
-  cli: `${rootSrcPath}/cli.ts`,
-  [CONSTANTS]: `${rootSrcPath}/constants.ts`,
-  [SHADOW_NPM_BIN]: `${rootSrcPath}/shadow/npm/bin.ts`,
-  [SHADOW_NPM_INJECT]: `${rootSrcPath}/shadow/npm/inject.ts`
-}
-
-const sharedOutputs = {
-  entryFileNames: '[name].js',
-  exports: 'auto',
-  externalLiveBindings: false,
-  format: 'cjs',
-  freeze: false,
-  sourcemap: true,
-  sourcemapDebugIds: true
-}
-
-const sharedPlugins = [
-  // Inline process.env values.
-  replacePlugin({
-    delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
-    preventAssignment: true,
-    values: [[INLINED_SOCKET_CLI_TEST_DIST_BUILD, 'false']].reduce(
-      (obj, { 0: name, 1: value }) => {
-        obj[`process.env.${name}`] = value
-        obj[`process.env['${name}']`] = value
-        obj[`process.env[${name}]`] = value
-        return obj
-      },
-      {}
-    )
-  })
-]
 
 // eslint-disable-next-line no-unused-vars
 async function copyBlessedWidgets() {
@@ -119,58 +72,12 @@ async function copyInitGradle() {
   await fs.copyFile(filepath, destPath)
 }
 
-function createStubCode(relFilepath) {
-  return `'use strict'\n\nmodule.exports = require('${relFilepath}')\n`
-}
-
 let _sentryManifest
 async function getSentryManifest() {
   if (_sentryManifest === undefined) {
     _sentryManifest = await fetchPackageManifest(`${SENTRY_NODE}@latest`)
   }
   return _sentryManifest
-}
-
-async function globDtsAndMapFiles(namePattern, srcPath) {
-  return await tinyGlob([`**/${namePattern}{.d.ts{.map,},.js.map}`], {
-    absolute: true,
-    cwd: srcPath
-  })
-}
-
-async function globJsFiles(namePattern, srcPath) {
-  return await tinyGlob([`**/${namePattern}.js`], {
-    absolute: true,
-    cwd: srcPath
-  })
-}
-
-async function moveDtsAndMapFiles(namePattern, srcPath, destPath) {
-  await Promise.all(
-    (await globDtsAndMapFiles(namePattern, srcPath)).map(p =>
-      fs.rename(p, path.join(destPath, path.basename(p)))
-    )
-  )
-}
-
-async function moveJsFiles(namePattern, srcPath, destPath) {
-  await Promise.all(
-    (await globJsFiles(namePattern, srcPath)).map(p =>
-      fs.rename(p, path.join(destPath, path.basename(p)))
-    )
-  )
-}
-
-async function removeDtsAndMapFiles(namePattern, srcPath) {
-  await Promise.all(
-    (await globDtsAndMapFiles(namePattern, srcPath)).map(p => fs.rm(p))
-  )
-}
-
-async function removeJsFiles(namePattern, srcPath) {
-  await Promise.all(
-    (await globJsFiles(namePattern, srcPath)).map(p => fs.rm(p))
-  )
 }
 
 function resetBin(bin) {
@@ -290,45 +197,21 @@ async function updatePackageLockFile() {
 }
 
 export default () => {
-  const moduleSyncConfig = baseConfig({
-    input: {
-      ...sharedInputs,
-      // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
-      ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
-        ? {
-            [INSTRUMENT_WITH_SENTRY]: `${rootSrcPath}/${INSTRUMENT_WITH_SENTRY}.ts`
-          }
-        : {})
-    },
+  return baseConfig({
     output: [
       {
-        ...sharedOutputs,
-        dir: path.relative(rootPath, distModuleSyncPath)
+        dir: path.relative(rootPath, rootDistPath),
+        entryFileNames: '[name].js',
+        exports: 'auto',
+        externalLiveBindings: false,
+        format: 'cjs',
+        freeze: false,
+        sourcemap: true,
+        sourcemapDebugIds: true
       }
     ],
     plugins: [
-      ...sharedPlugins,
       {
-        async generateBundle(_options, bundle) {
-          for (const basename of Object.keys(bundle)) {
-            const data = bundle[basename]
-            if (
-              data.type === 'chunk' &&
-              (basename === `${CONSTANTS}.js` ||
-                basename === `${INSTRUMENT_WITH_SENTRY}.js`)
-            ) {
-              // eslint-disable-next-line no-await-in-loop
-              await fs.mkdir(rootDistPath, { recursive: true })
-              // eslint-disable-next-line no-await-in-loop
-              await fs.writeFile(
-                path.join(rootDistPath, basename),
-                data.code,
-                'utf8'
-              )
-              data.code = createStubCode(`../${basename}`)
-            }
-          }
-        },
         async writeBundle() {
           await Promise.all([
             copyInitGradle(),
@@ -341,75 +224,4 @@ export default () => {
       }
     ]
   })
-
-  const keptRequireDtsMapFiles = new Set()
-  const requireConfig = baseConfig({
-    input: {
-      ...sharedInputs
-    },
-    output: [
-      {
-        ...sharedOutputs,
-        dir: path.relative(rootPath, distRequirePath)
-      }
-    ],
-    plugins: [
-      ...sharedPlugins,
-      {
-        async generateBundle(_options, bundle) {
-          for (const basename of Object.keys(bundle)) {
-            const data = bundle[basename]
-            if (data.type === 'chunk') {
-              if (
-                basename !== VENDOR_JS &&
-                !data.code.includes(`'./${VENDOR_JS}'`)
-              ) {
-                data.code = createStubCode(`../${MODULE_SYNC}/${basename}`)
-              } else {
-                keptRequireDtsMapFiles.add(
-                  path.basename(basename, path.extname(basename))
-                )
-              }
-            }
-          }
-        },
-        async writeBundle() {
-          await Promise.all([
-            moveDtsAndMapFiles(CONSTANTS, distModuleSyncPath, rootDistPath),
-            moveDtsAndMapFiles(VENDOR, distRequirePath, distModuleSyncPath),
-            moveJsFiles(VENDOR, distRequirePath, distModuleSyncPath)
-          ])
-          await Promise.all([
-            removeDtsAndMapFiles(CONSTANTS, distModuleSyncPath),
-            removeDtsAndMapFiles(
-              `!(${[...keptRequireDtsMapFiles].sort(naturalCompare).join('|')})`,
-              distRequirePath
-            ),
-            // Stub out the ./dist/require/vendor.js file.
-            fs.writeFile(
-              path.join(distRequirePath, VENDOR_JS),
-              createStubCode(`../${MODULE_SYNC}/${VENDOR_JS}`),
-              'utf8'
-            ),
-            // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
-            ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
-              ? [
-                  moveDtsAndMapFiles(
-                    INSTRUMENT_WITH_SENTRY,
-                    distModuleSyncPath,
-                    rootDistPath
-                  ),
-                  removeJsFiles(INSTRUMENT_WITH_SENTRY, distModuleSyncPath)
-                ]
-              : [
-                  removeDtsAndMapFiles(INSTRUMENT_WITH_SENTRY, rootDistPath),
-                  removeJsFiles(INSTRUMENT_WITH_SENTRY, rootDistPath)
-                ])
-          ])
-        }
-      }
-    ]
-  })
-
-  return [moduleSyncConfig, requireConfig]
 }

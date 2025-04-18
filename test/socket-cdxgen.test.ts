@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { LOG_SYMBOLS } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../dist/constants.js'
+import constants from '../src/constants'
 
 type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
   encoding?: BufferEncoding | undefined
