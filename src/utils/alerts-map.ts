@@ -1,7 +1,9 @@
 import { detectDepTypes } from '@pnpm/lockfile.detect-dep-types'
 import semver from 'semver'
 
+import { PackageURL } from '@socketregistry/packageurl-js'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
+import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 
 import { getDetailsFromDiff } from './arborist-helpers'
 import { getPublicToken, setupSdk } from './sdk'
@@ -91,10 +93,9 @@ export async function getAlertsMapFromPnpmLockfile(
 
   const depTypes = detectDepTypes(lockfile)
   const purls = Object.keys(depTypes).map(id => {
-    const lastAtSignIndex = id.lastIndexOf('@')
-    const name = id.slice(0, lastAtSignIndex)
-    const version = id.slice(lastAtSignIndex + 1)
-    return `pkg:npm/${name}@${semver.coerce(version)}`
+    const purlObj = PackageURL.fromString(`pkg:npm/${id}`)
+    const name = resolvePackageName(purlObj)
+    return `pkg:npm/${name}@${semver.coerce(purlObj.version)}`
   })
 
   return await getAlertsMapFromPurls(purls, {
