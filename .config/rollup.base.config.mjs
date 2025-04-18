@@ -1,11 +1,13 @@
 import { randomUUID } from 'node:crypto'
-import { builtinModules, createRequire } from 'node:module'
+import { builtinModules } from 'node:module'
 import path from 'node:path'
 
+import { babel as babelPlugin } from '@rollup/plugin-babel'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
+import typescriptPlugin from '@rollup/plugin-typescript'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
 import { readPackageJsonSync } from '@socketsecurity/registry/lib/packages'
@@ -19,8 +21,6 @@ import {
   normalizeId
 } from '../scripts/utils/packages.js'
 
-const require = createRequire(import.meta.url)
-
 const {
   CONSTANTS,
   INLINED_CYCLONEDX_CDXGEN_VERSION,
@@ -32,7 +32,7 @@ const {
   INLINED_SOCKET_CLI_VERSION,
   INLINED_SOCKET_CLI_VERSION_HASH,
   INLINED_SYNP_VERSION,
-  ROLLUP_ENTRY_SUFFIX,
+  INSTRUMENT_WITH_SENTRY,
   ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_NPM_BIN,
   SHADOW_NPM_INJECT,
@@ -43,12 +43,7 @@ const {
 } = constants
 
 export const EXTERNAL_PACKAGES = [
-  '@socketregistry/hyrious__bun.lockb',
-  '@socketregistry/indent-string',
-  '@socketregistry/is-interactive',
-  '@socketregistry/packageurl-js',
   '@socketsecurity/registry',
-  '@socketsecurity/sdk',
   'blessed'
 ]
 
@@ -61,6 +56,7 @@ const builtinAliases = builtinModules.reduce((o, n) => {
 
 const customResolver = nodeResolve({
   exportConditions: ['node'],
+  extensions: ['.mjs', '.js', '.json', '.ts'],
   preferBuiltins: true
 })
 
@@ -128,11 +124,22 @@ export default function baseConfig(extendConfig = {}) {
   const shadowNpmInjectSrcPath = path.join(rootSrcPath, 'shadow/npm/inject.ts')
   const shadowNpmPathsSrcPath = path.join(rootSrcPath, 'shadow/npm/paths.ts')
 
-  // Lazily access constants.babelConfigPath.
-  const babelConfig = require(constants.babelConfigPath)
-  const tsPlugin = require('rollup-plugin-ts')
+  const extendPlugins = extendConfig.plugins ?? []
+  const hasPlugin = name => !!extendPlugins.find(p => p.name === name)
 
   const config = {
+    input: {
+      cli: `${rootSrcPath}/cli.ts`,
+      [CONSTANTS]: `${rootSrcPath}/constants.ts`,
+      [SHADOW_NPM_BIN]: `${rootSrcPath}/shadow/npm/bin.ts`,
+      [SHADOW_NPM_INJECT]: `${rootSrcPath}/shadow/npm/inject.ts`,
+      // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
+      ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
+        ? {
+            [INSTRUMENT_WITH_SENTRY]: `${rootSrcPath}/${INSTRUMENT_WITH_SENTRY}.ts`
+          }
+        : {})
+    },
     external(id_) {
       if (id_.endsWith(ROLLUP_EXTERNAL_SUFFIX) || isBuiltin(id_)) {
         return true
@@ -160,20 +167,54 @@ export default function baseConfig(extendConfig = {}) {
     },
     ...extendConfig,
     plugins: [
-      customResolver,
-      jsonPlugin(),
-      tsPlugin({
-        transpiler: 'babel',
-        browserslist: false,
-        transpileOnly: true,
-        exclude: ['**/*.json'],
-        babelConfig,
-        // Lazily access constants.tsconfigPath.
-        tsconfig: constants.tsconfigPath
-      }),
-      purgePolyfills.rollup({
-        replacements: {}
-      }),
+      ...(hasPlugin('node-resolve') ? [] : [customResolver]),
+      ...(hasPlugin('json') ? [] : [jsonPlugin()]),
+      ...(hasPlugin('typescript')
+        ? []
+        : [
+            typescriptPlugin({
+              include: ['src/**/*.ts'],
+              noForceEmit: true,
+              // Lazily access constants.rootConfigPath.
+              tsconfig: path.join(
+                constants.rootConfigPath,
+                'tsconfig.rollup.json'
+              )
+            })
+          ]),
+      ...(hasPlugin('commonjs')
+        ? []
+        : [
+            commonjsPlugin({
+              defaultIsModuleExports: true,
+              extensions: ['.cjs', '.js'],
+              ignoreDynamicRequires: true,
+              ignoreGlobal: true,
+              ignoreTryCatch: true,
+              strictRequires: true
+            })
+          ]),
+      ...(hasPlugin('babel')
+        ? []
+        : [
+            babelPlugin({
+              babelHelpers: 'runtime',
+              babelrc: false,
+              // Lazily access constants.rootConfigPath.
+              configFile: path.join(
+                constants.rootConfigPath,
+                'babel.config.js'
+              ),
+              extensions: ['.ts', '.js', '.cjs', '.mjs']
+            })
+          ]),
+      ...(hasPlugin('unplugin-purge-polyfills')
+        ? []
+        : [
+            purgePolyfills.rollup({
+              replacements: {}
+            })
+          ]),
       // Inline process.env values.
       replacePlugin({
         delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
@@ -277,14 +318,6 @@ export default function baseConfig(extendConfig = {}) {
       //   find: blessedRequiresRegExp,
       //   replace: (id) => `../${id}`
       // }),
-      commonjsPlugin({
-        defaultIsModuleExports: true,
-        extensions: ['.cjs', '.js', '.ts', `.ts${ROLLUP_ENTRY_SUFFIX}`],
-        ignoreDynamicRequires: true,
-        ignoreGlobal: true,
-        ignoreTryCatch: true,
-        strictRequires: true
-      }),
       // Wrap require calls with SOCKET_INTEROP helper.
       socketModifyPlugin({
         find: requireAssignmentsRegExp,
@@ -314,32 +347,36 @@ function ${SOCKET_INTEROP}(e) {
     ]
   }
 
-  const output = (
-    Array.isArray(config.output)
-      ? config.output
-      : config.output
-        ? [config.output]
-        : []
-  ).map(o => ({
-    ...o,
-    chunkFileNames: '[name].js',
-    manualChunks: id_ => {
-      const id = normalizeId(id_)
-      switch (id) {
-        case constantsSrcPath:
-          return CONSTANTS
-        case shadowNpmBinSrcPath:
-          return SHADOW_NPM_BIN
-        case shadowNpmInjectSrcPath:
-          return SHADOW_NPM_INJECT
-        case shadowNpmPathsSrcPath:
-          return SHADOW_NPM_PATHS
-        default: {
-          return id.includes(SLASH_NODE_MODULES_SLASH) ? VENDOR : null
+  const configOutputs = Array.isArray(config.output)
+    ? config.output
+    : config.output
+      ? [config.output]
+      : []
+
+  const output = configOutputs.map(configOutput => {
+    const o = {
+      ...configOutput
+    }
+    if (!o.preserveModules) {
+      o.chunkFileNames = '[name].js'
+      o.manualChunks = id_ => {
+        const id = normalizeId(id_)
+        switch (id) {
+          case constantsSrcPath:
+            return CONSTANTS
+          case shadowNpmBinSrcPath:
+            return SHADOW_NPM_BIN
+          case shadowNpmInjectSrcPath:
+            return SHADOW_NPM_INJECT
+          case shadowNpmPathsSrcPath:
+            return SHADOW_NPM_PATHS
+          default:
+            return id.includes(SLASH_NODE_MODULES_SLASH) ? VENDOR : null
         }
       }
     }
-  }))
+    return o
+  })
 
   // Replace hard-coded absolute paths in source with hard-coded relative paths.
   const replaceAbsPathsOutputPlugin = (() => {

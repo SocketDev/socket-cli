@@ -2,7 +2,7 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import constants from '../../../dist/constants.js'
+import constants from '../../../src/constants'
 import { cmdit, invokeNpm } from '../../../test/utils'
 
 const { CLI } = constants

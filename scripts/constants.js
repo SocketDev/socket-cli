@@ -21,14 +21,10 @@ const INLINED_SOCKET_CLI_LEGACY_BUILD = 'INLINED_SOCKET_CLI_LEGACY_BUILD'
 const INLINED_SOCKET_CLI_NAME = 'INLINED_SOCKET_CLI_NAME'
 const INLINED_SOCKET_CLI_PUBLISHED_BUILD = 'INLINED_SOCKET_CLI_PUBLISHED_BUILD'
 const INLINED_SOCKET_CLI_SENTRY_BUILD = 'INLINED_SOCKET_CLI_SENTRY_BUILD'
-const INLINED_SOCKET_CLI_TEST_DIST_BUILD = 'INLINED_SOCKET_CLI_TEST_DIST_BUILD'
 const INLINED_SOCKET_CLI_VERSION = 'INLINED_SOCKET_CLI_VERSION'
 const INLINED_SOCKET_CLI_VERSION_HASH = 'INLINED_SOCKET_CLI_VERSION_HASH'
 const INLINED_SYNP_VERSION = 'INLINED_SYNP_VERSION'
 const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
-const MODULE_SYNC = 'module-sync'
-const REQUIRE = 'require'
-const ROLLUP_ENTRY_SUFFIX = '?commonjs-entry'
 const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
 const SHADOW_NPM_BIN = 'shadow-bin'
 const SHADOW_NPM_INJECT = 'shadow-npm-inject'
@@ -69,10 +65,6 @@ const LAZY_ENV = () => {
   })
 }
 
-const lazyBabelConfigPath = () =>
-  // Lazily access constants.rootConfigPath.
-  path.join(constants.rootConfigPath, 'babel.config.js')
-
 const lazyRootConfigPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, '.config')
@@ -95,10 +87,6 @@ const lazyRootSrcPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'src')
 
-const lazyTsconfigPath = () =>
-  // Lazily access constants.rootConfigPath.
-  path.join(constants.rootConfigPath, 'tsconfig.rollup.json')
-
 const constants = createConstantsObject(
   {
     CLI,
@@ -110,14 +98,10 @@ const constants = createConstantsObject(
     INLINED_SOCKET_CLI_NAME,
     INLINED_SOCKET_CLI_PUBLISHED_BUILD,
     INLINED_SOCKET_CLI_SENTRY_BUILD,
-    INLINED_SOCKET_CLI_TEST_DIST_BUILD,
     INLINED_SOCKET_CLI_VERSION,
     INLINED_SOCKET_CLI_VERSION_HASH,
     INLINED_SYNP_VERSION,
     INSTRUMENT_WITH_SENTRY,
-    MODULE_SYNC,
-    REQUIRE,
-    ROLLUP_ENTRY_SUFFIX,
     ROLLUP_EXTERNAL_SUFFIX,
     SHADOW_NPM_BIN,
     SHADOW_NPM_INJECT,
@@ -137,25 +121,21 @@ const constants = createConstantsObject(
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
     VENDOR,
     WITH_SENTRY,
-    babelConfigPath: undefined,
     rootConfigPath: undefined,
     rootDistPath: undefined,
     rootPackageJsonPath: undefined,
     rootPath: undefined,
-    rootSrcPath: undefined,
-    tsconfigPath: undefined
+    rootSrcPath: undefined
   },
   {
     getters: {
       ENV: LAZY_ENV,
-      babelConfigPath: lazyBabelConfigPath,
       rootConfigPath: lazyRootConfigPath,
       rootDistPath: lazyRootDistPath,
       rootPackageJsonPath: lazyRootPackageJsonPath,
       rootPackageLockPath: lazyRootPackageLockPath,
       rootPath: lazyRootPath,
-      rootSrcPath: lazyRootSrcPath,
-      tsconfigPath: lazyTsconfigPath
+      rootSrcPath: lazyRootSrcPath
     },
     mixin: registryConstants
   }

@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  convertCondaToRequirements,
-  convertCondaToRequirementsFromInput
-} from './convert-conda-to-requirements'
+import { convertCondaToRequirementsFromInput } from './convert-conda-to-requirements'
 
 describe('convert-conda-to-requirements', () => {
   it('should convert a simple example', () => {
