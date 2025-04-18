@@ -49,12 +49,6 @@ const builtinAliases = builtinModules.reduce((o, n) => {
   return o
 }, {})
 
-const customResolver = nodeResolve({
-  exportConditions: ['node'],
-  extensions: ['.mjs', '.js', '.json', '.ts'],
-  preferBuiltins: true
-})
-
 const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
 
 // eslint-disable-next-line no-unused-vars
@@ -146,7 +140,15 @@ export default function baseConfig(extendConfig = {}) {
     },
     ...extendConfig,
     plugins: [
-      ...(hasPlugin('node-resolve') ? [] : [customResolver]),
+      ...(hasPlugin('node-resolve')
+        ? []
+        : [
+            nodeResolve({
+              exportConditions: ['node'],
+              extensions: ['.mjs', '.js', '.json', '.ts'],
+              preferBuiltins: true
+            })
+          ]),
       ...(hasPlugin('json') ? [] : [jsonPlugin()]),
       ...(hasPlugin('typescript')
         ? []
