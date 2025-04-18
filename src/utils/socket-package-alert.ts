@@ -325,7 +325,6 @@ export function getCveInfoByAlertsMap(
   alertsMap: AlertsByPkgId,
   options?: GetCveInfoByPackageOptions | undefined
 ): CveInfoByPkgId | null {
-  debugLog('getCveInfoByAlertsMap')
   const exclude = {
     upgradable: true,
     ...({ __proto__: null, ...options } as GetCveInfoByPackageOptions).exclude
@@ -352,13 +351,22 @@ export function getCveInfoByAlertsMap(
       }
       const { firstPatchedVersionIdentifier, vulnerableVersionRange } =
         alert.props
-      debugLog({ firstPatchedVersionIdentifier, vulnerableVersionRange })
-      infos.push({
-        firstPatchedVersionIdentifier,
-        vulnerableVersionRange: new semver.Range(
+      try {
+        infos.push({
+          firstPatchedVersionIdentifier,
+          vulnerableVersionRange: new semver.Range(
+            // Replace ', ' in a range like '>= 1.0.0, < 1.8.2' with ' ' so that
+            // semver.Range will parse it without erroring.
+            vulnerableVersionRange.replace(/, +/g, ' ')
+          ).format()
+        })
+      } catch (e) {
+        debugLog('getCveInfoByAlertsMap', {
+          firstPatchedVersionIdentifier,
           vulnerableVersionRange
-        ).format()
-      })
+        })
+        debugLog(e)
+      }
     }
   }
   return infoByPkg
