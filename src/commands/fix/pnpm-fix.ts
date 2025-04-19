@@ -147,7 +147,7 @@ export async function pnpmFix(
       continue
     }
     if (!infos.length) {
-      debugLog(`No vulnerability info found for ${name}`)
+      debugLog(`No vuln info found for ${name}`)
       continue
     }
     // eslint-disable-next-line no-await-in-loop
@@ -222,7 +222,9 @@ export async function pnpmFix(
             : undefined
 
           if (!(newVersion && newVersionPackument)) {
-            spinner?.fail(`No update found for ${oldSpec}.`)
+            debugLog(
+              `No suitable update. ${oldSpec} needs >=${firstPatchedVersionIdentifier}, skipping`
+            )
             continue
           }
 
