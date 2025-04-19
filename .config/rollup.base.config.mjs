@@ -49,11 +49,13 @@ const builtinAliases = builtinModules.reduce((o, n) => {
   return o
 }, {})
 
-const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
+const danglingRequiresRegExp = /^\s*require\(["'].+?["']\);?\r?\n/gm
 
 // eslint-disable-next-line no-unused-vars
 const blessedRequiresRegExp =
   /(?<=require\(["'])blessed(?:\/[^"']+)?(?=["']\))/g
+
+const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
 
 const requireUrlAssignmentRegExp =
   /(?<=var +)[$\w]+(?= *= *require\(["']node:url["']\))/
@@ -285,6 +287,14 @@ export default function baseConfig(extendConfig = {}) {
         replace(match) {
           return requireUrlAssignmentRegExp.exec(this.input)?.[0] ?? match
         }
+      }),
+      // Remove dangling require calls, e.g. require calls not associated with
+      // an import binding:
+      //   require('node:util')
+      //   require('graceful-fs')
+      socketModifyPlugin({
+        find: danglingRequiresRegExp,
+        replace: ''
       }),
       // Replace require('blessed/lib/widgets/xyz') with require('../blessed/lib/widgets/xyz').
       // socketModifyPlugin({
