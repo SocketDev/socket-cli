@@ -68,7 +68,7 @@
     "update:deps": "npx --yes npm-check-updates"
   },
   "dependencies": {
-    "@socketsecurity/registry": "1.0.149",
+    "@socketsecurity/registry": "1.0.151",
     "blessed": "0.1.81"
   },
   "devDependencies": {
@@ -81,7 +81,7 @@
     "@babel/preset-typescript": "7.27.0",
     "@babel/runtime": "7.27.0",
     "@biomejs/biome": "1.9.4",
-    "@cyclonedx/cdxgen": "11.2.4",
+    "@cyclonedx/cdxgen": "11.2.5",
     "@eslint/compat": "1.2.8",
     "@eslint/js": "9.25.0",
     "@octokit/graphql": "8.2.2",
