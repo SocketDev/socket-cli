@@ -130,7 +130,7 @@ export default function baseConfig(extendConfig = {}) {
       )
     },
     onwarn(warning, warn) {
-      // Suppress INVALID_ANNOTATION and THIS_IS_UNDEFINED warnings.
+      // Suppress warnings.
       if (
         warning.code === 'INVALID_ANNOTATION' ||
         warning.code === 'THIS_IS_UNDEFINED'
