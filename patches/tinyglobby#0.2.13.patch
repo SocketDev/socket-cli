@@ -4,7 +4,7 @@ Index: /tinyglobby/package.json
 +++ /tinyglobby/package.json
 @@ -2,14 +2,9 @@
    "name": "tinyglobby",
-   "version": "0.2.12",
+   "version": "0.2.13",
    "description": "A fast and minimal alternative to globby and fast-glob",
    "main": "dist/index.js",
 -  "module": "dist/index.mjs",
