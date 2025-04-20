@@ -158,6 +158,7 @@ export default function baseConfig(extendConfig = {}) {
             typescriptPlugin({
               include: ['src/**/*.ts'],
               noForceEmit: true,
+              outputToFilesystem: true,
               // Lazily access constants.rootConfigPath.
               tsconfig: path.join(
                 constants.rootConfigPath,
