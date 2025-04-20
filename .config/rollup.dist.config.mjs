@@ -196,8 +196,8 @@ async function updatePackageLockFile() {
   await writeJson(rootPackageLockPath, lockJson, { spaces: 2 })
 }
 
-export default () => {
-  return baseConfig({
+export default () =>
+  baseConfig({
     output: [
       {
         dir: path.relative(rootPath, rootDistPath),
@@ -224,4 +224,3 @@ export default () => {
       }
     ]
   })
-}
