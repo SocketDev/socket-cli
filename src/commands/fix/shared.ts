@@ -12,25 +12,33 @@ export const alertMapOptions = Object.freeze({
   nothrow: true
 })
 
-export function assignDefaultFixOptions(
-  options: FixOptions
+export function normalizeFixOptions(
+  options_: FixOptions
 ): NormalizedFixOptions {
-  if (options.autoPilot === undefined) {
+  const options = {
+    __proto__: null,
+    ...options_
+  } as FixOptions
+  if (typeof options.autoPilot !== 'boolean') {
     options.autoPilot = false
   }
-  if (options.autoMerge === undefined) {
+  if (typeof options.autoMerge !== 'boolean') {
     options.autoMerge = !!options.autoPilot
   }
-  if (options.cwd === undefined) {
+  if (typeof options.cwd !== 'string') {
     options.cwd = process.cwd()
   }
-  if (options.rangeStyle === undefined) {
+  options.purls = Array.isArray(options.purls)
+    ? options.purls.flatMap(p => p.split(/, */))
+    : []
+
+  if (typeof options.rangeStyle !== 'string') {
     options.rangeStyle = 'preserve'
   }
-  if (options.test === undefined) {
+  if (typeof options.test !== 'boolean') {
     options.test = !!options.autoPilot || !!options.testScript
   }
-  if (options.testScript === undefined) {
+  if (typeof options.testScript !== 'string') {
     options.testScript = 'test'
   }
   return options as NormalizedFixOptions
