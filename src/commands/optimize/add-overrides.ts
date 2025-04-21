@@ -74,7 +74,7 @@ export async function addOverrides(
   const isWorkspace = workspacePkgJsonPaths.length > 0
   const isWorkspaceRoot = pkgPath === rootPath
   const isLockScanned = isWorkspaceRoot && !prod
-  const workspaceName = isWorkspaceRoot ? '' : path.relative(rootPath, pkgPath)
+  const workspaceName = isWorkspaceRoot ? 'root' : path.relative(rootPath, pkgPath)
   if (
     isWorkspace &&
     agent === PNPM &&
@@ -102,7 +102,7 @@ export async function addOverrides(
   }
 
   spinner?.setText(
-    `Adding overrides${workspaceName ? ` to ${workspaceName}` : ''}...`
+    `Adding overrides to ${workspaceName}...`
   )
 
   const depAliasMap = new Map<string, string>()
@@ -150,7 +150,7 @@ export async function addOverrides(
           thisSpec = sockOverrideSpec
           depObj[origPkgName] = thisSpec
           state.added.add(sockRegPkgName)
-          if (workspaceName) {
+          if (!isWorkspaceRoot) {
             state.addedInWorkspaces.add(workspaceName)
           }
         }
