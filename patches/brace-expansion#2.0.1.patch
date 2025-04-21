@@ -8,7 +8,7 @@ Index: /brace-expansion/index.js
      : [''];
  
 -  if (/\$$/.test(m.pre)) {    
-+  if (m.pre.endsWith('$')) {
++  if (m.pre.endsWith('\u0024' /*'$'*/)) {
      for (var k = 0; k < post.length; k++) {
        var expansion = pre+ '{' + m.body + '}' + post[k];
        expansions.push(expansion);

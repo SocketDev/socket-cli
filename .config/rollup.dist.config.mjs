@@ -1,11 +1,12 @@
 import assert from 'node:assert'
 import { existsSync, promises as fs } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import util from 'node:util'
 
 import { glob as tinyGlob } from 'tinyglobby'
 
-import { readJson, writeJson } from '@socketsecurity/registry/lib/fs'
+import { readJson, remove, writeJson } from '@socketsecurity/registry/lib/fs'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 import {
   fetchPackageManifest,
@@ -40,36 +41,36 @@ const SENTRY_NODE = '@sentry/node'
 const SOCKET_DESCRIPTION = 'CLI tool for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
 
-// eslint-disable-next-line no-unused-vars
-async function copyBlessedWidgets() {
-  // Copy blessed package files to dist.
-  const blessedDestPath = path.join(rootDistPath, 'blessed')
-  const blessedNmPath = path.join(rootPath, 'node_modules/blessed')
-  const folders = ['lib', 'usr', 'vendor']
-  await Promise.all(
-    folders.map(f =>
-      fs.cp(path.join(blessedNmPath, f), path.join(blessedDestPath, f), {
-        recursive: true
-      })
-    )
-  )
-  // Add 'use strict' directive to js files.
-  const jsFiles = await tinyGlob(['**/*.js'], {
-    absolute: true,
-    cwd: blessedDestPath
-  })
-  await Promise.all(
-    jsFiles.map(async p => {
-      const content = await fs.readFile(p, 'utf8')
-      await fs.writeFile(p, `'use strict'\n\n${content}`, 'utf8')
-    })
-  )
-}
-
 async function copyInitGradle() {
   const filepath = path.join(rootSrcPath, 'commands/manifest/init.gradle')
   const destPath = path.join(rootDistPath, 'init.gradle')
   await fs.copyFile(filepath, destPath)
+}
+
+async function copyPackage(pkgName) {
+  const pkgDestPath = path.join(rootDistPath, pkgName)
+  const pkgNmPath = path.join(rootPath, `node_modules/${pkgName}`)
+  // Copy entire package folder over to dist.
+  await fs.cp(pkgNmPath, pkgDestPath, { recursive: true })
+  // Add 'use strict' directive to js files.
+  const jsFiles = await tinyGlob(['**/*.js'], {
+    absolute: true,
+    cwd: pkgDestPath
+  })
+  await Promise.all(
+    jsFiles.map(async p => {
+      const content = await fs.readFile(p, 'utf8')
+      // Start by trimming the hashbang.
+      const hashbang = /^#!.*(?=\r?\n|$)/.exec(content)?.[0] ?? ''
+      let trimmed = content.slice(hashbang.length).trimStart()
+      // Then, trim "use strict" directive.
+      const useStrict = /^(['"])use strict\1/.exec(trimmed)?.[0] ?? ''
+      trimmed = trimmed.slice(useStrict.length).trimStart()
+      // Add back hashbang and add "use strict" directive.
+      const modded = `${hashbang}${os.EOL}${useStrict ?? "'use strict'"}${os.EOL}${trimmed}`
+      await fs.writeFile(p, modded, 'utf8')
+    })
+  )
 }
 
 let _sentryManifest
@@ -215,9 +216,93 @@ export default () =>
         async writeBundle() {
           await Promise.all([
             copyInitGradle(),
-            // copyBlessedWidgets(),
+            // copyPackage('@socketsecurity/registry'),
+            copyPackage('blessed'),
+            copyPackage('blessed-contrib'),
             updatePackageJson()
           ])
+
+          const blessedDestPath = path.join(rootDistPath, 'blessed')
+          const blessedIgnore = [
+            'lib/**',
+            'node_modules/**',
+            'usr/**',
+            'vendor/**',
+            'LICENSE*'
+          ]
+
+          const blessedContribDestPath = path.join(
+            rootDistPath,
+            'blessed-contrib'
+          )
+          const blessedContribIgnore = ['lib/**', 'node_modules/**', 'LICENSE*']
+
+          // Remove directories.
+          await Promise.all([
+            // Remove directories from 'blessed'.
+            ...(
+              await tinyGlob(['**/*'], {
+                absolute: true,
+                onlyDirectories: true,
+                cwd: blessedDestPath,
+                dot: true,
+                ignore: blessedIgnore
+              })
+            ).map(p => remove(p)),
+            // Remove directories from 'contrib'.
+            ...(
+              await tinyGlob(['**/*'], {
+                absolute: true,
+                onlyDirectories: true,
+                cwd: blessedContribDestPath,
+                dot: true,
+                ignore: blessedContribIgnore
+              })
+            ).map(p => remove(p))
+          ])
+
+          // Remove files.
+          await Promise.all([
+            // Remove files from 'blessed'.
+            ...(
+              await tinyGlob(['**/*'], {
+                absolute: true,
+                cwd: blessedDestPath,
+                dot: true,
+                ignore: blessedIgnore
+              })
+            ).map(p => remove(p)),
+            // Remove files from 'blessed-contrib'.
+            ...(
+              await tinyGlob(['**/*'], {
+                absolute: true,
+                cwd: blessedContribDestPath,
+                dot: true,
+                ignore: blessedContribIgnore
+              })
+            ).map(p => remove(p))
+          ])
+
+          await Promise.all([])
+          // Rewire 'blessed' inside 'blessed-contrib'.
+          await Promise.all([
+            ...(
+              await tinyGlob(['**/*.js'], {
+                absolute: true,
+                cwd: blessedContribDestPath,
+                ignore: ['node_modules/**']
+              })
+            ).map(async p => {
+              const relPath = path.relative(path.dirname(p), blessedDestPath)
+              const content = await fs.readFile(p, 'utf8')
+              const modded = content.replace(
+                /(?<=require\(["'])blessed(?=(?:\/[^"']+)?["']\))/g,
+                () => relPath
+              )
+              await fs.writeFile(p, modded, 'utf8')
+            })
+          ])
+
           // Update package-lock.json AFTER package.json.
           await updatePackageLockFile()
         }
