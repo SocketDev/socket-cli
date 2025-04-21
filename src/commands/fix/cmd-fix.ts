@@ -19,8 +19,8 @@ const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'fix',
-  description: 'Fix "fixable" Socket alerts',
-  hidden: true,
+  description: 'Update dependencies with "fixable" Socket alerts',
+  hidden: false,
   flags: {
     ...commonFlags,
     autoPilot: {
@@ -39,7 +39,10 @@ const config: CliCommandConfig = {
     purl: {
       type: 'string',
       default: [],
-      description: `User provided PURL to fix`,
+      description: `Provide a list of ${terminalLink(
+        'package URLs (PURLs)',
+        'https://github.com/package-url/purl-spec?tab=readme-ov-file#purl'
+      )} to fix, as either a comma separated value or as multiple flags, instead of querying the Socket API`,
       isMultiple: true,
       shortFlag: 'p'
     },
@@ -50,10 +53,12 @@ const config: CliCommandConfig = {
       Define how updated dependency versions should be written in package.json.
       Available styles:
         *	caret - Use ^ range for compatible updates (e.g. ^1.2.3)
-        *	gt - Use >= to allow any newer version (e.g. >=1.2.3)
+        *	gt - Use > to allow any newer version (e.g. >1.2.3)
+        *	gte - Use >= to allow any newer version (e.g. >=1.2.3)
         *	lt - Use < to allow only lower versions (e.g. <1.2.3)
+        *	lte - Use <= to allow only lower versions (e.g. <=1.2.3)
         *	pin - Use the exact version (e.g. 1.2.3)
-        *	preserve - Retain the existing version range as-is
+        *	preserve - Retain the existing version range style as-is
         *	tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
       `
     },
