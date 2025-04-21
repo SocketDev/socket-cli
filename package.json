@@ -142,7 +142,7 @@
     "meow": "13.2.0",
     "micromatch": "4.0.8",
     "mock-fs": "5.5.0",
-    "nock": "14.0.3",
+    "nock": "14.0.4",
     "npm-package-arg": "12.0.2",
     "npm-run-all2": "7.0.2",
     "open": "10.1.1",
