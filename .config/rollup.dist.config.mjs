@@ -14,7 +14,7 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
-import baseConfig from './rollup.base.config.mjs'
+import baseConfig, { BUNDLED_PACKAGES } from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
 
 const {
@@ -55,19 +55,21 @@ async function copyPackage(pkgName) {
   // Add 'use strict' directive to js files.
   const jsFiles = await tinyGlob(['**/*.js'], {
     absolute: true,
-    cwd: pkgDestPath
+    cwd: pkgDestPath,
+    ignore: ['node_modules/**']
   })
   await Promise.all(
     jsFiles.map(async p => {
       const content = await fs.readFile(p, 'utf8')
       // Start by trimming the hashbang.
-      const hashbang = /^#!.*(?=\r?\n|$)/.exec(content)?.[0] ?? ''
+      const hashbang = /^#!.*(?:\r?\n)*/.exec(content)?.[0] ?? ''
       let trimmed = content.slice(hashbang.length).trimStart()
       // Then, trim "use strict" directive.
-      const useStrict = /^(['"])use strict\1/.exec(trimmed)?.[0] ?? ''
+      const useStrict =
+        /^(['"])use strict\1;?(?:\r?\n)*/.exec(trimmed)?.[0] ?? ''
       trimmed = trimmed.slice(useStrict.length).trimStart()
       // Add back hashbang and add "use strict" directive.
-      const modded = `${hashbang}${os.EOL}${useStrict ?? "'use strict'"}${os.EOL}${trimmed}`
+      const modded = `${hashbang.trim()}${hashbang ? os.EOL : ''}${useStrict.trim() || "'use strict'"}${os.EOL}${os.EOL}${trimmed}`
       await fs.writeFile(p, modded, 'utf8')
     })
   )
@@ -79,6 +81,38 @@ async function getSentryManifest() {
     _sentryManifest = await fetchPackageManifest(`${SENTRY_NODE}@latest`)
   }
   return _sentryManifest
+}
+
+async function removeDirs(srcPath, options) {
+  const { exclude } = { __proto__: null, ...options }
+  const ignore = Array.isArray(exclude) ? exclude : exclude ? [exclude] : []
+  return Promise.all([
+    (
+      await tinyGlob(['**/*'], {
+        absolute: true,
+        onlyDirectories: true,
+        cwd: srcPath,
+        dot: true,
+        ignore
+      })
+    ).map(p => remove(p))
+  ])
+}
+
+async function removeFiles(srcPath, options) {
+  const { exclude } = { __proto__: null, ...options }
+  const ignore = Array.isArray(exclude) ? exclude : exclude ? [exclude] : []
+  return Promise.all([
+    (
+      await tinyGlob(['**/*'], {
+        absolute: true,
+        onlyFiles: true,
+        cwd: srcPath,
+        dot: true,
+        ignore
+      })
+    ).map(p => remove(p))
+  ])
 }
 
 function resetBin(bin) {
@@ -216,10 +250,8 @@ export default () =>
         async writeBundle() {
           await Promise.all([
             copyInitGradle(),
-            // copyPackage('@socketsecurity/registry'),
-            copyPackage('blessed'),
-            copyPackage('blessed-contrib'),
-            updatePackageJson()
+            updatePackageJson(),
+            ...BUNDLED_PACKAGES.map(n => copyPackage(n))
           ])
 
           const blessedDestPath = path.join(rootDistPath, 'blessed')
@@ -235,55 +267,29 @@ export default () =>
             rootDistPath,
             'blessed-contrib'
           )
-          const blessedContribIgnore = ['lib/**', 'node_modules/**', 'LICENSE*']
+          const blessedContribIgnore = [
+            'lib/**',
+            'node_modules/**',
+            'index.d.ts',
+            'LICENSE*'
+          ]
 
           // Remove directories.
           await Promise.all([
-            // Remove directories from 'blessed'.
-            ...(
-              await tinyGlob(['**/*'], {
-                absolute: true,
-                onlyDirectories: true,
-                cwd: blessedDestPath,
-                dot: true,
-                ignore: blessedIgnore
-              })
-            ).map(p => remove(p)),
-            // Remove directories from 'contrib'.
-            ...(
-              await tinyGlob(['**/*'], {
-                absolute: true,
-                onlyDirectories: true,
-                cwd: blessedContribDestPath,
-                dot: true,
-                ignore: blessedContribIgnore
-              })
-            ).map(p => remove(p))
+            removeDirs(blessedDestPath, { exclude: blessedIgnore }),
+            removeDirs(blessedContribDestPath, {
+              exclude: blessedContribIgnore
+            })
           ])
 
           // Remove files.
           await Promise.all([
-            // Remove files from 'blessed'.
-            ...(
-              await tinyGlob(['**/*'], {
-                absolute: true,
-                cwd: blessedDestPath,
-                dot: true,
-                ignore: blessedIgnore
-              })
-            ).map(p => remove(p)),
-            // Remove files from 'blessed-contrib'.
-            ...(
-              await tinyGlob(['**/*'], {
-                absolute: true,
-                cwd: blessedContribDestPath,
-                dot: true,
-                ignore: blessedContribIgnore
-              })
-            ).map(p => remove(p))
+            removeFiles(blessedDestPath, { exclude: blessedIgnore }),
+            removeFiles(blessedContribDestPath, {
+              exclude: blessedContribIgnore
+            })
           ])
 
-          await Promise.all([])
           // Rewire 'blessed' inside 'blessed-contrib'.
           await Promise.all([
             ...(
