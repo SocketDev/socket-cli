@@ -212,8 +212,8 @@ function displayAnalyticsScreen(data: FormattedData): void {
   const screen: Widgets.Screen = new ScreenWidget({
     ...constants.blessedOptions
   })
-  const contrib = require('blessed-contrib')
-  const grid = new contrib.grid({ rows: 5, cols: 4, screen })
+  const GridLayout = require('blessed-contrib/lib/layout/grid')
+  const grid = new GridLayout({ rows: 5, cols: 4, screen })
 
   renderLineCharts(
     grid,
@@ -272,7 +272,8 @@ function displayAnalyticsScreen(data: FormattedData): void {
     data['total_low_prevented']
   )
 
-  const bar = grid.set(4, 0, 1, 2, contrib.bar, {
+  const BarChart = require('blessed-contrib/lib/widget/charts/bar')
+  const bar = grid.set(4, 0, 1, 2, BarChart, {
     label: 'Top 5 alert types',
     barWidth: 10,
     barSpacing: 17,
@@ -393,8 +394,8 @@ function renderLineCharts(
   coords: number[],
   data: Record<string, number>
 ): void {
-  const contrib = require('blessed-contrib')
-  const line = grid.set(...coords, contrib.line, {
+  const LineChart = require('blessed-contrib/lib/widget/charts/line')
+  const line = grid.set(...coords, LineChart, {
     style: { line: 'cyan', text: 'cyan', baseline: 'black' },
     xLabelPadding: 0,
     xPadding: 0,
