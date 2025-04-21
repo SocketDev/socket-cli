@@ -369,8 +369,7 @@ const lazyNodeHardenFlags = () =>
         // Node's --frozen-intrinsics workable.
         // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
         // √ https://github.com/pnpm/components/pull/23
-        // TODO: Investigate why @octokit/rest errors with it enabled.
-        // '--frozen-intrinsics',
+        '--frozen-intrinsics',
         '--no-deprecation'
       ]
 
