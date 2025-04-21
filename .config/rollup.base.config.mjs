@@ -313,7 +313,7 @@ export default function baseConfig(extendConfig = {}) {
       // require('../blessed/lib/widgets/screen').
       ...BUNDLED_PACKAGES.map(n => {
         const requiresRegExp = new RegExp(
-          `(?<=require\\(["'])${escapeRegExp(n)}(?:=(?:\\/[^"']+)?["']\\))`,
+          `(?<=require\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
           'g'
         )
         return socketModifyPlugin({

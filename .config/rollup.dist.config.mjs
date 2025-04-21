@@ -7,7 +7,7 @@ import util from 'node:util'
 import { glob as tinyGlob } from 'tinyglobby'
 
 import { readJson, remove, writeJson } from '@socketsecurity/registry/lib/fs'
-import { toSortedObject } from '@socketsecurity/registry/lib/objects'
+import { hasKeys, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import {
   fetchPackageManifest,
   readPackageJson
@@ -159,7 +159,7 @@ async function updatePackageJson() {
     name: SOCKET_CLI_PACKAGE_NAME,
     description: SOCKET_DESCRIPTION,
     bin,
-    dependencies
+    dependencies: hasKeys(dependencies) ? dependencies : undefined
   })
   // Lazily access constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD].
   if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
@@ -203,7 +203,11 @@ async function updatePackageLockFile() {
   lockJson.name = SOCKET_CLI_PACKAGE_NAME
   rootPkg.name = SOCKET_CLI_PACKAGE_NAME
   rootPkg.bin = bin
-  rootPkg.dependencies = dependencies
+  if (hasKeys(dependencies)) {
+    rootPkg.dependencies = dependencies
+  } else {
+    delete rootPkg.dependencies
+  }
   // Lazily access constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD].
   if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
     lockJson.name = SOCKET_CLI_LEGACY_PACKAGE_NAME
