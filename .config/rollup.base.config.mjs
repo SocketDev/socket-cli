@@ -49,6 +49,8 @@ export const EXTERNAL_PACKAGES = [
   'blessed-contrib'
 ]
 
+export const BUNDLED_PACKAGES = EXTERNAL_PACKAGES.slice()
+
 const builtinAliases = builtinModules.reduce((o, n) => {
   o[n] = `node:${n}`
   return o
@@ -309,7 +311,7 @@ export default function baseConfig(extendConfig = {}) {
       }),
       // Replace requires like require('blessed/lib/widgets/screen') with
       // require('../blessed/lib/widgets/screen').
-      ...[/*'@socketsecurity/registry',*/ 'blessed', 'blessed-contrib'].map(n => {
+      ...BUNDLED_PACKAGES.map(n => {
         const requiresRegExp = new RegExp(
           `(?<=require\\(["'])${escapeRegExp(n)}(?:=(?:\\/[^"']+)?["']\\))`,
           'g'
