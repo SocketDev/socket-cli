@@ -31,11 +31,22 @@ export function applyRange(
     case 'lte':
       return `<=${version}`
     case 'preserve': {
-      const comparators = [...new semver.Range(refRange).set].flat()
+      const range = new semver.Range(refRange)
+      const { raw } = range
+      const comparators = [...range.set].flat()
       const { length } = comparators
-      return !length || length > 1
-        ? version
-        : `${comparators[0]!.operator}${version}`
+      if (length === 1) {
+        const char = /^[<>]=?/.exec(raw)?.[0]
+        if (char) {
+          return `${char}${version}`
+        }
+      } else if (length === 2) {
+        const char = /^[~^]/.exec(raw)?.[0]
+        if (char) {
+          return `${char}${version}`
+        }
+      }
+      return version
     }
     case 'tilde':
       return `~${version}`
