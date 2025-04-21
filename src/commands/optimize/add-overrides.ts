@@ -74,7 +74,9 @@ export async function addOverrides(
   const isWorkspace = workspacePkgJsonPaths.length > 0
   const isWorkspaceRoot = pkgPath === rootPath
   const isLockScanned = isWorkspaceRoot && !prod
-  const workspaceName = isWorkspaceRoot ? 'root' : path.relative(rootPath, pkgPath)
+  const workspaceName = isWorkspaceRoot
+    ? 'root'
+    : path.relative(rootPath, pkgPath)
   if (
     isWorkspace &&
     agent === PNPM &&
@@ -101,9 +103,7 @@ export async function addOverrides(
     )
   }
 
-  spinner?.setText(
-    `Adding overrides to ${workspaceName}...`
-  )
+  spinner?.setText(`Adding overrides to ${workspaceName}...`)
 
   const depAliasMap = new Map<string, string>()
   const depEntries = getDependencyEntries(pkgEnvDetails)
