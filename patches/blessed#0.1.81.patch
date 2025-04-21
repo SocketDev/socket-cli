@@ -444,7 +444,15 @@ Index: /blessed/lib/widgets/node.js
 ===================================================================
 --- /blessed/lib/widgets/node.js
 +++ /blessed/lib/widgets/node.js
-@@ -15,10 +15,8 @@
+@@ -8,17 +8,15 @@
+  * Modules
+  */
+ 
+ var EventEmitter = require('../events').EventEmitter;
+-
++console.log('node_modules error', (new Error()).stack)
+ /**
+  * Node
   */
  
  function Node(options) {
@@ -465,7 +473,19 @@ Index: /blessed/lib/widgets/node.js
        this.screen = this;
      } else if (Screen.total === 1) {
        this.screen = Screen.global;
-@@ -76,9 +75,9 @@
+@@ -53,9 +52,10 @@
+             + ' append the element later.');
+         }
+       });
+     } else {
+-      throw new Error('No active screen.');
++      console.log('node_modules error', (new Error()).stack)
++      throw new Error('No active screen okokokokoko.');
+     }
+   }
+ 
+   this.parent = options.parent || null;
+@@ -76,9 +76,9 @@
  }
  
  Node.uid = 0;
