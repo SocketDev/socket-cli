@@ -6,10 +6,10 @@ Index: /blessed/lib/gpmclient.js
      });
    }
  }
-
+ 
 -GpmClient.prototype.__proto__ = EventEmitter.prototype;
 +Object.setPrototypeOf(GpmClient.prototype, EventEmitter.prototype);
-
+ 
  GpmClient.prototype.stop = function() {
    if (this.gpm) {
      this.gpm.end();
@@ -19,9 +19,9 @@ Index: /blessed/lib/program.js
 +++ /blessed/lib/program.js
 @@ -34,9 +34,9 @@
    Program.bind(this);
-
+ 
    EventEmitter.call(this);
-
+ 
 -  if (!options || options.__proto__ !== Object.prototype) {
 +  if (!options || Object.getPrototypeOf(options) !== Object.prototype) {
      options = {
@@ -32,12 +32,12 @@ Index: /blessed/lib/program.js
      });
    });
  };
-
+ 
 -Program.prototype.__proto__ = EventEmitter.prototype;
 +Object.setPrototypeOf(Program.prototype, EventEmitter.prototype);
-
+ 
  Program.prototype.type = 'program';
-
+ 
  Program.prototype.log = function() {
 @@ -194,9 +194,9 @@
    function caret(data) {
@@ -51,14 +51,14 @@ Index: /blessed/lib/program.js
          case '\x1b':
            ch = '[';
 @@ -1910,9 +1910,9 @@
-
+ 
  //Program.prototype.pad =
  Program.prototype.nul = function() {
    //if (this.has('pad')) return this.put.pad();
 -  return this._write('\200');
 +  return this._write('\x80');
  };
-
+ 
  Program.prototype.bel =
  Program.prototype.bell = function() {
 Index: /blessed/lib/tput.js
@@ -110,7 +110,7 @@ Index: /blessed/lib/tput.js
        _strings.push((data[i + 1] << 8) | data[i]);
      }
 @@ -842,9 +842,9 @@
-
+ 
      // '\e' -> ^[
      // '\n' -> \n
      // '\r' -> \r
@@ -158,7 +158,7 @@ Index: /blessed/lib/tput.js
        return true;
      }
    }
-
+ 
 @@ -2275,9 +2275,9 @@
        case 's': // string
          break;
@@ -169,7 +169,7 @@ Index: /blessed/lib/tput.js
            : '';
          break;
      }
-
+ 
 Index: /blessed/lib/widgets/ansiimage.js
 ===================================================================
 --- /blessed/lib/widgets/ansiimage.js
@@ -178,12 +178,12 @@ Index: /blessed/lib/widgets/ansiimage.js
      self.stop();
    });
  }
-
+ 
 -ANSIImage.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(ANSIImage.prototype, Box.prototype);
-
+ 
  ANSIImage.prototype.type = 'ansiimage';
-
+ 
  ANSIImage.curl = function(url) {
 Index: /blessed/lib/widgets/bigtext.js
 ===================================================================
@@ -193,12 +193,12 @@ Index: /blessed/lib/widgets/bigtext.js
      this.font = this.fontBold;
    }
  }
-
+ 
 -BigText.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(BigText.prototype, Box.prototype);
-
+ 
  BigText.prototype.type = 'bigtext';
-
+ 
  BigText.prototype.loadFont = function(filename) {
 Index: /blessed/lib/widgets/box.js
 ===================================================================
@@ -208,12 +208,12 @@ Index: /blessed/lib/widgets/box.js
    options = options || {};
    Element.call(this, options);
  }
-
+ 
 -Box.prototype.__proto__ = Element.prototype;
 +Object.setPrototypeOf(Box.prototype, Element.prototype);
-
+ 
  Box.prototype.type = 'box';
-
+ 
  /**
 Index: /blessed/lib/widgets/button.js
 ===================================================================
@@ -223,12 +223,12 @@ Index: /blessed/lib/widgets/button.js
      });
    }
  }
-
+ 
 -Button.prototype.__proto__ = Input.prototype;
 +Object.setPrototypeOf(Button.prototype, Input.prototype);
-
+ 
  Button.prototype.type = 'button';
-
+ 
  Button.prototype.press = function() {
 Index: /blessed/lib/widgets/checkbox.js
 ===================================================================
@@ -238,12 +238,12 @@ Index: /blessed/lib/widgets/checkbox.js
      self.screen.program.lrestoreCursor('checkbox', true);
    });
  }
-
+ 
 -Checkbox.prototype.__proto__ = Input.prototype;
 +Object.setPrototypeOf(Checkbox.prototype, Input.prototype);
-
+ 
  Checkbox.prototype.type = 'checkbox';
-
+ 
  Checkbox.prototype.render = function() {
 Index: /blessed/lib/widgets/element.js
 ===================================================================
@@ -253,12 +253,12 @@ Index: /blessed/lib/widgets/element.js
      this.focus();
    }
  }
-
+ 
 -Element.prototype.__proto__ = Node.prototype;
 +Object.setPrototypeOf(Element.prototype, Node.prototype);
-
+ 
  Element.prototype.type = 'element';
-
+ 
  Element.prototype.__defineGetter__('focused', function() {
 Index: /blessed/lib/widgets/filemanager.js
 ===================================================================
@@ -268,12 +268,12 @@ Index: /blessed/lib/widgets/filemanager.js
      });
    });
  }
-
+ 
 -FileManager.prototype.__proto__ = List.prototype;
 +Object.setPrototypeOf(FileManager.prototype, List.prototype);
-
+ 
  FileManager.prototype.type = 'file-manager';
-
+ 
  FileManager.prototype.refresh = function(cwd, callback) {
 Index: /blessed/lib/widgets/form.js
 ===================================================================
@@ -283,27 +283,27 @@ Index: /blessed/lib/widgets/form.js
      });
    }
  }
-
+ 
 -Form.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(Form.prototype, Box.prototype);
-
+ 
  Form.prototype.type = 'form';
-
+ 
  Form.prototype._refresh = function() {
 Index: /blessed/lib/widgets/image.js
 ===================================================================
 --- /blessed/lib/widgets/image.js
 +++ /blessed/lib/widgets/image.js
 @@ -49,9 +49,9 @@
-
+ 
    throw new Error('`type` must either be `ansi` or `overlay`.');
  }
-
+ 
 -Image.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(Image.prototype, Box.prototype);
-
+ 
  Image.prototype.type = 'image';
-
+ 
  /**
 Index: /blessed/lib/widgets/input.js
 ===================================================================
@@ -313,12 +313,12 @@ Index: /blessed/lib/widgets/input.js
    options = options || {};
    Box.call(this, options);
  }
-
+ 
 -Input.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(Input.prototype, Box.prototype);
-
+ 
  Input.prototype.type = 'input';
-
+ 
  /**
 Index: /blessed/lib/widgets/layout.js
 ===================================================================
@@ -328,27 +328,27 @@ Index: /blessed/lib/widgets/layout.js
      this.renderer = options.renderer;
    }
  }
-
+ 
 -Layout.prototype.__proto__ = Element.prototype;
 +Object.setPrototypeOf(Layout.prototype, Element.prototype);
-
+ 
  Layout.prototype.type = 'layout';
-
+ 
  Layout.prototype.isRendered = function(el) {
 Index: /blessed/lib/widgets/line.js
 ===================================================================
 --- /blessed/lib/widgets/line.js
 +++ /blessed/lib/widgets/line.js
 @@ -44,9 +44,9 @@
-
+ 
    this.style.border = this.style;
  }
-
+ 
 -Line.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(Line.prototype, Box.prototype);
-
+ 
  Line.prototype.type = 'line';
-
+ 
  /**
 Index: /blessed/lib/widgets/list.js
 ===================================================================
@@ -358,12 +358,12 @@ Index: /blessed/lib/widgets/list.js
      self.removeItem(el);
    });
  }
-
+ 
 -List.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(List.prototype, Box.prototype);
-
+ 
  List.prototype.type = 'list';
-
+ 
  List.prototype.createItem = function(content) {
 Index: /blessed/lib/widgets/listbar.js
 ===================================================================
@@ -373,12 +373,12 @@ Index: /blessed/lib/widgets/listbar.js
      self.select(self.selected);
    });
  }
-
+ 
 -Listbar.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(Listbar.prototype, Box.prototype);
-
+ 
  Listbar.prototype.type = 'listbar';
-
+ 
  Listbar.prototype.__defineGetter__('selected', function() {
 Index: /blessed/lib/widgets/listtable.js
 ===================================================================
@@ -388,12 +388,12 @@ Index: /blessed/lib/widgets/listtable.js
      self.screen.render();
    });
  }
-
+ 
 -ListTable.prototype.__proto__ = List.prototype;
 +Object.setPrototypeOf(ListTable.prototype, List.prototype);
-
+ 
  ListTable.prototype.type = 'list-table';
-
+ 
  ListTable.prototype._calculateMaxes = Table.prototype._calculateMaxes;
 Index: /blessed/lib/widgets/loading.js
 ===================================================================
@@ -403,12 +403,12 @@ Index: /blessed/lib/widgets/loading.js
      content: '|'
    });
  }
-
+ 
 -Loading.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(Loading.prototype, Box.prototype);
-
+ 
  Loading.prototype.type = 'loading';
-
+ 
  Loading.prototype.load = function(text) {
 Index: /blessed/lib/widgets/log.js
 ===================================================================
@@ -418,27 +418,27 @@ Index: /blessed/lib/widgets/log.js
      }
    });
  }
-
+ 
 -Log.prototype.__proto__ = ScrollableText.prototype;
 +Object.setPrototypeOf(Log.prototype, ScrollableText.prototype);
-
+ 
  Log.prototype.type = 'log';
-
+ 
  Log.prototype.log =
 Index: /blessed/lib/widgets/message.js
 ===================================================================
 --- /blessed/lib/widgets/message.js
 +++ /blessed/lib/widgets/message.js
 @@ -25,9 +25,9 @@
-
+ 
    Box.call(this, options);
  }
-
+ 
 -Message.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(Message.prototype, Box.prototype);
-
+ 
  Message.prototype.type = 'message';
-
+ 
  Message.prototype.log =
 Index: /blessed/lib/widgets/node.js
 ===================================================================
@@ -447,14 +447,14 @@ Index: /blessed/lib/widgets/node.js
 @@ -8,17 +8,15 @@
   * Modules
   */
-
+ 
  var EventEmitter = require('../events').EventEmitter;
 -
 +console.log('node_modules error', (new Error()).stack)
  /**
   * Node
   */
-
+ 
  function Node(options) {
    var self = this;
 -  var Screen = require('./screen');
@@ -462,11 +462,11 @@ Index: /blessed/lib/widgets/node.js
    if (!(this instanceof Node)) {
      return new Node(options);
    }
-
+ 
 @@ -29,8 +27,9 @@
-
+ 
    this.screen = this.screen || options.screen;
-
+ 
    if (!this.screen) {
 +    var Screen = require('./screen');
      if (this.type === 'screen') {
@@ -483,18 +483,18 @@ Index: /blessed/lib/widgets/node.js
 +      throw new Error('No active screen okokokokoko.');
      }
    }
-
+ 
    this.parent = options.parent || null;
 @@ -76,9 +76,9 @@
  }
-
+ 
  Node.uid = 0;
-
+ 
 -Node.prototype.__proto__ = EventEmitter.prototype;
 +Object.setPrototypeOf(Node.prototype, EventEmitter.prototype);
-
+ 
  Node.prototype.type = 'node';
-
+ 
  Node.prototype.insert = function(element, i) {
 Index: /blessed/lib/widgets/overlayimage.js
 ===================================================================
@@ -504,12 +504,12 @@ Index: /blessed/lib/widgets/overlayimage.js
      this.setImage(this.options.file || this.options.img);
    }
  }
-
+ 
 -OverlayImage.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(OverlayImage.prototype, Box.prototype);
-
+ 
  OverlayImage.prototype.type = 'overlayimage';
-
+ 
  OverlayImage.w3mdisplay = '/usr/lib/w3m/w3mimgdisplay';
 Index: /blessed/lib/widgets/progressbar.js
 ===================================================================
@@ -519,12 +519,12 @@ Index: /blessed/lib/widgets/progressbar.js
      });
    }
  }
-
+ 
 -ProgressBar.prototype.__proto__ = Input.prototype;
 +Object.setPrototypeOf(ProgressBar.prototype, Input.prototype);
-
+ 
  ProgressBar.prototype.type = 'progress-bar';
-
+ 
  ProgressBar.prototype.render = function() {
 Index: /blessed/lib/widgets/prompt.js
 ===================================================================
@@ -534,12 +534,12 @@ Index: /blessed/lib/widgets/prompt.js
      mouse: true
    });
  }
-
+ 
 -Prompt.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(Prompt.prototype, Box.prototype);
-
+ 
  Prompt.prototype.type = 'prompt';
-
+ 
  Prompt.prototype.input =
 Index: /blessed/lib/widgets/question.js
 ===================================================================
@@ -549,12 +549,12 @@ Index: /blessed/lib/widgets/question.js
      mouse: true
    });
  }
-
+ 
 -Question.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(Question.prototype, Box.prototype);
-
+ 
  Question.prototype.type = 'question';
-
+ 
  Question.prototype.ask = function(text, callback) {
 Index: /blessed/lib/widgets/radiobutton.js
 ===================================================================
@@ -564,12 +564,12 @@ Index: /blessed/lib/widgets/radiobutton.js
      });
    });
  }
-
+ 
 -RadioButton.prototype.__proto__ = Checkbox.prototype;
 +Object.setPrototypeOf(RadioButton.prototype, Checkbox.prototype);
-
+ 
  RadioButton.prototype.type = 'radio-button';
-
+ 
  RadioButton.prototype.render = function() {
 Index: /blessed/lib/widgets/radioset.js
 ===================================================================
@@ -579,12 +579,12 @@ Index: /blessed/lib/widgets/radioset.js
    // options.style = this.parent.style;
    Box.call(this, options);
  }
-
+ 
 -RadioSet.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(RadioSet.prototype, Box.prototype);
-
+ 
  RadioSet.prototype.type = 'radio-set';
-
+ 
  /**
 Index: /blessed/lib/widgets/screen.js
 ===================================================================
@@ -592,40 +592,40 @@ Index: /blessed/lib/widgets/screen.js
 +++ /blessed/lib/widgets/screen.js
 @@ -17,22 +17,16 @@
    , unicode = require('../unicode');
-
+ 
  var nextTick = global.setImmediate || process.nextTick.bind(process);
-
+ 
 -var helpers = require('../helpers');
 -
  var Node = require('./node');
 -var Log = require('./log');
 -var Element = require('./element');
 -var Box = require('./box');
-
+ 
  /**
   * Screen
   */
-
+ 
  function Screen(options) {
    var self = this;
 -
    if (!(this instanceof Node)) {
      return new Screen(options);
    }
-
+ 
 @@ -240,9 +234,9 @@
      });
    });
  };
-
+ 
 -Screen.prototype.__proto__ = Node.prototype;
 +Object.setPrototypeOf(Screen.prototype, Node.prototype);
-
+ 
  Screen.prototype.type = 'screen';
-
+ 
  Screen.prototype.__defineGetter__('title', function() {
 @@ -333,8 +327,9 @@
-
+ 
  Screen.prototype.postEnter = function() {
    var self = this;
    if (this.options.debug) {
@@ -636,7 +636,7 @@ Index: /blessed/lib/widgets/screen.js
        hidden: true,
 @@ -378,8 +373,9 @@
    }
-
+ 
    if (this.options.warnings) {
      this.on('warning', function(text) {
 +      var Box = require('./box');
@@ -647,15 +647,15 @@ Index: /blessed/lib/widgets/screen.js
 @@ -476,8 +472,9 @@
    this.program.on('mouse', function(data) {
      if (self.lockKeys) return;
-
+ 
      if (self._needsClickableSort) {
 +      var helpers = require('../helpers');
        self.clickable = helpers.hsort(self.clickable);
        self._needsClickableSort = false;
      }
-
+ 
 @@ -619,9 +616,9 @@
-
+ 
    if (this._hoverText) {
      return;
    }
@@ -672,7 +672,7 @@ Index: /blessed/lib/widgets/screen.js
    } else if (typeof cursor.shape === 'object' && cursor.shape) {
 +    var Element = require('./element');
      cattr = Element.prototype.sattr.call(cursor, cursor.shape);
-
+ 
      if (cursor.shape.bold || cursor.shape.underline
          || cursor.shape.blink || cursor.shape.inverse
 Index: /blessed/lib/widgets/scrollablebox.js
@@ -680,15 +680,15 @@ Index: /blessed/lib/widgets/scrollablebox.js
 --- /blessed/lib/widgets/scrollablebox.js
 +++ /blessed/lib/widgets/scrollablebox.js
 @@ -167,9 +167,9 @@
-
+ 
    self._recalculateIndex();
  }
-
+ 
 -ScrollableBox.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(ScrollableBox.prototype, Box.prototype);
-
+ 
  ScrollableBox.prototype.type = 'scrollable-box';
-
+ 
  // XXX Potentially use this in place of scrollable checks elsewhere.
 Index: /blessed/lib/widgets/scrollabletext.js
 ===================================================================
@@ -698,12 +698,12 @@ Index: /blessed/lib/widgets/scrollabletext.js
    options.alwaysScroll = true;
    ScrollableBox.call(this, options);
  }
-
+ 
 -ScrollableText.prototype.__proto__ = ScrollableBox.prototype;
 +Object.setPrototypeOf(ScrollableText.prototype, ScrollableBox.prototype);
-
+ 
  ScrollableText.prototype.type = 'scrollable-text';
-
+ 
  /**
 Index: /blessed/lib/widgets/table.js
 ===================================================================
@@ -713,27 +713,27 @@ Index: /blessed/lib/widgets/table.js
      self.screen.render();
    });
  }
-
+ 
 -Table.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(Table.prototype, Box.prototype);
-
+ 
  Table.prototype.type = 'table';
-
+ 
  Table.prototype._calculateMaxes = function() {
 Index: /blessed/lib/widgets/terminal.js
 ===================================================================
 --- /blessed/lib/widgets/terminal.js
 +++ /blessed/lib/widgets/terminal.js
 @@ -51,9 +51,9 @@
-
+ 
    this.bootstrap();
  }
-
+ 
 -Terminal.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(Terminal.prototype, Box.prototype);
-
+ 
  Terminal.prototype.type = 'terminal';
-
+ 
  Terminal.prototype.bootstrap = function() {
 Index: /blessed/lib/widgets/text.js
 ===================================================================
@@ -743,12 +743,12 @@ Index: /blessed/lib/widgets/text.js
    options.shrink = true;
    Element.call(this, options);
  }
-
+ 
 -Text.prototype.__proto__ = Element.prototype;
 +Object.setPrototypeOf(Text.prototype, Element.prototype);
-
+ 
  Text.prototype.type = 'text';
-
+ 
  /**
 Index: /blessed/lib/widgets/textarea.js
 ===================================================================
@@ -758,12 +758,12 @@ Index: /blessed/lib/widgets/textarea.js
      });
    }
  }
-
+ 
 -Textarea.prototype.__proto__ = Input.prototype;
 +Object.setPrototypeOf(Textarea.prototype, Input.prototype);
-
+ 
  Textarea.prototype.type = 'textarea';
-
+ 
  Textarea.prototype._updateCursor = function(get) {
 Index: /blessed/lib/widgets/textbox.js
 ===================================================================
@@ -773,12 +773,12 @@ Index: /blessed/lib/widgets/textbox.js
    this.secret = options.secret;
    this.censor = options.censor;
  }
-
+ 
 -Textbox.prototype.__proto__ = Textarea.prototype;
 +Object.setPrototypeOf(Textbox.prototype, Textarea.prototype);
-
+ 
  Textbox.prototype.type = 'textbox';
-
+ 
  Textbox.prototype.__olistener = Textbox.prototype._listener;
 Index: /blessed/lib/widgets/video.js
 ===================================================================
@@ -788,41 +788,13 @@ Index: /blessed/lib/widgets/video.js
      self.screen.render();
    });
  }
-
+ 
 -Video.prototype.__proto__ = Box.prototype;
 +Object.setPrototypeOf(Video.prototype, Box.prototype);
-
+ 
  Video.prototype.type = 'video';
-
+ 
  Video.prototype.exists = function(program) {
-Index: /blessed/package.json
-===================================================================
---- /blessed/package.json
-+++ /blessed/package.json
-@@ -1,21 +1,12 @@
- {
-   "name": "blessed",
-+  "private": true,
-   "description": "A high-level terminal interface library for node.js.",
-   "author": "Christopher Jeffrey",
-   "version": "0.1.81",
-   "license": "MIT",
-   "main": "./lib/blessed.js",
--  "bin": "./bin/tput.js",
--  "preferGlobal": false,
-   "repository": "git://github.com/chjj/blessed.git",
-   "homepage": "https://github.com/chjj/blessed",
--  "bugs": { "url": "http://github.com/chjj/blessed/issues" },
--  "keywords": ["curses", "tui", "tput", "terminfo", "termcap"],
--  "tags": ["curses", "tui", "tput", "terminfo", "termcap"],
--  "engines": {
--    "node": ">= 0.8.0"
--  },
--  "browserify": {
--    "transform": ["./browser/transform.js"]
--  }
-+  "bugs": { "url": "http://github.com/chjj/blessed/issues" }
- }
 Index: /blessed/vendor/tng.js
 ===================================================================
 --- /blessed/vendor/tng.js
@@ -830,7 +802,7 @@ Index: /blessed/vendor/tng.js
 @@ -47,13 +47,9 @@
      : buf.readUInt16BE(0) === 0xffd8 ? 'jpg'
      : path.extname(this.file).slice(1).toLowerCase() || 'png';
-
+ 
    if (this.format !== 'png') {
 -    try {
 -      return this.toPNG(buf);
@@ -839,7 +811,7 @@ Index: /blessed/vendor/tng.js
 -    }
 +    return this.toPNG(buf);
    }
-
+ 
    chunks = this.parseRaw(buf);
    idat = this.parseChunks(chunks);
 @@ -67,9 +63,8 @@
@@ -865,7 +837,7 @@ Index: /blessed/vendor/tng.js
 @@ -591,11 +585,11 @@
    return bmp;
  };
-
+ 
  PNG.prototype.createCellmap = function(bmp, options) {
 -  var bmp = bmp || this.bmp
 -    , options = options || this.options
@@ -885,5 +857,5 @@ Index: /blessed/vendor/tng.js
 -    , scale
      , xs
      , ys;
-
+ 
    if (cmwidth) {
