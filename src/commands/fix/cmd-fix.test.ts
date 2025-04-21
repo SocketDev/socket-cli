@@ -18,7 +18,7 @@ describe('socket fix', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Fix "fixable" Socket alerts
+        "Update dependencies with "fixable" Socket alerts
 
               Usage
                 $ socket fix
@@ -28,14 +28,16 @@ describe('socket fix', async () => {
                                   See GitHub documentation (\\u200bhttps://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository\\u200b) for managing auto-merge for pull requests in your repository.
                 --autoPilot       Shorthand for --autoMerge --test
                 --help            Print this help
-                --purl            User provided PURL to fix
+                --purl            Provide a list of package URLs (PURLs) (\\u200bhttps://github.com/package-url/purl-spec?tab=readme-ov-file#purl\\u200b) to fix, as either a comma separated value or as multiple flags, instead of querying the Socket API
                 --rangeStyle      Define how updated dependency versions should be written in package.json.
           Available styles:
             *\\x09caret - Use ^ range for compatible updates (e.g. ^1.2.3)
-            *\\x09gt - Use >= to allow any newer version (e.g. >=1.2.3)
+            *\\x09gt - Use > to allow any newer version (e.g. >1.2.3)
+            *\\x09gte - Use >= to allow any newer version (e.g. >=1.2.3)
             *\\x09lt - Use < to allow only lower versions (e.g. <1.2.3)
+            *\\x09lte - Use <= to allow only lower versions (e.g. <=1.2.3)
             *\\x09pin - Use the exact version (e.g. 1.2.3)
-            *\\x09preserve - Retain the existing version range as-is
+            *\\x09preserve - Retain the existing version range style as-is
             *\\x09tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
                 --test            Verify the fix by running unit tests
                 --testScript      The test script to run for each fix attempt"
