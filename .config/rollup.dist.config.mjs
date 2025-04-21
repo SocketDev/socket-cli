@@ -86,7 +86,7 @@ async function getSentryManifest() {
 async function removeDirs(srcPath, options) {
   const { exclude } = { __proto__: null, ...options }
   const ignore = Array.isArray(exclude) ? exclude : exclude ? [exclude] : []
-  return Promise.all([
+  return await Promise.all(
     (
       await tinyGlob(['**/*'], {
         absolute: true,
@@ -96,13 +96,13 @@ async function removeDirs(srcPath, options) {
         ignore
       })
     ).map(p => remove(p))
-  ])
+  )
 }
 
 async function removeFiles(srcPath, options) {
   const { exclude } = { __proto__: null, ...options }
   const ignore = Array.isArray(exclude) ? exclude : exclude ? [exclude] : []
-  return Promise.all([
+  return await Promise.all(
     (
       await tinyGlob(['**/*'], {
         absolute: true,
@@ -112,7 +112,7 @@ async function removeFiles(srcPath, options) {
         ignore
       })
     ).map(p => remove(p))
-  ])
+  )
 }
 
 function resetBin(bin) {
