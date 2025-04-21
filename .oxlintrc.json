@@ -23,7 +23,6 @@
     "no-unused-vars": "off",
     "no-var": "error",
     "unicorn/no-empty-file": "off",
-    "unicorn/no-new-array": "off",
-    "unicorn/prefer-string-starts-ends-with": "off"
+    "unicorn/no-new-array": "off"
   }
 }
