@@ -11,6 +11,7 @@ import typescriptPlugin from '@rollup/plugin-typescript'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
 import { readPackageJsonSync } from '@socketsecurity/registry/lib/packages'
+import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../scripts/constants.js'
@@ -42,7 +43,11 @@ const {
   VITEST
 } = constants
 
-export const EXTERNAL_PACKAGES = ['@socketsecurity/registry', 'blessed']
+export const EXTERNAL_PACKAGES = [
+  '@socketsecurity/registry',
+  'blessed',
+  'blessed-contrib'
+]
 
 const builtinAliases = builtinModules.reduce((o, n) => {
   o[n] = `node:${n}`
@@ -50,10 +55,6 @@ const builtinAliases = builtinModules.reduce((o, n) => {
 }, {})
 
 const danglingRequiresRegExp = /^\s*require\(["'].+?["']\);?\r?\n/gm
-
-// eslint-disable-next-line no-unused-vars
-const blessedRequiresRegExp =
-  /(?<=require\(["'])blessed(?:\/[^"']+)?(?=["']\))/g
 
 const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
 
@@ -101,8 +102,31 @@ export default function baseConfig(extendConfig = {}) {
   const shadowNpmInjectSrcPath = path.join(rootSrcPath, 'shadow/npm/inject.ts')
   const shadowNpmPathsSrcPath = path.join(rootSrcPath, 'shadow/npm/paths.ts')
 
-  const extendPlugins = extendConfig.plugins ?? []
-  const hasPlugin = name => !!extendPlugins.find(p => p.name === name)
+  const extendPlugins = Array.isArray(extendConfig.plugins)
+    ? extendConfig.plugins.slice()
+    : []
+  const extractedPlugins = { __proto__: null }
+  if (extendPlugins.length) {
+    for (const pluginName of [
+      'babel',
+      'commonjs',
+      'json',
+      'node-resolve',
+      'typescript',
+      'unplugin-purge-polyfills'
+    ]) {
+      for (let i = 0, { length } = extendPlugins; i < length; i += 1) {
+        const p = extendPlugins[i]
+        if (p?.name === pluginName) {
+          extractedPlugins[pluginName] = p
+          // Remove from extendPlugins array.
+          extendPlugins.splice(i, 1)
+          length -= 1
+          i -= 1
+        }
+      }
+    }
+  }
 
   const config = {
     input: {
@@ -118,10 +142,17 @@ export default function baseConfig(extendConfig = {}) {
         : {})
     },
     external(id_) {
+      const id = normalizeId(id_)
+      if (id.includes('blessed')) {
+        console.log(
+          id,
+          getPackageName(id),
+          EXTERNAL_PACKAGES.includes(getPackageName(id))
+        )
+      }
       if (id_.endsWith(ROLLUP_EXTERNAL_SUFFIX) || isBuiltin(id_)) {
         return true
       }
-      const id = normalizeId(id_)
       return (
         id.endsWith('.d.cts') ||
         id.endsWith('.d.mts') ||
@@ -142,63 +173,42 @@ export default function baseConfig(extendConfig = {}) {
     },
     ...extendConfig,
     plugins: [
-      ...(hasPlugin('node-resolve')
-        ? []
-        : [
-            nodeResolve({
-              exportConditions: ['node'],
-              extensions: ['.mjs', '.js', '.json', '.ts'],
-              preferBuiltins: true
-            })
-          ]),
-      ...(hasPlugin('json') ? [] : [jsonPlugin()]),
-      ...(hasPlugin('typescript')
-        ? []
-        : [
-            typescriptPlugin({
-              include: ['src/**/*.ts'],
-              noForceEmit: true,
-              outputToFilesystem: true,
-              // Lazily access constants.rootConfigPath.
-              tsconfig: path.join(
-                constants.rootConfigPath,
-                'tsconfig.rollup.json'
-              )
-            })
-          ]),
-      ...(hasPlugin('commonjs')
-        ? []
-        : [
-            commonjsPlugin({
-              defaultIsModuleExports: true,
-              extensions: ['.cjs', '.js'],
-              ignoreDynamicRequires: true,
-              ignoreGlobal: true,
-              ignoreTryCatch: true,
-              strictRequires: true
-            })
-          ]),
-      ...(hasPlugin('babel')
-        ? []
-        : [
-            babelPlugin({
-              babelHelpers: 'runtime',
-              babelrc: false,
-              // Lazily access constants.rootConfigPath.
-              configFile: path.join(
-                constants.rootConfigPath,
-                'babel.config.js'
-              ),
-              extensions: ['.ts', '.js', '.cjs', '.mjs']
-            })
-          ]),
-      ...(hasPlugin('unplugin-purge-polyfills')
-        ? []
-        : [
-            purgePolyfills.rollup({
-              replacements: {}
-            })
-          ]),
+      extractedPlugins['node-resolve'] ??
+        nodeResolve({
+          exportConditions: ['node'],
+          extensions: ['.mjs', '.js', '.json', '.ts'],
+          preferBuiltins: true
+        }),
+      extractedPlugins['json'] ?? jsonPlugin(),
+      extractedPlugins['typescript'] ??
+        typescriptPlugin({
+          include: ['src/**/*.ts'],
+          noForceEmit: true,
+          outputToFilesystem: true,
+          // Lazily access constants.rootConfigPath.
+          tsconfig: path.join(constants.rootConfigPath, 'tsconfig.rollup.json')
+        }),
+      extractedPlugins['commonjs'] ??
+        commonjsPlugin({
+          defaultIsModuleExports: true,
+          extensions: ['.cjs', '.js'],
+          ignoreDynamicRequires: true,
+          ignoreGlobal: true,
+          ignoreTryCatch: true,
+          strictRequires: true
+        }),
+      extractedPlugins['babel'] ??
+        babelPlugin({
+          babelHelpers: 'runtime',
+          babelrc: false,
+          // Lazily access constants.rootConfigPath.
+          configFile: path.join(constants.rootConfigPath, 'babel.config.js'),
+          extensions: ['.ts', '.js', '.cjs', '.mjs']
+        }),
+      extractedPlugins['unplugin-purge-polyfills'] ??
+        purgePolyfills.rollup({
+          replacements: {}
+        }),
       // Inline process.env values.
       replacePlugin({
         delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
@@ -297,12 +307,19 @@ export default function baseConfig(extendConfig = {}) {
         find: danglingRequiresRegExp,
         replace: ''
       }),
-      // Replace require('blessed/lib/widgets/xyz') with require('../blessed/lib/widgets/xyz').
-      // socketModifyPlugin({
-      //   find: blessedRequiresRegExp,
-      //   replace: (id) => `./${id}`
-      // }),
-      ...(extendConfig.plugins ?? [])
+      // Replace requires like require('blessed/lib/widgets/screen') with
+      // require('../blessed/lib/widgets/screen').
+      ...[/*'@socketsecurity/registry',*/ 'blessed', 'blessed-contrib'].map(n => {
+        const requiresRegExp = new RegExp(
+          `(?<=require\\(["'])${escapeRegExp(n)}(?:=(?:\\/[^"']+)?["']\\))`,
+          'g'
+        )
+        return socketModifyPlugin({
+          find: requiresRegExp,
+          replace: id => `./${id}`
+        })
+      }),
+      ...extendPlugins
     ]
   }
 
