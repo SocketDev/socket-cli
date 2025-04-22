@@ -113,8 +113,10 @@ async function run(
       )
       if (dryRun) {
         logger.fail('Skipping auto-discovery of org in dry-run mode')
+        orgSlug = ''
       } else if (!interactive) {
         logger.fail('Skipping auto-discovery of org when interactive = false')
+        orgSlug = ''
       } else {
         orgSlug = suggestOrgSlug()
       }
