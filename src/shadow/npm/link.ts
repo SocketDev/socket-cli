@@ -31,8 +31,8 @@ export async function installLinks(
   if (!shadowed) {
     if (WIN32) {
       await cmdShim(
-        // Lazily access constants.rootDistPath.
-        path.join(constants.rootDistPath, `${binName}-${CLI}.js`),
+        // Lazily access constants.distPath.
+        path.join(constants.distPath, `${binName}-${CLI}.js`),
         path.join(realBinPath, binName)
       )
     }

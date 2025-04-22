@@ -149,7 +149,7 @@ type Constants = Remap<
     readonly nmBinPath: string
     readonly nodeHardenFlags: string[]
     readonly rootBinPath: string
-    readonly rootDistPath: string
+    readonly distPath: string
     readonly rootPath: string
     readonly shadowBinPath: string
     readonly zshRcPath: string
@@ -308,20 +308,20 @@ const lazyBlessedOptions = () =>
   })
 
 const lazyDistCliPath = () =>
-  // Lazily access constants.rootDistPath.
-  path.join(constants.rootDistPath, 'cli.js')
+  // Lazily access constants.distPath.
+  path.join(constants.distPath, 'cli.js')
 
 const lazyDistInstrumentWithSentryPath = () =>
-  // Lazily access constants.rootDistPath.
-  path.join(constants.rootDistPath, 'instrument-with-sentry.js')
+  // Lazily access constants.distPath.
+  path.join(constants.distPath, 'instrument-with-sentry.js')
 
 const lazyDistShadowNpmBinPath = () =>
-  // Lazily access constants.rootDistPath.
-  path.join(constants.rootDistPath, `${SHADOW_NPM_BIN}.js`)
+  // Lazily access constants.distPath.
+  path.join(constants.distPath, `${SHADOW_NPM_BIN}.js`)
 
 const lazyDistShadowNpmInjectPath = () =>
-  // Lazily access constants.rootDistPath.
-  path.join(constants.rootDistPath, `${SHADOW_NPM_INJECT}.js`)
+  // Lazily access constants.distPath.
+  path.join(constants.distPath, `${SHADOW_NPM_INJECT}.js`)
 
 const lazyHomePath = () => os.homedir()
 
@@ -377,7 +377,7 @@ const lazyRootBinPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'bin')
 
-const lazyRootDistPath = () =>
+const lazyDistPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'dist')
 
@@ -460,6 +460,7 @@ const constants: Constants = createConstantsObject(
     blessedOptions: undefined,
     distCliPath: undefined,
     distInstrumentWithSentryPath: undefined,
+    distPath: undefined,
     distShadowNpmBinPath: undefined,
     distShadowNpmInjectPath: undefined,
     homePath: undefined,
@@ -467,7 +468,6 @@ const constants: Constants = createConstantsObject(
     nmBinPath: undefined,
     nodeHardenFlags: undefined,
     rootBinPath: undefined,
-    rootDistPath: undefined,
     rootPath: undefined,
     shadowBinPath: undefined,
     zshRcPath: undefined
@@ -479,6 +479,7 @@ const constants: Constants = createConstantsObject(
       blessedOptions: lazyBlessedOptions,
       distCliPath: lazyDistCliPath,
       distInstrumentWithSentryPath: lazyDistInstrumentWithSentryPath,
+      distPath: lazyDistPath,
       distShadowNpmBinPath: lazyDistShadowNpmBinPath,
       distShadowNpmInjectPath: lazyDistShadowNpmInjectPath,
       homePath: lazyHomePath,
@@ -486,7 +487,6 @@ const constants: Constants = createConstantsObject(
       nmBinPath: lazyNmBinPath,
       nodeHardenFlags: lazyNodeHardenFlags,
       rootBinPath: lazyRootBinPath,
-      rootDistPath: lazyRootDistPath,
       rootPath: lazyRootPath,
       shadowBinPath: lazyShadowBinPath,
       zshRcPath: lazyZshRcPath

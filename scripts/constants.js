@@ -65,11 +65,11 @@ const LAZY_ENV = () => {
   })
 }
 
-const lazyRootConfigPath = () =>
+const lazyConfigPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, '.config')
 
-const lazyRootDistPath = () =>
+const lazyDistPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'dist')
 
@@ -83,7 +83,7 @@ const lazyRootPackageLockPath = () =>
 
 const lazyRootPath = () => path.resolve(__dirname, '..')
 
-const lazyRootSrcPath = () =>
+const lazySrcPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'src')
 
@@ -121,21 +121,21 @@ const constants = createConstantsObject(
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
     VENDOR,
     WITH_SENTRY,
-    rootConfigPath: undefined,
-    rootDistPath: undefined,
+    configPath: undefined,
+    distPath: undefined,
     rootPackageJsonPath: undefined,
     rootPath: undefined,
-    rootSrcPath: undefined
+    srcPath: undefined
   },
   {
     getters: {
       ENV: LAZY_ENV,
-      rootConfigPath: lazyRootConfigPath,
-      rootDistPath: lazyRootDistPath,
+      configPath: lazyConfigPath,
+      distPath: lazyDistPath,
       rootPackageJsonPath: lazyRootPackageJsonPath,
       rootPackageLockPath: lazyRootPackageLockPath,
       rootPath: lazyRootPath,
-      rootSrcPath: lazyRootSrcPath
+      srcPath: lazySrcPath
     },
     mixin: registryConstants
   }
