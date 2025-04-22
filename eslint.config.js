@@ -26,13 +26,31 @@ const { flatConfigs: origImportXFlatConfigs } = importXPlugin
 const rootPath = __dirname
 const rootTsConfigPath = path.join(rootPath, TSCONFIG_JSON)
 
-const biomeConfigPath = path.join(rootPath, BIOME_JSON)
-const gitignorePath = path.join(rootPath, GITIGNORE)
-
-const biomeConfig = require(biomeConfigPath)
 const nodeGlobalsConfig = Object.fromEntries(
   Object.entries(globals.node).map(([k]) => [k, 'readonly'])
 )
+
+const biomeConfigPath = path.join(rootPath, BIOME_JSON)
+const biomeConfig = require(biomeConfigPath)
+const biomeIgnores = {
+  name: 'Imported biome.json ignore patterns',
+  ignores: biomeConfig.files.ignore.map(convertIgnorePatternToMinimatch)
+}
+
+const gitignorePath = path.join(rootPath, GITIGNORE)
+const gitIgnores = includeIgnoreFile(gitignorePath)
+
+if (process.env.LINT_DIST) {
+  const isNotDistGlobPattern = p => !/(?:^|[\\/])dist/.test(p)
+  biomeIgnores.ignores = biomeIgnores.ignores?.filter(isNotDistGlobPattern)
+  gitIgnores.ignores = gitIgnores.ignores?.filter(isNotDistGlobPattern)
+}
+
+if (process.env.LINT_EXTERNAL) {
+  const isNotExternalGlobPattern = p => !/(?:^|[\\/])external/.test(p)
+  biomeIgnores.ignores = biomeIgnores.ignores?.filter(isNotExternalGlobPattern)
+  gitIgnores.ignores = gitIgnores.ignores?.filter(isNotExternalGlobPattern)
+}
 
 const sharedPlugins = {
   'sort-destructure-keys': sortDestructureKeysPlugin,
@@ -159,24 +177,6 @@ function getImportXFlatConfigs(isEsm) {
 
 const importFlatConfigsForScript = getImportXFlatConfigs(false)
 const importFlatConfigsForModule = getImportXFlatConfigs(true)
-
-const biomeIgnores = {
-  name: 'Imported biome.json ignore patterns',
-  ignores: biomeConfig.files.ignore.map(convertIgnorePatternToMinimatch)
-}
-const gitIgnores = includeIgnoreFile(gitignorePath)
-
-if (process.env.LINT_DIST) {
-  const isNotDistGlobPattern = p => !/(?:^|[\\/])dist/.test(p)
-  biomeIgnores.ignores = biomeIgnores.ignores?.filter(isNotDistGlobPattern)
-  gitIgnores.ignores = gitIgnores.ignores?.filter(isNotDistGlobPattern)
-}
-
-if (process.env.LINT_EXTERNAL) {
-  const isNotExternalGlobPattern = p => !/(?:^|[\\/])external/.test(p)
-  biomeIgnores.ignores = biomeIgnores.ignores?.filter(isNotExternalGlobPattern)
-  gitIgnores.ignores = gitIgnores.ignores?.filter(isNotExternalGlobPattern)
-}
 
 module.exports = [
   gitIgnores,
