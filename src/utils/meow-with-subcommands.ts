@@ -2,6 +2,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import meow from 'meow'
+import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
@@ -12,6 +13,7 @@ import { getLastFiveOfApiToken } from './api'
 import {
   getConfigValue,
   isReadOnlyConfig,
+  isTestingV1,
   overrideCachedConfig,
   overrideConfigApiToken
 } from './config'
@@ -291,6 +293,12 @@ function getAsciiHeader(command: string) {
   const apiToken = getDefaultToken()
   const defaultOrg = getConfigValue('defaultOrg')
   const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
+  const v1test = isTestingV1() ? ' (is testing v1)' : ''
+  const feedback = isTestingV1()
+    ? colors.green(
+        '   (Thank you for testing the v1 bump! Please send us any feedback you might have!)\n'
+      )
+    : ''
   const shownToken = redacting
     ? REDACTED
     : apiToken
@@ -311,8 +319,9 @@ function getAsciiHeader(command: string) {
       )
   const body = `
    _____         _       _        /---------------
-  |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
+  |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}${v1test}
   |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${shownToken}${defaultOrg ? `, default org: ${redacting ? REDACTED : defaultOrg}` : ''}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}`.trimStart()
-  return `   ${body}\n`
+
+  return `   ${body}\n${feedback}`
 }
