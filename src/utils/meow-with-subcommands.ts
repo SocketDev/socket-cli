@@ -294,7 +294,7 @@ function getAsciiHeader(command: string) {
   const defaultOrg = getConfigValue('defaultOrg')
   const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
   const v1test = isTestingV1() ? ' (is testing v1)' : ''
-  const feedback = isTestingV1
+  const feedback = isTestingV1()
     ? colors.green(
         '   (Thank you for testing the v1 bump! Please send us any feedback you might have!)\n'
       )

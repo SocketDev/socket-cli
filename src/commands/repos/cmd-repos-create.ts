@@ -74,7 +74,7 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command} FakeOrg --repoName=test-repo
+      $ ${command} ${isTestingV1() ? 'test-repo' : 'FakeOrg --repoName=test-repo'}
   `
 }
 
@@ -116,7 +116,7 @@ async function run(
       } else if (!interactive) {
         logger.fail('Skipping auto-discovery of org when interactive = false')
       } else {
-        orgSlug = suggestOrgSlug()
+        orgSlug = (await suggestOrgSlug()) || ''
       }
     } else {
       orgSlug = cli.input[0] || ''
@@ -124,7 +124,7 @@ async function run(
   }
 
   const repoNameFlag = cli.flags['repoName']
-  const repoName = isTestingV1() ? cli.input[0] || '' : repoNameFlag
+  const repoName = (isTestingV1() ? cli.input[0] : repoNameFlag) || ''
 
   const apiToken = getDefaultToken()
 
@@ -133,14 +133,16 @@ async function run(
       nook: true,
       test: !!orgSlug,
       message: isTestingV1()
-        ? 'Org name by default setting, flag, or auto-discovered'
+        ? 'Org name by default setting, --org, or auto-discovered'
         : 'Org name must be the first argument',
       pass: 'ok',
       fail: 'missing'
     },
     {
       test: !!repoName,
-      message: 'Repository name using --repoNam',
+      message: isTestingV1()
+        ? 'Repository name as first argument'
+        : 'Repository name using --repoName',
       pass: 'ok',
       fail: 'missing'
     },
