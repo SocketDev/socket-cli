@@ -33,7 +33,6 @@ const {
   INLINED_SOCKET_CLI_LEGACY_BUILD,
   INLINED_SOCKET_CLI_SENTRY_BUILD,
   INSTRUMENT_WITH_SENTRY,
-  LICENSE,
   NODE_MODULES,
   ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_NPM_BIN,
@@ -57,7 +56,7 @@ const {
 const BLESSED = 'blessed'
 const BLESSED_CONTRIB = 'blessed-contrib'
 const EXTERNAL = 'external'
-const LICENSE_MD = `${LICENSE}.md`
+const LICENSE_MD = `LICENSE.md`
 const SENTRY_NODE = '@sentry/node'
 const SOCKET_DESCRIPTION = 'CLI tool for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
@@ -305,7 +304,7 @@ export default async () => {
             path.isAbsolute(id) ? nmPath.length + 1 : 0
           )
           return (
-            pkgName === 'blessed' ||
+            pkgName === BLESSED ||
             rawId.endsWith(ROLLUP_EXTERNAL_SUFFIX) ||
             isBuiltin(rawId)
           )
@@ -424,8 +423,8 @@ export default async () => {
             )
 
             // Rewire 'blessed' inside 'blessed-contrib'.
-            await Promise.all([
-              ...(
+            await Promise.all(
+              (
                 await tinyGlob(['**/*.js'], {
                   absolute: true,
                   cwd: blessedContribExternalPath,
@@ -443,7 +442,7 @@ export default async () => {
                 )
                 await fs.writeFile(p, modded, 'utf8')
               })
-            ])
+            )
 
             // Update package-lock.json AFTER package.json.
             await updatePackageLockFile()
