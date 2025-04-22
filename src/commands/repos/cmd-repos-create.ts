@@ -101,7 +101,7 @@ async function run(
   const interactive = cli.flags['interactive']
   const dryRun = cli.flags['dryRun']
 
-  let orgSlug = cli.flags['org'] || defaultOrgSlug || ''
+  let orgSlug = String(cli.flags['org'] || defaultOrgSlug || '')
   if (!orgSlug) {
     if (isTestingV1()) {
       // ask from server
