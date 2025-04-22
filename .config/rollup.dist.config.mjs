@@ -375,7 +375,7 @@ export default async () => {
       ],
       plugins: [
         // Replace requires like require('blessed/lib/widgets/screen') with
-        // require('./external/blessed/lib/widgets/screen').
+        // require('../external/blessed/lib/widgets/screen').
         ...EXTERNAL_PACKAGES.map(n => {
           const requiresRegExp = new RegExp(
             `(?<=require\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
