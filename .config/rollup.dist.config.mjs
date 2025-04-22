@@ -22,13 +22,19 @@ import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import baseConfig, { EXTERNAL_PACKAGES } from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
-import { normalizeId } from '../scripts/utils/packages.js'
+import {
+  getPackageName,
+  isBuiltin,
+  normalizeId
+} from '../scripts/utils/packages.js'
 
 const {
   CONSTANTS,
   INLINED_SOCKET_CLI_LEGACY_BUILD,
   INLINED_SOCKET_CLI_SENTRY_BUILD,
   INSTRUMENT_WITH_SENTRY,
+  NODE_MODULES,
+  ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_NPM_BIN,
   SHADOW_NPM_INJECT,
   SHADOW_NPM_PATHS,
@@ -47,6 +53,9 @@ const {
   VENDOR
 } = constants
 
+const BLESSED = 'blessed'
+const BLESSED_CONTRIB = 'blessed-contrib'
+const EXTERNAL = 'external'
 const SENTRY_NODE = '@sentry/node'
 const SOCKET_DESCRIPTION = 'CLI tool for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
@@ -61,8 +70,8 @@ async function copyInitGradle() {
 
 async function copyPackage(pkgName) {
   // Lazily access constants.distPath and constants.rootPath.
-  const externalPath = path.join(constants.rootPath, 'external')
-  const nmPath = path.join(constants.rootPath, 'node_modules')
+  const externalPath = path.join(constants.rootPath, EXTERNAL)
+  const nmPath = path.join(constants.rootPath, NODE_MODULES)
   const pkgDestPath = path.join(externalPath, pkgName)
   const pkgNmPath = path.join(nmPath, pkgName)
   // Copy entire package folder over to dist.
@@ -259,14 +268,15 @@ export default async () => {
   // Lazily access constants path properties.
   const { configPath, distPath, rootPath, srcPath } = constants
   const constantsSrcPath = path.join(srcPath, `constants.ts`)
-  const externalPath = path.join(rootPath, 'external')
-  const externalSrcPath = path.join(srcPath, 'external')
+  const externalPath = path.join(rootPath, EXTERNAL)
+  const externalSrcPath = path.join(srcPath, EXTERNAL)
+  const nmPath = path.join(rootPath, NODE_MODULES)
   const shadowNpmBinSrcPath = path.join(srcPath, 'shadow/npm/bin.ts')
   const shadowNpmInjectSrcPath = path.join(srcPath, 'shadow/npm/inject.ts')
   const shadowNpmPathsSrcPath = path.join(srcPath, 'shadow/npm/paths.ts')
   const blessedContribFilepaths = await tinyGlob(['**/*.mjs'], {
     absolute: true,
-    cwd: path.join(externalSrcPath, 'blessed-contrib')
+    cwd: path.join(externalSrcPath, BLESSED_CONTRIB)
   })
 
   return [
@@ -286,6 +296,18 @@ export default async () => {
             sourcemapDebugIds: true
           }
         ],
+        external(rawId) {
+          const id = normalizeId(rawId)
+          const pkgName = getPackageName(
+            id,
+            path.isAbsolute(id) ? nmPath.length + 1 : 0
+          )
+          return (
+            pkgName === 'blessed' ||
+            rawId.endsWith(ROLLUP_EXTERNAL_SUFFIX) ||
+            isBuiltin(rawId)
+          )
+        },
         plugins: [
           nodeResolve({
             exportConditions: ['node'],
@@ -352,17 +374,29 @@ export default async () => {
         }
       ],
       plugins: [
+        // Replace requires like require('blessed/lib/widgets/screen') with
+        // require('./external/blessed/lib/widgets/screen').
+        ...EXTERNAL_PACKAGES.map(n => {
+          const requiresRegExp = new RegExp(
+            `(?<=require\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
+            'g'
+          )
+          return socketModifyPlugin({
+            find: requiresRegExp,
+            replace: id => `../external/${id}`
+          })
+        }),
         {
           async writeBundle() {
             await Promise.all([
               copyInitGradle(),
               updatePackageJson(),
-              ...EXTERNAL_PACKAGES.filter(n => n !== 'blessed-contrib').map(n =>
+              ...EXTERNAL_PACKAGES.filter(n => n !== BLESSED_CONTRIB).map(n =>
                 copyPackage(n)
               )
             ])
 
-            const blessedDestPath = path.join(externalPath, 'blessed')
+            const blessedDestPath = path.join(externalPath, BLESSED)
             const blessedIgnore = [
               'lib/**',
               'node_modules/**',
@@ -399,40 +433,28 @@ export default async () => {
             ])
 
             // Rewire 'blessed' inside 'blessed-contrib'.
-            // await Promise.all([
-            //   ...(
-            //     await tinyGlob(['**/*.js'], {
-            //       absolute: true,
-            //       cwd: blessedContribDestPath,
-            //       ignore: ['node_modules/**']
-            //     })
-            //   ).map(async p => {
-            //     const relPath = path.relative(path.dirname(p), blessedDestPath)
-            //     const content = await fs.readFile(p, 'utf8')
-            //     const modded = content.replace(
-            //       /(?<=require\(["'])blessed(?=(?:\/[^"']+)?["']\))/g,
-            //       () => relPath
-            //     )
-            //     await fs.writeFile(p, modded, 'utf8')
-            //   })
-            // ])
+            await Promise.all([
+              ...(
+                await tinyGlob(['**/*.js'], {
+                  absolute: true,
+                  cwd: blessedContribDestPath,
+                  ignore: ['node_modules/**']
+                })
+              ).map(async p => {
+                const relPath = path.relative(path.dirname(p), blessedDestPath)
+                const content = await fs.readFile(p, 'utf8')
+                const modded = content.replace(
+                  /(?<=require\(["'])blessed(?=(?:\/[^"']+)?["']\))/g,
+                  () => relPath
+                )
+                await fs.writeFile(p, modded, 'utf8')
+              })
+            ])
 
             // Update package-lock.json AFTER package.json.
             await updatePackageLockFile()
           }
-        },
-        // Replace requires like require('blessed/lib/widgets/screen') with
-        // require('./external/blessed/lib/widgets/screen').
-        ...EXTERNAL_PACKAGES.map(n => {
-          const requiresRegExp = new RegExp(
-            `(?<=require\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
-            'g'
-          )
-          return socketModifyPlugin({
-            find: requiresRegExp,
-            replace: id => `../external/${id}`
-          })
-        })
+        }
       ]
     })
   ]

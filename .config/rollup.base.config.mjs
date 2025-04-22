@@ -31,6 +31,7 @@ const {
   INLINED_SOCKET_CLI_VERSION,
   INLINED_SOCKET_CLI_VERSION_HASH,
   INLINED_SYNP_VERSION,
+  NODE_MODULES,
   ROLLUP_EXTERNAL_SUFFIX,
   VITEST
 } = constants
@@ -87,6 +88,9 @@ function getSocketCliVersionHash() {
 }
 
 export default function baseConfig(extendConfig = {}) {
+  // Lazily access constants path properties.
+  const { configPath, rootPath } = constants
+  const nmPath = path.join(rootPath, NODE_MODULES)
   const extendPlugins = Array.isArray(extendConfig.plugins)
     ? extendConfig.plugins.slice()
     : []
@@ -114,16 +118,19 @@ export default function baseConfig(extendConfig = {}) {
   }
 
   return {
-    external(id_) {
-      const id = normalizeId(id_)
-      if (id_.endsWith(ROLLUP_EXTERNAL_SUFFIX) || isBuiltin(id_)) {
-        return true
-      }
+    external(rawId) {
+      const id = normalizeId(rawId)
+      const pkgName = getPackageName(
+        id,
+        path.isAbsolute(id) ? nmPath.length + 1 : 0
+      )
       return (
         id.endsWith('.d.cts') ||
         id.endsWith('.d.mts') ||
         id.endsWith('.d.ts') ||
-        EXTERNAL_PACKAGES.includes(getPackageName(id))
+        EXTERNAL_PACKAGES.includes(pkgName) ||
+        rawId.endsWith(ROLLUP_EXTERNAL_SUFFIX) ||
+        isBuiltin(rawId)
       )
     },
     onwarn(warning, warn) {
@@ -151,8 +158,7 @@ export default function baseConfig(extendConfig = {}) {
           include: ['src/**/*.ts'],
           noForceEmit: true,
           outputToFilesystem: true,
-          // Lazily access constants.configPath.
-          tsconfig: path.join(constants.configPath, 'tsconfig.rollup.json')
+          tsconfig: path.join(configPath, 'tsconfig.rollup.json')
         }),
       extractedPlugins['commonjs'] ??
         commonjsPlugin({
@@ -167,8 +173,7 @@ export default function baseConfig(extendConfig = {}) {
         babelPlugin({
           babelHelpers: 'runtime',
           babelrc: false,
-          // Lazily access constants.configPath.
-          configFile: path.join(constants.configPath, 'babel.config.js'),
+          configFile: path.join(configPath, 'babel.config.js'),
           extensions: ['.ts', '.js', '.cjs', '.mjs']
         }),
       extractedPlugins['unplugin-purge-polyfills'] ??
