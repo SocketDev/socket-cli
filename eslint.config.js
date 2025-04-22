@@ -167,9 +167,14 @@ const biomeIgnores = {
 const gitIgnores = includeIgnoreFile(gitignorePath)
 
 if (process.env.LINT_DIST) {
-  const isNotDistGlobPattern = p => !p.endsWith('/dist')
+  const isNotDistGlobPattern = p => !/(?:^|[\\/])dist/.test(p)
   biomeIgnores.ignores = biomeIgnores.ignores?.filter(isNotDistGlobPattern)
   gitIgnores.ignores = gitIgnores.ignores?.filter(isNotDistGlobPattern)
+}
+if (process.env.LINT_EXTERNAL) {
+  const isNotExternalGlobPattern = p => !/(?:^|[\\/])external/.test(p)
+  biomeIgnores.ignores = biomeIgnores.ignores?.filter(isNotExternalGlobPattern)
+  gitIgnores.ignores = gitIgnores.ignores?.filter(isNotExternalGlobPattern)
 }
 
 module.exports = [
