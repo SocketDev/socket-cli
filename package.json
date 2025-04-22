@@ -28,7 +28,8 @@
   },
   "scripts": {
     "build": "run-p -c --aggregate-output build:*",
-    "build:dist": "npm run clean:dist && npm run clean:external && rollup -c .config/rollup.dist.config.mjs && npm run lint:dist:fix && npm run lint:external:fix",
+    "build:dist": "npm run build:dist_no_fix && npm run lint:dist:fix && npm run lint:external:fix",
+    "build:dist_no_fix": "npm run clean:dist && npm run clean:external && rollup -c .config/rollup.dist.config.mjs",
     "build:types": "tsc --project .config/tsconfig.dts.json",
     "check": "run-p -c --aggregate-output check:*",
     "check:lint": "eslint --report-unused-disable-directives .",
@@ -59,7 +60,7 @@
     "lint-staged": "lint-staged",
     "precommit": "lint-staged",
     "prepare": "husky && custompatch",
-    "bs": "npm run build:dist; npm exec socket --",
+    "bs": "npm run build:dist_no_fix; npm exec socket --",
     "s": "npm exec socket --",
     "test": "run-s check test:*",
     "test:prepare": "cross-env VITEST=1 npm run build && del-cli 'test/**/node_modules'",

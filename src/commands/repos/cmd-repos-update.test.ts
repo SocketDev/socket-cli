@@ -31,12 +31,14 @@ describe('socket repos update', async () => {
             --defaultBranch   Repository default branch
             --help            Print this help
             --homepage        Repository url
+            --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
+            --org             Force override the organization slug, overrides the default org from config
             --repoDescription Repository description
             --repoName        Repository name
             --visibility      Repository visibility (Default Private)
 
           Examples
-            $ socket repos update FakeOrg"
+            $ socket repos update FakeOrg test-repo"
       `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -69,7 +71,7 @@ describe('socket repos update', async () => {
 
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
 
-          - Org name as the first argument (\\x1b[31mmissing\\x1b[39m)
+          - Org name must be the first argument (\\x1b[31mmissing\\x1b[39m)
 
           - Repository name using --repoName (\\x1b[31mmissing\\x1b[39m)
 
@@ -84,23 +86,118 @@ describe('socket repos update', async () => {
     [
       'repos',
       'update',
-      'a',
-      '--repoName',
-      'b',
+      'reponame',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}'
     ],
-    'should require args with just dry-run',
+    'should report missing org name in v1',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos update\`, cwd: <redacted>
+        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
+        \\x1b[39m
+        Missing the org slug and no --org flag set. Trying to auto-discover the org now...
+        Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.
+        \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
+
+          - Org name by default setting, --org, or auto-discovered (\\x1b[31mmissing\\x1b[39m)
+
+          - Repository name as first argument (\\x1b[32mok\\x1b[39m)"
+      `)
+
+      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+    }
+  )
+
+  cmdit(
+    [
+      'repos',
+      'update',
+      '--dry-run',
+      '--config',
+      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}'
+    ],
+    'should only report missing repo name with default org in v1',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>, default org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos update\`, cwd: <redacted>
+        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
+        \\x1b[39m
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
+
+          - Repository name as first argument (\\x1b[31mmissing\\x1b[39m)"
+      `)
+
+      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+    }
+  )
+
+  cmdit(
+    [
+      'repos',
+      'update',
+      '--org',
+      'forcedorg',
+      '--dry-run',
+      '--config',
+      '{"isTestingV1": true, "apiToken":"anything"}'
+    ],
+    'should only report missing repo name with --org flag in v1',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos update\`, cwd: <redacted>
+        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
+        \\x1b[39m
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
+
+          - Repository name as first argument (\\x1b[31mmissing\\x1b[39m)"
+      `)
+
+      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+    }
+  )
+
+  cmdit(
+    [
+      'repos',
+      'update',
+      'fakerepo',
+      '--dry-run',
+      '--config',
+      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}'
+    ],
+    'should run to dryrun in v1',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos update\`, cwd: <redacted>"
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>, default org: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos update\`, cwd: <redacted>
+        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
+        \\x1b[39m"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
