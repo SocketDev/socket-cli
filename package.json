@@ -28,7 +28,7 @@
   },
   "scripts": {
     "build": "run-p -c --aggregate-output build:*",
-    "build:dist": "del-cli 'dist' && rollup -c .config/rollup.dist.config.mjs && npm run lint:dist:fix",
+    "build:dist": "del-cli 'dist' 'external' && rollup -c .config/rollup.dist.config.mjs && npm run lint:dist:fix",
     "build:types": "tsc --project .config/tsconfig.dts.json",
     "check": "run-p -c --aggregate-output check:*",
     "check:lint": "eslint --report-unused-disable-directives .",
@@ -199,6 +199,7 @@
   "files": [
     "bin/**",
     "dist/**",
+    "external/**",
     "shadow-bin/**",
     "translations.json"
   ],

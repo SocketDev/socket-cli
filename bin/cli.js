@@ -3,8 +3,8 @@
 
 const process = require('node:process')
 
-const { spawn } = require('../dist/@socketsecurity/registry/lib/spawn')
-const constants = require('../dist/constants')
+const constants = require('../dist/constants.js')
+const { spawn } = require('../external/@socketsecurity/registry/lib/spawn.js')
 
 const { INLINED_SOCKET_CLI_SENTRY_BUILD } = constants
 
