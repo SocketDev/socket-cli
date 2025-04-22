@@ -207,12 +207,12 @@ ${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
 }
 
 function displayAnalyticsScreen(data: FormattedData): void {
-  const ScreenWidget = require('../../external/blessed/lib/widgets/screen.js')
+  const ScreenWidget = require('../external/blessed/lib/widgets/screen.js')
   // Lazily access constants.blessedOptions.
   const screen: Widgets.Screen = new ScreenWidget({
     ...constants.blessedOptions
   })
-  const GridLayout = require('../../external/blessed-contrib/lib/layout/grid.js')
+  const GridLayout = require('../external/blessed-contrib/lib/layout/grid.js')
   const grid = new GridLayout({ rows: 5, cols: 4, screen })
 
   renderLineCharts(
@@ -272,7 +272,7 @@ function displayAnalyticsScreen(data: FormattedData): void {
     data['total_low_prevented']
   )
 
-  const BarChart = require('../../external/blessed-contrib/lib/widget/charts/bar.js')
+  const BarChart = require('../external/blessed-contrib/lib/widget/charts/bar.js')
   const bar = grid.set(4, 0, 1, 2, BarChart, {
     label: 'Top 5 alert types',
     barWidth: 10,
@@ -394,7 +394,7 @@ function renderLineCharts(
   coords: number[],
   data: Record<string, number>
 ): void {
-  const LineChart = require('../../external/blessed-contrib/lib/widget/charts/line.js')
+  const LineChart = require('../external/blessed-contrib/lib/widget/charts/line.js')
   const line = grid.set(...coords, LineChart, {
     style: { line: 'cyan', text: 'cyan', baseline: 'black' },
     xLabelPadding: 0,
