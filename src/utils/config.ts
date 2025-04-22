@@ -22,6 +22,8 @@ export interface LocalConfig {
   apiToken?: string | null | undefined
   defaultOrg?: string
   enforcedOrgs?: string[] | readonly string[] | null | undefined
+  // Temporary to prepare (and mark) CLI API changes for the major bump
+  isTestingV1?: boolean
 }
 
 export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
@@ -35,7 +37,8 @@ export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
   [
     'enforcedOrgs',
     'Orgs in this list have their security policies enforced on this machine'
-  ]
+  ],
+  ['isTestingV1', 'For development of testing the next major bump']
 ])
 
 export const sensitiveConfigKeys: Set<keyof LocalConfig> = new Set(['apiToken'])
@@ -236,4 +239,8 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
       }
     })
   }
+}
+
+export function isTestingV1() {
+  return !!getConfigValue('isTestingV1')
 }
