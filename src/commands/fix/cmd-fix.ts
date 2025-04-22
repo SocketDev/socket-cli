@@ -1,4 +1,3 @@
-import { codeBlock } from 'common-tags'
 import terminalLink from 'terminal-link'
 
 import { joinOr } from '@socketsecurity/registry/lib/arrays'
@@ -40,27 +39,27 @@ const config: CliCommandConfig = {
       type: 'string',
       default: [],
       description: `Provide a list of ${terminalLink(
-        'package URLs (PURLs)',
+        'package URLs',
         'https://github.com/package-url/purl-spec?tab=readme-ov-file#purl'
-      )} to fix, as either a comma separated value or as multiple flags, instead of querying the Socket API`,
+      )} (PURLs) to fix, as either a comma separated value or as multiple flags,\n                        instead of querying the Socket API`,
       isMultiple: true,
       shortFlag: 'p'
     },
     rangeStyle: {
       type: 'string',
       default: 'preserve',
-      description: codeBlock`
-      Define how updated dependency versions should be written in package.json.
-      Available styles:
-        *	caret - Use ^ range for compatible updates (e.g. ^1.2.3)
-        *	gt - Use > to allow any newer version (e.g. >1.2.3)
-        *	gte - Use >= to allow any newer version (e.g. >=1.2.3)
-        *	lt - Use < to allow only lower versions (e.g. <1.2.3)
-        *	lte - Use <= to allow only lower versions (e.g. <=1.2.3)
-        *	pin - Use the exact version (e.g. 1.2.3)
-        *	preserve - Retain the existing version range style as-is
-        *	tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
-      `
+      description: `
+                        Define how updated dependency versions should be written in package.json.
+                        Available styles:
+                          * caret - Use ^ range for compatible updates (e.g. ^1.2.3)
+                          * gt - Use > to allow any newer version (e.g. >1.2.3)
+                          * gte - Use >= to allow any newer version (e.g. >=1.2.3)
+                          * lt - Use < to allow only lower versions (e.g. <1.2.3)
+                          * lte - Use <= to allow only lower versions (e.g. <=1.2.3)
+                          * pin - Use the exact version (e.g. 1.2.3)
+                          * preserve - Retain the existing version range style as-is
+                          * tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
+      `.trim()
     },
     test: {
       type: 'boolean',
