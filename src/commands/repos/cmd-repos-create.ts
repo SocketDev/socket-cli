@@ -101,7 +101,7 @@ async function run(
   const interactive = cli.flags['interactive']
   const dryRun = cli.flags['dryRun']
 
-  let orgSlug = cli.flags['org'] || defaultOrgSlug
+  let orgSlug = cli.flags['org'] || defaultOrgSlug || ''
   if (!orgSlug) {
     if (isTestingV1()) {
       // ask from server
@@ -113,10 +113,8 @@ async function run(
       )
       if (dryRun) {
         logger.fail('Skipping auto-discovery of org in dry-run mode')
-        orgSlug = ''
       } else if (!interactive) {
         logger.fail('Skipping auto-discovery of org when interactive = false')
-        orgSlug = ''
       } else {
         orgSlug = suggestOrgSlug()
       }
