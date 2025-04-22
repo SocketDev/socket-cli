@@ -33,6 +33,7 @@ const {
   INLINED_SOCKET_CLI_LEGACY_BUILD,
   INLINED_SOCKET_CLI_SENTRY_BUILD,
   INSTRUMENT_WITH_SENTRY,
+  LICENSE,
   NODE_MODULES,
   ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_NPM_BIN,
@@ -56,6 +57,7 @@ const {
 const BLESSED = 'blessed'
 const BLESSED_CONTRIB = 'blessed-contrib'
 const EXTERNAL = 'external'
+const LICENSE_MD = `${LICENSE}.md`
 const SENTRY_NODE = '@sentry/node'
 const SOCKET_DESCRIPTION = 'CLI tool for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
@@ -396,7 +398,7 @@ export default async () => {
               )
             ])
 
-            const blessedDestPath = path.join(externalPath, BLESSED)
+            const blessedExternalPath = path.join(externalPath, BLESSED)
             const blessedIgnore = [
               'lib/**',
               'node_modules/**',
@@ -405,43 +407,35 @@ export default async () => {
               'LICENSE*'
             ]
 
-            const blessedContribDestPath = path.join(
-              externalPath,
-              'blessed-contrib'
-            )
-            const blessedContribIgnore = [
-              'lib/**',
-              'node_modules/**',
-              'index.d.ts',
-              'LICENSE*'
-            ]
-
             // Remove directories.
-            await Promise.all([
-              removeDirs(blessedDestPath, { exclude: blessedIgnore }),
-              removeDirs(blessedContribDestPath, {
-                exclude: blessedContribIgnore
-              })
-            ])
+            await removeDirs(blessedExternalPath, { exclude: blessedIgnore })
+            await removeFiles(blessedExternalPath, { exclude: blessedIgnore })
 
-            // Remove files.
-            await Promise.all([
-              removeFiles(blessedDestPath, { exclude: blessedIgnore }),
-              removeFiles(blessedContribDestPath, {
-                exclude: blessedContribIgnore
-              })
-            ])
+            const blessedContribExternalPath = path.join(
+              externalPath,
+              BLESSED_CONTRIB
+            )
+            const blessedContribNmPath = path.join(nmPath, BLESSED_CONTRIB)
+
+            // Copy LICENSE.md.
+            await fs.cp(
+              `${blessedContribNmPath}/${LICENSE_MD}`,
+              `${blessedContribExternalPath}/${LICENSE_MD}`
+            )
 
             // Rewire 'blessed' inside 'blessed-contrib'.
             await Promise.all([
               ...(
                 await tinyGlob(['**/*.js'], {
                   absolute: true,
-                  cwd: blessedContribDestPath,
+                  cwd: blessedContribExternalPath,
                   ignore: ['node_modules/**']
                 })
               ).map(async p => {
-                const relPath = path.relative(path.dirname(p), blessedDestPath)
+                const relPath = path.relative(
+                  path.dirname(p),
+                  blessedExternalPath
+                )
                 const content = await fs.readFile(p, 'utf8')
                 const modded = content.replace(
                   /(?<=require\(["'])blessed(?=(?:\/[^"']+)?["']\))/g,
