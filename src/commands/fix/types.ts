@@ -7,7 +7,7 @@ type StripUndefined<T> = {
 
 export type FixOptions = {
   autoMerge?: boolean | undefined
-  autoPilot?: boolean | undefined
+  autopilot?: boolean | undefined
   cwd?: string | undefined
   purls?: string[] | readonly string[] | undefined
   rangeStyle?: RangeStyle | undefined
