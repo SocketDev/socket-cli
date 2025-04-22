@@ -19,11 +19,11 @@ export function normalizeFixOptions(
     __proto__: null,
     ...options_
   } as FixOptions
-  if (typeof options.autoPilot !== 'boolean') {
-    options.autoPilot = false
+  if (typeof options.autopilot !== 'boolean') {
+    options.autopilot = false
   }
   if (typeof options.autoMerge !== 'boolean') {
-    options.autoMerge = !!options.autoPilot
+    options.autoMerge = !!options.autopilot
   }
   if (typeof options.cwd !== 'string') {
     options.cwd = process.cwd()
@@ -36,7 +36,7 @@ export function normalizeFixOptions(
     options.rangeStyle = 'preserve'
   }
   if (typeof options.test !== 'boolean') {
-    options.test = !!options.autoPilot || !!options.testScript
+    options.test = !!options.autopilot || !!options.testScript
   }
   if (typeof options.testScript !== 'string') {
     options.testScript = 'test'

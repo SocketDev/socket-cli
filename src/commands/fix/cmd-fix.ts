@@ -22,7 +22,7 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    autoPilot: {
+    autopilot: {
       type: 'boolean',
       default: false,
       description: `Shorthand for --autoMerge --test`
@@ -119,7 +119,7 @@ async function run(
 
   await runFix({
     autoMerge: Boolean(cli.flags['autoMerge']),
-    autoPilot: Boolean(cli.flags['autoPilot']),
+    autopilot: Boolean(cli.flags['autopilot']),
     purls: Array.isArray(cli.flags['purl']) ? cli.flags['purl'] : [],
     spinner,
     rangeStyle: (cli.flags['rangeStyle'] ?? undefined) as
