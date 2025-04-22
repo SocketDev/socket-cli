@@ -171,6 +171,7 @@ if (process.env.LINT_DIST) {
   biomeIgnores.ignores = biomeIgnores.ignores?.filter(isNotDistGlobPattern)
   gitIgnores.ignores = gitIgnores.ignores?.filter(isNotDistGlobPattern)
 }
+
 if (process.env.LINT_EXTERNAL) {
   const isNotExternalGlobPattern = p => !/(?:^|[\\/])external/.test(p)
   biomeIgnores.ignores = biomeIgnores.ignores?.filter(isNotExternalGlobPattern)
