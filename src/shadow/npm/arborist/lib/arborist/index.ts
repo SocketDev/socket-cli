@@ -1,7 +1,5 @@
 import process from 'node:process'
 
-import { codeBlock } from 'common-tags'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../../../../constants'
@@ -104,8 +102,6 @@ export class SafeArborist extends Arborist {
     )
     // Lazily access constants.ENV[SOCKET_CLI_ACCEPT_RISKS].
     const acceptRisks = constants.ENV[SOCKET_CLI_ACCEPT_RISKS]
-    // Lazily access constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS].
-    const viewAllRisks = constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS]
     const progress = ipc[SOCKET_CLI_SAFE_PROGRESS]
     const spinner =
       options['silent'] || !progress
@@ -133,12 +129,14 @@ export class SafeArborist extends Arborist {
     })
     if (alertsMap.size) {
       process.exitCode = 1
+      // Lazily access constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS].
+      const viewAllRisks = constants.ENV[SOCKET_CLI_VIEW_ALL_RISKS]
       logAlertsMap(alertsMap, {
         hideAt: viewAllRisks ? 'none' : 'middle',
         output: process.stderr
       })
       throw new Error(
-        codeBlock`
+        `
           Socket ${binName} exiting due to risks.${
             viewAllRisks
               ? ''
@@ -148,7 +146,7 @@ export class SafeArborist extends Arborist {
               ? ''
               : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
           }
-        `
+        `.trim()
       )
     } else if (!options['silent']) {
       logger.success(
