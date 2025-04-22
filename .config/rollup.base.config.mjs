@@ -11,7 +11,6 @@ import typescriptPlugin from '@rollup/plugin-typescript'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
 import { readPackageJsonSync } from '@socketsecurity/registry/lib/packages'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../scripts/constants.js'
@@ -23,7 +22,6 @@ import {
 } from '../scripts/utils/packages.js'
 
 const {
-  CONSTANTS,
   INLINED_CYCLONEDX_CDXGEN_VERSION,
   INLINED_SOCKET_CLI_HOMEPAGE,
   INLINED_SOCKET_CLI_LEGACY_BUILD,
@@ -33,13 +31,7 @@ const {
   INLINED_SOCKET_CLI_VERSION,
   INLINED_SOCKET_CLI_VERSION_HASH,
   INLINED_SYNP_VERSION,
-  INSTRUMENT_WITH_SENTRY,
   ROLLUP_EXTERNAL_SUFFIX,
-  SHADOW_NPM_BIN,
-  SHADOW_NPM_INJECT,
-  SHADOW_NPM_PATHS,
-  SLASH_NODE_MODULES_SLASH,
-  VENDOR,
   VITEST
 } = constants
 
@@ -48,8 +40,6 @@ export const EXTERNAL_PACKAGES = [
   'blessed',
   'blessed-contrib'
 ]
-
-export const BUNDLED_PACKAGES = EXTERNAL_PACKAGES.slice()
 
 const builtinAliases = builtinModules.reduce((o, n) => {
   o[n] = `node:${n}`
@@ -97,13 +87,6 @@ function getSocketCliVersionHash() {
 }
 
 export default function baseConfig(extendConfig = {}) {
-  // Lazily access constants.rootSrcPath.
-  const { rootSrcPath } = constants
-  const constantsSrcPath = path.join(rootSrcPath, `constants.ts`)
-  const shadowNpmBinSrcPath = path.join(rootSrcPath, 'shadow/npm/bin.ts')
-  const shadowNpmInjectSrcPath = path.join(rootSrcPath, 'shadow/npm/inject.ts')
-  const shadowNpmPathsSrcPath = path.join(rootSrcPath, 'shadow/npm/paths.ts')
-
   const extendPlugins = Array.isArray(extendConfig.plugins)
     ? extendConfig.plugins.slice()
     : []
@@ -130,28 +113,9 @@ export default function baseConfig(extendConfig = {}) {
     }
   }
 
-  const config = {
-    input: {
-      cli: `${rootSrcPath}/cli.ts`,
-      [CONSTANTS]: `${rootSrcPath}/constants.ts`,
-      [SHADOW_NPM_BIN]: `${rootSrcPath}/shadow/npm/bin.ts`,
-      [SHADOW_NPM_INJECT]: `${rootSrcPath}/shadow/npm/inject.ts`,
-      // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
-      ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
-        ? {
-            [INSTRUMENT_WITH_SENTRY]: `${rootSrcPath}/${INSTRUMENT_WITH_SENTRY}.ts`
-          }
-        : {})
-    },
+  return {
     external(id_) {
       const id = normalizeId(id_)
-      if (id.includes('blessed')) {
-        console.log(
-          id,
-          getPackageName(id),
-          EXTERNAL_PACKAGES.includes(getPackageName(id))
-        )
-      }
       if (id_.endsWith(ROLLUP_EXTERNAL_SUFFIX) || isBuiltin(id_)) {
         return true
       }
@@ -187,8 +151,8 @@ export default function baseConfig(extendConfig = {}) {
           include: ['src/**/*.ts'],
           noForceEmit: true,
           outputToFilesystem: true,
-          // Lazily access constants.rootConfigPath.
-          tsconfig: path.join(constants.rootConfigPath, 'tsconfig.rollup.json')
+          // Lazily access constants.configPath.
+          tsconfig: path.join(constants.configPath, 'tsconfig.rollup.json')
         }),
       extractedPlugins['commonjs'] ??
         commonjsPlugin({
@@ -203,8 +167,8 @@ export default function baseConfig(extendConfig = {}) {
         babelPlugin({
           babelHelpers: 'runtime',
           babelrc: false,
-          // Lazily access constants.rootConfigPath.
-          configFile: path.join(constants.rootConfigPath, 'babel.config.js'),
+          // Lazily access constants.configPath.
+          configFile: path.join(constants.configPath, 'babel.config.js'),
           extensions: ['.ts', '.js', '.cjs', '.mjs']
         }),
       extractedPlugins['unplugin-purge-polyfills'] ??
@@ -309,53 +273,7 @@ export default function baseConfig(extendConfig = {}) {
         find: danglingRequiresRegExp,
         replace: ''
       }),
-      // Replace requires like require('blessed/lib/widgets/screen') with
-      // require('../blessed/lib/widgets/screen').
-      ...BUNDLED_PACKAGES.map(n => {
-        const requiresRegExp = new RegExp(
-          `(?<=require\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
-          'g'
-        )
-        return socketModifyPlugin({
-          find: requiresRegExp,
-          replace: id => `./${id}`
-        })
-      }),
       ...extendPlugins
     ]
   }
-
-  const configOutputs = Array.isArray(config.output)
-    ? config.output
-    : config.output
-      ? [config.output]
-      : []
-
-  const output = configOutputs.map(configOutput => {
-    const o = {
-      ...configOutput
-    }
-    if (!o.preserveModules) {
-      o.chunkFileNames = '[name].js'
-      o.manualChunks = id_ => {
-        const id = normalizeId(id_)
-        switch (id) {
-          case constantsSrcPath:
-            return CONSTANTS
-          case shadowNpmBinSrcPath:
-            return SHADOW_NPM_BIN
-          case shadowNpmInjectSrcPath:
-            return SHADOW_NPM_INJECT
-          case shadowNpmPathsSrcPath:
-            return SHADOW_NPM_PATHS
-          default:
-            return id.includes(SLASH_NODE_MODULES_SLASH) ? VENDOR : null
-        }
-      }
-    }
-    return o
-  })
-
-  config.output = output
-  return config
 }
