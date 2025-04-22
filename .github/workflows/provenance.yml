@@ -2,7 +2,15 @@ name: Publish Package to npm
 
 on:
   workflow_dispatch:
-
+    inputs:
+      debug:
+        description: 'Enable debug output'
+        required: false
+        default: '0'
+        type: string
+        options:
+          - '0'
+          - '1'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,11 +33,18 @@ jobs:
       - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 npm run build:dist
+        env:
+          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 npm run build:dist
+        env:
+          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
       - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
