@@ -30,9 +30,11 @@ describe('socket scan report', async () => {
           Options
             --fold            Fold reported alerts to some degree
             --help            Print this help
+            --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --license         Also report the license policy status. Default: false
             --markdown        Output result as markdown
+            --org             Force override the organization slug, overrides the default org from config
             --reportLevel     Which policy level alerts should be reported
             --short           Report only the healthy status
 
@@ -80,7 +82,7 @@ describe('socket scan report', async () => {
 
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
 
-          - Org name as the first argument (\\x1b[31mmissing\\x1b[39m)
+          - Org name must be the first argument (\\x1b[31mmissing\\x1b[39m)
 
           - Scan ID to fetch (\\x1b[31mmissing\\x1b[39m)
 

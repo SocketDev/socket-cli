@@ -3,7 +3,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleDiffScan } from './handle-diff-scan'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { getConfigValue } from '../../utils/config'
+import { isTestingV1 } from '../../utils/config'
+import { determineOrgSlug } from '../../utils/determine-org-slug'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
@@ -35,11 +36,22 @@ const config: CliCommandConfig = {
       default: '',
       description:
         'Path to a local file where the output should be saved. Use `-` to force stdout.'
+    },
+    interactive: {
+      type: 'boolean',
+      default: true,
+      description:
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+    },
+    org: {
+      type: 'string',
+      description:
+        'Force override the organization slug, overrides the default org from config'
     }
   },
   help: (command, config) => `
     Usage
-      $ ${command} <org slug> <ID1> <ID2>
+      $ ${command}${isTestingV1() ? '' : ' <org slug>'} <ID1> <ID2>
 
     API Token Requirements
       - Quota: 1 unit
@@ -56,8 +68,8 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command} FakeCorp aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
-      $ ${command} FakeCorp aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json
+      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
+      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json
   `
 }
 
@@ -79,10 +91,22 @@ async function run(
     parentName
   })
 
-  const { depth, file, json, markdown } = cli.flags
+  const {
+    depth,
+    dryRun,
+    file,
+    interactive,
+    json,
+    markdown,
+    org: orgFlag
+  } = cli.flags
 
-  const defaultOrgSlug = getConfigValue('defaultOrg')
-  const orgSlug = defaultOrgSlug || cli.input[0] || ''
+  const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+    String(orgFlag || ''),
+    cli.input[0] || '',
+    !!interactive,
+    !!dryRun
+  )
 
   let id1 = cli.input[defaultOrgSlug ? 0 : 1] || ''
   let id2 = cli.input[defaultOrgSlug ? 1 : 2] || ''
@@ -111,7 +135,9 @@ async function run(
     {
       test: !!orgSlug,
       nook: true,
-      message: 'Org name as the first argument',
+      message: isTestingV1()
+        ? 'Org name by default setting, --org, or auto-discovered'
+        : 'Org name must be the first argument',
       pass: 'ok',
       fail: 'missing'
     },

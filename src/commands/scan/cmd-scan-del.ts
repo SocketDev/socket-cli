@@ -3,7 +3,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleDeleteScan } from './handle-delete-scan'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { getConfigValue } from '../../utils/config'
+import { isTestingV1 } from '../../utils/config'
+import { determineOrgSlug } from '../../utils/determine-org-slug'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
@@ -19,11 +20,22 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    ...outputFlags
+    ...outputFlags,
+    interactive: {
+      type: 'boolean',
+      default: true,
+      description:
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+    },
+    org: {
+      type: 'string',
+      description:
+        'Force override the organization slug, overrides the default org from config'
+    }
   },
   help: (command, config) => `
     Usage
-      $ ${command} <org slug> <scan ID>
+      $ ${command}${isTestingV1() ? '' : ' <org slug>'} <scan ID>
 
     API Token Requirements
       - Quota: 1 unit
@@ -33,7 +45,7 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command} FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0
+      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} 000aaaa1-0000-0a0a-00a0-00a0000000a0
   `
 }
 
@@ -55,16 +67,26 @@ async function run(
     parentName
   })
 
-  const defaultOrgSlug = getConfigValue('defaultOrg')
-  const orgSlug = defaultOrgSlug || cli.input[0] || ''
-  const scanId = (defaultOrgSlug ? cli.input[0] : cli.input[1]) || ''
+  const { dryRun, interactive, org: orgFlag } = cli.flags
+
+  const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+    String(orgFlag || ''),
+    cli.input[0] || '',
+    !!interactive,
+    !!dryRun
+  )
+
+  const scanId =
+    (isTestingV1() || defaultOrgSlug ? cli.input[0] : cli.input[1]) || ''
   const apiToken = getDefaultToken()
 
   const wasBadInput = handleBadInput(
     {
       nook: !!defaultOrgSlug,
       test: !!orgSlug && orgSlug !== '.',
-      message: 'Org name as the first argument',
+      message: isTestingV1()
+        ? 'Org name by default setting, --org, or auto-discovered'
+        : 'Org name must be the first argument',
       pass: 'ok',
       fail:
         orgSlug === '.'
