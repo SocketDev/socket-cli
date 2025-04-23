@@ -38,12 +38,14 @@ describe('socket scan diff', async () => {
             --depth           Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)
             --file            Path to a local file where the output should be saved. Use \`-\` to force stdout.
             --help            Print this help
+            --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown
+            --org             Force override the organization slug, overrides the default org from config
 
           Examples
-            $ socket scan diff FakeCorp aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
-            $ socket scan diff FakeCorp aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json"
+            $ socket scan diff FakeOrg aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
+            $ socket scan diff FakeOrg aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json"
       `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -79,7 +81,7 @@ describe('socket scan diff', async () => {
           - Specify two Scan IDs. (\\x1b[31mmissing both Scan IDs\\x1b[39m)
             A Scan ID looks like \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\`.
 
-          - Org name as the first argument (\\x1b[31mmissing\\x1b[39m)
+          - Org name must be the first argument (\\x1b[31mmissing\\x1b[39m)
 
           - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)"
       `)

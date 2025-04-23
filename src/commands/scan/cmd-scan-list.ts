@@ -3,7 +3,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleListScans } from './handle-list-scans'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { getConfigValue } from '../../utils/config'
+import { isTestingV1 } from '../../utils/config'
+import { determineOrgSlug } from '../../utils/determine-org-slug'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
@@ -39,6 +40,12 @@ const config: CliCommandConfig = {
       default: '',
       description: 'From time - as a unix timestamp'
     },
+    interactive: {
+      type: 'boolean',
+      default: true,
+      description:
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+    },
     page: {
       type: 'number',
       shortFlag: 'p',
@@ -50,6 +57,11 @@ const config: CliCommandConfig = {
       shortFlag: 'pp',
       default: 30,
       description: 'Results per page - Default is 30'
+    },
+    org: {
+      type: 'string',
+      description:
+        'Force override the organization slug, overrides the default org from config'
     },
     repo: {
       type: 'string',
@@ -71,7 +83,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} <org slug>
+      $ ${command}${isTestingV1() ? '' : ' <org slug>'}
 
     API Token Requirements
       - Quota: 1 unit
@@ -81,7 +93,7 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command} FakeOrg
+      $ ${command}${isTestingV1() ? '' : ' FakeOrg'}
   `
 }
 
@@ -103,16 +115,32 @@ async function run(
     parentName
   })
 
-  const { branch, json, markdown, repo } = cli.flags
-  const defaultOrgSlug = getConfigValue('defaultOrg')
-  const orgSlug = defaultOrgSlug || cli.input[0] || ''
+  const {
+    branch,
+    dryRun,
+    interactive,
+    json,
+    markdown,
+    org: orgFlag,
+    repo
+  } = cli.flags
+
+  const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+    String(orgFlag || ''),
+    cli.input[0] || '',
+    !!interactive,
+    !!dryRun
+  )
+
   const apiToken = getDefaultToken()
 
   const wasBadInput = handleBadInput(
     {
       nook: !!defaultOrgSlug,
       test: !!orgSlug && orgSlug !== '.',
-      message: 'Org name as the first argument',
+      message: isTestingV1()
+        ? 'Org name by default setting, --org, or auto-discovered'
+        : 'Org name must be the first argument',
       pass: 'ok',
       fail:
         orgSlug === '.'
