@@ -317,11 +317,22 @@ function getAsciiHeader(command: string) {
             '~/'
           )
       )
+  // process.version should be the current node's version, like `v22.1.3`
+  let nodeVerWarn = ''
+  if (
+    parseInt(String(process.version).slice(1).split('.')[0] || '0', 10) < 20
+  ) {
+    nodeVerWarn = colors.bold(
+      `   ${colors.red('Warning:')} NodeJS version 19 and lower will be ${colors.red('unsupported')} after April 30th.\n`
+    )
+    nodeVerWarn +=
+      '            Soon after that the Socket CLI will require NodeJS version 20 or higher.\n'
+  }
   const body = `
    _____         _       _        /---------------
   |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}${v1test}
   |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${shownToken}${defaultOrg ? `, default org: ${redacting ? REDACTED : defaultOrg}` : ''}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}`.trimStart()
 
-  return `   ${body}\n${feedback}`
+  return `   ${body}\n${nodeVerWarn}${feedback}`
 }
