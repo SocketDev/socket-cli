@@ -240,7 +240,7 @@ describe('socket analytics', async () => {
 
           - Scope must be "repo" or "org" (\\x1b[32mok\\x1b[39m)
 
-          - When scope=repo, repo name should the second argument (\\x1b[31mmissing\\x1b[39m)
+          - When scope=repo, repo name should be the second argument (\\x1b[31mmissing\\x1b[39m)
 
           - The time filter must either be 7, 30 or 90 (\\x1b[32mok\\x1b[39m)"
       `)
