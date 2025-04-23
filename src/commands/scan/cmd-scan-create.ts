@@ -5,7 +5,8 @@ import { suggestOrgSlug } from './suggest-org-slug'
 import { suggestTarget } from './suggest_target'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { getConfigValue } from '../../utils/config'
+import { isTestingV1 } from '../../utils/config'
+import { determineOrgSlug } from '../../utils/determine-org-slug'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
@@ -73,6 +74,11 @@ const config: CliCommandConfig = {
       shortFlag: 'pr',
       description: 'Commit hash'
     },
+    org: {
+      type: 'string',
+      description:
+        'Force override the organization slug, overrides the default org from config'
+    },
     readOnly: {
       type: 'boolean',
       default: false,
@@ -102,7 +108,7 @@ const config: CliCommandConfig = {
   // TODO: your project's "socket.yml" file's "projectIgnorePaths"
   help: (command, config) => `
     Usage
-      $ ${command} [...options] <org> <TARGET> [TARGET...]
+      $ ${command} [...options]${isTestingV1() ? '' : ' <org>'} <TARGET> [TARGET...]
 
     API Token Requirements
       - Quota: 1 unit
@@ -135,7 +141,8 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command} --repo=test-repo --branch=main FakeOrg ./package.json
+      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} .
+      $ ${command} --repo=test-repo --branch=main${isTestingV1() ? '' : ' FakeOrg'} ./package.json
   `
 }
 
@@ -164,10 +171,11 @@ async function run(
     committers,
     cwd: cwdOverride,
     defaultBranch,
-    dryRun,
+    dryRun = false,
     interactive = true,
     json,
     markdown,
+    org: orgFlag,
     pendingHead,
     pullRequest,
     readOnly,
@@ -185,6 +193,7 @@ async function run(
     interactive: boolean
     json: boolean
     markdown: boolean
+    org: string
     pendingHead: boolean
     pullRequest: number
     readOnly: boolean
@@ -192,9 +201,19 @@ async function run(
     report: boolean
     tmp: boolean
   }
-  const defaultOrgSlug = getConfigValue('defaultOrg')
-  let orgSlug = defaultOrgSlug || cli.input[0] || ''
-  let targets = cli.input.slice(defaultOrgSlug ? 0 : 1)
+
+  let [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+    String(orgFlag || ''),
+    cli.input[0] || '',
+    interactive,
+    dryRun
+  )
+  if (!defaultOrgSlug) {
+    // Tmp. just for TS. will drop this later.
+    defaultOrgSlug = ''
+  }
+
+  let targets = cli.input.slice(isTestingV1() || defaultOrgSlug ? 0 : 1)
 
   const cwd =
     cwdOverride && cwdOverride !== 'process.cwd()'
@@ -242,9 +261,11 @@ async function run(
 
   const wasBadInput = handleBadInput(
     {
-      nook: !!defaultOrgSlug,
+      nook: !isTestingV1() && !!defaultOrgSlug,
       test: !!orgSlug && orgSlug !== '.',
-      message: 'Org name as the first argument',
+      message: isTestingV1()
+        ? 'Org name by default setting, --org, or auto-discovered'
+        : 'Org name must be the first argument',
       pass: 'ok',
       fail:
         orgSlug === '.'

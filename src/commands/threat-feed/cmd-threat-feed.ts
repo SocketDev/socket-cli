@@ -3,7 +3,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleThreatFeed } from './handle-threat-feed'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { getConfigValue } from '../../utils/config'
+import { isTestingV1 } from '../../utils/config'
+import { determineOrgSlug } from '../../utils/determine-org-slug'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
@@ -20,6 +21,17 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags,
     ...outputFlags,
+    interactive: {
+      type: 'boolean',
+      default: true,
+      description:
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+    },
+    org: {
+      type: 'string',
+      description:
+        'Force override the organization slug, overrides the default org from config'
+    },
     perPage: {
       type: 'number',
       shortFlag: 'pp',
@@ -53,7 +65,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command}
+      $ ${command}${isTestingV1() ? '' : ' <org slug>'}
 
     API Token Requirements
       - Quota: 1 unit
@@ -90,8 +102,8 @@ const config: CliCommandConfig = {
       - pypi
 
     Examples
-      $ ${command}
-      $ ${command} --perPage=5 --page=2 --direction=asc --filter=joke
+      $ ${command}${isTestingV1() ? '' : ' FakeOrg'}
+      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} --perPage=5 --page=2 --direction=asc --filter=joke
   `
 }
 
@@ -113,9 +125,15 @@ async function run(
     parentName
   })
 
-  const { json, markdown } = cli.flags
-  const defaultOrgSlug = getConfigValue('defaultOrg')
-  const orgSlug = defaultOrgSlug || cli.input[0] || ''
+  const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
+
+  const [orgSlug] = await determineOrgSlug(
+    String(orgFlag || ''),
+    cli.input[0] || '',
+    !!interactive,
+    !!dryRun
+  )
+
   const apiToken = getDefaultToken()
 
   const wasBadInput = handleBadInput(

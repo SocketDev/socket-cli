@@ -20,6 +20,9 @@ describe('socket diff-scan get', async () => {
         `
         "Get a diff scan for an organization
 
+          Note: This command is deprecated, to be dropped in the next major bump.
+                Please see \`socket scan diff\`
+
           Usage
             $ socket diff-scan get <org slug> --before=<before> --after=<after>
 

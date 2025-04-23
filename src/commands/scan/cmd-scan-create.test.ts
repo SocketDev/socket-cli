@@ -60,6 +60,7 @@ describe('socket scan create', async () => {
             --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown
+            --org             Force override the organization slug, overrides the default org from config
             --pendingHead     Designate this full-scan as the latest scan of a given branch. This must be set to have it show up in the dashboard.
             --pullRequest     Commit hash
             --readOnly        Similar to --dry-run except it can read from remote, stops before it would create an actual report
@@ -68,6 +69,7 @@ describe('socket scan create', async () => {
             --tmp             Set the visibility (true/false) of the scan in your dashboard. Can not be used when --pendingHead is set.
 
           Examples
+            $ socket scan create FakeOrg .
             $ socket scan create --repo=test-repo --branch=main FakeOrg ./package.json"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
