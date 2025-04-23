@@ -1,5 +1,3 @@
-import assert from 'node:assert'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { displayAnalytics } from './display-analytics'
@@ -128,13 +126,13 @@ async function run(
     }
   } else {
     if (cli.flags['scope']) {
-      scope = cli.flags['scope']
+      scope = String(cli.flags['scope'] || '')
     }
     if (scope === 'repo') {
-      repoName = cli.flags['repoName'] || ''
+      repoName = String(cli.flags['repoName'] || '')
     }
     if (cli.flags['time']) {
-      time = cli.flags['time']
+      time = Number(cli.flags['time'] || 7)
     }
   }
 
