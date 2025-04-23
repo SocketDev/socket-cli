@@ -153,7 +153,7 @@ async function run(
       nook: true,
       test: scope === 'org' || !!repoName,
       message: isTestingV1()
-        ? 'When scope=repo, repo name should the second argument'
+        ? 'When scope=repo, repo name should be the second argument'
         : 'When scope=repo, repo name should be set through --repo',
       pass: 'ok',
       fail: 'missing'
