@@ -3,12 +3,12 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleUpdateRepo } from './handle-update-repo'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
-import { getConfigValue, isTestingV1 } from '../../utils/config'
+import { isTestingV1 } from '../../utils/config'
+import { determineOrgSlug } from '../../utils/determine-org-slug'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
-import { suggestOrgSlug } from '../scan/suggest-org-slug'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -96,32 +96,14 @@ async function run(
     parentName
   })
 
-  const defaultOrgSlug = getConfigValue('defaultOrg')
+  const { dryRun, interactive, org: orgFlag } = cli.flags
 
-  const interactive = cli.flags['interactive']
-  const dryRun = cli.flags['dryRun']
-
-  let orgSlug = String(cli.flags['org'] || defaultOrgSlug || '')
-  if (!orgSlug) {
-    if (isTestingV1()) {
-      // ask from server
-      logger.error(
-        'Missing the org slug and no --org flag set. Trying to auto-discover the org now...'
-      )
-      logger.error(
-        'Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.'
-      )
-      if (dryRun) {
-        logger.fail('Skipping auto-discovery of org in dry-run mode')
-      } else if (!interactive) {
-        logger.fail('Skipping auto-discovery of org when interactive = false')
-      } else {
-        orgSlug = (await suggestOrgSlug()) || ''
-      }
-    } else {
-      orgSlug = cli.input[0] || ''
-    }
-  }
+  const [orgSlug] = await determineOrgSlug(
+    String(orgFlag || ''),
+    cli.input[0] || '',
+    !!interactive,
+    !!dryRun
+  )
 
   const repoNameFlag = cli.flags['repoName']
   const repoName = (isTestingV1() ? cli.input[0] : repoNameFlag) || ''

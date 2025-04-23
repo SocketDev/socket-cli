@@ -3,6 +3,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handlePackageInfo } from './handle-package-info'
 import constants from '../../constants'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
+import { isTestingV1 } from '../../utils/config'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
@@ -20,7 +21,10 @@ const config: CliCommandConfig = {
     ...outputFlags,
     ...validationFlags
   },
-  help: (command, config) => `
+  help: (command, config) =>
+    isTestingV1()
+      ? 'This command will be removed in v1'
+      : `
     Usage
       $ ${command} <name>
 

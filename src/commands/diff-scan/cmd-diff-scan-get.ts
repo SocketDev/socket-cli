@@ -3,7 +3,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleDiffScan } from './handle-diff-scan'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
-import { getConfigValue } from '../../utils/config'
+import { getConfigValue, isTestingV1 } from '../../utils/config'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
@@ -52,7 +52,13 @@ const config: CliCommandConfig = {
         'Path to a local file where the output should be saved. Use `-` to force stdout.'
     }
   },
-  help: (command, config) => `
+  help: (command, config) =>
+    isTestingV1()
+      ? 'This command will be removed in v1'
+      : `
+    Note: This command is deprecated, to be dropped in the next major bump.
+          Please see \`socket scan diff\`
+
     Usage
       $ ${command} <org slug> --before=<before> --after=<after>
 

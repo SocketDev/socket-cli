@@ -3,7 +3,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleScanReport } from './handle-scan-report'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { getConfigValue } from '../../utils/config'
+import { isTestingV1 } from '../../utils/config'
+import { determineOrgSlug } from '../../utils/determine-org-slug'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
@@ -29,6 +30,17 @@ const config: CliCommandConfig = {
       default: 'none',
       description: 'Fold reported alerts to some degree'
     },
+    interactive: {
+      type: 'boolean',
+      default: true,
+      description:
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+    },
+    org: {
+      type: 'string',
+      description:
+        'Force override the organization slug, overrides the default org from config'
+    },
     reportLevel: {
       type: 'string',
       default: 'warn',
@@ -47,7 +59,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} <org slug> <scan ID> [path to output file]
+      $ ${command}${isTestingV1() ? '' : ' <org slug>'} <scan ID> [path to output file]
 
     API Token Requirements
       - Quota: 2 units
@@ -66,8 +78,8 @@ const config: CliCommandConfig = {
     Short responses: JSON: \`{healthy:bool}\`, markdown: \`healthy = bool\`, text: \`OK/ERR\`
 
     Examples
-      $ ${command} FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
-      $ ${command} FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short
+      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
+      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short
   `
 }
 
@@ -97,17 +109,28 @@ async function run(
     reportLevel = 'warn'
   } = cli.flags
 
-  const defaultOrgSlug = getConfigValue('defaultOrg')
-  const orgSlug = defaultOrgSlug || cli.input[0] || ''
-  const scanId = (defaultOrgSlug ? cli.input[0] : cli.input[1]) || ''
-  const file = (defaultOrgSlug ? cli.input[1] : cli.input[2]) || '-'
+  const { dryRun, interactive, org: orgFlag } = cli.flags
+
+  const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+    String(orgFlag || ''),
+    cli.input[0] || '',
+    !!interactive,
+    !!dryRun
+  )
+
+  const scanId =
+    (isTestingV1() || defaultOrgSlug ? cli.input[0] : cli.input[1]) || ''
+  const file =
+    (isTestingV1() || defaultOrgSlug ? cli.input[1] : cli.input[2]) || '-'
   const apiToken = getDefaultToken()
 
   const wasBadInput = handleBadInput(
     {
       nook: !!defaultOrgSlug,
       test: !!orgSlug && orgSlug !== '.',
-      message: 'Org name as the first argument',
+      message: isTestingV1()
+        ? 'Org name by default setting, --org, or auto-discovered'
+        : 'Org name must be the first argument',
       pass: 'ok',
       fail:
         orgSlug === '.'

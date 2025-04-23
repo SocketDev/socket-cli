@@ -32,8 +32,10 @@ describe('socket scan list', async () => {
             --direction       Direction option (\`desc\` or \`asc\`) - Default is \`desc\`
             --fromTime        From time - as a unix timestamp
             --help            Print this help
+            --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown
+            --org             Force override the organization slug, overrides the default org from config
             --page            Page number - Default is 1
             --perPage         Results per page - Default is 30
             --repo            Filter to show only scans with this repository name
@@ -74,7 +76,7 @@ describe('socket scan list', async () => {
 
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
 
-          - Org name as the first argument (\\x1b[31mmissing\\x1b[39m)
+          - Org name must be the first argument (\\x1b[31mmissing\\x1b[39m)
 
           - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)"
       `)
