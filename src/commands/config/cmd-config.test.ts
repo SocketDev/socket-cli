@@ -86,7 +86,7 @@ describe('socket config', async () => {
           "
              _____         _       _        /---------------
             |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-            |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+            |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
 
           \\x1b[31m\\xd7\\x1b[39m Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted \`undefined\`) and try again."
@@ -107,7 +107,7 @@ describe('socket config', async () => {
           "
              _____         _       _        /---------------
             |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-            |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+            |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
 
           \\x1b[31m\\xd7\\x1b[39m Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted \`undefined\`) and try again."
