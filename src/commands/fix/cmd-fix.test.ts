@@ -11,10 +11,13 @@ describe('socket fix', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['fix', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
-      `
+  cmdit(
+    ['fix', '--help', '--config', '{}'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(
+        `
       "Update dependencies with "fixable" Socket alerts
 
         Usage
@@ -40,20 +43,19 @@ describe('socket fix', async () => {
           --test            Verify the fix by running unit tests
           --testScript      The test script to run for each fix attempt"
     `
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-      "
-         _____         _       _        /---------------
-        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
-        |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>
-      \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-      \\x1b[39m"
-    `)
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>"
+      `)
 
-    expect(code, 'help should exit with code 2').toBe(2)
-    expect(stderr, 'banner includes base command').toContain('`socket fix`')
-  })
+      expect(code, 'help should exit with code 2').toBe(2)
+      expect(stderr, 'banner includes base command').toContain('`socket fix`')
+    }
+  )
 
   cmdit(
     ['fix', '--dry-run', '--config', '{"apiToken":"anything"}'],
