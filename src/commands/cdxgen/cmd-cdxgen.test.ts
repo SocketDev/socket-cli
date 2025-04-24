@@ -12,7 +12,10 @@ describe('socket cdxgen', async () => {
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
   cmdit(['cdxgen', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd, {
+      // Need to pass it on as env because --config will break cdxgen
+      SOCKET_CLI_CONFIG: '{}'
+    })
     expect(stdout).toMatchInlineSnapshot(
       `
       "cdxgen [command]
@@ -76,10 +79,8 @@ describe('socket cdxgen', async () => {
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-        |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket cdxgen\`, cwd: <redacted>
-      \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                  Soon after the Socket CLI will require NodeJS version 20 or higher."
+        |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket cdxgen\`, cwd: <redacted>"
     `)
 
     // expect(code, 'help should exit with code 2').toBe(2)
