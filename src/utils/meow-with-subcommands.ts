@@ -319,7 +319,7 @@ function getAsciiHeader(command: string) {
           )
       )
   let nodeVerWarn = ''
-  if (semver.parse(constants.NODE_VERSION)?.major ?? 0 < 20) {
+  if ((semver.parse(constants.NODE_VERSION)?.major ?? 0) < 20) {
     nodeVerWarn += colors.bold(
       `   ${colors.red('Warning:')} NodeJS version 19 and lower will be ${colors.red('unsupported')} after April 30th, 2025.`
     )
