@@ -61,6 +61,10 @@ export function overrideCachedConfig(
       throw new Error()
     }
   } catch {
+    // Force set an empty config to prevent accidentally using system settings
+    _cachedConfig = {} as LocalConfig
+    _readOnlyConfig = true
+
     return {
       ok: false,
       message:
