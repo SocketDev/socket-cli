@@ -46,9 +46,7 @@ describe('socket config get', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
-        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                    Soon after the Socket CLI will require NodeJS version 20 or higher."
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
       `)
 
       expect(code, 'help should exit with code 2').toBe(2)
@@ -70,8 +68,6 @@ describe('socket config get', async () => {
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
-        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                    Soon after the Socket CLI will require NodeJS version 20 or higher.
 
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
 
@@ -102,9 +98,7 @@ describe('socket config get', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>
-        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                    Soon after the Socket CLI will require NodeJS version 20 or higher."
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -130,9 +124,7 @@ describe('socket config get', async () => {
                _____         _       _        /---------------
               |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
               |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
-            \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                        Soon after the Socket CLI will require NodeJS version 20 or higher."
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           expect(stdout.includes('apiToken: null')).toBe(true)
@@ -158,9 +150,7 @@ describe('socket config get', async () => {
                _____         _       _        /---------------
               |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
               |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
-            \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                        Soon after the Socket CLI will require NodeJS version 20 or higher."
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
@@ -187,9 +177,7 @@ describe('socket config get', async () => {
                _____         _       _        /---------------
               |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
               |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
-            \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                        Soon after the Socket CLI will require NodeJS version 20 or higher."
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
@@ -215,9 +203,7 @@ describe('socket config get', async () => {
                _____         _       _        /---------------
               |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
               |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
-            \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                        Soon after the Socket CLI will require NodeJS version 20 or higher."
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
@@ -244,9 +230,7 @@ describe('socket config get', async () => {
                _____         _       _        /---------------
               |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
               |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
-            \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                        Soon after the Socket CLI will require NodeJS version 20 or higher."
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
@@ -278,9 +262,7 @@ describe('socket config get', async () => {
                _____         _       _        /---------------
               |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
               |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
-            \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                        Soon after the Socket CLI will require NodeJS version 20 or higher."
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
@@ -310,9 +292,7 @@ describe('socket config get', async () => {
                _____         _       _        /---------------
               |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
               |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
-            \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                        Soon after the Socket CLI will require NodeJS version 20 or higher."
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           expect(stdout.includes('apiToken: pickmepickme')).toBe(true)
@@ -336,9 +316,7 @@ describe('socket config get', async () => {
                _____         _       _        /---------------
               |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
               |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
-            \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                        Soon after the Socket CLI will require NodeJS version 20 or higher."
+              |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
           `)
 
           expect(stdout.includes('apiToken: undefined')).toBe(true)

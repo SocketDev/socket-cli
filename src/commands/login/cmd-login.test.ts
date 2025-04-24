@@ -43,9 +43,7 @@ describe('socket login', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket login\`, cwd: <redacted>
-        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                    Soon after the Socket CLI will require NodeJS version 20 or higher."
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket login\`, cwd: <redacted>"
       `)
 
       expect(code, 'help should exit with code 2').toBe(2)
@@ -64,9 +62,7 @@ describe('socket login', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket login\`, cwd: <redacted>
-        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                    Soon after the Socket CLI will require NodeJS version 20 or higher."
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket login\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
