@@ -2,6 +2,7 @@ import path from 'node:path'
 import process from 'node:process'
 
 import meow from 'meow'
+import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -317,16 +318,15 @@ function getAsciiHeader(command: string) {
             '~/'
           )
       )
-  // process.version should be the current node's version, like `v22.1.3`
   let nodeVerWarn = ''
-  if (
-    parseInt(String(process.version).slice(1).split('.')[0] || '0', 10) < 20
-  ) {
-    nodeVerWarn = colors.bold(
-      `   ${colors.red('Warning:')} NodeJS version 19 and lower will be ${colors.red('unsupported')} after April 30th.\n`
+  if (semver.parse(constants.NODE_VERSION)?.major ?? 0 < 20) {
+    nodeVerWarn += colors.bold(
+      `   ${colors.red('Warning:')} NodeJS version 19 and lower will be ${colors.red('unsupported')} after April 30th, 2025.`
     )
+    nodeVerWarn += '\n'
     nodeVerWarn +=
-      '            Soon after that the Socket CLI will require NodeJS version 20 or higher.\n'
+      '            Soon after the Socket CLI will require NodeJS version 20 or higher.'
+    nodeVerWarn += '\n'
   }
   const body = `
    _____         _       _        /---------------
