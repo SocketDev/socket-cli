@@ -47,7 +47,9 @@ describe('socket organization policy license', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>
+        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
+                    Soon after the Socket CLI will require NodeJS version 20 or higher."
       `)
 
       expect(code, 'help should exit with code 2').toBe(2)
@@ -69,6 +71,8 @@ describe('socket organization policy license', async () => {
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>
+        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
+                    Soon after the Socket CLI will require NodeJS version 20 or higher.
 
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
 
@@ -100,7 +104,9 @@ describe('socket organization policy license', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>
+        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
+                    Soon after the Socket CLI will require NodeJS version 20 or higher."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -126,6 +132,8 @@ describe('socket organization policy license', async () => {
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>
+        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
+                    Soon after the Socket CLI will require NodeJS version 20 or higher.
         \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
         \\x1b[39m
         Missing the org slug and no --org flag set. Trying to auto-discover the org now...
@@ -159,6 +167,8 @@ describe('socket organization policy license', async () => {
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>, default org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>
+        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
+                    Soon after the Socket CLI will require NodeJS version 20 or higher.
         \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
         \\x1b[39m"
       `)
@@ -188,6 +198,8 @@ describe('socket organization policy license', async () => {
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>
+        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
+                    Soon after the Socket CLI will require NodeJS version 20 or higher.
         \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
         \\x1b[39m"
       `)

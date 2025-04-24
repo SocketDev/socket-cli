@@ -44,7 +44,9 @@ describe('socket manifest conda', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
+        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
+                    Soon after the Socket CLI will require NodeJS version 20 or higher."
       `)
 
       expect(code, 'help should exit with code 2').toBe(2)
@@ -66,6 +68,8 @@ describe('socket manifest conda', async () => {
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
+        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
+                    Soon after the Socket CLI will require NodeJS version 20 or higher.
 
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
 
@@ -94,7 +98,9 @@ describe('socket manifest conda', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
+        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
+                    Soon after the Socket CLI will require NodeJS version 20 or higher."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -124,7 +130,9 @@ describe('socket manifest conda', async () => {
              _____         _       _        /---------------
             |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
+          \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
+                      Soon after the Socket CLI will require NodeJS version 20 or higher."
         `)
       }
     )
@@ -154,7 +162,9 @@ describe('socket manifest conda', async () => {
              _____         _       _        /---------------
             |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
+          \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
+                      Soon after the Socket CLI will require NodeJS version 20 or higher."
         `)
       }
     )
@@ -188,7 +198,9 @@ describe('socket manifest conda', async () => {
              _____         _       _        /---------------
             |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>"
+            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
+          \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
+                      Soon after the Socket CLI will require NodeJS version 20 or higher."
         `)
       }
     )
