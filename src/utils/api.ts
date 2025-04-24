@@ -16,12 +16,9 @@ import type {
 
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
-  sockSdkError: SocketSdkErrorType<T>
+  { cause, error, status }: SocketSdkErrorType<T>
 ): never {
-  const { cause, error, status } = sockSdkError
-  const message =
-    (error || 'No error message returned') +
-    (cause ? ' (reason: ' + cause + ')' : '')
+  const message = `${error || 'No error message returned'}${cause ? ` (reason: ${cause})` : ''}`
   if (status === 401 || status === 403) {
     // Lazily access constants.spinner.
     const { spinner } = constants
