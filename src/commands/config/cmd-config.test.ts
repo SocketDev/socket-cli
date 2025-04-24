@@ -42,9 +42,7 @@ describe('socket config', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>
-        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                    Soon after the Socket CLI will require NodeJS version 20 or higher."
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>"
       `)
 
       expect(code, 'help should exit with code 2').toBe(2)
@@ -67,9 +65,7 @@ describe('socket config', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>
-        \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                    Soon after the Socket CLI will require NodeJS version 20 or higher."
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -78,10 +74,13 @@ describe('socket config', async () => {
 
   describe('config override', () => {
     cmdit(
-      ['config', 'get', 'apiToken', '--config', '{apiToken:invalidjson}'],
-      'should print nice error when config override cannot be parsed',
+      ['config', 'get', 'apiToken'],
+      'should print nice error when env config override cannot be parsed',
       async cmd => {
-        const { code, stderr, stdout } = await invokeNpm(entryPath, cmd, {})
+        const { code, stderr, stdout } = await invokeNpm(entryPath, cmd, {
+          // This will be parsed first. If it fails it should fallback to flag or empty.
+          SOCKET_CLI_CONFIG: '{apiToken:invalidjson}'
+        })
         expect(stdout).toMatchInlineSnapshot(`""`)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
@@ -89,8 +88,27 @@ describe('socket config', async () => {
             |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
             |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
-          \\x1b[1m   \\x1b[31mWarning:\\x1b[39m NodeJS version 19 and lower will be \\x1b[31munsupported\\x1b[39m after April 30th, 2025.\\x1b[22m
-                      Soon after the Socket CLI will require NodeJS version 20 or higher.
+
+          \\x1b[31m\\xd7\\x1b[39m Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted \`undefined\`) and try again."
+        `)
+
+        expect(stderr.includes('Could not JSON parse')).toBe(true)
+        expect(code, 'bad config input should exit with code 2 ').toBe(2)
+      }
+    )
+
+    cmdit(
+      ['config', 'get', 'apiToken', '--config', '{apiToken:invalidjson}'],
+      'should print nice error when flag config override cannot be parsed',
+      async cmd => {
+        const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+        expect(stdout).toMatchInlineSnapshot(`""`)
+        expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+          "
+             _____         _       _        /---------------
+            |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+            |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+            |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
 
           \\x1b[31m\\xd7\\x1b[39m Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted \`undefined\`) and try again."
         `)
