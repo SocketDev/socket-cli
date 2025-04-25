@@ -8,8 +8,8 @@ import { getConfigValue } from './config'
 import { AuthError } from './errors'
 import constants from '../constants'
 import { failMsgWithBadge } from './fail-msg-with-badge'
-import type { CliJsonResult } from '../types'
 
+import type { CliJsonResult } from '../types'
 import type {
   SocketSdkErrorType,
   SocketSdkOperations

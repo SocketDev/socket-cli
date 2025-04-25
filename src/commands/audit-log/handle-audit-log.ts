@@ -1,6 +1,8 @@
 import { fetchAuditLog } from './fetch-audit-log'
 import { outputAuditLog } from './output-audit-log'
 
+import type { OutputKind } from '../../types'
+
 export async function handleAuditLog({
   logType,
   orgSlug,
@@ -8,7 +10,7 @@ export async function handleAuditLog({
   page,
   perPage
 }: {
-  outputKind: 'json' | 'markdown' | 'print'
+  outputKind: OutputKind
   orgSlug: string
   page: number
   perPage: number
@@ -21,9 +23,6 @@ export async function handleAuditLog({
     perPage,
     logType
   })
-  if (!auditLogs) {
-    return
-  }
 
   await outputAuditLog(auditLogs, {
     logType,

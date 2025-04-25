@@ -1,7 +1,7 @@
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { CliJsonResult } from '../types'
+import type { CliJsonResult } from '../types'
 
 // Serialize the final result object before printing it
 // All commands that support the --json flag should call this before printing
