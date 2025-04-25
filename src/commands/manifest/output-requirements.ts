@@ -2,9 +2,11 @@ import fs from 'node:fs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import type { OutputKind } from '../../types'
+
 export async function outputRequirements(
   data: { contents: string; pip: string },
-  outputKind: 'json' | 'markdown' | 'text',
+  outputKind: OutputKind,
   out: string
 ) {
   if (outputKind === 'json') {

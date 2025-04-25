@@ -6,7 +6,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { runFix } from './run-fix'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { RangeStyles } from '../../utils/semver'
@@ -99,7 +100,10 @@ async function run(
     parentName
   })
 
-  const wasBadInput = handleBadInput({
+  const { json, markdown } = cli.flags
+  const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
+
+  const wasBadInput = checkCommandInput(outputKind, {
     test: RangeStyles.includes(cli.flags['rangeStyle'] as string),
     message: `Expecting range style of ${joinOr(RangeStyles)}`,
     pass: 'ok',

@@ -1,6 +1,8 @@
 import { fetchReportData } from './fetch-report-data'
 import { outputScanReport } from './output-scan-report'
 
+import type { OutputKind } from '../../types'
+
 export async function handleScanReport({
   filePath,
   fold,
@@ -14,7 +16,7 @@ export async function handleScanReport({
   orgSlug: string
   scanId: string
   includeLicensePolicy: boolean
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
   filePath: string
   fold: 'pkg' | 'version' | 'file' | 'none'
   reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'

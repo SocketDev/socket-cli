@@ -66,6 +66,7 @@ async function run(
   })
   const verbose = !!cli.flags['verbose']
   const cwd = (cli.flags['cwd'] as string) ?? process.cwd()
+  // TODO: impl json/md
 
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')

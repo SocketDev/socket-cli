@@ -1,6 +1,8 @@
 import { fetchDiffScan } from './fetch-diff-scan'
 import { outputDiffScan } from './output-diff-scan'
 
+import type { OutputKind } from '../../types'
+
 export async function handleDiffScan({
   depth,
   file,
@@ -14,7 +16,7 @@ export async function handleDiffScan({
   id1: string
   id2: string
   orgSlug: string
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 }): Promise<void> {
   const data = await fetchDiffScan({
     id1,

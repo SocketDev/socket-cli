@@ -3,12 +3,13 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import type { OutputKind } from '../../types'
 import type { components } from '@socketsecurity/sdk/types/api'
 
 export function outputPurlsShallowScore(
   purls: string[],
   packageData: Array<components['schemas']['SocketArtifact']>,
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 ): void {
   if (outputKind === 'json') {
     // In JSON simply return what the server responds with. Don't bother trying

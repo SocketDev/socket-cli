@@ -4,7 +4,8 @@ import { handlePackageInfo } from './handle-package-info'
 import constants from '../../constants'
 import { commonFlags, outputFlags, validationFlags } from '../../flags'
 import { isTestingV1 } from '../../utils/config'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -58,9 +59,12 @@ async function run(
   })
 
   const { all, json, markdown, strict } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
+
   const [rawPkgName = ''] = cli.input
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       test: !!rawPkgName,
       message: 'Expecting a package name',
@@ -101,7 +105,7 @@ async function run(
   await handlePackageInfo({
     commandName: `${parentName} ${config.commandName}`,
     includeAllIssues: Boolean(all),
-    outputKind: json ? 'json' : markdown ? 'markdown' : 'print',
+    outputKind,
     pkgName,
     pkgVersion,
     strict: Boolean(strict)

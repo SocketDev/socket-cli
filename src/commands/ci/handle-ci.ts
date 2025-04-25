@@ -1,4 +1,7 @@
+import { logger } from '@socketsecurity/registry/lib/logger'
+
 import { getDefaultOrgSlug } from './fetch-default-org-slug'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan'
 
 export async function handleCI(): Promise<void> {
@@ -6,8 +9,10 @@ export async function handleCI(): Promise<void> {
   //   description: 'Alias for "report create --view --strict"',
   //     argv: ['report', 'create', '--view', '--strict']
   // }
-  const orgSlug = await getDefaultOrgSlug()
-  if (!orgSlug) {
+  const result = await getDefaultOrgSlug()
+  if (!result.ok) {
+    // Always assume json mode
+    logger.log(serializeResultJson(result))
     return
   }
 
@@ -21,7 +26,7 @@ export async function handleCI(): Promise<void> {
     cwd: process.cwd(),
     defaultBranch: false,
     interactive: false,
-    orgSlug,
+    orgSlug: result.data,
     outputKind: 'json',
     pendingHead: true, // when true, requires branch name set, tmp false
     pullRequest: 0,

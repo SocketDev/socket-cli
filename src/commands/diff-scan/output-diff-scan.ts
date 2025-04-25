@@ -5,6 +5,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import type { OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputDiffScan(
@@ -16,7 +17,7 @@ export async function outputDiffScan(
   }: {
     depth: number
     file: string
-    outputKind: 'json' | 'markdown' | 'text'
+    outputKind: OutputKind
   }
 ): Promise<void> {
   const dashboardUrl = result.diff_report_url

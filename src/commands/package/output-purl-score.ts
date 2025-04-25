@@ -2,10 +2,12 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { mdTable } from '../../utils/markdown'
 
+import type { OutputKind } from '../../types'
+
 export async function outputPurlScore(
   purl: string,
   data: unknown,
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 ) {
   if (outputKind === 'json') {
     let json

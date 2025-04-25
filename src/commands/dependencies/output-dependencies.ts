@@ -4,6 +4,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import type { OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputDependencies(
@@ -15,7 +16,7 @@ export async function outputDependencies(
   }: {
     limit: number
     offset: number
-    outputKind: 'json' | 'markdown' | 'text'
+    outputKind: OutputKind
   }
 ): Promise<void> {
   if (outputKind === 'json') {
