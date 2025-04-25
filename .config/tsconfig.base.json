@@ -5,31 +5,28 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
+    "erasableSyntaxOnly": true,
     "esModuleInterop": true,
+    "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
+    "importsNotUsedAsValues": "remove",
     "incremental": true,
     "isolatedModules": true,
     "lib": ["esnext"],
     "noEmit": true,
     "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
     "strictNullChecks": true,
     "target": "esnext",
-    "useUnknownInCatchVariables": true,
-
-    /* New checks being tried out */
-    "exactOptionalPropertyTypes": true,
-    "noFallthroughCasesInSwitch": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noUncheckedIndexedAccess": true,
-
-    /* Additional checks */
-    "importsNotUsedAsValues": "remove",
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "useUnknownInCatchVariables": true
   }
 }

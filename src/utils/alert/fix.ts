@@ -1,5 +1,7 @@
-export enum ALERT_FIX_TYPE {
-  cve = 'cve',
-  remove = 'remove',
-  upgrade = 'upgrade'
-}
+import { createEnum } from '../objects'
+
+export const ALERT_FIX_TYPE = createEnum({
+  cve: 'cve',
+  remove: 'remove',
+  upgrade: 'upgrade'
+})
