@@ -63,42 +63,25 @@ const Months = [
   'Dec'
 ] as const
 
-export async function displayAnalytics({
-  filePath,
-  outputKind,
-  repo,
-  scope,
-  time
-}: {
-  scope: string
-  time: number
-  repo: string
-  outputKind: OutputKind
-  filePath: string
-}): Promise<void> {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Fetching analytics data')
-
-  let result: CliJsonResult<
+export async function displayAnalytics(
+  result: CliJsonResult<
     | SocketSdkReturnType<'getOrgAnalytics'>['data']
     | SocketSdkReturnType<'getRepoAnalytics'>['data']
-  >
-  if (scope === 'org') {
-    result = await fetchOrgAnalyticsData(time)
-  } else if (repo) {
-    result = await fetchRepoAnalyticsData(repo, time)
-  } else {
-    result = {
-      ok: false,
-      message: 'Missing repository name in command',
-      data: undefined
-    }
+  >,
+  {
+    filePath,
+    outputKind,
+    repo,
+    scope,
+    time
+  }: {
+    scope: string
+    time: number
+    repo: string
+    outputKind: OutputKind
+    filePath: string
   }
-
-  spinner.successAndStop('Completed fetch from API server...')
-
+): Promise<void> {
   if (outputKind === 'json') {
     const serialized = serializeResultJson(result)
 
