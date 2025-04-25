@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 
 import FIXTURE from './audit-fixture.json' with { type: 'json' }
 import { outputAsJson, outputAsMarkdown } from './output-audit-log'
-import { CliJsonResult } from '../../types'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
