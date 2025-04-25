@@ -4,7 +4,8 @@ import { handleConfigAuto } from './handle-config-auto'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { supportedConfigKeys } from '../../utils/config'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -63,9 +64,13 @@ async function run(
   })
 
   const { json, markdown } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
+
   const [key = ''] = cli.input
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
+    outputKind,
     {
       test: supportedConfigKeys.has(key as keyof LocalConfig) && key !== 'test',
       message: 'Config key should be the first arg',
@@ -92,6 +97,6 @@ async function run(
 
   await handleConfigAuto({
     key: key as keyof LocalConfig,
-    outputKind: json ? 'json' : markdown ? 'markdown' : 'text'
+    outputKind
   })
 }

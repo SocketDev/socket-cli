@@ -5,7 +5,8 @@ import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { isTestingV1 } from '../../utils/config'
 import { determineOrgSlug } from '../../utils/determine-org-slug'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
@@ -108,6 +109,7 @@ async function run(
     markdown,
     reportLevel = 'warn'
   } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
 
   const { dryRun, interactive, org: orgFlag } = cli.flags
 
@@ -124,7 +126,8 @@ async function run(
     (isTestingV1() || defaultOrgSlug ? cli.input[1] : cli.input[2]) || '-'
   const apiToken = getDefaultToken()
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       nook: !!defaultOrgSlug,
       test: !!orgSlug && orgSlug !== '.',
@@ -172,7 +175,7 @@ async function run(
     orgSlug,
     scanId: scanId,
     includeLicensePolicy: !!license,
-    outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
+    outputKind,
     filePath: file,
     fold: fold as 'none' | 'file' | 'pkg' | 'version',
     short: !!cli.flags['short'],

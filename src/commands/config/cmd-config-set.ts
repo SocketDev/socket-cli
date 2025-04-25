@@ -4,7 +4,8 @@ import { handleConfigSet } from './handle-config-set'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { supportedConfigKeys } from '../../utils/config'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -63,10 +64,13 @@ async function run(
   })
 
   const { json, markdown } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
+
   const [key = '', ...rest] = cli.input
   const value = rest.join(' ')
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       test: key === 'test' || supportedConfigKeys.has(key as keyof LocalConfig),
       message: 'Config key should be the first arg',
@@ -100,7 +104,7 @@ async function run(
 
   await handleConfigSet({
     key: key as keyof LocalConfig,
-    outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
+    outputKind,
     value
   })
 }
