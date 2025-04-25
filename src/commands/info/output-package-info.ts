@@ -1,4 +1,3 @@
-import { codeBlock } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import constants from '@socketsecurity/registry/lib/constants'
@@ -86,11 +85,13 @@ export function outputPackageInfo(
     return
   }
   if (outputKind === 'markdown') {
-    logger.log(codeBlock`
-      # Package report for ${pkgName}
+    logger.log(
+      `
+# Package report for ${pkgName}
 
-      Package report card:
-    `)
+Package report card:
+    `.trim()
+    )
   } else {
     logger.log(`Package report card for ${pkgName}:`)
   }
