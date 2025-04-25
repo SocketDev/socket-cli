@@ -3,7 +3,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleDependencies } from './handle-dependencies'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
@@ -68,10 +69,12 @@ async function run(
   })
 
   const { json, limit, markdown, offset } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
 
   const apiToken = getDefaultToken()
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       nook: true,
       test: !json || !markdown,
@@ -101,6 +104,6 @@ async function run(
   await handleDependencies({
     limit: Number(limit || 0) || 0,
     offset: Number(offset || 0) || 0,
-    outputKind: json ? 'json' : markdown ? 'markdown' : 'text'
+    outputKind
   })
 }

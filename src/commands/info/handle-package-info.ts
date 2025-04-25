@@ -5,6 +5,7 @@ import { hasKeys } from '@socketsecurity/registry/lib/objects'
 import { fetchPackageInfo } from './fetch-package-info'
 import { outputPackageInfo } from './output-package-info'
 
+import type { OutputKind } from '../../types'
 import type { SocketSdkAlert } from '../../utils/alert/severity'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
@@ -24,7 +25,7 @@ export async function handlePackageInfo({
 }: {
   commandName: string
   includeAllIssues: boolean
-  outputKind: 'json' | 'markdown' | 'print'
+  outputKind: OutputKind
   pkgName: string
   pkgVersion: string
   strict: boolean

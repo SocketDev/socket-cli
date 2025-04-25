@@ -1,32 +1,42 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import constants from '../../constants'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { CliJsonResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchRepoAnalyticsData(
   repo: string,
-  time: number,
-  spinner: Spinner
-): Promise<SocketSdkReturnType<'getRepoAnalytics'>['data'] | undefined> {
+  time: number
+): Promise<CliJsonResult<SocketSdkReturnType<'getRepoAnalytics'>['data']>> {
   const sockSdk = await setupSdk()
+
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start(`Requesting analytics data from API...`)
+
   const result = await handleApiCall(
     sockSdk.getRepoAnalytics(repo, time.toString()),
     'fetching analytics data'
   )
 
-  if (result.success === false) {
-    handleUnsuccessfulApiResponse('getRepoAnalytics', result)
-  }
+  spinner.successAndStop(`Received API response.`)
 
-  spinner.stop()
+  if (result.success === false) {
+    return handleFailedApiResponse('getRepoAnalytics', result)
+  }
 
   if (!result.data.length) {
-    logger.log('No analytics data is available for this organization yet.')
-    return
+    return {
+      ok: true,
+      message: 'No analytics data is available for this repository yet.',
+      data: []
+    }
   }
 
-  return result.data
+  return {
+    ok: true,
+    data: result.data
+  }
 }

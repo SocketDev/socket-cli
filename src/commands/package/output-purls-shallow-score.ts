@@ -1,14 +1,14 @@
-import { codeBlock } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import type { OutputKind } from '../../types'
 import type { components } from '@socketsecurity/sdk/types/api'
 
 export function outputPurlsShallowScore(
   purls: string[],
   packageData: Array<components['schemas']['SocketArtifact']>,
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 ): void {
   if (outputKind === 'json') {
     // In JSON simply return what the server responds with. Don't bother trying
@@ -35,18 +35,20 @@ export function outputPurlsShallowScore(
   })
 
   if (outputKind === 'markdown') {
-    logger.log(codeBlock`
-      # Shallow Package Report
+    logger.log(
+      `
+# Shallow Package Report
 
-      This report contains the response for requesting data on some package url(s).
+This report contains the response for requesting data on some package url(s).
 
-      Please note: The listed scores are ONLY for the package itself. It does NOT
-                   reflect the scores of any dependencies, transitive or otherwise.
+Please note: The listed scores are ONLY for the package itself. It does NOT
+             reflect the scores of any dependencies, transitive or otherwise.
 
-      ${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => '- ' + purl + '\n').join('')}` : ''}
+${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => '- ' + purl + '\n').join('')}` : ''}
 
-      ${packageData.map(data => '## ' + formatReportCard(data, false)).join('\n\n\n')}
-    `)
+${packageData.map(data => '## ' + formatReportCard(data, false)).join('\n\n\n')}
+    `.trim()
+    )
     return
   }
 

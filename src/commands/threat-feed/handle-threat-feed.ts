@@ -5,6 +5,7 @@ import { outputThreatFeed } from './output-threat-feed'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 
 import type { ThreadFeedResponse } from './types'
+import type { OutputKind } from '../../types'
 
 export async function handleThreatFeed({
   direction,
@@ -17,7 +18,7 @@ export async function handleThreatFeed({
   direction: string
   ecosystem: string
   filter: string
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
   page: string
   perPage: number
 }): Promise<void> {

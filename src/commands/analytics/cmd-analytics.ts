@@ -1,10 +1,11 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { displayAnalytics } from './display-analytics'
+import { handleAnalytics } from './handle-analytics'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { isTestingV1 } from '../../utils/config'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
@@ -96,6 +97,7 @@ async function run(
   })
 
   const { file, json, markdown } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
 
   // In v1 mode support:
   // - []        (no args)
@@ -138,7 +140,8 @@ async function run(
 
   const apiToken = getDefaultToken()
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       // In v1 this can't go wrong anymore since the unknown value goes to time
       nook: !isTestingV1(),
@@ -212,11 +215,11 @@ async function run(
     return
   }
 
-  return await displayAnalytics({
+  return await handleAnalytics({
     scope,
     time: time === '90' ? 90 : time === '30' ? 30 : 7,
     repo: repoName,
-    outputKind: json ? 'json' : markdown ? 'markdown' : 'print',
+    outputKind,
     filePath: String(file || '')
   })
 }

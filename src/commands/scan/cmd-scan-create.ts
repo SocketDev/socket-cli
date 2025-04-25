@@ -7,7 +7,8 @@ import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { isTestingV1 } from '../../utils/config'
 import { determineOrgSlug } from '../../utils/determine-org-slug'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
@@ -201,6 +202,7 @@ async function run(
     report: boolean
     tmp: boolean
   }
+  const outputKind = getOutputKind(json, markdown)
 
   let [orgSlug, defaultOrgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
@@ -259,7 +261,8 @@ async function run(
     logger.error('```\n')
   }
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       nook: !isTestingV1() && !!defaultOrgSlug,
       test: !!orgSlug && orgSlug !== '.',
@@ -333,7 +336,7 @@ async function run(
     defaultBranch: Boolean(defaultBranch),
     interactive: Boolean(interactive),
     orgSlug,
-    outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
+    outputKind,
     pendingHead: Boolean(pendingHead),
     pullRequest: Number(pullRequest),
     readOnly: Boolean(readOnly),

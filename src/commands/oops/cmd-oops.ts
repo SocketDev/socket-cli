@@ -41,6 +41,8 @@ async function run(
     parentName
   })
 
+  // TODO: impl json/md
+
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAIL_TEXT)
     return

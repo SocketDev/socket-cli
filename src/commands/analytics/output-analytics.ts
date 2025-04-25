@@ -1,14 +1,13 @@
 import fs from 'node:fs/promises'
 
-import { codeBlock } from 'common-tags'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { fetchOrgAnalyticsData } from './fetch-org-analytics'
-import { fetchRepoAnalyticsData } from './fetch-repo-analytics'
 import constants from '../../constants'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mdTableStringNumber } from '../../utils/markdown'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 
+import type { CliJsonResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
 import type { grid as ContribGrid } from 'blessed-contrib'
@@ -60,45 +59,29 @@ const Months = [
   'Dec'
 ] as const
 
-export async function displayAnalytics({
-  filePath,
-  outputKind,
-  repo,
-  scope,
-  time
-}: {
-  scope: string
-  time: number
-  repo: string
-  outputKind: 'json' | 'markdown' | 'print'
-  filePath: string
-}): Promise<void> {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Fetching analytics data')
-
-  let data:
-    | undefined
+export async function outputAnalytics(
+  result: CliJsonResult<
     | SocketSdkReturnType<'getOrgAnalytics'>['data']
     | SocketSdkReturnType<'getRepoAnalytics'>['data']
-  if (scope === 'org') {
-    data = await fetchOrgAnalyticsData(time, spinner)
-  } else if (repo) {
-    data = await fetchRepoAnalyticsData(repo, time, spinner)
+  >,
+  {
+    filePath,
+    outputKind,
+    repo,
+    scope,
+    time
+  }: {
+    scope: string
+    time: number
+    repo: string
+    outputKind: OutputKind
+    filePath: string
   }
-
-  // A message should already have been printed if we have no data here
-  if (!data) {
-    return
-  }
-
+): Promise<void> {
   if (outputKind === 'json') {
-    const serialized = renderJson(data)
-    if (!serialized) {
-      return
-    }
+    const serialized = serializeResultJson(result)
 
+    // TODO: do we want to write to file even if there was an error...?
     if (filePath && filePath !== '-') {
       try {
         await fs.writeFile(filePath, serialized, 'utf8')
@@ -111,50 +94,48 @@ export async function displayAnalytics({
     } else {
       logger.log(serialized)
     }
-  } else {
-    const fdata = scope === 'org' ? formatDataOrg(data) : formatDataRepo(data)
 
-    if (outputKind === 'markdown') {
-      const serialized = renderMarkdown(fdata, time, repo)
-
-      if (filePath && filePath !== '-') {
-        try {
-          await fs.writeFile(filePath, serialized, 'utf8')
-          logger.log(`Data successfully written to ${filePath}`)
-        } catch (e) {
-          logger.error(e)
-        }
-      } else {
-        logger.log(serialized)
-      }
-    } else {
-      displayAnalyticsScreen(fdata)
-    }
-  }
-}
-
-function renderJson(data: unknown): string | undefined {
-  try {
-    return JSON.stringify(data, null, 2)
-  } catch (e) {
-    process.exitCode = 1
-    // This could be caused by circular references, which is an "us" problem
-    logger.fail(
-      'There was a problem converting the data set to JSON. Please try without --json or with --markdown'
-    )
     return
   }
+
+  if (!result.ok) {
+    // Note: We're not in json mode so just print the error badge
+    logger.fail(failMsgWithBadge(result.message, result.data))
+    return
+  }
+
+  const fdata =
+    scope === 'org' ? formatDataOrg(result.data) : formatDataRepo(result.data)
+
+  if (outputKind === 'markdown') {
+    const serialized = renderMarkdown(fdata, time, repo)
+
+    // TODO: do we want to write to file even if there was an error...?
+    if (filePath && filePath !== '-') {
+      try {
+        await fs.writeFile(filePath, serialized, 'utf8')
+        logger.log(`Data successfully written to ${filePath}`)
+      } catch (e) {
+        logger.error(e)
+      }
+    } else {
+      logger.log(serialized)
+    }
+  } else {
+    displayAnalyticsScreen(fdata)
+  }
 }
 
-function renderMarkdown(
+export function renderMarkdown(
   data: FormattedData,
   days: number,
   repoSlug: string
 ): string {
-  return codeBlock`
+  return (
+    `
 # Socket Alert Analytics
 
-These are the Socket.dev stats are analytics for the ${repoSlug ? `${repoSlug} repo` : 'org'} of the past ${days} days
+These are the Socket.dev analytics for the ${repoSlug ? `${repoSlug} repo` : 'org'} of the past ${days} days
 
 ${[
   [
@@ -190,20 +171,20 @@ ${[
     mdTableStringNumber('Date', 'Counts', data['total_low_prevented'])
   ]
 ]
-  .map(
-    ([title, table]) =>
-      codeBlock`
+  .map(([title, table]) =>
+    `
 ## ${title}
 
 ${table}
-`
+`.trim()
   )
   .join('\n\n')}
 
 ## Top 5 alert types
 
 ${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
-`
+`.trim() + '\n'
+  )
 }
 
 function displayAnalyticsScreen(data: FormattedData): void {
@@ -294,7 +275,7 @@ function displayAnalyticsScreen(data: FormattedData): void {
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 }
 
-function formatDataRepo(
+export function formatDataRepo(
   data: SocketSdkReturnType<'getRepoAnalytics'>['data']
 ): FormattedData {
   const sortedTopFiveAlerts: Record<string, number> = {}
@@ -335,7 +316,7 @@ function formatDataRepo(
   }
 }
 
-function formatDataOrg(
+export function formatDataOrg(
   data: SocketSdkReturnType<'getOrgAnalytics'>['data']
 ): FormattedData {
   const sortedTopFiveAlerts: Record<string, number> = {}

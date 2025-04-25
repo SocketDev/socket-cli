@@ -5,7 +5,8 @@ import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { isTestingV1 } from '../../utils/config'
 import { determineOrgSlug } from '../../utils/determine-org-slug'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
@@ -126,6 +127,7 @@ async function run(
   })
 
   const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
@@ -136,7 +138,8 @@ async function run(
 
   const apiToken = getDefaultToken()
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       nook: true,
       test: !!orgSlug,
@@ -173,7 +176,7 @@ async function run(
     direction: String(cli.flags['direction'] || 'desc'),
     ecosystem: String(cli.flags['eco'] || ''),
     filter: String(cli.flags['filter'] || 'mal'),
-    outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
+    outputKind,
     page: String(cli.flags['page'] || '1'),
     perPage: Number(cli.flags['perPage']) || 30
   })

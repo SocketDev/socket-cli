@@ -1,10 +1,11 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import type { OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputQuota(
   data: SocketSdkReturnType<'getQuota'>['data'],
-  outputKind: 'text' | 'json' | 'markdown' = 'text'
+  outputKind: OutputKind = 'text'
 ): Promise<void> {
   if (outputKind === 'json') {
     let json
