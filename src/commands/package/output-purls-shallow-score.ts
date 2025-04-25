@@ -1,4 +1,3 @@
-import { codeBlock } from 'common-tags'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -36,18 +35,20 @@ export function outputPurlsShallowScore(
   })
 
   if (outputKind === 'markdown') {
-    logger.log(codeBlock`
-      # Shallow Package Report
+    logger.log(
+      `
+# Shallow Package Report
 
-      This report contains the response for requesting data on some package url(s).
+This report contains the response for requesting data on some package url(s).
 
-      Please note: The listed scores are ONLY for the package itself. It does NOT
-                   reflect the scores of any dependencies, transitive or otherwise.
+Please note: The listed scores are ONLY for the package itself. It does NOT
+             reflect the scores of any dependencies, transitive or otherwise.
 
-      ${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => '- ' + purl + '\n').join('')}` : ''}
+${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => '- ' + purl + '\n').join('')}` : ''}
 
-      ${packageData.map(data => '## ' + formatReportCard(data, false)).join('\n\n\n')}
-    `)
+${packageData.map(data => '## ' + formatReportCard(data, false)).join('\n\n\n')}
+    `.trim()
+    )
     return
   }
 
