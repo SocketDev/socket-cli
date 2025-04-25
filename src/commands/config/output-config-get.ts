@@ -4,11 +4,11 @@ import { LocalConfig, isReadOnlyConfig } from '../../utils/config'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { serializeResultJson } from '../../utils/serialize-result-json'
 
-import type { CliJsonResult, OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 
 export async function outputConfigGet(
   key: keyof LocalConfig,
-  result: CliJsonResult<LocalConfig[keyof LocalConfig]>,
+  result: CResult<LocalConfig[keyof LocalConfig]>,
   outputKind: OutputKind
 ) {
   const readOnly = isReadOnlyConfig()

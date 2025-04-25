@@ -7,7 +7,7 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mdTableStringNumber } from '../../utils/markdown'
 import { serializeResultJson } from '../../utils/serialize-result-json'
 
-import type { CliJsonResult, OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
 import type { grid as ContribGrid } from 'blessed-contrib'
@@ -60,7 +60,7 @@ const Months = [
 ] as const
 
 export async function outputAnalytics(
-  result: CliJsonResult<
+  result: CResult<
     | SocketSdkReturnType<'getOrgAnalytics'>['data']
     | SocketSdkReturnType<'getRepoAnalytics'>['data']
   >,

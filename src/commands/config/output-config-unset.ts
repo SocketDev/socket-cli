@@ -3,10 +3,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { serializeResultJson } from '../../utils/serialize-result-json'
 
-import type { CliJsonResult, OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 
 export async function outputConfigUnset(
-  updateResult: CliJsonResult<undefined | string>,
+  updateResult: CResult<undefined | string>,
   outputKind: OutputKind
 ) {
   if (outputKind === 'json') {

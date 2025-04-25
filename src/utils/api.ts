@@ -9,7 +9,7 @@ import { AuthError } from './errors'
 import constants from '../constants'
 import { failMsgWithBadge } from './fail-msg-with-badge'
 
-import type { CliJsonResult } from '../types'
+import type { CResult } from '../types'
 import type {
   SocketSdkErrorType,
   SocketSdkOperations
@@ -36,15 +36,15 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
 export function handleFailedApiResponse<T extends SocketSdkOperations>(
   _name: T,
   { cause, error }: SocketSdkErrorType<T>
-): CliJsonResult<any> {
+): CResult<never> {
   process.exitCode = 1
   const message = `${error || 'No error message returned'}`
   // logger.error(failMsgWithBadge('Socket API returned an error', message))
   return {
     ok: false,
     message: 'Socket API returned an error',
-    data: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`
-  } satisfies CliJsonResult
+    cause: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`
+  }
 }
 
 export async function handleApiCall<T>(

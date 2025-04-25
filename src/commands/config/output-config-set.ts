@@ -1,10 +1,10 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { CliJsonResult, OutputKind } from '../../types'
+import { CResult, OutputKind } from '../../types'
 import { serializeResultJson } from '../../utils/serialize-result-json'
 
 export async function outputConfigSet(
-  result: CliJsonResult<undefined | string>,
+  result: CResult<undefined | string>,
   outputKind: OutputKind
 ) {
   if (outputKind === 'json') {

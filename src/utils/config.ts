@@ -10,7 +10,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { safeReadFileSync } from './fs'
 import constants from '../constants'
 
-import type { CliJsonResult } from '../types'
+import type { CResult } from '../types'
 
 const { LOCALAPPDATA, SOCKET_APP_DIR, XDG_DATA_HOME } = constants
 
@@ -179,7 +179,7 @@ function getConfigPath(): string | undefined {
 
 function normalizeConfigKey(
   key: keyof LocalConfig
-): CliJsonResult<keyof LocalConfig> {
+): CResult<keyof LocalConfig> {
   // Note: apiKey was the old name of the token. When we load a config with
   //       property apiKey, we'll copy that to apiToken and delete the old property.
   const normalizedKey = key === 'apiKey' ? 'apiToken' : key
@@ -222,7 +222,7 @@ export function findSocketYmlSync(dir = process.cwd()) {
 
 export function getConfigValue<Key extends keyof LocalConfig>(
   key: Key
-): CliJsonResult<LocalConfig[Key]> {
+): CResult<LocalConfig[Key]> {
   const localConfig = getConfigValues()
   const keyResult = normalizeConfigKey(key)
   if (!keyResult.ok) {
@@ -238,7 +238,7 @@ let _pendingSave = false
 export function updateConfigValue<Key extends keyof LocalConfig>(
   key: keyof LocalConfig,
   value: LocalConfig[Key]
-): CliJsonResult<undefined | string> {
+): CResult<undefined | string> {
   const localConfig = getConfigValues()
   const keyResult = normalizeConfigKey(key)
   if (!keyResult.ok) {

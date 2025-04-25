@@ -4,10 +4,10 @@ import { handleApiCall } from '../../utils/api'
 import { getConfigValue } from '../../utils/config'
 import { setupSdk } from '../../utils/sdk'
 
-import type { CliJsonResult } from '../../types'
+import type { CResult } from '../../types'
 
 // Use the config defaultOrg when set, otherwise discover from remote
-export async function getDefaultOrgSlug(): Promise<CliJsonResult<string>> {
+export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   const defaultOrgResult = getConfigValue('defaultOrg')
   if (!defaultOrgResult.ok) {
     return defaultOrgResult

@@ -8,13 +8,13 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mdTable } from '../../utils/markdown'
 import { serializeResultJson } from '../../utils/serialize-result-json'
 
-import type { CliJsonResult, OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 const { REDACTED } = constants
 
 export async function outputAuditLog(
-  auditLogs: CliJsonResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
+  auditLogs: CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
   {
     logType,
     orgSlug,
@@ -53,7 +53,7 @@ export async function outputAuditLog(
 }
 
 export async function outputAsJson(
-  auditLogs: CliJsonResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
+  auditLogs: CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
   {
     logType,
     orgSlug,
@@ -104,7 +104,7 @@ export async function outputAsJson(
 }
 
 export async function outputAsMarkdown(
-  auditLogs: CliJsonResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
+  auditLogs: CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
   {
     logType,
     orgSlug,

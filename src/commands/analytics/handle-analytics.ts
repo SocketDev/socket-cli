@@ -2,7 +2,7 @@ import { fetchOrgAnalyticsData } from './fetch-org-analytics'
 import { fetchRepoAnalyticsData } from './fetch-repo-analytics'
 import { outputAnalytics } from './output-analytics'
 
-import type { CliJsonResult, OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function handleAnalytics({
@@ -18,7 +18,7 @@ export async function handleAnalytics({
   outputKind: OutputKind
   filePath: string
 }) {
-  let result: CliJsonResult<
+  let result: CResult<
     | SocketSdkReturnType<'getOrgAnalytics'>['data']
     | SocketSdkReturnType<'getRepoAnalytics'>['data']
   >
@@ -31,7 +31,6 @@ export async function handleAnalytics({
     result = {
       ok: false,
       message: 'Missing repository name in command',
-      data: undefined
     }
   }
 

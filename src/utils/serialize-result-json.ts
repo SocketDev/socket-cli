@@ -1,11 +1,11 @@
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import type { CliJsonResult } from '../types'
+import type { CResult } from '../types'
 
 // Serialize the final result object before printing it
 // All commands that support the --json flag should call this before printing
-export function serializeResultJson(data: CliJsonResult): string {
+export function serializeResultJson(data: CResult): string {
   if (typeof data !== 'object' || !data) {
     process.exitCode = 1
     // We should not allow to expect the json value to be "null", or a boolean/number/string, even if they are valid "json".
