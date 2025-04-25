@@ -1,7 +1,5 @@
 import fs from 'node:fs/promises'
 
-import { codeBlock } from 'common-tags'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
@@ -128,12 +126,13 @@ export async function outputAnalytics(
   }
 }
 
-function renderMarkdown(
+export function renderMarkdown(
   data: FormattedData,
   days: number,
   repoSlug: string
 ): string {
-  return codeBlock`
+  return (
+    `
 # Socket Alert Analytics
 
 These are the Socket.dev stats are analytics for the ${repoSlug ? `${repoSlug} repo` : 'org'} of the past ${days} days
@@ -172,20 +171,20 @@ ${[
     mdTableStringNumber('Date', 'Counts', data['total_low_prevented'])
   ]
 ]
-  .map(
-    ([title, table]) =>
-      codeBlock`
+  .map(([title, table]) =>
+    `
 ## ${title}
 
 ${table}
-`
+`.trim()
   )
   .join('\n\n')}
 
 ## Top 5 alert types
 
 ${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
-`
+`.trim() + '\n'
+  )
 }
 
 function displayAnalyticsScreen(data: FormattedData): void {

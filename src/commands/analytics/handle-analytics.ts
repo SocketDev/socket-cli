@@ -1,6 +1,6 @@
 import { fetchOrgAnalyticsData } from './fetch-org-analytics'
 import { fetchRepoAnalyticsData } from './fetch-repo-analytics'
-import { outputAnalytics } from './output-analytics.ts'
+import { outputAnalytics } from './output-analytics'
 
 import type { CliJsonResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'

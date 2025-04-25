@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest'
 
 import FIXTURE from './analytics-fixture.json' with { type: 'json' }
-import { formatDataOrg, formatDataRepo } from './output-analytics'
+import {
+  formatDataOrg,
+  formatDataRepo,
+  renderMarkdown
+} from './output-analytics'
 
 describe('output-analytics', () => {
-  it('should formatDataRepo', () => {
-    const str = formatDataRepo(JSON.parse(JSON.stringify(FIXTURE)))
+  describe('format data', () => {
+    it('should formatDataRepo', () => {
+      const str = formatDataRepo(JSON.parse(JSON.stringify(FIXTURE)))
 
-    expect(str).toMatchInlineSnapshot(`
+      expect(str).toMatchInlineSnapshot(`
       {
         "top_five_alert_types": {
           "dynamicRequire": 71,
@@ -90,12 +95,12 @@ describe('output-analytics', () => {
         },
       }
     `)
-  })
+    })
 
-  it('should formatDataOrg', () => {
-    const str = formatDataOrg(JSON.parse(JSON.stringify(FIXTURE)))
+    it('should formatDataOrg', () => {
+      const str = formatDataOrg(JSON.parse(JSON.stringify(FIXTURE)))
 
-    expect(str).toMatchInlineSnapshot(`
+      expect(str).toMatchInlineSnapshot(`
       {
         "top_five_alert_types": {
           "dynamicRequire": 274,
@@ -178,5 +183,111 @@ describe('output-analytics', () => {
         },
       }
     `)
+    })
+  })
+
+  describe('format markdown', () => {
+    it('should renderMarkdown for repo', () => {
+      const fdata = formatDataRepo(JSON.parse(JSON.stringify(FIXTURE)))
+      const serialized = renderMarkdown(fdata, 7, 'fake_repo')
+
+      expect(serialized).toMatchInlineSnapshot(`
+        "# Socket Alert Analytics
+
+        These are the Socket.dev stats are analytics for the fake_repo repo of the past 7 days
+
+        ## Total critical alerts
+
+        | Date   | Counts |
+        | ------ | ------ |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
+        | Apr 20 |      0 |
+        | Apr 22 |      0 |
+        | ------ | ------ |
+
+        ## Total high alerts
+
+        | Date   | Counts |
+        | ------ | ------ |
+        | Apr 19 |     13 |
+        | Apr 21 |     13 |
+        | Apr 20 |     13 |
+        | Apr 22 |     10 |
+        | ------ | ------ |
+
+        ## Total critical alerts added to the main branch
+
+        | Date   | Counts |
+        | ------ | ------ |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
+        | Apr 20 |      0 |
+        | Apr 22 |      0 |
+        | ------ | ------ |
+
+        ## Total high alerts added to the main branch
+
+        | Date   | Counts |
+        | ------ | ------ |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
+        | Apr 20 |      0 |
+        | Apr 22 |      0 |
+        | ------ | ------ |
+
+        ## Total critical alerts prevented from the main branch
+
+        | Date   | Counts |
+        | ------ | ------ |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
+        | Apr 20 |      0 |
+        | Apr 22 |      0 |
+        | ------ | ------ |
+
+        ## Total high alerts prevented from the main branch
+
+        | Date   | Counts |
+        | ------ | ------ |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
+        | Apr 20 |      0 |
+        | Apr 22 |      0 |
+        | ------ | ------ |
+
+        ## Total medium alerts prevented from the main branch
+
+        | Date   | Counts |
+        | ------ | ------ |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
+        | Apr 20 |      0 |
+        | Apr 22 |      0 |
+        | ------ | ------ |
+
+        ## Total low alerts prevented from the main branch
+
+        | Date   | Counts |
+        | ------ | ------ |
+        | Apr 19 |      0 |
+        | Apr 21 |      0 |
+        | Apr 20 |      0 |
+        | Apr 22 |      0 |
+        | ------ | ------ |
+
+        ## Top 5 alert types
+
+        | Name             | Counts |
+        | ---------------- | ------ |
+        | envVars          |    636 |
+        | unmaintained     |    133 |
+        | filesystemAccess |    129 |
+        | networkAccess    |    109 |
+        | dynamicRequire   |     71 |
+        | ---------------- | ------ |
+        "
+      `)
+    })
   })
 })
