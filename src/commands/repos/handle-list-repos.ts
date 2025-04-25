@@ -1,6 +1,8 @@
 import { fetchListRepos } from './fetch-list-repos'
 import { outputListRepos } from './output-list-repos'
 
+import type { OutputKind } from '../../types'
+
 export async function handleListRepos({
   direction,
   orgSlug,
@@ -11,7 +13,7 @@ export async function handleListRepos({
 }: {
   direction: string
   orgSlug: string
-  outputKind: 'json' | 'markdown' | 'print'
+  outputKind: OutputKind
   page: number
   per_page: number
   sort: string

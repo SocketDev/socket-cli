@@ -3,6 +3,8 @@ import { select } from '@socketsecurity/registry/lib/prompts'
 
 import { LocalConfig, updateConfigValue } from '../../utils/config'
 
+import type { OutputKind } from '../../types'
+
 export async function outputConfigAuto(
   key: keyof LocalConfig,
   {
@@ -14,7 +16,7 @@ export async function outputConfigAuto(
     value: unknown
     message: string
   },
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 ) {
   if (outputKind === 'json') {
     logger.log(JSON.stringify({ success, message, result: { key, value } }))

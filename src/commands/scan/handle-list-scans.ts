@@ -1,6 +1,8 @@
 import { fetchListScans } from './fetch-list-scans'
 import { outputListScans } from './output-list-scans'
 
+import type { OutputKind } from '../../types'
+
 export async function handleListScans({
   branch,
   direction,
@@ -16,7 +18,7 @@ export async function handleListScans({
   direction: string
   from_time: string
   orgSlug: string
-  outputKind: 'json' | 'markdown' | 'print'
+  outputKind: OutputKind
   page: number
   per_page: number
   repo: string

@@ -4,7 +4,8 @@ import { handleDiffScan } from './handle-diff-scan'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
 import { getConfigValue, isTestingV1 } from '../../utils/config'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
@@ -97,13 +98,15 @@ async function run(
   })
 
   const { after, before, depth, file, json, markdown } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
 
   const defaultOrgSlug = getConfigValue('defaultOrg')
   const orgSlug = defaultOrgSlug || cli.input[0] || ''
 
   const apiToken = getDefaultToken()
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       test: !!(before && after),
       message:
@@ -158,7 +161,7 @@ async function run(
     after: String(after || ''),
     depth: Number(depth),
     orgSlug,
-    outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
+    outputKind,
     file: String(file || '')
   })
 }

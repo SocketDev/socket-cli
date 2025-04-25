@@ -1,7 +1,8 @@
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CliJsonResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchAuditLog({
@@ -11,12 +12,12 @@ export async function fetchAuditLog({
   page,
   perPage
 }: {
-  outputKind: 'json' | 'markdown' | 'print'
+  outputKind: OutputKind
   orgSlug: string
   page: number
   perPage: number
   logType: string
-}): Promise<SocketSdkReturnType<'getAuditLogEvents'>['data'] | void> {
+}): Promise<CliJsonResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>> {
   const sockSdk = await setupSdk()
 
   // Lazily access constants.spinner.
@@ -38,11 +39,14 @@ export async function fetchAuditLog({
     `Looking up audit log for ${orgSlug}\n`
   )
 
+  spinner.successAndStop(`Received API response.`)
+
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getAuditLogEvents', result)
+    return handleFailedApiResponse('getAuditLogEvents', result)
   }
 
-  spinner.stop()
-
-  return result.data
+  return {
+    ok: true,
+    data: result.data
+  }
 }

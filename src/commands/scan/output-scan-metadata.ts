@@ -1,11 +1,12 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import type { OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputScanMetadata(
   data: SocketSdkReturnType<'getOrgFullScanMetadata'>['data'],
   scanId: string,
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 ): Promise<void> {
   if (outputKind === 'json') {
     logger.log(data)

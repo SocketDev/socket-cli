@@ -9,6 +9,7 @@ import { mdTable } from '../../utils/markdown'
 import { walkNestedMap } from '../../utils/walk-nested-map'
 
 import type { ReportLeafNode, ScanReport } from './generate-report'
+import type { OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { components } from '@socketsecurity/sdk/types/api'
 
@@ -28,7 +29,7 @@ export async function outputScanReport(
     orgSlug: string
     scanId: string
     includeLicensePolicy: boolean
-    outputKind: 'json' | 'markdown' | 'text'
+    outputKind: OutputKind
     filePath: string
     fold: 'pkg' | 'version' | 'file' | 'none'
     reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'

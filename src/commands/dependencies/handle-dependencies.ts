@@ -1,6 +1,8 @@
 import { fetchDependencies } from './fetch-dependencies'
 import { outputDependencies } from './output-dependencies'
 
+import type { OutputKind } from '../../types'
+
 export async function handleDependencies({
   limit,
   offset,
@@ -8,7 +10,7 @@ export async function handleDependencies({
 }: {
   limit: number
   offset: number
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 }): Promise<void> {
   const data = await fetchDependencies({ limit, offset })
   if (!data) {

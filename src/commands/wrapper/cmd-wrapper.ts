@@ -8,7 +8,8 @@ import { postinstallWrapper } from './postinstall-wrapper'
 import { removeSocketWrapper } from './remove-socket-wrapper'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -70,9 +71,11 @@ async function run(
     parentName
   })
 
-  const { disable, enable } = cli.flags
+  const { disable, enable, json, markdown } = cli.flags
+  const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       test: !!(enable || disable),
       message: 'Must use --enabled or --disable',

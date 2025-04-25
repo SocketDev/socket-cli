@@ -4,11 +4,12 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import type { OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputListRepos(
   data: SocketSdkReturnType<'getOrgRepoList'>['data'],
-  outputKind: 'json' | 'markdown' | 'print'
+  outputKind: OutputKind
 ): Promise<void> {
   if (outputKind === 'json') {
     const json = data.results.map(o => ({

@@ -2,11 +2,13 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { LocalConfig } from '../../utils/config'
 
+import type { OutputKind } from '../../types'
+
 export async function outputConfigGet(
   key: keyof LocalConfig,
   value: unknown,
   readOnly: boolean, // Is config in read-only mode? (Overrides applied)
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 ) {
   if (outputKind === 'json') {
     logger.log(
