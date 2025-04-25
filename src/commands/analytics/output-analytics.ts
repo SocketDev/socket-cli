@@ -135,7 +135,7 @@ export function renderMarkdown(
     `
 # Socket Alert Analytics
 
-These are the Socket.dev stats are analytics for the ${repoSlug ? `${repoSlug} repo` : 'org'} of the past ${days} days
+These are the Socket.dev analytics for the ${repoSlug ? `${repoSlug} repo` : 'org'} of the past ${days} days
 
 ${[
   [
