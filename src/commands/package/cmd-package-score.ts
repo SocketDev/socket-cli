@@ -4,7 +4,8 @@ import { handlePurlDeepScore } from './handle-purl-deep-score'
 import { parsePackageSpecifiers } from './parse-package-specifiers'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
@@ -75,12 +76,15 @@ async function run(
   })
 
   const { json, markdown } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
+
   const [ecosystem = '', purl] = cli.input
   const apiToken = getDefaultToken()
 
   const { purls, valid } = parsePackageSpecifiers(ecosystem, purl ? [purl] : [])
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       test: valid,
       message: 'First parameter must be an ecosystem or the whole purl',
@@ -118,8 +122,5 @@ async function run(
     return
   }
 
-  await handlePurlDeepScore(
-    purls[0] || '',
-    json ? 'json' : markdown ? 'markdown' : 'text'
-  )
+  await handlePurlDeepScore(purls[0] || '', outputKind)
 }

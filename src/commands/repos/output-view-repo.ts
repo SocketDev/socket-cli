@@ -4,11 +4,12 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import type { OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputViewRepo(
   data: SocketSdkReturnType<'createOrgRepo'>['data'],
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 ): Promise<void> {
   if (outputKind === 'json') {
     const {

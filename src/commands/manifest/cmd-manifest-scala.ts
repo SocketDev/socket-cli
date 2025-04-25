@@ -3,7 +3,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { convertSbtToMaven } from './convert_sbt_to_maven'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -105,6 +106,8 @@ async function run(
   })
 
   const verbose = Boolean(cli.flags['verbose'])
+  const { json, markdown } = cli.flags
+  const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
 
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
@@ -120,7 +123,8 @@ async function run(
   //       try, store contents in a file in some folder, target that folder... what
   //       would the file name be?
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       test: !!target && target !== '-',
       message: 'The DIR arg is required',

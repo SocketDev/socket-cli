@@ -3,7 +3,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleQuota } from './handle-quota'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
@@ -49,9 +50,12 @@ async function run(
 
   const json = Boolean(cli.flags['json'])
   const markdown = Boolean(cli.flags['markdown'])
+  const outputKind = getOutputKind(json, markdown)
+
   const apiToken = getDefaultToken()
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       nook: true,
       test: !json || !markdown,
@@ -77,5 +81,5 @@ async function run(
     return
   }
 
-  await handleQuota(json ? 'json' : markdown ? 'markdown' : 'text')
+  await handleQuota(outputKind)
 }

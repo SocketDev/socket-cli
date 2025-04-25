@@ -4,7 +4,8 @@ import { outputConfigList } from './output-config-list'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { supportedConfigKeys } from '../../utils/config'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -62,8 +63,9 @@ async function run(
   })
 
   const { full, json, markdown } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
 
-  const wasBadInput = handleBadInput({
+  const wasBadInput = checkCommandInput(outputKind, {
     nook: true,
     test: !json || !markdown,
     message:
@@ -82,6 +84,6 @@ async function run(
 
   await outputConfigList({
     full: !!full,
-    outputKind: json ? 'json' : markdown ? 'markdown' : 'text'
+    outputKind
   })
 }

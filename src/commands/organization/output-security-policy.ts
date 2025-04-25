@@ -2,11 +2,12 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { mdTableOfPairs } from '../../utils/markdown'
 
+import type { OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputSecurityPolicy(
   data: SocketSdkReturnType<'getOrgSecurityPolicy'>['data'],
-  outputKind: 'text' | 'json' | 'markdown'
+  outputKind: OutputKind
 ): Promise<void> {
   if (outputKind === 'json') {
     let json

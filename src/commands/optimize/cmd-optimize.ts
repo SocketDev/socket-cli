@@ -58,6 +58,8 @@ async function run(
     parentName
   })
 
+  // TODO: impl json/md
+
   const cwd = process.cwd()
 
   if (cli.flags['dryRun']) {

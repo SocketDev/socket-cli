@@ -4,7 +4,8 @@ import { handlePurlsShallowScore } from './handle-purls-shallow-score'
 import { parsePackageSpecifiers } from './parse-package-specifiers'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 
@@ -81,11 +82,14 @@ async function run(
   })
 
   const { json, markdown } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
+
   const [ecosystem = '', ...pkgs] = cli.input
 
   const { purls, valid } = parsePackageSpecifiers(ecosystem, pkgs)
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       test: valid,
       message:
@@ -117,7 +121,7 @@ async function run(
   }
 
   await handlePurlsShallowScore({
-    outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
+    outputKind,
     purls
   })
 }

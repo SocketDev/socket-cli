@@ -13,6 +13,7 @@ import {
 } from '../../utils/socket-url'
 
 import type { PackageData } from './handle-package-info'
+import type { OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 const { NPM } = constants
@@ -74,7 +75,7 @@ export function outputPackageInfo(
     pkgVersion
   }: {
     commandName: string
-    outputKind: 'json' | 'markdown' | 'print'
+    outputKind: OutputKind
     pkgName: string
     pkgVersion: string
     includeAllIssues?: boolean | undefined

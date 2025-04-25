@@ -7,6 +7,8 @@ import { outputCreateNewScan } from './output-create-new-scan'
 import { handleBadInput } from '../../utils/handle-bad-input'
 import { getPackageFilesForScan } from '../../utils/path-resolve'
 
+import type { OutputKind } from '../../types'
+
 export async function handleCreateNewScan({
   branchName,
   commitHash,
@@ -35,7 +37,7 @@ export async function handleCreateNewScan({
   orgSlug: string
   pendingHead: boolean
   pullRequest: number
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
   readOnly: boolean
   repoName: string
   report: boolean

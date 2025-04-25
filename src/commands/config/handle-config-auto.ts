@@ -1,6 +1,7 @@
 import { discoverConfigValue } from './discover-config-value'
 import { outputConfigAuto } from './output-config-auto'
 
+import type { OutputKind } from '../../types'
 import type { LocalConfig } from '../../utils/config'
 
 export async function handleConfigAuto({
@@ -8,7 +9,7 @@ export async function handleConfigAuto({
   outputKind
 }: {
   key: keyof LocalConfig
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 }) {
   const result = await discoverConfigValue(key)
 

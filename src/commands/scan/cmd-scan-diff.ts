@@ -5,7 +5,8 @@ import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { isTestingV1 } from '../../utils/config'
 import { determineOrgSlug } from '../../utils/determine-org-slug'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { getOutputKind } from '../../utils/get-output-kind'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
@@ -100,6 +101,7 @@ async function run(
     markdown,
     org: orgFlag
   } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
 
   const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
@@ -119,7 +121,8 @@ async function run(
 
   const apiToken = getDefaultToken()
 
-  const wasBadInput = handleBadInput(
+  const wasBadInput = checkCommandInput(
+    outputKind,
     {
       test: !!(id1 && id2),
       message:
@@ -172,7 +175,7 @@ async function run(
     id2: String(id2 || ''),
     depth: Number(depth),
     orgSlug,
-    outputKind: json ? 'json' : markdown ? 'markdown' : 'text',
+    outputKind,
     file: String(file || '')
   })
 }

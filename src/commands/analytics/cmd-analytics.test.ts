@@ -73,11 +73,12 @@ describe('socket analytics', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
           - The time filter must either be 7, 30 or 90 (\\x1b[32mok\\x1b[39m)
 
-          - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)"
+          - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)
+        \\x1b[22m"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -236,13 +237,14 @@ describe('socket analytics', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
         \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
         \\x1b[39m
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again\\x1b[22m
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
           - Scope must be "repo" or "org" (\\x1b[32mok\\x1b[39m)
 
           - When scope=repo, repo name should be the second argument (\\x1b[31mmissing\\x1b[39m)
 
-          - The time filter must either be 7, 30 or 90 (\\x1b[32mok\\x1b[39m)"
+          - The time filter must either be 7, 30 or 90 (\\x1b[32mok\\x1b[39m)
+        \\x1b[22m"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

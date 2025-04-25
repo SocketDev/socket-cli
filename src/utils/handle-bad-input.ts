@@ -3,8 +3,12 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from './fail-msg-with-badge'
+import { serializeResultJson } from './serialize-result-json'
 
-export function handleBadInput(
+import type { OutputKind } from '../types'
+
+export function checkCommandInput(
+  outputKind: OutputKind,
   ...checks: Array<{
     fail: string
     message: string
@@ -12,18 +16,12 @@ export function handleBadInput(
     test: boolean
     nook?: boolean | undefined
   }>
-) {
+): boolean {
   if (checks.every(d => d.test)) {
     return false
   }
 
-  const msg = [
-    failMsgWithBadge(
-      'Input error',
-      'Please review the input requirements and try again'
-    ),
-    ''
-  ]
+  const msg = ['Please review the input requirements and try again', '']
   for (const d of checks) {
     // If nook, then ignore when test is ok
     if (d.nook && d.test) {
@@ -42,12 +40,34 @@ export function handleBadInput(
     msg.push('')
   }
 
-  logger.fail(msg.join('\n'))
-
   // Use exit status of 2 to indicate incorrect usage, generally invalid
   // options or missing arguments.
   // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
   process.exitCode = 2
 
+  if (outputKind === 'json') {
+    logger.log(
+      serializeResultJson({
+        ok: false,
+        message: 'Input error',
+        data: msg.join('\n')
+      })
+    )
+  } else {
+    logger.fail(failMsgWithBadge('Input error', msg.join('\n')))
+  }
+
   return true
+}
+
+export function handleBadInput(
+  ...checks: Array<{
+    fail: string
+    message: string
+    pass: string
+    test: boolean
+    nook?: boolean | undefined
+  }>
+): boolean {
+  return checkCommandInput('text', ...checks)
 }
