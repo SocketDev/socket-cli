@@ -27,6 +27,7 @@ export async function handleAnalytics({
   } else if (repo) {
     result = await fetchRepoAnalyticsData(repo, time)
   } else {
+    process.exitCode = 1
     result = {
       ok: false,
       message: 'Missing repository name in command',

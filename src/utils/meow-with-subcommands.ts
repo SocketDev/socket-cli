@@ -292,7 +292,7 @@ function getAsciiHeader(command: string) {
       process.env['INLINED_SOCKET_CLI_VERSION_HASH']
   const nodeVersion = redacting ? REDACTED : process.version
   const apiToken = getDefaultToken()
-  const defaultOrg = getConfigValue('defaultOrg')
+  const defaultOrg = getConfigValue('defaultOrg').data
   const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
   const v1test = isTestingV1() ? ' (is testing v1)' : ''
   const feedback = isTestingV1()

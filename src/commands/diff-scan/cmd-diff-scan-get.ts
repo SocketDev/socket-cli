@@ -9,6 +9,7 @@ import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -100,8 +101,12 @@ async function run(
   const { after, before, depth, file, json, markdown } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
-  const defaultOrgSlug = getConfigValue('defaultOrg')
-  const orgSlug = defaultOrgSlug || cli.input[0] || ''
+  const defaultOrgSlugResult = getConfigValue('defaultOrg')
+  if (!defaultOrgSlugResult) {
+    logger.log(serializeResultJson(defaultOrgSlugResult))
+    return
+  }
+  const orgSlug = defaultOrgSlugResult.data || cli.input[0] || ''
 
   const apiToken = getDefaultToken()
 

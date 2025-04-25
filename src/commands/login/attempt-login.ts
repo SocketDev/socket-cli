@@ -20,8 +20,8 @@ export async function attemptLogin(
   apiBaseUrl: string | undefined,
   apiProxy: string | undefined
 ) {
-  apiBaseUrl ??= getConfigValue('apiBaseUrl') ?? undefined
-  apiProxy ??= getConfigValue('apiProxy') ?? undefined
+  apiBaseUrl ??= getConfigValue('apiBaseUrl').data ?? undefined
+  apiProxy ??= getConfigValue('apiProxy').data ?? undefined
   const apiToken =
     (await password({
       message: `Enter your ${terminalLink(
@@ -86,7 +86,7 @@ export async function attemptLogin(
 
   spinner.stop()
 
-  const previousPersistedToken = getConfigValue('apiToken')
+  const previousPersistedToken = getConfigValue('apiToken').data
   try {
     applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
     logger.success(

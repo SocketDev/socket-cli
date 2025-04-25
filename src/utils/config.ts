@@ -10,6 +10,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { safeReadFileSync } from './fs'
 import constants from '../constants'
 
+import type { CliJsonResult } from '../types'
+
 const { LOCALAPPDATA, SOCKET_APP_DIR, XDG_DATA_HOME } = constants
 
 export interface LocalConfig {
@@ -65,6 +67,7 @@ export function overrideCachedConfig(
     _cachedConfig = {} as LocalConfig
     _readOnlyConfig = true
 
+    process.exitCode = 1
     return {
       ok: false,
       message:
@@ -174,14 +177,22 @@ function getConfigPath(): string | undefined {
   return _configPath
 }
 
-function normalizeConfigKey(key: keyof LocalConfig): keyof LocalConfig {
+function normalizeConfigKey(
+  key: keyof LocalConfig
+): CliJsonResult<keyof LocalConfig> {
   // Note: apiKey was the old name of the token. When we load a config with
   //       property apiKey, we'll copy that to apiToken and delete the old property.
   const normalizedKey = key === 'apiKey' ? 'apiToken' : key
   if (!supportedConfigKeys.has(normalizedKey)) {
-    throw new Error(`Invalid config key: ${normalizedKey}`)
+    // TODO: juggle the exit code as part of the Result type and set exitCode at exit time.
+    process.exitCode = 1
+    return {
+      ok: false,
+      message: `Invalid config key: ${normalizedKey}`,
+      data: undefined
+    }
   }
-  return normalizedKey
+  return { ok: true, data: key }
 }
 
 export function findSocketYmlSync(dir = process.cwd()) {
@@ -211,9 +222,13 @@ export function findSocketYmlSync(dir = process.cwd()) {
 
 export function getConfigValue<Key extends keyof LocalConfig>(
   key: Key
-): LocalConfig[Key] {
+): CliJsonResult<LocalConfig[Key]> {
   const localConfig = getConfigValues()
-  return localConfig[normalizeConfigKey(key)] as LocalConfig[Key]
+  const keyResult = normalizeConfigKey(key)
+  if (!keyResult.ok) {
+    return keyResult
+  }
+  return { ok: true, data: localConfig[keyResult.data as Key] }
 }
 export function isReadOnlyConfig() {
   return _readOnlyConfig
@@ -223,14 +238,22 @@ let _pendingSave = false
 export function updateConfigValue<Key extends keyof LocalConfig>(
   key: keyof LocalConfig,
   value: LocalConfig[Key]
-): void {
+): CliJsonResult<undefined | string> {
   const localConfig = getConfigValues()
-  localConfig[normalizeConfigKey(key) as Key] = value
+  const keyResult = normalizeConfigKey(key)
+  if (!keyResult.ok) {
+    return keyResult
+  }
+  localConfig[keyResult.data as Key] = value
   if (_readOnlyConfig) {
-    logger.warn(
-      'Not persisting config change; current config overridden through env var or flag'
-    )
-  } else if (!_pendingSave) {
+    return {
+      ok: true,
+      message: `Config key '${key}' was updated`,
+      data: 'Change applied but not persisted; current config is overridden through env var or flag'
+    }
+  }
+
+  if (!_pendingSave) {
     _pendingSave = true
     process.nextTick(() => {
       _pendingSave = false
@@ -243,8 +266,14 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
       }
     })
   }
+
+  return {
+    ok: true,
+    message: `Config key '${key}' was updated`,
+    data: undefined
+  }
 }
 
 export function isTestingV1() {
-  return !!getConfigValue('isTestingV1')
+  return !!getConfigValue('isTestingV1').data
 }

@@ -23,7 +23,8 @@ const {
 function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
     // Lazily access constants.ENV[SOCKET_SECURITY_API_BASE_URL].
-    constants.ENV[SOCKET_SECURITY_API_BASE_URL] || getConfigValue('apiBaseUrl')
+    constants.ENV[SOCKET_SECURITY_API_BASE_URL] ||
+    getConfigValue('apiBaseUrl').data
   return isNonEmptyString(baseUrl) ? baseUrl : undefined
 }
 
@@ -31,7 +32,7 @@ function getDefaultApiBaseUrl(): string | undefined {
 function getDefaultHttpProxy(): string | undefined {
   const apiProxy =
     // Lazily access constants.ENV[SOCKET_SECURITY_API_PROXY].
-    constants.ENV[SOCKET_SECURITY_API_PROXY] || getConfigValue('apiProxy')
+    constants.ENV[SOCKET_SECURITY_API_PROXY] || getConfigValue('apiProxy').data
   return isNonEmptyString(apiProxy) ? apiProxy : undefined
 }
 
@@ -45,7 +46,7 @@ export function getDefaultToken(): string | undefined {
     const key =
       // Lazily access constants.ENV[SOCKET_SECURITY_API_TOKEN].
       constants.ENV[SOCKET_SECURITY_API_TOKEN] ||
-      getConfigValue('apiToken') ||
+      getConfigValue('apiToken').data ||
       _defaultToken
     _defaultToken = isNonEmptyString(key) ? key : undefined
   }

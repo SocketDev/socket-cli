@@ -1,24 +1,27 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import type { OutputKind } from '../../types'
-import type { LocalConfig } from '../../utils/config'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import { serializeResultJson } from '../../utils/serialize-result-json'
+
+import type { CliJsonResult, OutputKind } from '../../types'
 
 export async function outputConfigUnset(
-  key: keyof LocalConfig,
+  updateResult: CliJsonResult<undefined | string>,
   outputKind: OutputKind
 ) {
   if (outputKind === 'json') {
-    logger.log(
-      JSON.stringify({
-        success: true,
-        message: `Config key '${key}' was unset`
-      })
-    )
+    logger.log(JSON.stringify(serializeResultJson(updateResult)))
   } else if (outputKind === 'markdown') {
     logger.log(`# Update config`)
     logger.log('')
-    logger.log(`Config key '${key}' was unset`)
-  } else {
+    logger.log(updateResult.message)
+    if (!updateResult.ok) {
+      logger.log('')
+      logger.log(updateResult.data)
+    }
+  } else if (updateResult.ok) {
     logger.log(`OK`)
+  } else {
+    logger.log(failMsgWithBadge(updateResult.message, updateResult.data))
   }
 }

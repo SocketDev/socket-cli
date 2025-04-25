@@ -1,39 +1,27 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import type { OutputKind } from '../../types'
-import type { LocalConfig } from '../../utils/config'
+import { CliJsonResult, OutputKind } from '../../types'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 
 export async function outputConfigSet(
-  key: keyof LocalConfig,
-  _value: string,
-  readOnly: boolean,
+  result: CliJsonResult<undefined | string>,
   outputKind: OutputKind
 ) {
   if (outputKind === 'json') {
-    logger.log(
-      JSON.stringify({
-        success: true,
-        message: `Config key '${key}' was updated${readOnly ? ' (Note: since at least one value was overridden from flag/env, the config was not persisted)' : ''}`,
-        readOnly
-      })
-    )
+    logger.log(serializeResultJson(result))
   } else if (outputKind === 'markdown') {
     logger.log(`# Update config`)
     logger.log('')
-    logger.log(`Config key '${key}' was updated`)
-    if (readOnly) {
+    logger.log(result.message)
+    if (result.data) {
       logger.log('')
-      logger.log(
-        'Note: The change was not persisted because the config is in read-only mode,\n      meaning at least one key was temporarily overridden from an env var or\n      command flag.'
-      )
+      logger.log(result.data)
     }
   } else {
     logger.log(`OK`)
-    if (readOnly) {
+    if (result.data) {
       logger.log('')
-      logger.log(
-        'Note: The change was not persisted because the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag.'
-      )
+      logger.log(result.data)
     }
   }
 }

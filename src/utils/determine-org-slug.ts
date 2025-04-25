@@ -9,7 +9,7 @@ export async function determineOrgSlug(
   interactive: boolean,
   dryRun: boolean
 ): Promise<[string, string]> {
-  const defaultOrgSlug = getConfigValue('defaultOrg') || ''
+  const defaultOrgSlug = getConfigValue('defaultOrg').data || ''
   let orgSlug = String(orgFlag || defaultOrgSlug || '')
   if (!orgSlug) {
     if (isTestingV1()) {

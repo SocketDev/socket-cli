@@ -1,5 +1,5 @@
 import { outputConfigGet } from './output-config-get'
-import { getConfigValue, isReadOnlyConfig } from '../../utils/config'
+import { getConfigValue } from '../../utils/config'
 
 import type { OutputKind } from '../../types'
 import type { LocalConfig } from '../../utils/config'
@@ -11,8 +11,7 @@ export async function handleConfigGet({
   key: keyof LocalConfig
   outputKind: OutputKind
 }) {
-  const value = getConfigValue(key)
-  const readOnly = isReadOnlyConfig()
+  const result = getConfigValue(key)
 
-  await outputConfigGet(key, value, readOnly, outputKind)
+  await outputConfigGet(key, result, outputKind)
 }

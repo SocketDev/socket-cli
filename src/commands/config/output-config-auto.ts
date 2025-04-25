@@ -1,9 +1,11 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'
 
-import { LocalConfig, updateConfigValue } from '../../utils/config'
+import { isReadOnlyConfig, updateConfigValue } from '../../utils/config'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 
 import type { OutputKind } from '../../types'
+import type { LocalConfig } from '../../utils/config'
 
 export async function outputConfigAuto(
   key: keyof LocalConfig,
@@ -46,7 +48,11 @@ export async function outputConfigAuto(
     logger.log('')
 
     if (success) {
-      if (key === 'defaultOrg') {
+      if (isReadOnlyConfig()) {
+        logger.log(
+          '(Unable to persist this value because the config is in read-only mode, meaning it was overridden through env or flag.)'
+        )
+      } else if (key === 'defaultOrg') {
         const proceed = await select<string>({
           message:
             'Would you like to update the default org in local config to this value?',
@@ -63,10 +69,17 @@ export async function outputConfigAuto(
             })
         })
         if (proceed) {
-          logger.log(
-            `OK. Setting defaultOrg to "${proceed}".\nYou should no longer need to add the org to commands that normally require it.`
-          )
-          updateConfigValue('defaultOrg', proceed)
+          logger.log(`Setting defaultOrg to "${proceed}"...`)
+          const updateResult = updateConfigValue('defaultOrg', proceed)
+          if (updateResult.ok) {
+            logger.log(
+              `OK. Updated defaultOrg to "${proceed}".\nYou should no longer need to add the org to commands that normally require it.`
+            )
+          } else {
+            logger.log(
+              failMsgWithBadge(updateResult.message, updateResult.data)
+            )
+          }
         } else {
           logger.log('OK. No changes made.')
         }
@@ -87,8 +100,15 @@ export async function outputConfigAuto(
             })
         })
         if (proceed) {
-          logger.log(`OK. Setting enforcedOrgs key to "${proceed}".`)
-          updateConfigValue('defaultOrg', proceed)
+          logger.log(`Setting enforcedOrgs key to "${proceed}"...`)
+          const updateResult = updateConfigValue('defaultOrg', proceed)
+          if (updateResult.ok) {
+            logger.log(`OK. Updated enforcedOrgs to "${proceed}".`)
+          } else {
+            logger.log(
+              failMsgWithBadge(updateResult.message, updateResult.data)
+            )
+          }
         } else {
           logger.log('OK. No changes made.')
         }

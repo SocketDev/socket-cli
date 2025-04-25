@@ -50,6 +50,7 @@ export async function convertCondaToRequirements(
     })
 
     if (!contents) {
+      process.exitCode = 1
       return {
         ok: false,
         message: 'No data received from stdin',
@@ -64,6 +65,7 @@ export async function convertCondaToRequirements(
     }
 
     if (!fs.existsSync(f)) {
+      process.exitCode = 1
       return {
         ok: false,
         message: `Input file not found at ${f}`,
@@ -74,6 +76,7 @@ export async function convertCondaToRequirements(
     contents = fs.readFileSync(target, 'utf8')
 
     if (!contents) {
+      process.exitCode = 1
       return { ok: false, message: 'File is empty', data: undefined }
     }
   }
