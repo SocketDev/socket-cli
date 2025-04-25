@@ -70,7 +70,6 @@ async function run(
 
   const wasBadInput = checkCommandInput(
     outputKind,
-    outputKind,
     {
       test: supportedConfigKeys.has(key as keyof LocalConfig) && key !== 'test',
       message: 'Config key should be the first arg',
