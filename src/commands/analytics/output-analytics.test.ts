@@ -194,7 +194,7 @@ describe('output-analytics', () => {
       expect(serialized).toMatchInlineSnapshot(`
         "# Socket Alert Analytics
 
-        These are the Socket.dev stats are analytics for the fake_repo repo of the past 7 days
+        These are the Socket.dev analytics for the fake_repo repo of the past 7 days
 
         ## Total critical alerts
 
