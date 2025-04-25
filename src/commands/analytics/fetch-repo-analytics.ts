@@ -1,3 +1,4 @@
+import constants from '../../constants'
 import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
@@ -9,10 +10,18 @@ export async function fetchRepoAnalyticsData(
   time: number
 ): Promise<CliJsonResult<SocketSdkReturnType<'getRepoAnalytics'>['data']>> {
   const sockSdk = await setupSdk()
+
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start(`Requesting analytics data from API...`)
+
   const result = await handleApiCall(
     sockSdk.getRepoAnalytics(repo, time.toString()),
     'fetching analytics data'
   )
+
+  spinner.successAndStop(`Received API response.`)
 
   if (result.success === false) {
     return handleFailedApiResponse('getRepoAnalytics', result)

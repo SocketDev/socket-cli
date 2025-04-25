@@ -1,11 +1,7 @@
 import fs from 'node:fs/promises'
 
-import { codeBlock } from 'common-tags'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { fetchOrgAnalyticsData } from './fetch-org-analytics'
-import { fetchRepoAnalyticsData } from './fetch-repo-analytics'
 import constants from '../../constants'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mdTableStringNumber } from '../../utils/markdown'
@@ -63,42 +59,25 @@ const Months = [
   'Dec'
 ] as const
 
-export async function displayAnalytics({
-  filePath,
-  outputKind,
-  repo,
-  scope,
-  time
-}: {
-  scope: string
-  time: number
-  repo: string
-  outputKind: OutputKind
-  filePath: string
-}): Promise<void> {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Fetching analytics data')
-
-  let result: CliJsonResult<
+export async function outputAnalytics(
+  result: CliJsonResult<
     | SocketSdkReturnType<'getOrgAnalytics'>['data']
     | SocketSdkReturnType<'getRepoAnalytics'>['data']
-  >
-  if (scope === 'org') {
-    result = await fetchOrgAnalyticsData(time)
-  } else if (repo) {
-    result = await fetchRepoAnalyticsData(repo, time)
-  } else {
-    result = {
-      ok: false,
-      message: 'Missing repository name in command',
-      data: undefined
-    }
+  >,
+  {
+    filePath,
+    outputKind,
+    repo,
+    scope,
+    time
+  }: {
+    scope: string
+    time: number
+    repo: string
+    outputKind: OutputKind
+    filePath: string
   }
-
-  spinner.successAndStop('Completed fetch from API server...')
-
+): Promise<void> {
   if (outputKind === 'json') {
     const serialized = serializeResultJson(result)
 
@@ -147,15 +126,16 @@ export async function displayAnalytics({
   }
 }
 
-function renderMarkdown(
+export function renderMarkdown(
   data: FormattedData,
   days: number,
   repoSlug: string
 ): string {
-  return codeBlock`
+  return (
+    `
 # Socket Alert Analytics
 
-These are the Socket.dev stats are analytics for the ${repoSlug ? `${repoSlug} repo` : 'org'} of the past ${days} days
+These are the Socket.dev analytics for the ${repoSlug ? `${repoSlug} repo` : 'org'} of the past ${days} days
 
 ${[
   [
@@ -191,20 +171,20 @@ ${[
     mdTableStringNumber('Date', 'Counts', data['total_low_prevented'])
   ]
 ]
-  .map(
-    ([title, table]) =>
-      codeBlock`
+  .map(([title, table]) =>
+    `
 ## ${title}
 
 ${table}
-`
+`.trim()
   )
   .join('\n\n')}
 
 ## Top 5 alert types
 
 ${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
-`
+`.trim() + '\n'
+  )
 }
 
 function displayAnalyticsScreen(data: FormattedData): void {
@@ -295,7 +275,7 @@ function displayAnalyticsScreen(data: FormattedData): void {
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 }
 
-function formatDataRepo(
+export function formatDataRepo(
   data: SocketSdkReturnType<'getRepoAnalytics'>['data']
 ): FormattedData {
   const sortedTopFiveAlerts: Record<string, number> = {}
@@ -336,7 +316,7 @@ function formatDataRepo(
   }
 }
 
-function formatDataOrg(
+export function formatDataOrg(
   data: SocketSdkReturnType<'getOrgAnalytics'>['data']
 ): FormattedData {
   const sortedTopFiveAlerts: Record<string, number> = {}
