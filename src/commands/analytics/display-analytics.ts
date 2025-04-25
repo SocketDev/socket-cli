@@ -7,8 +7,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { fetchOrgAnalyticsData } from './fetch-org-analytics'
 import { fetchRepoAnalyticsData } from './fetch-repo-analytics'
 import constants from '../../constants'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mdTableStringNumber } from '../../utils/markdown'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 
+import type { CliJsonResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
 import type { grid as ContribGrid } from 'blessed-contrib'
@@ -70,7 +73,7 @@ export async function displayAnalytics({
   scope: string
   time: number
   repo: string
-  outputKind: 'json' | 'markdown' | 'print'
+  outputKind: OutputKind
   filePath: string
 }): Promise<void> {
   // Lazily access constants.spinner.
@@ -78,27 +81,28 @@ export async function displayAnalytics({
 
   spinner.start('Fetching analytics data')
 
-  let data:
-    | undefined
+  let result: CliJsonResult<
     | SocketSdkReturnType<'getOrgAnalytics'>['data']
     | SocketSdkReturnType<'getRepoAnalytics'>['data']
+  >
   if (scope === 'org') {
-    data = await fetchOrgAnalyticsData(time, spinner)
+    result = await fetchOrgAnalyticsData(time)
   } else if (repo) {
-    data = await fetchRepoAnalyticsData(repo, time, spinner)
+    result = await fetchRepoAnalyticsData(repo, time)
+  } else {
+    result = {
+      ok: false,
+      message: 'Missing repository name in command',
+      data: undefined
+    }
   }
 
-  // A message should already have been printed if we have no data here
-  if (!data) {
-    return
-  }
+  spinner.successAndStop('Completed fetch from API server...')
 
   if (outputKind === 'json') {
-    const serialized = renderJson(data)
-    if (!serialized) {
-      return
-    }
+    const serialized = serializeResultJson(result)
 
+    // TODO: do we want to write to file even if there was an error...?
     if (filePath && filePath !== '-') {
       try {
         await fs.writeFile(filePath, serialized, 'utf8')
@@ -111,38 +115,35 @@ export async function displayAnalytics({
     } else {
       logger.log(serialized)
     }
-  } else {
-    const fdata = scope === 'org' ? formatDataOrg(data) : formatDataRepo(data)
 
-    if (outputKind === 'markdown') {
-      const serialized = renderMarkdown(fdata, time, repo)
+    return
+  }
 
-      if (filePath && filePath !== '-') {
-        try {
-          await fs.writeFile(filePath, serialized, 'utf8')
-          logger.log(`Data successfully written to ${filePath}`)
-        } catch (e) {
-          logger.error(e)
-        }
-      } else {
-        logger.log(serialized)
+  if (!result.ok) {
+    // Note: We're not in json mode so just print the error badge
+    logger.fail(failMsgWithBadge(result.message, result.data))
+    return
+  }
+
+  const fdata =
+    scope === 'org' ? formatDataOrg(result.data) : formatDataRepo(result.data)
+
+  if (outputKind === 'markdown') {
+    const serialized = renderMarkdown(fdata, time, repo)
+
+    // TODO: do we want to write to file even if there was an error...?
+    if (filePath && filePath !== '-') {
+      try {
+        await fs.writeFile(filePath, serialized, 'utf8')
+        logger.log(`Data successfully written to ${filePath}`)
+      } catch (e) {
+        logger.error(e)
       }
     } else {
-      displayAnalyticsScreen(fdata)
+      logger.log(serialized)
     }
-  }
-}
-
-function renderJson(data: unknown): string | undefined {
-  try {
-    return JSON.stringify(data, null, 2)
-  } catch (e) {
-    process.exitCode = 1
-    // This could be caused by circular references, which is an "us" problem
-    logger.fail(
-      'There was a problem converting the data set to JSON. Please try without --json or with --markdown'
-    )
-    return
+  } else {
+    displayAnalyticsScreen(fdata)
   }
 }
 

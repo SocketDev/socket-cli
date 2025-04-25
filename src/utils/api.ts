@@ -8,6 +8,7 @@ import { getConfigValue } from './config'
 import { AuthError } from './errors'
 import constants from '../constants'
 import { failMsgWithBadge } from './fail-msg-with-badge'
+import type { CliJsonResult } from '../types'
 
 import type {
   SocketSdkErrorType,
@@ -30,6 +31,20 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   logger.fail(failMsgWithBadge('Socket API returned an error', message))
   // eslint-disable-next-line n/no-process-exit
   process.exit(1)
+}
+
+export function handleFailedApiResponse<T extends SocketSdkOperations>(
+  _name: T,
+  { cause, error }: SocketSdkErrorType<T>
+): CliJsonResult<any> {
+  process.exitCode = 1
+  const message = `${error || 'No error message returned'}`
+  // logger.error(failMsgWithBadge('Socket API returned an error', message))
+  return {
+    ok: false,
+    message: 'Socket API returned an error',
+    data: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`
+  } satisfies CliJsonResult
 }
 
 export async function handleApiCall<T>(
