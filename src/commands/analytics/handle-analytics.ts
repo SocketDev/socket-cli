@@ -1,6 +1,6 @@
-import { displayAnalytics } from './display-analytics'
 import { fetchOrgAnalyticsData } from './fetch-org-analytics'
 import { fetchRepoAnalyticsData } from './fetch-repo-analytics'
+import { outputAnalytics } from './output-analytics.ts'
 
 import type { CliJsonResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -34,7 +34,7 @@ export async function handleAnalytics({
     }
   }
 
-  await displayAnalytics(result, {
+  await outputAnalytics(result, {
     filePath,
     outputKind,
     repo,

@@ -4,8 +4,6 @@ import { codeBlock } from 'common-tags'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { fetchOrgAnalyticsData } from './fetch-org-analytics'
-import { fetchRepoAnalyticsData } from './fetch-repo-analytics'
 import constants from '../../constants'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mdTableStringNumber } from '../../utils/markdown'
@@ -63,7 +61,7 @@ const Months = [
   'Dec'
 ] as const
 
-export async function displayAnalytics(
+export async function outputAnalytics(
   result: CliJsonResult<
     | SocketSdkReturnType<'getOrgAnalytics'>['data']
     | SocketSdkReturnType<'getRepoAnalytics'>['data']
@@ -278,7 +276,7 @@ function displayAnalyticsScreen(data: FormattedData): void {
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 }
 
-function formatDataRepo(
+export function formatDataRepo(
   data: SocketSdkReturnType<'getRepoAnalytics'>['data']
 ): FormattedData {
   const sortedTopFiveAlerts: Record<string, number> = {}
@@ -319,7 +317,7 @@ function formatDataRepo(
   }
 }
 
-function formatDataOrg(
+export function formatDataOrg(
   data: SocketSdkReturnType<'getOrgAnalytics'>['data']
 ): FormattedData {
   const sortedTopFiveAlerts: Record<string, number> = {}
