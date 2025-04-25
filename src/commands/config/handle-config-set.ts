@@ -1,6 +1,7 @@
 import { outputConfigSet } from './output-config-set'
 import { isReadOnlyConfig, updateConfigValue } from '../../utils/config'
 
+import type { OutputKind } from '../../types'
 import type { LocalConfig } from '../../utils/config'
 
 export async function handleConfigSet({
@@ -9,7 +10,7 @@ export async function handleConfigSet({
   value
 }: {
   key: keyof LocalConfig
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
   value: string
 }) {
   updateConfigValue(key, value)

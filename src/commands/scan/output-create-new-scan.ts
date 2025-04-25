@@ -4,11 +4,12 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm } from '@socketsecurity/registry/lib/prompts'
 
+import type { OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputCreateNewScan(
   data: SocketSdkReturnType<'CreateOrgFullScan'>['data'],
-  outputKind: 'json' | 'markdown' | 'text',
+  outputKind: OutputKind,
   interactive: boolean
 ) {
   if (!data.id) {

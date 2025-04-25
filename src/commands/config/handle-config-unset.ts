@@ -1,6 +1,7 @@
 import { outputConfigUnset } from './output-config-unset'
 import { updateConfigValue } from '../../utils/config'
 
+import type { OutputKind } from '../../types'
 import type { LocalConfig } from '../../utils/config'
 
 export async function handleConfigUnset({
@@ -8,7 +9,7 @@ export async function handleConfigUnset({
   outputKind
 }: {
   key: keyof LocalConfig
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 }) {
   updateConfigValue(key, undefined)
   await outputConfigUnset(key, outputKind)

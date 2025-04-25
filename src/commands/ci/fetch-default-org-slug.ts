@@ -1,10 +1,11 @@
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { CliJsonResult } from '../../types'
 import { handleApiCall } from '../../utils/api'
 import { getConfigValue } from '../../utils/config'
 import { setupSdk } from '../../utils/sdk'
+
+import type { CliJsonResult } from '../../types'
 
 // Use the config defaultOrg when set, otherwise discover from remote
 export async function getDefaultOrgSlug(): Promise<CliJsonResult<string>> {

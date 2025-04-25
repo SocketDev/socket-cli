@@ -1,12 +1,13 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import type { OutputKind } from '../../types'
 import type { LocalConfig } from '../../utils/config'
 
 export async function outputConfigSet(
   key: keyof LocalConfig,
   _value: string,
   readOnly: boolean,
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 ) {
   if (outputKind === 'json') {
     logger.log(

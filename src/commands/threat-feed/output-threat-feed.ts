@@ -3,6 +3,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../../constants'
 
 import type { ThreadFeedResponse, ThreatResult } from './types'
+import type { OutputKind } from '../../types'
 import type { Widgets } from 'blessed'
 
 export async function outputThreatFeed(
@@ -10,7 +11,7 @@ export async function outputThreatFeed(
   {
     outputKind
   }: {
-    outputKind: 'json' | 'markdown' | 'text'
+    outputKind: OutputKind
   }
 ) {
   if (outputKind === 'json') {

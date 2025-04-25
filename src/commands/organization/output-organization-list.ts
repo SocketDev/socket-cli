@@ -5,11 +5,12 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { getLastFiveOfApiToken } from '../../utils/api'
 import { getDefaultToken } from '../../utils/sdk'
 
+import type { OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputOrganizationList(
   data: SocketSdkReturnType<'getOrganizations'>['data'],
-  outputKind: 'text' | 'json' | 'markdown' = 'text'
+  outputKind: OutputKind = 'text'
 ): Promise<void> {
   const organizations = Object.values(data.organizations)
   const apiToken = getDefaultToken()

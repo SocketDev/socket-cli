@@ -7,12 +7,14 @@ import {
   supportedConfigKeys
 } from '../../utils/config'
 
+import type { OutputKind } from '../../types'
+
 export async function outputConfigList({
   full,
   outputKind
 }: {
   full: boolean
-  outputKind: 'json' | 'markdown' | 'text'
+  outputKind: OutputKind
 }) {
   const readOnly = isReadOnlyConfig()
   if (outputKind === 'json') {
