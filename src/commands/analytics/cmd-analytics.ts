@@ -1,6 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { displayAnalytics } from './display-analytics'
+import { handleAnalytics } from './handle-analytics'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { isTestingV1 } from '../../utils/config'
@@ -215,7 +215,7 @@ async function run(
     return
   }
 
-  return await displayAnalytics({
+  return await handleAnalytics({
     scope,
     time: time === '90' ? 90 : time === '30' ? 30 : 7,
     repo: repoName,
