@@ -18,11 +18,11 @@ describe('socket npm', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "npm wrapper functionality
+        "npm wrapper functionality
 
-        Usage
-          $ socket npm"
-    `
+          Usage
+            $ socket npm"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

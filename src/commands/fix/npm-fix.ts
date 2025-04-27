@@ -52,7 +52,7 @@ import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
 import type { EnvDetails } from '../../utils/package-environment'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
-const { CI, NPM } = constants
+const { NPM } = constants
 
 type InstallOptions = {
   cwd?: string | undefined
@@ -104,8 +104,8 @@ export async function npmFix(
     return
   }
 
-  // Lazily access constants.ENV[CI].
-  const isCi = constants.ENV[CI]
+  // Lazily access constants.ENV.CI.
+  const isCi = constants.ENV.CI
   const workspacePkgJsonPaths = await globWorkspace(
     pkgEnvDetails.agent,
     rootPath

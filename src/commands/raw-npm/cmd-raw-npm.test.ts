@@ -18,14 +18,14 @@ describe('socket raw-npm', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Temporarily disable the Socket npm wrapper
+        "Temporarily disable the Socket npm wrapper
 
-        Usage
-          $ socket raw-npm <command>
+          Usage
+            $ socket raw-npm <command>
 
-        Examples
-          $ socket raw-npm install"
-    `
+          Examples
+            $ socket raw-npm install"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
