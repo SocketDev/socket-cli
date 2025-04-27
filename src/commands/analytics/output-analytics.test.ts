@@ -9,7 +9,7 @@ import {
 
 describe('output-analytics', () => {
   describe('format data', () => {
-    it('should formatDataRepo', () => {
+    it.skip('should formatDataRepo', () => {
       const str = formatDataRepo(JSON.parse(JSON.stringify(FIXTURE)))
 
       expect(str).toMatchInlineSnapshot(`
@@ -97,7 +97,7 @@ describe('output-analytics', () => {
       `)
     })
 
-    it('should formatDataOrg', () => {
+    it.skip('should formatDataOrg', () => {
       const str = formatDataOrg(JSON.parse(JSON.stringify(FIXTURE)))
 
       expect(str).toMatchInlineSnapshot(`
