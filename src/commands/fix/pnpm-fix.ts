@@ -56,7 +56,7 @@ import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-const { CI, NPM, OVERRIDES, PNPM } = constants
+const { NPM, OVERRIDES, PNPM } = constants
 
 async function getActualTree(cwd: string = process.cwd()): Promise<SafeNode> {
   const arb = new SafeArborist({
@@ -127,8 +127,8 @@ export async function pnpmFix(
     return
   }
 
-  // Lazily access constants.ENV[CI].
-  const isCi = constants.ENV[CI]
+  // Lazily access constants.ENV.CI.
+  const isCi = constants.ENV.CI
   const workspacePkgJsonPaths = await globWorkspace(
     pkgEnvDetails.agent,
     rootPath

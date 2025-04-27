@@ -74,7 +74,8 @@ export async function outputAsJson(
     ok: true,
     data: {
       desc: 'Audit logs for given query',
-      generated: process.env['VITEST'] ? REDACTED : new Date().toISOString(),
+      // Lazily access constants.ENV.VITEST.
+      generated: constants.ENV.VITEST ? REDACTED : new Date().toISOString(),
       org: orgSlug,
       logType,
       page,
@@ -161,7 +162,7 @@ These are the Socket.dev audit logs as per requested query.
 - page: ${page}
 - next page: ${auditLogs.data.nextPage}
 - per page: ${perPage}
-- generated: ${process.env['VITEST'] ? REDACTED : new Date().toISOString()}
+- generated: ${constants.ENV.VITEST ? REDACTED : new Date().toISOString()}
 
 ${table}
 `

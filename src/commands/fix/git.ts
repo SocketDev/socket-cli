@@ -7,8 +7,6 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants'
 
-const { GITHUB_REF_NAME } = constants
-
 function formatBranchName(str: string): string {
   return str
     .replace(/[-_.\\/]+/g, '-')
@@ -21,9 +19,9 @@ function getPkgNameFromPurlObj(purlObj: PackageURL): string {
 }
 
 export function getBaseGitBranch() {
-  // Lazily access constants.ENV[GITHUB_REF_NAME].
+  // Lazily access constants.ENV.GITHUB_REF_NAME.
   return (
-    constants.ENV[GITHUB_REF_NAME] ||
+    constants.ENV.GITHUB_REF_NAME ||
     // GitHub defaults to branch name "main"
     // https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches#about-the-default-branch
     'main'

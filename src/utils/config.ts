@@ -10,7 +10,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { safeReadFileSync } from './fs'
 import constants from '../constants'
 
-const { LOCALAPPDATA, SOCKET_APP_DIR, XDG_DATA_HOME } = constants
+const { LOCALAPPDATA, SOCKET_APP_DIR } = constants
 
 export interface LocalConfig {
   apiBaseUrl?: string | null | undefined
@@ -150,10 +150,10 @@ function getConfigPath(): string | undefined {
     // Lazily access constants.WIN32.
     const { WIN32 } = constants
     let dataHome: string | undefined = WIN32
-      ? // Lazily access constants.ENV[LOCALAPPDATA]
-        constants.ENV[LOCALAPPDATA]
-      : // Lazily access constants.ENV[XDG_DATA_HOME]
-        constants.ENV[XDG_DATA_HOME]
+      ? // Lazily access constants.ENV.LOCALAPPDATA
+        constants.ENV.LOCALAPPDATA
+      : // Lazily access constants.ENV.XDG_DATA_HOME
+        constants.ENV.XDG_DATA_HOME
     if (!dataHome) {
       if (WIN32) {
         if (!_warnedConfigPathWin32Missing) {

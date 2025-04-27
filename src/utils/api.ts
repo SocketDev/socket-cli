@@ -15,6 +15,8 @@ import type {
   SocketSdkOperations
 } from '@socketsecurity/sdk'
 
+const { API_V0_URL } = constants
+
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
   { cause, error, status }: SocketSdkErrorType<T>
@@ -82,29 +84,22 @@ export function getLastFiveOfApiToken(token: string): string {
 // The API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    process.env['SOCKET_SECURITY_API_BASE_URL'] || getConfigValue('apiBaseUrl')
-  if (isNonEmptyString(baseUrl)) {
-    return baseUrl
-  }
-  // Lazily access constants.API_V0_URL.
-  const API_V0_URL = constants.API_V0_URL
-  return API_V0_URL
+    // Lazily access constants.ENV.SOCKET_SECURITY_API_BASE_URL.
+    constants.ENV.SOCKET_SECURITY_API_BASE_URL || getConfigValue('apiBaseUrl')
+  return isNonEmptyString(baseUrl) ? baseUrl : API_V0_URL
 }
 
 export async function queryApi(path: string, apiToken: string) {
-  const API_V0_URL = getDefaultApiBaseUrl() || ''
-  if (!API_V0_URL) {
+  const baseUrl = getDefaultApiBaseUrl() || ''
+  if (!baseUrl) {
     logger.warn(
       'API endpoint is not set and default was empty. Request is likely to fail.'
     )
   }
-  return await fetch(
-    `${API_V0_URL}${API_V0_URL.endsWith('/') ? '' : '/'}${path}`,
-    {
-      method: 'GET',
-      headers: {
-        Authorization: `Basic ${btoa(`${apiToken}:`)}`
-      }
+  return await fetch(`${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Basic ${btoa(`${apiToken}:`)}`
     }
-  )
+  })
 }

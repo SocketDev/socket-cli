@@ -45,8 +45,8 @@ const { SOCKET_CLI_BIN_NAME } = constants
 void (async () => {
   await updateNotifier({
     name: SOCKET_CLI_BIN_NAME,
-    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION']".
-    version: process.env['INLINED_SOCKET_CLI_VERSION']!,
+    // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
+    version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
     ttl: 86_400_000 /* 24 hours in milliseconds */
   })
 
