@@ -39,8 +39,8 @@ export async function runCycloneDX(yargvWithYes: any) {
       try {
         await shadowBin(NPX, [
           ...yesArgs,
-          // The '@rollup/plugin-replace' will replace "process.env['INLINED_SYNP_VERSION']".
-          `synp@${process.env['INLINED_SYNP_VERSION']}`,
+          // Lazily access constants.ENV.INLINED_SYNP_VERSION.
+          `synp@${constants.ENV.INLINED_SYNP_VERSION}`,
           '--source-file',
           `./${YARN_LOCK}`
         ])
@@ -51,8 +51,8 @@ export async function runCycloneDX(yargvWithYes: any) {
   }
   await shadowBin(NPX, [
     ...yesArgs,
-    // The '@rollup/plugin-replace' will replace "process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']".
-    `@cyclonedx/cdxgen@${process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']}`,
+    // Lazily access constants.ENV.INLINED_CYCLONEDX_CDXGEN_VERSION.
+    `@cyclonedx/cdxgen@${constants.ENV.INLINED_CYCLONEDX_CDXGEN_VERSION}`,
     ...argvToArray(yargv)
   ])
   if (cleanupPackageLock) {

@@ -1,4 +1,6 @@
-export function createEnum<const T extends Record<string, any>>(obj: T): Readonly<T> {
+export function createEnum<const T extends Record<string, any>>(
+  obj: T
+): Readonly<T> {
   return Object.freeze({ __proto__: null, ...obj }) as any
 }
 

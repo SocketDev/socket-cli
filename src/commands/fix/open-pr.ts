@@ -16,9 +16,6 @@ import type { OctokitResponse } from '@octokit/types'
 
 type PullsCreateResponseData = components['schemas']['pull-request']
 
-const { GITHUB_ACTIONS, GITHUB_REPOSITORY, SOCKET_SECURITY_GITHUB_PAT } =
-  constants
-
 type GitHubRepoInfo = {
   owner: string
   repo: string
@@ -28,8 +25,8 @@ let _octokit: Octokit | undefined
 function getOctokit() {
   if (_octokit === undefined) {
     _octokit = new Octokit({
-      // Lazily access constants.ENV[SOCKET_SECURITY_GITHUB_PAT].
-      auth: constants.ENV[SOCKET_SECURITY_GITHUB_PAT]
+      // Lazily access constants.ENV.SOCKET_SECURITY_GITHUB_PAT.
+      auth: constants.ENV.SOCKET_SECURITY_GITHUB_PAT
     })
   }
   return _octokit
@@ -40,8 +37,8 @@ export function getOctokitGraphql() {
   if (!_octokitGraphql) {
     _octokitGraphql = OctokitGraphql.defaults({
       headers: {
-        // Lazily access constants.ENV[SOCKET_SECURITY_GITHUB_PAT].
-        authorization: `token ${constants.ENV[SOCKET_SECURITY_GITHUB_PAT]}`
+        // Lazily access constants.ENV.SOCKET_SECURITY_GITHUB_PAT.
+        authorization: `token ${constants.ENV.SOCKET_SECURITY_GITHUB_PAT}`
       }
     })
   }
@@ -108,8 +105,8 @@ mutation EnableAutoMerge($pullRequestId: ID!) {
 }
 
 export function getGitHubEnvRepoInfo(): GitHubRepoInfo {
-  // Lazily access constants.ENV[GITHUB_REPOSITORY].
-  const ownerSlashRepo = constants.ENV[GITHUB_REPOSITORY]
+  // Lazily access constants.ENV.GITHUB_REPOSITORY.
+  const ownerSlashRepo = constants.ENV.GITHUB_REPOSITORY
   const slashIndex = ownerSlashRepo.indexOf('/')
   if (slashIndex === -1) {
     throw new Error('Missing GITHUB_REPOSITORY environment variable')
@@ -138,10 +135,10 @@ export async function openGitHubPullRequest(
     __proto__: null,
     ...options
   } as OpenGitHubPullRequestOptions
-  // Lazily access constants.ENV[GITHUB_ACTIONS].
-  if (constants.ENV[GITHUB_ACTIONS]) {
-    // Lazily access constants.ENV[SOCKET_SECURITY_GITHUB_PAT].
-    const pat = constants.ENV[SOCKET_SECURITY_GITHUB_PAT]
+  // Lazily access constants.ENV.GITHUB_ACTIONS.
+  if (constants.ENV.GITHUB_ACTIONS) {
+    // Lazily access constants.ENV.SOCKET_SECURITY_GITHUB_PAT.
+    const pat = constants.ENV.SOCKET_SECURITY_GITHUB_PAT
     if (!pat) {
       throw new Error('Missing SOCKET_SECURITY_GITHUB_PAT environment variable')
     }

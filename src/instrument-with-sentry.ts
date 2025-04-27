@@ -6,13 +6,15 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 // Require constants with require(relConstantsPath) instead of require('./constants')
 // so Rollup doesn't generate a constants2.js chunk.
 const relConstantsPath = './constants'
-// The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']".
-if (process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']) {
+const constants = require(relConstantsPath)
+
+// Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
+if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
   const Sentry = require('@sentry/node')
   Sentry.init({
     onFatalError(error: Error) {
       // Defer module loads until after Sentry.init is called.
-      if (require(relConstantsPath).ENV.SOCKET_CLI_DEBUG) {
+      if (constants.ENV.SOCKET_CLI_DEBUG) {
         logger.fail('[DEBUG] [Sentry onFatalError]:', error)
       }
     },
@@ -22,19 +24,18 @@ if (process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']) {
   })
   Sentry.setTag(
     'environment',
-    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']".
-    process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']
+    // Lazily access constants.ENV.INLINED_SOCKET_CLI_PUBLISHED_BUILD.
+    constants.ENV.INLINED_SOCKET_CLI_PUBLISHED_BUILD
       ? 'pub'
-      : // The NODE_ENV convention is used by apps to define the runtime environment.
-        // https://nodejs.org/en/learn/getting-started/nodejs-the-difference-between-development-and-production
-        process.env['NODE_ENV']
+      : // Lazily access constants.ENV.NODE_ENV.
+        constants.ENV.NODE_ENV
   )
   Sentry.setTag(
     'version',
-    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION_HASH']".
-    process.env['INLINED_SOCKET_CLI_VERSION_HASH']
+    // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH.
+    constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
   )
-  const constants = require(relConstantsPath)
+  // Lazily access constants.ENV.SOCKET_CLI_DEBUG.
   if (constants.ENV.SOCKET_CLI_DEBUG) {
     Sentry.setTag('debugging', true)
     logger.log('[DEBUG] Set up Sentry.')
@@ -46,6 +47,8 @@ if (process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']) {
     [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { setSentry }
   } = constants
   setSentry(Sentry)
-} else if (require(relConstantsPath).ENV.SOCKET_CLI_DEBUG) {
+}
+// Lazily access constants.ENV.SOCKET_CLI_DEBUG.
+else if (constants.ENV.SOCKET_CLI_DEBUG) {
   logger.log('[DEBUG] Sentry disabled explicitly.')
 }
