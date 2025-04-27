@@ -1,3 +1,5 @@
+import { createEnum } from '../../../../../utils/objects'
+
 import type { SafeNode } from '../node'
 import type {
   Options as ArboristOptions,
@@ -50,11 +52,11 @@ export type AuditAdvisory = Omit<BaseAdvisory, 'id'> & {
   vulnerable_versions: string
 }
 
-export enum DiffAction {
-  add = 'ADD',
-  change = 'CHANGE',
-  remove = 'REMOVE'
-}
+export const DiffAction = createEnum({
+  add: 'ADD',
+  change: 'CHANGE',
+  remove: 'REMOVE'
+})
 
 export type Diff = Omit<
   BaseDiff,

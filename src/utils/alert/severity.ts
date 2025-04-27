@@ -1,14 +1,14 @@
-import { pick } from '../objects'
+import { createEnum, pick } from '../objects'
 import { stringJoinWithSeparateFinalSeparator } from '../strings'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
-export enum ALERT_SEVERITY {
-  critical = 'critical',
-  high = 'high',
-  middle = 'middle',
-  low = 'low'
-}
+export const ALERT_SEVERITY = createEnum({
+  critical: 'critical',
+  high: 'high',
+  middle: 'middle',
+  low: 'low'
+})
 
 export type SocketSdkAlertList =
   SocketSdkReturnType<'getIssuesByNPMPackage'>['data']
