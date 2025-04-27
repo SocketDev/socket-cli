@@ -47,8 +47,19 @@ type ENV = Remap<
       GITHUB_REF_NAME: string
       GITHUB_REF_TYPE: string
       GITHUB_REPOSITORY: string
+      INLINED_CYCLONEDX_CDXGEN_VERSION: string
+      INLINED_SOCKET_CLI_HOMEPAGE: string
+      INLINED_SOCKET_CLI_LEGACY_BUILD: string
+      INLINED_SOCKET_CLI_NAME: string
+      INLINED_SOCKET_CLI_PUBLISHED_BUILD: string
+      INLINED_SOCKET_CLI_SENTRY_BUILD: string
+      INLINED_SOCKET_CLI_VERSION: string
+      INLINED_SOCKET_CLI_VERSION_HASH: string
+      INLINED_SYNP_VERSION: string
       LOCALAPPDATA: string
+      PATH: string
       SOCKET_CLI_ACCEPT_RISKS: boolean
+      SOCKET_CLI_CONFIG: string
       SOCKET_CLI_DEBUG: boolean
       SOCKET_CLI_NO_API_TOKEN: boolean
       SOCKET_CLI_VIEW_ALL_RISKS: boolean
@@ -83,13 +94,6 @@ type Constants = Remap<
     readonly ENV: ENV
     readonly DRY_RUN_LABEL: '[DryRun]'
     readonly DRY_RUN_BAIL_TEXT: '[DryRun] Bailing now'
-    readonly GITHUB_ACTIONS: 'GITHUB_ACTIONS'
-    readonly GITHUB_REF_NAME: 'GITHUB_REF_NAME'
-    readonly GITHUB_REF_TYPE: 'GITHUB_REF_TYPE'
-    readonly GITHUB_REPOSITORY: 'GITHUB_REPOSITORY'
-    readonly INLINED_SOCKET_CLI_LEGACY_BUILD: 'INLINED_SOCKET_CLI_LEGACY_BUILD'
-    readonly INLINED_SOCKET_CLI_PUBLISHED_BUILD: 'INLINED_SOCKET_CLI_PUBLISHED_BUILD'
-    readonly INLINED_SOCKET_CLI_SENTRY_BUILD: 'INLINED_SOCKET_CLI_SENTRY_BUILD'
     readonly IPC: IPC
     readonly LOCALAPPDATA: 'LOCALAPPDATA'
     readonly LOCK_EXT: '.lock'
@@ -105,12 +109,11 @@ type Constants = Remap<
     readonly SOCKET_CLI_ACCEPT_RISKS: 'SOCKET_CLI_ACCEPT_RISKS'
     readonly SOCKET_CLI_BIN_NAME: 'socket'
     readonly SOCKET_CLI_BIN_NAME_ALIAS: 'cli'
-    readonly SOCKET_CLI_DEBUG: 'SOCKET_CLI_DEBUG'
+    readonly SOCKET_CLI_CONFIG: 'SOCKET_CLI_CONFIG'
     readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
     readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
     readonly SOCKET_CLI_SENTRY_BIN_NAME_ALIAS: 'cli-with-sentry'
     readonly SOCKET_CLI_LEGACY_PACKAGE_NAME: '@socketsecurity/cli'
-    readonly SOCKET_CLI_NO_API_TOKEN: 'SOCKET_CLI_NO_API_TOKEN'
     readonly SOCKET_CLI_NPM_BIN_NAME: 'socket-npm'
     readonly SOCKET_CLI_NPX_BIN_NAME: 'socket-npx'
     readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
@@ -122,14 +125,8 @@ type Constants = Remap<
     readonly SOCKET_CLI_SENTRY_NPX_BIN_NAME: 'socket-npx-with-sentry'
     readonly SOCKET_CLI_SENTRY_PACKAGE_NAME: '@socketsecurity/cli-with-sentry'
     readonly SOCKET_CLI_VIEW_ALL_RISKS: 'SOCKET_CLI_VIEW_ALL_RISKS'
-    readonly SOCKET_SECURITY_API_BASE_URL: 'SOCKET_SECURITY_API_BASE_URL'
-    readonly SOCKET_SECURITY_API_PROXY: 'SOCKET_SECURITY_API_PROXY'
-    readonly SOCKET_SECURITY_API_TOKEN: 'SOCKET_SECURITY_API_TOKEN'
-    readonly SOCKET_SECURITY_GITHUB_PAT: 'SOCKET_SECURITY_GITHUB_PAT'
-    readonly TERM: 'TERM'
     readonly VLT: 'vlt'
     readonly WITH_SENTRY: 'with-sentry'
-    readonly XDG_DATA_HOME: 'XDG_DATA_HOME'
     readonly YARN: 'yarn'
     readonly YARN_BERRY: 'yarn/berry'
     readonly YARN_CLASSIC: 'yarn/classic'
@@ -168,13 +165,6 @@ const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
   'firstPatchedVersionIdentifier'
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAIL_TEXT = `${DRY_RUN_LABEL}: Bailing now`
-const GITHUB_ACTIONS = 'GITHUB_ACTIONS'
-const GITHUB_REF_NAME = 'GITHUB_REF_NAME'
-const GITHUB_REF_TYPE = 'GITHUB_REF_TYPE'
-const GITHUB_REPOSITORY = 'GITHUB_REPOSITORY'
-const INLINED_SOCKET_CLI_LEGACY_BUILD = 'INLINED_SOCKET_CLI_LEGACY_BUILD'
-const INLINED_SOCKET_CLI_PUBLISHED_BUILD = 'INLINED_SOCKET_CLI_PUBLISHED_BUILD'
-const INLINED_SOCKET_CLI_SENTRY_BUILD = 'INLINED_SOCKET_CLI_SENTRY_BUILD'
 const LOCALAPPDATA = 'LOCALAPPDATA'
 const LOCK_EXT = '.lock'
 const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
@@ -190,11 +180,9 @@ const SOCKET_APP_DIR = 'socket/settings'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
-const SOCKET_CLI_DEBUG = 'SOCKET_CLI_DEBUG'
 const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const SOCKET_CLI_LEGACY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli`
-const SOCKET_CLI_NO_API_TOKEN = 'SOCKET_CLI_NO_API_TOKEN'
 const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
 const SOCKET_CLI_NPM_BIN_NAME = 'socket-npm'
 const SOCKET_CLI_NPX_BIN_NAME = 'socket-npx'
@@ -207,14 +195,8 @@ const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli-with-sentry`
 const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
-const SOCKET_SECURITY_API_BASE_URL = 'SOCKET_SECURITY_API_BASE_URL'
-const SOCKET_SECURITY_API_PROXY = 'SOCKET_SECURITY_API_PROXY'
-const SOCKET_SECURITY_API_TOKEN = 'SOCKET_SECURITY_API_TOKEN'
-const SOCKET_SECURITY_GITHUB_PAT = 'SOCKET_SECURITY_GITHUB_PAT'
-const TERM = 'TERM'
 const VLT = 'vlt'
 const WITH_SENTRY = 'with-sentry'
-const XDG_DATA_HOME = 'XDG_DATA_HOME'
 const YARN = 'yarn'
 const YARN_BERRY = 'yarn/berry'
 const YARN_CLASSIC = 'yarn/classic'
@@ -244,30 +226,67 @@ const LAZY_ENV = () => {
     // The owner and repository name. For example, octocat/Hello-World.
     // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
     GITHUB_REPOSITORY: envAsString(env['GITHUB_REPOSITORY']),
-    // Inlined flag to determine if this is the Legacy build.
-    // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_LEGACY_BUILD]".
-    INLINED_SOCKET_CLI_LEGACY_BUILD:
-      process.env['INLINED_SOCKET_CLI_LEGACY_BUILD'],
-    // Inlined flag to determine if this is a published build.
-    // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_PUBLISHED_BUILD]".
-    INLINED_SOCKET_CLI_PUBLISHED_BUILD:
-      process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'],
-    // Inlined flag to determine if this is the Sentry build.
-    // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]".
-    INLINED_SOCKET_CLI_SENTRY_BUILD:
-      process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'],
+    // Comp-time inlined @cyclonedx/cdxgen package version.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']".
+    INLINED_CYCLONEDX_CDXGEN_VERSION: envAsString(
+      process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']
+    ),
+    // Comp-time inlined Socket package homepage.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_HOMEPAGE']".
+    INLINED_SOCKET_CLI_HOMEPAGE: envAsString(
+      process.env['INLINED_SOCKET_CLI_HOMEPAGE']
+    ),
+    // Comp-time inlined flag to determine if this is the Legacy build.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_LEGACY_BUILD']".
+    INLINED_SOCKET_CLI_LEGACY_BUILD: envAsBoolean(
+      process.env['INLINED_SOCKET_CLI_LEGACY_BUILD']
+    ),
+    // Comp-time inlined Socket package name.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_NAME']".
+    INLINED_SOCKET_CLI_NAME: envAsString(
+      process.env['INLINED_SOCKET_CLI_NAME']
+    ),
+    // Comp-time inlined flag to determine if this is a published build.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']".
+    INLINED_SOCKET_CLI_PUBLISHED_BUILD: envAsBoolean(
+      process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']
+    ),
+    // Comp-time inlined flag to determine if this is the Sentry build.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']".
+    INLINED_SOCKET_CLI_SENTRY_BUILD: envAsBoolean(
+      process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']
+    ),
+    // Comp-time inlined Socket package version.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION']".
+    INLINED_SOCKET_CLI_VERSION: envAsString(
+      process.env['INLINED_SOCKET_CLI_VERSION']
+    ),
+    // Comp-time inlined Socket package version hash.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION_HASH']".
+    INLINED_SOCKET_CLI_VERSION_HASH: envAsString(
+      process.env['INLINED_SOCKET_CLI_VERSION_HASH']
+    ),
+    // Comp-time inlined synp package version.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SYNP_VERSION']".
+    INLINED_SYNP_VERSION: envAsString(process.env['INLINED_SYNP_VERSION']),
     // The location of the %localappdata% folder on Windows used to store user-specific,
     // non-roaming application data, like temporary files, cached data, and program
     // settings, that are specific to the current machine and user.
-    LOCALAPPDATA: envAsString(env['LOCALAPPDATA']),
+    LOCALAPPDATA: envAsString(env[LOCALAPPDATA]),
+    // PATH is an environment variable that lists directories where executable
+    // programs are located. When a command is run, the system searches these
+    // directories to find the executable.
+    PATH: envAsString(env['PATH']),
     // Flag to accepts risks of safe-npm and safe-npx run.
-    SOCKET_CLI_ACCEPT_RISKS: envAsBoolean(env['SOCKET_CLI_ACCEPT_RISKS']),
+    SOCKET_CLI_ACCEPT_RISKS: envAsBoolean(env[SOCKET_CLI_ACCEPT_RISKS]),
+    // Flag containing a JSON stringified Socket configuration object.
+    SOCKET_CLI_CONFIG: envAsString(env['SOCKET_CLI_CONFIG']),
     // Flag to help debug Socket CLI.
     SOCKET_CLI_DEBUG: envAsBoolean(env['SOCKET_CLI_DEBUG']),
     // Flag to make the default API token `undefined`.
     SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN']),
     // Flag to view all risks of safe-npm and safe-npx run.
-    SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env['SOCKET_CLI_VIEW_ALL_RISKS']),
+    SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
     // Flag to change the base URL for all API-calls.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_SECURITY_API_BASE_URL: envAsString(
@@ -279,10 +298,17 @@ const LAZY_ENV = () => {
     // Flag to set the API token.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
     SOCKET_SECURITY_API_TOKEN:
+      // Note: These are SOCKET_SECURITY prefixed because they're not specific
+      //       to the CLI. For the sake of consistency we'll also support the env
+      //       keys that do have the SOCKET_CLI prefix, it's an easy mistake.
+      // In case multiple are supplied, the tokens supersede the keys and the
+      // security prefix supersedes the cli prefix. "Adventure mode" ;)
       envAsString(env['SOCKET_SECURITY_API_TOKEN']) ||
-      // Keep 'SOCKET_SECURITY_API_KEY' as an alias of 'SOCKET_SECURITY_API_TOKEN'.
+      // Keep 'SOCKET_SECURITY_API_KEY' alias.
       // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
-      envAsString(env['SOCKET_SECURITY_API_KEY']),
+      envAsString(env['SOCKET_SECURITY_API_KEY']) ||
+      envAsString(env['SOCKET_CLI_API_TOKEN']) ||
+      envAsString(env['SOCKET_CLI_API_KEY']),
     // A classic GitHub personal access token with the "repo" scope or a fine-grained
     // access token with read/write permissions set for "Contents" and "Pull Request".
     // https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
@@ -354,15 +380,14 @@ const lazyNmBinPath = () =>
 // Redefine registryConstants.nodeHardenFlags to account for the
 // INLINED_SOCKET_CLI_SENTRY_BUILD environment variable.
 const lazyNodeHardenFlags = () =>
-  // The '@rollup/plugin-replace' will replace "process.env[INLINED_SOCKET_CLI_SENTRY_BUILD]".
-  process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'] ||
+  // Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
+  constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD ||
   // Lazily access constants.WIN32.
   constants.WIN32
     ? []
     : // Harden Node security.
       // https://nodejs.org/en/learn/getting-started/security-best-practices
       [
-        // TODO: Investigate why dist/blessed errors with it enabled.
         '--disable-proto',
         'throw',
         // We have contributed the following patches to our dependencies to make
@@ -405,13 +430,6 @@ const constants: Constants = createConstantsObject(
     DRY_RUN_LABEL,
     DRY_RUN_BAIL_TEXT,
     ENV: undefined,
-    GITHUB_ACTIONS,
-    GITHUB_REF_NAME,
-    GITHUB_REF_TYPE,
-    GITHUB_REPOSITORY,
-    INLINED_SOCKET_CLI_LEGACY_BUILD,
-    INLINED_SOCKET_CLI_PUBLISHED_BUILD,
-    INLINED_SOCKET_CLI_SENTRY_BUILD,
     LOCALAPPDATA,
     LOCK_EXT,
     NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
@@ -427,12 +445,10 @@ const constants: Constants = createConstantsObject(
     SOCKET_CLI_ACCEPT_RISKS,
     SOCKET_CLI_BIN_NAME,
     SOCKET_CLI_BIN_NAME_ALIAS,
-    SOCKET_CLI_DEBUG,
     SOCKET_CLI_FIX,
     SOCKET_CLI_ISSUES_URL,
     SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
     SOCKET_CLI_LEGACY_PACKAGE_NAME,
-    SOCKET_CLI_NO_API_TOKEN,
     SOCKET_CLI_NPM_BIN_NAME,
     SOCKET_CLI_NPX_BIN_NAME,
     SOCKET_CLI_OPTIMIZE,
@@ -444,14 +460,8 @@ const constants: Constants = createConstantsObject(
     SOCKET_CLI_SENTRY_NPX_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
     SOCKET_CLI_VIEW_ALL_RISKS,
-    SOCKET_SECURITY_API_BASE_URL,
-    SOCKET_SECURITY_API_PROXY,
-    SOCKET_SECURITY_API_TOKEN,
-    SOCKET_SECURITY_GITHUB_PAT,
-    TERM,
     VLT,
     WITH_SENTRY,
-    XDG_DATA_HOME,
     YARN,
     YARN_BERRY,
     YARN_CLASSIC,

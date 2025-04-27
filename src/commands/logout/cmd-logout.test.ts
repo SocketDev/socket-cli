@@ -18,13 +18,13 @@ describe('socket logout', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Socket API logout
+        "Socket API logout
 
-        Usage
-          $ socket logout
+          Usage
+            $ socket logout
 
-        Logs out of the Socket API and clears all Socket credentials from disk"
-    `
+          Logs out of the Socket API and clears all Socket credentials from disk"
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
