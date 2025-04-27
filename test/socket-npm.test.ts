@@ -1,11 +1,11 @@
+import path from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
-const path = require('node:path')
-const process = require('node:process')
+import { isDebug } from '@socketsecurity/registry/lib/debug'
+import { spawn, spawnSync } from '@socketsecurity/registry/lib/spawn'
 
-const { spawn, spawnSync } = require('@socketsecurity/registry/lib/spawn')
-
-const constants = require('../dist/constants.js')
+import constants from '../dist/constants.js'
 
 const { CLI, NODE_MODULES, NPM } = constants
 
@@ -13,8 +13,8 @@ const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 // These aliases are defined in package.json.
-for (const npmDir of ['npm8', 'npm9', 'npm10', 'npm11']) {
-  if (process.env.CI) {
+for (const npmDir of ['npm9', 'npm10', 'npm11']) {
+  if (constants.ENV.CI) {
     // Skip this test in CI.
     describe('skipme', () => it('should skip', () => expect(true).toBe(true)))
     continue
@@ -23,9 +23,9 @@ for (const npmDir of ['npm8', 'npm9', 'npm10', 'npm11']) {
   const npmBinPath = path.join(npmPath, NODE_MODULES, '.bin')
 
   describe(`Socket npm wrapper for ${npmDir}`, () => {
-    spawnSync(NPM, ['install', '--silent'], {
+    spawnSync(NPM, ['install', ...(isDebug() ? [] : ['--silent'])], {
       cwd: npmPath,
-      stdio: 'ignore'
+      stdio: isDebug() ? 'inherit' : 'ignore'
     })
 
     // Lazily access constants.rootBinPath.
@@ -46,11 +46,12 @@ for (const npmDir of ['npm8', 'npm9', 'npm10', 'npm11']) {
             {
               cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
               env: {
-                PATH: `${npmBinPath}:${process.env.PATH}`
+                // Lazily access constants.ENV.PATH.
+                PATH: `${npmBinPath}:${constants.ENV.PATH}`
               }
             }
           )
-          spawnPromise.process.stdout.on('data', () => {
+          spawnPromise.process.stdout!.on('data', () => {
             reject(
               new Error(
                 'It seems npm ran anyways so the test failed to invoke socket'
