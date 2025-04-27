@@ -16,6 +16,7 @@ import { getSocketDevPackageOverviewUrl } from './socket-url'
 import { getTranslations } from './translations'
 import constants from '../constants'
 import { findSocketYmlSync } from './config'
+import { createEnum } from './objects'
 
 import type {
   ALERT_ACTION,
@@ -25,20 +26,20 @@ import type {
 } from './alert/artifact'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-export enum ALERT_SEVERITY_COLOR {
-  critical = 'magenta',
-  high = 'red',
-  middle = 'yellow',
-  low = 'white'
-}
+export const ALERT_SEVERITY_COLOR = createEnum({
+  critical: 'magenta',
+  high: 'red',
+  middle: 'yellow',
+  low: 'white'
+})
 
-export enum ALERT_SEVERITY_ORDER {
-  critical = 0,
-  high = 1,
-  middle = 2,
-  low = 3,
-  none = 4
-}
+export const ALERT_SEVERITY_ORDER = createEnum({
+  critical: 0,
+  high: 1,
+  middle: 2,
+  low: 3,
+  none: 4
+})
 
 export type SocketPackageAlert = {
   name: string
@@ -68,7 +69,7 @@ function alertsHaveBlocked(alerts: SocketPackageAlert[]): boolean {
 
 function alertsHaveSeverity(
   alerts: SocketPackageAlert[],
-  severity: `${ALERT_SEVERITY}`
+  severity: `${keyof typeof ALERT_SEVERITY}`
 ): boolean {
   return alerts.find(a => a.raw.severity === severity) !== undefined
 }
@@ -156,7 +157,7 @@ function getHiddenRisksDescription(riskCounts: RiskCounts): string {
   return `(${descriptions.join('; ')})`
 }
 
-function getSeverityLabel(severity: `${ALERT_SEVERITY}`): string {
+function getSeverityLabel(severity: `${keyof typeof ALERT_SEVERITY}`): string {
   return severity === 'middle' ? 'moderate' : severity
 }
 
@@ -373,7 +374,7 @@ export function getCveInfoByAlertsMap(
 }
 
 export type LogAlertsMapOptions = {
-  hideAt?: `${ALERT_SEVERITY}` | 'none' | undefined
+  hideAt?: `${keyof typeof ALERT_SEVERITY}` | 'none' | undefined
   output?: NodeJS.WriteStream | undefined
 }
 
