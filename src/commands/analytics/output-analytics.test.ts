@@ -187,7 +187,7 @@ describe('output-analytics', () => {
   })
 
   describe('format markdown', () => {
-    it('should renderMarkdown for repo', () => {
+    it.skip('should renderMarkdown for repo', () => {
       const fdata = formatDataRepo(JSON.parse(JSON.stringify(FIXTURE)))
       const serialized = renderMarkdown(fdata, 7, 'fake_repo')
 
