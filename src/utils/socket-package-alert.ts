@@ -17,6 +17,7 @@ import { getTranslations } from './translations'
 import constants from '../constants'
 import { findSocketYmlSync } from './config'
 import { createEnum } from './objects'
+import { idToPurl } from './spec'
 
 import type {
   ALERT_ACTION,
@@ -332,7 +333,7 @@ export function getCveInfoByAlertsMap(
   }
   let infoByPkg: CveInfoByPkgId | null = null
   for (const [pkgId, sockPkgAlerts] of alertsMap) {
-    const purlObj = PackageURL.fromString(`pkg:npm/${pkgId}`)
+    const purlObj = PackageURL.fromString(idToPurl(pkgId))
     const name = resolvePackageName(purlObj)
     for (const sockPkgAlert of sockPkgAlerts) {
       const alert = sockPkgAlert.raw
@@ -491,7 +492,7 @@ export function logAlertsMap(
       // TODO: emoji seems to mis-align terminals sometimes
       lines.add(`  ${content}`)
     }
-    const purlObj = PackageURL.fromString(`pkg:npm/${pkgId}`)
+    const purlObj = PackageURL.fromString(idToPurl(pkgId))
     const hyperlink = format.hyperlink(
       pkgId,
       getSocketDevPackageOverviewUrl(
