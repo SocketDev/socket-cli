@@ -22,6 +22,6 @@ export async function outputConfigUnset(
   } else if (updateResult.ok) {
     logger.log(`OK`)
   } else {
-    logger.log(failMsgWithBadge(updateResult.message, updateResult.data))
+    logger.log(failMsgWithBadge(updateResult.message, updateResult.cause))
   }
 }

@@ -230,6 +230,18 @@ export function getConfigValue<Key extends keyof LocalConfig>(
   }
   return { ok: true, data: localConfig[keyResult.data as Key] }
 }
+// This version squashes errors, returning undefined instead.
+// Should be used when we can reasonably predict the call can't fail.
+export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
+  key: Key
+): LocalConfig[Key] | undefined {
+  const localConfig = getConfigValues()
+  const keyResult = normalizeConfigKey(key)
+  if (!keyResult.ok) {
+    return undefined
+  }
+  return localConfig[keyResult.data as Key]
+}
 export function isReadOnlyConfig() {
   return _readOnlyConfig
 }
@@ -275,5 +287,5 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
 }
 
 export function isTestingV1() {
-  return !!getConfigValue('isTestingV1').data
+  return !!getConfigValueOrUndef('isTestingV1')
 }

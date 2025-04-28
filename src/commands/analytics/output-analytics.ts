@@ -100,7 +100,7 @@ export async function outputAnalytics(
 
   if (!result.ok) {
     // Note: We're not in json mode so just print the error badge
-    logger.fail(failMsgWithBadge(result.message, result.data))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 

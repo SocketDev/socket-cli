@@ -26,5 +26,5 @@ export type CResult<T> =
       // a non-json error message. Optional.
       cause?: string
       // If set, this may conform to the actual payload.
-      data?: T
+      data?: unknown
     }

@@ -3,13 +3,12 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleDiffScan } from './handle-diff-scan'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
-import { getConfigValue, isTestingV1 } from '../../utils/config'
+import { getConfigValueOrUndef, isTestingV1 } from '../../utils/config'
 import { getOutputKind } from '../../utils/get-output-kind'
 import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
 import { getFlagListOutput } from '../../utils/output-formatting'
 import { getDefaultToken } from '../../utils/sdk'
-import { serializeResultJson } from '../../utils/serialize-result-json'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands'
 
@@ -101,12 +100,8 @@ async function run(
   const { after, before, depth, file, json, markdown } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
-  const defaultOrgSlugResult = getConfigValue('defaultOrg')
-  if (!defaultOrgSlugResult) {
-    logger.log(serializeResultJson(defaultOrgSlugResult))
-    return
-  }
-  const orgSlug = defaultOrgSlugResult.data || cli.input[0] || ''
+  const defaultOrgSlugResult = getConfigValueOrUndef('defaultOrg')
+  const orgSlug = defaultOrgSlugResult || cli.input[0] || ''
 
   const apiToken = getDefaultToken()
 

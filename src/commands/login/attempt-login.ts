@@ -6,7 +6,7 @@ import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 import { applyLogin } from './apply-login'
 import constants from '../../constants'
 import { handleUnsuccessfulApiResponse } from '../../utils/api'
-import { getConfigValue, isReadOnlyConfig } from '../../utils/config'
+import { getConfigValueOrUndef, isReadOnlyConfig } from '../../utils/config'
 import { setupSdk } from '../../utils/sdk'
 
 import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
@@ -20,8 +20,8 @@ export async function attemptLogin(
   apiBaseUrl: string | undefined,
   apiProxy: string | undefined
 ) {
-  apiBaseUrl ??= getConfigValue('apiBaseUrl').data ?? undefined
-  apiProxy ??= getConfigValue('apiProxy').data ?? undefined
+  apiBaseUrl ??= getConfigValueOrUndef('apiBaseUrl') ?? undefined
+  apiProxy ??= getConfigValueOrUndef('apiProxy') ?? undefined
   const apiToken =
     (await password({
       message: `Enter your ${terminalLink(
@@ -86,7 +86,7 @@ export async function attemptLogin(
 
   spinner.stop()
 
-  const previousPersistedToken = getConfigValue('apiToken').data
+  const previousPersistedToken = getConfigValueOrUndef('apiToken')
   try {
     applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
     logger.success(

@@ -12,7 +12,7 @@ import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import { getLastFiveOfApiToken } from './api'
 import {
-  getConfigValue,
+  getConfigValueOrUndef,
   isReadOnlyConfig,
   isTestingV1,
   overrideCachedConfig,
@@ -287,7 +287,7 @@ function getAsciiHeader(command: string) {
       constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
   const nodeVersion = redacting ? REDACTED : process.version
   const apiToken = getDefaultToken()
-  const defaultOrg = getConfigValue('defaultOrg').data
+  const defaultOrg = getConfigValueOrUndef('defaultOrg')
   const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
   const v1test = isTestingV1() ? ' (is testing v1)' : ''
   const feedback = isTestingV1()

@@ -4,7 +4,7 @@ import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import { getConfigValue } from './config'
+import { getConfigValueOrUndef } from './config'
 import { AuthError } from './errors'
 import constants from '../constants'
 import { failMsgWithBadge } from './fail-msg-with-badge'
@@ -85,7 +85,7 @@ export function getDefaultApiBaseUrl(): string | undefined {
   const SOCKET_SECURITY_API_BASE_URL =
     constants.ENV.SOCKET_SECURITY_API_BASE_URL
   const baseUrl =
-    SOCKET_SECURITY_API_BASE_URL || getConfigValue('apiBaseUrl').data
+    SOCKET_SECURITY_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
   if (isNonEmptyString(baseUrl)) {
     return baseUrl
   }

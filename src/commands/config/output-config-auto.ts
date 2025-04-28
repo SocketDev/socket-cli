@@ -77,7 +77,7 @@ export async function outputConfigAuto(
             )
           } else {
             logger.log(
-              failMsgWithBadge(updateResult.message, updateResult.data)
+              failMsgWithBadge(updateResult.message, updateResult.cause)
             )
           }
         } else {
@@ -106,7 +106,7 @@ export async function outputConfigAuto(
             logger.log(`OK. Updated enforcedOrgs to "${proceed}".`)
           } else {
             logger.log(
-              failMsgWithBadge(updateResult.message, updateResult.data)
+              failMsgWithBadge(updateResult.message, updateResult.cause)
             )
           }
         } else {

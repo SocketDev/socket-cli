@@ -39,7 +39,7 @@ export async function outputAuditLog(
       })
     )
   } else if (outputKind !== 'markdown' && !auditLogs.ok) {
-    logger.fail(failMsgWithBadge(auditLogs.message, auditLogs.data))
+    logger.fail(failMsgWithBadge(auditLogs.message, auditLogs.cause))
   } else {
     logger.log(
       await outputAsMarkdown(auditLogs, {
@@ -126,12 +126,14 @@ There was a problem fetching the audit logs:
 
 > ${auditLogs.message}
 ${
-  auditLogs.data
+  auditLogs.cause
     ? '>\n' +
-      auditLogs.data
-        .split('\n')
-        .map(s => `> ${s}\n`)
-        .join('')
+      (
+        auditLogs.cause
+          .split('\n')
+          .map(s => `> ${s}\n`)
+          .join('') ?? ''
+      )
     : ''
 }
 Parameters:

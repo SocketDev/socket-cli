@@ -28,7 +28,7 @@ export async function outputConfigGet(
       logger.log(serializeResultJson(result))
     }
   } else if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.data))
+    logger.fail(failMsgWithBadge(result.message, result.cause))
   } else if (outputKind === 'markdown') {
     logger.log(`# Config Value`)
     logger.log('')
