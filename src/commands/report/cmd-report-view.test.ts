@@ -18,11 +18,11 @@ describe('socket report create', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "[Deprecated] Create a project report
+        "[Deprecated] Create a project report
 
-        This command is deprecated in favor of \`socket scan view\`.
-        It will be removed in the next major release of the CLI."
-    `
+          This command is deprecated in favor of \`socket scan view\`.
+          It will be removed in the next major release of the CLI."
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

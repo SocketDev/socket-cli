@@ -81,9 +81,11 @@ export function getLastFiveOfApiToken(token: string): string {
 
 // The API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
+  // Lazily access constants.ENV.SOCKET_SECURITY_API_BASE_URL.
+  const SOCKET_SECURITY_API_BASE_URL =
+    constants.ENV.SOCKET_SECURITY_API_BASE_URL
   const baseUrl =
-    process.env['SOCKET_SECURITY_API_BASE_URL'] ||
-    getConfigValue('apiBaseUrl').data
+    SOCKET_SECURITY_API_BASE_URL || getConfigValue('apiBaseUrl').data
   if (isNonEmptyString(baseUrl)) {
     return baseUrl
   }
@@ -93,19 +95,16 @@ export function getDefaultApiBaseUrl(): string | undefined {
 }
 
 export async function queryApi(path: string, apiToken: string) {
-  const API_V0_URL = getDefaultApiBaseUrl() || ''
-  if (!API_V0_URL) {
+  const baseUrl = getDefaultApiBaseUrl() || ''
+  if (!baseUrl) {
     logger.warn(
       'API endpoint is not set and default was empty. Request is likely to fail.'
     )
   }
-  return await fetch(
-    `${API_V0_URL}${API_V0_URL.endsWith('/') ? '' : '/'}${path}`,
-    {
-      method: 'GET',
-      headers: {
-        Authorization: `Basic ${btoa(`${apiToken}:`)}`
-      }
+  return await fetch(`${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Basic ${btoa(`${apiToken}:`)}`
     }
-  )
+  })
 }

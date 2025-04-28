@@ -153,10 +153,10 @@ function getConfigPath(): string | undefined {
     // Lazily access constants.WIN32.
     const { WIN32 } = constants
     let dataHome: string | undefined = WIN32
-      ? // Lazily access constants.ENV[LOCALAPPDATA]
-        constants.ENV[LOCALAPPDATA]
-      : // Lazily access constants.ENV[XDG_DATA_HOME]
-        constants.ENV[XDG_DATA_HOME]
+      ? // Lazily access constants.ENV.LOCALAPPDATA
+        constants.ENV.LOCALAPPDATA
+      : // Lazily access constants.ENV.XDG_DATA_HOME
+        constants.ENV.XDG_DATA_HOME
     if (!dataHome) {
       if (WIN32) {
         if (!_warnedConfigPathWin32Missing) {

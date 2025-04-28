@@ -30,7 +30,7 @@ export async function handleAnalytics({
     process.exitCode = 1
     result = {
       ok: false,
-      message: 'Missing repository name in command',
+      message: 'Missing repository name in command'
     }
   }
 

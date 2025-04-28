@@ -25,8 +25,6 @@ import { getDefaultToken } from './sdk'
 
 import type { Options } from 'meow'
 
-const { DRY_RUN_LABEL, REDACTED } = constants
-
 interface CliAlias {
   description: string
   argv: readonly string[]
@@ -163,9 +161,11 @@ export async function meowWithSubcommands(
   // The env var overrides the --flag, which overrides the persisted config
   // Also, when either of these are used, config updates won't persist.
   let configOverrideResult
-  if (process.env['SOCKET_CLI_CONFIG']) {
+  // Lazily access constants.ENV.SOCKET_CLI_CONFIG.
+  if (constants.ENV.SOCKET_CLI_CONFIG) {
     configOverrideResult = overrideCachedConfig(
-      process.env['SOCKET_CLI_CONFIG']
+      // Lazily access constants.ENV.SOCKET_CLI_CONFIG.
+      constants.ENV.SOCKET_CLI_CONFIG
     )
   } else if (cli.flags['config']) {
     configOverrideResult = overrideCachedConfig(
@@ -173,21 +173,14 @@ export async function meowWithSubcommands(
     )
   }
 
-  if (process.env['SOCKET_CLI_NO_API_TOKEN']) {
+  // Lazily access constants.ENV.SOCKET_CLI_NO_API_TOKEN.
+  if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
     // This overrides the config override and even the explicit token env var.
     // The config will be marked as readOnly to prevent persisting it.
     overrideConfigApiToken(undefined)
   } else {
-    // Note: these are SOCKET_SECURITY prefixed because they're not specific to
-    //       the CLI. For the sake of consistency we'll also support the env
-    //       keys that do have the SOCKET_CLI prefix, it's an easy mistake.
-    // In case multiple are supplied, the tokens supersede the keys and the
-    // security prefix supersedes the cli prefix. "Adventure mode" ;)
-    const tokenOverride =
-      process.env['SOCKET_CLI_API_KEY'] ||
-      process.env['SOCKET_SECURITY_API_KEY'] ||
-      process.env['SOCKET_CLI_API_TOKEN'] ||
-      process.env['SOCKET_SECURITY_API_TOKEN']
+    // Lazily access constants.ENV.SOCKET_SECURITY_API_TOKEN.
+    const tokenOverride = constants.ENV.SOCKET_SECURITY_API_TOKEN
     if (tokenOverride) {
       // This will set the token (even if there was a config override) and
       // set it to readOnly, making sure the temp token won't be persisted.
@@ -225,7 +218,8 @@ export async function meowWithSubcommands(
   }
   if (!cli.flags['help'] && cli.flags['dryRun']) {
     process.exitCode = 0
-    logger.log(`${DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
+    // Lazily access constants.DRY_RUN_LABEL.
+    logger.log(`${constants.DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
   } else {
     cli.showHelp()
   }
@@ -284,12 +278,13 @@ export function emitBanner(name: string) {
 
 function getAsciiHeader(command: string) {
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
-  // The '@rollup/plugin-replace' will replace "process.env['VITEST']".
-  const redacting = process.env['VITEST']
+  const { REDACTED } = constants
+  // Lazily access constants.ENV.VITEST.
+  const redacting = constants.ENV.VITEST
   const cliVersion = redacting
     ? REDACTED
-    : // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION_HASH']".
-      process.env['INLINED_SOCKET_CLI_VERSION_HASH']
+    : // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH.
+      constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
   const nodeVersion = redacting ? REDACTED : process.version
   const apiToken = getDefaultToken()
   const defaultOrg = getConfigValue('defaultOrg').data

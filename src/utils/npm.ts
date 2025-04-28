@@ -67,8 +67,8 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
       ...constants.nodeHardenFlags,
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
-      // Lazily access process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'].
-      ...(process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']
+      // Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
+      ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
         ? [
             '--require',
             // Lazily access constants.distInstrumentWithSentryPath.

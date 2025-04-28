@@ -18,13 +18,13 @@ describe('socket oops', async () => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "Trigger an intentional error (for development)
+        "Trigger an intentional error (for development)
 
-        Usage
-          $ socket oops oops
+          Usage
+            $ socket oops oops
 
-        Don't run me."
-    `
+          Don't run me."
+      `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
