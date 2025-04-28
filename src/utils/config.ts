@@ -12,7 +12,7 @@ import constants from '../constants'
 
 import type { CResult } from '../types'
 
-const { LOCALAPPDATA, SOCKET_APP_DIR, XDG_DATA_HOME } = constants
+const { LOCALAPPDATA, SOCKET_APP_DIR } = constants
 
 export interface LocalConfig {
   apiBaseUrl?: string | null | undefined
