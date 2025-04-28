@@ -1,13 +1,10 @@
-import { detectDepTypes } from '@pnpm/lockfile.detect-dep-types'
-import semver from 'semver'
-
-import { PackageURL } from '@socketregistry/packageurl-js'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 
 import { getDetailsFromDiff } from './arborist-helpers'
+import { extractPurlsFromPnpmLockfile } from './pnpm'
 import { getPublicToken, setupSdk } from './sdk'
 import { addArtifactToAlertsMap } from './socket-package-alert'
+import { idToPurl } from './spec'
 
 import type { CompactSocketArtifact } from './alert/artifact'
 import type { AlertIncludeFilter, AlertsByPkgId } from './socket-package-alert'
@@ -50,7 +47,7 @@ export async function getAlertsMapFromArborist(
       unchanged: include.existing
     }
   })
-  const purls = needInfoOn.map(d => `pkg:npm/${d.node.pkgid}`)
+  const purls = needInfoOn.map(d => idToPurl(d.node.pkgid))
 
   let overrides: { [key: string]: string } | undefined
   const overridesMap = (
@@ -90,14 +87,7 @@ export async function getAlertsMapFromPnpmLockfile(
     nothrow: false,
     ...options_
   } as GetAlertsMapFromPnpmLockfileOptions
-
-  const depTypes = detectDepTypes(lockfile)
-  const purls = Object.keys(depTypes).map(id => {
-    const purlObj = PackageURL.fromString(`pkg:npm/${id}`)
-    const name = resolvePackageName(purlObj)
-    return `pkg:npm/${name}@${semver.coerce(purlObj.version)}`
-  })
-
+  const purls = extractPurlsFromPnpmLockfile(lockfile)
   return await getAlertsMapFromPurls(purls, {
     overrides: lockfile.overrides,
     ...options
