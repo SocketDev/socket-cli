@@ -18,7 +18,6 @@ export async function outputThreatFeed(
 
   if (outputKind === 'json') {
     logger.log(serializeResultJson(result))
-    logger.log('')
     return
   }
   if (!result.ok) {

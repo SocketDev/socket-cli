@@ -21,7 +21,6 @@ export async function outputListRepos(
 
   if (outputKind === 'json') {
     logger.log(serializeResultJson(result))
-    logger.log('')
     return
   }
   if (!result.ok) {

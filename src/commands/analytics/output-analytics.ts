@@ -85,7 +85,6 @@ export async function outputAnalytics(
   if (!result.ok) {
     if (outputKind === 'json') {
       logger.log(serializeResultJson(result))
-      logger.log('')
       return
     }
     logger.fail(failMsgWithBadge(result.message, result.cause))
@@ -108,11 +107,9 @@ export async function outputAnalytics(
             cause: 'There was an error trying to write the json to disk'
           })
         )
-        logger.log('')
       }
     } else {
       logger.log(serialized)
-      logger.log('')
     }
 
     return

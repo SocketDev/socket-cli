@@ -15,15 +15,17 @@ export function serializeResultJson(data: CResult<unknown>): string {
     if (typeof data !== 'object' && data) {
       debugLog('data:', data)
     }
-    return JSON.stringify({
-      ok: false,
-      message: 'Unable to serialize JSON',
-      data: msg
-    })
+    return (
+      JSON.stringify({
+        ok: false,
+        message: 'Unable to serialize JSON',
+        data: msg
+      }).trim() + '\n'
+    )
   }
 
   try {
-    return JSON.stringify(data, null, 2)
+    return JSON.stringify(data, null, 2).trim() + '\n'
   } catch (e) {
     debugLog('Error:')
     debugLog(e)
@@ -32,10 +34,12 @@ export function serializeResultJson(data: CResult<unknown>): string {
     const msg =
       'There was a problem converting the data set to JSON. Please try again without --json'
     logger.error(msg)
-    return JSON.stringify({
-      ok: false,
-      message: 'Unable to serialize JSON',
-      data: msg
-    })
+    return (
+      JSON.stringify({
+        ok: false,
+        message: 'Unable to serialize JSON',
+        data: msg
+      }).trim() + '\n'
+    )
   }
 }

@@ -23,7 +23,6 @@ export async function outputScanView(
   if (!result.ok) {
     if (outputKind === 'json') {
       logger.log(serializeResultJson(result))
-      logger.log('')
       return
     }
     logger.fail(failMsgWithBadge(result.message, result.cause))
@@ -52,13 +51,11 @@ export async function outputScanView(
             cause: 'Failed to write json to disk'
           })
         )
-        logger.log('')
       }
       return
     }
 
     logger.log(json)
-    logger.log('')
     return
   }
 

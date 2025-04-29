@@ -47,7 +47,6 @@ export async function outputScanReport(
   if (!result.ok) {
     if (outputKind === 'json') {
       logger.log(serializeResultJson(result))
-      logger.log('')
       return
     }
     logger.fail(failMsgWithBadge(result.message, result.cause))
@@ -86,7 +85,6 @@ export async function outputScanReport(
     }
 
     logger.log(json)
-    logger.log('')
     return
   }
 

@@ -16,7 +16,6 @@ export async function outputUpdateRepo(
 
   if (outputKind === 'json') {
     logger.log(serializeResultJson(result))
-    logger.log('')
     return
   }
   if (!result.ok) {
