@@ -1,5 +1,4 @@
 // @ts-ignore
-
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 

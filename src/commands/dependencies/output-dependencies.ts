@@ -28,30 +28,33 @@ export async function outputDependencies(
 
   if (outputKind === 'json') {
     logger.log(serializeResultJson(result))
-  } else if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-  } else {
-    logger.log(
-      'Request details: Offset:',
-      offset,
-      ', limit:',
-      limit,
-      ', is there more data after this?',
-      result.data.end ? 'no' : 'yes'
-    )
-
-    const options = {
-      columns: [
-        { field: 'namespace', name: colors.cyan('Namespace') },
-        { field: 'name', name: colors.cyan('Name') },
-        { field: 'version', name: colors.cyan('Version') },
-        { field: 'repository', name: colors.cyan('Repository') },
-        { field: 'branch', name: colors.cyan('Branch') },
-        { field: 'type', name: colors.cyan('Type') },
-        { field: 'direct', name: colors.cyan('Direct') }
-      ]
-    }
-
-    logger.log(chalkTable(options, result.data.rows))
+    return
   }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  logger.log(
+    'Request details: Offset:',
+    offset,
+    ', limit:',
+    limit,
+    ', is there more data after this?',
+    result.data.end ? 'no' : 'yes'
+  )
+
+  const options = {
+    columns: [
+      { field: 'namespace', name: colors.cyan('Namespace') },
+      { field: 'name', name: colors.cyan('Name') },
+      { field: 'version', name: colors.cyan('Version') },
+      { field: 'repository', name: colors.cyan('Repository') },
+      { field: 'branch', name: colors.cyan('Branch') },
+      { field: 'type', name: colors.cyan('Type') },
+      { field: 'direct', name: colors.cyan('Direct') }
+    ]
+  }
+
+  logger.log(chalkTable(options, result.data.rows))
 }
