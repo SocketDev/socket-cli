@@ -1,10 +1,11 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { LocalConfig, isReadOnlyConfig } from '../../utils/config'
+import { isReadOnlyConfig } from '../../utils/config'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { serializeResultJson } from '../../utils/serialize-result-json'
 
 import type { CResult, OutputKind } from '../../types'
+import type { LocalConfig } from '../../utils/config'
 
 export async function outputConfigGet(
   key: keyof LocalConfig,
