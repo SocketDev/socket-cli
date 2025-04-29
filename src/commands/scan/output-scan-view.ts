@@ -2,11 +2,11 @@ import fs from 'node:fs/promises'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { CResult, OutputKind } from '../../types'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mdTable } from '../../utils/markdown'
 import { serializeResultJson } from '../../utils/serialize-result-json'
 
+import type { CResult, OutputKind } from '../../types'
 import type { components } from '@socketsecurity/sdk/types/api'
 
 export async function outputScanView(

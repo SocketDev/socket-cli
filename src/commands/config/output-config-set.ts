@@ -1,8 +1,9 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { CResult, OutputKind } from '../../types'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { serializeResultJson } from '../../utils/serialize-result-json'
+
+import type { CResult, OutputKind } from '../../types'
 
 export async function outputConfigSet(
   result: CResult<undefined | string>,

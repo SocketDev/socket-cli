@@ -1,8 +1,8 @@
 import constants from '../../constants'
-import { CResult } from '../../types'
 import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchScanMetadata(
