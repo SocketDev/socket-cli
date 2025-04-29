@@ -25,15 +25,17 @@ export async function outputConfigUnset(
   if (outputKind === 'markdown') {
     logger.log(`# Update config`)
     logger.log('')
-    if (updateResult.message) {
+    logger.log(updateResult.message)
+    if (updateResult.data) {
       logger.log('')
-      logger.log(updateResult.message)
+      logger.log(updateResult.data)
     }
   } else {
     logger.log(`OK`)
-    if (updateResult.message) {
+    logger.log(updateResult.message)
+    if (updateResult.data) {
       logger.log('')
-      logger.log(updateResult.message)
+      logger.log(updateResult.data)
     }
   }
 }

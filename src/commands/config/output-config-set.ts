@@ -32,6 +32,7 @@ export async function outputConfigSet(
     }
   } else {
     logger.log(`OK`)
+    logger.log(result.message)
     if (result.data) {
       logger.log('')
       logger.log(result.data)
