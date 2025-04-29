@@ -1,7 +1,8 @@
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchDependencies({
@@ -10,7 +11,7 @@ export async function fetchDependencies({
 }: {
   limit: number
   offset: number
-}): Promise<SocketSdkReturnType<'searchDependencies'>['data'] | undefined> {
+}): Promise<CResult<SocketSdkReturnType<'searchDependencies'>['data']>> {
   const sockSdk = await setupSdk()
 
   // Lazily access constants.spinner.
@@ -26,8 +27,8 @@ export async function fetchDependencies({
   spinner.successAndStop('Received organization dependencies response.')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('searchDependencies', result)
+    return handleFailedApiResponse('searchDependencies', result)
   }
 
-  return result.data
+  return { ok: true, data: result.data }
 }

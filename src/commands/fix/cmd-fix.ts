@@ -118,14 +118,10 @@ async function run(
     return
   }
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
   await runFix({
     autoMerge: Boolean(cli.flags['autoMerge']),
     autopilot: Boolean(cli.flags['autopilot']),
     purls: Array.isArray(cli.flags['purl']) ? cli.flags['purl'] : [],
-    spinner,
     rangeStyle: (cli.flags['rangeStyle'] ?? undefined) as
       | RangeStyle
       | undefined,

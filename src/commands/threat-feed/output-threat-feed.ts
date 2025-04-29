@@ -1,31 +1,37 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 
 import type { ThreadFeedResponse, ThreatResult } from './types'
-import type { OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 import type { Widgets } from 'blessed'
 
 export async function outputThreatFeed(
-  data: ThreadFeedResponse,
-  {
-    outputKind
-  }: {
-    outputKind: OutputKind
-  }
+  result: CResult<ThreadFeedResponse>,
+  outputKind: OutputKind
 ) {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
   if (outputKind === 'json') {
-    logger.log(data)
+    logger.log(serializeResultJson(result))
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  if (!data?.results?.length) {
+  if (!result.data?.results?.length) {
     logger.error('Did not receive any data to display...')
     return
   }
 
-  const formattedOutput = formatResults(data.results)
-  const descriptions = data.results.map(d => d.description)
+  const formattedOutput = formatResults(result.data.results)
+  const descriptions = result.data.results.map(d => d.description)
 
   // Note: this temporarily takes over the terminal (just like `man` does).
   const ScreenWidget = require('../external/blessed/lib/widgets/screen.js')

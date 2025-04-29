@@ -4,38 +4,26 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import type { OutputKind } from '../../types'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import { serializeResultJson } from '../../utils/serialize-result-json'
+
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputViewRepo(
-  data: SocketSdkReturnType<'createOrgRepo'>['data'],
+  result: CResult<SocketSdkReturnType<'createOrgRepo'>['data']>,
   outputKind: OutputKind
 ): Promise<void> {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
   if (outputKind === 'json') {
-    const {
-      archived,
-      created_at,
-      default_branch,
-      homepage,
-      id,
-      name,
-      visibility
-    } = data
-    logger.log(
-      JSON.stringify(
-        {
-          id,
-          name,
-          visibility,
-          default_branch,
-          homepage,
-          archived,
-          created_at
-        },
-        null,
-        2
-      )
-    )
+    logger.log(serializeResultJson(result))
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -51,5 +39,5 @@ export async function outputViewRepo(
     ]
   }
 
-  logger.log(chalkTable(options, [data]))
+  logger.log(chalkTable(options, [result.data]))
 }

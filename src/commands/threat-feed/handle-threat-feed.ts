@@ -1,10 +1,6 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { fetchThreatFeed } from './fetch-threat-feed'
 import { outputThreatFeed } from './output-threat-feed'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 
-import type { ThreadFeedResponse } from './types'
 import type { OutputKind } from '../../types'
 
 export async function handleThreatFeed({
@@ -29,16 +25,6 @@ export async function handleThreatFeed({
     page,
     perPage
   })
-  if (!data) {
-    return
-  }
 
-  if ('error' in data && data.error) {
-    logger.fail(failMsgWithBadge('Server Error', data.error.message))
-    return
-  }
-
-  await outputThreatFeed(data as ThreadFeedResponse, {
-    outputKind
-  })
+  await outputThreatFeed(data, outputKind)
 }

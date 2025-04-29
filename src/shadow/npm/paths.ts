@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs'
 import Module from 'node:module'
 import path from 'node:path'
-import process from 'node:process'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'

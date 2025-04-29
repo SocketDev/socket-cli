@@ -34,9 +34,6 @@ export async function handleListScans({
     repo,
     sort
   })
-  if (!data) {
-    return
-  }
 
   await outputListScans(data, outputKind)
 }

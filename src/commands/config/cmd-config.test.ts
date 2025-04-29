@@ -89,10 +89,10 @@ describe('socket config', async () => {
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
 
-          \\x1b[31m\\xd7\\x1b[39m Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted \`undefined\`) and try again."
+          \\x1b[31m\\xd7\\x1b[39m Could not parse Config as JSON"
         `)
 
-        expect(stderr.includes('Could not JSON parse')).toBe(true)
+        expect(stderr.includes('Could not parse Config as JSON')).toBe(true)
         expect(code, 'bad config input should exit with code 2 ').toBe(2)
       }
     )
@@ -110,10 +110,10 @@ describe('socket config', async () => {
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
 
-          \\x1b[31m\\xd7\\x1b[39m Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted \`undefined\`) and try again."
+          \\x1b[31m\\xd7\\x1b[39m Could not parse Config as JSON"
         `)
 
-        expect(stderr.includes('Could not JSON parse')).toBe(true)
+        expect(stderr.includes('Could not parse Config as JSON')).toBe(true)
         expect(code, 'bad config input should exit with code 2 ').toBe(2)
       }
     )

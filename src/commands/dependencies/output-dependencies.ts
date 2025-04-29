@@ -4,11 +4,14 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import type { OutputKind } from '../../types'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import { serializeResultJson } from '../../utils/serialize-result-json'
+
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputDependencies(
-  data: SocketSdkReturnType<'searchDependencies'>['data'],
+  result: CResult<SocketSdkReturnType<'searchDependencies'>['data']>,
   {
     limit,
     offset,
@@ -19,19 +22,16 @@ export async function outputDependencies(
     outputKind: OutputKind
   }
 ): Promise<void> {
-  if (outputKind === 'json') {
-    let json
-    try {
-      json = JSON.stringify(data, null, 2)
-    } catch (e) {
-      process.exitCode = 1
-      logger.fail(
-        'There was a problem converting the data to JSON, please try without the `--json` flag'
-      )
-      return
-    }
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
 
-    logger.log(json)
+  if (outputKind === 'json') {
+    logger.log(serializeResultJson(result))
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -41,7 +41,7 @@ export async function outputDependencies(
     ', limit:',
     limit,
     ', is there more data after this?',
-    data.end ? 'no' : 'yes'
+    result.data.end ? 'no' : 'yes'
   )
 
   const options = {
@@ -56,5 +56,5 @@ export async function outputDependencies(
     ]
   }
 
-  logger.log(chalkTable(options, data.rows))
+  logger.log(chalkTable(options, result.data.rows))
 }

@@ -1,26 +1,14 @@
-import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
-import { setupSdk } from '../../utils/sdk'
+import { fetchDeleteRepo } from './fetch-delete-repo'
+import { outputDeleteRepo } from './output-delete-repo'
+
+import type { OutputKind } from '../../types'
 
 export async function handleDeleteRepo(
   orgSlug: string,
-  repoName: string
-): Promise<void> {
-  const sockSdk = await setupSdk()
+  repoName: string,
+  outputKind: OutputKind
+) {
+  const data = await fetchDeleteRepo(orgSlug, repoName)
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Deleting repository...')
-
-  const result = await handleApiCall(
-    sockSdk.deleteOrgRepo(orgSlug, repoName),
-    'deleting repository'
-  )
-
-  if (!result.success) {
-    handleUnsuccessfulApiResponse('deleteOrgRepo', result)
-  }
-
-  spinner.successAndStop('Repository deleted successfully')
+  await outputDeleteRepo(data, outputKind)
 }

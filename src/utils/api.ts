@@ -1,21 +1,17 @@
-import process from 'node:process'
-
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import { getConfigValue } from './config'
+import { getConfigValueOrUndef } from './config'
 import { AuthError } from './errors'
 import constants from '../constants'
 import { failMsgWithBadge } from './fail-msg-with-badge'
 
-import type { CliJsonResult } from '../types'
+import type { CResult } from '../types'
 import type {
   SocketSdkErrorType,
   SocketSdkOperations
 } from '@socketsecurity/sdk'
-
-const { API_V0_URL } = constants
 
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
@@ -38,15 +34,14 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
 export function handleFailedApiResponse<T extends SocketSdkOperations>(
   _name: T,
   { cause, error }: SocketSdkErrorType<T>
-): CliJsonResult<any> {
-  process.exitCode = 1
+): CResult<never> {
   const message = `${error || 'No error message returned'}`
   // logger.error(failMsgWithBadge('Socket API returned an error', message))
   return {
     ok: false,
     message: 'Socket API returned an error',
-    data: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`
-  } satisfies CliJsonResult
+    cause: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`
+  }
 }
 
 export async function handleApiCall<T>(
@@ -58,6 +53,7 @@ export async function handleApiCall<T>(
     result = await value
   } catch (e) {
     debugLog(`handleApiCall[${description}] error:\n`, e)
+    // TODO: eliminate this throw in favor of CResult (or anything else)
     throw new Error(`Failed ${description}`, { cause: e })
   }
   return result
@@ -83,10 +79,17 @@ export function getLastFiveOfApiToken(token: string): string {
 
 // The API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
+  // Lazily access constants.ENV.SOCKET_SECURITY_API_BASE_URL.
+  const SOCKET_SECURITY_API_BASE_URL =
+    constants.ENV.SOCKET_SECURITY_API_BASE_URL
   const baseUrl =
-    // Lazily access constants.ENV.SOCKET_SECURITY_API_BASE_URL.
-    constants.ENV.SOCKET_SECURITY_API_BASE_URL || getConfigValue('apiBaseUrl')
-  return isNonEmptyString(baseUrl) ? baseUrl : API_V0_URL
+    SOCKET_SECURITY_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
+  if (isNonEmptyString(baseUrl)) {
+    return baseUrl
+  }
+  // Lazily access constants.API_V0_URL.
+  const API_V0_URL = constants.API_V0_URL
+  return API_V0_URL
 }
 
 export async function queryApi(path: string, apiToken: string) {

@@ -1,7 +1,8 @@
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchListRepos({
@@ -16,7 +17,7 @@ export async function fetchListRepos({
   page: number
   per_page: number
   sort: string
-}): Promise<SocketSdkReturnType<'getOrgRepoList'>['data'] | undefined> {
+}): Promise<CResult<SocketSdkReturnType<'getOrgRepoList'>['data']>> {
   const sockSdk = await setupSdk()
 
   // Lazily access constants.spinner.
@@ -37,8 +38,8 @@ export async function fetchListRepos({
   spinner.successAndStop('Received response for repository list.')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrgRepoList', result)
+    return handleFailedApiResponse('getOrgRepoList', result)
   }
 
-  return result.data
+  return { ok: true, data: result.data }
 }

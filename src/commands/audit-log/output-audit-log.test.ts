@@ -89,7 +89,8 @@ describe('output-audit-log', () => {
               }
             ]
           }
-        }"
+        }
+        "
       `)
     })
 
@@ -100,7 +101,10 @@ describe('output-audit-log', () => {
         page: 1,
         perPage: 10
       })
-      expect(r).toMatchInlineSnapshot(`"{}"`)
+      expect(r).toMatchInlineSnapshot(`
+        "{}
+        "
+      `)
     })
   })
 

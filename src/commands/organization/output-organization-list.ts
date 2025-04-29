@@ -3,34 +3,35 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getLastFiveOfApiToken } from '../../utils/api'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { getDefaultToken } from '../../utils/sdk'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 
-import type { OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputOrganizationList(
-  data: SocketSdkReturnType<'getOrganizations'>['data'],
+  result: CResult<SocketSdkReturnType<'getOrganizations'>['data']>,
   outputKind: OutputKind = 'text'
 ): Promise<void> {
-  const organizations = Object.values(data.organizations)
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
+  if (outputKind === 'json') {
+    logger.log(serializeResultJson(result))
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  const organizations = Object.values(result.data.organizations)
   const apiToken = getDefaultToken()
   const lastFiveOfApiToken = getLastFiveOfApiToken(apiToken ?? '?????')
 
   switch (outputKind) {
-    case 'json': {
-      logger.log(
-        JSON.stringify(
-          organizations.map(o => ({
-            name: o.name,
-            id: o.id,
-            plan: o.plan
-          })),
-          null,
-          2
-        )
-      )
-      return
-    }
     case 'markdown': {
       // | Syntax      | Description |
       // | ----------- | ----------- |

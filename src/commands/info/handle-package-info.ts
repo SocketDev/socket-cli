@@ -1,5 +1,3 @@
-import process from 'node:process'
-
 import { hasKeys } from '@socketsecurity/registry/lib/objects'
 
 import { fetchPackageInfo } from './fetch-package-info'

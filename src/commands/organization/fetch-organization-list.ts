@@ -1,11 +1,12 @@
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchOrganization(): Promise<
-  SocketSdkReturnType<'getOrganizations'>['data'] | undefined
+  CResult<SocketSdkReturnType<'getOrganizations'>['data']>
 > {
   const sockSdk = await setupSdk()
 
@@ -22,8 +23,8 @@ export async function fetchOrganization(): Promise<
   spinner.successAndStop('Received organization list response.')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrganizations', result)
+    return handleFailedApiResponse('getOrganizations', result)
   }
 
-  return result.data
+  return { ok: true, data: result.data }
 }

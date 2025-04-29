@@ -12,10 +12,7 @@ export async function handleDependencies({
   offset: number
   outputKind: OutputKind
 }): Promise<void> {
-  const data = await fetchDependencies({ limit, offset })
-  if (!data) {
-    return
-  }
+  const result = await fetchDependencies({ limit, offset })
 
-  await outputDependencies(data, { limit, offset, outputKind })
+  await outputDependencies(result, { limit, offset, outputKind })
 }

@@ -16,6 +16,7 @@ export async function convertGradleToMaven(
   verbose: boolean,
   gradleOpts: string[]
 ) {
+  // TODO: impl json/md
   if (verbose) {
     logger.log('[VERBOSE] Resolving:', [cwd, bin])
   }

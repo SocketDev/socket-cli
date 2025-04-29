@@ -1,7 +1,8 @@
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchCreateOrgFullScan(
@@ -26,7 +27,7 @@ export async function fetchCreateOrgFullScan(
     pullRequest: number
     repoName: string
   }
-): Promise<SocketSdkReturnType<'CreateOrgFullScan'>['data'] | undefined> {
+): Promise<CResult<SocketSdkReturnType<'CreateOrgFullScan'>['data']>> {
   const sockSdk = await setupSdk()
 
   // Lazily access constants.spinner.
@@ -59,8 +60,8 @@ export async function fetchCreateOrgFullScan(
   spinner.successAndStop('Completed request to create a new scan.')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('CreateOrgFullScan', result)
+    return handleFailedApiResponse('CreateOrgFullScan', result)
   }
 
-  return result.data
+  return { ok: true, data: result.data }
 }

@@ -1,5 +1,3 @@
-import process from 'node:process'
-
 import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
@@ -8,13 +6,13 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mdTable } from '../../utils/markdown'
 import { serializeResultJson } from '../../utils/serialize-result-json'
 
-import type { CliJsonResult, OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 const { REDACTED } = constants
 
 export async function outputAuditLog(
-  auditLogs: CliJsonResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
+  auditLogs: CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
   {
     logType,
     orgSlug,
@@ -29,6 +27,10 @@ export async function outputAuditLog(
     logType: string
   }
 ): Promise<void> {
+  if (!auditLogs.ok) {
+    process.exitCode = auditLogs.code ?? 1
+  }
+
   if (outputKind === 'json') {
     logger.log(
       await outputAsJson(auditLogs, {
@@ -39,7 +41,7 @@ export async function outputAuditLog(
       })
     )
   } else if (outputKind !== 'markdown' && !auditLogs.ok) {
-    logger.fail(failMsgWithBadge(auditLogs.message, auditLogs.data))
+    logger.fail(failMsgWithBadge(auditLogs.message, auditLogs.cause))
   } else {
     logger.log(
       await outputAsMarkdown(auditLogs, {
@@ -53,7 +55,7 @@ export async function outputAuditLog(
 }
 
 export async function outputAsJson(
-  auditLogs: CliJsonResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
+  auditLogs: CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
   {
     logType,
     orgSlug,
@@ -105,7 +107,7 @@ export async function outputAsJson(
 }
 
 export async function outputAsMarkdown(
-  auditLogs: CliJsonResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
+  auditLogs: CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
   {
     logType,
     orgSlug,
@@ -126,12 +128,14 @@ There was a problem fetching the audit logs:
 
 > ${auditLogs.message}
 ${
-  auditLogs.data
+  auditLogs.cause
     ? '>\n' +
-      auditLogs.data
-        .split('\n')
-        .map(s => `> ${s}\n`)
-        .join('')
+      (
+        auditLogs.cause
+          .split('\n')
+          .map(s => `> ${s}\n`)
+          .join('') ?? ''
+      )
     : ''
 }
 Parameters:

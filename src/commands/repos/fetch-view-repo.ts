@@ -1,5 +1,6 @@
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { CResult } from '../../types'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -7,7 +8,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 export async function fetchViewRepo(
   orgSlug: string,
   repoName: string
-): Promise<SocketSdkReturnType<'getOrgRepo'>['data'] | undefined> {
+): Promise<CResult<SocketSdkReturnType<'getOrgRepo'>['data']>> {
   const sockSdk = await setupSdk()
 
   // Lazily access constants.spinner.
@@ -23,8 +24,8 @@ export async function fetchViewRepo(
   spinner.successAndStop('Received response while fetched repository data.')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrgRepo', result)
+    return handleFailedApiResponse('getOrgRepo', result)
   }
 
-  return result.data
+  return { ok: true, data: result.data }
 }

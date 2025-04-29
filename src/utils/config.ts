@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import process from 'node:process'
 
 import config from '@socketsecurity/config'
 import { debugLog } from '@socketsecurity/registry/lib/debug'
@@ -9,6 +8,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { safeReadFileSync } from './fs'
 import constants from '../constants'
+
+import type { CResult } from '../types'
 
 const { LOCALAPPDATA, SOCKET_APP_DIR } = constants
 
@@ -47,18 +48,20 @@ let _cachedConfig: LocalConfig | undefined
 // When using --config or SOCKET_CLI_CONFIG, do not persist the config.
 let _readOnlyConfig = false
 
-export function overrideCachedConfig(
-  jsonConfig: unknown
-): { ok: true; message: undefined } | { ok: false; message: string } {
+export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   debugLog('Overriding entire config, marking config as read-only')
 
   let config
   try {
     config = JSON.parse(String(jsonConfig))
     if (!config || typeof config !== 'object') {
-      // Just throw to reuse the error message. `null` is valid json,
-      // so are primitive values. They're not valid config objects :)
-      throw new Error()
+      // `null` is valid json, so are primitive values. They're not valid config objects :)
+      return {
+        ok: false,
+        message: 'Could not parse Config as JSON',
+        cause:
+          "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again."
+      }
     }
   } catch {
     // Force set an empty config to prevent accidentally using system settings
@@ -67,7 +70,8 @@ export function overrideCachedConfig(
 
     return {
       ok: false,
-      message:
+      message: 'Could not parse Config as JSON',
+      cause:
         "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again."
     }
   }
@@ -87,7 +91,7 @@ export function overrideCachedConfig(
     delete _cachedConfig['apiKey']
   }
 
-  return { ok: true, message: undefined }
+  return { ok: true, data: undefined }
 }
 
 export function overrideConfigApiToken(apiToken: unknown) {
@@ -174,14 +178,20 @@ function getConfigPath(): string | undefined {
   return _configPath
 }
 
-function normalizeConfigKey(key: keyof LocalConfig): keyof LocalConfig {
+function normalizeConfigKey(
+  key: keyof LocalConfig
+): CResult<keyof LocalConfig> {
   // Note: apiKey was the old name of the token. When we load a config with
   //       property apiKey, we'll copy that to apiToken and delete the old property.
   const normalizedKey = key === 'apiKey' ? 'apiToken' : key
   if (!supportedConfigKeys.has(normalizedKey)) {
-    throw new Error(`Invalid config key: ${normalizedKey}`)
+    return {
+      ok: false,
+      message: `Invalid config key: ${normalizedKey}`,
+      data: undefined
+    }
   }
-  return normalizedKey
+  return { ok: true, data: key }
 }
 
 export function findSocketYmlSync(dir = process.cwd()) {
@@ -211,9 +221,25 @@ export function findSocketYmlSync(dir = process.cwd()) {
 
 export function getConfigValue<Key extends keyof LocalConfig>(
   key: Key
-): LocalConfig[Key] {
+): CResult<LocalConfig[Key]> {
   const localConfig = getConfigValues()
-  return localConfig[normalizeConfigKey(key)] as LocalConfig[Key]
+  const keyResult = normalizeConfigKey(key)
+  if (!keyResult.ok) {
+    return keyResult
+  }
+  return { ok: true, data: localConfig[keyResult.data as Key] }
+}
+// This version squashes errors, returning undefined instead.
+// Should be used when we can reasonably predict the call can't fail.
+export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
+  key: Key
+): LocalConfig[Key] | undefined {
+  const localConfig = getConfigValues()
+  const keyResult = normalizeConfigKey(key)
+  if (!keyResult.ok) {
+    return undefined
+  }
+  return localConfig[keyResult.data as Key]
 }
 export function isReadOnlyConfig() {
   return _readOnlyConfig
@@ -223,14 +249,22 @@ let _pendingSave = false
 export function updateConfigValue<Key extends keyof LocalConfig>(
   key: keyof LocalConfig,
   value: LocalConfig[Key]
-): void {
+): CResult<undefined | string> {
   const localConfig = getConfigValues()
-  localConfig[normalizeConfigKey(key) as Key] = value
+  const keyResult = normalizeConfigKey(key)
+  if (!keyResult.ok) {
+    return keyResult
+  }
+  localConfig[keyResult.data as Key] = value
   if (_readOnlyConfig) {
-    logger.warn(
-      'Not persisting config change; current config overridden through env var or flag'
-    )
-  } else if (!_pendingSave) {
+    return {
+      ok: true,
+      message: `Config key '${key}' was updated`,
+      data: 'Change applied but not persisted; current config is overridden through env var or flag'
+    }
+  }
+
+  if (!_pendingSave) {
     _pendingSave = true
     process.nextTick(() => {
       _pendingSave = false
@@ -243,8 +277,14 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
       }
     })
   }
+
+  return {
+    ok: true,
+    message: `Config key '${key}' was updated`,
+    data: undefined
+  }
 }
 
 export function isTestingV1() {
-  return !!getConfigValue('isTestingV1')
+  return !!getConfigValueOrUndef('isTestingV1')
 }

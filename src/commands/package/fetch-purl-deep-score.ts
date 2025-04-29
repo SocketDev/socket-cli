@@ -2,20 +2,72 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
 import { handleApiCall, handleApiError, queryApi } from '../../utils/api'
-import { AuthError } from '../../utils/errors'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { getDefaultToken } from '../../utils/sdk'
 
-const { SOCKET_CLI_ISSUES_URL } = constants
+import type { CResult } from '../../types'
 
-export async function fetchPurlDeepScore(purl: string) {
+export interface PurlDataResponse {
+  purl: string
+  self: {
+    purl: string
+    score: {
+      license: number
+      maintenance: number
+      overall: number
+      quality: number
+      supplyChain: number
+      vulnerability: number
+    }
+    capabilities: string[]
+    alerts: Array<{
+      name: string
+      severity: string
+      category: string
+      example: string
+    }>
+  }
+  transitively: {
+    dependencyCount: number
+    func: string
+    score: {
+      license: number
+      maintenance: number
+      overall: number
+      quality: number
+      supplyChain: number
+      vulnerability: number
+    }
+    lowest: {
+      license: string
+      maintenance: string
+      overall: string
+      quality: string
+      supplyChain: string
+      vulnerability: string
+    }
+    capabilities: string[]
+    alerts: Array<{
+      name: string
+      severity: string
+      category: string
+      example: string
+    }>
+  }
+}
+
+export async function fetchPurlDeepScore(
+  purl: string
+): Promise<CResult<PurlDataResponse>> {
   logger.info(`Requesting deep score data for this purl: ${purl}`)
 
   const apiToken = getDefaultToken()
   if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
+    return {
+      ok: false,
+      message: 'Authentication Error',
+      cause:
+        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+    }
   }
 
   // Lazily access constants.spinner.
@@ -26,37 +78,37 @@ export async function fetchPurlDeepScore(purl: string) {
   let result
   try {
     result = await queryApi(`purl/score/${encodeURIComponent(purl)}`, apiToken)
-    spinner.successAndStop('Received deep package score response.')
   } catch (e) {
     spinner.failAndStop('The request was unsuccessful.')
     const msg = (e as undefined | { message: string })?.message
-    if (msg) {
-      logger.fail(msg)
-      logger.log(
-        'Please report this if the error persists or use the cli version that includes error reporting to automate that'
-      )
-    } else {
-      logger.log(
-        'An error happened but no reason was given. If this persists please let us know about it and what you were trying to achieve. Thank you.'
-      )
+
+    return {
+      ok: false,
+      message: 'API Request failed to complete',
+      ...(msg ? { cause: msg } : {})
     }
-    return
   }
+
+  spinner.successAndStop('Received deep package score response.')
 
   if (!result.ok) {
     const err = await handleApiError(result.status)
-    logger.fail(failMsgWithBadge(result.statusText, err))
-    process.exitCode = 1
-    return
+    return {
+      ok: false,
+      message: 'Socket API returned an error',
+      cause: `${result.statusText}${err ? ` (cause: ${err}` : ''}`
+    }
   }
 
   const data = await handleApiCall(await result.text(), 'Reading text')
 
   try {
-    return JSON.parse(data)
+    return { ok: true, data: JSON.parse(data) }
   } catch (e) {
-    throw new Error(
-      `Unable to parse JSON response from the Socket API.\nPlease report to ${SOCKET_CLI_ISSUES_URL}`
-    )
+    return {
+      ok: false,
+      message: 'Server returned invalid JSON',
+      cause: `Please report this. JSON.parse threw an error over the following response: \`${data}\``
+    }
   }
 }

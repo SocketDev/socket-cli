@@ -1,23 +1,36 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { LocalConfig } from '../../utils/config'
+import { isReadOnlyConfig } from '../../utils/config'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 
-import type { OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
+import type { LocalConfig } from '../../utils/config'
 
 export async function outputConfigGet(
   key: keyof LocalConfig,
-  value: unknown,
-  readOnly: boolean, // Is config in read-only mode? (Overrides applied)
+  result: CResult<LocalConfig[keyof LocalConfig]>,
   outputKind: OutputKind
 ) {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
   if (outputKind === 'json') {
-    logger.log(
-      JSON.stringify({ success: true, result: { key, value }, readOnly })
-    )
-  } else if (outputKind === 'markdown') {
+    logger.log(serializeResultJson(result))
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  const readOnly = isReadOnlyConfig()
+
+  if (outputKind === 'markdown') {
     logger.log(`# Config Value`)
     logger.log('')
-    logger.log(`Config key '${key}' has value '${value}`)
+    logger.log(`Config key '${key}' has value '${result.data}`)
     if (readOnly) {
       logger.log('')
       logger.log(
@@ -25,7 +38,7 @@ export async function outputConfigGet(
       )
     }
   } else {
-    logger.log(`${key}: ${value}`)
+    logger.log(`${key}: ${result.data}`)
     if (readOnly) {
       logger.log('')
       logger.log(

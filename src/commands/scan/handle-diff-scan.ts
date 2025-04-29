@@ -23,9 +23,6 @@ export async function handleDiffScan({
     id2,
     orgSlug
   })
-  if (!data) {
-    return
-  }
 
   await outputDiffScan(data, {
     depth,

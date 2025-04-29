@@ -35,6 +35,7 @@ describe('socket scan view', async () => {
             --json            Output result as json
             --markdown        Output result as markdown
             --org             Force override the organization slug, overrides the default org from config
+            --stream          Only valid with --json. Streams the response as "ndjson" (chunks of valid json blobs).
 
           Examples
             $ socket scan view FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 ./stream.txt"
