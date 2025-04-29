@@ -152,7 +152,8 @@ describe('socket manifest conda', async () => {
       'should print a json blurb with --json flag',
       async cmd => {
         const { stderr, stdout } = await invokeNpm(entryPath, cmd)
-        expect(stdout).toMatchInlineSnapshot(`
+        // (Must normalize newlines to fix snapshot test for Windows)
+        expect(stdout.replace(/\r\n/g, '\n')).toMatchInlineSnapshot(`
           "{
             "ok": true,
             "data": {
