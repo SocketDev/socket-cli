@@ -62,7 +62,7 @@ export async function fetchThreatFeed({
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${result.statusText}${err ? ` (cause: ${err}` : ''}`
+      cause: `${result.statusText}${err ? ` (cause: ${err})` : ''}`
     }
   }
 
