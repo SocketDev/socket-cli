@@ -4,7 +4,7 @@ import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names'
 import { handleScanReport } from './handle-scan-report'
 import { outputCreateNewScan } from './output-create-new-scan'
-import { handleBadInput } from '../../utils/handle-bad-input'
+import { checkCommandInput } from '../../utils/handle-bad-input'
 import { getPackageFilesForScan } from '../../utils/path-resolve'
 
 import type { OutputKind } from '../../types'
@@ -45,26 +45,26 @@ export async function handleCreateNewScan({
   tmp: boolean
 }): Promise<void> {
   const supportedFileNames = await fetchSupportedScanFileNames()
-  if (!supportedFileNames) {
+  if (!supportedFileNames.ok) {
+    await outputCreateNewScan(supportedFileNames, outputKind, interactive)
     return
   }
 
   const packagePaths = await getPackageFilesForScan(
     cwd,
     targets,
-    supportedFileNames
+    supportedFileNames.data
   )
 
-  if (
-    handleBadInput({
-      nook: true,
-      test: packagePaths.length > 0,
-      pass: 'ok',
-      fail: 'found no eligible files to scan',
-      message:
-        'TARGET (file/dir) must contain matching / supported file types for a scan'
-    })
-  ) {
+  const wasBadInput = checkCommandInput(outputKind, {
+    nook: true,
+    test: packagePaths.length > 0,
+    pass: 'ok',
+    fail: 'found no eligible files to scan',
+    message:
+      'TARGET (file/dir) must contain matching / supported file types for a scan'
+  })
+  if (wasBadInput) {
     return
   }
 
@@ -89,12 +89,9 @@ export async function handleCreateNewScan({
       branchName
     }
   )
-  if (!data) {
-    return
-  }
 
-  if (report) {
-    if (data?.id) {
+  if (data.ok && report) {
+    if (data.data?.id) {
       await handleScanReport({
         filePath: '-',
         fold: 'version',
@@ -102,12 +99,20 @@ export async function handleCreateNewScan({
         orgSlug,
         outputKind,
         reportLevel: 'error',
-        scanId: data.id,
+        scanId: data.data.id,
         short: false
       })
     } else {
-      logger.fail('Failure: Server did not respond with a scan ID')
-      process.exitCode = 1
+      await outputCreateNewScan(
+        {
+          ok: false,
+          message: 'Missing Scan ID',
+          cause: 'Server did not respond with a scan ID',
+          data: data.data
+        },
+        outputKind,
+        interactive
+      )
     }
   } else {
     await outputCreateNewScan(data, outputKind, interactive)

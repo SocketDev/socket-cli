@@ -22,16 +22,9 @@ export async function handleScanReport({
   reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'
   short: boolean
 }): Promise<void> {
-  const { ok, scan, securityPolicy } = await fetchReportData(
-    orgSlug,
-    scanId,
-    includeLicensePolicy
-  )
-  if (!ok) {
-    return
-  }
+  const result = await fetchReportData(orgSlug, scanId, includeLicensePolicy)
 
-  await outputScanReport(scan, securityPolicy, {
+  await outputScanReport(result, {
     filePath,
     fold,
     scanId: scanId,

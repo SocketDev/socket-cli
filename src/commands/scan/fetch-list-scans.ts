@@ -1,7 +1,8 @@
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchListScans({
@@ -22,7 +23,7 @@ export async function fetchListScans({
   per_page: number
   repo: string
   sort: string
-}): Promise<SocketSdkReturnType<'getOrgFullScanList'>['data'] | void> {
+}): Promise<CResult<SocketSdkReturnType<'getOrgFullScanList'>['data']>> {
   const sockSdk = await setupSdk()
 
   // Lazily access constants.spinner.
@@ -46,8 +47,8 @@ export async function fetchListScans({
   spinner.successAndStop(`Received response for list of scans.`)
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrgFullScanList', result)
+    return handleFailedApiResponse('getOrgFullScanList', result)
   }
 
-  return result.data
+  return { ok: true, data: result.data }
 }

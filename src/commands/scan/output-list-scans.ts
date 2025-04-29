@@ -4,15 +4,26 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import type { OutputKind } from '../../types'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import { serializeResultJson } from '../../utils/serialize-result-json'
+
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputListScans(
-  data: SocketSdkReturnType<'getOrgFullScanList'>['data'],
+  result: CResult<SocketSdkReturnType<'getOrgFullScanList'>['data']>,
   outputKind: OutputKind
 ): Promise<void> {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
   if (outputKind === 'json') {
-    logger.log(data)
+    logger.log(serializeResultJson(result))
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -26,7 +37,7 @@ export async function outputListScans(
     ]
   }
 
-  const formattedResults = data.results.map(d => {
+  const formattedResults = result.data.results.map(d => {
     return {
       id: d.id,
       report_url: colors.underline(`${d.html_report_url}`),

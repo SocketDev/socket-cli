@@ -1,36 +1,36 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import type { OutputKind } from '../../types'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import { serializeResultJson } from '../../utils/serialize-result-json'
+
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputQuota(
-  data: SocketSdkReturnType<'getQuota'>['data'],
+  result: CResult<SocketSdkReturnType<'getQuota'>['data']>,
   outputKind: OutputKind = 'text'
 ): Promise<void> {
-  if (outputKind === 'json') {
-    let json
-    try {
-      json = JSON.stringify(data, null, 2)
-    } catch {
-      console.error(
-        'Failed to convert the server response to json, try running the same command without --json'
-      )
-      return
-    }
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
 
-    logger.log(json)
-    logger.log('')
+  if (outputKind === 'json') {
+    logger.log(serializeResultJson(result))
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   if (outputKind === 'markdown') {
     logger.log('# Quota')
     logger.log('')
-    logger.log(`Quota left on the current API token: ${data.quota}`)
+    logger.log(`Quota left on the current API token: ${result.data.quota}`)
     logger.log('')
     return
   }
 
-  logger.log(`Quota left on the current API token: ${data.quota}`)
+  logger.log(`Quota left on the current API token: ${result.data.quota}`)
   logger.log('')
 }

@@ -5,11 +5,14 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import type { OutputKind } from '../../types'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import { serializeResultJson } from '../../utils/serialize-result-json'
+
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputDiffScan(
-  result: SocketSdkReturnType<'GetOrgDiffScan'>['data'],
+  result: CResult<SocketSdkReturnType<'GetOrgDiffScan'>['data']>,
   {
     depth,
     file,
@@ -20,7 +23,20 @@ export async function outputDiffScan(
     outputKind: OutputKind
   }
 ): Promise<void> {
-  const dashboardUrl = result.diff_report_url
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
+  if (!result.ok) {
+    if (outputKind === 'json') {
+      logger.log(serializeResultJson(result))
+      return
+    }
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  const dashboardUrl = result.data.diff_report_url
   const dashboardMessage = dashboardUrl
     ? `\n View this diff scan in the Socket dashboard: ${colors.cyan(dashboardUrl)}`
     : ''
@@ -29,16 +45,7 @@ export async function outputDiffScan(
   // won't get truncated. The only way to dump the full raw JSON to stdout is
   // to use `--json --file -` (the dash is a standard notation for stdout)
   if (outputKind === 'json' || file) {
-    let json
-    try {
-      json = JSON.stringify(result, null, 2)
-    } catch (e) {
-      process.exitCode = 1
-      // Most likely caused by a circular reference (or OOM)
-      logger.fail('There was a problem converting the data to JSON')
-      logger.error(e)
-      return
-    }
+    const json = serializeResultJson(result)
 
     if (file && file !== '-') {
       logger.log(`Writing json to \`${file}\``)

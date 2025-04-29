@@ -1,5 +1,3 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { convertCondaToRequirements } from './convert-conda-to-requirements'
 import { outputRequirements } from './output-requirements'
 
@@ -13,13 +11,6 @@ export async function handleManifestConda(
   verbose: boolean
 ): Promise<void> {
   const data = await convertCondaToRequirements(target, cwd, verbose)
-  if (!data) {
-    return
-  }
-  if (!data.ok) {
-    logger.fail(data.message)
-    return
-  }
 
-  await outputRequirements(data.data, outputKind, out)
+  await outputRequirements(data, outputKind, out)
 }

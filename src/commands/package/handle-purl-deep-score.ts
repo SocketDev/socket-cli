@@ -7,10 +7,7 @@ export async function handlePurlDeepScore(
   purl: string,
   outputKind: OutputKind
 ) {
-  const data = await fetchPurlDeepScore(purl)
-  if (!data) {
-    return
-  }
+  const result = await fetchPurlDeepScore(purl)
 
-  await outputPurlScore(purl, data, outputKind)
+  await outputPurlScore(purl, result, outputKind)
 }

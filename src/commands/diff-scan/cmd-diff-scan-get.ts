@@ -3,7 +3,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleDiffScan } from './handle-diff-scan'
 import constants from '../../constants'
 import { commonFlags } from '../../flags'
-import { getConfigValue, isTestingV1 } from '../../utils/config'
+import { getConfigValueOrUndef, isTestingV1 } from '../../utils/config'
 import { getOutputKind } from '../../utils/get-output-kind'
 import { checkCommandInput } from '../../utils/handle-bad-input'
 import { meowOrExit } from '../../utils/meow-with-subcommands'
@@ -100,8 +100,8 @@ async function run(
   const { after, before, depth, file, json, markdown } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
-  const defaultOrgSlug = getConfigValue('defaultOrg')
-  const orgSlug = defaultOrgSlug || cli.input[0] || ''
+  const defaultOrgSlugResult = getConfigValueOrUndef('defaultOrg')
+  const orgSlug = defaultOrgSlugResult || cli.input[0] || ''
 
   const apiToken = getDefaultToken()
 

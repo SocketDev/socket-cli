@@ -1,7 +1,7 @@
 import { fetchPurlsShallowScore } from './fetch-purls-shallow-score'
 import { outputPurlsShallowScore } from './output-purls-shallow-score'
 
-import type { OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 import type { components } from '@socketsecurity/sdk/types/api'
 
 export async function handlePurlsShallowScore({
@@ -12,13 +12,10 @@ export async function handlePurlsShallowScore({
   purls: string[]
 }) {
   const packageData = await fetchPurlsShallowScore(purls)
-  if (!packageData) {
-    return
-  }
 
   outputPurlsShallowScore(
     purls,
-    packageData.data as Array<components['schemas']['SocketArtifact']>,
+    packageData as CResult<Array<components['schemas']['SocketArtifact']>>,
     outputKind
   )
 }

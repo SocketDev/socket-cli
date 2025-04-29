@@ -13,6 +13,8 @@ export async function convertSbtToMaven(
   verbose: boolean,
   sbtOpts: string[]
 ) {
+  // TODO: impl json/md
+
   // Lazily access constants.spinner.
   const { spinner } = constants
   const rbin = path.resolve(bin)

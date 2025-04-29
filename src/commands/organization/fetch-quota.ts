@@ -1,11 +1,12 @@
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchQuota(): Promise<
-  SocketSdkReturnType<'getQuota'>['data'] | undefined
+  CResult<SocketSdkReturnType<'getQuota'>['data']>
 > {
   const sockSdk = await setupSdk()
 
@@ -22,8 +23,8 @@ export async function fetchQuota(): Promise<
   spinner.successAndStop('Received organization quota response.')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getQuota', result)
+    return handleFailedApiResponse('getQuota', result)
   }
 
-  return result.data
+  return { ok: true, data: result.data }
 }

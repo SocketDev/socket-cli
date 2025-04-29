@@ -1,22 +1,22 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import constants from '../../constants'
 import { handleApiError, queryApi } from '../../utils/api'
-import { AuthError } from '../../utils/errors'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { getDefaultToken } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { components } from '@socketsecurity/sdk/types/api'
 
 export async function fetchScan(
   orgSlug: string,
   scanId: string
-): Promise<Array<components['schemas']['SocketArtifact']> | undefined> {
+): Promise<CResult<Array<components['schemas']['SocketArtifact']>>> {
   const apiToken = getDefaultToken()
   if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
+    return {
+      ok: false,
+      message: 'Authentication Error',
+      cause:
+        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+    }
   }
 
   // Lazily access constants.spinner.
@@ -33,23 +33,34 @@ export async function fetchScan(
 
   if (!response.ok) {
     const err = await handleApiError(response.status)
-    logger.fail(failMsgWithBadge(response.statusText, `Fetch error: ${err}`))
-    return
+    return {
+      ok: false,
+      message: 'Socket API returned an error',
+      cause: `${response.statusText}${err ? ` (cause: ${err}` : ''}`
+    }
   }
 
   // This is nd-json; each line is a json object
   const jsons = await response.text()
   const lines = jsons.split('\n').filter(Boolean)
+  let failed = false
   const data = lines.map(line => {
     try {
       return JSON.parse(line)
     } catch {
-      console.error(
-        'At least one line item was returned that could not be parsed as JSON...'
-      )
+      failed = true
       return {}
     }
   }) as unknown as Array<components['schemas']['SocketArtifact']>
 
-  return data
+  if (failed) {
+    return {
+      ok: false,
+      message: 'API response was invalid',
+      cause:
+        'At least one line item was returned that could not be parsed as JSON... Please report.'
+    }
+  }
+
+  return { ok: true, data }
 }

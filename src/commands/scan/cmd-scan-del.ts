@@ -69,7 +69,7 @@ async function run(
   })
 
   const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
-  const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
+  const outputKind = getOutputKind(json, markdown)
 
   const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
@@ -120,5 +120,5 @@ async function run(
     return
   }
 
-  await handleDeleteScan(orgSlug, scanId)
+  await handleDeleteScan(orgSlug, scanId, outputKind)
 }

@@ -7,7 +7,7 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mdTableStringNumber } from '../../utils/markdown'
 import { serializeResultJson } from '../../utils/serialize-result-json'
 
-import type { CliJsonResult, OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
 import type { grid as ContribGrid } from 'blessed-contrib'
@@ -60,7 +60,7 @@ const Months = [
 ] as const
 
 export async function outputAnalytics(
-  result: CliJsonResult<
+  result: CResult<
     | SocketSdkReturnType<'getOrgAnalytics'>['data']
     | SocketSdkReturnType<'getRepoAnalytics'>['data']
   >,
@@ -78,29 +78,40 @@ export async function outputAnalytics(
     filePath: string
   }
 ): Promise<void> {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
+  if (!result.ok) {
+    if (outputKind === 'json') {
+      logger.log(serializeResultJson(result))
+      return
+    }
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
   if (outputKind === 'json') {
     const serialized = serializeResultJson(result)
 
-    // TODO: do we want to write to file even if there was an error...?
     if (filePath && filePath !== '-') {
       try {
         await fs.writeFile(filePath, serialized, 'utf8')
-        logger.log(`Data successfully written to ${filePath}`)
+        logger.error(`Data successfully written to ${filePath}`)
       } catch (e) {
         process.exitCode = 1
-        logger.fail('There was an error trying to write the json to disk')
-        logger.error(e)
+        logger.log(
+          serializeResultJson({
+            ok: false,
+            message: 'File Write Failure',
+            cause: 'There was an error trying to write the json to disk'
+          })
+        )
       }
     } else {
       logger.log(serialized)
     }
 
-    return
-  }
-
-  if (!result.ok) {
-    // Note: We're not in json mode so just print the error badge
-    logger.fail(failMsgWithBadge(result.message, result.data))
     return
   }
 

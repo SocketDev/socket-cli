@@ -1,12 +1,13 @@
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchLicensePolicy(
   orgSlug: string
-): Promise<SocketSdkReturnType<'getOrgLicensePolicy'>['data'] | undefined> {
+): Promise<CResult<SocketSdkReturnType<'getOrgLicensePolicy'>['data']>> {
   const sockSdk = await setupSdk()
 
   // Lazily access constants.spinner.
@@ -22,8 +23,8 @@ export async function fetchLicensePolicy(
   spinner.successAndStop('Received organization license policy response.')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrgLicensePolicy', result)
+    return handleFailedApiResponse('getOrgLicensePolicy', result)
   }
 
-  return result.data
+  return { ok: true, data: result.data }
 }

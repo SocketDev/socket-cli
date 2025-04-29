@@ -9,9 +9,6 @@ export async function handleViewRepo(
   outputKind: OutputKind
 ): Promise<void> {
   const data = await fetchViewRepo(orgSlug, repoName)
-  if (!data) {
-    return
-  }
 
   await outputViewRepo(data, outputKind)
 }
