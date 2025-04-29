@@ -1,5 +1,3 @@
-import process from 'node:process'
-
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import {
   isAuditFlag,

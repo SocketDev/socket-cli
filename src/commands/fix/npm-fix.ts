@@ -73,16 +73,11 @@ async function install(
 
 export async function npmFix(
   pkgEnvDetails: EnvDetails,
-  {
-    autoMerge,
-    cwd,
-    purls,
-    rangeStyle,
-    spinner,
-    test,
-    testScript
-  }: NormalizedFixOptions
+  { autoMerge, cwd, purls, rangeStyle, test, testScript }: NormalizedFixOptions
 ) {
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
   spinner?.start()
 
   const { pkgPath: rootPath } = pkgEnvDetails

@@ -4,18 +4,22 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { generateReport } from './generate-report'
 import constants from '../../constants'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mapToObject } from '../../utils/map-to-object'
 import { mdTable } from '../../utils/markdown'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 import { walkNestedMap } from '../../utils/walk-nested-map'
 
 import type { ReportLeafNode, ScanReport } from './generate-report'
-import type { OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { components } from '@socketsecurity/sdk/types/api'
 
 export async function outputScanReport(
-  scan: Array<components['schemas']['SocketArtifact']>,
-  securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>,
+  result: CResult<{
+    scan: Array<components['schemas']['SocketArtifact']>
+    securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>['data']
+  }>,
   {
     filePath,
     fold,
@@ -36,15 +40,33 @@ export async function outputScanReport(
     short: boolean
   }
 ): Promise<void> {
-  const scanReport = generateReport(scan, securityPolicy, {
-    orgSlug,
-    scanId,
-    fold,
-    reportLevel,
-    short,
-    // Lazily access constants.spinner.
-    spinner: constants.spinner
-  })
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
+  if (!result.ok) {
+    if (outputKind === 'json') {
+      logger.log(serializeResultJson(result))
+      logger.log('')
+      return
+    }
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  const scanReport = generateReport(
+    result.data.scan,
+    result.data.securityPolicy,
+    {
+      orgSlug,
+      scanId,
+      fold,
+      reportLevel,
+      short,
+      // Lazily access constants.spinner.
+      spinner: constants.spinner
+    }
+  )
 
   if (!scanReport.healthy) {
     process.exitCode = 1
@@ -55,7 +77,7 @@ export async function outputScanReport(
     (outputKind === 'text' && filePath && filePath.endsWith('.json'))
   ) {
     const json = short
-      ? JSON.stringify(scanReport)
+      ? JSON.stringify(scanReport, null, 2)
       : toJsonReport(scanReport as ScanReport, includeLicensePolicy)
 
     if (filePath && filePath !== '-') {
@@ -64,6 +86,7 @@ export async function outputScanReport(
     }
 
     logger.log(json)
+    logger.log('')
     return
   }
 
@@ -78,6 +101,7 @@ export async function outputScanReport(
     }
 
     logger.log(md)
+    logger.log('')
     return
   }
 

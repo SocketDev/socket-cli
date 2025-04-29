@@ -1,5 +1,3 @@
-import process from 'node:process'
-
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -37,7 +35,6 @@ export function handleFailedApiResponse<T extends SocketSdkOperations>(
   _name: T,
   { cause, error }: SocketSdkErrorType<T>
 ): CResult<never> {
-  process.exitCode = 1
   const message = `${error || 'No error message returned'}`
   // logger.error(failMsgWithBadge('Socket API returned an error', message))
   return {

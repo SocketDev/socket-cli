@@ -1,7 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleScanView } from './handle-scan-view'
-import { streamScan } from './streamScan'
+import { streamScan } from './stream-scan'
 import constants from '../../constants'
 import { commonFlags, outputFlags } from '../../flags'
 import { isTestingV1 } from '../../utils/config'
@@ -26,6 +26,12 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags,
     ...outputFlags,
+    stream: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Only valid with --json. Streams the response as "ndjson" (chunks of valid json blobs).'
+    },
     interactive: {
       type: 'boolean',
       default: true,
@@ -74,7 +80,14 @@ async function run(
     parentName
   })
 
-  const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
+  const {
+    dryRun,
+    interactive,
+    json,
+    markdown,
+    org: orgFlag,
+    stream
+  } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
   const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
@@ -125,6 +138,13 @@ async function run(
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
       fail: 'missing API token'
+    },
+    {
+      nook: true,
+      test: !stream || !!json,
+      message: 'You can only use --stream when using --json',
+      pass: 'ok',
+      fail: 'Either remove --stream or add --json'
     }
   )
   if (wasBadInput) {
@@ -136,9 +156,9 @@ async function run(
     return
   }
 
-  if (json) {
+  if (json && stream) {
     await streamScan(orgSlug, scanId, file)
   } else {
-    await handleScanView(orgSlug, scanId, file)
+    await handleScanView(orgSlug, scanId, file, outputKind)
   }
 }

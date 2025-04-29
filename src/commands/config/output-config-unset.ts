@@ -9,19 +9,27 @@ export async function outputConfigUnset(
   updateResult: CResult<undefined | string>,
   outputKind: OutputKind
 ) {
+  if (!updateResult.ok) {
+    process.exitCode = updateResult.code ?? 1
+  }
+
   if (outputKind === 'json') {
-    logger.log(JSON.stringify(serializeResultJson(updateResult)))
+    logger.log(serializeResultJson(updateResult))
+  } else if (!updateResult.ok) {
+    logger.fail(failMsgWithBadge(updateResult.message, updateResult.cause))
   } else if (outputKind === 'markdown') {
     logger.log(`# Update config`)
     logger.log('')
     logger.log(updateResult.message)
-    if (!updateResult.ok) {
+    if (updateResult.message) {
       logger.log('')
-      logger.log(updateResult.data)
+      logger.log(updateResult.message)
     }
-  } else if (updateResult.ok) {
-    logger.log(`OK`)
   } else {
-    logger.log(failMsgWithBadge(updateResult.message, updateResult.cause))
+    logger.log(`OK`)
+    if (updateResult.message) {
+      logger.log('')
+      logger.log(updateResult.message)
+    }
   }
 }

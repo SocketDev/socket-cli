@@ -1,5 +1,4 @@
 import path from 'node:path'
-import process from 'node:process'
 
 import meow from 'meow'
 import semver from 'semver'

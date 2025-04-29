@@ -92,16 +92,11 @@ async function readLockfile(pkgPath: string): Promise<LockfileObject | null> {
 
 export async function pnpmFix(
   pkgEnvDetails: EnvDetails,
-  {
-    autoMerge,
-    cwd,
-    purls,
-    rangeStyle,
-    spinner,
-    test,
-    testScript
-  }: NormalizedFixOptions
+  { autoMerge, cwd, purls, rangeStyle, test, testScript }: NormalizedFixOptions
 ) {
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
   spinner?.start()
 
   const { pkgPath: rootPath } = pkgEnvDetails

@@ -3,14 +3,13 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import type { CResult } from '../../types'
+
 export async function convertCondaToRequirements(
   target: string,
   cwd: string,
   verbose: boolean
-): Promise<
-  | { ok: true; message: string; data: { contents: string; pip: string } }
-  | { ok: false; message: string; data: undefined }
-> {
+): Promise<CResult<{ contents: string; pip: string }>> {
   let contents: string
   if (target === '-') {
     if (verbose) {
@@ -50,11 +49,10 @@ export async function convertCondaToRequirements(
     })
 
     if (!contents) {
-      process.exitCode = 1
       return {
         ok: false,
-        message: 'No data received from stdin',
-        data: undefined
+        message: 'Manifest Generation Failed',
+        cause: 'No data received from stdin'
       }
     }
   } else {
@@ -65,25 +63,26 @@ export async function convertCondaToRequirements(
     }
 
     if (!fs.existsSync(f)) {
-      process.exitCode = 1
       return {
         ok: false,
-        message: `Input file not found at ${f}`,
-        data: undefined
+        message: 'Manifest Generation Failed',
+        cause: `Input file not found at ${f}`
       }
     }
 
     contents = fs.readFileSync(target, 'utf8')
 
     if (!contents) {
-      process.exitCode = 1
-      return { ok: false, message: 'File is empty', data: undefined }
+      return {
+        ok: false,
+        message: 'Manifest Generation Failed',
+        cause: 'File is empty'
+      }
     }
   }
 
   return {
     ok: true,
-    message: '',
     data: {
       contents,
       pip: convertCondaToRequirementsFromInput(contents)

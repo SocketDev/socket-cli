@@ -10,9 +10,7 @@ describe('generate-report', () => {
   it('should accept empty args', () => {
     const result = generateReport(
       [],
-      {
-        data: { securityPolicyRules: [] }
-      } as unknown as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+      { securityPolicyRules: [] },
       {
         orgSlug: 'fakeorg',
         scanId: 'scan-ai-dee',
@@ -41,16 +39,13 @@ describe('generate-report', () => {
         const result = generateReport(
           getSimpleCleanScan(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                gptSecurity: {
-                  action: 'ignore'
-                }
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              gptSecurity: {
+                action: 'ignore'
+              }
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -79,16 +74,13 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                envVars: {
-                  action: 'error'
-                }
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              envVars: {
+                action: 'error'
+              }
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -142,16 +134,13 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                envVars: {
-                  action: 'warn'
-                }
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              envVars: {
+                action: 'warn'
+              }
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -205,16 +194,13 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                envVars: {
-                  action: 'monitor'
-                }
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              envVars: {
+                action: 'monitor'
+              }
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -243,16 +229,13 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                envVars: {
-                  action: 'ignore'
-                }
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              envVars: {
+                action: 'ignore'
+              }
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -281,16 +264,13 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                envVars: {
-                  action: 'defer'
-                }
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              envVars: {
+                action: 'defer'
+              }
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -319,14 +299,11 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                envVars: {}
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              envVars: {}
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -355,12 +332,9 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {},
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {},
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -391,16 +365,13 @@ describe('generate-report', () => {
         const result = generateReport(
           getSimpleCleanScan(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                gptSecurity: {
-                  action: 'ignore'
-                }
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              gptSecurity: {
+                action: 'ignore'
+              }
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -429,16 +400,13 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                envVars: {
-                  action: 'error'
-                }
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              envVars: {
+                action: 'error'
+              }
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -492,16 +460,13 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                envVars: {
-                  action: 'warn'
-                }
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              envVars: {
+                action: 'warn'
+              }
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -555,16 +520,13 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                envVars: {
-                  action: 'monitor'
-                }
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              envVars: {
+                action: 'monitor'
+              }
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -618,16 +580,13 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                envVars: {
-                  action: 'ignore'
-                }
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              envVars: {
+                action: 'ignore'
+              }
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -681,16 +640,13 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                envVars: {
-                  action: 'defer'
-                }
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              envVars: {
+                action: 'defer'
+              }
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -719,14 +675,11 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {
-                envVars: {}
-              },
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {
+              envVars: {}
+            },
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -755,12 +708,9 @@ describe('generate-report', () => {
         const result = generateReport(
           getScanWithEnvVars(),
           {
-            success: true,
-            data: {
-              securityPolicyRules: {},
-              securityPolicyDefault: 'medium'
-            }
-          } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+            securityPolicyRules: {},
+            securityPolicyDefault: 'medium'
+          },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -792,16 +742,13 @@ describe('generate-report', () => {
       const result = generateReport(
         getScanWithEnvVars(),
         {
-          success: true,
-          data: {
-            securityPolicyRules: {
-              envVars: {
-                action: 'error'
-              }
-            },
-            securityPolicyDefault: 'medium'
-          }
-        } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+          securityPolicyRules: {
+            envVars: {
+              action: 'error'
+            }
+          },
+          securityPolicyDefault: 'medium'
+        },
         {
           orgSlug: 'fakeorg',
           scanId: 'scan-ai-dee',
@@ -853,16 +800,13 @@ describe('generate-report', () => {
       const result = generateReport(
         getScanWithEnvVars(),
         {
-          success: true,
-          data: {
-            securityPolicyRules: {
-              envVars: {
-                action: 'error'
-              }
-            },
-            securityPolicyDefault: 'medium'
-          }
-        } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+          securityPolicyRules: {
+            envVars: {
+              action: 'error'
+            }
+          },
+          securityPolicyDefault: 'medium'
+        },
         {
           orgSlug: 'fakeorg',
           scanId: 'scan-ai-dee',
@@ -904,16 +848,13 @@ describe('generate-report', () => {
       const result = generateReport(
         getScanWithEnvVars(),
         {
-          success: true,
-          data: {
-            securityPolicyRules: {
-              envVars: {
-                action: 'error'
-              }
-            },
-            securityPolicyDefault: 'medium'
-          }
-        } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+          securityPolicyRules: {
+            envVars: {
+              action: 'error'
+            }
+          },
+          securityPolicyDefault: 'medium'
+        },
         {
           orgSlug: 'fakeorg',
           scanId: 'scan-ai-dee',
@@ -953,16 +894,13 @@ describe('generate-report', () => {
       const result = generateReport(
         getScanWithEnvVars(),
         {
-          success: true,
-          data: {
-            securityPolicyRules: {
-              envVars: {
-                action: 'error'
-              }
-            },
-            securityPolicyDefault: 'medium'
-          }
-        } as SocketSdkReturnType<'getOrgSecurityPolicy'>,
+          securityPolicyRules: {
+            envVars: {
+              action: 'error'
+            }
+          },
+          securityPolicyDefault: 'medium'
+        },
         {
           orgSlug: 'fakeorg',
           scanId: 'scan-ai-dee',

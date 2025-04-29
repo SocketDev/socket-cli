@@ -1,7 +1,8 @@
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchUpdateRepo({
@@ -18,7 +19,7 @@ export async function fetchUpdateRepo({
   homepage: string
   default_branch: string
   visibility: string
-}): Promise<SocketSdkReturnType<'updateOrgRepo'>['data'] | undefined> {
+}): Promise<CResult<SocketSdkReturnType<'updateOrgRepo'>['data']>> {
   const sockSdk = await setupSdk()
 
   // Lazily access constants.spinner.
@@ -41,8 +42,8 @@ export async function fetchUpdateRepo({
   spinner.successAndStop('Received response trying to update a repository')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('updateOrgRepo', result)
+    return handleFailedApiResponse('updateOrgRepo', result)
   }
 
-  return result.data
+  return { ok: true, data: result.data }
 }

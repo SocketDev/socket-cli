@@ -1,6 +1,5 @@
 import { promises as fs, readFileSync as fsReadFileSync } from 'node:fs'
 import path from 'node:path'
-import process from 'node:process'
 
 import { remove } from '@socketsecurity/registry/lib/fs'
 

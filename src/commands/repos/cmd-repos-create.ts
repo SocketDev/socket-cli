@@ -162,12 +162,15 @@ async function run(
     return
   }
 
-  await handleCreateRepo({
-    orgSlug,
-    repoName: String(repoName),
-    description: String(cli.flags['repoDescription'] || ''),
-    homepage: String(cli.flags['homepage'] || ''),
-    default_branch: String(cli.flags['defaultBranch'] || ''),
-    visibility: String(cli.flags['visibility'] || 'private')
-  })
+  await handleCreateRepo(
+    {
+      orgSlug,
+      repoName: String(repoName),
+      description: String(cli.flags['repoDescription'] || ''),
+      homepage: String(cli.flags['homepage'] || ''),
+      default_branch: String(cli.flags['defaultBranch'] || ''),
+      visibility: String(cli.flags['visibility'] || 'private')
+    },
+    outputKind
+  )
 }

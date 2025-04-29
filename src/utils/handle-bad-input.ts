@@ -46,7 +46,6 @@ export function checkCommandInput(
   process.exitCode = 2
 
   if (outputKind === 'json') {
-    process.exitCode = 1
     logger.log(
       serializeResultJson({
         ok: false,

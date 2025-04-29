@@ -1,5 +1,3 @@
-import process from 'node:process'
-
 import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
@@ -29,6 +27,10 @@ export async function outputAuditLog(
     logType: string
   }
 ): Promise<void> {
+  if (!auditLogs.ok) {
+    process.exitCode = auditLogs.code ?? 1
+  }
+
   if (outputKind === 'json') {
     logger.log(
       await outputAsJson(auditLogs, {

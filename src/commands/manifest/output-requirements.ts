@@ -2,24 +2,31 @@ import fs from 'node:fs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import type { OutputKind } from '../../types'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import { serializeResultJson } from '../../utils/serialize-result-json'
+
+import type { CResult, OutputKind } from '../../types'
 
 export async function outputRequirements(
-  data: { contents: string; pip: string },
+  result: CResult<{ contents: string; pip: string }>,
   outputKind: OutputKind,
   out: string
 ) {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
+  if (!result.ok) {
+    if (outputKind === 'json') {
+      logger.log(serializeResultJson(result))
+      return
+    }
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
   if (outputKind === 'json') {
-    const json = JSON.stringify(
-      {
-        ok: true,
-        data: {
-          pip: data.pip
-        }
-      },
-      undefined,
-      2
-    )
+    const json = serializeResultJson(result)
 
     if (out === '-') {
       logger.log(json)
@@ -39,7 +46,7 @@ export async function outputRequirements(
     )
     arr.push('')
     arr.push('```file=requirements.txt')
-    arr.push(data.pip)
+    arr.push(result.data.pip)
     arr.push('```')
     arr.push('')
     const md = arr.join('\n')
@@ -53,9 +60,9 @@ export async function outputRequirements(
   }
 
   if (out === '-') {
-    logger.log(data.pip)
+    logger.log(result.data.pip)
     logger.log('')
   } else {
-    fs.writeFileSync(out, data.pip, 'utf8')
+    fs.writeFileSync(out, result.data.pip, 'utf8')
   }
 }

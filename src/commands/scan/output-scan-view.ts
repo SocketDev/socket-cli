@@ -2,17 +2,35 @@ import fs from 'node:fs/promises'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { CResult, OutputKind } from '../../types'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mdTable } from '../../utils/markdown'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 
 import type { components } from '@socketsecurity/sdk/types/api'
 
 export async function outputScanView(
-  artifacts: Array<components['schemas']['SocketArtifact']>,
+  result: CResult<Array<components['schemas']['SocketArtifact']>>,
   orgSlug: string,
   scanId: string,
-  filePath: string
+  filePath: string,
+  outputKind: OutputKind
 ): Promise<void> {
-  const display = artifacts.map(art => {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
+  if (outputKind === 'json') {
+    logger.log(serializeResultJson(result))
+    logger.log('')
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  const display = result.data.map(art => {
     const author = Array.isArray(art.author)
       ? `${art.author[0]}${art.author.length > 1 ? ' et.al.' : ''}`
       : art.author

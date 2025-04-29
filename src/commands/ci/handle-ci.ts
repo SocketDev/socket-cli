@@ -11,6 +11,7 @@ export async function handleCI(): Promise<void> {
   // }
   const result = await getDefaultOrgSlug()
   if (!result.ok) {
+    process.exitCode = result.code ?? 1
     // Always assume json mode
     logger.log(serializeResultJson(result))
     return

@@ -78,6 +78,10 @@ export async function outputAnalytics(
     filePath: string
   }
 ): Promise<void> {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
   if (outputKind === 'json') {
     const serialized = serializeResultJson(result)
 

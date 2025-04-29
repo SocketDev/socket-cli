@@ -1,25 +1,31 @@
 // @ts-ignore
+
 import chalkTable from 'chalk-table'
 import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import type { OutputKind } from '../../types'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import { serializeResultJson } from '../../utils/serialize-result-json'
+
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputListRepos(
-  data: SocketSdkReturnType<'getOrgRepoList'>['data'],
+  result: CResult<SocketSdkReturnType<'getOrgRepoList'>['data']>,
   outputKind: OutputKind
 ): Promise<void> {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
   if (outputKind === 'json') {
-    const json = data.results.map(o => ({
-      id: o.id,
-      name: o.name,
-      visibility: o.visibility,
-      defaultBranch: o.default_branch,
-      archived: o.archived
-    }))
-    logger.log(JSON.stringify(json, null, 2))
+    logger.log(serializeResultJson(result))
+    logger.log('')
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -33,5 +39,5 @@ export async function outputListRepos(
     ]
   }
 
-  logger.log(chalkTable(options, data.results))
+  logger.log(chalkTable(options, result.data.results))
 }

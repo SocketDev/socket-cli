@@ -1,9 +1,9 @@
 import constants from '../../constants'
-import { queryApi } from '../../utils/api'
-import { AuthError } from '../../utils/errors'
+import { handleApiError, queryApi } from '../../utils/api'
 import { getDefaultToken } from '../../utils/sdk'
 
 import type { ThreadFeedResponse } from './types'
+import type { CResult } from '../../types'
 
 export async function fetchThreatFeed({
   direction,
@@ -17,7 +17,7 @@ export async function fetchThreatFeed({
   filter: string
   page: string
   perPage: number
-}): Promise<ThreadFeedResponse | { error: { message: string } }> {
+}): Promise<CResult<ThreadFeedResponse>> {
   const queryParams = new URLSearchParams([
     ['direction', direction],
     ['ecosystem', ecosystem],
@@ -28,9 +28,12 @@ export async function fetchThreatFeed({
 
   const apiToken = getDefaultToken()
   if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
+    return {
+      ok: false,
+      message: 'Authentication Error',
+      cause:
+        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+    }
   }
 
   // Lazily access constants.spinner.
@@ -38,11 +41,42 @@ export async function fetchThreatFeed({
 
   spinner.start('Fetching Threat Feed data...')
 
-  const response = await queryApi(`threat-feed?${queryParams}`, apiToken)
+  let result
+  try {
+    result = await queryApi(`threat-feed?${queryParams}`, apiToken)
+  } catch (e) {
+    spinner.failAndStop('The request was unsuccessful.')
+    const msg = (e as undefined | { message: string })?.message
+
+    return {
+      ok: false,
+      message: 'API Request failed to complete',
+      ...(msg ? { cause: msg } : {})
+    }
+  }
 
   spinner.successAndStop('Received response while fetching Threat Feed data.')
 
-  const data = await response.json()
+  if (!result.ok) {
+    const err = await handleApiError(result.status)
+    return {
+      ok: false,
+      message: 'Socket API returned an error',
+      cause: `${result.statusText}${err ? ` (cause: ${err}` : ''}`
+    }
+  }
 
-  return data as ThreadFeedResponse | { error: { message: string } }
+  const data = (await result.json()) as
+    | ThreadFeedResponse
+    | { error: { message: string } }
+
+  if ('error' in data && data.error) {
+    return {
+      ok: false,
+      message: 'Socket API returned an error',
+      cause: data.error.message
+    }
+  }
+
+  return { ok: true, data: data as ThreadFeedResponse }
 }

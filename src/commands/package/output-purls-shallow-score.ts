@@ -2,25 +2,35 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import type { OutputKind } from '../../types'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import { serializeResultJson } from '../../utils/serialize-result-json'
+
+import type { CResult, OutputKind } from '../../types'
 import type { components } from '@socketsecurity/sdk/types/api'
 
 export function outputPurlsShallowScore(
   purls: string[],
-  packageData: Array<components['schemas']['SocketArtifact']>,
+  result: CResult<Array<components['schemas']['SocketArtifact']>>,
   outputKind: OutputKind
 ): void {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
   if (outputKind === 'json') {
-    // In JSON simply return what the server responds with. Don't bother trying
-    // to match the response with the requested packages/purls.
-    logger.log(JSON.stringify(packageData, undefined, 2))
+    logger.log(serializeResultJson(result))
+    logger.log('')
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
   // Make some effort to match the requested data with the response
 
   const set = new Set()
-  packageData.forEach(data => {
+  result.data.forEach(data => {
     set.add('pkg:' + data.type + '/' + data.name + '@' + data.version)
     set.add('pkg:' + data.type + '/' + data.name)
   })
@@ -46,7 +56,7 @@ Please note: The listed scores are ONLY for the package itself. It does NOT
 
 ${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => '- ' + purl + '\n').join('')}` : ''}
 
-${packageData.map(data => '## ' + formatReportCard(data, false)).join('\n\n\n')}
+${result.data.map(data => '## ' + formatReportCard(data, false)).join('\n\n\n')}
     `.trim()
     )
     return
@@ -64,7 +74,7 @@ ${packageData.map(data => '## ' + formatReportCard(data, false)).join('\n\n\n')}
     )
   }
 
-  packageData.forEach(data => {
+  result.data.forEach(data => {
     logger.log('\n')
     logger.log(formatReportCard(data, true))
   })

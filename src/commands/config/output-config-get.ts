@@ -11,22 +11,13 @@ export async function outputConfigGet(
   result: CResult<LocalConfig[keyof LocalConfig]>,
   outputKind: OutputKind
 ) {
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
+
   const readOnly = isReadOnlyConfig()
   if (outputKind === 'json') {
-    if (result.ok) {
-      logger.log(
-        serializeResultJson({
-          ok: true,
-          data: {
-            key,
-            value: result.data,
-            readOnly
-          }
-        })
-      )
-    } else {
-      logger.log(serializeResultJson(result))
-    }
+    logger.log(serializeResultJson(result))
   } else if (!result.ok) {
     logger.fail(failMsgWithBadge(result.message, result.cause))
   } else if (outputKind === 'markdown') {

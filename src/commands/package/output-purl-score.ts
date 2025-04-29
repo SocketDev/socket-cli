@@ -1,29 +1,28 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mdTable } from '../../utils/markdown'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 
-import type { OutputKind } from '../../types'
+import type { PurlDataResponse } from './fetch-purl-deep-score'
+import type { CResult, OutputKind } from '../../types'
 
 export async function outputPurlScore(
   purl: string,
-  data: unknown,
+  result: CResult<PurlDataResponse>,
   outputKind: OutputKind
 ) {
-  if (outputKind === 'json') {
-    let json
-    try {
-      json = JSON.stringify(data, null, 2)
-    } catch {
-      console.error(
-        'Failed to convert the server response to JSON... Please try again or reach out to customer support.'
-      )
-      process.exitCode = 1
-      return
-    }
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
 
-    logger.error(`Score report for "${purl}":\n`)
-    logger.log(json)
+  if (outputKind === 'json') {
+    logger.log(serializeResultJson(result))
     logger.log('')
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -44,54 +43,7 @@ export async function outputPurlScore(
         lowest,
         score
       }
-    } = data as {
-      purl: string
-      self: {
-        purl: string
-        score: {
-          license: number
-          maintenance: number
-          overall: number
-          quality: number
-          supplyChain: number
-          vulnerability: number
-        }
-        capabilities: string[]
-        alerts: Array<{
-          name: string
-          severity: string
-          category: string
-          example: string
-        }>
-      }
-      transitively: {
-        dependencyCount: number
-        func: string
-        score: {
-          license: number
-          maintenance: number
-          overall: number
-          quality: number
-          supplyChain: number
-          vulnerability: number
-        }
-        lowest: {
-          license: string
-          maintenance: string
-          overall: string
-          quality: string
-          supplyChain: string
-          vulnerability: string
-        }
-        capabilities: string[]
-        alerts: Array<{
-          name: string
-          severity: string
-          category: string
-          example: string
-        }>
-      }
-    }
+    } = result.data
 
     logger.error(`Score report for "${requestedPurl}" ("${purl}"):\n`)
     logger.log('# Complete Package Score')
@@ -256,6 +208,6 @@ export async function outputPurlScore(
   logger.log(
     `Score report for "${purl}" (use --json for raw and --markdown for formatted reports):`
   )
-  logger.log(data)
+  logger.log(result.data)
   logger.log('')
 }

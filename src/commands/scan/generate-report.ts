@@ -31,7 +31,7 @@ export type ReportLeafNode = {
 
 export function generateReport(
   scan: Array<components['schemas']['SocketArtifact']>,
-  securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>,
+  securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>['data'],
   {
     fold,
     orgSlug,
@@ -83,8 +83,7 @@ export function generateReport(
 
   let healthy = true
 
-  const securityRules: SocketSdkReturnType<'getOrgSecurityPolicy'>['data']['securityPolicyRules'] =
-    securityPolicy.data.securityPolicyRules
+  const securityRules = securityPolicy.securityPolicyRules
   if (securityRules) {
     // Note: reportLevel: error > warn > monitor > ignore > defer
     scan.forEach(artifact => {
