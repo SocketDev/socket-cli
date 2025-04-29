@@ -65,6 +65,7 @@ export async function setupSdk(
     _defaultToken = apiToken
   }
   if (!apiToken) {
+    // TODO: eliminate this throw in favor of CResult (or anything else)
     throw new AuthError('You need to provide an API key')
   }
   return new SocketSdk(apiToken, {

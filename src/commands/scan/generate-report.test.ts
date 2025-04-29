@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { generateReport } from './generate-report'
 
 import type { ScanReport } from './generate-report'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { components } from '@socketsecurity/sdk/types/api'
 
 describe('generate-report', () => {

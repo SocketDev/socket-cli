@@ -69,7 +69,7 @@ export async function outputScanReport(
   )
 
   if (!scanReport.healthy) {
-    process.exitCode = 1
+    process.exitCode = 1 // TODO: we could use a different code to distinct program error from health check failure...
   }
 
   if (

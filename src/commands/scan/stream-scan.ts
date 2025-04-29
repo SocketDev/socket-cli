@@ -1,7 +1,8 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 
 export async function streamScan(
   orgSlug: string,
@@ -19,6 +20,9 @@ export async function streamScan(
   )
 
   if (!data?.success) {
-    handleUnsuccessfulApiResponse('getOrgFullScan', data)
+    // Note: this is always --json
+    const result = handleFailedApiResponse('getOrgFullScan', data)
+    logger.log(serializeResultJson(result))
+    return
   }
 }

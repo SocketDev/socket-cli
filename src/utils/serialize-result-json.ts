@@ -26,7 +26,7 @@ export function serializeResultJson(data: CResult<unknown>): string {
     return JSON.stringify(data, null, 2)
   } catch (e) {
     debugLog('Error:')
-    logger.log('wtf?', e)
+    debugLog(e)
     process.exitCode = 1
     // This could be caused by circular references, which is an "us" problem
     const msg =

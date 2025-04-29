@@ -48,28 +48,30 @@ let _cachedConfig: LocalConfig | undefined
 // When using --config or SOCKET_CLI_CONFIG, do not persist the config.
 let _readOnlyConfig = false
 
-export function overrideCachedConfig(
-  jsonConfig: unknown
-): { ok: true; message: undefined } | { ok: false; message: string } {
+export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   debugLog('Overriding entire config, marking config as read-only')
 
   let config
   try {
     config = JSON.parse(String(jsonConfig))
     if (!config || typeof config !== 'object') {
-      // Just throw to reuse the error message. `null` is valid json,
-      // so are primitive values. They're not valid config objects :)
-      throw new Error()
+      // `null` is valid json, so are primitive values. They're not valid config objects :)
+      return {
+        ok: false,
+        message: 'Could not parse Config as JSON',
+        cause:
+          "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again."
+      }
     }
   } catch {
     // Force set an empty config to prevent accidentally using system settings
     _cachedConfig = {} as LocalConfig
     _readOnlyConfig = true
 
-    process.exitCode = 1
     return {
       ok: false,
-      message:
+      message: 'Could not parse Config as JSON',
+      cause:
         "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again."
     }
   }
@@ -89,7 +91,7 @@ export function overrideCachedConfig(
     delete _cachedConfig['apiKey']
   }
 
-  return { ok: true, message: undefined }
+  return { ok: true, data: undefined }
 }
 
 export function overrideConfigApiToken(apiToken: unknown) {
@@ -183,8 +185,6 @@ function normalizeConfigKey(
   //       property apiKey, we'll copy that to apiToken and delete the old property.
   const normalizedKey = key === 'apiKey' ? 'apiToken' : key
   if (!supportedConfigKeys.has(normalizedKey)) {
-    // TODO: juggle the exit code as part of the Result type and set exitCode at exit time.
-    process.exitCode = 1
     return {
       ok: false,
       message: `Invalid config key: ${normalizedKey}`,

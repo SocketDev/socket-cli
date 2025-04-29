@@ -53,6 +53,7 @@ export async function handleApiCall<T>(
     result = await value
   } catch (e) {
     debugLog(`handleApiCall[${description}] error:\n`, e)
+    // TODO: eliminate this throw in favor of CResult (or anything else)
     throw new Error(`Failed ${description}`, { cause: e })
   }
   return result

@@ -82,29 +82,39 @@ export async function outputAnalytics(
     process.exitCode = result.code ?? 1
   }
 
-  if (outputKind === 'json') {
-    const serialized = serializeResultJson(result)
-
-    // TODO: do we want to write to file even if there was an error...?
-    if (filePath && filePath !== '-') {
-      try {
-        await fs.writeFile(filePath, serialized, 'utf8')
-        logger.log(`Data successfully written to ${filePath}`)
-      } catch (e) {
-        process.exitCode = 1
-        logger.fail('There was an error trying to write the json to disk')
-        logger.error(e)
-      }
-    } else {
-      logger.log(serialized)
+  if (!result.ok) {
+    if (outputKind === 'json') {
+      logger.log(serializeResultJson(result))
+      logger.log('')
+      return
     }
-
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
-  if (!result.ok) {
-    // Note: We're not in json mode so just print the error badge
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+  if (outputKind === 'json') {
+    const serialized = serializeResultJson(result)
+
+    if (filePath && filePath !== '-') {
+      try {
+        await fs.writeFile(filePath, serialized, 'utf8')
+        logger.error(`Data successfully written to ${filePath}`)
+      } catch (e) {
+        process.exitCode = 1
+        logger.log(
+          serializeResultJson({
+            ok: false,
+            message: 'File Write Failure',
+            cause: 'There was an error trying to write the json to disk'
+          })
+        )
+        logger.log('')
+      }
+    } else {
+      logger.log(serialized)
+      logger.log('')
+    }
+
     return
   }
 

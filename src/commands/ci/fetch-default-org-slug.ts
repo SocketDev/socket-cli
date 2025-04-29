@@ -26,7 +26,6 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   )
 
   if (!result.success) {
-    process.exitCode = 1
     return {
       ok: false,
       message: result.error,
@@ -38,7 +37,6 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   const keys = Object.keys(orgs)
 
   if (!keys[0]) {
-    process.exitCode = 1
     return {
       ok: false,
       message: 'Failed to establish identity',
@@ -49,7 +47,6 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   const slug = (keys[0] in orgs && orgs?.[keys[0]]?.name) ?? undefined
 
   if (!slug) {
-    process.exitCode = 1
     return {
       ok: false,
       message: 'Failed to establish identity',

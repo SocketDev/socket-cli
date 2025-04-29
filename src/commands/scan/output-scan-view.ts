@@ -20,13 +20,45 @@ export async function outputScanView(
     process.exitCode = result.code ?? 1
   }
 
-  if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
-    logger.log('')
+  if (!result.ok) {
+    if (outputKind === 'json') {
+      logger.log(serializeResultJson(result))
+      logger.log('')
+      return
+    }
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
-  if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+
+  if (
+    outputKind === 'json' ||
+    (outputKind === 'text' && filePath && filePath.endsWith('.json'))
+  ) {
+    const json = serializeResultJson(result)
+
+    if (filePath && filePath !== '-') {
+      logger.info('Writing json results to', filePath)
+      try {
+        await fs.writeFile(filePath, json, 'utf8')
+        logger.info(`Data successfully written to ${filePath}`)
+      } catch (e) {
+        process.exitCode = 1
+        logger.fail('There was an error trying to write the markdown to disk')
+        logger.error(e)
+        logger.log(
+          serializeResultJson({
+            ok: false,
+            message: 'File Write Failure',
+            cause: 'Failed to write json to disk'
+          })
+        )
+        logger.log('')
+      }
+      return
+    }
+
+    logger.log(json)
+    logger.log('')
     return
   }
 
@@ -70,7 +102,7 @@ View this report at: https://socket.dev/dashboard/org/${orgSlug}/sbom/${scanId}
       logger.log(`Data successfully written to ${filePath}`)
     } catch (e) {
       process.exitCode = 1
-      logger.fail('There was an error trying to write the json to disk')
+      logger.fail('There was an error trying to write the markdown to disk')
       logger.error(e)
     }
   } else {
