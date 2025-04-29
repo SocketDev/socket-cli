@@ -15,12 +15,18 @@ export async function outputConfigGet(
     process.exitCode = result.code ?? 1
   }
 
-  const readOnly = isReadOnlyConfig()
   if (outputKind === 'json') {
     logger.log(serializeResultJson(result))
-  } else if (!result.ok) {
+    return
+  }
+  if (!result.ok) {
     logger.fail(failMsgWithBadge(result.message, result.cause))
-  } else if (outputKind === 'markdown') {
+    return
+  }
+
+  const readOnly = isReadOnlyConfig()
+
+  if (outputKind === 'markdown') {
     logger.log(`# Config Value`)
     logger.log('')
     logger.log(`Config key '${key}' has value '${result.data}`)

@@ -19,10 +19,14 @@ export async function outputConfigAuto(
 
   if (outputKind === 'json') {
     logger.log(serializeResultJson(result))
+    return
   }
-  if (outputKind !== 'markdown' && !result.ok) {
+  if (!result.ok) {
     logger.fail(failMsgWithBadge(result.message, result.cause))
-  } else if (outputKind === 'markdown') {
+    return
+  }
+
+  if (outputKind === 'markdown') {
     logger.log(`# Auto discover config value`)
     logger.log('')
     logger.log(

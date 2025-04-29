@@ -14,9 +14,14 @@ export async function outputConfigSet(
 
   if (outputKind === 'json') {
     logger.log(serializeResultJson(result))
-  } else if (!result.ok) {
+    return
+  }
+  if (!result.ok) {
     logger.fail(failMsgWithBadge(result.message, result.cause))
-  } else if (outputKind === 'markdown') {
+    return
+  }
+
+  if (outputKind === 'markdown') {
     logger.log(`# Update config`)
     logger.log('')
     logger.log(result.message)
