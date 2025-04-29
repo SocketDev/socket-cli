@@ -1,12 +1,13 @@
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchSecurityPolicy(
   orgSlug: string
-): Promise<SocketSdkReturnType<'getOrgSecurityPolicy'>['data'] | undefined> {
+): Promise<CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>> {
   const sockSdk = await setupSdk()
 
   // Lazily access constants.spinner.
@@ -22,8 +23,8 @@ export async function fetchSecurityPolicy(
   spinner.successAndStop('Received organization security policy response.')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrgSecurityPolicy', result)
+    return handleFailedApiResponse('getOrgSecurityPolicy', result)
   }
 
-  return result.data
+  return { ok: true, data: result.data }
 }

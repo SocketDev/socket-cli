@@ -2,29 +2,30 @@ import { handleApiCall } from '../../utils/api'
 import { supportedConfigKeys } from '../../utils/config'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { LocalConfig } from '../../utils/config'
 
 export async function discoverConfigValue(
   key: string
-): Promise<{ success: boolean; value: unknown; message: string }> {
+): Promise<CResult<unknown>> {
   // This will have to be a specific implementation per key because certain
   // keys should request information from particular API endpoints while
   // others should simply return their default value, like endpoint URL.
 
   if (!supportedConfigKeys.has(key as keyof LocalConfig)) {
     return {
-      success: false,
-      value: undefined,
-      message: 'Requested key is not a valid config key.'
+      ok: false,
+      message: 'Auto discover failed',
+      cause: 'Requested key is not a valid config key.'
     }
   }
 
   if (key === 'apiBaseUrl') {
     // Return the default value
     return {
-      success: false,
-      value: undefined,
-      message:
+      ok: false,
+      message: 'Auto discover failed',
+      cause:
         "If you're unsure about the base endpoint URL then simply unset it."
     }
   }
@@ -32,18 +33,18 @@ export async function discoverConfigValue(
   if (key === 'apiProxy') {
     // I don't think we can auto-discover this with any order of reliability..?
     return {
-      success: false,
-      value: undefined,
-      message:
+      ok: false,
+      message: 'Auto discover failed',
+      cause:
         'When uncertain, unset this key. Otherwise ask your network administrator'
     }
   }
 
   if (key === 'apiToken') {
     return {
-      success: false,
-      value: undefined,
-      message:
+      ok: false,
+      message: 'Auto discover failed',
+      cause:
         'You can find/create your API token in your Socket dashboard > settings > API tokens.\nYou should then use `socket login` to login instead of this command.'
     }
   }
@@ -52,34 +53,32 @@ export async function discoverConfigValue(
     const apiToken = getDefaultToken()
     if (!apiToken) {
       return {
-        success: false,
-        value: undefined,
-        message:
-          'No API token set, must have a token to resolve its default org.'
+        ok: false,
+        message: 'Auto discover failed',
+        cause: 'No API token set, must have a token to resolve its default org.'
       }
     }
 
     const org = await getDefaultOrgFromToken()
     if (!org?.length) {
       return {
-        success: false,
-        value: undefined,
-        message:
-          'Was unable to determine default org for the current API token.'
+        ok: false,
+        message: 'Auto discover failed',
+        cause: 'Was unable to determine default org for the current API token.'
       }
     }
 
     if (Array.isArray(org)) {
       return {
-        success: true,
-        value: org,
+        ok: true,
+        data: org,
         message: 'These are the orgs that the current API token can access.'
       }
     }
 
     return {
-      success: true,
-      value: org,
+      ok: true,
+      data: org,
       message: 'This is the org that belongs to the current API token.'
     }
   }
@@ -88,43 +87,42 @@ export async function discoverConfigValue(
     const apiToken = getDefaultToken()
     if (!apiToken) {
       return {
-        success: false,
-        value: undefined,
-        message:
-          'No API token set, must have a token to resolve orgs to enforce.'
+        ok: false,
+        message: 'Auto discover failed',
+        cause: 'No API token set, must have a token to resolve orgs to enforce.'
       }
     }
 
     const orgs = await getEnforceableOrgsFromToken()
     if (!orgs?.length) {
       return {
-        success: false,
-        value: undefined,
-        message:
+        ok: false,
+        message: 'Auto discover failed',
+        cause:
           'Was unable to determine any orgs to enforce for the current API token.'
       }
     }
 
     return {
-      success: true,
-      value: orgs,
+      ok: true,
+      data: orgs,
       message: 'These are the orgs whose security policy you can enforce.'
     }
   }
 
   if (key === 'test') {
     return {
-      success: false,
-      value: undefined,
-      message: ''
+      ok: false,
+      message: 'Auto discover failed',
+      cause: 'congrats, you found the test key'
     }
   }
 
   // Mostly to please TS, because we're not telling it `key` is keyof LocalConfig
   return {
-    success: false,
-    value: undefined,
-    message: 'unreachable?'
+    ok: false,
+    message: 'Auto discover failed',
+    cause: 'unreachable?'
   }
 }
 
@@ -132,6 +130,7 @@ async function getDefaultOrgFromToken(): Promise<
   string[] | string | undefined
 > {
   const sockSdk = await setupSdk()
+
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
     'looking up organizations'
@@ -155,6 +154,7 @@ async function getDefaultOrgFromToken(): Promise<
 
 async function getEnforceableOrgsFromToken(): Promise<string[] | undefined> {
   const sockSdk = await setupSdk()
+
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
     'looking up organizations'

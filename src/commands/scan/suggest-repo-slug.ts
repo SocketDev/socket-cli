@@ -1,5 +1,4 @@
 import path from 'node:path'
-import process from 'node:process'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { select } from '@socketsecurity/registry/lib/prompts'

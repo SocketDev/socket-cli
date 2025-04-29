@@ -8,9 +8,6 @@ export async function handleSecurityPolicy(
   outputKind: OutputKind
 ): Promise<void> {
   const data = await fetchSecurityPolicy(orgSlug)
-  if (!data) {
-    return
-  }
 
   await outputSecurityPolicy(data, outputKind)
 }

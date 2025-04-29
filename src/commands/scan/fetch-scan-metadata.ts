@@ -1,13 +1,14 @@
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchScanMetadata(
   orgSlug: string,
   scanId: string
-): Promise<SocketSdkReturnType<'getOrgFullScanMetadata'>['data'] | void> {
+): Promise<CResult<SocketSdkReturnType<'getOrgFullScanMetadata'>['data']>> {
   const sockSdk = await setupSdk()
 
   // Lazily access constants.spinner.
@@ -23,8 +24,8 @@ export async function fetchScanMetadata(
   spinner.successAndStop('Received response for scan meta data.')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getOrgFullScanMetadata', result)
+    return handleFailedApiResponse('getOrgFullScanMetadata', result)
   }
 
-  return result.data
+  return { ok: true, data: result.data }
 }

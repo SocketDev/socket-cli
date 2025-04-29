@@ -2,15 +2,16 @@ import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
-import { handleApiCall, handleApiError, queryApi } from '../../utils/api'
-import { AuthError } from '../../utils/errors'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import {
+  handleApiCall,
+  handleApiError,
+  handleFailedApiResponse,
+  queryApi
+} from '../../utils/api'
 import { getDefaultToken, setupSdk } from '../../utils/sdk'
 
-import type {
-  SocketSdkResultType,
-  SocketSdkReturnType
-} from '@socketsecurity/sdk'
+import type { CResult } from '../../types'
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { components } from '@socketsecurity/sdk/types/api'
 
 /**
@@ -22,22 +23,19 @@ export async function fetchReportData(
   scanId: string,
   includeLicensePolicy: boolean
 ): Promise<
-  | {
-      ok: true
-      scan: Array<components['schemas']['SocketArtifact']>
-      securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>
-    }
-  | {
-      ok: false
-      scan: undefined
-      securityPolicy: undefined
-    }
+  CResult<{
+    scan: Array<components['schemas']['SocketArtifact']>
+    securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>['data']
+  }>
 > {
   const apiToken = getDefaultToken()
   if (!apiToken) {
-    throw new AuthError(
-      'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    )
+    return {
+      ok: false,
+      message: 'Authentication Error',
+      cause:
+        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+    }
   }
 
   const sockSdk = await setupSdk(apiToken)
@@ -72,7 +70,9 @@ export async function fetchReportData(
     }
   }
 
-  async function fetchScanResult(apiToken: string) {
+  async function fetchScanResult(
+    apiToken: string
+  ): Promise<CResult<Array<components['schemas']['SocketArtifact']>>> {
     const response = await queryApi(
       `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
       apiToken
@@ -80,17 +80,18 @@ export async function fetchReportData(
     updateScan('received response')
 
     if (!response.ok) {
-      spinner.stop()
       const err = await handleApiError(response.status)
-      logger.fail(failMsgWithBadge(response.statusText, `Fetch error: ${err}`))
-      debugLog(err)
       updateScan(`request resulted in status code ${response.status}`)
-      return undefined
+      return {
+        ok: false,
+        message: 'Socket API returned an error',
+        cause: `${response.statusText}${err ? ` (cause: ${err}` : ''}`
+      }
     }
 
     updateScan(`ok, downloading response..`)
     const jsons = await response.text()
-    updateScan(`received`)
+    updateScan(`received policy`)
 
     const lines = jsons.split('\n').filter(Boolean)
     const data = lines.map(line => {
@@ -108,63 +109,75 @@ export async function fetchReportData(
       }
     }) as unknown as Array<components['schemas']['SocketArtifact']>
 
-    return data
+    return { ok: true, data }
   }
 
-  async function fetchSecurityPolicy() {
-    const r = await sockSdk.getOrgSecurityPolicy(orgSlug)
+  async function fetchSecurityPolicy(): Promise<
+    CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>
+  > {
+    const response = await sockSdk.getOrgSecurityPolicy(orgSlug)
     updatePolicy('received response')
 
+    if (!response.success) {
+      return handleFailedApiResponse('getOrgSecurityPolicy', response)
+    }
+
     const s = await handleApiCall(
-      r,
+      response,
       "looking up organization's security policy"
     )
-    updatePolicy('received')
-    return s
+    updatePolicy('received policy')
+
+    return { ok: true, data: s.data }
   }
 
   updateProgress()
 
-  const [scan, securityPolicyMaybe]: [
-    undefined | Array<components['schemas']['SocketArtifact']>,
-    SocketSdkResultType<'getOrgSecurityPolicy'>
+  const [scan, securityPolicy]: [
+    CResult<Array<components['schemas']['SocketArtifact']>>,
+    CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>
   ] = await Promise.all([
     fetchScanResult(apiToken).catch(e => {
       updateScan(`failure; unknown blocking problem occurred`)
-      throw e
+      return {
+        ok: false as const,
+        message: 'Unexpected API problem',
+        cause: `We encountered an unexpected problem while requesting the Scan from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}'}`
+      }
     }),
     fetchSecurityPolicy().catch(e => {
       updatePolicy(`failure; unknown blocking problem occurred`)
-      throw e
+      return {
+        ok: false as const,
+        message: 'Unexpected API problem',
+        cause: `We encountered an unexpected problem while requesting the policy from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}'}`
+      }
     })
   ]).finally(() => {
     finishedFetching = true
     updateProgress()
   })
 
-  if (!Array.isArray(scan)) {
-    logger.error('Was unable to fetch scan result, bailing')
-    process.exitCode = 1
-    return {
-      ok: false,
-      scan: undefined,
-      securityPolicy: undefined
-    }
+  if (!scan.ok) {
+    return scan
+  }
+  if (!securityPolicy.ok) {
+    return securityPolicy
   }
 
-  if (!securityPolicyMaybe?.success) {
-    logger.error('Was unable to fetch security policy, bailing')
-    process.exitCode = 1
+  if (!Array.isArray(scan.data)) {
     return {
       ok: false,
-      scan: undefined,
-      securityPolicy: undefined
+      message: 'Failed to fetch',
+      cause: 'Was unable to fetch scan result, bailing'
     }
   }
 
   return {
     ok: true,
-    scan,
-    securityPolicy: securityPolicyMaybe
+    data: {
+      scan: scan.data satisfies Array<components['schemas']['SocketArtifact']>,
+      securityPolicy: securityPolicy.data
+    }
   }
 }

@@ -8,9 +8,6 @@ export async function handleLicensePolicy(
   outputKind: OutputKind
 ): Promise<void> {
   const data = await fetchLicensePolicy(orgSlug)
-  if (!data) {
-    return
-  }
 
   await outputLicensePolicy(data, outputKind)
 }

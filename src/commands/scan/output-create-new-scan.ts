@@ -4,36 +4,41 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm } from '@socketsecurity/registry/lib/prompts'
 
-import type { OutputKind } from '../../types'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
+import { serializeResultJson } from '../../utils/serialize-result-json'
+
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputCreateNewScan(
-  data: SocketSdkReturnType<'CreateOrgFullScan'>['data'],
+  result: CResult<SocketSdkReturnType<'CreateOrgFullScan'>['data']>,
   outputKind: OutputKind,
   interactive: boolean
 ) {
-  if (!data.id) {
-    logger.fail('Did not receive a scan ID from the API...')
-    process.exitCode = 1
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
   }
 
   if (outputKind === 'json') {
-    const json = data.id
-      ? { success: true, data }
-      : { success: false, message: 'No scan ID received' }
-
-    logger.log(JSON.stringify(json, null, 2))
-    logger.log('')
-
+    logger.log(serializeResultJson(result))
     return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  if (!result.data.id) {
+    logger.fail('Did not receive a scan ID from the API...')
+    process.exitCode = 1
   }
 
   if (outputKind === 'markdown') {
     logger.log('# Create New Scan')
     logger.log('')
-    if (data.id) {
+    if (result.data.id) {
       logger.log(
-        `A [new Scan](${data.html_report_url}) was created with ID: ${data.id}`
+        `A [new Scan](${result.data.html_report_url}) was created with ID: ${result.data.id}`
       )
       logger.log('')
     } else {
@@ -45,7 +50,7 @@ export async function outputCreateNewScan(
     return
   }
 
-  const link = colors.underline(colors.cyan(`${data.html_report_url}`))
+  const link = colors.underline(colors.cyan(`${result.data.html_report_url}`))
   logger.log(`Available at: ${link}`)
 
   if (
@@ -55,6 +60,6 @@ export async function outputCreateNewScan(
       default: false
     }))
   ) {
-    await open(`${data.html_report_url}`)
+    await open(`${result.data.html_report_url}`)
   }
 }

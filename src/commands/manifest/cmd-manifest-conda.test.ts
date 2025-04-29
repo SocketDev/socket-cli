@@ -152,10 +152,12 @@ describe('socket manifest conda', async () => {
       'should print a json blurb with --json flag',
       async cmd => {
         const { stderr, stdout } = await invokeNpm(entryPath, cmd)
-        expect(stdout).toMatchInlineSnapshot(`
+        // (Must normalize newlines to fix snapshot test for Windows)
+        expect(stdout.replace(/\\r\\n/g, '\\n')).toMatchInlineSnapshot(`
           "{
             "ok": true,
             "data": {
+              "contents": "name: my_stuff\\n\\nchannels:\\n  - conda-thing\\n  - defaults\\ndependencies:\\n  - python=3.8\\n  - pandas=1.3.4\\n  - numpy=1.19.0\\n  - scipy\\n  - mkl-service\\n  - libpython\\n  - m2w64-toolchain\\n  - pytest\\n  - requests\\n  - pip\\n  - pip:\\n      - qgrid==1.3.0\\n      - mplstereonet\\n      - pyqt5\\n      - gempy==2.1.0\\n",
               "pip": "qgrid==1.3.0\\nmplstereonet\\npyqt5\\ngempy==2.1.0"
             }
           }"

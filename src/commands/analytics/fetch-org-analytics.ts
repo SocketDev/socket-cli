@@ -2,12 +2,12 @@ import constants from '../../constants'
 import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
-import type { CliJsonResult } from '../../types'
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchOrgAnalyticsData(
   time: number
-): Promise<CliJsonResult<SocketSdkReturnType<'getOrgAnalytics'>['data']>> {
+): Promise<CResult<SocketSdkReturnType<'getOrgAnalytics'>['data']>> {
   const sockSdk = await setupSdk()
 
   // Lazily access constants.spinner.

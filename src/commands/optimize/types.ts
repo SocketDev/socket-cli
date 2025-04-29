@@ -1,4 +1,4 @@
-import { StringKeyValueObject } from '../../types'
+import type { StringKeyValueObject } from '../../types'
 
 export type NpmOverrides = { [key: string]: string | StringKeyValueObject }
 

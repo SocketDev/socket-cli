@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
 import { messageWithCauses, stackWithCauses } from 'pony-cause'

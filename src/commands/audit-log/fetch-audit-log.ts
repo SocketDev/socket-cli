@@ -2,7 +2,7 @@ import constants from '../../constants'
 import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
-import type { CliJsonResult, OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchAuditLog({
@@ -17,7 +17,7 @@ export async function fetchAuditLog({
   page: number
   perPage: number
   logType: string
-}): Promise<CliJsonResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>> {
+}): Promise<CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>> {
   const sockSdk = await setupSdk()
 
   // Lazily access constants.spinner.

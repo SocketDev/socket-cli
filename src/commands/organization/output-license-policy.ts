@@ -1,27 +1,26 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { mdTableOfPairs } from '../../utils/markdown'
+import { serializeResultJson } from '../../utils/serialize-result-json'
 
-import type { OutputKind } from '../../types'
+import type { CResult, OutputKind } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputLicensePolicy(
-  data: SocketSdkReturnType<'getOrgLicensePolicy'>['data'],
+  result: CResult<SocketSdkReturnType<'getOrgLicensePolicy'>['data']>,
   outputKind: OutputKind
 ): Promise<void> {
-  if (outputKind === 'json') {
-    let json
-    try {
-      json = JSON.stringify(data, null, 2)
-    } catch {
-      console.error(
-        'Failed to convert the server response to json, try running the same command without --json'
-      )
-      return
-    }
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
+  }
 
-    logger.log(json)
-    logger.log('')
+  if (outputKind === 'json') {
+    logger.log(serializeResultJson(result))
+    return
+  }
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
 
@@ -30,7 +29,7 @@ export async function outputLicensePolicy(
   logger.log('')
   logger.log('This is the license policy for your organization:')
   logger.log('')
-  const rules = data.license_policy!
+  const rules = result.data.license_policy!
   const entries = rules ? Object.entries(rules) : []
   const mapped: Array<[string, string]> = entries.map(
     ([key, value]) => [key, value.allowed ? ' yes' : ' no'] as const

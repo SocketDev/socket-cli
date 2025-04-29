@@ -1,13 +1,14 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchSupportedScanFileNames(): Promise<
-  SocketSdkReturnType<'getReportSupportedFiles'>['data'] | undefined
+  CResult<SocketSdkReturnType<'getReportSupportedFiles'>['data']>
 > {
   const sockSdk = await setupSdk()
 
@@ -25,8 +26,8 @@ export async function fetchSupportedScanFileNames(): Promise<
   logger.success('Received response while fetched supported scan file types.')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('getReportSupportedFiles', result)
+    return handleFailedApiResponse('getReportSupportedFiles', result)
   }
 
-  return result.data
+  return { ok: true, data: result.data }
 }

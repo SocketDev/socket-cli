@@ -2,9 +2,9 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
 import { handleApiCall, handleApiError, queryApi } from '../../utils/api'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge'
 import { getDefaultToken } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchDiffScan({
@@ -15,7 +15,7 @@ export async function fetchDiffScan({
   id1: string
   id2: string
   orgSlug: string
-}): Promise<SocketSdkReturnType<'GetOrgDiffScan'>['data'] | undefined> {
+}): Promise<CResult<SocketSdkReturnType<'GetOrgDiffScan'>['data']>> {
   const apiToken = getDefaultToken()
 
   // Lazily access constants.spinner.
@@ -35,8 +35,11 @@ export async function fetchDiffScan({
 
   if (!response.ok) {
     const err = await handleApiError(response.status)
-    logger.fail(failMsgWithBadge(response.statusText, err))
-    return
+    return {
+      ok: false,
+      message: 'Socket API returned an error',
+      cause: `${response.statusText}${err ? ` (cause: ${err}` : ''}`
+    }
   }
 
   const result = await handleApiCall(
@@ -46,5 +49,5 @@ export async function fetchDiffScan({
     'Deserializing json'
   )
 
-  return result
+  return { ok: true, data: result }
 }

@@ -11,6 +11,7 @@ export async function handleConfigUnset({
   key: keyof LocalConfig
   outputKind: OutputKind
 }) {
-  updateConfigValue(key, undefined)
-  await outputConfigUnset(key, outputKind)
+  const updateResult = updateConfigValue(key, undefined)
+
+  await outputConfigUnset(updateResult, outputKind)
 }

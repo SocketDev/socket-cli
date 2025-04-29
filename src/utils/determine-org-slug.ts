@@ -1,6 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getConfigValue, isTestingV1 } from './config'
+import { getConfigValueOrUndef, isTestingV1 } from './config'
 import { suggestOrgSlug } from '../commands/scan/suggest-org-slug'
 
 export async function determineOrgSlug(
@@ -8,8 +8,8 @@ export async function determineOrgSlug(
   firstArg: string,
   interactive: boolean,
   dryRun: boolean
-): Promise<[string, string]> {
-  const defaultOrgSlug = getConfigValue('defaultOrg') || ''
+): Promise<[string, string | undefined]> {
+  const defaultOrgSlug = getConfigValueOrUndef('defaultOrg')
   let orgSlug = String(orgFlag || defaultOrgSlug || '')
   if (!orgSlug) {
     if (isTestingV1()) {

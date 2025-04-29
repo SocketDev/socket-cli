@@ -1,5 +1,3 @@
-import process from 'node:process'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../../../../constants'

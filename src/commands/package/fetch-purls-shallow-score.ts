@@ -1,9 +1,10 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants'
-import { handleApiCall, handleUnsuccessfulApiResponse } from '../../utils/api'
+import { handleApiCall, handleFailedApiResponse } from '../../utils/api'
 import { getPublicToken, setupSdk } from '../../utils/sdk'
 
+import type { CResult } from '../../types'
 import type {
   SocketSdkResultType,
   SocketSdkReturnType
@@ -11,7 +12,7 @@ import type {
 
 export async function fetchPurlsShallowScore(
   purls: string[]
-): Promise<SocketSdkReturnType<'batchPackageFetch'> | undefined> {
+): Promise<CResult<SocketSdkReturnType<'batchPackageFetch'>>> {
   logger.info(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`
   )
@@ -37,8 +38,8 @@ export async function fetchPurlsShallowScore(
   spinner.successAndStop('Request completed')
 
   if (!result.success) {
-    handleUnsuccessfulApiResponse('batchPackageFetch', result)
+    return handleFailedApiResponse('batchPackageFetch', result)
   }
 
-  return result
+  return { ok: true, data: result }
 }
