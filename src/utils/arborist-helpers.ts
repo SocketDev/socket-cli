@@ -10,6 +10,7 @@ import {
 
 import constants from '../constants'
 import { applyRange, getMajor } from './semver'
+import { idToPurl } from './spec'
 import { DiffAction } from '../shadow/npm/arborist/lib/arborist/types'
 import { Edge } from '../shadow/npm/arborist/lib/edge'
 
@@ -231,7 +232,7 @@ export function updateNode(
   // Update package.version associated with the node.
   node.package.version = newVersion
   // Update node.resolved.
-  const purlObj = PackageURL.fromString(`pkg:npm/${node.name}`)
+  const purlObj = PackageURL.fromString(idToPurl(node.name))
   node.resolved = `${NPM_REGISTRY_URL}/${node.name}/-/${purlObj.name}-${newVersion}.tgz`
   // Update node.integrity with the targetPackument.dist.integrity value if available
   // else delete node.integrity so a new value is resolved for the target version.

@@ -46,6 +46,7 @@ import { removeNodeModules } from '../../utils/fs'
 import { globWorkspace } from '../../utils/glob'
 import { applyRange } from '../../utils/semver'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
+import { idToPurl } from '../../utils/spec'
 
 import type { NormalizedFixOptions } from './types'
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
@@ -164,12 +165,12 @@ export async function npmFix(
       })
 
       for (const oldVersion of oldVersions) {
-        const oldSpec = `${name}@${oldVersion}`
-        const oldPurl = `pkg:npm/${oldSpec}`
+        const oldId = `${name}@${oldVersion}`
+        const oldPurl = idToPurl(oldId)
 
         const node = findPackageNode(arb.idealTree!, name, oldVersion)
         if (!node) {
-          debugLog(`Arborist node not found, skipping ${oldSpec}`)
+          debugLog(`Arborist node not found, skipping ${oldId}`)
           continue
         }
 
@@ -189,17 +190,17 @@ export async function npmFix(
 
           if (!(newVersion && newVersionPackument)) {
             debugLog(
-              `No suitable update. ${oldSpec} needs >=${firstPatchedVersionIdentifier}, skipping`
+              `No suitable update. ${oldId} needs >=${firstPatchedVersionIdentifier}, skipping`
             )
             continue
           }
 
           const newVersionRange = applyRange(oldVersion, newVersion, rangeStyle)
-          const newSpec = `${name}@${newVersionRange}`
-          const newSpecKey = `${workspaceName}:${newSpec}`
+          const newId = `${name}@${newVersionRange}`
+          const newSpecKey = `${workspaceName}:${newId}`
 
           if (fixedSpecs.has(newSpecKey)) {
-            debugLog(`Already fixed ${newSpec} in ${workspaceName}, skipping`)
+            debugLog(`Already fixed ${newId} in ${workspaceName}, skipping`)
             continue
           }
 
@@ -229,7 +230,7 @@ export async function npmFix(
             continue
           }
 
-          spinner?.info(`Installing ${newSpec} in ${workspaceName}`)
+          spinner?.info(`Installing ${newId} in ${workspaceName}`)
 
           let error
           let errored = false
@@ -237,7 +238,7 @@ export async function npmFix(
             // eslint-disable-next-line no-await-in-loop
             await install(arb.idealTree!, { cwd })
             if (test) {
-              spinner?.info(`Testing ${newSpec} in ${workspaceName}`)
+              spinner?.info(`Testing ${newId} in ${workspaceName}`)
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
@@ -317,7 +318,7 @@ export async function npmFix(
               await install(arb.idealTree!, { cwd })
             }
             spinner?.failAndStop(
-              `Update failed for ${oldSpec} in ${workspaceName}`,
+              `Update failed for ${oldId} in ${workspaceName}`,
               error
             )
           }

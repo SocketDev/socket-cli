@@ -47,6 +47,7 @@ import { removeNodeModules } from '../../utils/fs'
 import { globWorkspace } from '../../utils/glob'
 import { applyRange } from '../../utils/semver'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert'
+import { idToPurl } from '../../utils/spec'
 
 import type { NormalizedFixOptions } from './types'
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node'
@@ -101,6 +102,7 @@ export async function pnpmFix(
 
   const { pkgPath: rootPath } = pkgEnvDetails
   let lockfile = await readLockfile(rootPath)
+
   if (!lockfile) {
     await install(pkgEnvDetails, { cwd, spinner })
     lockfile = await readLockfile(rootPath)
@@ -193,12 +195,12 @@ export async function pnpmFix(
         | undefined
 
       for (const oldVersion of oldVersions) {
-        const oldSpec = `${name}@${oldVersion}`
-        const oldPurl = `pkg:npm/${oldSpec}`
+        const oldId = `${name}@${oldVersion}`
+        const oldPurl = idToPurl(oldId)
 
         const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
-          debugLog(`Arborist node not found, skipping ${oldSpec}`)
+          debugLog(`Arborist node not found, skipping ${oldId}`)
           continue
         }
 
@@ -218,7 +220,7 @@ export async function pnpmFix(
 
           if (!(newVersion && newVersionPackument)) {
             debugLog(
-              `No suitable update. ${oldSpec} needs >=${firstPatchedVersionIdentifier}, skipping`
+              `No suitable update. ${oldId} needs >=${firstPatchedVersionIdentifier}, skipping`
             )
             continue
           }
@@ -229,11 +231,11 @@ export async function pnpmFix(
             newVersion,
             rangeStyle
           )
-          const newSpec = `${name}@${newVersionRange}`
-          const newSpecKey = `${workspaceName}:${newSpec}`
+          const newId = `${name}@${newVersionRange}`
+          const newSpecKey = `${workspaceName}:${newId}`
 
           if (fixedSpecs.has(newSpecKey)) {
-            debugLog(`Already fixed ${newSpec} in ${workspaceName}, skipping`)
+            debugLog(`Already fixed ${newId} in ${workspaceName}, skipping`)
             continue
           }
 
@@ -291,7 +293,7 @@ export async function pnpmFix(
             continue
           }
 
-          spinner?.info(`Installing ${newSpec} in ${workspaceName}`)
+          spinner?.info(`Installing ${newId} in ${workspaceName}`)
 
           let error
           let errored = false
@@ -299,7 +301,7 @@ export async function pnpmFix(
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { cwd, spinner })
             if (test) {
-              spinner?.info(`Testing ${newSpec} in ${workspaceName}`)
+              spinner?.info(`Testing ${newId} in ${workspaceName}`)
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
@@ -379,7 +381,7 @@ export async function pnpmFix(
               actualTree = await install(pkgEnvDetails, { cwd, spinner })
             }
             spinner?.failAndStop(
-              `Update failed for ${oldSpec} in ${workspaceName}`,
+              `Update failed for ${oldId} in ${workspaceName}`,
               error
             )
           }

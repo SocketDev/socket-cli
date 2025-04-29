@@ -361,7 +361,7 @@ const lazyMinimumVersionByAgent = () =>
     // 8.x is the earliest version to support Node 18.
     // https://pnpm.io/installation#compatibility
     // https://www.npmjs.com/package/pnpm?activeTab=versions
-    [PNPM, '8.15.9'],
+    [PNPM, '8.15.7'],
     // 4.x supports >= Node 18.12.0
     // https://github.com/yarnpkg/berry/blob/%40yarnpkg/core/4.1.0/CHANGELOG.md#400
     [YARN_BERRY, '4.0.0'],
