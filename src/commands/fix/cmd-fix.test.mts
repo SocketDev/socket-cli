@@ -62,6 +62,10 @@ describe('socket fix', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`
+        "\\x1b[34mi\\x1b[39m Fixing packages for npm
+        [DryRun]: Not saving"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
@@ -70,10 +74,6 @@ describe('socket fix', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>
 
         \\x1b[33m\\u203c\\x1b[39m socket fix: Package package-lock.json found at <redacted>"
-      `)
-      expect(stdout).toMatchInlineSnapshot(`
-        "\\x1b[34mi\\x1b[39m Fixing packages for npm
-        [DryRun]: Not saving"
       `)
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     }
