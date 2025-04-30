@@ -62,7 +62,7 @@ export function getMajor(version: string): number | null {
     try {
       return semver.major(coerced)
     } catch (e) {
-      debugLog(`Error parsing '${version}'`, e)
+      debugLog(`Error parsing '${version}':\n`, e)
     }
   }
   return null

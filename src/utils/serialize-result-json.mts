@@ -13,7 +13,7 @@ export function serializeResultJson(data: CResult<unknown>): string {
       'There was a problem converting the data set to JSON. The JSON was not an object. Please try again without --json'
     debugLog('typeof data=', typeof data)
     if (typeof data !== 'object' && data) {
-      debugLog('data:', data)
+      debugLog('data:\n', data)
     }
     return (
       JSON.stringify({
@@ -27,8 +27,7 @@ export function serializeResultJson(data: CResult<unknown>): string {
   try {
     return JSON.stringify(data, null, 2).trim() + '\n'
   } catch (e) {
-    debugLog('Error:')
-    debugLog(e)
+    debugLog('Error:\n', e)
     process.exitCode = 1
     // This could be caused by circular references, which is an "us" problem
     const msg =
