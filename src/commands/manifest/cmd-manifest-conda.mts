@@ -4,7 +4,7 @@ import { handleManifestConda } from './handle-manifest-conda.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { checkCommandInput } from '../../utils/handle-bad-input.mts'
+import { checkCommandInput } from '../../utils/check-input.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
@@ -94,7 +94,7 @@ async function run(
     logger.groupEnd()
   }
 
-  const wasBadInput = checkCommandInput(
+  const wasValidInput = checkCommandInput(
     outputKind,
     {
       test: !!target,
@@ -118,7 +118,7 @@ async function run(
       fail: 'bad'
     }
   )
-  if (wasBadInput) {
+  if (!wasValidInput) {
     return
   }
 

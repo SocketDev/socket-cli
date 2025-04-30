@@ -5,7 +5,7 @@ import { joinOr } from '@socketsecurity/registry/lib/arrays'
 import { runFix } from './run-fix.mts'
 import { commonFlags } from '../../flags.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { checkCommandInput } from '../../utils/handle-bad-input.mts'
+import { checkCommandInput } from '../../utils/check-input.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { RangeStyles } from '../../utils/semver.mts'
@@ -99,13 +99,13 @@ async function run(
   const { json, markdown } = cli.flags
   const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
 
-  const wasBadInput = checkCommandInput(outputKind, {
+  const wasValidInput = checkCommandInput(outputKind, {
     test: RangeStyles.includes(cli.flags['rangeStyle'] as string),
     message: `Expecting range style of ${joinOr(RangeStyles)}`,
     pass: 'ok',
     fail: 'missing'
   })
-  if (wasBadInput) {
+  if (!wasValidInput) {
     return
   }
 

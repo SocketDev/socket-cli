@@ -4,7 +4,7 @@ import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
-import { checkCommandInput } from '../../utils/handle-bad-input.mts'
+import { checkCommandInput } from '../../utils/check-input.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 
 import type { OutputKind } from '../../types.mts'
@@ -56,7 +56,7 @@ export async function handleCreateNewScan({
     supportedFileNames.data
   )
 
-  const wasBadInput = checkCommandInput(outputKind, {
+  const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
     test: packagePaths.length > 0,
     pass: 'ok',
@@ -64,7 +64,7 @@ export async function handleCreateNewScan({
     message:
       'TARGET (file/dir) must contain matching / supported file types for a scan'
   })
-  if (wasBadInput) {
+  if (!wasValidInput) {
     return
   }
 

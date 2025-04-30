@@ -4,7 +4,7 @@ import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { checkCommandInput } from '../../utils/handle-bad-input.mts'
+import { checkCommandInput } from '../../utils/check-input.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
@@ -123,7 +123,7 @@ async function run(
   //       try, store contents in a file in some folder, target that folder... what
   //       would the file name be?
 
-  const wasBadInput = checkCommandInput(
+  const wasValidInput = checkCommandInput(
     outputKind,
     {
       test: !!target && target !== '-',
@@ -139,7 +139,7 @@ async function run(
       fail: 'received ' + cli.input.length
     }
   )
-  if (wasBadInput) {
+  if (!wasValidInput) {
     return
   }
 

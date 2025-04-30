@@ -5,7 +5,7 @@ import { parsePackageSpecifiers } from './parse-package-specifiers.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { checkCommandInput } from '../../utils/handle-bad-input.mts'
+import { checkCommandInput } from '../../utils/check-input.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { getDefaultToken } from '../../utils/sdk.mts'
@@ -83,7 +83,7 @@ async function run(
 
   const { purls, valid } = parsePackageSpecifiers(ecosystem, purl ? [purl] : [])
 
-  const wasBadInput = checkCommandInput(
+  const wasValidInput = checkCommandInput(
     outputKind,
     {
       test: valid,
@@ -113,7 +113,7 @@ async function run(
       fail: 'missing API token'
     }
   )
-  if (wasBadInput) {
+  if (!wasValidInput) {
     return
   }
 

@@ -4,7 +4,7 @@ import { handleOrganizationList } from './handle-organization-list.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { checkCommandInput } from '../../utils/handle-bad-input.mts'
+import { checkCommandInput } from '../../utils/check-input.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { getDefaultToken } from '../../utils/sdk.mts'
@@ -57,7 +57,7 @@ async function run(
 
   const apiToken = getDefaultToken()
 
-  const wasBadInput = checkCommandInput(
+  const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
@@ -76,7 +76,7 @@ async function run(
       fail: 'missing API token'
     }
   )
-  if (wasBadInput) {
+  if (!wasValidInput) {
     return
   }
 
