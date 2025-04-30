@@ -470,10 +470,14 @@ export async function detectAndValidatePackageEnvironment(
     details.lockPath &&
     path.relative(cwd, details.lockPath).startsWith('.')
   ) {
+    // Note: In tests we return <redacted> because otherwise snapshots will fail.
+    const { REDACTED } = constants
+    // Lazily access constants.ENV.VITEST.
+    const redacting = constants.ENV.VITEST
     logger?.warn(
       cmdPrefixMessage(
         cmdName,
-        `Package ${lockName} found at ${details.lockPath}`
+        `Package ${lockName} found at ${redacting ? REDACTED : details.lockPath}`
       )
     )
   }

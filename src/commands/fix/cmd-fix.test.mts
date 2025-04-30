@@ -73,7 +73,7 @@ describe('socket fix', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>
 
-        \\x1b[33m\\u203c\\x1b[39m socket fix: Package package-lock.json found at /Users/jdalton/projects/socket-cli/package-lock.json"
+        \\x1b[33m\\u203c\\x1b[39m socket fix: Package package-lock.json found at <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
