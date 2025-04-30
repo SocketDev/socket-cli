@@ -96,7 +96,8 @@ type Constants = Remap<
     readonly CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER: 'firstPatchedVersionIdentifier'
     readonly ENV: ENV
     readonly DRY_RUN_LABEL: '[DryRun]'
-    readonly DRY_RUN_BAIL_TEXT: '[DryRun] Bailing now'
+    readonly DRY_RUN_BAILING_NOW: '[DryRun] Bailing now'
+    readonly DRY_RUN_NOT_SAVING: '[DryRun] Not saving'
     readonly IPC: IPC
     readonly LOCALAPPDATA: 'LOCALAPPDATA'
     readonly LOCK_EXT: '.lock'
@@ -167,14 +168,14 @@ const CLI = 'cli'
 const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
   'firstPatchedVersionIdentifier'
 const DRY_RUN_LABEL = '[DryRun]'
-const DRY_RUN_BAIL_TEXT = `${DRY_RUN_LABEL}: Bailing now`
+const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
+const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
 const LOCALAPPDATA = 'LOCALAPPDATA'
 const LOCK_EXT = '.lock'
 const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const PNPM = 'pnpm'
 const REDACTED = '<redacted>'
-const REQUIRE = 'require'
 const SHADOW_NPM_BIN = 'shadow-bin'
 const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 const SHADOW_NPM_PATHS = 'shadow-npm-paths'
@@ -431,7 +432,8 @@ const constants: Constants = createConstantsObject(
     CLI,
     CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
     DRY_RUN_LABEL,
-    DRY_RUN_BAIL_TEXT,
+    DRY_RUN_BAILING_NOW,
+    DRY_RUN_NOT_SAVING,
     ENV: undefined,
     LOCALAPPDATA,
     LOCK_EXT,
@@ -439,7 +441,6 @@ const constants: Constants = createConstantsObject(
     NPM_REGISTRY_URL,
     PNPM,
     REDACTED,
-    REQUIRE,
     SHADOW_NPM_BIN,
     SHADOW_NPM_INJECT,
     SHADOW_NPM_PATHS,

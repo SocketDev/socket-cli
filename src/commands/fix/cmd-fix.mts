@@ -1,10 +1,8 @@
 import terminalLink from 'terminal-link'
 
 import { joinOr } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { runFix } from './run-fix.mts'
-import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { checkCommandInput } from '../../utils/handle-bad-input.mts'
@@ -14,8 +12,6 @@ import { RangeStyles } from '../../utils/semver.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
-
-const { DRY_RUN_BAIL_TEXT } = constants
 
 const config: CliCommandConfig = {
   commandName: 'fix',
@@ -110,11 +106,6 @@ async function run(
     fail: 'missing'
   })
   if (wasBadInput) {
-    return
-  }
-
-  if (cli.flags['dryRun']) {
-    logger.log(DRY_RUN_BAIL_TEXT)
     return
   }
 

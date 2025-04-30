@@ -15,7 +15,7 @@ import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAIL_TEXT } = constants
+const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
   commandName: 'wrapper',
@@ -95,7 +95,7 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    logger.log(DRY_RUN_BAIL_TEXT)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
