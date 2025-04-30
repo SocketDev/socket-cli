@@ -7,7 +7,6 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replacePlugin from '@rollup/plugin-replace'
-import typescriptPlugin from '@rollup/plugin-typescript'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
 import { readPackageJsonSync } from '@socketsecurity/registry/lib/packages'
@@ -149,17 +148,10 @@ export default function baseConfig(extendConfig = {}) {
       extractedPlugins['node-resolve'] ??
         nodeResolve({
           exportConditions: ['node'],
-          extensions: ['.mjs', '.js', '.json', '.ts'],
+          extensions: ['.mjs', '.js', '.json', '.ts', '.mts'],
           preferBuiltins: true
         }),
       extractedPlugins['json'] ?? jsonPlugin(),
-      extractedPlugins['typescript'] ??
-        typescriptPlugin({
-          include: ['src/**/*.ts'],
-          noForceEmit: true,
-          outputToFilesystem: true,
-          tsconfig: path.join(configPath, 'tsconfig.rollup.json')
-        }),
       extractedPlugins['commonjs'] ??
         commonjsPlugin({
           defaultIsModuleExports: true,
@@ -174,7 +166,7 @@ export default function baseConfig(extendConfig = {}) {
           babelHelpers: 'runtime',
           babelrc: false,
           configFile: path.join(configPath, 'babel.config.js'),
-          extensions: ['.ts', '.js', '.cjs', '.mjs']
+          extensions: ['.mjs', '.js', '.ts', '.mts']
         }),
       extractedPlugins['unplugin-purge-polyfills'] ??
         purgePolyfills.rollup({

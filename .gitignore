@@ -11,8 +11,8 @@ Thumbs.db
 /npm-debug.log
 **/dist
 **/node_modules
-/*.tsbuildinfo
 *.d.ts
 *.d.ts.map
+*.tsbuildinfo
 
 !/.vscode/extensions.json

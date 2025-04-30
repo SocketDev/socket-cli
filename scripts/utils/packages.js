@@ -65,8 +65,8 @@ function resolveId(id_, req = require) {
   if (isValidPackageName(id)) {
     return resolvedId
   }
-  const tsId = `${resolvedId}.ts`
-  return fs.existsSync(tsId) ? tsId : resolvedId
+  const mtsId = `${resolvedId}.mts`
+  return fs.existsSync(mtsId) ? mtsId : resolvedId
 }
 
 function isEsmId(id_, parentId_) {

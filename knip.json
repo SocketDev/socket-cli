@@ -4,8 +4,8 @@
     "bin/*.js",
     "scripts/**/*.js",
     "shadow-bin/**",
-    "src/**/*.ts",
-    "test/**/*.test.ts",
+    "src/**/*.mts",
+    "test/**/*.test.mts",
     "*.js"
   ],
   "project": [
