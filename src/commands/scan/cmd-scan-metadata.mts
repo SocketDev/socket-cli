@@ -6,7 +6,7 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { checkCommandInput } from '../../utils/handle-bad-input.mts'
+import { checkCommandInput } from '../../utils/check-input.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { getDefaultToken } from '../../utils/sdk.mts'
@@ -85,7 +85,7 @@ async function run(
     (isTestingV1() || defaultOrgSlug ? cli.input[0] : cli.input[1]) || ''
   const apiToken = getDefaultToken()
 
-  const wasBadInput = checkCommandInput(
+  const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: !!defaultOrgSlug,
@@ -121,7 +121,7 @@ async function run(
       fail: 'missing API token'
     }
   )
-  if (wasBadInput) {
+  if (!wasValidInput) {
     return
   }
 

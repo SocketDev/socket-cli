@@ -5,7 +5,7 @@ import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { getConfigValueOrUndef, isTestingV1 } from '../../utils/config.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { checkCommandInput } from '../../utils/handle-bad-input.mts'
+import { checkCommandInput } from '../../utils/check-input.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { getDefaultToken } from '../../utils/sdk.mts'
@@ -105,7 +105,7 @@ async function run(
 
   const apiToken = getDefaultToken()
 
-  const wasBadInput = checkCommandInput(
+  const wasValidInput = checkCommandInput(
     outputKind,
     {
       test: !!(before && after),
@@ -143,7 +143,7 @@ async function run(
       fail: 'missing API token'
     }
   )
-  if (wasBadInput) {
+  if (!wasValidInput) {
     return
   }
 
