@@ -29,10 +29,11 @@ export async function outputLicensePolicy(
   logger.log('')
   logger.log('This is the license policy for your organization:')
   logger.log('')
-  const rules = result.data.license_policy!
+  const rules = result.data['license_policy']!
   const entries = rules ? Object.entries(rules) : []
   const mapped: Array<[string, string]> = entries.map(
-    ([key, value]) => [key, value.allowed ? ' yes' : ' no'] as const
+    ([key, value]) =>
+      [key, (value as any)?.['allowed'] ? ' yes' : ' no'] as const
   )
   mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
   logger.log(mdTableOfPairs(mapped, ['License Name', 'Allowed']))
