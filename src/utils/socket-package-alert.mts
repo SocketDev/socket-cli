@@ -321,18 +321,27 @@ export type CveInfoByPkgId = Map<
 
 export type GetCveInfoByPackageOptions = {
   exclude?: CveExcludeFilter | undefined
+  limit?: number | undefined
 }
 
 export function getCveInfoByAlertsMap(
   alertsMap: AlertsByPkgId,
   options?: GetCveInfoByPackageOptions | undefined
 ): CveInfoByPkgId | null {
+  const { exclude: _exclude, limit = Infinity } = {
+    __proto__: null,
+    ...options
+  } as GetCveInfoByPackageOptions
+  console.log('limit', limit)
   const exclude = {
+    __proto__: null,
     upgradable: true,
-    ...({ __proto__: null, ...options } as GetCveInfoByPackageOptions).exclude
-  }
+    ..._exclude
+  } as CveExcludeFilter
+
+  let count = 0
   let infoByPkg: CveInfoByPkgId | null = null
-  for (const [pkgId, sockPkgAlerts] of alertsMap) {
+  alertsMapLoop: for (const [pkgId, sockPkgAlerts] of alertsMap) {
     const purlObj = PackageURL.fromString(idToPurl(pkgId))
     const name = resolvePackageName(purlObj)
     for (const sockPkgAlert of sockPkgAlerts) {
@@ -362,6 +371,9 @@ export function getCveInfoByAlertsMap(
             vulnerableVersionRange.replace(/, +/g, ' ')
           ).format()
         })
+        if (++count >= limit) {
+          break alertsMapLoop
+        }
       } catch (e) {
         debugLog('getCveInfoByAlertsMap', {
           firstPatchedVersionIdentifier,

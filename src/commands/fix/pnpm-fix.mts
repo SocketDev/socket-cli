@@ -26,7 +26,7 @@ import {
   getGitHubEnvRepoInfo,
   openGitHubPullRequest
 } from './open-pr.mts'
-import { alertMapOptions } from './shared.mts'
+import { getAlertMapOptions } from './shared.mts'
 import constants from '../../constants.mts'
 import {
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
@@ -97,6 +97,7 @@ export async function pnpmFix(
     autoMerge,
     cwd,
     dryRun,
+    limit,
     purls,
     rangeStyle,
     test,
@@ -126,10 +127,14 @@ export async function pnpmFix(
   }
 
   const alertsMap = purls.length
-    ? await getAlertsMapFromPurls(purls, alertMapOptions)
-    : await getAlertsMapFromPnpmLockfile(lockfile, alertMapOptions)
+    ? await getAlertsMapFromPurls(purls, getAlertMapOptions({ limit }))
+    : await getAlertsMapFromPnpmLockfile(
+        lockfile,
+        getAlertMapOptions({ limit })
+      )
 
-  const infoByPkg = getCveInfoByAlertsMap(alertsMap)
+  const infoByPkg = getCveInfoByAlertsMap(alertsMap, { limit })
+  console.log(infoByPkg)
   if (!infoByPkg) {
     spinner?.stop()
     logger.info('No fixable vulnerabilities found.')
@@ -148,7 +153,8 @@ export async function pnpmFix(
     pkgEnvDetails.editablePkgJson.filename!
   ]
 
-  for (const { 0: name, 1: infos } of infoByPkg) {
+  let count = 0
+  infoByPkgLoop: for (const { 0: name, 1: infos } of infoByPkg) {
     debugLog(`Processing vulnerable package: ${name}`)
 
     if (getManifestData(NPM, name)) {
@@ -396,6 +402,9 @@ export async function pnpmFix(
               `Update failed for ${oldId} in ${workspaceName}`,
               error
             )
+          }
+          if (++count >= limit) {
+            break infoByPkgLoop
           }
         }
       }
