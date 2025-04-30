@@ -1,0 +1,43 @@
+import { cmdScanCreate } from './cmd-scan-create.mts'
+import { cmdScanDel } from './cmd-scan-del.mts'
+import { cmdScanDiff } from './cmd-scan-diff.mts'
+import { cmdScanList } from './cmd-scan-list.mts'
+import { cmdScanMetadata } from './cmd-scan-metadata.mts'
+import { cmdScanReport } from './cmd-scan-report.mts'
+import { cmdScanView } from './cmd-scan-view.mts'
+import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
+
+import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
+
+const description = 'Scan related commands'
+
+export const cmdScan: CliSubcommand = {
+  description,
+  async run(argv, importMeta, { parentName }) {
+    await meowWithSubcommands(
+      {
+        create: cmdScanCreate,
+        list: cmdScanList,
+        del: cmdScanDel,
+        diff: cmdScanDiff,
+        metadata: cmdScanMetadata,
+        report: cmdScanReport,
+        view: cmdScanView
+      },
+      {
+        aliases: {
+          // Backwards compat. TODO: Drop next major bump
+          stream: {
+            description: cmdScanView.description,
+            hidden: true,
+            argv: ['view'] // Original args will be appended (!)
+          }
+        },
+        argv,
+        description,
+        importMeta,
+        name: parentName + ' scan'
+      }
+    )
+  }
+}
