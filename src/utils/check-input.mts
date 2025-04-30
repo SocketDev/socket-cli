@@ -62,4 +62,3 @@ export function checkCommandInput(
 
   return false
 }
-
