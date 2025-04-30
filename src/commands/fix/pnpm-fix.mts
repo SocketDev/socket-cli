@@ -93,7 +93,15 @@ async function readLockfile(pkgPath: string): Promise<LockfileObject | null> {
 
 export async function pnpmFix(
   pkgEnvDetails: EnvDetails,
-  { autoMerge, cwd, dryRun, purls, rangeStyle, test, testScript }: NormalizedFixOptions
+  {
+    autoMerge,
+    cwd,
+    dryRun,
+    purls,
+    rangeStyle,
+    test,
+    testScript
+  }: NormalizedFixOptions
 ) {
   if (dryRun) {
     logger.log(DRY_RUN_NOT_SAVING)
