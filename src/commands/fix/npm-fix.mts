@@ -53,7 +53,7 @@ import type { SafeNode } from '../../shadow/npm/arborist/lib/node.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
-const { NPM } = constants
+const { DRY_RUN_NOT_SAVING, NPM } = constants
 
 type InstallOptions = {
   cwd?: string | undefined
@@ -74,8 +74,12 @@ async function install(
 
 export async function npmFix(
   pkgEnvDetails: EnvDetails,
-  { autoMerge, cwd, purls, rangeStyle, test, testScript }: NormalizedFixOptions
+  { autoMerge, cwd, dryRun, purls, rangeStyle, test, testScript }: NormalizedFixOptions
 ) {
+  if (dryRun) {
+    logger.log(DRY_RUN_NOT_SAVING)
+    return
+  }
   // Lazily access constants.spinner.
   const { spinner } = constants
 
