@@ -9,7 +9,7 @@ import { removeSocketWrapper } from './remove-socket-wrapper.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { checkCommandInput } from '../../utils/handle-bad-input.mts'
+import { checkCommandInput } from '../../utils/check-input.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
@@ -74,7 +74,7 @@ async function run(
   const { disable, enable, json, markdown } = cli.flags
   const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
 
-  const wasBadInput = checkCommandInput(
+  const wasValidInput = checkCommandInput(
     outputKind,
     {
       test: !!(enable || disable),
@@ -90,7 +90,7 @@ async function run(
       fail: 'missing'
     }
   )
-  if (wasBadInput) {
+  if (!wasValidInput) {
     return
   }
 

@@ -8,7 +8,7 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { checkCommandInput } from '../../utils/handle-bad-input.mts'
+import { checkCommandInput } from '../../utils/check-input.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { getDefaultToken } from '../../utils/sdk.mts'
@@ -261,7 +261,7 @@ async function run(
     logger.error('```\n')
   }
 
-  const wasBadInput = checkCommandInput(
+  const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: !isTestingV1() && !!defaultOrgSlug,
@@ -317,7 +317,7 @@ async function run(
       fail: 'missing branch name'
     }
   )
-  if (wasBadInput) {
+  if (!wasValidInput) {
     return
   }
 
