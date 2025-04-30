@@ -228,7 +228,6 @@ export async function detectPackageEnvironment({
     : undefined
 
   let agent: Agent | undefined
-  let agentVersion: SemVer | undefined
   if (pkgManager) {
     // A valid "packageManager" field value is "<package manager name>@<version>".
     // https://nodejs.org/api/packages.html#packagemanager
@@ -254,11 +253,7 @@ export async function detectPackageEnvironment({
     onUnknown?.(pkgManager)
   }
   const agentExecPath = await getAgentExecPath(agent)
-  const npmExecPath =
-    agent === NPM ? agentExecPath : await getAgentExecPath(NPM)
-  if (agentVersion === undefined) {
-    agentVersion = await getAgentVersion(agentExecPath, cwd)
-  }
+  const agentVersion = await getAgentVersion(agentExecPath, cwd)
   if (agent === YARN_CLASSIC && (agentVersion?.major ?? 0) > 1) {
     agent = YARN_BERRY
   }
@@ -331,6 +326,9 @@ export async function detectPackageEnvironment({
     `>=${minSupportedNodeVersion}`
   )
 
+  const npmExecPath =
+    agent === NPM ? agentExecPath : await getAgentExecPath(NPM)
+
   const npmBuggyOverrides =
     agent === NPM &&
     !!agentVersion &&
@@ -401,6 +399,7 @@ export async function detectAndValidatePackageEnvironment(
   const agentVersion = details.agentVersion ?? 'unknown'
   if (!details.agentSupported) {
     const minVersion = constants.minimumVersionByAgent.get(agent)!
+    console.dir({ details }, { depth: 999 })
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
