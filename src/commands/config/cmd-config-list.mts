@@ -5,7 +5,7 @@ import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { supportedConfigKeys } from '../../utils/config.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { checkCommandInput } from '../../utils/handle-bad-input.mts'
+import { checkCommandInput } from '../../utils/check-input.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
@@ -65,7 +65,7 @@ async function run(
   const { full, json, markdown } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
-  const wasBadInput = checkCommandInput(outputKind, {
+  const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
     test: !json || !markdown,
     message:
@@ -73,7 +73,7 @@ async function run(
     pass: 'ok',
     fail: 'bad'
   })
-  if (wasBadInput) {
+  if (!wasValidInput) {
     return
   }
 

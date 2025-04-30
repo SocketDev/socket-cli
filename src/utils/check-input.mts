@@ -18,7 +18,7 @@ export function checkCommandInput(
   }>
 ): boolean {
   if (checks.every(d => d.test)) {
-    return false
+    return true
   }
 
   const msg = ['Please review the input requirements and try again', '']
@@ -28,13 +28,16 @@ export function checkCommandInput(
       continue
     }
     const lines = d.message.split('\n')
-
+    const { length: lineCount } = lines
+    if (!lineCount) {
+      continue
+    }
     // If the message has newlines then format the first line with the input
-    // expectation and teh rest indented below it
+    // expectation and the rest indented below it.
     msg.push(
       `  - ${lines[0]} (${d.test ? colors.green(d.pass) : colors.red(d.fail)})`
     )
-    if (lines.length > 1) {
+    if (lineCount > 1) {
       msg.push(...lines.slice(1).map(str => `    ${str}`))
     }
     msg.push('')
@@ -57,17 +60,6 @@ export function checkCommandInput(
     logger.fail(failMsgWithBadge('Input error', msg.join('\n')))
   }
 
-  return true
+  return false
 }
 
-export function handleBadInput(
-  ...checks: Array<{
-    fail: string
-    message: string
-    pass: string
-    test: boolean
-    nook?: boolean | undefined
-  }>
-): boolean {
-  return checkCommandInput('text', ...checks)
-}
