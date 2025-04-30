@@ -70,7 +70,13 @@ async function getAgentVersion(
       // and tildes (~).
       semver.coerce(
         // All package managers support the "--version" flag.
-        (await spawn(agentExecPath, ['--version'], { cwd })).stdout
+        (
+          await spawn(agentExecPath, ['--version'], {
+            cwd,
+            // Lazily access constants.WIN32.
+            shell: constants.WIN32
+          })
+        ).stdout
       ) ?? undefined
   } catch (e) {
     debugLog('getAgentVersion error:\n', e)
@@ -103,6 +109,11 @@ const LOCKS: Record<string, Agent> = {
 type ReadLockFile =
   | ((lockPath: string) => Promise<string | undefined>)
   | ((lockPath: string, agentExecPath: string) => Promise<string | undefined>)
+  | ((
+      lockPath: string,
+      agentExecPath: string,
+      cwd: string
+    ) => Promise<string | undefined>)
 
 const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   function wrapReader<T extends (...args: any[]) => Promise<any>>(
@@ -125,25 +136,37 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   return new Map([
     [
       BUN,
-      wrapReader(async (lockPath: string, agentExecPath: string) => {
-        const ext = path.extname(lockPath)
-        if (ext === LOCK_EXT) {
-          return await defaultReader(lockPath)
-        }
-        if (ext === BINARY_LOCK_EXT) {
-          const lockBuffer = await binaryReader(lockPath)
-          if (lockBuffer) {
-            try {
-              return parseBunLockb(lockBuffer)
-            } catch {}
+      wrapReader(
+        async (
+          lockPath: string,
+          agentExecPath: string,
+          cwd = process.cwd()
+        ) => {
+          const ext = path.extname(lockPath)
+          if (ext === LOCK_EXT) {
+            return await defaultReader(lockPath)
           }
-          // To print a Yarn lockfile to your console without writing it to disk
-          // use `bun bun.lockb`.
-          // https://bun.sh/guides/install/yarnlock
-          return (await spawn(agentExecPath, [lockPath])).stdout.trim()
+          if (ext === BINARY_LOCK_EXT) {
+            const lockBuffer = await binaryReader(lockPath)
+            if (lockBuffer) {
+              try {
+                return parseBunLockb(lockBuffer)
+              } catch {}
+            }
+            // To print a Yarn lockfile to your console without writing it to disk
+            // use `bun bun.lockb`.
+            // https://bun.sh/guides/install/yarnlock
+            return (
+              await spawn(agentExecPath, [lockPath], {
+                cwd,
+                // Lazily access constants.WIN32.
+                shell: constants.WIN32
+              })
+            ).stdout.trim()
+          }
+          return undefined
         }
-        return undefined
-      })
+      )
     ],
     [NPM, defaultReader],
     [PNPM, defaultReader],
@@ -314,7 +337,7 @@ export async function detectPackageEnvironment({
     }
     lockSrc =
       typeof lockPath === 'string'
-        ? await readLockFileByAgent.get(agent)!(lockPath, agentExecPath)
+        ? await readLockFileByAgent.get(agent)!(lockPath, agentExecPath, cwd)
         : undefined
   } else {
     lockName = undefined

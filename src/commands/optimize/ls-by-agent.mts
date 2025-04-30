@@ -47,7 +47,13 @@ function parsableToQueryStdout(stdout: string) {
 async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
   let stdout = ''
   try {
-    stdout = (await spawn(npmExecPath, ['query', ':not(.dev)'], { cwd })).stdout
+    stdout = (
+      await spawn(npmExecPath, ['query', ':not(.dev)'], {
+        cwd,
+        // Lazily access constants.WIN32.
+        shell: constants.WIN32
+      })
+    ).stdout
   } catch {}
   return cleanupQueryStdout(stdout)
 }
@@ -57,7 +63,11 @@ async function lsBun(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
     // Bun does not support filtering by production packages yet.
     // https://github.com/oven-sh/bun/issues/8283
     return (
-      await spawn(pkgEnvDetails.agentExecPath, ['pm', 'ls', '--all'], { cwd })
+      await spawn(pkgEnvDetails.agentExecPath, ['pm', 'ls', '--all'], {
+        cwd,
+        // Lazily access constants.WIN32.
+        shell: constants.WIN32
+      })
     ).stdout
   } catch {}
   return ''
@@ -87,7 +97,11 @@ async function lsPnpm(
         // Pnpm uses the alternative spelling of parsable.
         // https://en.wiktionary.org/wiki/parsable
         ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
-        { cwd }
+        {
+          cwd,
+          // Lazily access constants.WIN32.
+          shell: constants.WIN32
+        }
       )
     ).stdout
   } catch {}
@@ -103,7 +117,9 @@ async function lsVlt(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
         pkgEnvDetails.agentExecPath,
         ['ls', '--view', 'human', ':not(.dev)'],
         {
-          cwd
+          cwd,
+          // Lazily access constants.WIN32.
+          shell: constants.WIN32
         }
       )
     ).stdout
@@ -124,7 +140,9 @@ async function lsYarnBerry(
           pkgEnvDetails.agentExecPath,
           ['info', '--recursive', '--name-only'],
           {
-            cwd
+            cwd,
+            // Lazily access constants.WIN32.
+            shell: constants.WIN32
           }
         )
       ).stdout.trim()
@@ -143,7 +161,11 @@ async function lsYarnClassic(
     // > Fix: Excludes dev dependencies from the yarn list output when the
     //   environment is production
     return (
-      await spawn(pkgEnvDetails.agentExecPath, ['list', '--prod'], { cwd })
+      await spawn(pkgEnvDetails.agentExecPath, ['list', '--prod'], {
+        cwd,
+        // Lazily access constants.WIN32.
+        shell: constants.WIN32
+      })
     ).stdout.trim()
   } catch {}
   return ''
