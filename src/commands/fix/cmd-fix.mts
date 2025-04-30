@@ -19,11 +19,6 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    autopilot: {
-      type: 'boolean',
-      default: false,
-      description: `Shorthand for --autoMerge --test`
-    },
     autoMerge: {
       type: 'boolean',
       default: false,
@@ -31,6 +26,16 @@ const config: CliCommandConfig = {
         'GitHub documentation',
         'https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository'
       )} for managing auto-merge for pull requests in your repository.`
+    },
+    autopilot: {
+      type: 'boolean',
+      default: false,
+      description: `Shorthand for --autoMerge --test`
+    },
+    limit: {
+      type: 'number',
+      default: Infinity,
+      description: 'The number of fixes to attempt at a time'
     },
     purl: {
       type: 'string',
@@ -112,6 +117,7 @@ async function run(
   await runFix({
     autoMerge: Boolean(cli.flags['autoMerge']),
     autopilot: Boolean(cli.flags['autopilot']),
+    limit: Number(cli.flags['limit']),
     dryRun: Boolean(cli.flags['dryRun']),
     purls: Array.isArray(cli.flags['purl']) ? cli.flags['purl'] : [],
     rangeStyle: (cli.flags['rangeStyle'] ?? undefined) as
