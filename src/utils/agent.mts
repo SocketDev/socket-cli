@@ -38,6 +38,8 @@ export function runAgentInstall(
   const skipNodeHardenFlags =
     agent === PNPM && pkgEnvDetails.agentVersion.major < 11
   return spawn(agentExecPath, ['install', ...args], {
+    // Lazily access constants.WIN32.
+    shell: constants.WIN32,
     spinner,
     stdio: 'inherit',
     ...spawnOptions,
