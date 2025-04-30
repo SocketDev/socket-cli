@@ -67,7 +67,9 @@ async function getAgentVersion(
         // All package managers support the "--version" flag.
         (await spawn(agentExecPath, ['--version'], { cwd })).stdout
       ) ?? undefined
-  } catch {}
+  } catch (e){
+    console.log(e)
+  }
   return result
 }
 
