@@ -12,7 +12,7 @@ import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAIL_TEXT } = constants
+const { DRY_RUN_BAILING_NOW } = constants
 
 // TODO: we may want to dedupe some pieces for all gradle languages. I think it
 //       makes sense to have separate commands for them and I think it makes
@@ -158,7 +158,7 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    logger.log(DRY_RUN_BAIL_TEXT)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

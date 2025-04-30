@@ -57,7 +57,7 @@ import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-const { NPM, OVERRIDES, PNPM } = constants
+const { DRY_RUN_NOT_SAVING, NPM, OVERRIDES, PNPM } = constants
 
 async function getActualTree(cwd: string = process.cwd()): Promise<SafeNode> {
   const arb = new SafeArborist({
@@ -93,8 +93,12 @@ async function readLockfile(pkgPath: string): Promise<LockfileObject | null> {
 
 export async function pnpmFix(
   pkgEnvDetails: EnvDetails,
-  { autoMerge, cwd, purls, rangeStyle, test, testScript }: NormalizedFixOptions
+  { autoMerge, cwd, dryRun, purls, rangeStyle, test, testScript }: NormalizedFixOptions
 ) {
+  if (dryRun) {
+    logger.log(DRY_RUN_NOT_SAVING)
+    return
+  }
   // Lazily access constants.spinner.
   const { spinner } = constants
 

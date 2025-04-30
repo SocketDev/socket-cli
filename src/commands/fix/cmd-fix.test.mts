@@ -62,13 +62,18 @@ describe('socket fix', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "\\x1b[34mi\\x1b[39m Fixing packages for npm
+        [DryRun]: Not saving"
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>
+
+        \\x1b[33m\\u203c\\x1b[39m socket fix: Package package-lock.json found at /Users/jdalton/projects/socket-cli/package-lock.json"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

@@ -17,7 +17,7 @@ import type {
   CliSubcommand
 } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAIL_TEXT } = constants
+const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
   commandName: 'view',
@@ -152,7 +152,7 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    logger.log(DRY_RUN_BAIL_TEXT)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
