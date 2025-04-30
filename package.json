@@ -193,7 +193,7 @@
     "tiny-colors": "$yoctocolors-cjs",
     "typedarray": "npm:@socketregistry/typedarray@^1",
     "undici": "6.21.1",
-    "vite": "6.2.6",
+    "vite": "6.2.7",
     "xml2js": "0.5.0",
     "yaml": "2.7.1"
   },
