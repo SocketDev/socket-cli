@@ -106,7 +106,7 @@
     "@socketregistry/packageurl-js": "1.0.6",
     "@socketsecurity/config": "2.1.3",
     "@socketsecurity/registry": "1.0.157",
-    "@socketsecurity/sdk": "1.4.29",
+    "@socketsecurity/sdk": "1.4.30",
     "@types/blessed": "0.1.25",
     "@types/cmd-shim": "5.0.2",
     "@types/micromatch": "4.0.9",
