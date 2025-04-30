@@ -7,12 +7,12 @@ export default defineConfig({
         '**/{eslint,vitest}.config.*',
         '**/node_modules/**',
         '**/[.]**',
-        '**/*.d.ts',
+        '**/*.d.mts',
         '**/virtual:*',
         'coverage/**',
         'dist/**',
         'scripts/**',
-        'src/**/types.ts',
+        'src/**/types.mts',
         'test/**'
       ]
     }

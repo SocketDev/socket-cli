@@ -90,7 +90,9 @@ const sharedRulesForImportX = {
       cjs: 'ignorePackages',
       js: 'ignorePackages',
       json: 'always',
-      mjs: 'ignorePackages'
+      mjs: 'ignorePackages',
+      mts: 'ignorePackages',
+      ts: 'ignorePackages'
     }
   ],
   'import-x/order': [
@@ -204,11 +206,11 @@ module.exports = [
           ...importFlatConfigsForModule.typescript.languageOptions
             ?.parserOptions?.projectService,
           allowDefaultProject: [
-            // Allow paths like src/utils/*.test.ts.
-            'src/*/*.test.ts',
-            // Allow paths like src/commands/optimize/*.test.ts.
-            'src/*/*/*.test.ts',
-            'test/*.ts',
+            // Allow paths like src/utils/*.test.mts.
+            'src/*/*.test.mts',
+            // Allow paths like src/commands/optimize/*.test.mts.
+            'src/*/*/*.test.mts',
+            'test/*.mts',
             'vitest.config.mts'
           ],
           defaultProject: 'tsconfig.json',
