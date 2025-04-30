@@ -268,13 +268,13 @@ function resetDependencies(deps) {
 export default async () => {
   // Lazily access constants path properties.
   const { configPath, distPath, rootPath, srcPath } = constants
-  const constantsSrcPath = path.join(srcPath, `constants.ts`)
+  const constantsSrcPath = path.join(srcPath, `constants.mts`)
   const externalPath = path.join(rootPath, EXTERNAL)
   const externalSrcPath = path.join(srcPath, EXTERNAL)
   const nmPath = path.join(rootPath, NODE_MODULES)
-  const shadowNpmBinSrcPath = path.join(srcPath, 'shadow/npm/bin.ts')
-  const shadowNpmInjectSrcPath = path.join(srcPath, 'shadow/npm/inject.ts')
-  const shadowNpmPathsSrcPath = path.join(srcPath, 'shadow/npm/paths.ts')
+  const shadowNpmBinSrcPath = path.join(srcPath, 'shadow/npm/bin.mts')
+  const shadowNpmInjectSrcPath = path.join(srcPath, 'shadow/npm/inject.mts')
+  const shadowNpmPathsSrcPath = path.join(srcPath, 'shadow/npm/paths.mts')
   const blessedContribFilepaths = await tinyGlob(['**/*.mjs'], {
     absolute: true,
     cwd: path.join(externalSrcPath, BLESSED_CONTRIB)
@@ -291,7 +291,6 @@ export default async () => {
             exports: 'auto',
             externalLiveBindings: false,
             format: 'cjs',
-            freeze: false,
             inlineDynamicImports: true,
             sourcemap: true,
             sourcemapDebugIds: true
@@ -335,14 +334,14 @@ export default async () => {
     }),
     baseConfig({
       input: {
-        cli: `${srcPath}/cli.ts`,
-        [CONSTANTS]: `${srcPath}/constants.ts`,
-        [SHADOW_NPM_BIN]: `${srcPath}/shadow/npm/bin.ts`,
-        [SHADOW_NPM_INJECT]: `${srcPath}/shadow/npm/inject.ts`,
+        cli: `${srcPath}/cli.mts`,
+        [CONSTANTS]: `${srcPath}/constants.mts`,
+        [SHADOW_NPM_BIN]: `${srcPath}/shadow/npm/bin.mts`,
+        [SHADOW_NPM_INJECT]: `${srcPath}/shadow/npm/inject.mts`,
         // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
         ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
           ? {
-              [INSTRUMENT_WITH_SENTRY]: `${srcPath}/${INSTRUMENT_WITH_SENTRY}.ts`
+              [INSTRUMENT_WITH_SENTRY]: `${srcPath}/${INSTRUMENT_WITH_SENTRY}.mts`
             }
           : {})
       },
@@ -354,7 +353,6 @@ export default async () => {
           exports: 'auto',
           externalLiveBindings: false,
           format: 'cjs',
-          freeze: false,
           manualChunks(id_) {
             const id = normalizeId(id_)
             switch (id) {
