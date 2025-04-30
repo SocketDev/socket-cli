@@ -6,6 +6,7 @@ import semver from 'semver'
 import which from 'which'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { Logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -50,6 +51,10 @@ const binByAgent = new Map<Agent, string>([
 
 async function getAgentExecPath(agent: Agent): Promise<string> {
   const binName = binByAgent.get(agent)!
+  if (binName === NPM) {
+    // Lazily access constants.npmExecPath.
+    return constants.npmExecPath
+  }
   return (await which(binName, { nothrow: true })) ?? binName
 }
 
@@ -67,8 +72,8 @@ async function getAgentVersion(
         // All package managers support the "--version" flag.
         (await spawn(agentExecPath, ['--version'], { cwd })).stdout
       ) ?? undefined
-  } catch (e){
-    console.log(e)
+  } catch (e) {
+    debugLog('getAgentVersion error:\n', e)
   }
   return result
 }
@@ -399,7 +404,6 @@ export async function detectAndValidatePackageEnvironment(
   const agentVersion = details.agentVersion ?? 'unknown'
   if (!details.agentSupported) {
     const minVersion = constants.minimumVersionByAgent.get(agent)!
-    console.dir({ details }, { depth: 999 })
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
