@@ -9,6 +9,7 @@ export type FixOptions = {
   autopilot?: boolean | undefined
   cwd?: string | undefined
   dryRun?: boolean | undefined
+  limit?: number | undefined
   purls?: string[] | readonly string[] | undefined
   rangeStyle?: RangeStyle | undefined
   test?: boolean | undefined

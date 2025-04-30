@@ -29,6 +29,7 @@ export async function getAlertsMapFromArborist(
   const options = {
     __proto__: null,
     consolidate: false,
+    limit: Infinity,
     nothrow: false,
     ...options_
   } as GetAlertsMapFromArboristOptions
@@ -87,6 +88,7 @@ export async function getAlertsMapFromPnpmLockfile(
   const options = {
     __proto__: null,
     consolidate: false,
+    limit: Infinity,
     nothrow: false,
     ...options_
   } as GetAlertsMapFromPnpmLockfileOptions
@@ -100,6 +102,7 @@ export async function getAlertsMapFromPnpmLockfile(
 export type GetAlertsMapFromPurlsOptions = {
   consolidate?: boolean | undefined
   include?: AlertIncludeFilter | undefined
+  limit?: number | undefined
   overrides?: { [key: string]: string } | undefined
   nothrow?: boolean | undefined
   spinner?: Spinner | undefined
@@ -112,6 +115,7 @@ export async function getAlertsMapFromPurls(
   const options = {
     __proto__: null,
     consolidate: false,
+    limit: Infinity,
     nothrow: false,
     ...options_
   } as GetAlertsMapFromPurlsOptions
