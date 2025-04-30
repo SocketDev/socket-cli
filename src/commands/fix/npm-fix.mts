@@ -74,7 +74,15 @@ async function install(
 
 export async function npmFix(
   pkgEnvDetails: EnvDetails,
-  { autoMerge, cwd, dryRun, purls, rangeStyle, test, testScript }: NormalizedFixOptions
+  {
+    autoMerge,
+    cwd,
+    dryRun,
+    purls,
+    rangeStyle,
+    test,
+    testScript
+  }: NormalizedFixOptions
 ) {
   if (dryRun) {
     logger.log(DRY_RUN_NOT_SAVING)
