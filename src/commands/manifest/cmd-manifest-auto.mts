@@ -15,7 +15,7 @@ import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAIL_TEXT } = constants
+const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
   commandName: 'auto',
@@ -91,7 +91,7 @@ async function run(
     }
     subArgs.push(dir)
     if (cli.flags['dryRun']) {
-      logger.log(DRY_RUN_BAIL_TEXT)
+      logger.log(DRY_RUN_BAILING_NOW)
       return
     }
     await cmdManifestScala.run(subArgs, importMeta, { parentName })
@@ -105,7 +105,7 @@ async function run(
       subArgs.push(cwd)
     }
     if (cli.flags['dryRun']) {
-      logger.log(DRY_RUN_BAIL_TEXT)
+      logger.log(DRY_RUN_BAILING_NOW)
       return
     }
     await cmdManifestGradle.run(subArgs, importMeta, { parentName })
@@ -123,7 +123,7 @@ async function run(
     // This command takes the TARGET as first arg.
     subArgs.push(hasEnvyml ? envyml : hasEnvyaml ? envyaml : '')
     if (cli.flags['dryRun']) {
-      logger.log(DRY_RUN_BAIL_TEXT)
+      logger.log(DRY_RUN_BAILING_NOW)
       return
     }
     await cmdManifestConda.run(subArgs, importMeta, { parentName })
@@ -131,7 +131,7 @@ async function run(
   }
 
   if (cli.flags['dryRun']) {
-    logger.log(DRY_RUN_BAIL_TEXT)
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
