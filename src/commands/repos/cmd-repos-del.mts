@@ -2,7 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleDeleteRepo } from './handle-delete-repo.mts'
 import constants from '../../constants.mts'
-import { commonFlags } from '../../flags.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
@@ -21,6 +21,7 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
+    ...outputFlags,
     interactive: {
       type: 'boolean',
       default: true,
@@ -68,7 +69,7 @@ async function run(
   })
 
   const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
-  const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
+  const outputKind = getOutputKind(json, markdown)
 
   const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
