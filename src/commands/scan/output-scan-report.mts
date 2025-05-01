@@ -67,17 +67,32 @@ export async function outputScanReport(
     }
   )
 
-  if (!scanReport.healthy) {
-    process.exitCode = 1 // TODO: we could use a different code to distinct program error from health check failure...
+  if (!scanReport.ok) {
+    // Note: this means generation failed, it does not reflect the healthy state
+    process.exitCode = scanReport.code ?? 1
+
+    // If report generation somehow failed then .data should not be set.
+    if (outputKind === 'json') {
+      logger.log(serializeResultJson(scanReport))
+      return
+    }
+    logger.fail(failMsgWithBadge(scanReport.message, scanReport.cause))
+    return
   }
+
+  // I don't think we emit the default error message with banner for an unhealhty report, do we?
+  // if (!scanReport.data.healhty) {
+  //   logger.fail(failMsgWithBadge(scanReport.message, scanReport.cause))
+  //   return
+  // }
 
   if (
     outputKind === 'json' ||
     (outputKind === 'text' && filePath && filePath.endsWith('.json'))
   ) {
     const json = short
-      ? JSON.stringify(scanReport, null, 2)
-      : toJsonReport(scanReport as ScanReport, includeLicensePolicy)
+      ? serializeResultJson(scanReport)
+      : toJsonReport(scanReport.data as ScanReport, includeLicensePolicy)
 
     if (filePath && filePath !== '-') {
       logger.log('Writing json report to', filePath)
@@ -90,8 +105,11 @@ export async function outputScanReport(
 
   if (outputKind === 'markdown' || (filePath && filePath.endsWith('.md'))) {
     const md = short
-      ? `healthy = ${scanReport.healthy}`
-      : toMarkdownReport(scanReport as ScanReport, includeLicensePolicy)
+      ? `healthy = ${scanReport.data.healthy}`
+      : toMarkdownReport(
+          scanReport.data as ScanReport, // not short so must be regular report
+          includeLicensePolicy
+        )
 
     if (filePath && filePath !== '-') {
       logger.log('Writing markdown report to', filePath)
@@ -104,9 +122,9 @@ export async function outputScanReport(
   }
 
   if (short) {
-    logger.log(scanReport.healthy ? 'OK' : 'ERR')
+    logger.log(scanReport.data.healthy ? 'OK' : 'ERR')
   } else {
-    logger.dir(scanReport, { depth: null })
+    logger.dir(scanReport.data, { depth: null })
   }
 }
 
@@ -116,17 +134,16 @@ export function toJsonReport(
 ): string {
   const obj = mapToObject(report.alerts)
 
-  const json = JSON.stringify(
-    {
-      includeLicensePolicy,
-      ...report,
-      alerts: obj
-    },
-    null,
-    2
-  )
+  const newReport = {
+    includeLicensePolicy,
+    ...report,
+    alerts: obj
+  }
 
-  return json
+  return serializeResultJson({
+    ok: true,
+    data: newReport
+  })
 }
 
 export function toMarkdownReport(
