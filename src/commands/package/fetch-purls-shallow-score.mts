@@ -41,5 +41,9 @@ export async function fetchPurlsShallowScore(
     return handleFailedApiResponse('batchPackageFetch', result)
   }
 
-  return { ok: true, data: result }
+  // TODO: seems like there's a bug in the typing since we absolutely have to return the .data here
+  return {
+    ok: true,
+    data: result.data as SocketSdkReturnType<'batchPackageFetch'>
+  }
 }
