@@ -284,13 +284,15 @@ export async function pnpmFix(
                 }
               : {}),
             ...(editablePkgJson.content.dependencies && {
-              dependencies: editablePkgJson.content.dependencies
+              dependencies: { ...editablePkgJson.content.dependencies }
             }),
             ...(editablePkgJson.content.optionalDependencies && {
-              optionalDependencies: editablePkgJson.content.optionalDependencies
+              optionalDependencies: {
+                ...editablePkgJson.content.optionalDependencies
+              }
             }),
             ...(editablePkgJson.content.peerDependencies && {
-              peerDependencies: editablePkgJson.content.peerDependencies
+              peerDependencies: { ...editablePkgJson.content.peerDependencies }
             })
           } as PackageJson
 
@@ -305,7 +307,7 @@ export async function pnpmFix(
             rangeStyle
           )
           // eslint-disable-next-line no-await-in-loop
-          if (!(await editablePkgJson.save())) {
+          if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
             debugLog(`Nothing changed for ${workspaceName}, skipping install`)
             continue
           }
