@@ -368,6 +368,21 @@ export default async () => {
                 return id.includes(SLASH_NODE_MODULES_SLASH) ? VENDOR : null
             }
           },
+          plugins: [
+            // Remove Rollup's browser interop for import.meta.url.
+            socketModifyPlugin({
+              find: /(?<=const require(?:\$+\d+)?\s*=)\s*Module\.createRequire[^;]+;/g,
+              replace(match) {
+                const pathToUrlCode =
+                  /require(?:\$+\d+)?(?:\([^)]+\))?\.pathToFileURL\(__filename\)\.href/.exec(
+                    match
+                  )?.[0]
+                return pathToUrlCode
+                  ? `Module.createRequire(${pathToUrlCode})`
+                  : match
+              }
+            })
+          ],
           sourcemap: true,
           sourcemapDebugIds: true
         }
@@ -375,16 +390,15 @@ export default async () => {
       plugins: [
         // Replace requires like require('blessed/lib/widgets/screen') with
         // require('../external/blessed/lib/widgets/screen').
-        ...EXTERNAL_PACKAGES.map(n => {
-          const requiresRegExp = new RegExp(
-            `(?<=require\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
-            'g'
-          )
-          return socketModifyPlugin({
-            find: requiresRegExp,
+        ...EXTERNAL_PACKAGES.map(n =>
+          socketModifyPlugin({
+            find: new RegExp(
+              `(?<=require(?:\\$+\\d+)?\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
+              'g'
+            ),
             replace: id => `../external/${id}`
           })
-        }),
+        ),
         {
           async writeBundle() {
             await Promise.all([
