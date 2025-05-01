@@ -21,6 +21,7 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
+    ...outputFlags,
     sort: {
       type: 'string',
       shortFlag: 's',
@@ -54,8 +55,7 @@ const config: CliCommandConfig = {
       shortFlag: 'p',
       default: 1,
       description: 'Page number'
-    },
-    ...outputFlags
+    }
   },
   help: (command, config) => `
     Usage
