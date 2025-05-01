@@ -36,7 +36,7 @@ export async function fetchScan(
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${response.statusText}${err ? ` (cause: ${err}` : ''}`
+      cause: `${response.statusText}${err ? ` (cause: ${err})` : ''}`
     }
   }
 
