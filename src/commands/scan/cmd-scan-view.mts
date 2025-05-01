@@ -119,7 +119,7 @@ async function run(
     },
     {
       test: !!scanId,
-      message: 'Scan ID to delete',
+      message: 'Scan ID to view',
       pass: 'ok',
       fail: 'missing'
     },

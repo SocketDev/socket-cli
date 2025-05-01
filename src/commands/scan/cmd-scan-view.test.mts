@@ -73,7 +73,7 @@ describe('socket scan view', async () => {
 
           - Org name must be the first argument (\\x1b[31mmissing\\x1b[39m)
 
-          - Scan ID to delete (\\x1b[31mmissing\\x1b[39m)
+          - Scan ID to view (\\x1b[31mmissing\\x1b[39m)
 
           - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)
         \\x1b[22m"
