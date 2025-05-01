@@ -8,6 +8,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputDeleteRepo(
   result: CResult<SocketSdkReturnType<'deleteOrgRepo'>['data']>,
+  repoName: string,
   outputKind: OutputKind
 ): Promise<void> {
   if (!result.ok) {
@@ -23,5 +24,5 @@ export async function outputDeleteRepo(
     return
   }
 
-  logger.success('Repository deleted successfully')
+  logger.success(`OK. Repository \`${repoName}\` deleted successfully`)
 }
