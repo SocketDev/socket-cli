@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
@@ -7,6 +9,8 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import type { ThreadFeedResponse, ThreatResult } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { Widgets } from 'blessed'
+
+const require = createRequire(import.meta.url)
 
 export async function outputThreatFeed(
   result: CResult<ThreadFeedResponse>,
@@ -34,7 +38,7 @@ export async function outputThreatFeed(
   const descriptions = result.data.results.map(d => d.description)
 
   // Note: this temporarily takes over the terminal (just like `man` does).
-  const ScreenWidget = require('../external/blessed/lib/widgets/screen.js')
+  const ScreenWidget = require('blessed/lib/widgets/screen.js')
   // Lazily access constants.blessedOptions.
   const screen: Widgets.Screen = new ScreenWidget({
     ...constants.blessedOptions
@@ -45,7 +49,7 @@ export async function outputThreatFeed(
   // eslint-disable-next-line n/no-process-exit
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 
-  const TableWidget = require('../external/blessed-contrib/lib/widget/table.js')
+  const TableWidget = require('blessed-contrib/lib/widget/table.js')
   const table: any = new TableWidget({
     keys: 'true',
     fg: 'white',
@@ -67,7 +71,7 @@ export async function outputThreatFeed(
   })
 
   // Create details box at the bottom
-  const BoxWidget = require('../external/blessed/lib/widgets/box.js')
+  const BoxWidget = require('blessed/lib/widgets/box.js')
   const detailsBox: Widgets.BoxElement = new BoxWidget({
     bottom: 0,
     height: '30%',
