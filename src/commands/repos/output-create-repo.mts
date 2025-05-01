@@ -8,6 +8,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputCreateRepo(
   result: CResult<SocketSdkReturnType<'createOrgRepo'>['data']>,
+  requestedName: string,
   outputKind: OutputKind
 ): Promise<void> {
   if (!result.ok) {
@@ -23,5 +24,7 @@ export async function outputCreateRepo(
     return
   }
 
-  logger.success('Repository created successfully')
+  logger.success(
+    `OK. Repository created successfully, slug: \`${result.data.slug}\`${result.data.slug !== requestedName ? ' (Warning: slug is not the same as name that was requested!)' : ''}`
+  )
 }
