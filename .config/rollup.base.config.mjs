@@ -46,14 +46,15 @@ const builtinAliases = builtinModules.reduce((o, n) => {
   return o
 }, {})
 
-const danglingRequiresRegExp = /^\s*require\(["'].+?["']\);?\r?\n/gm
+const danglingRequiresRegExp = /^\s*require(?:\$+\d+)?\(["'].+?["']\);?\r?\n/gm
 
-const requireTinyColorsRegExp = /require\(["']tiny-colors["']\)/g
+const requireTinyColorsRegExp = /require(?:\$+\d+)?\(["']tiny-colors["']\)/g
 
 const requireUrlAssignmentRegExp =
-  /(?<=var +)[$\w]+(?= *= *require\(["']node:url["']\))/
+  /(?<=var +)[$\w]+(?= *= *require(?:\$+\d+)?\(["']node:url["']\))/
 
-const splitUrlRequiresRegExp = /require\(["']u["']\s*\+\s*["']rl["']\)/g
+const splitUrlRequiresRegExp =
+  /require(?:\$+\d+)?\(["']u["']\s*\+\s*["']rl["']\)/g
 
 let _rootPkgJson
 function getRootPkgJsonSync() {
@@ -243,7 +244,10 @@ export default function baseConfig(extendConfig = {}) {
       }),
       // Convert un-prefixed built-in imports into "node:"" prefixed forms.
       replacePlugin({
-        delimiters: ['(?<=(?:require\\(|from\\s*)["\'])', '(?=["\'])'],
+        delimiters: [
+          '(?<=(?:require(?:\\$+\\d+)?\\(|from\\s*)["\'])',
+          '(?=["\'])'
+        ],
         preventAssignment: false,
         values: builtinAliases
       }),

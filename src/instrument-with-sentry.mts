@@ -1,7 +1,11 @@
 // This should ONLY be included in the special Sentry build!
 // Otherwise the Sentry dependency won't even be present in the manifest.
 
+import { createRequire } from 'node:module'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
+
+const require = createRequire(import.meta.url)
 
 // Require constants with require(relConstantsPath) instead of require('./constants')
 // so Rollup doesn't generate a constants2.js chunk.

@@ -1,4 +1,8 @@
+import { createRequire } from 'node:module'
+
 import constants from '../../constants.mts'
+
+const require = createRequire(import.meta.url)
 
 const { NPX } = constants
 

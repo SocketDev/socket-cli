@@ -1,6 +1,9 @@
+import { createRequire } from 'node:module'
 import path from 'node:path'
 
 import constants from '../constants.mts'
+
+const require = createRequire(import.meta.url)
 
 let _translations: typeof import('../../translations.json') | undefined
 
