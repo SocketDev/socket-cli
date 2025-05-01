@@ -1,3 +1,4 @@
+import type { CResult } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { components } from '@socketsecurity/sdk/types/api'
@@ -29,6 +30,8 @@ export type ReportLeafNode = {
   manifest: string[]
 }
 
+// Note: The returned cresult will only be ok:false when the generation
+//       failed. It won't reflect the healthy state.
 export function generateReport(
   scan: Array<components['schemas']['SocketArtifact']>,
   securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>['data'],
@@ -47,7 +50,7 @@ export function generateReport(
     short?: boolean | undefined
     spinner?: Spinner | undefined
   }
-): ScanReport | ShortScanReport {
+): CResult<ScanReport | { healthy: boolean }> {
   const now = Date.now()
 
   spinner?.start('Generating report...')
@@ -199,17 +202,34 @@ export function generateReport(
 
   spinner?.successAndStop(`Generated reported in ${Date.now() - now} ms`)
 
-  const report = short
-    ? { healthy }
-    : {
-        healthy,
-        orgSlug,
-        scanId,
-        options: { fold, reportLevel },
-        alerts: violations
-      }
+  if (short) {
+    return {
+      ok: true,
+      data: { healthy }
+    }
+  }
 
-  return report
+  const report = {
+    healthy,
+    orgSlug,
+    scanId,
+    options: { fold, reportLevel },
+    alerts: violations
+  }
+
+  if (!healthy) {
+    return {
+      ok: true,
+      message:
+        'The report contains at least one alert that violates the policies set by your organization',
+      data: report
+    }
+  }
+
+  return {
+    ok: true,
+    data: report
+  }
 }
 
 function createLeaf(

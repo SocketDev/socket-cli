@@ -20,14 +20,17 @@ describe('generate-report', () => {
 
     expect(result).toMatchInlineSnapshot(`
       {
-        "alerts": Map {},
-        "healthy": true,
-        "options": {
-          "fold": "none",
-          "reportLevel": "warn",
+        "data": {
+          "alerts": Map {},
+          "healthy": true,
+          "options": {
+            "fold": "none",
+            "reportLevel": "warn",
+          },
+          "orgSlug": "fakeorg",
+          "scanId": "scan-ai-dee",
         },
-        "orgSlug": "fakeorg",
-        "scanId": "scan-ai-dee",
+        "ok": true,
       }
     `)
   })
@@ -55,18 +58,22 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {},
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "warn",
+            "data": {
+              "alerts": Map {},
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "warn",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(0)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(0)
       })
 
       it('should return a sick report with alert when an alert violates at error', () => {
@@ -90,43 +97,50 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {
-              "npm" => Map {
-                "tslib" => Map {
-                  "1.14.1" => Map {
-                    "package/which.js" => Map {
-                      "envVars at 54:72" => {
-                        "manifest": [
-                          "package-lock.json",
-                        ],
-                        "policy": "error",
-                        "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
-                      },
-                      "envVars at 200:250" => {
-                        "manifest": [
-                          "package-lock.json",
-                        ],
-                        "policy": "error",
-                        "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+            "data": {
+              "alerts": Map {
+                "npm" => Map {
+                  "tslib" => Map {
+                    "1.14.1" => Map {
+                      "package/which.js" => Map {
+                        "envVars at 54:72" => {
+                          "manifest": [
+                            "package-lock.json",
+                          ],
+                          "policy": "error",
+                          "type": "envVars",
+                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        },
+                        "envVars at 200:250" => {
+                          "manifest": [
+                            "package-lock.json",
+                          ],
+                          "policy": "error",
+                          "type": "envVars",
+                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        },
                       },
                     },
                   },
                 },
               },
+              "healthy": false,
+              "options": {
+                "fold": "none",
+                "reportLevel": "warn",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "healthy": false,
-            "options": {
-              "fold": "none",
-              "reportLevel": "warn",
-            },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "message": "The report contains at least one alert that violates the policies set by your organization",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(false)
-        expect((result as ScanReport)['alerts']?.size).toBe(1)
+        // "ok" only reports on the state of the command, not the report health
+        expect(result.ok).toBe(true)
+        // the report health itself should be false.
+        expect(result.ok && result.data.healthy).toBe(false)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(1)
       })
 
       it('should return a healthy report with alert when an alert violates at warn', () => {
@@ -150,43 +164,47 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {
-              "npm" => Map {
-                "tslib" => Map {
-                  "1.14.1" => Map {
-                    "package/which.js" => Map {
-                      "envVars at 54:72" => {
-                        "manifest": [
-                          "package-lock.json",
-                        ],
-                        "policy": "warn",
-                        "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
-                      },
-                      "envVars at 200:250" => {
-                        "manifest": [
-                          "package-lock.json",
-                        ],
-                        "policy": "warn",
-                        "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+            "data": {
+              "alerts": Map {
+                "npm" => Map {
+                  "tslib" => Map {
+                    "1.14.1" => Map {
+                      "package/which.js" => Map {
+                        "envVars at 54:72" => {
+                          "manifest": [
+                            "package-lock.json",
+                          ],
+                          "policy": "warn",
+                          "type": "envVars",
+                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        },
+                        "envVars at 200:250" => {
+                          "manifest": [
+                            "package-lock.json",
+                          ],
+                          "policy": "warn",
+                          "type": "envVars",
+                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        },
                       },
                     },
                   },
                 },
               },
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "warn",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "warn",
-            },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(1)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(1)
       })
 
       it('should return a healthy report without alerts when an alert violates at monitor', () => {
@@ -210,18 +228,22 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {},
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "warn",
+            "data": {
+              "alerts": Map {},
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "warn",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(0)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(0)
       })
 
       it('should return a healthy report without alerts when an alert violates at ignore', () => {
@@ -245,18 +267,22 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {},
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "warn",
+            "data": {
+              "alerts": Map {},
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "warn",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(0)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(0)
       })
 
       it('should return a healthy report without alerts when an alert violates at defer', () => {
@@ -280,18 +306,22 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {},
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "warn",
+            "data": {
+              "alerts": Map {},
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "warn",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(0)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(0)
       })
 
       it('should return a healthy report without alerts when an alert has no policy value', () => {
@@ -313,18 +343,22 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {},
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "warn",
+            "data": {
+              "alerts": Map {},
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "warn",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(0)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(0)
       })
 
       it('should return a healthy report without alerts when an alert has no policy entry', () => {
@@ -344,18 +378,22 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {},
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "warn",
+            "data": {
+              "alerts": Map {},
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "warn",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(0)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(0)
       })
     })
 
@@ -381,18 +419,22 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {},
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "ignore",
+            "data": {
+              "alerts": Map {},
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "ignore",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(0)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(0)
       })
 
       it('should return a sick report with alert when an alert violates at error', () => {
@@ -416,43 +458,48 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {
-              "npm" => Map {
-                "tslib" => Map {
-                  "1.14.1" => Map {
-                    "package/which.js" => Map {
-                      "envVars at 54:72" => {
-                        "manifest": [
-                          "package-lock.json",
-                        ],
-                        "policy": "error",
-                        "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
-                      },
-                      "envVars at 200:250" => {
-                        "manifest": [
-                          "package-lock.json",
-                        ],
-                        "policy": "error",
-                        "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+            "data": {
+              "alerts": Map {
+                "npm" => Map {
+                  "tslib" => Map {
+                    "1.14.1" => Map {
+                      "package/which.js" => Map {
+                        "envVars at 54:72" => {
+                          "manifest": [
+                            "package-lock.json",
+                          ],
+                          "policy": "error",
+                          "type": "envVars",
+                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        },
+                        "envVars at 200:250" => {
+                          "manifest": [
+                            "package-lock.json",
+                          ],
+                          "policy": "error",
+                          "type": "envVars",
+                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        },
                       },
                     },
                   },
                 },
               },
+              "healthy": false,
+              "options": {
+                "fold": "none",
+                "reportLevel": "ignore",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "healthy": false,
-            "options": {
-              "fold": "none",
-              "reportLevel": "ignore",
-            },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "message": "The report contains at least one alert that violates the policies set by your organization",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(false)
-        expect((result as ScanReport)['alerts']?.size).toBe(1)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(false)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(1)
       })
 
       it('should return a healthy report with alert when an alert violates at warn', () => {
@@ -476,43 +523,47 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {
-              "npm" => Map {
-                "tslib" => Map {
-                  "1.14.1" => Map {
-                    "package/which.js" => Map {
-                      "envVars at 54:72" => {
-                        "manifest": [
-                          "package-lock.json",
-                        ],
-                        "policy": "warn",
-                        "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
-                      },
-                      "envVars at 200:250" => {
-                        "manifest": [
-                          "package-lock.json",
-                        ],
-                        "policy": "warn",
-                        "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+            "data": {
+              "alerts": Map {
+                "npm" => Map {
+                  "tslib" => Map {
+                    "1.14.1" => Map {
+                      "package/which.js" => Map {
+                        "envVars at 54:72" => {
+                          "manifest": [
+                            "package-lock.json",
+                          ],
+                          "policy": "warn",
+                          "type": "envVars",
+                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        },
+                        "envVars at 200:250" => {
+                          "manifest": [
+                            "package-lock.json",
+                          ],
+                          "policy": "warn",
+                          "type": "envVars",
+                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        },
                       },
                     },
                   },
                 },
               },
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "ignore",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "ignore",
-            },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(1)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(1)
       })
 
       it('should return a healthy report with alert when an alert violates at monitor', () => {
@@ -536,43 +587,47 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {
-              "npm" => Map {
-                "tslib" => Map {
-                  "1.14.1" => Map {
-                    "package/which.js" => Map {
-                      "envVars at 54:72" => {
-                        "manifest": [
-                          "package-lock.json",
-                        ],
-                        "policy": "monitor",
-                        "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
-                      },
-                      "envVars at 200:250" => {
-                        "manifest": [
-                          "package-lock.json",
-                        ],
-                        "policy": "monitor",
-                        "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+            "data": {
+              "alerts": Map {
+                "npm" => Map {
+                  "tslib" => Map {
+                    "1.14.1" => Map {
+                      "package/which.js" => Map {
+                        "envVars at 54:72" => {
+                          "manifest": [
+                            "package-lock.json",
+                          ],
+                          "policy": "monitor",
+                          "type": "envVars",
+                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        },
+                        "envVars at 200:250" => {
+                          "manifest": [
+                            "package-lock.json",
+                          ],
+                          "policy": "monitor",
+                          "type": "envVars",
+                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        },
                       },
                     },
                   },
                 },
               },
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "ignore",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "ignore",
-            },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(1)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(1)
       })
 
       it('should return a healthy report with alert when an alert violates at ignore', () => {
@@ -596,43 +651,47 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {
-              "npm" => Map {
-                "tslib" => Map {
-                  "1.14.1" => Map {
-                    "package/which.js" => Map {
-                      "envVars at 54:72" => {
-                        "manifest": [
-                          "package-lock.json",
-                        ],
-                        "policy": "ignore",
-                        "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
-                      },
-                      "envVars at 200:250" => {
-                        "manifest": [
-                          "package-lock.json",
-                        ],
-                        "policy": "ignore",
-                        "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+            "data": {
+              "alerts": Map {
+                "npm" => Map {
+                  "tslib" => Map {
+                    "1.14.1" => Map {
+                      "package/which.js" => Map {
+                        "envVars at 54:72" => {
+                          "manifest": [
+                            "package-lock.json",
+                          ],
+                          "policy": "ignore",
+                          "type": "envVars",
+                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        },
+                        "envVars at 200:250" => {
+                          "manifest": [
+                            "package-lock.json",
+                          ],
+                          "policy": "ignore",
+                          "type": "envVars",
+                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        },
                       },
                     },
                   },
                 },
               },
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "ignore",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "ignore",
-            },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(1)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(1)
       })
 
       it('should return a healthy report without alerts when an alert violates at defer', () => {
@@ -656,18 +715,22 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {},
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "ignore",
+            "data": {
+              "alerts": Map {},
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "ignore",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(0)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(0)
       })
 
       it('should return a healthy report without alerts when an alert has no policy value', () => {
@@ -689,18 +752,22 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {},
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "ignore",
+            "data": {
+              "alerts": Map {},
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "ignore",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(0)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(0)
       })
 
       it('should return a healthy report without alerts when an alert has no policy entry', () => {
@@ -720,18 +787,22 @@ describe('generate-report', () => {
 
         expect(result).toMatchInlineSnapshot(`
           {
-            "alerts": Map {},
-            "healthy": true,
-            "options": {
-              "fold": "none",
-              "reportLevel": "ignore",
+            "data": {
+              "alerts": Map {},
+              "healthy": true,
+              "options": {
+                "fold": "none",
+                "reportLevel": "ignore",
+              },
+              "orgSlug": "fakeorg",
+              "scanId": "scan-ai-dee",
             },
-            "orgSlug": "fakeorg",
-            "scanId": "scan-ai-dee",
+            "ok": true,
           }
         `)
-        expect(result.healthy).toBe(true)
-        expect((result as ScanReport)['alerts']?.size).toBe(0)
+        expect(result.ok).toBe(true)
+        expect(result.ok && result.data.healthy).toBe(true)
+        expect((result.data as ScanReport)['alerts']?.size).toBe(0)
       })
     })
   })
@@ -758,39 +829,43 @@ describe('generate-report', () => {
 
       expect(result).toMatchInlineSnapshot(`
         {
-          "alerts": Map {
-            "npm" => Map {
-              "tslib" => Map {
-                "1.14.1" => Map {
-                  "package/which.js" => Map {
-                    "envVars at 54:72" => {
-                      "manifest": [
-                        "package-lock.json",
-                      ],
-                      "policy": "error",
-                      "type": "envVars",
-                      "url": "https://socket.dev/npm/package/tslib/1.14.1",
-                    },
-                    "envVars at 200:250" => {
-                      "manifest": [
-                        "package-lock.json",
-                      ],
-                      "policy": "error",
-                      "type": "envVars",
-                      "url": "https://socket.dev/npm/package/tslib/1.14.1",
+          "data": {
+            "alerts": Map {
+              "npm" => Map {
+                "tslib" => Map {
+                  "1.14.1" => Map {
+                    "package/which.js" => Map {
+                      "envVars at 54:72" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "error",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
+                      "envVars at 200:250" => {
+                        "manifest": [
+                          "package-lock.json",
+                        ],
+                        "policy": "error",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      },
                     },
                   },
                 },
               },
             },
+            "healthy": false,
+            "options": {
+              "fold": "none",
+              "reportLevel": "warn",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
           },
-          "healthy": false,
-          "options": {
-            "fold": "none",
-            "reportLevel": "warn",
-          },
-          "orgSlug": "fakeorg",
-          "scanId": "scan-ai-dee",
+          "message": "The report contains at least one alert that violates the policies set by your organization",
+          "ok": true,
         }
       `)
     })
@@ -816,29 +891,33 @@ describe('generate-report', () => {
 
       expect(result).toMatchInlineSnapshot(`
         {
-          "alerts": Map {
-            "npm" => Map {
-              "tslib" => Map {
-                "1.14.1" => Map {
-                  "package/which.js" => {
-                    "manifest": [
-                      "package-lock.json",
-                    ],
-                    "policy": "error",
-                    "type": "envVars",
-                    "url": "https://socket.dev/npm/package/tslib/1.14.1",
+          "data": {
+            "alerts": Map {
+              "npm" => Map {
+                "tslib" => Map {
+                  "1.14.1" => Map {
+                    "package/which.js" => {
+                      "manifest": [
+                        "package-lock.json",
+                      ],
+                      "policy": "error",
+                      "type": "envVars",
+                      "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                    },
                   },
                 },
               },
             },
+            "healthy": false,
+            "options": {
+              "fold": "file",
+              "reportLevel": "warn",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
           },
-          "healthy": false,
-          "options": {
-            "fold": "file",
-            "reportLevel": "warn",
-          },
-          "orgSlug": "fakeorg",
-          "scanId": "scan-ai-dee",
+          "message": "The report contains at least one alert that violates the policies set by your organization",
+          "ok": true,
         }
       `)
     })
@@ -864,27 +943,31 @@ describe('generate-report', () => {
 
       expect(result).toMatchInlineSnapshot(`
         {
-          "alerts": Map {
-            "npm" => Map {
-              "tslib" => Map {
-                "1.14.1" => {
-                  "manifest": [
-                    "package-lock.json",
-                  ],
-                  "policy": "error",
-                  "type": "envVars",
-                  "url": "https://socket.dev/npm/package/tslib/1.14.1",
+          "data": {
+            "alerts": Map {
+              "npm" => Map {
+                "tslib" => Map {
+                  "1.14.1" => {
+                    "manifest": [
+                      "package-lock.json",
+                    ],
+                    "policy": "error",
+                    "type": "envVars",
+                    "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                  },
                 },
               },
             },
+            "healthy": false,
+            "options": {
+              "fold": "version",
+              "reportLevel": "warn",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
           },
-          "healthy": false,
-          "options": {
-            "fold": "version",
-            "reportLevel": "warn",
-          },
-          "orgSlug": "fakeorg",
-          "scanId": "scan-ai-dee",
+          "message": "The report contains at least one alert that violates the policies set by your organization",
+          "ok": true,
         }
       `)
     })
@@ -910,25 +993,29 @@ describe('generate-report', () => {
 
       expect(result).toMatchInlineSnapshot(`
         {
-          "alerts": Map {
-            "npm" => Map {
-              "tslib" => {
-                "manifest": [
-                  "package-lock.json",
-                ],
-                "policy": "error",
-                "type": "envVars",
-                "url": "https://socket.dev/npm/package/tslib/1.14.1",
+          "data": {
+            "alerts": Map {
+              "npm" => Map {
+                "tslib" => {
+                  "manifest": [
+                    "package-lock.json",
+                  ],
+                  "policy": "error",
+                  "type": "envVars",
+                  "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                },
               },
             },
+            "healthy": false,
+            "options": {
+              "fold": "pkg",
+              "reportLevel": "warn",
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee",
           },
-          "healthy": false,
-          "options": {
-            "fold": "pkg",
-            "reportLevel": "warn",
-          },
-          "orgSlug": "fakeorg",
-          "scanId": "scan-ai-dee",
+          "message": "The report contains at least one alert that violates the policies set by your organization",
+          "ok": true,
         }
       `)
     })
