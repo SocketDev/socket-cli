@@ -142,7 +142,7 @@ async function run(
     },
     {
       test: !!scanId,
-      message: 'Scan ID to fetch',
+      message: 'Scan ID to report on',
       pass: 'ok',
       fail: 'missing'
     },

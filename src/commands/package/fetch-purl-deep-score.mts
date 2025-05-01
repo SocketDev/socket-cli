@@ -58,7 +58,7 @@ export interface PurlDataResponse {
 export async function fetchPurlDeepScore(
   purl: string
 ): Promise<CResult<PurlDataResponse>> {
-  logger.info(`Requesting deep score data for this purl: ${purl}`)
+  logger.error(`Requesting deep score data for this purl: ${purl}`)
 
   const apiToken = getDefaultToken()
   if (!apiToken) {
@@ -96,7 +96,7 @@ export async function fetchPurlDeepScore(
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${result.statusText}${err ? ` (cause: ${err}` : ''}`
+      cause: `${result.statusText}${err ? ` (cause: ${err})` : ''}`
     }
   }
 
