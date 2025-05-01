@@ -30,5 +30,5 @@ export async function handleUpdateRepo(
     visibility
   })
 
-  await outputUpdateRepo(data, outputKind)
+  await outputUpdateRepo(data, repoName, outputKind)
 }

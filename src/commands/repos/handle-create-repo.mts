@@ -30,5 +30,5 @@ export async function handleCreateRepo(
     visibility
   })
 
-  await outputCreateRepo(data, outputKind)
+  await outputCreateRepo(data, repoName, outputKind)
 }

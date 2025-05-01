@@ -10,5 +10,5 @@ export async function handleDeleteRepo(
 ) {
   const data = await fetchDeleteRepo(orgSlug, repoName)
 
-  await outputDeleteRepo(data, outputKind)
+  await outputDeleteRepo(data, repoName, outputKind)
 }
