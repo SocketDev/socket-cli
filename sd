@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+# node 20 does not support strip types (yet) so we have go the slow path
+# Note that we don't rebuild here... this will be annoying later but I
+# think this is only for dev where we don't need to run node 20.
+# Should we emit a warning anyways? Maybe.
+if [ "$(node -v | cut -d'v' -f2 | cut -d'.' -f1)" -lt 22 ]; then
+  npm run s -- "$@"
+else
+  node --experimental-strip-types --no-warnings src/cli.mts "$@"
+fi
