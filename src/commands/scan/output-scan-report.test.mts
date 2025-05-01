@@ -9,55 +9,63 @@ describe('output-scan-report', () => {
     it('should be able to generate a healthy json report', () => {
       expect(toJsonReport(getHealthyReport())).toMatchInlineSnapshot(`
         "{
-          "alerts": {},
-          "healthy": true,
-          "options": {
-            "fold": "none",
-            "reportLevel": "warn"
-          },
-          "orgSlug": "fakeorg",
-          "scanId": "scan-ai-dee"
-        }"
+          "ok": true,
+          "data": {
+            "alerts": {},
+            "healthy": true,
+            "options": {
+              "fold": "none",
+              "reportLevel": "warn"
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee"
+          }
+        }
+        "
       `)
     })
 
     it('should be able to generate an unhealthy json report', () => {
       expect(toJsonReport(getUnhealthyReport())).toMatchInlineSnapshot(`
         "{
-          "alerts": {
-            "npm": {
-              "tslib": {
-                "1.14.1": {
-                  "package/which.js": {
-                    "envVars at 54:72": {
-                      "manifest": [
-                        "package-lock.json"
-                      ],
-                      "policy": "error",
-                      "type": "envVars",
-                      "url": "https://socket.dev/npm/package/tslib/1.14.1"
-                    },
-                    "envVars at 200:250": {
-                      "manifest": [
-                        "package-lock.json"
-                      ],
-                      "policy": "error",
-                      "type": "envVars",
-                      "url": "https://socket.dev/npm/package/tslib/1.14.1"
+          "ok": true,
+          "data": {
+            "alerts": {
+              "npm": {
+                "tslib": {
+                  "1.14.1": {
+                    "package/which.js": {
+                      "envVars at 54:72": {
+                        "manifest": [
+                          "package-lock.json"
+                        ],
+                        "policy": "error",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1"
+                      },
+                      "envVars at 200:250": {
+                        "manifest": [
+                          "package-lock.json"
+                        ],
+                        "policy": "error",
+                        "type": "envVars",
+                        "url": "https://socket.dev/npm/package/tslib/1.14.1"
+                      }
                     }
                   }
                 }
               }
-            }
-          },
-          "healthy": false,
-          "options": {
-            "fold": "none",
-            "reportLevel": "warn"
-          },
-          "orgSlug": "fakeorg",
-          "scanId": "scan-ai-dee"
-        }"
+            },
+            "healthy": false,
+            "options": {
+              "fold": "none",
+              "reportLevel": "warn"
+            },
+            "orgSlug": "fakeorg",
+            "scanId": "scan-ai-dee"
+          }
+        }
+        "
       `)
     })
   })
