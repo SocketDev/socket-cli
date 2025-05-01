@@ -115,6 +115,7 @@ export async function npmFix(
 
   // Lazily access constants.ENV.CI.
   const isCi = constants.ENV.CI
+  const baseBranch = isCi ? getBaseGitBranch() : ''
   const workspacePkgJsonPaths = await globWorkspace(
     pkgEnvDetails.agent,
     rootPath
@@ -243,6 +244,13 @@ export async function npmFix(
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
             debugLog(`Nothing changed for ${workspaceName}, skipping install`)
+            // Reset things just in case.
+            if (isCi) {
+              // eslint-disable-next-line no-await-in-loop
+              await gitHardReset(baseBranch, cwd)
+              // eslint-disable-next-line no-await-in-loop
+              await gitCleanFdx(cwd)
+            }
             continue
           }
 
@@ -266,7 +274,6 @@ export async function npmFix(
             error = e
           }
 
-          const baseBranch = isCi ? getBaseGitBranch() : ''
           if (!errored && isCi) {
             const branch = getSocketBranchName(
               oldPurl,
@@ -328,7 +335,7 @@ export async function npmFix(
               // eslint-disable-next-line no-await-in-loop
               await Promise.all([
                 removeNodeModules(cwd),
-                editablePkgJson.save()
+                editablePkgJson.save({ ignoreWhitespace: true })
               ])
               // eslint-disable-next-line no-await-in-loop
               await install(arb.idealTree!, { cwd })
