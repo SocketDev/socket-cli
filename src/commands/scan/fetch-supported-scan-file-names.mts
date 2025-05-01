@@ -23,7 +23,7 @@ export async function fetchSupportedScanFileNames(): Promise<
   )
 
   spinner.stop()
-  logger.success('Received response while fetched supported scan file types.')
+  logger.error('Received response while fetched supported scan file types.')
 
   if (!result.success) {
     return handleFailedApiResponse('getReportSupportedFiles', result)
