@@ -134,7 +134,6 @@ export async function pnpmFix(
       )
 
   const infoByPkg = getCveInfoByAlertsMap(alertsMap, { limit })
-  console.log(infoByPkg)
   if (!infoByPkg) {
     spinner?.stop()
     logger.info('No fixable vulnerabilities found.')

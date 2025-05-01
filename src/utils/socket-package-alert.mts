@@ -332,7 +332,6 @@ export function getCveInfoByAlertsMap(
     __proto__: null,
     ...options
   } as GetCveInfoByPackageOptions
-  console.log('limit', limit)
   const exclude = {
     __proto__: null,
     upgradable: true,
