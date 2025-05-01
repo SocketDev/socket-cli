@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+node --experimental-strip-types --no-warnings src/cli.mts "$@"
