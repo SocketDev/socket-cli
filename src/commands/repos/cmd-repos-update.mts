@@ -2,7 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleUpdateRepo } from './handle-update-repo.mts'
 import constants from '../../constants.mts'
-import { commonFlags } from '../../flags.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
@@ -21,6 +21,7 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
+    ...outputFlags,
     defaultBranch: {
       type: 'string',
       shortFlag: 'b',

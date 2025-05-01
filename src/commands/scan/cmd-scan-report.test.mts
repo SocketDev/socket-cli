@@ -84,7 +84,7 @@ describe('socket scan report', async () => {
 
           - Org name must be the first argument (\\x1b[31mmissing\\x1b[39m)
 
-          - Scan ID to fetch (\\x1b[31mmissing\\x1b[39m)
+          - Scan ID to report on (\\x1b[31mmissing\\x1b[39m)
 
           - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)
         \\x1b[22m"

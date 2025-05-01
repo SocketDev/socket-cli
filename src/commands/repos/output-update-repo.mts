@@ -8,6 +8,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputUpdateRepo(
   result: CResult<SocketSdkReturnType<'updateOrgRepo'>['data']>,
+  repoName: string,
   outputKind: OutputKind
 ): Promise<void> {
   if (!result.ok) {
@@ -23,5 +24,5 @@ export async function outputUpdateRepo(
     return
   }
 
-  logger.success('Repository updated successfully')
+  logger.success(`Repository \`${repoName}\` updated successfully`)
 }

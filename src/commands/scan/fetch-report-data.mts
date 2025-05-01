@@ -60,7 +60,7 @@ export async function fetchReportData(
   function updateProgress() {
     if (finishedFetching) {
       spinner.stop()
-      logger.info(
+      logger.error(
         `Scan result: ${scanStatus}. Security policy: ${policyStatus}.`
       )
     } else {
@@ -85,7 +85,7 @@ export async function fetchReportData(
       return {
         ok: false,
         message: 'Socket API returned an error',
-        cause: `${response.statusText}${err ? ` (cause: ${err}` : ''}`
+        cause: `${response.statusText}${err ? ` (cause: ${err})` : ''}`
       }
     }
 
