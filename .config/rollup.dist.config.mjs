@@ -371,7 +371,7 @@ export default async () => {
           plugins: [
             // Remove Rollup's browser interop for import.meta.url.
             socketModifyPlugin({
-              find: /(?<=const require(?:\$+\d+)?\s*=)\s*Module\.createRequire[^;]+;/g,
+              find: /(?<=const +require(?:\$+\d+)?\s*=)\s*Module\.createRequire[^;]+;/g,
               replace(match) {
                 const pathToUrlCode =
                   /require(?:\$+\d+)?(?:\([^)]+\))?\.pathToFileURL\(__filename\)\.href/.exec(
