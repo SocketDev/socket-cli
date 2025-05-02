@@ -46,16 +46,6 @@ const builtinAliases = builtinModules.reduce((o, n) => {
   return o
 }, {})
 
-const danglingRequiresRegExp = /^\s*require(?:\$+\d+)?\(["'].+?["']\);?\r?\n/gm
-
-const requireTinyColorsRegExp = /require(?:\$+\d+)?\(["']tiny-colors["']\)/g
-
-const requireUrlAssignmentRegExp =
-  /(?<=var +)[$\w]+(?= *= *require(?:\$+\d+)?\(["']node:url["']\))/
-
-const splitUrlRequiresRegExp =
-  /require(?:\$+\d+)?\(["']u["']\s*\+\s*["']rl["']\)/g
-
 let _rootPkgJson
 function getRootPkgJsonSync() {
   if (_rootPkgJson === undefined) {
@@ -256,14 +246,18 @@ export default function baseConfig(extendConfig = {}) {
       // builds which causes 'tiny-colors' to be treated as an external, not bundled,
       // require.
       socketModifyPlugin({
-        find: requireTinyColorsRegExp,
+        find: /require(?:\$+\d+)?\(["']tiny-colors["']\)/g,
         replace: "require('yoctocolors-cjs')"
       }),
       // Try to convert `require('u' + 'rl')` into something like `require$$2$3`.
       socketModifyPlugin({
-        find: splitUrlRequiresRegExp,
+        find: /require(?:\$+\d+)?\(["']u["']\s*\+\s*["']rl["']\)/g,
         replace(match) {
-          return requireUrlAssignmentRegExp.exec(this.input)?.[0] ?? match
+          return (
+            /(?<=var +)[$\w]+(?=\s*=\s*require(?:\$+\d+)?\(["']node:url["']\))/.exec(
+              this.input
+            )?.[0] ?? match
+          )
         }
       }),
       // Remove dangling require calls, e.g. require calls not associated with
@@ -271,7 +265,7 @@ export default function baseConfig(extendConfig = {}) {
       //   require('node:util')
       //   require('graceful-fs')
       socketModifyPlugin({
-        find: danglingRequiresRegExp,
+        find: /^\s*require(?:\$+\d+)?\(["'].+?["']\);?\r?\n/gm,
         replace: ''
       }),
       ...extendPlugins
