@@ -1,5 +1,4 @@
-import constants from '../../constants.mts'
-import { handleApiCall, handleFailedApiResponse } from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -11,32 +10,8 @@ export async function fetchRepoAnalyticsData(
 ): Promise<CResult<SocketSdkReturnType<'getRepoAnalytics'>['data']>> {
   const sockSdk = await setupSdk()
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start(`Requesting analytics data from API...`)
-
-  const result = await handleApiCall(
+  return await handleApiCall(
     sockSdk.getRepoAnalytics(repo, time.toString()),
-    'fetching analytics data'
+    'analytics data'
   )
-
-  spinner.successAndStop(`Received API response.`)
-
-  if (result.success === false) {
-    return handleFailedApiResponse('getRepoAnalytics', result)
-  }
-
-  if (!result.data.length) {
-    return {
-      ok: true,
-      message: 'No analytics data is available for this repository yet.',
-      data: []
-    }
-  }
-
-  return {
-    ok: true,
-    data: result.data
-  }
 }

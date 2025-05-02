@@ -1,7 +1,10 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
-import { handleApiCall, handleFailedApiResponse } from '../../utils/api.mts'
+import {
+  handleFailedApiResponse,
+  tmpHandleApiCall as oldHandleApiCall
+} from '../../utils/api.mts'
 import { getPublicToken, setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -24,8 +27,8 @@ export async function fetchPurlsShallowScore(
 
   spinner.start(`Requesting data ...`)
 
-  const result: Awaited<SocketSdkResultType<'batchPackageFetch'>> =
-    await handleApiCall(
+  const result: SocketSdkResultType<'batchPackageFetch'> =
+    await oldHandleApiCall(
       sockSdk.batchPackageFetch(
         {
           alerts: 'true'

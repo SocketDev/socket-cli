@@ -133,10 +133,10 @@ async function getDefaultOrgFromToken(): Promise<
 
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
-    'looking up organizations'
+    'list of organizations'
   )
 
-  if (result.success) {
+  if (result.ok) {
     const arr = Array.from(Object.values(result.data.organizations)).map(
       ({ slug }) => slug
     )
@@ -157,10 +157,10 @@ async function getEnforceableOrgsFromToken(): Promise<string[] | undefined> {
 
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
-    'looking up organizations'
+    'list of organizations'
   )
 
-  if (result.success) {
+  if (result.ok) {
     const arr = Array.from(Object.values(result.data.organizations)).map(
       ({ slug }) => slug
     )
