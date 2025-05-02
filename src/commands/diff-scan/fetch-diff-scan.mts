@@ -1,5 +1,5 @@
 import constants from '../../constants.mts'
-import { handleApiCall, handleApiError, queryApi } from '../../utils/api.mts'
+import { handleApiError, queryApi } from '../../utils/api.mts'
 import { getDefaultToken } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
