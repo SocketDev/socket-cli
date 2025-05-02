@@ -9,11 +9,5 @@ export async function fetchOrganization(): Promise<
 > {
   const sockSdk = await setupSdk()
 
-  return await handleApiCall(
-    sockSdk.getOrganizations(),
-    'Requesting organization list from API...',
-    'Received API response (requested organization list).',
-    'Error fetching organization list',
-    'getOrganizations'
-  )
+  return await handleApiCall(sockSdk.getOrganizations(), 'organization list')
 }

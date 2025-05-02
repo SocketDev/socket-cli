@@ -12,9 +12,6 @@ export async function fetchScanMetadata(
 
   return await handleApiCall(
     sockSdk.getOrgFullScanMetadata(orgSlug, scanId),
-    'Requesting meta data for a full scan...',
-    'Received API response (requested meta data for a full scan).',
-    'Error fetching meta data for a full scan',
-    'getOrgFullScanMetadata'
+    'meta data for a full scan'
   )
 }

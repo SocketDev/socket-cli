@@ -11,9 +11,6 @@ export async function fetchOrgAnalyticsData(
 
   return await handleApiCall(
     sockSdk.getOrgAnalytics(time.toString()),
-    'Requesting analytics data from API...',
-    'Received API response (requested analytics data).',
-    'Error fetching analytics data',
-    'getOrgAnalytics'
+    'analytics data'
   )
 }

@@ -46,9 +46,6 @@ export async function fetchCreateOrgFullScan(
       packagePaths,
       cwd
     ),
-    'Requesting to create a scan...',
-    'Received API response (requested to create a scan).',
-    'Error creating scan',
-    'CreateOrgFullScan'
+    'to create a scan'
   )
 }

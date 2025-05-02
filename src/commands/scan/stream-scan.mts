@@ -13,13 +13,8 @@ export async function streamScan(
   logger.error('Requesting data from API...')
 
   // Note: this will write to stdout or target file. It's not a noop
-  const data = await handleApiCall(
+  return await handleApiCall(
     sockSdk.getOrgFullScan(orgSlug, scanId, file === '-' ? undefined : file),
-    'Fetching a scan',
-    'Received API response (requested a scan).',
-    'Error fetching a scan',
-    'GetOrgFullScan'
+    'a scan'
   )
-
-  return data
 }

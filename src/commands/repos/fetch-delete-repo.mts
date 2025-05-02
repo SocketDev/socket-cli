@@ -12,9 +12,6 @@ export async function fetchDeleteRepo(
 
   return await handleApiCall(
     sockSdk.deleteOrgRepo(orgSlug, repoName),
-    'Requesting to delete a repository...',
-    'Received API response (requested to delete a repository).',
-    'Error deleting repository',
-    'deleteOrgRepo'
+    'to delete a repository'
   )
 }

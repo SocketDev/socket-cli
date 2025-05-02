@@ -11,9 +11,6 @@ export async function fetchLicensePolicy(
 
   return await handleApiCall(
     sockSdk.getOrgLicensePolicy(orgSlug),
-    'looking up organization quota',
-    'Received organization license policy response.',
-    'Error fetching organization license policy',
-    'getOrgLicensePolicy'
+    'organization license policy'
   )
 }

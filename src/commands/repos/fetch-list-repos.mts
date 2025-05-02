@@ -26,9 +26,6 @@ export async function fetchListRepos({
       per_page: String(per_page),
       page: String(page)
     }),
-    'Requesting list of repositories...',
-    'Received API response (requested list of repositories).',
-    'Error fetching list of repositories',
-    'getOrgRepoList'
+    'list of repositories'
   )
 }

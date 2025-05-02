@@ -12,9 +12,6 @@ export async function fetchViewRepo(
 
   return await handleApiCall(
     sockSdk.getOrgRepo(orgSlug, repoName),
-    'Requesting repository data...',
-    'Received API response (requested repository data).',
-    'Error fetching repository data',
-    'getOrgRepo'
+    'repository data'
   )
 }

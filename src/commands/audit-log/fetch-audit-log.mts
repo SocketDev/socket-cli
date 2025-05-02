@@ -30,9 +30,6 @@ export async function fetchAuditLog({
       page: String(page),
       per_page: String(perPage)
     }),
-    `Looking up audit log for ${orgSlug}\n`,
-    'Received API response (requested audit log).',
-    'Error fetching audit log',
-    'getAuditLogEvents'
+    `audit log for ${orgSlug}`
   )
 }

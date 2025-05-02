@@ -16,17 +16,11 @@ export async function fetchPackageInfo(
 
   const result = await handleApiCall(
     sockSdk.getIssuesByNPMPackage(pkgName, pkgVersion),
-    'Requesting package issues...',
-    'Received API response (requested package issues).',
-    'Error fetching package issues',
-    'getIssuesByNPMPackage'
+    'package issues'
   )
   const scoreResult = await handleApiCall(
     sockSdk.getScoreByNPMPackage(pkgName, pkgVersion),
-    'looking up package score',
-    'Received API response (requested package score).',
-    'Error fetching package score',
-    'getScoreByNPMPackage'
+    'package score'
   )
 
   if (!result.ok) {

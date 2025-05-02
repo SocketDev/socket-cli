@@ -25,13 +25,8 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
       perPage: '10',
       page: '0'
     }),
-    'Requesting list of repositories...',
-    'Received API response (requested list of repositories).',
-    'Error fetching list of repositories',
-    'getOrgRepoList'
+    'list of repositories'
   )
-
-  console.log('huh wtf?', result)
 
   // Ignore a failed request here. It was not the primary goal of
   // running this command and reporting it only leads to end-user confusion.
@@ -45,10 +40,7 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
       // Do an explicit request so we can assert that the cwd exists or not
       const result = await handleApiCall(
         sockSdk.getOrgRepo(orgSlug, currentDirName),
-        'Requesting to check if current cwd is a known repo...',
-        'Received API response (requested to check if current cwd is a known repo).',
-        'Error checking if current cwd is a known repo',
-        'getOrgRepo'
+        'check if current cwd is a known repo'
       )
       if (result.ok) {
         cwdIsKnown = true

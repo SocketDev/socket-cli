@@ -6,12 +6,10 @@ import { setupSdk } from '../../utils/sdk.mts'
 
 export async function suggestOrgSlug(): Promise<string | void> {
   const sockSdk = await setupSdk()
+
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
-    'looking up organizations',
-    'Received API response (requested list of organizations).',
-    'Error fetching list of organizations',
-    'getOrganizations'
+    'list of organizations'
   )
 
   // Ignore a failed request here. It was not the primary goal of

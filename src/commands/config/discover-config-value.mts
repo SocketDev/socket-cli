@@ -133,10 +133,7 @@ async function getDefaultOrgFromToken(): Promise<
 
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
-    'Requesting list of organizations...',
-    'Received API response (requested list of organizations).',
-    'Error fetching list of organizations',
-    'getOrganizations'
+    'list of organizations'
   )
 
   if (result.ok) {
@@ -160,10 +157,7 @@ async function getEnforceableOrgsFromToken(): Promise<string[] | undefined> {
 
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
-    'Requesting list of organizations...',
-    'Received API response (requested list of organizations).',
-    'Error fetching list of organizations',
-    'getOrganizations'
+    'list of organizations'
   )
 
   if (result.ok) {

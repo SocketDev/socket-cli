@@ -37,15 +37,8 @@ export async function fetchDiffScan({
     }
   }
 
-  const result = (await response.json()) as Promise<
-    SocketSdkReturnType<'GetOrgDiffScan'>
-  >
+  const result =
+    (await response.json()) as SocketSdkReturnType<'GetOrgDiffScan'>['data']
 
-  return await handleApiCall(
-    result,
-    'Deserializing json',
-    'Received API response (requested a diff-scan).',
-    'Error fetching diff-scan',
-    'GetOrgDiffScan'
-  )
+  return { ok: true, data: result }
 }

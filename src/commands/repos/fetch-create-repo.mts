@@ -29,9 +29,6 @@ export async function fetchCreateRepo({
       default_branch,
       visibility
     }),
-    'Requesting to create a repository...',
-    'Received API response (requested to create a repository).',
-    'Error creating repository',
-    'createOrgRepo'
+    'to create a repository'
   )
 }

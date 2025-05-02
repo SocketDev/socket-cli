@@ -11,9 +11,6 @@ export async function fetchSecurityPolicy(
 
   return await handleApiCall(
     sockSdk.getOrgSecurityPolicy(orgSlug),
-    'Requesting organization security policy from API...',
-    'Received API response (requested organization security policy).',
-    'Error fetching organization security policy',
-    'getOrgSecurityPolicy'
+    'organization security policy'
   )
 }

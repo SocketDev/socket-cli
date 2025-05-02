@@ -9,11 +9,5 @@ export async function fetchQuota(): Promise<
 > {
   const sockSdk = await setupSdk()
 
-  return await handleApiCall(
-    sockSdk.getQuota(),
-    'Requesting token quota from API...',
-    'Received API response (requested token quota).',
-    'Error fetching token quota',
-    'getQuota'
-  )
+  return await handleApiCall(sockSdk.getQuota(), 'token quota')
 }

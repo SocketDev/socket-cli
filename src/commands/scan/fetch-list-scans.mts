@@ -35,9 +35,6 @@ export async function fetchListScans({
       page: String(page),
       from: from_time
     }),
-    'Requesting list of scans...',
-    'Received API response (requested list of scans).',
-    'Error fetching list of scans',
-    'getOrgFullScanList'
+    'list of scans'
   )
 }

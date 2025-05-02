@@ -12,9 +12,6 @@ export async function fetchRepoAnalyticsData(
 
   return await handleApiCall(
     sockSdk.getRepoAnalytics(repo, time.toString()),
-    'Requesting analytics data from API...',
-    'Received API response (requested analytics data).',
-    'Error fetching analytics data',
-    'getRepoAnalytics'
+    'analytics data'
   )
 }

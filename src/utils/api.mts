@@ -51,25 +51,25 @@ export function handleFailedApiResponse<T extends SocketSdkOperations>(
 
 export async function handleApiCall<T extends SocketSdkOperations>(
   value: Promise<SocketSdkResultType<T>>,
-  spinnerBefore: string,
-  spinnerAfterOk: string,
-  spinnerAfterError: string,
-  description: string
+  fetchingDesc: string
 ): Promise<CResult<SocketSdkReturnType<T>['data']>> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  spinner.start(spinnerBefore)
+  spinner.start(`Requesting ${fetchingDesc} from API...`)
 
   let result: SocketSdkResultType<T>
   try {
     result = await value
 
-    spinner.successAndStop(spinnerAfterOk)
+    // TODO: info, not success (looks weird when response is non-200)
+    spinner.successAndStop(
+      `Received API response (after requesting ${fetchingDesc}).`
+    )
   } catch (e) {
-    spinner.failAndStop(spinnerAfterError)
+    spinner.failAndStop(`An error was thrown while requesting ${fetchingDesc}`)
 
-    debugLog(`handleApiCall(${description}) threw error:\n`, e)
+    debugLog(`handleApiCall(${fetchingDesc}) threw error:\n`, e)
 
     const message = `${e || 'No error message returned'}`
     const cause = `${e || 'No error message returned'}`
@@ -87,7 +87,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   if (result.success === false) {
     const err = result as SocketSdkErrorType<T>
     const message = `${err.error || 'No error message returned'}`
-    debugLog(`handleApiCall(${description}) bad response:\n`, err)
+    debugLog(`handleApiCall(${fetchingDesc}) bad response:\n`, err)
 
     return {
       ok: false,

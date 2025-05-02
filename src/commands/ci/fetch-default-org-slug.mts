@@ -19,10 +19,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
 
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
-    'Requesting list of organizations...',
-    'Received API response (requested list of organizations).',
-    'Error fetching list of organizations',
-    'getOrganizations'
+    'list of organizations'
   )
 
   if (!result.ok) {

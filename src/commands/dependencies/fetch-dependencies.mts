@@ -15,9 +15,6 @@ export async function fetchDependencies({
 
   return await handleApiCall(
     sockSdk.searchDependencies({ limit, offset }),
-    'Requesting organization dependencies from API...',
-    'Received response from API (requested organization dependencies).',
-    'Error fetching organization dependencies',
-    'searchDependencies'
+    'organization dependencies'
   )
 }

@@ -35,10 +35,7 @@ export async function attemptLogin(
 
   const result = await handleApiCall(
     sdk.getOrganizations(),
-    'Verifying API key...',
-    'Received response',
-    'Error verifying API key',
-    'getOrganizations'
+    'token verification'
   )
 
   if (!result.ok) {

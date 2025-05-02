@@ -30,9 +30,6 @@ export async function fetchUpdateRepo({
       default_branch,
       visibility
     }),
-    'Requesting to update a repository...',
-    'Received API response (requested to update a repository).',
-    'Error updating repository',
-    'updateOrgRepo'
+    'to update a repository'
   )
 }
