@@ -20,11 +20,11 @@ export async function suggestOrgSlug(): Promise<string | void> {
         'Missing org name; do you want to use any of these orgs for this scan?',
       choices: [
         ...Object.values(result.data.organizations).map(org => {
-          const slug = org.name ?? 'undefined'
+          const name = org.name ?? org.slug
           return {
-            name: `Yes [${slug}]`,
-            value: slug,
-            description: `Use "${slug}" as the organization`
+            name: `Yes [${name}]`,
+            value: name,
+            description: `Use "${name}" as the organization`
           }
         }),
         {
