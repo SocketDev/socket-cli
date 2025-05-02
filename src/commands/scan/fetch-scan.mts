@@ -32,11 +32,11 @@ export async function fetchScan(
   spinner.successAndStop('Received response while fetching scan data.')
 
   if (!response.ok) {
-    const err = await handleApiError(response.status)
+    const cause = await handleApiError(response.status)
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${response.statusText}${err ? ` (cause: ${err})` : ''}`
+      cause: `${response.statusText}${cause ? ` (cause: ${cause})` : ''}`
     }
   }
 

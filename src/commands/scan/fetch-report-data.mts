@@ -84,12 +84,12 @@ export async function fetchReportData(
     updateScan('received response')
 
     if (!response.ok) {
-      const err = await handleApiError(response.status)
+      const cause = await handleApiError(response.status)
       updateScan(`request resulted in status code ${response.status}`)
       return {
         ok: false,
         message: 'Socket API returned an error',
-        cause: `${response.statusText}${err ? ` (cause: ${err})` : ''}`
+        cause: `${response.statusText}${cause ? ` (cause: ${cause})` : ''}`
       }
     }
 

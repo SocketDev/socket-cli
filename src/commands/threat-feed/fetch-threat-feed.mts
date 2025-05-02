@@ -58,11 +58,11 @@ export async function fetchThreatFeed({
   spinner.successAndStop('Received response while fetching Threat Feed data.')
 
   if (!result.ok) {
-    const err = await handleApiError(result.status)
+    const cause = await handleApiError(result.status)
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${result.statusText}${err ? ` (cause: ${err})` : ''}`
+      cause: `${result.statusText}${cause ? ` (cause: ${cause})` : ''}`
     }
   }
 
