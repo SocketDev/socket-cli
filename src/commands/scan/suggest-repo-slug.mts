@@ -12,7 +12,7 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
 } | void> {
   const sockSdk = await setupSdk()
 
-  // Same as above, but if there's a repo with the same name as cwd then
+  // If there's a repo with the same name as cwd then
   // default the selection to that name.
   const result = await handleApiCall(
     sockSdk.getOrgRepoList(orgSlug, {
@@ -25,12 +25,12 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
       perPage: '10',
       page: '0'
     }),
-    'looking up known repos'
+    'list of repositories'
   )
 
   // Ignore a failed request here. It was not the primary goal of
   // running this command and reporting it only leads to end-user confusion.
-  if (result.success) {
+  if (result.ok) {
     const currentDirName = dirNameToSlug(path.basename(process.cwd()))
 
     let cwdIsKnown =
@@ -40,9 +40,9 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
       // Do an explicit request so we can assert that the cwd exists or not
       const result = await handleApiCall(
         sockSdk.getOrgRepo(orgSlug, currentDirName),
-        'checking if current cwd is a known repo'
+        'check if current cwd is a known repo'
       )
-      if (result.success) {
+      if (result.ok) {
         cwdIsKnown = true
       }
     }
