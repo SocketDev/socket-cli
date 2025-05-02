@@ -1,8 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { handleApiCall, handleFailedApiResponse } from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 export async function streamScan(
   orgSlug: string,
@@ -16,13 +15,11 @@ export async function streamScan(
   // Note: this will write to stdout or target file. It's not a noop
   const data = await handleApiCall(
     sockSdk.getOrgFullScan(orgSlug, scanId, file === '-' ? undefined : file),
-    'Fetching a scan'
+    'Fetching a scan',
+    'Received API response (requested a scan).',
+    'Error fetching a scan',
+    'GetOrgFullScan'
   )
 
-  if (!data?.success) {
-    // Note: this is always --json
-    const result = handleFailedApiResponse('getOrgFullScan', data)
-    logger.log(serializeResultJson(result))
-    return
-  }
+  return data
 }

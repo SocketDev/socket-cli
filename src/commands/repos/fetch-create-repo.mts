@@ -1,5 +1,4 @@
-import constants from '../../constants.mts'
-import { handleApiCall, handleFailedApiResponse } from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -22,12 +21,7 @@ export async function fetchCreateRepo({
 }): Promise<CResult<SocketSdkReturnType<'createOrgRepo'>['data']>> {
   const sockSdk = await setupSdk()
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Sending request ot create a repository...')
-
-  const result = await handleApiCall(
+  return await handleApiCall(
     sockSdk.createOrgRepo(orgSlug, {
       name: repoName,
       description,
@@ -35,14 +29,9 @@ export async function fetchCreateRepo({
       default_branch,
       visibility
     }),
-    'creating repository'
+    'Requesting to create a repository...',
+    'Received API response (requested to create a repository).',
+    'Error creating repository',
+    'createOrgRepo'
   )
-
-  spinner.successAndStop('Received response requesting to create a repository.')
-
-  if (!result.success) {
-    return handleFailedApiResponse('createOrgRepo', result)
-  }
-
-  return { ok: true, data: result.data }
 }

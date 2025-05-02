@@ -1,7 +1,4 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
-import constants from '../../constants.mts'
-import { handleApiCall, handleFailedApiResponse } from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -12,22 +9,11 @@ export async function fetchSupportedScanFileNames(): Promise<
 > {
   const sockSdk = await setupSdk()
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Requesting supported scan file types from API...')
-
-  const result = await handleApiCall(
+  return await handleApiCall(
     sockSdk.getReportSupportedFiles(),
-    'fetching supported scan file types'
+    'Requesting supported scan file types from API...',
+    'Received API response (requested supported scan file types).',
+    'Error fetching supported scan file types',
+    'getReportSupportedFiles'
   )
-
-  spinner.stop()
-  logger.error('Received response while fetching supported scan file types.')
-
-  if (!result.success) {
-    return handleFailedApiResponse('getReportSupportedFiles', result)
-  }
-
-  return { ok: true, data: result.data }
 }

@@ -103,15 +103,15 @@ async function run(
   } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
-  const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+  const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
     cli.input[0] || '',
     !!interactive,
     !!dryRun
   )
 
-  let id1 = cli.input[defaultOrgSlug ? 0 : 1] || ''
-  let id2 = cli.input[defaultOrgSlug ? 1 : 2] || ''
+  let id1 = cli.input[isTestingV1() || orgSlug ? 0 : 1] || ''
+  let id2 = cli.input[isTestingV1() || orgSlug ? 1 : 2] || ''
   if (id1.startsWith(SOCKET_SBOM_URL_PREFIX)) {
     id1 = id1.slice(SOCKET_SBOM_URL_PREFIX.length)
   }

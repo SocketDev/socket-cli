@@ -1,5 +1,4 @@
-import constants from '../../constants.mts'
-import { handleApiCall, handleFailedApiResponse } from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -11,21 +10,11 @@ export async function fetchDeleteOrgFullScan(
 ): Promise<CResult<SocketSdkReturnType<'deleteOrgFullScan'>['data']>> {
   const sockSdk = await setupSdk()
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Requesting the scan to be deleted...')
-
-  const result = await handleApiCall(
+  return await handleApiCall(
     sockSdk.deleteOrgFullScan(orgSlug, scanId),
-    'Deleting scan'
+    'Requesting to delete a scan...',
+    'Received API response (requested to delete a scan).',
+    'Error deleting scan',
+    'deleteOrgFullScan'
   )
-
-  spinner.successAndStop('Received response for deleting a scan.')
-
-  if (!result.success) {
-    return handleFailedApiResponse('deleteOrgFullScan', result)
-  }
-
-  return { ok: true, data: result.data }
 }

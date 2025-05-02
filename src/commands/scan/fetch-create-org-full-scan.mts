@@ -1,5 +1,4 @@
-import constants from '../../constants.mts'
-import { handleApiCall, handleFailedApiResponse } from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -30,14 +29,7 @@ export async function fetchCreateOrgFullScan(
 ): Promise<CResult<SocketSdkReturnType<'CreateOrgFullScan'>['data']>> {
   const sockSdk = await setupSdk()
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start(
-    `Sending request to create a scan with ${packagePaths.length} packages...`
-  )
-
-  const result = await handleApiCall(
+  return await handleApiCall(
     sockSdk.createOrgFullScan(
       orgSlug,
       {
@@ -54,14 +46,9 @@ export async function fetchCreateOrgFullScan(
       packagePaths,
       cwd
     ),
-    'Creating scan'
+    'Requesting to create a scan...',
+    'Received API response (requested to create a scan).',
+    'Error creating scan',
+    'CreateOrgFullScan'
   )
-
-  spinner.successAndStop('Completed request to create a new scan.')
-
-  if (!result.success) {
-    return handleFailedApiResponse('CreateOrgFullScan', result)
-  }
-
-  return { ok: true, data: result.data }
 }

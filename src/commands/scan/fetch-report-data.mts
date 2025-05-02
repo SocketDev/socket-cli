@@ -3,10 +3,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
 import {
-  handleApiCall,
+  handleApiCallNoSpinner,
   handleApiError,
-  handleFailedApiResponse,
-  queryApi
+  queryApi,
+  tmpHandleApiCall
 } from '../../utils/api.mts'
 import { getDefaultToken, setupSdk } from '../../utils/sdk.mts'
 
@@ -73,10 +73,14 @@ export async function fetchReportData(
   async function fetchScanResult(
     apiToken: string
   ): Promise<CResult<Array<components['schemas']['SocketArtifact']>>> {
-    const response = await queryApi(
-      `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
-      apiToken
+    const response = await tmpHandleApiCall(
+      queryApi(
+        `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
+        apiToken
+      ),
+      'fetchScanResult'
     )
+
     updateScan('received response')
 
     if (!response.ok) {
@@ -85,7 +89,7 @@ export async function fetchReportData(
       return {
         ok: false,
         message: 'Socket API returned an error',
-        cause: `${response.statusText}${err ? ` (cause: ${err})` : ''}`
+        cause: `${response.statusText}${err ? ` (cause: ${err}` : ''}`
       }
     }
 
@@ -115,20 +119,14 @@ export async function fetchReportData(
   async function fetchSecurityPolicy(): Promise<
     CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>
   > {
-    const response = await sockSdk.getOrgSecurityPolicy(orgSlug)
-    updatePolicy('received response')
-
-    if (!response.success) {
-      return handleFailedApiResponse('getOrgSecurityPolicy', response)
-    }
-
-    const s = await handleApiCall(
-      response,
-      "looking up organization's security policy"
+    const result = await handleApiCallNoSpinner(
+      sockSdk.getOrgSecurityPolicy(orgSlug),
+      'GetOrgSecurityPolicy'
     )
+
     updatePolicy('received policy')
 
-    return { ok: true, data: s.data }
+    return result
   }
 
   updateProgress()

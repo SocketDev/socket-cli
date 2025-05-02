@@ -1,7 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
-import { handleApiCall, handleApiError, queryApi } from '../../utils/api.mts'
+import { handleApiError, queryApi } from '../../utils/api.mts'
 import { getDefaultToken } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -100,10 +100,13 @@ export async function fetchPurlDeepScore(
     }
   }
 
-  const data = await handleApiCall(await result.text(), 'Reading text')
+  const data = await result.text()
 
   try {
-    return { ok: true, data: JSON.parse(data) }
+    return {
+      ok: true,
+      data: JSON.parse(data) // as PurlDataResponse
+    }
   } catch (e) {
     return {
       ok: false,

@@ -32,6 +32,13 @@ export async function handleAnalytics({
       message: 'Missing repository name in command'
     }
   }
+  if (result.ok && !result.data.length) {
+    result = {
+      ok: true,
+      message: `The analytics data for this ${scope === 'org' ? 'organization' : 'repository'} is not yet available.`,
+      data: []
+    }
+  }
 
   await outputAnalytics(result, {
     filePath,

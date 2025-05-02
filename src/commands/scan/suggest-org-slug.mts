@@ -8,11 +8,15 @@ export async function suggestOrgSlug(): Promise<string | void> {
   const sockSdk = await setupSdk()
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
-    'looking up organizations'
+    'looking up organizations',
+    'Received API response (requested list of organizations).',
+    'Error fetching list of organizations',
+    'getOrganizations'
   )
+
   // Ignore a failed request here. It was not the primary goal of
   // running this command and reporting it only leads to end-user confusion.
-  if (result.success) {
+  if (result.ok) {
     const proceed = await select<string>({
       message:
         'Missing org name; do you want to use any of these orgs for this scan?',

@@ -1,5 +1,4 @@
-import constants from '../../constants.mts'
-import { handleApiCall, handleFailedApiResponse } from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -10,21 +9,11 @@ export async function fetchLicensePolicy(
 ): Promise<CResult<SocketSdkReturnType<'getOrgLicensePolicy'>['data']>> {
   const sockSdk = await setupSdk()
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Fetching organization license policy...')
-
-  const result = await handleApiCall(
+  return await handleApiCall(
     sockSdk.getOrgLicensePolicy(orgSlug),
-    'looking up organization quota'
+    'looking up organization quota',
+    'Received organization license policy response.',
+    'Error fetching organization license policy',
+    'getOrgLicensePolicy'
   )
-
-  spinner.successAndStop('Received organization license policy response.')
-
-  if (!result.success) {
-    return handleFailedApiResponse('getOrgLicensePolicy', result)
-  }
-
-  return { ok: true, data: result.data }
 }

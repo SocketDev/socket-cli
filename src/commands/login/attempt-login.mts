@@ -5,8 +5,9 @@ import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 
 import { applyLogin } from './apply-login.mts'
 import constants from '../../constants.mts'
-import { handleUnsuccessfulApiResponse } from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { getConfigValueOrUndef, isReadOnlyConfig } from '../../utils/config.mts'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
@@ -29,20 +30,20 @@ export async function attemptLogin(
         'https://docs.socket.dev/docs/api-keys'
       )} (leave blank for a public key)`
     })) || SOCKET_PUBLIC_API_TOKEN
-  // Lazily access constants.spinner.
-  const { spinner } = constants
 
   const sdk = await setupSdk(apiToken, apiBaseUrl, apiProxy)
 
-  spinner.start('Verifying API key...')
+  const result = await handleApiCall(
+    sdk.getOrganizations(),
+    'Verifying API key...',
+    'Received response',
+    'Error verifying API key',
+    'getOrganizations'
+  )
 
-  const result = await sdk.getOrganizations()
-
-  spinner.successAndStop('Received response')
-
-  if (!result.success) {
-    logger.fail('Authentication failed...')
-    handleUnsuccessfulApiResponse('getOrganizations', result)
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
   }
 
   logger.success('API key verified')
@@ -83,8 +84,6 @@ export async function attemptLogin(
       }
     }
   }
-
-  spinner.stop()
 
   const previousPersistedToken = getConfigValueOrUndef('apiToken')
   try {

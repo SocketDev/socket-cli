@@ -1,4 +1,3 @@
-import constants from '../../constants.mts'
 import { getSeverityCount } from '../../utils/alert/severity.mts'
 import {
   handleApiCall,
@@ -15,32 +14,37 @@ export async function fetchPackageInfo(
 ): Promise<void | PackageData> {
   const sockSdk = await setupSdk(getPublicToken())
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start(
-    pkgVersion === 'latest'
-      ? `Looking up data for the latest version of ${pkgName}`
-      : `Looking up data for version ${pkgVersion} of ${pkgName}`
-  )
-
   const result = await handleApiCall(
     sockSdk.getIssuesByNPMPackage(pkgName, pkgVersion),
-    'looking up package'
+    'Requesting package issues...',
+    'Received API response (requested package issues).',
+    'Error fetching package issues',
+    'getIssuesByNPMPackage'
   )
   const scoreResult = await handleApiCall(
     sockSdk.getScoreByNPMPackage(pkgName, pkgVersion),
-    'looking up package score'
+    'looking up package score',
+    'Received API response (requested package score).',
+    'Error fetching package score',
+    'getScoreByNPMPackage'
   )
 
-  spinner.successAndStop('Data fetched')
-
-  if (result.success === false) {
-    handleUnsuccessfulApiResponse('getIssuesByNPMPackage', result)
+  if (!result.ok) {
+    handleUnsuccessfulApiResponse(
+      'getIssuesByNPMPackage',
+      result.message,
+      result.cause ?? '',
+      (result.data as any)?.code ?? 0
+    )
   }
 
-  if (scoreResult.success === false) {
-    handleUnsuccessfulApiResponse('getScoreByNPMPackage', scoreResult)
+  if (!scoreResult.ok) {
+    handleUnsuccessfulApiResponse(
+      'getScoreByNPMPackage',
+      scoreResult.message,
+      scoreResult.cause ?? '',
+      (scoreResult.data as any)?.code ?? 0
+    )
   }
 
   const severityCount = getSeverityCount(

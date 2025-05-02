@@ -1,5 +1,4 @@
-import constants from '../../constants.mts'
-import { handleApiCall, handleFailedApiResponse } from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -11,21 +10,11 @@ export async function fetchViewRepo(
 ): Promise<CResult<SocketSdkReturnType<'getOrgRepo'>['data']>> {
   const sockSdk = await setupSdk()
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Fetching repository data...')
-
-  const result = await handleApiCall(
+  return await handleApiCall(
     sockSdk.getOrgRepo(orgSlug, repoName),
-    'fetching repository'
+    'Requesting repository data...',
+    'Received API response (requested repository data).',
+    'Error fetching repository data',
+    'getOrgRepo'
   )
-
-  spinner.successAndStop('Received response while fetched repository data.')
-
-  if (!result.success) {
-    return handleFailedApiResponse('getOrgRepo', result)
-  }
-
-  return { ok: true, data: result.data }
 }
