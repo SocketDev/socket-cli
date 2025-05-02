@@ -14,7 +14,6 @@ export async function outputCreateRepo(
   if (!result.ok) {
     process.exitCode = result.code ?? 1
   }
-
   if (outputKind === 'json') {
     logger.log(serializeResultJson(result))
     return
@@ -23,8 +22,8 @@ export async function outputCreateRepo(
     logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
-
+  const { slug } = result.data
   logger.success(
-    `OK. Repository created successfully, slug: \`${result.data.slug}\`${result.data.slug !== requestedName ? ' (Warning: slug is not the same as name that was requested!)' : ''}`
+    `OK. Repository created successfully, slug: \`${slug}\`${slug !== requestedName ? ' (Warning: slug is not the same as name that was requested!)' : ''}`
   )
 }
