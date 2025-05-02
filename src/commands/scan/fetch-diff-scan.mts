@@ -34,11 +34,11 @@ export async function fetchDiffScan({
   spinner.successAndStop('Received scan diff response')
 
   if (!response.ok) {
-    const err = await handleApiError(response.status)
+    const cause = await handleApiError(response.status)
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${response.statusText}${err ? ` (cause: ${err})` : ''}`
+      cause: `${response.statusText}${cause ? ` (cause: ${cause})` : ''}`
     }
   }
 
