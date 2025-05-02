@@ -83,12 +83,12 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
       const repoName = proceed
       let repoDefaultBranch = ''
       // Store the default branch to help with the branch name question next
-      result.data.results.some(obj => {
+      for (const obj of result.data.results) {
         if (obj.slug === proceed && obj.default_branch) {
           repoDefaultBranch = obj.default_branch
-          return
+          break
         }
-      })
+      }
       return { slug: repoName, defaultBranch: repoDefaultBranch }
     }
   } else {
