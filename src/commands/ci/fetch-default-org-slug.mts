@@ -1,36 +1,29 @@
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 
 import { handleApiCall } from '../../utils/api.mts'
-import { getConfigValue } from '../../utils/config.mts'
+import { getConfigValueOrUndef } from '../../utils/config.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 
 // Use the config defaultOrg when set, otherwise discover from remote
 export async function getDefaultOrgSlug(): Promise<CResult<string>> {
-  const defaultOrgResult = getConfigValue('defaultOrg')
-  if (!defaultOrgResult.ok) {
-    return defaultOrgResult
-  }
+  const defaultOrgResult = getConfigValueOrUndef('defaultOrg')
 
-  if (defaultOrgResult.data) {
-    debugLog(`Using default org: ${defaultOrgResult.data}`)
-    return { ok: true, data: defaultOrgResult.data }
+  if (defaultOrgResult) {
+    debugLog(`Using default org: ${defaultOrgResult}`)
+    return { ok: true, data: defaultOrgResult }
   }
 
   const sockSdk = await setupSdk()
 
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
-    'looking up organizations'
+    'list of organizations'
   )
 
-  if (!result.success) {
-    return {
-      ok: false,
-      message: result.error,
-      data: `Failed to fetch default organization from API. Unable to continue.${result.cause ? ` ( Reason given: ${result.cause} )` : ''}`
-    }
+  if (!result.ok) {
+    return result
   }
 
   const orgs = result.data.organizations

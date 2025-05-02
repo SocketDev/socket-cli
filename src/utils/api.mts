@@ -10,12 +10,17 @@ import { failMsgWithBadge } from './fail-msg-with-badge.mts'
 import type { CResult } from '../types.mts'
 import type {
   SocketSdkErrorType,
-  SocketSdkOperations
+  SocketSdkOperations,
+  SocketSdkResultType,
+  SocketSdkReturnType
 } from '@socketsecurity/sdk'
 
+// TODO: this function is removed after v1.0.0
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
-  { cause, error, status }: SocketSdkErrorType<T>
+  error: string,
+  cause: string,
+  status: number
 ): never {
   const message = `${error || 'No error message returned'}${cause ? ` (reason: ${cause})` : ''}`
   if (status === 401 || status === 403) {
@@ -44,19 +49,117 @@ export function handleFailedApiResponse<T extends SocketSdkOperations>(
   }
 }
 
-export async function handleApiCall<T>(
-  value: T,
-  description: string
-): Promise<T> {
-  let result: T
+export async function handleApiCall<T extends SocketSdkOperations>(
+  value: Promise<SocketSdkResultType<T>>,
+  fetchingDesc: string
+): Promise<CResult<SocketSdkReturnType<T>['data']>> {
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start(`Requesting ${fetchingDesc} from API...`)
+
+  let result: SocketSdkResultType<T>
   try {
     result = await value
+
+    // TODO: info, not success (looks weird when response is non-200)
+    spinner.successAndStop(
+      `Received API response (after requesting ${fetchingDesc}).`
+    )
+  } catch (e) {
+    spinner.failAndStop(`An error was thrown while requesting ${fetchingDesc}`)
+
+    debugLog(`handleApiCall(${fetchingDesc}) threw error:\n`, e)
+
+    const message = `${e || 'No error message returned'}`
+    const cause = `${e || 'No error message returned'}`
+
+    return {
+      ok: false,
+      message: 'Socket API returned an error',
+      cause: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`
+    }
+  } finally {
+    spinner.stop()
+  }
+
+  // Note: TS can't narrow down the type of result due to generics
+  if (result.success === false) {
+    const err = result as SocketSdkErrorType<T>
+    const message = `${err.error || 'No error message returned'}`
+    debugLog(`handleApiCall(${fetchingDesc}) bad response:\n`, err)
+
+    return {
+      ok: false,
+      message: 'Socket API returned an error',
+      cause: `${message}${err.cause ? ` ( Reason: ${err.cause} )` : ''}`,
+      data: {
+        code: result.status
+      }
+    }
+  } else {
+    const ok = result as SocketSdkReturnType<T>
+    return {
+      ok: true,
+      data: ok.data
+    }
+  }
+}
+
+export async function tmpHandleApiCall<T>(
+  value: Promise<T>,
+  description: string
+): Promise<Awaited<T>> {
+  try {
+    return await value
   } catch (e) {
     debugLog(`handleApiCall[${description}] error:\n`, e)
     // TODO: eliminate this throw in favor of CResult (or anything else)
     throw new Error(`Failed ${description}`, { cause: e })
   }
-  return result
+}
+
+export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
+  value: Promise<SocketSdkResultType<T>>,
+  description: string
+): Promise<CResult<SocketSdkReturnType<T>['data']>> {
+  let result: SocketSdkResultType<T>
+  try {
+    result = await value
+  } catch (e) {
+    debugLog(`handleApiCall(${description}) threw error:\n`, e)
+
+    const message = `${e || 'No error message returned'}`
+    const cause = `${e || 'No error message returned'}`
+
+    return {
+      ok: false,
+      message: 'Socket API returned an error',
+      cause: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`
+    }
+  }
+
+  // Note: TS can't narrow down the type of result due to generics
+  if (result.success === false) {
+    const err = result as SocketSdkErrorType<T>
+    const message = `${err.error || 'No error message returned'}`
+    debugLog(`handleApiCall(${description}) bad response:\n`, err)
+
+    return {
+      ok: false,
+      message: 'Socket API returned an error',
+      cause: `${message}${err.cause ? ` ( Reason: ${err.cause} )` : ''}`,
+      data: {
+        code: result.status
+      }
+    }
+  } else {
+    const ok = result as SocketSdkReturnType<T>
+    return {
+      ok: true,
+      data: ok.data
+    }
+  }
 }
 
 export async function handleApiError(code: number) {

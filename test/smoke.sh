@@ -456,7 +456,6 @@ if should_run_section "organization"; then
     run_socket 0 organization policy security --org $DEFORG_BAK
 
     run_socket 0 organization policy license --markdown
-    run_socket 0 organization policy license --json
     run_json   0 organization policy license --json
     run_socket 1 organization policy license --org trash
     run_socket 1 organization policy license --org trash --markdown
@@ -520,7 +519,7 @@ if should_run_section "raw-npx"; then
     run_socket 0 raw-npx                                    # interactive shell...
     run_socket 2 raw-npx --help
     run_socket 0 raw-npx --dry-run
-    run_socket 0 rax-npx socket --dry-run
+    run_socket 0 raw-npx socket --dry-run
 fi
 
 ### repos

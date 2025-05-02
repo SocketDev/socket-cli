@@ -1,5 +1,5 @@
 import constants from '../../constants.mts'
-import { handleApiCall, handleApiError, queryApi } from '../../utils/api.mts'
+import { handleApiError, queryApi } from '../../utils/api.mts'
 import { getDefaultToken } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -37,12 +37,8 @@ export async function fetchDiffScan({
     }
   }
 
-  const result = await handleApiCall(
-    (await response.json()) as Promise<
-      SocketSdkReturnType<'GetOrgDiffScan'>['data']
-    >,
-    'Deserializing json'
-  )
+  const result =
+    (await response.json()) as SocketSdkReturnType<'GetOrgDiffScan'>['data']
 
   return { ok: true, data: result }
 }

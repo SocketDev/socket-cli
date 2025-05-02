@@ -1,5 +1,4 @@
-import constants from '../../constants.mts'
-import { handleApiCall, handleFailedApiResponse } from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -22,12 +21,7 @@ export async function fetchUpdateRepo({
 }): Promise<CResult<SocketSdkReturnType<'updateOrgRepo'>['data']>> {
   const sockSdk = await setupSdk()
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Sending request to update a repository...')
-
-  const result = await handleApiCall(
+  return await handleApiCall(
     sockSdk.updateOrgRepo(orgSlug, repoName, {
       orgSlug,
       name: repoName,
@@ -36,14 +30,6 @@ export async function fetchUpdateRepo({
       default_branch,
       visibility
     }),
-    'updating repository'
+    'to update a repository'
   )
-
-  spinner.successAndStop('Received response trying to update a repository')
-
-  if (!result.success) {
-    return handleFailedApiResponse('updateOrgRepo', result)
-  }
-
-  return { ok: true, data: result.data }
 }

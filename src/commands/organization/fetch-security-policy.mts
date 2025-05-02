@@ -1,5 +1,4 @@
-import constants from '../../constants.mts'
-import { handleApiCall, handleFailedApiResponse } from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -10,21 +9,8 @@ export async function fetchSecurityPolicy(
 ): Promise<CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>> {
   const sockSdk = await setupSdk()
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Fetching organization security policy...')
-
-  const result = await handleApiCall(
+  return await handleApiCall(
     sockSdk.getOrgSecurityPolicy(orgSlug),
-    'looking up organization quota'
+    'organization security policy'
   )
-
-  spinner.successAndStop('Received organization security policy response.')
-
-  if (!result.success) {
-    return handleFailedApiResponse('getOrgSecurityPolicy', result)
-  }
-
-  return { ok: true, data: result.data }
 }

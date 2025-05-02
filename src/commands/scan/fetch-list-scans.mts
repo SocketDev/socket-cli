@@ -1,5 +1,4 @@
-import constants from '../../constants.mts'
-import { handleApiCall, handleFailedApiResponse } from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -26,12 +25,7 @@ export async function fetchListScans({
 }): Promise<CResult<SocketSdkReturnType<'getOrgFullScanList'>['data']>> {
   const sockSdk = await setupSdk()
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Fetching list of scans...')
-
-  const result = await handleApiCall(
+  return await handleApiCall(
     sockSdk.getOrgFullScanList(orgSlug, {
       ...(branch ? { branch } : {}),
       ...(repo ? { repo } : {}),
@@ -41,14 +35,6 @@ export async function fetchListScans({
       page: String(page),
       from: from_time
     }),
-    'Listing scans'
+    'list of scans'
   )
-
-  spinner.successAndStop(`Received response for list of scans.`)
-
-  if (!result.success) {
-    return handleFailedApiResponse('getOrgFullScanList', result)
-  }
-
-  return { ok: true, data: result.data }
 }
