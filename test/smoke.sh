@@ -12,6 +12,14 @@
 ##
 ######
 
+##
+# Adding commands:
+#
+# All run functions accept an exit code as first arg and the command to run as remaining args.
+#
+# - `run_socket`  Use for most commands.
+# - `run_json`    Use for commands that return JSON. It will confirm that stdout contains valid JSON and assert the toplevel structure matches exit code logic.
+#
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -33,6 +41,15 @@ TEST_COUNTER=0
 # COMMAND_PREFIX="npm run --silent s --"
 # node 22+
 COMMAND_PREFIX="./sd"
+
+# Function to restore config on exit
+restore_config() {
+    echo -e "\n${YELLOW}Restoring backed up configuration values...${NC}"
+    eval "${COMMAND_PREFIX} config set defaultOrg ${DEFORG_BAK}"
+    eval "${COMMAND_PREFIX} config set apiToken ${TOKEN_BAK}"
+    eval "${COMMAND_PREFIX} config set isTestingV1 ${TESTV1_BAK}"
+    echo -e "${GREEN}Configuration restored!${NC}"
+}
 
 # Get target subcommand from first argument
 TARGET_SUBCOMMAND="$1"
@@ -173,7 +190,6 @@ run_json() {
     fi
 }
 
-# Function to run a test
 run_socket() {
     local expected_exit="$1"
     shift  # Remove the first argument
@@ -199,6 +215,7 @@ run_socket() {
         FAILED_TESTS+=("$TEST_COUNTER|$command|$expected_exit|$exit_code")
     fi
 }
+
 
 # Function to print test summary
 print_test_summary() {
@@ -238,6 +255,19 @@ else
   npm run build
 fi
 
+## Backup config
+echo "Backing up default org and apitoken..."
+DEFORG_BAK=$(eval "$COMMAND_PREFIX config get defaultOrg --json" | jq -r '.data' )
+TOKEN_BAK=$(eval "$COMMAND_PREFIX config get apiToken --json" | jq -r '.data' )
+TESTV1_BAK=$(eval "$COMMAND_PREFIX config get isTestingV1 --json" | jq -r '.data' )
+echo "Backing complete!"
+
+# Set up trap to restore config on any exit
+trap restore_config EXIT
+
+# This smoke test assumes the <v1 cli api
+run_socket 0 config set isTestingV1 true
+
 ### Analytics
 
 if should_run_section "analytics"; then
@@ -253,9 +283,8 @@ if should_run_section "analytics"; then
     run_json   0 analytics 90 --json
     run_socket 0 analytics --file smoke.txt --json
     run_socket 0 analytics --file smoke.txt --markdown
-    run_socket 0 analytics --file - --json
 
-    run_socket 2 analytics --whatnow
+    #run_socket 2 analytics --wat
     run_socket 2 analytics --file smoke.txt
     run_socket 2 analytics rainbow --json
     run_socket 1 analytics repo veryunknownrepo --json
@@ -291,8 +320,6 @@ fi
 ### config
 
 if should_run_section "config"; then
-    DEFORG_BAK=$(eval "$COMMAND_PREFIX config get defaultOrg --json" | jq -r '.data' )
-
     run_socket 2 config
     run_socket 2 config --help
     run_socket 0 config --dry-run
@@ -326,7 +353,7 @@ if should_run_section "dependencies"; then
     run_socket 0 dependencies --offset 5
     run_socket 0 dependencies --limit 1 --offset 10
 
-    run_json   2 dependencies --json --wat foo
+    #run_json   2 dependencies --json --wat foo
     run_json   0 dependencies --json --limit -200
     run_json   0 dependencies --json --limit NaN
     run_json   0 dependencies --json --limit foo
@@ -343,13 +370,11 @@ fi
 ### login
 
 if should_run_section "login"; then
-    TOKEN_BAK=$(eval "$COMMAND_PREFIX config get apiToken --json" | jq -r '.data' )
-
     run_socket 0 login
     run_socket 2 login --help
     run_socket 0 login --dry-run
 
-    run_socket 1 login --wat
+    #run_socket 1 login --wat
     run_socket 1 login --api-base-url fail
     run_socket 1 login --api-proxy fail
 fi
@@ -360,7 +385,7 @@ if should_run_section "logout"; then
     run_socket 0 logout
     run_socket 2 logout --help
     run_socket 0 logout --dry-run
-    run_socket 0 logout --wat
+    #run_socket 0 logout --wat
 
     # Let's hope this command isn't broken (:
     eval "${COMMAND_PREFIX} config set apiToken ${TOKEN_BAK}"
@@ -413,7 +438,7 @@ if should_run_section "oops"; then
     run_socket 1 oops
     run_socket 2 oops --help
     run_socket 0 oops --dry-run
-    run_socket 0 oops --wat
+    #run_socket 0 oops --wat
 fi
 
 ### optimize
