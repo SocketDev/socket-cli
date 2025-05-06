@@ -1,5 +1,5 @@
 import constants from '../../../constants.mts'
-import { getNpmRequire } from '../paths.mts'
+import { getNpmRequire } from '../../../utils/npm-paths.mts'
 
 const { UNDEFINED_TOKEN } = constants
 

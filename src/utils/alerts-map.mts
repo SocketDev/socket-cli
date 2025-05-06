@@ -1,77 +1,16 @@
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 
-import { getDetailsFromDiff } from './arborist-helpers.mts'
 import { extractPurlsFromPnpmLockfile } from './pnpm.mts'
 import { getPublicToken, setupSdk } from './sdk.mts'
 import { addArtifactToAlertsMap } from './socket-package-alert.mts'
-import { idToPurl } from './spec.mts'
 
 import type { CompactSocketArtifact } from './alert/artifact.mts'
 import type {
   AlertIncludeFilter,
   AlertsByPkgId
 } from './socket-package-alert.mts'
-import type { SafeArborist } from '../shadow/npm/arborist/lib/arborist/index.mts'
 import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
-
-export type GetAlertsMapFromArboristOptions = {
-  consolidate?: boolean | undefined
-  include?: AlertIncludeFilter | undefined
-  nothrow?: boolean | undefined
-  spinner?: Spinner | undefined
-}
-
-export async function getAlertsMapFromArborist(
-  arb: SafeArborist,
-  options_?: GetAlertsMapFromArboristOptions | undefined
-): Promise<AlertsByPkgId> {
-  const options = {
-    __proto__: null,
-    consolidate: false,
-    limit: Infinity,
-    nothrow: false,
-    ...options_
-  } as GetAlertsMapFromArboristOptions
-
-  const include = {
-    __proto__: null,
-    actions: undefined,
-    blocked: true,
-    critical: true,
-    cve: true,
-    existing: false,
-    unfixable: true,
-    upgradable: false,
-    ...options.include
-  } as AlertIncludeFilter
-
-  const needInfoOn = getDetailsFromDiff(arb.diff, {
-    include: {
-      unchanged: include.existing
-    }
-  })
-  const purls = needInfoOn.map(d => idToPurl(d.node.pkgid))
-
-  let overrides: { [key: string]: string } | undefined
-  const overridesMap = (
-    arb.actualTree ??
-    arb.idealTree ??
-    (await arb.loadActual())
-  )?.overrides?.children
-  if (overridesMap) {
-    overrides = Object.fromEntries(
-      [...overridesMap.entries()].map(([key, overrideSet]) => {
-        return [key, overrideSet.value!]
-      })
-    )
-  }
-
-  return await getAlertsMapFromPurls(purls, {
-    overrides,
-    ...options
-  })
-}
 
 export type GetAlertsMapFromPnpmLockfileOptions = {
   consolidate?: boolean | undefined

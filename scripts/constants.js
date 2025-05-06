@@ -28,7 +28,6 @@ const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
 const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
 const SHADOW_NPM_BIN = 'shadow-bin'
 const SHADOW_NPM_INJECT = 'shadow-npm-inject'
-const SHADOW_NPM_PATHS = 'shadow-npm-paths'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
 const SOCKET = 'socket'
 const SOCKET_CLI_BIN_NAME = 'socket'
@@ -42,6 +41,7 @@ const SOCKET_CLI_SENTRY_BIN_NAME = 'socket-with-sentry'
 const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli-with-sentry`
+const UTILS = 'utils'
 const VENDOR = 'vendor'
 const WITH_SENTRY = 'with-sentry'
 
@@ -105,7 +105,6 @@ const constants = createConstantsObject(
     ROLLUP_EXTERNAL_SUFFIX,
     SHADOW_NPM_BIN,
     SHADOW_NPM_INJECT,
-    SHADOW_NPM_PATHS,
     SLASH_NODE_MODULES_SLASH,
     SOCKET,
     SOCKET_CLI_BIN_NAME,
@@ -119,6 +118,7 @@ const constants = createConstantsObject(
     SOCKET_CLI_SENTRY_NPM_BIN_NAME,
     SOCKET_CLI_SENTRY_NPX_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
+    UTILS,
     VENDOR,
     WITH_SENTRY,
     configPath: undefined,

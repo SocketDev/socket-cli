@@ -5,17 +5,24 @@ import { getManifestData } from '@socketsecurity/registry'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { fetchPackagePackument } from '@socketsecurity/registry/lib/packages'
 
-import constants from '../constants.mts'
-import { applyRange, getMajor } from './semver.mts'
-import { idToPurl } from './spec.mts'
-import { DiffAction } from '../shadow/npm/arborist/lib/arborist/types.mts'
-import { Edge } from '../shadow/npm/arborist/lib/edge.mts'
+import constants from '../../constants.mts'
+import { applyRange, getMajor } from '../../utils/semver.mts'
+import { idToPurl } from '../../utils/spec.mts'
+import { DiffAction } from './arborist/lib/arborist/types.mts'
+import { Edge } from './arborist/lib/edge.mts'
+import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 
-import type { RangeStyle } from './semver.mts'
-import type { Diff } from '../shadow/npm/arborist/lib/arborist/types.mts'
-import type { SafeEdge } from '../shadow/npm/arborist/lib/edge.mts'
-import type { SafeNode } from '../shadow/npm/arborist/lib/node.mts'
+import type { RangeStyle } from '../../utils/semver.mts'
+import type { SafeArborist } from './arborist/lib/arborist/index.mts'
+import type { Diff } from './arborist/lib/arborist/types.mts'
+import type { SafeEdge } from './arborist/lib/edge.mts'
+import type { SafeNode } from './arborist/lib/node.mts'
+import type {
+  AlertIncludeFilter,
+  AlertsByPkgId
+} from '../../utils/socket-package-alert.mts'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { LOOP_SENTINEL, NPM, NPM_REGISTRY_URL } = constants
 
@@ -106,6 +113,64 @@ export function findPackageNodes(
     }
   }
   return matches
+}
+
+export type GetAlertsMapFromArboristOptions = {
+  consolidate?: boolean | undefined
+  include?: AlertIncludeFilter | undefined
+  nothrow?: boolean | undefined
+  spinner?: Spinner | undefined
+}
+
+export async function getAlertsMapFromArborist(
+  arb: SafeArborist,
+  options_?: GetAlertsMapFromArboristOptions | undefined
+): Promise<AlertsByPkgId> {
+  const options = {
+    __proto__: null,
+    consolidate: false,
+    limit: Infinity,
+    nothrow: false,
+    ...options_
+  } as GetAlertsMapFromArboristOptions
+
+  const include = {
+    __proto__: null,
+    actions: undefined,
+    blocked: true,
+    critical: true,
+    cve: true,
+    existing: false,
+    unfixable: true,
+    upgradable: false,
+    ...options.include
+  } as AlertIncludeFilter
+
+  const needInfoOn = getDetailsFromDiff(arb.diff, {
+    include: {
+      unchanged: include.existing
+    }
+  })
+  const purls = needInfoOn.map(d => idToPurl(d.node.pkgid))
+
+  let overrides: { [key: string]: string } | undefined
+  const overridesMap = (
+    arb.actualTree ??
+    arb.idealTree ??
+    (await arb.loadActual())
+  )?.overrides?.children
+  if (overridesMap) {
+    overrides = Object.fromEntries(
+      [...overridesMap.entries()].map(([key, overrideSet]) => {
+        return [key, overrideSet.value!]
+      })
+    )
+  }
+
+  return await getAlertsMapFromPurls(purls, {
+    overrides,
+    ...options
+  })
 }
 
 export type DiffQueryIncludeFilter = {
