@@ -3,8 +3,8 @@ import { createRequire } from 'node:module'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../../../../constants.mts'
-import { getAlertsMapFromArborist } from '../../../../../utils/alerts-map.mts'
 import { logAlertsMap } from '../../../../../utils/socket-package-alert.mts'
+import { getAlertsMapFromArborist } from '../../../arborist-helpers.mts'
 import { getArboristClassPath } from '../../../paths.mts'
 
 import type { ArboristClass, ArboristReifyOptions } from './types.mts'

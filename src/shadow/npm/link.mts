@@ -2,13 +2,13 @@ import path from 'node:path'
 
 import cmdShim from 'cmd-shim'
 
+import constants from '../../constants.mts'
 import {
   getNpmBinPath,
   getNpxBinPath,
   isNpmBinPathShadowed,
   isNpxBinPathShadowed
-} from './paths.mts'
-import constants from '../../constants.mts'
+} from '../../utils/npm-paths.mts'
 
 const { CLI, NPX } = constants
 
