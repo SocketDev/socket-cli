@@ -44,7 +44,7 @@ const config: CliCommandConfig = {
     time: {
       type: 'number',
       shortFlag: 't',
-      default: 7,
+      default: 30,
       description: 'Time filter - either 7, 30 or 90, default: 30'
     }
   },
