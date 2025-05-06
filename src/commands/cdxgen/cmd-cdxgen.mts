@@ -127,13 +127,8 @@ const yargsConfig = {
     //'feature-flags': [], // hidden
     //'include-crypto': false,
     //'include-formulation': false,
-
-    // Make 'lifecycle' default to 'pre-build', which also sets 'install-deps' to `false`,
-    // to avoid arbitrary code execution during cdxgen scans.
-    // https://github.com/CycloneDX/cdxgen/issues/1328
-    //'install-deps': false, // !isSecureMode
-    lifecycle: 'pre-build', // hidden
-
+    //'install-deps': !isSecureMode
+    //lifecycle: 'build', // hidden
     //'min-confidence': '0',
     //output: 'bom.json',
     //profile: 'generic',
@@ -272,6 +267,17 @@ async function run(
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
+  }
+
+  // Make 'lifecycle' default to 'pre-build', which also sets 'install-deps' to `false`,
+  // to avoid arbitrary code execution on the cdxgen scan.
+  // https://github.com/CycloneDX/cdxgen/issues/1328
+  if (yargv.lifecycle === undefined) {
+    yargv.lifecycle = 'pre-build'
+    yargv['install-deps'] = false
+    logger.info(
+      `Socket set cdxgen --lifecycle to "${yargv.lifecycle}" to avoid arbitrary code execution on this scan.\n  Pass "--lifecycle build" to generate a BOM consisting of information obtained during the build process.`
+    )
   }
 
   if (yargv.output === undefined) {
