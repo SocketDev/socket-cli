@@ -18,7 +18,10 @@ describe('socket cdxgen', async () => {
     })
     expect(stdout).toMatchInlineSnapshot(
       `
-      "cdxgen [command]
+      "\\x1b[34mi\\x1b[39m Socket set cdxgen --lifecycle to "pre-build" to avoid arbitrary code execution on this scan.
+        Pass "--lifecycle build" to generate a BOM consisting of information obtained during the build process.
+        See cdxgen BOM lifecycles documentation (\\u200bhttps://cyclonedx.github.io/cdxgen/#/ADVANCED?id=bom-lifecycles\\u200b) for more details.
+      cdxgen [command]
 
       Commands:
         cdxgen completion  Generate bash/zsh completion
