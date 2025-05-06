@@ -81,7 +81,7 @@ export async function outputAnalytics(
   if (outputKind === 'json') {
     const serialized = serializeResultJson(result)
 
-    if (filePath && filePath !== '-') {
+    if (filePath) {
       try {
         await fs.writeFile(filePath, serialized, 'utf8')
         logger.error(`Data successfully written to ${filePath}`)
@@ -109,7 +109,7 @@ export async function outputAnalytics(
     const serialized = renderMarkdown(fdata, time, repo)
 
     // TODO: do we want to write to file even if there was an error...?
-    if (filePath && filePath !== '-') {
+    if (filePath) {
       try {
         await fs.writeFile(filePath, serialized, 'utf8')
         logger.log(`Data successfully written to ${filePath}`)
