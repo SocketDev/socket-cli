@@ -8,53 +8,143 @@ import { runCycloneDX } from './run-cyclonedx.mts'
 import constants from '../../constants.mts'
 import { isHelpFlag } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-// TODO: convert yargs to meow. Or convert all the other things to yargs.
+// TODO: Convert yargs to meow.
 const toLower = (arg: string) => arg.toLowerCase()
 const arrayToLower = (arg: string[]) => arg.map(toLower)
 
+// npx @cyclonedx/cdxgen@11.2.7 --help
+//
+// Options:
+//   -o, --output                 Output file. Default bom.json                                       [default: "bom.json"]
+//   -t, --type                   Project type. Please refer to https://cyclonedx.github.io/cdxgen/#/PROJECT_TYPES for supp
+//                                orted languages/platforms.                                                        [array]
+//       --exclude-type           Project types to exclude. Please refer to https://cyclonedx.github.io/cdxgen/#/PROJECT_TY
+//                                PES for supported languages/platforms.
+//   -r, --recurse                Recurse mode suitable for mono-repos. Defaults to true. Pass --no-recurse to disable.
+//                                                                                                [boolean] [default: true]
+//   -p, --print                  Print the SBOM as a table with tree.                                            [boolean]
+//   -c, --resolve-class          Resolve class names for packages. jars only for now.                            [boolean]
+//       --deep                   Perform deep searches for components. Useful while scanning C/C++ apps, live OS and oci i
+//                                mages.                                                                          [boolean]
+//       --server-url             Dependency track url. Eg: https://deptrack.cyclonedx.io
+//       --skip-dt-tls-check      Skip TLS certificate check when calling Dependency-Track.      [boolean] [default: false]
+//       --api-key                Dependency track api key
+//       --project-group          Dependency track project group
+//       --project-name           Dependency track project name. Default use the directory name
+//       --project-version        Dependency track project version                                   [string] [default: ""]
+//       --project-id             Dependency track project id. Either provide the id or the project name and version togeth
+//                                er                                                                               [string]
+//       --parent-project-id      Dependency track parent project id                                               [string]
+//       --required-only          Include only the packages with required scope on the SBOM. Would set compositions.aggrega
+//                                te to incomplete unless --no-auto-compositions is passed.                       [boolean]
+//       --fail-on-error          Fail if any dependency extractor fails.                                         [boolean]
+//       --no-babel               Do not use babel to perform usage analysis for JavaScript/TypeScript projects.  [boolean]
+//       --generate-key-and-sign  Generate an RSA public/private key pair and then sign the generated SBOM using JSON Web S
+//                                ignatures.                                                                      [boolean]
+//       --server                 Run cdxgen as a server                                                          [boolean]
+//       --server-host            Listen address                                                     [default: "127.0.0.1"]
+//       --server-port            Listen port                                                             [default: "9090"]
+//       --install-deps           Install dependencies automatically for some projects. Defaults to true but disabled for c
+//                                ontainers and oci scans. Use --no-install-deps to disable this feature.
+//                                                                                                [boolean] [default: true]
+//       --validate               Validate the generated SBOM using json schema. Defaults to true. Pass --no-validate to di
+//                                sable.                                                          [boolean] [default: true]
+//       --evidence               Generate SBOM with evidence for supported languages.           [boolean] [default: false]
+//       --spec-version           CycloneDX Specification version to use. Defaults to 1.6
+//                                                                         [number] [choices: 1.4, 1.5, 1.6] [default: 1.6]
+//       --filter                 Filter components containing this word in purl or component.properties.value. Multiple va
+//                                lues allowed.                                                                     [array]
+//       --only                   Include components only containing this word in purl. Useful to generate BOM with first p
+//                                arty components alone. Multiple values allowed.                                   [array]
+//       --author                 The person(s) who created the BOM. Set this value if you're intending the modify the BOM
+//                                and claim authorship.                               [array] [default: "OWASP Foundation"]
+//       --profile                BOM profile to use for generation. Default generic.
+//   [choices: "appsec", "research", "operational", "threat-modeling", "license-compliance", "generic", "machine-learning",
+//                                                        "ml", "deep-learning", "ml-deep", "ml-tiny"] [default: "generic"]
+//       --exclude                Additional glob pattern(s) to ignore                                              [array]
+//       --include-formulation    Generate formulation section with git metadata and build tools. Defaults to false.
+//                                                                                               [boolean] [default: false]
+//       --include-crypto         Include crypto libraries as components.                        [boolean] [default: false]
+//       --standard               The list of standards which may consist of regulations, industry or organizational-specif
+//                                ic standards, maturity models, best practices, or any other requirements which can be eva
+//                                luated against or attested to.
+//   [array] [choices: "asvs-5.0", "asvs-4.0.3", "bsimm-v13", "masvs-2.0.0", "nist_ssdf-1.1", "pcissc-secure-slc-1.1", "scv
+//                                                                                          s-1.0.0", "ssaf-DRAFT-2023-11"]
+//       --json-pretty            Pretty-print the generated BOM json.                           [boolean] [default: false]
+//       --min-confidence         Minimum confidence needed for the identity of a component from 0 - 1, where 1 is 100% con
+//                                fidence.                                                            [number] [default: 0]
+//       --technique              Analysis technique to use
+//   [array] [choices: "auto", "source-code-analysis", "binary-analysis", "manifest-analysis", "hash-comparison", "instrume
+//                                                                                                    ntation", "filename"]
+//       --auto-compositions      Automatically set compositions when the BOM was filtered. Defaults to true
+//                                                                                                [boolean] [default: true]
+//   -h, --help                   Show help                                                                       [boolean]
+//   -v, --version                Show version number                                                             [boolean]
+
+// isSecureMode defined at:
+// https://github.com/CycloneDX/cdxgen/blob/v11.2.7/lib/helpers/utils.js#L66
+// const isSecureMode =
+//   ['true', '1'].includes(process.env?.CDXGEN_SECURE_MODE) ||
+//   process.env?.NODE_OPTIONS?.includes('--permission')
+
+// Yargs CDXGEN configuration defined at:
+// https://github.com/CycloneDX/cdxgen/blob/v11.2.7/bin/cdxgen.js#L64
 const yargsConfig = {
   configuration: {
     'camel-case-expansion': false,
-    'strip-aliased': true,
+    'greedy-arrays': false,
     'parse-numbers': false,
     'populate--': true,
+    'short-option-groups': false,
+    'strip-aliased': true,
     'unknown-options-as-args': true
   },
   coerce: {
-    author: arrayToLower,
+    'exclude-type': arrayToLower,
+    'feature-flags': arrayToLower,
     filter: arrayToLower,
     only: arrayToLower,
     profile: toLower,
     standard: arrayToLower,
+    technique: arrayToLower,
     type: arrayToLower
   },
   default: {
     //author: ['OWASP Foundation'],
     //'auto-compositions': true,
     //babel: true,
+    //banner: false, // hidden
+    //'deps-slices-file': 'deps.slices.json', // hidden
     //evidence: false,
+    //'exclude-type': [],
+    //'export-proto': true, // hidden
+    //'fail-on-error': isSecureMode,
+    //'feature-flags': [], // hidden
     //'include-crypto': false,
     //'include-formulation': false,
 
-    // Default 'install-deps' to `false` and 'lifecycle' to 'pre-build' to
-    // sidestep arbitrary code execution during a cdxgen scan.
+    // Make 'lifecycle' default to 'pre-build', which also sets 'install-deps' to `false`,
+    // to avoid arbitrary code execution during cdxgen scans.
     // https://github.com/CycloneDX/cdxgen/issues/1328
-    'install-deps': false,
-    lifecycle: 'pre-build',
+    //'install-deps': false, // !isSecureMode
+    lifecycle: 'pre-build', // hidden
 
+    //'min-confidence': '0',
     //output: 'bom.json',
     //profile: 'generic',
     //'project-version': '',
+    //'proto-bin-file': 'bom.cdx', // hidden
     //recurse: true,
+    //'skip-dt-tls-check': false,
+    //'semantics-slices-file': 'semantics.slices.json',
     //'server-host': '127.0.0.1',
     //'server-port': '9090',
-    //'spec-version': '1.5',
+    //'spec-version': '1.6',
     type: ['js']
     //validate: true,
   },
@@ -71,24 +161,33 @@ const yargsConfig = {
   array: [
     { key: 'author', type: 'string' },
     { key: 'exclude', type: 'string' },
+    { key: 'exclude-type', type: 'string' },
+    { key: 'feature-flags', type: 'string' }, // hidden
     { key: 'filter', type: 'string' },
     { key: 'only', type: 'string' },
     { key: 'standard', type: 'string' },
+    { key: 'technique', type: 'string' },
     { key: 'type', type: 'string' }
   ],
   boolean: [
     'auto-compositions',
     'babel',
+    'banner', // hidden
     'deep',
     'evidence',
+    'export-proto', // hidden
     'fail-on-error',
     'generate-key-and-sign',
     'help',
-    'include-formulation',
     'include-crypto',
+    'include-formulation',
     'install-deps',
+    'json-pretty',
     'print',
+    'recurse',
     'required-only',
+    'resolve-class',
+    'skip-dt-tls-check',
     'server',
     'validate',
     'version',
@@ -98,7 +197,12 @@ const yargsConfig = {
   ],
   string: [
     'api-key',
+    'data-flow-slices-file', // hidden
+    'deps-slices-file', // hidden
+    'evinse-output', // hidden
     'lifecycle',
+    'min-confidence', // number
+    'openapi-spec-file', // hidden
     'output',
     'parent-project-id',
     'profile',
@@ -106,10 +210,14 @@ const yargsConfig = {
     'project-name',
     'project-version',
     'project-id',
+    'proto-bin-file', // hidden
+    'reachables-slices-file', // hidden
+    'semantics-slices-file', // hidden
     'server-host',
     'server-port',
     'server-url',
-    'spec-version'
+    'spec-version', // number
+    'usages-slices-file' // hidden
   ]
 }
 
@@ -117,16 +225,10 @@ const config: CliCommandConfig = {
   commandName: 'cdxgen',
   description: 'Create an SBOM with CycloneDX generator (cdxgen)',
   hidden: false,
-  flags: {
-    // TODO: convert from yargsConfig
-  },
-  help: (command, config) => `
-    Usage
-      $ ${command} [options]
-
-    Options
-      ${getFlagListOutput(config.flags, 6)}
-  `
+  // Stub out flags and help.
+  // TODO: Convert yargs to meow.
+  flags: {},
+  help: () => ''
 }
 
 export const cmdCdxgen = {
@@ -149,7 +251,7 @@ async function run(
     parentName
   })
 
-  // TODO: Convert to meow.
+  // TODO: Convert yargs to meow.
   const yargv = {
     ...yargsParse(argv as string[], yargsConfig)
   } as any
