@@ -108,7 +108,6 @@ type Constants = Remap<
     readonly REDACTED: '<redacted>'
     readonly SHADOW_NPM_BIN: 'shadow-bin'
     readonly SHADOW_NPM_INJECT: 'shadow-npm-inject'
-    readonly SHADOW_NPM_PATHS: 'shadow-npm-paths'
     readonly SOCKET: 'socket'
     readonly SOCKET_APP_DIR: 'socket/settings'
     readonly SOCKET_CLI_ACCEPT_RISKS: 'SOCKET_CLI_ACCEPT_RISKS'
@@ -179,7 +178,6 @@ const PNPM = 'pnpm'
 const REDACTED = '<redacted>'
 const SHADOW_NPM_BIN = 'shadow-bin'
 const SHADOW_NPM_INJECT = 'shadow-npm-inject'
-const SHADOW_NPM_PATHS = 'shadow-npm-paths'
 const SOCKET = 'socket'
 const SOCKET_APP_DIR = 'socket/settings'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
@@ -447,7 +445,6 @@ const constants: Constants = createConstantsObject(
     REDACTED,
     SHADOW_NPM_BIN,
     SHADOW_NPM_INJECT,
-    SHADOW_NPM_PATHS,
     SOCKET,
     SOCKET_APP_DIR,
     SOCKET_CLI_ACCEPT_RISKS,

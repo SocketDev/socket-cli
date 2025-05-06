@@ -3,7 +3,7 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../constants.mts'
 import { cmdFlagsToString } from './cmd.mts'
-import { safeNpmInstall } from './npm.mts'
+import { safeNpmInstall } from '../shadow/npm/install.mts'
 
 import type { EnvDetails } from './package-environment.mts'
 

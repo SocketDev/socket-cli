@@ -37,7 +37,6 @@ const {
   ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_NPM_BIN,
   SHADOW_NPM_INJECT,
-  SHADOW_NPM_PATHS,
   SLASH_NODE_MODULES_SLASH,
   SOCKET_CLI_BIN_NAME,
   SOCKET_CLI_BIN_NAME_ALIAS,
@@ -50,6 +49,7 @@ const {
   SOCKET_CLI_SENTRY_NPM_BIN_NAME,
   SOCKET_CLI_SENTRY_NPX_BIN_NAME,
   SOCKET_CLI_SENTRY_PACKAGE_NAME,
+  UTILS,
   VENDOR
 } = constants
 
@@ -274,7 +274,7 @@ export default async () => {
   const nmPath = path.join(rootPath, NODE_MODULES)
   const shadowNpmBinSrcPath = path.join(srcPath, 'shadow/npm/bin.mts')
   const shadowNpmInjectSrcPath = path.join(srcPath, 'shadow/npm/inject.mts')
-  const shadowNpmPathsSrcPath = path.join(srcPath, 'shadow/npm/paths.mts')
+  const utilsSrcPath = path.join(srcPath, UTILS)
   const blessedContribFilepaths = await tinyGlob(['**/*.mjs'], {
     absolute: true,
     cwd: path.join(externalSrcPath, BLESSED_CONTRIB)
@@ -362,10 +362,14 @@ export default async () => {
                 return SHADOW_NPM_BIN
               case shadowNpmInjectSrcPath:
                 return SHADOW_NPM_INJECT
-              case shadowNpmPathsSrcPath:
-                return SHADOW_NPM_PATHS
               default:
-                return id.includes(SLASH_NODE_MODULES_SLASH) ? VENDOR : null
+                if (id.startsWith(utilsSrcPath)) {
+                  return UTILS
+                }
+                if (id.includes(SLASH_NODE_MODULES_SLASH)) {
+                  return VENDOR
+                }
+                return null
             }
           },
           plugins: [

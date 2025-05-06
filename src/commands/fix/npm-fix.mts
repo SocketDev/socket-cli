@@ -32,16 +32,14 @@ import {
   SafeArborist
 } from '../../shadow/npm/arborist/lib/arborist/index.mts'
 import {
-  getAlertsMapFromArborist,
-  getAlertsMapFromPurls
-} from '../../utils/alerts-map.mts'
-import {
   findBestPatchVersion,
   findPackageNode,
   findPackageNodes,
+  getAlertsMapFromArborist,
   updateNode,
   updatePackageJsonFromNode
-} from '../../utils/arborist-helpers.mts'
+} from '../../shadow/npm/arborist-helpers.mts'
+import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { removeNodeModules } from '../../utils/fs.mts'
 import { globWorkspace } from '../../utils/glob.mts'
 import { applyRange } from '../../utils/semver.mts'
