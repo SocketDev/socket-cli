@@ -16,15 +16,15 @@ import {
   getBaseGitBranch,
   getSocketBranchName,
   getSocketCommitMessage,
-  gitCleanFdx,
   gitCreateAndPushBranchIfNeeded,
-  gitHardReset
+  gitResetAndClean
 } from './git.mts'
 import {
-  doesPullRequestExistForBranch,
-  enableAutoMerge,
+  cleanupOpenPrs,
+  enablePrAutoMerge,
   getGitHubEnvRepoInfo,
-  openGitHubPullRequest
+  openPr,
+  prExistForBranch
 } from './open-pr.mts'
 import { getAlertMapOptions } from './shared.mts'
 import constants from '../../constants.mts'
@@ -45,6 +45,7 @@ import {
 } from '../../utils/arborist-helpers.mts'
 import { removeNodeModules } from '../../utils/fs.mts'
 import { globWorkspace } from '../../utils/glob.mts'
+import { parsePnpmLockfileVersion } from '../../utils/pnpm.mts'
 import { applyRange } from '../../utils/semver.mts'
 import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
@@ -68,6 +69,7 @@ async function getActualTree(cwd: string = process.cwd()): Promise<SafeNode> {
 }
 
 type InstallOptions = {
+  args?: string[] | undefined
   cwd?: string | undefined
   spinner?: Spinner | undefined
 }
@@ -76,9 +78,12 @@ async function install(
   pkgEnvDetails: EnvDetails,
   options: InstallOptions
 ): Promise<SafeNode> {
-  const { cwd, spinner } = { __proto__: null, ...options } as InstallOptions
+  const { args, cwd, spinner } = {
+    __proto__: null,
+    ...options
+  } as InstallOptions
   await runAgentInstall(pkgEnvDetails, {
-    args: ['--no-frozen-lockfile'],
+    args: [...(args ?? []), '--no-frozen-lockfile'],
     spinner,
     stdio: isDebug() ? 'inherit' : 'ignore'
   })
@@ -110,20 +115,32 @@ export async function pnpmFix(
   }
   // Lazily access constants.spinner.
   const { spinner } = constants
+  const { pkgPath: rootPath } = pkgEnvDetails
 
   spinner?.start()
 
-  const { pkgPath: rootPath } = pkgEnvDetails
   let lockfile = await readLockfile(rootPath)
 
+  // If pnpm-lock.yaml does NOT exist then install with pnpm to create it.
   if (!lockfile) {
     await install(pkgEnvDetails, { cwd, spinner })
     lockfile = await readLockfile(rootPath)
-    if (!lockfile) {
-      spinner?.stop()
-      logger.error('Required pnpm-lock.yaml not found.')
-      return
-    }
+  }
+  // Update pnpm-lock.yaml if its version is older than what the installed pnpm
+  // produces.
+  if (
+    lockfile &&
+    pkgEnvDetails.agentVersion.major >= 10 &&
+    parsePnpmLockfileVersion(lockfile.lockfileVersion).major <= 6
+  ) {
+    await install(pkgEnvDetails, { args: ['--lockfile-only'], cwd, spinner })
+    lockfile = await readLockfile(rootPath)
+  }
+  // Exit early if pnpm-lock.yaml is not found.
+  if (!lockfile) {
+    spinner?.stop()
+    logger.error('Required pnpm-lock.yaml not found.')
+    return
   }
 
   const alertsMap = purls.length
@@ -313,9 +330,7 @@ export async function pnpmFix(
             // Reset things just in case.
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
-              await gitHardReset(baseBranch, cwd)
-              // eslint-disable-next-line no-await-in-loop
-              await gitCleanFdx(cwd)
+              await gitResetAndClean(baseBranch, cwd)
             }
             continue
           }
@@ -350,7 +365,7 @@ export async function pnpmFix(
               const { owner, repo } = getGitHubEnvRepoInfo()
               if (
                 // eslint-disable-next-line no-await-in-loop
-                (await doesPullRequestExistForBranch(owner, repo, branch)) ||
+                (await prExistForBranch(owner, repo, branch)) ||
                 // eslint-disable-next-line no-await-in-loop
                 !(await gitCreateAndPushBranchIfNeeded(
                   branch,
@@ -361,14 +376,18 @@ export async function pnpmFix(
                 continue
               }
               // eslint-disable-next-line no-await-in-loop
-              const prResponse = await openGitHubPullRequest(
+              await cleanupOpenPrs(owner, repo, oldPurl, newVersion, {
+                workspaceName
+              })
+              // eslint-disable-next-line no-await-in-loop
+              const prResponse = await openPr(
                 owner,
                 repo,
-                baseBranch,
                 branch,
                 oldPurl,
                 newVersion,
                 {
+                  baseBranch,
                   cwd,
                   workspaceName
                 }
@@ -378,7 +397,7 @@ export async function pnpmFix(
                 spinner?.info(`Opened PR #${data.number}.`)
                 if (autoMerge) {
                   // eslint-disable-next-line no-await-in-loop
-                  await enableAutoMerge(data)
+                  await enablePrAutoMerge(data)
                 }
               }
             } catch (e) {
@@ -389,9 +408,7 @@ export async function pnpmFix(
 
           if (isCi) {
             // eslint-disable-next-line no-await-in-loop
-            await gitHardReset(baseBranch, cwd)
-            // eslint-disable-next-line no-await-in-loop
-            await gitCleanFdx(cwd)
+            await gitResetAndClean(baseBranch, cwd)
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { cwd, spinner })
           }

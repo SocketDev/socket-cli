@@ -3,6 +3,7 @@ import path from 'node:path'
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
+import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
@@ -44,6 +45,20 @@ export function getSocketBranchName(
   return `socket/${fullName}-${formatBranchName(newVersion)}`
 }
 
+export function getSocketPrTitlePattern(
+  purl: string,
+  workspaceName?: string | undefined
+): RegExp {
+  const purlObj = PackageURL.fromString(purl)
+  const pkgName = getPkgNameFromPurlObj(purlObj)
+  const workspaceDetails = workspaceName
+    ? ` in ${escapeRegExp(workspaceName)}`
+    : ''
+  return new RegExp(
+    `Bump ${escapeRegExp(pkgName)} from ${escapeRegExp(purlObj.version!)} to \\S+${workspaceDetails}`
+  )
+}
+
 export function getSocketPullRequestTitle(
   purl: string,
   newVersion: string,
@@ -63,7 +78,7 @@ export function getSocketPullRequestBody(
   const purlObj = PackageURL.fromString(purl)
   const pkgName = getPkgNameFromPurlObj(purlObj)
   const workspaceDetails = workspaceName ? ` in ${workspaceName}` : ''
-  return `Bumps [${pkgName}](https://socket.dev/${purlObj.type}/package/${pkgName}) from ${purlObj.version} to ${newVersion}${workspaceDetails}.`
+  return `Bump [${pkgName}](https://socket.dev/${purlObj.type}/package/${pkgName}) from ${purlObj.version} to ${newVersion}${workspaceDetails}.`
 }
 
 export function getSocketCommitMessage(
@@ -118,7 +133,17 @@ export async function gitCreateAndPushBranchIfNeeded(
   return false
 }
 
-export async function gitHardReset(
+export async function gitResetAndClean(
+  branch = 'HEAD',
+  cwd = process.cwd()
+): Promise<void> {
+  // Discards tracked changes.
+  await gitResetHard(branch, cwd)
+  // Deletes all untracked files and directories.
+  await gitCleanFdx(cwd)
+}
+
+export async function gitResetHard(
   branch = 'HEAD',
   cwd = process.cwd()
 ): Promise<void> {
