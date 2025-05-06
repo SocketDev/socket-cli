@@ -9,8 +9,8 @@ import {
 import { isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../constants.mts'
-import { getNpmBinPath } from '../shadow/npm/paths.mts'
+import constants from '../../constants.mts'
+import { getNpmBinPath } from '../../utils/npm-paths.mts'
 
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 

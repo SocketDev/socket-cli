@@ -1,7 +1,7 @@
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
-import { getNpmBinPath } from '../../shadow/npm/paths.mts'
+import { getNpmBinPath } from '../../utils/npm-paths.mts'
 
 export async function runRawNpm(
   argv: string[] | readonly string[]

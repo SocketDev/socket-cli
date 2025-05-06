@@ -32,17 +32,17 @@ import {
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   SafeArborist
 } from '../../shadow/npm/arborist/lib/arborist/index.mts'
-import { runAgentInstall } from '../../utils/agent.mts'
-import {
-  getAlertsMapFromPnpmLockfile,
-  getAlertsMapFromPurls
-} from '../../utils/alerts-map.mts'
 import {
   findBestPatchVersion,
   findPackageNode,
   findPackageNodes,
   updatePackageJsonFromNode
-} from '../../utils/arborist-helpers.mts'
+} from '../../shadow/npm/arborist-helpers.mts'
+import { runAgentInstall } from '../../utils/agent.mts'
+import {
+  getAlertsMapFromPnpmLockfile,
+  getAlertsMapFromPurls
+} from '../../utils/alerts-map.mts'
 import { removeNodeModules } from '../../utils/fs.mts'
 import { globWorkspace } from '../../utils/glob.mts'
 import { parsePnpmLockfileVersion } from '../../utils/pnpm.mts'
