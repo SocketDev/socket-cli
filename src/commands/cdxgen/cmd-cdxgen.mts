@@ -1,4 +1,4 @@
-// import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -276,7 +276,10 @@ async function run(
     yargv.lifecycle = 'pre-build'
     yargv['install-deps'] = false
     logger.info(
-      `Socket set cdxgen --lifecycle to "${yargv.lifecycle}" to avoid arbitrary code execution on this scan.\n  Pass "--lifecycle build" to generate a BOM consisting of information obtained during the build process.`
+      `Socket set cdxgen --lifecycle to "${yargv.lifecycle}" to avoid arbitrary code execution on this scan.\n  Pass "--lifecycle build" to generate a BOM consisting of information obtained during the build process.\n  See cdxgen ${terminalLink(
+        'BOM lifecycles documentation',
+        'https://cyclonedx.github.io/cdxgen/#/ADVANCED?id=bom-lifecycles'
+      )} for more details.`
     )
   }
 
