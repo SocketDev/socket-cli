@@ -23,7 +23,7 @@ const {
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
-type SafeNpmInstallOptions = SpawnOption & {
+export type SafeNpmInstallOptions = SpawnOption & {
   agentExecPath?: string | undefined
   args?: string[] | readonly string[] | undefined
   ipc?: object | undefined
