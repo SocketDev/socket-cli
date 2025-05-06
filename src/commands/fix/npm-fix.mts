@@ -14,15 +14,15 @@ import {
   getBaseGitBranch,
   getSocketBranchName,
   getSocketCommitMessage,
-  gitCleanFdx,
   gitCreateAndPushBranchIfNeeded,
-  gitHardReset
+  gitResetAndClean
 } from './git.mts'
 import {
-  doesPullRequestExistForBranch,
-  enableAutoMerge,
+  cleanupOpenPrs,
+  enablePrAutoMerge,
   getGitHubEnvRepoInfo,
-  openGitHubPullRequest
+  openPr,
+  prExistForBranch
 } from './open-pr.mts'
 import { getAlertMapOptions } from './shared.mts'
 import constants from '../../constants.mts'
@@ -247,9 +247,7 @@ export async function npmFix(
             // Reset things just in case.
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
-              await gitHardReset(baseBranch, cwd)
-              // eslint-disable-next-line no-await-in-loop
-              await gitCleanFdx(cwd)
+              await gitResetAndClean(baseBranch, cwd)
             }
             continue
           }
@@ -284,7 +282,7 @@ export async function npmFix(
               const { owner, repo } = getGitHubEnvRepoInfo()
               if (
                 // eslint-disable-next-line no-await-in-loop
-                (await doesPullRequestExistForBranch(owner, repo, branch)) ||
+                (await prExistForBranch(owner, repo, branch)) ||
                 // eslint-disable-next-line no-await-in-loop
                 !(await gitCreateAndPushBranchIfNeeded(
                   branch,
@@ -295,14 +293,18 @@ export async function npmFix(
                 continue
               }
               // eslint-disable-next-line no-await-in-loop
-              const prResponse = await openGitHubPullRequest(
+              await cleanupOpenPrs(owner, repo, oldPurl, newVersion, {
+                workspaceName
+              })
+              // eslint-disable-next-line no-await-in-loop
+              const prResponse = await openPr(
                 owner,
                 repo,
-                baseBranch,
                 branch,
                 oldPurl,
                 newVersion,
                 {
+                  baseBranch,
                   cwd,
                   workspaceName
                 }
@@ -312,7 +314,7 @@ export async function npmFix(
                 spinner?.info(`Opened PR #${data.number}.`)
                 if (autoMerge) {
                   // eslint-disable-next-line no-await-in-loop
-                  await enableAutoMerge(data)
+                  await enablePrAutoMerge(data)
                 }
               }
             } catch (e) {
@@ -323,9 +325,7 @@ export async function npmFix(
 
           if (isCi) {
             // eslint-disable-next-line no-await-in-loop
-            await gitHardReset(baseBranch, cwd)
-            // eslint-disable-next-line no-await-in-loop
-            await gitCleanFdx(cwd)
+            await gitResetAndClean(baseBranch, cwd)
             // eslint-disable-next-line no-await-in-loop
             await install(arb.idealTree!, { cwd })
           }
