@@ -24,7 +24,6 @@ const config: CliCommandConfig = {
     file: {
       type: 'string',
       shortFlag: 'f',
-      default: '-',
       description:
         'Filepath to save output. Only valid with --json/--markdown. Defaults to stdout.'
     },
@@ -108,7 +107,7 @@ async function run(
   // - ['30']
   // Validate final values in the next step
   let scope = 'org'
-  let time = isTestingV1() ? '7' : 7
+  let time = isTestingV1() ? '30' : 30
   let repoName = ''
   if (isTestingV1()) {
     if (cli.input[0] === 'org') {
@@ -189,7 +188,7 @@ async function run(
     },
     {
       nook: true,
-      test: file === '-' || !!json || !!markdown,
+      test: !file || !!json || !!markdown,
       message:
         'The `--file` flag is only valid when using `--json` or `--markdown`',
       pass: 'ok',
