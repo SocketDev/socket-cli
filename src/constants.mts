@@ -46,6 +46,7 @@ type Internals = Remap<
 type ENV = Remap<
   RegistryEnv &
     Readonly<{
+      DISABLE_GITHUB_CACHE: boolean
       GITHUB_ACTIONS: boolean
       GITHUB_REF_NAME: string
       GITHUB_REF_TYPE: string
@@ -215,6 +216,9 @@ const LAZY_ENV = () => {
   return Object.freeze({
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
+    // Flag to disable using GitHub's workflow actions/cache.
+    // https://github.com/actions/cache
+    DISABLE_GITHUB_CACHE: envAsBoolean(env['DISABLE_GITHUB_CACHE']),
     // Always set to true when GitHub Actions is running the workflow. This variable
     // can be used to differentiate when tests are being run locally or by GitHub Actions.
     // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
