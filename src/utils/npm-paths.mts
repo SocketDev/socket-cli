@@ -35,6 +35,14 @@ function getNpxBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
   return _npxBinPathDetails
 }
 
+export function isNpmBinPathShadowed() {
+  return getNpmBinPathDetails().shadowed
+}
+
+export function isNpxBinPathShadowed() {
+  return getNpxBinPathDetails().shadowed
+}
+
 let _npmBinPath: string | undefined
 export function getNpmBinPath(): string {
   if (_npmBinPath === undefined) {
@@ -44,25 +52,6 @@ export function getNpmBinPath(): string {
     }
   }
   return _npmBinPath
-}
-
-export function isNpmBinPathShadowed() {
-  return getNpmBinPathDetails().shadowed
-}
-
-let _npxBinPath: string | undefined
-export function getNpxBinPath(): string {
-  if (_npxBinPath === undefined) {
-    _npxBinPath = getNpxBinPathDetails().path
-    if (!_npxBinPath) {
-      exitWithBinPathError(NPX)
-    }
-  }
-  return _npxBinPath
-}
-
-export function isNpxBinPathShadowed() {
-  return getNpxBinPathDetails().shadowed
 }
 
 let _npmPath: string | undefined
@@ -96,4 +85,15 @@ export function getNpmRequire(): NodeJS.Require {
     )
   }
   return _npmRequire
+}
+
+let _npxBinPath: string | undefined
+export function getNpxBinPath(): string {
+  if (_npxBinPath === undefined) {
+    _npxBinPath = getNpxBinPathDetails().path
+    if (!_npxBinPath) {
+      exitWithBinPathError(NPX)
+    }
+  }
+  return _npxBinPath
 }
