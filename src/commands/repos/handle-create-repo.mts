@@ -29,6 +29,5 @@ export async function handleCreateRepo(
     repoName,
     visibility
   })
-
-  await outputCreateRepo(data, repoName, outputKind)
+  outputCreateRepo(data, repoName, outputKind)
 }
