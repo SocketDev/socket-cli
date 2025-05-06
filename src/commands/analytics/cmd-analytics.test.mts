@@ -28,7 +28,7 @@ describe('socket analytics', async () => {
             - Permissions: report:write
 
           Default parameters are set to show the organization-level analytics over the
-          last 7 days.
+          last 30 days.
 
           Options
             --file            Filepath to save output. Only valid with --json/--markdown. Defaults to stdout.
@@ -37,7 +37,7 @@ describe('socket analytics', async () => {
             --markdown        Output result as markdown
             --repo            Name of the repository. Only valid when scope=repo
             --scope           Scope of the analytics data - either 'org' or 'repo', default: org
-            --time            Time filter - either 7, 30 or 90, default: 7
+            --time            Time filter - either 7, 30 or 90, default: 30
 
           Examples
             $ socket analytics --scope=org --time=7
@@ -132,7 +132,7 @@ describe('socket analytics', async () => {
 
           When scope is repo, a repo slug must be given as well.
 
-          The time argument must be number 7, 30, or 90 and defaults to 7.
+          The time argument must be number 7, 30, or 90 and defaults to 30.
 
           Options
             --file            Filepath to save output. Only valid with --json/--markdown. Defaults to stdout.
@@ -141,7 +141,7 @@ describe('socket analytics', async () => {
             --markdown        Output result as markdown
             --repo            Name of the repository. Only valid when scope=repo
             --scope           Scope of the analytics data - either 'org' or 'repo', default: org
-            --time            Time filter - either 7, 30 or 90, default: 7
+            --time            Time filter - either 7, 30 or 90, default: 30
 
           Examples
             $ socket analytics org 7
