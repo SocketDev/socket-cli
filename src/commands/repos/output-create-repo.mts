@@ -6,11 +6,11 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
-export async function outputCreateRepo(
+export function outputCreateRepo(
   result: CResult<SocketSdkReturnType<'createOrgRepo'>['data']>,
   requestedName: string,
   outputKind: OutputKind
-): Promise<void> {
+): void {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
   }
