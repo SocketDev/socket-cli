@@ -45,7 +45,7 @@ const config: CliCommandConfig = {
       type: 'number',
       shortFlag: 't',
       default: 7,
-      description: 'Time filter - either 7, 30 or 90, default: 7'
+      description: 'Time filter - either 7, 30 or 90, default: 30'
     }
   },
   help: (command, { flags }) =>
@@ -58,13 +58,13 @@ const config: CliCommandConfig = {
       - Permissions: report:write
 
     ${isTestingV1() ? '' : 'Default parameters are set to show the organization-level analytics over the'}
-    ${isTestingV1() ? '' : 'last 7 days.'}
+    ${isTestingV1() ? '' : 'last 30 days.'}
 
     ${isTestingV1() ? 'The scope is either org or repo level, defaults to org.' : ''}
 
     ${isTestingV1() ? 'When scope is repo, a repo slug must be given as well.' : ''}
 
-    ${isTestingV1() ? 'The time argument must be number 7, 30, or 90 and defaults to 7.' : ''}
+    ${isTestingV1() ? 'The time argument must be number 7, 30, or 90 and defaults to 30.' : ''}
 
     Options
       ${getFlagListOutput(flags, 6)}
@@ -131,10 +131,10 @@ async function run(
       scope = String(cli.flags['scope'] || '')
     }
     if (scope === 'repo') {
-      repoName = String(cli.flags['repoName'] || '')
+      repoName = String(cli.flags['repo'] || '')
     }
     if (cli.flags['time']) {
-      time = Number(cli.flags['time'] || 7)
+      time = Number(cli.flags['time'] || 30)
     }
   }
 
@@ -152,6 +152,14 @@ async function run(
     },
     {
       nook: true,
+      // Before v1 there were no args, only flags
+      test: isTestingV1() || cli.input.length === 0,
+      message: 'This command does not accept any arguments (use flags instead)',
+      pass: 'ok',
+      fail: `bad`
+    },
+    {
+      nook: true,
       test: scope === 'org' || !!repoName,
       message: isTestingV1()
         ? 'When scope=repo, repo name should be the second argument'
@@ -163,11 +171,9 @@ async function run(
       nook: true,
       test:
         scope === 'org' ||
-        (isTestingV1() &&
-          repoName !== '7' &&
-          repoName !== '30' &&
-          repoName !== '90'),
-      message: 'Missing the repo name as second argument',
+        !isTestingV1() ||
+        (repoName !== '7' && repoName !== '30' && repoName !== '90'),
+      message: 'When scope is repo, the second arg should be repo, not time',
       pass: 'ok',
       fail: 'missing'
     },
@@ -217,7 +223,8 @@ async function run(
 
   return await handleAnalytics({
     scope,
-    time: time === '90' ? 90 : time === '30' ? 30 : 7,
+    time:
+      time === '90' || time === 90 ? 90 : time === '30' || time === 30 ? 30 : 7,
     repo: repoName,
     outputKind,
     filePath: String(file || '')
