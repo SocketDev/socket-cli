@@ -1,5 +1,6 @@
 import { refToRelative } from '@pnpm/dependency-path'
 import { detectDepTypes } from '@pnpm/lockfile.detect-dep-types'
+import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
@@ -12,6 +13,7 @@ import {
 } from './spec.mts'
 
 import type { LockfileObject } from '@pnpm/lockfile.fs'
+import type { SemVer } from 'semver'
 
 export function extractPurlsFromPnpmLockfileV6(
   lockfile: LockfileObject
@@ -75,13 +77,13 @@ export function extractPurlsFromPnpmLockfileV9(
 export function extractPurlsFromPnpmLockfile(
   lockfile: LockfileObject
 ): string[] {
-  return parsePnpmLockfileVersion(lockfile.lockfileVersion) >= 9
-    ? extractPurlsFromPnpmLockfileV9(lockfile)
-    : extractPurlsFromPnpmLockfileV6(lockfile)
+  return parsePnpmLockfileVersion(lockfile.lockfileVersion).major <= 6
+    ? extractPurlsFromPnpmLockfileV6(lockfile)
+    : extractPurlsFromPnpmLockfileV9(lockfile)
 }
 
-export function parsePnpmLockfileVersion(version: string): number {
-  return parseInt(version.split('.')[0]! ?? '', 10) || 0
+export function parsePnpmLockfileVersion(version: string): SemVer {
+  return semver.coerce(version)!
 }
 
 export function resolvePnpmPackageId(
