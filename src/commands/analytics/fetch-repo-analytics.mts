@@ -8,7 +8,11 @@ export async function fetchRepoAnalyticsData(
   repo: string,
   time: number
 ): Promise<CResult<SocketSdkReturnType<'getRepoAnalytics'>['data']>> {
-  const sockSdk = await setupSdk()
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   return await handleApiCall(
     sockSdk.getRepoAnalytics(repo, time.toString()),

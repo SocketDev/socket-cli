@@ -32,9 +32,13 @@ export async function attemptLogin(
     })) || SOCKET_PUBLIC_API_TOKEN
 
   const sdk = await setupSdk(apiToken, apiBaseUrl, apiProxy)
+  if (!sdk.ok) {
+    logger.fail(failMsgWithBadge(sdk.message, sdk.cause))
+    return
+  }
 
   const result = await handleApiCall(
-    sdk.getOrganizations(),
+    sdk.data.getOrganizations(),
     'token verification'
   )
 

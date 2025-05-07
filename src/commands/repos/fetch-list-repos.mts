@@ -17,7 +17,11 @@ export async function fetchListRepos({
   per_page: number
   sort: string
 }): Promise<CResult<SocketSdkReturnType<'getOrgRepoList'>['data']>> {
-  const sockSdk = await setupSdk()
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   return await handleApiCall(
     sockSdk.getOrgRepoList(orgSlug, {
