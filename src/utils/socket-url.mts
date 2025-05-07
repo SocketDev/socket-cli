@@ -1,11 +1,36 @@
+import type { PackageURL } from '@socketregistry/packageurl-js'
+import type { components } from '@socketsecurity/sdk/types/api'
+
+type PurlLikeType = PackageURL | components['schemas']['SocketPURL']
+
+export function getPkgFullNameFromPurlObj(purlObj: PurlLikeType): string {
+  if (purlObj.type === 'maven') {
+    return [purlObj.namespace, purlObj.name].filter(Boolean).join(':')
+  } else {
+    return [purlObj.namespace, purlObj.name].filter(Boolean).join('/')
+  }
+}
+
 export function getSocketDevAlertUrl(alertType: string): string {
   return `https://socket.dev/alerts/${alertType}`
 }
 
+export function getSocketDevPackageOverviewUrlFromPurl(
+  purlObj: PurlLikeType
+): string {
+  const fullName = getPkgFullNameFromPurlObj(purlObj)
+
+  return getSocketDevPackageOverviewUrl(purlObj.type, fullName, purlObj.version)
+}
+
 export function getSocketDevPackageOverviewUrl(
-  eco: string,
-  name: string,
+  ecosystem: string,
+  fullName: string,
   version?: string | undefined
 ): string {
-  return `https://socket.dev/${eco}/package/${name}${version ? `/overview/${version}` : ''}`
+  if (ecosystem === 'go') {
+    return `https://socket.dev/go/package/${fullName}${version ? `?section=overview&version=${version}` : ''}`
+  } else {
+    return `https://socket.dev/${ecosystem}/package/${fullName}${version ? `/overview/${version}` : ''}`
+  }
 }
