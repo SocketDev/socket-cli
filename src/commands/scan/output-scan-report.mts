@@ -193,8 +193,8 @@ Configuration used to generate this report:
 
 ${
   report.alerts.size
-    ? `All the alerts from the scan with a policy set to at least "${report.options.reportLevel}"}.`
-    : `The scan contained no alerts for with a policy set to at least "${report.options.reportLevel}".`
+    ? `All the alerts from the scan with a policy set to at least "${report.options.reportLevel}".`
+    : `The scan contained no alerts with a policy set to at least "${report.options.reportLevel}".`
 }
 
 ${
