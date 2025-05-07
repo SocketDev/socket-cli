@@ -109,7 +109,83 @@ export async function meowWithSubcommands(
     }
   }
 
-  const cli = meow(
+  // This is basically a dry-run parse of cli args and flags. We use this to
+  // determine config overrides and expected output mode.
+  const cli1 = meow(`(this should never be printed)`, {
+    argv,
+    importMeta,
+    ...additionalOptions,
+    flags,
+    // Do not strictly check for flags here.
+    allowUnknownFlags: true,
+    // We will emit help when we're ready
+    // Plus, if we allow this then meow() can just exit here.
+    autoHelp: false
+  })
+
+  // Hard override the config if instructed to do so.
+  // The env var overrides the --flag, which overrides the persisted config
+  // Also, when either of these are used, config updates won't persist.
+  let configOverrideResult
+  // Lazily access constants.ENV.SOCKET_CLI_CONFIG.
+  if (constants.ENV.SOCKET_CLI_CONFIG) {
+    configOverrideResult = overrideCachedConfig(
+      // Lazily access constants.ENV.SOCKET_CLI_CONFIG.
+      constants.ENV.SOCKET_CLI_CONFIG
+    )
+  } else if (cli1.flags['config']) {
+    configOverrideResult = overrideCachedConfig(
+      String(cli1.flags['config'] || '')
+    )
+  }
+
+  // Lazily access constants.ENV.SOCKET_CLI_NO_API_TOKEN.
+  if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
+    // This overrides the config override and even the explicit token env var.
+    // The config will be marked as readOnly to prevent persisting it.
+    overrideConfigApiToken(undefined)
+  } else {
+    // Lazily access constants.ENV.SOCKET_SECURITY_API_TOKEN.
+    const tokenOverride = constants.ENV.SOCKET_SECURITY_API_TOKEN
+    if (tokenOverride) {
+      // This will set the token (even if there was a config override) and
+      // set it to readOnly, making sure the temp token won't be persisted.
+      overrideConfigApiToken(tokenOverride)
+    }
+  }
+
+  if (configOverrideResult?.ok === false) {
+    emitBanner(name)
+    logger.fail(configOverrideResult.message)
+    process.exitCode = 2
+    return
+  }
+
+  // If we got at least some args, then lets find out if we can find a command.
+  if (commandOrAliasName) {
+    const alias = aliases[commandOrAliasName]
+    // First: Resolve argv data from alias if its an alias that's been given.
+    const [commandName, ...commandArgv] = alias
+      ? [...alias.argv, ...rawCommandArgv]
+      : [commandOrAliasName, ...rawCommandArgv]
+    // Second: Find a command definition using that data.
+    const commandDefinition = commandName ? subcommands[commandName] : undefined
+    // Third: If a valid command has been found, then we run it...
+    if (commandDefinition) {
+      return await commandDefinition.run(commandArgv, importMeta, {
+        parentName: name
+      })
+    }
+  }
+
+  if (isTestingV1()) {
+    delete subcommands['diff-scan']
+    delete subcommands['info']
+    delete subcommands['report']
+  }
+
+  // Parse it again. Config overrides should now be applied (may affect help).
+  const cli2 = meow(
     `
     Usage
       $ ${name} <command>
@@ -157,71 +233,18 @@ export async function meowWithSubcommands(
     }
   )
 
-  // Hard override the config if instructed to do so.
-  // The env var overrides the --flag, which overrides the persisted config
-  // Also, when either of these are used, config updates won't persist.
-  let configOverrideResult
-  // Lazily access constants.ENV.SOCKET_CLI_CONFIG.
-  if (constants.ENV.SOCKET_CLI_CONFIG) {
-    configOverrideResult = overrideCachedConfig(
-      // Lazily access constants.ENV.SOCKET_CLI_CONFIG.
-      constants.ENV.SOCKET_CLI_CONFIG
-    )
-  } else if (cli.flags['config']) {
-    configOverrideResult = overrideCachedConfig(
-      String(cli.flags['config'] || '')
-    )
-  }
-
-  // Lazily access constants.ENV.SOCKET_CLI_NO_API_TOKEN.
-  if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
-    // This overrides the config override and even the explicit token env var.
-    // The config will be marked as readOnly to prevent persisting it.
-    overrideConfigApiToken(undefined)
-  } else {
-    // Lazily access constants.ENV.SOCKET_SECURITY_API_TOKEN.
-    const tokenOverride = constants.ENV.SOCKET_SECURITY_API_TOKEN
-    if (tokenOverride) {
-      // This will set the token (even if there was a config override) and
-      // set it to readOnly, making sure the temp token won't be persisted.
-      overrideConfigApiToken(tokenOverride)
-    }
-  }
-
-  if (configOverrideResult?.ok === false) {
-    emitBanner(name)
-    logger.fail(configOverrideResult.message)
-    process.exitCode = 2
-    return
-  }
-
-  // If we got at least some args, then lets find out if we can find a command.
-  if (commandOrAliasName) {
-    const alias = aliases[commandOrAliasName]
-    // First: Resolve argv data from alias if its an alias that's been given.
-    const [commandName, ...commandArgv] = alias
-      ? [...alias.argv, ...rawCommandArgv]
-      : [commandOrAliasName, ...rawCommandArgv]
-    // Second: Find a command definition using that data.
-    const commandDefinition = commandName ? subcommands[commandName] : undefined
-    // Third: If a valid command has been found, then we run it...
-    if (commandDefinition) {
-      return await commandDefinition.run(commandArgv, importMeta, {
-        parentName: name
-      })
-    }
-  }
-
   // ...else we provide basic instructions and help.
-  if (!cli.flags['silent']) {
+  if (!cli2.flags['silent']) {
     emitBanner(name)
   }
-  if (!cli.flags['help'] && cli.flags['dryRun']) {
+  if (!cli2.flags['help'] && cli2.flags['dryRun']) {
     process.exitCode = 0
     // Lazily access constants.DRY_RUN_LABEL.
     logger.log(`${constants.DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
   } else {
-    cli.showHelp()
+    // When you explicitly request --help, the command should be successful
+    // so we exit(0). If we do it because we need more input, we exit(2).
+    cli2.showHelp(cli2.flags['help'] ? 0 : 2)
   }
 }
 
@@ -251,16 +274,46 @@ export function meowOrExit({
     help: config.help(command, config),
     importMeta,
     flags: config.flags,
-    allowUnknownFlags: Boolean(allowUnknownFlags),
-    autoHelp: false // otherwise we can't exit(0)
+    allowUnknownFlags: true, // meow will exit(1) before printing the banner
+    autoHelp: false // meow will exit(0) before printing the banner
   })
 
   if (!cli.flags['silent']) {
     emitBanner(command)
   }
-  if (cli.flags['help']) {
-    cli.showHelp()
+  if (!allowUnknownFlags) {
+    // Run meow specifically with the flag setting. It will exit(2) if an
+    // invalid flag is set and print a message.
+    meow({
+      argv,
+      description: config.description,
+      help: config.help(command, config),
+      importMeta,
+      flags: config.flags,
+      allowUnknownFlags: false,
+      autoHelp: false
+    })
   }
+
+  if (cli.flags['help']) {
+    cli.showHelp(0)
+  }
+  // Now test for help state. Run meow again. If it exits now, it must be due
+  // to wanting to print the help screen. But it would exit(0) and we want a
+  // consistent exit(2) for that case (missing input). TODO: move away from meow
+  process.exitCode = 2
+  meow({
+    argv,
+    description: config.description,
+    help: config.help(command, config),
+    importMeta,
+    flags: config.flags,
+    allowUnknownFlags: Boolean(allowUnknownFlags),
+    autoHelp: false
+  })
+  // Ok, no help, reset to default.
+  process.exitCode = 0
+
   return cli
 }
 

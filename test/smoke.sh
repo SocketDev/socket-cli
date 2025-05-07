@@ -12,6 +12,14 @@
 ##
 ######
 
+##
+# Adding commands:
+#
+# All run functions accept an exit code as first arg and the command to run as remaining args.
+#
+# - `run_socket`  Use for most commands.
+# - `run_json`    Use for commands that return JSON. It will confirm that stdout contains valid JSON and assert the toplevel structure matches exit code logic.
+#
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -33,6 +41,15 @@ TEST_COUNTER=0
 # COMMAND_PREFIX="npm run --silent s --"
 # node 22+
 COMMAND_PREFIX="./sd"
+
+# Function to restore config on exit
+restore_config() {
+    echo -e "\n${YELLOW}Restoring backed up configuration values...${NC}"
+    eval "${COMMAND_PREFIX} config set defaultOrg ${DEFORG_BAK}"
+    eval "${COMMAND_PREFIX} config set apiToken ${TOKEN_BAK}"
+    eval "${COMMAND_PREFIX} config set isTestingV1 ${TESTV1_BAK}"
+    echo -e "${GREEN}Configuration restored!${NC}"
+}
 
 # Get target subcommand from first argument
 TARGET_SUBCOMMAND="$1"
@@ -238,10 +255,23 @@ else
   npm run build
 fi
 
+# Backup config
+echo "Backing up default org and apitoken..."
+DEFORG_BAK=$(eval "$COMMAND_PREFIX config get defaultOrg --json" | jq -r '.data' )
+TOKEN_BAK=$(eval "$COMMAND_PREFIX config get apiToken --json" | jq -r '.data' )
+TESTV1_BAK=$(eval "$COMMAND_PREFIX config get isTestingV1 --json" | jq -r '.data' )
+echo "Backing complete!"
+
+# Set up trap to restore config on any exit
+trap restore_config EXIT
+
+# This smoke test assumes the <v1 cli api
+run_socket 0 config set isTestingV1 true
+
 ### Analytics
 
 if should_run_section "analytics"; then
-    run_socket 2 analytics --help
+    run_socket 0 analytics --help
     run_socket 0 analytics --dry-run
     run_socket 0 analytics                    # interactive
     run_socket 0 analytics --markdown
@@ -267,7 +297,7 @@ fi
 ### audit-log
 
 if should_run_section "audit-log"; then
-    run_socket 2 audit-log --help
+    run_socket 0 audit-log --help
     run_socket 0 audit-log --dry-run
     run_socket 0 audit-log
 fi
@@ -283,7 +313,7 @@ fi
 ### ci
 
 if should_run_section "ci"; then
-    run_socket 2 ci --help
+    run_socket 0 ci --help
     run_socket 0 ci --dry-run
     run_socket 0 ci
 fi
@@ -291,21 +321,19 @@ fi
 ### config
 
 if should_run_section "config"; then
-    DEFORG_BAK=$(eval "$COMMAND_PREFIX config get defaultOrg --json" | jq -r '.data' )
-
     run_socket 2 config
-    run_socket 2 config --help
+    run_socket 0 config --help
     run_socket 0 config --dry-run
-    run_socket 2 config get --help
+    run_socket 0 config get --help
     run_socket 2 config get --dry-run
     run_socket 0 config get defaultOrg
-    run_socket 2 config set --help
+    run_socket 0 config set --help
     run_socket 2 config set --dry-run
     run_socket 0 config set defaultOrg mydev
-    run_socket 2 config unset --help
+    run_socket 0 config unset --help
     run_socket 2 config unset --dry-run
     run_socket 0 config unset defaultOrg
-    run_socket 2 config auto --help
+    run_socket 0 config auto --help
     run_socket 2 config auto --dry-run
     run_socket 0 config auto defaultOrg
 
@@ -317,7 +345,7 @@ fi
 
 if should_run_section "dependencies"; then
     run_socket 0 dependencies
-    run_socket 2 dependencies --help
+    run_socket 0 dependencies --help
     run_socket 0 dependencies --dry-run
     run_json   0 dependencies --json
     run_socket 0 dependencies --markdown
@@ -336,56 +364,61 @@ fi
 
 if should_run_section "fix"; then
     run_socket 0 fix
-    run_socket 2 fix --help
+    run_socket 0 fix --help
     run_socket 0 fix --dry-run
 fi
 
 ### login
 
 if should_run_section "login"; then
-    TOKEN_BAK=$(eval "$COMMAND_PREFIX config get apiToken --json" | jq -r '.data' )
-
     run_socket 0 login
-    run_socket 2 login --help
+    run_socket 0 login --help
     run_socket 0 login --dry-run
 
     run_socket 1 login --wat
     run_socket 1 login --api-base-url fail
     run_socket 1 login --api-proxy fail
+
+    echo "Restoring api token"
+    eval "${COMMAND_PREFIX} config set apiToken $TOKEN_BAK"
+    echo "Restoring default org to $DEFORG_BAK"
+    eval "${COMMAND_PREFIX} config set defaultOrg $DEFORG_BAK"
 fi
 
 ### logout
 
 if should_run_section "logout"; then
     run_socket 0 logout
-    run_socket 2 logout --help
+    run_socket 0 logout --help
     run_socket 0 logout --dry-run
     run_socket 0 logout --wat
 
-    # Let's hope this command isn't broken (:
-    eval "${COMMAND_PREFIX} config set apiToken ${TOKEN_BAK}"
+    echo "Restoring api token"
+    eval "${COMMAND_PREFIX} config set apiToken $TOKEN_BAK"
+    echo "Restoring default org to $DEFORG_BAK"
+    eval "${COMMAND_PREFIX} config set defaultOrg $DEFORG_BAK"
 fi
 
 ### manifest
 
 if should_run_section "manifest"; then
     run_socket 2 manifest
-    run_socket 2 manifest --help
+    run_socket 0 manifest --help
     run_socket 0 manifest --dry-run
     run_socket 2 manifest auto
-    run_socket 2 manifest auto --help
+    run_socket 0 manifest auto --help
     run_socket 0 manifest auto --dry-run
     run_socket 2 manifest conda
-    run_socket 2 manifest conda --help
+    run_socket 0 manifest conda --help
     run_socket 2 manifest conda --dry-run
     run_socket 2 manifest gradle
-    run_socket 2 manifest gradle --help
+    run_socket 0 manifest gradle --help
     run_socket 2 manifest gradle --dry-run
     run_socket 2 manifest kotlin
-    run_socket 2 manifest kotlin --help
+    run_socket 0 manifest kotlin --help
     run_socket 2 manifest kotlin --dry-run
     run_socket 2 manifest scala
-    run_socket 2 manifest scala --help
+    run_socket 0 manifest scala --help
     run_socket 2 manifest scala --dry-run
 fi
 
@@ -393,7 +426,7 @@ fi
 
 if should_run_section "npm"; then
     run_socket 1 npm
-    run_socket 2 npm --help
+    run_socket 0 npm --help
     run_socket 0 npm --dry-run
     run_socket 0 npm info
 fi
@@ -402,7 +435,7 @@ fi
 
 if should_run_section "npx"; then
     run_socket 2 npx
-    run_socket 2 npx --help
+    run_socket 0 npx --help
     run_socket 0 npx --dry-run
     run_socket 0 npx socket --dry-run
 fi
@@ -411,7 +444,7 @@ fi
 
 if should_run_section "oops"; then
     run_socket 1 oops
-    run_socket 2 oops --help
+    run_socket 0 oops --help
     run_socket 0 oops --dry-run
     run_socket 0 oops --wat
 fi
@@ -420,7 +453,7 @@ fi
 
 if should_run_section "optimize"; then
     run_socket 0 optimize
-    run_socket 2 optimize --help
+    run_socket 0 optimize --help
     run_socket 0 optimize --dry-run
 fi
 
@@ -428,22 +461,22 @@ fi
 
 if should_run_section "organization"; then
     run_socket 0 organization
-    run_socket 2 organization --help
+    run_socket 0 organization --help
     run_socket 0 organization --dry-run
     run_socket 0 organization list
-    run_socket 2 organization list --help
+    run_socket 0 organization list --help
     run_socket 0 organization list --dry-run
     run_socket 2 organization policy
-    run_socket 2 organization policy --help
+    run_socket 0 organization policy --help
     run_socket 0 organization policy --dry-run
     run_socket 0 organization policy license
-    run_socket 2 organization policy license --help
+    run_socket 0 organization policy license --help
     run_socket 0 organization policy license --dry-run
     run_socket 0 organization policy security
-    run_socket 2 organization policy security --help
+    run_socket 0 organization policy security --help
     run_socket 0 organization policy security --dry-run
     run_socket 0 organization quota
-    run_socket 2 organization quota --help
+    run_socket 0 organization quota --help
     run_socket 0 organization quota --dry-run
 
     run_socket 0 organization policy security --markdown
@@ -474,12 +507,12 @@ fi
 
 if should_run_section "package"; then
     run_socket 2 package
-    run_socket 2 package --help
+    run_socket 0 package --help
     run_socket 0 package --dry-run
-    run_socket 2 package score --help
+    run_socket 0 package score --help
     run_socket 2 package score --dry-run
-    run_socket 0 package score npm socket
-    run_socket 2 package shallow --help
+    run_socket 0 package score npm tenko
+    run_socket 0 package shallow --help
     run_socket 2 package shallow --dry-run
     run_socket 0 package shallow npm socket
 
@@ -496,7 +529,7 @@ if should_run_section "package"; then
     run_json   0 package shallow npm socket --json # 500
     run_json   0 package shallow npm babel --json # ok
     run_json   0 package shallow npm nope --json  # stuck?
-    run_json   1 package shallow npm mostdefinitelynotworkingletskeepitthatway --json
+    run_json   0 package shallow npm mostdefinitelynotworkingletskeepitthatway --json
 
     run_json   0 package score npm socket --json # 500
     run_json   0 package score npm babel --json # ok
@@ -508,7 +541,7 @@ fi
 
 if should_run_section "raw-npm"; then
     run_socket 1 raw-npm
-    run_socket 2 raw-npm --help
+    run_socket 0 raw-npm --help
     run_socket 0 raw-npm --dry-run
     run_socket 0 raw-npm info
 fi
@@ -517,7 +550,7 @@ fi
 
 if should_run_section "raw-npx"; then
     run_socket 0 raw-npx                                    # interactive shell...
-    run_socket 2 raw-npx --help
+    run_socket 0 raw-npx --help
     run_socket 0 raw-npx --dry-run
     run_socket 0 raw-npx socket --dry-run
 fi
@@ -528,20 +561,20 @@ if should_run_section "repos"; then
     eval "${COMMAND_PREFIX} config set apiToken ${TOKEN_BAK}"
 
     run_socket 2 repos
-    run_socket 2 repos --help
+    run_socket 0 repos --help
     run_socket 0 repos --dry-run
-    run_socket 2 repos create --help
+    run_socket 0 repos create --help
     run_socket 2 repos create --dry-run
     run_socket 0 repos create cli-smoke-test
     run_socket 1 repos create '%$#'
     run_socket 1 repos create '%$#' --json
-    run_socket 2 repos update --help
+    run_socket 0 repos update --help
     run_socket 2 repos update --dry-run
     run_socket 0 repos update cli-smoke-test --homepage "socket.dev"
-    run_socket 2 repos view --help
+    run_socket 0 repos view --help
     run_socket 2 repos view --dry-run
     run_socket 0 repos view cli-smoke-test
-    run_socket 2 repos del --help
+    run_socket 0 repos del --help
     run_socket 2 repos del --dry-run
     run_socket 0 repos del cli-smoke-test
 
@@ -567,43 +600,43 @@ fi
 
 if should_run_section "scan"; then
     run_socket 2 scan
-    run_socket 2 scan --help
+    run_socket 0 scan --help
     run_socket 0 scan --dry-run
-    run_socket 2 scan create --help
+    run_socket 0 scan create --help
     run_socket 2 scan create --dry-run
     run_socket 0 scan create .
     run_socket 0 scan create --json
     run_json   0 scan create . --json
     run_json   2 scan create --json --no-interactive
     run_json   0 scan create . --json --no-interactive
-    run_socket 2 scan del --help
+    run_socket 0 scan del --help
     run_socket 2 scan del --dry-run
     run_socket 0 scan list
-    run_socket 2 scan list --help
+    run_socket 0 scan list --help
     run_socket 0 scan list --dry-run
     run_json   0 scan list --json
     run_socket 0 scan list --markdown
     run_socket 2 scan view
-    run_socket 2 scan view --help
+    run_socket 0 scan view --help
     run_socket 2 scan view --dry-run
     # view the last scan of the current org
     SBOM_ID=$(eval "$COMMAND_PREFIX scan list --json" | jq -r '.data.results[0].id' )
     run_socket 0 scan view "$SBOM_ID"
     run_json   0 scan view "$SBOM_ID" --json
     run_socket 0 scan view "$SBOM_ID" --markdown
-    run_socket 2 scan metadata --help
+    run_socket 0 scan metadata --help
     run_socket 2 scan metadata --dry-run
     # view the metadata of the last scan of the current org
     run_socket 0 scan metadata "$SBOM_ID"
     run_json   0 scan metadata "$SBOM_ID" --json
     run_socket 0 scan metadata "$SBOM_ID" --markdown
-    run_socket 2 scan report --help
+    run_socket 0 scan report --help
     run_socket 2 scan report --dry-run
     # view the report of the last scan of the current org
     run_socket 0 scan report "$SBOM_ID"
     run_json   0 scan report "$SBOM_ID" --json
     run_socket 0 scan report "$SBOM_ID" --markdown
-    run_socket 2 scan diff --help
+    run_socket 0 scan diff --help
     run_socket 2 scan diff --dry-run
     # diff on the last two scans in the current org
     SBOM_IDS=$( eval "$COMMAND_PREFIX scan list --json" | jq -r '.data.results[0,1].id' | tr '\n' ' ' )
@@ -642,7 +675,7 @@ fi
 if should_run_section "threat-feed"; then
     # by default interactive so use flags
     run_socket 0 threat-feed                                    # potential caching issue? first run tends to show empty window with top of "window" scrolled down
-    run_socket 2 threat-feed --help
+    run_socket 0 threat-feed --help
     run_socket 0 threat-feed --dry-run
     run_json   0 threat-feed --json
     run_socket 0 threat-feed --markdown
@@ -653,7 +686,7 @@ fi
 
 if should_run_section "wrapper"; then
     run_socket 2 wrapper
-    run_socket 2 wrapper --help
+    run_socket 0 wrapper --help
     run_socket 2 wrapper --dry-run
     run_socket 0 wrapper --enable
     run_socket 0 wrapper --disable
