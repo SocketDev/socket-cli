@@ -4,11 +4,10 @@ import type { components } from '@socketsecurity/sdk/types/api'
 type PurlLikeType = PackageURL | components['schemas']['SocketPURL']
 
 export function getPkgFullNameFromPurlObj(purlObj: PurlLikeType): string {
-  if (purlObj.type === 'maven') {
-    return [purlObj.namespace, purlObj.name].filter(Boolean).join(':')
-  } else {
-    return [purlObj.namespace, purlObj.name].filter(Boolean).join('/')
-  }
+  const { name, namespace } = purlObj
+  return namespace
+    ? `${namespace}${purlObj.type === 'maven' ? ':' : '/'}${name}`
+    : name
 }
 
 export function getSocketDevAlertUrl(alertType: string): string {
@@ -19,7 +18,6 @@ export function getSocketDevPackageOverviewUrlFromPurl(
   purlObj: PurlLikeType
 ): string {
   const fullName = getPkgFullNameFromPurlObj(purlObj)
-
   return getSocketDevPackageOverviewUrl(purlObj.type, fullName, purlObj.version)
 }
 
