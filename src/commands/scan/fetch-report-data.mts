@@ -127,7 +127,7 @@ export async function fetchReportData(
       return {
         ok: false as const,
         message: 'Unexpected API problem',
-        cause: `We encountered an unexpected problem while requesting the Scan from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}'}`
+        cause: `We encountered an unexpected problem while requesting the Scan from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`
       }
     }),
     fetchSecurityPolicy().catch(e => {
@@ -135,7 +135,7 @@ export async function fetchReportData(
       return {
         ok: false as const,
         message: 'Unexpected API problem',
-        cause: `We encountered an unexpected problem while requesting the policy from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}'}`
+        cause: `We encountered an unexpected problem while requesting the policy from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`
       }
     })
   ]).finally(() => {
