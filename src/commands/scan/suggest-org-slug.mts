@@ -7,7 +7,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 export async function suggestOrgSlug(): Promise<string | void> {
   const sockSdkResult = await setupSdk()
   if (!sockSdkResult.ok) {
-    return sockSdkResult
+    return
   }
   const sockSdk = sockSdkResult.data
 

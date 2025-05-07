@@ -5,7 +5,7 @@ import {
   handleFailedApiResponse,
   tmpHandleApiCall as oldHandleApiCall
 } from '../../utils/api.mts'
-import { getPublicToken, setupSdk } from '../../utils/sdk.mts'
+import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type {
