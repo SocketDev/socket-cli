@@ -1,7 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleApiCall } from '../../utils/api.mts'
-import { getPublicToken, setupSdk } from '../../utils/sdk.mts'
+import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -13,7 +13,11 @@ export async function fetchPurlsShallowScore(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`
   )
 
-  const sockSdk = await setupSdk(getPublicToken())
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   const result = await handleApiCall(
     sockSdk.batchPackageFetch(

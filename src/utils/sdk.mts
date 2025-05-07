@@ -6,8 +6,9 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
 import { getConfigValueOrUndef } from './config.mts'
-import { AuthError } from './errors.mts'
 import constants from '../constants.mts'
+
+import type { CResult } from '../types.mts'
 
 const { SOCKET_PUBLIC_API_TOKEN } = constants
 
@@ -71,7 +72,7 @@ export async function setupSdk(
   apiToken: string | undefined = getDefaultToken(),
   apiBaseUrl: string | undefined = getDefaultApiBaseUrl(),
   proxy: string | undefined = getDefaultHttpProxy()
-): Promise<SocketSdk> {
+): Promise<CResult<SocketSdk>> {
   if (typeof apiToken !== 'string' && isInteractive()) {
     apiToken = await password({
       message:
@@ -80,19 +81,25 @@ export async function setupSdk(
     _defaultToken = apiToken
   }
   if (!apiToken) {
-    // TODO: eliminate this throw in favor of CResult (or anything else)
-    throw new AuthError('You need to provide an API key')
+    return {
+      ok: false,
+      message: 'Auth Error',
+      cause: 'You need to provide an API Token. Run `socket login` first.'
+    }
   }
-  return new SocketSdk(apiToken, {
-    agent: proxy ? new HttpsProxyAgent({ proxy }) : undefined,
-    baseUrl: apiBaseUrl,
-    userAgent: createUserAgentFromPkgJson({
-      // Lazily access constants.ENV.INLINED_SOCKET_CLI_NAME.
-      name: constants.ENV.INLINED_SOCKET_CLI_NAME,
-      // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
-      version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
-      // Lazily access constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE.
-      homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE
+  return {
+    ok: true,
+    data: new SocketSdk(apiToken, {
+      agent: proxy ? new HttpsProxyAgent({ proxy }) : undefined,
+      baseUrl: apiBaseUrl,
+      userAgent: createUserAgentFromPkgJson({
+        // Lazily access constants.ENV.INLINED_SOCKET_CLI_NAME.
+        name: constants.ENV.INLINED_SOCKET_CLI_NAME,
+        // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
+        version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+        // Lazily access constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE.
+        homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE
+      })
     })
-  })
+  }
 }

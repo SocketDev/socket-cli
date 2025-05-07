@@ -19,7 +19,11 @@ export async function fetchUpdateRepo({
   default_branch: string
   visibility: string
 }): Promise<CResult<SocketSdkReturnType<'updateOrgRepo'>['data']>> {
-  const sockSdk = await setupSdk()
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   return await handleApiCall(
     sockSdk.updateOrgRepo(orgSlug, repoName, {
