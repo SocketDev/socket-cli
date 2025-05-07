@@ -1,3 +1,5 @@
+import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket-url.mts'
+
 import type { CResult } from '../../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -240,7 +242,7 @@ function createLeaf(
   const leaf: ReportLeafNode = {
     type: alert.type,
     policy: policyAction,
-    url: `https://socket.dev/${art.type}/package/${art.name}/${art.version}`,
+    url: getSocketDevPackageOverviewUrlFromPurl(art),
     manifest: art.manifestFiles?.map(obj => obj.file) ?? []
   }
   return leaf
