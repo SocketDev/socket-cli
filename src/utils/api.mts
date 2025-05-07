@@ -37,19 +37,6 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   process.exit(1)
 }
 
-export function handleFailedApiResponse<T extends SocketSdkOperations>(
-  _name: T,
-  { cause, error }: SocketSdkErrorType<T>
-): CResult<never> {
-  const message = `${error || 'No error message returned'}`
-  // logger.error(failMsgWithBadge('Socket API returned an error', message))
-  return {
-    ok: false,
-    message: 'Socket API returned an error',
-    cause: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`
-  }
-}
-
 export async function handleApiCall<T extends SocketSdkOperations>(
   value: Promise<SocketSdkResultType<T>>,
   fetchingDesc: string
@@ -104,19 +91,6 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       ok: true,
       data: ok.data
     }
-  }
-}
-
-export async function tmpHandleApiCall<T>(
-  value: Promise<T>,
-  description: string
-): Promise<Awaited<T>> {
-  try {
-    return await value
-  } catch (e) {
-    debugLog(`handleApiCall[${description}] error:\n`, e)
-    // TODO: eliminate this throw in favor of CResult (or anything else)
-    throw new Error(`Failed ${description}`, { cause: e })
   }
 }
 
