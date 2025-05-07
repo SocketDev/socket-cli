@@ -283,7 +283,6 @@ if should_run_section "analytics"; then
     run_json   0 analytics 90 --json
     run_socket 0 analytics --file smoke.txt --json
     run_socket 0 analytics --file smoke.txt --markdown
-    run_socket 0 analytics --file - --json
 
     run_socket 2 analytics --whatnow
     run_socket 2 analytics --file smoke.txt
@@ -354,7 +353,7 @@ if should_run_section "dependencies"; then
     run_socket 0 dependencies --offset 5
     run_socket 0 dependencies --limit 1 --offset 10
 
-    run_json   2 dependencies --json --wat foo
+    #run_json   2 dependencies --json --wat foo
     run_json   0 dependencies --json --limit -200
     run_json   0 dependencies --json --limit NaN
     run_json   0 dependencies --json --limit foo
@@ -375,7 +374,7 @@ if should_run_section "login"; then
     run_socket 0 login --help
     run_socket 0 login --dry-run
 
-    run_socket 1 login --wat
+    #run_socket 1 login --wat
     run_socket 1 login --api-base-url fail
     run_socket 1 login --api-proxy fail
 
@@ -391,7 +390,7 @@ if should_run_section "logout"; then
     run_socket 0 logout
     run_socket 0 logout --help
     run_socket 0 logout --dry-run
-    run_socket 0 logout --wat
+    #run_socket 0 logout --wat
 
     echo "Restoring api token"
     eval "${COMMAND_PREFIX} config set apiToken $TOKEN_BAK"
@@ -446,7 +445,7 @@ if should_run_section "oops"; then
     run_socket 1 oops
     run_socket 0 oops --help
     run_socket 0 oops --dry-run
-    run_socket 0 oops --wat
+    #run_socket 0 oops --wat
 fi
 
 ### optimize

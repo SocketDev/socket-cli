@@ -33,6 +33,7 @@ export async function attemptLogin(
 
   const sdk = await setupSdk(apiToken, apiBaseUrl, apiProxy)
   if (!sdk.ok) {
+    process.exitCode = 1
     logger.fail(failMsgWithBadge(sdk.message, sdk.cause))
     return
   }
@@ -43,6 +44,7 @@ export async function attemptLogin(
   )
 
   if (!result.ok) {
+    process.exitCode = 1
     logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
@@ -99,6 +101,7 @@ export async function attemptLogin(
       )
     }
   } catch {
+    process.exitCode = 1
     logger.fail(`API login failed`)
   }
 }
