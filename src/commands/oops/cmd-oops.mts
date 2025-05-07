@@ -1,8 +1,10 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
-import { commonFlags } from '../../flags.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
+import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mjs'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { serializeResultJson } from '../../utils/serialize-result-json.mjs'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -13,7 +15,8 @@ const config: CliCommandConfig = {
   description: 'Trigger an intentional error (for development)',
   hidden: true,
   flags: {
-    ...commonFlags
+    ...commonFlags,
+    ...outputFlags
   },
   help: (parentName, config) => `
     Usage
@@ -41,10 +44,29 @@ async function run(
     parentName
   })
 
-  // TODO: impl json/md
+  const { json, markdown } = cli.flags
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAILING_NOW)
+    return
+  }
+
+  if (json) {
+    process.exitCode = 1
+    logger.log(
+      serializeResultJson({
+        ok: false,
+        message: 'Oops',
+        cause: 'This error was intentionally left blank'
+      })
+    )
+  }
+
+  if (markdown) {
+    process.exitCode = 1
+    logger.fail(
+      failMsgWithBadge('Oops', 'This error was intentionally left blank')
+    )
     return
   }
 
