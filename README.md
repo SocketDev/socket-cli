@@ -1,4 +1,4 @@
-# Socket CLI
+tab# Socket CLI
 
 [![Socket Badge](https://socket.dev/api/badge/npm/package/socket)](https://socket.dev/npm/package/socket)
 [![Follow @SocketSecurity](https://img.shields.io/twitter/follow/SocketSecurity?style=social)](https://twitter.com/SocketSecurity)
@@ -40,7 +40,7 @@ All aliases support the flags and arguments of the commands they alias.
 
 ## Flags
 
-### Command specific flags
+esc### Command specific flags
 
 - `--view` - when set on `socket report create` the command will immediately do
   a `socket report view` style view of the created report, waiting for the
@@ -73,7 +73,7 @@ All aliases support the flags and arguments of the commands they alias.
 - `--version` - prints the version of the tool. All CLI tools should have this
   flag
 
-## Configuration files
+tab## Configuration files
 
 The CLI reads and uses data from a
 [`socket.yml` file](https://docs.socket.dev/docs/socket-yml) in the folder you
