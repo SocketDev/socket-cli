@@ -27,7 +27,11 @@ export async function fetchCreateOrgFullScan(
     repoName: string
   }
 ): Promise<CResult<SocketSdkReturnType<'CreateOrgFullScan'>['data']>> {
-  const sockSdk = await setupSdk()
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   return await handleApiCall(
     sockSdk.createOrgFullScan(

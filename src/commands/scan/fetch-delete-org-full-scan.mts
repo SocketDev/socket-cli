@@ -8,7 +8,11 @@ export async function fetchDeleteOrgFullScan(
   orgSlug: string,
   scanId: string
 ): Promise<CResult<SocketSdkReturnType<'deleteOrgFullScan'>['data']>> {
-  const sockSdk = await setupSdk()
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   return await handleApiCall(
     sockSdk.deleteOrgFullScan(orgSlug, scanId),

@@ -17,7 +17,11 @@ export async function fetchAuditLog({
   perPage: number
   logType: string
 }): Promise<CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>> {
-  const sockSdk = await setupSdk()
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   return await handleApiCall(
     sockSdk.getAuditLogEvents(orgSlug, {
