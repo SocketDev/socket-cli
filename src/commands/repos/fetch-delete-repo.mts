@@ -8,7 +8,11 @@ export async function fetchDeleteRepo(
   orgSlug: string,
   repoName: string
 ): Promise<CResult<SocketSdkReturnType<'deleteOrgRepo'>['data']>> {
-  const sockSdk = await setupSdk()
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   return await handleApiCall(
     sockSdk.deleteOrgRepo(orgSlug, repoName),

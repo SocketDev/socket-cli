@@ -15,7 +15,11 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return { ok: true, data: defaultOrgResult }
   }
 
-  const sockSdk = await setupSdk()
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
