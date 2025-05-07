@@ -23,7 +23,11 @@ export async function fetchListScans({
   repo: string
   sort: string
 }): Promise<CResult<SocketSdkReturnType<'getOrgFullScanList'>['data']>> {
-  const sockSdk = await setupSdk()
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   return await handleApiCall(
     sockSdk.getOrgFullScanList(orgSlug, {

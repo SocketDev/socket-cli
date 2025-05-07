@@ -20,7 +20,11 @@ export async function fetchPurlsShallowScore(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`
   )
 
-  const sockSdk = await setupSdk(getPublicToken())
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   // Lazily access constants.spinner.
   const { spinner } = constants

@@ -23,7 +23,11 @@ export async function fetchReportData(
     securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>['data']
   }>
 > {
-  const sockSdk = await setupSdk()
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   let scanStatus = 'requested..'
   let policyStatus = 'requested..'

@@ -12,7 +12,11 @@ export async function fetchPackageInfo(
   pkgVersion: string,
   includeAllIssues: boolean
 ): Promise<void | PackageData> {
-  const sockSdk = await setupSdk(getPublicToken())
+  const sockSdkResult = await setupSdk(getPublicToken())
+  if (!sockSdkResult.ok) {
+    throw new Error('Was unable to setup sdk. Run `socket login` first.')
+  }
+  const sockSdk = sockSdkResult.data
 
   const result = await handleApiCall(
     sockSdk.getIssuesByNPMPackage(pkgName, pkgVersion),

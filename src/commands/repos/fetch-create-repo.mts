@@ -19,7 +19,11 @@ export async function fetchCreateRepo({
   default_branch: string
   visibility: string
 }): Promise<CResult<SocketSdkReturnType<'createOrgRepo'>['data']>> {
-  const sockSdk = await setupSdk()
+  const sockSdkResult = await setupSdk()
+  if (!sockSdkResult.ok) {
+    return sockSdkResult
+  }
+  const sockSdk = sockSdkResult.data
 
   return await handleApiCall(
     sockSdk.createOrgRepo(orgSlug, {
