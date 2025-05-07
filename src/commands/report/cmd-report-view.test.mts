@@ -32,7 +32,7 @@ describe('socket report create', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket report create\`, cwd: <redacted>"
       `)
 
-      expect(code, 'help should exit with code 2').toBe(2)
+      expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
         '`socket report create`'
       )

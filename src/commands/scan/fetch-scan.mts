@@ -1,6 +1,6 @@
-import constants from '../../constants.mts'
-import { handleApiError, queryApi } from '../../utils/api.mts'
-import { getDefaultToken } from '../../utils/sdk.mts'
+import { debugLog } from '@socketsecurity/registry/lib/debug'
+
+import { queryApiSafeText } from '../../utils/api.mts'
 
 import type { CResult } from '../../types.mts'
 import type { components } from '@socketsecurity/sdk/types/api'
@@ -9,58 +9,39 @@ export async function fetchScan(
   orgSlug: string,
   scanId: string
 ): Promise<CResult<Array<components['schemas']['SocketArtifact']>>> {
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    return {
-      ok: false,
-      message: 'Authentication Error',
-      cause:
-        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    }
-  }
-
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  spinner.start('Fetching scan data...')
-
-  const response = await queryApi(
+  const result = await queryApiSafeText(
     `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}`,
-    apiToken
+    'a scan'
   )
 
-  spinner.successAndStop('Received response while fetching scan data.')
-
-  if (!response.ok) {
-    const cause = await handleApiError(response.status)
-    return {
-      ok: false,
-      message: 'Socket API returned an error',
-      cause: `${response.statusText}${cause ? ` (cause: ${cause})` : ''}`
-    }
+  if (!result.ok) {
+    return result
   }
 
+  const jsonsString = result.data
+
   // This is nd-json; each line is a json object
-  const jsons = await response.text()
-  const lines = jsons.split('\n').filter(Boolean)
-  let failed = false
+  const lines = jsonsString.split('\n').filter(Boolean)
+  let ok = true
   const data = lines.map(line => {
     try {
       return JSON.parse(line)
     } catch {
-      failed = true
-      return {}
+      ok = false
+      debugLog('ndjson failed to parse the following line:')
+      debugLog(line)
+      return null
     }
   }) as unknown as Array<components['schemas']['SocketArtifact']>
 
-  if (failed) {
-    return {
-      ok: false,
-      message: 'API response was invalid',
-      cause:
-        'At least one line item was returned that could not be parsed as JSON... Please report.'
-    }
+  if (ok) {
+    return { ok: true, data }
   }
 
-  return { ok: true, data }
+  return {
+    ok: false,
+    message: 'Invalid API response',
+    cause:
+      'The API responded with at least one line that was not valid JSON. Please report if this persists.'
+  }
 }
