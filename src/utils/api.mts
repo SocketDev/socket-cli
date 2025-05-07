@@ -153,11 +153,6 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
   return `Server responded with status code ${code}`
 }
 
-export function getLastFiveOfApiToken(token: string): string {
-  // Get the last 5 characters of the API token before the trailing "_api".
-  return token.slice(-9, -4)
-}
-
 // The API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   // Lazily access constants.ENV.SOCKET_SECURITY_API_BASE_URL.

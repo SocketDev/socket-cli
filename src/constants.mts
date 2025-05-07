@@ -295,12 +295,16 @@ const LAZY_ENV = () => {
     SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
     // Flag to change the base URL for all API-calls.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
-    SOCKET_SECURITY_API_BASE_URL: envAsString(
-      env['SOCKET_SECURITY_API_BASE_URL']
-    ),
+    SOCKET_SECURITY_API_BASE_URL:
+      envAsString(env['SOCKET_SECURITY_API_BASE_URL']) ||
+      // For consistency; allow socket_cli prefix too
+      envAsString(env['SOCKET_CLI_API_BASE_URL']),
     // Flag to set the proxy all requests are routed through.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
-    SOCKET_SECURITY_API_PROXY: envAsString(env['SOCKET_SECURITY_API_PROXY']),
+    SOCKET_SECURITY_API_PROXY:
+      envAsString(env['SOCKET_SECURITY_API_PROXY']) ||
+      // For consistency; allow socket_cli prefix too
+      envAsString(env['SOCKET_CLI_API_BASE_URL']),
     // Flag to set the API token.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
     SOCKET_SECURITY_API_TOKEN:

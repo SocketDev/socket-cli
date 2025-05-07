@@ -11,7 +11,7 @@ import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
-import { getDefaultToken } from '../../utils/sdk.mts'
+import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -225,7 +225,7 @@ async function run(
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
   // If the api-token is not set, ignore it for the sake of suggestions.
-  const apiToken = getDefaultToken()
+  const hasApiToken = hasDefaultToken()
 
   // If we updated any inputs then we should print the command line to repeat
   // the command without requiring user input, as a suggestion.
@@ -240,7 +240,7 @@ async function run(
   // If the current cwd is unknown and is used as a repo slug anyways, we will
   // first need to register the slug before we can use it.
   // Only do suggestions with an apiToken and when not in dryRun mode
-  if (apiToken && !dryRun && interactive) {
+  if (hasApiToken && !dryRun && interactive) {
     if (!orgSlug) {
       const suggestion = await suggestOrgSlug()
       if (suggestion) {
@@ -290,7 +290,7 @@ async function run(
     },
     {
       nook: true,
-      test: !!apiToken,
+      test: hasApiToken,
       message: 'This command requires an API token for access',
       pass: 'ok',
       fail: 'missing (try `socket login`)'
