@@ -45,6 +45,20 @@ export function getDefaultToken(): string | undefined {
   return _defaultToken
 }
 
+export function getVisibleTokenPrefix(): string {
+  const apiToken = getDefaultToken()
+  if (!apiToken) {
+    return ''
+  }
+
+  const PREFIX = 'sktsec_'
+  return apiToken.slice(PREFIX.length, PREFIX.length + 5)
+}
+
+export function hasDefaultToken(): boolean {
+  return !!getDefaultToken()
+}
+
 export function getPublicToken(): string {
   return (
     // Lazily access constants.ENV.SOCKET_SECURITY_API_TOKEN.
