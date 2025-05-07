@@ -6,6 +6,7 @@ import { getConfigValueOrUndef } from './config.mts'
 import { AuthError } from './errors.mts'
 import constants from '../constants.mts'
 import { failMsgWithBadge } from './fail-msg-with-badge.mts'
+import { getDefaultToken } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
 import type {
@@ -162,15 +163,18 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   }
 }
 
-export async function handleApiError(code: number) {
+export async function getErrorMessageForHttpStatusCode(code: number) {
   if (code === 400) {
     return 'One of the options passed might be incorrect'
   }
-  if (code === 403) {
+  if (code === 403 || code === 401) {
     return 'Your API token may not have the required permissions for this command or you might be trying to access (data from) an organization that is not linked to the API key you are logged in with'
   }
   if (code === 404) {
-    return 'The requested Socket API endpoint was not found (404) or there was no result for the requested parameters. This could be a temporary problem caused by an incident or a bug in the CLI. If the problem persists please let us know.'
+    return 'The requested Socket API endpoint was not found (404) or there was no result for the requested parameters. If unexpected, this could be a temporary problem caused by an incident or a bug in the CLI. If the problem persists please let us know.'
+  }
+  if (code === 500) {
+    return 'There was an unknown server side problem with your request. This ought to be temporary. Please let us know if this problem persists.'
   }
   return `Server responded with status code ${code}`
 }
@@ -208,4 +212,109 @@ export async function queryApi(path: string, apiToken: string) {
       Authorization: `Basic ${btoa(`${apiToken}:`)}`
     }
   })
+}
+
+export async function queryApiSafeText(
+  path: string,
+  fetchSpinnerDesc?: string
+): Promise<CResult<string>> {
+  const apiToken = getDefaultToken()
+  if (!apiToken) {
+    return {
+      ok: false,
+      message: 'Authentication Error',
+      cause:
+        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+    }
+  }
+
+  if (fetchSpinnerDesc) {
+    // Lazily access constants.spinner.
+    const { spinner } = constants
+
+    spinner.start(`Requesting ${fetchSpinnerDesc} from API...`)
+  }
+
+  let result
+  try {
+    result = await queryApi(path, apiToken)
+    if (fetchSpinnerDesc) {
+      // Lazily access constants.spinner.
+      const { spinner } = constants
+
+      spinner.successAndStop(
+        `Received API response (after requesting ${fetchSpinnerDesc}).`
+      )
+    }
+  } catch (e) {
+    if (fetchSpinnerDesc) {
+      // Lazily access constants.spinner.
+      const { spinner } = constants
+
+      spinner.failAndStop(
+        `An error was thrown while requesting ${fetchSpinnerDesc}`
+      )
+    }
+    debugLog('Error thrown trying to await queryApi():')
+    debugLog(e)
+
+    const msg = (e as undefined | { message: string })?.message
+
+    return {
+      ok: false,
+      message: 'API Request failed to complete',
+      ...(msg ? { cause: msg } : {})
+    }
+  }
+
+  if (!result.ok) {
+    const cause = await getErrorMessageForHttpStatusCode(result.status)
+    return {
+      ok: false,
+      message: 'Socket API returned an error',
+      cause: `${result.statusText}${cause ? ` (cause: ${cause})` : ''}`
+    }
+  }
+
+  try {
+    const data = await result.text()
+
+    return {
+      ok: true,
+      data
+    }
+  } catch (e) {
+    debugLog('Error thrown trying to await result.text():')
+    debugLog(e)
+
+    return {
+      ok: false,
+      message: 'API Request failed to complete',
+      cause: 'There was an unexpected error trying to read the response text'
+    }
+  }
+}
+
+export async function queryApiSafeJson<T>(
+  path: string,
+  fetchSpinnerDesc = ''
+): Promise<CResult<T>> {
+  const result = await queryApiSafeText(path, fetchSpinnerDesc)
+
+  if (!result.ok) {
+    return result
+  }
+
+  try {
+    return {
+      ok: true,
+      data: JSON.parse(result.data) as T
+    }
+  } catch (e) {
+    return {
+      ok: false,
+      message: 'Server returned invalid JSON',
+      cause: `Please report this. JSON.parse threw an error over the following response: \`${(result.data?.slice?.(0, 100) || '<empty>').trim() + (result.data?.length > 100 ? '...' : '')}\``
+    }
+  }
 }

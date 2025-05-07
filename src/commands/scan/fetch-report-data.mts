@@ -2,13 +2,8 @@ import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
-import {
-  handleApiCallNoSpinner,
-  handleApiError,
-  queryApi,
-  tmpHandleApiCall
-} from '../../utils/api.mts'
-import { getDefaultToken, setupSdk } from '../../utils/sdk.mts'
+import { handleApiCallNoSpinner, queryApiSafeText } from '../../utils/api.mts'
+import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -28,17 +23,7 @@ export async function fetchReportData(
     securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>['data']
   }>
 > {
-  const apiToken = getDefaultToken()
-  if (!apiToken) {
-    return {
-      ok: false,
-      message: 'Authentication Error',
-      cause:
-        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
-    }
-  }
-
-  const sockSdk = await setupSdk(apiToken)
+  const sockSdk = await setupSdk()
 
   let scanStatus = 'requested..'
   let policyStatus = 'requested..'
@@ -70,50 +55,48 @@ export async function fetchReportData(
     }
   }
 
-  async function fetchScanResult(
-    apiToken: string
-  ): Promise<CResult<Array<components['schemas']['SocketArtifact']>>> {
-    const response = await tmpHandleApiCall(
-      queryApi(
-        `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
-        apiToken
-      ),
-      'fetchScanResult'
+  async function fetchScanResult(): Promise<
+    CResult<Array<components['schemas']['SocketArtifact']>>
+  > {
+    const result = await queryApiSafeText(
+      `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`
     )
 
-    updateScan('received response')
+    updateScan(`response received`)
 
-    if (!response.ok) {
-      const cause = await handleApiError(response.status)
-      updateScan(`request resulted in status code ${response.status}`)
-      return {
-        ok: false,
-        message: 'Socket API returned an error',
-        cause: `${response.statusText}${cause ? ` (cause: ${cause})` : ''}`
-      }
+    if (!result.ok) {
+      return result
     }
 
-    updateScan(`ok, downloading response..`)
-    const jsons = await response.text()
-    updateScan(`received policy`)
+    const jsonsString = result.data
 
-    const lines = jsons.split('\n').filter(Boolean)
+    // This is nd-json; each line is a json object
+    const lines = jsonsString.split('\n').filter(Boolean)
+    let ok = true
     const data = lines.map(line => {
       try {
         return JSON.parse(line)
       } catch {
-        scanStatus = `received invalid JSON response`
-        spinner.stop()
-        logger.error(
-          'Response was not valid JSON but it ought to be (please report if this persists)'
-        )
+        ok = false
+        debugLog('ndjson failed to parse the following line:')
         debugLog(line)
-        updateProgress()
         return
       }
     }) as unknown as Array<components['schemas']['SocketArtifact']>
 
-    return { ok: true, data }
+    if (ok) {
+      updateScan(`success`)
+      return { ok: true, data }
+    }
+
+    updateScan(`received invalid JSON response`)
+
+    return {
+      ok: false,
+      message: 'Invalid API response',
+      cause:
+        'The API responded with at least one line that was not valid JSON. Please report if this persists.'
+    }
   }
 
   async function fetchSecurityPolicy(): Promise<
@@ -135,7 +118,7 @@ export async function fetchReportData(
     CResult<Array<components['schemas']['SocketArtifact']>>,
     CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>
   ] = await Promise.all([
-    fetchScanResult(apiToken).catch(e => {
+    fetchScanResult().catch(e => {
       updateScan(`failure; unknown blocking problem occurred`)
       return {
         ok: false as const,
