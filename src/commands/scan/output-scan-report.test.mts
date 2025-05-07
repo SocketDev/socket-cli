@@ -94,7 +94,7 @@ describe('output-scan-report', () => {
 
         ## Alerts
 
-        The scan contained no alerts for with a policy set to at least "warn".
+        The scan contained no alerts with a policy set to at least "warn".
         "
       `)
     })
@@ -122,7 +122,7 @@ describe('output-scan-report', () => {
 
         ## Alerts
 
-        All the alerts from the scan with a policy set to at least "warn"}.
+        All the alerts from the scan with a policy set to at least "warn".
 
         | ------ | ---------- | ------- | ------------- | ------------------------------------------- | ----------------- |
         | Policy | Alert Type | Package | Introduced by | url                                         | Manifest file     |
