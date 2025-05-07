@@ -2,9 +2,8 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getLastFiveOfApiToken } from '../../utils/api.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { getDefaultToken } from '../../utils/sdk.mts'
+import { getVisibleTokenPrefix } from '../../utils/sdk.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -28,8 +27,7 @@ export async function outputOrganizationList(
   }
 
   const organizations = Object.values(result.data.organizations)
-  const apiToken = getDefaultToken()
-  const lastFiveOfApiToken = getLastFiveOfApiToken(apiToken ?? '?????')
+  const visibleTokenPrefix = getVisibleTokenPrefix()
 
   switch (outputKind) {
     case 'markdown': {
@@ -47,7 +45,7 @@ export async function outputOrganizationList(
       }
       logger.log('# Organizations\n')
       logger.log(
-        `List of organizations associated with your API key, ending with: ${colors.italic(lastFiveOfApiToken)}\n`
+        `List of organizations associated with your API key, starting with: ${colors.italic(visibleTokenPrefix)}\n`
       )
       logger.log(
         `| Name${' '.repeat(mw1 - 4)} | ID${' '.repeat(mw2 - 2)} | Plan${' '.repeat(mw3 - 4)} |`
@@ -67,7 +65,7 @@ export async function outputOrganizationList(
     }
     default: {
       logger.log(
-        `List of organizations associated with your API key, ending with: ${colors.italic(lastFiveOfApiToken)}\n`
+        `List of organizations associated with your API key, starting with: ${colors.italic(visibleTokenPrefix)}\n`
       )
       // Just dump
       for (const o of organizations) {

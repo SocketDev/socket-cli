@@ -9,7 +9,6 @@ import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
-import { getLastFiveOfApiToken } from './api.mts'
 import {
   getConfigValueOrUndef,
   isReadOnlyConfig,
@@ -20,7 +19,7 @@ import {
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
 import constants from '../constants.mts'
 import { commonFlags } from '../flags.mts'
-import { getDefaultToken } from './sdk.mts'
+import { getVisibleTokenPrefix } from './sdk.mts'
 
 import type { MeowFlags } from '../flags.mts'
 import type { Options } from 'meow'
@@ -339,7 +338,6 @@ function getAsciiHeader(command: string) {
     : // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH.
       constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
   const nodeVersion = redacting ? REDACTED : process.version
-  const apiToken = getDefaultToken()
   const defaultOrg = getConfigValueOrUndef('defaultOrg')
   const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
   const v1test = isTestingV1() ? ' (is testing v1)' : ''
@@ -348,11 +346,7 @@ function getAsciiHeader(command: string) {
         '   (Thank you for testing the v1 bump! Please send us any feedback you might have!)\n'
       )
     : ''
-  const shownToken = redacting
-    ? REDACTED
-    : apiToken
-      ? getLastFiveOfApiToken(apiToken)
-      : 'no'
+  const shownToken = redacting ? REDACTED : getVisibleTokenPrefix() || 'no'
   const relCwd = redacting
     ? REDACTED
     : normalizePath(
