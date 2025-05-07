@@ -12,7 +12,7 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
 } | void> {
   const sockSdkResult = await setupSdk()
   if (!sockSdkResult.ok) {
-    return sockSdkResult
+    return
   }
   const sockSdk = sockSdkResult.data
 
