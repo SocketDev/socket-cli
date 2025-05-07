@@ -7,7 +7,7 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
-import { getDefaultToken } from '../../utils/sdk.mts'
+import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -52,7 +52,7 @@ async function run(
   const markdown = Boolean(cli.flags['markdown'])
   const outputKind = getOutputKind(json, markdown)
 
-  const apiToken = getDefaultToken()
+  const hasApiToken = hasDefaultToken()
 
   const wasValidInput = checkCommandInput(
     outputKind,
@@ -65,7 +65,7 @@ async function run(
     },
     {
       nook: true,
-      test: !!apiToken,
+      test: hasApiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
