@@ -154,7 +154,7 @@ async function run(
     },
     {
       nook: true,
-      test: !!hasApiToken,
+      test: hasApiToken ,
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
