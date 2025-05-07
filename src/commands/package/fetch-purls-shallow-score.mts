@@ -1,17 +1,10 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants.mts'
-import {
-  handleFailedApiResponse,
-  tmpHandleApiCall as oldHandleApiCall
-} from '../../utils/api.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { getPublicToken, setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type {
-  SocketSdkResultType,
-  SocketSdkReturnType
-} from '@socketsecurity/sdk'
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchPurlsShallowScore(
   purls: string[]
@@ -22,26 +15,18 @@ export async function fetchPurlsShallowScore(
 
   const sockSdk = await setupSdk(getPublicToken())
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
+  const result = await handleApiCall(
+    sockSdk.batchPackageFetch(
+      {
+        alerts: 'true'
+      },
+      { components: purls.map(purl => ({ purl })) }
+    ),
+    'looking up package'
+  )
 
-  spinner.start(`Requesting data ...`)
-
-  const result: SocketSdkResultType<'batchPackageFetch'> =
-    await oldHandleApiCall(
-      sockSdk.batchPackageFetch(
-        {
-          alerts: 'true'
-        },
-        { components: purls.map(purl => ({ purl })) }
-      ),
-      'looking up package'
-    )
-
-  spinner.successAndStop('Request completed')
-
-  if (!result.success) {
-    return handleFailedApiResponse('batchPackageFetch', result)
+  if (!result.ok) {
+    return result
   }
 
   // TODO: seems like there's a bug in the typing since we absolutely have to return the .data here
