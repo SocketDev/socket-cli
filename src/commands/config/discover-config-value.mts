@@ -1,6 +1,6 @@
 import { handleApiCall } from '../../utils/api.mts'
 import { supportedConfigKeys } from '../../utils/config.mts'
-import { getDefaultToken, setupSdk } from '../../utils/sdk.mts'
+import { hasDefaultToken, setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { LocalConfig } from '../../utils/config.mts'
@@ -50,8 +50,8 @@ export async function discoverConfigValue(
   }
 
   if (key === 'defaultOrg') {
-    const apiToken = getDefaultToken()
-    if (!apiToken) {
+    const hasApiToken = hasDefaultToken()
+    if (!hasApiToken) {
       return {
         ok: false,
         message: 'Auto discover failed',
@@ -84,8 +84,8 @@ export async function discoverConfigValue(
   }
 
   if (key === 'enforcedOrgs') {
-    const apiToken = getDefaultToken()
-    if (!apiToken) {
+    const hasApiToken = hasDefaultToken()
+    if (!hasApiToken) {
       return {
         ok: false,
         message: 'Auto discover failed',

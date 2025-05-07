@@ -9,7 +9,7 @@ import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
-import { getDefaultToken } from '../../utils/sdk.mts'
+import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type {
   CliCommandConfig,
@@ -124,7 +124,7 @@ async function run(
     (isTestingV1() || defaultOrgSlug ? cli.input[0] : cli.input[1]) || ''
   const file =
     (isTestingV1() || defaultOrgSlug ? cli.input[1] : cli.input[2]) || '-'
-  const apiToken = getDefaultToken()
+  const hasApiToken = hasDefaultToken()
 
   const wasValidInput = checkCommandInput(
     outputKind,
@@ -155,7 +155,7 @@ async function run(
     },
     {
       nook: true,
-      test: !!apiToken,
+      test: hasApiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
