@@ -109,7 +109,7 @@ describe('generate-report', () => {
                           ],
                           "policy": "error",
                           "type": "envVars",
-                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                          "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                         },
                         "envVars at 200:250" => {
                           "manifest": [
@@ -117,7 +117,7 @@ describe('generate-report', () => {
                           ],
                           "policy": "error",
                           "type": "envVars",
-                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                          "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                         },
                       },
                     },
@@ -176,7 +176,7 @@ describe('generate-report', () => {
                           ],
                           "policy": "warn",
                           "type": "envVars",
-                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                          "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                         },
                         "envVars at 200:250" => {
                           "manifest": [
@@ -184,7 +184,7 @@ describe('generate-report', () => {
                           ],
                           "policy": "warn",
                           "type": "envVars",
-                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                          "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                         },
                       },
                     },
@@ -470,7 +470,7 @@ describe('generate-report', () => {
                           ],
                           "policy": "error",
                           "type": "envVars",
-                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                          "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                         },
                         "envVars at 200:250" => {
                           "manifest": [
@@ -478,7 +478,7 @@ describe('generate-report', () => {
                           ],
                           "policy": "error",
                           "type": "envVars",
-                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                          "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                         },
                       },
                     },
@@ -535,7 +535,7 @@ describe('generate-report', () => {
                           ],
                           "policy": "warn",
                           "type": "envVars",
-                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                          "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                         },
                         "envVars at 200:250" => {
                           "manifest": [
@@ -543,7 +543,7 @@ describe('generate-report', () => {
                           ],
                           "policy": "warn",
                           "type": "envVars",
-                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                          "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                         },
                       },
                     },
@@ -599,7 +599,7 @@ describe('generate-report', () => {
                           ],
                           "policy": "monitor",
                           "type": "envVars",
-                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                          "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                         },
                         "envVars at 200:250" => {
                           "manifest": [
@@ -607,7 +607,7 @@ describe('generate-report', () => {
                           ],
                           "policy": "monitor",
                           "type": "envVars",
-                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                          "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                         },
                       },
                     },
@@ -663,7 +663,7 @@ describe('generate-report', () => {
                           ],
                           "policy": "ignore",
                           "type": "envVars",
-                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                          "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                         },
                         "envVars at 200:250" => {
                           "manifest": [
@@ -671,7 +671,7 @@ describe('generate-report', () => {
                           ],
                           "policy": "ignore",
                           "type": "envVars",
-                          "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                          "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                         },
                       },
                     },
@@ -841,7 +841,7 @@ describe('generate-report', () => {
                         ],
                         "policy": "error",
                         "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                       },
                       "envVars at 200:250" => {
                         "manifest": [
@@ -849,7 +849,7 @@ describe('generate-report', () => {
                         ],
                         "policy": "error",
                         "type": "envVars",
-                        "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                        "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                       },
                     },
                   },
@@ -902,7 +902,7 @@ describe('generate-report', () => {
                       ],
                       "policy": "error",
                       "type": "envVars",
-                      "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                      "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                     },
                   },
                 },
@@ -953,7 +953,7 @@ describe('generate-report', () => {
                     ],
                     "policy": "error",
                     "type": "envVars",
-                    "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                    "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                   },
                 },
               },
@@ -1002,7 +1002,7 @@ describe('generate-report', () => {
                   ],
                   "policy": "error",
                   "type": "envVars",
-                  "url": "https://socket.dev/npm/package/tslib/1.14.1",
+                  "url": "https://socket.dev/npm/package/tslib/overview/1.14.1",
                 },
               },
             },
