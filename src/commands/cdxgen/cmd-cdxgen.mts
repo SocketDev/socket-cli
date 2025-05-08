@@ -269,22 +269,24 @@ async function run(
     return
   }
 
-  // Make 'lifecycle' default to 'pre-build', which also sets 'install-deps' to `false`,
-  // to avoid arbitrary code execution on the cdxgen scan.
-  // https://github.com/CycloneDX/cdxgen/issues/1328
-  if (yargv.lifecycle === undefined) {
-    yargv.lifecycle = 'pre-build'
-    yargv['install-deps'] = false
-    logger.info(
-      `Socket set cdxgen --lifecycle to "${yargv.lifecycle}" to avoid arbitrary code execution on this scan.\n  Pass "--lifecycle build" to generate a BOM consisting of information obtained during the build process.\n  See cdxgen ${terminalLink(
-        'BOM lifecycles documentation',
-        'https://cyclonedx.github.io/cdxgen/#/ADVANCED?id=bom-lifecycles'
-      )} for more details.`
-    )
-  }
-
-  if (yargv.output === undefined) {
-    yargv.output = 'socket-cdx.json'
+  // Change defaults when not passing the --help flag.
+  if (!yargv.help) {
+    // Make 'lifecycle' default to 'pre-build', which also sets 'install-deps' to `false`,
+    // to avoid arbitrary code execution on the cdxgen scan.
+    // https://github.com/CycloneDX/cdxgen/issues/1328
+    if (yargv.lifecycle === undefined) {
+      yargv.lifecycle = 'pre-build'
+      yargv['install-deps'] = false
+      logger.info(
+        `Socket set cdxgen --lifecycle to "${yargv.lifecycle}" to avoid arbitrary code execution on this scan.\n  Pass "--lifecycle build" to generate a BOM consisting of information obtained during the build process.\n  See cdxgen ${terminalLink(
+          'BOM lifecycles documentation',
+          'https://cyclonedx.github.io/cdxgen/#/ADVANCED?id=bom-lifecycles'
+        )} for more details.\n`
+      )
+    }
+    if (yargv.output === undefined) {
+      yargv.output = 'socket-cdx.json'
+    }
   }
 
   await runCycloneDX(yargv)
