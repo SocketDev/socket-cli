@@ -5,7 +5,7 @@ import { describe, expect } from 'vitest'
 import constants from '../../../src/constants.mts'
 import { cmdit, invokeNpm } from '../../../test/utils.mts'
 
-const { CLI } = constants
+const { CLI, SOCKET_WEBSITE_URL } = constants
 
 describe('socket audit-log', async () => {
   // Lazily access constants.rootBinPath.
@@ -28,7 +28,7 @@ describe('socket audit-log', async () => {
             - Permissions: audit-log:list
 
           This feature requires an Enterprise Plan. To learn more about getting access
-          to this feature and many more, please visit https://socket.dev/pricing
+          to this feature and many more, please visit ${SOCKET_WEBSITE_URL}/pricing
 
           Options
             --help            Print this help

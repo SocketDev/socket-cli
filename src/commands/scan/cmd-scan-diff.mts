@@ -13,10 +13,11 @@ import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW } = constants
+const { DRY_RUN_BAILING_NOW, SOCKET_WEBSITE_URL } = constants
 
-const SOCKET_SBOM_URL_PREFIX =
-  'https://socket.dev/dashboard/org/SocketDev/sbom/'
+const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
+
+const { length: SOCKET_SBOM_URL_PREFIX_LENGTH } = SOCKET_SBOM_URL_PREFIX
 
 const config: CliCommandConfig = {
   commandName: 'diff',
@@ -113,10 +114,10 @@ async function run(
   let id1 = cli.input[isTestingV1() || orgSlug ? 0 : 1] || ''
   let id2 = cli.input[isTestingV1() || orgSlug ? 1 : 2] || ''
   if (id1.startsWith(SOCKET_SBOM_URL_PREFIX)) {
-    id1 = id1.slice(SOCKET_SBOM_URL_PREFIX.length)
+    id1 = id1.slice(SOCKET_SBOM_URL_PREFIX_LENGTH)
   }
   if (id2.startsWith(SOCKET_SBOM_URL_PREFIX)) {
-    id2 = id2.slice(SOCKET_SBOM_URL_PREFIX.length)
+    id2 = id2.slice(SOCKET_SBOM_URL_PREFIX_LENGTH)
   }
 
   const hasApiToken = hasDefaultToken()
