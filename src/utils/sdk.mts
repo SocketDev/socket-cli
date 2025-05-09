@@ -12,6 +12,10 @@ import type { CResult } from '../types.mts'
 
 const { SOCKET_PUBLIC_API_TOKEN } = constants
 
+const TOKEN_PREFIX = 'sktsec_'
+
+const { length: TOKEN_PREFIX_LENGTH } = TOKEN_PREFIX
+
 // The API server that should be used for operations.
 function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
@@ -48,12 +52,9 @@ export function getDefaultToken(): string | undefined {
 
 export function getVisibleTokenPrefix(): string {
   const apiToken = getDefaultToken()
-  if (!apiToken) {
-    return ''
-  }
-
-  const PREFIX = 'sktsec_'
-  return apiToken.slice(PREFIX.length, PREFIX.length + 5)
+  return apiToken
+    ? apiToken.slice(TOKEN_PREFIX_LENGTH, TOKEN_PREFIX_LENGTH + 5)
+    : ''
 }
 
 export function hasDefaultToken(): boolean {
