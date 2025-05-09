@@ -5,14 +5,16 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
-const SOCKET_SBOM_URL_PREFIX =
-  'https://socket.dev/dashboard/org/SocketDev/sbom/'
+const { SOCKET_WEBSITE_URL } = constants
+
+const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
 
 export async function outputDiffScan(
   result: CResult<SocketSdkReturnType<'GetOrgDiffScan'>['data']>,

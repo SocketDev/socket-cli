@@ -13,7 +13,7 @@ import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW } = constants
+const { DRY_RUN_BAILING_NOW, SOCKET_WEBSITE_URL } = constants
 
 const config: CliCommandConfig = {
   commandName: 'audit-log',
@@ -61,7 +61,7 @@ const config: CliCommandConfig = {
       - Permissions: audit-log:list
 
     This feature requires an Enterprise Plan. To learn more about getting access
-    to this feature and many more, please visit https://socket.dev/pricing
+    to this feature and many more, please visit ${SOCKET_WEBSITE_URL}/pricing
 
     Options
       ${getFlagListOutput(config.flags, 6)}
