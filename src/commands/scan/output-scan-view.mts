@@ -2,12 +2,15 @@ import fs from 'node:fs/promises'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/markdown.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { components } from '@socketsecurity/sdk/types/api'
+
+const { SOCKET_WEBSITE_URL } = constants
 
 export async function outputScanView(
   result: CResult<Array<components['schemas']['SocketArtifact']>>,
@@ -90,7 +93,7 @@ Scan ID: ${scanId}
 
 ${md}
 
-View this report at: https://socket.dev/dashboard/org/${orgSlug}/sbom/${scanId}
+View this report at: ${SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sbom/${scanId}
   `.trim() + '\n'
 
   if (filePath && filePath !== '-') {
