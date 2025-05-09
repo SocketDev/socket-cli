@@ -6,6 +6,9 @@ import { confirm } from '@socketsecurity/registry/lib/prompts'
 import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import constants from '../../constants.mts'
+// import { getBashrcDetails } from '../../utils/completion.mjs'
+// import { debugLog } from '@socketsecurity/registry/lib/debug'
+// import { setupTabCompletion } from '../install/setup-tab-completion.mjs'
 
 export async function postinstallWrapper() {
   // Lazily access constants.bashRcPath and constants.zshRcPath.
@@ -25,6 +28,22 @@ Do you want to install "safe npm" (this will create an alias to the socket-npm c
     `.trim()
     )
   }
+
+  // Setting up tab completion requires bashrc modification. I'm not sure it's
+  // cool to just do that from an npm install...
+  logger.log('Run `socket install completion` to setup bash tab completion')
+  // // Attempt to setup tab completion
+  // try {
+  //   const details = getBashrcDetails("socket")
+  //   if (details.ok) {
+  //     // Just overwrite it if it already exists
+  //     await setupTabCompletion('socket')
+  //   }
+  // } catch (e) {
+  //   debugLog('Failed to setup tab completion:')
+  //   debugLog(e);
+  //   // Ignore. Skip tab completion setup.
+  // }
 }
 
 async function installSafeNpm(query: string): Promise<void> {
