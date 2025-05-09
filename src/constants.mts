@@ -419,7 +419,7 @@ const lazyDistPath = () =>
 
 const lazyRootPath = () => path.join(realpathSync.native(__dirname), '..')
 
-function lazySocketAppDataPath(): string | undefined {
+const lazySocketAppDataPath = (): string | undefined => {
   // Get the OS app data folder:
   // - Win: %LOCALAPPDATA% or fail?
   // - Mac: %XDG_DATA_HOME% or fallback to "~/Library/Application Support/"
