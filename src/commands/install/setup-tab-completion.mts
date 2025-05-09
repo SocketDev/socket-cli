@@ -31,27 +31,13 @@ export async function setupTabCompletion(targetName: string): Promise<
   // Target dir is something like ~/.local/share/socket/settings/completion (linux)
   const targetDir = path.dirname(targetPath)
   debugLog('Target Path:', targetPath, ', Target Dir:', targetDir)
+
   if (!fs.existsSync(targetDir)) {
     debugLog('Dir does not exist, creating it now...')
     fs.mkdirSync(targetDir, { recursive: true })
   }
 
-  // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH.
-  const CLI_VERSION = constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
-
-  // Copy the completion script to the config directory
-  const sourcePath = path.join(
-    path.dirname(fileURLToPath(import.meta.url)),
-    'socket-completion.bash'
-  )
-  const content = fs.readFileSync(sourcePath, 'utf8')
-  // When installing set the current package.json version.
-  // Later, we can call _socket_completion_version to get the installed version.
-  fs.writeFileSync(
-    targetPath,
-    content.replaceAll('SOCKET_VERSION_TOKEN', CLI_VERSION),
-    'utf8'
-  )
+  updateInstalledTabCompletionScript(targetPath)
 
   let bashrcUpdated = false
 
@@ -79,7 +65,7 @@ export async function setupTabCompletion(targetName: string): Promise<
           ? 'Added tab completion loader to ~/.bashrc'
           : foundBashrc
             ? 'Tab completion already found in ~/.bashrc'
-            : 'No ~/.bashrc found'
+            : 'No ~/.bashrc found so tab completion was not completely installed'
       ],
       bashrcPath,
       bashrcUpdated,
@@ -89,4 +75,41 @@ export async function setupTabCompletion(targetName: string): Promise<
       targetName
     }
   }
+}
+
+function getTabCompletionScriptRaw(): CResult<string> {
+  const sourceDir = path.dirname(fileURLToPath(import.meta.url))
+  const sourcePath = path.join(sourceDir, 'socket-completion.bash')
+
+  if (!fs.existsSync(sourcePath)) {
+    return {
+      ok: false,
+      message: 'Source not found',
+      cause: `Unable to find the source tab completion bash script that Socket should ship. Expected to find it in \`${sourcePath}\` but it was not there.`
+    }
+  }
+
+  return { ok: true, data: fs.readFileSync(sourcePath, 'utf8') }
+}
+
+export function updateInstalledTabCompletionScript(
+  targetPath: string
+): CResult<undefined> {
+  const content = getTabCompletionScriptRaw()
+  if (!content.ok) {
+    return content
+  }
+
+  // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH.
+  const CLI_VERSION = constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
+
+  // When installing set the current package.json version.
+  // Later, we can call _socket_completion_version to get the installed version.
+  fs.writeFileSync(
+    targetPath,
+    content.data.replaceAll('SOCKET_VERSION_TOKEN', CLI_VERSION),
+    'utf8'
+  )
+
+  return { ok: true, data: undefined }
 }
