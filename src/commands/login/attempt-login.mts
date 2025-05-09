@@ -9,6 +9,7 @@ import { handleApiCall } from '../../utils/api.mts'
 import { getConfigValueOrUndef, isReadOnlyConfig } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { setupSdk } from '../../utils/sdk.mts'
+import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 
 import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
@@ -85,6 +86,38 @@ export async function attemptLogin(
       if (existing) {
         enforcedOrgs = [existing.value]
       }
+    }
+  }
+
+  if (
+    await select({
+      message: 'Would you like to install bash tab completion?',
+      choices: [
+        {
+          name: 'Yes',
+          value: true,
+          description:
+            'Sets up tab completion for "socket" in your bash env. If you\'re unsure, this is probably what you want.'
+        },
+        {
+          name: 'No',
+          value: false,
+          description:
+            'Will skip tab completion setup. Does not change how Socket works.'
+        }
+      ]
+    })
+  ) {
+    logger.log('Setting up tab completion...')
+    const result = await setupTabCompletion('socket')
+    if (result.ok) {
+      logger.success(
+        'Tab completion will be enabled after restarting your terminal'
+      )
+    } else {
+      logger.fail(
+        'Failed to install tab completion script. Try `socket install completion` later.'
+      )
     }
   }
 

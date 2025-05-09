@@ -137,7 +137,7 @@ function getConfigValues(): LocalConfig {
 
 let _configPath: string | undefined
 let _warnedConfigPathWin32Missing = false
-function getConfigPath(): string | undefined {
+export function getConfigPath(): string | undefined {
   // Get the OS app data folder:
   // - Win: %LOCALAPPDATA% or fail?
   // - Mac: %XDG_DATA_HOME% or fallback to "~/Library/Application Support/"
