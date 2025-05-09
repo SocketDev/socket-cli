@@ -26,9 +26,8 @@ export function getSocketDevPackageOverviewUrl(
   fullName: string,
   version?: string | undefined
 ): string {
-  if (ecosystem === 'go') {
-    return `https://socket.dev/go/package/${fullName}${version ? `?section=overview&version=${version}` : ''}`
-  } else {
-    return `https://socket.dev/${ecosystem}/package/${fullName}${version ? `/overview/${version}` : ''}`
-  }
+  const url = `${SOCKET_WEBSITE_URL}/${ecosystem}/package/${fullName}`
+  return ecosystem === 'go'
+    ? `${url}${version ? `?section=overview&version=${version}` : ''}`
+    : `${url}${version ? `/overview/${version}` : ''}`
 }
