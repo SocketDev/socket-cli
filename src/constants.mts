@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 import registryConstants from '@socketsecurity/registry/lib/constants'
 import { envAsBoolean, envAsString } from '@socketsecurity/registry/lib/env'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
 import type { Agent } from './utils/package-environment.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
@@ -100,7 +101,6 @@ type Constants = Remap<
     readonly DRY_RUN_BAILING_NOW: '[DryRun] Bailing now'
     readonly DRY_RUN_NOT_SAVING: '[DryRun] Not saving'
     readonly IPC: IPC
-    readonly LOCALAPPDATA: 'LOCALAPPDATA'
     readonly LOCK_EXT: '.lock'
     readonly NPM_BUGGY_OVERRIDES_PATCHED_VERSION: '11.2.0'
     readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
@@ -109,7 +109,6 @@ type Constants = Remap<
     readonly SHADOW_NPM_BIN: 'shadow-bin'
     readonly SHADOW_NPM_INJECT: 'shadow-npm-inject'
     readonly SOCKET: 'socket'
-    readonly SOCKET_APP_DIR: 'socket/settings'
     readonly SOCKET_CLI_ACCEPT_RISKS: 'SOCKET_CLI_ACCEPT_RISKS'
     readonly SOCKET_CLI_BIN_NAME: 'socket'
     readonly SOCKET_CLI_BIN_NAME_ALIAS: 'cli'
@@ -153,6 +152,7 @@ type Constants = Remap<
     readonly distPath: string
     readonly rootPath: string
     readonly shadowBinPath: string
+    readonly socketAppPath: string
     readonly zshRcPath: string
   }
 >
@@ -179,7 +179,6 @@ const REDACTED = '<redacted>'
 const SHADOW_NPM_BIN = 'shadow-bin'
 const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 const SOCKET = 'socket'
-const SOCKET_APP_DIR = 'socket/settings'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
@@ -418,6 +417,41 @@ const lazyDistPath = () =>
 
 const lazyRootPath = () => path.join(realpathSync.native(__dirname), '..')
 
+function lazySocketAppDataPath(): string | undefined {
+  // Get the OS app data folder:
+  // - Win: %LOCALAPPDATA% or fail?
+  // - Mac: %XDG_DATA_HOME% or fallback to "~/Library/Application Support/"
+  // - Linux: %XDG_DATA_HOME% or fallback to "~/.local/share/"
+  // Note: LOCALAPPDATA is typically: C:\Users\USERNAME\AppData
+  // Note: XDG stands for "X Desktop Group", nowadays "freedesktop.org"
+  //       On most systems that path is: $HOME/.local/share
+  // Then append `socket/settings`, so:
+  // - Win: %LOCALAPPDATA%\socket\settings or return undefined
+  // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
+  // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
+
+  // Lazily access constants.WIN32.
+  const { WIN32 } = constants
+  let dataHome: string | undefined = WIN32
+    ? // Lazily access constants.ENV.LOCALAPPDATA
+      constants.ENV.LOCALAPPDATA
+    : // Lazily access constants.ENV.XDG_DATA_HOME
+      constants.ENV.XDG_DATA_HOME
+  if (!dataHome) {
+    if (WIN32) {
+      logger.warn(`Missing %${LOCALAPPDATA}%`)
+    } else {
+      dataHome = path.join(
+        os.homedir(),
+        ...(process.platform === 'darwin'
+          ? ['Library', 'Application Support']
+          : ['.local', 'share'])
+      )
+    }
+  }
+  return dataHome ? path.join(dataHome, 'socket/settings') : undefined
+}
+
 const lazyShadowBinPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, SHADOW_NPM_BIN)
@@ -441,7 +475,6 @@ const constants: Constants = createConstantsObject(
     DRY_RUN_BAILING_NOW,
     DRY_RUN_NOT_SAVING,
     ENV: undefined,
-    LOCALAPPDATA,
     LOCK_EXT,
     NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
     NPM_REGISTRY_URL,
@@ -450,7 +483,6 @@ const constants: Constants = createConstantsObject(
     SHADOW_NPM_BIN,
     SHADOW_NPM_INJECT,
     SOCKET,
-    SOCKET_APP_DIR,
     SOCKET_CLI_ACCEPT_RISKS,
     SOCKET_CLI_BIN_NAME,
     SOCKET_CLI_BIN_NAME_ALIAS,
@@ -489,6 +521,7 @@ const constants: Constants = createConstantsObject(
     rootBinPath: undefined,
     rootPath: undefined,
     shadowBinPath: undefined,
+    socketAppPath: undefined,
     zshRcPath: undefined
   },
   {
@@ -508,6 +541,7 @@ const constants: Constants = createConstantsObject(
       rootBinPath: lazyRootBinPath,
       rootPath: lazyRootPath,
       shadowBinPath: lazyShadowBinPath,
+      socketAppPath: lazySocketAppDataPath,
       zshRcPath: lazyZshRcPath
     },
     internals: {
