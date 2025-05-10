@@ -1,24 +1,22 @@
 import { realpathSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import registryConstants from '@socketsecurity/registry/lib/constants'
-import { envAsBoolean, envAsString } from '@socketsecurity/registry/lib/env'
-import { logger } from '@socketsecurity/registry/lib/logger'
 
 import type { Agent } from './utils/package-environment.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 
+const require = createRequire(import.meta.url)
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const {
-  NODE_MODULES,
-  NPM,
-  SOCKET_SECURITY_SCOPE,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
+    attributes: registryConstantsAttribs,
     createConstantsObject,
     getIpc
   }
@@ -62,6 +60,7 @@ type ENV = Remap<
       INLINED_SOCKET_CLI_VERSION_HASH: string
       INLINED_SYNP_VERSION: string
       LOCALAPPDATA: string
+      NODE_COMPILE_CACHE: string
       PATH: string
       SOCKET_CLI_ACCEPT_RISKS: boolean
       SOCKET_CLI_CONFIG: string
@@ -154,6 +153,7 @@ type Constants = Remap<
     readonly rootPath: string
     readonly shadowBinPath: string
     readonly socketAppPath: string
+    readonly socketCachePath: string
     readonly zshRcPath: string
   }
 >
@@ -185,7 +185,7 @@ const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
 const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
-const SOCKET_CLI_LEGACY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli`
+const SOCKET_CLI_LEGACY_PACKAGE_NAME = '@socketsecurity/cli'
 const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
 const SOCKET_CLI_NPM_BIN_NAME = 'socket-npm'
 const SOCKET_CLI_NPX_BIN_NAME = 'socket-npx'
@@ -196,7 +196,7 @@ const SOCKET_CLI_SENTRY_BIN_NAME = 'socket-with-sentry'
 const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
 const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
-const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli-with-sentry`
+const SOCKET_CLI_SENTRY_PACKAGE_NAME = '@socketsecurity/cli-with-sentry'
 const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
 const SOCKET_WEBSITE_URL = 'https://socket.dev'
 const VLT = 'vlt'
@@ -209,10 +209,15 @@ const YARN_LOCK = 'yarn.lock'
 let _Sentry: any
 
 const LAZY_ENV = () => {
+  const {
+    envAsBoolean,
+    envAsString
+  } = require('@socketsecurity/registry/lib/env')
   const { env } = process
   // We inline some environment values so that they CANNOT be influenced by user
   // provided environment variables.
   return Object.freeze({
+    __proto__: null,
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
     // Flag to disable using GitHub's workflow actions/cache.
@@ -280,6 +285,14 @@ const LAZY_ENV = () => {
     // non-roaming application data, like temporary files, cached data, and program
     // settings, that are specific to the current machine and user.
     LOCALAPPDATA: envAsString(env[LOCALAPPDATA]),
+    // Flag to enable the module compile cache for the Node.js instance.
+    // https://nodejs.org/api/cli.html#node_compile_cachedir
+    NODE_COMPILE_CACHE:
+      // Lazily access constants.SUPPORTS_NODE_COMPILE_CACHE_ENV_VAR.
+      constants.SUPPORTS_NODE_COMPILE_CACHE_ENV_VAR
+        ? // Lazily access constants.socketCachePath.
+          constants.socketCachePath
+        : '',
     // PATH is an environment variable that lists directories where executable
     // programs are located. When a command is run, the system searches these
     // directories to find the executable.
@@ -369,7 +382,7 @@ const lazyMinimumVersionByAgent = () =>
     [BUN, '1.1.39'],
     // The npm version bundled with Node 18.
     // https://nodejs.org/en/about/previous-releases#looking-for-the-latest-release-of-a-version-branch
-    [NPM, '10.8.2'],
+    ['npm', '10.8.2'],
     // 8.x is the earliest version to support Node 18.
     // https://pnpm.io/installation#compatibility
     // https://www.npmjs.com/package/pnpm?activeTab=versions
@@ -386,28 +399,30 @@ const lazyMinimumVersionByAgent = () =>
 
 const lazyNmBinPath = () =>
   // Lazily access constants.rootPath.
-  path.join(constants.rootPath, `${NODE_MODULES}/.bin`)
+  path.join(constants.rootPath, 'node_modules/.bin')
 
 // Redefine registryConstants.nodeHardenFlags to account for the
 // INLINED_SOCKET_CLI_SENTRY_BUILD environment variable.
 const lazyNodeHardenFlags = () =>
-  // Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
-  constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD ||
-  // Lazily access constants.WIN32.
-  constants.WIN32
-    ? []
-    : // Harden Node security.
-      // https://nodejs.org/en/learn/getting-started/security-best-practices
-      [
-        '--disable-proto',
-        'throw',
-        // We have contributed the following patches to our dependencies to make
-        // Node's --frozen-intrinsics workable.
-        // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
-        // √ https://github.com/pnpm/components/pull/23
-        '--frozen-intrinsics',
-        '--no-deprecation'
-      ]
+  Object.freeze(
+    // Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
+    constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD ||
+      // Lazily access constants.WIN32.
+      constants.WIN32
+      ? []
+      : // Harden Node security.
+        // https://nodejs.org/en/learn/getting-started/security-best-practices
+        [
+          '--disable-proto',
+          'throw',
+          // We have contributed the following patches to our dependencies to make
+          // Node's --frozen-intrinsics workable.
+          // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
+          // √ https://github.com/pnpm/components/pull/23
+          '--frozen-intrinsics',
+          '--no-deprecation'
+        ]
+  )
 
 const lazyRootBinPath = () =>
   // Lazily access constants.rootPath.
@@ -441,20 +456,23 @@ const lazySocketAppDataPath = (): string | undefined => {
       constants.ENV.XDG_DATA_HOME
   if (!dataHome) {
     if (WIN32) {
+      const logger = require('@socketsecurity/registry/lib/logger')
       logger.warn(`Missing %${LOCALAPPDATA}%`)
     } else {
       dataHome = path.join(
         // Lazily access constants.homePath.
         constants.homePath,
         // Lazily access constants.DARWIN.
-        constants.DARWIN
-          ? 'Library/Application Support'
-          : '.local/share'
+        constants.DARWIN ? 'Library/Application Support' : '.local/share'
       )
     }
   }
   return dataHome ? path.join(dataHome, 'socket/settings') : undefined
 }
+
+const lazySocketCachePath = () =>
+  // Lazily access constants.rootPath.
+  path.join(constants.rootPath, '.cache')
 
 const lazyShadowBinPath = () =>
   // Lazily access constants.rootPath.
@@ -466,6 +484,7 @@ const lazyZshRcPath = () =>
 
 const constants: Constants = createConstantsObject(
   {
+    ...registryConstantsAttribs.props,
     ALERT_TYPE_CRITICAL_CVE,
     ALERT_TYPE_CVE,
     ALERT_TYPE_MEDIUM_CVE,
@@ -527,10 +546,12 @@ const constants: Constants = createConstantsObject(
     rootPath: undefined,
     shadowBinPath: undefined,
     socketAppPath: undefined,
+    socketCachePath: undefined,
     zshRcPath: undefined
   },
   {
     getters: {
+      ...registryConstantsAttribs.getters,
       ENV: LAZY_ENV,
       bashRcPath: lazyBashRcPath,
       blessedOptions: lazyBlessedOptions,
@@ -547,9 +568,11 @@ const constants: Constants = createConstantsObject(
       rootPath: lazyRootPath,
       shadowBinPath: lazyShadowBinPath,
       socketAppPath: lazySocketAppDataPath,
+      socketCachePath: lazySocketCachePath,
       zshRcPath: lazyZshRcPath
     },
     internals: {
+      ...registryConstantsAttribs.internals,
       getIpc,
       getSentry() {
         return _Sentry
@@ -561,8 +584,7 @@ const constants: Constants = createConstantsObject(
         }
         return false
       }
-    },
-    mixin: registryConstants
+    }
   }
 ) as Constants
 
