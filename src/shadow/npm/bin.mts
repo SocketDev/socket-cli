@@ -16,6 +16,8 @@ export default async function shadowBin(
   args = process.argv.slice(2)
 ) {
   process.exitCode = 1
+  // Lazily access constants.ENV.NODE_COMPILE_CACHE
+  const { NODE_COMPILE_CACHE } = constants.ENV
   const useDebug = isDebug()
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
@@ -56,6 +58,10 @@ export default async function shadowBin(
       ...otherArgs
     ],
     {
+      env: {
+        ...process.env,
+        ...(NODE_COMPILE_CACHE ? { NODE_COMPILE_CACHE } : undefined)
+      },
       // 'inherit' + 'ipc'
       stdio: [0, 1, 2, 'ipc']
     }
