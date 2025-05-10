@@ -444,7 +444,8 @@ const lazySocketAppDataPath = (): string | undefined => {
       logger.warn(`Missing %${LOCALAPPDATA}%`)
     } else {
       dataHome = path.join(
-        os.homedir(),
+        // Lazily access constants.homePath.
+        constants.homePath,
         // Lazily access constants.DARWIN.
         constants.DARWIN
           ? 'Library/Application Support'
