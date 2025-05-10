@@ -445,9 +445,10 @@ const lazySocketAppDataPath = (): string | undefined => {
     } else {
       dataHome = path.join(
         os.homedir(),
-        ...(process.platform === 'darwin'
-          ? ['Library', 'Application Support']
-          : ['.local', 'share'])
+        // Lazily access constants.DARWIN.
+        constants.DARWIN
+          ? 'Library/Application Support'
+          : '.local/share'
       )
     }
   }
