@@ -1,12 +1,19 @@
 #!/usr/bin/env node
 'use strict'
 
-const process = require('node:process')
+const Module = require('node:module')
 
 const constants = require('../dist/constants.js')
+if (typeof Module.enableCompileCache === 'function') {
+  // Lazily access constants.socketCachePath.
+  Module.enableCompileCache(constants.socketCachePath)
+}
+
+// eslint-disable-next-line import-x/order
+const process = require('node:process')
 const { spawn } = require('../external/@socketsecurity/registry/lib/spawn.js')
 
-const { INLINED_SOCKET_CLI_SENTRY_BUILD } = constants
+const { INLINED_SOCKET_CLI_SENTRY_BUILD, NODE_COMPILE_CACHE } = constants
 
 process.exitCode = 1
 
@@ -31,6 +38,10 @@ spawn(
     ...process.argv.slice(2)
   ],
   {
+    env: {
+      ...process.env,
+      ...(NODE_COMPILE_CACHE ? { NODE_COMPILE_CACHE } : undefined)
+    },
     stdio: 'inherit'
   }
 )
