@@ -70,8 +70,8 @@ async function readCache(
   // 5 minute in milliseconds time to live (TTL).
   ttlMs = 5 * 60 * 1000
 ): Promise<JsonContent | null> {
-  // Lazily access constants.rootPath.
-  const cachePath = path.join(constants.rootPath, '.cache/github')
+  // Lazily access constants.socketCachePath.
+  const cachePath = path.join(constants.socketCachePath, 'github')
   const cacheJsonPath = path.join(cachePath, `${key}.json`)
   try {
     const stat = statSync(cacheJsonPath)
@@ -84,8 +84,8 @@ async function readCache(
 }
 
 async function writeCache(key: string, data: JsonContent): Promise<void> {
-  // Lazily access constants.rootPath.
-  const cachePath = path.join(constants.rootPath, '.cache/github')
+  // Lazily access constants.socketCachePath.
+  const cachePath = path.join(constants.socketCachePath, 'github')
   const cacheJsonPath = path.join(cachePath, `${key}.json`)
   if (!existsSync(cachePath)) {
     await fs.mkdir(cachePath, { recursive: true })

@@ -132,7 +132,13 @@ const sharedRulesForNode = {
   'n/no-unsupported-features/node-builtins': [
     'error',
     {
-      ignores: ['fs.promises.cp', 'readline/promises', 'test', 'test.describe'],
+      ignores: [
+        'fs.promises.cp',
+        'module.enableCompileCache',
+        'readline/promises',
+        'test',
+        'test.describe'
+      ],
       // Lazily access constants.maintainedNodeVersions.
       version: constants.maintainedNodeVersions.current
     }
