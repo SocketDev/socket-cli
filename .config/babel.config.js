@@ -2,6 +2,10 @@
 
 const path = require('node:path')
 
+const rootPath = path.join(__dirname, '..')
+const scriptsPath = path.join(rootPath, 'scripts')
+const babelPluginsPath = path.join(scriptsPath, 'babel')
+
 module.exports = {
   presets: ['@babel/preset-typescript'],
   plugins: [
@@ -14,9 +18,10 @@ module.exports = {
         corejs: false,
         helpers: true,
         regenerator: false,
-        version: '^7.26.10'
+        version: '^7.27.1'
       }
     ],
-    path.resolve('./scripts/babel/transform-set-proto-plugin.js')
+    path.join(babelPluginsPath, 'transform-set-proto-plugin.js'),
+    path.join(babelPluginsPath, 'transform-url-parse-plugin.js')
   ]
 }
