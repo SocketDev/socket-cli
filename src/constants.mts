@@ -105,8 +105,8 @@ type Constants = Remap<
     readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
     readonly PNPM: 'pnpm'
     readonly REDACTED: '<redacted>'
-    readonly SHADOW_NPM_BIN: 'shadow-bin'
-    readonly SHADOW_NPM_INJECT: 'shadow-npm-inject'
+    readonly SHADOW_BIN: 'shadow-bin'
+    readonly SHADOW_INJECT: 'shadow-inject'
     readonly SOCKET: 'socket'
     readonly SOCKET_CLI_ACCEPT_RISKS: 'SOCKET_CLI_ACCEPT_RISKS'
     readonly SOCKET_CLI_BIN_NAME: 'socket'
@@ -142,8 +142,8 @@ type Constants = Remap<
     }
     readonly distCliPath: string
     readonly distInstrumentWithSentryPath: string
-    readonly distShadowNpmBinPath: string
-    readonly distShadowNpmInjectPath: string
+    readonly distShadowBinPath: string
+    readonly distShadowInjectPath: string
     readonly homePath: string
     readonly minimumVersionByAgent: Map<Agent, string>
     readonly nmBinPath: string
@@ -177,8 +177,8 @@ const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const PNPM = 'pnpm'
 const REDACTED = '<redacted>'
-const SHADOW_NPM_BIN = 'shadow-bin'
-const SHADOW_NPM_INJECT = 'shadow-npm-inject'
+const SHADOW_BIN = 'shadow-bin'
+const SHADOW_INJECT = 'shadow-inject'
 const SOCKET = 'socket'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 const SOCKET_CLI_BIN_NAME = 'socket'
@@ -365,13 +365,13 @@ const lazyDistInstrumentWithSentryPath = () =>
   // Lazily access constants.distPath.
   path.join(constants.distPath, 'instrument-with-sentry.js')
 
-const lazyDistShadowNpmBinPath = () =>
+const lazyDistShadowBinPath = () =>
   // Lazily access constants.distPath.
-  path.join(constants.distPath, `${SHADOW_NPM_BIN}.js`)
+  path.join(constants.distPath, `${SHADOW_BIN}.js`)
 
-const lazyDistShadowNpmInjectPath = () =>
+const lazyDistShadowInjectPath = () =>
   // Lazily access constants.distPath.
-  path.join(constants.distPath, `${SHADOW_NPM_INJECT}.js`)
+  path.join(constants.distPath, `${SHADOW_INJECT}.js`)
 
 const lazyHomePath = () => os.homedir()
 
@@ -476,7 +476,7 @@ const lazySocketCachePath = () =>
 
 const lazyShadowBinPath = () =>
   // Lazily access constants.rootPath.
-  path.join(constants.rootPath, SHADOW_NPM_BIN)
+  path.join(constants.rootPath, SHADOW_BIN)
 
 const lazyZshRcPath = () =>
   // Lazily access constants.homePath.
@@ -503,8 +503,8 @@ const constants: Constants = createConstantsObject(
     NPM_REGISTRY_URL,
     PNPM,
     REDACTED,
-    SHADOW_NPM_BIN,
-    SHADOW_NPM_INJECT,
+    SHADOW_BIN,
+    SHADOW_INJECT,
     SOCKET,
     SOCKET_CLI_ACCEPT_RISKS,
     SOCKET_CLI_BIN_NAME,
@@ -536,8 +536,8 @@ const constants: Constants = createConstantsObject(
     distCliPath: undefined,
     distInstrumentWithSentryPath: undefined,
     distPath: undefined,
-    distShadowNpmBinPath: undefined,
-    distShadowNpmInjectPath: undefined,
+    distShadowBinPath: undefined,
+    distShadowInjectPath: undefined,
     homePath: undefined,
     minimumVersionByAgent: undefined,
     nmBinPath: undefined,
@@ -558,8 +558,8 @@ const constants: Constants = createConstantsObject(
       distCliPath: lazyDistCliPath,
       distInstrumentWithSentryPath: lazyDistInstrumentWithSentryPath,
       distPath: lazyDistPath,
-      distShadowNpmBinPath: lazyDistShadowNpmBinPath,
-      distShadowNpmInjectPath: lazyDistShadowNpmInjectPath,
+      distShadowBinPath: lazyDistShadowBinPath,
+      distShadowInjectPath: lazyDistShadowInjectPath,
       homePath: lazyHomePath,
       minimumVersionByAgent: lazyMinimumVersionByAgent,
       nmBinPath: lazyNmBinPath,

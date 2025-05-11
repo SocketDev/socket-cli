@@ -2,18 +2,17 @@
 'use strict'
 
 const Module = require('node:module')
-
-const constants = require('../dist/constants.js')
-if (typeof Module.enableCompileCache === 'function') {
-  // Lazily access constants.socketCachePath.
-  Module.enableCompileCache(constants.socketCachePath)
-}
-
-// eslint-disable-next-line import-x/order
+const path = require('node:path')
+const rootPath = path.join(__dirname, '..')
+Module.enableCompileCache?.(path.join(rootPath, '.cache'))
 const process = require('node:process')
-const { spawn } = require('../external/@socketsecurity/registry/lib/spawn.js')
 
-const { INLINED_SOCKET_CLI_SENTRY_BUILD, NODE_COMPILE_CACHE } = constants
+const constants = require(path.join(rootPath, 'dist/constants.js'))
+const { spawn } = require(
+  path.join(rootPath, 'external/@socketsecurity/registry/lib/spawn.js')
+)
+
+const { NODE_COMPILE_CACHE } = constants
 
 process.exitCode = 1
 
@@ -25,8 +24,8 @@ spawn(
     ...constants.nodeHardenFlags,
     // Lazily access constants.nodeNoWarningsFlags.
     ...constants.nodeNoWarningsFlags,
-    // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
-    ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
+    // Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
+    ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
       ? [
           '--require',
           // Lazily access constants.distInstrumentWithSentryPath.

@@ -77,8 +77,8 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
           ]
         : []),
       '--require',
-      // Lazily access constants.distShadowNpmInjectPath.
-      constants.distShadowNpmInjectPath,
+      // Lazily access constants.distShadowInjectPath.
+      constants.distShadowInjectPath,
       realExecPathSync(agentExecPath),
       'install',
       // Avoid code paths for 'audit' and 'fund'.

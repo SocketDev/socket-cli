@@ -3,14 +3,13 @@
 const path = require('node:path')
 
 const registryConstants = require('@socketsecurity/registry/lib/constants')
-const { envAsBoolean } = require('@socketsecurity/registry/lib/env')
 
 const {
-  PACKAGE_JSON,
-  PACKAGE_LOCK_JSON,
-  SOCKET_SECURITY_SCOPE,
   kInternalsSymbol,
-  [kInternalsSymbol]: { createConstantsObject }
+  [kInternalsSymbol]: {
+    attributes: registryConstantsAttribs,
+    createConstantsObject
+  }
 } = registryConstants
 
 const CLI = 'cli'
@@ -26,26 +25,27 @@ const INLINED_SOCKET_CLI_VERSION_HASH = 'INLINED_SOCKET_CLI_VERSION_HASH'
 const INLINED_SYNP_VERSION = 'INLINED_SYNP_VERSION'
 const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
 const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
-const SHADOW_NPM_BIN = 'shadow-bin'
-const SHADOW_NPM_INJECT = 'shadow-npm-inject'
+const SHADOW_BIN = 'shadow-bin'
+const SHADOW_INJECT = 'shadow-inject'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
 const SOCKET = 'socket'
 const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
 const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
-const SOCKET_CLI_LEGACY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli`
+const SOCKET_CLI_LEGACY_PACKAGE_NAME = '@socketsecurity/cli'
 const SOCKET_CLI_NPM_BIN_NAME = 'socket-npm'
 const SOCKET_CLI_NPX_BIN_NAME = 'socket-npx'
 const SOCKET_CLI_PACKAGE_NAME = 'socket'
 const SOCKET_CLI_SENTRY_BIN_NAME = 'socket-with-sentry'
 const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
-const SOCKET_CLI_SENTRY_PACKAGE_NAME = `${SOCKET_SECURITY_SCOPE}/cli-with-sentry`
+const SOCKET_CLI_SENTRY_PACKAGE_NAME = '@socketsecurity/cli-with-sentry'
 const UTILS = 'utils'
 const VENDOR = 'vendor'
 const WITH_SENTRY = 'with-sentry'
 
 const LAZY_ENV = () => {
+  const { envAsBoolean } = require('@socketsecurity/registry/lib/env')
   const { env } = process
   return Object.freeze({
     // Lazily access registryConstants.ENV.
@@ -75,11 +75,11 @@ const lazyDistPath = () =>
 
 const lazyRootPackageJsonPath = () =>
   // Lazily access constants.rootPath.
-  path.join(constants.rootPath, PACKAGE_JSON)
+  path.join(constants.rootPath, 'package.json')
 
 const lazyRootPackageLockPath = () =>
   // Lazily access constants.rootPath.
-  path.join(constants.rootPath, PACKAGE_LOCK_JSON)
+  path.join(constants.rootPath, 'package-lock.json')
 
 const lazyRootPath = () => path.resolve(__dirname, '..')
 
@@ -89,6 +89,7 @@ const lazySrcPath = () =>
 
 const constants = createConstantsObject(
   {
+    ...registryConstantsAttribs.props,
     CLI,
     CONSTANTS,
     ENV: undefined,
@@ -103,8 +104,8 @@ const constants = createConstantsObject(
     INLINED_SYNP_VERSION,
     INSTRUMENT_WITH_SENTRY,
     ROLLUP_EXTERNAL_SUFFIX,
-    SHADOW_NPM_BIN,
-    SHADOW_NPM_INJECT,
+    SHADOW_BIN,
+    SHADOW_INJECT,
     SLASH_NODE_MODULES_SLASH,
     SOCKET,
     SOCKET_CLI_BIN_NAME,
@@ -129,6 +130,7 @@ const constants = createConstantsObject(
   },
   {
     getters: {
+      ...registryConstantsAttribs.getters,
       ENV: LAZY_ENV,
       configPath: lazyConfigPath,
       distPath: lazyDistPath,
@@ -136,8 +138,7 @@ const constants = createConstantsObject(
       rootPackageLockPath: lazyRootPackageLockPath,
       rootPath: lazyRootPath,
       srcPath: lazySrcPath
-    },
-    mixin: registryConstants
+    }
   }
 )
 module.exports = constants
