@@ -35,8 +35,8 @@ const {
   INSTRUMENT_WITH_SENTRY,
   NODE_MODULES,
   ROLLUP_EXTERNAL_SUFFIX,
-  SHADOW_NPM_BIN,
-  SHADOW_NPM_INJECT,
+  SHADOW_BIN,
+  SHADOW_INJECT,
   SLASH_NODE_MODULES_SLASH,
   SOCKET_CLI_BIN_NAME,
   SOCKET_CLI_BIN_NAME_ALIAS,
@@ -336,8 +336,8 @@ export default async () => {
       input: {
         cli: `${srcPath}/cli.mts`,
         [CONSTANTS]: `${srcPath}/constants.mts`,
-        [SHADOW_NPM_BIN]: `${srcPath}/shadow/npm/bin.mts`,
-        [SHADOW_NPM_INJECT]: `${srcPath}/shadow/npm/inject.mts`,
+        [SHADOW_BIN]: `${srcPath}/shadow/npm/bin.mts`,
+        [SHADOW_INJECT]: `${srcPath}/shadow/npm/inject.mts`,
         // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
         ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
           ? {
@@ -359,9 +359,9 @@ export default async () => {
               case constantsSrcPath:
                 return CONSTANTS
               case shadowNpmBinSrcPath:
-                return SHADOW_NPM_BIN
+                return SHADOW_BIN
               case shadowNpmInjectSrcPath:
-                return SHADOW_NPM_INJECT
+                return SHADOW_INJECT
               default:
                 if (id.startsWith(utilsSrcPath)) {
                   return UTILS
