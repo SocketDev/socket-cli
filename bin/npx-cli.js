@@ -2,11 +2,9 @@
 'use strict'
 
 const Module = require('node:module')
+const path = require('node:path')
+const rootPath = path.join(__dirname, '..')
+Module.enableCompileCache?.(path.join(rootPath, '.cache'))
 
-const constants = require('../dist/constants.js')
-if (typeof Module.enableCompileCache === 'function') {
-  // Lazily access constants.socketCachePath.
-  Module.enableCompileCache(constants.socketCachePath)
-}
-const shadowBin = require(constants.distShadowNpmBinPath)
-shadowBin(constants.NPX)
+const shadowBin = require(path.join(rootPath, 'dist/shadow-bin.js'))
+shadowBin('npx')

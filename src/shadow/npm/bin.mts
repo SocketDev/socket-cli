@@ -45,8 +45,8 @@ export default async function shadowBin(
           ]
         : []),
       '--require',
-      // Lazily access constants.distShadowNpmInjectPath.
-      constants.distShadowNpmInjectPath,
+      // Lazily access constants.distShadowInjectPath.
+      constants.distShadowInjectPath,
       // Lazily access constants.shadowBinPath.
       await installLinks(constants.shadowBinPath, binName),
       // Add '--no-progress' to fix input being swallowed by the npm spinner.
@@ -66,7 +66,7 @@ export default async function shadowBin(
       stdio: [0, 1, 2, 'ipc']
     }
   )
-  // See https://nodejs.org/api/all.html#all_child_process_event-exit.
+  // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on('exit', (code, signalName) => {
     if (signalName) {
       process.kill(process.pid, signalName)
