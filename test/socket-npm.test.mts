@@ -11,8 +11,6 @@ import constants from '../src/constants.mts'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const { CLI, NODE_MODULES, NPM } = constants
-
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
@@ -24,16 +22,16 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
     continue
   }
   const npmPath = path.join(npmFixturesPath, npmDir)
-  const npmBinPath = path.join(npmPath, NODE_MODULES, '.bin')
+  const npmBinPath = path.join(npmPath, 'node_modules/.bin')
 
   describe(`Socket npm wrapper for ${npmDir}`, () => {
-    spawnSync(NPM, ['install', ...(isDebug() ? [] : ['--silent'])], {
+    spawnSync('npm', ['install', ...(isDebug() ? [] : ['--silent'])], {
       cwd: npmPath,
       stdio: isDebug() ? 'inherit' : 'ignore'
     })
 
     // Lazily access constants.rootBinPath.
-    const entryPath = path.join(constants['rootBinPath'], `${CLI}.js`)
+    const entryPath = path.join(constants.rootBinPath, 'cli.js')
 
     it(
       'should bail on new typosquat',
@@ -46,7 +44,14 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
           const spawnPromise = spawn(
             // Lazily access constants.execPath.
             constants.execPath,
-            [entryPath, NPM, 'install', 'bowserify', '--no-audit', '--no-fund'],
+            [
+              entryPath,
+              'npm',
+              'install',
+              'bowserify',
+              '--no-audit',
+              '--no-fund'
+            ],
             {
               cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
               env: {

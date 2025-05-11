@@ -1,17 +1,20 @@
+import { createRequire } from 'node:module'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { wrapNpx } from './wrap-npx.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW, NPX } = constants
+const require = createRequire(import.meta.url)
+
+const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
   commandName: 'npx',
-  description: `${NPX} wrapper functionality`,
+  description: `npx wrapper functionality`,
   hidden: false,
   flags: {
     ...commonFlags
@@ -46,5 +49,7 @@ async function run(
     return
   }
 
-  await wrapNpx(argv)
+  // Lazily access constants.distShadowBinPath.
+  const shadowBin = require(constants.distShadowBinPath)
+  await shadowBin('npx', argv)
 }
