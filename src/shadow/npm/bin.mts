@@ -1,12 +1,14 @@
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import {
   isLoglevelFlag,
+  isNodeOptionsFlag,
   isProgressFlag
 } from '@socketsecurity/registry/lib/npm'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { installLinks } from './link.mts'
 import constants from '../../constants.mts'
+import { cmdFlagsToString } from '../../utils/cmd.mts'
 
 const { SOCKET_CLI_SAFE_BIN, SOCKET_CLI_SAFE_PROGRESS, SOCKET_IPC_HANDSHAKE } =
   constants
@@ -16,12 +18,42 @@ export default async function shadowBin(
   args = process.argv.slice(2)
 ) {
   process.exitCode = 1
-  const useDebug = isDebug()
+  // Lazily access constants.ENV.NODE_COMPILE_CACHE
+  const { NODE_COMPILE_CACHE } = constants.ENV
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
+  const binArgs = rawBinArgs.filter(
+    a => !isProgressFlag(a) && !isNodeOptionsFlag(a)
+  )
+  const nodeOptionsArg = rawBinArgs.findLast(isNodeOptionsFlag)
   const progressArg = rawBinArgs.findLast(isProgressFlag) !== '--no-progress'
-  const binArgs = rawBinArgs.filter(a => !isProgressFlag(a))
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
+  // Lazily access constants.SUPPORTS_NODE_PERMISSION_FLAG.
+  const permArgs = constants.SUPPORTS_NODE_PERMISSION_FLAG
+    ? await (async () => {
+        const cwd = process.cwd()
+        const globalPrefix = (
+          await spawn('npm', ['prefix', '-g'], { cwd })
+        ).stdout.trim()
+        const npmCachePath = (
+          await spawn('npm', ['config', 'get', 'cache'], { cwd })
+        ).stdout.trim()
+        return [
+          '--permission',
+          // '--allow-child-process',
+          // '--allow-addons',
+          // '--allow-wasi',
+          // Allow all reads because npm walks up directories looking for config
+          // and package.json files.
+          '--allow-fs-read=*',
+          `--allow-fs-write=${cwd}/*`,
+          `--allow-fs-write=${globalPrefix}/*`,
+          `--allow-fs-write=${npmCachePath}/*`
+        ]
+      })()
+    : []
+  const useDebug = isDebug()
+  const useNodeOptions = nodeOptionsArg || permArgs.length
   const isSilent = !useDebug && !binArgs.some(isLoglevelFlag)
   // The default value of loglevel is "notice". We default to "error" which is
   // two levels quieter.
@@ -43,10 +75,16 @@ export default async function shadowBin(
           ]
         : []),
       '--require',
-      // Lazily access constants.distShadowNpmInjectPath.
-      constants.distShadowNpmInjectPath,
+      // Lazily access constants.distShadowInjectPath.
+      constants.distShadowInjectPath,
       // Lazily access constants.shadowBinPath.
       await installLinks(constants.shadowBinPath, binName),
+      ...(useDebug ? ['--trace-uncaught', '--trace-warnings'] : []),
+      ...(useNodeOptions
+        ? [
+            `--node-options='${nodeOptionsArg ? nodeOptionsArg.slice(15) : ''}${cmdFlagsToString(permArgs)}'`
+          ]
+        : []),
       // Add '--no-progress' to fix input being swallowed by the npm spinner.
       '--no-progress',
       // Add '--loglevel=error' if a loglevel flag is not provided and the
@@ -56,11 +94,15 @@ export default async function shadowBin(
       ...otherArgs
     ],
     {
+      env: {
+        ...process.env,
+        ...(NODE_COMPILE_CACHE ? { NODE_COMPILE_CACHE } : undefined)
+      },
       // 'inherit' + 'ipc'
       stdio: [0, 1, 2, 'ipc']
     }
   )
-  // See https://nodejs.org/api/all.html#all_child_process_event-exit.
+  // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on('exit', (code, signalName) => {
     if (signalName) {
       process.kill(process.pid, signalName)

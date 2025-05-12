@@ -1,17 +1,14 @@
 import fs from 'node:fs'
-import os from 'node:os'
 import path from 'node:path'
 
 import config from '@socketsecurity/config'
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { safeReadFileSync } from './fs.mts'
 import constants from '../constants.mts'
+import { safeReadFileSync } from './fs.mts'
 
 import type { CResult } from '../types.mts'
-
-const { LOCALAPPDATA, SOCKET_APP_DIR } = constants
 
 export interface LocalConfig {
   apiBaseUrl?: string | null | undefined
@@ -106,11 +103,12 @@ export function overrideConfigApiToken(apiToken: unknown) {
 
 function getConfigValues(): LocalConfig {
   if (_cachedConfig === undefined) {
-    _cachedConfig = {} as LocalConfig
     // Order: env var > --config flag > file
-    const configPath = getConfigPath()
-    if (configPath) {
-      const raw = safeReadFileSync(configPath)
+    _cachedConfig = {} as LocalConfig
+    // Lazily access constants.socketAppPath.
+    const { socketAppPath } = constants
+    if (socketAppPath) {
+      const raw = safeReadFileSync(socketAppPath)
       if (raw) {
         try {
           Object.assign(
@@ -118,7 +116,7 @@ function getConfigValues(): LocalConfig {
             JSON.parse(Buffer.from(raw, 'base64').toString())
           )
         } catch {
-          logger.warn(`Failed to parse config at ${configPath}`)
+          logger.warn(`Failed to parse config at ${socketAppPath}`)
         }
         // Normalize apiKey to apiToken and persist it.
         // This is a one time migration per user.
@@ -128,7 +126,7 @@ function getConfigValues(): LocalConfig {
           updateConfigValue('apiToken', token)
         }
       } else {
-        fs.mkdirSync(path.dirname(configPath), { recursive: true })
+        fs.mkdirSync(path.dirname(socketAppPath), { recursive: true })
       }
     }
   }
@@ -149,6 +147,8 @@ export function getConfigPath(): string | undefined {
   // - Win: %LOCALAPPDATA%\socket\settings or return undefined
   // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
   // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
+
+  const { LOCALAPPDATA, socketAppPath: SOCKET_APP_DIR } = constants
 
   if (_configPath === undefined) {
     // Lazily access constants.WIN32.
@@ -268,10 +268,11 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     _pendingSave = true
     process.nextTick(() => {
       _pendingSave = false
-      const configPath = getConfigPath()
-      if (configPath) {
+      // Lazily access constants.socketAppPath.
+      const { socketAppPath } = constants
+      if (socketAppPath) {
         fs.writeFileSync(
-          configPath,
+          socketAppPath,
           Buffer.from(JSON.stringify(localConfig)).toString('base64')
         )
       }

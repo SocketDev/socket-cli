@@ -1,17 +1,20 @@
+import { createRequire } from 'node:module'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { wrapNpm } from './wrap-npm.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW, NPM } = constants
+const require = createRequire(import.meta.url)
+
+const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
   commandName: 'npm',
-  description: `${NPM} wrapper functionality`,
+  description: `npm wrapper functionality`,
   hidden: false,
   flags: {
     ...commonFlags
@@ -46,5 +49,7 @@ async function run(
     return
   }
 
-  await wrapNpm(argv)
+  // Lazily access constants.distShadowBinPath.
+  const shadowBin = require(constants.distShadowBinPath)
+  await shadowBin('npm', argv)
 }

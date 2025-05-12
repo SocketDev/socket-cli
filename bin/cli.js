@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 'use strict'
 
+const Module = require('node:module')
+const path = require('node:path')
+const rootPath = path.join(__dirname, '..')
+Module.enableCompileCache?.(path.join(rootPath, '.cache'))
 const process = require('node:process')
 
-const constants = require('../dist/constants.js')
-const { spawn } = require('../external/@socketsecurity/registry/lib/spawn.js')
+const constants = require(path.join(rootPath, 'dist/constants.js'))
+const { spawn } = require(
+  path.join(rootPath, 'external/@socketsecurity/registry/lib/spawn.js')
+)
 
-const { INLINED_SOCKET_CLI_SENTRY_BUILD } = constants
+const { NODE_COMPILE_CACHE } = constants
 
 process.exitCode = 1
 
@@ -18,8 +24,8 @@ spawn(
     ...constants.nodeHardenFlags,
     // Lazily access constants.nodeNoWarningsFlags.
     ...constants.nodeNoWarningsFlags,
-    // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
-    ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
+    // Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
+    ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
       ? [
           '--require',
           // Lazily access constants.distInstrumentWithSentryPath.
@@ -31,6 +37,10 @@ spawn(
     ...process.argv.slice(2)
   ],
   {
+    env: {
+      ...process.env,
+      ...(NODE_COMPILE_CACHE ? { NODE_COMPILE_CACHE } : undefined)
+    },
     stdio: 'inherit'
   }
 )

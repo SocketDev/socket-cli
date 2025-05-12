@@ -70,9 +70,8 @@ async function readCache(
   // 5 minute in milliseconds time to live (TTL).
   ttlMs = 5 * 60 * 1000
 ): Promise<JsonContent | null> {
-  // Lazily access constants.rootPath.
-  const cachePath = path.join(constants.rootPath, '.cache/github')
-  const cacheJsonPath = path.join(cachePath, `${key}.json`)
+  // Lazily access constants.githubCachePath.
+  const cacheJsonPath = path.join(constants.githubCachePath, `${key}.json`)
   try {
     const stat = statSync(cacheJsonPath)
     const isExpired = Date.now() - stat.mtimeMs > ttlMs
@@ -84,11 +83,11 @@ async function readCache(
 }
 
 async function writeCache(key: string, data: JsonContent): Promise<void> {
-  // Lazily access constants.rootPath.
-  const cachePath = path.join(constants.rootPath, '.cache/github')
-  const cacheJsonPath = path.join(cachePath, `${key}.json`)
-  if (!existsSync(cachePath)) {
-    await fs.mkdir(cachePath, { recursive: true })
+  // Lazily access constants.githubCachePath.
+  const { githubCachePath } = constants
+  const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
+  if (!existsSync(githubCachePath)) {
+    await fs.mkdir(githubCachePath, { recursive: true })
   }
   await writeJson(cacheJsonPath, data as JsonContent)
 }
