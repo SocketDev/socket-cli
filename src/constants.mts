@@ -144,6 +144,7 @@ type Constants = Remap<
     readonly distInstrumentWithSentryPath: string
     readonly distShadowBinPath: string
     readonly distShadowInjectPath: string
+    readonly githubCachePath: string
     readonly homePath: string
     readonly minimumVersionByAgent: Map<Agent, string>
     readonly nmBinPath: string
@@ -373,6 +374,10 @@ const lazyDistShadowInjectPath = () =>
   // Lazily access constants.distPath.
   path.join(constants.distPath, `${SHADOW_INJECT}.js`)
 
+const lazyGithubCachePath = () =>
+  // Lazily access constants.socketCachePath.
+  path.join(constants.socketCachePath, 'github')
+
 const lazyHomePath = () => os.homedir()
 
 const lazyMinimumVersionByAgent = () =>
@@ -538,6 +543,7 @@ const constants: Constants = createConstantsObject(
     distPath: undefined,
     distShadowBinPath: undefined,
     distShadowInjectPath: undefined,
+    githubCachePath: undefined,
     homePath: undefined,
     minimumVersionByAgent: undefined,
     nmBinPath: undefined,
@@ -560,6 +566,7 @@ const constants: Constants = createConstantsObject(
       distPath: lazyDistPath,
       distShadowBinPath: lazyDistShadowBinPath,
       distShadowInjectPath: lazyDistShadowInjectPath,
+      githubCachePath: lazyGithubCachePath,
       homePath: lazyHomePath,
       minimumVersionByAgent: lazyMinimumVersionByAgent,
       nmBinPath: lazyNmBinPath,
