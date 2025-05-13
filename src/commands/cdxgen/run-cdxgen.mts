@@ -21,7 +21,36 @@ const nodejsPlatformTypes = new Set([
   'typescript'
 ])
 
-export async function runCycloneDX(yargvWithYes: any) {
+function argvToArray(argv: {
+  [key: string]: boolean | null | number | string | Array<string | number>
+}): string[] {
+  if (argv['help']) {
+    return ['--help']
+  }
+  const result = []
+  for (const { 0: key, 1: value } of Object.entries(argv)) {
+    if (key === '_' || key === '--') {
+      continue
+    }
+    if (key === 'babel' || key === 'install-deps' || key === 'validate') {
+      // cdxgen documents no-babel, no-install-deps, and no-validate flags so
+      // use them when relevant.
+      result.push(`--${value ? key : `no-${key}`}`)
+    } else if (value === true) {
+      result.push(`--${key}`)
+    } else if (typeof value === 'string') {
+      result.push(`--${key}`, String(value))
+    } else if (Array.isArray(value)) {
+      result.push(`--${key}`, ...value.map(String))
+    }
+  }
+  if (argv['--']) {
+    result.push('--', ...(argv as any)['--'])
+  }
+  return result
+}
+
+export async function runCdxgen(yargvWithYes: any) {
   let cleanupPackageLock = false
   const { yes, ...yargv } = { __proto__: null, ...yargvWithYes } as any
   const yesArgs = yes ? ['--yes'] : []
@@ -63,33 +92,4 @@ export async function runCycloneDX(yargvWithYes: any) {
   if (existsSync(fullOutputPath)) {
     logger.log(colors.cyanBright(`${yargv.output} created!`))
   }
-}
-
-function argvToArray(argv: {
-  [key: string]: boolean | null | number | string | Array<string | number>
-}): string[] {
-  if (argv['help']) {
-    return ['--help']
-  }
-  const result = []
-  for (const { 0: key, 1: value } of Object.entries(argv)) {
-    if (key === '_' || key === '--') {
-      continue
-    }
-    if (key === 'babel' || key === 'install-deps' || key === 'validate') {
-      // cdxgen documents no-babel, no-install-deps, and no-validate flags so
-      // use them when relevant.
-      result.push(`--${value ? key : `no-${key}`}`)
-    } else if (value === true) {
-      result.push(`--${key}`)
-    } else if (typeof value === 'string') {
-      result.push(`--${key}`, String(value))
-    } else if (Array.isArray(value)) {
-      result.push(`--${key}`, ...value.map(String))
-    }
-  }
-  if (argv['--']) {
-    result.push('--', ...(argv as any)['--'])
-  }
-  return result
 }
