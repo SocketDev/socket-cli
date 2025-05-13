@@ -1,5 +1,5 @@
 {
   "loglevel": "minimal",
-  "reject": ["@pnpm/logger", "eslint-plugin-unicorn", "terminal-link"],
+  "reject": ["eslint-plugin-unicorn", "terminal-link"],
   "upgrade": true
 }
