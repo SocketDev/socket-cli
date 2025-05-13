@@ -29,7 +29,7 @@ export default async function shadowBin(
   const progressArg = rawBinArgs.findLast(isProgressFlag) !== '--no-progress'
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const permArgs =
-    binName === 'npx' &&
+    binName === 'npm' &&
     // Lazily access constants.SUPPORTS_NODE_PERMISSION_FLAG.
     constants.SUPPORTS_NODE_PERMISSION_FLAG
       ? await (async () => {
