@@ -83,7 +83,7 @@
     "@babel/runtime": "7.27.1",
     "@biomejs/biome": "1.9.4",
     "@cyclonedx/cdxgen": "11.3.0",
-    "@dotenvx/dotenvx": "^1.44.0",
+    "@dotenvx/dotenvx": "1.44.0",
     "@eslint/compat": "1.2.9",
     "@eslint/js": "9.26.0",
     "@octokit/graphql": "8.2.2",
