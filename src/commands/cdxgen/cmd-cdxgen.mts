@@ -4,7 +4,7 @@ import yargsParse from 'yargs-parser'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import { runCycloneDX } from './run-cyclonedx.mts'
+import { runCdxgen } from './run-cdxgen.mts'
 import constants from '../../constants.mts'
 import { isHelpFlag } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -289,5 +289,5 @@ async function run(
     }
   }
 
-  await runCycloneDX(yargv)
+  await runCdxgen(yargv)
 }
