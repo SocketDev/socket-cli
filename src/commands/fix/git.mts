@@ -12,6 +12,9 @@ import {
   getSocketDevPackageOverviewUrlFromPurl
 } from '../../utils/socket-url.mts'
 
+const GITHUB_ACTIONS_BOT_USERNAME = 'github-actions[bot]'
+const GITHUB_ACTIONS_BOT_EMAIL = `${GITHUB_ACTIONS_BOT_USERNAME}@users.noreply.github.com`
+
 function formatBranchName(str: string): string {
   return str
     .replace(/[-_.\\/]+/g, '-')
@@ -113,6 +116,7 @@ export async function gitCreateAndPushBranchIfNeeded(
     logger.warn('Nothing to commit, skipping push.')
     return false
   }
+  await gitEnsureIdentity(cwd)
   await spawn('git', ['checkout', '-b', branch], { cwd })
   await spawn('git', ['add', ...moddedFilepaths], { cwd })
   await spawn('git', ['commit', '-m', commitMsg], { cwd })
@@ -131,6 +135,33 @@ export async function gitCreateAndPushBranchIfNeeded(
   } catch {}
   logger.warn(`Force-push failed for "${branch}"`)
   return false
+}
+
+export async function gitEnsureIdentity(cwd = process.cwd()): Promise<void> {
+  let hasUserName = false
+  try {
+    const { stdout } = await spawn('git', ['config', '--get', 'user.name'], {
+      cwd
+    })
+    hasUserName = !!stdout.trim()
+  } catch {}
+  if (!hasUserName) {
+    await spawn('git', ['config', 'user.name', GITHUB_ACTIONS_BOT_USERNAME], {
+      cwd
+    })
+  }
+  let hasUserEmail = false
+  try {
+    const { stdout } = await spawn('git', ['config', '--get', 'user.email'], {
+      cwd
+    })
+    hasUserEmail = !!stdout.trim()
+  } catch {}
+  if (!hasUserEmail) {
+    await spawn('git', ['config', 'user.email', GITHUB_ACTIONS_BOT_EMAIL], {
+      cwd
+    })
+  }
 }
 
 export async function gitResetAndClean(
