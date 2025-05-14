@@ -50,6 +50,7 @@ type ENV = Remap<
       GITHUB_REF_NAME: string
       GITHUB_REF_TYPE: string
       GITHUB_REPOSITORY: string
+      GITHUB_TOKEN: string
       INLINED_CYCLONEDX_CDXGEN_VERSION: string
       INLINED_SOCKET_CLI_HOMEPAGE: string
       INLINED_SOCKET_CLI_LEGACY_BUILD: string
@@ -239,6 +240,10 @@ const LAZY_ENV = () => {
     // The owner and repository name. For example, octocat/Hello-World.
     // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
     GITHUB_REPOSITORY: envAsString(env['GITHUB_REPOSITORY']),
+    // The GITHUB_TOKEN secret is a GitHub App installation access token. The token's
+    // permissions are limited to the repository that contains the workflow.
+    // https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#about-the-github_token-secret
+    GITHUB_TOKEN: envAsString(env['GITHUB_TOKEN']),
     // Comp-time inlined @cyclonedx/cdxgen package version.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']".
     INLINED_CYCLONEDX_CDXGEN_VERSION: envAsString(
