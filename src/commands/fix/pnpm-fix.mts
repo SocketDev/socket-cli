@@ -226,6 +226,9 @@ export async function pnpmFix(
         logger.warn(
           `Unexpected condition: Lockfile entries not found for ${name}.\n`
         )
+        if (isDebug()) {
+          console.dir(actualTree, { depth: 999 })
+        }
         continue
       }
 
