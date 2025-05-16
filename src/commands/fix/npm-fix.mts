@@ -14,8 +14,10 @@ import {
   getBaseGitBranch,
   getSocketBranchName,
   getSocketCommitMessage,
-  gitCreateAndPushBranchIfNeeded,
-  gitResetAndClean
+  gitCreateAndPushBranch,
+  gitRemoteBranchExists,
+  gitResetAndClean,
+  gitUnstagedModifiedFiles
 } from './git.mts'
 import {
   cleanupOpenPrs,
@@ -43,7 +45,7 @@ import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { removeNodeModules } from '../../utils/fs.mts'
 import { globWorkspace } from '../../utils/glob.mts'
 import { applyRange } from '../../utils/semver.mts'
-import { getCveInfoByAlertsMap } from '../../utils/socket-package-alert.mts'
+import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
 import type { NormalizedFixOptions } from './types.mts'
@@ -104,8 +106,8 @@ export async function npmFix(
     ? await getAlertsMapFromPurls(purls, getAlertMapOptions({ limit }))
     : await getAlertsMapFromArborist(arb, getAlertMapOptions({ limit }))
 
-  const infoByPkg = getCveInfoByAlertsMap(alertsMap, { limit })
-  if (!infoByPkg) {
+  const infoByPkgName = getCveInfoFromAlertsMap(alertsMap, { limit })
+  if (!infoByPkgName) {
     spinner?.stop()
     logger.info('No fixable vulnerabilities found.')
     return
@@ -124,27 +126,28 @@ export async function npmFix(
     pkgEnvDetails.editablePkgJson.filename!
   ]
 
+  spinner?.stop()
+
   let count = 0
-  infoByPkgLoop: for (const { 0: name, 1: infos } of infoByPkg) {
-    debugLog(`Processing vulnerable package: ${name}`)
+  infoByPkgNameLoop: for (const { 0: name, 1: infos } of infoByPkgName) {
+    logger.log(`Processing vulnerable package: ${name}`)
+    logger.indent()
+    spinner?.indent()
 
     if (getManifestData(NPM, name)) {
-      spinner?.info(`Socket Optimize package for ${name} exists, skipping`)
-      continue
-    }
-    if (!infos.length) {
-      debugLog(`No vuln info found for ${name}`)
-      continue
+      debugLog(`Socket Optimize package exists for ${name}`)
     }
     // eslint-disable-next-line no-await-in-loop
     const packument = await fetchPackagePackument(name)
     if (!packument) {
-      debugLog(`No packument found for ${name}`)
+      logger.warn(`Unexpected condition: No packument found for ${name}\n`)
+      logger.dedent()
+      spinner?.dedent()
       continue
     }
 
     const availableVersions = Object.keys(packument.versions)
-    const fixedSpecs = new Set<string>()
+    const warningsForAfter = new Set<string>()
 
     for (const pkgJsonPath of pkgJsonPaths) {
       const pkgPath = path.dirname(pkgJsonPath)
@@ -154,7 +157,7 @@ export async function npmFix(
         ? 'root'
         : path.relative(rootPath, pkgPath)
 
-      debugLog(`Checking workspace: ${workspaceName}`)
+      logger.log(`Checking workspace: ${workspaceName}`)
 
       arb.idealTree = null
       // eslint-disable-next-line no-await-in-loop
@@ -165,8 +168,11 @@ export async function npmFix(
           .map(n => n.target?.version ?? n.version)
           .filter(Boolean)
       )
+
       if (!oldVersions.length) {
-        debugLog(`Lockfile entries not found for ${name}`)
+        logger.warn(
+          `Unexpected condition: Lockfile entries not found for ${name}.\n`
+        )
         continue
       }
 
@@ -183,14 +189,16 @@ export async function npmFix(
 
         const node = findPackageNode(arb.idealTree!, name, oldVersion)
         if (!node) {
-          debugLog(`Arborist node not found, skipping ${oldId}`)
+          logger.warn(
+            `Unexpected condition: Arborist node not found, skipping ${oldId}`
+          )
           continue
         }
 
         for (const {
           firstPatchedVersionIdentifier,
           vulnerableVersionRange
-        } of infos) {
+        } of infos.values()) {
           const newVersion = findBestPatchVersion(
             node,
             availableVersions,
@@ -202,21 +210,14 @@ export async function npmFix(
             : undefined
 
           if (!(newVersion && newVersionPackument)) {
-            debugLog(
-              `No suitable update. ${oldId} needs >=${firstPatchedVersionIdentifier}, skipping`
+            warningsForAfter.add(
+              `No update applied. ${oldId} needs >=${firstPatchedVersionIdentifier}`
             )
             continue
           }
 
           const newVersionRange = applyRange(oldVersion, newVersion, rangeStyle)
           const newId = `${name}@${newVersionRange}`
-          const newSpecKey = `${workspaceName}:${newId}`
-
-          if (fixedSpecs.has(newSpecKey)) {
-            debugLog(`Already fixed ${newId} in ${workspaceName}, skipping`)
-            continue
-          }
-
           const revertData = {
             ...(editablePkgJson.content.dependencies && {
               dependencies: { ...editablePkgJson.content.dependencies }
@@ -241,7 +242,7 @@ export async function npmFix(
           )
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
-            debugLog(`Nothing changed for ${workspaceName}, skipping install`)
+            logger.info(`${workspaceName}/package.json not changed, skipping`)
             // Reset things just in case.
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
@@ -250,6 +251,7 @@ export async function npmFix(
             continue
           }
 
+          spinner?.start()
           spinner?.info(`Installing ${newId} in ${workspaceName}`)
 
           let error
@@ -262,9 +264,7 @@ export async function npmFix(
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
-            fixedSpecs.add(newSpecKey)
             spinner?.successAndStop(`Fixed ${name} in ${workspaceName}`)
-            spinner?.start()
           } catch (e) {
             errored = true
             error = e
@@ -278,16 +278,47 @@ export async function npmFix(
             )
             try {
               const { owner, repo } = getGitHubEnvRepoInfo()
+              // eslint-disable-next-line no-await-in-loop
+              if (await prExistForBranch(owner, repo, branch)) {
+                debugLog(`Branch "${branch}" exists, skipping PR creation.`)
+                continue
+              }
+              // eslint-disable-next-line no-await-in-loop
+              if (await gitRemoteBranchExists(branch, cwd)) {
+                debugLog(
+                  `Remote branch "${branch}" exists, skipping PR creation.`
+                )
+                continue
+              }
+
+              const moddedFilepaths =
+                // eslint-disable-next-line no-await-in-loop
+                (await gitUnstagedModifiedFiles(cwd)).filter(p => {
+                  const basename = path.basename(p)
+                  return (
+                    basename === 'package.json' ||
+                    basename === 'package-lock.json'
+                  )
+                })
+              if (!moddedFilepaths.length) {
+                logger.warn(
+                  'Unexpected condition: Nothing to commit, skipping PR creation.'
+                )
+                continue
+              }
+
               if (
                 // eslint-disable-next-line no-await-in-loop
-                (await prExistForBranch(owner, repo, branch)) ||
-                // eslint-disable-next-line no-await-in-loop
-                !(await gitCreateAndPushBranchIfNeeded(
+                !(await gitCreateAndPushBranch(
                   branch,
                   getSocketCommitMessage(oldPurl, newVersion, workspaceName),
+                  moddedFilepaths,
                   cwd
                 ))
               ) {
+                logger.warn(
+                  'Unexpected condition: Push failed, skipping PR creation.'
+                )
                 continue
               }
               // eslint-disable-next-line no-await-in-loop
@@ -309,7 +340,7 @@ export async function npmFix(
               )
               if (prResponse) {
                 const { data } = prResponse
-                spinner?.info(`Opened PR #${data.number}.`)
+                logger.info(`Opened PR #${data.number}.`)
                 if (autoMerge) {
                   // eslint-disable-next-line no-await-in-loop
                   await enablePrAutoMerge(data)
@@ -344,11 +375,22 @@ export async function npmFix(
             )
           }
           if (++count >= limit) {
-            break infoByPkgLoop
+            break infoByPkgNameLoop
           }
         }
       }
+      logger.log('')
     }
+
+    for (const warningText of warningsForAfter) {
+      logger.warn(warningText)
+    }
+    if (warningsForAfter.size) {
+      logger.log('')
+    }
+
+    logger.dedent()
+    spinner?.dedent()
   }
 
   spinner?.stop()
