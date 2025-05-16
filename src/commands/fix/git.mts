@@ -1,7 +1,4 @@
-import path from 'node:path'
-
 import { PackageURL } from '@socketregistry/packageurl-js'
-import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -95,36 +92,16 @@ export function getSocketCommitMessage(
   return `socket: Bump ${pkgFullName} from ${purlObj.version} to ${newVersion}${workspaceDetails}`
 }
 
-export async function gitCreateAndPushBranchIfNeeded(
+export async function gitCreateAndPushBranch(
   branch: string,
   commitMsg: string,
+  filepaths: string[],
   cwd = process.cwd()
 ): Promise<boolean> {
-  if (await gitRemoteBranchExists(branch, cwd)) {
-    logger.warn(`Branch "${branch}" already exists remotely, skipping push.`)
-    return true
-  }
-  const moddedFilepaths = (await gitUnstagedModifiedFiles(cwd)).filter(p => {
-    const basename = path.basename(p)
-    return (
-      basename === 'package.json' ||
-      basename === 'package-lock.json' ||
-      basename === 'pnpm-lock.yaml'
-    )
-  })
-  if (!moddedFilepaths.length) {
-    logger.warn('Nothing to commit, skipping push.')
-    return false
-  }
   await gitEnsureIdentity(cwd)
   await spawn('git', ['checkout', '-b', branch], { cwd })
-  await spawn('git', ['add', ...moddedFilepaths], { cwd })
+  await spawn('git', ['add', ...filepaths], { cwd })
   await spawn('git', ['commit', '-m', commitMsg], { cwd })
-  try {
-    await spawn('git', ['push', '--set-upstream', 'origin', branch], { cwd })
-    return true
-  } catch {}
-  logger.warn(`Push failed for "${branch}", trying force-push`)
   try {
     await spawn(
       'git',
@@ -133,7 +110,7 @@ export async function gitCreateAndPushBranchIfNeeded(
     )
     return true
   } catch {}
-  logger.warn(`Force-push failed for "${branch}"`)
+  await spawn('git', ['branch', '-D', branch], { cwd })
   return false
 }
 
@@ -201,7 +178,7 @@ export async function gitRemoteBranchExists(
   }
 }
 
-async function gitUnstagedModifiedFiles(
+export async function gitUnstagedModifiedFiles(
   cwd = process.cwd()
 ): Promise<string[]> {
   const { stdout } = await spawn('git', ['diff', '--name-only'], { cwd })
