@@ -74,6 +74,7 @@ describe('socket fix', async () => {
       `)
       expect(stdout).toMatchInlineSnapshot(`
         "\\x1b[34mi\\x1b[39m Fixing packages for npm
+
         [DryRun]: Not saving"
       `)
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
