@@ -311,23 +311,25 @@ export type CveExcludeFilter = {
   upgradable?: boolean | undefined
 }
 
-export type CveInfoByPkgId = Map<
+export type CveInfoByAlertKey = Map<
   string,
-  Array<{
+  {
     firstPatchedVersionIdentifier: string
     vulnerableVersionRange: string
-  }>
+  }
 >
+
+export type CveInfoByPkgName = Map<string, CveInfoByAlertKey>
 
 export type GetCveInfoByPackageOptions = {
   exclude?: CveExcludeFilter | undefined
   limit?: number | undefined
 }
 
-export function getCveInfoByAlertsMap(
+export function getCveInfoFromAlertsMap(
   alertsMap: AlertsByPkgId,
   options?: GetCveInfoByPackageOptions | undefined
-): CveInfoByPkgId | null {
+): CveInfoByPkgName | null {
   const { exclude: _exclude, limit = Infinity } = {
     __proto__: null,
     ...options
@@ -339,7 +341,7 @@ export function getCveInfoByAlertsMap(
   } as CveExcludeFilter
 
   let count = 0
-  let infoByPkg: CveInfoByPkgId | null = null
+  let infoByPkgName: CveInfoByPkgName | null = null
   alertsMapLoop: for (const [pkgId, sockPkgAlerts] of alertsMap) {
     const purlObj = PackageURL.fromString(idToPurl(pkgId))
     const name = resolvePackageName(purlObj)
@@ -351,38 +353,41 @@ export function getCveInfoByAlertsMap(
       ) {
         continue
       }
-      if (!infoByPkg) {
-        infoByPkg = new Map()
+      if (!infoByPkgName) {
+        infoByPkgName = new Map()
       }
-      let infos = infoByPkg.get(name)
+      let infos = infoByPkgName.get(name)
       if (!infos) {
-        infos = []
-        infoByPkg.set(name, infos)
+        infos = new Map()
+        infoByPkgName.set(name, infos)
       }
-      const { firstPatchedVersionIdentifier, vulnerableVersionRange } =
-        alert.props
-      try {
-        infos.push({
-          firstPatchedVersionIdentifier,
-          vulnerableVersionRange: new semver.Range(
-            // Replace ', ' in a range like '>= 1.0.0, < 1.8.2' with ' ' so that
-            // semver.Range will parse it without erroring.
-            vulnerableVersionRange.replace(/, +/g, ' ')
-          ).format()
-        })
-        if (++count >= limit) {
-          break alertsMapLoop
+      const { key } = alert
+      if (!infos.has(key)) {
+        const { firstPatchedVersionIdentifier, vulnerableVersionRange } =
+          alert.props
+        try {
+          infos.set(key, {
+            firstPatchedVersionIdentifier,
+            vulnerableVersionRange: new semver.Range(
+              // Replace ', ' in a range like '>= 1.0.0, < 1.8.2' with ' ' so that
+              // semver.Range will parse it without erroring.
+              vulnerableVersionRange.replace(/, +/g, ' ')
+            ).format()
+          })
+          if (++count >= limit) {
+            break alertsMapLoop
+          }
+        } catch (e) {
+          debugLog('getCveInfoFromAlertsMap', {
+            firstPatchedVersionIdentifier,
+            vulnerableVersionRange
+          })
+          debugLog(e)
         }
-      } catch (e) {
-        debugLog('getCveInfoByAlertsMap', {
-          firstPatchedVersionIdentifier,
-          vulnerableVersionRange
-        })
-        debugLog(e)
       }
     }
   }
-  return infoByPkg
+  return infoByPkgName
 }
 
 export type LogAlertsMapOptions = {
