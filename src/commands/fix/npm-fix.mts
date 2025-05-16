@@ -2,7 +2,7 @@ import path from 'node:path'
 
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
@@ -173,6 +173,9 @@ export async function npmFix(
         logger.warn(
           `Unexpected condition: Lockfile entries not found for ${name}.\n`
         )
+        if (isDebug()) {
+          console.dir(arb.idealTree!, { depth: 999 })
+        }
         continue
       }
 
