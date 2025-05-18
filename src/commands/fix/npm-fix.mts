@@ -137,7 +137,14 @@ export async function npmFix(
   const sortedInfoEntries = [...infoByPkgName.entries()].sort((a, b) =>
     naturalCompare(a[0], b[0])
   )
-  infoEntriesLoop: for (const { 0: name, 1: infos } of sortedInfoEntries) {
+  infoEntriesLoop: for (
+    let i = 0, { length } = sortedInfoEntries;
+    i < length;
+    i += 1
+  ) {
+    const { 0: name, 1: infos } = sortedInfoEntries[i]!
+    const isLastInfoEntry = i === length - 1
+
     logger.log(`Processing vulnerable package: ${name}`)
     logger.indent()
     spinner?.indent()
@@ -166,6 +173,7 @@ export async function npmFix(
         : path.relative(rootPath, pkgPath)
 
       logger.log(`Checking workspace: ${workspaceName}`)
+      const workspaceLogCallCount = logger.logCallCount
 
       // eslint-disable-next-line no-await-in-loop
       actualTree = await install(arb, { cwd })
@@ -389,13 +397,15 @@ export async function npmFix(
           }
         }
       }
-      logger.log('')
+      if (logger.logCallCount > workspaceLogCallCount) {
+        logger.log('')
+      }
     }
 
     for (const warningText of warningsForAfter) {
       logger.warn(warningText)
     }
-    if (warningsForAfter.size) {
+    if (!isLastInfoEntry) {
       logger.log('')
     }
 
