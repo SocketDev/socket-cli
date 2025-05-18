@@ -77,7 +77,7 @@ export function findPackageNode(
   let sentinel = 0
   while (queue.length) {
     if (sentinel++ === LOOP_SENTINEL) {
-      throw new Error('Detected infinite loop in findPackageNodes')
+      throw new Error('Detected infinite loop in findPackageNode')
     }
     const nodeOrLink = queue.pop()!
     const node = nodeOrLink.isLink ? nodeOrLink.target : nodeOrLink
@@ -300,7 +300,11 @@ export function getDetailsFromDiff(
 }
 
 export function isTopLevel(tree: SafeNode, node: SafeNode): boolean {
-  return tree.children.get(node.name) === node
+  const childNodeOrLink = tree.children.get(node.name)
+  const childNode = childNodeOrLink?.isLink
+    ? childNodeOrLink.target
+    : childNodeOrLink
+  return childNode === node
 }
 
 export type Packument = Exclude<
