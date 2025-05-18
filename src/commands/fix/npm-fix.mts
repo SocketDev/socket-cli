@@ -70,7 +70,9 @@ async function install(
   } as InstallOptions
   const newArb = new Arborist({ path: cwd })
   newArb.idealTree = await arb.buildIdealTree()
-  return await newArb.reify()
+  const actualTree = await newArb.reify()
+  arb.actualTree = actualTree
+  return actualTree
 }
 
 export async function npmFix(
@@ -253,6 +255,8 @@ export async function npmFix(
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
               await gitResetAndClean(baseBranch, cwd)
+              // eslint-disable-next-line no-await-in-loop
+              actualTree = await install(arb, { cwd })
             }
             continue
           }
@@ -361,6 +365,8 @@ export async function npmFix(
           if (isCi) {
             // eslint-disable-next-line no-await-in-loop
             await gitResetAndClean(baseBranch, cwd)
+            // eslint-disable-next-line no-await-in-loop
+            actualTree = await install(arb, { cwd })
           }
           if (errored) {
             if (!isCi) {
@@ -370,6 +376,8 @@ export async function npmFix(
                 removeNodeModules(cwd),
                 editablePkgJson.save({ ignoreWhitespace: true })
               ])
+              // eslint-disable-next-line no-await-in-loop
+              actualTree = await install(arb, { cwd })
             }
             spinner?.failAndStop(
               `Update failed for ${oldId} in ${workspaceName}`,

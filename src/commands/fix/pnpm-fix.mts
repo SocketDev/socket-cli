@@ -163,6 +163,7 @@ export async function pnpmFix(
     logger.error('Required pnpm-lock.yaml not found.')
     return
   }
+
   const alertsMap = purls.length
     ? await getAlertsMapFromPurls(purls, getAlertMapOptions({ limit }))
     : await getAlertsMapFromPnpmLockfile(
@@ -353,6 +354,8 @@ export async function pnpmFix(
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
               await gitResetAndClean(baseBranch, cwd)
+              // eslint-disable-next-line no-await-in-loop
+              actualTree = await install(pkgEnvDetails, { cwd, spinner })
             }
             continue
           }
@@ -461,6 +464,8 @@ export async function pnpmFix(
           if (isCi) {
             // eslint-disable-next-line no-await-in-loop
             await gitResetAndClean(baseBranch, cwd)
+            // eslint-disable-next-line no-await-in-loop
+            actualTree = await install(pkgEnvDetails, { cwd, spinner })
           }
           if (errored) {
             if (!isCi) {
@@ -470,6 +475,8 @@ export async function pnpmFix(
                 removeNodeModules(cwd),
                 editablePkgJson.save({ ignoreWhitespace: true })
               ])
+              // eslint-disable-next-line no-await-in-loop
+              actualTree = await install(pkgEnvDetails, { cwd, spinner })
             }
             spinner?.failAndStop(
               `Update failed for ${oldId} in ${workspaceName}`,
