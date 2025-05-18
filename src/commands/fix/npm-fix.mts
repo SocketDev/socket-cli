@@ -137,7 +137,7 @@ export async function npmFix(
   const sortedInfoEntries = [...infoByPkgName.entries()].sort((a, b) =>
     naturalCompare(a[0], b[0])
   )
-  infoByPkgNameLoop: for (const { 0: name, 1: infos } of sortedInfoEntries) {
+  infoEntriesLoop: for (const { 0: name, 1: infos } of sortedInfoEntries) {
     logger.log(`Processing vulnerable package: ${name}`)
     logger.indent()
     spinner?.indent()
@@ -151,13 +151,13 @@ export async function npmFix(
       logger.warn(`Unexpected condition: No packument found for ${name}\n`)
       logger.dedent()
       spinner?.dedent()
-      continue
+      continue infoEntriesLoop
     }
 
     const availableVersions = Object.keys(packument.versions)
     const warningsForAfter = new Set<string>()
 
-    for (const pkgJsonPath of pkgJsonPaths) {
+    pkgJsonPathsLoop: for (const pkgJsonPath of pkgJsonPaths) {
       const pkgPath = path.dirname(pkgJsonPath)
       const isWorkspaceRoot =
         pkgJsonPath === pkgEnvDetails.editablePkgJson.filename
@@ -180,7 +180,7 @@ export async function npmFix(
         logger.warn(
           `Unexpected condition: Lockfile entries not found for ${name}.\n`
         )
-        continue
+        continue pkgJsonPathsLoop
       }
 
       // Always re-read the editable package.json to avoid stale mutations
@@ -190,7 +190,7 @@ export async function npmFix(
         editable: true
       })
 
-      for (const oldVersion of oldVersions) {
+      oldVersionsLoop: for (const oldVersion of oldVersions) {
         const oldId = `${name}@${oldVersion}`
         const oldPurl = idToPurl(oldId)
 
@@ -199,10 +199,10 @@ export async function npmFix(
           logger.warn(
             `Unexpected condition: Arborist node not found, skipping ${oldId}`
           )
-          continue
+          continue oldVersionsLoop
         }
 
-        for (const {
+        infosLoop: for (const {
           firstPatchedVersionIdentifier,
           vulnerableVersionRange
         } of infos.values()) {
@@ -220,7 +220,7 @@ export async function npmFix(
             warningsForAfter.add(
               `No update applied. ${oldId} needs >=${firstPatchedVersionIdentifier}`
             )
-            continue
+            continue infosLoop
           }
 
           const newVersionRange = applyRange(oldVersion, newVersion, rangeStyle)
@@ -258,7 +258,7 @@ export async function npmFix(
               // eslint-disable-next-line no-await-in-loop
               actualTree = await install(arb, { cwd })
             }
-            continue
+            continue infosLoop
           }
 
           spinner?.start()
@@ -291,14 +291,14 @@ export async function npmFix(
               // eslint-disable-next-line no-await-in-loop
               if (await prExistForBranch(owner, repo, branch)) {
                 debugLog(`Branch "${branch}" exists, skipping PR creation.`)
-                continue
+                continue infosLoop
               }
               // eslint-disable-next-line no-await-in-loop
               if (await gitRemoteBranchExists(branch, cwd)) {
                 debugLog(
                   `Remote branch "${branch}" exists, skipping PR creation.`
                 )
-                continue
+                continue infosLoop
               }
 
               const moddedFilepaths =
@@ -314,7 +314,7 @@ export async function npmFix(
                 logger.warn(
                   'Unexpected condition: Nothing to commit, skipping PR creation.'
                 )
-                continue
+                continue infosLoop
               }
 
               if (
@@ -329,7 +329,7 @@ export async function npmFix(
                 logger.warn(
                   'Unexpected condition: Push failed, skipping PR creation.'
                 )
-                continue
+                continue infosLoop
               }
               // eslint-disable-next-line no-await-in-loop
               await cleanupOpenPrs(owner, repo, oldPurl, newVersion, {
@@ -385,7 +385,7 @@ export async function npmFix(
             )
           }
           if (++count >= limit) {
-            break infoByPkgNameLoop
+            break infoEntriesLoop
           }
         }
       }
