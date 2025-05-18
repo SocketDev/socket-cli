@@ -31,7 +31,7 @@ export async function getAlertsMapFromPnpmLockfile(
     nothrow: false,
     ...options_
   } as GetAlertsMapFromPnpmLockfileOptions
-  const purls = extractPurlsFromPnpmLockfile(lockfile)
+  const purls = await extractPurlsFromPnpmLockfile(lockfile)
   return await getAlertsMapFromPurls(purls, {
     overrides: lockfile.overrides,
     ...options

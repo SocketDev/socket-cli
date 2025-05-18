@@ -1,6 +1,7 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { readWantedLockfile } from '@pnpm/lockfile.fs'
+import yaml from 'js-yaml'
 
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
@@ -11,6 +12,8 @@ import {
   fetchPackagePackument,
   readPackageJson
 } from '@socketsecurity/registry/lib/packages'
+import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
+import { stripBom } from '@socketsecurity/registry/lib/strings'
 
 import {
   getBaseGitBranch,
@@ -45,7 +48,7 @@ import {
   getAlertsMapFromPnpmLockfile,
   getAlertsMapFromPurls
 } from '../../utils/alerts-map.mts'
-import { removeNodeModules } from '../../utils/fs.mts'
+import { readFileUtf8, removeNodeModules } from '../../utils/fs.mts'
 import { globWorkspace } from '../../utils/glob.mts'
 import { parsePnpmLockfileVersion } from '../../utils/pnpm.mts'
 import { applyRange } from '../../utils/semver.mts'
@@ -68,6 +71,14 @@ async function getActualTree(cwd: string = process.cwd()): Promise<SafeNode> {
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
   })
   return await arb.loadActual()
+}
+
+async function readLockfile(
+  lockfilePath: string
+): Promise<LockfileObject | null> {
+  return existsSync(lockfilePath)
+    ? (yaml.load(stripBom(await readFileUtf8(lockfilePath))) as LockfileObject)
+    : null
 }
 
 type InstallOptions = {
@@ -100,12 +111,6 @@ async function install(
   return await getActualTree(cwd)
 }
 
-async function readLockfile(pkgPath: string): Promise<LockfileObject | null> {
-  return await readWantedLockfile(pkgPath, {
-    ignoreIncompatible: false
-  })
-}
-
 export async function pnpmFix(
   pkgEnvDetails: EnvDetails,
   {
@@ -129,12 +134,14 @@ export async function pnpmFix(
 
   spinner?.start()
 
-  let lockfile = await readLockfile(rootPath)
+  let actualTree: SafeNode | undefined
+  const lockfilePath = path.join(rootPath, 'pnpm-lock.yaml')
+  let lockfile = await readLockfile(lockfilePath)
 
   // If pnpm-lock.yaml does NOT exist then install with pnpm to create it.
   if (!lockfile) {
-    await install(pkgEnvDetails, { cwd, spinner })
-    lockfile = await readLockfile(rootPath)
+    actualTree = await install(pkgEnvDetails, { cwd, spinner })
+    lockfile = await readLockfile(lockfilePath)
   }
   // Update pnpm-lock.yaml if its version is older than what the installed pnpm
   // produces.
@@ -143,8 +150,12 @@ export async function pnpmFix(
     pkgEnvDetails.agentVersion.major >= 10 &&
     parsePnpmLockfileVersion(lockfile.lockfileVersion).major <= 6
   ) {
-    await install(pkgEnvDetails, { args: ['--lockfile-only'], cwd, spinner })
-    lockfile = await readLockfile(rootPath)
+    actualTree = await install(pkgEnvDetails, {
+      args: ['--lockfile-only'],
+      cwd,
+      spinner
+    })
+    lockfile = await readLockfile(lockfilePath)
   }
   // Exit early if pnpm-lock.yaml is not found.
   if (!lockfile) {
@@ -152,7 +163,6 @@ export async function pnpmFix(
     logger.error('Required pnpm-lock.yaml not found.')
     return
   }
-
   const alertsMap = purls.length
     ? await getAlertsMapFromPurls(purls, getAlertMapOptions({ limit }))
     : await getAlertsMapFromPnpmLockfile(
@@ -183,7 +193,10 @@ export async function pnpmFix(
   spinner?.stop()
 
   let count = 0
-  infoByPkgNameLoop: for (const { 0: name, 1: infos } of infoByPkgName) {
+  const sortedInfoEntries = [...infoByPkgName.entries()].sort((a, b) =>
+    naturalCompare(a[0], b[0])
+  )
+  infoByPkgNameLoop: for (const { 0: name, 1: infos } of sortedInfoEntries) {
     logger.log(`Processing vulnerable package: ${name}`)
     logger.indent()
     spinner?.indent()
@@ -214,11 +227,11 @@ export async function pnpmFix(
       logger.log(`Checking workspace: ${workspaceName}`)
 
       // eslint-disable-next-line no-await-in-loop
-      let actualTree = await getActualTree(cwd)
+      actualTree = await install(pkgEnvDetails, { cwd, spinner })
 
       const oldVersions = arrayUnique(
         findPackageNodes(actualTree, name)
-          .map(n => n.target?.version ?? n.version)
+          .map(n => n.version)
           .filter(Boolean)
       )
 
@@ -451,8 +464,6 @@ export async function pnpmFix(
           if (isCi) {
             // eslint-disable-next-line no-await-in-loop
             await gitResetAndClean(baseBranch, cwd)
-            // eslint-disable-next-line no-await-in-loop
-            actualTree = await install(pkgEnvDetails, { cwd, spinner })
           }
           if (errored) {
             if (!isCi) {
@@ -462,8 +473,6 @@ export async function pnpmFix(
                 removeNodeModules(cwd),
                 editablePkgJson.save({ ignoreWhitespace: true })
               ])
-              // eslint-disable-next-line no-await-in-loop
-              actualTree = await install(pkgEnvDetails, { cwd, spinner })
             }
             spinner?.failAndStop(
               `Update failed for ${oldId} in ${workspaceName}`,

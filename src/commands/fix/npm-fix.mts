@@ -9,6 +9,7 @@ import {
   fetchPackagePackument,
   readPackageJson
 } from '@socketsecurity/registry/lib/packages'
+import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
 import {
   getBaseGitBranch,
@@ -60,16 +61,16 @@ type InstallOptions = {
 }
 
 async function install(
-  idealTree: SafeNode,
+  arb: SafeArborist,
   options: InstallOptions
-): Promise<void> {
+): Promise<SafeNode> {
   const { cwd = process.cwd() } = {
     __proto__: null,
     ...options
   } as InstallOptions
-  const arb = new Arborist({ path: cwd })
-  arb.idealTree = idealTree
-  await arb.reify()
+  const newArb = new Arborist({ path: cwd })
+  newArb.idealTree = await arb.buildIdealTree()
+  return await newArb.reify()
 }
 
 export async function npmFix(
@@ -95,12 +96,14 @@ export async function npmFix(
   spinner?.start()
 
   const { pkgPath: rootPath } = pkgEnvDetails
+
   const arb = new SafeArborist({
     path: rootPath,
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
   })
-  // Calling arb.reify() creates the arb.diff object and nulls-out arb.idealTree.
-  await arb.reify()
+  // Calling arb.reify() creates the arb.diff object, nulls-out arb.idealTree,
+  // and populates arb.actualTree.
+  let actualTree = await arb.reify()
 
   const alertsMap = purls.length
     ? await getAlertsMapFromPurls(purls, getAlertMapOptions({ limit }))
@@ -129,7 +132,10 @@ export async function npmFix(
   spinner?.stop()
 
   let count = 0
-  infoByPkgNameLoop: for (const { 0: name, 1: infos } of infoByPkgName) {
+  const sortedInfoEntries = [...infoByPkgName.entries()].sort((a, b) =>
+    naturalCompare(a[0], b[0])
+  )
+  infoByPkgNameLoop: for (const { 0: name, 1: infos } of sortedInfoEntries) {
     logger.log(`Processing vulnerable package: ${name}`)
     logger.indent()
     spinner?.indent()
@@ -159,12 +165,11 @@ export async function npmFix(
 
       logger.log(`Checking workspace: ${workspaceName}`)
 
-      arb.idealTree = null
       // eslint-disable-next-line no-await-in-loop
-      await arb.buildIdealTree()
+      actualTree = await install(arb, { cwd })
 
       const oldVersions = arrayUnique(
-        findPackageNodes(arb.idealTree!, name)
+        findPackageNodes(actualTree, name)
           .map(n => n.target?.version ?? n.version)
           .filter(Boolean)
       )
@@ -174,7 +179,7 @@ export async function npmFix(
           `Unexpected condition: Lockfile entries not found for ${name}.\n`
         )
         if (isDebug()) {
-          console.dir(arb.idealTree!, { depth: 999 })
+          console.dir(actualTree, { depth: 999 })
         }
         continue
       }
@@ -190,7 +195,7 @@ export async function npmFix(
         const oldId = `${name}@${oldVersion}`
         const oldPurl = idToPurl(oldId)
 
-        const node = findPackageNode(arb.idealTree!, name, oldVersion)
+        const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
           logger.warn(
             `Unexpected condition: Arborist node not found, skipping ${oldId}`
@@ -238,7 +243,8 @@ export async function npmFix(
           updateNode(node, newVersion, newVersionPackument)
           updatePackageJsonFromNode(
             editablePkgJson,
-            arb.idealTree!,
+            // eslint-disable-next-line no-await-in-loop
+            await arb.buildIdealTree(),
             node,
             newVersion,
             rangeStyle
@@ -261,7 +267,7 @@ export async function npmFix(
           let errored = false
           try {
             // eslint-disable-next-line no-await-in-loop
-            await install(arb.idealTree!, { cwd })
+            actualTree = await install(arb, { cwd })
             if (test) {
               spinner?.info(`Testing ${newId} in ${workspaceName}`)
               // eslint-disable-next-line no-await-in-loop
@@ -358,8 +364,6 @@ export async function npmFix(
           if (isCi) {
             // eslint-disable-next-line no-await-in-loop
             await gitResetAndClean(baseBranch, cwd)
-            // eslint-disable-next-line no-await-in-loop
-            await install(arb.idealTree!, { cwd })
           }
           if (errored) {
             if (!isCi) {
@@ -369,8 +373,6 @@ export async function npmFix(
                 removeNodeModules(cwd),
                 editablePkgJson.save({ ignoreWhitespace: true })
               ])
-              // eslint-disable-next-line no-await-in-loop
-              await install(arb.idealTree!, { cwd })
             }
             spinner?.failAndStop(
               `Update failed for ${oldId} in ${workspaceName}`,
