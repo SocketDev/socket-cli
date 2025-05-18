@@ -7,7 +7,7 @@ import { getArboristNodeClassPath } from '../../paths.mts'
 import { getLogger } from '../../proc-log/index.mts'
 
 import type { SafeEdge } from './edge.mts'
-import type { Node as BaseNode, Link } from '@npmcli/arborist'
+import type { Node as BaseNode } from '@npmcli/arborist'
 
 const require = createRequire(import.meta.url)
 
@@ -38,6 +38,7 @@ type NodeClass = Omit<
   | 'resolve'
   | 'resolveParent'
   | 'root'
+  | 'target'
   | 'updateOverridesEdgeInAdded'
   | 'updateOverridesEdgeInRemoved'
   | 'version'
@@ -45,7 +46,7 @@ type NodeClass = Omit<
 > & {
   name: string
   version: string
-  children: Map<string, SafeNode | Link>
+  children: Map<string, SafeNode | LinkClass>
   edgesIn: Set<SafeEdge>
   edgesOut: Map<string, SafeEdge>
   from: SafeNode | null
@@ -57,6 +58,7 @@ type NodeClass = Omit<
     addEdge(edge: SafeEdge): void
   }
   overrides: SafeOverrideSet | undefined
+  target: SafeNode
   versions: string[]
   get inDepBundle(): boolean
   get packageName(): string | null
@@ -79,6 +81,10 @@ type NodeClass = Omit<
     otherOverrideSet: SafeOverrideSet | undefined
   ): boolean
   updateOverridesEdgeInRemoved(otherOverrideSet: SafeOverrideSet): boolean
+}
+
+export type LinkClass = Omit<NodeClass, 'isLink'> & {
+  readonly isLink: true
 }
 
 const Node: NodeClass = require(getArboristNodeClassPath())
