@@ -226,7 +226,7 @@ const config: CliCommandConfig = {
   help: () => '',
 }
 
-export const cmdCdxgen = {
+export const cmdManifestCdxgen = {
   description: config.description,
   hidden: config.hidden,
   run,

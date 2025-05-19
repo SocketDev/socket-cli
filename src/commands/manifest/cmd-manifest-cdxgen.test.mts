@@ -2,22 +2,25 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
 import { cmdit, invokeNpm } from '../../../test/utils.mts'
+import constants from '../../constants.mts'
 
 const { CLI } = constants
 
-describe('socket cdxgen', async () => {
+describe('socket manifest cdxgen', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
-  cmdit(['cdxgen', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd, {
-      // Need to pass it on as env because --config will break cdxgen
-      SOCKET_CLI_CONFIG: '{}',
-    })
-    expect(stdout).toMatchInlineSnapshot(
-      `
+  cmdit(
+    ['manifest', 'cdxgen', '--help'],
+    'should support --help',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd, {
+        // Need to pass it on as env because --config will break cdxgen
+        SOCKET_CLI_CONFIG: '{}',
+      })
+      expect(stdout).toMatchInlineSnapshot(
+        `
       "cdxgen [command]
 
       Commands:
@@ -74,19 +77,22 @@ describe('socket cdxgen', async () => {
 
       for documentation, visit https://cyclonedx.github.io/cdxgen"
     `,
-    )
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      )
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket cdxgen\`, cwd: <redacted>"
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest cdxgen\`, cwd: <redacted>"
     `)
 
-    // expect(code, 'explicit help should exit with code 0').toBe(0)
-    expect(code, 'help should exit with code 2').toBe(0) // cdxgen special case
-    expect(stderr, 'banner includes base command').toContain('`socket cdxgen`')
-  })
+      // expect(code, 'explicit help should exit with code 0').toBe(0)
+      expect(code, 'help should exit with code 2').toBe(0) // cdxgen special case
+      expect(stderr, 'banner includes base command').toContain(
+        '`socket manifest cdxgen`',
+      )
+    },
+  )
 
   // cdxgen does not support --dry-run
   // cmdit(
