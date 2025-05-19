@@ -43,8 +43,9 @@ export async function setupTabCompletion(targetName: string): Promise<
   let bashrcUpdated = false
 
   // Add to ~/.bashrc if not already there
-  const bashrcPath = process.env['HOME']
-    ? path.join(process.env['HOME'], '.bashrc')
+  // Lazily access constants.homePath
+  const bashrcPath = constants.homePath
+    ? path.join(constants.homePath, '.bashrc')
     : ''
 
   const foundBashrc = Boolean(bashrcPath && fs.existsSync(bashrcPath))
