@@ -80,7 +80,7 @@ export function findPackageNode(
       throw new Error('Detected infinite loop in findPackageNode')
     }
     const nodeOrLink = queue.pop()!
-    const node = nodeOrLink.isLink ? nodeOrLink.target : nodeOrLink
+    const node = getTargetNode(nodeOrLink)
     if (visited.has(node)) {
       continue
     }
@@ -118,7 +118,7 @@ export function findPackageNodes(
       throw new Error('Detected infinite loop in findPackageNodes')
     }
     const nodeOrLink = queue.pop()!
-    const node = nodeOrLink.isLink ? nodeOrLink.target : nodeOrLink
+    const node = getTargetNode(nodeOrLink)
     if (visited.has(node)) {
       continue
     }
@@ -299,12 +299,14 @@ export function getDetailsFromDiff(
   return details
 }
 
+export function getTargetNode(nodeOrLink: SafeNode | LinkClass): SafeNode
+export function getTargetNode<T>(nodeOrLink: T): SafeNode | null
+export function getTargetNode(nodeOrLink: any): SafeNode | null {
+  return nodeOrLink?.isLink ? nodeOrLink.target : (nodeOrLink ?? null)
+}
+
 export function isTopLevel(tree: SafeNode, node: SafeNode): boolean {
-  const childNodeOrLink = tree.children.get(node.name)
-  const childNode = childNodeOrLink?.isLink
-    ? childNodeOrLink.target
-    : childNodeOrLink
-  return childNode === node
+  return getTargetNode(tree.children.get(node.name)) === node
 }
 
 export type Packument = Exclude<
