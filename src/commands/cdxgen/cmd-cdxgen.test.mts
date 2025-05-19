@@ -12,7 +12,10 @@ describe('socket cdxgen', async () => {
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
   cmdit(['cdxgen', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd,  {
+      // Need to pass it on as env because --config will break cdxgen
+      SOCKET_CLI_CONFIG: '{}',
+    })
     expect(stdout).toMatchInlineSnapshot(
       `
         "cdxgen [command]
@@ -73,15 +76,13 @@ describe('socket cdxgen', async () => {
       `,
     )
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-        "
-           \\x1b[33m\\u203c\\x1b[39m Warning: The \`socket cdxgen\` command moved to \`socket manifest cdxgen\` and will be removed as a toplevel command in the next major bump.
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
-          |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>, default org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket cdxgen\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m"
-      `)
+      "
+         \\x1b[33m\\u203c\\x1b[39m Warning: The \`socket cdxgen\` command moved to \`socket manifest cdxgen\` and will be removed as a toplevel command in the next major bump.
+         _____         _       _        /---------------
+        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+        |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket cdxgen\`, cwd: <redacted>"
+    `)
 
     expect(code, 'explicit help should exit with code 0').toBe(0)
     expect(stderr, 'banner includes base command').toContain('`socket cdxgen`')
