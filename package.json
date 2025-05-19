@@ -106,7 +106,7 @@
     "@socketregistry/indent-string": "1.0.12",
     "@socketregistry/is-interactive": "1.0.5",
     "@socketregistry/packageurl-js": "1.0.6",
-    "@socketsecurity/config": "2.1.3",
+    "@socketsecurity/config": "3.0.1",
     "@socketsecurity/registry": "1.0.186",
     "@socketsecurity/sdk": "1.4.36",
     "@types/blessed": "0.1.25",
