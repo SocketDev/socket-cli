@@ -14,7 +14,7 @@ export async function streamScan(
   }
   const sockSdk = sockSdkResult.data
 
-  logger.error('Requesting data from API...')
+  logger.info('Requesting data from API...')
 
   // Note: this will write to stdout or target file. It's not a noop
   return await handleApiCall(

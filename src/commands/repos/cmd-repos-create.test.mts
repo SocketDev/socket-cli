@@ -133,8 +133,8 @@ describe('socket repos create', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repos create\`, cwd: <redacted>
         \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
         \\x1b[39m
-        Missing the org slug and no --org flag set. Trying to auto-discover the org now...
-        Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.
+        \\x1b[33m\\u203c\\x1b[39m Missing the org slug and no --org flag set. Trying to auto-discover the org now...
+        \\x1b[34mi\\x1b[39m Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.
         \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 

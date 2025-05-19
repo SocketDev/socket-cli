@@ -48,21 +48,21 @@ export async function outputDiffScan(
     const json = serializeResultJson(result)
 
     if (file && file !== '-') {
-      logger.log(`Writing json to \`${file}\``)
+      logger.info(`Writing json to \`${file}\``)
       fs.writeFile(file, JSON.stringify(result, null, 2), err => {
         if (err) {
           logger.fail(`Writing to \`${file}\` failed...`)
           logger.error(err)
         } else {
-          logger.log(`Data successfully written to \`${file}\``)
+          logger.success(`Data successfully written to \`${file}\``)
         }
-        logger.error(dashboardMessage)
+        logger.info(dashboardMessage)
       })
     } else {
-      // TODO: expose different method for writing to stderr when simply dodging stdout
-      logger.error(`\n Diff scan result: \n`)
+      // Note: only the .log will go to stdout
+      logger.success(`\n Diff scan result: \n`)
       logger.log(json)
-      logger.error(dashboardMessage)
+      logger.info(dashboardMessage)
     }
 
     return
@@ -71,7 +71,7 @@ export async function outputDiffScan(
   // In this case neither the --json nor the --file flag was passed
   // Dump the JSON to CLI and let NodeJS deal with truncation
 
-  logger.log('Diff scan result:')
+  logger.success('Diff scan result:')
   logger.log(
     util.inspect(result, {
       showHidden: false,
@@ -80,7 +80,7 @@ export async function outputDiffScan(
       maxArrayLength: null,
     }),
   )
-  logger.log(
+  logger.info(
     `\n 📝 To display the detailed report in the terminal, use the --json flag \n`,
   )
   logger.log(dashboardMessage)

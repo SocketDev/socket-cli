@@ -251,14 +251,14 @@ async function run(
   }
 
   if (updatedInput && orgSlug && targets?.length) {
-    logger.error(
+    logger.info(
       'Note: You can invoke this command next time to skip the interactive questions:',
     )
-    logger.error('```')
-    logger.error(
+    logger.info('```')
+    logger.info(
       `    socket scan create [other flags...] ${defaultOrgSlug ? '' : orgSlug} ${targets.join(' ')}`,
     )
-    logger.error('```\n')
+    logger.info('```\n')
   }
 
   const wasValidInput = checkCommandInput(

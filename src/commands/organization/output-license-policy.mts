@@ -24,7 +24,7 @@ export async function outputLicensePolicy(
     return
   }
 
-  logger.error('Use --json to get the full result')
+  logger.info('Use --json to get the full result')
   logger.log('# License policy')
   logger.log('')
   logger.log('This is the license policy for your organization:')

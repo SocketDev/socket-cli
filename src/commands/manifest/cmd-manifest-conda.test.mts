@@ -103,7 +103,7 @@ describe('socket manifest conda', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
 
-        Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
+        \\x1b[33m\\u203c\\x1b[39m Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -135,7 +135,7 @@ describe('socket manifest conda', async () => {
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
 
-          Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
+          \\x1b[33m\\u203c\\x1b[39m Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
         `)
       },
     )
@@ -169,7 +169,7 @@ describe('socket manifest conda', async () => {
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
 
-          Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
+          \\x1b[33m\\u203c\\x1b[39m Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
         `)
       },
     )
@@ -205,7 +205,7 @@ describe('socket manifest conda', async () => {
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
 
-          Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
+          \\x1b[33m\\u203c\\x1b[39m Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
         `)
       },
     )

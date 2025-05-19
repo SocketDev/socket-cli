@@ -32,7 +32,7 @@ export function serializeResultJson(data: CResult<unknown>): string {
     // This could be caused by circular references, which is an "us" problem
     const msg =
       'There was a problem converting the data set to JSON. Please try again without --json'
-    logger.error(msg)
+    logger.fail(msg)
     return (
       JSON.stringify({
         ok: false,

@@ -9,7 +9,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 export async function fetchPurlsShallowScore(
   purls: string[],
 ): Promise<CResult<SocketSdkReturnType<'batchPackageFetch'>>> {
-  logger.error(
+  logger.info(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`,
   )
 

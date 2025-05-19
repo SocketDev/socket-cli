@@ -42,7 +42,7 @@ if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
   // Lazily access constants.ENV.SOCKET_CLI_DEBUG.
   if (constants.ENV.SOCKET_CLI_DEBUG) {
     Sentry.setTag('debugging', true)
-    logger.log('[DEBUG] Set up Sentry.')
+    logger.info('[DEBUG] Set up Sentry.')
   } else {
     Sentry.setTag('debugging', false)
   }
@@ -54,5 +54,5 @@ if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
 }
 // Lazily access constants.ENV.SOCKET_CLI_DEBUG.
 else if (constants.ENV.SOCKET_CLI_DEBUG) {
-  logger.log('[DEBUG] Sentry disabled explicitly.')
+  logger.info('[DEBUG] Sentry disabled explicitly.')
 }
