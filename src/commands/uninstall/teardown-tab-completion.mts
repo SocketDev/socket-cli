@@ -70,8 +70,6 @@ function findRemainingCompletionSetups(bashrc: string): string[] {
   return bashrc
     .split('\n')
     .map(s => s.trim())
-    .filter(s => {
-      return s.trim().startsWith(COMPLETION_CMD_PREFIX)
-    })
+    .filter(s => s.startsWith(COMPLETION_CMD_PREFIX))
     .map(s => s.slice(COMPLETION_CMD_PREFIX.length).trim())
 }
