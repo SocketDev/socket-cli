@@ -6,7 +6,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 export async function streamScan(
   orgSlug: string,
   scanId: string,
-  file: string | undefined
+  file: string | undefined,
 ) {
   const sockSdkResult = await setupSdk()
   if (!sockSdkResult.ok) {
@@ -19,6 +19,6 @@ export async function streamScan(
   // Note: this will write to stdout or target file. It's not a noop
   return await handleApiCall(
     sockSdk.getOrgFullScan(orgSlug, scanId, file === '-' ? undefined : file),
-    'a scan'
+    'a scan',
   )
 }

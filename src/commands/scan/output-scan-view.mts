@@ -17,7 +17,7 @@ export async function outputScanView(
   orgSlug: string,
   scanId: string,
   filePath: string,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -51,8 +51,8 @@ export async function outputScanView(
           serializeResultJson({
             ok: false,
             message: 'File Write Failure',
-            cause: 'Failed to write json to disk'
-          })
+            cause: 'Failed to write json to disk',
+          }),
         )
       }
       return
@@ -71,7 +71,7 @@ export async function outputScanView(
       name: art.name,
       version: art.version,
       author,
-      score: JSON.stringify(art.score)
+      score: JSON.stringify(art.score),
     }
   })
 
@@ -80,7 +80,7 @@ export async function outputScanView(
     'version',
     'name',
     'author',
-    'score'
+    'score',
   ])
 
   const report =

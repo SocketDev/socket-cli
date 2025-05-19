@@ -28,7 +28,7 @@
   },
   "scripts": {
     "build": "run-p -c --aggregate-output build:*",
-    "build:dist": "run-s build:dist:src build:dist:types lint:dist:fix lint:external:fix",
+    "build:dist": "run-s build:dist:src build:dist:types",
     "build:dist:src": "run-p -c clean:dist clean:external && dotenvx -q run -f .env.local -- rollup -c .config/rollup.dist.config.mjs",
     "build:dist:types": "npm run clean:dist:types && dotenvx -q run -f .env.local -- tsc --project .config/tsconfig.dts.json",
     "check": "run-p -c --aggregate-output check:*",

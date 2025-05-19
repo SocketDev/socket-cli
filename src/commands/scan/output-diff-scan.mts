@@ -21,12 +21,12 @@ export async function outputDiffScan(
   {
     depth,
     file,
-    outputKind
+    outputKind,
   }: {
     depth: number
     file: string
     outputKind: OutputKind
-  }
+  },
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -68,11 +68,11 @@ export async function outputDiffScan(
       showHidden: false,
       depth: depth > 0 ? depth : null,
       colors: true,
-      maxArrayLength: null
-    })
+      maxArrayLength: null,
+    }),
   )
   logger.error(
-    `\n 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.\n`
+    `\n 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.\n`,
   )
   logger.log(dashboardMessage)
 }
@@ -80,7 +80,7 @@ export async function outputDiffScan(
 async function handleJson(
   data: CResult<SocketSdkReturnType<'GetOrgDiffScan'>['data']>,
   file: string,
-  dashboardMessage: string
+  dashboardMessage: string,
 ) {
   const json = serializeResultJson(data)
 
@@ -104,18 +104,18 @@ async function handleJson(
 }
 
 async function handleMarkdown(
-  data: SocketSdkReturnType<'GetOrgDiffScan'>['data']
+  data: SocketSdkReturnType<'GetOrgDiffScan'>['data'],
 ) {
   logger.log('# Scan diff result')
   logger.log('')
   logger.log('This Socket.dev report shows the changes between two scans:')
   logger.log(
-    `- [${data.before.id}](${SOCKET_SBOM_URL_PREFIX}${data.before.id})`
+    `- [${data.before.id}](${SOCKET_SBOM_URL_PREFIX}${data.before.id})`,
   )
   logger.log(`- [${data.after.id}](${SOCKET_SBOM_URL_PREFIX}${data.after.id})`)
   logger.log('')
   logger.log(
-    `You can [view this report in your dashboard](${data.diff_report_url})`
+    `You can [view this report in your dashboard](${data.diff_report_url})`,
   )
   logger.log('')
   logger.log('## Changes')
@@ -170,7 +170,7 @@ async function handleMarkdown(
   logger.log(`## Scan ${data.before.id}`)
   logger.log('')
   logger.log(
-    'This Scan was considered to be the "base" / "from" / "before" Scan.'
+    'This Scan was considered to be the "base" / "from" / "before" Scan.',
   )
   logger.log('')
   for (const [key, value] of Object.entries(data.before)) {
@@ -179,7 +179,7 @@ async function handleMarkdown(
     }
     if (!['id', 'organization_id', 'repository_id'].includes(key)) {
       logger.group(
-        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${value}`
+        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${value}`,
       )
       logger.groupEnd()
     }
@@ -195,7 +195,7 @@ async function handleMarkdown(
     }
     if (!['id', 'organization_id', 'repository_id'].includes(key)) {
       logger.group(
-        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${value}`
+        `- ${key === 'repository_slug' ? 'repo' : key === 'organization_slug' ? 'org' : key}: ${value}`,
       )
       logger.groupEnd()
     }

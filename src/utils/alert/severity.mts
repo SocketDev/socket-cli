@@ -7,7 +7,7 @@ export const ALERT_SEVERITY = createEnum({
   critical: 'critical',
   high: 'high',
   middle: 'middle',
-  low: 'low'
+  low: 'low',
 })
 
 export type SocketSdkAlertList =
@@ -25,7 +25,7 @@ export const ALERT_SEVERITIES_SORTED: ReadonlyArray<
 > = Object.freeze(['critical', 'high', 'middle', 'low'])
 
 function getDesiredSeverities(
-  lowestToInclude: SocketSdkAlert['severity'] | undefined
+  lowestToInclude: SocketSdkAlert['severity'] | undefined,
 ): Array<SocketSdkAlert['severity']> {
   const result: Array<SocketSdkAlert['severity']> = []
   for (const severity of ALERT_SEVERITIES_SORTED) {
@@ -38,7 +38,7 @@ function getDesiredSeverities(
 }
 
 export function formatSeverityCount(
-  severityCount: Record<SocketSdkAlert['severity'], number>
+  severityCount: Record<SocketSdkAlert['severity'], number>,
 ): string {
   const summary: string[] = []
   for (const severity of ALERT_SEVERITIES_SORTED) {
@@ -51,11 +51,11 @@ export function formatSeverityCount(
 
 export function getSeverityCount(
   issues: SocketSdkAlertList,
-  lowestToInclude: SocketSdkAlert['severity'] | undefined
+  lowestToInclude: SocketSdkAlert['severity'] | undefined,
 ): Record<SocketSdkAlert['severity'], number> {
   const severityCount = pick(
     { low: 0, middle: 0, high: 0, critical: 0 },
-    getDesiredSeverities(lowestToInclude)
+    getDesiredSeverities(lowestToInclude),
   ) as Record<SocketSdkAlert['severity'], number>
 
   for (const issue of issues) {

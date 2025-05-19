@@ -9,15 +9,15 @@ export async function suggestTarget(): Promise<string[] | void> {
       {
         name: 'Yes',
         value: true,
-        description: 'Target the current directory'
+        description: 'Target the current directory',
       },
       {
         name: 'No',
         value: false,
         description:
-          'Do not use the current directory (this will end in a no-op)'
-      }
-    ]
+          'Do not use the current directory (this will end in a no-op)',
+      },
+    ],
   })
   if (proceed) {
     return ['.']

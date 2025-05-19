@@ -1,6 +1,6 @@
 export function stringJoinWithSeparateFinalSeparator(
   list: string[],
-  separator: string = ' and '
+  separator: string = ' and ',
 ): string {
   const values = list.filter(Boolean)
   const { length } = values

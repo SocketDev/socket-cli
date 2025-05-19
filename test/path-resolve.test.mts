@@ -24,57 +24,57 @@ const mockedNmCallback = mockFs.load(rootNmPath)
 function mockTestFs(config: FileSystem.DirectoryItems) {
   return mockFs({
     ...config,
-    [mockNmPath]: mockedNmCallback
+    [mockNmPath]: mockedNmCallback,
   })
 }
 
 const globPatterns = {
   general: {
     readme: {
-      pattern: '*readme*'
+      pattern: '*readme*',
     },
     notice: {
-      pattern: '*notice*'
+      pattern: '*notice*',
     },
     license: {
-      pattern: '{licen{s,c}e{,-*},copying}'
-    }
+      pattern: '{licen{s,c}e{,-*},copying}',
+    },
   },
   npm: {
     packagejson: {
-      pattern: 'package.json'
+      pattern: 'package.json',
     },
     packagelockjson: {
-      pattern: 'package-lock.json'
+      pattern: 'package-lock.json',
     },
     npmshrinkwrap: {
-      pattern: 'npm-shrinkwrap.json'
+      pattern: 'npm-shrinkwrap.json',
     },
     yarnlock: {
-      pattern: 'yarn.lock'
+      pattern: 'yarn.lock',
     },
     pnpmlock: {
-      pattern: 'pnpm-lock.yaml'
+      pattern: 'pnpm-lock.yaml',
     },
     pnpmworkspace: {
-      pattern: 'pnpm-workspace.yaml'
-    }
+      pattern: 'pnpm-workspace.yaml',
+    },
   },
   pypi: {
     pipfile: {
-      pattern: 'pipfile'
+      pattern: 'pipfile',
     },
     pyproject: {
-      pattern: 'pyproject.toml'
+      pattern: 'pyproject.toml',
     },
     requirements: {
       pattern:
-        '{*requirements.txt,requirements/*.txt,requirements-*.txt,requirements.frozen}'
+        '{*requirements.txt,requirements/*.txt,requirements-*.txt,requirements.frozen}',
     },
     setuppy: {
-      pattern: 'setup.py'
-    }
-  }
+      pattern: 'setup.py',
+    },
+  },
 }
 
 type Fn = (...args: any[]) => Promise<any[]>
@@ -103,17 +103,17 @@ describe('Path Resolve', () => {
   describe('getPackageFilesForScan()', () => {
     it('should handle a "." inputPath', async () => {
       mockTestFs({
-        [`${mockFixturePath}/package.json`]: '{}'
+        [`${mockFixturePath}/package.json`]: '{}',
       })
 
       const actual = await sortedGetPackageFilesFullScans(
         mockFixturePath,
         ['.'],
         globPatterns,
-        undefined
+        undefined,
       )
       expect(actual.map(normalizePath)).toEqual([
-        `${mockFixturePath}/package.json`
+        `${mockFixturePath}/package.json`,
       ])
     })
 
@@ -122,7 +122,7 @@ describe('Path Resolve', () => {
         [`${mockFixturePath}/bar/package-lock.json`]: '{}',
         [`${mockFixturePath}/bar/package.json`]: '{}',
         [`${mockFixturePath}/foo/package-lock.json`]: '{}',
-        [`${mockFixturePath}/foo/package.json`]: '{}'
+        [`${mockFixturePath}/foo/package.json`]: '{}',
       })
 
       const actual = await sortedGetPackageFilesFullScans(
@@ -133,13 +133,13 @@ describe('Path Resolve', () => {
           version: 2,
           projectIgnorePaths: ['bar/*', '!bar/package.json'],
           issueRules: {},
-          githubApp: {}
-        }
+          githubApp: {},
+        },
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/bar/package.json`,
         `${mockFixturePath}/foo/package-lock.json`,
-        `${mockFixturePath}/foo/package.json`
+        `${mockFixturePath}/foo/package.json`,
       ])
     })
 
@@ -149,19 +149,19 @@ describe('Path Resolve', () => {
         [`${mockFixturePath}/bar/package-lock.json`]: '{}',
         [`${mockFixturePath}/bar/package.json`]: '{}',
         [`${mockFixturePath}/foo/package-lock.json`]: '{}',
-        [`${mockFixturePath}/foo/package.json`]: '{}'
+        [`${mockFixturePath}/foo/package.json`]: '{}',
       })
 
       const actual = await sortedGetPackageFilesFullScans(
         mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined
+        undefined,
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/bar/package.json`,
         `${mockFixturePath}/foo/package-lock.json`,
-        `${mockFixturePath}/foo/package.json`
+        `${mockFixturePath}/foo/package.json`,
       ])
     })
 
@@ -178,18 +178,18 @@ describe('Path Resolve', () => {
         [`${mockFixturePath}/coverage/some/dir/package.json`]: '{}',
         [`${mockFixturePath}/node_modules/socket/package.json`]: '{}',
         [`${mockFixturePath}/foo/package-lock.json`]: '{}',
-        [`${mockFixturePath}/foo/package.json`]: '{}'
+        [`${mockFixturePath}/foo/package.json`]: '{}',
       })
 
       const actual = await sortedGetPackageFilesFullScans(
         mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined
+        undefined,
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/foo/package-lock.json`,
-        `${mockFixturePath}/foo/package.json`
+        `${mockFixturePath}/foo/package.json`,
       ])
     })
 
@@ -198,18 +198,18 @@ describe('Path Resolve', () => {
         [`${mockFixturePath}/foo/package-foo.json`]: '{}',
         [`${mockFixturePath}/foo/package-lock.json`]: '{}',
         [`${mockFixturePath}/foo/package.json`]: '{}',
-        [`${mockFixturePath}/foo/random.json`]: '{}'
+        [`${mockFixturePath}/foo/random.json`]: '{}',
       })
 
       const actual = await sortedGetPackageFilesFullScans(
         mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined
+        undefined,
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/foo/package-lock.json`,
-        `${mockFixturePath}/foo/package.json`
+        `${mockFixturePath}/foo/package.json`,
       ])
     })
 
@@ -217,14 +217,14 @@ describe('Path Resolve', () => {
       mockTestFs({
         [`${mockFixturePath}/package.json`]: {
           /* Empty directory */
-        }
+        },
       })
 
       const actual = await sortedGetPackageFilesFullScans(
         mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined
+        undefined,
       )
       expect(actual.map(normalizePath)).toEqual([])
     })
@@ -232,52 +232,52 @@ describe('Path Resolve', () => {
     it('should resolve package and lock file', async () => {
       mockTestFs({
         [`${mockFixturePath}/package-lock.json`]: '{}',
-        [`${mockFixturePath}/package.json`]: '{}'
+        [`${mockFixturePath}/package.json`]: '{}',
       })
 
       const actual = await sortedGetPackageFilesFullScans(
         mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined
+        undefined,
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/package-lock.json`,
-        `${mockFixturePath}/package.json`
+        `${mockFixturePath}/package.json`,
       ])
     })
 
     it('should resolve package without lock file', async () => {
       mockTestFs({
-        [`${mockFixturePath}/package.json`]: '{}'
+        [`${mockFixturePath}/package.json`]: '{}',
       })
 
       const actual = await sortedGetPackageFilesFullScans(
         mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined
+        undefined,
       )
       expect(actual.map(normalizePath)).toEqual([
-        `${mockFixturePath}/package.json`
+        `${mockFixturePath}/package.json`,
       ])
     })
 
     it('should support alternative lock files', async () => {
       mockTestFs({
         [`${mockFixturePath}/yarn.lock`]: '{}',
-        [`${mockFixturePath}/package.json`]: '{}'
+        [`${mockFixturePath}/package.json`]: '{}',
       })
 
       const actual = await sortedGetPackageFilesFullScans(
         mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined
+        undefined,
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/package.json`,
-        `${mockFixturePath}/yarn.lock`
+        `${mockFixturePath}/yarn.lock`,
       ])
     })
 
@@ -289,14 +289,14 @@ describe('Path Resolve', () => {
         [`${mockFixturePath}/foo/package.json`]: '{}',
         [`${mockFixturePath}/bar/yarn.lock`]: '{}',
         [`${mockFixturePath}/bar/package.json`]: '{}',
-        [`${mockFixturePath}/abc/package.json`]: '{}'
+        [`${mockFixturePath}/abc/package.json`]: '{}',
       })
 
       const actual = await sortedGetPackageFilesFullScans(
         mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined
+        undefined,
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/abc/package.json`,
@@ -305,7 +305,7 @@ describe('Path Resolve', () => {
         `${mockFixturePath}/foo/package-lock.json`,
         `${mockFixturePath}/foo/package.json`,
         `${mockFixturePath}/package-lock.json`,
-        `${mockFixturePath}/package.json`
+        `${mockFixturePath}/package.json`,
       ])
     })
   })

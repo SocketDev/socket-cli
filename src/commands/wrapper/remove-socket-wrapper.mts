@@ -12,7 +12,7 @@ export function removeSocketWrapper(file: string): void {
     const linesWithoutSocketAlias = data
       .split('\n')
       .filter(
-        l => l !== 'alias npm="socket npm"' && l !== 'alias npx="socket npx"'
+        l => l !== 'alias npm="socket npm"' && l !== 'alias npx="socket npx"',
       )
 
     const updatedFileContent = linesWithoutSocketAlias.join('\n')
@@ -25,7 +25,7 @@ export function removeSocketWrapper(file: string): void {
       // TODO: pretty sure you need to source the file or restart
       //       any terminal session before changes are reflected.
       logger.log(
-        `The alias was removed from ${file}. Running 'npm install' will now run the standard npm command.`
+        `The alias was removed from ${file}. Running 'npm install' will now run the standard npm command.`,
       )
     })
   })

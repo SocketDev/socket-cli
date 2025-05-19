@@ -17,7 +17,7 @@ import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
   getPackageName,
   isBuiltin,
-  normalizeId
+  normalizeId,
 } from '../scripts/utils/packages.js'
 
 const {
@@ -32,13 +32,13 @@ const {
   INLINED_SYNP_VERSION,
   NODE_MODULES,
   ROLLUP_EXTERNAL_SUFFIX,
-  VITEST
+  VITEST,
 } = constants
 
 export const EXTERNAL_PACKAGES = [
   '@socketsecurity/registry',
   'blessed',
-  'blessed-contrib'
+  'blessed-contrib',
 ]
 
 const builtinAliases = builtinModules.reduce((o, n) => {
@@ -63,7 +63,7 @@ function getSocketCliVersionHash() {
     let gitHash = ''
     try {
       gitHash = spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
-        encoding: 'utf8'
+        encoding: 'utf8',
       }).stdout.trim()
     } catch {}
     // Make each build generate a unique version id, regardless.
@@ -92,7 +92,7 @@ export default function baseConfig(extendConfig = {}) {
       'json',
       'node-resolve',
       'typescript',
-      'unplugin-purge-polyfills'
+      'unplugin-purge-polyfills',
     ]) {
       for (let i = 0, { length } = extendPlugins; i < length; i += 1) {
         const p = extendPlugins[i]
@@ -112,7 +112,7 @@ export default function baseConfig(extendConfig = {}) {
       const id = normalizeId(rawId)
       const pkgName = getPackageName(
         id,
-        path.isAbsolute(id) ? nmPath.length + 1 : 0
+        path.isAbsolute(id) ? nmPath.length + 1 : 0,
       )
       return (
         id.endsWith('.d.cts') ||
@@ -140,7 +140,7 @@ export default function baseConfig(extendConfig = {}) {
         nodeResolve({
           exportConditions: ['node'],
           extensions: ['.mjs', '.js', '.json', '.ts', '.mts'],
-          preferBuiltins: true
+          preferBuiltins: true,
         }),
       extractedPlugins['json'] ?? jsonPlugin(),
       extractedPlugins['commonjs'] ??
@@ -150,18 +150,18 @@ export default function baseConfig(extendConfig = {}) {
           ignoreDynamicRequires: true,
           ignoreGlobal: true,
           ignoreTryCatch: true,
-          strictRequires: true
+          strictRequires: true,
         }),
       extractedPlugins['babel'] ??
         babelPlugin({
           babelHelpers: 'runtime',
           babelrc: false,
           configFile: path.join(configPath, 'babel.config.js'),
-          extensions: ['.mjs', '.js', '.ts', '.mts']
+          extensions: ['.mjs', '.js', '.ts', '.mts'],
         }),
       extractedPlugins['unplugin-purge-polyfills'] ??
         purgePolyfills.rollup({
-          replacements: {}
+          replacements: {},
         }),
       // Inline process.env values.
       replacePlugin({
@@ -172,74 +172,74 @@ export default function baseConfig(extendConfig = {}) {
             INLINED_CYCLONEDX_CDXGEN_VERSION,
             () =>
               JSON.stringify(
-                getRootPkgJsonSync().devDependencies['@cyclonedx/cdxgen']
-              )
+                getRootPkgJsonSync().devDependencies['@cyclonedx/cdxgen'],
+              ),
           ],
           [
             INLINED_SOCKET_CLI_HOMEPAGE,
-            () => JSON.stringify(getRootPkgJsonSync().homepage)
+            () => JSON.stringify(getRootPkgJsonSync().homepage),
           ],
           [
             INLINED_SOCKET_CLI_LEGACY_BUILD,
             () =>
               JSON.stringify(
                 // Lazily access constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD].
-                !!constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]
-              )
+                !!constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD],
+              ),
           ],
           [
             INLINED_SOCKET_CLI_NAME,
-            () => JSON.stringify(getRootPkgJsonSync().name)
+            () => JSON.stringify(getRootPkgJsonSync().name),
           ],
           [
             INLINED_SOCKET_CLI_PUBLISHED_BUILD,
             () =>
               JSON.stringify(
                 // Lazily access constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD].
-                !!constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD]
-              )
+                !!constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD],
+              ),
           ],
           [
             INLINED_SOCKET_CLI_SENTRY_BUILD,
             () =>
               JSON.stringify(
                 // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
-                !!constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
-              )
+                !!constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD],
+              ),
           ],
           [
             INLINED_SOCKET_CLI_VERSION,
-            () => JSON.stringify(getRootPkgJsonSync().version)
+            () => JSON.stringify(getRootPkgJsonSync().version),
           ],
           [
             INLINED_SOCKET_CLI_VERSION_HASH,
-            () => JSON.stringify(getSocketCliVersionHash())
+            () => JSON.stringify(getSocketCliVersionHash()),
           ],
           [
             INLINED_SYNP_VERSION,
-            () => JSON.stringify(getRootPkgJsonSync().devDependencies['synp'])
+            () => JSON.stringify(getRootPkgJsonSync().devDependencies['synp']),
           ],
           [
             VITEST,
             () =>
               // Lazily access constants.ENV[VITEST].
-              !!constants.ENV[VITEST]
-          ]
+              !!constants.ENV[VITEST],
+          ],
         ].reduce((obj, { 0: name, 1: value }) => {
           obj[`process.env.${name}`] = value
           obj[`process.env['${name}']`] = value
           obj[`process.env[${name}]`] = value
           return obj
-        }, {})
+        }, {}),
       }),
       // Convert un-prefixed built-in imports into "node:"" prefixed forms.
       replacePlugin({
         delimiters: [
           '(?<=(?:require(?:\\$+\\d+)?\\(|from\\s*)["\'])',
-          '(?=["\'])'
+          '(?=["\'])',
         ],
         preventAssignment: false,
-        values: builtinAliases
+        values: builtinAliases,
       }),
       // Replace require calls to ESM 'tiny-colors' with CJS 'yoctocolors-cjs'
       // because we npm override 'tiny-colors' with 'yoctocolors-cjs' for dist
@@ -247,7 +247,7 @@ export default function baseConfig(extendConfig = {}) {
       // require.
       socketModifyPlugin({
         find: /require(?:\$+\d+)?\(["']tiny-colors["']\)/g,
-        replace: "require('yoctocolors-cjs')"
+        replace: "require('yoctocolors-cjs')",
       }),
       // Try to convert `require('u' + 'rl')` into something like `require$$2$3`.
       socketModifyPlugin({
@@ -255,10 +255,10 @@ export default function baseConfig(extendConfig = {}) {
         replace(match) {
           return (
             /(?<=var +)[$\w]+(?=\s*=\s*require(?:\$+\d+)?\(["']node:url["']\))/.exec(
-              this.input
+              this.input,
             )?.[0] ?? match
           )
-        }
+        },
       }),
       // Remove dangling require calls, e.g. require calls not associated with
       // an import binding:
@@ -266,9 +266,9 @@ export default function baseConfig(extendConfig = {}) {
       //   require('graceful-fs')
       socketModifyPlugin({
         find: /^\s*require(?:\$+\d+)?\(["'].+?["']\);?\r?\n/gm,
-        replace: ''
+        replace: '',
       }),
-      ...extendPlugins
-    ]
+      ...extendPlugins,
+    ],
   }
 }

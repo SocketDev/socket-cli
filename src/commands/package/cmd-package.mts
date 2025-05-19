@@ -13,21 +13,21 @@ export const cmdPackage: CliSubcommand = {
     await meowWithSubcommands(
       {
         score: cmdPackageScore,
-        shallow: cmdPackageShallow
+        shallow: cmdPackageShallow,
       },
       {
         aliases: {
           deep: {
             description,
             hidden: true,
-            argv: ['score']
-          }
+            argv: ['score'],
+          },
         },
         argv,
         description,
         importMeta,
-        name: parentName + ' package'
-      }
+        name: parentName + ' package',
+      },
     )
-  }
+  },
 }

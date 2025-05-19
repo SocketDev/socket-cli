@@ -20,5 +20,5 @@ export const depsIncludesByAgent = new Map<Agent, AgentDepsIncludesFn>([
   [PNPM, matchQueryCmdStdout],
   [VLT, matchQueryCmdStdout],
   [YARN_BERRY, matchLsCmdViewHumanStdout],
-  [YARN_CLASSIC, matchLsCmdViewHumanStdout]
+  [YARN_CLASSIC, matchLsCmdViewHumanStdout],
 ])

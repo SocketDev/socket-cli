@@ -22,31 +22,31 @@ const config: CliCommandConfig = {
     bin: {
       type: 'string',
       default: 'sbt',
-      description: 'Location of sbt binary to use'
+      description: 'Location of sbt binary to use',
     },
     cwd: {
       type: 'string',
-      description: 'Set the cwd, defaults to process.cwd()'
+      description: 'Set the cwd, defaults to process.cwd()',
     },
     out: {
       type: 'string',
       default: './socket.pom.xml',
       description:
-        'Path of output file; where to store the resulting manifest, see also --stdout'
+        'Path of output file; where to store the resulting manifest, see also --stdout',
     },
     stdout: {
       type: 'boolean',
-      description: 'Print resulting pom.xml to stdout (supersedes --out)'
+      description: 'Print resulting pom.xml to stdout (supersedes --out)',
     },
     sbtOpts: {
       type: 'string',
       default: '',
-      description: 'Additional options to pass on to sbt, as per `sbt --help`'
+      description: 'Additional options to pass on to sbt, as per `sbt --help`',
     },
     verbose: {
       type: 'boolean',
-      description: 'Print debug messages'
-    }
+      description: 'Print debug messages',
+    },
   },
   help: (command, config) => `
     Usage
@@ -84,25 +84,25 @@ const config: CliCommandConfig = {
 
       $ ${command} ./build.sbt
       $ ${command} --bin=/usr/bin/sbt ./build.sbt
-  `
+  `,
 }
 
 export const cmdManifestScala = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const verbose = Boolean(cli.flags['verbose'])
@@ -129,15 +129,15 @@ async function run(
       test: !!target && target !== '-',
       message: 'The DIR arg is required',
       pass: 'ok',
-      fail: target === '-' ? 'stdin is not supported' : 'missing'
+      fail: target === '-' ? 'stdin is not supported' : 'missing',
     },
     {
       nook: true,
       test: cli.input.length <= 1,
       message: 'Can only accept one DIR (make sure to escape spaces!)',
       pass: 'ok',
-      fail: 'received ' + cli.input.length
-    }
+      fail: 'received ' + cli.input.length,
+    },
   )
   if (!wasValidInput) {
     return

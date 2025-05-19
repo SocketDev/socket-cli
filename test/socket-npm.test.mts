@@ -27,7 +27,7 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
   describe(`Socket npm wrapper for ${npmDir}`, () => {
     spawnSync('npm', ['install', ...(isDebug() ? [] : ['--silent'])], {
       cwd: npmPath,
-      stdio: isDebug() ? 'inherit' : 'ignore'
+      stdio: isDebug() ? 'inherit' : 'ignore',
     })
 
     // Lazily access constants.rootBinPath.
@@ -37,7 +37,7 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
       'should bail on new typosquat',
       {
         // About 5s on my machine. Will be slow in CI. Extend if too flaky.
-        timeout: 30_000
+        timeout: 30_000,
       },
       async () => {
         const result = await new Promise<string>((resolve, reject) => {
@@ -50,21 +50,21 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
               'install',
               'bowserify',
               '--no-audit',
-              '--no-fund'
+              '--no-fund',
             ],
             {
               cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
               env: {
                 // Lazily access constants.ENV.PATH.
-                PATH: `${npmBinPath}:${constants.ENV.PATH}`
-              }
-            }
+                PATH: `${npmBinPath}:${constants.ENV.PATH}`,
+              },
+            },
           )
           spawnPromise.process.stdout!.on('data', () => {
             reject(
               new Error(
-                'It seems npm ran anyways so the test failed to invoke socket'
-              )
+                'It seems npm ran anyways so the test failed to invoke socket',
+              ),
             )
           })
           spawnPromise.catch((e: any) => {
@@ -79,9 +79,9 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
 
         expect(
           result,
-          'if the promise resolves then the typo-squat attack message was seen, the promise should not reject in any way'
+          'if the promise resolves then the typo-squat attack message was seen, the promise should not reject in any way',
         ).toBe('OK')
-      }
+      },
     )
   })
 }

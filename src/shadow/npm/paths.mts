@@ -10,11 +10,11 @@ export function getArboristPackagePath() {
   if (_arboristPkgPath === undefined) {
     const pkgName = '@npmcli/arborist'
     const mainPathWithForwardSlashes = normalizePath(
-      getNpmRequire().resolve(pkgName)
+      getNpmRequire().resolve(pkgName),
     )
     const arboristPkgPathWithForwardSlashes = mainPathWithForwardSlashes.slice(
       0,
-      mainPathWithForwardSlashes.lastIndexOf(pkgName) + pkgName.length
+      mainPathWithForwardSlashes.lastIndexOf(pkgName) + pkgName.length,
     )
     // Lazily access constants.WIN32.
     _arboristPkgPath = constants.WIN32
@@ -29,7 +29,7 @@ export function getArboristClassPath() {
   if (_arboristClassPath === undefined) {
     _arboristClassPath = path.join(
       getArboristPackagePath(),
-      'lib/arborist/index.js'
+      'lib/arborist/index.js',
     )
   }
   return _arboristClassPath
@@ -40,7 +40,7 @@ export function getArboristDepValidPath() {
   if (_arboristDepValidPath === undefined) {
     _arboristDepValidPath = path.join(
       getArboristPackagePath(),
-      'lib/dep-valid.js'
+      'lib/dep-valid.js',
     )
   }
   return _arboristDepValidPath
@@ -67,7 +67,7 @@ export function getArboristOverrideSetClassPath() {
   if (_arboristOverrideSetClassPath === undefined) {
     _arboristOverrideSetClassPath = path.join(
       getArboristPackagePath(),
-      'lib/override-set.js'
+      'lib/override-set.js',
     )
   }
   return _arboristOverrideSetClassPath

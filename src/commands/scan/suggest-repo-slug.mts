@@ -27,9 +27,9 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
       // then do an additional request and specific search for it instead.
       // This way we can offer the tip of "do you want to create [cwd]?".
       perPage: '10',
-      page: '0'
+      page: '0',
     }),
-    'list of repositories'
+    'list of repositories',
   )
 
   // Ignore a failed request here. It was not the primary goal of
@@ -44,7 +44,7 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
       // Do an explicit request so we can assert that the cwd exists or not
       const result = await handleApiCall(
         sockSdk.getOrgRepo(orgSlug, currentDirName),
-        'check if current cwd is a known repo'
+        'check if current cwd is a known repo',
       )
       if (result.ok) {
         cwdIsKnown = true
@@ -63,8 +63,8 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
                 value: currentDirName,
                 description: cwdIsKnown
                   ? 'Register a new repo name under the given org and use it'
-                  : 'Use current dir as repo'
-              }
+                  : 'Use current dir as repo',
+              },
             ]
           : []
         ).concat(
@@ -73,14 +73,14 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
             .map(({ slug }) => ({
               name: 'Yes [' + slug + ']',
               value: slug || '', // Filtered above but TS is like nah.
-              description: `Use "${slug}" as the repo name`
+              description: `Use "${slug}" as the repo name`,
             })),
           {
             name: 'No',
             value: '',
-            description: 'Do not use any of these repos (will end in a no-op)'
-          }
-        )
+            description: 'Do not use any of these repos (will end in a no-op)',
+          },
+        ),
     })
 
     if (proceed) {

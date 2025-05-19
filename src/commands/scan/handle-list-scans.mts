@@ -12,7 +12,7 @@ export async function handleListScans({
   page,
   per_page,
   repo,
-  sort
+  sort,
 }: {
   branch: string
   direction: string
@@ -32,7 +32,7 @@ export async function handleListScans({
     page,
     per_page,
     repo,
-    sort
+    sort,
   })
 
   await outputListScans(data, outputKind)

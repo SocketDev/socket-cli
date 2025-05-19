@@ -8,7 +8,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputDeleteScan(
   result: CResult<SocketSdkReturnType<'deleteOrgFullScan'>['data']>,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1

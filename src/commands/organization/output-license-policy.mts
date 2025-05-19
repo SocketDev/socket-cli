@@ -9,7 +9,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputLicensePolicy(
   result: CResult<SocketSdkReturnType<'getOrgLicensePolicy'>['data']>,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -33,7 +33,7 @@ export async function outputLicensePolicy(
   const entries = rules ? Object.entries(rules) : []
   const mapped: Array<[string, string]> = entries.map(
     ([key, value]) =>
-      [key, (value as any)?.['allowed'] ? ' yes' : ' no'] as const
+      [key, (value as any)?.['allowed'] ? ' yes' : ' no'] as const,
   )
   mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
   logger.log(mdTableOfPairs(mapped, ['License Name', 'Allowed']))

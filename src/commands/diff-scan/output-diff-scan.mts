@@ -16,12 +16,12 @@ export async function outputDiffScan(
   {
     depth,
     file,
-    outputKind
+    outputKind,
   }: {
     depth: number
     file: string
     outputKind: OutputKind
-  }
+  },
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -77,11 +77,11 @@ export async function outputDiffScan(
       showHidden: false,
       depth: depth > 0 ? depth : null,
       colors: true,
-      maxArrayLength: null
-    })
+      maxArrayLength: null,
+    }),
   )
   logger.log(
-    `\n 📝 To display the detailed report in the terminal, use the --json flag \n`
+    `\n 📝 To display the detailed report in the terminal, use the --json flag \n`,
   )
   logger.log(dashboardMessage)
 }

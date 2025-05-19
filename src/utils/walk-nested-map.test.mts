@@ -10,10 +10,10 @@ describe('walkNestedMap', () => {
           new Map([
             ['x', 1],
             ['y', 2],
-            ['z', 3]
-          ])
-        )
-      )
+            ['z', 3],
+          ]),
+        ),
+      ),
     ).toMatchInlineSnapshot(`
       [
         {
@@ -48,20 +48,20 @@ describe('walkNestedMap', () => {
               new Map([
                 ['x2', 1],
                 ['y2', 2],
-                ['z2', 3]
-              ])
+                ['z2', 3],
+              ]),
             ],
             [
               'y',
               new Map([
                 ['x3', 1],
                 ['y3', 2],
-                ['z3', 3]
-              ])
-            ]
-          ])
-        )
-      )
+                ['z3', 3],
+              ]),
+            ],
+          ]),
+        ),
+      ),
     ).toMatchInlineSnapshot(`
       [
         {
@@ -123,18 +123,18 @@ describe('walkNestedMap', () => {
                   new Map([
                     ['x2', 1],
                     ['y2', 2],
-                    ['z2', 3]
-                  ])
+                    ['z2', 3],
+                  ]),
                 ],
                 [
                   'y',
                   new Map([
                     ['x3', 1],
                     ['y3', 2],
-                    ['z3', 3]
-                  ])
-                ]
-              ])
+                    ['z3', 3],
+                  ]),
+                ],
+              ]),
             ],
             [
               'b',
@@ -144,24 +144,24 @@ describe('walkNestedMap', () => {
                   new Map([
                     ['x2', 1],
                     ['y2', 2],
-                    ['z2', 3]
-                  ])
+                    ['z2', 3],
+                  ]),
                 ],
                 [
                   'y',
                   new Map([
                     ['x3', 1],
                     ['y3', 2],
-                    ['z3', 3]
-                  ])
-                ]
-              ])
-            ]
-          ])
-        )
+                    ['z3', 3],
+                  ]),
+                ],
+              ]),
+            ],
+          ]),
+        ),
       )
         // Makes test easier to read...
-        .map(obj => JSON.stringify(obj))
+        .map(obj => JSON.stringify(obj)),
     ).toMatchInlineSnapshot(`
       [
         "{"keys":["a","x","x2"],"value":1}",

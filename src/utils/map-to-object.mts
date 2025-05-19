@@ -7,12 +7,12 @@ interface NestedRecord<T> {
  * The goal is to serialize it with JSON.stringify, which Map can't do.
  */
 export function mapToObject<T>(
-  map: Map<string, T | Map<string, T | Map<string, T>>>
+  map: Map<string, T | Map<string, T | Map<string, T>>>,
 ): NestedRecord<T> {
   return Object.fromEntries(
     Array.from(map.entries()).map(([k, v]) => [
       k,
-      v instanceof Map ? mapToObject(v) : v
-    ])
+      v instanceof Map ? mapToObject(v) : v,
+    ]),
   )
 }

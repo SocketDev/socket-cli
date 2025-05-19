@@ -52,7 +52,7 @@ describe('socket package shallow', async () => {
             $ socket package shallow maven webtorrent babel
             $ socket package shallow npm/webtorrent golang/babel
             $ socket package shallow npm npm/webtorrent@1.0.1 babel"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -64,9 +64,9 @@ describe('socket package shallow', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket package shallow`'
+        '`socket package shallow`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -91,7 +91,7 @@ describe('socket package shallow', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -102,7 +102,7 @@ describe('socket package shallow', async () => {
       'babel',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -117,6 +117,6 @@ describe('socket package shallow', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

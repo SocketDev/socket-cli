@@ -6,7 +6,7 @@ import type { LocalConfig } from '../../utils/config.mts'
 
 export async function handleConfigUnset({
   key,
-  outputKind
+  outputKind,
 }: {
   key: keyof LocalConfig
   outputKind: OutputKind

@@ -10,7 +10,7 @@ import type { LocalConfig } from '../../utils/config.mts'
 export async function outputConfigGet(
   key: keyof LocalConfig,
   result: CResult<LocalConfig[keyof LocalConfig]>,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ) {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -34,7 +34,7 @@ export async function outputConfigGet(
     if (readOnly) {
       logger.log('')
       logger.log(
-        'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.'
+        'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.',
       )
     }
   } else {
@@ -42,7 +42,7 @@ export async function outputConfigGet(
     if (readOnly) {
       logger.log('')
       logger.log(
-        'Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag.'
+        'Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag.',
       )
     }
   }

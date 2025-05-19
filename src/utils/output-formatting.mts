@@ -12,21 +12,21 @@ type ListDescription =
 export function getFlagListOutput(
   list: MeowFlags,
   indent: number,
-  { keyPrefix = '--', padName } = {} as HelpListOptions
+  { keyPrefix = '--', padName } = {} as HelpListOptions,
 ): string {
   return getHelpListOutput(
     {
-      ...list
+      ...list,
     },
     indent,
-    { keyPrefix, padName }
+    { keyPrefix, padName },
   )
 }
 
 export function getHelpListOutput(
   list: Record<string, ListDescription>,
   indent: number,
-  { keyPrefix = '', padName = 18 } = {} as HelpListOptions
+  { keyPrefix = '', padName = 18 } = {} as HelpListOptions,
 ): string {
   let result = ''
   const names = Object.keys(list).sort()

@@ -13,7 +13,7 @@ import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type {
   CliCommandConfig,
-  CliSubcommand
+  CliSubcommand,
 } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
@@ -29,13 +29,13 @@ const config: CliCommandConfig = {
       type: 'boolean',
       default: true,
       description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
     },
     org: {
       type: 'string',
       description:
-        'Force override the organization slug, overrides the default org from config'
-    }
+        'Force override the organization slug, overrides the default org from config',
+    },
   },
   help: (command, config) => `
     Usage
@@ -50,25 +50,25 @@ const config: CliCommandConfig = {
 
     Examples
       $ ${command}${isTestingV1() ? '' : ' FakeOrg'} 000aaaa1-0000-0a0a-00a0-00a0000000a0
-  `
+  `,
 }
 
 export const cmdScanMetadata: CliSubcommand = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
@@ -78,7 +78,7 @@ async function run(
     String(orgFlag || ''),
     cli.input[0] || '',
     !!interactive,
-    !!dryRun
+    !!dryRun,
   )
 
   const scanId =
@@ -97,20 +97,20 @@ async function run(
       fail:
         orgSlug === '.'
           ? 'dot is an invalid org, most likely you forgot the org name here?'
-          : 'missing'
+          : 'missing',
     },
     {
       test: !!scanId,
       message: 'Scan ID to inspect as argument',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       pass: 'ok',
-      fail: 'omit one'
+      fail: 'omit one',
     },
     {
       nook: true,
@@ -118,8 +118,8 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token'
-    }
+      fail: 'missing API token',
+    },
   )
   if (!wasValidInput) {
     return

@@ -7,7 +7,7 @@ import { addArtifactToAlertsMap } from './socket-package-alert.mts'
 import type { CompactSocketArtifact } from './alert/artifact.mts'
 import type {
   AlertIncludeFilter,
-  AlertsByPkgId
+  AlertsByPkgId,
 } from './socket-package-alert.mts'
 import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -22,19 +22,19 @@ export type GetAlertsMapFromPnpmLockfileOptions = {
 
 export async function getAlertsMapFromPnpmLockfile(
   lockfile: LockfileObject,
-  options_?: GetAlertsMapFromPnpmLockfileOptions | undefined
+  options_?: GetAlertsMapFromPnpmLockfileOptions | undefined,
 ): Promise<AlertsByPkgId> {
   const options = {
     __proto__: null,
     consolidate: false,
     limit: Infinity,
     nothrow: false,
-    ...options_
+    ...options_,
   } as GetAlertsMapFromPnpmLockfileOptions
   const purls = await extractPurlsFromPnpmLockfile(lockfile)
   return await getAlertsMapFromPurls(purls, {
     overrides: lockfile.overrides,
-    ...options
+    ...options,
   })
 }
 
@@ -49,14 +49,14 @@ export type GetAlertsMapFromPurlsOptions = {
 
 export async function getAlertsMapFromPurls(
   purls: string[] | readonly string[],
-  options_?: GetAlertsMapFromPurlsOptions | undefined
+  options_?: GetAlertsMapFromPurlsOptions | undefined,
 ): Promise<AlertsByPkgId> {
   const options = {
     __proto__: null,
     consolidate: false,
     limit: Infinity,
     nothrow: false,
-    ...options_
+    ...options_,
   } as GetAlertsMapFromPurlsOptions
 
   const include = {
@@ -68,7 +68,7 @@ export async function getAlertsMapFromPurls(
     existing: false,
     unfixable: true,
     upgradable: false,
-    ...options.include
+    ...options.include,
   } as AlertIncludeFilter
 
   const { spinner } = options
@@ -93,7 +93,7 @@ export async function getAlertsMapFromPurls(
     overrides: options.overrides,
     consolidate: options.consolidate,
     include,
-    spinner
+    spinner,
   }
 
   for await (const batchResult of sockSdk.batchPackageStream(
@@ -101,23 +101,23 @@ export async function getAlertsMapFromPurls(
       alerts: 'true',
       compact: 'true',
       ...(include.actions ? { actions: include.actions.join(',') } : {}),
-      ...(include.unfixable ? {} : { fixable: 'true' })
+      ...(include.unfixable ? {} : { fixable: 'true' }),
     },
     {
-      components: uniqPurls.map(purl => ({ purl }))
-    }
+      components: uniqPurls.map(purl => ({ purl })),
+    },
   )) {
     if (batchResult.success) {
       await addArtifactToAlertsMap(
         batchResult.data as CompactSocketArtifact,
         alertsByPkgId,
-        toAlertsMapOptions
+        toAlertsMapOptions,
       )
     } else if (!options.nothrow) {
       const statusCode = batchResult.status ?? 'unknown'
       const statusMessage = batchResult.error ?? 'No status message'
       throw new Error(
-        `Socket API server error (${statusCode}): ${statusMessage}`
+        `Socket API server error (${statusCode}): ${statusMessage}`,
       )
     }
     remaining -= 1

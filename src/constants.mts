@@ -18,8 +18,8 @@ const {
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
     attributes: registryConstantsAttribs,
     createConstantsObject,
-    getIpc
-  }
+    getIpc,
+  },
 } = registryConstants
 
 type RegistryEnv = typeof registryConstants.ENV
@@ -34,7 +34,7 @@ type Internals = Remap<
       getIpc: {
         (): Promise<IPC>
         <K extends keyof IPC | undefined>(
-          key?: K | undefined
+          key?: K | undefined,
         ): Promise<K extends keyof IPC ? IPC[K] : IPC>
       }
       getSentry: () => Sentry
@@ -213,7 +213,7 @@ let _Sentry: any
 const LAZY_ENV = () => {
   const {
     envAsBoolean,
-    envAsString
+    envAsString,
   } = require('@socketsecurity/registry/lib/env')
   const { env } = process
   // We inline some environment values so that they CANNOT be influenced by user
@@ -247,42 +247,42 @@ const LAZY_ENV = () => {
     // Comp-time inlined @cyclonedx/cdxgen package version.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']".
     INLINED_CYCLONEDX_CDXGEN_VERSION: envAsString(
-      process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']
+      process.env['INLINED_CYCLONEDX_CDXGEN_VERSION'],
     ),
     // Comp-time inlined Socket package homepage.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_HOMEPAGE']".
     INLINED_SOCKET_CLI_HOMEPAGE: envAsString(
-      process.env['INLINED_SOCKET_CLI_HOMEPAGE']
+      process.env['INLINED_SOCKET_CLI_HOMEPAGE'],
     ),
     // Comp-time inlined flag to determine if this is the Legacy build.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_LEGACY_BUILD']".
     INLINED_SOCKET_CLI_LEGACY_BUILD: envAsBoolean(
-      process.env['INLINED_SOCKET_CLI_LEGACY_BUILD']
+      process.env['INLINED_SOCKET_CLI_LEGACY_BUILD'],
     ),
     // Comp-time inlined Socket package name.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_NAME']".
     INLINED_SOCKET_CLI_NAME: envAsString(
-      process.env['INLINED_SOCKET_CLI_NAME']
+      process.env['INLINED_SOCKET_CLI_NAME'],
     ),
     // Comp-time inlined flag to determine if this is a published build.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']".
     INLINED_SOCKET_CLI_PUBLISHED_BUILD: envAsBoolean(
-      process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']
+      process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'],
     ),
     // Comp-time inlined flag to determine if this is the Sentry build.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']".
     INLINED_SOCKET_CLI_SENTRY_BUILD: envAsBoolean(
-      process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']
+      process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'],
     ),
     // Comp-time inlined Socket package version.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION']".
     INLINED_SOCKET_CLI_VERSION: envAsString(
-      process.env['INLINED_SOCKET_CLI_VERSION']
+      process.env['INLINED_SOCKET_CLI_VERSION'],
     ),
     // Comp-time inlined Socket package version hash.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION_HASH']".
     INLINED_SOCKET_CLI_VERSION_HASH: envAsString(
-      process.env['INLINED_SOCKET_CLI_VERSION_HASH']
+      process.env['INLINED_SOCKET_CLI_VERSION_HASH'],
     ),
     // Comp-time inlined synp package version.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SYNP_VERSION']".
@@ -347,7 +347,7 @@ const LAZY_ENV = () => {
     TERM: envAsString(env['TERM']),
     // The location of the base directory on Linux and MacOS used to store
     // user-specific data files, defaulting to $HOME/.local/share if not set or empty.
-    XDG_DATA_HOME: envAsString(env['XDG_DATA_HOME'])
+    XDG_DATA_HOME: envAsString(env['XDG_DATA_HOME']),
   })
 }
 
@@ -360,7 +360,7 @@ const lazyBlessedOptions = () =>
     smartCSR: true,
     // Lazily access constants.WIN32.
     term: constants.WIN32 ? 'windows-ansi' : 'xterm',
-    useBCE: true
+    useBCE: true,
   })
 
 const lazyDistCliPath = () =>
@@ -404,7 +404,7 @@ const lazyMinimumVersionByAgent = () =>
     // https://www.npmjs.com/package/yarn?activeTab=versions
     [YARN_CLASSIC, '1.22.22'],
     // vlt does not support overrides so we don't gate on it.
-    [VLT, '*']
+    [VLT, '*'],
   ])
 
 const lazyNmBinPath = () =>
@@ -430,8 +430,8 @@ const lazyNodeHardenFlags = () =>
           // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
           // √ https://github.com/pnpm/components/pull/23
           '--frozen-intrinsics',
-          '--no-deprecation'
-        ]
+          '--no-deprecation',
+        ],
   )
 
 const lazyRootBinPath = () =>
@@ -473,7 +473,7 @@ const lazySocketAppDataPath = (): string | undefined => {
         // Lazily access constants.homePath.
         constants.homePath,
         // Lazily access constants.DARWIN.
-        constants.DARWIN ? 'Library/Application Support' : '.local/share'
+        constants.DARWIN ? 'Library/Application Support' : '.local/share',
       )
     }
   }
@@ -558,7 +558,7 @@ const constants: Constants = createConstantsObject(
     shadowBinPath: undefined,
     socketAppPath: undefined,
     socketCachePath: undefined,
-    zshRcPath: undefined
+    zshRcPath: undefined,
   },
   {
     getters: {
@@ -581,7 +581,7 @@ const constants: Constants = createConstantsObject(
       shadowBinPath: lazyShadowBinPath,
       socketAppPath: lazySocketAppDataPath,
       socketCachePath: lazySocketCachePath,
-      zshRcPath: lazyZshRcPath
+      zshRcPath: lazyZshRcPath,
     },
     internals: {
       ...registryConstantsAttribs.internals,
@@ -595,9 +595,9 @@ const constants: Constants = createConstantsObject(
           return true
         }
         return false
-      }
-    }
-  }
+      },
+    },
+  },
 ) as Constants
 
 export default constants

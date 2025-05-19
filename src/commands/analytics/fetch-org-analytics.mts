@@ -5,7 +5,7 @@ import type { CResult } from '../../types.mts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchOrgAnalyticsData(
-  time: number
+  time: number,
 ): Promise<CResult<SocketSdkReturnType<'getOrgAnalytics'>['data']>> {
   const sockSdkResult = await setupSdk()
   if (!sockSdkResult.ok) {
@@ -15,6 +15,6 @@ export async function fetchOrgAnalyticsData(
 
   return await handleApiCall(
     sockSdk.getOrgAnalytics(time.toString()),
-    'analytics data'
+    'analytics data',
   )
 }

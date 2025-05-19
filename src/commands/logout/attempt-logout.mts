@@ -10,7 +10,7 @@ export function attemptLogout() {
     if (isReadOnlyConfig()) {
       logger.log('')
       logger.warn(
-        'Note: config is in read-only mode, at least one key was overridden through flag/env, so the logout was not persisted!'
+        'Note: config is in read-only mode, at least one key was overridden through flag/env, so the logout was not persisted!',
       )
     }
   } catch {

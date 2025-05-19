@@ -19,7 +19,7 @@ export function serializeResultJson(data: CResult<unknown>): string {
       JSON.stringify({
         ok: false,
         message: 'Unable to serialize JSON',
-        data: msg
+        data: msg,
       }).trim() + '\n'
     )
   }
@@ -37,7 +37,7 @@ export function serializeResultJson(data: CResult<unknown>): string {
       JSON.stringify({
         ok: false,
         message: 'Unable to serialize JSON',
-        data: msg
+        data: msg,
       }).trim() + '\n'
     )
   }

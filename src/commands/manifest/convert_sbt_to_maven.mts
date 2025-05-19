@@ -11,7 +11,7 @@ export async function convertSbtToMaven(
   bin: string,
   out: string,
   verbose: boolean,
-  sbtOpts: string[]
+  sbtOpts: string[],
 ) {
   // TODO: impl json/md
 
@@ -43,7 +43,7 @@ export async function convertSbtToMaven(
     // .socket folder. We could do a socket.pom.gz with all the poms, although
     // I'd prefer something plain-text if it is to be committed.
     const output = await spawn(bin, ['makePom'].concat(sbtOpts), {
-      cwd: target || '.'
+      cwd: target || '.',
     })
 
     spinner.stop()
@@ -72,7 +72,7 @@ export async function convertSbtToMaven(
     if (!poms.length) {
       process.exitCode = 1
       logger.fail(
-        'There were no errors from sbt but it seems to not have generated any poms either'
+        'There were no errors from sbt but it seems to not have generated any poms either',
       )
       return
     }
@@ -87,7 +87,7 @@ export async function convertSbtToMaven(
     } else if (out === '-') {
       process.exitCode = 1
       logger.fail(
-        'Requested out target was stdout but there are multiple generated files'
+        'Requested out target was stdout but there are multiple generated files',
       )
       poms.forEach(fn => logger.error('-', fn))
       logger.error('Exiting now...')
@@ -111,7 +111,7 @@ export async function convertSbtToMaven(
     spinner.stop()
     logger.fail(
       'There was an unexpected error while running this' +
-        (verbose ? '' : ' (use --verbose for details)')
+        (verbose ? '' : ' (use --verbose for details)'),
     )
     if (verbose) {
       logger.group('[VERBOSE] error:')

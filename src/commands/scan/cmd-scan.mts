@@ -22,7 +22,7 @@ export const cmdScan: CliSubcommand = {
         diff: cmdScanDiff,
         metadata: cmdScanMetadata,
         report: cmdScanReport,
-        view: cmdScanView
+        view: cmdScanView,
       },
       {
         aliases: {
@@ -30,14 +30,14 @@ export const cmdScan: CliSubcommand = {
           stream: {
             description: cmdScanView.description,
             hidden: true,
-            argv: ['view'] // Original args will be appended (!)
-          }
+            argv: ['view'], // Original args will be appended (!)
+          },
         },
         argv,
         description,
         importMeta,
-        name: parentName + ' scan'
-      }
+        name: parentName + ' scan',
+      },
     )
-  }
+  },
 }

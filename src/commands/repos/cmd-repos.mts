@@ -18,14 +18,14 @@ export const cmdRepos: CliSubcommand = {
         view: cmdReposView,
         list: cmdReposList,
         del: cmdReposDel,
-        update: cmdReposUpdate
+        update: cmdReposUpdate,
       },
       {
         argv,
         description,
         importMeta,
-        name: `${parentName} repos`
-      }
+        name: `${parentName} repos`,
+      },
     )
-  }
+  },
 }

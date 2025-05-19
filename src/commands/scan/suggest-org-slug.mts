@@ -13,7 +13,7 @@ export async function suggestOrgSlug(): Promise<string | void> {
 
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
-    'list of organizations'
+    'list of organizations',
   )
 
   // Ignore a failed request here. It was not the primary goal of
@@ -28,23 +28,23 @@ export async function suggestOrgSlug(): Promise<string | void> {
           return {
             name: `Yes [${name}]`,
             value: name,
-            description: `Use "${name}" as the organization`
+            description: `Use "${name}" as the organization`,
           }
         }),
         {
           name: 'No',
           value: '',
           description:
-            'Do not use any of these organizations (will end in a no-op)'
-        }
-      ]
+            'Do not use any of these organizations (will end in a no-op)',
+        },
+      ],
     })
     if (proceed) {
       return proceed
     }
   } else {
     logger.fail(
-      'Failed to lookup organization list from API, unable to suggest'
+      'Failed to lookup organization list from API, unable to suggest',
     )
   }
 }

@@ -37,7 +37,7 @@ describe('socket scan', async () => {
 
           Examples
             $ socket scan --help"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -49,7 +49,7 @@ describe('socket scan', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain('`socket scan`')
-    }
+    },
   )
 
   cmdit(
@@ -58,7 +58,7 @@ describe('socket scan', async () => {
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`
+        `"[DryRun]: No-op, call a sub-command; ok"`,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -69,6 +69,6 @@ describe('socket scan', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

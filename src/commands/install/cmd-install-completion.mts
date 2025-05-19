@@ -15,7 +15,7 @@ const config: CliCommandConfig = {
   description: 'Install bash completion for Socket CLI',
   hidden: true, // beta
   flags: {
-    ...commonFlags
+    ...commonFlags,
   },
   help: (command, config) => `
     Usage
@@ -44,25 +44,25 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} sd
       $ ${command} ./sd
-  `
+  `,
 }
 
 export const cmdInstallCompletion = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const targetName = cli.input[0] || 'socket'

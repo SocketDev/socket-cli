@@ -10,7 +10,7 @@ export async function handleAnalytics({
   outputKind,
   repo,
   scope,
-  time
+  time,
 }: {
   scope: string
   time: number
@@ -29,14 +29,14 @@ export async function handleAnalytics({
   } else {
     result = {
       ok: false,
-      message: 'Missing repository name in command'
+      message: 'Missing repository name in command',
     }
   }
   if (result.ok && !result.data.length) {
     result = {
       ok: true,
       message: `The analytics data for this ${scope === 'org' ? 'organization' : 'repository'} is not yet available.`,
-      data: []
+      data: [],
     }
   }
 
@@ -45,6 +45,6 @@ export async function handleAnalytics({
     outputKind,
     repo,
     scope,
-    time
+    time,
   })
 }

@@ -41,7 +41,7 @@ export class SafeOverrideSet extends OverrideSet {
   // https://github.com/npm/cli/pull/8089.
   static doOverrideSetsConflict(
     first: SafeOverrideSet | undefined,
-    second: SafeOverrideSet | undefined
+    second: SafeOverrideSet | undefined,
   ) {
     // If override sets contain one another then we can try to use the more
     // specific one. If neither one is more specific, then we consider them to
@@ -53,7 +53,7 @@ export class SafeOverrideSet extends OverrideSet {
   // https://github.com/npm/cli/pull/8089.
   static findSpecificOverrideSet(
     first: SafeOverrideSet | undefined,
-    second: SafeOverrideSet | undefined
+    second: SafeOverrideSet | undefined,
   ) {
     for (
       let overrideSet = second;

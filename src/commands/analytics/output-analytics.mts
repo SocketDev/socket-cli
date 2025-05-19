@@ -27,7 +27,7 @@ const METRICS = [
   'total_critical_prevented',
   'total_high_prevented',
   'total_medium_prevented',
-  'total_low_prevented'
+  'total_low_prevented',
 ] as const
 
 // Note: This maps `new Date(date).getMonth()` to English three letters
@@ -43,7 +43,7 @@ const Months = [
   'Sep',
   'Oct',
   'Nov',
-  'Dec'
+  'Dec',
 ] as const
 
 export async function outputAnalytics(
@@ -56,14 +56,14 @@ export async function outputAnalytics(
     outputKind,
     repo,
     scope,
-    time
+    time,
   }: {
     scope: string
     time: number
     repo: string
     outputKind: OutputKind
     filePath: string
-  }
+  },
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -91,8 +91,8 @@ export async function outputAnalytics(
           serializeResultJson({
             ok: false,
             message: 'File Write Failure',
-            cause: 'There was an error trying to write the json to disk'
-          })
+            cause: 'There was an error trying to write the json to disk',
+          }),
         )
       }
     } else {
@@ -143,7 +143,7 @@ export interface FormattedData {
 export function renderMarkdown(
   data: FormattedData,
   days: number,
-  repoSlug: string
+  repoSlug: string,
 ): string {
   return (
     `
@@ -154,43 +154,43 @@ These are the Socket.dev analytics for the ${repoSlug ? `${repoSlug} repo` : 'or
 ${[
   [
     'Total critical alerts',
-    mdTableStringNumber('Date', 'Counts', data['total_critical_alerts'])
+    mdTableStringNumber('Date', 'Counts', data['total_critical_alerts']),
   ],
   [
     'Total high alerts',
-    mdTableStringNumber('Date', 'Counts', data['total_high_alerts'])
+    mdTableStringNumber('Date', 'Counts', data['total_high_alerts']),
   ],
   [
     'Total critical alerts added to the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_critical_added'])
+    mdTableStringNumber('Date', 'Counts', data['total_critical_added']),
   ],
   [
     'Total high alerts added to the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_high_added'])
+    mdTableStringNumber('Date', 'Counts', data['total_high_added']),
   ],
   [
     'Total critical alerts prevented from the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_critical_prevented'])
+    mdTableStringNumber('Date', 'Counts', data['total_critical_prevented']),
   ],
   [
     'Total high alerts prevented from the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_high_prevented'])
+    mdTableStringNumber('Date', 'Counts', data['total_high_prevented']),
   ],
   [
     'Total medium alerts prevented from the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_medium_prevented'])
+    mdTableStringNumber('Date', 'Counts', data['total_medium_prevented']),
   ],
   [
     'Total low alerts prevented from the main branch',
-    mdTableStringNumber('Date', 'Counts', data['total_low_prevented'])
-  ]
+    mdTableStringNumber('Date', 'Counts', data['total_low_prevented']),
+  ],
 ]
   .map(([title, table]) =>
     `
 ## ${title}
 
 ${table}
-`.trim()
+`.trim(),
   )
   .join('\n\n')}
 
@@ -205,7 +205,7 @@ function displayAnalyticsScreen(data: FormattedData): void {
   const ScreenWidget = require('blessed/lib/widgets/screen.js')
   // Lazily access constants.blessedOptions.
   const screen: Widgets.Screen = new ScreenWidget({
-    ...constants.blessedOptions
+    ...constants.blessedOptions,
   })
   const GridLayout = require('blessed-contrib/lib/layout/grid.js')
   const grid = new GridLayout({ rows: 5, cols: 4, screen })
@@ -215,56 +215,56 @@ function displayAnalyticsScreen(data: FormattedData): void {
     screen,
     'Total critical alerts',
     [0, 0, 1, 2],
-    data['total_critical_alerts']
+    data['total_critical_alerts'],
   )
   renderLineCharts(
     grid,
     screen,
     'Total high alerts',
     [0, 2, 1, 2],
-    data['total_high_alerts']
+    data['total_high_alerts'],
   )
   renderLineCharts(
     grid,
     screen,
     'Total critical alerts added to the main branch',
     [1, 0, 1, 2],
-    data['total_critical_added']
+    data['total_critical_added'],
   )
   renderLineCharts(
     grid,
     screen,
     'Total high alerts added to the main branch',
     [1, 2, 1, 2],
-    data['total_high_added']
+    data['total_high_added'],
   )
   renderLineCharts(
     grid,
     screen,
     'Total critical alerts prevented from the main branch',
     [2, 0, 1, 2],
-    data['total_critical_prevented']
+    data['total_critical_prevented'],
   )
   renderLineCharts(
     grid,
     screen,
     'Total high alerts prevented from the main branch',
     [2, 2, 1, 2],
-    data['total_high_prevented']
+    data['total_high_prevented'],
   )
   renderLineCharts(
     grid,
     screen,
     'Total medium alerts prevented from the main branch',
     [3, 0, 1, 2],
-    data['total_medium_prevented']
+    data['total_medium_prevented'],
   )
   renderLineCharts(
     grid,
     screen,
     'Total low alerts prevented from the main branch',
     [3, 2, 1, 2],
-    data['total_low_prevented']
+    data['total_low_prevented'],
   )
 
   const BarChart = require('blessed-contrib/lib/widget/charts/bar.js')
@@ -274,14 +274,14 @@ function displayAnalyticsScreen(data: FormattedData): void {
     barSpacing: 17,
     xOffset: 0,
     maxHeight: 9,
-    barBgColor: 'magenta'
+    barBgColor: 'magenta',
   })
 
   screen.append(bar) //must append before setting data
 
   bar.setData({
     titles: Object.keys(data.top_five_alert_types),
-    data: Object.values(data.top_five_alert_types)
+    data: Object.values(data.top_five_alert_types),
   })
 
   screen.render()
@@ -290,7 +290,7 @@ function displayAnalyticsScreen(data: FormattedData): void {
 }
 
 export function formatDataRepo(
-  data: SocketSdkReturnType<'getRepoAnalytics'>['data']
+  data: SocketSdkReturnType<'getRepoAnalytics'>['data'],
 ): FormattedData {
   const sortedTopFiveAlerts: Record<string, number> = {}
   const totalTopAlerts: Record<string, number> = {}
@@ -326,12 +326,12 @@ export function formatDataRepo(
 
   return {
     ...formattedData,
-    top_five_alert_types: sortedTopFiveAlerts
+    top_five_alert_types: sortedTopFiveAlerts,
   }
 }
 
 export function formatDataOrg(
-  data: SocketSdkReturnType<'getOrgAnalytics'>['data']
+  data: SocketSdkReturnType<'getOrgAnalytics'>['data'],
 ): FormattedData {
   const sortedTopFiveAlerts: Record<string, number> = {}
   const totalTopAlerts: Record<string, number> = {}
@@ -374,7 +374,7 @@ export function formatDataOrg(
 
   return {
     ...formattedData,
-    top_five_alert_types: sortedTopFiveAlerts
+    top_five_alert_types: sortedTopFiveAlerts,
   }
 }
 
@@ -387,7 +387,7 @@ function renderLineCharts(
   screen: Widgets.Screen,
   title: string,
   coords: number[],
-  data: Record<string, number>
+  data: Record<string, number>,
 ): void {
   const LineChart = require('blessed-contrib/lib/widget/charts/line.js')
   const line = grid.set(...coords, LineChart, {
@@ -397,16 +397,16 @@ function renderLineCharts(
     xOffset: 0,
     wholeNumbersOnly: true,
     legend: {
-      width: 1
+      width: 1,
     },
-    label: title
+    label: title,
   })
 
   screen.append(line)
 
   const lineData = {
     x: Object.keys(data),
-    y: Object.values(data)
+    y: Object.values(data),
   }
 
   line.setData([lineData])

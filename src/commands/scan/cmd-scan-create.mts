@@ -28,83 +28,83 @@ const config: CliCommandConfig = {
       type: 'string',
       shortFlag: 'b',
       default: 'socket-default-branch',
-      description: 'Branch name'
+      description: 'Branch name',
     },
     commitMessage: {
       type: 'string',
       shortFlag: 'm',
       default: '',
-      description: 'Commit message'
+      description: 'Commit message',
     },
     commitHash: {
       type: 'string',
       shortFlag: 'ch',
       default: '',
-      description: 'Commit hash'
+      description: 'Commit hash',
     },
     committers: {
       type: 'string',
       shortFlag: 'c',
       default: '',
-      description: 'Committers'
+      description: 'Committers',
     },
     cwd: {
       type: 'string',
-      description: 'working directory, defaults to process.cwd()'
+      description: 'working directory, defaults to process.cwd()',
     },
     defaultBranch: {
       type: 'boolean',
       default: false,
       description:
-        'Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.'
+        'Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.',
     },
     interactive: {
       type: 'boolean',
       default: true,
       description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
     },
     pendingHead: {
       type: 'boolean',
       default: true,
       description:
-        'Designate this full-scan as the latest scan of a given branch. This must be set to have it show up in the dashboard.'
+        'Designate this full-scan as the latest scan of a given branch. This must be set to have it show up in the dashboard.',
     },
     pullRequest: {
       type: 'number',
       shortFlag: 'pr',
-      description: 'Commit hash'
+      description: 'Commit hash',
     },
     org: {
       type: 'string',
       description:
-        'Force override the organization slug, overrides the default org from config'
+        'Force override the organization slug, overrides the default org from config',
     },
     readOnly: {
       type: 'boolean',
       default: false,
       description:
-        'Similar to --dry-run except it can read from remote, stops before it would create an actual report'
+        'Similar to --dry-run except it can read from remote, stops before it would create an actual report',
     },
     repo: {
       type: 'string',
       shortFlag: 'r',
       default: 'socket-default-repository',
-      description: 'Repository name'
+      description: 'Repository name',
     },
     report: {
       type: 'boolean',
       default: false,
       description:
-        'Wait for the scan creation to complete, then basically run `socket scan report` on it'
+        'Wait for the scan creation to complete, then basically run `socket scan report` on it',
     },
     tmp: {
       type: 'boolean',
       shortFlag: 't',
       default: false,
       description:
-        'Set the visibility (true/false) of the scan in your dashboard. Can not be used when --pendingHead is set.'
-    }
+        'Set the visibility (true/false) of the scan in your dashboard. Can not be used when --pendingHead is set.',
+    },
   },
   // TODO: your project's "socket.yml" file's "projectIgnorePaths"
   help: (command, config) => `
@@ -144,25 +144,25 @@ const config: CliCommandConfig = {
     Examples
       $ ${command}${isTestingV1() ? '' : ' FakeOrg'} .
       $ ${command} --repo=test-repo --branch=main${isTestingV1() ? '' : ' FakeOrg'} ./package.json
-  `
+  `,
 }
 
 export const cmdScanCreate = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const {
@@ -182,7 +182,7 @@ async function run(
     readOnly,
     repo: repoName = 'socket-default-repository',
     report,
-    tmp
+    tmp,
   } = cli.flags as {
     branch: string
     cwd: string
@@ -208,7 +208,7 @@ async function run(
     String(orgFlag || ''),
     cli.input[0] || '',
     interactive,
-    dryRun
+    dryRun,
   )
   if (!defaultOrgSlug) {
     // Tmp. just for TS. will drop this later.
@@ -252,11 +252,11 @@ async function run(
 
   if (updatedInput && orgSlug && targets?.length) {
     logger.error(
-      'Note: You can invoke this command next time to skip the interactive questions:'
+      'Note: You can invoke this command next time to skip the interactive questions:',
     )
     logger.error('```')
     logger.error(
-      `    socket scan create [other flags...] ${defaultOrgSlug ? '' : orgSlug} ${targets.join(' ')}`
+      `    socket scan create [other flags...] ${defaultOrgSlug ? '' : orgSlug} ${targets.join(' ')}`,
     )
     logger.error('```\n')
   }
@@ -273,49 +273,49 @@ async function run(
       fail:
         orgSlug === '.'
           ? 'dot is an invalid org, most likely you forgot the org name here?'
-          : 'missing'
+          : 'missing',
     },
     {
       test: !!targets.length,
       message: 'At least one TARGET (e.g. `.` or `./package.json`)',
       pass: 'ok',
-      fail: 'missing (or perhaps you forgot the org slug?)'
+      fail: 'missing (or perhaps you forgot the org slug?)',
     },
     {
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       pass: 'ok',
-      fail: 'omit one'
+      fail: 'omit one',
     },
     {
       nook: true,
       test: hasApiToken,
       message: 'This command requires an API token for access',
       pass: 'ok',
-      fail: 'missing (try `socket login`)'
+      fail: 'missing (try `socket login`)',
     },
     {
       nook: true,
       test: !pendingHead || !tmp,
       message: 'Can not use --pendingHead and --tmp at the same time',
       pass: 'ok',
-      fail: 'remove at least one flag'
+      fail: 'remove at least one flag',
     },
     {
       nook: true,
       test: !pendingHead || !!branchName,
       message: 'When --pendingHead is set, --branch is mandatory',
       pass: 'ok',
-      fail: 'missing branch name'
+      fail: 'missing branch name',
     },
     {
       nook: true,
       test: !defaultBranch || !!branchName,
       message: 'When --defaultBranch is set, --branch is mandatory',
       pass: 'ok',
-      fail: 'missing branch name'
-    }
+      fail: 'missing branch name',
+    },
   )
   if (!wasValidInput) {
     return
@@ -343,6 +343,6 @@ async function run(
     repoName: repoName,
     report,
     targets,
-    tmp: Boolean(tmp)
+    tmp: Boolean(tmp),
   })
 }

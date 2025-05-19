@@ -43,7 +43,7 @@ export function generateReport(
     reportLevel,
     scanId,
     short,
-    spinner
+    spinner,
   }: {
     fold: 'pkg' | 'version' | 'file' | 'none'
     orgSlug: string
@@ -51,7 +51,7 @@ export function generateReport(
     scanId: string
     short?: boolean | undefined
     spinner?: Spinner | undefined
-  }
+  },
 ): CResult<ScanReport | { healthy: boolean }> {
   const now = Date.now()
 
@@ -96,14 +96,14 @@ export function generateReport(
         alerts,
         name: pkgName = '<unknown>',
         type: ecosystem,
-        version = '<unknown>'
+        version = '<unknown>',
       } = artifact
 
       alerts?.forEach(
         (
           alert: NonNullable<
             components['schemas']['SocketArtifact']['alerts']
-          >[number]
+          >[number],
         ) => {
           const alertName = alert.type as keyof typeof securityRules // => policy[type]
           const action = securityRules[alertName]?.action || ''
@@ -119,7 +119,7 @@ export function generateReport(
                   pkgName,
                   version,
                   alert,
-                  action
+                  action,
                 )
               }
               break
@@ -134,7 +134,7 @@ export function generateReport(
                   pkgName,
                   version,
                   alert,
-                  action
+                  action,
                 )
               }
               break
@@ -149,7 +149,7 @@ export function generateReport(
                   pkgName,
                   version,
                   alert,
-                  action
+                  action,
                 )
               }
               break
@@ -170,7 +170,7 @@ export function generateReport(
                   pkgName,
                   version,
                   alert,
-                  action
+                  action,
                 )
               }
               break
@@ -187,7 +187,7 @@ export function generateReport(
                   pkgName,
                   version,
                   alert,
-                  action
+                  action,
                 )
               }
               break
@@ -197,7 +197,7 @@ export function generateReport(
               // This value was not emitted from the api at the time of writing.
             }
           }
-        }
+        },
       )
     })
   }
@@ -207,7 +207,7 @@ export function generateReport(
   if (short) {
     return {
       ok: true,
-      data: { healthy }
+      data: { healthy },
     }
   }
 
@@ -216,7 +216,7 @@ export function generateReport(
     orgSlug,
     scanId,
     options: { fold, reportLevel },
-    alerts: violations
+    alerts: violations,
   }
 
   if (!healthy) {
@@ -224,26 +224,26 @@ export function generateReport(
       ok: true,
       message:
         'The report contains at least one alert that violates the policies set by your organization',
-      data: report
+      data: report,
     }
   }
 
   return {
     ok: true,
-    data: report
+    data: report,
   }
 }
 
 function createLeaf(
   art: components['schemas']['SocketArtifact'],
   alert: NonNullable<components['schemas']['SocketArtifact']['alerts']>[number],
-  policyAction: AlertAction
+  policyAction: AlertAction,
 ): ReportLeafNode {
   const leaf: ReportLeafNode = {
     type: alert.type,
     policy: policyAction,
     url: getSocketDevPackageOverviewUrlFromPurl(art),
-    manifest: art.manifestFiles?.map(obj => obj.file) ?? []
+    manifest: art.manifestFiles?.map(obj => obj.file) ?? [],
   }
   return leaf
 }
@@ -256,7 +256,7 @@ function addAlert(
   pkgName: string,
   version: string,
   alert: NonNullable<components['schemas']['SocketArtifact']['alerts']>[number],
-  policyAction: AlertAction
+  policyAction: AlertAction,
 ): void {
   if (!violations.has(ecosystem)) {
     violations.set(ecosystem, new Map())
@@ -306,7 +306,7 @@ function addAlert(
 
 function isStricterPolicy(
   was: 'error' | 'warn' | 'monitor' | 'ignore' | 'defer',
-  is: 'error' | 'warn' | 'monitor' | 'ignore' | 'defer'
+  is: 'error' | 'warn' | 'monitor' | 'ignore' | 'defer',
 ): boolean {
   // error > warn > monitor > ignore > defer > {unknown}
   if (was === 'error') {

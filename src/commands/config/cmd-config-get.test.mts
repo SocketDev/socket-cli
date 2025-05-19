@@ -39,7 +39,7 @@ describe('socket config get', async () => {
 
           Examples
             $ socket config get FakeOrg --repoName=test-repo"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -51,9 +51,9 @@ describe('socket config get', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket config get`'
+        '`socket config get`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -76,7 +76,7 @@ describe('socket config get', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -86,13 +86,13 @@ describe('socket config get', async () => {
       'test',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`
+        `"[DryRun]: No-op, call a sub-command; ok"`,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -103,7 +103,7 @@ describe('socket config get', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   describe('env vars', () => {
@@ -118,7 +118,7 @@ describe('socket config get', async () => {
             "apiToken: null
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `
+          `,
           )
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
@@ -129,7 +129,7 @@ describe('socket config get', async () => {
           `)
 
           expect(stdout.includes('apiToken: null')).toBe(true)
-        }
+        },
       )
 
       cmdit(
@@ -137,14 +137,14 @@ describe('socket config get', async () => {
         'should return the env var token when set',
         async cmd => {
           const { stderr, stdout } = await invokeNpm(entryPath, cmd, {
-            SOCKET_SECURITY_API_TOKEN: 'abc'
+            SOCKET_SECURITY_API_TOKEN: 'abc',
           })
           expect(stdout).toMatchInlineSnapshot(
             `
             "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `
+          `,
           )
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
@@ -155,7 +155,7 @@ describe('socket config get', async () => {
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
-        }
+        },
       )
 
       // Migrate this away...?
@@ -164,14 +164,14 @@ describe('socket config get', async () => {
         'should backwards compat support api key as well env var',
         async cmd => {
           const { stderr, stdout } = await invokeNpm(entryPath, cmd, {
-            SOCKET_SECURITY_API_KEY: 'abc'
+            SOCKET_SECURITY_API_KEY: 'abc',
           })
           expect(stdout).toMatchInlineSnapshot(
             `
             "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `
+          `,
           )
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
@@ -182,7 +182,7 @@ describe('socket config get', async () => {
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
-        }
+        },
       )
 
       cmdit(
@@ -190,14 +190,14 @@ describe('socket config get', async () => {
         'should be nice and support cli prefixed env var for token as well',
         async cmd => {
           const { stderr, stdout } = await invokeNpm(entryPath, cmd, {
-            SOCKET_CLI_API_TOKEN: 'abc'
+            SOCKET_CLI_API_TOKEN: 'abc',
           })
           expect(stdout).toMatchInlineSnapshot(
             `
             "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `
+          `,
           )
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
@@ -208,7 +208,7 @@ describe('socket config get', async () => {
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
-        }
+        },
       )
 
       // Migrate this away...?
@@ -217,14 +217,14 @@ describe('socket config get', async () => {
         'should be very nice and support cli prefixed env var for key as well since it is an easy mistake to make',
         async cmd => {
           const { stderr, stdout } = await invokeNpm(entryPath, cmd, {
-            SOCKET_CLI_API_KEY: 'abc'
+            SOCKET_CLI_API_KEY: 'abc',
           })
           expect(stdout).toMatchInlineSnapshot(
             `
             "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `
+          `,
           )
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
@@ -235,7 +235,7 @@ describe('socket config get', async () => {
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
-        }
+        },
       )
 
       cmdit(
@@ -244,19 +244,19 @@ describe('socket config get', async () => {
           'get',
           'apiToken',
           '--config',
-          '{"apiToken":"ignoremebecausetheenvvarshouldbemoreimportant"}'
+          '{"apiToken":"ignoremebecausetheenvvarshouldbemoreimportant"}',
         ],
         'should use the env var token when the config override also has a token set',
         async cmd => {
           const { stderr, stdout } = await invokeNpm(entryPath, cmd, {
-            SOCKET_CLI_API_KEY: 'abc'
+            SOCKET_CLI_API_KEY: 'abc',
           })
           expect(stdout).toMatchInlineSnapshot(
             `
             "apiToken: abc
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `
+          `,
           )
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
@@ -267,7 +267,7 @@ describe('socket config get', async () => {
           `)
 
           expect(stdout.includes('apiToken: abc')).toBe(true)
-        }
+        },
       )
 
       cmdit(
@@ -276,7 +276,7 @@ describe('socket config get', async () => {
           'get',
           'apiToken',
           '--config',
-          '{"apiToken":"pickmepickme"}'
+          '{"apiToken":"pickmepickme"}',
         ],
         'should use the config override when there is no env var',
         async cmd => {
@@ -286,7 +286,7 @@ describe('socket config get', async () => {
             "apiToken: pickmepickme
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `
+          `,
           )
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
@@ -297,7 +297,7 @@ describe('socket config get', async () => {
           `)
 
           expect(stdout.includes('apiToken: pickmepickme')).toBe(true)
-        }
+        },
       )
 
       cmdit(
@@ -310,7 +310,7 @@ describe('socket config get', async () => {
             "apiToken: undefined
 
             Note: the config is in read-only mode, meaning at least one key was temporarily overridden from an env var or command flag."
-          `
+          `,
           )
           expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
             "
@@ -321,7 +321,7 @@ describe('socket config get', async () => {
           `)
 
           expect(stdout.includes('apiToken: undefined')).toBe(true)
-        }
+        },
       )
     })
   })

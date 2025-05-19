@@ -22,7 +22,7 @@ describe('socket npm', async () => {
 
           Usage
             $ socket npm"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -34,7 +34,7 @@ describe('socket npm', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain('`socket npm`')
-    }
+    },
   )
 
   cmdit(
@@ -52,6 +52,6 @@ describe('socket npm', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

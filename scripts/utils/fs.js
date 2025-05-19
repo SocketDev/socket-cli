@@ -23,5 +23,5 @@ function findUpSync(name, { cwd = process.cwd() }) {
 }
 
 module.exports = {
-  findUpSync
+  findUpSync,
 }

@@ -11,7 +11,7 @@ export function getTranslations() {
   if (_translations === undefined) {
     _translations = require(
       // Lazily access constants.rootPath.
-      path.join(constants.rootPath, 'translations.json')
+      path.join(constants.rootPath, 'translations.json'),
     )
   }
   return _translations!

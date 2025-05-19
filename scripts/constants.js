@@ -8,8 +8,8 @@ const {
   kInternalsSymbol,
   [kInternalsSymbol]: {
     attributes: registryConstantsAttribs,
-    createConstantsObject
-  }
+    createConstantsObject,
+  },
 } = registryConstants
 
 const CLI = 'cli'
@@ -52,16 +52,16 @@ const LAZY_ENV = () => {
     ...registryConstants.ENV,
     // Flag set to determine if this is the Legacy build.
     [INLINED_SOCKET_CLI_LEGACY_BUILD]: envAsBoolean(
-      env[INLINED_SOCKET_CLI_LEGACY_BUILD]
+      env[INLINED_SOCKET_CLI_LEGACY_BUILD],
     ),
     // Flag set to determine if this is a published build.
     [INLINED_SOCKET_CLI_PUBLISHED_BUILD]: envAsBoolean(
-      env[INLINED_SOCKET_CLI_PUBLISHED_BUILD]
+      env[INLINED_SOCKET_CLI_PUBLISHED_BUILD],
     ),
     // Flag set to determine if this is the Sentry build.
     [INLINED_SOCKET_CLI_SENTRY_BUILD]: envAsBoolean(
-      env[INLINED_SOCKET_CLI_SENTRY_BUILD]
-    )
+      env[INLINED_SOCKET_CLI_SENTRY_BUILD],
+    ),
   })
 }
 
@@ -126,7 +126,7 @@ const constants = createConstantsObject(
     distPath: undefined,
     rootPackageJsonPath: undefined,
     rootPath: undefined,
-    srcPath: undefined
+    srcPath: undefined,
   },
   {
     getters: {
@@ -137,8 +137,8 @@ const constants = createConstantsObject(
       rootPackageJsonPath: lazyRootPackageJsonPath,
       rootPackageLockPath: lazyRootPackageLockPath,
       rootPath: lazyRootPath,
-      srcPath: lazySrcPath
-    }
-  }
+      srcPath: lazySrcPath,
+    },
+  },
 )
 module.exports = constants

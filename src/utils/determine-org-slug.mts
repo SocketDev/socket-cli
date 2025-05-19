@@ -7,7 +7,7 @@ export async function determineOrgSlug(
   orgFlag: string,
   firstArg: string,
   interactive: boolean,
-  dryRun: boolean
+  dryRun: boolean,
 ): Promise<[string, string | undefined]> {
   const defaultOrgSlug = getConfigValueOrUndef('defaultOrg')
   let orgSlug = String(orgFlag || defaultOrgSlug || '')
@@ -15,10 +15,10 @@ export async function determineOrgSlug(
     if (isTestingV1()) {
       // ask from server
       logger.error(
-        'Missing the org slug and no --org flag set. Trying to auto-discover the org now...'
+        'Missing the org slug and no --org flag set. Trying to auto-discover the org now...',
       )
       logger.error(
-        'Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.'
+        'Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.',
       )
       if (dryRun) {
         logger.fail('Skipping auto-discovery of org in dry-run mode')

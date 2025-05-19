@@ -4,7 +4,7 @@ import {
   getConfigValue,
   isReadOnlyConfig,
   sensitiveConfigKeys,
-  supportedConfigKeys
+  supportedConfigKeys,
 } from '../../utils/config.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
@@ -12,7 +12,7 @@ import type { OutputKind } from '../../types.mts'
 
 export async function outputConfigList({
   full,
-  outputKind
+  outputKind,
 }: {
   full: boolean
   outputKind: OutputKind
@@ -46,23 +46,23 @@ export async function outputConfigList({
               data: JSON.stringify({
                 full,
                 config: obj,
-                readOnly
-              })
+                readOnly,
+              }),
             }
           : {
               ok: true,
               data: {
                 full,
                 config: obj,
-                readOnly
-              }
-            }
-      )
+                readOnly,
+              },
+            },
+      ),
     )
   } else {
     const maxWidth = Array.from(supportedConfigKeys.keys()).reduce(
       (a, b) => Math.max(a, b.length),
-      0
+      0,
     )
 
     logger.log('# Local CLI Config')
@@ -80,7 +80,7 @@ export async function outputConfigList({
         }
         if (full || value !== undefined) {
           logger.log(
-            `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${Array.isArray(value) ? value.join(', ') || '<none>' : (value ?? '<none>')}`
+            `- ${key}:${' '.repeat(Math.max(0, maxWidth - key.length + 3))} ${Array.isArray(value) ? value.join(', ') || '<none>' : (value ?? '<none>')}`,
           )
         }
       }
@@ -88,7 +88,7 @@ export async function outputConfigList({
     if (readOnly) {
       logger.log('')
       logger.log(
-        'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.'
+        'Note: the config is in read-only mode, meaning at least one key was temporarily\n      overridden from an env var or command flag.',
       )
     }
   }

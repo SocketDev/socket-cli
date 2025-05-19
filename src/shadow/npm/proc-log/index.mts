@@ -11,7 +11,7 @@ interface RequireKnownModules {
 }
 
 type RequireTransformer<T extends keyof RequireKnownModules> = (
-  mod: RequireKnownModules[T]
+  mod: RequireKnownModules[T],
 ) => RequireKnownModules[T]
 
 function tryRequire<T extends keyof RequireKnownModules>(
@@ -54,9 +54,9 @@ export function getLogger(): Logger {
         'proc-log/lib/index.js' as 'proc-log',
         // The proc-log DefinitelyTyped definition is incorrect. The type definition
         // is really that of its export log.
-        mod => (mod as any).log as RequireKnownModules['proc-log']
+        mod => (mod as any).log as RequireKnownModules['proc-log'],
       ],
-      'npmlog/lib/log.js' as 'npmlog'
+      'npmlog/lib/log.js' as 'npmlog',
     )
   }
   return _log as Logger | undefined

@@ -34,20 +34,20 @@ const ignoredDirs = [
   'node_modules', // Where Node modules are installed, see <https://nodejs.org/>
   // Taken from globby:
   // https://github.com/sindresorhus/globby/blob/v14.0.2/ignore.js#L11-L16
-  'flow-typed'
+  'flow-typed',
 ] as const
 
 const ignoredDirPatterns = ignoredDirs.map(i => `**/${i}`)
 
 async function getWorkspaceGlobs(
   agent: Agent,
-  cwd = process.cwd()
+  cwd = process.cwd(),
 ): Promise<string[]> {
   let workspacePatterns
   if (agent === PNPM) {
     for (const workspacePath of [
       path.join(cwd, `${PNPM_WORKSPACE}.yaml`),
-      path.join(cwd, `${PNPM_WORKSPACE}.yml`)
+      path.join(cwd, `${PNPM_WORKSPACE}.yml`),
     ]) {
       // eslint-disable-next-line no-await-in-loop
       const yml = await safeReadFile(workspacePath)
@@ -75,7 +75,7 @@ async function getWorkspaceGlobs(
 function ignoreFileLinesToGlobPatterns(
   lines: string[] | readonly string[],
   filepath: string,
-  cwd: string
+  cwd: string,
 ): string[] {
   const base = path.relative(cwd, path.dirname(filepath)).replace(/\\/g, '/')
   const patterns = []
@@ -86,8 +86,8 @@ function ignoreFileLinesToGlobPatterns(
         ignorePatternToMinimatch(
           pattern.length && pattern.charCodeAt(0) === 33 /*'!'*/
             ? `!${path.posix.join(base, pattern.slice(1))}`
-            : path.posix.join(base, pattern)
-        )
+            : path.posix.join(base, pattern),
+        ),
       )
     }
   }
@@ -97,7 +97,7 @@ function ignoreFileLinesToGlobPatterns(
 function ignoreFileToGlobPatterns(
   content: string,
   filepath: string,
-  cwd: string
+  cwd: string,
 ): string[] {
   return ignoreFileLinesToGlobPatterns(content.split(/\r?\n/), filepath, cwd)
 }
@@ -136,7 +136,7 @@ function ignorePatternToMinimatch(pattern: string): string {
   const escapedPatternWithoutLeadingSlash =
     patternWithoutLeadingSlash.replaceAll(
       /(?=((?:\\.|[^{(])*))\1([{(])/guy,
-      '$1\\$2'
+      '$1\\$2',
     )
   const matchInsideSuffix = patternToTest.endsWith('/**') ? '/*' : ''
   return `${negatedPrefix}${matchEverywherePrefix}${escapedPatternWithoutLeadingSlash}${matchInsideSuffix}`
@@ -165,7 +165,7 @@ function workspacePatternToGlobPattern(workspace: string): string {
 
 export async function filterGlobResultToSupportedFiles(
   entries: string[] | readonly string[],
-  supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data']
+  supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
 ): Promise<string[]> {
   const patterns = ['golang', NPM, 'maven', 'pypi', 'gem', 'nuget'].reduce(
     (r: string[], n: string) => {
@@ -173,11 +173,11 @@ export async function filterGlobResultToSupportedFiles(
       r.push(
         ...(supported
           ? Object.values(supported).map(p => `**/${p.pattern}`)
-          : [])
+          : []),
       )
       return r
     },
-    []
+    [],
   )
   return entries.filter(p => micromatch.some(p, patterns))
 }
@@ -188,7 +188,7 @@ type GlobWithGitIgnoreOptions = GlobOptions & {
 
 export async function globWithGitIgnore(
   patterns: string[] | readonly string[],
-  options: GlobWithGitIgnoreOptions
+  options: GlobWithGitIgnoreOptions,
 ) {
   const {
     cwd = process.cwd(),
@@ -199,7 +199,7 @@ export async function globWithGitIgnore(
   const ignoreFiles = await tinyGlob(['**/.gitignore'], {
     absolute: true,
     cwd,
-    expandDirectories: true
+    expandDirectories: true,
   })
   const ignores = [
     ...ignoredDirPatterns,
@@ -207,7 +207,7 @@ export async function globWithGitIgnore(
       ? ignoreFileLinesToGlobPatterns(
           projectIgnorePaths,
           path.join(cwd, '.gitignore'),
-          cwd
+          cwd,
         )
       : []),
     ...(
@@ -216,11 +216,11 @@ export async function globWithGitIgnore(
           ignoreFileToGlobPatterns(
             await fs.readFile(filepath, 'utf8'),
             filepath,
-            cwd
-          )
-        )
+            cwd,
+          ),
+        ),
       )
-    ).flat()
+    ).flat(),
   ]
   const hasNegatedPattern = ignores.some(p => p.charCodeAt(0) === 33 /*'!'*/)
   const globOptions = {
@@ -228,7 +228,7 @@ export async function globWithGitIgnore(
     cwd,
     expandDirectories: false,
     ignore: hasNegatedPattern ? [] : ignores,
-    ...additionalOptions
+    ...additionalOptions,
   }
   const result = await tinyGlob(patterns as string[], globOptions)
   if (!hasNegatedPattern) {
@@ -247,26 +247,26 @@ export async function globWithGitIgnore(
 export async function globNodeModules(cwd = process.cwd()): Promise<string[]> {
   return await tinyGlob('**/node_modules/**', {
     absolute: true,
-    cwd
+    cwd,
   })
 }
 
 export async function globWorkspace(
   agent: Agent,
-  cwd = process.cwd()
+  cwd = process.cwd(),
 ): Promise<string[]> {
   const workspaceGlobs = await getWorkspaceGlobs(agent, cwd)
   return workspaceGlobs.length
     ? await tinyGlob(workspaceGlobs, {
         absolute: true,
         cwd,
-        ignore: ['**/node_modules/**', '**/bower_components/**']
+        ignore: ['**/node_modules/**', '**/bower_components/**'],
       })
     : []
 }
 
 export function pathsToGlobPatterns(
-  paths: string[] | readonly string[]
+  paths: string[] | readonly string[],
 ): string[] {
   // TODO: Does not support `~/` paths.
   return paths.map(p => (p === '.' || p === './' ? '**/*' : p))
