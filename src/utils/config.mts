@@ -133,6 +133,23 @@ function getConfigValues(): LocalConfig {
   return _cachedConfig
 }
 
+export function getConfigPath(): string | undefined {
+  // Get the OS app data folder:
+  // - Win: %LOCALAPPDATA% or fail?
+  // - Mac: %XDG_DATA_HOME% or fallback to "~/Library/Application Support/"
+  // - Linux: %XDG_DATA_HOME% or fallback to "~/.local/share/"
+  // Note: LOCALAPPDATA is typically: C:\Users\USERNAME\AppData
+  // Note: XDG stands for "X Desktop Group", nowadays "freedesktop.org"
+  //       On most systems that path is: $HOME/.local/share
+  // Then append `socket/settings`, so:
+  // - Win: %LOCALAPPDATA%\socket\settings or return undefined
+  // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
+  // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
+
+  const { socketAppPath: SOCKET_APP_DIR } = constants
+  return SOCKET_APP_DIR
+}
+
 function normalizeConfigKey(
   key: keyof LocalConfig
 ): CResult<keyof LocalConfig> {

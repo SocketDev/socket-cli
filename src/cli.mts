@@ -17,6 +17,7 @@ import { cmdScanCreate } from './commands/dependencies/cmd-dependencies.mts'
 import { cmdDiffScan } from './commands/diff-scan/cmd-diff-scan.mts'
 import { cmdFix } from './commands/fix/cmd-fix.mts'
 import { cmdInfo } from './commands/info/cmd-info.mts'
+import { cmdInstall } from './commands/install/cmd-install.mts'
 import { cmdLogin } from './commands/login/cmd-login.mts'
 import { cmdLogout } from './commands/logout/cmd-logout.mts'
 import { cmdManifest } from './commands/manifest/cmd-manifest.mts'
@@ -32,6 +33,7 @@ import { cmdReport } from './commands/report/cmd-report.mts'
 import { cmdRepos } from './commands/repos/cmd-repos.mts'
 import { cmdScan } from './commands/scan/cmd-scan.mts'
 import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed.mts'
+import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper.mts'
 import constants from './constants.mts'
 import { AuthError, InputError, captureException } from './utils/errors.mts'
@@ -59,6 +61,7 @@ void (async () => {
         config: cmdConfig,
         fix: cmdFix,
         info: cmdInfo,
+        install: cmdInstall,
         login: cmdLogin,
         logout: cmdLogout,
         npm: cmdNpm,
@@ -78,7 +81,8 @@ void (async () => {
         analytics: cmdAnalytics,
         'diff-scan': cmdDiffScan,
         'threat-feed': cmdThreatFeed,
-        manifest: cmdManifest
+        manifest: cmdManifest,
+        uninstall: cmdUninstall
       },
       {
         aliases: {},
