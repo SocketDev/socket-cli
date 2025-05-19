@@ -6,7 +6,7 @@ import type { OutputKind } from '../../types.mts'
 export async function handleViewRepo(
   orgSlug: string,
   repoName: string,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   const data = await fetchViewRepo(orgSlug, repoName)
 

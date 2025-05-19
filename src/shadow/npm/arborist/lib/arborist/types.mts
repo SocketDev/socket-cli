@@ -8,7 +8,7 @@ import type {
   AuditReport as BaseAuditReport,
   Diff as BaseDiff,
   BuildIdealTreeOptions,
-  ReifyOptions
+  ReifyOptions,
 } from '@npmcli/arborist'
 
 export type ArboristClass = ArboristInstance & {
@@ -55,7 +55,7 @@ export type AuditAdvisory = Omit<BaseAdvisory, 'id'> & {
 export const DiffAction = createEnum({
   add: 'ADD',
   change: 'CHANGE',
-  remove: 'REMOVE'
+  remove: 'REMOVE',
 })
 
 export type Diff = Omit<

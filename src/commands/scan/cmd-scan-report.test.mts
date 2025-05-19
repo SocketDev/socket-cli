@@ -50,7 +50,7 @@ describe('socket scan report', async () => {
           Examples
             $ socket scan report FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
             $ socket scan report FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -62,9 +62,9 @@ describe('socket scan report', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket scan report`'
+        '`socket scan report`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -91,7 +91,7 @@ describe('socket scan report', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -102,7 +102,7 @@ describe('socket scan report', async () => {
       'report-id',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should be ok with org name and id',
     async cmd => {
@@ -117,6 +117,6 @@ describe('socket scan report', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

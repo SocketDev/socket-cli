@@ -14,7 +14,7 @@ export async function convertGradleToMaven(
   bin: string,
   cwd: string,
   verbose: boolean,
-  gradleOpts: string[]
+  gradleOpts: string[],
 ) {
   // TODO: impl json/md
   if (verbose) {
@@ -33,22 +33,22 @@ export async function convertGradleToMaven(
   logger.group('gradle2maven:')
   if (verbose || isDebug()) {
     logger.log(
-      `[VERBOSE] - Absolute bin path: \`${rbin}\` (${binExists ? 'found' : colors.red('not found!')})`
+      `[VERBOSE] - Absolute bin path: \`${rbin}\` (${binExists ? 'found' : colors.red('not found!')})`,
     )
     logger.log(
-      `[VERBOSE] - Absolute target path: \`${rtarget}\` (${targetExists ? 'found' : colors.red('not found!')})`
+      `[VERBOSE] - Absolute target path: \`${rtarget}\` (${targetExists ? 'found' : colors.red('not found!')})`,
     )
   } else {
     logger.log(`- executing: \`${rbin}\``)
     if (!binExists) {
       logger.warn(
-        'Warning: It appears the executable could not be found at this location. An error might be printed later because of that.'
+        'Warning: It appears the executable could not be found at this location. An error might be printed later because of that.',
       )
     }
     logger.log(`- src dir: \`${rtarget}\``)
     if (!targetExists) {
       logger.warn(
-        'Warning: It appears the src dir could not be found at this location. An error might be printed later because of that.'
+        'Warning: It appears the src dir could not be found at this location. An error might be printed later because of that.',
       )
     }
   }
@@ -70,7 +70,7 @@ export async function convertGradleToMaven(
     }
 
     logger.log(
-      `Converting gradle to maven from \`${bin}\` on \`${target}\` ...`
+      `Converting gradle to maven from \`${bin}\` on \`${target}\` ...`,
     )
     const output = await execGradleWithSpinner(rbin, commandArgs, rtarget, cwd)
 
@@ -97,17 +97,17 @@ export async function convertGradleToMaven(
       (_all: string, fn: string) => {
         logger.log('- ', fn)
         return fn
-      }
+      },
     )
     logger.log('')
     logger.log(
-      'Next step is to generate a Scan by running the `socket scan create` command on the same directory'
+      'Next step is to generate a Scan by running the `socket scan create` command on the same directory',
     )
   } catch (e) {
     process.exitCode = 1
     logger.fail(
       'There was an unexpected error while generating manifests' +
-        (verbose ? '' : '  (use --verbose for details)')
+        (verbose ? '' : '  (use --verbose for details)'),
     )
     if (verbose) {
       logger.group('[VERBOSE] error:')
@@ -121,7 +121,7 @@ async function execGradleWithSpinner(
   bin: string,
   commandArgs: string[],
   target: string,
-  cwd: string
+  cwd: string,
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   // Lazily access constants.spinner.
   const { spinner } = constants
@@ -129,14 +129,14 @@ async function execGradleWithSpinner(
   let pass = false
   try {
     spinner.start(
-      `Running gradlew... (this can take a while, it depends on how long gradlew has to run)`
+      `Running gradlew... (this can take a while, it depends on how long gradlew has to run)`,
     )
     const output = await spawn(bin, commandArgs, {
       // We can pipe the output through to have the user see the result
       // of running gradlew, but then we can't (easily) gather the output
       // to discover the generated files... probably a flag we should allow?
       // stdio: isDebug() ? 'inherit' : undefined,
-      cwd: target || cwd
+      cwd: target || cwd,
     })
     pass = true
     const { code, stderr, stdout } = output

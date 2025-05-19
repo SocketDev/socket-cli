@@ -9,7 +9,7 @@ export async function handleListRepos({
   outputKind,
   page,
   per_page,
-  sort
+  sort,
 }: {
   direction: string
   orgSlug: string
@@ -23,7 +23,7 @@ export async function handleListRepos({
     orgSlug,
     page,
     per_page,
-    sort
+    sort,
   })
 
   await outputListRepos(data, outputKind)

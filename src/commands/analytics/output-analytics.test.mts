@@ -4,7 +4,7 @@ import FIXTURE from './analytics-fixture.json' with { type: 'json' }
 import {
   formatDataOrg,
   formatDataRepo,
-  renderMarkdown
+  renderMarkdown,
 } from './output-analytics.mts'
 
 describe('output-analytics', () => {

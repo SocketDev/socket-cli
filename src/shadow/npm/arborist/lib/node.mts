@@ -78,7 +78,7 @@ type NodeClass = Omit<
   recalculateOutEdgesOverrides(): void
   resolve(name: string): SafeNode
   updateOverridesEdgeInAdded(
-    otherOverrideSet: SafeOverrideSet | undefined
+    otherOverrideSet: SafeOverrideSet | undefined,
   ): boolean
   updateOverridesEdgeInRemoved(otherOverrideSet: SafeOverrideSet): boolean
 }
@@ -321,7 +321,7 @@ export class SafeNode extends Node {
   // lot of duplication, because the conflict in the dependencies might never
   // actually happen.
   override updateOverridesEdgeInAdded(
-    otherOverrideSet: SafeOverrideSet | undefined
+    otherOverrideSet: SafeOverrideSet | undefined,
   ) {
     if (!otherOverrideSet) {
       // Assuming there are any overrides at all, the overrides field is never
@@ -340,7 +340,7 @@ export class SafeNode extends Node {
     }
     const newOverrideSet = SafeOverrideSet.findSpecificOverrideSet(
       this.overrides,
-      otherOverrideSet
+      otherOverrideSet,
     )
     if (newOverrideSet) {
       if (this.overrides.isEqual(newOverrideSet)) {
@@ -371,7 +371,7 @@ export class SafeNode extends Node {
       if (newOverrideSet && edgeOverrides) {
         newOverrideSet = SafeOverrideSet.findSpecificOverrideSet(
           edgeOverrides,
-          newOverrideSet
+          newOverrideSet,
         )
       } else {
         newOverrideSet = edgeOverrides

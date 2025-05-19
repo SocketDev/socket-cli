@@ -4,7 +4,7 @@ import {
   getArboristClassPath,
   getArboristEdgeClassPath,
   getArboristNodeClassPath,
-  getArboristOverrideSetClassPath
+  getArboristOverrideSetClassPath,
 } from '../paths.mts'
 import { SafeArborist } from './lib/arborist/index.mts'
 import { SafeEdge } from './lib/edge.mts'

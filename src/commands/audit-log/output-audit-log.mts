@@ -18,14 +18,14 @@ export async function outputAuditLog(
     orgSlug,
     outputKind,
     page,
-    perPage
+    perPage,
   }: {
     outputKind: OutputKind
     orgSlug: string
     page: number
     perPage: number
     logType: string
-  }
+  },
 ): Promise<void> {
   if (!auditLogs.ok) {
     process.exitCode = auditLogs.code ?? 1
@@ -37,8 +37,8 @@ export async function outputAuditLog(
         logType,
         orgSlug,
         page,
-        perPage
-      })
+        perPage,
+      }),
     )
   } else if (outputKind !== 'markdown' && !auditLogs.ok) {
     logger.fail(failMsgWithBadge(auditLogs.message, auditLogs.cause))
@@ -48,8 +48,8 @@ export async function outputAuditLog(
         logType,
         orgSlug,
         page,
-        perPage
-      })
+        perPage,
+      }),
     )
   }
 }
@@ -60,13 +60,13 @@ export async function outputAsJson(
     logType,
     orgSlug,
     page,
-    perPage
+    perPage,
   }: {
     orgSlug: string
     page: number
     perPage: number
     logType: string
-  }
+  },
 ): Promise<string> {
   if (!auditLogs.ok) {
     return serializeResultJson(auditLogs)
@@ -91,7 +91,7 @@ export async function outputAsJson(
           ip_address,
           type,
           user_agent,
-          user_email
+          user_email,
         } = log
         return {
           event_id,
@@ -99,10 +99,10 @@ export async function outputAsJson(
           ip_address,
           type,
           user_agent,
-          user_email
+          user_email,
         }
-      })
-    }
+      }),
+    },
   })
 }
 
@@ -112,13 +112,13 @@ export async function outputAsMarkdown(
     logType,
     orgSlug,
     page,
-    perPage
+    perPage,
   }: {
     orgSlug: string
     page: number
     perPage: number
     logType: string
-  }
+  },
 ): Promise<string> {
   if (!auditLogs.ok) {
     return `
@@ -154,7 +154,7 @@ Parameters:
       'type',
       'user_email',
       'ip_address',
-      'user_agent'
+      'user_agent',
     ])
 
     return `
@@ -173,7 +173,7 @@ ${table}
   } catch (e) {
     process.exitCode = 1
     logger.fail(
-      'There was a problem converting the logs to Markdown, please try the `--json` flag'
+      'There was a problem converting the logs to Markdown, please try the `--json` flag',
     )
     if (isDebug()) {
       debugLog('Error:\n', e)

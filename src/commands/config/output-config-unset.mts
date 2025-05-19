@@ -7,7 +7,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 
 export async function outputConfigUnset(
   updateResult: CResult<undefined | string>,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ) {
   if (!updateResult.ok) {
     process.exitCode = updateResult.code ?? 1

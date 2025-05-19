@@ -10,7 +10,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 export async function outputRequirements(
   result: CResult<{ contents: string; pip: string }>,
   outputKind: OutputKind,
-  out: string
+  out: string,
 ) {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -42,7 +42,7 @@ export async function outputRequirements(
     arr.push('# Converted Conda file')
     arr.push('')
     arr.push(
-      'This is the Conda `environment.yml` file converted to python `requirements.txt`:'
+      'This is the Conda `environment.yml` file converted to python `requirements.txt`:',
     )
     arr.push('')
     arr.push('```file=requirements.txt')

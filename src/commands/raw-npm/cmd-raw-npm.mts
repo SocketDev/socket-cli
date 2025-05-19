@@ -19,26 +19,26 @@ const config: CliCommandConfig = {
 
     Examples
       $ ${command} install
-  `
+  `,
 }
 
 export const cmdRawNpm = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     allowUnknownFlags: true,
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   if (cli.flags['dryRun']) {

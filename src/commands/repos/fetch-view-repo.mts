@@ -6,7 +6,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchViewRepo(
   orgSlug: string,
-  repoName: string
+  repoName: string,
 ): Promise<CResult<SocketSdkReturnType<'getOrgRepo'>['data']>> {
   const sockSdkResult = await setupSdk()
   if (!sockSdkResult.ok) {
@@ -16,6 +16,6 @@ export async function fetchViewRepo(
 
   return await handleApiCall(
     sockSdk.getOrgRepo(orgSlug, repoName),
-    'repository data'
+    'repository data',
   )
 }

@@ -1,7 +1,7 @@
 import { getSeverityCount } from '../../utils/alert/severity.mts'
 import {
   handleApiCall,
-  handleUnsuccessfulApiResponse
+  handleUnsuccessfulApiResponse,
 } from '../../utils/api.mts'
 import { getPublicToken, setupSdk } from '../../utils/sdk.mts'
 
@@ -10,7 +10,7 @@ import type { PackageData } from './handle-package-info.mts'
 export async function fetchPackageInfo(
   pkgName: string,
   pkgVersion: string,
-  includeAllIssues: boolean
+  includeAllIssues: boolean,
 ): Promise<void | PackageData> {
   const sockSdkResult = await setupSdk(getPublicToken())
   if (!sockSdkResult.ok) {
@@ -20,11 +20,11 @@ export async function fetchPackageInfo(
 
   const result = await handleApiCall(
     sockSdk.getIssuesByNPMPackage(pkgName, pkgVersion),
-    'package issues'
+    'package issues',
   )
   const scoreResult = await handleApiCall(
     sockSdk.getScoreByNPMPackage(pkgName, pkgVersion),
-    'package score'
+    'package score',
   )
 
   if (!result.ok) {
@@ -32,7 +32,7 @@ export async function fetchPackageInfo(
       'getIssuesByNPMPackage',
       result.message,
       result.cause ?? '',
-      (result.data as any)?.code ?? 0
+      (result.data as any)?.code ?? 0,
     )
   }
 
@@ -41,18 +41,18 @@ export async function fetchPackageInfo(
       'getScoreByNPMPackage',
       scoreResult.message,
       scoreResult.cause ?? '',
-      (scoreResult.data as any)?.code ?? 0
+      (scoreResult.data as any)?.code ?? 0,
     )
   }
 
   const severityCount = getSeverityCount(
     result.data,
-    includeAllIssues ? undefined : 'high'
+    includeAllIssues ? undefined : 'high',
   )
 
   return {
     data: result.data,
     severityCount,
-    score: scoreResult.data
+    score: scoreResult.data,
   }
 }

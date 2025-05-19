@@ -8,7 +8,7 @@ import type { CResult } from '../../types.mts'
 export async function convertCondaToRequirements(
   target: string,
   cwd: string,
-  verbose: boolean
+  verbose: boolean,
 ): Promise<CResult<{ contents: string; pip: string }>> {
   let contents: string
   if (target === '-') {
@@ -40,7 +40,7 @@ export async function convertCondaToRequirements(
         } else {
           if (verbose) {
             logger.error(
-              'warning: stdin closed explicitly with some data received'
+              'warning: stdin closed explicitly with some data received',
             )
           }
           resolve(buf.join(''))
@@ -52,7 +52,7 @@ export async function convertCondaToRequirements(
       return {
         ok: false,
         message: 'Manifest Generation Failed',
-        cause: 'No data received from stdin'
+        cause: 'No data received from stdin',
       }
     }
   } else {
@@ -66,7 +66,7 @@ export async function convertCondaToRequirements(
       return {
         ok: false,
         message: 'Manifest Generation Failed',
-        cause: `Input file not found at ${f}`
+        cause: `Input file not found at ${f}`,
       }
     }
 
@@ -76,7 +76,7 @@ export async function convertCondaToRequirements(
       return {
         ok: false,
         message: 'Manifest Generation Failed',
-        cause: 'File is empty'
+        cause: 'File is empty',
       }
     }
   }
@@ -85,8 +85,8 @@ export async function convertCondaToRequirements(
     ok: true,
     data: {
       contents,
-      pip: convertCondaToRequirementsFromInput(contents)
-    }
+      pip: convertCondaToRequirementsFromInput(contents),
+    },
   }
 }
 

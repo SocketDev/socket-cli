@@ -14,7 +14,7 @@ const config: CliCommandConfig = {
   description: 'Generate a dependency manifest for given file or dir',
   hidden: false,
   flags: {
-    ...commonFlags
+    ...commonFlags,
   },
   help: (command, config) => `
     Usage
@@ -41,19 +41,19 @@ const config: CliCommandConfig = {
     To have it auto-detect and attempt to run:
 
       $ ${command} yolo
-  `
+  `,
 }
 
 export const cmdManifest = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   await meowWithSubcommands(
     {
@@ -61,7 +61,7 @@ async function run(
       conda: cmdManifestConda,
       scala: cmdManifestScala,
       gradle: cmdManifestGradle,
-      kotlin: cmdManifestKotlin
+      kotlin: cmdManifestKotlin,
     },
     {
       argv,
@@ -69,13 +69,13 @@ async function run(
         yolo: {
           description: config.description,
           hidden: true,
-          argv: ['auto']
-        }
+          argv: ['auto'],
+        },
       },
       description: config.description,
       importMeta,
       flags: config.flags,
-      name: `${parentName} ${config.commandName}`
-    }
+      name: `${parentName} ${config.commandName}`,
+    },
   )
 }

@@ -9,7 +9,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputSecurityPolicy(
   result: CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -27,11 +27,11 @@ export async function outputSecurityPolicy(
   logger.log('# Security policy')
   logger.log('')
   logger.log(
-    `The default security policy setting is: "${result.data.securityPolicyDefault}"`
+    `The default security policy setting is: "${result.data.securityPolicyDefault}"`,
   )
   logger.log('')
   logger.log(
-    'These are the security policies per setting for your organization:'
+    'These are the security policies per setting for your organization:',
   )
   logger.log('')
   const rules = result.data.securityPolicyRules
@@ -40,7 +40,7 @@ export async function outputSecurityPolicy(
   > = rules ? Object.entries(rules) : []
   const mapped: Array<[string, string]> = entries.map(([key, value]) => [
     key,
-    value.action
+    value.action,
   ])
   mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
   logger.log(mdTableOfPairs(mapped, ['name', 'action']))

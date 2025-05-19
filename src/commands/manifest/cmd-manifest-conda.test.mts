@@ -43,7 +43,7 @@ describe('socket manifest conda', async () => {
           Examples
 
             $ socket manifest conda ./environment.yml"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -55,9 +55,9 @@ describe('socket manifest conda', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket manifest conda`'
+        '`socket manifest conda`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -80,7 +80,7 @@ describe('socket manifest conda', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -90,7 +90,7 @@ describe('socket manifest conda', async () => {
       'mootools',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -107,7 +107,7 @@ describe('socket manifest conda', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   describe('output flags', () => {
@@ -117,7 +117,7 @@ describe('socket manifest conda', async () => {
         'conda',
         './manifest-conda/environment.yml',
         '--config',
-        '{}'
+        '{}',
       ],
       'should print raw text without flags',
       async cmd => {
@@ -137,7 +137,7 @@ describe('socket manifest conda', async () => {
 
           Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
         `)
-      }
+      },
     )
 
     cmdit(
@@ -147,7 +147,7 @@ describe('socket manifest conda', async () => {
         './manifest-conda/environment.yml',
         '--json',
         '--config',
-        '{}'
+        '{}',
       ],
       'should print a json blurb with --json flag',
       async cmd => {
@@ -171,7 +171,7 @@ describe('socket manifest conda', async () => {
 
           Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
         `)
-      }
+      },
     )
 
     cmdit(
@@ -181,7 +181,7 @@ describe('socket manifest conda', async () => {
         './manifest-conda/environment.yml',
         '--markdown',
         '--config',
-        '{}'
+        '{}',
       ],
       'should print a markdown blurb with --markdown flag',
       async cmd => {
@@ -207,7 +207,7 @@ describe('socket manifest conda', async () => {
 
           Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
         `)
-      }
+      },
     )
   })
 })

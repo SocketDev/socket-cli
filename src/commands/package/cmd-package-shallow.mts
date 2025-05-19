@@ -20,7 +20,7 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    ...outputFlags
+    ...outputFlags,
   },
   help: (command, config) => `
     Usage
@@ -53,7 +53,7 @@ const config: CliCommandConfig = {
       $ ${command} maven webtorrent babel
       $ ${command} npm/webtorrent golang/babel
       $ ${command} npm npm/webtorrent@1.0.1 babel
-  `
+  `,
 }
 
 export const cmdPackageShallow = {
@@ -63,22 +63,22 @@ export const cmdPackageShallow = {
     shallowScore: {
       description: config.description,
       hidden: true,
-      argv: []
-    }
+      argv: [],
+    },
   },
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { json, markdown } = cli.flags
@@ -95,21 +95,21 @@ async function run(
       message:
         'First parameter should be an ecosystem or all args must be purls',
       pass: 'ok',
-      fail: 'bad'
+      fail: 'bad',
     },
     {
       test: purls.length > 0,
       message: 'Expecting at least one package',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       pass: 'ok',
-      fail: 'omit one'
-    }
+      fail: 'omit one',
+    },
   )
   if (!wasValidInput) {
     return
@@ -122,6 +122,6 @@ async function run(
 
   await handlePurlsShallowScore({
     outputKind,
-    purls
+    purls,
   })
 }

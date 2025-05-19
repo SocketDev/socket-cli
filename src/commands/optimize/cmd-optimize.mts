@@ -19,13 +19,13 @@ const config: CliCommandConfig = {
     pin: {
       type: 'boolean',
       default: false,
-      description: 'Pin overrides to their latest version'
+      description: 'Pin overrides to their latest version',
     },
     prod: {
       type: 'boolean',
       default: false,
-      description: 'Only add overrides for production dependencies'
-    }
+      description: 'Only add overrides for production dependencies',
+    },
   },
   help: (command, config) => `
     Usage
@@ -37,25 +37,25 @@ const config: CliCommandConfig = {
     Examples
       $ ${command}
       $ ${command} --pin
-  `
+  `,
 }
 
 export const cmdOptimize = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   // TODO: impl json/md
@@ -70,6 +70,6 @@ async function run(
   await applyOptimization(
     cwd,
     Boolean(cli.flags['pin']),
-    Boolean(cli.flags['prod'])
+    Boolean(cli.flags['prod']),
   )
 }

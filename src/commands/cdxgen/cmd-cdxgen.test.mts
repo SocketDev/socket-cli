@@ -14,7 +14,7 @@ describe('socket cdxgen', async () => {
   cmdit(['cdxgen', '--help'], 'should support --help', async cmd => {
     const { code, stderr, stdout } = await invokeNpm(entryPath, cmd, {
       // Need to pass it on as env because --config will break cdxgen
-      SOCKET_CLI_CONFIG: '{}'
+      SOCKET_CLI_CONFIG: '{}',
     })
     expect(stdout).toMatchInlineSnapshot(
       `
@@ -73,7 +73,7 @@ describe('socket cdxgen', async () => {
         cdxgen --server                        Run cdxgen as a server
 
       for documentation, visit https://cyclonedx.github.io/cdxgen"
-    `
+    `,
     )
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "

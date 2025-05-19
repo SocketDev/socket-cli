@@ -8,7 +8,7 @@ function socketModifyPlugin({
   find,
   include,
   replace,
-  sourcemap = true
+  sourcemap = true,
 }) {
   const filter = createFilter(include, exclude)
   return {
@@ -27,7 +27,7 @@ function socketModifyPlugin({
           match.index + match[0].length,
           typeof replace === 'function'
             ? Reflect.apply(replace, match, match)
-            : String(replace)
+            : String(replace),
         )
         // Exit early if not a global regexp.
         if (!global) {
@@ -36,9 +36,9 @@ function socketModifyPlugin({
       }
       return {
         code: s.toString(),
-        map: sourcemap ? s.generateMap() : null
+        map: sourcemap ? s.generateMap() : null,
       }
-    }
+    },
   }
 }
 

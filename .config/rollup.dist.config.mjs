@@ -14,7 +14,7 @@ import { readJson, remove, writeJson } from '@socketsecurity/registry/lib/fs'
 import { hasKeys, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import {
   fetchPackageManifest,
-  readPackageJson
+  readPackageJson,
 } from '@socketsecurity/registry/lib/packages'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -25,7 +25,7 @@ import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
 import {
   getPackageName,
   isBuiltin,
-  normalizeId
+  normalizeId,
 } from '../scripts/utils/packages.js'
 
 const {
@@ -50,7 +50,7 @@ const {
   SOCKET_CLI_SENTRY_NPX_BIN_NAME,
   SOCKET_CLI_SENTRY_PACKAGE_NAME,
   UTILS,
-  VENDOR
+  VENDOR,
 } = constants
 
 const BLESSED = 'blessed'
@@ -73,7 +73,7 @@ async function copyBashCompletion() {
   // Lazily access constants.srcPath.
   const filepath = path.join(
     constants.srcPath,
-    'commands/install/socket-completion.bash'
+    'commands/install/socket-completion.bash',
   )
   // Lazily access constants.distPath.
   const destPath = path.join(constants.distPath, 'socket-completion.bash')
@@ -92,7 +92,7 @@ async function copyPackage(pkgName) {
   const jsFiles = await tinyGlob(['**/*.js'], {
     absolute: true,
     cwd: pkgDestPath,
-    ignore: ['node_modules/**']
+    ignore: ['node_modules/**'],
   })
   await Promise.all(
     jsFiles.map(async p => {
@@ -107,7 +107,7 @@ async function copyPackage(pkgName) {
       // Add back hashbang and add "use strict" directive.
       const modded = `${hashbang.trim()}${hashbang ? os.EOL : ''}${useStrict.trim() || "'use strict'"}${os.EOL}${os.EOL}${trimmed}`
       await fs.writeFile(p, modded, 'utf8')
-    })
+    }),
   )
 }
 
@@ -122,7 +122,7 @@ async function getSentryManifest() {
 async function updatePackageJson() {
   // Lazily access constants.rootPath.
   const editablePkgJson = await readPackageJson(constants.rootPath, {
-    editable: true
+    editable: true,
   })
   const bin = resetBin(editablePkgJson.content.bin)
   const dependencies = resetDependencies(editablePkgJson.content.dependencies)
@@ -130,7 +130,7 @@ async function updatePackageJson() {
     name: SOCKET_CLI_PACKAGE_NAME,
     description: SOCKET_DESCRIPTION,
     bin,
-    dependencies: hasKeys(dependencies) ? dependencies : undefined
+    dependencies: hasKeys(dependencies) ? dependencies : undefined,
   })
   // Lazily access constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD].
   if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
@@ -138,8 +138,8 @@ async function updatePackageJson() {
       name: SOCKET_CLI_LEGACY_PACKAGE_NAME,
       bin: {
         [SOCKET_CLI_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
-        ...bin
-      }
+        ...bin,
+      },
     })
   }
   // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
@@ -151,12 +151,12 @@ async function updatePackageJson() {
         [SOCKET_CLI_SENTRY_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
         [SOCKET_CLI_SENTRY_BIN_NAME]: bin[SOCKET_CLI_BIN_NAME],
         [SOCKET_CLI_SENTRY_NPM_BIN_NAME]: bin[SOCKET_CLI_NPM_BIN_NAME],
-        [SOCKET_CLI_SENTRY_NPX_BIN_NAME]: bin[SOCKET_CLI_NPX_BIN_NAME]
+        [SOCKET_CLI_SENTRY_NPX_BIN_NAME]: bin[SOCKET_CLI_NPX_BIN_NAME],
       },
       dependencies: {
         ...dependencies,
-        [SENTRY_NODE]: (await getSentryManifest()).version
-      }
+        [SENTRY_NODE]: (await getSentryManifest()).version,
+      },
     })
   }
   await editablePkgJson.save()
@@ -187,7 +187,7 @@ async function updatePackageLockFile() {
     rootPkg.name = SOCKET_CLI_LEGACY_PACKAGE_NAME
     rootPkg.bin = toSortedObject({
       [SOCKET_CLI_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
-      ...bin
+      ...bin,
     })
   }
   // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
@@ -198,11 +198,11 @@ async function updatePackageLockFile() {
       [SOCKET_CLI_SENTRY_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
       [SOCKET_CLI_SENTRY_BIN_NAME]: bin[SOCKET_CLI_BIN_NAME],
       [SOCKET_CLI_SENTRY_NPM_BIN_NAME]: bin[SOCKET_CLI_NPM_BIN_NAME],
-      [SOCKET_CLI_SENTRY_NPX_BIN_NAME]: bin[SOCKET_CLI_NPX_BIN_NAME]
+      [SOCKET_CLI_SENTRY_NPX_BIN_NAME]: bin[SOCKET_CLI_NPX_BIN_NAME],
     }
     rootPkg.dependencies = toSortedObject({
       ...dependencies,
-      [SENTRY_NODE]: (await getSentryManifest()).version
+      [SENTRY_NODE]: (await getSentryManifest()).version,
     })
   }
   await writeJson(rootPackageLockPath, lockJson, { spaces: 2 })
@@ -218,9 +218,9 @@ async function removeDirs(thePath, options) {
         onlyDirectories: true,
         cwd: thePath,
         dot: true,
-        ignore
+        ignore,
       })
-    ).map(p => remove(p))
+    ).map(p => remove(p)),
   )
 }
 
@@ -234,9 +234,9 @@ async function removeFiles(thePath, options) {
         onlyFiles: true,
         cwd: thePath,
         dot: true,
-        ignore
+        ignore,
       })
-    ).map(p => remove(p))
+    ).map(p => remove(p)),
   )
 }
 
@@ -247,7 +247,7 @@ function resetBin(bin) {
     [SOCKET_CLI_NPM_BIN_NAME]:
       bin?.[SOCKET_CLI_NPM_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPM_BIN_NAME],
     [SOCKET_CLI_NPX_BIN_NAME]:
-      bin?.[SOCKET_CLI_NPX_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPX_BIN_NAME]
+      bin?.[SOCKET_CLI_NPX_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPX_BIN_NAME],
   }
   const newBin = {
     ...(tmpBin[SOCKET_CLI_BIN_NAME]
@@ -258,15 +258,15 @@ function resetBin(bin) {
       : {}),
     ...(tmpBin[SOCKET_CLI_NPX_BIN_NAME]
       ? { [SOCKET_CLI_NPX_BIN_NAME]: tmpBin[SOCKET_CLI_NPX_BIN_NAME] }
-      : {})
+      : {}),
   }
   assert(
     util.isDeepStrictEqual(Object.keys(newBin).sort(naturalCompare), [
       SOCKET_CLI_BIN_NAME,
       SOCKET_CLI_NPM_BIN_NAME,
-      SOCKET_CLI_NPX_BIN_NAME
+      SOCKET_CLI_NPX_BIN_NAME,
     ]),
-    "Update the rollup Legacy and Sentry build's .bin to match the default build."
+    "Update the rollup Legacy and Sentry build's .bin to match the default build.",
   )
   return newBin
 }
@@ -288,7 +288,7 @@ export default async () => {
   const utilsSrcPath = path.join(srcPath, UTILS)
   const blessedContribFilepaths = await tinyGlob(['**/*.mjs'], {
     absolute: true,
-    cwd: path.join(externalSrcPath, BLESSED_CONTRIB)
+    cwd: path.join(externalSrcPath, BLESSED_CONTRIB),
   })
 
   return [
@@ -304,14 +304,14 @@ export default async () => {
             format: 'cjs',
             inlineDynamicImports: true,
             sourcemap: true,
-            sourcemapDebugIds: true
-          }
+            sourcemapDebugIds: true,
+          },
         ],
         external(rawId) {
           const id = normalizeId(rawId)
           const pkgName = getPackageName(
             id,
-            path.isAbsolute(id) ? nmPath.length + 1 : 0
+            path.isAbsolute(id) ? nmPath.length + 1 : 0,
           )
           return (
             pkgName === BLESSED ||
@@ -323,7 +323,7 @@ export default async () => {
           nodeResolve({
             exportConditions: ['node'],
             extensions: ['.mjs', '.js', '.json'],
-            preferBuiltins: true
+            preferBuiltins: true,
           }),
           jsonPlugin(),
           commonjsPlugin({
@@ -332,15 +332,15 @@ export default async () => {
             ignoreDynamicRequires: true,
             ignoreGlobal: true,
             ignoreTryCatch: true,
-            strictRequires: true
+            strictRequires: true,
           }),
           babelPlugin({
             babelHelpers: 'runtime',
             babelrc: false,
             configFile: path.join(configPath, 'babel.config.js'),
-            extensions: ['.js', '.cjs', '.mjs']
-          })
-        ]
+            extensions: ['.js', '.cjs', '.mjs'],
+          }),
+        ],
       }
     }),
     baseConfig({
@@ -352,9 +352,9 @@ export default async () => {
         // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
         ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
           ? {
-              [INSTRUMENT_WITH_SENTRY]: `${srcPath}/${INSTRUMENT_WITH_SENTRY}.mts`
+              [INSTRUMENT_WITH_SENTRY]: `${srcPath}/${INSTRUMENT_WITH_SENTRY}.mts`,
             }
-          : {})
+          : {}),
       },
       output: [
         {
@@ -390,17 +390,17 @@ export default async () => {
               replace(match) {
                 const pathToUrlCode =
                   /require(?:\$+\d+)?(?:\([^)]+\))?\.pathToFileURL\(__filename\)\.href/.exec(
-                    match
+                    match,
                   )?.[0]
                 return pathToUrlCode
                   ? `Module.createRequire(${pathToUrlCode})`
                   : match
-              }
-            })
+              },
+            }),
           ],
           sourcemap: true,
-          sourcemapDebugIds: true
-        }
+          sourcemapDebugIds: true,
+        },
       ],
       plugins: [
         // Replace requires like require('blessed/lib/widgets/screen') with
@@ -409,10 +409,10 @@ export default async () => {
           socketModifyPlugin({
             find: new RegExp(
               `(?<=require(?:\\$+\\d+)?\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
-              'g'
+              'g',
             ),
-            replace: id => `../external/${id}`
-          })
+            replace: id => `../external/${id}`,
+          }),
         ),
         {
           async writeBundle() {
@@ -421,8 +421,8 @@ export default async () => {
               copyBashCompletion(),
               updatePackageJson(),
               ...EXTERNAL_PACKAGES.filter(n => n !== BLESSED_CONTRIB).map(n =>
-                copyPackage(n)
-              )
+                copyPackage(n),
+              ),
             ])
 
             const blessedExternalPath = path.join(externalPath, BLESSED)
@@ -431,7 +431,7 @@ export default async () => {
               'node_modules/**',
               'usr/**',
               'vendor/**',
-              'LICENSE*'
+              'LICENSE*',
             ]
 
             // Remove directories.
@@ -440,14 +440,14 @@ export default async () => {
 
             const blessedContribExternalPath = path.join(
               externalPath,
-              BLESSED_CONTRIB
+              BLESSED_CONTRIB,
             )
             const blessedContribNmPath = path.join(nmPath, BLESSED_CONTRIB)
 
             // Copy LICENSE.md.
             await fs.cp(
               `${blessedContribNmPath}/${LICENSE_MD}`,
-              `${blessedContribExternalPath}/${LICENSE_MD}`
+              `${blessedContribExternalPath}/${LICENSE_MD}`,
             )
 
             // Rewire 'blessed' inside 'blessed-contrib'.
@@ -456,27 +456,27 @@ export default async () => {
                 await tinyGlob(['**/*.js'], {
                   absolute: true,
                   cwd: blessedContribExternalPath,
-                  ignore: ['node_modules/**']
+                  ignore: ['node_modules/**'],
                 })
               ).map(async p => {
                 const relPath = path.relative(
                   path.dirname(p),
-                  blessedExternalPath
+                  blessedExternalPath,
                 )
                 const content = await fs.readFile(p, 'utf8')
                 const modded = content.replace(
                   /(?<=require\(["'])blessed(?=(?:\/[^"']+)?["']\))/g,
-                  () => relPath
+                  () => relPath,
                 )
                 await fs.writeFile(p, modded, 'utf8')
-              })
+              }),
             )
 
             // Update package-lock.json AFTER package.json.
             await updatePackageLockFile()
-          }
-        }
-      ]
-    })
+          },
+        },
+      ],
+    }),
   ]
 }

@@ -20,7 +20,7 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    ...outputFlags
+    ...outputFlags,
   },
   help: (command, config) => `
     Usage
@@ -37,25 +37,25 @@ ${Array.from(supportedConfigKeys.entries())
 
     Examples
       $ ${command} FakeOrg --repoName=test-repo
-  `
+  `,
 }
 
 export const cmdConfigUnset = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { json, markdown } = cli.flags
@@ -69,7 +69,7 @@ async function run(
       test: key === 'test' || supportedConfigKeys.has(key as keyof LocalConfig),
       message: 'Config key should be the first arg',
       pass: 'ok',
-      fail: key ? 'invalid config key' : 'missing'
+      fail: key ? 'invalid config key' : 'missing',
     },
     {
       nook: true,
@@ -77,8 +77,8 @@ async function run(
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
       pass: 'ok',
-      fail: 'bad'
-    }
+      fail: 'bad',
+    },
   )
   if (!wasValidInput) {
     return
@@ -91,6 +91,6 @@ async function run(
 
   await handleConfigUnset({
     key: key as keyof LocalConfig,
-    outputKind
+    outputKind,
   })
 }

@@ -10,7 +10,7 @@ export async function fetchUpdateRepo({
   homepage,
   orgSlug,
   repoName,
-  visibility
+  visibility,
 }: {
   orgSlug: string
   repoName: string
@@ -32,8 +32,8 @@ export async function fetchUpdateRepo({
       description,
       homepage,
       default_branch,
-      visibility
+      visibility,
     }),
-    'to update a repository'
+    'to update a repository',
   )
 }

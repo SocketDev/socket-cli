@@ -11,7 +11,7 @@ export async function handleScanReport({
   outputKind,
   reportLevel,
   scanId,
-  short
+  short,
 }: {
   orgSlug: string
   scanId: string
@@ -32,6 +32,6 @@ export async function handleScanReport({
     orgSlug,
     outputKind,
     reportLevel,
-    short
+    short,
   })
 }

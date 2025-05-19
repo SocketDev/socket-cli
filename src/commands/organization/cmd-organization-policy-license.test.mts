@@ -40,7 +40,7 @@ describe('socket organization policy license', async () => {
           Examples
             $ socket organization policy license mycorp
             $ socket organization policy license mycorp --json"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -52,9 +52,9 @@ describe('socket organization policy license', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket organization policy license`'
+        '`socket organization policy license`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -79,7 +79,7 @@ describe('socket organization policy license', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if input bad').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -90,7 +90,7 @@ describe('socket organization policy license', async () => {
       'fakeorg',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should be ok with org name and id',
     async cmd => {
@@ -105,7 +105,7 @@ describe('socket organization policy license', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -115,7 +115,7 @@ describe('socket organization policy license', async () => {
       'license',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should report missing org name in v1',
     async cmd => {
@@ -139,7 +139,7 @@ describe('socket organization policy license', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -149,7 +149,7 @@ describe('socket organization policy license', async () => {
       'license',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}'
+      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}',
     ],
     'should accept default org in v1',
     async cmd => {
@@ -166,7 +166,7 @@ describe('socket organization policy license', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -178,7 +178,7 @@ describe('socket organization policy license', async () => {
       'forcedorg',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should accept --org flag in v1',
     async cmd => {
@@ -195,6 +195,6 @@ describe('socket organization policy license', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

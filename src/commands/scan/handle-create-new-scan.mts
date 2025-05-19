@@ -25,7 +25,7 @@ export async function handleCreateNewScan({
   repoName,
   report,
   targets,
-  tmp
+  tmp,
 }: {
   branchName: string
   commitHash: string
@@ -53,7 +53,7 @@ export async function handleCreateNewScan({
   const packagePaths = await getPackageFilesForScan(
     cwd,
     targets,
-    supportedFileNames.data
+    supportedFileNames.data,
   )
 
   const wasValidInput = checkCommandInput(outputKind, {
@@ -62,7 +62,7 @@ export async function handleCreateNewScan({
     pass: 'ok',
     fail: 'found no eligible files to scan',
     message:
-      'TARGET (file/dir) must contain matching / supported file types for a scan'
+      'TARGET (file/dir) must contain matching / supported file types for a scan',
   })
   if (!wasValidInput) {
     return
@@ -86,8 +86,8 @@ export async function handleCreateNewScan({
       committers,
       pullRequest,
       repoName,
-      branchName
-    }
+      branchName,
+    },
   )
 
   if (data.ok && report) {
@@ -100,7 +100,7 @@ export async function handleCreateNewScan({
         outputKind,
         reportLevel: 'error',
         scanId: data.data.id,
-        short: false
+        short: false,
       })
     } else {
       await outputCreateNewScan(
@@ -108,10 +108,10 @@ export async function handleCreateNewScan({
           ok: false,
           message: 'Missing Scan ID',
           cause: 'Server did not respond with a scan ID',
-          data: data.data
+          data: data.data,
         },
         outputKind,
-        interactive
+        interactive,
       )
     }
   } else {

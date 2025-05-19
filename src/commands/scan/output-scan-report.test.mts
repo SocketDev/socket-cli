@@ -142,10 +142,10 @@ function getHealthyReport(): ScanReport {
     healthy: true,
     options: {
       fold: 'none',
-      reportLevel: 'warn'
+      reportLevel: 'warn',
     },
     orgSlug: 'fakeorg',
-    scanId: 'scan-ai-dee'
+    scanId: 'scan-ai-dee',
   }
 }
 
@@ -170,8 +170,8 @@ function getUnhealthyReport(): ScanReport {
                           manifest: ['package-lock.json'],
                           policy: 'error' as const,
                           type: 'envVars',
-                          url: 'https://socket.dev/npm/package/tslib/1.14.1'
-                        }
+                          url: 'https://socket.dev/npm/package/tslib/1.14.1',
+                        },
                       ],
                       [
                         'envVars at 200:250',
@@ -179,24 +179,24 @@ function getUnhealthyReport(): ScanReport {
                           manifest: ['package-lock.json'],
                           policy: 'error' as const,
                           type: 'envVars',
-                          url: 'https://socket.dev/npm/package/tslib/1.14.1'
-                        }
-                      ]
-                    ])
-                  ]
-                ])
-              ]
-            ])
-          ]
-        ])
-      ]
+                          url: 'https://socket.dev/npm/package/tslib/1.14.1',
+                        },
+                      ],
+                    ]),
+                  ],
+                ]),
+              ],
+            ]),
+          ],
+        ]),
+      ],
     ]),
     healthy: false,
     options: {
       fold: 'none',
-      reportLevel: 'warn'
+      reportLevel: 'warn',
     },
     orgSlug: 'fakeorg',
-    scanId: 'scan-ai-dee'
+    scanId: 'scan-ai-dee',
   }
 }

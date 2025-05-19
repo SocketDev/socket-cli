@@ -31,7 +31,7 @@ describe('socket manifest auto', async () => {
           Tries to figure out what language your current repo uses. If it finds a
           supported case then it will try to generate the manifest file for that
           language with the default or detected settings."
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -43,9 +43,9 @@ describe('socket manifest auto', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket manifest auto`'
+        '`socket manifest auto`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -63,6 +63,6 @@ describe('socket manifest auto', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

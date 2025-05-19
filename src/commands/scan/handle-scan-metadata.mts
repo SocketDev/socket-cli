@@ -6,7 +6,7 @@ import type { OutputKind } from '../../types.mts'
 export async function handleOrgScanMetadata(
   orgSlug: string,
   scanId: string,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   const data = await fetchScanMetadata(orgSlug, scanId)
 

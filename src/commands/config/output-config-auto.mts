@@ -11,7 +11,7 @@ import type { LocalConfig } from '../../utils/config.mts'
 export async function outputConfigAuto(
   key: keyof LocalConfig,
   result: CResult<unknown>,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ) {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -30,7 +30,7 @@ export async function outputConfigAuto(
     logger.log(`# Auto discover config value`)
     logger.log('')
     logger.log(
-      `Attempted to automatically discover the value for config key: "${key}"`
+      `Attempted to automatically discover the value for config key: "${key}"`,
     )
     logger.log('')
     if (result.ok) {
@@ -51,7 +51,7 @@ export async function outputConfigAuto(
 
     if (isReadOnlyConfig()) {
       logger.log(
-        '(Unable to persist this value because the config is in read-only mode, meaning it was overridden through env or flag.)'
+        '(Unable to persist this value because the config is in read-only mode, meaning it was overridden through env or flag.)',
       )
     } else if (key === 'defaultOrg') {
       const proceed = await select<string>({
@@ -61,20 +61,20 @@ export async function outputConfigAuto(
           .map(slug => ({
             name: 'Yes [' + slug + ']',
             value: slug,
-            description: `Use "${slug}" as the default organization`
+            description: `Use "${slug}" as the default organization`,
           }))
           .concat({
             name: 'No',
             value: '',
-            description: 'Do not use any of these organizations'
-          })
+            description: 'Do not use any of these organizations',
+          }),
       })
       if (proceed) {
         logger.log(`Setting defaultOrg to "${proceed}"...`)
         const updateResult = updateConfigValue('defaultOrg', proceed)
         if (updateResult.ok) {
           logger.log(
-            `OK. Updated defaultOrg to "${proceed}".\nYou should no longer need to add the org to commands that normally require it.`
+            `OK. Updated defaultOrg to "${proceed}".\nYou should no longer need to add the org to commands that normally require it.`,
           )
         } else {
           logger.log(failMsgWithBadge(updateResult.message, updateResult.cause))
@@ -90,13 +90,13 @@ export async function outputConfigAuto(
           .map(slug => ({
             name: 'Yes [' + slug + ']',
             value: slug,
-            description: `Enforce the security policy of "${slug}" on this machine`
+            description: `Enforce the security policy of "${slug}" on this machine`,
           }))
           .concat({
             name: 'No',
             value: '',
-            description: 'Do not use any of these organizations'
-          })
+            description: 'Do not use any of these organizations',
+          }),
       })
       if (proceed) {
         logger.log(`Setting enforcedOrgs key to "${proceed}"...`)

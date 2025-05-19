@@ -11,7 +11,7 @@ import constants from '../constants.mts'
 import {
   filterGlobResultToSupportedFiles,
   globWithGitIgnore,
-  pathsToGlobPatterns
+  pathsToGlobPatterns,
 } from './glob.mts'
 
 import type { SocketYml } from '@socketsecurity/config'
@@ -27,7 +27,7 @@ export function findBinPathDetailsSync(binName: string): {
   const binPaths =
     which.sync(binName, {
       all: true,
-      nothrow: true
+      nothrow: true,
     }) ?? []
   let shadowIndex = -1
   let theBinPath: string | undefined
@@ -96,11 +96,11 @@ export async function getPackageFilesForScan(
   cwd: string,
   inputPaths: string[],
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
-  config?: SocketYml | undefined
+  config?: SocketYml | undefined,
 ): Promise<string[]> {
   debugLog(
     `getPackageFilesForScan: resolving ${inputPaths.length} paths:\n`,
-    inputPaths
+    inputPaths,
   )
 
   // Lazily access constants.spinner.
@@ -112,29 +112,29 @@ export async function getPackageFilesForScan(
 
   const entries = await globWithGitIgnore(patterns, {
     cwd,
-    socketConfig: config
+    socketConfig: config,
   })
 
   if (isDebug()) {
     spinner.stop()
     debugLog(
       `Resolved ${inputPaths.length} paths to ${entries.length} local paths:\n`,
-      entries
+      entries,
     )
     spinner.start('Searching for files now...')
   } else {
     spinner.start(
-      `Resolved ${inputPaths.length} paths to ${entries.length} local paths, searching for files now...`
+      `Resolved ${inputPaths.length} paths to ${entries.length} local paths, searching for files now...`,
     )
   }
 
   const packageFiles = await filterGlobResultToSupportedFiles(
     entries,
-    supportedFiles
+    supportedFiles,
   )
 
   spinner.successAndStop(
-    `Found ${packageFiles.length} local ${pluralize('file', packageFiles.length)}`
+    `Found ${packageFiles.length} local ${pluralize('file', packageFiles.length)}`,
   )
   debugLog('Absolute paths:\n', packageFiles)
 

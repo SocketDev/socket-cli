@@ -6,7 +6,7 @@ import type { OutputKind } from '../../types.mts'
 export async function handleDependencies({
   limit,
   offset,
-  outputKind
+  outputKind,
 }: {
   limit: number
   offset: number

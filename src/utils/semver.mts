@@ -17,7 +17,7 @@ export type RangeStyle =
 export function applyRange(
   refRange: string,
   version: string,
-  style: RangeStyle = 'preserve'
+  style: RangeStyle = 'preserve',
 ): string {
   switch (style) {
     case 'caret':

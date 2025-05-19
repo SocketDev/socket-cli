@@ -15,8 +15,8 @@ export function getAlertMapOptions(options: GetAlertsMapFromPurlsOptions = {}) {
       existing: true,
       unfixable: false,
       upgradable: false,
-      ...options?.include
-    }
+      ...options?.include,
+    },
   } as Remap<
     Omit<GetAlertsMapFromPurlsOptions, 'include' | 'overrides' | 'spinner'> & {
       include: Exclude<GetAlertsMapFromPurlsOptions['include'], undefined>
@@ -25,11 +25,11 @@ export function getAlertMapOptions(options: GetAlertsMapFromPurlsOptions = {}) {
 }
 
 export function normalizeFixOptions(
-  options_: FixOptions
+  options_: FixOptions,
 ): NormalizedFixOptions {
   const options = {
     __proto__: null,
-    ...options_
+    ...options_,
   } as FixOptions
   if (typeof options.autopilot !== 'boolean') {
     options.autopilot = false

@@ -20,14 +20,14 @@ export type AgentSpawnResult = ReturnType<typeof spawn>
 
 export function runAgentInstall(
   pkgEnvDetails: EnvDetails,
-  options?: AgentInstallOptions | undefined
+  options?: AgentInstallOptions | undefined,
 ): AgentSpawnResult {
   const { agent, agentExecPath } = pkgEnvDetails
   // All package managers support the "install" command.
   if (agent === NPM) {
     return safeNpmInstall({
       agentExecPath,
-      ...options
+      ...options,
     })
   }
   const {
@@ -51,9 +51,9 @@ export function runAgentInstall(
           : // Lazily access constants.nodeHardenFlags.
             constants.nodeHardenFlags),
         // Lazily access constants.nodeNoWarningsFlags.
-        ...constants.nodeNoWarningsFlags
+        ...constants.nodeNoWarningsFlags,
       ]),
-      ...spawnOptions.env
-    }
+      ...spawnOptions.env,
+    },
   })
 }

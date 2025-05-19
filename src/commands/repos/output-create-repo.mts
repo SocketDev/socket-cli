@@ -9,7 +9,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 export function outputCreateRepo(
   result: CResult<SocketSdkReturnType<'createOrgRepo'>['data']>,
   requestedName: string,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): void {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -24,6 +24,6 @@ export function outputCreateRepo(
   }
   const { slug } = result.data
   logger.success(
-    `OK. Repository created successfully, slug: \`${slug}\`${slug !== requestedName ? ' (Warning: slug is not the same as name that was requested!)' : ''}`
+    `OK. Repository created successfully, slug: \`${slug}\`${slug !== requestedName ? ' (Warning: slug is not the same as name that was requested!)' : ''}`,
   )
 }

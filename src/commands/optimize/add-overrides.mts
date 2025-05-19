@@ -48,14 +48,14 @@ const manifestNpmOverrides = getManifestData(NPM)
 export async function addOverrides(
   pkgEnvDetails: EnvDetails,
   pkgPath: string,
-  options?: AddOverridesOptions | undefined
+  options?: AddOverridesOptions | undefined,
 ): Promise<AddOverridesState> {
   const {
     agent,
     lockName,
     lockSrc,
     npmExecPath,
-    pkgPath: rootPath
+    pkgPath: rootPath,
   } = pkgEnvDetails
   const {
     logger,
@@ -67,8 +67,8 @@ export async function addOverrides(
       addedInWorkspaces: new Set(),
       updated: new Set(),
       updatedInWorkspaces: new Set(),
-      warnedPnpmWorkspaceRequiresNpm: false
-    }
+      warnedPnpmWorkspaceRequiresNpm: false,
+    },
   } = { __proto__: null, ...options } as AddOverridesOptions
   const workspacePkgJsonPaths = await globWorkspace(agent, pkgPath)
   const isWorkspace = workspacePkgJsonPaths.length > 0
@@ -88,8 +88,8 @@ export async function addOverrides(
     logger?.warn(
       cmdPrefixMessage(
         CMD_NAME,
-        `${agent} workspace support requires \`npm ls\`, falling back to \`${agent} list\``
-      )
+        `${agent} workspace support requires \`npm ls\`, falling back to \`${agent} list\``,
+      ),
     )
   }
 
@@ -99,7 +99,7 @@ export async function addOverrides(
   } else {
     overridesDataObjects.push(
       overridesDataByAgent.get(NPM)!(pkgEnvDetails),
-      overridesDataByAgent.get(YARN_CLASSIC)!(pkgEnvDetails)
+      overridesDataByAgent.get(YARN_CLASSIC)!(pkgEnvDetails),
     )
   }
 
@@ -113,8 +113,8 @@ export async function addOverrides(
       // Roughly check Node range as semver.coerce will strip leading
       // v's, carets (^), comparators (<,<=,>,>=,=), and tildes (~).
       semver.coerce(data.engines.node)!,
-      pkgEnvDetails.pkgRequirements.node
-    )
+      pkgEnvDetails.pkgRequirements.node,
+    ),
   )
 
   // Chunk package names to process them in parallel 3 at a time.
@@ -204,7 +204,7 @@ export async function addOverrides(
                   // will strip leading v's, carets (^), comparators (<,<=,>,>=,=),
                   // and tildes (~). If not coerced to a valid version then
                   // default to the manifest entry version.
-                  semver.coerce(npa(thisSpec).rawSpec)?.version ?? version
+                  semver.coerce(npa(thisSpec).rawSpec)?.version ?? version,
                 ) !== major
               ) {
                 const otherVersion = (await fetchPackageManifest(thisSpec))
@@ -237,14 +237,14 @@ export async function addOverrides(
           logger,
           pin,
           prod,
-          spinner
-        }
+          spinner,
+        },
       )
       for (const key of [
         'added',
         'addedInWorkspaces',
         'updated',
-        'updatedInWorkspaces'
+        'updatedInWorkspaces',
       ] satisfies
         // Here we're just telling TS that we're looping over key names
         // of the type and that they're all Set<string> props. This allows
@@ -264,7 +264,7 @@ export async function addOverrides(
 
   if (state.added.size > 0 || state.updated.size > 0) {
     pkgEnvDetails.editablePkgJson.update(
-      Object.fromEntries(depEntries) as PackageJson
+      Object.fromEntries(depEntries) as PackageJson,
     )
     for (const { overrides, type } of overridesDataObjects) {
       updateManifestByAgent.get(type)!(pkgEnvDetails, toSortedObject(overrides))

@@ -51,7 +51,7 @@ async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
       await spawn(npmExecPath, ['query', ':not(.dev)'], {
         cwd,
         // Lazily access constants.WIN32.
-        shell: constants.WIN32
+        shell: constants.WIN32,
       })
     ).stdout
   } catch {}
@@ -66,7 +66,7 @@ async function lsBun(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
       await spawn(pkgEnvDetails.agentExecPath, ['pm', 'ls', '--all'], {
         cwd,
         // Lazily access constants.WIN32.
-        shell: constants.WIN32
+        shell: constants.WIN32,
       })
     ).stdout
   } catch {}
@@ -80,7 +80,7 @@ async function lsNpm(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
 async function lsPnpm(
   pkgEnvDetails: EnvDetails,
   cwd: string,
-  options?: AgentListDepsOptions | undefined
+  options?: AgentListDepsOptions | undefined,
 ): Promise<string> {
   const npmExecPath = options?.npmExecPath
   if (npmExecPath && npmExecPath !== NPM) {
@@ -100,8 +100,8 @@ async function lsPnpm(
         {
           cwd,
           // Lazily access constants.WIN32.
-          shell: constants.WIN32
-        }
+          shell: constants.WIN32,
+        },
       )
     ).stdout
   } catch {}
@@ -119,8 +119,8 @@ async function lsVlt(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
         {
           cwd,
           // Lazily access constants.WIN32.
-          shell: constants.WIN32
-        }
+          shell: constants.WIN32,
+        },
       )
     ).stdout
   } catch {}
@@ -129,7 +129,7 @@ async function lsVlt(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
 
 async function lsYarnBerry(
   pkgEnvDetails: EnvDetails,
-  cwd: string
+  cwd: string,
 ): Promise<string> {
   try {
     return (
@@ -142,8 +142,8 @@ async function lsYarnBerry(
           {
             cwd,
             // Lazily access constants.WIN32.
-            shell: constants.WIN32
-          }
+            shell: constants.WIN32,
+          },
         )
       ).stdout.trim()
     )
@@ -153,7 +153,7 @@ async function lsYarnBerry(
 
 async function lsYarnClassic(
   pkgEnvDetails: EnvDetails,
-  cwd: string
+  cwd: string,
 ): Promise<string> {
   try {
     // However, Yarn Classic does support it.
@@ -164,7 +164,7 @@ async function lsYarnClassic(
       await spawn(pkgEnvDetails.agentExecPath, ['list', '--prod'], {
         cwd,
         // Lazily access constants.WIN32.
-        shell: constants.WIN32
+        shell: constants.WIN32,
       })
     ).stdout.trim()
   } catch {}
@@ -176,7 +176,7 @@ export type AgentListDepsOptions = { npmExecPath?: string }
 export type AgentListDepsFn = (
   pkgEnvDetails: EnvDetails,
   cwd: string,
-  options?: AgentListDepsOptions | undefined
+  options?: AgentListDepsOptions | undefined,
 ) => Promise<string>
 
 export const lsByAgent = new Map<Agent, AgentListDepsFn>([
@@ -185,5 +185,5 @@ export const lsByAgent = new Map<Agent, AgentListDepsFn>([
   [PNPM, lsPnpm],
   [VLT, lsVlt],
   [YARN_BERRY, lsYarnBerry],
-  [YARN_CLASSIC, lsYarnClassic]
+  [YARN_CLASSIC, lsYarnClassic],
 ])

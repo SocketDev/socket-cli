@@ -16,7 +16,7 @@ import type { components } from '@socketsecurity/sdk/types/api'
 export async function fetchReportData(
   orgSlug: string,
   scanId: string,
-  includeLicensePolicy: boolean
+  includeLicensePolicy: boolean,
 ): Promise<
   CResult<{
     scan: Array<components['schemas']['SocketArtifact']>
@@ -50,11 +50,11 @@ export async function fetchReportData(
     if (finishedFetching) {
       spinner.stop()
       logger.error(
-        `Scan result: ${scanStatus}. Security policy: ${policyStatus}.`
+        `Scan result: ${scanStatus}. Security policy: ${policyStatus}.`,
       )
     } else {
       spinner.start(
-        `Scan result: ${scanStatus}. Security policy: ${policyStatus}.`
+        `Scan result: ${scanStatus}. Security policy: ${policyStatus}.`,
       )
     }
   }
@@ -63,7 +63,7 @@ export async function fetchReportData(
     CResult<Array<components['schemas']['SocketArtifact']>>
   > {
     const result = await queryApiSafeText(
-      `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`
+      `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
     )
 
     updateScan(`response received`)
@@ -99,7 +99,7 @@ export async function fetchReportData(
       ok: false,
       message: 'Invalid API response',
       cause:
-        'The API responded with at least one line that was not valid JSON. Please report if this persists.'
+        'The API responded with at least one line that was not valid JSON. Please report if this persists.',
     }
   }
 
@@ -108,7 +108,7 @@ export async function fetchReportData(
   > {
     const result = await handleApiCallNoSpinner(
       sockSdk.getOrgSecurityPolicy(orgSlug),
-      'GetOrgSecurityPolicy'
+      'GetOrgSecurityPolicy',
     )
 
     updatePolicy('received policy')
@@ -120,14 +120,14 @@ export async function fetchReportData(
 
   const [scan, securityPolicy]: [
     CResult<Array<components['schemas']['SocketArtifact']>>,
-    CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>
+    CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>,
   ] = await Promise.all([
     fetchScanResult().catch(e => {
       updateScan(`failure; unknown blocking problem occurred`)
       return {
         ok: false as const,
         message: 'Unexpected API problem',
-        cause: `We encountered an unexpected problem while requesting the Scan from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`
+        cause: `We encountered an unexpected problem while requesting the Scan from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`,
       }
     }),
     fetchSecurityPolicy().catch(e => {
@@ -135,9 +135,9 @@ export async function fetchReportData(
       return {
         ok: false as const,
         message: 'Unexpected API problem',
-        cause: `We encountered an unexpected problem while requesting the policy from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`
+        cause: `We encountered an unexpected problem while requesting the policy from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`,
       }
-    })
+    }),
   ]).finally(() => {
     finishedFetching = true
     updateProgress()
@@ -154,7 +154,7 @@ export async function fetchReportData(
     return {
       ok: false,
       message: 'Failed to fetch',
-      cause: 'Was unable to fetch scan result, bailing'
+      cause: 'Was unable to fetch scan result, bailing',
     }
   }
 
@@ -162,7 +162,7 @@ export async function fetchReportData(
     ok: true,
     data: {
       scan: scan.data satisfies Array<components['schemas']['SocketArtifact']>,
-      securityPolicy: securityPolicy.data
-    }
+      securityPolicy: securityPolicy.data,
+    },
   }
 }

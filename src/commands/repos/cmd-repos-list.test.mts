@@ -40,7 +40,7 @@ describe('socket repos list', async () => {
 
           Examples
             $ socket repos list <org slug>"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -52,9 +52,9 @@ describe('socket repos list', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket repos list`'
+        '`socket repos list`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -79,7 +79,7 @@ describe('socket repos list', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -97,7 +97,7 @@ describe('socket repos list', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -106,7 +106,7 @@ describe('socket repos list', async () => {
       'list',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should report missing org name in v1',
     async cmd => {
@@ -130,7 +130,7 @@ describe('socket repos list', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -139,7 +139,7 @@ describe('socket repos list', async () => {
       'list',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}'
+      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}',
     ],
     'should accept default org in v1',
     async cmd => {
@@ -156,7 +156,7 @@ describe('socket repos list', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -167,7 +167,7 @@ describe('socket repos list', async () => {
       'forcedorg',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should accept --org flag in v1',
     async cmd => {
@@ -184,6 +184,6 @@ describe('socket repos list', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

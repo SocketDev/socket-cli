@@ -124,7 +124,7 @@ export class SafeEdge extends Edge {
         this.#safeTo.edgesOut.size &&
         SafeOverrideSet.doOverrideSetsConflict(
           this.overrides,
-          this.#safeTo.overrides
+          this.#safeTo.overrides,
         )
       ) {
         // Any inconsistency between the edge's override set and the target's
@@ -216,7 +216,7 @@ export class SafeEdge extends Edge {
         overridden: false,
         error: undefined,
         from: undefined,
-        rawSpec: undefined
+        rawSpec: undefined,
       }
       if (this.rawSpec !== this.spec) {
         explanation.rawSpec = this.rawSpec

@@ -44,7 +44,7 @@ describe('socket scan list', async () => {
 
           Examples
             $ socket scan list FakeOrg"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -56,9 +56,9 @@ describe('socket scan list', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket scan list`'
+        '`socket scan list`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -83,7 +83,7 @@ describe('socket scan list', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -93,7 +93,7 @@ describe('socket scan list', async () => {
       'fakeorg',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -108,6 +108,6 @@ describe('socket scan list', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

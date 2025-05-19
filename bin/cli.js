@@ -9,7 +9,7 @@ const process = require('node:process')
 
 const constants = require(path.join(rootPath, 'dist/constants.js'))
 const { spawn } = require(
-  path.join(rootPath, 'external/@socketsecurity/registry/lib/spawn.js')
+  path.join(rootPath, 'external/@socketsecurity/registry/lib/spawn.js'),
 )
 
 const { NODE_COMPILE_CACHE } = constants
@@ -29,20 +29,20 @@ spawn(
       ? [
           '--require',
           // Lazily access constants.distInstrumentWithSentryPath.
-          constants.distInstrumentWithSentryPath
+          constants.distInstrumentWithSentryPath,
         ]
       : []),
     // Lazily access constants.distCliPath.
     constants.distCliPath,
-    ...process.argv.slice(2)
+    ...process.argv.slice(2),
   ],
   {
     env: {
       ...process.env,
-      ...(NODE_COMPILE_CACHE ? { NODE_COMPILE_CACHE } : undefined)
+      ...(NODE_COMPILE_CACHE ? { NODE_COMPILE_CACHE } : undefined),
     },
-    stdio: 'inherit'
-  }
+    stdio: 'inherit',
+  },
 )
   // See https://nodejs.org/api/all.html#all_child_process_event-exit.
   .process.on('exit', (code, signalName) => {

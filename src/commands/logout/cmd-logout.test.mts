@@ -24,7 +24,7 @@ describe('socket logout', async () => {
             $ socket logout
 
           Logs out of the Socket API and clears all Socket credentials from disk"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -36,9 +36,9 @@ describe('socket logout', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket logout`'
+        '`socket logout`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -56,6 +56,6 @@ describe('socket logout', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

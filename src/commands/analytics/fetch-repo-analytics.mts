@@ -6,7 +6,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchRepoAnalyticsData(
   repo: string,
-  time: number
+  time: number,
 ): Promise<CResult<SocketSdkReturnType<'getRepoAnalytics'>['data']>> {
   const sockSdkResult = await setupSdk()
   if (!sockSdkResult.ok) {
@@ -16,6 +16,6 @@ export async function fetchRepoAnalyticsData(
 
   return await handleApiCall(
     sockSdk.getRepoAnalytics(repo, time.toString()),
-    'analytics data'
+    'analytics data',
   )
 }

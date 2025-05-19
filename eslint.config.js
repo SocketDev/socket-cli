@@ -4,12 +4,12 @@ const path = require('node:path')
 
 const {
   convertIgnorePatternToMinimatch,
-  includeIgnoreFile
+  includeIgnoreFile,
 } = require('@eslint/compat')
 const js = require('@eslint/js')
 const tsParser = require('@typescript-eslint/parser')
 const {
-  createTypeScriptImportResolver
+  createTypeScriptImportResolver,
 } = require('eslint-import-resolver-typescript')
 const importXPlugin = require('eslint-plugin-import-x')
 const nodePlugin = require('eslint-plugin-n')
@@ -27,14 +27,14 @@ const rootPath = __dirname
 const rootTsConfigPath = path.join(rootPath, TSCONFIG_JSON)
 
 const nodeGlobalsConfig = Object.fromEntries(
-  Object.entries(globals.node).map(([k]) => [k, 'readonly'])
+  Object.entries(globals.node).map(([k]) => [k, 'readonly']),
 )
 
 const biomeConfigPath = path.join(rootPath, BIOME_JSON)
 const biomeConfig = require(biomeConfigPath)
 const biomeIgnores = {
   name: 'Imported biome.json ignore patterns',
-  ignores: biomeConfig.files.ignore.map(convertIgnorePatternToMinimatch)
+  ignores: biomeConfig.files.ignore.map(convertIgnorePatternToMinimatch),
 }
 
 const gitignorePath = path.join(rootPath, GITIGNORE)
@@ -54,7 +54,7 @@ if (process.env.LINT_EXTERNAL) {
 
 const sharedPlugins = {
   'sort-destructure-keys': sortDestructureKeysPlugin,
-  unicorn: unicornPlugin
+  unicorn: unicornPlugin,
 }
 
 const sharedRules = {
@@ -71,14 +71,14 @@ const sharedRules = {
     {
       argsIgnorePattern: '^_|^this$',
       ignoreRestSiblings: true,
-      varsIgnorePattern: '^_'
-    }
+      varsIgnorePattern: '^_',
+    },
   ],
   'no-var': 'error',
   'no-warning-comments': ['warn', { terms: ['fixme'] }],
   'prefer-const': 'error',
   'sort-destructure-keys/sort-destructure-keys': 'error',
-  'sort-imports': ['error', { ignoreDeclarationSort: true }]
+  'sort-imports': ['error', { ignoreDeclarationSort: true }],
 }
 
 const sharedRulesForImportX = {
@@ -92,8 +92,8 @@ const sharedRulesForImportX = {
       json: 'always',
       mjs: 'ignorePackages',
       mts: 'ignorePackages',
-      ts: 'ignorePackages'
-    }
+      ts: 'ignorePackages',
+    },
   ],
   'import-x/order': [
     'warn',
@@ -103,21 +103,21 @@ const sharedRulesForImportX = {
         'external',
         'internal',
         ['parent', 'sibling', 'index'],
-        'type'
+        'type',
       ],
       pathGroups: [
         {
           pattern: '@socket{registry,security}/**',
-          group: 'internal'
-        }
+          group: 'internal',
+        },
       ],
       pathGroupsExcludedImportTypes: ['type'],
       'newlines-between': 'always',
       alphabetize: {
-        order: 'asc'
-      }
-    }
-  ]
+        order: 'asc',
+      },
+    },
+  ],
 }
 
 const sharedRulesForNode = {
@@ -137,13 +137,13 @@ const sharedRulesForNode = {
         'module.enableCompileCache',
         'readline/promises',
         'test',
-        'test.describe'
+        'test.describe',
       ],
       // Lazily access constants.maintainedNodeVersions.
-      version: constants.maintainedNodeVersions.current
-    }
+      version: constants.maintainedNodeVersions.current,
+    },
   ],
-  'n/prefer-node-protocol': 'error'
+  'n/prefer-node-protocol': 'error',
 }
 
 function getImportXFlatConfigs(isEsm) {
@@ -153,12 +153,12 @@ function getImportXFlatConfigs(isEsm) {
       languageOptions: {
         ...origImportXFlatConfigs.recommended.languageOptions,
         ecmaVersion: LATEST,
-        sourceType: isEsm ? 'module' : 'script'
+        sourceType: isEsm ? 'module' : 'script',
       },
       rules: {
         ...sharedRulesForImportX,
-        'import-x/no-named-as-default-member': 'off'
-      }
+        'import-x/no-named-as-default-member': 'off',
+      },
     },
     typescript: {
       ...origImportXFlatConfigs.typescript,
@@ -167,9 +167,9 @@ function getImportXFlatConfigs(isEsm) {
         ...origImportXFlatConfigs.typescript.settings,
         'import-x/resolver-next': [
           createTypeScriptImportResolver({
-            project: rootTsConfigPath
-          })
-        ]
+            project: rootTsConfigPath,
+          }),
+        ],
       },
       rules: {
         ...sharedRulesForImportX,
@@ -177,9 +177,9 @@ function getImportXFlatConfigs(isEsm) {
         // the referenced module.
         'import-x/named': 'off',
         'import-x/no-named-as-default-member': 'off',
-        'import-x/no-unresolved': 'off'
-      }
-    }
+        'import-x/no-unresolved': 'off',
+      },
+    },
   }
 }
 
@@ -202,7 +202,7 @@ module.exports = [
         ...nodeGlobalsConfig,
         BufferConstructor: 'readonly',
         BufferEncoding: 'readonly',
-        NodeJS: 'readonly'
+        NodeJS: 'readonly',
       },
       parser: tsParser,
       parserOptions: {
@@ -217,26 +217,26 @@ module.exports = [
             // Allow paths like src/commands/optimize/*.test.mts.
             'src/*/*/*.test.mts',
             'test/*.mts',
-            'vitest.config.mts'
+            'vitest.config.mts',
           ],
           defaultProject: 'tsconfig.json',
           tsconfigRootDir: rootPath,
           // Need this to glob the test files in /src. Otherwise it won't work.
-          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 1_000_000
-        }
-      }
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 1_000_000,
+        },
+      },
     },
     linterOptions: {
       ...js.configs.recommended.linterOptions,
       ...importFlatConfigsForModule.typescript.linterOptions,
-      reportUnusedDisableDirectives: 'off'
+      reportUnusedDisableDirectives: 'off',
     },
     plugins: {
       ...js.configs.recommended.plugins,
       ...importFlatConfigsForModule.typescript.plugins,
       ...nodePlugin.configs['flat/recommended-module'].plugins,
       ...sharedPlugins,
-      '@typescript-eslint': tsEslint.plugin
+      '@typescript-eslint': tsEslint.plugin,
     },
     rules: {
       ...js.configs.recommended.rules,
@@ -247,12 +247,12 @@ module.exports = [
       '@typescript-eslint/array-type': ['error', { default: 'array-simple' }],
       '@typescript-eslint/consistent-type-assertions': [
         'error',
-        { assertionStyle: 'as' }
+        { assertionStyle: 'as' },
       ],
       '@typescript-eslint/no-misused-new': 'error',
       '@typescript-eslint/no-this-alias': [
         'error',
-        { allowDestructuring: true }
+        { allowDestructuring: true },
       ],
       // Returning unawaited promises in a try/catch/finally is dangerous
       // (the `catch` won't catch if the promise is rejected, and the `finally`
@@ -268,8 +268,8 @@ module.exports = [
       'n/no-extraneous-import': 'off',
       'n/no-missing-import': 'off',
       'no-redeclare': 'off',
-      'no-unused-vars': 'off'
-    }
+      'no-unused-vars': 'off',
+    },
   },
   {
     files: ['**/*.{cjs,js}'],
@@ -285,22 +285,22 @@ module.exports = [
         ...importFlatConfigsForModule.recommended.languageOptions?.globals,
         ...nodePlugin.configs['flat/recommended-script'].languageOptions
           ?.globals,
-        ...nodeGlobalsConfig
-      }
+        ...nodeGlobalsConfig,
+      },
     },
     plugins: {
       ...js.configs.recommended.plugins,
       ...importFlatConfigsForScript.recommended.plugins,
       ...nodePlugin.configs['flat/recommended-script'].plugins,
-      ...sharedPlugins
+      ...sharedPlugins,
     },
     rules: {
       ...js.configs.recommended.rules,
       ...importFlatConfigsForScript.recommended.rules,
       ...nodePlugin.configs['flat/recommended-script'].rules,
       ...sharedRulesForNode,
-      ...sharedRules
-    }
+      ...sharedRules,
+    },
   },
   {
     files: ['**/*.mjs'],
@@ -316,21 +316,21 @@ module.exports = [
         ...importFlatConfigsForModule.recommended.languageOptions?.globals,
         ...nodePlugin.configs['flat/recommended-module'].languageOptions
           ?.globals,
-        ...nodeGlobalsConfig
-      }
+        ...nodeGlobalsConfig,
+      },
     },
     plugins: {
       ...js.configs.recommended.plugins,
       ...importFlatConfigsForModule.recommended.plugins,
       ...nodePlugin.configs['flat/recommended-module'].plugins,
-      ...sharedPlugins
+      ...sharedPlugins,
     },
     rules: {
       ...js.configs.recommended.rules,
       ...importFlatConfigsForModule.recommended.rules,
       ...nodePlugin.configs['flat/recommended-module'].rules,
       ...sharedRulesForNode,
-      ...sharedRules
-    }
-  }
+      ...sharedRules,
+    },
+  },
 ]

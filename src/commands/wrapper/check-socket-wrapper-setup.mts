@@ -7,12 +7,12 @@ export function checkSocketWrapperSetup(file: string): boolean {
   const linesWithSocketAlias = fileContent
     .split('\n')
     .filter(
-      l => l === 'alias npm="socket npm"' || l === 'alias npx="socket npx"'
+      l => l === 'alias npm="socket npm"' || l === 'alias npx="socket npx"',
     )
 
   if (linesWithSocketAlias.length) {
     logger.log(
-      `The Socket npm/npx wrapper is set up in your bash profile (${file})`
+      `The Socket npm/npx wrapper is set up in your bash profile (${file})`,
     )
     return true
   }

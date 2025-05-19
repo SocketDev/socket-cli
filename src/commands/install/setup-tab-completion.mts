@@ -67,7 +67,7 @@ export async function setupTabCompletion(targetName: string): Promise<
           ? 'Added tab completion loader to ~/.bashrc'
           : foundBashrc
             ? 'Tab completion already found in ~/.bashrc'
-            : 'No ~/.bashrc found so tab completion was not completely installed'
+            : 'No ~/.bashrc found so tab completion was not completely installed',
       ],
       bashrcPath,
       bashrcUpdated,
@@ -75,8 +75,8 @@ export async function setupTabCompletion(targetName: string): Promise<
       foundBashrc,
       sourcingCommand,
       targetName,
-      targetPath
-    }
+      targetPath,
+    },
   }
 }
 
@@ -88,7 +88,7 @@ function getTabCompletionScriptRaw(): CResult<string> {
     return {
       ok: false,
       message: 'Source not found',
-      cause: `Unable to find the source tab completion bash script that Socket should ship. Expected to find it in \`${sourcePath}\` but it was not there.`
+      cause: `Unable to find the source tab completion bash script that Socket should ship. Expected to find it in \`${sourcePath}\` but it was not there.`,
     }
   }
 
@@ -96,7 +96,7 @@ function getTabCompletionScriptRaw(): CResult<string> {
 }
 
 export function updateInstalledTabCompletionScript(
-  targetPath: string
+  targetPath: string,
 ): CResult<undefined> {
   const content = getTabCompletionScriptRaw()
   if (!content.ok) {
@@ -111,7 +111,7 @@ export function updateInstalledTabCompletionScript(
   fs.writeFileSync(
     targetPath,
     content.data.replaceAll('SOCKET_VERSION_TOKEN', CLI_VERSION),
-    'utf8'
+    'utf8',
   )
 
   return { ok: true, data: undefined }

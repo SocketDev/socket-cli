@@ -69,7 +69,7 @@ describe('socket threat-feed', async () => {
           Examples
             $ socket threat-feed FakeOrg
             $ socket threat-feed FakeOrg --perPage=5 --page=2 --direction=asc --filter=joke"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -81,9 +81,9 @@ describe('socket threat-feed', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket threat-feed`'
+        '`socket threat-feed`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -108,7 +108,7 @@ describe('socket threat-feed', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -126,7 +126,7 @@ describe('socket threat-feed', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -134,7 +134,7 @@ describe('socket threat-feed', async () => {
       'threat-feed',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should report missing org name in v1',
     async cmd => {
@@ -158,7 +158,7 @@ describe('socket threat-feed', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -166,7 +166,7 @@ describe('socket threat-feed', async () => {
       'threat-feed',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}'
+      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}',
     ],
     'should accept default org in v1',
     async cmd => {
@@ -183,7 +183,7 @@ describe('socket threat-feed', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -193,7 +193,7 @@ describe('socket threat-feed', async () => {
       'forcedorg',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should accept --org flag in v1',
     async cmd => {
@@ -210,6 +210,6 @@ describe('socket threat-feed', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

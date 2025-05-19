@@ -7,14 +7,14 @@ import {
   getNpmBinPath,
   getNpxBinPath,
   isNpmBinPathShadowed,
-  isNpxBinPathShadowed
+  isNpxBinPathShadowed,
 } from '../../utils/npm-paths.mts'
 
 const { CLI, NPX } = constants
 
 export async function installLinks(
   realBinPath: string,
-  binName: 'npm' | 'npx'
+  binName: 'npm' | 'npx',
 ): Promise<string> {
   const isNpx = binName === NPX
   // Find package manager being shadowed by this process.
@@ -32,7 +32,7 @@ export async function installLinks(
       await cmdShim(
         // Lazily access constants.distPath.
         path.join(constants.distPath, `${binName}-${CLI}.js`),
-        path.join(realBinPath, binName)
+        path.join(realBinPath, binName),
       )
     }
     const { env } = process

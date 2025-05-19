@@ -62,11 +62,11 @@ const {
   ALERT_TYPE_CRITICAL_CVE,
   ALERT_TYPE_CVE,
   ALERT_TYPE_MEDIUM_CVE,
-  ALERT_TYPE_MILD_CVE
+  ALERT_TYPE_MILD_CVE,
 } = constants
 
 export function isArtifactAlertCve(
-  alert: CompactSocketArtifactAlert
+  alert: CompactSocketArtifactAlert,
 ): alert is ArtifactAlertCve {
   const { type } = alert
   return (

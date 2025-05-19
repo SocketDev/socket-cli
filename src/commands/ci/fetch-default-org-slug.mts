@@ -23,7 +23,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
 
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
-    'list of organizations'
+    'list of organizations',
   )
 
   if (!result.ok) {
@@ -37,7 +37,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return {
       ok: false,
       message: 'Failed to establish identity',
-      data: `API did not return any organization associated with the current API token. Unable to continue.`
+      data: `API did not return any organization associated with the current API token. Unable to continue.`,
     }
   }
 
@@ -47,7 +47,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return {
       ok: false,
       message: 'Failed to establish identity',
-      data: `Was unable to determine the default organization for the current API token. Unable to continue.`
+      data: `Was unable to determine the default organization for the current API token. Unable to continue.`,
     }
   }
 
@@ -55,6 +55,6 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   return {
     ok: true,
     message: 'Retrieved default org from server',
-    data: slug
+    data: slug,
   }
 }

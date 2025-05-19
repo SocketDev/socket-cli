@@ -13,7 +13,7 @@ import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type {
   CliCommandConfig,
-  CliSubcommand
+  CliSubcommand,
 } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
@@ -29,34 +29,34 @@ const config: CliCommandConfig = {
     fold: {
       type: 'string',
       default: 'none',
-      description: 'Fold reported alerts to some degree'
+      description: 'Fold reported alerts to some degree',
     },
     interactive: {
       type: 'boolean',
       default: true,
       description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
     },
     org: {
       type: 'string',
       description:
-        'Force override the organization slug, overrides the default org from config'
+        'Force override the organization slug, overrides the default org from config',
     },
     reportLevel: {
       type: 'string',
       default: 'warn',
-      description: 'Which policy level alerts should be reported'
+      description: 'Which policy level alerts should be reported',
     },
     short: {
       type: 'boolean',
       default: false,
-      description: 'Report only the healthy status'
+      description: 'Report only the healthy status',
     },
     license: {
       type: 'boolean',
       default: false,
-      description: 'Also report the license policy status. Default: false'
-    }
+      description: 'Also report the license policy status. Default: false',
+    },
   },
   help: (command, config) => `
     Usage
@@ -81,25 +81,25 @@ const config: CliCommandConfig = {
     Examples
       $ ${command}${isTestingV1() ? '' : ' FakeOrg'} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
       $ ${command}${isTestingV1() ? '' : ' FakeOrg'} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short
-  `
+  `,
 }
 
 export const cmdScanReport: CliSubcommand = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const {
@@ -107,7 +107,7 @@ async function run(
     json,
     license,
     markdown,
-    reportLevel = 'warn'
+    reportLevel = 'warn',
   } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
@@ -117,7 +117,7 @@ async function run(
     String(orgFlag || ''),
     cli.input[0] || '',
     !!interactive,
-    !!dryRun
+    !!dryRun,
   )
 
   const scanId =
@@ -138,20 +138,20 @@ async function run(
       fail:
         orgSlug === '.'
           ? 'dot is an invalid org, most likely you forgot the org name here?'
-          : 'missing'
+          : 'missing',
     },
     {
       test: !!scanId,
       message: 'Scan ID to report on',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       pass: 'ok',
-      fail: 'omit one'
+      fail: 'omit one',
     },
     {
       nook: true,
@@ -159,8 +159,8 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token'
-    }
+      fail: 'missing API token',
+    },
   )
   if (!wasValidInput) {
     return
@@ -184,6 +184,6 @@ async function run(
       | 'error'
       | 'defer'
       | 'ignore'
-      | 'monitor'
+      | 'monitor',
   })
 }

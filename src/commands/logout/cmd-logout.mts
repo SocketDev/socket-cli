@@ -14,32 +14,32 @@ const config: CliCommandConfig = {
   description: 'Socket API logout',
   hidden: false,
   flags: {
-    ...commonFlags
+    ...commonFlags,
   },
   help: (command, _config) => `
     Usage
       $ ${command}
 
     Logs out of the Socket API and clears all Socket credentials from disk
-  `
+  `,
 }
 
 export const cmdLogout = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   if (cli.flags['dryRun']) {

@@ -6,7 +6,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchScanMetadata(
   orgSlug: string,
-  scanId: string
+  scanId: string,
 ): Promise<CResult<SocketSdkReturnType<'getOrgFullScanMetadata'>['data']>> {
   const sockSdkResult = await setupSdk()
   if (!sockSdkResult.ok) {
@@ -16,6 +16,6 @@ export async function fetchScanMetadata(
 
   return await handleApiCall(
     sockSdk.getOrgFullScanMetadata(orgSlug, scanId),
-    'meta data for a full scan'
+    'meta data for a full scan',
   )
 }

@@ -13,7 +13,7 @@ import type {
   SocketSdkErrorType,
   SocketSdkOperations,
   SocketSdkResultType,
-  SocketSdkReturnType
+  SocketSdkReturnType,
 } from '@socketsecurity/sdk'
 
 // TODO: this function is removed after v1.0.0
@@ -21,7 +21,7 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   _name: T,
   error: string,
   cause: string,
-  status: number
+  status: number,
 ): never {
   const message = `${error || 'No error message returned'}${cause ? ` (reason: ${cause})` : ''}`
   if (status === 401 || status === 403) {
@@ -39,7 +39,7 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
 
 export async function handleApiCall<T extends SocketSdkOperations>(
   value: Promise<SocketSdkResultType<T>>,
-  fetchingDesc: string
+  fetchingDesc: string,
 ): Promise<CResult<SocketSdkReturnType<T>['data']>> {
   // Lazily access constants.spinner.
   const { spinner } = constants
@@ -52,7 +52,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
 
     // TODO: info, not success (looks weird when response is non-200)
     spinner.successAndStop(
-      `Received API response (after requesting ${fetchingDesc}).`
+      `Received API response (after requesting ${fetchingDesc}).`,
     )
   } catch (e) {
     spinner.failAndStop(`An error was thrown while requesting ${fetchingDesc}`)
@@ -65,7 +65,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`
+      cause: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`,
     }
   } finally {
     spinner.stop()
@@ -82,21 +82,21 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       message: 'Socket API returned an error',
       cause: `${message}${err.cause ? ` ( Reason: ${err.cause} )` : ''}`,
       data: {
-        code: result.status
-      }
+        code: result.status,
+      },
     }
   } else {
     const ok = result as SocketSdkReturnType<T>
     return {
       ok: true,
-      data: ok.data
+      data: ok.data,
     }
   }
 }
 
 export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   value: Promise<SocketSdkResultType<T>>,
-  description: string
+  description: string,
 ): Promise<CResult<SocketSdkReturnType<T>['data']>> {
   let result: SocketSdkResultType<T>
   try {
@@ -110,7 +110,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`
+      cause: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`,
     }
   }
 
@@ -125,14 +125,14 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
       message: 'Socket API returned an error',
       cause: `${message}${err.cause ? ` ( Reason: ${err.cause} )` : ''}`,
       data: {
-        code: result.status
-      }
+        code: result.status,
+      },
     }
   } else {
     const ok = result as SocketSdkReturnType<T>
     return {
       ok: true,
-      data: ok.data
+      data: ok.data,
     }
   }
 }
@@ -172,20 +172,20 @@ export async function queryApi(path: string, apiToken: string) {
   const baseUrl = getDefaultApiBaseUrl() || ''
   if (!baseUrl) {
     logger.warn(
-      'API endpoint is not set and default was empty. Request is likely to fail.'
+      'API endpoint is not set and default was empty. Request is likely to fail.',
     )
   }
   return await fetch(`${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`, {
     method: 'GET',
     headers: {
-      Authorization: `Basic ${btoa(`${apiToken}:`)}`
-    }
+      Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+    },
   })
 }
 
 export async function queryApiSafeText(
   path: string,
-  fetchSpinnerDesc?: string
+  fetchSpinnerDesc?: string,
 ): Promise<CResult<string>> {
   const apiToken = getDefaultToken()
   if (!apiToken) {
@@ -193,7 +193,7 @@ export async function queryApiSafeText(
       ok: false,
       message: 'Authentication Error',
       cause:
-        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.'
+        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.',
     }
   }
 
@@ -212,7 +212,7 @@ export async function queryApiSafeText(
       const { spinner } = constants
 
       spinner.successAndStop(
-        `Received API response (after requesting ${fetchSpinnerDesc}).`
+        `Received API response (after requesting ${fetchSpinnerDesc}).`,
       )
     }
   } catch (e) {
@@ -221,7 +221,7 @@ export async function queryApiSafeText(
       const { spinner } = constants
 
       spinner.failAndStop(
-        `An error was thrown while requesting ${fetchSpinnerDesc}`
+        `An error was thrown while requesting ${fetchSpinnerDesc}`,
       )
     }
     debugLog('Error thrown trying to await queryApi():')
@@ -232,7 +232,7 @@ export async function queryApiSafeText(
     return {
       ok: false,
       message: 'API Request failed to complete',
-      ...(msg ? { cause: msg } : {})
+      ...(msg ? { cause: msg } : {}),
     }
   }
 
@@ -241,7 +241,7 @@ export async function queryApiSafeText(
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${result.statusText}${cause ? ` (cause: ${cause})` : ''}`
+      cause: `${result.statusText}${cause ? ` (cause: ${cause})` : ''}`,
     }
   }
 
@@ -250,7 +250,7 @@ export async function queryApiSafeText(
 
     return {
       ok: true,
-      data
+      data,
     }
   } catch (e) {
     debugLog('Error thrown trying to await result.text():')
@@ -259,14 +259,14 @@ export async function queryApiSafeText(
     return {
       ok: false,
       message: 'API Request failed to complete',
-      cause: 'There was an unexpected error trying to read the response text'
+      cause: 'There was an unexpected error trying to read the response text',
     }
   }
 }
 
 export async function queryApiSafeJson<T>(
   path: string,
-  fetchSpinnerDesc = ''
+  fetchSpinnerDesc = '',
 ): Promise<CResult<T>> {
   const result = await queryApiSafeText(path, fetchSpinnerDesc)
 
@@ -277,13 +277,13 @@ export async function queryApiSafeJson<T>(
   try {
     return {
       ok: true,
-      data: JSON.parse(result.data) as T
+      data: JSON.parse(result.data) as T,
     }
   } catch (e) {
     return {
       ok: false,
       message: 'Server returned invalid JSON',
-      cause: `Please report this. JSON.parse threw an error over the following response: \`${(result.data?.slice?.(0, 100) || '<empty>').trim() + (result.data?.length > 100 ? '...' : '')}\``
+      cause: `Please report this. JSON.parse threw an error over the following response: \`${(result.data?.slice?.(0, 100) || '<empty>').trim() + (result.data?.length > 100 ? '...' : '')}\``,
     }
   }
 }

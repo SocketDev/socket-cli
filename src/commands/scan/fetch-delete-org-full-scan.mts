@@ -6,7 +6,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchDeleteOrgFullScan(
   orgSlug: string,
-  scanId: string
+  scanId: string,
 ): Promise<CResult<SocketSdkReturnType<'deleteOrgFullScan'>['data']>> {
   const sockSdkResult = await setupSdk()
   if (!sockSdkResult.ok) {
@@ -16,6 +16,6 @@ export async function fetchDeleteOrgFullScan(
 
   return await handleApiCall(
     sockSdk.deleteOrgFullScan(orgSlug, scanId),
-    'to delete a scan'
+    'to delete a scan',
   )
 }

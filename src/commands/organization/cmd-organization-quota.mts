@@ -19,7 +19,7 @@ const config: CliCommandConfig = {
   hidden: true,
   flags: {
     ...commonFlags,
-    ...outputFlags
+    ...outputFlags,
   },
   help: (command, _config) => `
     Usage
@@ -27,25 +27,25 @@ const config: CliCommandConfig = {
 
     Options
       ${getFlagListOutput(config.flags, 6)}
-  `
+  `,
 }
 
 export const cmdOrganizationQuota = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const json = Boolean(cli.flags['json'])
@@ -61,7 +61,7 @@ async function run(
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       pass: 'ok',
-      fail: 'omit one'
+      fail: 'omit one',
     },
     {
       nook: true,
@@ -69,8 +69,8 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token'
-    }
+      fail: 'missing API token',
+    },
   )
   if (!wasValidInput) {
     return

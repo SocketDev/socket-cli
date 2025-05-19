@@ -102,7 +102,7 @@ const yargsConfig = {
     'populate--': true,
     'short-option-groups': false,
     'strip-aliased': true,
-    'unknown-options-as-args': true
+    'unknown-options-as-args': true,
   },
   coerce: {
     'exclude-type': arrayToLower,
@@ -112,7 +112,7 @@ const yargsConfig = {
     profile: toLower,
     standard: arrayToLower,
     technique: arrayToLower,
-    type: arrayToLower
+    type: arrayToLower,
   },
   default: {
     //author: ['OWASP Foundation'],
@@ -140,7 +140,7 @@ const yargsConfig = {
     //'server-host': '127.0.0.1',
     //'server-port': '9090',
     //'spec-version': '1.6',
-    type: ['js']
+    type: ['js'],
     //validate: true,
   },
   alias: {
@@ -151,7 +151,7 @@ const yargsConfig = {
     'resolve-class': ['c'],
     type: ['t'],
     version: ['v'],
-    yes: ['y']
+    yes: ['y'],
   },
   array: [
     { key: 'author', type: 'string' },
@@ -162,7 +162,7 @@ const yargsConfig = {
     { key: 'only', type: 'string' },
     { key: 'standard', type: 'string' },
     { key: 'technique', type: 'string' },
-    { key: 'type', type: 'string' }
+    { key: 'type', type: 'string' },
   ],
   boolean: [
     'auto-compositions',
@@ -188,7 +188,7 @@ const yargsConfig = {
     'version',
     // The --yes flag and -y alias map to the corresponding flag and alias of npx.
     // https://docs.npmjs.com/cli/v7/commands/npx#compatibility-with-older-npx-versions
-    'yes'
+    'yes',
   ],
   string: [
     'api-key',
@@ -212,8 +212,8 @@ const yargsConfig = {
     'server-port',
     'server-url',
     'spec-version', // number
-    'usages-slices-file' // hidden
-  ]
+    'usages-slices-file', // hidden
+  ],
 }
 
 const config: CliCommandConfig = {
@@ -223,19 +223,19 @@ const config: CliCommandConfig = {
   // Stub out flags and help.
   // TODO: Convert yargs to meow.
   flags: {},
-  help: () => ''
+  help: () => '',
 }
 
 export const cmdCdxgen = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     allowUnknownFlags: true,
@@ -243,12 +243,12 @@ async function run(
     argv: argv.filter(a => !isHelpFlag(a)),
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   // TODO: Convert yargs to meow.
   const yargv = {
-    ...yargsParse(argv as string[], yargsConfig)
+    ...yargsParse(argv as string[], yargsConfig),
   } as any
 
   const unknown: string[] = yargv._
@@ -259,7 +259,7 @@ async function run(
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
     logger.fail(
-      `Unknown ${pluralize('argument', unknownLength)}: ${yargv._.join(', ')}`
+      `Unknown ${pluralize('argument', unknownLength)}: ${yargv._.join(', ')}`,
     )
     return
   }
@@ -280,8 +280,8 @@ async function run(
       logger.info(
         `Socket set cdxgen --lifecycle to "${yargv.lifecycle}" to avoid arbitrary code execution on this scan.\n  Pass "--lifecycle build" to generate a BOM consisting of information obtained during the build process.\n  See cdxgen ${terminalLink(
           'BOM lifecycles documentation',
-          'https://cyclonedx.github.io/cdxgen/#/ADVANCED?id=bom-lifecycles'
-        )} for more details.\n`
+          'https://cyclonedx.github.io/cdxgen/#/ADVANCED?id=bom-lifecycles',
+        )} for more details.\n`,
       )
     }
     if (yargv.output === undefined) {

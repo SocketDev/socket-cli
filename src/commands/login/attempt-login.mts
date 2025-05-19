@@ -9,7 +9,7 @@ import { handleApiCall } from '../../utils/api.mts'
 import {
   getConfigValueOrUndef,
   isReadOnlyConfig,
-  isTestingV1
+  isTestingV1,
 } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { setupSdk } from '../../utils/sdk.mts'
@@ -24,7 +24,7 @@ const { SOCKET_PUBLIC_API_TOKEN } = constants
 
 export async function attemptLogin(
   apiBaseUrl: string | undefined,
-  apiProxy: string | undefined
+  apiProxy: string | undefined,
 ) {
   apiBaseUrl ??= getConfigValueOrUndef('apiBaseUrl') ?? undefined
   apiProxy ??= getConfigValueOrUndef('apiProxy') ?? undefined
@@ -32,8 +32,8 @@ export async function attemptLogin(
     (await password({
       message: `Enter your ${terminalLink(
         'Socket.dev API key',
-        'https://docs.socket.dev/docs/api-keys'
-      )} (leave blank for a public key)`
+        'https://docs.socket.dev/docs/api-keys',
+      )} (leave blank for a public key)`,
     })) || SOCKET_PUBLIC_API_TOKEN
 
   const sdk = await setupSdk(apiToken, apiBaseUrl, apiProxy)
@@ -45,7 +45,7 @@ export async function attemptLogin(
 
   const result = await handleApiCall(
     sdk.data.getOrganizations(),
-    'token verification'
+    'token verification',
   )
 
   if (!result.ok) {
@@ -62,7 +62,7 @@ export async function attemptLogin(
     .filter(org => org?.plan === 'enterprise')
     .map(org => ({
       name: org.name ?? 'undefined',
-      value: org.id
+      value: org.id,
     }))
 
   let enforcedOrgs: string[] = []
@@ -73,8 +73,8 @@ export async function attemptLogin(
       choices: enforcedChoices.concat({
         name: 'None',
         value: '',
-        description: 'Pick "None" if this is a personal device'
-      })
+        description: 'Pick "None" if this is a personal device',
+      }),
     })) as string | null
     if (id) {
       enforcedOrgs = [id]
@@ -83,7 +83,7 @@ export async function attemptLogin(
     if (
       await confirm({
         message: `Should Socket enforce ${(enforcedChoices[0] as OrgChoice)?.name}'s security policies system-wide?`,
-        default: true
+        default: true,
       })
     ) {
       const existing = enforcedChoices[0] as OrgChoice
@@ -102,26 +102,26 @@ export async function attemptLogin(
           name: 'Yes',
           value: true,
           description:
-            'Sets up tab completion for "socket" in your bash env. If you\'re unsure, this is probably what you want.'
+            'Sets up tab completion for "socket" in your bash env. If you\'re unsure, this is probably what you want.',
         },
         {
           name: 'No',
           value: false,
           description:
-            'Will skip tab completion setup. Does not change how Socket works.'
-        }
-      ]
+            'Will skip tab completion setup. Does not change how Socket works.',
+        },
+      ],
     }))
   ) {
     logger.log('Setting up tab completion...')
     const result = await setupTabCompletion('socket')
     if (result.ok) {
       logger.success(
-        'Tab completion will be enabled after restarting your terminal'
+        'Tab completion will be enabled after restarting your terminal',
       )
     } else {
       logger.fail(
-        'Failed to install tab completion script. Try `socket install completion` later.'
+        'Failed to install tab completion script. Try `socket install completion` later.',
       )
     }
   }
@@ -130,12 +130,12 @@ export async function attemptLogin(
   try {
     applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
     logger.success(
-      `API credentials ${previousPersistedToken === apiToken ? 'refreshed' : previousPersistedToken ? 'updated' : 'set'}`
+      `API credentials ${previousPersistedToken === apiToken ? 'refreshed' : previousPersistedToken ? 'updated' : 'set'}`,
     )
     if (isReadOnlyConfig()) {
       logger.log('')
       logger.warn(
-        'Note: config is in read-only mode, at least one key was overridden through flag/env, so the login was not persisted!'
+        'Note: config is in read-only mode, at least one key was overridden through flag/env, so the login was not persisted!',
       )
     }
   } catch {

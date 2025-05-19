@@ -9,7 +9,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 export async function outputScanMetadata(
   result: CResult<SocketSdkReturnType<'getOrgFullScanMetadata'>['data']>,
   scanId: string,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -36,7 +36,7 @@ export async function outputScanMetadata(
         'organization_id',
         'repository_id',
         'commit_hash',
-        'html_report_url'
+        'html_report_url',
       ].includes(key)
     ) {
       continue
@@ -45,11 +45,11 @@ export async function outputScanMetadata(
   }
   if (outputKind === 'markdown') {
     logger.log(
-      `\nYou can view this report at: [${result.data.html_report_url}](${result.data.html_report_url})\n`
+      `\nYou can view this report at: [${result.data.html_report_url}](${result.data.html_report_url})\n`,
     )
   } else {
     logger.log(
-      `\nYou can view this report at: ${result.data.html_report_url}]\n`
+      `\nYou can view this report at: ${result.data.html_report_url}]\n`,
     )
   }
 }

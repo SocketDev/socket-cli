@@ -9,7 +9,7 @@ export async function handleThreatFeed({
   filter,
   outputKind,
   page,
-  perPage
+  perPage,
 }: {
   direction: string
   ecosystem: string
@@ -23,7 +23,7 @@ export async function handleThreatFeed({
     ecosystem,
     filter,
     page,
-    perPage
+    perPage,
   })
 
   await outputThreatFeed(data, outputKind)

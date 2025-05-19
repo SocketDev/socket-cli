@@ -10,7 +10,7 @@ import type { CResult, OutputKind } from '../../types.mts'
 export async function outputPurlScore(
   purl: string,
   result: CResult<PurlDataResponse>,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ) {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -32,7 +32,7 @@ export async function outputPurlScore(
         alerts: selfAlerts,
         capabilities: selfCaps,
         purl,
-        score: selfScore
+        score: selfScore,
       },
       transitively: {
         alerts,
@@ -40,8 +40,8 @@ export async function outputPurlScore(
         dependencyCount,
         func,
         lowest,
-        score
-      }
+        score,
+      },
     } = result.data
 
     logger.error(`Score report for "${requestedPurl}" ("${purl}"):\n`)
@@ -49,44 +49,44 @@ export async function outputPurlScore(
     logger.log('')
     if (dependencyCount) {
       logger.log(
-        `This is a Socket report for the package *"${purl}"* and its *${dependencyCount}* direct/transitive dependencies.`
+        `This is a Socket report for the package *"${purl}"* and its *${dependencyCount}* direct/transitive dependencies.`,
       )
     } else {
       logger.log(
-        `This is a Socket report for the package *"${purl}"*. It has *no dependencies*.`
+        `This is a Socket report for the package *"${purl}"*. It has *no dependencies*.`,
       )
     }
     logger.log('')
     if (dependencyCount) {
       logger.log(
-        `It will show you the shallow score for just the package itself and a deep score for all the transitives combined. Additionally you can see which capabilities were found and the top alerts as well as a package that was responsible for it.`
+        `It will show you the shallow score for just the package itself and a deep score for all the transitives combined. Additionally you can see which capabilities were found and the top alerts as well as a package that was responsible for it.`,
       )
     } else {
       logger.log(
-        `It will show you the shallow score for the package itself, which capabilities were found, and its top alerts.`
+        `It will show you the shallow score for the package itself, which capabilities were found, and its top alerts.`,
       )
       logger.log('')
       logger.log(
-        'Since it has no dependencies, the shallow score is also the deep score.'
+        'Since it has no dependencies, the shallow score is also the deep score.',
       )
     }
     logger.log('')
     if (dependencyCount) {
       // This doesn't make much sense if there are no dependencies. Better to omit it.
       logger.log(
-        'The report should give you a good insight into the status of this package.'
+        'The report should give you a good insight into the status of this package.',
       )
       logger.log('')
       logger.log('## Package itself')
       logger.log('')
       logger.log(
-        'Here are results for the package itself (excluding data from dependencies).'
+        'Here are results for the package itself (excluding data from dependencies).',
       )
     } else {
       logger.log('## Report')
       logger.log('')
       logger.log(
-        'The report should give you a good insight into the status of this package.'
+        'The report should give you a good insight into the status of this package.',
       )
     }
     logger.log('')
@@ -123,7 +123,7 @@ export async function outputPurlScore(
       }
       logger.log('')
       logger.log(
-        mdTable(selfAlerts, ['severity', 'name'], ['Severity', 'Alert Name'])
+        mdTable(selfAlerts, ['severity', 'name'], ['Severity', 'Alert Name']),
       )
     } else {
       logger.log('There are currently no alerts for this package.')
@@ -133,16 +133,16 @@ export async function outputPurlScore(
       logger.log('## Transitive Package Results')
       logger.log('')
       logger.log(
-        'Here are results for the package and its direct/transitive dependencies.'
+        'Here are results for the package and its direct/transitive dependencies.',
       )
       logger.log('')
       logger.log('### Deep Score')
       logger.log('')
       logger.log(
-        'This score represents the package and and its direct/transitive dependencies:'
+        'This score represents the package and and its direct/transitive dependencies:',
       )
       logger.log(
-        `The function used to calculate the values in aggregate is: *"${func}"*`
+        `The function used to calculate the values in aggregate is: *"${func}"*`,
       )
       logger.log('')
       logger.log('- Overall: ' + score.overall)
@@ -155,7 +155,7 @@ export async function outputPurlScore(
       logger.log('### Capabilities')
       logger.log('')
       logger.log(
-        'These are the packages with the lowest recorded score. If there is more than one with the lowest score, just one is shown here. This may help you figure out the source of low scores.'
+        'These are the packages with the lowest recorded score. If there is more than one with the lowest score, just one is shown here. This may help you figure out the source of low scores.',
       )
       logger.log('')
       logger.log('- Overall: ' + lowest.overall)
@@ -169,7 +169,7 @@ export async function outputPurlScore(
       logger.log('')
       if (capabilities.length) {
         logger.log(
-          'These are the capabilities detected in at least one package:'
+          'These are the capabilities detected in at least one package:',
         )
         logger.log('')
         capabilities.forEach(cap => {
@@ -177,7 +177,7 @@ export async function outputPurlScore(
         })
       } else {
         logger.log(
-          'This package had no capabilities and neither did any of its direct/transitive dependencies.'
+          'This package had no capabilities and neither did any of its direct/transitive dependencies.',
         )
       }
       logger.log('')
@@ -191,12 +191,12 @@ export async function outputPurlScore(
           mdTable(
             alerts,
             ['severity', 'name', 'example'],
-            ['Severity', 'Alert Name', 'Example package reporting it']
-          )
+            ['Severity', 'Alert Name', 'Example package reporting it'],
+          ),
         )
       } else {
         logger.log(
-          'This package had no alerts and neither did any of its direct/transitive dependencies'
+          'This package had no alerts and neither did any of its direct/transitive dependencies',
         )
       }
       logger.log('')
@@ -205,7 +205,7 @@ export async function outputPurlScore(
   }
 
   logger.log(
-    `Score report for "${purl}" (use --json for raw and --markdown for formatted reports):`
+    `Score report for "${purl}" (use --json for raw and --markdown for formatted reports):`,
   )
   logger.log(result.data)
   logger.log('')
