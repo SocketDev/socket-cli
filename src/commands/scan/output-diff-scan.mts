@@ -71,10 +71,10 @@ export async function outputDiffScan(
       maxArrayLength: null,
     }),
   )
-  logger.error(
+  logger.info(
     `\n 📝 To display the detailed report in the terminal, use the --json flag. For a friendlier report, use the --markdown flag.\n`,
   )
-  logger.log(dashboardMessage)
+  logger.info(dashboardMessage)
 }
 
 async function handleJson(
@@ -91,15 +91,15 @@ async function handleJson(
         logger.fail(`Writing to \`${file}\` failed...`)
         logger.error(err)
       } else {
-        logger.log(`Data successfully written to \`${file}\``)
+        logger.success(`Data successfully written to \`${file}\``)
       }
       logger.error(dashboardMessage)
     })
   } else {
-    // TODO: expose different method for writing to stderr when simply dodging stdout
-    logger.error(`\n Diff scan result: \n`)
+    // only .log goes to stdout
+    logger.info(`\n Diff scan result: \n`)
     logger.log(json)
-    logger.error(dashboardMessage)
+    logger.info(dashboardMessage)
   }
 }
 

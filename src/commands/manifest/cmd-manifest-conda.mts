@@ -122,7 +122,7 @@ async function run(
     return
   }
 
-  logger.error(
+  logger.warn(
     'Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk.',
   )
 

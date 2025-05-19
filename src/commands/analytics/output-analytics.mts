@@ -84,7 +84,7 @@ export async function outputAnalytics(
     if (filePath) {
       try {
         await fs.writeFile(filePath, serialized, 'utf8')
-        logger.error(`Data successfully written to ${filePath}`)
+        logger.success(`Data successfully written to ${filePath}`)
       } catch (e) {
         process.exitCode = 1
         logger.log(
@@ -112,7 +112,7 @@ export async function outputAnalytics(
     if (filePath) {
       try {
         await fs.writeFile(filePath, serialized, 'utf8')
-        logger.log(`Data successfully written to ${filePath}`)
+        logger.success(`Data successfully written to ${filePath}`)
       } catch (e) {
         logger.error(e)
       }

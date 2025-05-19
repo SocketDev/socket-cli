@@ -13,7 +13,7 @@ export async function convertCondaToRequirements(
   let contents: string
   if (target === '-') {
     if (verbose) {
-      logger.error(`[VERBOSE] reading input from stdin`)
+      logger.info(`[VERBOSE] reading input from stdin`)
     }
 
     const buf: string[] = []
@@ -59,7 +59,7 @@ export async function convertCondaToRequirements(
     const f = path.resolve(cwd, target)
 
     if (verbose) {
-      logger.error(`[VERBOSE] target file: ${f}`)
+      logger.info(`[VERBOSE] target file: ${f}`)
     }
 
     if (!fs.existsSync(f)) {

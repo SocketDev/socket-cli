@@ -44,7 +44,7 @@ export async function outputPurlScore(
       },
     } = result.data
 
-    logger.error(`Score report for "${requestedPurl}" ("${purl}"):\n`)
+    logger.success(`Score report for "${requestedPurl}" ("${purl}"):\n`)
     logger.log('# Complete Package Score')
     logger.log('')
     if (dependencyCount) {
