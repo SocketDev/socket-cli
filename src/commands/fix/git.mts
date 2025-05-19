@@ -6,7 +6,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import constants from '../../constants.mts'
 import {
   getPkgFullNameFromPurlObj,
-  getSocketDevPackageOverviewUrlFromPurl
+  getSocketDevPackageOverviewUrlFromPurl,
 } from '../../utils/socket-url.mts'
 
 const GITHUB_ACTIONS_BOT_USERNAME = 'github-actions[bot]'
@@ -32,7 +32,7 @@ export function getBaseGitBranch() {
 export function getSocketBranchName(
   purl: string,
   newVersion: string,
-  workspaceName?: string | undefined
+  workspaceName?: string | undefined,
 ): string {
   const purlObj = PackageURL.fromString(purl)
   const maybeWorkspaceName = workspaceName
@@ -47,7 +47,7 @@ export function getSocketBranchName(
 
 export function getSocketPrTitlePattern(
   purl: string,
-  workspaceName?: string | undefined
+  workspaceName?: string | undefined,
 ): RegExp {
   const purlObj = PackageURL.fromString(purl)
   const pkgFullName = getPkgFullNameFromPurlObj(purlObj)
@@ -55,14 +55,14 @@ export function getSocketPrTitlePattern(
     ? ` in ${escapeRegExp(workspaceName)}`
     : ''
   return new RegExp(
-    `Bump ${escapeRegExp(pkgFullName)} from ${escapeRegExp(purlObj.version!)} to \\S+${workspaceDetails}`
+    `Bump ${escapeRegExp(pkgFullName)} from ${escapeRegExp(purlObj.version!)} to \\S+${workspaceDetails}`,
   )
 }
 
 export function getSocketPullRequestTitle(
   purl: string,
   newVersion: string,
-  workspaceName?: string | undefined
+  workspaceName?: string | undefined,
 ): string {
   const purlObj = PackageURL.fromString(purl)
   const pkgFullName = getPkgFullNameFromPurlObj(purlObj)
@@ -73,7 +73,7 @@ export function getSocketPullRequestTitle(
 export function getSocketPullRequestBody(
   purl: string,
   newVersion: string,
-  workspaceName?: string | undefined
+  workspaceName?: string | undefined,
 ): string {
   const purlObj = PackageURL.fromString(purl)
   const pkgFullName = getPkgFullNameFromPurlObj(purlObj)
@@ -84,7 +84,7 @@ export function getSocketPullRequestBody(
 export function getSocketCommitMessage(
   purl: string,
   newVersion: string,
-  workspaceName?: string | undefined
+  workspaceName?: string | undefined,
 ): string {
   const purlObj = PackageURL.fromString(purl)
   const pkgFullName = getPkgFullNameFromPurlObj(purlObj)
@@ -96,7 +96,7 @@ export async function gitCreateAndPushBranch(
   branch: string,
   commitMsg: string,
   filepaths: string[],
-  cwd = process.cwd()
+  cwd = process.cwd(),
 ): Promise<boolean> {
   await gitEnsureIdentity(cwd)
   await spawn('git', ['checkout', '-b', branch], { cwd })
@@ -106,7 +106,7 @@ export async function gitCreateAndPushBranch(
     await spawn(
       'git',
       ['push', '--force', '--set-upstream', 'origin', branch],
-      { cwd }
+      { cwd },
     )
     return true
   } catch {}
@@ -118,32 +118,32 @@ export async function gitEnsureIdentity(cwd = process.cwd()): Promise<void> {
   let hasUserName = false
   try {
     const { stdout } = await spawn('git', ['config', '--get', 'user.name'], {
-      cwd
+      cwd,
     })
     hasUserName = !!stdout.trim()
   } catch {}
   if (!hasUserName) {
     await spawn('git', ['config', 'user.name', GITHUB_ACTIONS_BOT_USERNAME], {
-      cwd
+      cwd,
     })
   }
   let hasUserEmail = false
   try {
     const { stdout } = await spawn('git', ['config', '--get', 'user.email'], {
-      cwd
+      cwd,
     })
     hasUserEmail = !!stdout.trim()
   } catch {}
   if (!hasUserEmail) {
     await spawn('git', ['config', 'user.email', GITHUB_ACTIONS_BOT_EMAIL], {
-      cwd
+      cwd,
     })
   }
 }
 
 export async function gitResetAndClean(
   branch = 'HEAD',
-  cwd = process.cwd()
+  cwd = process.cwd(),
 ): Promise<void> {
   // Discards tracked changes.
   await gitResetHard(branch, cwd)
@@ -153,7 +153,7 @@ export async function gitResetAndClean(
 
 export async function gitResetHard(
   branch = 'HEAD',
-  cwd = process.cwd()
+  cwd = process.cwd(),
 ): Promise<void> {
   await spawn('git', ['reset', '--hard', branch], { cwd })
 }
@@ -164,13 +164,13 @@ export async function gitCleanFdx(cwd = process.cwd()): Promise<void> {
 
 export async function gitRemoteBranchExists(
   branch: string,
-  cwd = process.cwd()
+  cwd = process.cwd(),
 ): Promise<boolean> {
   try {
     const { stdout } = await spawn(
       'git',
       ['ls-remote', '--heads', 'origin', branch],
-      { cwd }
+      { cwd },
     )
     return stdout.trim().length > 0
   } catch {
@@ -179,7 +179,7 @@ export async function gitRemoteBranchExists(
 }
 
 export async function gitUnstagedModifiedFiles(
-  cwd = process.cwd()
+  cwd = process.cwd(),
 ): Promise<string[]> {
   const { stdout } = await spawn('git', ['diff', '--name-only'], { cwd })
   const rawFiles = stdout?.trim().split('\n') ?? []

@@ -5,7 +5,7 @@ import type { OutputKind } from '../../types.mts'
 
 export async function handlePurlDeepScore(
   purl: string,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ) {
   const result = await fetchPurlDeepScore(purl)
 

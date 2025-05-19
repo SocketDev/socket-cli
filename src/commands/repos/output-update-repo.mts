@@ -9,7 +9,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 export async function outputUpdateRepo(
   result: CResult<SocketSdkReturnType<'updateOrgRepo'>['data']>,
   repoName: string,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1

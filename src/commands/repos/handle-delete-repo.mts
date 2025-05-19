@@ -6,7 +6,7 @@ import type { OutputKind } from '../../types.mts'
 export async function handleDeleteRepo(
   orgSlug: string,
   repoName: string,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ) {
   const data = await fetchDeleteRepo(orgSlug, repoName)
 

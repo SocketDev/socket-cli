@@ -33,7 +33,7 @@ const {
   VLT,
   YARN,
   YARN_BERRY,
-  YARN_CLASSIC
+  YARN_CLASSIC,
 } = constants
 
 export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
@@ -46,7 +46,7 @@ const binByAgent = new Map<Agent, string>([
   [PNPM, PNPM],
   [YARN_BERRY, YARN],
   [YARN_CLASSIC, YARN],
-  [VLT, VLT]
+  [VLT, VLT],
 ])
 
 async function getAgentExecPath(agent: Agent): Promise<string> {
@@ -60,7 +60,7 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
 
 async function getAgentVersion(
   agentExecPath: string,
-  cwd: string
+  cwd: string,
 ): Promise<SemVer | undefined> {
   let result
   try {
@@ -74,9 +74,9 @@ async function getAgentVersion(
           await spawn(agentExecPath, ['--version'], {
             cwd,
             // Lazily access constants.WIN32.
-            shell: constants.WIN32
+            shell: constants.WIN32,
           })
-        ).stdout
+        ).stdout,
       ) ?? undefined
   } catch (e) {
     debugLog('getAgentVersion error:\n', e)
@@ -103,7 +103,7 @@ const LOCKS: Record<string, Agent> = {
   //
   // Unlike the other LOCKS keys this key contains a directory AND filename so
   // it has to be handled differently.
-  'node_modules/.package-lock.json': NPM
+  'node_modules/.package-lock.json': NPM,
 }
 
 type ReadLockFile =
@@ -112,12 +112,12 @@ type ReadLockFile =
   | ((
       lockPath: string,
       agentExecPath: string,
-      cwd: string
+      cwd: string,
     ) => Promise<string | undefined>)
 
 const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   function wrapReader<T extends (...args: any[]) => Promise<any>>(
-    reader: T
+    reader: T,
   ): (...args: Parameters<T>) => Promise<Awaited<ReturnType<T>> | undefined> {
     return async (...args: any[]): Promise<any> => {
       try {
@@ -130,7 +130,7 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   const binaryReader = wrapReader(readFileBinary)
 
   const defaultReader = wrapReader(
-    async (lockPath: string) => await readFileUtf8(lockPath)
+    async (lockPath: string) => await readFileUtf8(lockPath),
   )
 
   return new Map([
@@ -140,7 +140,7 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
         async (
           lockPath: string,
           agentExecPath: string,
-          cwd = process.cwd()
+          cwd = process.cwd(),
         ) => {
           const ext = path.extname(lockPath)
           if (ext === LOCK_EXT) {
@@ -160,19 +160,19 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
               await spawn(agentExecPath, [lockPath], {
                 cwd,
                 // Lazily access constants.WIN32.
-                shell: constants.WIN32
+                shell: constants.WIN32,
               })
             ).stdout.trim()
           }
           return undefined
-        }
-      )
+        },
+      ),
     ],
     [NPM, defaultReader],
     [PNPM, defaultReader],
     [VLT, defaultReader],
     [YARN_BERRY, defaultReader],
-    [YARN_CLASSIC, defaultReader]
+    [YARN_CLASSIC, defaultReader],
   ])
 })()
 
@@ -231,7 +231,7 @@ export type DetectOptions = {
 
 export async function detectPackageEnvironment({
   cwd = process.cwd(),
-  onUnknown
+  onUnknown,
 }: DetectOptions = {}): Promise<EnvDetails | PartialEnvDetails> {
   let lockPath = await findUp(Object.keys(LOCKS), { cwd })
   let lockName = lockPath ? path.basename(lockPath) : undefined
@@ -239,7 +239,7 @@ export async function detectPackageEnvironment({
   const pkgJsonPath = lockPath
     ? path.resolve(
         lockPath,
-        `${isHiddenLockFile ? '../' : ''}../${PACKAGE_JSON}`
+        `${isHiddenLockFile ? '../' : ''}../${PACKAGE_JSON}`,
       )
     : await findUp(PACKAGE_JSON, { cwd })
   const pkgPath =
@@ -351,7 +351,7 @@ export async function detectPackageEnvironment({
   // Does the system Node version meet our minimum supported Node version?
   const nodeSupported = semver.satisfies(
     nodeVersion,
-    `>=${minSupportedNodeVersion}`
+    `>=${minSupportedNodeVersion}`,
   )
 
   const npmExecPath =
@@ -378,19 +378,19 @@ export async function detectPackageEnvironment({
     pkgPath,
     pkgRequirements: {
       agent: pkgAgentRange ?? `>=${pkgMinAgentVersion}`,
-      node: pkgNodeRange ?? `>=${pkgMinNodeVersion}`
+      node: pkgNodeRange ?? `>=${pkgMinNodeVersion}`,
     },
     pkgSupports: {
       // Does our minimum supported agent version meet the package's requirements?
       agent: semver.satisfies(
         minSupportedAgentVersion,
-        `>=${pkgMinAgentVersion}`
+        `>=${pkgMinAgentVersion}`,
       ),
       // Does our supported Node versions meet the package's requirements?
       node: maintainedNodeVersions.some(v =>
-        semver.satisfies(v, `>=${pkgMinNodeVersion}`)
-      )
-    }
+        semver.satisfies(v, `>=${pkgMinNodeVersion}`),
+      ),
+    },
   }
 }
 
@@ -402,15 +402,15 @@ export type DetectAndValidateOptions = {
 
 export async function detectAndValidatePackageEnvironment(
   cwd: string,
-  options?: DetectAndValidateOptions | undefined
+  options?: DetectAndValidateOptions | undefined,
 ): Promise<void | EnvDetails> {
   const {
     cmdName = '',
     logger,
-    prod
+    prod,
   } = {
     __proto__: null,
-    ...options
+    ...options,
   } as DetectAndValidateOptions
   const details = await detectPackageEnvironment({
     cwd,
@@ -418,10 +418,10 @@ export async function detectAndValidatePackageEnvironment(
       logger?.warn(
         cmdPrefixMessage(
           cmdName,
-          `Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}, defaulting to npm`
-        )
+          `Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}, defaulting to npm`,
+        ),
       )
-    }
+    },
   })
   const { agent, nodeVersion, pkgRequirements } = details
   const agentVersion = details.agentVersion ?? 'unknown'
@@ -430,8 +430,8 @@ export async function detectAndValidatePackageEnvironment(
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
-        `Requires ${agent} >=${minVersion}. Current version: ${agentVersion}.`
-      )
+        `Requires ${agent} >=${minVersion}. Current version: ${agentVersion}.`,
+      ),
     )
     return
   }
@@ -440,8 +440,8 @@ export async function detectAndValidatePackageEnvironment(
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
-        `Requires Node >=${minVersion}. Current version: ${nodeVersion}.`
-      )
+        `Requires Node >=${minVersion}. Current version: ${nodeVersion}.`,
+      ),
     )
     return
   }
@@ -449,8 +449,8 @@ export async function detectAndValidatePackageEnvironment(
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
-        `Package engine "${agent}" requires ${pkgRequirements.agent}. Current version: ${agentVersion}`
-      )
+        `Package engine "${agent}" requires ${pkgRequirements.agent}. Current version: ${agentVersion}`,
+      ),
     )
     return
   }
@@ -458,8 +458,8 @@ export async function detectAndValidatePackageEnvironment(
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
-        `Package engine "node" requires ${pkgRequirements.node}. Current version: ${nodeVersion}`
-      )
+        `Package engine "node" requires ${pkgRequirements.node}. Current version: ${nodeVersion}`,
+      ),
     )
     return
   }
@@ -467,8 +467,8 @@ export async function detectAndValidatePackageEnvironment(
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
-        `${agent} does not support overrides. Soon, though ⚡`
-      )
+        `${agent} does not support overrides. Soon, though ⚡`,
+      ),
     )
     return
   }
@@ -489,8 +489,8 @@ export async function detectAndValidatePackageEnvironment(
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
-        `--prod not supported for ${agent}${agentVersion ? `@${agentVersion}` : ''}`
-      )
+        `--prod not supported for ${agent}${agentVersion ? `@${agentVersion}` : ''}`,
+      ),
     )
     return
   }
@@ -505,8 +505,8 @@ export async function detectAndValidatePackageEnvironment(
     logger?.warn(
       cmdPrefixMessage(
         cmdName,
-        `Package ${lockName} found at ${redacting ? REDACTED : details.lockPath}`
-      )
+        `Package ${lockName} found at ${redacting ? REDACTED : details.lockPath}`,
+      ),
     )
   }
   return details as EnvDetails

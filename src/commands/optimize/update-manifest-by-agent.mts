@@ -14,7 +14,7 @@ const {
   RESOLUTIONS,
   VLT,
   YARN_BERRY,
-  YARN_CLASSIC
+  YARN_CLASSIC,
 } = constants
 
 const depFields = [
@@ -23,12 +23,12 @@ const depFields = [
   'peerDependencies',
   'peerDependenciesMeta',
   'optionalDependencies',
-  'bundleDependencies'
+  'bundleDependencies',
 ]
 
 function getEntryIndexes(
   entries: Array<[string | symbol, any]>,
-  keys: Array<string | symbol>
+  keys: Array<string | symbol>,
 ): number[] {
   return keys
     .map(n => entries.findIndex(p => p[0] === n))
@@ -38,14 +38,14 @@ function getEntryIndexes(
 
 function getLowestEntryIndex(
   entries: Array<[string | symbol, any]>,
-  keys: Array<string | symbol>
+  keys: Array<string | symbol>,
 ) {
   return getEntryIndexes(entries, keys)?.[0] ?? -1
 }
 
 function getHighestEntryIndex(
   entries: Array<[string | symbol, any]>,
-  keys: Array<string | symbol>
+  keys: Array<string | symbol>,
 ) {
   return getEntryIndexes(entries, keys).at(-1) ?? -1
 }
@@ -53,7 +53,7 @@ function getHighestEntryIndex(
 function updatePkgJsonField(
   editablePkgJson: EditablePackageJson,
   field: string,
-  value: any
+  value: any,
 ) {
   const oldValue = editablePkgJson.content[field]
   if (oldValue) {
@@ -66,9 +66,9 @@ function updatePkgJsonField(
             ...(isPnpmObj ? oldValue : {}),
             overrides: {
               ...(isPnpmObj ? (oldValue as any)[OVERRIDES] : {}),
-              ...value
-            }
-          }
+              ...value,
+            },
+          },
         })
       } else {
         // Properties with undefined values are omitted when saved as JSON.
@@ -77,16 +77,16 @@ function updatePkgJsonField(
             ? {
                 [field]: {
                   ...(isPnpmObj ? oldValue : {}),
-                  overrides: undefined
-                }
+                  overrides: undefined,
+                },
               }
-            : { [field]: undefined }) as typeof editablePkgJson.content
+            : { [field]: undefined }) as typeof editablePkgJson.content,
         )
       }
     } else if (field === OVERRIDES || field === RESOLUTIONS) {
       // Properties with undefined values are omitted when saved as JSON.
       editablePkgJson.update({
-        [field]: hasKeys(value) ? value : undefined
+        [field]: hasKeys(value) ? value : undefined,
       } as typeof editablePkgJson.content)
     } else {
       editablePkgJson.update({ [field]: value })
@@ -135,10 +135,10 @@ function updatePkgJsonField(
   }
   entries.splice(insertIndex, 0, [
     field,
-    field === PNPM ? { [OVERRIDES]: value } : value
+    field === PNPM ? { [OVERRIDES]: value } : value,
   ])
   editablePkgJson.fromJSON(
-    `${JSON.stringify(Object.fromEntries(entries), null, 2)}\n`
+    `${JSON.stringify(Object.fromEntries(entries), null, 2)}\n`,
   )
 }
 
@@ -148,7 +148,7 @@ function updateOverridesField(pkgEnvDetails: EnvDetails, overrides: Overrides) {
 
 function updateResolutionsField(
   pkgEnvDetails: EnvDetails,
-  overrides: Overrides
+  overrides: Overrides,
 ) {
   updatePkgJsonField(pkgEnvDetails.editablePkgJson, RESOLUTIONS, overrides)
 }
@@ -159,7 +159,7 @@ function updatePnpmField(pkgEnvDetails: EnvDetails, overrides: Overrides) {
 
 export type AgentModifyManifestFn = (
   pkgEnvDetails: EnvDetails,
-  overrides: Overrides
+  overrides: Overrides,
 ) => void
 
 export const updateManifestByAgent = new Map<Agent, AgentModifyManifestFn>([
@@ -168,5 +168,5 @@ export const updateManifestByAgent = new Map<Agent, AgentModifyManifestFn>([
   [PNPM, updatePnpmField],
   [VLT, updateOverridesField],
   [YARN_BERRY, updateResolutionsField],
-  [YARN_CLASSIC, updateResolutionsField]
+  [YARN_CLASSIC, updateResolutionsField],
 ])

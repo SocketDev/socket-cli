@@ -26,36 +26,36 @@ const config: CliCommandConfig = {
       type: 'string',
       shortFlag: 's',
       default: 'created_at',
-      description: 'Sorting option'
+      description: 'Sorting option',
     },
     direction: {
       type: 'string',
       default: 'desc',
-      description: 'Direction option'
+      description: 'Direction option',
     },
     interactive: {
       type: 'boolean',
       default: true,
       description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
     },
     org: {
       type: 'string',
       description:
-        'Force override the organization slug, overrides the default org from config'
+        'Force override the organization slug, overrides the default org from config',
     },
     perPage: {
       type: 'number',
       shortFlag: 'pp',
       default: 30,
-      description: 'Number of results per page'
+      description: 'Number of results per page',
     },
     page: {
       type: 'number',
       shortFlag: 'p',
       default: 1,
-      description: 'Page number'
-    }
+      description: 'Page number',
+    },
   },
   help: (command, config) => `
     Usage
@@ -70,25 +70,25 @@ const config: CliCommandConfig = {
 
     Examples
       $ ${command} ${isTestingV1() ? '' : '<org slug>'}
-  `
+  `,
 }
 
 export const cmdReposList = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { json, markdown } = cli.flags
@@ -100,7 +100,7 @@ async function run(
     String(orgFlag || ''),
     cli.input[0] || '',
     !!interactive,
-    !!dryRun
+    !!dryRun,
   )
 
   const hasApiToken = hasDefaultToken()
@@ -114,7 +114,7 @@ async function run(
         ? 'Org name by default setting, --org, or auto-discovered'
         : 'Org name must be the first argument',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
@@ -122,7 +122,7 @@ async function run(
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
       pass: 'ok',
-      fail: 'bad'
+      fail: 'bad',
     },
     {
       nook: true,
@@ -130,8 +130,8 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token'
-    }
+      fail: 'missing API token',
+    },
   )
   if (!wasValidInput) {
     return
@@ -148,6 +148,6 @@ async function run(
     outputKind,
     page: Number(cli.flags['page']) || 1,
     per_page: Number(cli.flags['perPage']) || 30,
-    sort: String(cli.flags['sort'] || 'created_at')
+    sort: String(cli.flags['sort'] || 'created_at'),
   })
 }

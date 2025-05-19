@@ -5,7 +5,7 @@ import type { OutputKind } from '../../types.mts'
 
 export async function handleLicensePolicy(
   orgSlug: string,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   const data = await fetchLicensePolicy(orgSlug)
 

@@ -36,7 +36,7 @@ describe('socket dependencies', async () => {
 
           Examples
             socket dependencies --limit 20 --offset 10"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -48,9 +48,9 @@ describe('socket dependencies', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket dependencies`'
+        '`socket dependencies`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -68,6 +68,6 @@ describe('socket dependencies', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

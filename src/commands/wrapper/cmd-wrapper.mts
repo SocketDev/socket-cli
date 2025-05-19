@@ -26,13 +26,13 @@ const config: CliCommandConfig = {
     enable: {
       type: 'boolean',
       default: false,
-      description: 'Enables the Socket npm/npx wrapper'
+      description: 'Enables the Socket npm/npx wrapper',
     },
     disable: {
       type: 'boolean',
       default: false,
-      description: 'Disables the Socket npm/npx wrapper'
-    }
+      description: 'Disables the Socket npm/npx wrapper',
+    },
   },
   help: (command, config) => `
     Usage
@@ -44,19 +44,19 @@ const config: CliCommandConfig = {
     Examples
       $ ${command} --enable
       $ ${command} --disable
-  `
+  `,
 }
 
 export const cmdWrapper = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   // I don't think meow would mess with this but ...
   if (argv[0] === '--postinstall') {
@@ -68,7 +68,7 @@ async function run(
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { disable, enable, json, markdown } = cli.flags
@@ -80,15 +80,15 @@ async function run(
       test: !!(enable || disable),
       message: 'Must use --enabled or --disable',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
       test: !enable || !disable,
       message: 'Do not use both --enable and --disable',
       pass: 'ok',
-      fail: 'missing'
-    }
+      fail: 'missing',
+    },
   )
   if (!wasValidInput) {
     return

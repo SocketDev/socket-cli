@@ -16,8 +16,8 @@ export function addSocketWrapper(file: string): void {
         `
 The alias was added to ${file}. Running 'npm install' will now be wrapped in Socket's "safe npm" 🎉
 If you want to disable it at any time, run \`socket wrapper --disable\`
-      `.trim()
+      `.trim(),
       )
-    }
+    },
   )
 }

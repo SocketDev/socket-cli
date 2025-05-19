@@ -17,31 +17,31 @@ const config: CliCommandConfig = {
   description: `npx wrapper functionality`,
   hidden: false,
   flags: {
-    ...commonFlags
+    ...commonFlags,
   },
   help: (command, _config) => `
     Usage
       $ ${command}
-  `
+  `,
 }
 
 export const cmdNpx = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     allowUnknownFlags: true,
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   if (cli.flags['dryRun']) {

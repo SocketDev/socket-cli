@@ -35,7 +35,7 @@ describe('socket info', async () => {
           Examples
             $ socket info webtorrent
             $ socket info webtorrent@1.9.1"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -47,7 +47,7 @@ describe('socket info', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain('`socket info`')
-    }
+    },
   )
 
   cmdit(
@@ -72,7 +72,7 @@ describe('socket info', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -90,6 +90,6 @@ describe('socket info', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

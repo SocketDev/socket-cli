@@ -20,7 +20,7 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags,
     ...outputFlags,
-    ...validationFlags
+    ...validationFlags,
   },
   help: (command, config) =>
     isTestingV1()
@@ -37,25 +37,25 @@ const config: CliCommandConfig = {
     Examples
       $ ${command} webtorrent
       $ ${command} webtorrent@1.9.1
-  `
+  `,
 }
 
 export const cmdInfo = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { all, json, markdown, strict } = cli.flags
@@ -69,14 +69,14 @@ async function run(
       test: !!rawPkgName,
       message: 'Expecting a package name',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
       test: cli.input.length === 1,
       message: 'Can only accept one package at a time',
       pass: 'ok',
-      fail: 'got ' + cli.input.length
+      fail: 'got ' + cli.input.length,
     },
     {
       nook: true,
@@ -84,8 +84,8 @@ async function run(
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
       pass: 'ok',
-      fail: 'bad'
-    }
+      fail: 'bad',
+    },
   )
   if (!wasValidInput) {
     return
@@ -108,6 +108,6 @@ async function run(
     outputKind,
     pkgName,
     pkgVersion,
-    strict: Boolean(strict)
+    strict: Boolean(strict),
   })
 }

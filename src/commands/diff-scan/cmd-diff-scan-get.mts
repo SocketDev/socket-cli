@@ -24,34 +24,34 @@ const config: CliCommandConfig = {
       type: 'string',
       shortFlag: 'a',
       default: '',
-      description: 'The scan ID of the head scan'
+      description: 'The scan ID of the head scan',
     },
     before: {
       type: 'string',
       shortFlag: 'b',
       default: '',
-      description: 'The scan ID of the base scan'
+      description: 'The scan ID of the base scan',
     },
     depth: {
       type: 'number',
       default: 2,
       description:
-        'Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)'
+        'Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)',
     },
     json: {
       type: 'boolean',
       shortFlag: 'j',
       default: false,
       description:
-        'Output result as json. This can be big. Use --file to store it to disk without truncation.'
+        'Output result as json. This can be big. Use --file to store it to disk without truncation.',
     },
     file: {
       type: 'string',
       shortFlag: 'f',
       default: '',
       description:
-        'Path to a local file where the output should be saved. Use `-` to force stdout.'
-    }
+        'Path to a local file where the output should be saved. Use `-` to force stdout.',
+    },
   },
   help: (command, config) =>
     isTestingV1()
@@ -76,25 +76,25 @@ const config: CliCommandConfig = {
 
     Examples
       $ ${command} FakeCorp --before=aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 --after=aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
-  `
+  `,
 }
 
 export const cmdDiffScanGet = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { after, before, depth, file, json, markdown } = cli.flags
@@ -117,14 +117,14 @@ async function run(
           ? 'missing before and after'
           : !before
             ? 'missing before'
-            : 'missing after'
+            : 'missing after',
     },
     {
       test: !!orgSlug,
       nook: true,
       message: 'Org name as the first argument',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
@@ -132,7 +132,7 @@ async function run(
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
       pass: 'ok',
-      fail: 'bad'
+      fail: 'bad',
     },
     {
       nook: true,
@@ -140,15 +140,15 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token'
-    }
+      fail: 'missing API token',
+    },
   )
   if (!wasValidInput) {
     return
   }
 
   logger.fail(
-    'Warning: this command is deprecated in favor of `socket scan diff` and will be removed in the next major bump.'
+    'Warning: this command is deprecated in favor of `socket scan diff` and will be removed in the next major bump.',
   )
 
   if (cli.flags['dryRun']) {
@@ -162,6 +162,6 @@ async function run(
     depth: Number(depth),
     orgSlug,
     outputKind,
-    file: String(file || '')
+    file: String(file || ''),
   })
 }

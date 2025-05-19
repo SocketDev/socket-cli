@@ -14,7 +14,7 @@ const require = createRequire(import.meta.url)
 
 export async function outputThreatFeed(
   result: CResult<ThreadFeedResponse>,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ) {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -41,7 +41,7 @@ export async function outputThreatFeed(
   const ScreenWidget = require('blessed/lib/widgets/screen.js')
   // Lazily access constants.blessedOptions.
   const screen: Widgets.Screen = new ScreenWidget({
-    ...constants.blessedOptions
+    ...constants.blessedOptions,
   })
   // Register these keys first so you can always exit, even when it gets stuck
   // If we don't do this and the code crashes, the user must hard-kill the
@@ -61,13 +61,13 @@ export async function outputThreatFeed(
     height: '70%', // Changed from 100% to 70%
     border: {
       type: 'line',
-      fg: 'cyan'
+      fg: 'cyan',
     },
     columnWidth: [10, 30, 20, 18, 15, 200],
     // TODO: the truncation doesn't seem to work too well yet but when we add
     //       `pad` alignment fails, when we extend columnSpacing alignment fails
     columnSpacing: 1,
-    truncate: '_'
+    truncate: '_',
   })
 
   // Create details box at the bottom
@@ -78,14 +78,14 @@ export async function outputThreatFeed(
     width: '100%',
     border: {
       type: 'line',
-      fg: 'cyan'
+      fg: 'cyan',
     },
     label: 'Details',
     content:
       'Use arrow keys to navigate. Press Enter to select a threat. Press q to exit.',
     style: {
-      fg: 'white'
-    }
+      fg: 'white',
+    },
   })
 
   table.setData({
@@ -95,9 +95,9 @@ export async function outputThreatFeed(
       '  Version',
       '  Threat type',
       '  Detected at',
-      ' Details'
+      ' Details',
     ],
-    data: formattedOutput
+    data: formattedOutput,
   })
 
   // allow control the table with the keyboard
@@ -120,7 +120,7 @@ export async function outputThreatFeed(
             `Threat type:${selectedRow[3]}\n` +
             `Detected at:${selectedRow[4]}\n` +
             `Details: ${selectedRow[5]}\n` +
-            `Description: ${descriptions[selectedIndex]}`
+            `Description: ${descriptions[selectedIndex]}`,
         )
         screen.render()
       }
@@ -152,7 +152,7 @@ function formatResults(data: ThreatResult[]) {
       ` ${version}`,
       ` ${d.threatType}`,
       ` ${timeDiff}`,
-      d.locationHtmlUrl
+      d.locationHtmlUrl,
     ]
   })
 }
@@ -163,7 +163,7 @@ function msAtHome(isoTimeStamp: string): string {
 
   const rtf = new Intl.RelativeTimeFormat('en', {
     numeric: 'always',
-    style: 'short'
+    style: 'short',
   })
 
   const delta = timeEnd - timeStart

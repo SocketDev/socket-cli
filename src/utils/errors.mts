@@ -6,7 +6,7 @@ import constants from '../constants.mts'
 
 const {
   kInternalsSymbol,
-  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getSentry }
+  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getSentry },
 } = constants
 
 type EventHintOrCaptureContext = { [key: string]: any } | Function
@@ -24,7 +24,7 @@ export class InputError extends Error {
 
 export async function captureException(
   exception: unknown,
-  hint?: EventHintOrCaptureContext | undefined
+  hint?: EventHintOrCaptureContext | undefined,
 ): Promise<string> {
   const result = captureExceptionSync(exception, hint)
   // "Sleep" for a second, just in case, hopefully enough time to initiate fetch.
@@ -34,7 +34,7 @@ export async function captureException(
 
 export function captureExceptionSync(
   exception: unknown,
-  hint?: EventHintOrCaptureContext | undefined
+  hint?: EventHintOrCaptureContext | undefined,
 ): string {
   const Sentry = getSentry()
   if (!Sentry) {
@@ -45,7 +45,7 @@ export function captureExceptionSync(
 }
 
 export function isErrnoException(
-  value: unknown
+  value: unknown,
 ): value is NodeJS.ErrnoException {
   if (!(value instanceof Error)) {
     return false

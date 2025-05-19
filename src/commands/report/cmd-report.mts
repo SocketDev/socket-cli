@@ -13,14 +13,14 @@ export const cmdReport: CliSubcommand = {
     await meowWithSubcommands(
       {
         create: cmdReportCreate,
-        view: cmdReportView
+        view: cmdReportView,
       },
       {
         argv,
         description,
         importMeta,
-        name: parentName + ' report'
-      }
+        name: parentName + ' report',
+      },
     )
-  }
+  },
 }

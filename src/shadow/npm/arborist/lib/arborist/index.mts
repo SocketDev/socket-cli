@@ -20,7 +20,7 @@ const {
   SOCKET_CLI_SAFE_PROGRESS,
   SOCKET_CLI_VIEW_ALL_RISKS,
   kInternalsSymbol,
-  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIpc }
+  [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIpc },
 } = constants
 
 export const SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
@@ -32,7 +32,7 @@ export const SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
   progress: false,
   save: false,
   saveBundle: false,
-  silent: true
+  silent: true,
 }
 
 export const kCtorArgs = Symbol('ctorArgs')
@@ -50,9 +50,9 @@ export class SafeArborist extends Arborist {
         path:
           (ctorArgs.length ? ctorArgs[0]?.path : undefined) ?? process.cwd(),
         ...(ctorArgs.length ? ctorArgs[0] : undefined),
-        ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
+        ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
       },
-      ...ctorArgs.slice(1)
+      ...ctorArgs.slice(1),
     )
     ;(this as any)[kCtorArgs] = ctorArgs
   }
@@ -64,16 +64,16 @@ export class SafeArborist extends Arborist {
     const arb = new Arborist(
       {
         ...(ctorArgs.length ? ctorArgs[0] : undefined),
-        progress: false
+        progress: false,
       },
-      ...ctorArgs.slice(1)
+      ...ctorArgs.slice(1),
     )
     const ret = await (arb.reify as (...args: any[]) => Promise<SafeNode>)(
       {
         ...(args.length ? args[0] : undefined),
-        progress: false
+        progress: false,
       },
-      ...args.slice(1)
+      ...args.slice(1),
     )
     Object.assign(this, arb)
     return ret
@@ -86,7 +86,7 @@ export class SafeArborist extends Arborist {
   ): Promise<SafeNode> {
     const options = {
       __proto__: null,
-      ...(args.length ? args[0] : undefined)
+      ...(args.length ? args[0] : undefined),
     } as ArboristReifyOptions
     const ipc = await getIpc()
     const binName = ipc[SOCKET_CLI_SAFE_BIN]
@@ -97,10 +97,10 @@ export class SafeArborist extends Arborist {
       {
         ...options,
         ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
-        progress: false
+        progress: false,
       },
       // @ts-ignore: TypeScript gets grumpy about rest parameters.
-      ...args.slice(1)
+      ...args.slice(1),
     )
     // Lazily access constants.ENV.SOCKET_CLI_ACCEPT_RISKS.
     const acceptRisks = constants.ENV.SOCKET_CLI_ACCEPT_RISKS
@@ -122,12 +122,12 @@ export class SafeArborist extends Arborist {
               critical: false,
               cve: false,
               existing: true,
-              unfixable: false
+              unfixable: false,
             }
           : {
               existing: isSafeNpx,
-              unfixable: isSafeNpm
-            }
+              unfixable: isSafeNpm,
+            },
     })
     if (alertsMap.size) {
       process.exitCode = 1
@@ -135,7 +135,7 @@ export class SafeArborist extends Arborist {
       const viewAllRisks = constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
       logAlertsMap(alertsMap, {
         hideAt: viewAllRisks ? 'none' : 'middle',
-        output: process.stderr
+        output: process.stderr,
       })
       throw new Error(
         `
@@ -148,11 +148,11 @@ export class SafeArborist extends Arborist {
               ? ''
               : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
           }
-        `.trim()
+        `.trim(),
       )
     } else if (!options['silent']) {
       logger.success(
-        `Socket ${binName} ${acceptRisks ? 'accepted' : 'found no'} risks`
+        `Socket ${binName} ${acceptRisks ? 'accepted' : 'found no'} risks`,
       )
       if (binName === NPX) {
         logger.log(`Running ${options.add![0]}`)

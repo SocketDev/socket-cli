@@ -13,7 +13,7 @@ import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type {
   CliCommandConfig,
-  CliSubcommand
+  CliSubcommand,
 } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
@@ -27,60 +27,60 @@ const config: CliCommandConfig = {
     ...outputFlags,
     branch: {
       type: 'string',
-      description: 'Filter to show only scans with this branch name'
+      description: 'Filter to show only scans with this branch name',
     },
     direction: {
       type: 'string',
       shortFlag: 'd',
       default: 'desc',
-      description: 'Direction option (`desc` or `asc`) - Default is `desc`'
+      description: 'Direction option (`desc` or `asc`) - Default is `desc`',
     },
     fromTime: {
       type: 'string',
       shortFlag: 'f',
       default: '',
-      description: 'From time - as a unix timestamp'
+      description: 'From time - as a unix timestamp',
     },
     interactive: {
       type: 'boolean',
       default: true,
       description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
     },
     page: {
       type: 'number',
       shortFlag: 'p',
       default: 1,
-      description: 'Page number - Default is 1'
+      description: 'Page number - Default is 1',
     },
     perPage: {
       type: 'number',
       shortFlag: 'pp',
       default: 30,
-      description: 'Results per page - Default is 30'
+      description: 'Results per page - Default is 30',
     },
     org: {
       type: 'string',
       description:
-        'Force override the organization slug, overrides the default org from config'
+        'Force override the organization slug, overrides the default org from config',
     },
     repo: {
       type: 'string',
-      description: 'Filter to show only scans with this repository name'
+      description: 'Filter to show only scans with this repository name',
     },
     sort: {
       type: 'string',
       shortFlag: 's',
       default: 'created_at',
       description:
-        'Sorting option (`name` or `created_at`) - default is `created_at`'
+        'Sorting option (`name` or `created_at`) - default is `created_at`',
     },
     untilTime: {
       type: 'string',
       shortFlag: 'u',
       default: '',
-      description: 'Until time - as a unix timestamp'
-    }
+      description: 'Until time - as a unix timestamp',
+    },
   },
   help: (command, config) => `
     Usage
@@ -95,25 +95,25 @@ const config: CliCommandConfig = {
 
     Examples
       $ ${command}${isTestingV1() ? '' : ' FakeOrg'}
-  `
+  `,
 }
 
 export const cmdScanList: CliSubcommand = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ) {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const {
@@ -123,7 +123,7 @@ async function run(
     json,
     markdown,
     org: orgFlag,
-    repo
+    repo,
   } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
@@ -131,7 +131,7 @@ async function run(
     String(orgFlag || ''),
     cli.input[0] || '',
     !!interactive,
-    !!dryRun
+    !!dryRun,
   )
 
   const hasApiToken = hasDefaultToken()
@@ -148,14 +148,14 @@ async function run(
       fail:
         orgSlug === '.'
           ? 'dot is an invalid org, most likely you forgot the org name here?'
-          : 'missing'
+          : 'missing',
     },
     {
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       pass: 'ok',
-      fail: 'omit one'
+      fail: 'omit one',
     },
     {
       nook: true,
@@ -163,8 +163,8 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token'
-    }
+      fail: 'missing API token',
+    },
   )
   if (!wasValidInput) {
     return
@@ -184,6 +184,6 @@ async function run(
     page: Number(cli.flags['page'] || 1),
     per_page: Number(cli.flags['perPage'] || 30),
     repo: repo ? String(repo) : '',
-    sort: String(cli.flags['sort'] || '')
+    sort: String(cli.flags['sort'] || ''),
   })
 }

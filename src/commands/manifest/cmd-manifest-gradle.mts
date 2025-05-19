@@ -23,27 +23,27 @@ const config: CliCommandConfig = {
     ...commonFlags,
     bin: {
       type: 'string',
-      description: 'Location of gradlew binary to use, default: CWD/gradlew'
+      description: 'Location of gradlew binary to use, default: CWD/gradlew',
     },
     cwd: {
       type: 'string',
-      description: 'Set the cwd, defaults to process.cwd()'
+      description: 'Set the cwd, defaults to process.cwd()',
     },
     gradleOpts: {
       type: 'string',
       default: '',
       description:
-        'Additional options to pass on to ./gradlew, see `./gradlew --help`'
+        'Additional options to pass on to ./gradlew, see `./gradlew --help`',
     },
     task: {
       type: 'string',
       default: 'all',
-      description: 'Task to target. By default targets all'
+      description: 'Task to target. By default targets all',
     },
     verbose: {
       type: 'boolean',
-      description: 'Print debug messages'
-    }
+      description: 'Print debug messages',
+    },
   },
   help: (command, config) => `
     Usage
@@ -76,25 +76,25 @@ const config: CliCommandConfig = {
 
       $ ${command} .
       $ ${command} --bin=../gradlew .
-  `
+  `,
 }
 
 export const cmdManifestGradle = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const verbose = Boolean(cli.flags['verbose'])
@@ -121,15 +121,15 @@ async function run(
       test: !!target && target !== '-',
       message: 'The DIR arg is required',
       pass: 'ok',
-      fail: target === '-' ? 'stdin is not supported' : 'missing'
+      fail: target === '-' ? 'stdin is not supported' : 'missing',
     },
     {
       nook: true,
       test: cli.input.length <= 1,
       message: 'Can only accept one DIR (make sure to escape spaces!)',
       pass: 'ok',
-      fail: 'received ' + cli.input.length
-    }
+      fail: 'received ' + cli.input.length,
+    },
   )
   if (!wasValidInput) {
     return
@@ -162,6 +162,6 @@ async function run(
     String(bin),
     String(cwd),
     verbose,
-    gradleOpts
+    gradleOpts,
   )
 }

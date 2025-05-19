@@ -40,7 +40,7 @@ describe('socket config get', async () => {
 
           Examples
             $ socket config list FakeOrg --repoName=test-repo"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -52,9 +52,9 @@ describe('socket config get', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket config list`'
+        '`socket config list`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -72,6 +72,6 @@ describe('socket config get', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

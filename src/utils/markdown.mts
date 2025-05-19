@@ -1,7 +1,7 @@
 export function mdTableStringNumber(
   title1: string,
   title2: string,
-  obj: Record<string, number | string>
+  obj: Record<string, number | string>,
 ): string {
   // | Date        | Counts |
   // | ----------- | ------ |
@@ -19,7 +19,7 @@ export function mdTableStringNumber(
   lines.push(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} |`)
   for (const [key, value] of Object.entries(obj)) {
     lines.push(
-      `| ${key.padEnd(mw1, ' ')} | ${String(value ?? '').padStart(mw2, ' ')} |`
+      `| ${key.padEnd(mw1, ' ')} | ${String(value ?? '').padStart(mw2, ' ')} |`,
     )
   }
   lines.push(`| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} |`)
@@ -32,7 +32,7 @@ export function mdTable<T extends Array<Record<string, string>>>(
   // This is saying "an array of strings and the strings are a valid key of elements of T"
   // In turn, T is defined above as the audit log event type from our OpenAPI docs.
   cols: Array<string & keyof T[number]>,
-  titles: string[] = cols
+  titles: string[] = cols,
 ): string {
   // Max col width required to fit all data in that column
   const cws = cols.map(col => col.length)
@@ -44,7 +44,7 @@ export function mdTable<T extends Array<Record<string, string>>>(
       cws[i] = Math.max(
         cws[i] ?? 0,
         String(val).length,
-        (titles[i] || '').length
+        (titles[i] || '').length,
       )
     }
   }
@@ -77,7 +77,7 @@ export function mdTableOfPairs(
   arr: Array<[string, string]>,
   // This is saying "an array of strings and the strings are a valid key of elements of T"
   // In turn, T is defined above as the audit log event type from our OpenAPI docs.
-  cols: string[]
+  cols: string[],
 ): string {
   // Max col width required to fit all data in that column
   const cws = cols.map(col => col.length)

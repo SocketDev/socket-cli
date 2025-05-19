@@ -17,15 +17,15 @@ export const cmdOrganizationPolicy: CliSubcommand = {
     await meowWithSubcommands(
       {
         security: cmdOrganizationPolicyPolicy,
-        license: cmdOrganizationPolicyLicense
+        license: cmdOrganizationPolicyLicense,
       },
       {
         argv,
         description,
         defaultSub: 'list', // Backwards compat
         importMeta,
-        name: parentName + ' policy'
-      }
+        name: parentName + ' policy',
+      },
     )
-  }
+  },
 }

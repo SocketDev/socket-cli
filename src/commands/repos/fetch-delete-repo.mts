@@ -6,7 +6,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchDeleteRepo(
   orgSlug: string,
-  repoName: string
+  repoName: string,
 ): Promise<CResult<SocketSdkReturnType<'deleteOrgRepo'>['data']>> {
   const sockSdkResult = await setupSdk()
   if (!sockSdkResult.ok) {
@@ -16,6 +16,6 @@ export async function fetchDeleteRepo(
 
   return await handleApiCall(
     sockSdk.deleteOrgRepo(orgSlug, repoName),
-    'to delete a repository'
+    'to delete a repository',
   )
 }

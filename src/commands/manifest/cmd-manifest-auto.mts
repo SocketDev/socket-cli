@@ -25,13 +25,13 @@ const config: CliCommandConfig = {
     ...commonFlags,
     cwd: {
       type: 'string',
-      description: 'Set the cwd, defaults to process.cwd()'
+      description: 'Set the cwd, defaults to process.cwd()',
     },
     verbose: {
       type: 'boolean',
       default: false,
-      description: 'Enable debug output, may help when running into errors'
-    }
+      description: 'Enable debug output, may help when running into errors',
+    },
     // TODO: support output flags
   },
   help: (command, config) => `
@@ -44,25 +44,25 @@ const config: CliCommandConfig = {
     Tries to figure out what language your current repo uses. If it finds a
     supported case then it will try to generate the manifest file for that
     language with the default or detected settings.
-  `
+  `,
 }
 
 export const cmdManifestAuto = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
   const verbose = !!cli.flags['verbose']
   const cwd = (cli.flags['cwd'] as string) ?? process.cwd()
@@ -118,7 +118,7 @@ async function run(
   const hasEnvyaml = !hasEnvyml && existsSync(envyaml)
   if (hasEnvyml || hasEnvyaml) {
     logger.log(
-      'Detected an environment.yml file, running default Conda generator...'
+      'Detected an environment.yml file, running default Conda generator...',
     )
     // This command takes the TARGET as first arg.
     subArgs.push(hasEnvyml ? envyml : hasEnvyaml ? envyaml : '')
@@ -153,7 +153,7 @@ async function run(
     {
       argv: [],
       description: config.description,
-      importMeta
-    }
+      importMeta,
+    },
   ).showHelp()
 }

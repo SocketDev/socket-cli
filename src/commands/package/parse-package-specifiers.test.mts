@@ -22,7 +22,7 @@ describe('parse-package-specifiers', async () => {
 
   it('should support npm scoped packages', () => {
     expect(
-      parsePackageSpecifiers('npm', ['@babel/core'])
+      parsePackageSpecifiers('npm', ['@babel/core']),
     ).toMatchInlineSnapshot(`
       {
         "purls": [
@@ -46,7 +46,7 @@ describe('parse-package-specifiers', async () => {
 
   it('should parse a multiple purls', () => {
     expect(
-      parsePackageSpecifiers('npm/babel', ['golang/foo'])
+      parsePackageSpecifiers('npm/babel', ['golang/foo']),
     ).toMatchInlineSnapshot(`
       {
         "purls": [
@@ -60,7 +60,7 @@ describe('parse-package-specifiers', async () => {
 
   it('should parse a mixed names and purls', () => {
     expect(
-      parsePackageSpecifiers('npm', ['golang/foo', 'babel', 'pkg:npm/tenko'])
+      parsePackageSpecifiers('npm', ['golang/foo', 'babel', 'pkg:npm/tenko']),
     ).toMatchInlineSnapshot(`
       {
         "purls": [
@@ -75,7 +75,7 @@ describe('parse-package-specifiers', async () => {
 
   it('should complain when seeing an unscoped package without namespace', () => {
     expect(
-      parsePackageSpecifiers('golang/foo', ['babel', 'pkg:npm/tenko'])
+      parsePackageSpecifiers('golang/foo', ['babel', 'pkg:npm/tenko']),
     ).toMatchInlineSnapshot(`
       {
         "purls": [

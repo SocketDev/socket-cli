@@ -13,14 +13,14 @@ export function getCompletionSourcingCommand(): CResult<string> {
   const completionScriptExportPath = path.join(
     // Lazily access constants.distPath.
     constants.distPath,
-    'socket-completion.bash'
+    'socket-completion.bash',
   )
 
   if (!fs.existsSync(completionScriptExportPath)) {
     return {
       ok: false,
       message: 'Tab Completion script not found',
-      cause: `Expected to find completion script at \`${completionScriptExportPath}\` but it was not there`
+      cause: `Expected to find completion script at \`${completionScriptExportPath}\` but it was not there`,
     }
   }
 
@@ -44,7 +44,7 @@ export function getBashrcDetails(targetCommandName: string): CResult<{
     return {
       ok: false,
       message: 'Could not determine config directory',
-      cause: 'Failed to get config path'
+      cause: 'Failed to get config path',
     }
   }
 
@@ -55,7 +55,7 @@ export function getBashrcDetails(targetCommandName: string): CResult<{
   const completionScriptPath = path.join(
     path.dirname(configFilePath),
     'completion',
-    'socket-completion.bash'
+    'socket-completion.bash',
   )
 
   const bashrcContent = `# Socket CLI completion for "${targetCommandName}"
@@ -74,7 +74,7 @@ fi
       completionCommand,
       toAddToBashrc: bashrcContent,
       targetName: targetCommandName,
-      targetPath: completionScriptPath
-    }
+      targetPath: completionScriptPath,
+    },
   }
 }

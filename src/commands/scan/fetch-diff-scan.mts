@@ -8,7 +8,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 export async function fetchDiffScan({
   id1,
   id2,
-  orgSlug
+  orgSlug,
 }: {
   id1: string
   id2: string
@@ -20,6 +20,6 @@ export async function fetchDiffScan({
 
   return await queryApiSafeJson<SocketSdkReturnType<'GetOrgDiffScan'>['data']>(
     `orgs/${orgSlug}/full-scans/diff?before=${encodeURIComponent(id1)}&after=${encodeURIComponent(id2)}`,
-    'a scan diff'
+    'a scan diff',
   )
 }

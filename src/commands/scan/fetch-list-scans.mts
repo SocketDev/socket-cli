@@ -12,7 +12,7 @@ export async function fetchListScans({
   page,
   per_page,
   repo,
-  sort
+  sort,
 }: {
   branch: string
   direction: string
@@ -37,8 +37,8 @@ export async function fetchListScans({
       direction,
       per_page: String(per_page),
       page: String(page),
-      from: from_time
+      from: from_time,
     }),
-    'list of scans'
+    'list of scans',
   )
 }

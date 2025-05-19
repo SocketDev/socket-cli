@@ -25,7 +25,7 @@ describe('socket raw-npm', async () => {
 
           Examples
             $ socket raw-npm install"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -37,9 +37,9 @@ describe('socket raw-npm', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket raw-npm`'
+        '`socket raw-npm`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -57,6 +57,6 @@ describe('socket raw-npm', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

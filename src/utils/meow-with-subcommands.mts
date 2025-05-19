@@ -14,7 +14,7 @@ import {
   isReadOnlyConfig,
   isTestingV1,
   overrideCachedConfig,
-  overrideConfigApiToken
+  overrideConfigApiToken,
 } from './config.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
 import constants from '../constants.mts'
@@ -35,7 +35,7 @@ type CliAliases = Record<string, CliAlias>
 type CliSubcommandRun = (
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  context: { parentName: string }
+  context: { parentName: string },
 ) => Promise<void> | void
 
 export interface CliSubcommand {
@@ -73,7 +73,7 @@ export function getLastSeenCommand(): string {
 
 export async function meowWithSubcommands(
   subcommands: Record<string, CliSubcommand>,
-  options: MeowOptions
+  options: MeowOptions,
 ): Promise<void> {
   const {
     aliases = {},
@@ -91,7 +91,7 @@ export async function meowWithSubcommands(
 
   const flags: MeowFlags = {
     ...commonFlags,
-    ...additionalOptions.flags
+    ...additionalOptions.flags,
   }
 
   // No further args or first arg is a flag (shrug)
@@ -104,7 +104,7 @@ export async function meowWithSubcommands(
       default: false,
       hidden: false, // Only show on root
       description:
-        'Do input validation for a command and exit 0 when input is ok. Every command should support this flag (not shown on help screens)'
+        'Do input validation for a command and exit 0 when input is ok. Every command should support this flag (not shown on help screens)',
     }
   }
 
@@ -119,7 +119,7 @@ export async function meowWithSubcommands(
     allowUnknownFlags: true,
     // We will emit help when we're ready
     // Plus, if we allow this then meow() can just exit here.
-    autoHelp: false
+    autoHelp: false,
   })
 
   // Hard override the config if instructed to do so.
@@ -130,11 +130,11 @@ export async function meowWithSubcommands(
   if (constants.ENV.SOCKET_CLI_CONFIG) {
     configOverrideResult = overrideCachedConfig(
       // Lazily access constants.ENV.SOCKET_CLI_CONFIG.
-      constants.ENV.SOCKET_CLI_CONFIG
+      constants.ENV.SOCKET_CLI_CONFIG,
     )
   } else if (cli1.flags['config']) {
     configOverrideResult = overrideCachedConfig(
-      String(cli1.flags['config'] || '')
+      String(cli1.flags['config'] || ''),
     )
   }
 
@@ -172,7 +172,7 @@ export async function meowWithSubcommands(
     // Third: If a valid command has been found, then we run it...
     if (commandDefinition) {
       return await commandDefinition.run(commandArgv, importMeta, {
-        parentName: name
+        parentName: name,
       })
     }
   }
@@ -195,9 +195,9 @@ export async function meowWithSubcommands(
           ...toSortedObject(
             Object.fromEntries(
               Object.entries(subcommands).filter(
-                ({ 1: subcommand }) => !subcommand.hidden
-              )
-            )
+                ({ 1: subcommand }) => !subcommand.hidden,
+              ),
+            ),
           ),
           ...toSortedObject(
             Object.fromEntries(
@@ -206,11 +206,11 @@ export async function meowWithSubcommands(
                 const cmdName = hidden ? '' : alias.argv[0]
                 const subcommand = cmdName ? subcommands[cmdName] : undefined
                 return subcommand && !subcommand.hidden
-              })
-            )
-          )
+              }),
+            ),
+          ),
         },
-        6
+        6,
       )}
 
     Options
@@ -228,8 +228,8 @@ export async function meowWithSubcommands(
       allowUnknownFlags: true,
       // We will emit help when we're ready
       // Plus, if we allow this then meow() can just exit here.
-      autoHelp: false
-    }
+      autoHelp: false,
+    },
   )
 
   // ...else we provide basic instructions and help.
@@ -255,7 +255,7 @@ export function meowOrExit({
   argv,
   config,
   importMeta,
-  parentName
+  parentName,
 }: {
   allowUnknownFlags?: boolean | undefined
   argv: readonly string[]
@@ -274,7 +274,7 @@ export function meowOrExit({
     importMeta,
     flags: config.flags,
     allowUnknownFlags: true, // meow will exit(1) before printing the banner
-    autoHelp: false // meow will exit(0) before printing the banner
+    autoHelp: false, // meow will exit(0) before printing the banner
   })
 
   if (!cli.flags['silent']) {
@@ -290,7 +290,7 @@ export function meowOrExit({
       importMeta,
       flags: config.flags,
       allowUnknownFlags: false,
-      autoHelp: false
+      autoHelp: false,
     })
   }
 
@@ -308,7 +308,7 @@ export function meowOrExit({
     importMeta,
     flags: config.flags,
     allowUnknownFlags: Boolean(allowUnknownFlags),
-    autoHelp: false
+    autoHelp: false,
   })
   // Ok, no help, reset to default.
   process.exitCode = 0
@@ -343,7 +343,7 @@ function getAsciiHeader(command: string) {
   const v1test = isTestingV1() ? ' (is testing v1)' : ''
   const feedback = isTestingV1()
     ? colors.green(
-        '   (Thank you for testing the v1 bump! Please send us any feedback you might have!)\n'
+        '   (Thank you for testing the v1 bump! Please send us any feedback you might have!)\n',
       )
     : ''
   const shownToken = redacting ? REDACTED : getVisibleTokenPrefix() || 'no'
@@ -355,15 +355,15 @@ function getAsciiHeader(command: string) {
           .replace(
             new RegExp(
               `^${escapeRegExp(constants.homePath)}(?:${path.sep}|$)`,
-              'i'
+              'i',
             ),
-            '~/'
-          )
+            '~/',
+          ),
       )
   let nodeVerWarn = ''
   if ((semver.parse(constants.NODE_VERSION)?.major ?? 0) < 20) {
     nodeVerWarn += colors.bold(
-      `   ${colors.red('Warning:')} NodeJS version 19 and lower will be ${colors.red('unsupported')} after April 30th, 2025.`
+      `   ${colors.red('Warning:')} NodeJS version 19 and lower will be ${colors.red('unsupported')} after April 30th, 2025.`,
     )
     nodeVerWarn += '\n'
     nodeVerWarn +=

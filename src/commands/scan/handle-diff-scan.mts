@@ -9,7 +9,7 @@ export async function handleDiffScan({
   id1,
   id2,
   orgSlug,
-  outputKind
+  outputKind,
 }: {
   depth: number
   file: string
@@ -21,12 +21,12 @@ export async function handleDiffScan({
   const data = await fetchDiffScan({
     id1,
     id2,
-    orgSlug
+    orgSlug,
   })
 
   await outputDiffScan(data, {
     depth,
     file,
-    outputKind
+    outputKind,
   })
 }

@@ -14,7 +14,7 @@ export async function runFix(options_: FixOptions) {
   const options = normalizeFixOptions(options_)
   const pkgEnvDetails = await detectAndValidatePackageEnvironment(options.cwd, {
     cmdName: CMD_NAME,
-    logger
+    logger,
   })
   if (!pkgEnvDetails) {
     return

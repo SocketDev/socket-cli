@@ -24,7 +24,7 @@ if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
     },
     dsn: 'https://66736701db8e4ffac046bd09fa6aaced@o555220.ingest.us.sentry.io/4508846967619585',
     enabled: true,
-    integrations: []
+    integrations: [],
   })
   Sentry.setTag(
     'environment',
@@ -32,12 +32,12 @@ if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
     constants.ENV.INLINED_SOCKET_CLI_PUBLISHED_BUILD
       ? 'pub'
       : // Lazily access constants.ENV.NODE_ENV.
-        constants.ENV.NODE_ENV
+        constants.ENV.NODE_ENV,
   )
   Sentry.setTag(
     'version',
     // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH.
-    constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
+    constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH,
   )
   // Lazily access constants.ENV.SOCKET_CLI_DEBUG.
   if (constants.ENV.SOCKET_CLI_DEBUG) {
@@ -48,7 +48,7 @@ if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
   }
   const {
     kInternalsSymbol,
-    [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { setSentry }
+    [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { setSentry },
   } = constants
   setSentry(Sentry)
 }

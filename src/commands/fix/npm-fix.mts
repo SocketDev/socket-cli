@@ -7,7 +7,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
-  readPackageJson
+  readPackageJson,
 } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
@@ -18,21 +18,21 @@ import {
   gitCreateAndPushBranch,
   gitRemoteBranchExists,
   gitResetAndClean,
-  gitUnstagedModifiedFiles
+  gitUnstagedModifiedFiles,
 } from './git.mts'
 import {
   cleanupOpenPrs,
   enablePrAutoMerge,
   getGitHubEnvRepoInfo,
   openPr,
-  prExistForBranch
+  prExistForBranch,
 } from './open-pr.mts'
 import { getAlertMapOptions } from './shared.mts'
 import constants from '../../constants.mts'
 import {
   Arborist,
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
-  SafeArborist
+  SafeArborist,
 } from '../../shadow/npm/arborist/lib/arborist/index.mts'
 import {
   findBestPatchVersion,
@@ -40,7 +40,7 @@ import {
   findPackageNodes,
   getAlertsMapFromArborist,
   updateNode,
-  updatePackageJsonFromNode
+  updatePackageJsonFromNode,
 } from '../../shadow/npm/arborist-helpers.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { removeNodeModules } from '../../utils/fs.mts'
@@ -62,11 +62,11 @@ type InstallOptions = {
 
 async function install(
   arb: SafeArborist,
-  options: InstallOptions
+  options: InstallOptions,
 ): Promise<SafeNode> {
   const { cwd = process.cwd() } = {
     __proto__: null,
-    ...options
+    ...options,
   } as InstallOptions
   const newArb = new Arborist({ path: cwd })
   newArb.idealTree = await arb.buildIdealTree()
@@ -85,8 +85,8 @@ export async function npmFix(
     purls,
     rangeStyle,
     test,
-    testScript
-  }: NormalizedFixOptions
+    testScript,
+  }: NormalizedFixOptions,
 ) {
   if (dryRun) {
     logger.log(DRY_RUN_NOT_SAVING)
@@ -101,7 +101,7 @@ export async function npmFix(
 
   const arb = new SafeArborist({
     path: rootPath,
-    ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
+    ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   })
   // Calling arb.reify() creates the arb.diff object, nulls-out arb.idealTree,
   // and populates arb.actualTree.
@@ -123,19 +123,19 @@ export async function npmFix(
   const baseBranch = isCi ? getBaseGitBranch() : ''
   const workspacePkgJsonPaths = await globWorkspace(
     pkgEnvDetails.agent,
-    rootPath
+    rootPath,
   )
   const pkgJsonPaths = [
     ...workspacePkgJsonPaths,
     // Process the workspace root last since it will add an override to package.json.
-    pkgEnvDetails.editablePkgJson.filename!
+    pkgEnvDetails.editablePkgJson.filename!,
   ]
 
   spinner?.stop()
 
   let count = 0
   const sortedInfoEntries = [...infoByPkgName.entries()].sort((a, b) =>
-    naturalCompare(a[0], b[0])
+    naturalCompare(a[0], b[0]),
   )
   infoEntriesLoop: for (
     let i = 0, { length } = sortedInfoEntries;
@@ -181,12 +181,12 @@ export async function npmFix(
       const oldVersions = arrayUnique(
         findPackageNodes(actualTree, name)
           .map(n => n.target?.version ?? n.version)
-          .filter(Boolean)
+          .filter(Boolean),
       )
 
       if (!oldVersions.length) {
         logger.warn(
-          `Unexpected condition: Lockfile entries not found for ${name}.\n`
+          `Unexpected condition: Lockfile entries not found for ${name}.\n`,
         )
         continue pkgJsonPathsLoop
       }
@@ -195,7 +195,7 @@ export async function npmFix(
       // across iterations.
       // eslint-disable-next-line no-await-in-loop
       const editablePkgJson = await readPackageJson(pkgJsonPath, {
-        editable: true
+        editable: true,
       })
 
       oldVersionsLoop: for (const oldVersion of oldVersions) {
@@ -205,20 +205,20 @@ export async function npmFix(
         const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
           logger.warn(
-            `Unexpected condition: Arborist node not found, skipping ${oldId}`
+            `Unexpected condition: Arborist node not found, skipping ${oldId}`,
           )
           continue oldVersionsLoop
         }
 
         infosLoop: for (const {
           firstPatchedVersionIdentifier,
-          vulnerableVersionRange
+          vulnerableVersionRange,
         } of infos.values()) {
           const newVersion = findBestPatchVersion(
             node,
             availableVersions,
             vulnerableVersionRange,
-            firstPatchedVersionIdentifier
+            firstPatchedVersionIdentifier,
           )
           const newVersionPackument = newVersion
             ? packument.versions[newVersion]
@@ -226,7 +226,7 @@ export async function npmFix(
 
           if (!(newVersion && newVersionPackument)) {
             warningsForAfter.add(
-              `No update applied. ${oldId} needs >=${firstPatchedVersionIdentifier}`
+              `No update applied. ${oldId} needs >=${firstPatchedVersionIdentifier}`,
             )
             continue infosLoop
           }
@@ -235,16 +235,16 @@ export async function npmFix(
           const newId = `${name}@${newVersionRange}`
           const revertData = {
             ...(editablePkgJson.content.dependencies && {
-              dependencies: { ...editablePkgJson.content.dependencies }
+              dependencies: { ...editablePkgJson.content.dependencies },
             }),
             ...(editablePkgJson.content.optionalDependencies && {
               optionalDependencies: {
-                ...editablePkgJson.content.optionalDependencies
-              }
+                ...editablePkgJson.content.optionalDependencies,
+              },
             }),
             ...(editablePkgJson.content.peerDependencies && {
-              peerDependencies: { ...editablePkgJson.content.peerDependencies }
-            })
+              peerDependencies: { ...editablePkgJson.content.peerDependencies },
+            }),
           } as PackageJson
 
           updateNode(node, newVersion, newVersionPackument)
@@ -254,7 +254,7 @@ export async function npmFix(
             await arb.buildIdealTree(),
             node,
             newVersion,
-            rangeStyle
+            rangeStyle,
           )
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
@@ -292,7 +292,7 @@ export async function npmFix(
             const branch = getSocketBranchName(
               oldPurl,
               newVersion,
-              workspaceName
+              workspaceName,
             )
             try {
               const { owner, repo } = getGitHubEnvRepoInfo()
@@ -304,7 +304,7 @@ export async function npmFix(
               // eslint-disable-next-line no-await-in-loop
               if (await gitRemoteBranchExists(branch, cwd)) {
                 debugLog(
-                  `Remote branch "${branch}" exists, skipping PR creation.`
+                  `Remote branch "${branch}" exists, skipping PR creation.`,
                 )
                 continue infosLoop
               }
@@ -320,7 +320,7 @@ export async function npmFix(
                 })
               if (!moddedFilepaths.length) {
                 logger.warn(
-                  'Unexpected condition: Nothing to commit, skipping PR creation.'
+                  'Unexpected condition: Nothing to commit, skipping PR creation.',
                 )
                 continue infosLoop
               }
@@ -331,17 +331,17 @@ export async function npmFix(
                   branch,
                   getSocketCommitMessage(oldPurl, newVersion, workspaceName),
                   moddedFilepaths,
-                  cwd
+                  cwd,
                 ))
               ) {
                 logger.warn(
-                  'Unexpected condition: Push failed, skipping PR creation.'
+                  'Unexpected condition: Push failed, skipping PR creation.',
                 )
                 continue infosLoop
               }
               // eslint-disable-next-line no-await-in-loop
               await cleanupOpenPrs(owner, repo, oldPurl, newVersion, {
-                workspaceName
+                workspaceName,
               })
               // eslint-disable-next-line no-await-in-loop
               const prResponse = await openPr(
@@ -353,8 +353,8 @@ export async function npmFix(
                 {
                   baseBranch,
                   cwd,
-                  workspaceName
-                }
+                  workspaceName,
+                },
               )
               if (prResponse) {
                 const { data } = prResponse
@@ -382,14 +382,14 @@ export async function npmFix(
               // eslint-disable-next-line no-await-in-loop
               await Promise.all([
                 removeNodeModules(cwd),
-                editablePkgJson.save({ ignoreWhitespace: true })
+                editablePkgJson.save({ ignoreWhitespace: true }),
               ])
               // eslint-disable-next-line no-await-in-loop
               actualTree = await install(arb, { cwd })
             }
             spinner?.failAndStop(
               `Update failed for ${oldId} in ${workspaceName}`,
-              error
+              error,
             )
           }
           if (++count >= limit) {

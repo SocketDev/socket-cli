@@ -8,7 +8,7 @@ export async function fetchThreatFeed({
   ecosystem,
   filter,
   page,
-  perPage
+  perPage,
 }: {
   direction: string
   ecosystem: string
@@ -21,11 +21,11 @@ export async function fetchThreatFeed({
     ['ecosystem', ecosystem],
     ['filter', filter],
     ['page', page],
-    ['per_page', String(perPage)]
+    ['per_page', String(perPage)],
   ])
 
   return await queryApiSafeJson(
     `threat-feed?${queryParams}`,
-    'the Threat Feed data'
+    'the Threat Feed data',
   )
 }

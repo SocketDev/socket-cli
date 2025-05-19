@@ -8,7 +8,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputQuota(
   result: CResult<SocketSdkReturnType<'getQuota'>['data']>,
-  outputKind: OutputKind = 'text'
+  outputKind: OutputKind = 'text',
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1

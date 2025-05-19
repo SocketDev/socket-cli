@@ -19,14 +19,14 @@ export const cmdConfig: CliSubcommand = {
         get: cmdConfigGet,
         list: cmdConfigList,
         set: cmdConfigSet,
-        unset: cmdConfigUnset
+        unset: cmdConfigUnset,
       },
       {
         argv,
         description,
         importMeta,
-        name: `${parentName} config`
-      }
+        name: `${parentName} config`,
+      },
     )
-  }
+  },
 }

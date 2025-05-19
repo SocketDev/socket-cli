@@ -35,7 +35,7 @@ export function checkCommandInput(
     // If the message has newlines then format the first line with the input
     // expectation and the rest indented below it.
     msg.push(
-      `  - ${lines[0]} (${d.test ? colors.green(d.pass) : colors.red(d.fail)})`
+      `  - ${lines[0]} (${d.test ? colors.green(d.pass) : colors.red(d.fail)})`,
     )
     if (lineCount > 1) {
       msg.push(...lines.slice(1).map(str => `    ${str}`))
@@ -53,8 +53,8 @@ export function checkCommandInput(
       serializeResultJson({
         ok: false,
         message: 'Input error',
-        data: msg.join('\n')
-      })
+        data: msg.join('\n'),
+      }),
     )
   } else {
     logger.fail(failMsgWithBadge('Input error', msg.join('\n')))

@@ -4,14 +4,14 @@ import {
   idToPurl,
   isDepPath,
   stripLeadingSlash,
-  stripPeerSuffix
+  stripPeerSuffix,
 } from './spec.mts'
 
 import type { LockfileObject, PackageSnapshot } from '@pnpm/lockfile.fs'
 import type { SemVer } from 'semver'
 
 export async function extractPurlsFromPnpmLockfile(
-  lockfile: LockfileObject
+  lockfile: LockfileObject,
 ): Promise<string[]> {
   const packages = lockfile?.packages ?? {}
   const seen = new Set<string>()
@@ -28,7 +28,7 @@ export async function extractPurlsFromPnpmLockfile(
       __proto__: null,
       ...pkg.dependencies,
       ...pkg.optionalDependencies,
-      ...(pkg as any).devDependencies
+      ...(pkg as any).devDependencies,
     }
     for (const depName in deps) {
       const ref = deps[depName]!

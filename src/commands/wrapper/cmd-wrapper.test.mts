@@ -31,7 +31,7 @@ describe('socket wrapper', async () => {
           Examples
             $ socket wrapper --enable
             $ socket wrapper --disable"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -43,9 +43,9 @@ describe('socket wrapper', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket wrapper`'
+        '`socket wrapper`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -68,7 +68,7 @@ describe('socket wrapper', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -86,6 +86,6 @@ describe('socket wrapper', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

@@ -10,7 +10,7 @@ import { detectAndValidatePackageEnvironment } from '../../utils/package-environ
 function createActionMessage(
   verb: string,
   overrideCount: number,
-  workspaceCount: number
+  workspaceCount: number,
 ): string {
   return `${verb} ${overrideCount} Socket.dev optimized ${pluralize('override', overrideCount)}${workspaceCount ? ` in ${workspaceCount} ${pluralize('workspace', workspaceCount)}` : ''}`
 }
@@ -18,12 +18,12 @@ function createActionMessage(
 export async function applyOptimization(
   cwd: string,
   pin: boolean,
-  prod: boolean
+  prod: boolean,
 ) {
   const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
     cmdName: CMD_NAME,
     logger,
-    prod
+    prod,
   })
   if (!pkgEnvDetails) {
     return
@@ -37,7 +37,7 @@ export async function applyOptimization(
     logger,
     pin,
     prod,
-    spinner
+    spinner,
   })
 
   const addedCount = state.added.size
@@ -53,12 +53,12 @@ export async function applyOptimization(
   if (pkgJsonChanged) {
     if (updatedCount > 0) {
       logger?.log(
-        `${createActionMessage('Updated', updatedCount, state.updatedInWorkspaces.size)}${addedCount ? '.' : '🚀'}`
+        `${createActionMessage('Updated', updatedCount, state.updatedInWorkspaces.size)}${addedCount ? '.' : '🚀'}`,
       )
     }
     if (addedCount > 0) {
       logger?.log(
-        `${createActionMessage('Added', addedCount, state.addedInWorkspaces.size)} 🚀`
+        `${createActionMessage('Added', addedCount, state.addedInWorkspaces.size)} 🚀`,
       )
     }
   } else {

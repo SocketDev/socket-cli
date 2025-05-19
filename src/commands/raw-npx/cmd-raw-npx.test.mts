@@ -25,7 +25,7 @@ describe('socket raw-npx', async () => {
 
           Examples
             $ socket raw-npx install"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -37,9 +37,9 @@ describe('socket raw-npx', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket raw-npx`'
+        '`socket raw-npx`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -57,6 +57,6 @@ describe('socket raw-npx', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

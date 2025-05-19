@@ -6,12 +6,12 @@ import { hasKeys } from '@socketsecurity/registry/lib/objects'
 
 import {
   ALERT_SEVERITY,
-  formatSeverityCount
+  formatSeverityCount,
 } from '../../utils/alert/severity.mts'
 import { ColorOrMarkdown } from '../../utils/color-or-markdown.mts'
 import {
   getSocketDevAlertUrl,
-  getSocketDevPackageOverviewUrl
+  getSocketDevPackageOverviewUrl,
 } from '../../utils/socket-url.mts'
 
 import type { PackageData } from './handle-package-info.mts'
@@ -31,12 +31,12 @@ function formatScore(score: number): string {
 
 function outputPackageIssuesDetails(
   packageData: SocketSdkReturnType<'getIssuesByNPMPackage'>['data'],
-  outputMarkdown: boolean
+  outputMarkdown: boolean,
 ) {
   const issueDetails = packageData.filter(
     d =>
       d.value?.severity === ALERT_SEVERITY.critical ||
-      d.value?.severity === ALERT_SEVERITY.high
+      d.value?.severity === ALERT_SEVERITY.high,
   )
   const uniqueIssueDetails = issueDetails.reduce((acc, issue) => {
     const { type } = issue
@@ -47,7 +47,7 @@ function outputPackageIssuesDetails(
       } else {
         acc.set(type, {
           label: issue.value?.label ?? '',
-          count: 1
+          count: 1,
         })
       }
     }
@@ -58,7 +58,7 @@ function outputPackageIssuesDetails(
     const issueWithLink = format.hyperlink(
       details.label,
       getSocketDevAlertUrl(type),
-      { fallbackToUrl: true }
+      { fallbackToUrl: true },
     )
     if (details.count === 1) {
       logger.log(`- ${issueWithLink}`)
@@ -74,14 +74,14 @@ export function outputPackageInfo(
     commandName,
     outputKind,
     pkgName,
-    pkgVersion
+    pkgVersion,
   }: {
     commandName: string
     outputKind: OutputKind
     pkgName: string
     pkgVersion: string
     includeAllIssues?: boolean | undefined
-  }
+  },
 ): void {
   if (outputKind === 'json') {
     logger.log(JSON.stringify(data, undefined, 2))
@@ -93,7 +93,7 @@ export function outputPackageInfo(
 # Package report for ${pkgName}
 
 Package report card:
-    `.trim()
+    `.trim(),
     )
   } else {
     logger.log(`Package report card for ${pkgName}:`)
@@ -103,11 +103,11 @@ Package report card:
     Maintenance: Math.floor(score.maintenance.score * 100),
     Quality: Math.floor(score.quality.score * 100),
     Vulnerabilities: Math.floor(score.vulnerability.score * 100),
-    License: Math.floor(score.license.score * 100)
+    License: Math.floor(score.license.score * 100),
   }
   logger.log('\n')
   Object.entries(scoreResult).map(score =>
-    logger.log(`- ${score[0]}: ${formatScore(score[1])}`)
+    logger.log(`- ${score[0]}: ${formatScore(score[1])}`),
   )
   logger.log('\n')
   if (hasKeys(severityCount)) {
@@ -115,7 +115,7 @@ Package report card:
       logger.log('# Issues\n')
     }
     logger.log(
-      `Package has these issues: ${formatSeverityCount(severityCount)}\n`
+      `Package has these issues: ${formatSeverityCount(severityCount)}\n`,
     )
     outputPackageIssuesDetails(data, outputKind === 'markdown')
   } else {
@@ -128,18 +128,18 @@ Package report card:
   logger.log('\n')
   if (pkgVersion === 'latest') {
     logger.log(
-      `Detailed info on socket.dev: ${format.hyperlink(`${pkgName}`, url, { fallbackToUrl: true })}`
+      `Detailed info on socket.dev: ${format.hyperlink(`${pkgName}`, url, { fallbackToUrl: true })}`,
     )
   } else {
     logger.log(
-      `Detailed info on socket.dev: ${format.hyperlink(`${pkgName} v${pkgVersion}`, url, { fallbackToUrl: true })}`
+      `Detailed info on socket.dev: ${format.hyperlink(`${pkgName} v${pkgVersion}`, url, { fallbackToUrl: true })}`,
     )
   }
   if (outputKind !== 'markdown') {
     logger.log(
       colors.dim(
-        `\nOr rerun ${colors.italic(commandName)} using the ${colors.italic('--json')} flag to get full JSON output`
-      )
+        `\nOr rerun ${colors.italic(commandName)} using the ${colors.italic('--json')} flag to get full JSON output`,
+      ),
     )
   } else {
     logger.log('')

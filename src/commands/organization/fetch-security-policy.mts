@@ -5,7 +5,7 @@ import type { CResult } from '../../types.mts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchSecurityPolicy(
-  orgSlug: string
+  orgSlug: string,
 ): Promise<CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>> {
   const sockSdkResult = await setupSdk()
   if (!sockSdkResult.ok) {
@@ -15,6 +15,6 @@ export async function fetchSecurityPolicy(
 
   return await handleApiCall(
     sockSdk.getOrgSecurityPolicy(orgSlug),
-    'organization security policy'
+    'organization security policy',
   )
 }

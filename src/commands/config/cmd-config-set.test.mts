@@ -44,7 +44,7 @@ describe('socket config get', async () => {
 
           Examples
             $ socket config set apiProxy https://example.com"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -56,9 +56,9 @@ describe('socket config get', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket config set`'
+        '`socket config set`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -83,7 +83,7 @@ describe('socket config get', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -94,7 +94,7 @@ describe('socket config get', async () => {
       'xyz',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -109,6 +109,6 @@ describe('socket config get', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

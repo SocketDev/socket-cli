@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import {
   GraphqlResponseError,
-  graphql as OctokitGraphql
+  graphql as OctokitGraphql,
 } from '@octokit/graphql'
 import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
@@ -16,7 +16,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import {
   getSocketPrTitlePattern,
   getSocketPullRequestBody,
-  getSocketPullRequestTitle
+  getSocketPullRequestTitle,
 } from './git.mts'
 import constants from '../../constants.mts'
 
@@ -30,7 +30,7 @@ function getOctokit() {
     _octokit = new Octokit({
       // Lazily access constants.ENV properties.
       auth:
-        constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN
+        constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN,
     })
   }
   return _octokit
@@ -42,8 +42,8 @@ export function getOctokitGraphql() {
     _octokitGraphql = OctokitGraphql.defaults({
       headers: {
         // Lazily access constants.ENV properties.
-        authorization: `token ${constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN}`
-      }
+        authorization: `token ${constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN}`,
+      },
     })
   }
   return _octokitGraphql
@@ -52,7 +52,7 @@ export function getOctokitGraphql() {
 export async function cacheFetch<T>(
   key: string,
   fetcher: () => Promise<T>,
-  ttlMs?: number | undefined
+  ttlMs?: number | undefined,
 ): Promise<T> {
   // Optionally disable cache.
   if (constants.ENV.DISABLE_GITHUB_CACHE) {
@@ -69,7 +69,7 @@ export async function cacheFetch<T>(
 async function readCache(
   key: string,
   // 5 minute in milliseconds time to live (TTL).
-  ttlMs = 5 * 60 * 1000
+  ttlMs = 5 * 60 * 1000,
 ): Promise<JsonContent | null> {
   // Lazily access constants.githubCachePath.
   const cacheJsonPath = path.join(constants.githubCachePath, `${key}.json`)
@@ -104,7 +104,7 @@ export async function cleanupOpenPrs(
   repo: string,
   purl: string,
   newVersion: string,
-  options?: CleanupPrsOptions | undefined
+  options?: CleanupPrsOptions | undefined,
 ) {
   const { workspaceName } = { __proto__: null, ...options } as CleanupPrsOptions
   const octokit = getOctokit()
@@ -150,8 +150,8 @@ export async function cleanupOpenPrs(
             }
           }
           `,
-        { owner, repo }
-      )
+        { owner, repo },
+      ),
     )
     const nodes: GqlPrNode[] = (gqlResp as any)?.repository?.pullRequests?.nodes
     if (nodes) {
@@ -165,7 +165,7 @@ export async function cleanupOpenPrs(
             entry: node,
             index: i,
             parent: nodes,
-            props: node
+            props: node,
           })
         }
       }
@@ -184,8 +184,8 @@ export async function cleanupOpenPrs(
             owner,
             repo,
             state: 'open',
-            per_page: 100
-          })) as Pr[]
+            per_page: 100,
+          })) as Pr[],
       )
     } catch {}
     if (allOpenPrs) {
@@ -207,8 +207,8 @@ export async function cleanupOpenPrs(
               mergeStateStatus:
                 pr.mergeable_state?.toUpperCase?.() ?? 'UNKNOWN',
               number: pr.number,
-              title: pr.title
-            }
+              title: pr.title,
+            },
           })
         }
       }
@@ -234,7 +234,7 @@ export async function cleanupOpenPrs(
             owner,
             repo,
             pull_number: prNumber,
-            state: 'closed'
+            state: 'closed',
           })
           logger.info(`Closed PR #${prNumber} for older version ${prVersion}`)
           // Remove entry from parent object.
@@ -243,7 +243,7 @@ export async function cleanupOpenPrs(
           cachesToSave.set(match.cacheKey, match.data)
         } catch (e) {
           logger.warn(
-            `Failed to close PR #${prNumber}: ${(e as Error).message}`
+            `Failed to close PR #${prNumber}: ${(e as Error).message}`,
           )
           return
         }
@@ -256,7 +256,7 @@ export async function cleanupOpenPrs(
             owner,
             repo,
             base: props.headRefName,
-            head: props.baseRefName
+            head: props.baseRefName,
           })
           logger.info(`Updated stale PR #${prNumber}`)
           // Update entry entry.
@@ -272,19 +272,19 @@ export async function cleanupOpenPrs(
           logger.warn(`Failed to update PR #${prNumber}: ${message}`)
         }
       }
-    })
+    }),
   )
 
   if (cachesToSave.size) {
     await Promise.allSettled(
-      [...cachesToSave].map(({ 0: key, 1: data }) => writeCache(key, data))
+      [...cachesToSave].map(({ 0: key, 1: data }) => writeCache(key, data)),
     )
   }
 }
 
 export async function enablePrAutoMerge({
   node_id: prId,
-  number: prNumber
+  number: prNumber,
 }: Pr): Promise<boolean> {
   const octokitGraphql = getOctokitGraphql()
   let error: unknown
@@ -301,7 +301,7 @@ export async function enablePrAutoMerge({
           }
         }
       }`,
-      { pullRequestId: prId }
+      { pullRequestId: prId },
     )
     const respPrNumber = (response as any)?.enablePullRequestAutoMerge
       ?.pullRequest?.number
@@ -337,7 +337,7 @@ export function getGitHubEnvRepoInfo(): GitHubRepoInfo {
   }
   return {
     owner: ownerSlashRepo.slice(0, slashIndex),
-    repo: ownerSlashRepo.slice(slashIndex + 1)
+    repo: ownerSlashRepo.slice(slashIndex + 1),
   }
 }
 
@@ -353,15 +353,15 @@ export async function openPr(
   branch: string,
   purl: string,
   newVersion: string,
-  options?: OpenPrOptions | undefined
+  options?: OpenPrOptions | undefined,
 ): Promise<OctokitResponse<Pr> | null> {
   const {
     baseBranch = 'main',
     cwd = process.cwd(),
-    workspaceName
+    workspaceName,
   } = {
     __proto__: null,
-    ...options
+    ...options,
   } as OpenPrOptions
   // Lazily access constants.ENV.GITHUB_ACTIONS.
   if (constants.ENV.GITHUB_ACTIONS) {
@@ -370,7 +370,7 @@ export async function openPr(
       constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN
     const url = `https://x-access-token:${token}@github.com/${owner}/${repo}`
     await spawn('git', ['remote', 'set-url', 'origin', url], {
-      cwd
+      cwd,
     })
     const octokit = getOctokit()
     try {
@@ -380,7 +380,7 @@ export async function openPr(
         title: getSocketPullRequestTitle(purl, newVersion, workspaceName),
         head: branch,
         base: baseBranch,
-        body: getSocketPullRequestBody(purl, newVersion, workspaceName)
+        body: getSocketPullRequestBody(purl, newVersion, workspaceName),
       })
     } catch (e) {
       let message = `Failed to open pull request`
@@ -390,7 +390,7 @@ export async function openPr(
           const details = restErrors
             .map(
               restErr =>
-                `- ${restErr.message?.trim() ?? `${restErr.resource}.${restErr.field} (${restErr.code})`}`
+                `- ${restErr.message?.trim() ?? `${restErr.resource}.${restErr.field} (${restErr.code})`}`,
             )
             .join('\n')
           message += `:\n${details}`
@@ -406,7 +406,7 @@ export async function openPr(
 export async function prExistForBranch(
   owner: string,
   repo: string,
-  branch: string
+  branch: string,
 ): Promise<boolean> {
   const octokit = getOctokit()
   try {
@@ -415,7 +415,7 @@ export async function prExistForBranch(
       repo,
       head: `${owner}:${branch}`,
       state: 'open',
-      per_page: 1
+      per_page: 1,
     })
     return prs.length > 0
   } catch {}

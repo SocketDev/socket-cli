@@ -14,8 +14,8 @@ describe('generate-report', () => {
         orgSlug: 'fakeorg',
         scanId: 'scan-ai-dee',
         fold: 'none',
-        reportLevel: 'warn'
-      }
+        reportLevel: 'warn',
+      },
     )
 
     expect(result).toMatchInlineSnapshot(`
@@ -43,17 +43,17 @@ describe('generate-report', () => {
           {
             securityPolicyRules: {
               gptSecurity: {
-                action: 'ignore'
-              }
+                action: 'ignore',
+              },
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'warn'
-          }
+            reportLevel: 'warn',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -82,17 +82,17 @@ describe('generate-report', () => {
           {
             securityPolicyRules: {
               envVars: {
-                action: 'error'
-              }
+                action: 'error',
+              },
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'warn'
-          }
+            reportLevel: 'warn',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -149,17 +149,17 @@ describe('generate-report', () => {
           {
             securityPolicyRules: {
               envVars: {
-                action: 'warn'
-              }
+                action: 'warn',
+              },
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'warn'
-          }
+            reportLevel: 'warn',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -213,17 +213,17 @@ describe('generate-report', () => {
           {
             securityPolicyRules: {
               envVars: {
-                action: 'monitor'
-              }
+                action: 'monitor',
+              },
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'warn'
-          }
+            reportLevel: 'warn',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -252,17 +252,17 @@ describe('generate-report', () => {
           {
             securityPolicyRules: {
               envVars: {
-                action: 'ignore'
-              }
+                action: 'ignore',
+              },
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'warn'
-          }
+            reportLevel: 'warn',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -291,17 +291,17 @@ describe('generate-report', () => {
           {
             securityPolicyRules: {
               envVars: {
-                action: 'defer'
-              }
+                action: 'defer',
+              },
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'warn'
-          }
+            reportLevel: 'warn',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -329,16 +329,16 @@ describe('generate-report', () => {
           getScanWithEnvVars(),
           {
             securityPolicyRules: {
-              envVars: {}
+              envVars: {},
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'warn'
-          }
+            reportLevel: 'warn',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -366,14 +366,14 @@ describe('generate-report', () => {
           getScanWithEnvVars(),
           {
             securityPolicyRules: {},
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'warn'
-          }
+            reportLevel: 'warn',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -404,17 +404,17 @@ describe('generate-report', () => {
           {
             securityPolicyRules: {
               gptSecurity: {
-                action: 'ignore'
-              }
+                action: 'ignore',
+              },
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'ignore'
-          }
+            reportLevel: 'ignore',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -443,17 +443,17 @@ describe('generate-report', () => {
           {
             securityPolicyRules: {
               envVars: {
-                action: 'error'
-              }
+                action: 'error',
+              },
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'ignore'
-          }
+            reportLevel: 'ignore',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -508,17 +508,17 @@ describe('generate-report', () => {
           {
             securityPolicyRules: {
               envVars: {
-                action: 'warn'
-              }
+                action: 'warn',
+              },
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'ignore'
-          }
+            reportLevel: 'ignore',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -572,17 +572,17 @@ describe('generate-report', () => {
           {
             securityPolicyRules: {
               envVars: {
-                action: 'monitor'
-              }
+                action: 'monitor',
+              },
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'ignore'
-          }
+            reportLevel: 'ignore',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -636,17 +636,17 @@ describe('generate-report', () => {
           {
             securityPolicyRules: {
               envVars: {
-                action: 'ignore'
-              }
+                action: 'ignore',
+              },
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'ignore'
-          }
+            reportLevel: 'ignore',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -700,17 +700,17 @@ describe('generate-report', () => {
           {
             securityPolicyRules: {
               envVars: {
-                action: 'defer'
-              }
+                action: 'defer',
+              },
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'ignore'
-          }
+            reportLevel: 'ignore',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -738,16 +738,16 @@ describe('generate-report', () => {
           getScanWithEnvVars(),
           {
             securityPolicyRules: {
-              envVars: {}
+              envVars: {},
             },
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'ignore'
-          }
+            reportLevel: 'ignore',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -775,14 +775,14 @@ describe('generate-report', () => {
           getScanWithEnvVars(),
           {
             securityPolicyRules: {},
-            securityPolicyDefault: 'medium'
+            securityPolicyDefault: 'medium',
           },
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
             fold: 'none',
-            reportLevel: 'ignore'
-          }
+            reportLevel: 'ignore',
+          },
         )
 
         expect(result).toMatchInlineSnapshot(`
@@ -814,17 +814,17 @@ describe('generate-report', () => {
         {
           securityPolicyRules: {
             envVars: {
-              action: 'error'
-            }
+              action: 'error',
+            },
           },
-          securityPolicyDefault: 'medium'
+          securityPolicyDefault: 'medium',
         },
         {
           orgSlug: 'fakeorg',
           scanId: 'scan-ai-dee',
           fold: 'none',
-          reportLevel: 'warn'
-        }
+          reportLevel: 'warn',
+        },
       )
 
       expect(result).toMatchInlineSnapshot(`
@@ -876,17 +876,17 @@ describe('generate-report', () => {
         {
           securityPolicyRules: {
             envVars: {
-              action: 'error'
-            }
+              action: 'error',
+            },
           },
-          securityPolicyDefault: 'medium'
+          securityPolicyDefault: 'medium',
         },
         {
           orgSlug: 'fakeorg',
           scanId: 'scan-ai-dee',
           fold: 'file',
-          reportLevel: 'warn'
-        }
+          reportLevel: 'warn',
+        },
       )
 
       expect(result).toMatchInlineSnapshot(`
@@ -928,17 +928,17 @@ describe('generate-report', () => {
         {
           securityPolicyRules: {
             envVars: {
-              action: 'error'
-            }
+              action: 'error',
+            },
           },
-          securityPolicyDefault: 'medium'
+          securityPolicyDefault: 'medium',
         },
         {
           orgSlug: 'fakeorg',
           scanId: 'scan-ai-dee',
           fold: 'version',
-          reportLevel: 'warn'
-        }
+          reportLevel: 'warn',
+        },
       )
 
       expect(result).toMatchInlineSnapshot(`
@@ -978,17 +978,17 @@ describe('generate-report', () => {
         {
           securityPolicyRules: {
             envVars: {
-              action: 'error'
-            }
+              action: 'error',
+            },
           },
-          securityPolicyDefault: 'medium'
+          securityPolicyDefault: 'medium',
         },
         {
           orgSlug: 'fakeorg',
           scanId: 'scan-ai-dee',
           fold: 'pkg',
-          reportLevel: 'warn'
-        }
+          reportLevel: 'warn',
+        },
       )
 
       expect(result).toMatchInlineSnapshot(`
@@ -1039,18 +1039,18 @@ function getSimpleCleanScan(): Array<components['schemas']['SocketArtifact']> {
         overall: 0.86,
         quality: 1,
         supplyChain: 1,
-        vulnerability: 1
+        vulnerability: 1,
       },
       alerts: [],
       manifestFiles: [
         {
           file: 'package-lock.json',
           start: 600172,
-          end: 600440
-        }
+          end: 600440,
+        },
       ],
-      topLevelAncestors: ['15903631404']
-    }
+      topLevelAncestors: ['15903631404'],
+    },
   ]
 }
 
@@ -1071,7 +1071,7 @@ function getScanWithEnvVars(): Array<components['schemas']['SocketArtifact']> {
         overall: 0.86,
         quality: 1,
         supplyChain: 1,
-        vulnerability: 1
+        vulnerability: 1,
       },
       alerts: [
         {
@@ -1084,8 +1084,8 @@ function getScanWithEnvVars(): Array<components['schemas']['SocketArtifact']> {
           end: 72,
           props: {
             // @ts-ignore
-            envVars: 'XYZ'
-          }
+            envVars: 'XYZ',
+          },
         },
         {
           key: 'QEW1uRmLsj4EBOTv3wb0NZ3W4ziYZVheU5uTpYPC6txy',
@@ -1097,18 +1097,18 @@ function getScanWithEnvVars(): Array<components['schemas']['SocketArtifact']> {
           end: 250,
           props: {
             // @ts-ignore
-            envVars: 'ABC'
-          }
-        }
+            envVars: 'ABC',
+          },
+        },
       ],
       manifestFiles: [
         {
           file: 'package-lock.json',
           start: 600172,
-          end: 600440
-        }
+          end: 600440,
+        },
       ],
-      topLevelAncestors: ['15903631404']
-    }
+      topLevelAncestors: ['15903631404'],
+    },
   ]
 }

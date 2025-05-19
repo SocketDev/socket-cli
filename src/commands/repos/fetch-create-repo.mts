@@ -10,7 +10,7 @@ export async function fetchCreateRepo({
   homepage,
   orgSlug,
   repoName,
-  visibility
+  visibility,
 }: {
   orgSlug: string
   repoName: string
@@ -31,8 +31,8 @@ export async function fetchCreateRepo({
       description,
       homepage,
       default_branch,
-      visibility
+      visibility,
     }),
-    'to create a repository'
+    'to create a repository',
   )
 }

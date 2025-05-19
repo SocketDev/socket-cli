@@ -10,7 +10,7 @@ export async function handleUpdateRepo(
     homepage,
     orgSlug,
     repoName,
-    visibility
+    visibility,
   }: {
     orgSlug: string
     repoName: string
@@ -19,7 +19,7 @@ export async function handleUpdateRepo(
     default_branch: string
     visibility: string
   },
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   const data = await fetchUpdateRepo({
     default_branch,
@@ -27,7 +27,7 @@ export async function handleUpdateRepo(
     homepage,
     orgSlug,
     repoName,
-    visibility
+    visibility,
   })
 
   await outputUpdateRepo(data, repoName, outputKind)

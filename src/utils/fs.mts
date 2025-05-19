@@ -12,7 +12,7 @@ import type {
   ObjectEncodingOptions,
   OpenMode,
   PathLike,
-  PathOrFileDescriptor
+  PathOrFileDescriptor,
 } from 'node:fs'
 import type { FileHandle } from 'node:fs/promises'
 
@@ -30,7 +30,7 @@ export type FindUpOptions = {
 
 export async function findUp(
   name: string | string[],
-  { cwd = process.cwd(), signal = abortSignal }: FindUpOptions
+  { cwd = process.cwd(), signal = abortSignal }: FindUpOptions,
 ): Promise<string | undefined> {
   let dir = path.resolve(cwd)
   const { root } = path.parse(dir)
@@ -63,40 +63,40 @@ export type ReadFileOptions = Remap<
 
 export async function readFileBinary(
   filepath: PathLike | FileHandle,
-  options?: ReadFileOptions | undefined
+  options?: ReadFileOptions | undefined,
 ): Promise<Buffer> {
   return (await fs.readFile(filepath, {
     signal: abortSignal,
     ...options,
-    encoding: 'binary'
+    encoding: 'binary',
   } as ReadFileOptions)) as Buffer
 }
 
 export async function readFileUtf8(
   filepath: PathLike | FileHandle,
-  options?: ReadFileOptions | undefined
+  options?: ReadFileOptions | undefined,
 ): Promise<string> {
   return await fs.readFile(filepath, {
     signal: abortSignal,
     ...options,
-    encoding: 'utf8'
+    encoding: 'utf8',
   })
 }
 
 export async function safeReadFile(
   filepath: PathLike | FileHandle,
-  options?: 'utf8' | 'utf-8' | { encoding: 'utf8' | 'utf-8' } | undefined
+  options?: 'utf8' | 'utf-8' | { encoding: 'utf8' | 'utf-8' } | undefined,
 ): Promise<string | undefined>
 
 export async function safeReadFile(
   filepath: PathLike | FileHandle,
-  options?: ReadFileOptions | NodeJS.BufferEncoding | undefined
+  options?: ReadFileOptions | NodeJS.BufferEncoding | undefined,
 ): Promise<Awaited<ReturnType<typeof fs.readFile>> | undefined> {
   try {
     return await fs.readFile(filepath, {
       encoding: 'utf8',
       signal: abortSignal,
-      ...(typeof options === 'string' ? { encoding: options } : options)
+      ...(typeof options === 'string' ? { encoding: options } : options),
     })
   } catch {}
   return undefined
@@ -104,7 +104,7 @@ export async function safeReadFile(
 
 export function safeReadFileSync(
   filepath: PathOrFileDescriptor,
-  options?: 'utf8' | 'utf-8' | { encoding: 'utf8' | 'utf-8' } | undefined
+  options?: 'utf8' | 'utf-8' | { encoding: 'utf8' | 'utf-8' } | undefined,
 ): string | undefined
 
 export function safeReadFileSync(
@@ -115,12 +115,12 @@ export function safeReadFileSync(
         flag?: string | undefined
       }
     | NodeJS.BufferEncoding
-    | undefined
+    | undefined,
 ): ReturnType<typeof fsReadFileSync> | undefined {
   try {
     return fsReadFileSync(filepath, {
       encoding: 'utf8',
-      ...(typeof options === 'string' ? { encoding: options } : options)
+      ...(typeof options === 'string' ? { encoding: options } : options),
     })
   } catch {}
   return undefined

@@ -11,7 +11,7 @@ const { NODE_MODULES, NPM, NPX, SOCKET_CLI_ISSUES_URL } = constants
 
 function exitWithBinPathError(binName: string): never {
   logger.fail(
-    `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`
+    `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`,
   )
   // The exit code 127 indicates that the command or binary being executed
   // could not be found.
@@ -81,7 +81,10 @@ export function getNpmRequire(): NodeJS.Require {
     const npmPath = getNpmPath()
     const npmNmPath = path.join(npmPath, NODE_MODULES, NPM)
     _npmRequire = Module.createRequire(
-      path.join(existsSync(npmNmPath) ? npmNmPath : npmPath, '<dummy-basename>')
+      path.join(
+        existsSync(npmNmPath) ? npmNmPath : npmPath,
+        '<dummy-basename>',
+      ),
     )
   }
   return _npmRequire

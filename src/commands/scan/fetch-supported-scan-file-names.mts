@@ -15,6 +15,6 @@ export async function fetchSupportedScanFileNames(): Promise<
 
   return await handleApiCall(
     sockSdk.getReportSupportedFiles(),
-    'supported scan file types'
+    'supported scan file types',
   )
 }

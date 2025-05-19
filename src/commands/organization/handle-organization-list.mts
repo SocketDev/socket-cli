@@ -4,7 +4,7 @@ import { outputOrganizationList } from './output-organization-list.mts'
 import type { OutputKind } from '../../types.mts'
 
 export async function handleOrganizationList(
-  outputKind: OutputKind = 'text'
+  outputKind: OutputKind = 'text',
 ): Promise<void> {
   const data = await fetchOrganization()
 

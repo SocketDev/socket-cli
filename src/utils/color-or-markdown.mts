@@ -25,17 +25,17 @@ export class ColorOrMarkdown {
     url: string | undefined,
     {
       fallback = true,
-      fallbackToUrl
+      fallbackToUrl,
     }: {
       fallback?: boolean | undefined
       fallbackToUrl?: boolean | undefined
-    } = {}
+    } = {},
   ) {
     if (url) {
       return this.useMarkdown
         ? `[${text}](${url})`
         : terminalLink(text, url, {
-            fallback: fallbackToUrl ? (_text, url) => url : fallback
+            fallback: fallbackToUrl ? (_text, url) => url : fallback,
           })
     }
     return text

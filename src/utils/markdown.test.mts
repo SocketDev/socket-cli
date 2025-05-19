@@ -10,10 +10,10 @@ describe('markdown', () => {
           [
             ['apple', 'green'],
             ['banana', 'yellow'],
-            ['orange', 'orange']
+            ['orange', 'orange'],
           ],
-          ['name', 'color']
-        )
+          ['name', 'color'],
+        ),
       ).toMatchInlineSnapshot(`
         "| ------ | ------ |
         | name   | color  |

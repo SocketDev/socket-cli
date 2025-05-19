@@ -21,7 +21,7 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    ...outputFlags
+    ...outputFlags,
   },
   help: (command, config) => `
     Usage
@@ -54,25 +54,25 @@ const config: CliCommandConfig = {
       $ ${command} npm babel-cli@1.9.1
       $ ${command} npm/babel-cli@1.9.1
       $ ${command} pkg:npm/babel-cli@1.9.1
-  `
+  `,
 }
 
 export const cmdPackageScore = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { json, markdown } = cli.flags
@@ -90,20 +90,20 @@ async function run(
       test: valid,
       message: 'First parameter must be an ecosystem or the whole purl',
       pass: 'ok',
-      fail: 'bad'
+      fail: 'bad',
     },
     {
       test: purls.length === 1,
       message: 'Expecting at least one package',
       pass: 'ok',
-      fail: purls.length === 0 ? 'missing' : 'too many'
+      fail: purls.length === 0 ? 'missing' : 'too many',
     },
     {
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       pass: 'ok',
-      fail: 'omit one'
+      fail: 'omit one',
     },
     {
       nook: true,
@@ -111,8 +111,8 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token'
-    }
+      fail: 'missing API token',
+    },
   )
   if (!wasValidInput) {
     return

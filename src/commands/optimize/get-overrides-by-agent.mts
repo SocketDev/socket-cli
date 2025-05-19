@@ -11,7 +11,7 @@ const {
   RESOLUTIONS,
   VLT,
   YARN_BERRY,
-  YARN_CLASSIC
+  YARN_CLASSIC,
 } = constants
 
 function getOverridesDataBun(pkgEnvDetails: EnvDetails) {
@@ -72,5 +72,5 @@ export const overridesDataByAgent = new Map<Agent, GetOverrides>([
   [PNPM, getOverridesDataPnpm],
   [VLT, getOverridesDataVlt],
   [YARN_BERRY, getOverridesDataYarn],
-  [YARN_CLASSIC, getOverridesDataYarnClassic]
+  [YARN_CLASSIC, getOverridesDataYarnClassic],
 ] as ReadonlyArray<[Agent, GetOverrides]>)

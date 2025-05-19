@@ -31,7 +31,7 @@ describe('socket optimize', async () => {
           Examples
             $ socket optimize
             $ socket optimize --pin"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -43,9 +43,9 @@ describe('socket optimize', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket optimize`'
+        '`socket optimize`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -63,6 +63,6 @@ describe('socket optimize', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

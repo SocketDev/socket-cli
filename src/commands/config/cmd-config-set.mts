@@ -20,7 +20,7 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    ...outputFlags
+    ...outputFlags,
   },
   help: (command, config) => `
     Usage
@@ -42,25 +42,25 @@ ${Array.from(supportedConfigKeys.entries())
 
     Examples
       $ ${command} apiProxy https://example.com
-  `
+  `,
 }
 
 export const cmdConfigSet = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { json, markdown } = cli.flags
@@ -75,14 +75,14 @@ async function run(
       test: key === 'test' || supportedConfigKeys.has(key as keyof LocalConfig),
       message: 'Config key should be the first arg',
       pass: 'ok',
-      fail: key ? 'invalid config key' : 'missing'
+      fail: key ? 'invalid config key' : 'missing',
     },
     {
       test: !!value, // This is a string, empty string is not ok
       message:
         'Key value should be the remaining args (use `unset` to unset a value)',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
@@ -90,8 +90,8 @@ async function run(
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
       pass: 'ok',
-      fail: 'bad'
-    }
+      fail: 'bad',
+    },
   )
   if (!wasValidInput) {
     return
@@ -105,6 +105,6 @@ async function run(
   await handleConfigSet({
     key: key as keyof LocalConfig,
     outputKind,
-    value
+    value,
   })
 }

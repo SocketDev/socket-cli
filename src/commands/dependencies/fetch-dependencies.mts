@@ -6,7 +6,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchDependencies({
   limit,
-  offset
+  offset,
 }: {
   limit: number
   offset: number
@@ -19,6 +19,6 @@ export async function fetchDependencies({
 
   return await handleApiCall(
     sockSdk.searchDependencies({ limit, offset }),
-    'organization dependencies'
+    'organization dependencies',
   )
 }

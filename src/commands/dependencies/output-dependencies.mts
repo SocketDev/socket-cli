@@ -15,12 +15,12 @@ export async function outputDependencies(
   {
     limit,
     offset,
-    outputKind
+    outputKind,
   }: {
     limit: number
     offset: number
     outputKind: OutputKind
-  }
+  },
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -41,7 +41,7 @@ export async function outputDependencies(
     ', limit:',
     limit,
     ', is there more data after this?',
-    result.data.end ? 'no' : 'yes'
+    result.data.end ? 'no' : 'yes',
   )
 
   const options = {
@@ -52,8 +52,8 @@ export async function outputDependencies(
       { field: 'repository', name: colors.cyan('Repository') },
       { field: 'branch', name: colors.cyan('Branch') },
       { field: 'type', name: colors.cyan('Type') },
-      { field: 'direct', name: colors.cyan('Direct') }
-    ]
+      { field: 'direct', name: colors.cyan('Direct') },
+    ],
   }
 
   logger.log(chalkTable(options, result.data.rows))

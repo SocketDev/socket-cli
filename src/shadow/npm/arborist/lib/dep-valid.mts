@@ -10,7 +10,7 @@ type DepValidFn = (
   child: SafeNode,
   requested: string,
   accept: string | undefined,
-  requester: SafeNode
+  requester: SafeNode,
 ) => boolean
 
 let _depValid: DepValidFn | undefined
@@ -18,7 +18,7 @@ export function depValid(
   child: SafeNode,
   requested: string,
   accept: string | undefined,
-  requester: SafeNode
+  requester: SafeNode,
 ) {
   if (_depValid === undefined) {
     _depValid = require(getArboristDepValidPath()) as DepValidFn

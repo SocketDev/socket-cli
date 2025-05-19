@@ -6,7 +6,7 @@ import type { components } from '@socketsecurity/sdk/types/api'
 
 export async function handlePurlsShallowScore({
   outputKind,
-  purls
+  purls,
 }: {
   outputKind: OutputKind
   purls: string[]
@@ -16,6 +16,6 @@ export async function handlePurlsShallowScore({
   outputPurlsShallowScore(
     purls,
     packageData as CResult<Array<components['schemas']['SocketArtifact']>>,
-    outputKind
+    outputKind,
   )
 }

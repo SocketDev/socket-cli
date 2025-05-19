@@ -15,7 +15,7 @@ function unwrapProto(node, t) {
     object,
     isPrototype:
       t.isMemberExpression(object) &&
-      t.isIdentifier(object.property, { name: 'prototype' })
+      t.isIdentifier(object.property, { name: 'prototype' }),
   }
 }
 
@@ -34,14 +34,14 @@ module.exports = function ({ types: t }) {
               t.callExpression(
                 t.memberExpression(
                   t.identifier('Object'),
-                  t.identifier('setPrototypeOf')
+                  t.identifier('setPrototypeOf'),
                 ),
-                [object, right]
-              )
-            )
+                [object, right],
+              ),
+            ),
           )
         }
-      }
-    }
+      },
+    },
   }
 }

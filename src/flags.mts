@@ -17,27 +17,28 @@ export const commonFlags: MeowFlags = {
     type: 'string',
     default: '',
     hidden: true,
-    description: 'Override the local config with this JSON'
+    description: 'Override the local config with this JSON',
   },
   dryRun: {
     type: 'boolean',
     default: false,
     hidden: true, // Only show in root command
-    description: 'Do input validation for a command and exit 0 when input is ok'
+    description:
+      'Do input validation for a command and exit 0 when input is ok',
   },
   help: {
     type: 'boolean',
     default: false,
     shortFlag: 'h',
-    description: 'Print this help'
+    description: 'Print this help',
   },
   silent: {
     type: 'boolean',
     default: false,
     hidden: true,
     shortFlag: 's',
-    description: 'Make the CLI less chatty'
-  }
+    description: 'Make the CLI less chatty',
+  },
 }
 
 export const outputFlags: MeowFlags = {
@@ -45,25 +46,25 @@ export const outputFlags: MeowFlags = {
     type: 'boolean',
     shortFlag: 'j',
     default: false,
-    description: 'Output result as json'
+    description: 'Output result as json',
   },
   markdown: {
     type: 'boolean',
     shortFlag: 'm',
     default: false,
-    description: 'Output result as markdown'
-  }
+    description: 'Output result as markdown',
+  },
 }
 
 export const validationFlags: MeowFlags = {
   all: {
     type: 'boolean',
     default: false,
-    description: 'Include all issues'
+    description: 'Include all issues',
   },
   strict: {
     type: 'boolean',
     default: false,
-    description: 'Exits with an error code if any matching issues are found'
-  }
+    description: 'Exits with an error code if any matching issues are found',
+  },
 }

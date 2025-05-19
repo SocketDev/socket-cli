@@ -8,7 +8,7 @@ const vm = require('node:vm')
 const { isValidPackageName } = require('@socketsecurity/registry/lib/packages')
 const {
   isRelative,
-  normalizePath
+  normalizePath,
 } = require('@socketsecurity/registry/lib/path')
 
 const { findUpSync } = require('./fs')
@@ -95,7 +95,7 @@ function isEsmId(id_, parentId_) {
     return false
   }
   const pkgJsonPath = findUpSync('package.json', {
-    cwd: path.dirname(resolvedId)
+    cwd: path.dirname(resolvedId),
   })
   if (pkgJsonPath) {
     const pkgJson = require(pkgJsonPath)
@@ -136,5 +136,5 @@ module.exports = {
   getPackageName,
   getPackageNameEnd,
   normalizeId,
-  resolveId
+  resolveId,
 }

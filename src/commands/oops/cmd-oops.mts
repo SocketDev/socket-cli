@@ -16,32 +16,32 @@ const config: CliCommandConfig = {
   hidden: true,
   flags: {
     ...commonFlags,
-    ...outputFlags
+    ...outputFlags,
   },
   help: (parentName, config) => `
     Usage
       $ ${parentName} ${config.commandName}
 
     Don't run me.
-  `
+  `,
 }
 
 export const cmdOops = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { json, markdown } = cli.flags
@@ -57,15 +57,15 @@ async function run(
       serializeResultJson({
         ok: false,
         message: 'Oops',
-        cause: 'This error was intentionally left blank'
-      })
+        cause: 'This error was intentionally left blank',
+      }),
     )
   }
 
   if (markdown) {
     process.exitCode = 1
     logger.fail(
-      failMsgWithBadge('Oops', 'This error was intentionally left blank')
+      failMsgWithBadge('Oops', 'This error was intentionally left blank'),
     )
     return
   }

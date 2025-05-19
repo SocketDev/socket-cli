@@ -42,7 +42,7 @@ describe('socket audit-log', async () => {
 
           Examples
             $ socket audit-log FakeOrg"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -54,9 +54,9 @@ describe('socket audit-log', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket audit-log`'
+        '`socket audit-log`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -81,7 +81,7 @@ describe('socket audit-log', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -90,7 +90,7 @@ describe('socket audit-log', async () => {
       'fakeorg',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -105,7 +105,7 @@ describe('socket audit-log', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -113,7 +113,7 @@ describe('socket audit-log', async () => {
       'audit-log',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should report missing org name in v1',
     async cmd => {
@@ -137,7 +137,7 @@ describe('socket audit-log', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -145,7 +145,7 @@ describe('socket audit-log', async () => {
       'audit-log',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}'
+      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}',
     ],
     'should accept default org in v1',
     async cmd => {
@@ -162,7 +162,7 @@ describe('socket audit-log', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -172,7 +172,7 @@ describe('socket audit-log', async () => {
       'forcedorg',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should accept --org flag in v1',
     async cmd => {
@@ -189,6 +189,6 @@ describe('socket audit-log', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

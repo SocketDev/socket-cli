@@ -36,7 +36,7 @@ describe('socket repos del', async () => {
 
           Examples
             $ socket repos del FakeOrg test-repo"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -48,9 +48,9 @@ describe('socket repos del', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket repos del`'
+        '`socket repos del`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -77,7 +77,7 @@ describe('socket repos del', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -88,7 +88,7 @@ describe('socket repos del', async () => {
       'b',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -103,7 +103,7 @@ describe('socket repos del', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -113,7 +113,7 @@ describe('socket repos del', async () => {
       'reponame',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should report missing org name in v1',
     async cmd => {
@@ -139,7 +139,7 @@ describe('socket repos del', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -148,7 +148,7 @@ describe('socket repos del', async () => {
       'del',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}'
+      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}',
     ],
     'should only report missing repo name with default org in v1',
     async cmd => {
@@ -169,7 +169,7 @@ describe('socket repos del', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -180,7 +180,7 @@ describe('socket repos del', async () => {
       'forcedorg',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should only report missing repo name with --org flag in v1',
     async cmd => {
@@ -201,7 +201,7 @@ describe('socket repos del', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -211,7 +211,7 @@ describe('socket repos del', async () => {
       'fakerepo',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}'
+      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}',
     ],
     'should run to dryrun in v1',
     async cmd => {
@@ -228,6 +228,6 @@ describe('socket repos del', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

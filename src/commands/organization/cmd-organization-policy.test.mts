@@ -31,7 +31,7 @@ describe('socket organization list', async () => {
 
           Examples
             $ socket organization policy --help"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -43,9 +43,9 @@ describe('socket organization list', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket organization policy`'
+        '`socket organization policy`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -54,13 +54,13 @@ describe('socket organization list', async () => {
       'policy',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should support --dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`
+        `"[DryRun]: No-op, call a sub-command; ok"`,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -71,6 +71,6 @@ describe('socket organization list', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

@@ -15,14 +15,14 @@ export const cmdDiffScan: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        get: cmdDiffScanGet
+        get: cmdDiffScanGet,
       },
       {
         argv,
         description,
         importMeta,
-        name: parentName + ' diff-scan'
-      }
+        name: parentName + ' diff-scan',
+      },
     )
-  }
+  },
 }

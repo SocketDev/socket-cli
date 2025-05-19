@@ -26,43 +26,43 @@ const config: CliCommandConfig = {
       type: 'string',
       shortFlag: 'b',
       default: 'main',
-      description: 'Repository default branch'
+      description: 'Repository default branch',
     },
     homepage: {
       type: 'string',
       shortFlag: 'h',
       default: '',
-      description: 'Repository url'
+      description: 'Repository url',
     },
     interactive: {
       type: 'boolean',
       default: true,
       description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
     },
     org: {
       type: 'string',
       description:
-        'Force override the organization slug, overrides the default org from config'
+        'Force override the organization slug, overrides the default org from config',
     },
     repoName: {
       type: 'string',
       shortFlag: 'n',
       default: '',
-      description: 'Repository name'
+      description: 'Repository name',
     },
     repoDescription: {
       type: 'string',
       shortFlag: 'd',
       default: '',
-      description: 'Repository description'
+      description: 'Repository description',
     },
     visibility: {
       type: 'string',
       shortFlag: 'v',
       default: 'private',
-      description: 'Repository visibility (Default Private)'
-    }
+      description: 'Repository visibility (Default Private)',
+    },
   },
   help: (command, config) => `
     Usage
@@ -77,25 +77,25 @@ const config: CliCommandConfig = {
 
     Examples
       $ ${command} ${isTestingV1() ? 'test-repo' : 'FakeOrg test-repo'}
-  `
+  `,
 }
 
 export const cmdReposUpdate = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
@@ -105,7 +105,7 @@ async function run(
     String(orgFlag || ''),
     cli.input[0] || '',
     !!interactive,
-    !!dryRun
+    !!dryRun,
   )
 
   const repoNameFlag = cli.flags['repoName']
@@ -122,7 +122,7 @@ async function run(
         ? 'Org name by default setting, --org, or auto-discovered'
         : 'Org name must be the first argument',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       test: !!repoName,
@@ -130,7 +130,7 @@ async function run(
         ? 'Repository name as first argument'
         : 'Repository name using --repoName',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
@@ -138,15 +138,15 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token'
+      fail: 'missing API token',
     },
     {
       nook: true,
       test: !isTestingV1() || !repoNameFlag,
       message: 'In v1 the first arg should be the repo, not the flag',
       pass: 'ok',
-      fail: 'received --repo-name flag'
-    }
+      fail: 'received --repo-name flag',
+    },
   )
   if (!wasValidInput) {
     return
@@ -164,8 +164,8 @@ async function run(
       description: String(cli.flags['repoDescription'] || ''),
       homepage: String(cli.flags['homepage'] || ''),
       default_branch: String(cli.flags['defaultBranch'] || ''),
-      visibility: String(cli.flags['visibility'] || 'private')
+      visibility: String(cli.flags['visibility'] || 'private'),
     },
-    outputKind
+    outputKind,
   )
 }

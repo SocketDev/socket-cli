@@ -43,7 +43,7 @@ describe('socket fix', async () => {
                                 * tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
             --test            Verify the fix by running unit tests
             --testScript      The test script to run for each fix attempt"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -55,7 +55,7 @@ describe('socket fix', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain('`socket fix`')
-    }
+    },
   )
 
   cmdit(
@@ -78,6 +78,6 @@ describe('socket fix', async () => {
         [DryRun]: Not saving"
       `)
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

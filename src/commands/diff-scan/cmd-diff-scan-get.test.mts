@@ -44,7 +44,7 @@ describe('socket diff-scan get', async () => {
 
           Examples
             $ socket diff-scan get FakeCorp --before=aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 --after=aaa1aa1a-aaaa-1111-1a1a-1111111a11a1"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -56,9 +56,9 @@ describe('socket diff-scan get', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket diff-scan get`'
+        '`socket diff-scan get`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -86,7 +86,7 @@ describe('socket diff-scan get', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -100,7 +100,7 @@ describe('socket diff-scan get', async () => {
       '--before',
       'x',
       '--after',
-      'y'
+      'y',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -117,6 +117,6 @@ describe('socket diff-scan get', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

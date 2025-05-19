@@ -50,7 +50,7 @@ void (async () => {
     name: SOCKET_CLI_BIN_NAME,
     // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
     version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
-    ttl: 86_400_000 /* 24 hours in milliseconds */
+    ttl: 86_400_000 /* 24 hours in milliseconds */,
   })
 
   try {
@@ -82,14 +82,14 @@ void (async () => {
         'diff-scan': cmdDiffScan,
         'threat-feed': cmdThreatFeed,
         manifest: cmdManifest,
-        uninstall: cmdUninstall
+        uninstall: cmdUninstall,
       },
       {
         aliases: {},
         argv: process.argv.slice(2),
         name: SOCKET_CLI_BIN_NAME,
-        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta
-      }
+        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
+      },
     )
   } catch (e) {
     process.exitCode = 1

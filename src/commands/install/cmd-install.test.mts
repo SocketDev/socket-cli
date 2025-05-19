@@ -31,7 +31,7 @@ describe('socket install', async () => {
 
           Examples
             $ socket install --help"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -43,9 +43,9 @@ describe('socket install', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket install`'
+        '`socket install`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -54,7 +54,7 @@ describe('socket install', async () => {
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
-        `"[DryRun]: No-op, call a sub-command; ok"`
+        `"[DryRun]: No-op, call a sub-command; ok"`,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -65,6 +65,6 @@ describe('socket install', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

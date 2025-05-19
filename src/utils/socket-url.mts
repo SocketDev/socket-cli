@@ -19,7 +19,7 @@ export function getSocketDevAlertUrl(alertType: string): string {
 }
 
 export function getSocketDevPackageOverviewUrlFromPurl(
-  purlObj: PurlLikeType
+  purlObj: PurlLikeType,
 ): string {
   const fullName = getPkgFullNameFromPurlObj(purlObj)
   return getSocketDevPackageOverviewUrl(purlObj.type, fullName, purlObj.version)
@@ -28,7 +28,7 @@ export function getSocketDevPackageOverviewUrlFromPurl(
 export function getSocketDevPackageOverviewUrl(
   ecosystem: string,
   fullName: string,
-  version?: string | undefined
+  version?: string | undefined,
 ): string {
   const url = `${SOCKET_WEBSITE_URL}/${ecosystem}/package/${fullName}`
   return ecosystem === 'go'

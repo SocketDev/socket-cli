@@ -8,7 +8,7 @@ export async function handleAuditLog({
   orgSlug,
   outputKind,
   page,
-  perPage
+  perPage,
 }: {
   outputKind: OutputKind
   orgSlug: string
@@ -21,7 +21,7 @@ export async function handleAuditLog({
     outputKind,
     page,
     perPage,
-    logType
+    logType,
   })
 
   await outputAuditLog(auditLogs, {
@@ -29,6 +29,6 @@ export async function handleAuditLog({
     orgSlug,
     outputKind,
     page,
-    perPage
+    perPage,
   })
 }

@@ -61,7 +61,7 @@ describe('socket manifest scala', async () => {
 
             $ socket manifest scala ./build.sbt
             $ socket manifest scala --bin=/usr/bin/sbt ./build.sbt"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -73,9 +73,9 @@ describe('socket manifest scala', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket manifest scala`'
+        '`socket manifest scala`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -98,7 +98,7 @@ describe('socket manifest scala', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -108,7 +108,7 @@ describe('socket manifest scala', async () => {
       'mootools',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -123,6 +123,6 @@ describe('socket manifest scala', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

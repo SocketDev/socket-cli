@@ -5,7 +5,7 @@ import type { CResult } from '../../types.mts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchLicensePolicy(
-  orgSlug: string
+  orgSlug: string,
 ): Promise<CResult<SocketSdkReturnType<'getOrgLicensePolicy'>['data']>> {
   const sockSdkResult = await setupSdk()
   if (!sockSdkResult.ok) {
@@ -15,6 +15,6 @@ export async function fetchLicensePolicy(
 
   return await handleApiCall(
     sockSdk.getOrgLicensePolicy(orgSlug),
-    'organization license policy'
+    'organization license policy',
   )
 }

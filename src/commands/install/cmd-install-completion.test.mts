@@ -46,7 +46,7 @@ describe('socket install completion', async () => {
             $ socket install completion
             $ socket install completion sd
             $ socket install completion ./sd"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -58,9 +58,9 @@ describe('socket install completion', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket install completion`'
+        '`socket install completion`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -69,7 +69,7 @@ describe('socket install completion', async () => {
       'completion',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -84,6 +84,6 @@ describe('socket install completion', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })
