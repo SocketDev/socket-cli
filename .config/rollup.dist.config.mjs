@@ -69,6 +69,17 @@ async function copyInitGradle() {
   await fs.copyFile(filepath, destPath)
 }
 
+async function copyBashCompletion() {
+  // Lazily access constants.srcPath.
+  const filepath = path.join(
+    constants.srcPath,
+    'commands/install/socket-completion.bash'
+  )
+  // Lazily access constants.distPath.
+  const destPath = path.join(constants.distPath, 'socket-completion.bash')
+  await fs.copyFile(filepath, destPath)
+}
+
 async function copyPackage(pkgName) {
   // Lazily access constants.distPath and constants.rootPath.
   const externalPath = path.join(constants.rootPath, EXTERNAL)
@@ -407,6 +418,7 @@ export default async () => {
           async writeBundle() {
             await Promise.all([
               copyInitGradle(),
+              copyBashCompletion(),
               updatePackageJson(),
               ...EXTERNAL_PACKAGES.filter(n => n !== BLESSED_CONTRIB).map(n =>
                 copyPackage(n)
