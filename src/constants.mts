@@ -154,7 +154,7 @@ type Constants = Remap<
     readonly distPath: string
     readonly rootPath: string
     readonly shadowBinPath: string
-    readonly socketAppPath: string
+    readonly socketAppDataPath: string
     readonly socketCachePath: string
     readonly zshRcPath: string
   }
@@ -556,7 +556,7 @@ const constants: Constants = createConstantsObject(
     rootBinPath: undefined,
     rootPath: undefined,
     shadowBinPath: undefined,
-    socketAppPath: undefined,
+    socketAppDataPath: undefined,
     socketCachePath: undefined,
     zshRcPath: undefined,
   },
@@ -579,7 +579,7 @@ const constants: Constants = createConstantsObject(
       rootBinPath: lazyRootBinPath,
       rootPath: lazyRootPath,
       shadowBinPath: lazyShadowBinPath,
-      socketAppPath: lazySocketAppDataPath,
+      socketAppDataPath: lazySocketAppDataPath,
       socketCachePath: lazySocketCachePath,
       zshRcPath: lazyZshRcPath,
     },
