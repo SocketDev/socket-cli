@@ -10,7 +10,6 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
 import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.mts'
-import { cmdCdxgen } from './commands/cdxgen/cmd-cdxgen.mts'
 import { cmdCI } from './commands/ci/cmd-ci.mts'
 import { cmdConfig } from './commands/config/cmd-config.mts'
 import { cmdScanCreate } from './commands/dependencies/cmd-dependencies.mts'
@@ -56,7 +55,6 @@ void (async () => {
   try {
     await meowWithSubcommands(
       {
-        cdxgen: cmdCdxgen,
         ci: cmdCI,
         config: cmdConfig,
         fix: cmdFix,
