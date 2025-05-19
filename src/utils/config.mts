@@ -24,6 +24,8 @@ export interface LocalConfig {
   isTestingV1?: boolean
 }
 
+export const sensitiveConfigKeys: Set<keyof LocalConfig> = new Set(['apiToken'])
+
 export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
   ['apiBaseUrl', 'Base URL of the API endpoint'],
   ['apiProxy', 'A proxy through which to access the API'],
@@ -39,7 +41,110 @@ export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
   ['isTestingV1', 'For development of testing the next major bump'],
 ])
 
-export const sensitiveConfigKeys: Set<keyof LocalConfig> = new Set(['apiToken'])
+function getConfigValues(): LocalConfig {
+  if (_cachedConfig === undefined) {
+    // Order: env var > --config flag > file
+    _cachedConfig = {} as LocalConfig
+    // Lazily access constants.socketAppDataPath.
+    const { socketAppDataPath } = constants
+    if (socketAppDataPath) {
+      const raw = safeReadFileSync(socketAppDataPath)
+      if (raw) {
+        try {
+          Object.assign(
+            _cachedConfig,
+            JSON.parse(Buffer.from(raw, 'base64').toString()),
+          )
+        } catch {
+          logger.warn(`Failed to parse config at ${socketAppDataPath}`)
+        }
+        // Normalize apiKey to apiToken and persist it.
+        // This is a one time migration per user.
+        if (_cachedConfig['apiKey']) {
+          const token = _cachedConfig['apiKey']
+          delete _cachedConfig['apiKey']
+          updateConfigValue('apiToken', token)
+        }
+      } else {
+        fs.mkdirSync(path.dirname(socketAppDataPath), { recursive: true })
+      }
+    }
+  }
+  return _cachedConfig
+}
+
+function normalizeConfigKey(
+  key: keyof LocalConfig,
+): CResult<keyof LocalConfig> {
+  // Note: apiKey was the old name of the token. When we load a config with
+  //       property apiKey, we'll copy that to apiToken and delete the old property.
+  const normalizedKey = key === 'apiKey' ? 'apiToken' : key
+  if (!supportedConfigKeys.has(normalizedKey)) {
+    return {
+      ok: false,
+      message: `Invalid config key: ${normalizedKey}`,
+      data: undefined,
+    }
+  }
+  return { ok: true, data: key }
+}
+
+export function findSocketYmlSync(dir = process.cwd()) {
+  let prevDir = null
+  while (dir !== prevDir) {
+    let ymlPath = path.join(dir, 'socket.yml')
+    let yml = safeReadFileSync(ymlPath)
+    if (yml === undefined) {
+      ymlPath = path.join(dir, 'socket.yaml')
+      yml = safeReadFileSync(ymlPath)
+    }
+    if (typeof yml === 'string') {
+      try {
+        return {
+          path: ymlPath,
+          parsed: config.parseSocketConfig(yml),
+        }
+      } catch {
+        throw new Error(`Found file but was unable to parse ${ymlPath}`)
+      }
+    }
+    prevDir = dir
+    dir = path.join(dir, '..')
+  }
+  return null
+}
+
+export function getConfigValue<Key extends keyof LocalConfig>(
+  key: Key,
+): CResult<LocalConfig[Key]> {
+  const localConfig = getConfigValues()
+  const keyResult = normalizeConfigKey(key)
+  if (!keyResult.ok) {
+    return keyResult
+  }
+  return { ok: true, data: localConfig[keyResult.data as Key] }
+}
+
+// This version squashes errors, returning undefined instead.
+// Should be used when we can reasonably predict the call can't fail.
+export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
+  key: Key,
+): LocalConfig[Key] | undefined {
+  const localConfig = getConfigValues()
+  const keyResult = normalizeConfigKey(key)
+  if (!keyResult.ok) {
+    return undefined
+  }
+  return localConfig[keyResult.data as Key]
+}
+
+export function isReadOnlyConfig() {
+  return _readOnlyConfig
+}
+
+export function isTestingV1() {
+  return !!getConfigValueOrUndef('isTestingV1')
+}
 
 let _cachedConfig: LocalConfig | undefined
 // When using --config or SOCKET_CLI_CONFIG, do not persist the config.
@@ -101,122 +206,6 @@ export function overrideConfigApiToken(apiToken: unknown) {
   _readOnlyConfig = true
 }
 
-function getConfigValues(): LocalConfig {
-  if (_cachedConfig === undefined) {
-    // Order: env var > --config flag > file
-    _cachedConfig = {} as LocalConfig
-    // Lazily access constants.socketAppPath.
-    const { socketAppPath } = constants
-    if (socketAppPath) {
-      const raw = safeReadFileSync(socketAppPath)
-      if (raw) {
-        try {
-          Object.assign(
-            _cachedConfig,
-            JSON.parse(Buffer.from(raw, 'base64').toString()),
-          )
-        } catch {
-          logger.warn(`Failed to parse config at ${socketAppPath}`)
-        }
-        // Normalize apiKey to apiToken and persist it.
-        // This is a one time migration per user.
-        if (_cachedConfig['apiKey']) {
-          const token = _cachedConfig['apiKey']
-          delete _cachedConfig['apiKey']
-          updateConfigValue('apiToken', token)
-        }
-      } else {
-        fs.mkdirSync(path.dirname(socketAppPath), { recursive: true })
-      }
-    }
-  }
-  return _cachedConfig
-}
-
-export function getConfigPath(): string | undefined {
-  // Get the OS app data folder:
-  // - Win: %LOCALAPPDATA% or fail?
-  // - Mac: %XDG_DATA_HOME% or fallback to "~/Library/Application Support/"
-  // - Linux: %XDG_DATA_HOME% or fallback to "~/.local/share/"
-  // Note: LOCALAPPDATA is typically: C:\Users\USERNAME\AppData
-  // Note: XDG stands for "X Desktop Group", nowadays "freedesktop.org"
-  //       On most systems that path is: $HOME/.local/share
-  // Then append `socket/settings`, so:
-  // - Win: %LOCALAPPDATA%\socket\settings or return undefined
-  // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
-  // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
-
-  const { socketAppPath: SOCKET_APP_DIR } = constants
-  return SOCKET_APP_DIR
-}
-
-function normalizeConfigKey(
-  key: keyof LocalConfig,
-): CResult<keyof LocalConfig> {
-  // Note: apiKey was the old name of the token. When we load a config with
-  //       property apiKey, we'll copy that to apiToken and delete the old property.
-  const normalizedKey = key === 'apiKey' ? 'apiToken' : key
-  if (!supportedConfigKeys.has(normalizedKey)) {
-    return {
-      ok: false,
-      message: `Invalid config key: ${normalizedKey}`,
-      data: undefined,
-    }
-  }
-  return { ok: true, data: key }
-}
-
-export function findSocketYmlSync(dir = process.cwd()) {
-  let prevDir = null
-  while (dir !== prevDir) {
-    let ymlPath = path.join(dir, 'socket.yml')
-    let yml = safeReadFileSync(ymlPath)
-    if (yml === undefined) {
-      ymlPath = path.join(dir, 'socket.yaml')
-      yml = safeReadFileSync(ymlPath)
-    }
-    if (typeof yml === 'string') {
-      try {
-        return {
-          path: ymlPath,
-          parsed: config.parseSocketConfig(yml),
-        }
-      } catch {
-        throw new Error(`Found file but was unable to parse ${ymlPath}`)
-      }
-    }
-    prevDir = dir
-    dir = path.join(dir, '..')
-  }
-  return null
-}
-
-export function getConfigValue<Key extends keyof LocalConfig>(
-  key: Key,
-): CResult<LocalConfig[Key]> {
-  const localConfig = getConfigValues()
-  const keyResult = normalizeConfigKey(key)
-  if (!keyResult.ok) {
-    return keyResult
-  }
-  return { ok: true, data: localConfig[keyResult.data as Key] }
-}
-// This version squashes errors, returning undefined instead.
-// Should be used when we can reasonably predict the call can't fail.
-export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
-  key: Key,
-): LocalConfig[Key] | undefined {
-  const localConfig = getConfigValues()
-  const keyResult = normalizeConfigKey(key)
-  if (!keyResult.ok) {
-    return undefined
-  }
-  return localConfig[keyResult.data as Key]
-}
-export function isReadOnlyConfig() {
-  return _readOnlyConfig
-}
-
 let _pendingSave = false
 export function updateConfigValue<Key extends keyof LocalConfig>(
   key: keyof LocalConfig,
@@ -240,11 +229,11 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     _pendingSave = true
     process.nextTick(() => {
       _pendingSave = false
-      // Lazily access constants.socketAppPath.
-      const { socketAppPath } = constants
-      if (socketAppPath) {
+      // Lazily access constants.socketAppDataPath.
+      const { socketAppDataPath } = constants
+      if (socketAppDataPath) {
         fs.writeFileSync(
-          socketAppPath,
+          socketAppDataPath,
           Buffer.from(JSON.stringify(localConfig)).toString('base64'),
         )
       }
@@ -256,8 +245,4 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     message: `Config key '${key}' was updated`,
     data: undefined,
   }
-}
-
-export function isTestingV1() {
-  return !!getConfigValueOrUndef('isTestingV1')
 }
