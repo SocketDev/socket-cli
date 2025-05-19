@@ -1,4 +1,5 @@
 import { cmdManifestAuto } from './cmd-manifest-auto.mts'
+import { cmdManifestCdxgen } from './cmd-manifest-cdxgen.mts'
 import { cmdManifestConda } from './cmd-manifest-conda.mts'
 import { cmdManifestGradle } from './cmd-manifest-gradle.mts'
 import { cmdManifestKotlin } from './cmd-manifest-kotlin.mts'
@@ -58,6 +59,7 @@ async function run(
   await meowWithSubcommands(
     {
       auto: cmdManifestAuto,
+      cdxgen: cmdManifestCdxgen,
       conda: cmdManifestConda,
       scala: cmdManifestScala,
       gradle: cmdManifestGradle,
