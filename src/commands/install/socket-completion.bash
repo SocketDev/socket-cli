@@ -204,8 +204,8 @@ _socket_completion() {
 }
 
 # Register the completion function
-# This script defines the _socket_completion function which provides tab completion
-# for the Socket CLI. To use this completion:
+# This script defines the `_socket_completion` function which provides tab
+# completion for the Socket CLI. To use this completion:
 #
 # 1. Source this script in your current shell:
 #    source /path/to/socket-completion.bash

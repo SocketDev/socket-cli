@@ -133,8 +133,6 @@ function getConfigValues(): LocalConfig {
   return _cachedConfig
 }
 
-let _configPath: string | undefined
-let _warnedConfigPathWin32Missing = false
 export function getConfigPath(): string | undefined {
   // Get the OS app data folder:
   // - Win: %LOCALAPPDATA% or fail?
@@ -148,34 +146,8 @@ export function getConfigPath(): string | undefined {
   // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
   // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
 
-  const { LOCALAPPDATA, socketAppPath: SOCKET_APP_DIR } = constants
-
-  if (_configPath === undefined) {
-    // Lazily access constants.WIN32.
-    const { WIN32 } = constants
-    let dataHome: string | undefined = WIN32
-      ? // Lazily access constants.ENV.LOCALAPPDATA
-        constants.ENV.LOCALAPPDATA
-      : // Lazily access constants.ENV.XDG_DATA_HOME
-        constants.ENV.XDG_DATA_HOME
-    if (!dataHome) {
-      if (WIN32) {
-        if (!_warnedConfigPathWin32Missing) {
-          _warnedConfigPathWin32Missing = true
-          logger.warn(`Missing %${LOCALAPPDATA}%`)
-        }
-      } else {
-        dataHome = path.join(
-          os.homedir(),
-          ...(process.platform === 'darwin'
-            ? ['Library', 'Application Support']
-            : ['.local', 'share'])
-        )
-      }
-    }
-    _configPath = dataHome ? path.join(dataHome, SOCKET_APP_DIR) : undefined
-  }
-  return _configPath
+  const { socketAppPath: SOCKET_APP_DIR } = constants
+  return SOCKET_APP_DIR
 }
 
 function normalizeConfigKey(

@@ -13,6 +13,7 @@ export async function outputInstallCompletion(
     foundBashrc: boolean
     sourcingCommand: string
     targetName: string
+    targetPath: string
   }>
 ) {
   if (!result.ok) {
@@ -45,7 +46,7 @@ export async function outputInstallCompletion(
   logger.log('')
   logger.log('2. Run these commands to load the completion script:')
   logger.log('')
-  logger.log(`   ${result.data.sourcingCommand}`)
+  logger.log(`   source ${result.data.targetPath}`)
   logger.log(`   ${result.data.completionCommand}`)
   logger.log('')
   logger.log('3. Or restart bash somehow (restart terminal or run `bash`)')

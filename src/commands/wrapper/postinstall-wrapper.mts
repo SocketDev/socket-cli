@@ -32,7 +32,7 @@ Do you want to install "safe npm" (this will create an alias to the socket-npm c
   // Attempt to update the existing tab completion
   let updatedTabCompletion = false
   try {
-    const details = getBashrcDetails('socket')
+    const details = getBashrcDetails('') // Note: command is not relevant, we just want the config path
     if (details.ok) {
       if (fs.existsSync(details.data.targetPath)) {
         // Replace the file with the one from this installation

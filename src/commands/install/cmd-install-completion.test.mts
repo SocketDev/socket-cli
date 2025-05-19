@@ -44,7 +44,8 @@ describe('socket install completion', async () => {
           Examples
 
             $ socket install completion
-            $ socket install completion sd"
+            $ socket install completion sd
+            $ socket install completion ./sd"
       `
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

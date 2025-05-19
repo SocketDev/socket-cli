@@ -24,7 +24,7 @@ describe('socket uninstall', async () => {
             $ socket uninstall <command>
 
           Commands
-            completion        Uninstall bash completion for Socket CLI
+            (none)
 
           Options
             --help            Print this help

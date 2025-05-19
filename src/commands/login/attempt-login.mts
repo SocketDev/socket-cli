@@ -6,7 +6,11 @@ import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 import { applyLogin } from './apply-login.mts'
 import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
-import { getConfigValueOrUndef, isReadOnlyConfig } from '../../utils/config.mts'
+import {
+  getConfigValueOrUndef,
+  isReadOnlyConfig,
+  isTestingV1
+} from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
@@ -90,7 +94,8 @@ export async function attemptLogin(
   }
 
   if (
-    await select({
+    isTestingV1() &&
+    (await select({
       message: 'Would you like to install bash tab completion?',
       choices: [
         {
@@ -106,7 +111,7 @@ export async function attemptLogin(
             'Will skip tab completion setup. Does not change how Socket works.'
         }
       ]
-    })
+    }))
   ) {
     logger.log('Setting up tab completion...')
     const result = await setupTabCompletion('socket')

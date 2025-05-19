@@ -1,34 +1,33 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
 
 import { getConfigPath } from './config.mts'
+import constants from '../constants.mts'
 
 import type { CResult } from '../types.mts'
 
+export const COMPLETION_CMD_PREFIX = 'complete -F _socket_completion'
+
 export function getCompletionSourcingCommand(): CResult<string> {
-  // Get the path to the completion script relative to the current module
-  const __dirname = path.dirname(fileURLToPath(import.meta.url))
-  const completionScript = path.join(
-    __dirname,
-    '..',
-    'commands',
-    'install',
+  // Note: this is exported to distPath in .config/rollup.dist.config.mjs
+  const completionScriptExportPath = path.join(
+    // Lazily access constants.distPath.
+    constants.distPath,
     'socket-completion.bash'
   )
 
-  if (!fs.existsSync(completionScript)) {
+  if (!fs.existsSync(completionScriptExportPath)) {
     return {
       ok: false,
       message: 'Tab Completion script not found',
-      cause: `Expected to find completion script at \`${completionScript}\` but it was not there`
+      cause: `Expected to find completion script at \`${completionScriptExportPath}\` but it was not there`
     }
   }
 
-  return { ok: true, data: `source ${completionScript}` }
+  return { ok: true, data: `source ${completionScriptExportPath}` }
 }
 
-export function getBashrcDetails(targetName: string): CResult<{
+export function getBashrcDetails(targetCommandName: string): CResult<{
   completionCommand: string
   sourcingCommand: string
   toAddToBashrc: string
@@ -49,16 +48,19 @@ export function getBashrcDetails(targetName: string): CResult<{
     }
   }
 
-  const completionCommand = `complete -F _socket_completion ${targetName}`
+  // _socket_completion is the function defined in our completion bash script
+  const completionCommand = `${COMPLETION_CMD_PREFIX} ${targetCommandName}`
 
+  // Location of completion script in config after installing
   const completionScriptPath = path.join(
     path.dirname(configFilePath),
     'completion',
     'socket-completion.bash'
   )
-  const bashrcContent = `# Socket CLI completion for "${targetName}"
+
+  const bashrcContent = `# Socket CLI completion for "${targetCommandName}"
 if [ -f "${completionScriptPath}" ]; then
-    # Get the tab completion script
+    # Load the tab completion script
     source "${completionScriptPath}"
     # Tell bash to use this function for tab completion of this function
     ${completionCommand}
@@ -71,7 +73,7 @@ fi
       sourcingCommand: sourcingCommand.data,
       completionCommand,
       toAddToBashrc: bashrcContent,
-      targetName,
+      targetName: targetCommandName,
       targetPath: completionScriptPath
     }
   }

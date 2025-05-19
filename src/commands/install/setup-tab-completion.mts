@@ -18,6 +18,7 @@ export async function setupTabCompletion(targetName: string): Promise<
     foundBashrc: boolean
     sourcingCommand: string
     targetName: string
+    targetPath: string
   }>
 > {
   const result = getBashrcDetails(targetName)
@@ -72,7 +73,8 @@ export async function setupTabCompletion(targetName: string): Promise<
       completionCommand,
       foundBashrc,
       sourcingCommand,
-      targetName
+      targetName,
+      targetPath
     }
   }
 }
