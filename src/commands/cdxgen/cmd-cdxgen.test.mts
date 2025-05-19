@@ -12,7 +12,7 @@ describe('socket cdxgen', async () => {
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
   cmdit(['cdxgen', '--help'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd,  {
+    const { code, stderr, stdout } = await invokeNpm(entryPath, cmd, {
       // Need to pass it on as env because --config will break cdxgen
       SOCKET_CLI_CONFIG: '{}',
     })
