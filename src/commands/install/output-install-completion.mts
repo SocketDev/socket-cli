@@ -33,7 +33,7 @@ export async function outputInstallCompletion(
     logger.log(`  - ${action}`)
   })
   logger.log('')
-  logger.log('Socket tab completion work automatically in new terminals.')
+  logger.log('Socket tab completion works automatically in new terminals.')
   logger.log('')
   logger.log(
     'Due to a bash limitation, tab completion cannot be enabled in the'
