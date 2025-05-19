@@ -70,10 +70,13 @@ describe('socket fix', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket fix\`, cwd: <redacted>
 
-        \\x1b[33m\\u203c\\x1b[39m socket fix: Package package-lock.json found at <redacted>
-        \\x1b[34mi\\x1b[39m Fixing packages for npm"
+        \\x1b[33m\\u203c\\x1b[39m socket fix: Package package-lock.json found at <redacted>"
       `)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(stdout).toMatchInlineSnapshot(`
+        "\\x1b[34mi\\x1b[39m Fixing packages for npm
+
+        [DryRun]: Not saving"
+      `)
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     },
   )

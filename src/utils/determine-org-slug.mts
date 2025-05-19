@@ -14,10 +14,10 @@ export async function determineOrgSlug(
   if (!orgSlug) {
     if (isTestingV1()) {
       // ask from server
-      logger.error(
+      logger.warn(
         'Missing the org slug and no --org flag set. Trying to auto-discover the org now...',
       )
-      logger.error(
+      logger.info(
         'Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.',
       )
       if (dryRun) {
