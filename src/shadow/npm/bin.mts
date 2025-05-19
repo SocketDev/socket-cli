@@ -28,30 +28,32 @@ export default async function shadowBin(
   const nodeOptionsArg = rawBinArgs.findLast(isNodeOptionsFlag)
   const progressArg = rawBinArgs.findLast(isProgressFlag) !== '--no-progress'
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
-  // Lazily access constants.SUPPORTS_NODE_PERMISSION_FLAG.
-  const permArgs = constants.SUPPORTS_NODE_PERMISSION_FLAG
-    ? await (async () => {
-        const cwd = process.cwd()
-        const globalPrefix = (
-          await spawn('npm', ['prefix', '-g'], { cwd })
-        ).stdout.trim()
-        const npmCachePath = (
-          await spawn('npm', ['config', 'get', 'cache'], { cwd })
-        ).stdout.trim()
-        return [
-          '--permission',
-          // '--allow-child-process',
-          // '--allow-addons',
-          // '--allow-wasi',
-          // Allow all reads because npm walks up directories looking for config
-          // and package.json files.
-          '--allow-fs-read=*',
-          `--allow-fs-write=${cwd}/*`,
-          `--allow-fs-write=${globalPrefix}/*`,
-          `--allow-fs-write=${npmCachePath}/*`
-        ]
-      })()
-    : []
+  const permArgs =
+    binName === 'npm' &&
+    // Lazily access constants.SUPPORTS_NODE_PERMISSION_FLAG.
+    constants.SUPPORTS_NODE_PERMISSION_FLAG
+      ? await (async () => {
+          const cwd = process.cwd()
+          const globalPrefix = (
+            await spawn('npm', ['prefix', '-g'], { cwd })
+          ).stdout.trim()
+          const npmCachePath = (
+            await spawn('npm', ['config', 'get', 'cache'], { cwd })
+          ).stdout.trim()
+          return [
+            '--permission',
+            '--allow-child-process',
+            // '--allow-addons',
+            // '--allow-wasi',
+            // Allow all reads because npm walks up directories looking for config
+            // and package.json files.
+            '--allow-fs-read=*',
+            `--allow-fs-write=${cwd}/*`,
+            `--allow-fs-write=${globalPrefix}/*`,
+            `--allow-fs-write=${npmCachePath}/*`
+          ]
+        })()
+      : []
   const useDebug = isDebug()
   const useNodeOptions = nodeOptionsArg || permArgs.length
   const isSilent = !useDebug && !binArgs.some(isLoglevelFlag)

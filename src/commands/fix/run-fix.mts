@@ -19,7 +19,7 @@ export async function runFix(options_: FixOptions) {
   if (!pkgEnvDetails) {
     return
   }
-  logger.info(`Fixing packages for ${pkgEnvDetails.agent}`)
+  logger.info(`Fixing packages for ${pkgEnvDetails.agent}\n`)
   const { agent } = pkgEnvDetails
   if (agent === NPM) {
     await npmFix(pkgEnvDetails, options)

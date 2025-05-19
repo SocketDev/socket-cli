@@ -16,7 +16,7 @@ import type { RangeStyle } from '../../utils/semver.mts'
 import type { SafeArborist } from './arborist/lib/arborist/index.mts'
 import type { Diff } from './arborist/lib/arborist/types.mts'
 import type { SafeEdge } from './arborist/lib/edge.mts'
-import type { SafeNode } from './arborist/lib/node.mts'
+import type { LinkClass, SafeNode } from './arborist/lib/node.mts'
 import type {
   AlertIncludeFilter,
   AlertsByPkgId
@@ -72,22 +72,36 @@ export function findPackageNode(
   name: string,
   version?: string | undefined
 ): SafeNode | undefined {
-  const queue: SafeNode[] = [tree]
+  const queue: Array<SafeNode | LinkClass> = [tree]
+  const visited = new Set<SafeNode>()
   let sentinel = 0
   while (queue.length) {
     if (sentinel++ === LOOP_SENTINEL) {
-      throw new Error('Detected infinite loop in findPackageNodes')
+      throw new Error('Detected infinite loop in findPackageNode')
     }
-    const currentNode = queue.pop()!
-    const node = currentNode.children.get(name)
-    if (node && (typeof version !== 'string' || node.version === version)) {
-      return node as unknown as SafeNode
+    const nodeOrLink = queue.pop()!
+    const node = nodeOrLink.isLink ? nodeOrLink.target : nodeOrLink
+    if (visited.has(node)) {
+      continue
     }
-    const children = [...currentNode.children.values()]
-    for (let i = children.length - 1; i >= 0; i -= 1) {
-      queue.push(children[i] as unknown as SafeNode)
+    visited.add(node)
+    if (
+      node.name === name &&
+      (typeof version !== 'string' || node.version === version)
+    ) {
+      return node
+    }
+    for (const child of node.children.values()) {
+      queue.push(child)
+    }
+    for (const edge of node.edgesOut.values()) {
+      const { to } = edge
+      if (to) {
+        queue.push(to)
+      }
     }
   }
+  return undefined
 }
 
 export function findPackageNodes(
@@ -95,21 +109,34 @@ export function findPackageNodes(
   name: string,
   version?: string | undefined
 ): SafeNode[] {
-  const queue: SafeNode[] = [tree]
   const matches: SafeNode[] = []
+  const queue: Array<SafeNode | LinkClass> = [tree]
+  const visited = new Set<SafeNode>()
   let sentinel = 0
   while (queue.length) {
     if (sentinel++ === LOOP_SENTINEL) {
       throw new Error('Detected infinite loop in findPackageNodes')
     }
-    const currentNode = queue.pop()!
-    const node = currentNode.children.get(name)
-    if (node && (typeof version !== 'string' || node.version === version)) {
-      matches.push(node as unknown as SafeNode)
+    const nodeOrLink = queue.pop()!
+    const node = nodeOrLink.isLink ? nodeOrLink.target : nodeOrLink
+    if (visited.has(node)) {
+      continue
     }
-    const children = [...currentNode.children.values()]
-    for (let i = children.length - 1; i >= 0; i -= 1) {
-      queue.push(children[i] as unknown as SafeNode)
+    visited.add(node)
+    if (
+      node.name === name &&
+      (typeof version !== 'string' || node.version === version)
+    ) {
+      matches.push(node)
+    }
+    for (const child of node.children.values()) {
+      queue.push(child)
+    }
+    for (const edge of node.edgesOut.values()) {
+      const { to } = edge
+      if (to) {
+        queue.push(to)
+      }
     }
   }
   return matches
@@ -151,6 +178,7 @@ export async function getAlertsMapFromArborist(
       unchanged: include.existing
     }
   })
+
   const purls = needInfoOn.map(d => idToPurl(d.node.pkgid))
 
   let overrides: { [key: string]: string } | undefined
@@ -272,7 +300,11 @@ export function getDetailsFromDiff(
 }
 
 export function isTopLevel(tree: SafeNode, node: SafeNode): boolean {
-  return tree.children.get(node.name) === node
+  const childNodeOrLink = tree.children.get(node.name)
+  const childNode = childNodeOrLink?.isLink
+    ? childNodeOrLink.target
+    : childNodeOrLink
+  return childNode === node
 }
 
 export type Packument = Exclude<

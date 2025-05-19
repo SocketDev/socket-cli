@@ -28,8 +28,9 @@ let _octokit: Octokit | undefined
 function getOctokit() {
   if (_octokit === undefined) {
     _octokit = new Octokit({
-      // Lazily access constants.ENV.SOCKET_SECURITY_GITHUB_PAT.
-      auth: constants.ENV.SOCKET_SECURITY_GITHUB_PAT
+      // Lazily access constants.ENV properties.
+      auth:
+        constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN
     })
   }
   return _octokit
@@ -40,8 +41,8 @@ export function getOctokitGraphql() {
   if (!_octokitGraphql) {
     _octokitGraphql = OctokitGraphql.defaults({
       headers: {
-        // Lazily access constants.ENV.SOCKET_SECURITY_GITHUB_PAT.
-        authorization: `token ${constants.ENV.SOCKET_SECURITY_GITHUB_PAT}`
+        // Lazily access constants.ENV properties.
+        authorization: `token ${constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN}`
       }
     })
   }
@@ -364,12 +365,10 @@ export async function openPr(
   } as OpenPrOptions
   // Lazily access constants.ENV.GITHUB_ACTIONS.
   if (constants.ENV.GITHUB_ACTIONS) {
-    // Lazily access constants.ENV.SOCKET_SECURITY_GITHUB_PAT.
-    const pat = constants.ENV.SOCKET_SECURITY_GITHUB_PAT
-    if (!pat) {
-      throw new Error('Missing SOCKET_SECURITY_GITHUB_PAT environment variable')
-    }
-    const url = `https://x-access-token:${pat}@github.com/${owner}/${repo}`
+    // Lazily access constants.ENV properties.
+    const token =
+      constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN
+    const url = `https://x-access-token:${token}@github.com/${owner}/${repo}`
     await spawn('git', ['remote', 'set-url', 'origin', url], {
       cwd
     })
