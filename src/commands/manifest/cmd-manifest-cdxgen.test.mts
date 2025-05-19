@@ -7,7 +7,7 @@ import constants from '../../constants.mts'
 
 const { CLI } = constants
 
-describe('socket cdxgen', async () => {
+describe('socket manifest cdxgen', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
