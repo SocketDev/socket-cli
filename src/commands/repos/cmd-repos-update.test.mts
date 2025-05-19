@@ -97,9 +97,7 @@ describe('socket repos update', async () => {
     'should report missing org name in v1',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `""`,
-      )
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
