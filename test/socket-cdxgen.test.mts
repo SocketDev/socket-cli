@@ -28,7 +28,7 @@ const spawnOpts: PromiseSpawnOptions = {
   },
 }
 
-describe('Socket cdxgen command', async () => {
+describe('Socket manifest cdxgen command', async () => {
   // Lazily access constants.rootBinPath.
   const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
 
@@ -44,7 +44,7 @@ describe('Socket cdxgen command', async () => {
         const ret = await spawn(
           // Lazily access constants.execPath.
           constants.execPath,
-          [entryPath, 'cdxgen', '--yes', command],
+          [entryPath, 'manifest', 'cdxgen', '--yes', command],
           spawnOpts,
         )
         expect(
@@ -75,7 +75,7 @@ describe('Socket cdxgen command', async () => {
           spawn(
             // Lazily access constants.execPath.
             constants.execPath,
-            [entryPath, 'cdxgen', '-y', command],
+            [entryPath, 'manifest', 'cdxgen', '-y', command],
             spawnOpts,
           ),
         // @ts-ignore toHaveStderrInclude is defined above
@@ -91,7 +91,7 @@ describe('Socket cdxgen command', async () => {
           spawn(
             // Lazily access constants.execPath.
             constants.execPath,
-            [entryPath, 'cdxgen', '--yes', command],
+            [entryPath, 'manifest', 'cdxgen', '--yes', command],
             spawnOpts,
           ),
         // @ts-ignore toHaveStderrInclude is defined above
@@ -106,7 +106,7 @@ describe('Socket cdxgen command', async () => {
           spawn(
             // Lazily access constants.execPath.
             constants.execPath,
-            [entryPath, 'cdxgen', '-y', '-u', '-h', '--unknown'],
+            [entryPath, 'manifest', 'cdxgen', '-y', '-u', '-h', '--unknown'],
             spawnOpts,
           ),
         // @ts-ignore toHaveStderrInclude is defined above
