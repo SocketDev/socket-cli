@@ -1,7 +1,4 @@
-import { existsSync } from 'node:fs'
 import path from 'node:path'
-
-import yaml from 'js-yaml'
 
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
@@ -13,7 +10,6 @@ import {
   readPackageJson,
 } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
-import { stripBom } from '@socketsecurity/registry/lib/strings'
 
 import {
   getBaseGitBranch,
@@ -48,9 +44,12 @@ import {
   getAlertsMapFromPnpmLockfile,
   getAlertsMapFromPurls,
 } from '../../utils/alerts-map.mts'
-import { readFileUtf8, removeNodeModules } from '../../utils/fs.mts'
+import { removeNodeModules } from '../../utils/fs.mts'
 import { globWorkspace } from '../../utils/glob.mts'
-import { parsePnpmLockfileVersion } from '../../utils/pnpm.mts'
+import {
+  parsePnpmLockfileVersion,
+  readPnpmLockfile,
+} from '../../utils/pnpm.mts'
 import { applyRange } from '../../utils/semver.mts'
 import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
@@ -59,26 +58,20 @@ import type { NormalizedFixOptions } from './types.mts'
 import type { SafeNode } from '../../shadow/npm/arborist/lib/node.mts'
 import type { StringKeyValueObject } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
-import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { DRY_RUN_NOT_SAVING, NPM, OVERRIDES, PNPM } = constants
 
 async function getActualTree(cwd: string = process.cwd()): Promise<SafeNode> {
+  // npm DOES have some support pnpm structured node_modules folders. However,
+  // the support is a little iffy where the unhappy path errors. So, we restrict
+  // our usage to --dry-run loading of the node_modules folder.
   const arb = new SafeArborist({
     path: cwd,
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   })
   return await arb.loadActual()
-}
-
-async function readLockfile(
-  lockfilePath: string,
-): Promise<LockfileObject | null> {
-  return existsSync(lockfilePath)
-    ? (yaml.load(stripBom(await readFileUtf8(lockfilePath))) as LockfileObject)
-    : null
 }
 
 type InstallOptions = {
@@ -136,12 +129,12 @@ export async function pnpmFix(
 
   let actualTree: SafeNode | undefined
   const lockfilePath = path.join(rootPath, 'pnpm-lock.yaml')
-  let lockfile = await readLockfile(lockfilePath)
+  let lockfile = await readPnpmLockfile(lockfilePath)
 
   // If pnpm-lock.yaml does NOT exist then install with pnpm to create it.
   if (!lockfile) {
     actualTree = await install(pkgEnvDetails, { cwd, spinner })
-    lockfile = await readLockfile(lockfilePath)
+    lockfile = await readPnpmLockfile(lockfilePath)
   }
   // Update pnpm-lock.yaml if its version is older than what the installed pnpm
   // produces.
@@ -155,7 +148,7 @@ export async function pnpmFix(
       cwd,
       spinner,
     })
-    lockfile = await readLockfile(lockfilePath)
+    lockfile = await readPnpmLockfile(lockfilePath)
   }
   // Exit early if pnpm-lock.yaml is not found.
   if (!lockfile) {

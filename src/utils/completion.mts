@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { getConfigPath } from './config.mts'
 import constants from '../constants.mts'
 
 import type { CResult } from '../types.mts'
@@ -39,8 +38,9 @@ export function getBashrcDetails(targetCommandName: string): CResult<{
     return sourcingCommand
   }
 
-  const configFilePath = getConfigPath()
-  if (!configFilePath) {
+  // Lazily access constants.socketAppDataPath.
+  const { socketAppDataPath } = constants
+  if (!socketAppDataPath) {
     return {
       ok: false,
       message: 'Could not determine config directory',
@@ -53,7 +53,7 @@ export function getBashrcDetails(targetCommandName: string): CResult<{
 
   // Location of completion script in config after installing
   const completionScriptPath = path.join(
-    path.dirname(configFilePath),
+    path.dirname(socketAppDataPath),
     'completion',
     'socket-completion.bash',
   )
