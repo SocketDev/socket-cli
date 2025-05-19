@@ -56,7 +56,7 @@ export interface PurlDataResponse {
 export async function fetchPurlDeepScore(
   purl: string,
 ): Promise<CResult<PurlDataResponse>> {
-  logger.error(`Requesting deep score data for this purl: ${purl}`)
+  logger.info(`Requesting deep score data for this purl: ${purl}`)
 
   return await queryApiSafeJson<PurlDataResponse>(
     `purl/score/${encodeURIComponent(purl)}`,

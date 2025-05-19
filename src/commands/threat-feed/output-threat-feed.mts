@@ -30,7 +30,7 @@ export async function outputThreatFeed(
   }
 
   if (!result.data?.results?.length) {
-    logger.error('Did not receive any data to display...')
+    logger.warn('Did not receive any data to display...')
     return
   }
 

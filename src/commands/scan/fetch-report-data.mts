@@ -49,7 +49,7 @@ export async function fetchReportData(
   function updateProgress() {
     if (finishedFetching) {
       spinner.stop()
-      logger.error(
+      logger.info(
         `Scan result: ${scanStatus}. Security policy: ${policyStatus}.`,
       )
     } else {

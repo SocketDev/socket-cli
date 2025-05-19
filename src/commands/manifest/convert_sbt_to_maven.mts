@@ -90,7 +90,7 @@ export async function convertSbtToMaven(
         'Requested out target was stdout but there are multiple generated files',
       )
       poms.forEach(fn => logger.error('-', fn))
-      logger.error('Exiting now...')
+      logger.info('Exiting now...')
       return
     } else {
       // if (verbose) {
