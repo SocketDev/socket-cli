@@ -30,13 +30,13 @@ export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
   ['apiToken', 'The API token required to access most API endpoints'],
   [
     'defaultOrg',
-    'The default org slug to use; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.'
+    'The default org slug to use; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.',
   ],
   [
     'enforcedOrgs',
-    'Orgs in this list have their security policies enforced on this machine'
+    'Orgs in this list have their security policies enforced on this machine',
   ],
-  ['isTestingV1', 'For development of testing the next major bump']
+  ['isTestingV1', 'For development of testing the next major bump'],
 ])
 
 export const sensitiveConfigKeys: Set<keyof LocalConfig> = new Set(['apiToken'])
@@ -57,7 +57,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
         ok: false,
         message: 'Could not parse Config as JSON',
         cause:
-          "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again."
+          "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again.",
       }
     }
   } catch {
@@ -69,7 +69,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
       ok: false,
       message: 'Could not parse Config as JSON',
       cause:
-        "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again."
+        "Could not JSON parse the config override. Make sure it's a proper JSON object (double-quoted keys and strings, no unquoted `undefined`) and try again.",
     }
   }
 
@@ -81,7 +81,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   if (_cachedConfig['apiKey']) {
     if (_cachedConfig['apiToken']) {
       logger.warn(
-        'Note: The config override had both apiToken and apiKey. Using the apiToken value. Remove the apiKey to get rid of this message.'
+        'Note: The config override had both apiToken and apiKey. Using the apiToken value. Remove the apiKey to get rid of this message.',
       )
     }
     _cachedConfig['apiToken'] = _cachedConfig['apiKey']
@@ -96,7 +96,7 @@ export function overrideConfigApiToken(apiToken: unknown) {
   // Set token to the local cached config and mark it read-only so it doesn't persist
   _cachedConfig = {
     ...config,
-    ...(apiToken === undefined ? {} : { apiToken: String(apiToken) })
+    ...(apiToken === undefined ? {} : { apiToken: String(apiToken) }),
   } as LocalConfig
   _readOnlyConfig = true
 }
@@ -113,7 +113,7 @@ function getConfigValues(): LocalConfig {
         try {
           Object.assign(
             _cachedConfig,
-            JSON.parse(Buffer.from(raw, 'base64').toString())
+            JSON.parse(Buffer.from(raw, 'base64').toString()),
           )
         } catch {
           logger.warn(`Failed to parse config at ${socketAppPath}`)
@@ -151,7 +151,7 @@ export function getConfigPath(): string | undefined {
 }
 
 function normalizeConfigKey(
-  key: keyof LocalConfig
+  key: keyof LocalConfig,
 ): CResult<keyof LocalConfig> {
   // Note: apiKey was the old name of the token. When we load a config with
   //       property apiKey, we'll copy that to apiToken and delete the old property.
@@ -160,7 +160,7 @@ function normalizeConfigKey(
     return {
       ok: false,
       message: `Invalid config key: ${normalizedKey}`,
-      data: undefined
+      data: undefined,
     }
   }
   return { ok: true, data: key }
@@ -179,7 +179,7 @@ export function findSocketYmlSync(dir = process.cwd()) {
       try {
         return {
           path: ymlPath,
-          parsed: config.parseSocketConfig(yml)
+          parsed: config.parseSocketConfig(yml),
         }
       } catch {
         throw new Error(`Found file but was unable to parse ${ymlPath}`)
@@ -192,7 +192,7 @@ export function findSocketYmlSync(dir = process.cwd()) {
 }
 
 export function getConfigValue<Key extends keyof LocalConfig>(
-  key: Key
+  key: Key,
 ): CResult<LocalConfig[Key]> {
   const localConfig = getConfigValues()
   const keyResult = normalizeConfigKey(key)
@@ -204,7 +204,7 @@ export function getConfigValue<Key extends keyof LocalConfig>(
 // This version squashes errors, returning undefined instead.
 // Should be used when we can reasonably predict the call can't fail.
 export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
-  key: Key
+  key: Key,
 ): LocalConfig[Key] | undefined {
   const localConfig = getConfigValues()
   const keyResult = normalizeConfigKey(key)
@@ -220,7 +220,7 @@ export function isReadOnlyConfig() {
 let _pendingSave = false
 export function updateConfigValue<Key extends keyof LocalConfig>(
   key: keyof LocalConfig,
-  value: LocalConfig[Key]
+  value: LocalConfig[Key],
 ): CResult<undefined | string> {
   const localConfig = getConfigValues()
   const keyResult = normalizeConfigKey(key)
@@ -232,7 +232,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     return {
       ok: true,
       message: `Config key '${key}' was updated`,
-      data: 'Change applied but not persisted; current config is overridden through env var or flag'
+      data: 'Change applied but not persisted; current config is overridden through env var or flag',
     }
   }
 
@@ -245,7 +245,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
       if (socketAppPath) {
         fs.writeFileSync(
           socketAppPath,
-          Buffer.from(JSON.stringify(localConfig)).toString('base64')
+          Buffer.from(JSON.stringify(localConfig)).toString('base64'),
         )
       }
     })
@@ -254,7 +254,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
   return {
     ok: true,
     message: `Config key '${key}' was updated`,
-    data: undefined
+    data: undefined,
   }
 }
 

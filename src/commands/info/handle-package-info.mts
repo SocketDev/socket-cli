@@ -19,7 +19,7 @@ export async function handlePackageInfo({
   outputKind,
   pkgName,
   pkgVersion,
-  strict
+  strict,
 }: {
   commandName: string
   includeAllIssues: boolean
@@ -31,7 +31,7 @@ export async function handlePackageInfo({
   const packageData = await fetchPackageInfo(
     pkgName,
     pkgVersion,
-    includeAllIssues
+    includeAllIssues,
   )
 
   if (packageData) {
@@ -40,7 +40,7 @@ export async function handlePackageInfo({
       includeAllIssues,
       outputKind,
       pkgName,
-      pkgVersion
+      pkgVersion,
     })
 
     if (strict && hasKeys(packageData.severityCount)) {

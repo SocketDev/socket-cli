@@ -12,7 +12,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputListScans(
   result: CResult<SocketSdkReturnType<'getOrgFullScanList'>['data']>,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -33,8 +33,8 @@ export async function outputListScans(
       { field: 'report_url', name: colors.magenta('Scan URL') },
       { field: 'repo', name: colors.magenta('Repo') },
       { field: 'branch', name: colors.magenta('Branch') },
-      { field: 'created_at', name: colors.magenta('Created at') }
-    ]
+      { field: 'created_at', name: colors.magenta('Created at') },
+    ],
   }
 
   const formattedResults = result.data.results.map(d => {
@@ -45,11 +45,11 @@ export async function outputListScans(
         ? new Date(d.created_at).toLocaleDateString('en-us', {
             year: 'numeric',
             month: 'numeric',
-            day: 'numeric'
+            day: 'numeric',
           })
         : '',
       repo: d.repo,
-      branch: d.branch
+      branch: d.branch,
     }
   })
 

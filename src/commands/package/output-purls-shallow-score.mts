@@ -11,7 +11,7 @@ import type { components } from '@socketsecurity/sdk/types/api'
 export function outputPurlsShallowScore(
   purls: string[],
   result: CResult<Array<components['schemas']['SocketArtifact']>>,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): void {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -56,7 +56,7 @@ Please note: The listed scores are ONLY for the package itself. It does NOT
 ${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => '- ' + purl + '\n').join('')}` : ''}
 
 ${result.data.map(data => '## ' + formatReportCard(data, false)).join('\n\n\n')}
-    `.trim()
+    `.trim(),
     )
     return
   }
@@ -64,12 +64,12 @@ ${result.data.map(data => '## ' + formatReportCard(data, false)).join('\n\n\n')}
   logger.log('\n' + colors.bold('Shallow Package Score') + '\n')
   logger.log(
     'Please note: The listed scores are ONLY for the package itself. It does NOT\n' +
-      '             reflect the scores of any dependencies, transitive or otherwise.'
+      '             reflect the scores of any dependencies, transitive or otherwise.',
   )
 
   if (missing.length) {
     logger.log(
-      `\nAt least one package had no response or the purl was not canonical:\n${missing.map(purl => '\n- ' + colors.bold(purl)).join('')}`
+      `\nAt least one package had no response or the purl was not canonical:\n${missing.map(purl => '\n- ' + colors.bold(purl)).join('')}`,
     )
   }
 
@@ -82,14 +82,14 @@ ${result.data.map(data => '## ' + formatReportCard(data, false)).join('\n\n\n')}
 
 function formatReportCard(
   data: components['schemas']['SocketArtifact'],
-  color: boolean
+  color: boolean,
 ): string {
   const scoreResult = {
     'Supply Chain Risk': Math.floor((data.score?.supplyChain ?? 0) * 100),
     Maintenance: Math.floor((data.score?.maintenance ?? 0) * 100),
     Quality: Math.floor((data.score?.quality ?? 0) * 100),
     Vulnerabilities: Math.floor((data.score?.vulnerability ?? 0) * 100),
-    License: Math.floor((data.score?.license ?? 0) * 100)
+    License: Math.floor((data.score?.license ?? 0) * 100),
   }
   const alertString = getAlertString(data.alerts, !color)
   const purl = 'pkg:' + data.type + '/' + data.name + '@' + data.version
@@ -100,9 +100,9 @@ function formatReportCard(
     ...Object.entries(scoreResult).map(
       score =>
         `- ${score[0]}:`.padEnd(20, ' ') +
-        `  ${formatScore(score[1], !color, true)}`
+        `  ${formatScore(score[1], !color, true)}`,
     ),
-    alertString
+    alertString,
   ].join('\n')
 }
 
@@ -122,7 +122,7 @@ function formatScore(score: number, noColor = false, pad = false): string {
 
 function getAlertString(
   alerts: Array<components['schemas']['SocketAlert']> | undefined,
-  noColor = false
+  noColor = false,
 ) {
   if (!alerts?.length) {
     return noColor ? `- Alerts: none!` : `- Alerts: ${colors.green('none')}!`
@@ -149,7 +149,7 @@ function getAlertString(
       [
         bad.map(alert => `[${alert.severity}] ` + alert.type).join(', '),
         mid.map(alert => `[${alert.severity}] ` + alert.type).join(', '),
-        low.map(alert => `[${alert.severity}] ` + alert.type).join(', ')
+        low.map(alert => `[${alert.severity}] ` + alert.type).join(', '),
       ]
         .filter(Boolean)
         .join(', ')
@@ -162,17 +162,17 @@ function getAlertString(
     [
       bad
         .map(alert =>
-          colors.red(colors.dim(`[${alert.severity}] `) + alert.type)
+          colors.red(colors.dim(`[${alert.severity}] `) + alert.type),
         )
         .join(', '),
       mid
         .map(alert =>
-          colors.yellow(colors.dim(`[${alert.severity}] `) + alert.type)
+          colors.yellow(colors.dim(`[${alert.severity}] `) + alert.type),
         )
         .join(', '),
       low
         .map(alert => colors.dim(`[${alert.severity}] `) + alert.type)
-        .join(', ')
+        .join(', '),
     ]
       .filter(Boolean)
       .join(', ')

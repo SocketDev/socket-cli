@@ -22,17 +22,17 @@ const config: CliCommandConfig = {
     ...outputFlags,
     cwd: {
       type: 'string',
-      description: 'Set the cwd, defaults to process.cwd()'
+      description: 'Set the cwd, defaults to process.cwd()',
     },
     out: {
       type: 'string',
       default: '-',
-      description: 'Output target (use `-` or omit to print to stdout)'
+      description: 'Output target (use `-` or omit to print to stdout)',
     },
     verbose: {
       type: 'boolean',
-      description: 'Print debug messages'
-    }
+      description: 'Print debug messages',
+    },
   },
   help: (command, config) => `
     Usage
@@ -53,25 +53,25 @@ const config: CliCommandConfig = {
     Examples
 
       $ ${command} ./environment.yml
-  `
+  `,
 }
 
 export const cmdManifestConda = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const {
@@ -79,7 +79,7 @@ async function run(
     json = false,
     markdown = false,
     out = '-',
-    verbose = false
+    verbose = false,
   } = cli.flags
   const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
 
@@ -100,14 +100,14 @@ async function run(
       test: !!target,
       message: 'The FILE arg is required',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
       test: cli.input.length <= 1,
       message: 'Can only accept one DIR (make sure to escape spaces!)',
       pass: 'ok',
-      fail: 'received ' + cli.input.length
+      fail: 'received ' + cli.input.length,
     },
     {
       nook: true,
@@ -115,15 +115,15 @@ async function run(
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
       pass: 'ok',
-      fail: 'bad'
-    }
+      fail: 'bad',
+    },
   )
   if (!wasValidInput) {
     return
   }
 
   logger.error(
-    'Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk.'
+    'Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk.',
   )
 
   if (cli.flags['dryRun']) {
@@ -136,6 +136,6 @@ async function run(
     String(out || ''),
     json ? 'json' : markdown ? 'markdown' : 'text',
     String(cwd),
-    Boolean(verbose)
+    Boolean(verbose),
   )
 }

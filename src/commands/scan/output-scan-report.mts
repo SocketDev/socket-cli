@@ -28,7 +28,7 @@ export async function outputScanReport(
     outputKind,
     reportLevel,
     scanId,
-    short
+    short,
   }: {
     orgSlug: string
     scanId: string
@@ -38,7 +38,7 @@ export async function outputScanReport(
     fold: 'pkg' | 'version' | 'file' | 'none'
     reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'
     short: boolean
-  }
+  },
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -63,8 +63,8 @@ export async function outputScanReport(
       reportLevel,
       short,
       // Lazily access constants.spinner.
-      spinner: constants.spinner
-    }
+      spinner: constants.spinner,
+    },
   )
 
   if (!scanReport.ok) {
@@ -108,7 +108,7 @@ export async function outputScanReport(
       ? `healthy = ${scanReport.data.healthy}`
       : toMarkdownReport(
           scanReport.data as ScanReport, // not short so must be regular report
-          includeLicensePolicy
+          includeLicensePolicy,
         )
 
     if (filePath && filePath !== '-') {
@@ -130,25 +130,25 @@ export async function outputScanReport(
 
 export function toJsonReport(
   report: ScanReport,
-  includeLicensePolicy?: boolean | undefined
+  includeLicensePolicy?: boolean | undefined,
 ): string {
   const obj = mapToObject(report.alerts)
 
   const newReport = {
     includeLicensePolicy,
     ...report,
-    alerts: obj
+    alerts: obj,
   }
 
   return serializeResultJson({
     ok: true,
-    data: newReport
+    data: newReport,
   })
 }
 
 export function toMarkdownReport(
   report: ScanReport,
-  includeLicensePolicy?: boolean | undefined
+  includeLicensePolicy?: boolean | undefined,
 ): string {
   const flatData = Array.from(walkNestedMap(report.alerts)).map(
     ({ keys, value }: { keys: string[]; value: ReportLeafNode }) => {
@@ -159,9 +159,9 @@ export function toMarkdownReport(
         'Introduced by': keys[2] || '<unknown>',
         url,
         'Manifest file': manifest.join(', '),
-        Policy: policy
+        Policy: policy,
       }
-    }
+    },
   )
 
   const md =
@@ -206,7 +206,7 @@ ${
         'Package',
         'Introduced by',
         'url',
-        'Manifest file'
+        'Manifest file',
       ])
 }
   `.trim() + '\n'

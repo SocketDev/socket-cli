@@ -35,6 +35,6 @@ export async function handleCI(): Promise<void> {
     readOnly: false,
     report: true,
     targets: ['.'],
-    tmp: false // don't set when pendingHead is true
+    tmp: false, // don't set when pendingHead is true
   })
 }

@@ -72,12 +72,12 @@ export function getPublicToken(): string {
 export async function setupSdk(
   apiToken: string | undefined = getDefaultToken(),
   apiBaseUrl: string | undefined = getDefaultApiBaseUrl(),
-  proxy: string | undefined = getDefaultHttpProxy()
+  proxy: string | undefined = getDefaultHttpProxy(),
 ): Promise<CResult<SocketSdk>> {
   if (typeof apiToken !== 'string' && isInteractive()) {
     apiToken = await password({
       message:
-        'Enter your Socket.dev API key (not saved, use socket login to persist)'
+        'Enter your Socket.dev API key (not saved, use socket login to persist)',
     })
     _defaultToken = apiToken
   }
@@ -85,7 +85,7 @@ export async function setupSdk(
     return {
       ok: false,
       message: 'Auth Error',
-      cause: 'You need to provide an API Token. Run `socket login` first.'
+      cause: 'You need to provide an API Token. Run `socket login` first.',
     }
   }
   return {
@@ -99,8 +99,8 @@ export async function setupSdk(
         // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
         version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
         // Lazily access constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE.
-        homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE
-      })
-    })
+        homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE,
+      }),
+    }),
   }
 }

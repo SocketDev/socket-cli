@@ -25,7 +25,7 @@ The Socket CLI is now successfully installed! 🎉
 To better protect yourself against supply-chain attacks, our "safe npm" wrapper can warn you about malicious packages whenever you run 'npm install'.
 
 Do you want to install "safe npm" (this will create an alias to the socket-npm command)?
-    `.trim()
+    `.trim(),
     )
   }
 
@@ -37,7 +37,7 @@ Do you want to install "safe npm" (this will create an alias to the socket-npm c
       if (fs.existsSync(details.data.targetPath)) {
         // Replace the file with the one from this installation
         const result = updateInstalledTabCompletionScript(
-          details.data.targetPath
+          details.data.targetPath,
         )
         if (result.ok) {
           // This will work no matter what alias(es) were registered since that
@@ -70,7 +70,7 @@ async function installSafeNpm(query: string): Promise<void> {
   if (
     await confirm({
       message: query,
-      default: true
+      default: true,
     })
   ) {
     // Lazily access constants.bashRcPath and constants.zshRcPath.
@@ -84,7 +84,7 @@ async function installSafeNpm(query: string): Promise<void> {
       }
     } catch (e) {
       throw new Error(
-        `There was an issue setting up the alias: ${(e as any)?.['message']}`
+        `There was an issue setting up the alias: ${(e as any)?.['message']}`,
       )
     }
   }

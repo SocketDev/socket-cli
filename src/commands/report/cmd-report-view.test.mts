@@ -22,7 +22,7 @@ describe('socket report create', async () => {
 
           This command is deprecated in favor of \`socket scan view\`.
           It will be removed in the next major release of the CLI."
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -34,9 +34,9 @@ describe('socket report create', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket report create`'
+        '`socket report create`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -56,6 +56,6 @@ describe('socket report create', async () => {
       `)
 
       expect(code).toBe(1)
-    }
+    },
   )
 })

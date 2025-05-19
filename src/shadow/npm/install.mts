@@ -4,7 +4,7 @@ import {
   isFundFlag,
   isLoglevelFlag,
   isProgressFlag,
-  realExecPathSync
+  realExecPathSync,
 } from '@socketsecurity/registry/lib/npm'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -18,7 +18,7 @@ const {
   NPM,
   SOCKET_CLI_SAFE_BIN,
   SOCKET_CLI_SAFE_PROGRESS,
-  SOCKET_IPC_HANDSHAKE
+  SOCKET_IPC_HANDSHAKE,
 } = constants
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
@@ -55,7 +55,7 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   const progressArg = rawBinArgs.findLast(isProgressFlag) !== '--no-progress'
   const binArgs = rawBinArgs.filter(
-    a => !isAuditFlag(a) && !isFundFlag(a) && !isProgressFlag(a)
+    a => !isAuditFlag(a) && !isFundFlag(a) && !isProgressFlag(a),
   )
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const isSilent = !useDebug && !binArgs.some(isLoglevelFlag)
@@ -73,7 +73,7 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
         ? [
             '--require',
             // Lazily access constants.distInstrumentWithSentryPath.
-            constants.distInstrumentWithSentryPath
+            constants.distInstrumentWithSentryPath,
           ]
         : []),
       '--require',
@@ -90,7 +90,7 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
       // SOCKET_CLI_DEBUG environment variable is not truthy.
       ...logLevelArgs,
       ...binArgs,
-      ...otherArgs
+      ...otherArgs,
     ],
     {
       spinner,
@@ -99,17 +99,17 @@ export function safeNpmInstall(options?: SafeNpmInstallOptions) {
       env: {
         ...process.env,
         ...(NODE_COMPILE_CACHE ? { NODE_COMPILE_CACHE } : undefined),
-        ...spawnOptions.env
-      }
-    }
+        ...spawnOptions.env,
+      },
+    },
   )
   if (useIpc) {
     spawnPromise.process.send({
       [SOCKET_IPC_HANDSHAKE]: {
         [SOCKET_CLI_SAFE_BIN]: NPM,
         [SOCKET_CLI_SAFE_PROGRESS]: progressArg,
-        ...ipc
-      }
+        ...ipc,
+      },
     })
   }
   return spawnPromise

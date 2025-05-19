@@ -13,7 +13,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 export async function outputCreateNewScan(
   result: CResult<SocketSdkReturnType<'CreateOrgFullScan'>['data']>,
   outputKind: OutputKind,
-  interactive: boolean
+  interactive: boolean,
 ) {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -38,12 +38,12 @@ export async function outputCreateNewScan(
     logger.log('')
     if (result.data.id) {
       logger.log(
-        `A [new Scan](${result.data.html_report_url}) was created with ID: ${result.data.id}`
+        `A [new Scan](${result.data.html_report_url}) was created with ID: ${result.data.id}`,
       )
       logger.log('')
     } else {
       logger.log(
-        `The server did not return a Scan ID while trying to create a new Scan. This could be an indication something went wrong.`
+        `The server did not return a Scan ID while trying to create a new Scan. This could be an indication something went wrong.`,
       )
     }
     logger.log('')
@@ -57,7 +57,7 @@ export async function outputCreateNewScan(
     interactive &&
     (await confirm({
       message: 'Would you like to open it in your browser?',
-      default: false
+      default: false,
     }))
   ) {
     await open(`${result.data.html_report_url}`)

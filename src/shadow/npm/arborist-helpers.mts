@@ -19,7 +19,7 @@ import type { SafeEdge } from './arborist/lib/edge.mts'
 import type { LinkClass, SafeNode } from './arborist/lib/node.mts'
 import type {
   AlertIncludeFilter,
-  AlertsByPkgId
+  AlertsByPkgId,
 } from '../../utils/socket-package-alert.mts'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -40,7 +40,7 @@ export function findBestPatchVersion(
   node: SafeNode,
   availableVersions: string[],
   vulnerableVersionRange?: string,
-  _firstPatchedVersionIdentifier?: string | undefined
+  _firstPatchedVersionIdentifier?: string | undefined,
 ): string | null {
   const manifestData = getManifestData(NPM, node.name)
   let eligibleVersions
@@ -61,7 +61,7 @@ export function findBestPatchVersion(
         // are NOT in the vulnerable range.
         getMajor(v) === major &&
         (!vulnerableVersionRange ||
-          !semver.satisfies(v, vulnerableVersionRange))
+          !semver.satisfies(v, vulnerableVersionRange)),
     )
   }
   return eligibleVersions ? semver.maxSatisfying(eligibleVersions, '*') : null
@@ -70,7 +70,7 @@ export function findBestPatchVersion(
 export function findPackageNode(
   tree: SafeNode,
   name: string,
-  version?: string | undefined
+  version?: string | undefined,
 ): SafeNode | undefined {
   const queue: Array<SafeNode | LinkClass> = [tree]
   const visited = new Set<SafeNode>()
@@ -107,7 +107,7 @@ export function findPackageNode(
 export function findPackageNodes(
   tree: SafeNode,
   name: string,
-  version?: string | undefined
+  version?: string | undefined,
 ): SafeNode[] {
   const matches: SafeNode[] = []
   const queue: Array<SafeNode | LinkClass> = [tree]
@@ -151,14 +151,14 @@ export type GetAlertsMapFromArboristOptions = {
 
 export async function getAlertsMapFromArborist(
   arb: SafeArborist,
-  options_?: GetAlertsMapFromArboristOptions | undefined
+  options_?: GetAlertsMapFromArboristOptions | undefined,
 ): Promise<AlertsByPkgId> {
   const options = {
     __proto__: null,
     consolidate: false,
     limit: Infinity,
     nothrow: false,
-    ...options_
+    ...options_,
   } as GetAlertsMapFromArboristOptions
 
   const include = {
@@ -170,13 +170,13 @@ export async function getAlertsMapFromArborist(
     existing: false,
     unfixable: true,
     upgradable: false,
-    ...options.include
+    ...options.include,
   } as AlertIncludeFilter
 
   const needInfoOn = getDetailsFromDiff(arb.diff, {
     include: {
-      unchanged: include.existing
-    }
+      unchanged: include.existing,
+    },
   })
 
   const purls = needInfoOn.map(d => idToPurl(d.node.pkgid))
@@ -191,13 +191,13 @@ export async function getAlertsMapFromArborist(
     overrides = Object.fromEntries(
       [...overridesMap.entries()].map(([key, overrideSet]) => {
         return [key, overrideSet.value!]
-      })
+      }),
     )
   }
 
   return await getAlertsMapFromPurls(purls, {
     overrides,
-    ...options
+    ...options,
   })
 }
 
@@ -217,7 +217,7 @@ export type PackageDetail = {
 
 export function getDetailsFromDiff(
   diff_: Diff | null,
-  options?: DiffQueryOptions | undefined
+  options?: DiffQueryOptions | undefined,
 ): PackageDetail[] {
   const details: PackageDetail[] = []
   // `diff_` is `null` when `npm install --package-lock-only` is passed.
@@ -229,7 +229,7 @@ export function getDetailsFromDiff(
     __proto__: null,
     unchanged: false,
     unknownOrigin: false,
-    ...({ __proto__: null, ...options } as DiffQueryOptions).include
+    ...({ __proto__: null, ...options } as DiffQueryOptions).include,
   } as DiffQueryIncludeFilter
 
   const queue: Diff[] = [...diff_.children]
@@ -272,7 +272,7 @@ export function getDetailsFromDiff(
         ) {
           details.push({
             node: pkgNode,
-            existing
+            existing,
           })
         }
       }
@@ -291,7 +291,7 @@ export function getDetailsFromDiff(
       ) {
         details.push({
           node: pkgNode,
-          existing: pkgNode
+          existing: pkgNode,
         })
       }
     }
@@ -315,14 +315,14 @@ export type Packument = Exclude<
 export function updateNode(
   node: SafeNode,
   newVersion: string,
-  newVersionPackument: Packument['versions'][number]
+  newVersionPackument: Packument['versions'][number],
 ): void {
   // Object.defineProperty is needed to set the version property and replace
   // the old value with newVersion.
   Object.defineProperty(node, 'version', {
     configurable: true,
     enumerable: true,
-    get: () => newVersion
+    get: () => newVersion,
   })
   // Update package.version associated with the node.
   node.package.version = newVersion
@@ -365,8 +365,8 @@ export function updateNode(
           from: node,
           name: newDepName,
           spec: newDeps[newDepName],
-          type: 'prod'
-        }) as unknown as SafeEdge
+          type: 'prod',
+        }) as unknown as SafeEdge,
       )
     }
   }
@@ -377,7 +377,7 @@ export function updatePackageJsonFromNode(
   tree: SafeNode,
   node: SafeNode,
   newVersion: string,
-  rangeStyle?: RangeStyle | undefined
+  rangeStyle?: RangeStyle | undefined,
 ): boolean {
   let result = false
   if (!isTopLevel(tree, node)) {
@@ -387,7 +387,7 @@ export function updatePackageJsonFromNode(
   for (const depField of [
     'dependencies',
     'optionalDependencies',
-    'peerDependencies'
+    'peerDependencies',
   ]) {
     const depObject = editablePkgJson.content[depField] as
       | { [key: string]: string }
@@ -401,8 +401,8 @@ export function updatePackageJsonFromNode(
           editablePkgJson.update({
             [depField]: {
               ...depObject,
-              [name]: newRange
-            }
+              [name]: newRange,
+            },
           })
         }
       }

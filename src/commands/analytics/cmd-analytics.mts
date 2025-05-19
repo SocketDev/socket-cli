@@ -25,27 +25,27 @@ const config: CliCommandConfig = {
       type: 'string',
       shortFlag: 'f',
       description:
-        'Filepath to save output. Only valid with --json/--markdown. Defaults to stdout.'
+        'Filepath to save output. Only valid with --json/--markdown. Defaults to stdout.',
     },
     repo: {
       type: 'string',
       shortFlag: 'r',
       default: '',
-      description: 'Name of the repository. Only valid when scope=repo'
+      description: 'Name of the repository. Only valid when scope=repo',
     },
     scope: {
       type: 'string',
       shortFlag: 's',
       default: 'org',
       description:
-        "Scope of the analytics data - either 'org' or 'repo', default: org"
+        "Scope of the analytics data - either 'org' or 'repo', default: org",
     },
     time: {
       type: 'number',
       shortFlag: 't',
       default: 30,
-      description: 'Time filter - either 7, 30 or 90, default: 30'
-    }
+      description: 'Time filter - either 7, 30 or 90, default: 30',
+    },
   },
   help: (command, { flags }) =>
     `
@@ -74,25 +74,25 @@ const config: CliCommandConfig = {
       $ ${command} ${isTestingV1() ? '90' : '--scope=repo --repo=test-repo --time=30'}
   `
       // Drop consecutive empty lines. Temporarily necessary to deal with v1 prep.
-      .replace(/\n(?: *\n)+/g, '\n\n')
+      .replace(/\n(?: *\n)+/g, '\n\n'),
 }
 
 export const cmdAnalytics = {
   description: config.description,
   hidden: config.hidden,
-  run: run
+  run: run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { file, json, markdown } = cli.flags
@@ -147,7 +147,7 @@ async function run(
       test: scope === 'org' || scope === 'repo',
       message: 'Scope must be "repo" or "org"',
       pass: 'ok',
-      fail: 'bad'
+      fail: 'bad',
     },
     {
       nook: true,
@@ -155,7 +155,7 @@ async function run(
       test: isTestingV1() || cli.input.length === 0,
       message: 'This command does not accept any arguments (use flags instead)',
       pass: 'ok',
-      fail: `bad`
+      fail: `bad`,
     },
     {
       nook: true,
@@ -164,7 +164,7 @@ async function run(
         ? 'When scope=repo, repo name should be the second argument'
         : 'When scope=repo, repo name should be set through --repo',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
@@ -174,7 +174,7 @@ async function run(
         (repoName !== '7' && repoName !== '30' && repoName !== '90'),
       message: 'When scope is repo, the second arg should be repo, not time',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       test: isTestingV1()
@@ -184,7 +184,7 @@ async function run(
       pass: 'ok',
       fail: isTestingV1()
         ? 'invalid range set, see --help for command arg details.'
-        : 'bad'
+        : 'bad',
     },
     {
       nook: true,
@@ -192,7 +192,7 @@ async function run(
       message:
         'The `--file` flag is only valid when using `--json` or `--markdown`',
       pass: 'ok',
-      fail: 'bad'
+      fail: 'bad',
     },
     {
       nook: true,
@@ -200,7 +200,7 @@ async function run(
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
       pass: 'ok',
-      fail: 'bad'
+      fail: 'bad',
     },
     {
       nook: true,
@@ -208,8 +208,8 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token'
-    }
+      fail: 'missing API token',
+    },
   )
   if (!wasValidInput) {
     return
@@ -226,6 +226,6 @@ async function run(
       time === '90' || time === 90 ? 90 : time === '30' || time === 30 ? 30 : 7,
     repo: repoName,
     outputKind,
-    filePath: String(file || '')
+    filePath: String(file || ''),
   })
 }

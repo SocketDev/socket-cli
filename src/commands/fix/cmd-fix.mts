@@ -24,28 +24,28 @@ const config: CliCommandConfig = {
       default: false,
       description: `Enable auto-merge for pull requests that Socket opens.\n                        See ${terminalLink(
         'GitHub documentation',
-        'https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository'
-      )} for managing auto-merge for pull requests in your repository.`
+        'https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository',
+      )} for managing auto-merge for pull requests in your repository.`,
     },
     autopilot: {
       type: 'boolean',
       default: false,
-      description: `Shorthand for --autoMerge --test`
+      description: `Shorthand for --autoMerge --test`,
     },
     limit: {
       type: 'number',
       default: Infinity,
-      description: 'The number of fixes to attempt at a time'
+      description: 'The number of fixes to attempt at a time',
     },
     purl: {
       type: 'string',
       default: [],
       description: `Provide a list of ${terminalLink(
         'package URLs',
-        'https://github.com/package-url/purl-spec?tab=readme-ov-file#purl'
+        'https://github.com/package-url/purl-spec?tab=readme-ov-file#purl',
       )} (PURLs) to fix, as either a comma separated value or as multiple flags,\n                        instead of querying the Socket API`,
       isMultiple: true,
-      shortFlag: 'p'
+      shortFlag: 'p',
     },
     rangeStyle: {
       type: 'string',
@@ -61,18 +61,18 @@ const config: CliCommandConfig = {
                           * pin - Use the exact version (e.g. 1.2.3)
                           * preserve - Retain the existing version range style as-is
                           * tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
-      `.trim()
+      `.trim(),
     },
     test: {
       type: 'boolean',
       default: false,
-      description: 'Verify the fix by running unit tests'
+      description: 'Verify the fix by running unit tests',
     },
     testScript: {
       type: 'string',
       default: 'test',
-      description: 'The test script to run for each fix attempt'
-    }
+      description: 'The test script to run for each fix attempt',
+    },
   },
   help: (command, config) => `
     Usage
@@ -80,25 +80,25 @@ const config: CliCommandConfig = {
 
     Options
       ${getFlagListOutput(config.flags, 6)}
-  `
+  `,
 }
 
 export const cmdFix = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { json, markdown } = cli.flags
@@ -108,7 +108,7 @@ async function run(
     test: RangeStyles.includes(cli.flags['rangeStyle'] as string),
     message: `Expecting range style of ${joinOr(RangeStyles)}`,
     pass: 'ok',
-    fail: 'missing'
+    fail: 'missing',
   })
   if (!wasValidInput) {
     return
@@ -124,6 +124,6 @@ async function run(
       | RangeStyle
       | undefined,
     test: Boolean(cli.flags['test']),
-    testScript: cli.flags['testScript'] as string | undefined
+    testScript: cli.flags['testScript'] as string | undefined,
   })
 }

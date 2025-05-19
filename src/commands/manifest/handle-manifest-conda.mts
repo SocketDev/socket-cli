@@ -8,7 +8,7 @@ export async function handleManifestConda(
   out: string,
   outputKind: OutputKind,
   cwd: string,
-  verbose: boolean
+  verbose: boolean,
 ): Promise<void> {
   const data = await convertCondaToRequirements(target, cwd, verbose)
 

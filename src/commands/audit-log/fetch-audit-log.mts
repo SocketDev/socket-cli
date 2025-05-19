@@ -9,7 +9,7 @@ export async function fetchAuditLog({
   orgSlug,
   outputKind,
   page,
-  perPage
+  perPage,
 }: {
   outputKind: OutputKind
   orgSlug: string
@@ -32,8 +32,8 @@ export async function fetchAuditLog({
       orgSlug,
       type: logType,
       page: String(page),
-      per_page: String(perPage)
+      per_page: String(perPage),
     }),
-    `audit log for ${orgSlug}`
+    `audit log for ${orgSlug}`,
   )
 }

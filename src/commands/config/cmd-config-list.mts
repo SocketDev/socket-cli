@@ -23,8 +23,8 @@ const config: CliCommandConfig = {
     full: {
       type: 'boolean',
       default: false,
-      description: 'Show full tokens in plaintext (unsafe)'
-    }
+      description: 'Show full tokens in plaintext (unsafe)',
+    },
   },
   help: (command, config) => `
     Usage
@@ -41,25 +41,25 @@ ${Array.from(supportedConfigKeys.entries())
 
     Examples
       $ ${command} FakeOrg --repoName=test-repo
-  `
+  `,
 }
 
 export const cmdConfigList = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { full, json, markdown } = cli.flags
@@ -71,7 +71,7 @@ async function run(
     message:
       'The `--json` and `--markdown` flags can not be used at the same time',
     pass: 'ok',
-    fail: 'bad'
+    fail: 'bad',
   })
   if (!wasValidInput) {
     return
@@ -84,6 +84,6 @@ async function run(
 
   await outputConfigList({
     full: !!full,
-    outputKind
+    outputKind,
   })
 }

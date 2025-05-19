@@ -14,7 +14,7 @@ export async function outputInstallCompletion(
     sourcingCommand: string
     targetName: string
     targetPath: string
-  }>
+  }>,
 ) {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -25,7 +25,7 @@ export async function outputInstallCompletion(
 
   logger.log('')
   logger.log(
-    `Installation of tab completion for "${result.data.targetName}" finished!`
+    `Installation of tab completion for "${result.data.targetName}" finished!`,
   )
   logger.log('')
 
@@ -36,7 +36,7 @@ export async function outputInstallCompletion(
   logger.log('Socket tab completion works automatically in new terminals.')
   logger.log('')
   logger.log(
-    'Due to a bash limitation, tab completion cannot be enabled in the'
+    'Due to a bash limitation, tab completion cannot be enabled in the',
   )
   logger.log('current shell (bash instance) through NodeJS. You must either:')
   logger.log('')

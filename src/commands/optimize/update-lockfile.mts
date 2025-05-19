@@ -17,15 +17,15 @@ export type UpdateLockfileOptions = {
 
 export async function updateLockfile(
   pkgEnvDetails: EnvDetails,
-  options: UpdateLockfileOptions
+  options: UpdateLockfileOptions,
 ) {
   const {
     cmdName = '',
     logger,
-    spinner
+    spinner,
   } = {
     __proto__: null,
-    ...options
+    ...options,
   } as UpdateLockfileOptions
   const isSpinning = !!spinner?.['isSpinning']
   if (!isSpinning) {
@@ -37,7 +37,7 @@ export async function updateLockfile(
     if (pkgEnvDetails.features.npmBuggyOverrides) {
       spinner?.stop()
       logger?.log(
-        `💡 Re-run ${cmdName ? `${cmdName} ` : ''}whenever ${pkgEnvDetails.lockName} changes.\n   This can be skipped for ${pkgEnvDetails.agent} >=${NPM_BUGGY_OVERRIDES_PATCHED_VERSION}.`
+        `💡 Re-run ${cmdName ? `${cmdName} ` : ''}whenever ${pkgEnvDetails.lockName} changes.\n   This can be skipped for ${pkgEnvDetails.agent} >=${NPM_BUGGY_OVERRIDES_PATCHED_VERSION}.`,
       )
     }
   } catch (e) {
@@ -45,8 +45,8 @@ export async function updateLockfile(
     logger?.fail(
       cmdPrefixMessage(
         cmdName,
-        `${pkgEnvDetails.agent} install failed to update ${pkgEnvDetails.lockName}`
-      )
+        `${pkgEnvDetails.agent} install failed to update ${pkgEnvDetails.lockName}`,
+      ),
     )
     logger?.error(e)
   }

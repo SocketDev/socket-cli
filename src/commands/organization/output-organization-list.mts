@@ -11,7 +11,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputOrganizationList(
   result: CResult<SocketSdkReturnType<'getOrganizations'>['data']>,
-  outputKind: OutputKind = 'text'
+  outputKind: OutputKind = 'text',
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -45,32 +45,32 @@ export async function outputOrganizationList(
       }
       logger.log('# Organizations\n')
       logger.log(
-        `List of organizations associated with your API key, starting with: ${colors.italic(visibleTokenPrefix)}\n`
+        `List of organizations associated with your API key, starting with: ${colors.italic(visibleTokenPrefix)}\n`,
       )
       logger.log(
-        `| Name${' '.repeat(mw1 - 4)} | ID${' '.repeat(mw2 - 2)} | Plan${' '.repeat(mw3 - 4)} |`
+        `| Name${' '.repeat(mw1 - 4)} | ID${' '.repeat(mw2 - 2)} | Plan${' '.repeat(mw3 - 4)} |`,
       )
       logger.log(
-        `| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`
+        `| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`,
       )
       for (const o of organizations) {
         logger.log(
-          `| ${(o.name || '').padEnd(mw1, ' ')} | ${(o.id || '').padEnd(mw2, ' ')} | ${(o.plan || '').padEnd(mw3, ' ')} |`
+          `| ${(o.name || '').padEnd(mw1, ' ')} | ${(o.id || '').padEnd(mw2, ' ')} | ${(o.plan || '').padEnd(mw3, ' ')} |`,
         )
       }
       logger.log(
-        `| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`
+        `| ${'-'.repeat(mw1)} | ${'-'.repeat(mw2)} | ${'-'.repeat(mw3)} |`,
       )
       return
     }
     default: {
       logger.log(
-        `List of organizations associated with your API key, starting with: ${colors.italic(visibleTokenPrefix)}\n`
+        `List of organizations associated with your API key, starting with: ${colors.italic(visibleTokenPrefix)}\n`,
       )
       // Just dump
       for (const o of organizations) {
         logger.log(
-          `- Name: ${colors.bold(o.name ?? 'undefined')}, ID: ${colors.bold(o.id)}, Plan: ${colors.bold(o.plan)}`
+          `- Name: ${colors.bold(o.name ?? 'undefined')}, ID: ${colors.bold(o.id)}, Plan: ${colors.bold(o.plan)}`,
         )
       }
     }

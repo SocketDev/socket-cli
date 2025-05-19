@@ -7,10 +7,10 @@ import type { CResult } from '../../types.mts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function fetchPurlsShallowScore(
-  purls: string[]
+  purls: string[],
 ): Promise<CResult<SocketSdkReturnType<'batchPackageFetch'>>> {
   logger.error(
-    `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`
+    `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`,
   )
 
   const sockSdkResult = await setupSdk()
@@ -22,11 +22,11 @@ export async function fetchPurlsShallowScore(
   const result = await handleApiCall(
     sockSdk.batchPackageFetch(
       {
-        alerts: 'true'
+        alerts: 'true',
       },
-      { components: purls.map(purl => ({ purl })) }
+      { components: purls.map(purl => ({ purl })) },
     ),
-    'looking up package'
+    'looking up package',
   )
 
   if (!result.ok) {
@@ -36,6 +36,6 @@ export async function fetchPurlsShallowScore(
   // TODO: seems like there's a bug in the typing since we absolutely have to return the .data here
   return {
     ok: true,
-    data: result.data as SocketSdkReturnType<'batchPackageFetch'>
+    data: result.data as SocketSdkReturnType<'batchPackageFetch'>,
   }
 }

@@ -20,12 +20,12 @@ const config: CliCommandConfig = {
     ...commonFlags,
     apiBaseUrl: {
       type: 'string',
-      description: 'API server to connect to for login'
+      description: 'API server to connect to for login',
     },
     apiProxy: {
       type: 'string',
-      description: 'Proxy to use when making connection to API server'
-    }
+      description: 'Proxy to use when making connection to API server',
+    },
   },
   help: (command, config) => `
     Usage
@@ -42,25 +42,25 @@ const config: CliCommandConfig = {
     Examples
       $ ${command}
       $ ${command} --api-proxy=http://localhost:1234
-  `
+  `,
 }
 
 export const cmdLogin = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const apiBaseUrl = cli.flags['apiBaseUrl'] as string | undefined
@@ -73,7 +73,7 @@ async function run(
 
   if (!isInteractive()) {
     throw new InputError(
-      'Cannot prompt for credentials in a non-interactive shell'
+      'Cannot prompt for credentials in a non-interactive shell',
     )
   }
 

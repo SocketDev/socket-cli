@@ -16,8 +16,8 @@ describe('output-audit-log', () => {
           logType: '',
           orgSlug: 'noorgslug',
           page: 1,
-          perPage: 10
-        }
+          perPage: 10,
+        },
       )
       expect(r).toMatchInlineSnapshot(`
         "{
@@ -99,7 +99,7 @@ describe('output-audit-log', () => {
         logType: '',
         orgSlug: 'noorgslug',
         page: 1,
-        perPage: 10
+        perPage: 10,
       })
       expect(r).toMatchInlineSnapshot(`
         "{}
@@ -116,8 +116,8 @@ describe('output-audit-log', () => {
           logType: '',
           orgSlug: 'noorgslug',
           page: 1,
-          perPage: 10
-        }
+          perPage: 10,
+        },
       )
       expect(r).toMatchInlineSnapshot(`
         "
@@ -153,8 +153,8 @@ describe('output-audit-log', () => {
           logType: '',
           orgSlug: 'noorgslug',
           page: 1,
-          perPage: 10
-        }
+          perPage: 10,
+        },
       )
       expect(r).toMatchInlineSnapshot(`
         "

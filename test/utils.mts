@@ -23,22 +23,22 @@ export function cmdit(
   cmd: string[],
   title: string,
   cb: (cmd: string[]) => Promise<void>,
-  options?: TestCollectorOptions | undefined
+  options?: TestCollectorOptions | undefined,
 ) {
   it(
     `${title}: \`${cmd.join(' ')}\``,
     {
       timeout: 30_000,
-      ...options
+      ...options,
     },
-    cb.bind(null, cmd)
+    cb.bind(null, cmd),
   )
 }
 
 export async function invokeNpm(
   entryPath: string,
   args: string[],
-  env = {}
+  env = {},
 ): Promise<{
   status: boolean
   code: number
@@ -52,21 +52,21 @@ export async function invokeNpm(
       [entryPath, ...args],
       {
         cwd: npmFixturesPath,
-        env: { ...process.env, ...env }
-      }
+        env: { ...process.env, ...env },
+      },
     )
     return {
       status: true,
       code: 0,
       stdout: toAsciiSafeString(normalizeLogSymbols(thing.stdout)),
-      stderr: toAsciiSafeString(normalizeLogSymbols(thing.stderr))
+      stderr: toAsciiSafeString(normalizeLogSymbols(thing.stderr)),
     }
   } catch (e: any) {
     return {
       status: false,
       code: e?.code,
       stdout: toAsciiSafeString(normalizeLogSymbols(e?.stdout ?? '')),
-      stderr: toAsciiSafeString(normalizeLogSymbols(e?.stderr ?? ''))
+      stderr: toAsciiSafeString(normalizeLogSymbols(e?.stderr ?? '')),
     }
   }
 }

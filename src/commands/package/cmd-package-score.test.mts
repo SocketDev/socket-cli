@@ -52,7 +52,7 @@ describe('socket package score', async () => {
             $ socket package score npm babel-cli@1.9.1
             $ socket package score npm/babel-cli@1.9.1
             $ socket package score pkg:npm/babel-cli@1.9.1"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -65,9 +65,9 @@ describe('socket package score', async () => {
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(
         stderr,
-        'header should include command (without params)'
+        'header should include command (without params)',
       ).toContain('`socket package score`')
-    }
+    },
   )
 
   cmdit(
@@ -94,7 +94,7 @@ describe('socket package score', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -105,7 +105,7 @@ describe('socket package score', async () => {
       'babel',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -120,6 +120,6 @@ describe('socket package score', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

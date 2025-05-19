@@ -24,8 +24,8 @@ const spawnOpts: PromiseSpawnOptions = {
   cwd: npmFixturesPath,
   env: {
     ...process.env,
-    SOCKET_CLI_DEBUG: '1'
-  }
+    SOCKET_CLI_DEBUG: '1',
+  },
 }
 
 describe('Socket cdxgen command', async () => {
@@ -36,7 +36,7 @@ describe('Socket cdxgen command', async () => {
     'should forwards known commands to cdxgen',
     {
       // Takes ~10s in CI
-      timeout: 20_000
+      timeout: 20_000,
     },
     async () => {
       for (const command of ['-h', '--help']) {
@@ -45,14 +45,14 @@ describe('Socket cdxgen command', async () => {
           // Lazily access constants.execPath.
           constants.execPath,
           [entryPath, 'cdxgen', '--yes', command],
-          spawnOpts
+          spawnOpts,
         )
         expect(
           ret.stdout.includes('cdxgen'),
-          'forwards commands to cdxgen'
+          'forwards commands to cdxgen',
         ).toBe(true)
       }
-    }
+    },
   )
 
   describe('command forwarding', async () => {
@@ -63,9 +63,9 @@ describe('Socket cdxgen command', async () => {
           // do not alter your "pass" based on isNot. Vitest does it for you
           pass: received?.stderr?.includes?.(expected) ?? false,
           message: () =>
-            `spawn.stderr ${isNot ? 'does NOT include' : 'includes'} \`${expected}\`: ${received?.stderr}`
+            `spawn.stderr ${isNot ? 'does NOT include' : 'includes'} \`${expected}\`: ${received?.stderr}`,
         }
-      }
+      },
     })
 
     it('should not forward -u to cdxgen', async () => {
@@ -76,11 +76,11 @@ describe('Socket cdxgen command', async () => {
             // Lazily access constants.execPath.
             constants.execPath,
             [entryPath, 'cdxgen', '-y', command],
-            spawnOpts
-          )
+            spawnOpts,
+          ),
         // @ts-ignore toHaveStderrInclude is defined above
       ).rejects.toHaveStderrInclude(
-        `${LOG_SYMBOLS.fail} Unknown argument: ${command}`
+        `${LOG_SYMBOLS.fail} Unknown argument: ${command}`,
       )
     })
 
@@ -92,11 +92,11 @@ describe('Socket cdxgen command', async () => {
             // Lazily access constants.execPath.
             constants.execPath,
             [entryPath, 'cdxgen', '--yes', command],
-            spawnOpts
-          )
+            spawnOpts,
+          ),
         // @ts-ignore toHaveStderrInclude is defined above
       ).rejects.toHaveStderrInclude(
-        `${LOG_SYMBOLS.fail} Unknown argument: ${command}`
+        `${LOG_SYMBOLS.fail} Unknown argument: ${command}`,
       )
     })
 
@@ -107,11 +107,11 @@ describe('Socket cdxgen command', async () => {
             // Lazily access constants.execPath.
             constants.execPath,
             [entryPath, 'cdxgen', '-y', '-u', '-h', '--unknown'],
-            spawnOpts
-          )
+            spawnOpts,
+          ),
         // @ts-ignore toHaveStderrInclude is defined above
       ).rejects.toHaveStderrInclude(
-        `${LOG_SYMBOLS.fail} Unknown arguments: -u, --unknown`
+        `${LOG_SYMBOLS.fail} Unknown arguments: -u, --unknown`,
       )
     })
   })

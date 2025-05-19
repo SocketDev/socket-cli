@@ -10,7 +10,7 @@ describe('utils/config', () => {
 
     it('should return object for applying a change', () => {
       expect(
-        updateConfigValue('defaultOrg', 'fake_test_org')
+        updateConfigValue('defaultOrg', 'fake_test_org'),
       ).toMatchInlineSnapshot(`
         {
           "data": "Change applied but not persisted; current config is overridden through env var or flag",
@@ -25,8 +25,8 @@ describe('utils/config', () => {
         updateConfigValue(
           // @ts-ignore
           'nawthiswontwork',
-          'fake_test_org'
-        )
+          'fake_test_org',
+        ),
       ).toMatchInlineSnapshot(`
         {
           "data": undefined,

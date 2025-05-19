@@ -9,7 +9,7 @@ export async function fetchListRepos({
   orgSlug,
   page,
   per_page,
-  sort
+  sort,
 }: {
   direction: string
   orgSlug: string
@@ -28,8 +28,8 @@ export async function fetchListRepos({
       sort,
       direction,
       per_page: String(per_page),
-      page: String(page)
+      page: String(page),
     }),
-    'list of repositories'
+    'list of repositories',
   )
 }

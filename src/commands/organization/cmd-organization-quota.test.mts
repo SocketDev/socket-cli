@@ -27,7 +27,7 @@ describe('socket organization quota', async () => {
             --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -39,9 +39,9 @@ describe('socket organization quota', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket organization quota`'
+        '`socket organization quota`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -50,7 +50,7 @@ describe('socket organization quota', async () => {
       'quota',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should be ok with org name and id',
     async cmd => {
@@ -65,6 +65,6 @@ describe('socket organization quota', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

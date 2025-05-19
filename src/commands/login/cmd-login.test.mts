@@ -36,7 +36,7 @@ describe('socket login', async () => {
           Examples
             $ socket login
             $ socket login --api-proxy=http://localhost:1234"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -48,7 +48,7 @@ describe('socket login', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain('`socket login`')
-    }
+    },
   )
 
   cmdit(
@@ -66,6 +66,6 @@ describe('socket login', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

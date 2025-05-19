@@ -38,7 +38,7 @@ describe('socket uninstall completion', async () => {
 
             $ socket uninstall completion
             $ socket uninstall completion sd"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -50,9 +50,9 @@ describe('socket uninstall completion', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket uninstall completion`'
+        '`socket uninstall completion`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -61,7 +61,7 @@ describe('socket uninstall completion', async () => {
       'completion',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -76,6 +76,6 @@ describe('socket uninstall completion', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

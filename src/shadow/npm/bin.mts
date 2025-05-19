@@ -2,7 +2,7 @@ import { isDebug } from '@socketsecurity/registry/lib/debug'
 import {
   isLoglevelFlag,
   isNodeOptionsFlag,
-  isProgressFlag
+  isProgressFlag,
 } from '@socketsecurity/registry/lib/npm'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -15,7 +15,7 @@ const { SOCKET_CLI_SAFE_BIN, SOCKET_CLI_SAFE_PROGRESS, SOCKET_IPC_HANDSHAKE } =
 
 export default async function shadowBin(
   binName: 'npm' | 'npx',
-  args = process.argv.slice(2)
+  args = process.argv.slice(2),
 ) {
   process.exitCode = 1
   // Lazily access constants.ENV.NODE_COMPILE_CACHE
@@ -23,7 +23,7 @@ export default async function shadowBin(
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   const binArgs = rawBinArgs.filter(
-    a => !isProgressFlag(a) && !isNodeOptionsFlag(a)
+    a => !isProgressFlag(a) && !isNodeOptionsFlag(a),
   )
   const nodeOptionsArg = rawBinArgs.findLast(isNodeOptionsFlag)
   const progressArg = rawBinArgs.findLast(isProgressFlag) !== '--no-progress'
@@ -50,7 +50,7 @@ export default async function shadowBin(
             '--allow-fs-read=*',
             `--allow-fs-write=${cwd}/*`,
             `--allow-fs-write=${globalPrefix}/*`,
-            `--allow-fs-write=${npmCachePath}/*`
+            `--allow-fs-write=${npmCachePath}/*`,
           ]
         })()
       : []
@@ -73,7 +73,7 @@ export default async function shadowBin(
         ? [
             '--require',
             // Lazily access constants.distInstrumentWithSentryPath.
-            constants.distInstrumentWithSentryPath
+            constants.distInstrumentWithSentryPath,
           ]
         : []),
       '--require',
@@ -84,7 +84,7 @@ export default async function shadowBin(
       ...(useDebug ? ['--trace-uncaught', '--trace-warnings'] : []),
       ...(useNodeOptions
         ? [
-            `--node-options='${nodeOptionsArg ? nodeOptionsArg.slice(15) : ''}${cmdFlagsToString(permArgs)}'`
+            `--node-options='${nodeOptionsArg ? nodeOptionsArg.slice(15) : ''}${cmdFlagsToString(permArgs)}'`,
           ]
         : []),
       // Add '--no-progress' to fix input being swallowed by the npm spinner.
@@ -93,16 +93,16 @@ export default async function shadowBin(
       // SOCKET_CLI_DEBUG environment variable is not truthy.
       ...logLevelArgs,
       ...binArgs,
-      ...otherArgs
+      ...otherArgs,
     ],
     {
       env: {
         ...process.env,
-        ...(NODE_COMPILE_CACHE ? { NODE_COMPILE_CACHE } : undefined)
+        ...(NODE_COMPILE_CACHE ? { NODE_COMPILE_CACHE } : undefined),
       },
       // 'inherit' + 'ipc'
-      stdio: [0, 1, 2, 'ipc']
-    }
+      stdio: [0, 1, 2, 'ipc'],
+    },
   )
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on('exit', (code, signalName) => {
@@ -116,8 +116,8 @@ export default async function shadowBin(
   spawnPromise.process.send({
     [SOCKET_IPC_HANDSHAKE]: {
       [SOCKET_CLI_SAFE_BIN]: binName,
-      [SOCKET_CLI_SAFE_PROGRESS]: progressArg
-    }
+      [SOCKET_CLI_SAFE_PROGRESS]: progressArg,
+    },
   })
   await spawnPromise
 }

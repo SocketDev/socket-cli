@@ -12,7 +12,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputViewRepo(
   result: CResult<SocketSdkReturnType<'createOrgRepo'>['data']>,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -35,8 +35,8 @@ export async function outputViewRepo(
       { field: 'default_branch', name: colors.magenta('Default branch') },
       { field: 'homepage', name: colors.magenta('Homepage') },
       { field: 'archived', name: colors.magenta('Archived') },
-      { field: 'created_at', name: colors.magenta('Created at') }
-    ]
+      { field: 'created_at', name: colors.magenta('Created at') },
+    ],
   }
 
   logger.log(chalkTable(options, [result.data]))

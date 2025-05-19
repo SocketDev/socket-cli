@@ -28,7 +28,7 @@ describe('socket ci', async () => {
           policy, the exit code will be non-zero.
 
           It will use the default org for the set API token."
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -40,7 +40,7 @@ describe('socket ci', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain('`socket ci`')
-    }
+    },
   )
 
   cmdit(
@@ -58,6 +58,6 @@ describe('socket ci', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

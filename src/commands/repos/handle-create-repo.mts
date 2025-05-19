@@ -10,7 +10,7 @@ export async function handleCreateRepo(
     homepage,
     orgSlug,
     repoName,
-    visibility
+    visibility,
   }: {
     orgSlug: string
     repoName: string
@@ -19,7 +19,7 @@ export async function handleCreateRepo(
     default_branch: string
     visibility: string
   },
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   const data = await fetchCreateRepo({
     default_branch,
@@ -27,7 +27,7 @@ export async function handleCreateRepo(
     homepage,
     orgSlug,
     repoName,
-    visibility
+    visibility,
   })
   outputCreateRepo(data, repoName, outputKind)
 }

@@ -82,9 +82,9 @@ describe('socket scan create', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket scan create`'
+        '`socket scan create`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -99,7 +99,7 @@ describe('socket scan create', async () => {
       '--branch',
       'abc',
       '--config',
-      '{"apiToken": "abc"}'
+      '{"apiToken": "abc"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -114,6 +114,6 @@ describe('socket scan create', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

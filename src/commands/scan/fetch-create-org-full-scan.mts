@@ -17,7 +17,7 @@ export async function fetchCreateOrgFullScan(
     commitMessage,
     committers,
     pullRequest,
-    repoName
+    repoName,
   }: {
     branchName: string
     commitHash: string
@@ -25,7 +25,7 @@ export async function fetchCreateOrgFullScan(
     committers: string
     pullRequest: number
     repoName: string
-  }
+  },
 ): Promise<CResult<SocketSdkReturnType<'CreateOrgFullScan'>['data']>> {
   const sockSdkResult = await setupSdk()
   if (!sockSdkResult.ok) {
@@ -45,11 +45,11 @@ export async function fetchCreateOrgFullScan(
         ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
         repo: repoName || 'socket-default-repository', // mandatory, this is server default for repo
         set_as_pending_head: String(pendingHead),
-        tmp: String(tmp)
+        tmp: String(tmp),
       },
       packagePaths,
-      cwd
+      cwd,
     ),
-    'to create a scan'
+    'to create a scan',
   )
 }

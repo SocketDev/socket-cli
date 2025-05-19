@@ -16,7 +16,7 @@ module.exports = function ({ types: t }) {
           const { parent } = path
           // Create an AST node for `new URL(<arg>)`.
           const newUrl = t.newExpression(t.identifier('URL'), [
-            node.arguments[0]
+            node.arguments[0],
           ])
           // Check if the result of `url.parse()` is immediately accessed, e.g.
           // `url.parse(x).protocol`.
@@ -27,15 +27,15 @@ module.exports = function ({ types: t }) {
                 newUrl,
                 parent.property,
                 // Handle dynamic props like `['protocol']`.
-                parent.computed
-              )
+                parent.computed,
+              ),
             )
           } else {
             // Otherwise, replace `url.parse(x)` with `new URL(x)`.
             path.replaceWith(newUrl)
           }
         }
-      }
-    }
+      },
+    },
   }
 }

@@ -4,13 +4,13 @@ import path from 'node:path'
 import constants from '../../constants.mts'
 import {
   COMPLETION_CMD_PREFIX,
-  getBashrcDetails
+  getBashrcDetails,
 } from '../../utils/completion.mts'
 
 import type { CResult } from '../../types.mts'
 
 export async function teardownTabCompletion(
-  targetName: string
+  targetName: string,
 ): Promise<CResult<{ action: string; left: string[] }>> {
   const result = getBashrcDetails(targetName)
   if (!result.ok) {
@@ -42,9 +42,9 @@ export async function teardownTabCompletion(
         ok: true,
         data: {
           action: 'removed',
-          left: findRemainingCompletionSetups(newContent)
+          left: findRemainingCompletionSetups(newContent),
         },
-        message: 'Removed completion from ~/.bashrc'
+        message: 'Removed completion from ~/.bashrc',
       }
     } else {
       const left = findRemainingCompletionSetups(content)
@@ -52,16 +52,16 @@ export async function teardownTabCompletion(
         ok: true,
         data: {
           action: 'missing',
-          left
+          left,
         },
-        message: `Completion was not found in ~/.bashrc${left.length ? ' (you may need to manually edit your .bashrc to clean this up...)' : ''}`
+        message: `Completion was not found in ~/.bashrc${left.length ? ' (you may need to manually edit your .bashrc to clean this up...)' : ''}`,
       }
     }
   } else {
     return {
       ok: true, // Eh. I think this makes most sense.
       data: { action: 'not found', left: [] },
-      message: '~/.bashrc not found, skipping'
+      message: '~/.bashrc not found, skipping',
     }
   }
 }

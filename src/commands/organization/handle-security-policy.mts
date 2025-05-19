@@ -5,7 +5,7 @@ import type { OutputKind } from '../../types.mts'
 
 export async function handleSecurityPolicy(
   orgSlug: string,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   const data = await fetchSecurityPolicy(orgSlug)
 

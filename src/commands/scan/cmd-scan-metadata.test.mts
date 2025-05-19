@@ -36,7 +36,7 @@ describe('socket scan metadata', async () => {
 
           Examples
             $ socket scan metadata FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -48,9 +48,9 @@ describe('socket scan metadata', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket scan metadata`'
+        '`socket scan metadata`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -77,7 +77,7 @@ describe('socket scan metadata', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -88,7 +88,7 @@ describe('socket scan metadata', async () => {
       'scanidee',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -103,6 +103,6 @@ describe('socket scan metadata', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })

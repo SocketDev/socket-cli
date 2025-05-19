@@ -13,8 +13,8 @@ export default defineConfig({
         'dist/**',
         'scripts/**',
         'src/**/types.mts',
-        'test/**'
-      ]
-    }
-  }
+        'test/**',
+      ],
+    },
+  },
 })

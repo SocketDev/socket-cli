@@ -18,7 +18,7 @@ const nodejsPlatformTypes = new Set([
   PNPM,
   'ts',
   'tsx',
-  'typescript'
+  'typescript',
 ])
 
 function argvToArray(argv: {
@@ -70,7 +70,7 @@ export async function runCdxgen(yargvWithYes: any) {
           // Lazily access constants.ENV.INLINED_SYNP_VERSION.
           `synp@${constants.ENV.INLINED_SYNP_VERSION}`,
           '--source-file',
-          `./${YARN_LOCK}`
+          `./${YARN_LOCK}`,
         ])
         yargv.type = NPM
         cleanupPackageLock = true
@@ -81,7 +81,7 @@ export async function runCdxgen(yargvWithYes: any) {
     ...yesArgs,
     // Lazily access constants.ENV.INLINED_CYCLONEDX_CDXGEN_VERSION.
     `@cyclonedx/cdxgen@${constants.ENV.INLINED_CYCLONEDX_CDXGEN_VERSION}`,
-    ...argvToArray(yargv)
+    ...argvToArray(yargv),
   ])
   if (cleanupPackageLock) {
     try {

@@ -10,7 +10,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
-  readPackageJson
+  readPackageJson,
 } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { stripBom } from '@socketsecurity/registry/lib/strings'
@@ -22,31 +22,31 @@ import {
   gitCreateAndPushBranch,
   gitRemoteBranchExists,
   gitResetAndClean,
-  gitUnstagedModifiedFiles
+  gitUnstagedModifiedFiles,
 } from './git.mts'
 import {
   cleanupOpenPrs,
   enablePrAutoMerge,
   getGitHubEnvRepoInfo,
   openPr,
-  prExistForBranch
+  prExistForBranch,
 } from './open-pr.mts'
 import { getAlertMapOptions } from './shared.mts'
 import constants from '../../constants.mts'
 import {
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
-  SafeArborist
+  SafeArborist,
 } from '../../shadow/npm/arborist/lib/arborist/index.mts'
 import {
   findBestPatchVersion,
   findPackageNode,
   findPackageNodes,
-  updatePackageJsonFromNode
+  updatePackageJsonFromNode,
 } from '../../shadow/npm/arborist-helpers.mts'
 import { runAgentInstall } from '../../utils/agent.mts'
 import {
   getAlertsMapFromPnpmLockfile,
-  getAlertsMapFromPurls
+  getAlertsMapFromPurls,
 } from '../../utils/alerts-map.mts'
 import { readFileUtf8, removeNodeModules } from '../../utils/fs.mts'
 import { globWorkspace } from '../../utils/glob.mts'
@@ -68,13 +68,13 @@ const { DRY_RUN_NOT_SAVING, NPM, OVERRIDES, PNPM } = constants
 async function getActualTree(cwd: string = process.cwd()): Promise<SafeNode> {
   const arb = new SafeArborist({
     path: cwd,
-    ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES
+    ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   })
   return await arb.loadActual()
 }
 
 async function readLockfile(
-  lockfilePath: string
+  lockfilePath: string,
 ): Promise<LockfileObject | null> {
   return existsSync(lockfilePath)
     ? (yaml.load(stripBom(await readFileUtf8(lockfilePath))) as LockfileObject)
@@ -89,11 +89,11 @@ type InstallOptions = {
 
 async function install(
   pkgEnvDetails: EnvDetails,
-  options: InstallOptions
+  options: InstallOptions,
 ): Promise<SafeNode> {
   const { args, cwd, spinner } = {
     __proto__: null,
-    ...options
+    ...options,
   } as InstallOptions
   await runAgentInstall(pkgEnvDetails, {
     args: [
@@ -103,10 +103,10 @@ async function install(
       '--no-frozen-lockfile',
       // Enable a non-interactive pnpm install
       // https://github.com/pnpm/pnpm/issues/6778
-      '--config.confirmModulesPurge=false'
+      '--config.confirmModulesPurge=false',
     ],
     spinner,
-    stdio: isDebug() ? 'inherit' : 'ignore'
+    stdio: isDebug() ? 'inherit' : 'ignore',
   })
   return await getActualTree(cwd)
 }
@@ -121,8 +121,8 @@ export async function pnpmFix(
     purls,
     rangeStyle,
     test,
-    testScript
-  }: NormalizedFixOptions
+    testScript,
+  }: NormalizedFixOptions,
 ) {
   if (dryRun) {
     logger.log(DRY_RUN_NOT_SAVING)
@@ -153,7 +153,7 @@ export async function pnpmFix(
     actualTree = await install(pkgEnvDetails, {
       args: ['--lockfile-only'],
       cwd,
-      spinner
+      spinner,
     })
     lockfile = await readLockfile(lockfilePath)
   }
@@ -168,7 +168,7 @@ export async function pnpmFix(
     ? await getAlertsMapFromPurls(purls, getAlertMapOptions({ limit }))
     : await getAlertsMapFromPnpmLockfile(
         lockfile,
-        getAlertMapOptions({ limit })
+        getAlertMapOptions({ limit }),
       )
 
   const infoByPkgName = getCveInfoFromAlertsMap(alertsMap, { limit })
@@ -183,19 +183,19 @@ export async function pnpmFix(
   const baseBranch = isCi ? getBaseGitBranch() : ''
   const workspacePkgJsonPaths = await globWorkspace(
     pkgEnvDetails.agent,
-    rootPath
+    rootPath,
   )
   const pkgJsonPaths = [
     ...workspacePkgJsonPaths,
     // Process the workspace root last since it will add an override to package.json.
-    pkgEnvDetails.editablePkgJson.filename!
+    pkgEnvDetails.editablePkgJson.filename!,
   ]
 
   spinner?.stop()
 
   let count = 0
   const sortedInfoEntries = [...infoByPkgName.entries()].sort((a, b) =>
-    naturalCompare(a[0], b[0])
+    naturalCompare(a[0], b[0]),
   )
   infoEntriesLoop: for (
     let i = 0, { length } = sortedInfoEntries;
@@ -241,12 +241,12 @@ export async function pnpmFix(
       const oldVersions = arrayUnique(
         findPackageNodes(actualTree, name)
           .map(n => n.version)
-          .filter(Boolean)
+          .filter(Boolean),
       )
 
       if (!oldVersions.length) {
         logger.warn(
-          `Unexpected condition: Lockfile entries not found for ${name}.\n`
+          `Unexpected condition: Lockfile entries not found for ${name}.\n`,
         )
         continue pkgJsonPathsLoop
       }
@@ -255,7 +255,7 @@ export async function pnpmFix(
       // across iterations.
       // eslint-disable-next-line no-await-in-loop
       const editablePkgJson = await readPackageJson(pkgJsonPath, {
-        editable: true
+        editable: true,
       })
       // Get current overrides for revert logic
       const oldPnpmSection = editablePkgJson.content[PNPM] as
@@ -273,19 +273,19 @@ export async function pnpmFix(
         const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
           logger.warn(
-            `Unexpected condition: Arborist node not found, skipping ${oldId}`
+            `Unexpected condition: Arborist node not found, skipping ${oldId}`,
           )
           continue oldVersionsLoop
         }
         infosLoop: for (const {
           firstPatchedVersionIdentifier,
-          vulnerableVersionRange
+          vulnerableVersionRange,
         } of infos.values()) {
           const newVersion = findBestPatchVersion(
             node,
             availableVersions,
             vulnerableVersionRange,
-            firstPatchedVersionIdentifier
+            firstPatchedVersionIdentifier,
           )
           const newVersionPackument = newVersion
             ? packument.versions[newVersion]
@@ -293,7 +293,7 @@ export async function pnpmFix(
 
           if (!(newVersion && newVersionPackument)) {
             warningsForAfter.add(
-              `No update applied. ${oldId} needs >=${firstPatchedVersionIdentifier}`
+              `No update applied. ${oldId} needs >=${firstPatchedVersionIdentifier}`,
             )
             continue infosLoop
           }
@@ -302,7 +302,7 @@ export async function pnpmFix(
           const newVersionRange = applyRange(
             oldOverrides?.[overrideKey] ?? oldVersion,
             newVersion,
-            rangeStyle
+            rangeStyle,
           )
           const newId = `${name}@${newVersionRange}`
           const updateData = isWorkspaceRoot
@@ -311,9 +311,9 @@ export async function pnpmFix(
                   ...oldPnpmSection,
                   [OVERRIDES]: {
                     ...oldOverrides,
-                    [overrideKey]: newVersionRange
-                  }
-                }
+                    [overrideKey]: newVersionRange,
+                  },
+                },
               } as PackageJson)
             : undefined
 
@@ -326,23 +326,23 @@ export async function pnpmFix(
                       oldOverrides && Object.keys(oldOverrides).length > 1
                         ? {
                             ...oldOverrides,
-                            [overrideKey]: undefined
+                            [overrideKey]: undefined,
                           }
-                        : undefined
-                  }
+                        : undefined,
+                  },
                 }
               : {}),
             ...(editablePkgJson.content.dependencies && {
-              dependencies: { ...editablePkgJson.content.dependencies }
+              dependencies: { ...editablePkgJson.content.dependencies },
             }),
             ...(editablePkgJson.content.optionalDependencies && {
               optionalDependencies: {
-                ...editablePkgJson.content.optionalDependencies
-              }
+                ...editablePkgJson.content.optionalDependencies,
+              },
             }),
             ...(editablePkgJson.content.peerDependencies && {
-              peerDependencies: { ...editablePkgJson.content.peerDependencies }
-            })
+              peerDependencies: { ...editablePkgJson.content.peerDependencies },
+            }),
           } as PackageJson
 
           if (updateData) {
@@ -353,7 +353,7 @@ export async function pnpmFix(
             actualTree,
             node,
             newVersion,
-            rangeStyle
+            rangeStyle,
           )
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
@@ -392,7 +392,7 @@ export async function pnpmFix(
             const branch = getSocketBranchName(
               oldPurl,
               newVersion,
-              workspaceName
+              workspaceName,
             )
             try {
               const { owner, repo } = getGitHubEnvRepoInfo()
@@ -404,7 +404,7 @@ export async function pnpmFix(
               // eslint-disable-next-line no-await-in-loop
               if (await gitRemoteBranchExists(branch, cwd)) {
                 debugLog(
-                  `Remote branch "${branch}" exists, skipping PR creation.`
+                  `Remote branch "${branch}" exists, skipping PR creation.`,
                 )
                 continue infosLoop
               }
@@ -419,7 +419,7 @@ export async function pnpmFix(
                 })
               if (!moddedFilepaths.length) {
                 logger.warn(
-                  'Unexpected condition: Nothing to commit, skipping PR creation.'
+                  'Unexpected condition: Nothing to commit, skipping PR creation.',
                 )
                 continue infosLoop
               }
@@ -430,17 +430,17 @@ export async function pnpmFix(
                   branch,
                   getSocketCommitMessage(oldPurl, newVersion, workspaceName),
                   moddedFilepaths,
-                  cwd
+                  cwd,
                 ))
               ) {
                 logger.warn(
-                  'Unexpected condition: Push failed, skipping PR creation.'
+                  'Unexpected condition: Push failed, skipping PR creation.',
                 )
                 continue infosLoop
               }
               // eslint-disable-next-line no-await-in-loop
               await cleanupOpenPrs(owner, repo, oldPurl, newVersion, {
-                workspaceName
+                workspaceName,
               })
               // eslint-disable-next-line no-await-in-loop
               const prResponse = await openPr(
@@ -452,8 +452,8 @@ export async function pnpmFix(
                 {
                   baseBranch,
                   cwd,
-                  workspaceName
-                }
+                  workspaceName,
+                },
               )
               if (prResponse) {
                 const { data } = prResponse
@@ -481,14 +481,14 @@ export async function pnpmFix(
               // eslint-disable-next-line no-await-in-loop
               await Promise.all([
                 removeNodeModules(cwd),
-                editablePkgJson.save({ ignoreWhitespace: true })
+                editablePkgJson.save({ ignoreWhitespace: true }),
               ])
               // eslint-disable-next-line no-await-in-loop
               actualTree = await install(pkgEnvDetails, { cwd, spinner })
             }
             spinner?.failAndStop(
               `Update failed for ${oldId} in ${workspaceName}`,
-              error
+              error,
             )
           }
           if (++count >= limit) {

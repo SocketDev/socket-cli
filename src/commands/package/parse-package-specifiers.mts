@@ -4,7 +4,7 @@
 // The ecosystem is considered as the first package if it is not an a-z string.
 export function parsePackageSpecifiers(
   ecosystem: string,
-  pkgs: string[]
+  pkgs: string[],
 ): { purls: string[]; valid: boolean } {
   let valid = true
   const purls = []

@@ -15,7 +15,7 @@ const config: CliCommandConfig = {
     'Create a new scan and report whether it passes your security policy',
   hidden: true,
   flags: {
-    ...commonFlags
+    ...commonFlags,
   },
   help: (parentName, _config) => `
     Usage
@@ -26,25 +26,25 @@ const config: CliCommandConfig = {
     policy, the exit code will be non-zero.
 
     It will use the default org for the set API token.
-  `
+  `,
 }
 
 export const cmdCI = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   if (cli.flags['dryRun']) {

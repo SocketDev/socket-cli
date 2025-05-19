@@ -7,7 +7,7 @@ import type { Agent } from '../../utils/package-environment.mts'
 export type AgentLockIncludesFn = (
   lockSrc: string,
   name: string,
-  ext?: string | undefined
+  ext?: string | undefined,
 ) => boolean
 
 const { BUN, LOCK_EXT, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
@@ -38,7 +38,7 @@ function includesPnpm(lockSrc: string, name: string) {
     //   name:
     //   name@
     `(?<=^\\s*)(?:(['/])${escapedName}\\1|${escapedName}(?=[:@]))`,
-    'm'
+    'm',
   ).test(lockSrc)
 }
 
@@ -57,7 +57,7 @@ function includesYarn(lockSrc: string, name: string) {
     //   name@
     //   , name@
     `(?<=(?:^\\s*|,\\s*)"?)${escapedName}(?=@)`,
-    'm'
+    'm',
   ).test(lockSrc)
 }
 
@@ -67,5 +67,5 @@ export const lockfileIncludesByAgent = new Map<Agent, AgentLockIncludesFn>([
   [PNPM, includesPnpm],
   [VLT, includesVlt],
   [YARN_BERRY, includesYarn],
-  [YARN_CLASSIC, includesYarn]
+  [YARN_CLASSIC, includesYarn],
 ])

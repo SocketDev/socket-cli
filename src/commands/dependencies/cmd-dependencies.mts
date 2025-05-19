@@ -24,15 +24,15 @@ const config: CliCommandConfig = {
       type: 'number',
       shortFlag: 'l',
       default: 50,
-      description: 'Maximum number of dependencies returned'
+      description: 'Maximum number of dependencies returned',
     },
     offset: {
       type: 'number',
       shortFlag: 'o',
       default: 0,
-      description: 'Page number'
+      description: 'Page number',
     },
-    ...outputFlags
+    ...outputFlags,
   },
   help: (command, config) => `
     Usage
@@ -47,25 +47,25 @@ const config: CliCommandConfig = {
 
     Examples
       ${command} --limit 20 --offset 10
-  `
+  `,
 }
 
 export const cmdScanCreate = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { json, limit, markdown, offset } = cli.flags
@@ -81,7 +81,7 @@ async function run(
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
       pass: 'ok',
-      fail: 'bad'
+      fail: 'bad',
     },
     {
       nook: true,
@@ -89,8 +89,8 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token'
-    }
+      fail: 'missing API token',
+    },
   )
   if (!wasValidInput) {
     return
@@ -104,6 +104,6 @@ async function run(
   await handleDependencies({
     limit: Number(limit || 0) || 0,
     offset: Number(offset || 0) || 0,
-    outputKind
+    outputKind,
   })
 }

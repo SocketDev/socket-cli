@@ -19,15 +19,15 @@ export const cmdOrganization: CliSubcommand = {
       {
         list: cmdOrganizationList,
         quota: cmdOrganizationQuota,
-        policy: cmdOrganizationPolicy
+        policy: cmdOrganizationPolicy,
       },
       {
         argv,
         description,
         defaultSub: 'list', // Backwards compat
         importMeta,
-        name: parentName + ' organization'
-      }
+        name: parentName + ' organization',
+      },
     )
-  }
+  },
 }

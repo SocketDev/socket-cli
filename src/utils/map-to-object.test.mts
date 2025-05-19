@@ -8,9 +8,9 @@ describe('map-to-object', () => {
       mapToObject(
         new Map([
           ['a', 'b'],
-          ['c', 'd']
-        ])
-      )
+          ['c', 'd'],
+        ]),
+      ),
     ).toMatchInlineSnapshot(`
       {
         "a": "b",
@@ -27,11 +27,11 @@ describe('map-to-object', () => {
             'x',
             new Map([
               ['a', 'b'],
-              ['c', 'd']
-            ])
-          ]
-        ])
-      )
+              ['c', 'd'],
+            ]),
+          ],
+        ]),
+      ),
     ).toMatchInlineSnapshot(`
       {
         "x": {
@@ -53,17 +53,17 @@ describe('map-to-object', () => {
                 'x',
                 new Map([
                   ['a', 'b'],
-                  ['c', 'd']
-                ])
+                  ['c', 'd'],
+                ]),
               ],
               [
                 'y',
                 new Map([
                   ['a', 'b'],
-                  ['c', 'd']
-                ])
-              ]
-            ])
+                  ['c', 'd'],
+                ]),
+              ],
+            ]),
           ],
           [
             'b456',
@@ -72,20 +72,20 @@ describe('map-to-object', () => {
                 'x',
                 new Map([
                   ['a', 'b'],
-                  ['c', 'd']
-                ])
+                  ['c', 'd'],
+                ]),
               ],
               [
                 'y',
                 new Map([
                   ['a', 'b'],
-                  ['c', 'd']
-                ])
-              ]
-            ])
-          ]
-        ])
-      )
+                  ['c', 'd'],
+                ]),
+              ],
+            ]),
+          ],
+        ]),
+      ),
     ).toMatchInlineSnapshot(`
       {
         "a123": {

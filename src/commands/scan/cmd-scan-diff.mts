@@ -30,26 +30,26 @@ const config: CliCommandConfig = {
       type: 'number',
       default: 2,
       description:
-        'Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)'
+        'Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)',
     },
     file: {
       type: 'string',
       shortFlag: 'f',
       default: '',
       description:
-        'Path to a local file where the output should be saved. Use `-` to force stdout.'
+        'Path to a local file where the output should be saved. Use `-` to force stdout.',
     },
     interactive: {
       type: 'boolean',
       default: true,
       description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
     },
     org: {
       type: 'string',
       description:
-        'Force override the organization slug, overrides the default org from config'
-    }
+        'Force override the organization slug, overrides the default org from config',
+    },
   },
   help: (command, config) => `
     Usage
@@ -72,25 +72,25 @@ const config: CliCommandConfig = {
     Examples
       $ ${command}${isTestingV1() ? '' : ' FakeOrg'} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
       $ ${command}${isTestingV1() ? '' : ' FakeOrg'} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json
-  `
+  `,
 }
 
 export const cmdScanDiff = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const {
@@ -100,7 +100,7 @@ async function run(
     interactive,
     json,
     markdown,
-    org: orgFlag
+    org: orgFlag,
   } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
@@ -108,7 +108,7 @@ async function run(
     String(orgFlag || ''),
     cli.input[0] || '',
     !!interactive,
-    !!dryRun
+    !!dryRun,
   )
 
   let id1 = cli.input[isTestingV1() || orgSlug ? 0 : 1] || ''
@@ -134,7 +134,7 @@ async function run(
           ? 'missing both Scan IDs'
           : !id2
             ? 'missing second Scan ID'
-            : 'missing first Scan ID' // Not sure how this can happen but ok.
+            : 'missing first Scan ID', // Not sure how this can happen but ok.
     },
     {
       test: !!orgSlug,
@@ -143,7 +143,7 @@ async function run(
         ? 'Org name by default setting, --org, or auto-discovered'
         : 'Org name must be the first argument',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
@@ -151,7 +151,7 @@ async function run(
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
       pass: 'ok',
-      fail: 'bad'
+      fail: 'bad',
     },
     {
       nook: true,
@@ -159,8 +159,8 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token'
-    }
+      fail: 'missing API token',
+    },
   )
   if (!wasValidInput) {
     return
@@ -177,6 +177,6 @@ async function run(
     depth: Number(depth),
     orgSlug,
     outputKind,
-    file: String(file || '')
+    file: String(file || ''),
   })
 }

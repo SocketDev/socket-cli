@@ -26,43 +26,43 @@ const config: CliCommandConfig = {
       type: 'boolean',
       default: true,
       description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.'
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
     },
     org: {
       type: 'string',
       description:
-        'Force override the organization slug, overrides the default org from config'
+        'Force override the organization slug, overrides the default org from config',
     },
     perPage: {
       type: 'number',
       shortFlag: 'pp',
       default: 30,
-      description: 'Number of items per page'
+      description: 'Number of items per page',
     },
     page: {
       type: 'string',
       shortFlag: 'p',
       default: '1',
-      description: 'Page token'
+      description: 'Page token',
     },
     direction: {
       type: 'string',
       shortFlag: 'd',
       default: 'desc',
-      description: 'Order asc or desc by the createdAt attribute'
+      description: 'Order asc or desc by the createdAt attribute',
     },
     eco: {
       type: 'string',
       shortFlag: 'e',
       default: '',
-      description: 'Only show threats for a particular ecosystem'
+      description: 'Only show threats for a particular ecosystem',
     },
     filter: {
       type: 'string',
       shortFlag: 'f',
       default: 'mal',
-      description: 'Filter what type of threats to return'
-    }
+      description: 'Filter what type of threats to return',
+    },
   },
   help: (command, config) => `
     Usage
@@ -105,25 +105,25 @@ const config: CliCommandConfig = {
     Examples
       $ ${command}${isTestingV1() ? '' : ' FakeOrg'}
       $ ${command}${isTestingV1() ? '' : ' FakeOrg'} --perPage=5 --page=2 --direction=asc --filter=joke
-  `
+  `,
 }
 
 export const cmdThreatFeed = {
   description: config.description,
   hidden: config.hidden,
-  run
+  run,
 }
 
 async function run(
   argv: readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string }
+  { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
-    parentName
+    parentName,
   })
 
   const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
@@ -133,7 +133,7 @@ async function run(
     String(orgFlag || ''),
     cli.input[0] || '',
     !!interactive,
-    !!dryRun
+    !!dryRun,
   )
 
   const hasApiToken = hasDefaultToken()
@@ -145,14 +145,14 @@ async function run(
       test: !!orgSlug,
       message: 'Org name as the first argument',
       pass: 'ok',
-      fail: 'missing'
+      fail: 'missing',
     },
     {
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       pass: 'ok',
-      fail: 'omit one'
+      fail: 'omit one',
     },
     {
       nook: true,
@@ -160,8 +160,8 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token'
-    }
+      fail: 'missing API token',
+    },
   )
   if (!wasValidInput) {
     return
@@ -178,6 +178,6 @@ async function run(
     filter: String(cli.flags['filter'] || 'mal'),
     outputKind,
     page: String(cli.flags['page'] || '1'),
-    perPage: Number(cli.flags['perPage']) || 30
+    perPage: Number(cli.flags['perPage']) || 30,
   })
 }

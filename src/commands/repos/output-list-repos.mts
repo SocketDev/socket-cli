@@ -12,7 +12,7 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 
 export async function outputListRepos(
   result: CResult<SocketSdkReturnType<'getOrgRepoList'>['data']>,
-  outputKind: OutputKind
+  outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -33,8 +33,8 @@ export async function outputListRepos(
       { field: 'name', name: colors.magenta('Name') },
       { field: 'visibility', name: colors.magenta('Visibility') },
       { field: 'default_branch', name: colors.magenta('Default branch') },
-      { field: 'archived', name: colors.magenta('Archived') }
-    ]
+      { field: 'archived', name: colors.magenta('Archived') },
+    ],
   }
 
   logger.log(chalkTable(options, result.data.results))

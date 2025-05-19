@@ -43,7 +43,7 @@ describe('socket analytics', async () => {
             $ socket analytics --scope=org --time=7
             $ socket analytics --scope=org --time=30
             $ socket analytics --scope=repo --repo=test-repo --time=30"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -55,9 +55,9 @@ describe('socket analytics', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket analytics`'
+        '`socket analytics`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -82,7 +82,7 @@ describe('socket analytics', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -94,7 +94,7 @@ describe('socket analytics', async () => {
       'bar',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}'
+      '{"apiToken":"anything"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -109,7 +109,7 @@ describe('socket analytics', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -147,7 +147,7 @@ describe('socket analytics', async () => {
             $ socket analytics org 7
             $ socket analytics repo test-repo 30
             $ socket analytics 90"
-      `
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -161,9 +161,9 @@ describe('socket analytics', async () => {
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket analytics`'
+        '`socket analytics`',
       )
-    }
+    },
   )
 
   cmdit(
@@ -171,7 +171,7 @@ describe('socket analytics', async () => {
       'analytics',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should run to dryrun without args in v1',
     async cmd => {
@@ -188,7 +188,7 @@ describe('socket analytics', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -197,7 +197,7 @@ describe('socket analytics', async () => {
       'org',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should accept org arg in v1',
     async cmd => {
@@ -214,7 +214,7 @@ describe('socket analytics', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -223,7 +223,7 @@ describe('socket analytics', async () => {
       'repo',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should ask for repo name with repo arg in v1',
     async cmd => {
@@ -248,7 +248,7 @@ describe('socket analytics', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    }
+    },
   )
 
   cmdit(
@@ -258,7 +258,7 @@ describe('socket analytics', async () => {
       'daname',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should accept repo with arg in v1',
     async cmd => {
@@ -275,7 +275,7 @@ describe('socket analytics', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -284,7 +284,7 @@ describe('socket analytics', async () => {
       '7',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should accept time 7 arg in v1',
     async cmd => {
@@ -301,7 +301,7 @@ describe('socket analytics', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -310,7 +310,7 @@ describe('socket analytics', async () => {
       '30',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should accept time 30 arg in v1',
     async cmd => {
@@ -327,7 +327,7 @@ describe('socket analytics', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -336,7 +336,7 @@ describe('socket analytics', async () => {
       '90',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should accept time 90 arg in v1',
     async cmd => {
@@ -353,7 +353,7 @@ describe('socket analytics', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -363,7 +363,7 @@ describe('socket analytics', async () => {
       '7',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should accept org and time arg in v1',
     async cmd => {
@@ -380,7 +380,7 @@ describe('socket analytics', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 
   cmdit(
@@ -391,7 +391,7 @@ describe('socket analytics', async () => {
       '30',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}'
+      '{"isTestingV1": true, "apiToken":"anything"}',
     ],
     'should accept repo and time arg in v1',
     async cmd => {
@@ -408,6 +408,6 @@ describe('socket analytics', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    }
+    },
   )
 })
