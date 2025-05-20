@@ -217,6 +217,7 @@ export async function pnpmFix(
     const availableVersions = Object.keys(packument.versions)
     const warningsForAfter = new Set<string>()
 
+    // eslint-disable-next-line no-unused-labels
     pkgJsonPathsLoop: for (const pkgJsonPath of pkgJsonPaths) {
       const pkgPath = path.dirname(pkgJsonPath)
       const isWorkspaceRoot =
@@ -241,7 +242,8 @@ export async function pnpmFix(
         logger.warn(
           `Unexpected condition: Lockfile entries not found for ${name}.\n`,
         )
-        continue pkgJsonPathsLoop
+        // Skip to next package.
+        continue infoEntriesLoop
       }
 
       // Always re-read the editable package.json to avoid stale mutations
