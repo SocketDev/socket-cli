@@ -73,7 +73,7 @@ describe('socket analytics', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+        \\x1b[31m\\u2716\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
           - The time filter must either be 7, 30 or 90 (\\x1b[32mok\\x1b[39m)
 
@@ -237,7 +237,7 @@ describe('socket analytics', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
         \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
         \\x1b[39m
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+        \\x1b[31m\\u2716\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
           - Scope must be "repo" or "org" (\\x1b[32mok\\x1b[39m)
 
