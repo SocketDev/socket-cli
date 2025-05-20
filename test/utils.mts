@@ -73,7 +73,7 @@ export async function invokeNpm(
 
 function normalizeLogSymbols(str: string): string {
   return str
-    .replaceAll('✖️', '×')
+    .replaceAll('✖', '×')
     .replaceAll('ℹ', 'i')
     .replaceAll('✔', '√')
     .replaceAll('⚠', '‼')
