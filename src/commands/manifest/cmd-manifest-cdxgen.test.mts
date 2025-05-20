@@ -108,7 +108,7 @@ describe('socket manifest cdxgen', async () => {
   //         |__   | . |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
   //         |_____|___|___|_,_|___|_|.dev   | Command: \`socket cdxgen\`, cwd: <redacted>
   //
-  //       \\x1b[31m\\u2716\\x1b[39m Unknown argument: --dry-run"
+  //       \\x1b[31m\\xd7\\x1b[39m Unknown argument: --dry-run"
   //     `)
   //
   //     expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
