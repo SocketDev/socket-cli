@@ -190,6 +190,8 @@ export async function npmFix(
           `Unexpected condition: Lockfile entries not found for ${name}.\n`,
         )
         // Skip to next package.
+        logger.dedent()
+        spinner?.dedent()
         continue infoEntriesLoop
       }
 
@@ -395,6 +397,8 @@ export async function npmFix(
             )
           }
           if (++count >= limit) {
+            logger.dedent()
+            spinner?.dedent()
             break infoEntriesLoop
           }
         }
