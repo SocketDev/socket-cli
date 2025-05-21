@@ -4,6 +4,7 @@ import { handleCI } from './handle-ci.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -16,16 +17,30 @@ const config: CliCommandConfig = {
   hidden: true,
   flags: {
     ...commonFlags,
+    autoManifest: {
+      type: 'boolean',
+      default: false, // dev tools is not likely to be set up so this is safer
+      description:
+        'Auto generate manifest files where detected? See autoManifest flag in `socket scan create`',
+    },
   },
   help: (parentName, _config) => `
     Usage
       $ ${parentName}
+
+    Options
+      ${getFlagListOutput(config.flags, 6)}
 
     This command is intended to use in CI runs to allow automated systems to
     accept or reject a current build. When the scan does not pass your security
     policy, the exit code will be non-zero.
 
     It will use the default org for the set API token.
+
+    The --autoManifest flag does the same as the one from \`socket scan create\`
+    but is not enabled by default since the CI is less likely to be set up with
+    all the necessary dev tooling. Enable it if you want the scan to include
+    locally generated manifests like for gradle and sbt.
   `,
 }
 
@@ -52,5 +67,5 @@ async function run(
     return
   }
 
-  await handleCI()
+  await handleCI(Boolean(cli.flags['autoManifest']))
 }

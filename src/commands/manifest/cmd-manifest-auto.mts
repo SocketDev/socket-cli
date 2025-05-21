@@ -1,12 +1,8 @@
-import path from 'node:path'
-
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
-import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { detectManifestActions } from './detect-manifest-actions.mts'
-import { handleManifestConda } from './handle-manifest-conda.mts'
+import { generateAutoManifest } from './generate_auto_manifest.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
@@ -77,20 +73,15 @@ async function run(
     logger.groupEnd()
   }
 
-  const result = await detectManifestActions(String(cwd))
-  debugLog(result)
+  const detected = await detectManifestActions(String(cwd))
+  debugLog(detected)
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
-  const found = Object.values(result).reduce(
-    (sum, now) => (now ? sum + 1 : sum),
-    0,
-  )
-
-  if (!found) {
+  if (detected.count) {
     logger.fail(
       ' Was unable to discover any targets for which we can generate manifest files...',
     )
@@ -106,26 +97,9 @@ async function run(
     return
   }
 
-  if (result.sbt) {
-    logger.log('Detected a Scala sbt build, generating pom files with sbt...')
-    await convertSbtToMaven(cwd, 'sbt', './socket.sbt.pom.xml', verbose, [])
-  }
-
-  if (result.gradle) {
-    logger.log(
-      'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator...',
-    )
-    await convertGradleToMaven(cwd, path.join(cwd, 'gradlew'), cwd, verbose, [])
-  }
-
-  if (result.conda) {
-    logger.log(
-      'Detected an environment.yml file, running default Conda generator...',
-    )
-    await handleManifestConda(cwd, '', outputKind, cwd, verbose)
-  }
+  await generateAutoManifest(detected, cwd, verbose, outputKind)
 
   logger.success(
-    `Finished. Should have attempted to generate manifest files for ${found} targets.`,
+    `Finished. Should have attempted to generate manifest files for ${detected.count} targets.`,
   )
 }
