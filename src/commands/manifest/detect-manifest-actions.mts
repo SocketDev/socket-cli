@@ -6,14 +6,20 @@ import path from 'node:path'
 
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 
-export async function detectManifestActions(cwd = process.cwd()): Promise<{
+export interface GeneratableManifests {
   cdxgen: boolean
+  count: number
   conda: boolean
   gradle: boolean
   sbt: boolean
-}> {
+}
+
+export async function detectManifestActions(
+  cwd = process.cwd(),
+): Promise<GeneratableManifests> {
   const output = {
     cdxgen: false, // TODO
+    count: 0,
     conda: false,
     gradle: false,
     sbt: false,
@@ -23,11 +29,13 @@ export async function detectManifestActions(cwd = process.cwd()): Promise<{
     debugLog('Detected a Scala sbt build, running default Scala generator...')
 
     output.sbt = true
+    output.count += 1
   }
 
   if (existsSync(path.join(cwd, 'gradlew'))) {
     debugLog('Detected a gradle build, running default gradle generator...')
     output.gradle = true
+    output.count += 1
   }
 
   const envyml = path.join(cwd, 'environment.yml')
@@ -39,6 +47,7 @@ export async function detectManifestActions(cwd = process.cwd()): Promise<{
       'Detected an environment.yml file, running default Conda generator...',
     )
     output.conda = true
+    output.count += 1
   }
 
   return output

@@ -54,6 +54,7 @@ describe('socket scan create', async () => {
           is not designated as the "default branch". It is disabled when using --tmp.
 
           Options
+            --autoManifest    Run \`socket manifest auto\` before collecting manifest files? This would be necessary for languages like Scala, Gradle, and Kotlin, See \`socket manifest auto --help\`.
             --branch          Branch name
             --commitHash      Commit hash
             --commitMessage   Commit message

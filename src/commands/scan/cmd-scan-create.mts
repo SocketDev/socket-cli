@@ -12,6 +12,7 @@ import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
+import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -24,6 +25,12 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags,
     ...outputFlags,
+    autoManifest: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Run `socket manifest auto` before collecting manifest files? This would be necessary for languages like Scala, Gradle, and Kotlin, See `socket manifest auto --help`.',
+    },
     branch: {
       type: 'string',
       shortFlag: 'b',
@@ -171,6 +178,7 @@ async function run(
   })
 
   const {
+    autoManifest = false,
     branch: branchName = 'socket-default-branch',
     commitHash,
     commitMessage,
@@ -189,6 +197,7 @@ async function run(
     setAsAlertsPage: pendingHeadFlag,
     tmp,
   } = cli.flags as {
+    autoManifest: boolean
     branch: string
     cwd: string
     commitHash: string
@@ -255,6 +264,13 @@ async function run(
       }
       updatedInput = true
     }
+  }
+
+  const detected = await detectManifestActions(cwd)
+  if (detected.count > 0 && !autoManifest) {
+    logger.info(
+      `Detected ${detected.count} manifest targets we could try to generate. Please set the --autoManifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
+    )
   }
 
   if (updatedInput && orgSlug && targets?.length) {
@@ -328,6 +344,7 @@ async function run(
   }
 
   await handleCreateNewScan({
+    autoManifest: Boolean(autoManifest),
     branchName: branchName as string,
     commitHash: (commitHash && String(commitHash)) || '',
     commitMessage: (commitMessage && String(commitMessage)) || '',

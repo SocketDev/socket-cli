@@ -4,7 +4,7 @@ import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 
-export async function handleCI(): Promise<void> {
+export async function handleCI(autoManifest: boolean): Promise<void> {
   // ci: {
   //   description: 'Alias for "report create --view --strict"',
   //     argv: ['report', 'create', '--view', '--strict']
@@ -20,6 +20,7 @@ export async function handleCI(): Promise<void> {
   // TODO: does it make sense to discover the commit details from local git?
   // TODO: does it makes sense to use custom branch/repo names here? probably socket.yml, right
   await handleCreateNewScan({
+    autoManifest,
     branchName: 'socket-default-branch',
     commitMessage: '',
     commitHash: '',
