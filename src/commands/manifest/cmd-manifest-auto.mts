@@ -77,10 +77,6 @@ async function run(
     logger.groupEnd()
   }
 
-  // Both ways work (with and without `=`)
-  // const tmp = meow('', {argv: '--bin x --foo=y'.split(' '), allowUnknownFlags:true, importMeta})
-  // console.log('--->', tmp.input, tmp.flags);
-
   const result = await detectManifestActions(String(cwd))
   debugLog(result)
 
