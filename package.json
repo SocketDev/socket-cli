@@ -107,7 +107,7 @@
     "@socketregistry/is-interactive": "1.0.5",
     "@socketregistry/packageurl-js": "1.0.6",
     "@socketsecurity/config": "3.0.1",
-    "@socketsecurity/registry": "1.0.189",
+    "@socketsecurity/registry": "1.0.192",
     "@socketsecurity/sdk": "1.4.36",
     "@types/blessed": "0.1.25",
     "@types/cmd-shim": "5.0.2",
@@ -172,6 +172,7 @@
   "overrides": {
     "@octokit/graphql": "$@octokit/graphql",
     "@octokit/request-error": "$@octokit/request-error",
+    "@socketsecurity/registry": "$@socketsecurity/registry",
     "aggregate-error": "npm:@socketregistry/aggregate-error@^1",
     "es-define-property": "npm:@socketregistry/es-define-property@^1",
     "function-bind": "npm:@socketregistry/function-bind@^1",

@@ -317,6 +317,7 @@ export async function enablePrAutoMerge({
     const details = error.errors
       .map(({ message }) => ` - ${message.trim()}`)
       .join('\n')
+      .trim()
     message += `:\n${details}`
   }
   logger.error(message)
