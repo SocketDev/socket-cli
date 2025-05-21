@@ -2,7 +2,7 @@ import path from 'node:path'
 
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
@@ -142,8 +142,8 @@ export async function npmFix(
     i < length;
     i += 1
   ) {
-    const { 0: name, 1: infos } = sortedInfoEntries[i]!
     const isLastInfoEntry = i === length - 1
+    const { 0: name, 1: infos } = sortedInfoEntries[i]!
 
     logger.log(`Processing vulnerable package: ${name}`)
     logger.indent()
@@ -165,19 +165,19 @@ export async function npmFix(
     const warningsForAfter = new Set<string>()
 
     // eslint-disable-next-line no-unused-labels
-    pkgJsonPathsLoop: for (const pkgJsonPath of pkgJsonPaths) {
+    pkgJsonPathsLoop: for (
+      let j = 0, { length: length_j } = pkgJsonPaths;
+      j < length_j;
+      j += 1
+    ) {
+      const isLastPkgJsonPath = j === length_j - 1
+      const pkgJsonPath = pkgJsonPaths[j]!
       const pkgPath = path.dirname(pkgJsonPath)
       const isWorkspaceRoot =
         pkgJsonPath === pkgEnvDetails.editablePkgJson.filename
       const workspaceName = isWorkspaceRoot
         ? 'root'
         : path.relative(rootPath, pkgPath)
-
-      logger.log(`Checking workspace: ${workspaceName}`)
-      const workspaceLogCallCount = logger.logCallCount
-
-      // eslint-disable-next-line no-await-in-loop
-      actualTree = await install(arb, { cwd })
 
       const oldVersions = arrayUnique(
         findPackageNodes(actualTree, name)
@@ -202,15 +202,25 @@ export async function npmFix(
         editable: true,
       })
 
+      let hasAnnouncedWorkspace = false
+      let workspaceLogCallCount = logger.logCallCount
+      if (isDebug()) {
+        debugLog(`Checking workspace: ${workspaceName}`)
+        hasAnnouncedWorkspace = true
+        workspaceLogCallCount = logger.logCallCount
+      }
+
       oldVersionsLoop: for (const oldVersion of oldVersions) {
         const oldId = `${name}@${oldVersion}`
         const oldPurl = idToPurl(oldId)
 
         const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
-          logger.warn(
-            `Unexpected condition: Arborist node not found, skipping ${oldId}`,
-          )
+          if (hasAnnouncedWorkspace) {
+            logger.warn(
+              `Unexpected condition: Arborist node not found, skipping ${oldId}`,
+            )
+          }
           continue oldVersionsLoop
         }
 
@@ -262,15 +272,18 @@ export async function npmFix(
           )
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
-            logger.info(`${workspaceName}/package.json not changed, skipping`)
+            debugLog(`${workspaceName}/package.json not changed, skipping`)
             // Reset things just in case.
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
               await gitResetAndClean(baseBranch, cwd)
-              // eslint-disable-next-line no-await-in-loop
-              actualTree = await install(arb, { cwd })
             }
             continue infosLoop
+          }
+
+          if (!hasAnnouncedWorkspace) {
+            hasAnnouncedWorkspace = true
+            workspaceLogCallCount = logger.logCallCount
           }
 
           spinner?.start()
@@ -299,20 +312,6 @@ export async function npmFix(
               workspaceName,
             )
             try {
-              const { owner, repo } = getGitHubEnvRepoInfo()
-              // eslint-disable-next-line no-await-in-loop
-              if (await prExistForBranch(owner, repo, branch)) {
-                debugLog(`Branch "${branch}" exists, skipping PR creation.`)
-                continue infosLoop
-              }
-              // eslint-disable-next-line no-await-in-loop
-              if (await gitRemoteBranchExists(branch, cwd)) {
-                debugLog(
-                  `Remote branch "${branch}" exists, skipping PR creation.`,
-                )
-                continue infosLoop
-              }
-
               const moddedFilepaths =
                 // eslint-disable-next-line no-await-in-loop
                 (await gitUnstagedModifiedFiles(cwd)).filter(p => {
@@ -329,6 +328,28 @@ export async function npmFix(
                 continue infosLoop
               }
 
+              const { owner, repo } = getGitHubEnvRepoInfo()
+              // eslint-disable-next-line no-await-in-loop
+              if (await prExistForBranch(owner, repo, branch)) {
+                debugLog(`Branch "${branch}" exists, skipping PR creation.`)
+                // eslint-disable-next-line no-await-in-loop
+                await gitResetAndClean(baseBranch, cwd)
+                // eslint-disable-next-line no-await-in-loop
+                actualTree = await install(arb, { cwd })
+                continue infosLoop
+              }
+              // eslint-disable-next-line no-await-in-loop
+              if (await gitRemoteBranchExists(branch, cwd)) {
+                debugLog(
+                  `Remote branch "${branch}" exists, skipping PR creation.`,
+                )
+                // eslint-disable-next-line no-await-in-loop
+                await gitResetAndClean(baseBranch, cwd)
+                // eslint-disable-next-line no-await-in-loop
+                actualTree = await install(arb, { cwd })
+                continue infosLoop
+              }
+
               if (
                 // eslint-disable-next-line no-await-in-loop
                 !(await gitCreateAndPushBranch(
@@ -341,6 +362,10 @@ export async function npmFix(
                 logger.warn(
                   'Unexpected condition: Push failed, skipping PR creation.',
                 )
+                // eslint-disable-next-line no-await-in-loop
+                await gitResetAndClean(baseBranch, cwd)
+                // eslint-disable-next-line no-await-in-loop
+                actualTree = await install(arb, { cwd })
                 continue infosLoop
               }
               // eslint-disable-next-line no-await-in-loop
@@ -403,7 +428,7 @@ export async function npmFix(
           }
         }
       }
-      if (logger.logCallCount > workspaceLogCallCount) {
+      if (!isLastPkgJsonPath && logger.logCallCount > workspaceLogCallCount) {
         logger.log('')
       }
     }
