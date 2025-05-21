@@ -159,12 +159,19 @@ export async function pnpmFix(
     return
   }
 
-  const alertsMap = purls.length
-    ? await getAlertsMapFromPurls(purls, getAlertMapOptions({ limit }))
-    : await getAlertsMapFromPnpmLockfile(
-        lockfile,
-        getAlertMapOptions({ limit }),
-      )
+  let alertsMap
+  try {
+    alertsMap = purls.length
+      ? await getAlertsMapFromPurls(purls, getAlertMapOptions({ limit }))
+      : await getAlertsMapFromPnpmLockfile(
+          lockfile,
+          getAlertMapOptions({ limit }),
+        )
+  } catch (e) {
+    spinner?.stop()
+    logger.error((e as Error)?.message || 'Unknown Socket batch PURL API error')
+    return
+  }
 
   const infoByPkgName = getCveInfoFromAlertsMap(alertsMap, { limit })
   if (!infoByPkgName) {
@@ -402,12 +409,13 @@ export async function pnpmFix(
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
-            spinner?.successAndStop(`Fixed ${name} in ${workspaceName}`)
+            spinner?.success(`Fixed ${name} in ${workspaceName}`)
           } catch (e) {
             error = e
             errored = true
-            spinner?.stop()
           }
+
+          spinner?.stop()
 
           if (!errored && isCi) {
             const branch = getSocketBranchName(
@@ -490,10 +498,14 @@ export async function pnpmFix(
               )
               if (prResponse) {
                 const { data } = prResponse
-                logger.info(`Opened PR #${data.number}.`)
+                logger.success(`Opened PR #${data.number}.`)
                 if (autoMerge) {
+                  logger.indent()
+                  spinner?.indent()
                   // eslint-disable-next-line no-await-in-loop
                   await enablePrAutoMerge(data)
+                  logger.dedent()
+                  spinner?.dedent()
                 }
               }
             } catch (e) {
@@ -510,6 +522,7 @@ export async function pnpmFix(
           }
           if (errored) {
             if (!isCi) {
+              spinner?.start()
               editablePkgJson.update(revertData)
               // eslint-disable-next-line no-await-in-loop
               await Promise.all([
@@ -518,11 +531,9 @@ export async function pnpmFix(
               ])
               // eslint-disable-next-line no-await-in-loop
               actualTree = await install(pkgEnvDetails, { cwd, spinner })
+              spinner?.stop()
             }
-            spinner?.failAndStop(
-              `Update failed for ${oldId} in ${workspaceName}`,
-              error,
-            )
+            logger.fail(`Update failed for ${oldId} in ${workspaceName}`, error)
           }
           if (++count >= limit) {
             logger.dedent()
@@ -532,7 +543,7 @@ export async function pnpmFix(
         }
       }
       if (!isLastPkgJsonPath && logger.logCallCount > workspaceLogCallCount) {
-        logger.log('')
+        logger.logNewline()
       }
     }
 
@@ -540,9 +551,8 @@ export async function pnpmFix(
       logger.warn(warningText)
     }
     if (!isLastInfoEntry) {
-      logger.log('')
+      logger.logNewline()
     }
-
     logger.dedent()
     spinner?.dedent()
   }
