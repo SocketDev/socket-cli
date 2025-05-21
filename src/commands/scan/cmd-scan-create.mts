@@ -64,12 +64,6 @@ const config: CliCommandConfig = {
       description:
         'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
     },
-    pendingHead: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Designate this full-scan as the latest scan of a given branch. This must be set to have it show up in the dashboard.',
-    },
     pullRequest: {
       type: 'number',
       shortFlag: 'pr',
@@ -98,12 +92,19 @@ const config: CliCommandConfig = {
       description:
         'Wait for the scan creation to complete, then basically run `socket scan report` on it',
     },
+    setAsAlertsPage: {
+      type: 'boolean',
+      default: true,
+      aliases: ['pendingHead'],
+      description:
+        'When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.',
+    },
     tmp: {
       type: 'boolean',
       shortFlag: 't',
       default: false,
       description:
-        'Set the visibility (true/false) of the scan in your dashboard. Can not be used when --pendingHead is set.',
+        'Set the visibility (true/false) of the scan in your dashboard.',
     },
   },
   // TODO: your project's "socket.yml" file's "projectIgnorePaths"
@@ -135,8 +136,12 @@ const config: CliCommandConfig = {
     Note: for a first run you probably want to set --defaultBranch to indicate
           the default branch name, like "main" or "master".
 
-    Note: --pendingHead is enabled by default and makes a scan show up in your
-          dashboard. You can use \`--no-pendingHead\` to have it not show up.
+    The "alerts page" (https://socket.dev/dashboard/org/YOURORG/alerts) will show
+    the results from the last scan designated as the "pending head" on the branch
+    configured on Socket to be the "default branch". When creating a scan the
+    --setAsAlertsPage flag will default to true to update this. You can prevent
+    this by using --no-setAsAlertsPage. This flag is ignored for any branch that
+    is not designated as the "default branch". It is disabled when using --tmp.
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -177,11 +182,11 @@ async function run(
     json,
     markdown,
     org: orgFlag,
-    pendingHead,
     pullRequest,
     readOnly,
     repo: repoName = 'socket-default-repository',
     report,
+    setAsAlertsPage: pendingHeadFlag,
     tmp,
   } = cli.flags as {
     branch: string
@@ -195,14 +200,16 @@ async function run(
     json: boolean
     markdown: boolean
     org: string
-    pendingHead: boolean
     pullRequest: number
     readOnly: boolean
     repo: string
     report: boolean
+    setAsAlertsPage: boolean
     tmp: boolean
   }
   const outputKind = getOutputKind(json, markdown)
+
+  const pendingHead = tmp ? false : pendingHeadFlag
 
   let [orgSlug, defaultOrgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
