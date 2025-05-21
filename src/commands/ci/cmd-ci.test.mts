@@ -23,11 +23,20 @@ describe('socket ci', async () => {
           Usage
             $ socket ci
 
+          Options
+            --autoManifest    Auto generate manifest files where detected? See autoManifest flag in \`socket scan create\`
+            --help            Print this help
+
           This command is intended to use in CI runs to allow automated systems to
           accept or reject a current build. When the scan does not pass your security
           policy, the exit code will be non-zero.
 
-          It will use the default org for the set API token."
+          It will use the default org for the set API token.
+
+          The --autoManifest flag does the same as the one from \`socket scan create\`
+          but is not enabled by default since the CI is less likely to be set up with
+          all the necessary dev tooling. Enable it if you want the scan to include
+          locally generated manifests like for gradle and sbt."
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

@@ -6,10 +6,13 @@ import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
+import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
+import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 
 import type { OutputKind } from '../../types.mts'
 
 export async function handleCreateNewScan({
+  autoManifest,
   branchName,
   commitHash,
   commitMessage,
@@ -27,6 +30,7 @@ export async function handleCreateNewScan({
   targets,
   tmp,
 }: {
+  autoManifest: boolean
   branchName: string
   commitHash: string
   commitMessage: string
@@ -44,6 +48,13 @@ export async function handleCreateNewScan({
   targets: string[]
   tmp: boolean
 }): Promise<void> {
+  if (autoManifest) {
+    logger.info('Auto generating manifest files ...')
+    const detected = await detectManifestActions(cwd)
+    await generateAutoManifest(detected, cwd, false, outputKind)
+    logger.info('Auto generation finished. Proceeding with Scan creation.')
+  }
+
   const supportedFileNames = await fetchSupportedScanFileNames()
   if (!supportedFileNames.ok) {
     await outputCreateNewScan(supportedFileNames, outputKind, interactive)
