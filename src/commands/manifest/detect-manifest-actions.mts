@@ -7,12 +7,13 @@ import path from 'node:path'
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 
 export async function detectManifestActions(cwd = process.cwd()): Promise<{
+  cdxgen: boolean
   conda: boolean
   gradle: boolean
   sbt: boolean
 }> {
   const output = {
-    cdxgen: false,
+    cdxgen: false, // TODO
     conda: false,
     gradle: false,
     sbt: false,
