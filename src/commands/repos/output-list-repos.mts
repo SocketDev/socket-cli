@@ -13,19 +13,44 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 export async function outputListRepos(
   result: CResult<SocketSdkReturnType<'getOrgRepoList'>['data']>,
   outputKind: OutputKind,
+  page: number,
+  nextPage: number | null,
+  sort: string,
+  perPage: number,
+  direction: 'asc' | 'desc',
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
   }
 
   if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
+    if (result.ok) {
+      logger.log(
+        serializeResultJson({
+          ok: true,
+          data: {
+            data: result.data,
+            direction,
+            nextPage: nextPage ?? 0,
+            page,
+            perPage,
+            sort,
+          },
+        }),
+      )
+    } else {
+      logger.log(serializeResultJson(result))
+    }
     return
   }
   if (!result.ok) {
     logger.fail(failMsgWithBadge(result.message, result.cause))
     return
   }
+
+  logger.log(
+    `Result page: ${page}, results per page: ${perPage === Infinity ? 'all' : perPage}, sorted by: ${sort}, direction: ${direction}`,
+  )
 
   const options = {
     columns: [
@@ -38,4 +63,16 @@ export async function outputListRepos(
   }
 
   logger.log(chalkTable(options, result.data.results))
+  if (nextPage) {
+    logger.info(
+      `This is page ${page}. Server indicated there are more results available on page ${nextPage}...`,
+    )
+    logger.info(`(Hint: you can use \`socket repos list --page ${nextPage}\`)`)
+  } else if (perPage === Infinity) {
+    logger.info(`This should be the entire list available on the server.`)
+  } else {
+    logger.info(
+      `This is page ${page}. Server indicated this is the last page with results.`,
+    )
+  }
 }
