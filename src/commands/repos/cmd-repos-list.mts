@@ -22,11 +22,11 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags,
     ...outputFlags,
-    sort: {
-      type: 'string',
-      shortFlag: 's',
-      default: 'created_at',
-      description: 'Sorting option',
+    all: {
+      type: 'boolean',
+      default: false,
+      description:
+        'By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --perPage.',
     },
     direction: {
       type: 'string',
@@ -55,6 +55,12 @@ const config: CliCommandConfig = {
       shortFlag: 'p',
       default: 1,
       description: 'Page number',
+    },
+    sort: {
+      type: 'string',
+      shortFlag: 's',
+      default: 'created_at',
+      description: 'Sorting option',
     },
   },
   help: (command, config) => `
@@ -91,10 +97,16 @@ async function run(
     parentName,
   })
 
-  const { json, markdown } = cli.flags
+  const {
+    all,
+    direction = 'desc',
+    dryRun,
+    interactive,
+    json,
+    markdown,
+    org: orgFlag,
+  } = cli.flags
   const outputKind = getOutputKind(json, markdown)
-
-  const { dryRun, interactive, org: orgFlag } = cli.flags
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
@@ -132,6 +144,13 @@ async function run(
       pass: 'ok',
       fail: 'missing API token',
     },
+    {
+      nook: true,
+      test: direction === 'asc' || direction === 'desc',
+      message: 'The --direction value must be "asc" or "desc"',
+      pass: 'ok',
+      fail: 'unexpected value',
+    },
   )
   if (!wasValidInput) {
     return
@@ -143,7 +162,8 @@ async function run(
   }
 
   await handleListRepos({
-    direction: cli.flags['direction'] === 'asc' ? 'asc' : 'desc',
+    all: Boolean(all),
+    direction: direction === 'asc' ? 'asc' : 'desc',
     orgSlug,
     outputKind,
     page: Number(cli.flags['page']) || 1,
