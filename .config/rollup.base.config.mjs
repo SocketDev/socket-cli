@@ -50,7 +50,7 @@ let _rootPkgJson
 function getRootPkgJsonSync() {
   if (_rootPkgJson === undefined) {
     // Lazily access constants.rootPath.
-    _rootPkgJson = readPackageJsonSync(constants.rootPath)
+    _rootPkgJson = readPackageJsonSync(constants.rootPath, { normalize: true })
   }
   return _rootPkgJson
 }
