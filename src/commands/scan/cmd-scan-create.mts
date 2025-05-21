@@ -297,13 +297,6 @@ async function run(
     },
     {
       nook: true,
-      test: !pendingHead || !tmp,
-      message: 'Can not use --pendingHead and --tmp at the same time',
-      pass: 'ok',
-      fail: 'remove at least one flag',
-    },
-    {
-      nook: true,
       test: !pendingHead || !!branchName,
       message: 'When --pendingHead is set, --branch is mandatory',
       pass: 'ok',
