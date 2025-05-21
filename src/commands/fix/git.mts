@@ -9,11 +9,13 @@ import {
   getSocketDevPackageOverviewUrlFromPurl,
 } from '../../utils/socket-url.mts'
 
+import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+
 const GITHUB_ACTIONS_BOT_USERNAME = 'github-actions[bot]'
 const GITHUB_ACTIONS_BOT_EMAIL = `${GITHUB_ACTIONS_BOT_USERNAME}@users.noreply.github.com`
 
-function formatBranchName(str: string): string {
-  return str
+function formatBranchName(name: string): string {
+  return name
     .replace(/[-_.\\/]+/g, '-')
     .replace(/[^-a-zA-Z0-9]+/g, '')
     .replace(/^-+|-+$/g, '')
@@ -92,52 +94,62 @@ export function getSocketCommitMessage(
   return `socket: Bump ${pkgFullName} from ${purlObj.version} to ${newVersion}${workspaceDetails}`
 }
 
+export async function gitCleanFdx(cwd = process.cwd()): Promise<void> {
+  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
+  await spawn('git', ['clean', '-fdx'], stdioIgnoreOptions)
+}
+
 export async function gitCreateAndPushBranch(
   branch: string,
   commitMsg: string,
   filepaths: string[],
   cwd = process.cwd(),
 ): Promise<boolean> {
+  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
   await gitEnsureIdentity(cwd)
-  await spawn('git', ['checkout', '-b', branch], { cwd })
-  await spawn('git', ['add', ...filepaths], { cwd })
-  await spawn('git', ['commit', '-m', commitMsg], { cwd })
+  await spawn('git', ['checkout', '-b', branch], stdioIgnoreOptions)
+  await spawn('git', ['add', ...filepaths], stdioIgnoreOptions)
+  await spawn('git', ['commit', '-m', commitMsg], stdioIgnoreOptions)
   try {
     await spawn(
       'git',
       ['push', '--force', '--set-upstream', 'origin', branch],
-      { cwd },
+      stdioIgnoreOptions,
     )
     return true
   } catch {}
-  await spawn('git', ['branch', '-D', branch], { cwd })
+  await spawn('git', ['branch', '-D', branch], stdioIgnoreOptions)
   return false
 }
 
 export async function gitEnsureIdentity(cwd = process.cwd()): Promise<void> {
+  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
+  const stdioPipeOptions: SpawnOptions = { cwd }
   let hasUserName = false
   try {
-    const { stdout } = await spawn('git', ['config', '--get', 'user.name'], {
-      cwd,
-    })
-    hasUserName = !!stdout.trim()
+    hasUserName = !!(
+      await spawn('git', ['config', '--get', 'user.name'], stdioPipeOptions)
+    ).stdout.trim()
   } catch {}
   if (!hasUserName) {
-    await spawn('git', ['config', 'user.name', GITHUB_ACTIONS_BOT_USERNAME], {
-      cwd,
-    })
+    await spawn(
+      'git',
+      ['config', 'user.name', GITHUB_ACTIONS_BOT_USERNAME],
+      stdioIgnoreOptions,
+    )
   }
   let hasUserEmail = false
   try {
-    const { stdout } = await spawn('git', ['config', '--get', 'user.email'], {
-      cwd,
-    })
-    hasUserEmail = !!stdout.trim()
+    hasUserEmail = !!(
+      await spawn('git', ['config', '--get', 'user.email'], stdioPipeOptions)
+    ).stdout.trim()
   } catch {}
   if (!hasUserEmail) {
-    await spawn('git', ['config', 'user.email', GITHUB_ACTIONS_BOT_EMAIL], {
-      cwd,
-    })
+    await spawn(
+      'git',
+      ['config', 'user.email', GITHUB_ACTIONS_BOT_EMAIL],
+      stdioIgnoreOptions,
+    )
   }
 }
 
@@ -155,24 +167,25 @@ export async function gitResetHard(
   branch = 'HEAD',
   cwd = process.cwd(),
 ): Promise<void> {
-  await spawn('git', ['reset', '--hard', branch], { cwd })
-}
-
-export async function gitCleanFdx(cwd = process.cwd()): Promise<void> {
-  await spawn('git', ['clean', '-fdx'], { cwd })
+  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
+  await spawn('git', ['reset', '--hard', branch], stdioIgnoreOptions)
 }
 
 export async function gitRemoteBranchExists(
   branch: string,
   cwd = process.cwd(),
 ): Promise<boolean> {
+  const stdioPipeOptions: SpawnOptions = { cwd }
   try {
-    const { stdout } = await spawn(
-      'git',
-      ['ls-remote', '--heads', 'origin', branch],
-      { cwd },
+    return (
+      (
+        await spawn(
+          'git',
+          ['ls-remote', '--heads', 'origin', branch],
+          stdioPipeOptions,
+        )
+      ).stdout.trim().length > 0
     )
-    return stdout.trim().length > 0
   } catch {
     return false
   }
@@ -181,7 +194,10 @@ export async function gitRemoteBranchExists(
 export async function gitUnstagedModifiedFiles(
   cwd = process.cwd(),
 ): Promise<string[]> {
-  const { stdout } = await spawn('git', ['diff', '--name-only'], { cwd })
-  const rawFiles = stdout?.trim().split('\n') ?? []
+  const stdioPipeOptions: SpawnOptions = { cwd }
+  const stdout = (
+    await spawn('git', ['diff', '--name-only'], stdioPipeOptions)
+  ).stdout.trim()
+  const rawFiles = stdout.split('\n') ?? []
   return rawFiles.map(relPath => normalizePath(relPath))
 }
