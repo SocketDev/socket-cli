@@ -46,8 +46,12 @@ describe('socket scan create', async () => {
           Note: for a first run you probably want to set --defaultBranch to indicate
                 the default branch name, like "main" or "master".
 
-          Note: --pendingHead is enabled by default and makes a scan show up in your
-                dashboard. You can use \`--no-pendingHead\` to have it not show up.
+          The "alerts page" (https://socket.dev/dashboard/org/YOURORG/alerts) will show
+          the results from the last scan designated as the "pending head" on the branch
+          configured on Socket to be the "default branch". When creating a scan the
+          --setAsAlertsPage flag will default to true to update this. You can prevent
+          this by using --no-setAsAlertsPage. This flag is ignored for any branch that
+          is not designated as the "default branch". It is disabled when using --tmp.
 
           Options
             --branch          Branch name
@@ -61,12 +65,12 @@ describe('socket scan create', async () => {
             --json            Output result as json
             --markdown        Output result as markdown
             --org             Force override the organization slug, overrides the default org from config
-            --pendingHead     Designate this full-scan as the latest scan of a given branch. This must be set to have it show up in the dashboard.
             --pullRequest     Commit hash
             --readOnly        Similar to --dry-run except it can read from remote, stops before it would create an actual report
             --repo            Repository name
             --report          Wait for the scan creation to complete, then basically run \`socket scan report\` on it
-            --tmp             Set the visibility (true/false) of the scan in your dashboard. Can not be used when --pendingHead is set.
+            --setAsAlertsPage When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
+            --tmp             Set the visibility (true/false) of the scan in your dashboard.
 
           Examples
             $ socket scan create FakeOrg .
