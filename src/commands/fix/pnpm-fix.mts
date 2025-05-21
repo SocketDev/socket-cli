@@ -169,7 +169,7 @@ export async function pnpmFix(
         )
   } catch (e) {
     spinner?.stop()
-    logger.error((e as Error)?.message || 'Unknown Socket batch PURL API error')
+    logger.error((e as Error)?.message || 'Unknown Socket batch PURL API error.')
     return
   }
 
