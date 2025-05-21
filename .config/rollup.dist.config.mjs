@@ -123,6 +123,7 @@ async function updatePackageJson() {
   // Lazily access constants.rootPath.
   const editablePkgJson = await readPackageJson(constants.rootPath, {
     editable: true,
+    normalize: true,
   })
   const bin = resetBin(editablePkgJson.content.bin)
   const dependencies = resetDependencies(editablePkgJson.content.dependencies)
