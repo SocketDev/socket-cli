@@ -46,7 +46,7 @@ export async function invokeNpm(
   stderr: string
 }> {
   try {
-    const thing = await spawn(
+    const output = await spawn(
       // Lazily access constants.execPath.
       constants.execPath,
       [entryPath, ...args],
@@ -58,8 +58,8 @@ export async function invokeNpm(
     return {
       status: true,
       code: 0,
-      stdout: toAsciiSafeString(normalizeLogSymbols(thing.stdout)),
-      stderr: toAsciiSafeString(normalizeLogSymbols(thing.stderr)),
+      stdout: toAsciiSafeString(normalizeLogSymbols(output.stdout)),
+      stderr: toAsciiSafeString(normalizeLogSymbols(output.stderr)),
     }
   } catch (e: any) {
     return {

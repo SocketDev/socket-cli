@@ -10,6 +10,8 @@ import { installLinks } from './link.mts'
 import constants from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
 
+import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+
 const { SOCKET_CLI_SAFE_BIN, SOCKET_CLI_SAFE_PROGRESS, SOCKET_IPC_HANDSHAKE } =
   constants
 
@@ -34,11 +36,12 @@ export default async function shadowBin(
     constants.SUPPORTS_NODE_PERMISSION_FLAG
       ? await (async () => {
           const cwd = process.cwd()
+          const stdioPipeOptions: SpawnOptions = { cwd }
           const globalPrefix = (
-            await spawn('npm', ['prefix', '-g'], { cwd })
+            await spawn('npm', ['prefix', '-g'], stdioPipeOptions)
           ).stdout.trim()
           const npmCachePath = (
-            await spawn('npm', ['config', 'get', 'cache'], { cwd })
+            await spawn('npm', ['config', 'get', 'cache'], stdioPipeOptions)
           ).stdout.trim()
           return [
             '--permission',

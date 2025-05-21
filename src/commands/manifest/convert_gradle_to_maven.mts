@@ -20,32 +20,30 @@ export async function convertGradleToMaven(
   if (verbose) {
     logger.log('[VERBOSE] Resolving:', [cwd, bin])
   }
-  const rbin = path.resolve(cwd, bin)
+  const rBin = path.resolve(cwd, bin)
   if (verbose) {
     logger.log('[VERBOSE] Resolving:', [cwd, target])
   }
-  const rtarget = path.resolve(cwd, target)
-
-  const binExists = fs.existsSync(rbin)
-
-  const targetExists = fs.existsSync(rtarget)
+  const rTarget = path.resolve(cwd, target)
+  const binExists = fs.existsSync(rBin)
+  const targetExists = fs.existsSync(rTarget)
 
   logger.group('gradle2maven:')
   if (verbose || isDebug()) {
     logger.log(
-      `[VERBOSE] - Absolute bin path: \`${rbin}\` (${binExists ? 'found' : colors.red('not found!')})`,
+      `[VERBOSE] - Absolute bin path: \`${rBin}\` (${binExists ? 'found' : colors.red('not found!')})`,
     )
     logger.log(
-      `[VERBOSE] - Absolute target path: \`${rtarget}\` (${targetExists ? 'found' : colors.red('not found!')})`,
+      `[VERBOSE] - Absolute target path: \`${rTarget}\` (${targetExists ? 'found' : colors.red('not found!')})`,
     )
   } else {
-    logger.log(`- executing: \`${rbin}\``)
+    logger.log(`- executing: \`${rBin}\``)
     if (!binExists) {
       logger.warn(
         'Warning: It appears the executable could not be found at this location. An error might be printed later because of that.',
       )
     }
-    logger.log(`- src dir: \`${rtarget}\``)
+    logger.log(`- src dir: \`${rTarget}\``)
     if (!targetExists) {
       logger.warn(
         'Warning: It appears the src dir could not be found at this location. An error might be printed later because of that.',
@@ -53,27 +51,22 @@ export async function convertGradleToMaven(
     }
   }
   logger.groupEnd()
-
   try {
     // Run gradlew with the init script we provide which should yield zero or more
     // pom files. We have to figure out where to store those pom files such that
     // we can upload them and predict them through the GitHub API. We could do a
     // .socket folder. We could do a socket.pom.gz with all the poms, although
     // I'd prefer something plain-text if it is to be committed.
-
     // Note: init.gradle will be exported by .config/rollup.dist.config.mjs
     const initLocation = path.join(constants.distPath, 'init.gradle')
     const commandArgs = ['--init-script', initLocation, ...gradleOpts, 'pom']
-
     if (verbose) {
       logger.log('[VERBOSE] Executing:', [bin], ', args:', commandArgs)
     }
-
     logger.log(
       `Converting gradle to maven from \`${bin}\` on \`${target}\` ...`,
     )
-    const output = await execGradleWithSpinner(rbin, commandArgs, rtarget, cwd)
-
+    const output = await execGradleWithSpinner(rBin, commandArgs, rTarget, cwd)
     if (verbose) {
       logger.group('[VERBOSE] gradle stdout:')
       logger.log(output)

@@ -41,14 +41,14 @@ describe('Socket manifest cdxgen command', async () => {
     async () => {
       for (const command of ['-h', '--help']) {
         // eslint-disable-next-line no-await-in-loop
-        const ret = await spawn(
+        const output = await spawn(
           // Lazily access constants.execPath.
           constants.execPath,
           [entryPath, 'manifest', 'cdxgen', '--yes', command],
           spawnOpts,
         )
         expect(
-          ret.stdout.includes('cdxgen'),
+          output.stdout.includes('cdxgen'),
           'forwards commands to cdxgen',
         ).toBe(true)
       }
