@@ -243,7 +243,7 @@ export async function cleanupOpenPrs(
           cachesToSave.set(match.cacheKey, match.data)
         } catch (e) {
           logger.warn(
-            `Failed to close PR #${prNumber}: ${(e as Error).message}`,
+            `Failed to close PR #${prNumber}: ${(e as Error)?.message || 'Unknown error'}`,
           )
           return
         }
@@ -268,7 +268,7 @@ export async function cleanupOpenPrs(
           // Mark cache to be saved.
           cachesToSave.set(match.cacheKey, match.data)
         } catch (e) {
-          const message = (e as Error)?.message ?? 'Unknown error'
+          const message = (e as Error)?.message || 'Unknown error'
           logger.warn(`Failed to update PR #${prNumber}: ${message}`)
         }
       }
