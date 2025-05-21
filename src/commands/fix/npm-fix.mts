@@ -398,7 +398,7 @@ export async function npmFix(
               )
               if (prResponse) {
                 const { data } = prResponse
-                logger.success(`Opened PR #${data.number}.`)
+                logger.success(`Opened PR #${data.number}`)
                 if (autoMerge) {
                   logger.indent()
                   spinner?.indent()
