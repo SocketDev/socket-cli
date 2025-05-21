@@ -1,7 +1,5 @@
 import path from 'node:path'
 
-import meow from 'meow'
-
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
