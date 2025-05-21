@@ -83,7 +83,7 @@ async function run(
 
   if (!detected.count) {
     logger.fail(
-      ' Was unable to discover any targets for which we can generate manifest files...',
+      'Was unable to discover any targets for which we can generate manifest files...',
     )
     logger.log('')
     logger.log(
