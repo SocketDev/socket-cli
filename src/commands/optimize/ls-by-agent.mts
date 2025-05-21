@@ -53,7 +53,7 @@ async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
         // Lazily access constants.WIN32.
         shell: constants.WIN32,
       })
-    ).stdout
+    ).stdout.trim()
   } catch {}
   return cleanupQueryStdout(stdout)
 }
@@ -68,7 +68,7 @@ async function lsBun(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
         // Lazily access constants.WIN32.
         shell: constants.WIN32,
       })
-    ).stdout
+    ).stdout.trim()
   } catch {}
   return ''
 }
@@ -103,7 +103,7 @@ async function lsPnpm(
           shell: constants.WIN32,
         },
       )
-    ).stdout
+    ).stdout.trim()
   } catch {}
   return parsableToQueryStdout(stdout)
 }
@@ -122,7 +122,7 @@ async function lsVlt(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
           shell: constants.WIN32,
         },
       )
-    ).stdout
+    ).stdout.trim()
   } catch {}
   return cleanupQueryStdout(stdout)
 }
