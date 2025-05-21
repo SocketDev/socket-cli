@@ -17,13 +17,13 @@ export async function convertSbtToMaven(
 
   // Lazily access constants.spinner.
   const { spinner } = constants
-  const rbin = path.resolve(bin)
-  const rtarget = path.resolve(target)
+  const rBin = path.resolve(bin)
+  const rTarget = path.resolve(target)
 
   if (verbose) {
     logger.group('sbt2maven:')
-    logger.log(`[VERBOSE] - Absolute bin path: \`${rbin}\``)
-    logger.log(`[VERBOSE] - Absolute target path: \`${rtarget}\``)
+    logger.log(`[VERBOSE] - Absolute bin path: \`${rBin}\``)
+    logger.log(`[VERBOSE] - Absolute target path: \`${rTarget}\``)
     // logger.log(`[VERBOSE] - Absolute out path: \`${rout}\``)
     logger.groupEnd()
   } else {
@@ -42,8 +42,8 @@ export async function convertSbtToMaven(
     // we can upload them and predict them through the GitHub API. We could do a
     // .socket folder. We could do a socket.pom.gz with all the poms, although
     // I'd prefer something plain-text if it is to be committed.
-    const output = await spawn(bin, ['makePom'].concat(sbtOpts), {
-      cwd: target || '.',
+    const output = await spawn(bin, ['makePom', ...sbtOpts], {
+      cwd: target || process.cwd(),
     })
 
     spinner.stop()
