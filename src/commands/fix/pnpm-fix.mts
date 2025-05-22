@@ -223,12 +223,12 @@ export async function pnpmFix(
     spinner?.indent()
 
     if (getManifestData(NPM, name)) {
-      debugLog(`Socket Optimize package exists for ${name}`)
+      debugLog(`Socket Optimize package exists for ${name}.`)
     }
     // eslint-disable-next-line no-await-in-loop
     const packument = await fetchPackagePackument(name)
     if (!packument) {
-      logger.warn(`Unexpected condition: No packument found for ${name}\n`)
+      logger.warn(`Unexpected condition: No packument found for ${name}.\n`)
       logger.dedent()
       spinner?.dedent()
       continue infoEntriesLoop
@@ -308,7 +308,7 @@ export async function pnpmFix(
         if (!node) {
           if (hasAnnouncedWorkspace) {
             logger.warn(
-              `Unexpected condition: Arborist node not found, skipping ${oldId}`,
+              `Unexpected condition: Arborist node not found, skipping ${oldId}.`,
             )
           }
           continue oldVersionsLoop
@@ -329,7 +329,7 @@ export async function pnpmFix(
 
           if (!(newVersion && newVersionPackument)) {
             warningsForAfter.add(
-              `No update applied. ${oldId} needs >=${firstPatchedVersionIdentifier}`,
+              `No update applied. ${oldId} needs >=${firstPatchedVersionIdentifier}.`,
             )
             continue infosLoop
           }
@@ -393,7 +393,7 @@ export async function pnpmFix(
           )
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
-            debugLog(`${workspaceName}/package.json not changed, skipping`)
+            debugLog(`${workspaceName}/package.json not changed, skipping.`)
             // Reset things just in case.
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
@@ -416,7 +416,7 @@ export async function pnpmFix(
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(pkgEnvDetails, { cwd, spinner })
             if (test) {
-              spinner?.info(`Testing ${newId} in ${workspaceName}`)
+              spinner?.info(`Testing ${newId} in ${workspaceName}.`)
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
@@ -566,7 +566,10 @@ export async function pnpmFix(
               actualTree = await install(pkgEnvDetails, { cwd, spinner })
               spinner?.stop()
             }
-            logger.fail(`Update failed for ${oldId} in ${workspaceName}`, error)
+            logger.fail(
+              `Update failed for ${oldId} in ${workspaceName}.`,
+              error,
+            )
           }
           if (++count >= limit) {
             logger.dedent()
