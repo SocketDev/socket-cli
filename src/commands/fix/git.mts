@@ -106,11 +106,11 @@ export async function gitCreateAndPushBranch(
   cwd = process.cwd(),
 ): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
-  await gitEnsureIdentity(cwd)
-  await spawn('git', ['checkout', '-b', branch], stdioIgnoreOptions)
-  await spawn('git', ['add', ...filepaths], stdioIgnoreOptions)
-  await spawn('git', ['commit', '-m', commitMsg], stdioIgnoreOptions)
   try {
+    await gitEnsureIdentity(cwd)
+    await spawn('git', ['checkout', '-b', branch], stdioIgnoreOptions)
+    await spawn('git', ['add', ...filepaths], stdioIgnoreOptions)
+    await spawn('git', ['commit', '-m', commitMsg], stdioIgnoreOptions)
     await spawn(
       'git',
       ['push', '--force', '--set-upstream', 'origin', branch],
@@ -118,7 +118,9 @@ export async function gitCreateAndPushBranch(
     )
     return true
   } catch {}
-  await spawn('git', ['branch', '-D', branch], stdioIgnoreOptions)
+  try {
+    await spawn('git', ['branch', '-D', branch], stdioIgnoreOptions)
+  } catch {}
   return false
 }
 
