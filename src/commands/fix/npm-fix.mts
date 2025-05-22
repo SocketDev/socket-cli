@@ -168,7 +168,7 @@ export async function npmFix(
     spinner?.indent()
 
     if (getManifestData(NPM, name)) {
-      debugLog(`Socket Optimize package exists for ${name}`)
+      debugLog(`Socket Optimize package exists for ${name}.`)
     }
     // eslint-disable-next-line no-await-in-loop
     const packument = await fetchPackagePackument(name)
@@ -236,7 +236,7 @@ export async function npmFix(
         if (!node) {
           if (hasAnnouncedWorkspace) {
             logger.warn(
-              `Unexpected condition: Arborist node not found, skipping ${oldId}`,
+              `Unexpected condition: Arborist node not found, skipping ${oldId}.`,
             )
           }
           continue oldVersionsLoop
@@ -258,7 +258,7 @@ export async function npmFix(
 
           if (!(newVersion && newVersionPackument)) {
             warningsForAfter.add(
-              `No update applied. ${oldId} needs >=${firstPatchedVersionIdentifier}`,
+              `No update applied. ${oldId} needs >=${firstPatchedVersionIdentifier}.`,
             )
             continue infosLoop
           }
@@ -290,7 +290,7 @@ export async function npmFix(
           )
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
-            debugLog(`${workspaceName}/package.json not changed, skipping`)
+            debugLog(`${workspaceName}/package.json not changed, skipping.`)
             // Reset things just in case.
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
@@ -313,7 +313,7 @@ export async function npmFix(
             // eslint-disable-next-line no-await-in-loop
             actualTree = await install(arb, { cwd })
             if (test) {
-              spinner?.info(`Testing ${newId} in ${workspaceName}`)
+              spinner?.info(`Testing ${newId} in ${workspaceName}.`)
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
@@ -465,7 +465,10 @@ export async function npmFix(
               actualTree = await install(arb, { cwd })
               spinner?.stop()
             }
-            logger.fail(`Update failed for ${oldId} in ${workspaceName}`, error)
+            logger.fail(
+              `Update failed for ${oldId} in ${workspaceName}.`,
+              error,
+            )
           }
           if (++count >= limit) {
             logger.dedent()
