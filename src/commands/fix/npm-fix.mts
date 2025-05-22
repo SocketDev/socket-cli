@@ -269,7 +269,7 @@ export async function npmFix(
 
           if (!(newVersion && newVersionPackument)) {
             warningsForAfter.add(
-              `No update applied: ${oldId} requires >=${firstPatchedVersionIdentifier}`,
+              `${oldId} not updated: requires >=${firstPatchedVersionIdentifier}`,
             )
             continue infosLoop
           }
