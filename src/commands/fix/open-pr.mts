@@ -9,8 +9,8 @@ import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
 import semver from 'semver'
 
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { readJson, writeJson } from '@socketsecurity/registry/lib/fs'
-import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import {
@@ -23,6 +23,7 @@ import constants from '../../constants.mts'
 import type { components } from '@octokit/openapi-types'
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/registry/lib/fs'
+import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
 let _octokit: Octokit | undefined
 function getOctokit() {
@@ -225,7 +226,8 @@ export async function cleanupOpenPrs(
     prMatches.map(async match => {
       const { props } = match
       const versionText = /(?<= to )\S+/.exec(props.title)?.[0]
-      const { number: prNumber } = props
+      const { number: prNum } = props
+      const prRef = `PR #${prNum}`
       const prVersion = semver.coerce(versionText)
       // Close older PRs.
       if (prVersion && semver.lt(prVersion, newVersion)) {
@@ -233,17 +235,17 @@ export async function cleanupOpenPrs(
           await octokit.pulls.update({
             owner,
             repo,
-            pull_number: prNumber,
+            pull_number: prNum,
             state: 'closed',
           })
-          logger.info(`Closed PR #${prNumber} for older version ${prVersion}`)
+          debugLog(`Closed ${prRef} for older version ${prVersion}.`)
           // Remove entry from parent object.
           match.parent.splice(match.index, 1)
           // Mark cache to be saved.
           cachesToSave.set(match.cacheKey, match.data)
         } catch (e) {
-          logger.warn(
-            `Failed to close PR #${prNumber}: ${(e as Error)?.message || 'Unknown error'}`,
+          debugLog(
+            `Failed to close ${prRef}: ${(e as Error)?.message || 'Unknown error'}`,
           )
           return
         }
@@ -258,7 +260,7 @@ export async function cleanupOpenPrs(
             base: props.headRefName,
             head: props.baseRefName,
           })
-          logger.info(`Updated stale PR #${prNumber}`)
+          debugLog(`Updated stale ${prRef}.`)
           // Update entry entry.
           if (match.apiType === 'graphql') {
             match.entry.mergeStateStatus = 'CLEAN'
@@ -269,7 +271,7 @@ export async function cleanupOpenPrs(
           cachesToSave.set(match.cacheKey, match.data)
         } catch (e) {
           const message = (e as Error)?.message || 'Unknown error'
-          logger.warn(`Failed to update PR #${prNumber}: ${message}`)
+          debugLog(`Failed to update ${prRef}: ${message}`)
         }
       }
     }),
@@ -282,10 +284,14 @@ export async function cleanupOpenPrs(
   }
 }
 
+export type PrAutoMergeState = {
+  enabled: boolean
+  details?: string[]
+}
+
 export async function enablePrAutoMerge({
   node_id: prId,
-  number: prNumber,
-}: Pr): Promise<boolean> {
+}: Pr): Promise<PrAutoMergeState> {
   const octokitGraphql = getOctokitGraphql()
   let error: unknown
   try {
@@ -306,22 +312,16 @@ export async function enablePrAutoMerge({
     const respPrNumber = (response as any)?.enablePullRequestAutoMerge
       ?.pullRequest?.number
     if (respPrNumber) {
-      logger.info(`Auto-merge enabled for PR #${respPrNumber}`)
-      return true
+      return { enabled: true }
     }
   } catch (e) {
     error = e
   }
-  let message = `Failed to enable auto-merge for PR #${prNumber}`
-  if (error instanceof GraphqlResponseError && error.errors) {
-    const details = error.errors
-      .map(({ message }) => ` - ${message.trim()}`)
-      .join('\n')
-      .trim()
-    message += `:\n${details}`
+  if (error instanceof GraphqlResponseError && Array.isArray(error.errors)) {
+    const details = error.errors.map(({ message }) => message.trim())
+    return { enabled: false, details }
   }
-  logger.error(message)
-  return false
+  return { enabled: false }
 }
 
 export type GitHubRepoInfo = {
@@ -329,12 +329,12 @@ export type GitHubRepoInfo = {
   repo: string
 }
 
-export function getGitHubEnvRepoInfo(): GitHubRepoInfo {
+export function getGitHubEnvRepoInfo(): GitHubRepoInfo | null {
   // Lazily access constants.ENV.GITHUB_REPOSITORY.
   const ownerSlashRepo = constants.ENV.GITHUB_REPOSITORY
   const slashIndex = ownerSlashRepo.indexOf('/')
   if (slashIndex === -1) {
-    throw new Error('Missing GITHUB_REPOSITORY environment variable')
+    return null
   }
   return {
     owner: ownerSlashRepo.slice(0, slashIndex),
@@ -356,52 +356,43 @@ export async function openPr(
   newVersion: string,
   options?: OpenPrOptions | undefined,
 ): Promise<OctokitResponse<Pr> | null> {
-  const {
-    baseBranch = 'main',
-    cwd = process.cwd(),
-    workspaceName,
-  } = {
+  const { baseBranch = 'main', workspaceName } = {
     __proto__: null,
     ...options,
   } as OpenPrOptions
   // Lazily access constants.ENV.GITHUB_ACTIONS.
-  if (constants.ENV.GITHUB_ACTIONS) {
-    // Lazily access constants.ENV properties.
-    const token =
-      constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN
-    const url = `https://x-access-token:${token}@github.com/${owner}/${repo}`
-    await spawn('git', ['remote', 'set-url', 'origin', url], {
-      cwd,
-    })
-    const octokit = getOctokit()
-    try {
-      return await octokit.pulls.create({
-        owner,
-        repo,
-        title: getSocketPullRequestTitle(purl, newVersion, workspaceName),
-        head: branch,
-        base: baseBranch,
-        body: getSocketPullRequestBody(purl, newVersion, workspaceName),
-      })
-    } catch (e) {
-      let message = `Failed to open pull request`
-      if (e instanceof RequestError) {
-        const restErrors = (e.response?.data as any)?.['errors']
-        if (Array.isArray(restErrors)) {
-          const details = restErrors
-            .map(
-              restErr =>
-                `- ${restErr.message?.trim() ?? `${restErr.resource}.${restErr.field} (${restErr.code})`}`,
-            )
-            .join('\n')
-          message += `:\n${details}`
-        }
-      }
-      logger.error(message)
-      return null
-    }
+  if (!constants.ENV.GITHUB_ACTIONS) {
+    debugLog('Missing GITHUB_ACTIONS environment variable.')
+    return null
   }
-  throw new Error('Missing GITHUB_ACTIONS environment variable')
+  const octokit = getOctokit()
+  try {
+    return await octokit.pulls.create({
+      owner,
+      repo,
+      title: getSocketPullRequestTitle(purl, newVersion, workspaceName),
+      head: branch,
+      base: baseBranch,
+      body: getSocketPullRequestBody(purl, newVersion, workspaceName),
+    })
+  } catch (e) {
+    let message = `Failed to open pull request`
+    const errors =
+      e instanceof RequestError
+        ? (e.response?.data as any)?.['errors']
+        : undefined
+    if (Array.isArray(errors)) {
+      const details = errors
+        .map(
+          d =>
+            `- ${d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`}`,
+        )
+        .join('\n')
+      message += `:\n${details}`
+    }
+    debugLog(message)
+  }
+  return null
 }
 
 export async function prExistForBranch(
@@ -421,4 +412,15 @@ export async function prExistForBranch(
     return prs.length > 0
   } catch {}
   return false
+}
+
+export async function setGitRemoteGitHubRepoUrl(
+  owner: string,
+  repo: string,
+  token: string,
+  cwd = process.cwd(),
+): Promise<void> {
+  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
+  const url = `https://x-access-token:${token}@github.com/${owner}/${repo}`
+  await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
 }
