@@ -354,7 +354,7 @@ export async function pnpmFix(
 
           if (!(newVersion && newVersionPackument)) {
             warningsForAfter.add(
-              `No update applied: ${oldId} requires >=${firstPatchedVersionIdentifier}`,
+              `${oldId} not updated: requires >=${firstPatchedVersionIdentifier}`,
             )
             continue infosLoop
           }
