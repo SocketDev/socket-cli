@@ -85,25 +85,28 @@ type InstallOptions = {
 async function install(
   pkgEnvDetails: EnvDetails,
   options: InstallOptions,
-): Promise<SafeNode> {
+): Promise<SafeNode | null> {
   const { args, cwd, spinner } = {
     __proto__: null,
     ...options,
   } as InstallOptions
-  await runAgentInstall(pkgEnvDetails, {
-    args: [
-      ...(args ?? []),
-      // Enable pnpm updates to pnpm-lock.yaml in CI environments.
-      // https://pnpm.io/cli/install#--frozen-lockfile
-      '--no-frozen-lockfile',
-      // Enable a non-interactive pnpm install
-      // https://github.com/pnpm/pnpm/issues/6778
-      '--config.confirmModulesPurge=false',
-    ],
-    spinner,
-    stdio: isDebug() ? 'inherit' : 'ignore',
-  })
-  return await getActualTree(cwd)
+  try {
+    await runAgentInstall(pkgEnvDetails, {
+      args: [
+        ...(args ?? []),
+        // Enable pnpm updates to pnpm-lock.yaml in CI environments.
+        // https://pnpm.io/cli/install#--frozen-lockfile
+        '--no-frozen-lockfile',
+        // Enable a non-interactive pnpm install
+        // https://github.com/pnpm/pnpm/issues/6778
+        '--config.confirmModulesPurge=false',
+      ],
+      spinner,
+      stdio: isDebug() ? 'inherit' : 'ignore',
+    })
+    return await getActualTree(cwd)
+  } catch {}
+  return null
 }
 
 export async function pnpmFix(
@@ -135,8 +138,11 @@ export async function pnpmFix(
 
   // If pnpm-lock.yaml does NOT exist then install with pnpm to create it.
   if (!lockfile) {
-    actualTree = await install(pkgEnvDetails, { cwd, spinner })
-    lockfile = await readPnpmLockfile(lockfilePath)
+    const maybeActualTree = await install(pkgEnvDetails, { cwd, spinner })
+    if (maybeActualTree) {
+      actualTree = maybeActualTree
+      lockfile = await readPnpmLockfile(lockfilePath)
+    }
   }
   // Update pnpm-lock.yaml if its version is older than what the installed pnpm
   // produces.
@@ -145,12 +151,15 @@ export async function pnpmFix(
     pkgEnvDetails.agentVersion.major >= 10 &&
     parsePnpmLockfileVersion(lockfile.lockfileVersion).major <= 6
   ) {
-    actualTree = await install(pkgEnvDetails, {
+    const maybeActualTree = await install(pkgEnvDetails, {
       args: ['--lockfile-only'],
       cwd,
       spinner,
     })
-    lockfile = await readPnpmLockfile(lockfilePath)
+    if (maybeActualTree) {
+      actualTree = maybeActualTree
+      lockfile = await readPnpmLockfile(lockfilePath)
+    }
   }
 
   // Exit early if pnpm-lock.yaml is not found.
@@ -179,7 +188,7 @@ export async function pnpmFix(
   const infoByPkgName = getCveInfoFromAlertsMap(alertsMap, { limit })
   if (!infoByPkgName) {
     spinner?.stop()
-    logger.info('No fixable vulnerabilities found.')
+    logger.info('No fixable vulns found.')
     return
   }
 
@@ -203,6 +212,14 @@ export async function pnpmFix(
     pkgEnvDetails.editablePkgJson.filename!,
   ]
 
+  const handleInstallFail = () => {
+    logger.error(
+      `Unexpected condition: ${pkgEnvDetails.agent} install failed.\n`,
+    )
+    logger.dedent()
+    spinner?.dedent()
+  }
+
   spinner?.stop()
 
   let count = 0
@@ -218,7 +235,7 @@ export async function pnpmFix(
     const isLastInfoEntry = i === length - 1
     const { 0: name, 1: infos } = sortedInfoEntries[i]!
 
-    logger.log(`Processing vulnerable package: ${name}`)
+    logger.log(`Processing vulns for ${name}:`)
     logger.indent()
     spinner?.indent()
 
@@ -254,11 +271,19 @@ export async function pnpmFix(
 
       // actualTree may not be defined on the first iteration of pkgJsonPathsLoop.
       if (!actualTree) {
-        actualTree = existsSync(path.join(rootPath, 'node_modules'))
+        const maybeActualTree = existsSync(path.join(rootPath, 'node_modules'))
           ? // eslint-disable-next-line no-await-in-loop
             await getActualTree(cwd)
           : // eslint-disable-next-line no-await-in-loop
             await install(pkgEnvDetails, { cwd, spinner })
+        if (maybeActualTree) {
+          actualTree = maybeActualTree
+        }
+      }
+      if (!actualTree) {
+        // Exit early if install fails.
+        handleInstallFail()
+        return
       }
 
       const oldVersions = arrayUnique(
@@ -329,7 +354,7 @@ export async function pnpmFix(
 
           if (!(newVersion && newVersionPackument)) {
             warningsForAfter.add(
-              `No update applied. ${oldId} needs >=${firstPatchedVersionIdentifier}.`,
+              `No update applied: ${oldId} requires >=${firstPatchedVersionIdentifier}`,
             )
             continue infosLoop
           }
@@ -414,13 +439,21 @@ export async function pnpmFix(
           let errored = false
           try {
             // eslint-disable-next-line no-await-in-loop
-            actualTree = await install(pkgEnvDetails, { cwd, spinner })
-            if (test) {
-              spinner?.info(`Testing ${newId} in ${workspaceName}.`)
-              // eslint-disable-next-line no-await-in-loop
-              await runScript(testScript, [], { spinner, stdio: 'ignore' })
+            const maybeActualTree = await install(pkgEnvDetails, {
+              cwd,
+              spinner,
+            })
+            if (maybeActualTree) {
+              actualTree = maybeActualTree
+              if (test) {
+                spinner?.info(`Testing ${newId} in ${workspaceName}.`)
+                // eslint-disable-next-line no-await-in-loop
+                await runScript(testScript, [], { spinner, stdio: 'ignore' })
+              }
+              spinner?.success(`Fixed ${name} in ${workspaceName}.`)
+            } else {
+              errored = true
             }
-            spinner?.success(`Fixed ${name} in ${workspaceName}.`)
           } catch (e) {
             error = e
             errored = true
@@ -483,7 +516,16 @@ export async function pnpmFix(
                 // eslint-disable-next-line no-await-in-loop
                 await gitResetAndClean(baseBranch, cwd)
                 // eslint-disable-next-line no-await-in-loop
-                actualTree = await install(pkgEnvDetails, { cwd, spinner })
+                const maybeActualTree = await install(pkgEnvDetails, {
+                  cwd,
+                  spinner,
+                })
+                if (!maybeActualTree) {
+                  // Exit early if install fails.
+                  handleInstallFail()
+                  return
+                }
+                actualTree = maybeActualTree
                 continue infosLoop
               }
 
@@ -548,10 +590,20 @@ export async function pnpmFix(
           }
 
           if (isCi) {
+            spinner?.start()
             // eslint-disable-next-line no-await-in-loop
             await gitResetAndClean(baseBranch, cwd)
             // eslint-disable-next-line no-await-in-loop
-            actualTree = await install(pkgEnvDetails, { cwd, spinner })
+            const maybeActualTree = await install(pkgEnvDetails, {
+              cwd,
+              spinner,
+            })
+            spinner?.stop()
+            if (maybeActualTree) {
+              actualTree = maybeActualTree
+            } else {
+              errored = true
+            }
           }
           if (errored) {
             if (!isCi) {
@@ -563,12 +615,21 @@ export async function pnpmFix(
                 editablePkgJson.save({ ignoreWhitespace: true }),
               ])
               // eslint-disable-next-line no-await-in-loop
-              actualTree = await install(pkgEnvDetails, { cwd, spinner })
+              const maybeActualTree = await install(pkgEnvDetails, {
+                cwd,
+                spinner,
+              })
               spinner?.stop()
+              if (!maybeActualTree) {
+                // Exit early if install fails.
+                handleInstallFail()
+                return
+              }
+              actualTree = maybeActualTree
             }
             logger.fail(
               `Update failed for ${oldId} in ${workspaceName}.`,
-              error,
+              ...(error ? [error] : []),
             )
           }
           if (++count >= limit) {

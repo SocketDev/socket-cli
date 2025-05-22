@@ -64,16 +64,19 @@ type InstallOptions = {
 async function install(
   arb: SafeArborist,
   options: InstallOptions,
-): Promise<SafeNode> {
+): Promise<SafeNode | null> {
   const { cwd = process.cwd() } = {
     __proto__: null,
     ...options,
   } as InstallOptions
-  const newArb = new Arborist({ path: cwd })
-  newArb.idealTree = await arb.buildIdealTree()
-  const actualTree = await newArb.reify()
-  arb.actualTree = actualTree
-  return actualTree
+  try {
+    const newArb = new Arborist({ path: cwd })
+    newArb.idealTree = await arb.buildIdealTree()
+    const actualTree = await newArb.reify()
+    arb.actualTree = actualTree
+    return actualTree
+  } catch {}
+  return null
 }
 
 export async function npmFix(
@@ -124,7 +127,7 @@ export async function npmFix(
   const infoByPkgName = getCveInfoFromAlertsMap(alertsMap, { limit })
   if (!infoByPkgName) {
     spinner?.stop()
-    logger.info('No fixable vulnerabilities found.')
+    logger.info('No fixable vulns found.')
     return
   }
 
@@ -148,6 +151,14 @@ export async function npmFix(
     pkgEnvDetails.editablePkgJson.filename!,
   ]
 
+  const handleInstallFail = () => {
+    logger.error(
+      `Unexpected condition: ${pkgEnvDetails.agent} install failed.\n`,
+    )
+    logger.dedent()
+    spinner?.dedent()
+  }
+
   spinner?.stop()
 
   let count = 0
@@ -163,7 +174,7 @@ export async function npmFix(
     const isLastInfoEntry = i === length - 1
     const { 0: name, 1: infos } = sortedInfoEntries[i]!
 
-    logger.log(`Processing vulnerable package: ${name}`)
+    logger.log(`Processing vulns for ${name}:`)
     logger.indent()
     spinner?.indent()
 
@@ -258,7 +269,7 @@ export async function npmFix(
 
           if (!(newVersion && newVersionPackument)) {
             warningsForAfter.add(
-              `No update applied. ${oldId} needs >=${firstPatchedVersionIdentifier}.`,
+              `No update applied: ${oldId} requires >=${firstPatchedVersionIdentifier}`,
             )
             continue infosLoop
           }
@@ -311,13 +322,18 @@ export async function npmFix(
           let errored = false
           try {
             // eslint-disable-next-line no-await-in-loop
-            actualTree = await install(arb, { cwd })
-            if (test) {
-              spinner?.info(`Testing ${newId} in ${workspaceName}.`)
-              // eslint-disable-next-line no-await-in-loop
-              await runScript(testScript, [], { spinner, stdio: 'ignore' })
+            const maybeActualTree = await install(arb, { cwd })
+            if (maybeActualTree) {
+              actualTree = maybeActualTree
+              if (test) {
+                spinner?.info(`Testing ${newId} in ${workspaceName}.`)
+                // eslint-disable-next-line no-await-in-loop
+                await runScript(testScript, [], { spinner, stdio: 'ignore' })
+              }
+              spinner?.success(`Fixed ${name} in ${workspaceName}.`)
+            } else {
+              errored = true
             }
-            spinner?.success(`Fixed ${name} in ${workspaceName}.`)
           } catch (e) {
             errored = true
             error = e
@@ -382,7 +398,13 @@ export async function npmFix(
                 // eslint-disable-next-line no-await-in-loop
                 await gitResetAndClean(baseBranch, cwd)
                 // eslint-disable-next-line no-await-in-loop
-                actualTree = await install(arb, { cwd })
+                const maybeActualTree = await install(arb, { cwd })
+                if (!maybeActualTree) {
+                  // Exit early if install fails.
+                  handleInstallFail()
+                  return
+                }
+                actualTree = maybeActualTree
                 continue infosLoop
               }
 
@@ -447,10 +469,17 @@ export async function npmFix(
           }
 
           if (isCi) {
+            spinner?.start()
             // eslint-disable-next-line no-await-in-loop
             await gitResetAndClean(baseBranch, cwd)
             // eslint-disable-next-line no-await-in-loop
-            actualTree = await install(arb, { cwd })
+            const maybeActualTree = await install(arb, { cwd })
+            spinner?.stop()
+            if (maybeActualTree) {
+              actualTree = maybeActualTree
+            } else {
+              errored = true
+            }
           }
           if (errored) {
             if (!isCi) {
@@ -462,8 +491,14 @@ export async function npmFix(
                 editablePkgJson.save({ ignoreWhitespace: true }),
               ])
               // eslint-disable-next-line no-await-in-loop
-              actualTree = await install(arb, { cwd })
+              const maybeActualTree = await install(arb, { cwd })
               spinner?.stop()
+              if (!maybeActualTree) {
+                // Exit early if install fails.
+                handleInstallFail()
+                return
+              }
+              actualTree = maybeActualTree
             }
             logger.fail(
               `Update failed for ${oldId} in ${workspaceName}.`,

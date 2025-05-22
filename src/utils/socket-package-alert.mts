@@ -345,13 +345,13 @@ export function getCveInfoFromAlertsMap(
   alertsMapLoop: for (const [pkgId, sockPkgAlerts] of alertsMap) {
     const purlObj = PackageURL.fromString(idToPurl(pkgId))
     const name = resolvePackageName(purlObj)
-    for (const sockPkgAlert of sockPkgAlerts) {
+    sockPkgAlertsLoop: for (const sockPkgAlert of sockPkgAlerts) {
       const alert = sockPkgAlert.raw
       if (
         alert.fix?.type !== ALERT_FIX_TYPE.cve ||
         (exclude.upgradable && getManifestData(NPM, name))
       ) {
-        continue
+        continue sockPkgAlertsLoop
       }
       if (!infoByPkgName) {
         infoByPkgName = new Map()
