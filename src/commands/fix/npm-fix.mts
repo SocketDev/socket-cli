@@ -26,6 +26,7 @@ import {
   getGitHubEnvRepoInfo,
   openPr,
   prExistForBranch,
+  setGitRemoteGitHubRepoUrl,
 } from './open-pr.mts'
 import { getAlertMapOptions } from './shared.mts'
 import constants from '../../constants.mts'
@@ -127,8 +128,15 @@ export async function npmFix(
     return
   }
 
-  // Lazily access constants.ENV.CI.
-  const isCi = constants.ENV.CI
+  // Lazily access constants.ENV properties.
+  const token =
+    constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN
+  const isCi = !!(
+    constants.ENV.CI &&
+    constants.ENV.GITHUB_ACTIONS &&
+    constants.ENV.GITHUB_REPOSITORY &&
+    token
+  )
   const baseBranch = isCi ? getBaseGitBranch() : ''
   const workspacePkgJsonPaths = await globWorkspace(
     pkgEnvDetails.agent,
@@ -143,6 +151,7 @@ export async function npmFix(
   spinner?.stop()
 
   let count = 0
+
   const sortedInfoEntries = [...infoByPkgName.entries()].sort((a, b) =>
     naturalCompare(a[0], b[0]),
   )
@@ -164,7 +173,7 @@ export async function npmFix(
     // eslint-disable-next-line no-await-in-loop
     const packument = await fetchPackagePackument(name)
     if (!packument) {
-      logger.warn(`Unexpected condition: No packument found for ${name}\n`)
+      logger.warn(`Unexpected condition: No packument found for ${name}.\n`)
       logger.dedent()
       spinner?.dedent()
       continue infoEntriesLoop
@@ -296,7 +305,7 @@ export async function npmFix(
           }
 
           spinner?.start()
-          spinner?.info(`Installing ${newId} in ${workspaceName}`)
+          spinner?.info(`Installing ${newId} in ${workspaceName}.`)
 
           let error
           let errored = false
@@ -308,7 +317,7 @@ export async function npmFix(
               // eslint-disable-next-line no-await-in-loop
               await runScript(testScript, [], { spinner, stdio: 'ignore' })
             }
-            spinner?.success(`Fixed ${name} in ${workspaceName}`)
+            spinner?.success(`Fixed ${name} in ${workspaceName}.`)
           } catch (e) {
             errored = true
             error = e
@@ -317,11 +326,6 @@ export async function npmFix(
           spinner?.stop()
 
           if (!errored && isCi) {
-            const branch = getSocketBranchName(
-              oldPurl,
-              newVersion,
-              workspaceName,
-            )
             try {
               const moddedFilepaths =
                 // eslint-disable-next-line no-await-in-loop
@@ -339,29 +343,28 @@ export async function npmFix(
                 continue infosLoop
               }
 
-              const { owner, repo } = getGitHubEnvRepoInfo()
-              // eslint-disable-next-line no-await-in-loop
-              if (await prExistForBranch(owner, repo, branch)) {
+              const repoInfo = getGitHubEnvRepoInfo()!
+              const branch = getSocketBranchName(
+                oldPurl,
+                newVersion,
+                workspaceName,
+              )
+
+              let skipPr = false
+              if (
+                // eslint-disable-next-line no-await-in-loop
+                await prExistForBranch(repoInfo.owner, repoInfo.repo, branch)
+              ) {
+                skipPr = true
                 debugLog(`Branch "${branch}" exists, skipping PR creation.`)
-                // eslint-disable-next-line no-await-in-loop
-                await gitResetAndClean(baseBranch, cwd)
-                // eslint-disable-next-line no-await-in-loop
-                actualTree = await install(arb, { cwd })
-                continue infosLoop
               }
               // eslint-disable-next-line no-await-in-loop
-              if (await gitRemoteBranchExists(branch, cwd)) {
+              else if (await gitRemoteBranchExists(branch, cwd)) {
+                skipPr = true
                 debugLog(
                   `Remote branch "${branch}" exists, skipping PR creation.`,
                 )
-                // eslint-disable-next-line no-await-in-loop
-                await gitResetAndClean(baseBranch, cwd)
-                // eslint-disable-next-line no-await-in-loop
-                actualTree = await install(arb, { cwd })
-                continue infosLoop
-              }
-
-              if (
+              } else if (
                 // eslint-disable-next-line no-await-in-loop
                 !(await gitCreateAndPushBranch(
                   branch,
@@ -370,23 +373,41 @@ export async function npmFix(
                   cwd,
                 ))
               ) {
+                skipPr = true
                 logger.warn(
                   'Unexpected condition: Push failed, skipping PR creation.',
                 )
+              }
+              if (skipPr) {
                 // eslint-disable-next-line no-await-in-loop
                 await gitResetAndClean(baseBranch, cwd)
                 // eslint-disable-next-line no-await-in-loop
                 actualTree = await install(arb, { cwd })
                 continue infosLoop
               }
+
               // eslint-disable-next-line no-await-in-loop
-              await cleanupOpenPrs(owner, repo, oldPurl, newVersion, {
-                workspaceName,
-              })
+              await Promise.allSettled([
+                setGitRemoteGitHubRepoUrl(
+                  repoInfo.owner,
+                  repoInfo.repo,
+                  token,
+                  cwd,
+                ),
+                cleanupOpenPrs(
+                  repoInfo.owner,
+                  repoInfo.repo,
+                  oldPurl,
+                  newVersion,
+                  {
+                    workspaceName,
+                  },
+                ),
+              ])
               // eslint-disable-next-line no-await-in-loop
               const prResponse = await openPr(
-                owner,
-                repo,
+                repoInfo.owner,
+                repoInfo.repo,
                 branch,
                 oldPurl,
                 newVersion,
@@ -398,12 +419,23 @@ export async function npmFix(
               )
               if (prResponse) {
                 const { data } = prResponse
-                logger.success(`Opened PR #${data.number}`)
+                const prRef = `PR #${data.number}`
+                logger.success(`Opened ${prRef}.`)
                 if (autoMerge) {
                   logger.indent()
                   spinner?.indent()
                   // eslint-disable-next-line no-await-in-loop
-                  await enablePrAutoMerge(data)
+                  const { details, enabled } = await enablePrAutoMerge(data)
+                  if (enabled) {
+                    logger.info(`Auto-merge enabled for ${prRef}.`)
+                  } else {
+                    const message = `Failed to enable auto-merge for ${prRef}${
+                      details
+                        ? `:\n${details.map(d => ` - ${d}`).join('\n')}`
+                        : '.'
+                    }`
+                    logger.error(message)
+                  }
                   logger.dedent()
                   spinner?.dedent()
                 }
