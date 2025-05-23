@@ -1,6 +1,7 @@
 import { cmdScanCreate } from './cmd-scan-create.mts'
 import { cmdScanDel } from './cmd-scan-del.mts'
 import { cmdScanDiff } from './cmd-scan-diff.mts'
+import { cmdScanGithub } from './cmd-scan-github.mts'
 import { cmdScanList } from './cmd-scan-list.mts'
 import { cmdScanMetadata } from './cmd-scan-metadata.mts'
 import { cmdScanReport } from './cmd-scan-report.mts'
@@ -17,9 +18,10 @@ export const cmdScan: CliSubcommand = {
     await meowWithSubcommands(
       {
         create: cmdScanCreate,
-        list: cmdScanList,
         del: cmdScanDel,
         diff: cmdScanDiff,
+        github: cmdScanGithub,
+        list: cmdScanList,
         metadata: cmdScanMetadata,
         report: cmdScanReport,
         view: cmdScanView,
