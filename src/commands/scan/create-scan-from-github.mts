@@ -497,7 +497,7 @@ async function streamDownloadWithFetch(
       // If error was due to bad HTTP status
       detailedError += ` (HTTP Status: ${response.status} ${response.statusText})`
     }
-    return { ok: false, message: 'Download Failred', cause: detailedError }
+    return { ok: false, message: 'Download Failed', cause: detailedError }
   }
 }
 

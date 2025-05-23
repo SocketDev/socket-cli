@@ -58,7 +58,7 @@ const config: CliCommandConfig = {
     repos: {
       type: 'string',
       description:
-        'List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. USe --all to use them all.',
+        'List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. Use --all to use them all.',
     },
   },
   help: (command, config) => `
