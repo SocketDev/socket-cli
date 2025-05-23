@@ -26,7 +26,7 @@ jobs:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
           cache: npm
-          scope: "@socketsecurity"
+          scope: '@socketsecurity'
       - run: npm install -g npm@latest
       - run: npm ci
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 npm run build:dist

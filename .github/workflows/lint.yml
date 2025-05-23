@@ -19,8 +19,8 @@ concurrency:
 
 jobs:
   linting:
-    name: "Linting"
+    name: 'Linting'
     uses: SocketDev/workflows/.github/workflows/reusable-base.yml@master
     with:
       no-lockfile: true
-      npm-test-script: 'check'
+      npm-test-script: 'check-ci'
