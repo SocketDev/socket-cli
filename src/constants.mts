@@ -64,14 +64,14 @@ type ENV = Remap<
       NODE_COMPILE_CACHE: string
       PATH: string
       SOCKET_CLI_ACCEPT_RISKS: boolean
+      SOCKET_CLI_API_BASE_URL: string
+      SOCKET_CLI_API_PROXY: string
+      SOCKET_CLI_API_TOKEN: string
       SOCKET_CLI_CONFIG: string
       SOCKET_CLI_DEBUG: boolean
+      SOCKET_CLI_GITHUB_TOKEN: string
       SOCKET_CLI_NO_API_TOKEN: boolean
       SOCKET_CLI_VIEW_ALL_RISKS: boolean
-      SOCKET_SECURITY_API_BASE_URL: string
-      SOCKET_SECURITY_API_PROXY: string
-      SOCKET_SECURITY_API_TOKEN: string
-      SOCKET_SECURITY_GITHUB_PAT: string
       TERM: string
       XDG_DATA_HOME: string
     }>
@@ -216,6 +216,7 @@ const LAZY_ENV = () => {
     envAsString,
   } = require('@socketsecurity/registry/lib/env')
   const { env } = process
+  const GITHUB_TOKEN = envAsString(env['GITHUB_TOKEN'])
   // We inline some environment values so that they CANNOT be influenced by user
   // provided environment variables.
   return Object.freeze({
@@ -243,7 +244,7 @@ const LAZY_ENV = () => {
     // The GITHUB_TOKEN secret is a GitHub App installation access token. The token's
     // permissions are limited to the repository that contains the workflow.
     // https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#about-the-github_token-secret
-    GITHUB_TOKEN: envAsString(env['GITHUB_TOKEN']),
+    GITHUB_TOKEN,
     // Comp-time inlined @cyclonedx/cdxgen package version.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']".
     INLINED_CYCLONEDX_CDXGEN_VERSION: envAsString(
@@ -305,44 +306,36 @@ const LAZY_ENV = () => {
     PATH: envAsString(env['PATH']),
     // Flag to accepts risks of safe-npm and safe-npx run.
     SOCKET_CLI_ACCEPT_RISKS: envAsBoolean(env[SOCKET_CLI_ACCEPT_RISKS]),
+    // Flag to change the base URL for all API-calls.
+    // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
+    SOCKET_CLI_API_BASE_URL:
+      envAsString(env['SOCKET_CLI_API_BASE_URL']) ||
+      envAsString(env['SOCKET_SECURITY_API_BASE_URL']),
+    // Flag to set the proxy all requests are routed through.
+    // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
+    SOCKET_CLI_API_PROXY:
+      envAsString(env['SOCKET_CLI_API_PROXY']) ||
+      envAsString(env['SOCKET_SECURITY_API_PROXY']),
+    // Flag to set the API token.
+    // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
+    SOCKET_CLI_API_TOKEN:
+      envAsString(env['SOCKET_CLI_API_TOKEN']) ||
+      envAsString(env['SOCKET_CLI_API_KEY']) ||
+      envAsString(env['SOCKET_SECURITY_API_TOKEN']) ||
+      envAsString(env['SOCKET_SECURITY_API_KEY']),
     // Flag containing a JSON stringified Socket configuration object.
     SOCKET_CLI_CONFIG: envAsString(env['SOCKET_CLI_CONFIG']),
     // Flag to help debug Socket CLI.
     SOCKET_CLI_DEBUG: envAsBoolean(env['SOCKET_CLI_DEBUG']),
+    // A classic GitHub personal access token with the "repo" scope or a fine-grained
+    // access token with read/write permissions set for "Contents" and "Pull Request".
+    // https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+    SOCKET_CLI_GITHUB_TOKEN:
+      envAsString(env['SOCKET_CLI_GITHUB_TOKEN']) || GITHUB_TOKEN,
     // Flag to make the default API token `undefined`.
     SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN']),
     // Flag to view all risks of safe-npm and safe-npx run.
     SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
-    // Flag to change the base URL for all API-calls.
-    // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
-    SOCKET_SECURITY_API_BASE_URL:
-      envAsString(env['SOCKET_SECURITY_API_BASE_URL']) ||
-      // For consistency; allow socket_cli prefix too
-      envAsString(env['SOCKET_CLI_API_BASE_URL']),
-    // Flag to set the proxy all requests are routed through.
-    // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
-    SOCKET_SECURITY_API_PROXY:
-      envAsString(env['SOCKET_SECURITY_API_PROXY']) ||
-      // For consistency; allow socket_cli prefix too
-      envAsString(env['SOCKET_CLI_API_BASE_URL']),
-    // Flag to set the API token.
-    // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
-    SOCKET_SECURITY_API_TOKEN:
-      // Note: These are SOCKET_SECURITY prefixed because they're not specific
-      //       to the CLI. For the sake of consistency we'll also support the env
-      //       keys that do have the SOCKET_CLI prefix, it's an easy mistake.
-      // In case multiple are supplied, the tokens supersede the keys and the
-      // security prefix supersedes the cli prefix. "Adventure mode" ;)
-      envAsString(env['SOCKET_SECURITY_API_TOKEN']) ||
-      // Keep 'SOCKET_SECURITY_API_KEY' alias.
-      // TODO: Remove 'SOCKET_SECURITY_API_KEY' alias.
-      envAsString(env['SOCKET_SECURITY_API_KEY']) ||
-      envAsString(env['SOCKET_CLI_API_TOKEN']) ||
-      envAsString(env['SOCKET_CLI_API_KEY']),
-    // A classic GitHub personal access token with the "repo" scope or a fine-grained
-    // access token with read/write permissions set for "Contents" and "Pull Request".
-    // https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
-    SOCKET_SECURITY_GITHUB_PAT: envAsString(env['SOCKET_SECURITY_GITHUB_PAT']),
     // Specifies the type of terminal or terminal emulator being used by the process.
     TERM: envAsString(env['TERM']),
     // The location of the base directory on Linux and MacOS used to store
