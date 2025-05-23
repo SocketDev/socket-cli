@@ -1,16 +1,17 @@
 {
   "compilerOptions": {
+    // Not supported by @typescript/native-preview.
+    //"erasableSyntaxOnly": true,
+    //"importsNotUsedAsValues": "remove",
+    //"incremental": true,
     "allowImportingTsExtensions": true,
     "allowJs": false,
     "composite": true,
     "declaration": true,
     "declarationMap": true,
-    "erasableSyntaxOnly": true,
     "esModuleInterop": true,
     "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
-    "importsNotUsedAsValues": "remove",
-    "incremental": true,
     "isolatedModules": true,
     "lib": ["esnext"],
     "module": "nodenext",
