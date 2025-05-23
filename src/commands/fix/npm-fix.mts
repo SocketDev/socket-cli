@@ -132,8 +132,7 @@ export async function npmFix(
   }
 
   // Lazily access constants.ENV properties.
-  const token =
-    constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN
+  const token = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
   const isCi = !!(
     constants.ENV.CI &&
     constants.ENV.GITHUB_ACTIONS &&

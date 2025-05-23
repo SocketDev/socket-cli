@@ -82,7 +82,7 @@ use of the `projectIgnorePaths` to excludes files when creating a report.
 
 ## Environment variables
 
-- `SOCKET_SECURITY_API_TOKEN` - if set, this will be used as the API-key
+- `SOCKET_CLI_API_TOKEN` - if set, this will be used as the API-key
 
 ## Contributing
 
@@ -101,9 +101,9 @@ That should invoke it from local sources. If you make changes you run
 
 ### Environment variables for development
 
-- `SOCKET_SECURITY_API_BASE_URL` - if set, this will be the base for all
+- `SOCKET_CLI_API_BASE_URL` - if set, this will be the base for all
   API-calls. Defaults to `https://api.socket.dev/v0/`
-- `SOCKET_SECURITY_API_PROXY` - if set to something like
+- `SOCKET_CLI_API_PROXY` - if set to something like
   [`http://127.0.0.1:9090`](https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries),
   then all request will be proxied through that proxy
 
