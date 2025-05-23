@@ -34,6 +34,7 @@
     "check": "npm run check:tsc && npm run check:lint",
     "check:lint": "dotenvx -q run -f .env.local -- eslint --report-unused-disable-directives .",
     "check:tsc": "tsgo",
+    "check-ci": "npm run check:lint",
     "coverage": "run-s coverage:*",
     "coverage:test": "run-s test:prepare test:unit:coverage",
     "coverage:type": "dotenvx -q run -f .env.local -- type-coverage --detail",
