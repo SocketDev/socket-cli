@@ -193,7 +193,6 @@ async function run(
       fail: 'missing (try `socket login`)',
     },
     {
-      nook: true,
       test: hasGithubApiToken,
       message: 'This command requires a GitHub API token for access',
       pass: 'ok',
