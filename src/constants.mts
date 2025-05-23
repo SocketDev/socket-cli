@@ -331,7 +331,9 @@ const LAZY_ENV = () => {
     // access token with read/write permissions set for "Contents" and "Pull Request".
     // https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
     SOCKET_CLI_GITHUB_TOKEN:
-      envAsString(env['SOCKET_CLI_GITHUB_TOKEN']) || GITHUB_TOKEN,
+      envAsString(env['SOCKET_CLI_GITHUB_TOKEN']) ||
+      envAsString(env['SOCKET_SECURITY_GITHUB_PAT']) ||
+      GITHUB_TOKEN,
     // Flag to make the default API token `undefined`.
     SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN']),
     // Flag to view all risks of safe-npm and safe-npx run.
