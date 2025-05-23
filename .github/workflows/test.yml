@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   test:
-    name: "Tests"
+    name: 'Tests'
     uses: SocketDev/workflows/.github/workflows/reusable-base.yml@master
     with:
       no-lockfile: true
