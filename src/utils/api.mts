@@ -155,11 +155,9 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
 
 // The API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
-  // Lazily access constants.ENV.SOCKET_SECURITY_API_BASE_URL.
-  const SOCKET_SECURITY_API_BASE_URL =
-    constants.ENV.SOCKET_SECURITY_API_BASE_URL
   const baseUrl =
-    SOCKET_SECURITY_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
+    // Lazily access constants.ENV.SOCKET_CLI_API_BASE_URL.
+    constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
   if (isNonEmptyString(baseUrl)) {
     return baseUrl
   }
