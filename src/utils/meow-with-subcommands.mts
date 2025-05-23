@@ -144,8 +144,8 @@ export async function meowWithSubcommands(
     // The config will be marked as readOnly to prevent persisting it.
     overrideConfigApiToken(undefined)
   } else {
-    // Lazily access constants.ENV.SOCKET_SECURITY_API_TOKEN.
-    const tokenOverride = constants.ENV.SOCKET_SECURITY_API_TOKEN
+    // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN.
+    const tokenOverride = constants.ENV.SOCKET_CLI_API_TOKEN
     if (tokenOverride) {
       // This will set the token (even if there was a config override) and
       // set it to readOnly, making sure the temp token won't be persisted.
