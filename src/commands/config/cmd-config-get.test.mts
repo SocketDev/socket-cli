@@ -137,7 +137,7 @@ describe('socket config get', async () => {
         'should return the env var token when set',
         async cmd => {
           const { stderr, stdout } = await invokeNpm(entryPath, cmd, {
-            SOCKET_SECURITY_API_TOKEN: 'abc',
+            SOCKET_CLI_API_TOKEN: 'abc',
           })
           expect(stdout).toMatchInlineSnapshot(
             `

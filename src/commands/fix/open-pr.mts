@@ -29,9 +29,8 @@ let _octokit: Octokit | undefined
 function getOctokit() {
   if (_octokit === undefined) {
     _octokit = new Octokit({
-      // Lazily access constants.ENV properties.
-      auth:
-        constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN,
+      // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
+      auth: constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
     })
   }
   return _octokit
@@ -42,8 +41,8 @@ export function getOctokitGraphql() {
   if (!_octokitGraphql) {
     _octokitGraphql = OctokitGraphql.defaults({
       headers: {
-        // Lazily access constants.ENV properties.
-        authorization: `token ${constants.ENV.SOCKET_SECURITY_GITHUB_PAT || constants.ENV.GITHUB_TOKEN}`,
+        // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
+        authorization: `token ${constants.ENV.SOCKET_CLI_GITHUB_TOKEN}`,
       },
     })
   }
@@ -56,6 +55,7 @@ export async function cacheFetch<T>(
   ttlMs?: number | undefined,
 ): Promise<T> {
   // Optionally disable cache.
+  // Lazily access constants.ENV.DISABLE_GITHUB_CACHE.
   if (constants.ENV.DISABLE_GITHUB_CACHE) {
     return await fetcher()
   }

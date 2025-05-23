@@ -19,17 +19,16 @@ const { length: TOKEN_PREFIX_LENGTH } = TOKEN_PREFIX
 // The API server that should be used for operations.
 function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    // Lazily access constants.ENV.SOCKET_SECURITY_API_BASE_URL.
-    constants.ENV.SOCKET_SECURITY_API_BASE_URL ||
-    getConfigValueOrUndef('apiBaseUrl')
+    // Lazily access constants.ENV.SOCKET_CLI_API_BASE_URL.
+    constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
   return isNonEmptyString(baseUrl) ? baseUrl : undefined
 }
 
 // The API server that should be used for operations.
 function getDefaultHttpProxy(): string | undefined {
   const apiProxy =
-    // Lazily access constants.ENV.SOCKET_SECURITY_API_PROXY.
-    constants.ENV.SOCKET_SECURITY_API_PROXY || getConfigValueOrUndef('apiProxy')
+    // Lazily access constants.ENV.SOCKET_CLI_API_PROXY.
+    constants.ENV.SOCKET_CLI_API_PROXY || getConfigValueOrUndef('apiProxy')
   return isNonEmptyString(apiProxy) ? apiProxy : undefined
 }
 
@@ -41,8 +40,8 @@ export function getDefaultToken(): string | undefined {
     _defaultToken = undefined
   } else {
     const key =
-      // Lazily access constants.ENV.SOCKET_SECURITY_API_TOKEN.
-      constants.ENV.SOCKET_SECURITY_API_TOKEN ||
+      // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN.
+      constants.ENV.SOCKET_CLI_API_TOKEN ||
       getConfigValueOrUndef('apiToken') ||
       _defaultToken
     _defaultToken = isNonEmptyString(key) ? key : undefined
@@ -63,8 +62,8 @@ export function hasDefaultToken(): boolean {
 
 export function getPublicToken(): string {
   return (
-    // Lazily access constants.ENV.SOCKET_SECURITY_API_TOKEN.
-    (constants.ENV.SOCKET_SECURITY_API_TOKEN || getDefaultToken()) ??
+    // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN.
+    (constants.ENV.SOCKET_CLI_API_TOKEN || getDefaultToken()) ??
     SOCKET_PUBLIC_API_TOKEN
   )
 }

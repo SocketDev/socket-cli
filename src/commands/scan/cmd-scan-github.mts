@@ -109,7 +109,8 @@ async function run(
     all = false,
     dryRun = false,
     githubApiUrl = 'https://api.github.com',
-    githubToken = process.env['SOCKET_CLI_GITHUB_TOKEN'] || '',
+    // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
+    githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
     interactive = true,
     json,
     markdown,
