@@ -27,13 +27,13 @@
     "./translations.json": "./translations.json"
   },
   "scripts": {
-    "build": "run-p -c --aggregate-output build:*",
-    "build:dist": "run-s build:dist:src build:dist:types",
+    "build": "npm run build:dist",
+    "build:dist": "npm run build:dist:src && npm run build:dist:types",
     "build:dist:src": "run-p -c clean:dist clean:external && dotenvx -q run -f .env.local -- rollup -c .config/rollup.dist.config.mjs",
-    "build:dist:types": "npm run clean:dist:types && dotenvx -q run -f .env.local -- tsgo --project tsconfig.dts.json",
-    "check": "run-p -c --aggregate-output check:*",
+    "build:dist:types": "npm run clean:dist:types && tsgo --project tsconfig.dts.json",
+    "check": "npm run check:tsc && npm run check:lint",
     "check:lint": "dotenvx -q run -f .env.local -- eslint --report-unused-disable-directives .",
-    "check:tsc": "dotenvx -q run -f .env.local -- tsgo",
+    "check:tsc": "tsgo",
     "coverage": "run-s coverage:*",
     "coverage:test": "run-s test:prepare test:unit:coverage",
     "coverage:type": "dotenvx -q run -f .env.local -- type-coverage --detail",
