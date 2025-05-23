@@ -230,9 +230,9 @@ const LAZY_ENV = () => {
     // can be used to differentiate when tests are being run locally or by GitHub Actions.
     // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
     GITHUB_ACTIONS: envAsBoolean(env['GITHUB_ACTIONS']),
-    // The short ref name of the branch or tag that triggered the GitHub workflow run.
-    // This value matches the branch or tag name shown on GitHub. For example, feature-branch-1.
-    // For pull requests, the format is <pr_number>/merge.
+    // The short ref name of the branch or tag that triggered the GitHub workflow
+    // run. This value matches the branch or tag name shown on GitHub. For example,
+    // feature-branch-1. For pull requests, the format is <pr_number>/merge.
     // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
     GITHUB_REF_NAME: envAsString(env['GITHUB_REF_NAME']),
     // The type of ref that triggered the workflow run. Valid values are branch or tag.
@@ -241,8 +241,9 @@ const LAZY_ENV = () => {
     // The owner and repository name. For example, octocat/Hello-World.
     // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
     GITHUB_REPOSITORY: envAsString(env['GITHUB_REPOSITORY']),
-    // The GITHUB_TOKEN secret is a GitHub App installation access token. The token's
-    // permissions are limited to the repository that contains the workflow.
+    // The GITHUB_TOKEN secret is a GitHub App installation access token.
+    // The token's permissions are limited to the repository that contains the
+    // workflow.
     // https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#about-the-github_token-secret
     GITHUB_TOKEN,
     // Comp-time inlined @cyclonedx/cdxgen package version.
@@ -327,8 +328,9 @@ const LAZY_ENV = () => {
     SOCKET_CLI_CONFIG: envAsString(env['SOCKET_CLI_CONFIG']),
     // Flag to help debug Socket CLI.
     SOCKET_CLI_DEBUG: envAsBoolean(env['SOCKET_CLI_DEBUG']),
-    // A classic GitHub personal access token with the "repo" scope or a fine-grained
-    // access token with read/write permissions set for "Contents" and "Pull Request".
+    // A classic GitHub personal access token with the "repo" scope or a
+    // fine-grained access token with at least read/write permissions set for
+    // "Contents" and "Pull Request".
     // https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
     SOCKET_CLI_GITHUB_TOKEN:
       envAsString(env['SOCKET_CLI_GITHUB_TOKEN']) ||
