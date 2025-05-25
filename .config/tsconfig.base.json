@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    // Not supported by @typescript/native-preview.
+    // The following options are not supported by @typescript/native-preview.
+    // They are either ignored or throw an unknown option error:
     //"erasableSyntaxOnly": true,
     //"importsNotUsedAsValues": "remove",
     //"incremental": true,
