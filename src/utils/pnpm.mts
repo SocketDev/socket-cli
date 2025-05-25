@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs'
 import yaml from 'js-yaml'
 import semver from 'semver'
 
+import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { stripBom } from '@socketsecurity/registry/lib/strings'
 
 import { readFileUtf8 } from './fs.mts'
@@ -10,6 +11,14 @@ import { idToPurl } from './spec.mts'
 
 import type { LockfileObject, PackageSnapshot } from '@pnpm/lockfile.fs'
 import type { SemVer } from 'semver'
+
+export function extractOverridesFromPnpmLockfileContent(
+  lockfileContent: any,
+): string {
+  return typeof lockfileContent === 'string'
+    ? (/^overrides:(\r?\n {2}.+)+(?:\r?\n)*/m.exec(lockfileContent)?.[0] ?? '')
+    : ''
+}
 
 export async function extractPurlsFromPnpmLockfile(
   lockfile: LockfileObject,
@@ -49,16 +58,24 @@ export function isPnpmDepPath(maybeDepPath: string): boolean {
   return maybeDepPath.length > 0 && maybeDepPath.charCodeAt(0) === 47 /*'/'*/
 }
 
-export function parsePnpmLockfileVersion(version: string): SemVer {
+export function parsePnpmLockfile(lockfileContent: any): LockfileObject | null {
+  let result
+  if (typeof lockfileContent === 'string') {
+    try {
+      result = yaml.load(stripBom(lockfileContent))
+    } catch {}
+  }
+  return isObjectObject(result) ? (result as LockfileObject) : null
+}
+
+export function parsePnpmLockfileVersion(version: any): SemVer {
   return semver.coerce(version)!
 }
 
 export async function readPnpmLockfile(
   lockfilePath: string,
-): Promise<LockfileObject | null> {
-  return existsSync(lockfilePath)
-    ? (yaml.load(stripBom(await readFileUtf8(lockfilePath))) as LockfileObject)
-    : null
+): Promise<string | null> {
+  return existsSync(lockfilePath) ? await readFileUtf8(lockfilePath) : null
 }
 
 export function stripLeadingPnpmDepPathSlash(depPath: string): string {

@@ -215,7 +215,7 @@ export async function npmFix(
 
       if (!oldVersions.length) {
         logger.warn(
-          `Unexpected condition: Lockfile entries not found for ${name}.\n`,
+          `Unexpected condition: ${name} not found in node_modules.\n`,
         )
         // Skip to next package.
         logger.dedent()
@@ -275,6 +275,7 @@ export async function npmFix(
 
           const newVersionRange = applyRange(oldVersion, newVersion, rangeStyle)
           const newId = `${name}@${newVersionRange}`
+
           const revertData = {
             ...(editablePkgJson.content.dependencies && {
               dependencies: { ...editablePkgJson.content.dependencies },
