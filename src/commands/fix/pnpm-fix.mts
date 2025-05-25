@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { getManifestData } from '@socketsecurity/registry'
@@ -49,6 +49,8 @@ import {
 import { removeNodeModules } from '../../utils/fs.mts'
 import { globWorkspace } from '../../utils/glob.mts'
 import {
+  extractOverridesFromPnpmLockfileContent,
+  parsePnpmLockfile,
   parsePnpmLockfileVersion,
   readPnpmLockfile,
 } from '../../utils/pnpm.mts'
@@ -135,38 +137,50 @@ export async function pnpmFix(
 
   let actualTree: SafeNode | undefined
   const lockfilePath = path.join(rootPath, 'pnpm-lock.yaml')
-  let lockfile = await readPnpmLockfile(lockfilePath)
+  let lockfileContent = await readPnpmLockfile(lockfilePath)
 
   // If pnpm-lock.yaml does NOT exist then install with pnpm to create it.
-  if (!lockfile) {
+  if (!lockfileContent) {
     const maybeActualTree = await install(pkgEnvDetails, { cwd, spinner })
+    const maybeLockfileContent = maybeActualTree
+      ? await readPnpmLockfile(lockfilePath)
+      : null
     if (maybeActualTree) {
       actualTree = maybeActualTree
-      lockfile = await readPnpmLockfile(lockfilePath)
+      lockfileContent = maybeLockfileContent
     }
   }
+
+  let lockfile = parsePnpmLockfile(lockfileContent)
   // Update pnpm-lock.yaml if its version is older than what the installed pnpm
   // produces.
   if (
-    lockfile &&
+    lockfileContent &&
     pkgEnvDetails.agentVersion.major >= 10 &&
-    parsePnpmLockfileVersion(lockfile.lockfileVersion).major <= 6
+    parsePnpmLockfileVersion(lockfile?.lockfileVersion)?.major <= 6
   ) {
     const maybeActualTree = await install(pkgEnvDetails, {
       args: ['--lockfile-only'],
       cwd,
       spinner,
     })
-    if (maybeActualTree) {
+    const maybeLockfileContent = maybeActualTree
+      ? await readPnpmLockfile(lockfilePath)
+      : null
+    if (maybeActualTree && maybeLockfileContent) {
       actualTree = maybeActualTree
-      lockfile = await readPnpmLockfile(lockfilePath)
+      lockfileContent = maybeLockfileContent
+      lockfile = parsePnpmLockfile(lockfileContent)
+    } else {
+      lockfile = null
     }
   }
 
-  // Exit early if pnpm-lock.yaml is not found.
-  if (!lockfile) {
+  // Exit early if pnpm-lock.yaml is not found or usable.
+  // Check !lockfileContent to make TypeScript happy.
+  if (!lockfile || !lockfileContent) {
     spinner?.stop()
-    logger.error('Required pnpm-lock.yaml not found.')
+    logger.error('Required pnpm-lock.yaml not found or usable.')
     return
   }
 
@@ -276,8 +290,13 @@ export async function pnpmFix(
             await getActualTree(cwd)
           : // eslint-disable-next-line no-await-in-loop
             await install(pkgEnvDetails, { cwd, spinner })
-        if (maybeActualTree) {
+        const maybeLockfileContent = maybeActualTree
+          ? // eslint-disable-next-line no-await-in-loop
+            await readPnpmLockfile(lockfilePath)
+          : null
+        if (maybeActualTree && maybeLockfileContent) {
           actualTree = maybeActualTree
+          lockfileContent = maybeLockfileContent
         }
       }
       if (!actualTree) {
@@ -294,7 +313,7 @@ export async function pnpmFix(
 
       if (!oldVersions.length) {
         logger.warn(
-          `Unexpected condition: Lockfile entries not found for ${name}.\n`,
+          `Unexpected condition: ${name} not found in node_modules.\n`,
         )
         // Skip to next package.
         logger.dedent()
@@ -366,7 +385,8 @@ export async function pnpmFix(
             rangeStyle,
           )
           const newId = `${name}@${newVersionRange}`
-          const updateData = isWorkspaceRoot
+
+          const updateOverrides = isWorkspaceRoot
             ? ({
                 [PNPM]: {
                   ...oldPnpmSection,
@@ -378,21 +398,27 @@ export async function pnpmFix(
               } as PackageJson)
             : undefined
 
-          const revertData = {
-            ...(isWorkspaceRoot
+          const revertOverrides = (
+            isWorkspaceRoot
               ? {
-                  [PNPM]: {
-                    ...oldPnpmSection,
-                    [OVERRIDES]:
-                      oldOverrides && Object.keys(oldOverrides).length > 1
-                        ? {
-                            ...oldOverrides,
-                            [overrideKey]: undefined,
-                          }
-                        : undefined,
-                  },
+                  [PNPM]: oldPnpmSection
+                    ? {
+                        ...oldPnpmSection,
+                        [OVERRIDES]:
+                          oldOverrides && Object.keys(oldOverrides).length > 1
+                            ? {
+                                ...oldOverrides,
+                                [overrideKey]: undefined,
+                              }
+                            : undefined,
+                      }
+                    : undefined,
                 }
-              : {}),
+              : {}
+          ) as PackageJson
+
+          const revertData = {
+            ...revertOverrides,
             ...(editablePkgJson.content.dependencies && {
               dependencies: { ...editablePkgJson.content.dependencies },
             }),
@@ -406,8 +432,10 @@ export async function pnpmFix(
             }),
           } as PackageJson
 
-          if (updateData) {
-            editablePkgJson.update(updateData)
+          if (updateOverrides) {
+            // Update overrides in the root package.json so that when `pnpm install`
+            // generates pnpm-lock.yaml it updates transitive dependencies too.
+            editablePkgJson.update(updateOverrides)
           }
           updatePackageJsonFromNode(
             editablePkgJson,
@@ -438,13 +466,35 @@ export async function pnpmFix(
           let error
           let errored = false
           try {
+            const revertOverridesContent =
+              extractOverridesFromPnpmLockfileContent(lockfileContent)
             // eslint-disable-next-line no-await-in-loop
             const maybeActualTree = await install(pkgEnvDetails, {
               cwd,
               spinner,
             })
-            if (maybeActualTree) {
+            const maybeLockfileContent = maybeActualTree
+              ? // eslint-disable-next-line no-await-in-loop
+                await readPnpmLockfile(lockfilePath)
+              : null
+            if (maybeActualTree && maybeLockfileContent) {
               actualTree = maybeActualTree
+              lockfileContent = maybeLockfileContent
+              // Revert overrides metadata in package.json now that pnpm-lock.yaml
+              // has been updated.
+              editablePkgJson.update(revertOverrides)
+              // eslint-disable-next-line no-await-in-loop
+              await editablePkgJson.save({ ignoreWhitespace: true })
+              const updatedOverridesContent =
+                extractOverridesFromPnpmLockfileContent(lockfileContent)
+              if (updatedOverridesContent) {
+                lockfileContent = lockfileContent!.replace(
+                  updatedOverridesContent,
+                  revertOverridesContent,
+                )
+                // eslint-disable-next-line no-await-in-loop
+                await fs.writeFile(lockfilePath, lockfileContent, 'utf8')
+              }
               if (test) {
                 spinner?.info(`Testing ${newId} in ${workspaceName}.`)
                 // eslint-disable-next-line no-await-in-loop
@@ -520,13 +570,18 @@ export async function pnpmFix(
                   cwd,
                   spinner,
                 })
-                if (!maybeActualTree) {
-                  // Exit early if install fails.
-                  handleInstallFail()
-                  return
+                const maybeLockfileContent = maybeActualTree
+                  ? // eslint-disable-next-line no-await-in-loop
+                    await readPnpmLockfile(lockfilePath)
+                  : null
+                if (maybeActualTree && maybeLockfileContent) {
+                  actualTree = maybeActualTree
+                  lockfileContent = maybeLockfileContent
+                  continue infosLoop
                 }
-                actualTree = maybeActualTree
-                continue infosLoop
+                // Exit early if install fails.
+                handleInstallFail()
+                return
               }
 
               // eslint-disable-next-line no-await-in-loop
@@ -598,9 +653,14 @@ export async function pnpmFix(
               cwd,
               spinner,
             })
+            const maybeLockfileContent = maybeActualTree
+              ? // eslint-disable-next-line no-await-in-loop
+                await readPnpmLockfile(lockfilePath)
+              : null
             spinner?.stop()
             if (maybeActualTree) {
               actualTree = maybeActualTree
+              lockfileContent = maybeLockfileContent
             } else {
               errored = true
             }
@@ -619,13 +679,19 @@ export async function pnpmFix(
                 cwd,
                 spinner,
               })
+              const maybeLockfileContent = maybeActualTree
+                ? // eslint-disable-next-line no-await-in-loop
+                  await readPnpmLockfile(lockfilePath)
+                : null
               spinner?.stop()
-              if (!maybeActualTree) {
+              if (maybeActualTree) {
+                actualTree = maybeActualTree
+                lockfileContent = maybeLockfileContent
+              } else {
                 // Exit early if install fails.
                 handleInstallFail()
                 return
               }
-              actualTree = maybeActualTree
             }
             logger.fail(
               `Update failed for ${oldId} in ${workspaceName}.`,
