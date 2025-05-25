@@ -3,8 +3,7 @@ import colors from 'yoctocolors-cjs'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
-import { isDebug } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { debugDir, debugLog } from '@socketsecurity/registry/lib/debug'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -404,14 +403,12 @@ export function getCveInfoFromAlertsMap(
             error = e
           }
         }
-        if (isDebug()) {
-          logger.log(
-            'Unexpected condition: Invalid SocketPackageAlert in getCveInfoFromAlertsMap.',
-          )
-          logger.dir(alert)
-          if (error) {
-            logger.log(error)
-          }
+        debugLog(
+          'Unexpected condition: Invalid SocketPackageAlert in getCveInfoFromAlertsMap.',
+        )
+        debugDir(alert)
+        if (error) {
+          debugLog(error)
         }
       }
     }
