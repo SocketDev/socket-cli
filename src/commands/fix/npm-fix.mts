@@ -28,7 +28,7 @@ import {
   prExistForBranch,
   setGitRemoteGitHubRepoUrl,
 } from './open-pr.mts'
-import { getAlertMapOptions } from './shared.mts'
+import { getAlertsMapOptions } from './shared.mts'
 import constants from '../../constants.mts'
 import {
   Arborist,
@@ -114,8 +114,8 @@ export async function npmFix(
   let alertsMap
   try {
     alertsMap = purls.length
-      ? await getAlertsMapFromPurls(purls, getAlertMapOptions({ limit }))
-      : await getAlertsMapFromArborist(arb, getAlertMapOptions({ limit }))
+      ? await getAlertsMapFromPurls(purls, getAlertsMapOptions({ limit }))
+      : await getAlertsMapFromArborist(arb, getAlertsMapOptions({ limit }))
   } catch (e) {
     spinner?.stop()
     logger.error(

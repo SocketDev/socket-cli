@@ -3,7 +3,8 @@ import colors from 'yoctocolors-cjs'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { isDebug } from '@socketsecurity/registry/lib/debug'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -24,6 +25,7 @@ import type {
   ALERT_TYPE,
   CompactSocketArtifact,
   CompactSocketArtifactAlert,
+  CveProps,
 } from './alert/artifact.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
@@ -56,57 +58,13 @@ export type SocketPackageAlert = {
 
 export type AlertsByPkgId = Map<string, SocketPackageAlert[]>
 
-const { CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER, NPM } = constants
+const { NPM } = constants
 
 const MIN_ABOVE_THE_FOLD_COUNT = 3
 
 const MIN_ABOVE_THE_FOLD_ALERT_COUNT = 1
 
 const format = new ColorOrMarkdown(false)
-
-function alertsHaveBlocked(alerts: SocketPackageAlert[]): boolean {
-  return alerts.find(a => a.blocked) !== undefined
-}
-
-function alertsHaveSeverity(
-  alerts: SocketPackageAlert[],
-  severity: `${keyof typeof ALERT_SEVERITY}`,
-): boolean {
-  return alerts.find(a => a.raw.severity === severity) !== undefined
-}
-
-function alertSeverityComparator(
-  a: SocketPackageAlert,
-  b: SocketPackageAlert,
-): number {
-  return getAlertSeverityOrder(a) - getAlertSeverityOrder(b)
-}
-
-function getAlertSeverityOrder(alert: SocketPackageAlert): number {
-  const { severity } = alert.raw
-  return severity === ALERT_SEVERITY.critical
-    ? 0
-    : severity === ALERT_SEVERITY.high
-      ? 1
-      : severity === ALERT_SEVERITY.middle
-        ? 2
-        : severity === ALERT_SEVERITY.low
-          ? 3
-          : 4
-}
-
-function getAlertsSeverityOrder(alerts: SocketPackageAlert[]): number {
-  return alertsHaveBlocked(alerts) ||
-    alertsHaveSeverity(alerts, ALERT_SEVERITY.critical)
-    ? 0
-    : alertsHaveSeverity(alerts, ALERT_SEVERITY.high)
-      ? 1
-      : alertsHaveSeverity(alerts, ALERT_SEVERITY.middle)
-        ? 2
-        : alertsHaveSeverity(alerts, ALERT_SEVERITY.low)
-          ? 3
-          : 4
-}
 
 export type RiskCounts = {
   critical: number
@@ -158,10 +116,6 @@ function getHiddenRisksDescription(riskCounts: RiskCounts): string {
   return `(${descriptions.join('; ')})`
 }
 
-function getSeverityLabel(severity: `${keyof typeof ALERT_SEVERITY}`): string {
-  return severity === 'middle' ? 'moderate' : severity
-}
-
 export type AlertIncludeFilter = {
   actions?: ALERT_ACTION[] | undefined
   blocked?: boolean | undefined
@@ -172,7 +126,7 @@ export type AlertIncludeFilter = {
   upgradable?: boolean | undefined
 }
 
-export type AddSocketArtifactAlertToAlertsMapOptions = {
+export type AddArtifactToAlertsMapOptions = {
   consolidate?: boolean | undefined
   include?: AlertIncludeFilter | undefined
   overrides?: { [key: string]: string } | undefined
@@ -182,7 +136,7 @@ export type AddSocketArtifactAlertToAlertsMapOptions = {
 export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
   artifact: CompactSocketArtifact,
   alertsByPkgId: T,
-  options?: AddSocketArtifactAlertToAlertsMapOptions | undefined,
+  options?: AddArtifactToAlertsMapOptions | undefined,
 ): Promise<T> {
   // Make TypeScript happy.
   if (!artifact.name || !artifact.version || !artifact.alerts?.length) {
@@ -195,11 +149,14 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
   } = {
     __proto__: null,
     ...options,
-  } as AddSocketArtifactAlertToAlertsMapOptions
+  } as AddArtifactToAlertsMapOptions
+
+  const socketYml = findSocketYmlSync()
+  const localRules = socketYml?.parsed.issueRules
 
   const include = {
     __proto__: null,
-    actions: undefined,
+    actions: localRules ? undefined : 'error,monitor,warn',
     blocked: true,
     critical: true,
     cve: true,
@@ -213,10 +170,9 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
   const { version } = artifact
   const pkgId = `${name}@${version}`
   const major = semver.major(version)
-  const socketYml = findSocketYmlSync()
   const enabledState = {
     __proto__: null,
-    ...socketYml?.parsed.issueRules,
+    ...localRules,
   } as Partial<Record<ALERT_TYPE, boolean>>
   let sockPkgAlerts: SocketPackageAlert[] = []
   for (const alert of artifact.alerts) {
@@ -260,33 +216,40 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
     return alertsByPkgId
   }
   if (consolidate) {
-    const highestForCve = new Map<
+    type HighestVersionByMajor = Map<
       number,
       { alert: SocketPackageAlert; version: string }
-    >()
-    const highestForUpgrade = new Map<
-      number,
-      { alert: SocketPackageAlert; version: string }
-    >()
+    >
+    const highestForCve: HighestVersionByMajor = new Map()
+    const highestForUpgrade: HighestVersionByMajor = new Map()
     const unfixableAlerts: SocketPackageAlert[] = []
     for (const sockPkgAlert of sockPkgAlerts) {
       const alert = sockPkgAlert.raw
       const fixType = alert.fix?.type ?? ''
       if (fixType === ALERT_FIX_TYPE.cve) {
-        const patchedVersion =
-          alert.props[CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER]
-        const patchedMajor = semver.major(patchedVersion)
-        const oldHighest = highestForCve.get(patchedMajor)
-        const highest = oldHighest?.version ?? '0.0.0'
-        if (semver.gt(patchedVersion, highest)) {
-          highestForCve.set(patchedMajor, {
-            alert: sockPkgAlert,
-            version: patchedVersion,
-          })
+        // An alert with alert.fix.type of 'cve' should have a
+        // alert.props.firstPatchedVersionIdentifier property value.
+        // We're just being cautious.
+        const firstPatchedVersionIdentifier = (alert.props as CveProps)
+          ?.firstPatchedVersionIdentifier
+        if (firstPatchedVersionIdentifier) {
+          // Consolidate to the highest "first patched version" by each major
+          // version number.
+          const patchedMajor = semver.major(firstPatchedVersionIdentifier)
+          const highest = highestForCve.get(patchedMajor)?.version ?? '0.0.0'
+          if (semver.gt(firstPatchedVersionIdentifier, highest)) {
+            highestForCve.set(patchedMajor, {
+              alert: sockPkgAlert,
+              version: firstPatchedVersionIdentifier,
+            })
+          }
+        } else {
+          unfixableAlerts.push(sockPkgAlert)
         }
       } else if (fixType === ALERT_FIX_TYPE.upgrade) {
-        const oldHighest = highestForUpgrade.get(major)
-        const highest = oldHighest?.version ?? '0.0.0'
+        // For Socket Optimize upgrades we assume the highest version available
+        // is compatible. This may change in the future.
+        const highest = highestForUpgrade.get(major)?.version ?? '0.0.0'
         if (semver.gt(version, highest)) {
           highestForUpgrade.set(major, { alert: sockPkgAlert, version })
         }
@@ -295,16 +258,66 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
       }
     }
     sockPkgAlerts = [
-      ...unfixableAlerts,
-      ...[...highestForCve.values()].map(d => d.alert),
+      // Sort CVE alerts by severity: critical, high, middle, then low.
+      ...[...highestForCve.values()]
+        .map(d => d.alert)
+        .sort(alertSeverityComparator),
       ...[...highestForUpgrade.values()].map(d => d.alert),
+      ...unfixableAlerts,
     ]
+  } else {
+    sockPkgAlerts.sort((a, b) => naturalCompare(a.type, b.type))
   }
   if (sockPkgAlerts.length) {
-    sockPkgAlerts.sort((a, b) => naturalCompare(a.type, b.type))
     alertsByPkgId.set(pkgId, sockPkgAlerts)
   }
   return alertsByPkgId
+}
+
+export function alertsHaveBlocked(alerts: SocketPackageAlert[]): boolean {
+  return alerts.find(a => a.blocked) !== undefined
+}
+
+export function alertsHaveSeverity(
+  alerts: SocketPackageAlert[],
+  severity: `${keyof typeof ALERT_SEVERITY}`,
+): boolean {
+  return alerts.find(a => a.raw.severity === severity) !== undefined
+}
+
+export function alertSeverityComparator(
+  a: SocketPackageAlert,
+  b: SocketPackageAlert,
+): number {
+  // Put the most severe first.
+  return getAlertSeverityOrder(a) - getAlertSeverityOrder(b)
+}
+
+export function getAlertSeverityOrder(alert: SocketPackageAlert): number {
+  // The more severe, the lower the sort number.
+  const { severity } = alert.raw
+  return severity === ALERT_SEVERITY.critical
+    ? 0
+    : severity === ALERT_SEVERITY.high
+      ? 1
+      : severity === ALERT_SEVERITY.middle
+        ? 2
+        : severity === ALERT_SEVERITY.low
+          ? 3
+          : 4
+}
+
+export function getAlertsSeverityOrder(alerts: SocketPackageAlert[]): number {
+  return alertsHaveBlocked(alerts) ||
+    alertsHaveSeverity(alerts, ALERT_SEVERITY.critical)
+    ? 0
+    : alertsHaveSeverity(alerts, ALERT_SEVERITY.high)
+      ? 1
+      : alertsHaveSeverity(alerts, ALERT_SEVERITY.middle)
+        ? 2
+        : alertsHaveSeverity(alerts, ALERT_SEVERITY.low)
+          ? 3
+          : 4
 }
 
 export type CveExcludeFilter = {
@@ -328,16 +341,18 @@ export type GetCveInfoByPackageOptions = {
 
 export function getCveInfoFromAlertsMap(
   alertsMap: AlertsByPkgId,
-  options?: GetCveInfoByPackageOptions | undefined,
+  options_?: GetCveInfoByPackageOptions | undefined,
 ): CveInfoByPkgName | null {
-  const { exclude: _exclude, limit = Infinity } = {
+  const options = {
     __proto__: null,
-    ...options,
+    exclude: undefined,
+    limit: Infinity,
+    ...options_,
   } as GetCveInfoByPackageOptions
-  const exclude = {
+
+  options.exclude = {
     __proto__: null,
-    upgradable: true,
-    ..._exclude,
+    ...options.exclude,
   } as CveExcludeFilter
 
   let count = 0
@@ -349,7 +364,7 @@ export function getCveInfoFromAlertsMap(
       const alert = sockPkgAlert.raw
       if (
         alert.fix?.type !== ALERT_FIX_TYPE.cve ||
-        (exclude.upgradable && getManifestData(NPM, name))
+        (options.exclude.upgradable && getManifestData(NPM, name))
       ) {
         continue sockPkgAlertsLoop
       }
@@ -363,31 +378,51 @@ export function getCveInfoFromAlertsMap(
       }
       const { key } = alert
       if (!infos.has(key)) {
-        const { firstPatchedVersionIdentifier, vulnerableVersionRange } =
-          alert.props
-        try {
-          infos.set(key, {
-            firstPatchedVersionIdentifier,
-            vulnerableVersionRange: new semver.Range(
-              // Replace ', ' in a range like '>= 1.0.0, < 1.8.2' with ' ' so that
-              // semver.Range will parse it without erroring.
-              vulnerableVersionRange.replace(/, +/g, ' '),
-            ).format(),
-          })
-          if (++count >= limit) {
-            break alertsMapLoop
+        // An alert with alert.fix.type of 'cve' should have a
+        // alert.props.firstPatchedVersionIdentifier property value.
+        // We're just being cautious.
+        const firstPatchedVersionIdentifier = (alert.props as CveProps)
+          ?.firstPatchedVersionIdentifier
+        const vulnerableVersionRange = (alert.props as CveProps)
+          ?.vulnerableVersionRange
+        let error: unknown
+        if (firstPatchedVersionIdentifier && vulnerableVersionRange) {
+          try {
+            infos.set(key, {
+              firstPatchedVersionIdentifier,
+              vulnerableVersionRange: new semver.Range(
+                // Replace ', ' in a range like '>= 1.0.0, < 1.8.2' with ' ' so that
+                // semver.Range will parse it without erroring.
+                vulnerableVersionRange.replace(/, +/g, ' '),
+              ).format(),
+            })
+            if (++count >= options.limit!) {
+              break alertsMapLoop
+            }
+            continue sockPkgAlertsLoop
+          } catch (e) {
+            error = e
           }
-        } catch (e) {
-          debugLog('getCveInfoFromAlertsMap', {
-            firstPatchedVersionIdentifier,
-            vulnerableVersionRange,
-          })
-          debugLog(e)
+        }
+        if (isDebug()) {
+          logger.log(
+            'Unexpected condition: Invalid SocketPackageAlert in getCveInfoFromAlertsMap.',
+          )
+          logger.dir(alert)
+          if (error) {
+            logger.log(error)
+          }
         }
       }
     }
   }
   return infoByPkgName
+}
+
+export function getSeverityLabel(
+  severity: `${keyof typeof ALERT_SEVERITY}`,
+): string {
+  return severity === 'middle' ? 'moderate' : severity
 }
 
 export type LogAlertsMapOptions = {

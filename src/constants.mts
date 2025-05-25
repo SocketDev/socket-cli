@@ -95,7 +95,6 @@ type Constants = Remap<
     readonly BINARY_LOCK_EXT: '.lockb'
     readonly BUN: 'bun'
     readonly CLI: 'cli'
-    readonly CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER: 'firstPatchedVersionIdentifier'
     readonly ENV: ENV
     readonly DRY_RUN_LABEL: '[DryRun]'
     readonly DRY_RUN_BAILING_NOW: '[DryRun] Bailing now'
@@ -168,8 +167,6 @@ const API_V0_URL = 'https://api.socket.dev/v0/'
 const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
 const CLI = 'cli'
-const CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER =
-  'firstPatchedVersionIdentifier'
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
 const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
@@ -500,7 +497,6 @@ const constants: Constants = createConstantsObject(
     BINARY_LOCK_EXT,
     BUN,
     CLI,
-    CVE_ALERT_PROPS_FIRST_PATCHED_VERSION_IDENTIFIER,
     DRY_RUN_LABEL,
     DRY_RUN_BAILING_NOW,
     DRY_RUN_NOT_SAVING,
