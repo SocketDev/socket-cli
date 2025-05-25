@@ -4,6 +4,7 @@ import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { fetchPackagePackument } from '@socketsecurity/registry/lib/packages'
+import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../../constants.mts'
 import { applyRange, getMajor } from '../../utils/semver.mts'
@@ -397,8 +398,10 @@ export function updatePackageJsonFromNode(
     const depObject = editablePkgJson.content[depField] as
       | { [key: string]: string }
       | undefined
-    const oldRange = depObject?.[name]
-    const oldMin = oldRange ? semver.minVersion(oldRange) : null
+    const oldRange = hasOwn(depObject, name) ? depObject[name] : undefined
+    const oldMin = isNonEmptyString(oldRange)
+      ? semver.minVersion(oldRange)
+      : null
     const newRange =
       oldMin &&
       // Ensure we're on the same major version...
