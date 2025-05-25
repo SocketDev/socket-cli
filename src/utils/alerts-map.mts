@@ -22,15 +22,8 @@ export type GetAlertsMapFromPnpmLockfileOptions = {
 
 export async function getAlertsMapFromPnpmLockfile(
   lockfile: LockfileObject,
-  options_?: GetAlertsMapFromPnpmLockfileOptions | undefined,
+  options?: GetAlertsMapFromPnpmLockfileOptions | undefined,
 ): Promise<AlertsByPkgId> {
-  const options = {
-    __proto__: null,
-    consolidate: false,
-    limit: Infinity,
-    nothrow: false,
-    ...options_,
-  } as GetAlertsMapFromPnpmLockfileOptions
   const purls = await extractPurlsFromPnpmLockfile(lockfile)
   return await getAlertsMapFromPurls(purls, {
     overrides: lockfile.overrides,
@@ -54,14 +47,17 @@ export async function getAlertsMapFromPurls(
   const options = {
     __proto__: null,
     consolidate: false,
+    include: undefined,
     limit: Infinity,
     nothrow: false,
     ...options_,
   } as GetAlertsMapFromPurlsOptions
 
-  const include = {
+  options.include = {
     __proto__: null,
-    actions: undefined,
+    // Leave 'actions' unassigned so it can be given a default value in
+    // subsequent functions where `options` is passed.
+    // actions: undefined,
     blocked: true,
     critical: true,
     cve: true,
@@ -89,10 +85,10 @@ export async function getAlertsMapFromPurls(
   }
   const sockSdk = sockSdkResult.data
 
-  const toAlertsMapOptions = {
+  const alertsMapOptions = {
     overrides: options.overrides,
     consolidate: options.consolidate,
-    include,
+    include: options.include,
     spinner,
   }
 
@@ -100,8 +96,10 @@ export async function getAlertsMapFromPurls(
     {
       alerts: 'true',
       compact: 'true',
-      ...(include.actions ? { actions: include.actions.join(',') } : {}),
-      ...(include.unfixable ? {} : { fixable: 'true' }),
+      ...(options.include.actions
+        ? { actions: options.include.actions.join(',') }
+        : {}),
+      ...(options.include.unfixable ? {} : { fixable: 'true' }),
     },
     {
       components: uniqPurls.map(purl => ({ purl })),
@@ -111,7 +109,7 @@ export async function getAlertsMapFromPurls(
       await addArtifactToAlertsMap(
         batchResult.data as CompactSocketArtifact,
         alertsByPkgId,
-        toAlertsMapOptions,
+        alertsMapOptions,
       )
     } else if (!options.nothrow) {
       const statusCode = batchResult.status ?? 'unknown'

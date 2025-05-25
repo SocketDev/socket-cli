@@ -29,7 +29,7 @@ import {
   prExistForBranch,
   setGitRemoteGitHubRepoUrl,
 } from './open-pr.mts'
-import { getAlertMapOptions } from './shared.mts'
+import { getAlertsMapOptions } from './shared.mts'
 import constants from '../../constants.mts'
 import {
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
@@ -66,9 +66,10 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 const { DRY_RUN_NOT_SAVING, NPM, OVERRIDES, PNPM } = constants
 
 async function getActualTree(cwd: string = process.cwd()): Promise<SafeNode> {
-  // npm DOES have some support pnpm structured node_modules folders. However,
-  // the support is a little iffy where the unhappy path errors. So, we restrict
-  // our usage to --dry-run loading of the node_modules folder.
+  // @npmcli/arborist DOES have partial support for pnpm structured node_modules
+  // folders. However, support is iffy resulting in unhappy path errors and hangs.
+  // So, to avoid the unhappy path, we restrict our usage to --dry-run loading
+  // of the node_modules folder.
   const arb = new SafeArborist({
     path: cwd,
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
@@ -172,10 +173,10 @@ export async function pnpmFix(
   let alertsMap
   try {
     alertsMap = purls.length
-      ? await getAlertsMapFromPurls(purls, getAlertMapOptions({ limit }))
+      ? await getAlertsMapFromPurls(purls, getAlertsMapOptions({ limit }))
       : await getAlertsMapFromPnpmLockfile(
           lockfile,
-          getAlertMapOptions({ limit }),
+          getAlertsMapOptions({ limit }),
         )
   } catch (e) {
     spinner?.stop()
