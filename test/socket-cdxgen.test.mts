@@ -11,8 +11,6 @@ import constants from '../src/constants.mts'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const { CLI } = constants
-
 const testPath = __dirname
 const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
@@ -29,8 +27,8 @@ const spawnOpts: PromiseSpawnOptions = {
 }
 
 describe('Socket manifest cdxgen command', async () => {
-  // Lazily access constants.rootBinPath.
-  const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
+  // Lazily access constants.binCliPath.
+  const { binCliPath } = constants
 
   it(
     'should forwards known commands to cdxgen',
@@ -44,7 +42,7 @@ describe('Socket manifest cdxgen command', async () => {
         const output = await spawn(
           // Lazily access constants.execPath.
           constants.execPath,
-          [entryPath, 'manifest', 'cdxgen', '--yes', command],
+          [binCliPath, 'manifest', 'cdxgen', '--yes', command],
           spawnOpts,
         )
         expect(
@@ -75,7 +73,7 @@ describe('Socket manifest cdxgen command', async () => {
           spawn(
             // Lazily access constants.execPath.
             constants.execPath,
-            [entryPath, 'manifest', 'cdxgen', '-y', command],
+            [binCliPath, 'manifest', 'cdxgen', '-y', command],
             spawnOpts,
           ),
         // @ts-ignore toHaveStderrInclude is defined above
@@ -91,7 +89,7 @@ describe('Socket manifest cdxgen command', async () => {
           spawn(
             // Lazily access constants.execPath.
             constants.execPath,
-            [entryPath, 'manifest', 'cdxgen', '--yes', command],
+            [binCliPath, 'manifest', 'cdxgen', '--yes', command],
             spawnOpts,
           ),
         // @ts-ignore toHaveStderrInclude is defined above
@@ -106,7 +104,7 @@ describe('Socket manifest cdxgen command', async () => {
           spawn(
             // Lazily access constants.execPath.
             constants.execPath,
-            [entryPath, 'manifest', 'cdxgen', '-y', '-u', '-h', '--unknown'],
+            [binCliPath, 'manifest', 'cdxgen', '-y', '-u', '-h', '--unknown'],
             spawnOpts,
           ),
         // @ts-ignore toHaveStderrInclude is defined above

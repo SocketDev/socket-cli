@@ -5,17 +5,15 @@ import { describe, expect } from 'vitest'
 import constants from '../../../src/constants.mts'
 import { cmdit, invokeNpm } from '../../../test/utils.mts'
 
-const { CLI } = constants
-
 describe('socket organization quota', async () => {
-  // Lazily access constants.rootBinPath.
-  const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
+  // Lazily access constants.binCliPath.
+  const { binCliPath } = constants
 
   cmdit(
     ['organization', 'quota', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "List organizations associated with the API key used
@@ -54,7 +52,7 @@ describe('socket organization quota', async () => {
     ],
     'should be ok with org name and id',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
