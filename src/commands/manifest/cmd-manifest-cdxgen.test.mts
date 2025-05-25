@@ -5,17 +5,15 @@ import { describe, expect } from 'vitest'
 import { cmdit, invokeNpm } from '../../../test/utils.mts'
 import constants from '../../constants.mts'
 
-const { CLI } = constants
-
 describe('socket manifest cdxgen', async () => {
-  // Lazily access constants.rootBinPath.
-  const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
+  // Lazily access constants.binCliPath.
+  const { binCliPath } = constants
 
   cmdit(
     ['manifest', 'cdxgen', '--help'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd, {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd, {
         // Need to pass it on as env because --config will break cdxgen
         SOCKET_CLI_CONFIG: '{}',
       })
@@ -99,7 +97,7 @@ describe('socket manifest cdxgen', async () => {
   //   ['cdxgen', '--help', '--config', '{"apiToken":"anything"}'],
   //   'should require args with just dry-run',
   //   async cmd => {
-  //     const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+  //     const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
   //     expect(stdout).toMatchInlineSnapshot(`""`)
   //     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
   //       "

@@ -5,17 +5,15 @@ import { describe, expect } from 'vitest'
 import constants from '../../../src/constants.mts'
 import { cmdit, invokeNpm } from '../../../test/utils.mts'
 
-const { CLI } = constants
-
 describe('socket config get', async () => {
-  // Lazily access constants.rootBinPath.
-  const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
+  // Lazily access constants.binCliPath.
+  const { binCliPath } = constants
 
   cmdit(
     ['config', 'set', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Update the value of a local CLI config item
@@ -65,7 +63,7 @@ describe('socket config get', async () => {
     ['config', 'set', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -98,7 +96,7 @@ describe('socket config get', async () => {
     ],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

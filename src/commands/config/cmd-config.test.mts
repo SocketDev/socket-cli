@@ -5,17 +5,15 @@ import { describe, expect } from 'vitest'
 import constants from '../../../src/constants.mts'
 import { cmdit, invokeNpm } from '../../../test/utils.mts'
 
-const { CLI } = constants
-
 describe('socket config', async () => {
-  // Lazily access constants.rootBinPath.
-  const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
+  // Lazily access constants.binCliPath.
+  const { binCliPath } = constants
 
   cmdit(
     ['config', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Commands related to the local CLI configuration
@@ -56,7 +54,7 @@ describe('socket config', async () => {
     ['config', '--dry-run', '--config', '{"apiToken":"anything"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `"[DryRun]: No-op, call a sub-command; ok"`,
       )
@@ -77,7 +75,7 @@ describe('socket config', async () => {
       ['config', 'get', 'apiToken'],
       'should print nice error when env config override cannot be parsed',
       async cmd => {
-        const { code, stderr, stdout } = await invokeNpm(entryPath, cmd, {
+        const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd, {
           // This will be parsed first. If it fails it should fallback to flag or empty.
           SOCKET_CLI_CONFIG: '{apiToken:invalidjson}',
         })
@@ -101,7 +99,7 @@ describe('socket config', async () => {
       ['config', 'get', 'apiToken', '--config', '{apiToken:invalidjson}'],
       'should print nice error when flag config override cannot be parsed',
       async cmd => {
-        const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+        const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`""`)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "

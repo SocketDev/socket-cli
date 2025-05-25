@@ -5,17 +5,15 @@ import { describe, expect } from 'vitest'
 import constants from '../../../src/constants.mts'
 import { cmdit, invokeNpm } from '../../../test/utils.mts'
 
-const { CLI } = constants
-
 describe('socket organization policy security', async () => {
-  // Lazily access constants.rootBinPath.
-  const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
+  // Lazily access constants.binCliPath.
+  const { binCliPath } = constants
 
   cmdit(
     ['organization', 'policy', 'security', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Retrieve the security policy of an organization
@@ -61,7 +59,7 @@ describe('socket organization policy security', async () => {
     ['organization', 'policy', 'security', '--dry-run', '--config', '{}'],
     'should reject dry run without proper args',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -94,7 +92,7 @@ describe('socket organization policy security', async () => {
     ],
     'should be ok with org name and id',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -119,7 +117,7 @@ describe('socket organization policy security', async () => {
     ],
     'should report missing org name in v1',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -153,7 +151,7 @@ describe('socket organization policy security', async () => {
     ],
     'should accept default org in v1',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -182,7 +180,7 @@ describe('socket organization policy security', async () => {
     ],
     'should accept --org flag in v1',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

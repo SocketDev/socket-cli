@@ -94,7 +94,6 @@ type Constants = Remap<
     readonly API_V0_URL: 'https://api.socket.dev/v0/'
     readonly BINARY_LOCK_EXT: '.lockb'
     readonly BUN: 'bun'
-    readonly CLI: 'cli'
     readonly ENV: ENV
     readonly DRY_RUN_LABEL: '[DryRun]'
     readonly DRY_RUN_BAILING_NOW: '[DryRun] Bailing now'
@@ -135,6 +134,8 @@ type Constants = Remap<
     readonly YARN_CLASSIC: 'yarn/classic'
     readonly YARN_LOCK: 'yarn.lock'
     readonly bashRcPath: string
+    readonly binCliPath: string
+    readonly binPath: string
     readonly blessedOptions: {
       smartCSR: boolean
       term: string
@@ -142,6 +143,7 @@ type Constants = Remap<
     }
     readonly distCliPath: string
     readonly distInstrumentWithSentryPath: string
+    readonly distPath: string
     readonly distShadowBinPath: string
     readonly distShadowInjectPath: string
     readonly githubCachePath: string
@@ -149,8 +151,6 @@ type Constants = Remap<
     readonly minimumVersionByAgent: Map<Agent, string>
     readonly nmBinPath: string
     readonly nodeHardenFlags: string[]
-    readonly rootBinPath: string
-    readonly distPath: string
     readonly rootPath: string
     readonly shadowBinPath: string
     readonly socketAppDataPath: string
@@ -166,7 +166,6 @@ const ALERT_TYPE_MILD_CVE = 'mildCVE'
 const API_V0_URL = 'https://api.socket.dev/v0/'
 const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
-const CLI = 'cli'
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
 const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
@@ -349,6 +348,14 @@ const lazyBashRcPath = () =>
   // Lazily access constants.homePath.
   path.join(constants.homePath, '.bashrc')
 
+const lazyBinPath = () =>
+  // Lazily access constants.rootPath.
+  path.join(constants.rootPath, 'bin')
+
+const lazyBinCliPath = () =>
+  // Lazily access constants.binPath.
+  path.join(constants.binPath, 'cli.js')
+
 const lazyBlessedOptions = () =>
   Object.freeze({
     smartCSR: true,
@@ -356,6 +363,10 @@ const lazyBlessedOptions = () =>
     term: constants.WIN32 ? 'windows-ansi' : 'xterm',
     useBCE: true,
   })
+
+const lazyDistPath = () =>
+  // Lazily access constants.rootPath.
+  path.join(constants.rootPath, 'dist')
 
 const lazyDistCliPath = () =>
   // Lazily access constants.distPath.
@@ -428,14 +439,6 @@ const lazyNodeHardenFlags = () =>
         ],
   )
 
-const lazyRootBinPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'bin')
-
-const lazyDistPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'dist')
-
 const lazyRootPath = () => path.join(realpathSync.native(__dirname), '..')
 
 const lazySocketAppDataPath = (): string | undefined => {
@@ -496,7 +499,6 @@ const constants: Constants = createConstantsObject(
     API_V0_URL,
     BINARY_LOCK_EXT,
     BUN,
-    CLI,
     DRY_RUN_LABEL,
     DRY_RUN_BAILING_NOW,
     DRY_RUN_NOT_SAVING,
@@ -535,6 +537,8 @@ const constants: Constants = createConstantsObject(
     YARN_CLASSIC,
     YARN_LOCK,
     bashRcPath: undefined,
+    binPath: undefined,
+    binCliPath: undefined,
     blessedOptions: undefined,
     distCliPath: undefined,
     distInstrumentWithSentryPath: undefined,
@@ -546,7 +550,6 @@ const constants: Constants = createConstantsObject(
     minimumVersionByAgent: undefined,
     nmBinPath: undefined,
     nodeHardenFlags: undefined,
-    rootBinPath: undefined,
     rootPath: undefined,
     shadowBinPath: undefined,
     socketAppDataPath: undefined,
@@ -558,6 +561,8 @@ const constants: Constants = createConstantsObject(
       ...registryConstantsAttribs.getters,
       ENV: LAZY_ENV,
       bashRcPath: lazyBashRcPath,
+      binCliPath: lazyBinCliPath,
+      binPath: lazyBinPath,
       blessedOptions: lazyBlessedOptions,
       distCliPath: lazyDistCliPath,
       distInstrumentWithSentryPath: lazyDistInstrumentWithSentryPath,
@@ -569,7 +574,6 @@ const constants: Constants = createConstantsObject(
       minimumVersionByAgent: lazyMinimumVersionByAgent,
       nmBinPath: lazyNmBinPath,
       nodeHardenFlags: lazyNodeHardenFlags,
-      rootBinPath: lazyRootBinPath,
       rootPath: lazyRootPath,
       shadowBinPath: lazyShadowBinPath,
       socketAppDataPath: lazySocketAppDataPath,

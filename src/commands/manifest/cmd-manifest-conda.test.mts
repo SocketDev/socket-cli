@@ -5,17 +5,15 @@ import { describe, expect } from 'vitest'
 import constants from '../../../src/constants.mts'
 import { cmdit, invokeNpm } from '../../../test/utils.mts'
 
-const { CLI } = constants
-
 describe('socket manifest conda', async () => {
-  // Lazily access constants.rootBinPath.
-  const entryPath = path.join(constants.rootBinPath, `${CLI}.js`)
+  // Lazily access constants.binCliPath.
+  const { binCliPath } = constants
 
   cmdit(
     ['manifest', 'conda', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "[beta] Convert a Conda environment.yml file to a python requirements.txt
@@ -64,7 +62,7 @@ describe('socket manifest conda', async () => {
     ['manifest', 'conda', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -94,7 +92,7 @@ describe('socket manifest conda', async () => {
     ],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(entryPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -121,7 +119,7 @@ describe('socket manifest conda', async () => {
       ],
       'should print raw text without flags',
       async cmd => {
-        const { stderr, stdout } = await invokeNpm(entryPath, cmd)
+        const { stderr, stdout } = await invokeNpm(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`
           "qgrid==1.3.0
           mplstereonet
@@ -151,7 +149,7 @@ describe('socket manifest conda', async () => {
       ],
       'should print a json blurb with --json flag',
       async cmd => {
-        const { stderr, stdout } = await invokeNpm(entryPath, cmd)
+        const { stderr, stdout } = await invokeNpm(binCliPath, cmd)
         // (Must normalize newlines to fix snapshot test for Windows)
         expect(stdout.replace(/\\r\\n/g, '\\n')).toMatchInlineSnapshot(`
           "{
@@ -185,7 +183,7 @@ describe('socket manifest conda', async () => {
       ],
       'should print a markdown blurb with --markdown flag',
       async cmd => {
-        const { stderr, stdout } = await invokeNpm(entryPath, cmd)
+        const { stderr, stdout } = await invokeNpm(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`
           "# Converted Conda file
 
