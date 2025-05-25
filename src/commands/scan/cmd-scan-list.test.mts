@@ -5,8 +5,6 @@ import { describe, expect } from 'vitest'
 import constants from '../../../src/constants.mts'
 import { cmdit, invokeNpm } from '../../../test/utils.mts'
 
-const { CLI } = constants
-
 describe('socket scan list', async () => {
   // Lazily access constants.binCliPath.
   const { binCliPath } = constants
