@@ -25,13 +25,14 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
   const npmBinPath = path.join(npmPath, 'node_modules/.bin')
 
   describe(`Socket npm wrapper for ${npmDir}`, () => {
-    spawnSync('npm', ['install', ...(isDebug() ? [] : ['--silent'])], {
+    const usDebug = isDebug()
+    spawnSync('npm', ['install', ...(usDebug ? [] : ['--silent'])], {
       cwd: npmPath,
-      stdio: isDebug() ? 'inherit' : 'ignore',
+      stdio: usDebug ? 'inherit' : 'ignore',
     })
 
-    // Lazily access constants.rootBinPath.
-    const entryPath = path.join(constants.rootBinPath, 'cli.js')
+    // Lazily access constants.binPath.
+    const entryPath = path.join(constants.binPath, 'cli.js')
 
     it(
       'should bail on new typosquat',
