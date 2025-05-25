@@ -12,7 +12,6 @@ const {
   },
 } = registryConstants
 
-const CLI = 'cli'
 const CONSTANTS = 'constants'
 const INLINED_CYCLONEDX_CDXGEN_VERSION = 'INLINED_CYCLONEDX_CDXGEN_VERSION'
 const INLINED_SOCKET_CLI_HOMEPAGE = 'INLINED_SOCKET_CLI_HOMEPAGE'
@@ -90,7 +89,6 @@ const lazySrcPath = () =>
 const constants = createConstantsObject(
   {
     ...registryConstantsAttribs.props,
-    CLI,
     CONSTANTS,
     ENV: undefined,
     INLINED_CYCLONEDX_CDXGEN_VERSION,
