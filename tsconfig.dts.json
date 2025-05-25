@@ -11,6 +11,9 @@
     "outDir": "dist/types",
     "rootDir": "src"
   },
+  // @typescript/native-preview currently cannot resolve paths for "include" if
+  // the config is not in the root of the repository. This is why tsconfig.dts.json
+  // is in the repository root with ./tsconfig.json instead of the ./config folder.
   "include": ["src/**/*.mts"],
   "exclude": ["test", "**/*.test.mts"]
 }
