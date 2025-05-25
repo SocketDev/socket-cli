@@ -156,14 +156,17 @@ export async function getAlertsMapFromArborist(
   const options = {
     __proto__: null,
     consolidate: false,
+    include: undefined,
     limit: Infinity,
     nothrow: false,
     ...options_,
   } as GetAlertsMapFromArboristOptions
 
-  const include = {
+  options.include = {
     __proto__: null,
-    actions: undefined,
+    // Leave 'actions' unassigned so it can be given a default value in
+    // subsequent functions where `options` is passed.
+    // actions: undefined,
     blocked: true,
     critical: true,
     cve: true,
@@ -175,7 +178,7 @@ export async function getAlertsMapFromArborist(
 
   const needInfoOn = getDetailsFromDiff(arb.diff, {
     include: {
-      unchanged: include.existing,
+      unchanged: options.include.existing,
     },
   })
 
@@ -394,20 +397,24 @@ export function updatePackageJsonFromNode(
     const depObject = editablePkgJson.content[depField] as
       | { [key: string]: string }
       | undefined
-    if (depObject) {
-      const oldRange = depObject[name]
-      if (oldRange) {
-        const newRange = applyRange(oldRange, newVersion, rangeStyle)
-        if (oldRange !== newRange) {
-          result = true
-          editablePkgJson.update({
-            [depField]: {
-              ...depObject,
-              [name]: newRange,
-            },
-          })
-        }
-      }
+    const oldRange = depObject?.[name]
+    const oldMin = oldRange ? semver.minVersion(oldRange) : null
+    const newRange =
+      oldMin &&
+      // Ensure we're on the same major version...
+      semver.major(newVersion) === semver.major(oldMin.version) &&
+      // and not a downgrade.
+      semver.gte(newVersion, oldMin.version)
+        ? applyRange(oldRange!, newVersion, rangeStyle)
+        : oldRange!
+    if (oldRange !== newRange) {
+      result = true
+      editablePkgJson.update({
+        [depField]: {
+          ...depObject,
+          [name]: newRange,
+        },
+      })
     }
   }
   return result
