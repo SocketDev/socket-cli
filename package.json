@@ -31,7 +31,7 @@
     "build:dist": "npm run build:dist:src && npm run build:dist:types",
     "build:dist:src": "run-p -c clean:dist clean:external && dotenvx -q run -f .env.local -- rollup -c .config/rollup.dist.config.mjs",
     "build:dist:types": "npm run clean:dist:types && tsgo --project tsconfig.dts.json",
-    "check": "npm run check:tsc && npm run check:lint",
+    "check": "npm run check:lint && npm run check:tsc",
     "check:lint": "dotenvx -q run -f .env.local -- eslint --report-unused-disable-directives .",
     "check:tsc": "tsgo",
     "check-ci": "npm run check:lint",
