@@ -92,7 +92,7 @@
     "@octokit/openapi-types": "25.0.0",
     "@octokit/request-error": "7.0.0",
     "@octokit/rest": "21.1.1",
-    "@octokit/types": "14.0.0",
+    "@octokit/types": "14.1.0",
     "@pnpm/dependency-path": "1000.0.9",
     "@pnpm/lockfile.detect-dep-types": "1001.0.9",
     "@pnpm/lockfile.fs": "1001.1.12",
