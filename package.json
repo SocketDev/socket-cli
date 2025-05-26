@@ -133,7 +133,7 @@
     "del-cli": "6.0.0",
     "dev-null-cli": "2.0.0",
     "eslint": "9.27.0",
-    "eslint-import-resolver-typescript": "4.4.0",
+    "eslint-import-resolver-typescript": "4.4.1",
     "eslint-plugin-import-x": "4.13.1",
     "eslint-plugin-n": "17.18.0",
     "eslint-plugin-sort-destructure-keys": "2.0.0",
