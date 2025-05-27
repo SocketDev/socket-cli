@@ -1,4 +1,5 @@
 import { PackageURL } from '@socketregistry/packageurl-js'
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -10,7 +11,6 @@ import {
 } from '../../utils/socket-url.mts'
 
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
-import { debugLog } from '@socketsecurity/registry/lib/debug'
 
 function formatBranchName(name: string): string {
   return name
@@ -139,10 +139,14 @@ export async function gitCreateAndPushBranch(
       stdioIgnoreOptions,
     )
     return true
-  } catch {}
+  } catch (e) {
+    debugLog(e)
+  }
   try {
     await spawn('git', ['branch', '-D', branch], stdioIgnoreOptions)
-  } catch {}
+  } catch (e) {
+    debugLog(e)
+  }
   return false
 }
 
@@ -157,7 +161,6 @@ export async function gitEnsureIdentity(
     ['user.email', name],
     ['user.name', email],
   ]
-  debugLog('identEntries', identEntries)
   await Promise.all(
     identEntries.map(async ({ 0: prop, 1: value }) => {
       try {
@@ -170,7 +173,9 @@ export async function gitEnsureIdentity(
         if (output.stdout.trim() !== value) {
           await spawn('git', ['config', prop, value], stdioIgnoreOptions)
         }
-      } catch {}
+      } catch (e) {
+        debugLog(e)
+      }
     }),
   )
 }
