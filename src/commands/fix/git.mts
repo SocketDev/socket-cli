@@ -140,13 +140,13 @@ export async function gitCreateAndPushBranch(
     )
     return true
   } catch (e) {
+    debugLog('gitCreateAndPushBranch: Unexpected error.')
     debugLog(e)
   }
   try {
+    // Will throw with exit code 1 if branch does not exist.
     await spawn('git', ['branch', '-D', branch], stdioIgnoreOptions)
-  } catch (e) {
-    debugLog(e)
-  }
+  } catch {}
   return false
 }
 
@@ -163,18 +163,20 @@ export async function gitEnsureIdentity(
   ]
   await Promise.all(
     identEntries.map(async ({ 0: prop, 1: value }) => {
+      let configValue
       try {
-        const output = await spawn(
-          'git',
-          ['config', '--get', prop],
-          stdioPipeOptions,
-        )
-        debugLog(`git config --get ${prop}`, output.stdout.trim())
-        if (output.stdout.trim() !== value) {
+        // Will throw with exit code 1 if the config property is not set.
+        configValue = (
+          await spawn('git', ['config', '--get', prop], stdioPipeOptions)
+        ).stdout.trim()
+      } catch {}
+      if (configValue !== value) {
+        try {
           await spawn('git', ['config', prop, value], stdioIgnoreOptions)
+        } catch (e) {
+          debugLog('gitEnsureIdentity: Unexpected error.')
+          debugLog(e)
         }
-      } catch (e) {
-        debugLog(e)
       }
     }),
   )
