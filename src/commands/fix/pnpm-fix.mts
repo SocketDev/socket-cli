@@ -312,9 +312,7 @@ export async function pnpmFix(
       )
 
       if (!oldVersions.length) {
-        logger.warn(
-          `Unexpected condition: ${name} not found in node_modules.\n`,
-        )
+        debugLog(`${name} not found, skipping.\n`)
         // Skip to next package.
         logger.dedent()
         spinner?.dedent()
@@ -350,11 +348,7 @@ export async function pnpmFix(
 
         const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
-          if (hasAnnouncedWorkspace) {
-            logger.warn(
-              `Unexpected condition: Arborist node not found, skipping ${oldId}.`,
-            )
-          }
+          debugLog(`${oldId} not found, skipping.`)
           continue oldVersionsLoop
         }
         infosLoop: for (const {
@@ -446,7 +440,7 @@ export async function pnpmFix(
           )
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
-            debugLog(`${workspace}/package.json not changed, skipping.`)
+            debugLog(`${workspace}/package.json unchanged, skipping.`)
             // Reset things just in case.
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
