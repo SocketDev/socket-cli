@@ -83,6 +83,7 @@ export function stripLeadingPnpmDepPathSlash(depPath: string): string {
 }
 
 export function stripPnpmPeerSuffix(depPath: string): string {
-  const index = depPath.indexOf('(')
+  const parenIndex = depPath.indexOf('(')
+  const index = parenIndex === -1 ? depPath.indexOf('_') : parenIndex
   return index === -1 ? depPath : depPath.slice(0, index)
 }
