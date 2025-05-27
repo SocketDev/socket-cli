@@ -62,7 +62,7 @@ export async function convertCondaToRequirements(
       logger.info(`[VERBOSE] target: ${filepath}`)
     }
 
-    if (!fs.existsSync(cwd)) {
+    if (!fs.existsSync(filepath)) {
       return {
         ok: false,
         message: 'Manifest Generation Failed',
