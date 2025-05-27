@@ -4,20 +4,23 @@ import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { fetchPackagePackument } from '@socketsecurity/registry/lib/packages'
-import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../../constants.mts'
-import { applyRange, getMajor } from '../../utils/semver.mts'
-import { idToPurl } from '../../utils/spec.mts'
-import { DiffAction } from './arborist/lib/arborist/types.mts'
-import { Edge } from './arborist/lib/edge.mts'
+import { Edge } from './arborist/index.mts'
+import { DiffAction } from './arborist/types.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
+import { type AliasResult, npa } from '../../utils/npm-package-arg.mts'
+import { applyRange, getMajor, getMinVersion } from '../../utils/semver.mts'
+import { idToPurl } from '../../utils/spec.mts'
 
+import type {
+  ArboristInstance,
+  Diff,
+  EdgeClass,
+  LinkClass,
+  NodeClass,
+} from './arborist/types.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
-import type { SafeArborist } from './arborist/lib/arborist/index.mts'
-import type { Diff } from './arborist/lib/arborist/types.mts'
-import type { SafeEdge } from './arborist/lib/edge.mts'
-import type { LinkClass, SafeNode } from './arborist/lib/node.mts'
 import type {
   AlertIncludeFilter,
   AlertsByPkgId,
@@ -38,7 +41,7 @@ function getUrlOrigin(input: string): string {
 }
 
 export function findBestPatchVersion(
-  node: SafeNode,
+  node: NodeClass,
   availableVersions: string[],
   vulnerableVersionRange?: string,
   _firstPatchedVersionIdentifier?: string | undefined,
@@ -69,12 +72,12 @@ export function findBestPatchVersion(
 }
 
 export function findPackageNode(
-  tree: SafeNode,
+  tree: NodeClass,
   name: string,
   version?: string | undefined,
-): SafeNode | undefined {
-  const queue: Array<SafeNode | LinkClass> = [tree]
-  const visited = new Set<SafeNode>()
+): NodeClass | undefined {
+  const queue: Array<NodeClass | LinkClass> = [tree]
+  const visited = new Set<NodeClass>()
   let sentinel = 0
   while (queue.length) {
     if (sentinel++ === LOOP_SENTINEL) {
@@ -106,13 +109,13 @@ export function findPackageNode(
 }
 
 export function findPackageNodes(
-  tree: SafeNode,
+  tree: NodeClass,
   name: string,
   version?: string | undefined,
-): SafeNode[] {
-  const matches: SafeNode[] = []
-  const queue: Array<SafeNode | LinkClass> = [tree]
-  const visited = new Set<SafeNode>()
+): NodeClass[] {
+  const matches: NodeClass[] = []
+  const queue: Array<NodeClass | LinkClass> = [tree]
+  const visited = new Set<NodeClass>()
   let sentinel = 0
   while (queue.length) {
     if (sentinel++ === LOOP_SENTINEL) {
@@ -151,7 +154,7 @@ export type GetAlertsMapFromArboristOptions = {
 }
 
 export async function getAlertsMapFromArborist(
-  arb: SafeArborist,
+  arb: ArboristInstance,
   options_?: GetAlertsMapFromArboristOptions | undefined,
 ): Promise<AlertsByPkgId> {
   const options = {
@@ -215,8 +218,8 @@ export type DiffQueryOptions = {
 }
 
 export type PackageDetail = {
-  node: SafeNode
-  existing?: SafeNode | undefined
+  node: NodeClass
+  existing?: NodeClass | undefined
 }
 
 export function getDetailsFromDiff(
@@ -251,7 +254,7 @@ export function getDetailsFromDiff(
       // The `oldNode`, i.e. the `actual` node, will be `undefined` if the diff
       // action is 'ADD'.
       const { actual: oldNode, ideal: pkgNode } = diff
-      let existing: SafeNode | undefined
+      let existing: NodeClass | undefined
       let keep = false
       if (action === DiffAction.change) {
         if (pkgNode?.package.version !== oldNode?.package.version) {
@@ -303,13 +306,13 @@ export function getDetailsFromDiff(
   return details
 }
 
-export function getTargetNode(nodeOrLink: SafeNode | LinkClass): SafeNode
-export function getTargetNode<T>(nodeOrLink: T): SafeNode | null
-export function getTargetNode(nodeOrLink: any): SafeNode | null {
+export function getTargetNode(nodeOrLink: NodeClass | LinkClass): NodeClass
+export function getTargetNode<T>(nodeOrLink: T): NodeClass | null
+export function getTargetNode(nodeOrLink: any): NodeClass | null {
   return nodeOrLink?.isLink ? nodeOrLink.target : (nodeOrLink ?? null)
 }
 
-export function isTopLevel(tree: SafeNode, node: SafeNode): boolean {
+export function isTopLevel(tree: NodeClass, node: NodeClass): boolean {
   return getTargetNode(tree.children.get(node.name)) === node
 }
 
@@ -319,7 +322,7 @@ export type Packument = Exclude<
 >
 
 export function updateNode(
-  node: SafeNode,
+  node: NodeClass,
   newVersion: string,
   newVersionPackument: Packument['versions'][number],
 ): void {
@@ -372,7 +375,7 @@ export function updateNode(
           name: newDepName,
           spec: newDeps[newDepName],
           type: 'prod',
-        }) as unknown as SafeEdge,
+        }) as unknown as EdgeClass,
       )
     }
   }
@@ -380,8 +383,8 @@ export function updateNode(
 
 export function updatePackageJsonFromNode(
   editablePkgJson: EditablePackageJson,
-  tree: SafeNode,
-  node: SafeNode,
+  tree: NodeClass,
+  node: NodeClass,
   newVersion: string,
   rangeStyle?: RangeStyle | undefined,
 ): boolean {
