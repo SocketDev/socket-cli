@@ -1,6 +1,5 @@
 import path from 'node:path'
 
-import npa from 'npm-package-arg'
 import semver from 'semver'
 
 import { getManifestData } from '@socketsecurity/registry'
@@ -19,9 +18,12 @@ import { updateManifestByAgent } from './update-manifest-by-agent.mts'
 import constants from '../../constants.mts'
 import { cmdPrefixMessage } from '../../utils/cmd.mts'
 import { globWorkspace } from '../../utils/glob.mts'
+import { npa } from '../../utils/npm-package-arg.mts'
+import { getMajor } from '../../utils/semver.mts'
 
 import type { GetOverridesResult } from './get-overrides-by-agent.mts'
 import type { AgentLockIncludesFn } from './lockfile-includes-by-agent.mts'
+import type { AliasResult } from '../../utils/npm-package-arg.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
@@ -120,7 +122,7 @@ export async function addOverrides(
   // Chunk package names to process them in parallel 3 at a time.
   await pEach(manifestEntries, 3, async ({ 1: data }) => {
     const { name: sockRegPkgName, package: origPkgName, version } = data
-    const major = semver.major(version)
+    const major = getMajor(version)!
     const sockOverridePrefix = `${NPM}:${sockRegPkgName}@`
     const sockOverrideSpec = `${sockOverridePrefix}${pin ? version : `^${major}`}`
     for (const { 1: depObj } of depEntries) {
@@ -144,7 +146,8 @@ export async function addOverrides(
             thisSpec.startsWith(sockOverridePrefix) &&
             // Check the validity of the spec by passing it through npa and
             // seeing if it will coerce to a version.
-            semver.coerce(npa(thisSpec).rawSpec)?.version
+            semver.coerce((npa(thisSpec) as AliasResult).subSpec.rawSpec)
+              ?.version
           )
         ) {
           thisSpec = sockOverrideSpec
@@ -198,19 +201,20 @@ export async function addOverrides(
             if (thisSpec.startsWith(sockOverridePrefix)) {
               if (
                 pin &&
-                semver.major(
+                getMajor(
                   // Check the validity of the spec by passing it through npa
                   // and seeing if it will coerce to a version. semver.coerce
                   // will strip leading v's, carets (^), comparators (<,<=,>,>=,=),
                   // and tildes (~). If not coerced to a valid version then
                   // default to the manifest entry version.
-                  semver.coerce(npa(thisSpec).rawSpec)?.version ?? version,
+                  semver.coerce((npa(thisSpec) as AliasResult).subSpec.rawSpec)
+                    ?.version ?? version,
                 ) !== major
               ) {
                 const otherVersion = (await fetchPackageManifest(thisSpec))
                   ?.version
                 if (otherVersion && otherVersion !== version) {
-                  newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${semver.major(otherVersion)}`}`
+                  newSpec = `${sockOverridePrefix}${pin ? otherVersion : `^${getMajor(otherVersion)!}`}`
                 }
               }
             } else {

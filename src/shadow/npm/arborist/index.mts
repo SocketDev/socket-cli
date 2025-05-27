@@ -1,24 +1,50 @@
 import { createRequire } from 'node:module'
 
+// @ts-ignore
+import UntypedEdge from '@npmcli/arborist/lib/edge.js'
+// @ts-ignore
+import UntypedNode from '@npmcli/arborist/lib/node.js'
+// @ts-ignore
+import UntypedOverrideSet from '@npmcli/arborist/lib/override-set.js'
+
 import {
   getArboristClassPath,
   getArboristEdgeClassPath,
   getArboristNodeClassPath,
   getArboristOverrideSetClassPath,
 } from '../paths.mts'
-import { SafeArborist } from './lib/arborist/index.mts'
-import { SafeEdge } from './lib/edge.mts'
-import { SafeNode } from './lib/node.mts'
-import { SafeOverrideSet } from './lib/override-set.mts'
+import { Arborist, SafeArborist } from './lib/arborist/index.mts'
+
+import type { EdgeClass, NodeClass, OverrideSetClass } from './types.mts'
 
 const require = createRequire(import.meta.url)
+
+export const SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
+  __proto__: null,
+  audit: false,
+  dryRun: true,
+  fund: false,
+  ignoreScripts: true,
+  progress: false,
+  save: false,
+  saveBundle: false,
+  silent: true,
+}
+
+export { Arborist, SafeArborist }
+
+export const Edge: EdgeClass = UntypedEdge
+
+export const Node: NodeClass = UntypedNode
+
+export const OverrideSet: OverrideSetClass = UntypedOverrideSet
 
 export function installSafeArborist() {
   // Override '@npmcli/arborist' module exports with patched variants based on
   // https://github.com/npm/cli/pull/8089.
   const cache: { [key: string]: any } = require.cache
   cache[getArboristClassPath()] = { exports: SafeArborist }
-  cache[getArboristEdgeClassPath()] = { exports: SafeEdge }
-  cache[getArboristNodeClassPath()] = { exports: SafeNode }
-  cache[getArboristOverrideSetClassPath()] = { exports: SafeOverrideSet }
+  cache[getArboristEdgeClassPath()] = { exports: Edge }
+  cache[getArboristNodeClassPath()] = { exports: Node }
+  cache[getArboristOverrideSetClassPath()] = { exports: OverrideSet }
 }

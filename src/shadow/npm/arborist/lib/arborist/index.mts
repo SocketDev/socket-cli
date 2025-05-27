@@ -1,16 +1,17 @@
-import { createRequire } from 'node:module'
+// @ts-ignore
+import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../../../../constants.mts'
 import { logAlertsMap } from '../../../../../utils/socket-package-alert.mts'
 import { getAlertsMapFromArborist } from '../../../arborist-helpers.mts'
-import { getArboristClassPath } from '../../../paths.mts'
 
-import type { ArboristClass, ArboristReifyOptions } from './types.mts'
-import type { SafeNode } from '../node.mts'
-
-const require = createRequire(import.meta.url)
+import type {
+  ArboristClass,
+  ArboristReifyOptions,
+  NodeClass,
+} from '../../types.mts'
 
 const {
   NPM,
@@ -39,7 +40,7 @@ export const kCtorArgs = Symbol('ctorArgs')
 
 export const kRiskyReify = Symbol('riskyReify')
 
-export const Arborist: ArboristClass = require(getArboristClassPath())
+export const Arborist: ArboristClass = UntypedArborist
 
 // Implementation code not related to our custom behavior is based on
 // https://github.com/npm/cli/blob/v11.0.0/workspaces/arborist/lib/arborist/index.js:
@@ -59,7 +60,7 @@ export class SafeArborist extends Arborist {
 
   async [kRiskyReify](
     ...args: Parameters<InstanceType<ArboristClass>['reify']>
-  ): Promise<SafeNode> {
+  ): Promise<NodeClass> {
     const ctorArgs = (this as any)[kCtorArgs]
     const arb = new Arborist(
       {
@@ -68,7 +69,7 @@ export class SafeArborist extends Arborist {
       },
       ...ctorArgs.slice(1),
     )
-    const ret = await (arb.reify as (...args: any[]) => Promise<SafeNode>)(
+    const ret = await (arb.reify as (...args: any[]) => Promise<NodeClass>)(
       {
         ...(args.length ? args[0] : undefined),
         progress: false,
@@ -83,7 +84,7 @@ export class SafeArborist extends Arborist {
   override async reify(
     this: SafeArborist,
     ...args: Parameters<InstanceType<ArboristClass>['reify']>
-  ): Promise<SafeNode> {
+  ): Promise<NodeClass> {
     const options = {
       __proto__: null,
       ...(args.length ? args[0] : undefined),
