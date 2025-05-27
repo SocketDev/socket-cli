@@ -1,6 +1,6 @@
 import semver from 'semver'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import type { SemVer } from 'semver'
 
 export const RangeStyles = ['caret', 'gt', 'lt', 'pin', 'preserve', 'tilde']
 
@@ -13,6 +13,8 @@ export type RangeStyle =
   | 'pin'
   | 'preserve'
   | 'tilde'
+
+export type { SemVer }
 
 export function applyRange(
   refRange: string,
@@ -56,14 +58,17 @@ export function applyRange(
   }
 }
 
-export function getMajor(version: string): number | null {
-  const coerced = semver.coerce(version)
-  if (coerced) {
-    try {
-      return semver.major(coerced)
-    } catch (e) {
-      debugLog(`Error parsing '${version}':\n`, e)
-    }
-  }
+export function getMajor(version: any): number | null {
+  try {
+    const coerced = semver.coerce(version)
+    return coerced ? semver.major(coerced) : null
+  } catch {}
+  return null
+}
+
+export function getMinVersion(range: any): SemVer | null {
+  try {
+    return semver.minVersion(range)
+  } catch {}
   return null
 }
