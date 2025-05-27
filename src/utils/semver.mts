@@ -58,17 +58,17 @@ export function applyRange(
   }
 }
 
-export function getMajor(version: any): number | null {
+export function getMajor(version: unknown): number | null {
   try {
-    const coerced = semver.coerce(version)
+    const coerced = semver.coerce(version as string)
     return coerced ? semver.major(coerced) : null
   } catch {}
   return null
 }
 
-export function getMinVersion(range: any): SemVer | null {
+export function getMinVersion(range: unknown): SemVer | null {
   try {
-    return semver.minVersion(range)
+    return semver.minVersion(range as string)
   } catch {}
   return null
 }
