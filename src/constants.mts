@@ -69,6 +69,8 @@ type ENV = Remap<
       SOCKET_CLI_API_TOKEN: string
       SOCKET_CLI_CONFIG: string
       SOCKET_CLI_DEBUG: boolean
+      SOCKET_CLI_GIT_USER_EMAIL: string
+      SOCKET_CLI_GIT_USER_NAME: string
       SOCKET_CLI_GITHUB_TOKEN: string
       SOCKET_CLI_NO_API_TOKEN: boolean
       SOCKET_CLI_VIEW_ALL_RISKS: boolean
@@ -324,6 +326,15 @@ const LAZY_ENV = () => {
     SOCKET_CLI_CONFIG: envAsString(env['SOCKET_CLI_CONFIG']),
     // Flag to help debug Socket CLI.
     SOCKET_CLI_DEBUG: envAsBoolean(env['SOCKET_CLI_DEBUG']),
+    // The git config user.email used by Socket CLI.
+    SOCKET_CLI_GIT_USER_EMAIL:
+      envAsString(env['SOCKET_CLI_GIT_USER_EMAIL']) ||
+      `github-actions[bot]@users.noreply.github.com`,
+    // The git config user.name used by Socket CLI.
+    SOCKET_CLI_GIT_USER_NAME:
+      envAsString(env['SOCKET_CLI_GIT_USER_NAME']) ||
+      envAsString(env['SOCKET_CLI_GIT_USERNAME']) ||
+      'github-actions[bot]',
     // A classic GitHub personal access token with the "repo" scope or a
     // fine-grained access token with at least read/write permissions set for
     // "Contents" and "Pull Request".
