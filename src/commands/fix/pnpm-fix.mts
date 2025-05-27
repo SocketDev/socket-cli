@@ -157,7 +157,7 @@ export async function pnpmFix(
   if (
     lockfileContent &&
     pkgEnvDetails.agentVersion.major >= 10 &&
-    parsePnpmLockfileVersion(lockfile?.lockfileVersion)?.major <= 6
+    (parsePnpmLockfileVersion(lockfile?.lockfileVersion)?.major ?? 0) <= 6
   ) {
     const maybeActualTree = await install(pkgEnvDetails, {
       args: ['--lockfile-only'],
