@@ -126,7 +126,7 @@ async function run(
   } else if (!out) {
     if (socketJson.defaults?.manifest?.conda?.outfile) {
       out = socketJson.defaults?.manifest?.conda?.outfile
-      logger.info('Using default --out from socket.json:', verbose)
+      logger.info('Using default --out from socket.json:', out)
     } else {
       out = 'requirements.txt'
     }

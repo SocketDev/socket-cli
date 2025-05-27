@@ -182,7 +182,7 @@ async function run(
   if (verbose) {
     logger.group()
     logger.log('- target:', cwd)
-    logger.log('- gradle bin:', bin)
+    logger.log('- sbt bin:', bin)
     logger.log('- out:', out)
     logger.groupEnd()
   }

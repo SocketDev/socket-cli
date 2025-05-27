@@ -55,7 +55,7 @@ export function getDefaultSocketJson(): SocketJson {
     ' _____         _       _     ':
       'Local config file for Socket CLI tool ( https://npmjs.org/socket ), to work with https://socket.dev',
     '|   __|___ ___| |_ ___| |_   ':
-      '     The config in this file is used to set as defaults for flags or cmmand args when using the CLI',
+      '     The config in this file is used to set as defaults for flags or command args when using the CLI',
     "|__   | . |  _| '_| -_|  _|  ":
       '     in this dir, often a repo root. You can choose commit or .ignore this file, both works.',
     '|_____|___|___|_,_|___|_|.dev':
@@ -134,7 +134,7 @@ export async function writeSocketJson(
   try {
     json = JSON.stringify(socketJson, null, 2)
   } catch (e) {
-    debugLog('[DEUBG] JSON.stringify failed:')
+    debugLog('[DEBUG] JSON.stringify failed:')
     debugLog(e)
     debugLog('[DEBUG] Object:')
     debugLog(socketJson)
