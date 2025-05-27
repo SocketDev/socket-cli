@@ -88,6 +88,7 @@
     "@dotenvx/dotenvx": "1.44.1",
     "@eslint/compat": "1.2.9",
     "@eslint/js": "9.27.0",
+    "@npmcli/arborist": "9.1.1",
     "@octokit/graphql": "9.0.1",
     "@octokit/openapi-types": "25.0.0",
     "@octokit/request-error": "7.0.0",
