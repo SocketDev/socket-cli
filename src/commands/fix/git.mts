@@ -11,9 +11,6 @@ import {
 
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
-const GITHUB_ACTIONS_BOT_USERNAME = 'github-actions[bot]'
-const GITHUB_ACTIONS_BOT_EMAIL = `${GITHUB_ACTIONS_BOT_USERNAME}@users.noreply.github.com`
-
 function formatBranchName(name: string): string {
   return name
     .replace(/[-_.\\/]+/g, '-')
@@ -47,29 +44,40 @@ export function getSocketBranchName(
   return `socket/${fullName}-${formatBranchName(newVersion)}`
 }
 
+export type GetSocketPrTitlePatternOptions = {
+  purl?: string | undefined
+  workspace?: string | undefined
+}
+
 export function getSocketPrTitlePattern(
-  purl: string,
-  workspaceName?: string | undefined,
+  options?: GetSocketPrTitlePatternOptions | undefined,
 ): RegExp {
-  const purlObj = PackageURL.fromString(purl)
-  const pkgFullName = getPkgFullNameFromPurlObj(purlObj)
-  const workspaceDetails = workspaceName
-    ? ` in ${escapeRegExp(workspaceName)}`
+  const { purl, workspace } = {
+    __proto__: null,
+    ...options,
+  } as GetSocketPrTitlePatternOptions
+  const purlObj = purl ? PackageURL.fromString(purl) : null
+  const escapedPkgFullName = purlObj
+    ? escapeRegExp(getPkgFullNameFromPurlObj(purlObj))
+    : '\\S+'
+  const escapedPkgVersion = purlObj ? escapeRegExp(purlObj.version!) : '\\S+'
+  const escapedWorkspaceDetails = workspace
+    ? ` in ${escapeRegExp(workspace)}`
     : ''
   return new RegExp(
-    `Bump ${escapeRegExp(pkgFullName)} from ${escapeRegExp(purlObj.version!)} to \\S+${workspaceDetails}`,
+    `Bump ${escapedPkgFullName} from ${escapedPkgVersion} to \\S+${escapedWorkspaceDetails}`,
   )
 }
 
 export function getSocketPullRequestTitle(
   purl: string,
-  newVersion: string,
-  workspaceName?: string | undefined,
+  toVersion: string,
+  workspace?: string | undefined,
 ): string {
   const purlObj = PackageURL.fromString(purl)
   const pkgFullName = getPkgFullNameFromPurlObj(purlObj)
-  const workspaceDetails = workspaceName ? ` in ${workspaceName}` : ''
-  return `Bump ${pkgFullName} from ${purlObj.version} to ${newVersion}${workspaceDetails}`
+  const workspaceDetails = workspace ? ` in ${workspace}` : ''
+  return `Bump ${pkgFullName} from ${purlObj.version} to ${toVersion}${workspaceDetails}`
 }
 
 export function getSocketPullRequestBody(
@@ -99,15 +107,28 @@ export async function gitCleanFdx(cwd = process.cwd()): Promise<void> {
   await spawn('git', ['clean', '-fdx'], stdioIgnoreOptions)
 }
 
+export type GitCreateAndPushBranchOptions = {
+  cwd?: string | undefined
+  email?: string | undefined
+  user?: string | undefined
+}
+
 export async function gitCreateAndPushBranch(
   branch: string,
   commitMsg: string,
   filepaths: string[],
-  cwd = process.cwd(),
+  options?: GitCreateAndPushBranchOptions | undefined,
 ): Promise<boolean> {
+  const {
+    cwd = process.cwd(),
+    // Lazily access constants.ENV.SOCKET_CLI_GIT_USER_EMAIL.
+    email = constants.ENV.SOCKET_CLI_GIT_USER_EMAIL,
+    // Lazily access constants.ENV.SOCKET_CLI_GIT_USER_NAME.
+    user = constants.ENV.SOCKET_CLI_GIT_USER_NAME,
+  } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions
   const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
   try {
-    await gitEnsureIdentity(cwd)
+    await gitEnsureIdentity(user, email, cwd)
     await spawn('git', ['checkout', '-b', branch], stdioIgnoreOptions)
     await spawn('git', ['add', ...filepaths], stdioIgnoreOptions)
     await spawn('git', ['commit', '-m', commitMsg], stdioIgnoreOptions)
@@ -124,53 +145,31 @@ export async function gitCreateAndPushBranch(
   return false
 }
 
-export async function gitEnsureIdentity(cwd = process.cwd()): Promise<void> {
+export async function gitEnsureIdentity(
+  name: string,
+  email: string,
+  cwd = process.cwd(),
+): Promise<void> {
   const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
   const stdioPipeOptions: SpawnOptions = { cwd }
-  let hasUserName = false
-  try {
-    hasUserName = !!(
-      await spawn('git', ['config', '--get', 'user.name'], stdioPipeOptions)
-    ).stdout.trim()
-  } catch {}
-  if (!hasUserName) {
-    await spawn(
-      'git',
-      ['config', 'user.name', GITHUB_ACTIONS_BOT_USERNAME],
-      stdioIgnoreOptions,
-    )
-  }
-  let hasUserEmail = false
-  try {
-    hasUserEmail = !!(
-      await spawn('git', ['config', '--get', 'user.email'], stdioPipeOptions)
-    ).stdout.trim()
-  } catch {}
-  if (!hasUserEmail) {
-    await spawn(
-      'git',
-      ['config', 'user.email', GITHUB_ACTIONS_BOT_EMAIL],
-      stdioIgnoreOptions,
-    )
-  }
-}
-
-export async function gitResetAndClean(
-  branch = 'HEAD',
-  cwd = process.cwd(),
-): Promise<void> {
-  // Discards tracked changes.
-  await gitResetHard(branch, cwd)
-  // Deletes all untracked files and directories.
-  await gitCleanFdx(cwd)
-}
-
-export async function gitResetHard(
-  branch = 'HEAD',
-  cwd = process.cwd(),
-): Promise<void> {
-  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
-  await spawn('git', ['reset', '--hard', branch], stdioIgnoreOptions)
+  const identEntries: Array<[string, string]> = [
+    ['user.email', name],
+    ['user.name', email],
+  ]
+  await Promise.all(
+    identEntries.map(async ({ 0: prop, 1: value }) => {
+      try {
+        const output = await spawn(
+          'git',
+          ['config', '--get', prop],
+          stdioPipeOptions,
+        )
+        if (output.stdout.trim() !== value) {
+          await spawn('git', ['config', prop, value], stdioIgnoreOptions)
+        }
+      } catch {}
+    }),
+  )
 }
 
 export async function gitRemoteBranchExists(
@@ -191,6 +190,24 @@ export async function gitRemoteBranchExists(
   } catch {
     return false
   }
+}
+
+export async function gitResetAndClean(
+  branch = 'HEAD',
+  cwd = process.cwd(),
+): Promise<void> {
+  // Discards tracked changes.
+  await gitResetHard(branch, cwd)
+  // Deletes all untracked files and directories.
+  await gitCleanFdx(cwd)
+}
+
+export async function gitResetHard(
+  branch = 'HEAD',
+  cwd = process.cwd(),
+): Promise<void> {
+  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
+  await spawn('git', ['reset', '--hard', branch], stdioIgnoreOptions)
 }
 
 export async function gitUnstagedModifiedFiles(
