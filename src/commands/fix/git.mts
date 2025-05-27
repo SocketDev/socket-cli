@@ -10,6 +10,7 @@ import {
 } from '../../utils/socket-url.mts'
 
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 
 function formatBranchName(name: string): string {
   return name
@@ -156,6 +157,7 @@ export async function gitEnsureIdentity(
     ['user.email', name],
     ['user.name', email],
   ]
+  debugLog('identEntries', identEntries)
   await Promise.all(
     identEntries.map(async ({ 0: prop, 1: value }) => {
       try {
@@ -164,6 +166,7 @@ export async function gitEnsureIdentity(
           ['config', '--get', prop],
           stdioPipeOptions,
         )
+        debugLog(`git config --get ${prop}`, output.stdout.trim())
         if (output.stdout.trim() !== value) {
           await spawn('git', ['config', prop, value], stdioIgnoreOptions)
         }
