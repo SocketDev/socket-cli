@@ -76,7 +76,7 @@ async function getAgentVersion(
             // Lazily access constants.WIN32.
             shell: constants.WIN32,
           })
-        ).stdout,
+        ).stdout.trim(),
       ) ?? undefined
   } catch (e) {
     debugLog('getAgentVersion error:\n', e)
