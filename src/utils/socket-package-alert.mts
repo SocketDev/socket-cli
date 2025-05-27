@@ -12,6 +12,7 @@ import { isArtifactAlertCve } from './alert/artifact.mts'
 import { ALERT_FIX_TYPE } from './alert/fix.mts'
 import { ALERT_SEVERITY } from './alert/severity.mts'
 import { ColorOrMarkdown } from './color-or-markdown.mts'
+import { getMajor } from './semver.mts'
 import { getSocketDevPackageOverviewUrl } from './socket-url.mts'
 import { getTranslations } from './translations.mts'
 import constants from '../constants.mts'
@@ -167,8 +168,6 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
 
   const name = resolvePackageName(artifact)
   const { version } = artifact
-  const pkgId = `${name}@${version}`
-  const major = semver.major(version)
   const enabledState = {
     __proto__: null,
     ...localRules,
@@ -214,6 +213,8 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
   if (!sockPkgAlerts.length) {
     return alertsByPkgId
   }
+  const pkgId = `${name}@${version}`
+  const major = getMajor(version)!
   if (consolidate) {
     type HighestVersionByMajor = Map<
       number,
@@ -231,15 +232,17 @@ export async function addArtifactToAlertsMap<T extends AlertsByPkgId>(
         // We're just being cautious.
         const firstPatchedVersionIdentifier = (alert.props as CveProps)
           ?.firstPatchedVersionIdentifier
-        if (firstPatchedVersionIdentifier) {
+        const patchedMajor = firstPatchedVersionIdentifier
+          ? getMajor(firstPatchedVersionIdentifier)
+          : null
+        if (typeof patchedMajor === 'number') {
           // Consolidate to the highest "first patched version" by each major
           // version number.
-          const patchedMajor = semver.major(firstPatchedVersionIdentifier)
           const highest = highestForCve.get(patchedMajor)?.version ?? '0.0.0'
-          if (semver.gt(firstPatchedVersionIdentifier, highest)) {
+          if (semver.gt(firstPatchedVersionIdentifier!, highest)) {
             highestForCve.set(patchedMajor, {
               alert: sockPkgAlert,
-              version: firstPatchedVersionIdentifier,
+              version: firstPatchedVersionIdentifier!,
             })
           }
         } else {
