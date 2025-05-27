@@ -216,9 +216,7 @@ export async function npmFix(
       )
 
       if (!oldVersions.length) {
-        logger.warn(
-          `Unexpected condition: ${name} not found in node_modules.\n`,
-        )
+        debugLog(`${name} not found, skipping.\n`)
         // Skip to next package.
         logger.dedent()
         spinner?.dedent()
@@ -246,11 +244,7 @@ export async function npmFix(
 
         const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
-          if (hasAnnouncedWorkspace) {
-            logger.warn(
-              `Unexpected condition: Arborist node not found, skipping ${oldId}.`,
-            )
-          }
+          debugLog(`${oldId} not found, skipping.`)
           continue oldVersionsLoop
         }
 
