@@ -61,12 +61,12 @@ export async function invokeNpm(
       stdout: toAsciiSafeString(normalizeLogSymbols(output.stdout)),
       stderr: toAsciiSafeString(normalizeLogSymbols(output.stderr)),
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     return {
       status: false,
-      code: e?.code,
-      stdout: toAsciiSafeString(normalizeLogSymbols(e?.stdout ?? '')),
-      stderr: toAsciiSafeString(normalizeLogSymbols(e?.stderr ?? '')),
+      code: e?.['code'],
+      stdout: toAsciiSafeString(normalizeLogSymbols(e?.['stdout'] ?? '')),
+      stderr: toAsciiSafeString(normalizeLogSymbols(e?.['stderr'] ?? '')),
     }
   }
 }

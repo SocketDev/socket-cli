@@ -68,7 +68,7 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
               ),
             )
           })
-          spawnPromise.catch((e: any) => {
+          spawnPromise.catch((e: unknown) => {
             spawnPromise.process.kill('SIGINT')
             if (e?.['stderr'].includes('typosquat')) {
               resolve('OK')

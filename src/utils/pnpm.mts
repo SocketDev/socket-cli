@@ -58,7 +58,9 @@ export function isPnpmDepPath(maybeDepPath: string): boolean {
   return maybeDepPath.length > 0 && maybeDepPath.charCodeAt(0) === 47 /*'/'*/
 }
 
-export function parsePnpmLockfile(lockfileContent: any): LockfileObject | null {
+export function parsePnpmLockfile(
+  lockfileContent: unknown,
+): LockfileObject | null {
   let result
   if (typeof lockfileContent === 'string') {
     try {
@@ -68,8 +70,11 @@ export function parsePnpmLockfile(lockfileContent: any): LockfileObject | null {
   return isObjectObject(result) ? (result as LockfileObject) : null
 }
 
-export function parsePnpmLockfileVersion(version: any): SemVer {
-  return semver.coerce(version)!
+export function parsePnpmLockfileVersion(version: unknown): SemVer | null {
+  try {
+    return semver.coerce(version as string)
+  } catch {}
+  return null
 }
 
 export async function readPnpmLockfile(
