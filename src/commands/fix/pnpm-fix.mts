@@ -1,6 +1,8 @@
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
+import semver from 'semver'
+
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
@@ -285,7 +287,7 @@ export async function pnpmFix(
 
       // actualTree may not be defined on the first iteration of pkgJsonPathsLoop.
       if (!actualTree) {
-        const maybeActualTree = existsSync(path.join(rootPath, 'node_modules'))
+        const maybeActualTree = isCi && existsSync(path.join(rootPath, 'node_modules'))
           ? // eslint-disable-next-line no-await-in-loop
             await getActualTree(cwd)
           : // eslint-disable-next-line no-await-in-loop
