@@ -402,13 +402,18 @@ export function updatePackageJsonFromNode(
       | { [key: string]: string }
       | undefined
     const oldRange = hasOwn(depObject, name) ? depObject[name] : undefined
-    const oldMin = isNonEmptyString(oldRange)
-      ? semver.minVersion(oldRange)
-      : null
+    if (typeof oldRange !== 'string' || oldRange.startsWith('catalog:')) {
+      continue
+    }
+    const npaResult = npa(oldRange)
+    if (!npaResult || (npaResult as AliasResult).subSpec) {
+      continue
+    }
+    const oldMin = getMinVersion(npaResult.rawSpec)
     const newRange =
       oldMin &&
       // Ensure we're on the same major version...
-      semver.major(newVersion) === semver.major(oldMin.version) &&
+      getMajor(newVersion) === oldMin.major &&
       // and not a downgrade.
       semver.gte(newVersion, oldMin.version)
         ? applyRange(oldRange!, newVersion, rangeStyle)
