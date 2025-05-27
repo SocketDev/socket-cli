@@ -51,7 +51,12 @@ export async function handleCreateNewScan({
   if (autoManifest) {
     logger.info('Auto generating manifest files ...')
     const detected = await detectManifestActions(cwd)
-    await generateAutoManifest(detected, cwd, false, outputKind)
+    await generateAutoManifest({
+      detected,
+      cwd,
+      outputKind,
+      verbose: false,
+    })
     logger.info('Auto generation finished. Proceeding with Scan creation.')
   }
 

@@ -23,10 +23,8 @@ describe('socket manifest kotlin', async () => {
 
           Options
             --bin             Location of gradlew binary to use, default: CWD/gradlew
-            --cwd             Set the cwd, defaults to process.cwd()
             --gradleOpts      Additional options to pass on to ./gradlew, see \`./gradlew --help\`
             --help            Print this help
-            --task            Task to target. By default targets all
             --verbose         Print debug messages
 
           Uses gradle, preferably through your local project \`gradlew\`, to generate a
@@ -72,36 +70,6 @@ describe('socket manifest kotlin', async () => {
 
   cmdit(
     ['manifest', 'kotlin', '--dry-run', '--config', '{}'],
-    'should require args with just dry-run',
-    async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
-      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-        "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest kotlin\`, cwd: <redacted>
-
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
-
-          - The DIR arg is required (\\x1b[31mmissing\\x1b[39m)
-        \\x1b[22m"
-      `)
-
-      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
-    },
-  )
-
-  cmdit(
-    [
-      'manifest',
-      'kotlin',
-      'mootools',
-      '--dry-run',
-      '--config',
-      '{"apiToken":"anything"}',
-    ],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)

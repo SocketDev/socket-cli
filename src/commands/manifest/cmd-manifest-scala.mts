@@ -1,3 +1,4 @@
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
@@ -7,6 +8,7 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -21,16 +23,10 @@ const config: CliCommandConfig = {
     ...commonFlags,
     bin: {
       type: 'string',
-      default: 'sbt',
       description: 'Location of sbt binary to use',
-    },
-    cwd: {
-      type: 'string',
-      description: 'Set the cwd, defaults to process.cwd()',
     },
     out: {
       type: 'string',
-      default: './socket.pom.xml',
       description:
         'Path of output file; where to store the resulting manifest, see also --stdout',
     },
@@ -40,7 +36,6 @@ const config: CliCommandConfig = {
     },
     sbtOpts: {
       type: 'string',
-      default: '',
       description: 'Additional options to pass on to sbt, as per `sbt --help`',
     },
     verbose: {
@@ -50,7 +45,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} [--bin=path/to/sbt/binary] [--out=path/to/result] FILE|DIR
+      $ ${command} [options] [CWD=.]
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -73,7 +68,7 @@ const config: CliCommandConfig = {
     - it can only export one target per run, so if you have multiple targets like
       development and production, you must run them separately.
 
-    You can optionally configure the path to the \`sbt\` bin to invoke.
+    You can specify --bin to override the path to the \`sbt\` binary to invoke.
 
     Support is beta. Please report issues or give us feedback on what's missing.
 
@@ -82,8 +77,8 @@ const config: CliCommandConfig = {
 
     Examples
 
-      $ ${command} ./build.sbt
-      $ ${command} --bin=/usr/bin/sbt ./build.sbt
+      $ ${command}
+      $ ${command} ./proj --bin=/usr/bin/sbt --file=boot.sbt
   `,
 }
 
@@ -105,9 +100,61 @@ async function run(
     parentName,
   })
 
-  const verbose = Boolean(cli.flags['verbose'])
-  const { json, markdown } = cli.flags
+  const { json = false, markdown = false } = cli.flags
+  let { bin, out, sbtOpts, stdout, verbose } = cli.flags
   const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
+  const [cwd = process.cwd()] = cli.input // no more in v1
+
+  const socketJson = await readOrDefaultSocketJson(String(cwd))
+
+  debugLog(
+    '[DEBUG] socket.json sbt override:',
+    socketJson?.defaults?.manifest?.sbt,
+  )
+
+  // Set defaults for any flag/arg that is not given. Check socket.json first.
+  if (!bin) {
+    if (socketJson.defaults?.manifest?.sbt?.bin) {
+      bin = socketJson.defaults?.manifest?.sbt?.bin
+      logger.info('Using default --bin from socket.json:', bin)
+    } else {
+      bin = 'sbt'
+    }
+  }
+  if (
+    stdout === undefined &&
+    socketJson.defaults?.manifest?.sbt?.stdout !== undefined
+  ) {
+    stdout = socketJson.defaults?.manifest?.sbt?.stdout
+    logger.info('Using default --stdout from socket.json:', stdout)
+  }
+  if (stdout) {
+    out = '-'
+  } else if (!out) {
+    if (socketJson.defaults?.manifest?.sbt?.outfile) {
+      out = socketJson.defaults?.manifest?.sbt?.outfile
+      logger.info('Using default --out from socket.json:', out)
+    } else {
+      out = './socket.pom.xml'
+    }
+  }
+  if (!sbtOpts) {
+    if (socketJson.defaults?.manifest?.sbt?.sbtOpts) {
+      sbtOpts = socketJson.defaults?.manifest?.sbt?.sbtOpts
+      logger.info('Using default --sbtOpts from socket.json:', sbtOpts)
+    } else {
+      sbtOpts = ''
+    }
+  }
+  if (
+    verbose === undefined &&
+    socketJson.defaults?.manifest?.sbt?.verbose !== undefined
+  ) {
+    verbose = socketJson.defaults?.manifest?.sbt?.verbose
+    logger.info('Using default --verbose from socket.json:', verbose)
+  } else if (verbose === undefined) {
+    verbose = false
+  }
 
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
@@ -117,59 +164,27 @@ async function run(
     logger.groupEnd()
   }
 
-  const [target = ''] = cli.input
-
   // TODO: I'm not sure it's feasible to parse source file from stdin. We could
   //       try, store contents in a file in some folder, target that folder... what
   //       would the file name be?
 
-  const wasValidInput = checkCommandInput(
-    outputKind,
-    {
-      test: !!target && target !== '-',
-      message: 'The DIR arg is required',
-      pass: 'ok',
-      fail: target === '-' ? 'stdin is not supported' : 'missing',
-    },
-    {
-      nook: true,
-      test: cli.input.length <= 1,
-      message: 'Can only accept one DIR (make sure to escape spaces!)',
-      pass: 'ok',
-      fail: 'received ' + cli.input.length,
-    },
-  )
+  const wasValidInput = checkCommandInput(outputKind, {
+    nook: true,
+    test: cli.input.length <= 1,
+    message: 'Can only accept one DIR (make sure to escape spaces!)',
+    pass: 'ok',
+    fail: 'received ' + cli.input.length,
+  })
   if (!wasValidInput) {
     return
   }
 
-  let bin: string = 'sbt'
-  if (cli.flags['bin']) {
-    bin = cli.flags['bin'] as string
-  }
-
-  let out: string = './socket.pom.xml'
-  if (cli.flags['out']) {
-    out = cli.flags['out'] as string
-  }
-  if (cli.flags['stdout']) {
-    out = '-'
-  }
-
   if (verbose) {
     logger.group()
-    logger.log('- target:', target)
+    logger.log('- target:', cwd)
     logger.log('- gradle bin:', bin)
     logger.log('- out:', out)
     logger.groupEnd()
-  }
-
-  let sbtOpts: string[] = []
-  if (cli.flags['sbtOpts']) {
-    sbtOpts = (cli.flags['sbtOpts'] as string)
-      .split(' ')
-      .map(s => s.trim())
-      .filter(Boolean)
   }
 
   if (cli.flags['dryRun']) {
@@ -177,5 +192,14 @@ async function run(
     return
   }
 
-  await convertSbtToMaven(target, bin, out, verbose, sbtOpts)
+  await convertSbtToMaven({
+    bin: String(bin),
+    cwd: String(cwd),
+    out: String(out),
+    sbtOpts: String(sbtOpts)
+      .split(' ')
+      .map(s => s.trim())
+      .filter(Boolean),
+    verbose: Boolean(verbose),
+  })
 }

@@ -24,7 +24,7 @@ describe('socket manifest auto', async () => {
           Options
             --cwd             Set the cwd, defaults to process.cwd()
             --help            Print this help
-            --verbose         Enable debug output, may help when running into errors
+            --verbose         Enable debug output (only for auto itself; sub-steps need to have it pre-configured), may help when running into errors
 
           Tries to figure out what language your current repo uses. If it finds a
           supported case then it will try to generate the manifest file for that

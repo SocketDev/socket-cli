@@ -28,6 +28,7 @@ describe('socket manifest', async () => {
             gradle            [beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Gradle/Java/Kotlin/etc project
             kotlin            [beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Kotlin project
             scala             [beta] Generate a manifest file (\`pom.xml\`) from Scala's \`build.sbt\` file
+            setup             Setup persistent options for generating manifest files with the \`socket manifest\` command
 
           Options
             --help            Print this help

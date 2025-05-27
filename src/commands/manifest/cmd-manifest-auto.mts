@@ -26,7 +26,8 @@ const config: CliCommandConfig = {
     verbose: {
       type: 'boolean',
       default: false,
-      description: 'Enable debug output, may help when running into errors',
+      description:
+        'Enable debug output (only for auto itself; sub-steps need to have it pre-configured), may help when running into errors',
     },
   },
   help: (command, config) => `
@@ -97,7 +98,12 @@ async function run(
     return
   }
 
-  await generateAutoManifest(detected, cwd, verbose, outputKind)
+  await generateAutoManifest({
+    detected,
+    cwd,
+    outputKind,
+    verbose,
+  })
 
   logger.success(
     `Finished. Should have attempted to generate manifest files for ${detected.count} targets.`,

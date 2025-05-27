@@ -1,5 +1,6 @@
 import path from 'node:path'
 
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
@@ -9,6 +10,7 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -30,20 +32,10 @@ const config: CliCommandConfig = {
       type: 'string',
       description: 'Location of gradlew binary to use, default: CWD/gradlew',
     },
-    cwd: {
-      type: 'string',
-      description: 'Set the cwd, defaults to process.cwd()',
-    },
     gradleOpts: {
       type: 'string',
-      default: '',
       description:
         'Additional options to pass on to ./gradlew, see `./gradlew --help`',
-    },
-    task: {
-      type: 'string',
-      default: 'all',
-      description: 'Task to target. By default targets all',
     },
     verbose: {
       type: 'boolean',
@@ -102,9 +94,45 @@ async function run(
     parentName,
   })
 
-  const verbose = Boolean(cli.flags['verbose'])
-  const { json, markdown } = cli.flags
+  const { json = false, markdown = false } = cli.flags
+  let { bin, gradleOpts, verbose } = cli.flags
   const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join: If given path is abs then cwd should not affect it
+  cwd = path.resolve(process.cwd(), String(cwd))
+
+  const socketJson = await readOrDefaultSocketJson(String(cwd))
+
+  debugLog(
+    '[DEBUG] socket.json gradle override:',
+    socketJson?.defaults?.manifest?.gradle,
+  )
+
+  // Set defaults for any flag/arg that is not given. Check socket.json first.
+  if (!bin) {
+    if (socketJson.defaults?.manifest?.gradle?.bin) {
+      bin = socketJson.defaults?.manifest?.gradle?.bin
+      logger.info('Using default --bin from socket.json:', bin)
+    } else {
+      bin = path.join(cwd, 'gradlew')
+    }
+  }
+  if (!gradleOpts) {
+    if (socketJson.defaults?.manifest?.gradle?.gradleOpts) {
+      gradleOpts = socketJson.defaults?.manifest?.gradle?.gradleOpts
+      logger.info('Using default --gradleOpts from socket.json:', gradleOpts)
+    } else {
+      gradleOpts = ''
+    }
+  }
+  if (verbose === undefined) {
+    if (socketJson.defaults?.manifest?.gradle?.verbose !== undefined) {
+      verbose = socketJson.defaults?.manifest?.gradle?.verbose
+      logger.info('Using default --verbose from socket.json:', verbose)
+    } else {
+      verbose = false
+    }
+  }
 
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
@@ -114,47 +142,26 @@ async function run(
     logger.groupEnd()
   }
 
-  const [target = ''] = cli.input
-
   // TODO: I'm not sure it's feasible to parse source file from stdin. We could
   //       try, store contents in a file in some folder, target that folder... what
   //       would the file name be?
 
-  const wasValidInput = checkCommandInput(
-    outputKind,
-    {
-      test: !!target && target !== '-',
-      message: 'The DIR arg is required',
-      pass: 'ok',
-      fail: target === '-' ? 'stdin is not supported' : 'missing',
-    },
-    {
-      nook: true,
-      test: cli.input.length <= 1,
-      message: 'Can only accept one DIR (make sure to escape spaces!)',
-      pass: 'ok',
-      fail: 'received ' + cli.input.length,
-    },
-  )
+  const wasValidInput = checkCommandInput(outputKind, {
+    nook: true,
+    test: cli.input.length <= 1,
+    message: 'Can only accept one DIR (make sure to escape spaces!)',
+    pass: 'ok',
+    fail: 'received ' + cli.input.length,
+  })
   if (!wasValidInput) {
     return
   }
 
-  const { bin = path.join(target, 'gradlew'), cwd = process.cwd() } = cli.flags
-
   if (verbose) {
     logger.group()
-    logger.log('- target:', target)
-    logger.log('- gradle bin:', bin)
+    logger.info('- cwd:', cwd)
+    logger.info('- gradle bin:', bin)
     logger.groupEnd()
-  }
-
-  let gradleOpts: string[] = []
-  if (cli.flags['gradleOpts']) {
-    gradleOpts = (cli.flags['gradleOpts'] as string)
-      .split(' ')
-      .map(s => s.trim())
-      .filter(Boolean)
   }
 
   if (cli.flags['dryRun']) {
@@ -162,11 +169,13 @@ async function run(
     return
   }
 
-  await convertGradleToMaven(
-    target,
-    String(bin),
-    String(cwd),
-    verbose,
-    gradleOpts,
-  )
+  await convertGradleToMaven({
+    bin: String(bin),
+    cwd,
+    gradleOpts: String(gradleOpts || '')
+      .split(' ')
+      .map(s => s.trim())
+      .filter(Boolean),
+    verbose: Boolean(verbose),
+  })
 }

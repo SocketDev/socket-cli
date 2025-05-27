@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleManifestConda } from './handle-manifest-conda.mts'
@@ -7,6 +9,7 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -20,14 +23,23 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags,
     ...outputFlags,
-    cwd: {
+    file: {
       type: 'string',
-      description: 'Set the cwd, defaults to process.cwd()',
+      description:
+        'Input file name (by default for Conda this is "environment.yml"), relative to cwd',
+    },
+    stdin: {
+      type: 'boolean',
+      description: 'Read the input from stdin (supersedes --file)',
     },
     out: {
       type: 'string',
-      default: '-',
-      description: 'Output target (use `-` or omit to print to stdout)',
+      description: 'Output path (relative to cwd)',
+    },
+    stdout: {
+      type: 'boolean',
+      description:
+        'Print resulting requirements.txt to stdout (supersedes --out)',
     },
     verbose: {
       type: 'boolean',
@@ -36,7 +48,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} FILE
+      $ ${command} [CWD=.]
 
     Warning: While we don't support Conda necessarily, this tool extracts the pip
              block from an environment.yml and outputs it as a requirements.txt
@@ -52,7 +64,8 @@ const config: CliCommandConfig = {
 
     Examples
 
-      $ ${command} ./environment.yml
+      $ ${command}
+      $ ${command} ./project/foo --file environment.yaml
   `,
 }
 
@@ -74,22 +87,65 @@ async function run(
     parentName,
   })
 
-  const {
-    cwd = process.cwd(),
-    json = false,
-    markdown = false,
-    out = '-',
-    verbose = false,
-  } = cli.flags
-  const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
+  const { json = false, markdown = false } = cli.flags
+  let { file: filename, out, stdin, stdout, verbose } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join: If given path is abs then cwd should not affect it
+  cwd = path.resolve(process.cwd(), String(cwd))
 
-  const [target = ''] = cli.input
+  const socketJson = await readOrDefaultSocketJson(String(cwd))
+
+  // Set defaults for any flag/arg that is not given. Check socket.json first.
+  if (
+    stdin === undefined &&
+    socketJson.defaults?.manifest?.conda?.stdin !== undefined
+  ) {
+    stdin = socketJson.defaults?.manifest?.conda?.stdin
+    logger.info('Using default --stdin from socket.json:', stdin)
+  }
+  if (stdin) {
+    filename = '-'
+  } else if (!filename) {
+    if (socketJson.defaults?.manifest?.conda?.infile) {
+      filename = socketJson.defaults?.manifest?.conda?.infile
+      logger.info('Using default --file from socket.json:', filename)
+    } else {
+      filename = 'environment.yml'
+    }
+  }
+  if (
+    stdout === undefined &&
+    socketJson.defaults?.manifest?.conda?.stdout !== undefined
+  ) {
+    stdout = socketJson.defaults?.manifest?.conda?.stdout
+    logger.info('Using default --stdout from socket.json:', stdout)
+  }
+  if (stdout) {
+    out = '-'
+  } else if (!out) {
+    if (socketJson.defaults?.manifest?.conda?.outfile) {
+      out = socketJson.defaults?.manifest?.conda?.outfile
+      logger.info('Using default --out from socket.json:', verbose)
+    } else {
+      out = 'requirements.txt'
+    }
+  }
+  if (
+    verbose === undefined &&
+    socketJson.defaults?.manifest?.conda?.verbose !== undefined
+  ) {
+    verbose = socketJson.defaults?.manifest?.conda?.verbose
+    logger.info('Using default --verbose from socket.json:', verbose)
+  } else if (verbose === undefined) {
+    verbose = false
+  }
 
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
     logger.group('- flags:', cli.flags)
     logger.groupEnd()
-    logger.log('- target:', target)
+    logger.log('- target:', cwd)
     logger.log('- output:', out)
     logger.groupEnd()
   }
@@ -97,7 +153,7 @@ async function run(
   const wasValidInput = checkCommandInput(
     outputKind,
     {
-      test: !!target,
+      test: !!cwd,
       message: 'The FILE arg is required',
       pass: 'ok',
       fail: 'missing',
@@ -131,11 +187,11 @@ async function run(
     return
   }
 
-  await handleManifestConda(
-    target,
-    String(out || ''),
-    json ? 'json' : markdown ? 'markdown' : 'text',
-    String(cwd),
-    Boolean(verbose),
-  )
+  await handleManifestConda({
+    cwd,
+    filename: String(filename),
+    out: String(out || ''),
+    outputKind,
+    verbose: Boolean(verbose),
+  })
 }

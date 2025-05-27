@@ -1,0 +1,10 @@
+# Converted Conda file
+
+This is the Conda `environment.yml` file converted to python `requirements.txt`:
+
+```file=requirements.txt
+qgrid==1.3.0
+mplstereonet
+pyqt5
+gempy==2.1.0
+```
