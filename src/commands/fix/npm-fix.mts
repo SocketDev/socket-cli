@@ -255,7 +255,9 @@ export async function npmFix(
           vulnerableVersionRange,
         } of infos.values()) {
           if (semver.gte(oldVersion, firstPatchedVersionIdentifier)) {
-            debugLog(`${oldId} is >= ${firstPatchedVersionIdentifier}, skipping.`)
+            debugLog(
+              `${oldId} is >= ${firstPatchedVersionIdentifier}, skipping.`,
+            )
             continue infosLoop
           }
           const newVersion = findBestPatchVersion(
