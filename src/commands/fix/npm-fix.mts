@@ -1,5 +1,7 @@
 import path from 'node:path'
 
+import semver from 'semver'
+
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
@@ -252,6 +254,10 @@ export async function npmFix(
           firstPatchedVersionIdentifier,
           vulnerableVersionRange,
         } of infos.values()) {
+          if (semver.gte(oldVersion, firstPatchedVersionIdentifier)) {
+            debugLog(`${oldId} is >= ${firstPatchedVersionIdentifier}, skipping.`)
+            continue infosLoop
+          }
           const newVersion = findBestPatchVersion(
             node,
             availableVersions,
