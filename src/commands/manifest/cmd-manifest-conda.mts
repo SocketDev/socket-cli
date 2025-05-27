@@ -48,7 +48,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} [CWD=.]
+      $ ${command} [options] [CWD=.]
 
     Warning: While we don't support Conda necessarily, this tool extracts the pip
              block from an environment.yml and outputs it as a requirements.txt
@@ -152,12 +152,6 @@ async function run(
 
   const wasValidInput = checkCommandInput(
     outputKind,
-    {
-      test: !!cwd,
-      message: 'The FILE arg is required',
-      pass: 'ok',
-      fail: 'missing',
-    },
     {
       nook: true,
       test: cli.input.length <= 1,

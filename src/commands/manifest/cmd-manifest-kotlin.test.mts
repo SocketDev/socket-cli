@@ -19,7 +19,7 @@ describe('socket manifest kotlin', async () => {
         "[beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Kotlin project
 
           Usage
-            $ socket manifest kotlin [--bin=path/to/gradle/binary] [--out=path/to/result] DIR
+            $ socket manifest kotlin [options] [CWD=.]
 
           Options
             --bin             Location of gradlew binary to use, default: CWD/gradlew

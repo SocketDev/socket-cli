@@ -19,7 +19,7 @@ describe('socket manifest conda', async () => {
         "[beta] Convert a Conda environment.yml file to a python requirements.txt
 
           Usage
-            $ socket manifest conda [CWD=.]
+            $ socket manifest conda [options] [CWD=.]
 
           Warning: While we don't support Conda necessarily, this tool extracts the pip
                    block from an environment.yml and outputs it as a requirements.txt
@@ -86,7 +86,8 @@ describe('socket manifest conda', async () => {
       [
         'manifest',
         'conda',
-        './manifest-conda/environment.yml',
+        'two',
+        'three', // this triggers the error
         '--config',
         '{}',
       ],
@@ -101,7 +102,10 @@ describe('socket manifest conda', async () => {
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
 
-          \\x1b[33m\\u203c\\x1b[39m Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
+          \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+
+            - Can only accept one DIR (make sure to escape spaces!) (\\x1b[31mreceived 2\\x1b[39m)
+          \\x1b[22m"
         `)
       },
     )
@@ -110,7 +114,8 @@ describe('socket manifest conda', async () => {
       [
         'manifest',
         'conda',
-        './manifest-conda/environment.yml',
+        'two',
+        'three', // this triggers the error
         '--json',
         '--config',
         '{}',
@@ -119,15 +124,19 @@ describe('socket manifest conda', async () => {
       async cmd => {
         const { stderr, stdout } = await invokeNpm(binCliPath, cmd)
         // (Must normalize newlines to fix snapshot test for Windows)
-        expect(stdout.replace(/\\r\\n/g, '\\n')).toMatchInlineSnapshot(`""`)
+        expect(stdout.replace(/\\r\\n/g, '\\n')).toMatchInlineSnapshot(`
+          "{
+            "ok": false,
+            "message": "Input error",
+            "data": "Please review the input requirements and try again\\n\\n  - Can only accept one DIR (make sure to escape spaces!) (\\u001b[31mreceived 2\\u001b[39m)\\n"
+          }"
+        `)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
              _____         _       _        /---------------
             |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
-
-          \\x1b[33m\\u203c\\x1b[39m Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
+            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>"
         `)
       },
     )
@@ -136,7 +145,8 @@ describe('socket manifest conda', async () => {
       [
         'manifest',
         'conda',
-        './manifest-conda/environment.yml',
+        'two',
+        'three', // this triggers the error
         '--markdown',
         '--config',
         '{}',
@@ -152,7 +162,10 @@ describe('socket manifest conda', async () => {
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
 
-          \\x1b[33m\\u203c\\x1b[39m Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
+          \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+
+            - Can only accept one DIR (make sure to escape spaces!) (\\x1b[31mreceived 2\\x1b[39m)
+          \\x1b[22m"
         `)
       },
     )

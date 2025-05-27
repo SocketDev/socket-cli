@@ -39,7 +39,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} [--bin=path/to/gradle/binary] [--out=path/to/result] DIR
+      $ ${command} [options] [CWD=.]
 
     Options
       ${getFlagListOutput(config.flags, 6)}
