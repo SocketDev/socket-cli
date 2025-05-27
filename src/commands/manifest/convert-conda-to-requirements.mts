@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
@@ -55,25 +56,27 @@ export async function convertCondaToRequirements(
       }
     }
   } else {
+    const filepath = path.join(cwd, filename)
+
     if (verbose) {
-      logger.info(`[VERBOSE] target dir/cwd: ${cwd}`)
+      logger.info(`[VERBOSE] target: ${filepath}`)
     }
 
     if (!fs.existsSync(cwd)) {
       return {
         ok: false,
         message: 'Manifest Generation Failed',
-        cause: `The cwd was not found at ${cwd}`,
+        cause: `The file was not found at ${filepath}`,
       }
     }
 
-    contents = fs.readFileSync(cwd, 'utf8')
+    contents = fs.readFileSync(filepath, 'utf8')
 
     if (!contents) {
       return {
         ok: false,
         message: 'Manifest Generation Failed',
-        cause: 'File is empty',
+        cause: `File at ${filepath} is empty`,
       }
     }
   }
