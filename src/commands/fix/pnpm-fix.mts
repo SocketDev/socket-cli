@@ -287,11 +287,12 @@ export async function pnpmFix(
 
       // actualTree may not be defined on the first iteration of pkgJsonPathsLoop.
       if (!actualTree) {
-        const maybeActualTree = isCi && existsSync(path.join(rootPath, 'node_modules'))
-          ? // eslint-disable-next-line no-await-in-loop
-            await getActualTree(cwd)
-          : // eslint-disable-next-line no-await-in-loop
-            await install(pkgEnvDetails, { cwd, spinner })
+        const maybeActualTree =
+          isCi && existsSync(path.join(rootPath, 'node_modules'))
+            ? // eslint-disable-next-line no-await-in-loop
+              await getActualTree(cwd)
+            : // eslint-disable-next-line no-await-in-loop
+              await install(pkgEnvDetails, { cwd, spinner })
         const maybeLockfileContent = maybeActualTree
           ? // eslint-disable-next-line no-await-in-loop
             await readPnpmLockfile(lockfilePath)
@@ -358,7 +359,9 @@ export async function pnpmFix(
           vulnerableVersionRange,
         } of infos.values()) {
           if (semver.gte(oldVersion, firstPatchedVersionIdentifier)) {
-            debugLog(`${oldId} is >= ${firstPatchedVersionIdentifier}, skipping.`)
+            debugLog(
+              `${oldId} is >= ${firstPatchedVersionIdentifier}, skipping.`,
+            )
             continue infosLoop
           }
           const newVersion = findBestPatchVersion(
