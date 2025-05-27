@@ -33,8 +33,7 @@ import constants from '../../constants.mts'
 import {
   Arborist,
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
-  SafeArborist,
-} from '../../shadow/npm/arborist/lib/arborist/index.mts'
+} from '../../shadow/npm/arborist/index.mts'
 import {
   findBestPatchVersion,
   findPackageNode,
@@ -51,7 +50,10 @@ import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
 import type { NormalizedFixOptions } from './types.mts'
-import type { SafeNode } from '../../shadow/npm/arborist/lib/node.mts'
+import type {
+  ArboristInstance,
+  NodeClass,
+} from '../../shadow/npm/arborist/types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
@@ -62,9 +64,9 @@ type InstallOptions = {
 }
 
 async function install(
-  arb: SafeArborist,
+  arb: ArboristInstance,
   options: InstallOptions,
-): Promise<SafeNode | null> {
+): Promise<NodeClass | null> {
   const { cwd = process.cwd() } = {
     __proto__: null,
     ...options,
@@ -103,7 +105,7 @@ export async function npmFix(
 
   const { pkgPath: rootPath } = pkgEnvDetails
 
-  const arb = new SafeArborist({
+  const arb = new Arborist({
     path: rootPath,
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   })

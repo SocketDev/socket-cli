@@ -32,9 +32,9 @@ import {
 import { getAlertsMapOptions } from './shared.mts'
 import constants from '../../constants.mts'
 import {
+  Arborist,
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
-  SafeArborist,
-} from '../../shadow/npm/arborist/lib/arborist/index.mts'
+} from '../../shadow/npm/arborist/index.mts'
 import {
   findBestPatchVersion,
   findPackageNode,
@@ -59,7 +59,7 @@ import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
 import type { NormalizedFixOptions } from './types.mts'
-import type { SafeNode } from '../../shadow/npm/arborist/lib/node.mts'
+import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { StringKeyValueObject } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
@@ -67,12 +67,12 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { DRY_RUN_NOT_SAVING, NPM, OVERRIDES, PNPM } = constants
 
-async function getActualTree(cwd: string = process.cwd()): Promise<SafeNode> {
+async function getActualTree(cwd: string = process.cwd()): Promise<NodeClass> {
   // @npmcli/arborist DOES have partial support for pnpm structured node_modules
   // folders. However, support is iffy resulting in unhappy path errors and hangs.
   // So, to avoid the unhappy path, we restrict our usage to --dry-run loading
   // of the node_modules folder.
-  const arb = new SafeArborist({
+  const arb = new Arborist({
     path: cwd,
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   })
@@ -88,7 +88,7 @@ type InstallOptions = {
 async function install(
   pkgEnvDetails: EnvDetails,
   options: InstallOptions,
-): Promise<SafeNode | null> {
+): Promise<NodeClass | null> {
   const { args, cwd, spinner } = {
     __proto__: null,
     ...options,
@@ -135,7 +135,7 @@ export async function pnpmFix(
 
   spinner?.start()
 
-  let actualTree: SafeNode | undefined
+  let actualTree: NodeClass | undefined
   const lockfilePath = path.join(rootPath, 'pnpm-lock.yaml')
   let lockfileContent = await readPnpmLockfile(lockfilePath)
 
