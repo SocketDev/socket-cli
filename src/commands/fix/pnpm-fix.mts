@@ -279,7 +279,7 @@ export async function pnpmFix(
       const pkgPath = path.dirname(pkgJsonPath)
       const isWorkspaceRoot =
         pkgJsonPath === pkgEnvDetails.editablePkgJson.filename
-      const workspaceName = isWorkspaceRoot
+      const workspace = isWorkspaceRoot
         ? 'root'
         : path.relative(rootPath, pkgPath)
 
@@ -339,7 +339,7 @@ export async function pnpmFix(
       let hasAnnouncedWorkspace = false
       let workspaceLogCallCount = logger.logCallCount
       if (isDebug()) {
-        debugLog(`Checking workspace: ${workspaceName}`)
+        debugLog(`Checking workspace: ${workspace}`)
         hasAnnouncedWorkspace = true
         workspaceLogCallCount = logger.logCallCount
       }
@@ -446,7 +446,7 @@ export async function pnpmFix(
           )
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
-            debugLog(`${workspaceName}/package.json not changed, skipping.`)
+            debugLog(`${workspace}/package.json not changed, skipping.`)
             // Reset things just in case.
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
@@ -461,7 +461,7 @@ export async function pnpmFix(
           }
 
           spinner?.start()
-          spinner?.info(`Installing ${newId} in ${workspaceName}.`)
+          spinner?.info(`Installing ${newId} in ${workspace}.`)
 
           let error
           let errored = false
@@ -496,11 +496,11 @@ export async function pnpmFix(
                 await fs.writeFile(lockfilePath, lockfileContent, 'utf8')
               }
               if (test) {
-                spinner?.info(`Testing ${newId} in ${workspaceName}.`)
+                spinner?.info(`Testing ${newId} in ${workspace}.`)
                 // eslint-disable-next-line no-await-in-loop
                 await runScript(testScript, [], { spinner, stdio: 'ignore' })
               }
-              spinner?.success(`Fixed ${name} in ${workspaceName}.`)
+              spinner?.success(`Fixed ${name} in ${workspace}.`)
             } else {
               errored = true
             }
@@ -529,11 +529,7 @@ export async function pnpmFix(
               }
 
               const repoInfo = getGitHubEnvRepoInfo()!
-              const branch = getSocketBranchName(
-                oldPurl,
-                newVersion,
-                workspaceName,
-              )
+              const branch = getSocketBranchName(oldPurl, newVersion, workspace)
               let skipPr = false
               if (
                 // eslint-disable-next-line no-await-in-loop
@@ -552,9 +548,11 @@ export async function pnpmFix(
                 // eslint-disable-next-line no-await-in-loop
                 !(await gitCreateAndPushBranch(
                   branch,
-                  getSocketCommitMessage(oldPurl, newVersion, workspaceName),
+                  getSocketCommitMessage(oldPurl, newVersion, workspace),
                   moddedFilepaths,
-                  cwd,
+                  {
+                    cwd,
+                  },
                 ))
               ) {
                 skipPr = true
@@ -592,15 +590,10 @@ export async function pnpmFix(
                   token,
                   cwd,
                 ),
-                cleanupOpenPrs(
-                  repoInfo.owner,
-                  repoInfo.repo,
-                  oldPurl,
-                  newVersion,
-                  {
-                    workspaceName,
-                  },
-                ),
+                cleanupOpenPrs(repoInfo.owner, repoInfo.repo, newVersion, {
+                  purl: oldPurl,
+                  workspace,
+                }),
               ])
               // eslint-disable-next-line no-await-in-loop
               const prResponse = await openPr(
@@ -612,7 +605,7 @@ export async function pnpmFix(
                 {
                   baseBranch,
                   cwd,
-                  workspaceName,
+                  workspace,
                 },
               )
               if (prResponse) {
@@ -694,7 +687,7 @@ export async function pnpmFix(
               }
             }
             logger.fail(
-              `Update failed for ${oldId} in ${workspaceName}.`,
+              `Update failed for ${oldId} in ${workspace}.`,
               ...(error ? [error] : []),
             )
           }
