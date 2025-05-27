@@ -401,23 +401,28 @@ export function updatePackageJsonFromNode(
     const depObject = editablePkgJson.content[depField] as
       | { [key: string]: string }
       | undefined
-    const oldRange = hasOwn(depObject, name) ? depObject[name] : undefined
-    if (typeof oldRange !== 'string' || oldRange.startsWith('catalog:')) {
+    const depValue = hasOwn(depObject, name) ? depObject[name] : undefined
+    if (typeof depValue !== 'string' || depValue.startsWith('catalog:')) {
       continue
     }
-    const npaResult = npa(oldRange)
-    if (!npaResult || (npaResult as AliasResult).subSpec) {
-      continue
+    let oldRange = depValue
+    // Use npa if depValue looks like more than just a semver range.
+    if (depValue.includes(':')) {
+      const npaResult = npa(depValue)
+      if (!npaResult || (npaResult as AliasResult).subSpec) {
+        continue
+      }
+      oldRange = npaResult.rawSpec
     }
-    const oldMin = getMinVersion(npaResult.rawSpec)
+    const oldMin = getMinVersion(oldRange)
     const newRange =
       oldMin &&
       // Ensure we're on the same major version...
       getMajor(newVersion) === oldMin.major &&
       // and not a downgrade.
       semver.gte(newVersion, oldMin.version)
-        ? applyRange(oldRange!, newVersion, rangeStyle)
-        : oldRange!
+        ? applyRange(oldRange, newVersion, rangeStyle)
+        : oldRange
     if (oldRange !== newRange) {
       result = true
       editablePkgJson.update({
