@@ -9,7 +9,7 @@ import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
 import semver from 'semver'
 
-import { debugFn, debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { readJson, writeJson } from '@socketsecurity/registry/lib/fs'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -447,7 +447,7 @@ export async function openPr(
   } as OpenPrOptions
   // Lazily access constants.ENV.GITHUB_ACTIONS.
   if (!constants.ENV.GITHUB_ACTIONS) {
-    debugLog('Missing GITHUB_ACTIONS environment variable.')
+    debugFn(openPr, 'Missing GITHUB_ACTIONS environment variable.')
     return null
   }
   const octokit = getOctokit()
@@ -475,7 +475,7 @@ export async function openPr(
         .join('\n')
       message += `:\n${details}`
     }
-    debugLog(message)
+    debugFn(openPr, message)
   }
   return null
 }
@@ -507,5 +507,9 @@ export async function setGitRemoteGitHubRepoUrl(
 ): Promise<void> {
   const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
   const url = `https://x-access-token:${token}@github.com/${owner}/${repo}`
-  await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
+  try {
+    await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
+  } catch (e) {
+    debugFn(setGitRemoteGitHubRepoUrl, 'Unexpected error\n:', e)
+  }
 }
