@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import config from '@socketsecurity/config'
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../constants.mts'
@@ -151,7 +151,7 @@ let _cachedConfig: LocalConfig | undefined
 let _readOnlyConfig = false
 
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
-  debugLog('Overriding entire config, marking config as read-only')
+  debugFn(overrideCachedConfig, 'Overriding entire config, marking config as read-only.')
 
   let config
   try {
@@ -197,7 +197,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
 }
 
 export function overrideConfigApiToken(apiToken: unknown) {
-  debugLog('Overriding API token, marking config as read-only')
+  debugFn(overrideConfigApiToken, 'Overriding API token, marking config as read-only.')
   // Set token to the local cached config and mark it read-only so it doesn't persist
   _cachedConfig = {
     ...config,

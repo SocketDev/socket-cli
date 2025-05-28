@@ -4,7 +4,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 
 export interface GeneratableManifests {
   cdxgen: boolean
@@ -26,14 +26,14 @@ export async function detectManifestActions(
   }
 
   if (existsSync(path.join(cwd, 'build.sbt'))) {
-    debugLog('Detected a Scala sbt build, running default Scala generator...')
+    debugFn(detectManifestActions, 'Detected a Scala sbt build, running default Scala generator...')
 
     output.sbt = true
     output.count += 1
   }
 
   if (existsSync(path.join(cwd, 'gradlew'))) {
-    debugLog('Detected a gradle build, running default gradle generator...')
+    debugFn(detectManifestActions, 'Detected a gradle build, running default gradle generator...')
     output.gradle = true
     output.count += 1
   }
@@ -43,7 +43,8 @@ export async function detectManifestActions(
   const envyaml = path.join(cwd, 'environment.yaml')
   const hasEnvyaml = !hasEnvyml && existsSync(envyaml)
   if (hasEnvyml || hasEnvyaml) {
-    debugLog(
+    debugFn(
+      detectManifestActions,
       'Detected an environment.yml file, running default Conda generator...',
     )
     output.conda = true
