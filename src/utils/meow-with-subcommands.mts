@@ -280,19 +280,22 @@ export function meowOrExit({
   if (!cli.flags['silent']) {
     emitBanner(command)
   }
-  if (!allowUnknownFlags) {
-    // Run meow specifically with the flag setting. It will exit(2) if an
-    // invalid flag is set and print a message.
-    meow({
-      argv,
-      description: config.description,
-      help: config.help(command, config),
-      importMeta,
-      flags: config.flags,
-      allowUnknownFlags: false,
-      autoHelp: false,
-    })
-  }
+
+  // As per https://github.com/sindresorhus/meow/issues/178
+  // Setting allowUnknownFlags:true makes it reject camel cased flags...
+  // if (!allowUnknownFlags) {
+  //   // Run meow specifically with the flag setting. It will exit(2) if an
+  //   // invalid flag is set and print a message.
+  //   meow({
+  //     argv,
+  //     description: config.description,
+  //     help: config.help(command, config),
+  //     importMeta,
+  //     flags: config.flags,
+  //     allowUnknownFlags: false,
+  //     autoHelp: false,
+  //   })
+  // }
 
   if (cli.flags['help']) {
     cli.showHelp(0)
@@ -307,7 +310,9 @@ export function meowOrExit({
     help: config.help(command, config),
     importMeta,
     flags: config.flags,
-    allowUnknownFlags: Boolean(allowUnknownFlags),
+    // As per https://github.com/sindresorhus/meow/issues/178
+    // Setting allowUnknownFlags:true makes it reject camel cased flags...
+    // allowUnknownFlags: Boolean(allowUnknownFlags),
     autoHelp: false,
   })
   // Ok, no help, reset to default.
