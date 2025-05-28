@@ -1,8 +1,12 @@
+import path from 'node:path'
+
 import terminalLink from 'terminal-link'
 
 import { joinOr } from '@socketsecurity/registry/lib/arrays'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { runFix } from './run-fix.mts'
+import { handleFix } from './handle-fix.mts'
+import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
@@ -12,6 +16,8 @@ import { RangeStyles } from '../../utils/semver.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
+
+const { DRY_RUN_NOT_SAVING } = constants
 
 const config: CliCommandConfig = {
   commandName: 'fix',
@@ -101,8 +107,16 @@ async function run(
     parentName,
   })
 
-  const { json, markdown } = cli.flags
+  const { autopilot, json, markdown } = cli.flags
+  let { autoMerge, rangeStyle, test } = cli.flags
   const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join: If given path is abs then cwd should not affect it
+  cwd = path.resolve(process.cwd(), cwd)
+  if (autopilot) {
+    autoMerge = true
+    test = true
+  }
 
   const wasValidInput = checkCommandInput(outputKind, {
     test: RangeStyles.includes(cli.flags['rangeStyle'] as string),
@@ -114,16 +128,35 @@ async function run(
     return
   }
 
-  await runFix({
-    autoMerge: Boolean(cli.flags['autoMerge']),
-    autopilot: Boolean(cli.flags['autopilot']),
-    limit: Number(cli.flags['limit']),
-    dryRun: Boolean(cli.flags['dryRun']),
-    purls: Array.isArray(cli.flags['purl']) ? cli.flags['purl'] : [],
-    rangeStyle: (cli.flags['rangeStyle'] ?? undefined) as
-      | RangeStyle
-      | undefined,
-    test: Boolean(cli.flags['test']),
-    testScript: cli.flags['testScript'] as string | undefined,
+  if (cli.flags['dryRun']) {
+    logger.log(DRY_RUN_NOT_SAVING)
+    return
+  }
+
+  let purls: string[] = Array.isArray(cli.flags['purl'])
+    ? cli.flags['purl']
+    : []
+  purls = purls.flatMap(p => p.split(/, */))
+
+  if (
+    !['caret', 'gt', 'gte', 'lt', 'lte', 'pin', 'preserve', 'tilde'].includes(
+      rangeStyle as string,
+    )
+  ) {
+    rangeStyle = 'preserve'
+  }
+
+  await handleFix({
+    autoMerge: Boolean(autoMerge),
+    cwd,
+    limit:
+      (cli.flags['limit']
+        ? parseInt(String(cli.flags['limit'] || ''), 10)
+        : Infinity) || Infinity,
+    outputKind,
+    purls,
+    rangeStyle: rangeStyle as RangeStyle,
+    test: Boolean(test),
+    testScript: String(cli.flags['testScript'] || 'test'),
   })
 }

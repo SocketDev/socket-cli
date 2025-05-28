@@ -2,24 +2,44 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { npmFix } from './npm-fix.mts'
 import { pnpmFix } from './pnpm-fix.mts'
-import { CMD_NAME, normalizeFixOptions } from './shared.mts'
+import { CMD_NAME } from './shared.mts'
 import constants from '../../constants.mts'
-import { cmdPrefixMessage } from '../../utils/cmd.mts'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment.mts'
 
-import type { FixOptions } from './types.mts'
+import type { CResult } from '../../types.mts'
+import type { RangeStyle } from '../../utils/semver.mts'
 
 const { NPM, PNPM } = constants
 
-export async function runFix(options_: FixOptions) {
-  const options = normalizeFixOptions(options_)
-  const pkgEnvDetails = await detectAndValidatePackageEnvironment(options.cwd, {
+export async function runFix({
+  autoMerge,
+  cwd,
+  limit,
+  purls,
+  rangeStyle,
+  test,
+  testScript,
+}: {
+  autoMerge: boolean
+  cwd: string
+  limit: number
+  purls: string[]
+  rangeStyle: RangeStyle
+  test: boolean
+  testScript: string
+}): Promise<CResult<unknown>> {
+  // TODO: make detectAndValidatePackageEnvironment return a CResult<pkgEnvDetails> and propagate it
+  const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
     cmdName: CMD_NAME,
     logger,
   })
 
   if (!pkgEnvDetails) {
-    return
+    return {
+      ok: false,
+      message: 'No package found',
+      cause: `No valid package environment was found in given cwd (${cwd})`,
+    }
   }
 
   logger.info(`Fixing packages for ${pkgEnvDetails.agent}.\n`)
@@ -27,12 +47,34 @@ export async function runFix(options_: FixOptions) {
   const { agent } = pkgEnvDetails
 
   if (agent === NPM) {
-    await npmFix(pkgEnvDetails, options)
+    // TODO: make npmFix return a CResult and propagate it
+    await npmFix(pkgEnvDetails, {
+      autoMerge,
+      cwd,
+      limit,
+      purls,
+      rangeStyle,
+      test,
+      testScript,
+    })
   } else if (agent === PNPM) {
-    await pnpmFix(pkgEnvDetails, options)
+    // TODO: make pnpmFix return a CResult and propagate it
+    await pnpmFix(pkgEnvDetails, {
+      autoMerge,
+      cwd,
+      limit,
+      purls,
+      rangeStyle,
+      test,
+      testScript,
+    })
   } else {
-    logger.warn(
-      cmdPrefixMessage(CMD_NAME, `${agent} is not supported at the moment.`),
-    )
+    return {
+      ok: false,
+      message: 'Not supported',
+      cause: `${agent} is not supported by this command at the moment.`,
+    }
   }
+
+  return { ok: true, data: undefined }
 }
