@@ -1,8 +1,11 @@
+import path from 'node:path'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { applyOptimization } from './apply-optimization.mts'
+import { handleOptimize } from './handle-optimize.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
+import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
@@ -29,14 +32,14 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command}
+      $ ${command} [options] [CWD=.]
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
       $ ${command}
-      $ ${command} --pin
+      $ ${command} ./proj/tree --pin
   `,
 }
 
@@ -58,18 +61,23 @@ async function run(
     parentName,
   })
 
-  // TODO: impl json/md
-
-  const cwd = process.cwd()
+  const { json, markdown } = cli.flags
+  const { pin, prod } = cli.flags
+  const outputKind = getOutputKind(json, markdown)
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join:
+  // If given path is absolute then cwd should not affect it.
+  cwd = path.resolve(process.cwd(), cwd)
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
-  await applyOptimization(
+  await handleOptimize({
     cwd,
-    Boolean(cli.flags['pin']),
-    Boolean(cli.flags['prod']),
-  )
+    pin: Boolean(pin),
+    outputKind,
+    prod: Boolean(prod),
+  })
 }

@@ -82,10 +82,14 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command}
+      $ ${command} [options] [CWD=.]
 
     Options
       ${getFlagListOutput(config.flags, 6)}
+
+    Examples
+      $ ${command}
+      $ ${command} ./proj/tree --autoMerge
   `,
 }
 
@@ -109,12 +113,12 @@ async function run(
 
   const { autopilot, json, markdown } = cli.flags
   let { autoMerge, rangeStyle, test } = cli.flags
-  // TODO: impl json/md further
   const outputKind = getOutputKind(json, markdown)
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
+
   if (autopilot) {
     autoMerge = true
     test = true
