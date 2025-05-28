@@ -10,6 +10,7 @@ import { commonFlags } from '../../flags.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -38,6 +39,9 @@ const config: CliCommandConfig = {
     Tries to figure out what language your target repo uses. If it finds a
     supported case then it will try to generate the manifest file for that
     language with the default or detected settings.
+
+    Note: you can exclude languages from being auto-generated if you don't want
+          them to. Run \`socket manifest setup\` in the same dir to disable it.
 
     Examples
 
@@ -79,7 +83,9 @@ async function run(
     logger.groupEnd()
   }
 
-  const detected = await detectManifestActions(String(cwd))
+  const socketJson = await readOrDefaultSocketJson(cwd)
+
+  const detected = await detectManifestActions(socketJson, cwd)
   debugLog(detected)
 
   if (cli.flags['dryRun']) {

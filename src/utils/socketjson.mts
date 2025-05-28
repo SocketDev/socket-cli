@@ -16,6 +16,7 @@ export interface SocketJson {
   defaults?: {
     manifest?: {
       conda?: {
+        disabled?: boolean
         infile?: string
         outfile?: string
         stdin?: boolean
@@ -24,11 +25,13 @@ export interface SocketJson {
         verbose?: boolean
       }
       gradle?: {
+        disabled?: boolean
         bin?: string
         gradleOpts?: string
         verbose?: boolean
       }
       sbt?: {
+        disabled?: boolean
         infile?: string
         stdin?: boolean
         bin?: string

@@ -27,6 +27,9 @@ describe('socket manifest auto', async () => {
           supported case then it will try to generate the manifest file for that
           language with the default or detected settings.
 
+          Note: you can exclude languages from being auto-generated if you don't want
+                them to. Run \`socket manifest setup\` in the same dir to disable it.
+
           Examples
 
             $ socket manifest auto

@@ -6,6 +6,8 @@ import path from 'node:path'
 
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 
+import type { SocketJson } from '../../utils/socketjson.mts'
+
 export interface GeneratableManifests {
   cdxgen: boolean
   count: number
@@ -15,6 +17,9 @@ export interface GeneratableManifests {
 }
 
 export async function detectManifestActions(
+  // Passing in null means we attempt detection for every supported language
+  // regardless of local socket.json status. Sometimes we want that.
+  socketJson: SocketJson | null,
   cwd = process.cwd(),
 ): Promise<GeneratableManifests> {
   const output = {
@@ -25,27 +30,35 @@ export async function detectManifestActions(
     sbt: false,
   }
 
-  if (existsSync(path.join(cwd, 'build.sbt'))) {
+  if (socketJson?.defaults?.manifest?.sbt?.disabled) {
+    debugLog('[DEBUG] - sbt auto-detection is disabled in socket.json')
+  } else if (existsSync(path.join(cwd, 'build.sbt'))) {
     debugLog('[DEBUG] - Detected a Scala sbt build file')
 
     output.sbt = true
     output.count += 1
   }
 
-  if (existsSync(path.join(cwd, 'gradlew'))) {
+  if (socketJson?.defaults?.manifest?.gradle?.disabled) {
+    debugLog('[DEBUG] - gradle auto-detection is disabled in socket.json')
+  } else if (existsSync(path.join(cwd, 'gradlew'))) {
     debugLog('[DEBUG] - Detected a gradle build file')
     output.gradle = true
     output.count += 1
   }
 
-  const envyml = path.join(cwd, 'environment.yml')
-  const hasEnvyml = existsSync(envyml)
-  const envyaml = path.join(cwd, 'environment.yaml')
-  const hasEnvyaml = !hasEnvyml && existsSync(envyaml)
-  if (hasEnvyml || hasEnvyaml) {
-    debugLog('[DEBUG] - Detected an environment.yml Conda file')
-    output.conda = true
-    output.count += 1
+  if (socketJson?.defaults?.manifest?.conda?.disabled) {
+    debugLog('[DEBUG] - conda auto-detection is disabled in socket.json')
+  } else {
+    const envyml = path.join(cwd, 'environment.yml')
+    const hasEnvyml = existsSync(envyml)
+    const envyaml = path.join(cwd, 'environment.yaml')
+    const hasEnvyaml = !hasEnvyml && existsSync(envyaml)
+    if (hasEnvyml || hasEnvyaml) {
+      debugLog('[DEBUG] - Detected an environment.yml Conda file')
+      output.conda = true
+      output.count += 1
+    }
   }
 
   return output

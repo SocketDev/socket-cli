@@ -6,6 +6,7 @@ import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
+import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 
@@ -50,7 +51,8 @@ export async function handleCreateNewScan({
 }): Promise<void> {
   if (autoManifest) {
     logger.info('Auto generating manifest files ...')
-    const detected = await detectManifestActions(cwd)
+    const socketJson = await readOrDefaultSocketJson(cwd)
+    const detected = await detectManifestActions(socketJson, cwd)
     await generateAutoManifest({
       detected,
       cwd,

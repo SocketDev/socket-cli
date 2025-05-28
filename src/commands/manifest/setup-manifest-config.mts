@@ -15,7 +15,7 @@ export async function setupManifestConfig(
   cwd: string,
   defaultOnReadError = false,
 ): Promise<CResult<unknown>> {
-  const detected = await detectManifestActions(String(cwd))
+  const detected = await detectManifestActions(null, cwd)
   debugLog(detected)
 
   // - repeat
@@ -110,7 +110,7 @@ export async function setupManifestConfig(
     choices,
   })) as string | null
 
-  const socketJsonResult = (await readSocketJson(cwd, defaultOnReadError)) || {}
+  const socketJsonResult = await readSocketJson(cwd, defaultOnReadError)
   if (!socketJsonResult.ok) {
     return socketJsonResult
   }
@@ -123,34 +123,36 @@ export async function setupManifestConfig(
     socketJson.defaults.manifest = {}
   }
 
+  let result: CResult<{ canceled: boolean }>
   switch (targetEco) {
     case 'conda': {
       if (!socketJson.defaults.manifest.conda) {
         socketJson.defaults.manifest.conda = {}
       }
-      await setupConda(socketJson.defaults.manifest.conda)
+      result = await setupConda(socketJson.defaults.manifest.conda)
       break
     }
     case 'gradle': {
       if (!socketJson.defaults.manifest.gradle) {
         socketJson.defaults.manifest.gradle = {}
       }
-      await setupGradle(socketJson.defaults.manifest.gradle)
+      result = await setupGradle(socketJson.defaults.manifest.gradle)
       break
     }
     case 'sbt': {
       if (!socketJson.defaults.manifest.sbt) {
         socketJson.defaults.manifest.sbt = {}
       }
-      await setupSbt(socketJson.defaults.manifest.sbt)
+      result = await setupSbt(socketJson.defaults.manifest.sbt)
       break
     }
     default: {
-      logger.log('')
-      logger.info('User canceled')
-      logger.log('')
-      return { ok: true, data: undefined }
+      result = canceledByUser()
     }
+  }
+
+  if (!result.ok || result.data.canceled) {
+    return result
   }
 
   logger.log('')
@@ -177,57 +179,85 @@ export async function setupManifestConfig(
     return await writeSocketJson(cwd, socketJson)
   }
 
-  logger.log('')
-  logger.log('User canceled updating the config')
-  logger.log('')
-
-  return { ok: true, data: undefined }
+  return canceledByUser()
 }
 
 async function setupConda(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['conda']
   >,
-) {
+): Promise<CResult<{ canceled: boolean }>> {
+  const on = await askForEnabled(!config.disabled)
+  if (on === undefined) {
+    return canceledByUser()
+  } else if (on) {
+    delete config.disabled
+  } else {
+    config.disabled = true
+  }
+
   const inf = await askForInputFile(config.infile || 'environment.yml')
-  if (inf?.trim() === '-') {
+  if (inf === undefined) {
+    return canceledByUser()
+  } else if (inf.trim() === '-') {
     config.stdin = true
   } else {
     delete config.stdin
-    if (inf?.trim()) {
+    if (inf.trim()) {
       config.infile = inf.trim()
     } else {
       delete config.infile
     }
   }
 
-  const out = await askForOutputFile(config.outfile || 'requirements.txt')
-  if (out === '-') {
+  const stdout = await askForStdout(config.stdout)
+  if (stdout === undefined) {
+    return canceledByUser()
+  } else if (stdout === 'yes') {
     config.stdout = true
+  } else if (stdout === 'no') {
+    config.stdout = false
   } else {
     delete config.stdout
-    if (out?.trim()) {
-      config.outfile = out.trim()
+  }
+
+  if (!config.stdout) {
+    const out = await askForOutputFile(config.outfile || 'requirements.txt')
+    if (out === undefined) {
+      return canceledByUser()
+    } else if (out === '-') {
+      config.stdout = true
     } else {
-      delete config.outfile
+      delete config.stdout
+      if (out?.trim()) {
+        config.outfile = out.trim()
+      } else {
+        delete config.outfile
+      }
     }
   }
 
   const verbose = await askForVerboseFlag(config.verbose)
-  if (verbose === 'yes' || verbose === 'no') {
+  if (verbose === undefined) {
+    return canceledByUser()
+  } else if (verbose === 'yes' || verbose === 'no') {
     config.verbose = verbose === 'yes'
   } else {
     delete config.verbose
   }
+
+  return notCanceled()
 }
 
 async function setupGradle(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['gradle']
   >,
-) {
+): Promise<CResult<{ canceled: boolean }>> {
   const bin = await askForBin(config.bin || './gradlew')
-  if (bin?.trim()) {
+  if (bin === undefined) {
+    return canceledByUser()
+  } else if (bin.trim()) {
     config.bin = bin.trim()
   } else {
     delete config.bin
@@ -239,27 +269,35 @@ async function setupGradle(
     required: false,
     // validate: async string => bool
   })
-  if (opts?.trim()) {
+  if (opts === undefined) {
+    return canceledByUser()
+  } else if (opts.trim()) {
     config.gradleOpts = opts.trim()
   } else {
     delete config.gradleOpts
   }
 
   const verbose = await askForVerboseFlag(config.verbose)
-  if (verbose === 'yes' || verbose === 'no') {
+  if (verbose === undefined) {
+    return canceledByUser()
+  } else if (verbose === 'yes' || verbose === 'no') {
     config.verbose = verbose === 'yes'
   } else {
     delete config.verbose
   }
+
+  return notCanceled()
 }
 
 async function setupSbt(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['manifest']>['sbt']
   >,
-) {
+): Promise<CResult<{ canceled: boolean }>> {
   const bin = await askForBin(config.bin || 'sbt')
-  if (bin?.trim()) {
+  if (bin === undefined) {
+    return canceledByUser()
+  } else if (bin.trim()) {
     config.bin = bin.trim()
   } else {
     delete config.bin
@@ -271,39 +309,56 @@ async function setupSbt(
     required: false,
     // validate: async string => bool
   })
-  if (opts?.trim()) {
+  if (opts === undefined) {
+    return canceledByUser()
+  } else if (opts.trim()) {
     config.sbtOpts = opts.trim()
   } else {
     delete config.sbtOpts
   }
 
   const stdout = await askForStdout(config.stdout)
-  if (typeof stdout === 'boolean') {
-    config.stdout = stdout
+  if (stdout === undefined) {
+    return canceledByUser()
+  } else if (stdout === 'yes') {
+    config.stdout = true
+  } else if (stdout === 'no') {
+    config.stdout = false
   } else {
     delete config.stdout
   }
 
-  if (stdout !== true) {
+  if (config.stdout !== true) {
     const out = await askForOutputFile(config.outfile || 'sbt.pom.xml')
-    if (out?.trim()) {
-      config.outfile = out.trim()
+    if (out === undefined) {
+      return canceledByUser()
+    } else if (out === '-') {
+      config.stdout = true
     } else {
-      delete config.outfile
+      delete config.stdout
+      if (out?.trim()) {
+        config.outfile = out.trim()
+      } else {
+        delete config.outfile
+      }
     }
   }
 
   const verbose = await askForVerboseFlag(config.verbose)
-  if (verbose === 'yes' || verbose === 'no') {
+  if (verbose === undefined) {
+    return canceledByUser()
+  } else if (verbose === 'yes' || verbose === 'no') {
     config.verbose = verbose === 'yes'
   } else {
     delete config.verbose
   }
+
+  return notCanceled()
 }
 
 async function askForStdout(
   defaultValue: boolean | undefined,
-): Promise<boolean | undefined> {
+): Promise<string | undefined> {
   return await select({
     message: '(--stdout) Print the resulting pom.xml to stdout?',
     choices: [
@@ -329,6 +384,41 @@ async function askForStdout(
   })
 }
 
+async function askForEnabled(
+  defaultValue: boolean | undefined,
+): Promise<boolean | undefined> {
+  return await select({
+    message:
+      'Do you want to enable or disable auto generating manifest files for this language in this dir?',
+    choices: [
+      {
+        name: 'Enable',
+        value: true,
+        selected: defaultValue === true,
+        description: 'Generate manifest files for this language when detected',
+      },
+      {
+        name: 'Disable',
+        value: false,
+        selected: defaultValue === false,
+        description:
+          'Do not generate manifest files for this language when detected, unless explicitly asking for it',
+      },
+      {
+        name: 'Cancel',
+        value: undefined,
+        description: 'Exit configurator',
+      },
+    ],
+    default:
+      defaultValue === true
+        ? 'enable'
+        : defaultValue === false
+          ? 'disable'
+          : '',
+  })
+}
+
 async function askForInputFile(defaultName = ''): Promise<string | undefined> {
   return await input({
     message:
@@ -343,7 +433,7 @@ async function askForInputFile(defaultName = ''): Promise<string | undefined> {
 async function askForOutputFile(defaultName = ''): Promise<string | undefined> {
   return await input({
     message:
-      '(--out) What should be the default output file? Should be absolute path, or relative to cwd, or $PATH.' +
+      '(--out) What should be the default output file? Should be absolute path or relative to cwd.' +
       (defaultName ? ' (Backspace to leave default)' : ''),
     default: defaultName,
     required: false,
@@ -364,7 +454,7 @@ async function askForBin(defaultName = ''): Promise<string | undefined> {
 
 async function askForVerboseFlag(
   current: boolean | undefined,
-): Promise<string> {
+): Promise<string | undefined> {
   return await select({
     message: '(--verbose) Should this run in verbose mode by default?',
     choices: [
@@ -388,4 +478,15 @@ async function askForVerboseFlag(
     ],
     default: current === true ? 'yes' : current === false ? 'no' : '',
   })
+}
+
+function canceledByUser(): CResult<{ canceled: boolean }> {
+  logger.log('')
+  logger.info('User canceled')
+  logger.log('')
+  return { ok: true, data: { canceled: true } }
+}
+
+function notCanceled(): CResult<{ canceled: boolean }> {
+  return { ok: true, data: { canceled: false } }
 }

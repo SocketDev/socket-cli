@@ -101,7 +101,7 @@ async function run(
   // Note: path.resolve vs .join: If given path is abs then cwd should not affect it
   cwd = path.resolve(process.cwd(), cwd)
 
-  const socketJson = await readOrDefaultSocketJson(String(cwd))
+  const socketJson = await readOrDefaultSocketJson(cwd)
 
   debugLog(
     '[DEBUG] socket.json gradle override:',
