@@ -76,9 +76,7 @@ export async function addOverrides(
   const isWorkspace = workspacePkgJsonPaths.length > 0
   const isWorkspaceRoot = pkgPath === rootPath
   const isLockScanned = isWorkspaceRoot && !prod
-  const workspace = isWorkspaceRoot
-    ? 'root'
-    : path.relative(rootPath, pkgPath)
+  const workspace = isWorkspaceRoot ? 'root' : path.relative(rootPath, pkgPath)
   if (
     isWorkspace &&
     agent === PNPM &&
@@ -271,7 +269,10 @@ export async function addOverrides(
     )
     if (isWorkspaceRoot) {
       for (const { overrides, type } of overridesDataObjects) {
-        updateManifestByAgent.get(type)!(pkgEnvDetails, toSortedObject(overrides))
+        updateManifestByAgent.get(type)!(
+          pkgEnvDetails,
+          toSortedObject(overrides),
+        )
       }
     }
     await pkgEnvDetails.editablePkgJson.save()
