@@ -61,13 +61,19 @@ import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
-import type { StringKeyValueObject } from '../../types.mts'
+import type { CResult, StringKeyValueObject } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { NPM, OVERRIDES, PNPM } = constants
+
+type InstallOptions = {
+  args?: string[] | undefined
+  cwd?: string | undefined
+  spinner?: Spinner | undefined
+}
 
 async function getActualTree(cwd: string = process.cwd()): Promise<NodeClass> {
   // @npmcli/arborist DOES have partial support for pnpm structured node_modules
@@ -79,12 +85,6 @@ async function getActualTree(cwd: string = process.cwd()): Promise<NodeClass> {
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   })
   return await arb.loadActual()
-}
-
-type InstallOptions = {
-  args?: string[] | undefined
-  cwd?: string | undefined
-  spinner?: Spinner | undefined
 }
 
 async function install(
@@ -133,7 +133,7 @@ export async function pnpmFix(
     test: boolean
     testScript: string
   },
-) {
+): Promise<CResult<{ fixed: boolean }>> {
   // Lazily access constants.spinner.
   const { spinner } = constants
   const { pkgPath: rootPath } = pkgEnvDetails
@@ -185,8 +185,11 @@ export async function pnpmFix(
   // Check !lockfileContent to make TypeScript happy.
   if (!lockfile || !lockfileContent) {
     spinner?.stop()
-    logger.error('Required pnpm-lock.yaml not found or usable.')
-    return
+    return {
+      ok: false,
+      message: 'Missing lockfile',
+      cause: 'Required pnpm-lock.yaml not found or usable',
+    }
   }
 
   let alertsMap
@@ -199,17 +202,20 @@ export async function pnpmFix(
         )
   } catch (e) {
     spinner?.stop()
-    logger.error(
-      (e as Error)?.message || 'Unknown Socket batch PURL API error.',
-    )
-    return
+    debugFn('Unexpected Socket batch PURL API error:')
+    debugFn(e)
+    return {
+      ok: false,
+      message: 'API Error',
+      cause: (e as Error)?.message || 'Unknown Socket batch PURL API error.',
+    }
   }
 
   const infoByPkgName = getCveInfoFromAlertsMap(alertsMap, { limit })
   if (!infoByPkgName) {
     spinner?.stop()
     logger.info('No fixable vulns found.')
-    return
+    return { ok: true, data: { fixed: false } }
   }
 
   // Lazily access constants.ENV properties.
@@ -231,12 +237,15 @@ export async function pnpmFix(
     pkgEnvDetails.editablePkgJson.filename!,
   ]
 
-  const handleInstallFail = () => {
-    logger.error(
-      `Unexpected condition: ${pkgEnvDetails.agent} install failed.\n`,
-    )
+  const handleInstallFail = (): CResult<{ fixed: boolean }> => {
     logger.dedent()
     spinner?.dedent()
+
+    return {
+      ok: false,
+      message: 'Install failed',
+      cause: `Unexpected condition: ${pkgEnvDetails.agent} install failed`,
+    }
   }
 
   spinner?.stop()
@@ -307,8 +316,7 @@ export async function pnpmFix(
       }
       if (!actualTree) {
         // Exit early if install fails.
-        handleInstallFail()
-        return
+        return handleInstallFail()
       }
 
       const oldVersions = arrayUnique(
@@ -519,14 +527,20 @@ export async function pnpmFix(
 
           if (!errored && isCi) {
             try {
-              const moddedFilepaths =
-                // eslint-disable-next-line no-await-in-loop
-                (await gitUnstagedModifiedFiles(cwd)).filter(p => {
-                  const basename = path.basename(p)
-                  return (
-                    basename === 'package.json' || basename === 'pnpm-lock.yaml'
-                  )
-                })
+              // eslint-disable-next-line no-await-in-loop
+              const result = await gitUnstagedModifiedFiles(cwd)
+              if (!result.ok) {
+                logger.warn(
+                  'Unexpected condition: Nothing to commit, skipping PR creation.',
+                )
+                continue
+              }
+              const moddedFilepaths = result.data.filter(p => {
+                const basename = path.basename(p)
+                return (
+                  basename === 'package.json' || basename === 'pnpm-lock.yaml'
+                )
+              })
               if (!moddedFilepaths.length) {
                 logger.warn(
                   'Unexpected condition: Nothing to commit, skipping PR creation.',
@@ -584,8 +598,7 @@ export async function pnpmFix(
                   continue infosLoop
                 }
                 // Exit early if install fails.
-                handleInstallFail()
-                return
+                return handleInstallFail()
               }
 
               // eslint-disable-next-line no-await-in-loop
@@ -688,14 +701,14 @@ export async function pnpmFix(
                 lockfileContent = maybeLockfileContent
               } else {
                 // Exit early if install fails.
-                handleInstallFail()
-                return
+                return handleInstallFail()
               }
             }
-            logger.fail(
-              `Update failed for ${oldId} in ${workspace}.`,
-              ...(error ? [error] : []),
-            )
+            return {
+              ok: false,
+              message: 'Update failed',
+              cause: `Update failed for ${oldId} in ${workspace}${error ? '; ' + error : ''}`,
+            }
           }
           if (++count >= limit) {
             logger.dedent()
@@ -720,4 +733,6 @@ export async function pnpmFix(
   }
 
   spinner?.stop()
+
+  return { ok: true, data: { fixed: true } } // or, did we change anything?
 }

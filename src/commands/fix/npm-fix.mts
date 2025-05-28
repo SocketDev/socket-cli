@@ -55,6 +55,7 @@ import type {
   ArboristInstance,
   NodeClass,
 } from '../../shadow/npm/arborist/types.mts'
+import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
@@ -102,7 +103,7 @@ export async function npmFix(
     test: boolean
     testScript: string
   },
-) {
+): Promise<CResult<{ fixed: boolean }>> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
@@ -125,17 +126,20 @@ export async function npmFix(
       : await getAlertsMapFromArborist(arb, getAlertsMapOptions({ limit }))
   } catch (e) {
     spinner?.stop()
-    logger.error(
-      (e as Error)?.message || 'Unknown Socket batch PURL API error.',
-    )
-    return
+    debugFn('API Error thrown:')
+    debugFn(e)
+    return {
+      ok: false,
+      message: 'API Error',
+      cause: (e as Error)?.message || 'Unknown Socket batch PURL API error.',
+    }
   }
 
   const infoByPkgName = getCveInfoFromAlertsMap(alertsMap, { limit })
   if (!infoByPkgName) {
     spinner?.stop()
     logger.info('No fixable vulns found.')
-    return
+    return { ok: true, data: { fixed: false } }
   }
 
   // Lazily access constants.ENV properties.
@@ -157,12 +161,16 @@ export async function npmFix(
     pkgEnvDetails.editablePkgJson.filename!,
   ]
 
-  const handleInstallFail = () => {
-    logger.error(
-      `Unexpected condition: ${pkgEnvDetails.agent} install failed.\n`,
-    )
+  const handleInstallFail = (): CResult<{ fixed: boolean }> => {
+    debugFn(`Unexpected condition: ${pkgEnvDetails.agent} install failed.\n`)
     logger.dedent()
     spinner?.dedent()
+
+    return {
+      ok: false,
+      message: 'Installation failure',
+      cause: `Unexpected condition: ${pkgEnvDetails.agent} install failed.`,
+    }
   }
 
   spinner?.stop()
@@ -350,15 +358,24 @@ export async function npmFix(
 
           if (!errored && isCi) {
             try {
-              const moddedFilepaths =
-                // eslint-disable-next-line no-await-in-loop
-                (await gitUnstagedModifiedFiles(cwd)).filter(p => {
-                  const basename = path.basename(p)
-                  return (
-                    basename === 'package.json' ||
-                    basename === 'package-lock.json'
-                  )
-                })
+              // eslint-disable-next-line no-await-in-loop
+              const result = await gitUnstagedModifiedFiles(cwd)
+              if (!result.ok) {
+                // Do we fail if this fails? If this git command
+                // fails then probably other git commands do too?
+                logger.warn(
+                  'Unexpected condition: Nothing to commit, skipping PR creation.',
+                )
+                continue infosLoop
+              }
+              const moddedFilepaths = result.data.filter(p => {
+                const basename = path.basename(p)
+                return (
+                  basename === 'package.json' ||
+                  basename === 'package-lock.json'
+                )
+              })
+
               if (!moddedFilepaths.length) {
                 logger.warn(
                   'Unexpected condition: Nothing to commit, skipping PR creation.',
@@ -406,8 +423,7 @@ export async function npmFix(
                 const maybeActualTree = await install(arb, { cwd })
                 if (!maybeActualTree) {
                   // Exit early if install fails.
-                  handleInstallFail()
-                  return
+                  return handleInstallFail()
                 }
                 actualTree = maybeActualTree
                 continue infosLoop
@@ -495,8 +511,7 @@ export async function npmFix(
               spinner?.stop()
               if (!maybeActualTree) {
                 // Exit early if install fails.
-                handleInstallFail()
-                return
+                return handleInstallFail()
               }
               actualTree = maybeActualTree
             }
@@ -525,4 +540,6 @@ export async function npmFix(
   }
 
   spinner?.stop()
+
+  return { ok: true, data: { fixed: true } } // true? did we actually change anything?
 }
