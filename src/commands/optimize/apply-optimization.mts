@@ -1,5 +1,4 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { addOverrides } from './add-overrides.mts'
 import { CMD_NAME } from './shared.mts'
@@ -8,21 +7,23 @@ import constants from '../../constants.mts'
 import { cmdPrefixMessage } from '../../utils/cmd.mts'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment.mts'
 
-const { VLT } = constants
+import type { CResult } from '../../types.mts'
 
-function createActionMessage(
-  verb: string,
-  overrideCount: number,
-  workspaceCount: number,
-): string {
-  return `${verb} ${overrideCount} Socket.dev optimized ${pluralize('override', overrideCount)}${workspaceCount ? ` in ${workspaceCount} ${pluralize('workspace', workspaceCount)}` : ''}`
-}
+const { VLT } = constants
 
 export async function applyOptimization(
   cwd: string,
   pin: boolean,
   prod: boolean,
-) {
+): Promise<
+  CResult<{
+    addedCount: number
+    updatedCount: number
+    pkgJsonChanged: boolean
+    updatedInWorkspaces: number
+    addedInWorkspaces: number
+  }>
+> {
   const result = await detectAndValidatePackageEnvironment(cwd, {
     cmdName: CMD_NAME,
     logger,
@@ -32,21 +33,17 @@ export async function applyOptimization(
   if (!result.ok) {
     return result
   }
-
   const pkgEnvDetails = result.data
-  if (!pkgEnvDetails) {
-    // TODO: probably not necessary
-    return
-  }
 
   if (pkgEnvDetails.agent === VLT) {
-    logger.warn(
-      cmdPrefixMessage(
+    return {
+      ok: false,
+      message: 'Unsupported',
+      cause: cmdPrefixMessage(
         CMD_NAME,
         `${VLT} does not support overrides. Soon, though ⚡`,
       ),
-    )
-    return
+    }
   }
 
   // Lazily access constants.spinner.
@@ -66,22 +63,26 @@ export async function applyOptimization(
   const pkgJsonChanged = addedCount > 0 || updatedCount > 0
 
   if (pkgJsonChanged || pkgEnvDetails.features.npmBuggyOverrides) {
-    await updateLockfile(pkgEnvDetails, { cmdName: CMD_NAME, logger, spinner })
+    const result = await updateLockfile(pkgEnvDetails, {
+      cmdName: CMD_NAME,
+      logger,
+      spinner,
+    })
+    if (!result.ok) {
+      return result
+    }
   }
 
   spinner.stop()
 
-  if (updatedCount > 0) {
-    logger?.log(
-      `${createActionMessage('Updated', updatedCount, state.updatedInWorkspaces.size)}${addedCount ? '.' : '🚀'}`,
-    )
-  }
-  if (addedCount > 0) {
-    logger?.log(
-      `${createActionMessage('Added', addedCount, state.addedInWorkspaces.size)} 🚀`,
-    )
-  }
-  if (!pkgJsonChanged) {
-    logger?.log('Scan complete. No Socket.dev optimized overrides applied.')
+  return {
+    ok: true,
+    data: {
+      addedCount,
+      updatedCount,
+      pkgJsonChanged,
+      updatedInWorkspaces: state.updatedInWorkspaces.size,
+      addedInWorkspaces: state.addedInWorkspaces.size,
+    },
   }
 }

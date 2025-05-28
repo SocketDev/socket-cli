@@ -17,7 +17,7 @@ describe('socket fix', async () => {
         "Update dependencies with "fixable" Socket alerts
 
           Usage
-            $ socket fix
+            $ socket fix [options] [CWD=.]
 
           Options
             --autoMerge       Enable auto-merge for pull requests that Socket opens.
@@ -38,7 +38,11 @@ describe('socket fix', async () => {
                                 * preserve - Retain the existing version range style as-is
                                 * tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
             --test            Verify the fix by running unit tests
-            --testScript      The test script to run for each fix attempt"
+            --testScript      The test script to run for each fix attempt
+
+          Examples
+            $ socket fix
+            $ socket fix ./proj/tree --autoMerge"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
