@@ -222,8 +222,8 @@ async function removeEmptyDirs(thePath) {
       onlyDirectories: true,
     })
   )
-  // Sort directory paths longest to shortest.
-  .sort((a, b) => b.length - a.length)
+    // Sort directory paths longest to shortest.
+    .sort((a, b) => b.length - a.length)
   for (const dirPath of dirPaths) {
     if (isDirEmptySync(dirPath)) {
       // eslint-disable-next-line no-await-in-loop
