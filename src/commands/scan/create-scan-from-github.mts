@@ -374,9 +374,7 @@ async function testAndDownloadManifestFile({
     githubToken,
   })
 
-  return result.ok
-    ? { ok: true, data: { isManifest: true } }
-    : result
+  return result.ok ? { ok: true, data: { isManifest: true } } : result
 }
 
 async function downloadManifestFile({
