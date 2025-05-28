@@ -176,7 +176,7 @@ ${table}
       'There was a problem converting the logs to Markdown, please try the `--json` flag',
     )
     if (isDebug()) {
-      debugFn('Unexpected error:\n', e)
+      debugFn('catch: unexpected\n', e)
     }
     return ''
   }

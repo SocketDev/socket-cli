@@ -40,7 +40,7 @@ export function captureExceptionSync(
   if (!Sentry) {
     return ''
   }
-  debugFn(`Sending exception to Sentry.`)
+  debugFn('send: exception to Sentry')
   return Sentry.captureException(exception, hint) as string
 }
 

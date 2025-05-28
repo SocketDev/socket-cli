@@ -154,7 +154,7 @@ export async function cleanupOpenPrs(
             pull_number: prNum,
             state: 'closed',
           })
-          debugFn(`Closed ${prRef} for older version ${prToVersion}.`)
+          debugFn(`close: ${prRef} for ${prToVersion}`)
           // Remove entry from parent object.
           context.parent.splice(context.index, 1)
           // Mark cache to be saved.
@@ -162,7 +162,8 @@ export async function cleanupOpenPrs(
           return null
         } catch (e) {
           debugFn(
-            `Failed to close ${prRef}: ${(e as Error)?.message || 'Unknown error'}`,
+            `fail: close ${prRef}\n`,
+            (e as Error)?.message || 'unknown error',
           )
         }
       }
@@ -176,7 +177,7 @@ export async function cleanupOpenPrs(
             base: match.headRefName,
             head: match.baseRefName,
           })
-          debugFn(`Updated stale ${prRef}.`)
+          debugFn('update: stale', prRef)
           // Update entry entry.
           if (context.apiType === 'graphql') {
             context.entry.mergeStateStatus = 'CLEAN'
@@ -187,7 +188,7 @@ export async function cleanupOpenPrs(
           cachesToSave.set(context.cacheKey, context.data)
         } catch (e) {
           const message = (e as Error)?.message || 'Unknown error'
-          debugFn(`Failed to update ${prRef}: ${message}`)
+          debugFn(`fail: update ${prRef} - ${message}`)
         }
       }
       return match
@@ -443,7 +444,7 @@ export async function openPr(
   } as OpenPrOptions
   // Lazily access constants.ENV.GITHUB_ACTIONS.
   if (!constants.ENV.GITHUB_ACTIONS) {
-    debugFn('Missing GITHUB_ACTIONS environment variable.')
+    debugFn('miss: GITHUB_ACTIONS env var')
     return null
   }
   const octokit = getOctokit()
@@ -506,6 +507,6 @@ export async function setGitRemoteGitHubRepoUrl(
   try {
     await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
   } catch (e) {
-    debugFn('Unexpected error:\n', e)
+    debugFn('catch: unexpected\n', e)
   }
 }

@@ -142,7 +142,7 @@ export async function gitCreateAndPushBranch(
     )
     return true
   } catch (e) {
-    debugFn('Unexpected error:\n', e)
+    debugFn('catch: unexpected\n', e)
   }
   try {
     // Will throw with exit code 1 if branch does not exist.
@@ -175,7 +175,7 @@ export async function gitEnsureIdentity(
         try {
           await spawn('git', ['config', prop, value], stdioIgnoreOptions)
         } catch (e) {
-          debugFn('Unexpected error:\n', e)
+          debugFn('catch: unexpected\n', e)
         }
       }
     }),
@@ -231,7 +231,8 @@ export async function gitUnstagedModifiedFiles(
     const rawFiles = stdout.split('\n') ?? []
     return { ok: true, data: rawFiles.map(relPath => normalizePath(relPath)) }
   } catch (e) {
-    debugFn('Unexpected error trying to run git diff --name-only')
+    debugFn('catch: git diff --name-only failed\n', e)
+
     return {
       ok: false,
       message: 'Git Error',

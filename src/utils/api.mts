@@ -57,15 +57,15 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   } catch (e) {
     spinner.failAndStop(`An error was thrown while requesting ${fetchingDesc}`)
 
-    debugFn(`${fetchingDesc} threw error:\n`, e)
-
     const message = `${e || 'No error message returned'}`
-    const cause = `${e || 'No error message returned'}`
+    const reason = `${e || 'No error message returned'}`
+
+    debugFn(`${fetchingDesc} threw error:\n`, e)
 
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`,
+      cause: `${message}${reason ? ` ( Reason: ${reason} )` : ''}`,
     }
   } finally {
     spinner.stop()
@@ -75,13 +75,14 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   if (result.success === false) {
     const err = result as SocketSdkErrorType<T>
     const message = `${err.error || 'No error message returned'}`
+    const { cause: reason } = err
 
     debugFn(`${fetchingDesc} bad response:\n`, err)
 
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${message}${err.cause ? ` ( Reason: ${err.cause} )` : ''}`,
+      cause: `${message}${reason ? ` ( Reason: ${reason} )` : ''}`,
       data: {
         code: result.status,
       },
@@ -103,15 +104,15 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   try {
     result = await value
   } catch (e) {
-    debugFn(`${description} threw error:\n`, e)
-
     const message = `${e || 'No error message returned'}`
-    const cause = `${e || 'No error message returned'}`
+    const reason = `${e || 'No error message returned'}`
+
+    debugFn(`${description} threw error:\n`, e)
 
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${message}${cause ? ` ( Reason: ${cause} )` : ''}`,
+      cause: `${message}${reason ? ` ( Reason: ${reason} )` : ''}`,
     }
   }
 
@@ -224,14 +225,15 @@ export async function queryApiSafeText(
         `An error was thrown while requesting ${fetchSpinnerDesc}`,
       )
     }
-    debugFn('Error thrown trying to await queryApi():\n', e)
 
-    const msg = (e as undefined | { message: string })?.message
+    const cause = (e as undefined | { message: string })?.message
+
+    debugFn('catch: error in queryApi()\n', e)
 
     return {
       ok: false,
       message: 'API Request failed to complete',
-      ...(msg ? { cause: msg } : {}),
+      ...(cause ? { cause } : {}),
     }
   }
 
@@ -252,7 +254,7 @@ export async function queryApiSafeText(
       data,
     }
   } catch (e) {
-    debugFn('Error thrown trying to await result.text():\n', e)
+    debugFn('catch: await result.text()\n', e)
 
     return {
       ok: false,
