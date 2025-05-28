@@ -4,6 +4,7 @@ import { cmdManifestConda } from './cmd-manifest-conda.mts'
 import { cmdManifestGradle } from './cmd-manifest-gradle.mts'
 import { cmdManifestKotlin } from './cmd-manifest-kotlin.mts'
 import { cmdManifestScala } from './cmd-manifest-scala.mts'
+import { cmdManifestSetup } from './cmd-manifest-setup.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -61,9 +62,10 @@ async function run(
       auto: cmdManifestAuto,
       cdxgen: cmdManifestCdxgen,
       conda: cmdManifestConda,
-      scala: cmdManifestScala,
       gradle: cmdManifestGradle,
       kotlin: cmdManifestKotlin,
+      scala: cmdManifestScala,
+      setup: cmdManifestSetup,
     },
     {
       argv,

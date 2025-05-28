@@ -1,4 +1,6 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import path from 'node:path'
+
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
@@ -8,6 +10,7 @@ import { commonFlags } from '../../flags.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -19,26 +22,31 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    cwd: {
-      type: 'string',
-      description: 'Set the cwd, defaults to process.cwd()',
-    },
     verbose: {
       type: 'boolean',
       default: false,
-      description: 'Enable debug output, may help when running into errors',
+      description:
+        'Enable debug output (only for auto itself; sub-steps need to have it pre-configured), may help when running into errors',
     },
   },
   help: (command, config) => `
     Usage
-      $ ${command}
+      $ ${command} [CWD=.]
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
-    Tries to figure out what language your current repo uses. If it finds a
+    Tries to figure out what language your target repo uses. If it finds a
     supported case then it will try to generate the manifest file for that
     language with the default or detected settings.
+
+    Note: you can exclude languages from being auto-generated if you don't want
+          them to. Run \`socket manifest setup\` in the same dir to disable it.
+
+    Examples
+
+      $ ${command}
+      $ ${command} ./project/foo
   `,
 }
 
@@ -59,10 +67,12 @@ async function run(
     importMeta,
     parentName,
   })
-  const { cwd: cwdFlag, json, markdown, verbose: verboseFlag } = cli.flags
+  const { json, markdown, verbose: verboseFlag } = cli.flags
   const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
-  const cwd = String(cwdFlag || process.cwd())
   const verbose = !!verboseFlag
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join: If given path is abs then cwd should not affect it
+  cwd = path.resolve(process.cwd(), cwd)
 
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
@@ -73,9 +83,10 @@ async function run(
     logger.groupEnd()
   }
 
-  const detected = await detectManifestActions(String(cwd))
+  const socketJson = await readOrDefaultSocketJson(cwd)
 
-  debugFn(detected)
+  const detected = await detectManifestActions(socketJson, cwd)
+  debugLog('[DEBUG]', detected)
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAILING_NOW)
@@ -98,7 +109,12 @@ async function run(
     return
   }
 
-  await generateAutoManifest(detected, cwd, verbose, outputKind)
+  await generateAutoManifest({
+    detected,
+    cwd,
+    outputKind,
+    verbose,
+  })
 
   logger.success(
     `Finished. Should have attempted to generate manifest files for ${detected.count} targets.`,

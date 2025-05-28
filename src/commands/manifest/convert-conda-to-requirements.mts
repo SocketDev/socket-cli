@@ -6,12 +6,12 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import type { CResult } from '../../types.mts'
 
 export async function convertCondaToRequirements(
-  target: string,
+  filename: string,
   cwd: string,
   verbose: boolean,
 ): Promise<CResult<{ contents: string; pip: string }>> {
   let contents: string
-  if (target === '-') {
+  if (filename === '-') {
     if (verbose) {
       logger.info(`[VERBOSE] reading input from stdin`)
     }
@@ -56,27 +56,27 @@ export async function convertCondaToRequirements(
       }
     }
   } else {
-    const f = path.resolve(cwd, target)
+    const filepath = path.join(cwd, filename)
 
     if (verbose) {
-      logger.info(`[VERBOSE] target file: ${f}`)
+      logger.info(`[VERBOSE] target: ${filepath}`)
     }
 
-    if (!fs.existsSync(f)) {
+    if (!fs.existsSync(filepath)) {
       return {
         ok: false,
         message: 'Manifest Generation Failed',
-        cause: `Input file not found at ${f}`,
+        cause: `The file was not found at ${filepath}`,
       }
     }
 
-    contents = fs.readFileSync(target, 'utf8')
+    contents = fs.readFileSync(filepath, 'utf8')
 
     if (!contents) {
       return {
         ok: false,
         message: 'Manifest Generation Failed',
-        cause: 'File is empty',
+        cause: `File at ${filepath} is empty`,
       }
     }
   }
