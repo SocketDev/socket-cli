@@ -140,7 +140,7 @@ export async function gitCreateAndPushBranch(
     )
     return true
   } catch (e) {
-    debugFn(gitCreateAndPushBranch, 'Unexpected error:\n', e)
+    debugFn('Unexpected error:\n', e)
   }
   try {
     // Will throw with exit code 1 if branch does not exist.
@@ -173,7 +173,7 @@ export async function gitEnsureIdentity(
         try {
           await spawn('git', ['config', prop, value], stdioIgnoreOptions)
         } catch (e) {
-          debugFn(gitEnsureIdentity, 'Unexpected error:\n', e)
+          debugFn('Unexpected error:\n', e)
         }
       }
     }),

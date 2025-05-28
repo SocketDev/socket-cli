@@ -5,7 +5,7 @@ import semver from 'semver'
 
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
@@ -256,7 +256,7 @@ export async function pnpmFix(
     spinner?.indent()
 
     if (getManifestData(NPM, name)) {
-      debugLog(`Socket Optimize package exists for ${name}.`)
+      debugFn(`Socket Optimize package exists for ${name}.`)
     }
     // eslint-disable-next-line no-await-in-loop
     const packument = await fetchPackagePackument(name)
@@ -315,7 +315,7 @@ export async function pnpmFix(
       )
 
       if (!oldVersions.length) {
-        debugLog(`${name} not found, skipping.\n`)
+        debugFn(`${name} not found, skipping.\n`)
         // Skip to next package.
         logger.dedent()
         spinner?.dedent()
@@ -340,7 +340,7 @@ export async function pnpmFix(
       let hasAnnouncedWorkspace = false
       let workspaceLogCallCount = logger.logCallCount
       if (isDebug()) {
-        debugLog(`Checking workspace: ${workspace}`)
+        debugFn(`Checking workspace ${workspace}.`)
         hasAnnouncedWorkspace = true
         workspaceLogCallCount = logger.logCallCount
       }
@@ -351,7 +351,7 @@ export async function pnpmFix(
 
         const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
-          debugLog(`${oldId} not found, skipping.`)
+          debugFn(`${oldId} not found, skipping.`)
           continue oldVersionsLoop
         }
         infosLoop: for (const {
@@ -359,7 +359,7 @@ export async function pnpmFix(
           vulnerableVersionRange,
         } of infos.values()) {
           if (semver.gte(oldVersion, firstPatchedVersionIdentifier)) {
-            debugLog(
+            debugFn(
               `${oldId} is >= ${firstPatchedVersionIdentifier}, skipping.`,
             )
             continue infosLoop
@@ -449,7 +449,7 @@ export async function pnpmFix(
           )
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
-            debugLog(`${workspace}/package.json unchanged, skipping.`)
+            debugFn(`${workspace}/package.json unchanged, skipping.`)
             // Reset things just in case.
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
@@ -539,12 +539,12 @@ export async function pnpmFix(
                 await prExistForBranch(repoInfo.owner, repoInfo.repo, branch)
               ) {
                 skipPr = true
-                debugLog(`Branch "${branch}" exists, skipping PR creation.`)
+                debugFn(`Branch "${branch}" exists, skipping PR creation.`)
               }
               // eslint-disable-next-line no-await-in-loop
               else if (await gitRemoteBranchExists(branch, cwd)) {
                 skipPr = true
-                debugLog(
+                debugFn(
                   `Remote branch "${branch}" exists, skipping PR creation.`,
                 )
               } else if (

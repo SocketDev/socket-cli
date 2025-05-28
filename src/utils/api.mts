@@ -1,4 +1,4 @@
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
@@ -57,7 +57,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   } catch (e) {
     spinner.failAndStop(`An error was thrown while requesting ${fetchingDesc}`)
 
-    debugLog(`handleApiCall(${fetchingDesc}) threw error:\n`, e)
+    debugFn(`${fetchingDesc} threw error:\n`, e)
 
     const message = `${e || 'No error message returned'}`
     const cause = `${e || 'No error message returned'}`
@@ -75,7 +75,8 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   if (result.success === false) {
     const err = result as SocketSdkErrorType<T>
     const message = `${err.error || 'No error message returned'}`
-    debugLog(`handleApiCall(${fetchingDesc}) bad response:\n`, err)
+
+    debugFn(`${fetchingDesc} bad response:\n`, err)
 
     return {
       ok: false,
@@ -102,7 +103,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   try {
     result = await value
   } catch (e) {
-    debugLog(`handleApiCall(${description}) threw error:\n`, e)
+    debugFn(`${description} threw error:\n`, e)
 
     const message = `${e || 'No error message returned'}`
     const cause = `${e || 'No error message returned'}`
@@ -118,7 +119,8 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   if (result.success === false) {
     const err = result as SocketSdkErrorType<T>
     const message = `${err.error || 'No error message returned'}`
-    debugLog(`handleApiCall(${description}) bad response:\n`, err)
+
+    debugFn(`${description} bad response:\n`, err)
 
     return {
       ok: false,
@@ -222,8 +224,7 @@ export async function queryApiSafeText(
         `An error was thrown while requesting ${fetchSpinnerDesc}`,
       )
     }
-    debugLog('Error thrown trying to await queryApi():')
-    debugLog(e)
+    debugFn('Error thrown trying to await queryApi():\n', e)
 
     const msg = (e as undefined | { message: string })?.message
 
@@ -251,8 +252,7 @@ export async function queryApiSafeText(
       data,
     }
   } catch (e) {
-    debugLog('Error thrown trying to await result.text():')
-    debugLog(e)
+    debugFn('Error thrown trying to await result.text():\n', e)
 
     return {
       ok: false,
