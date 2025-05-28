@@ -1,4 +1,4 @@
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
@@ -43,10 +43,11 @@ export async function fetchListAllRepos({
       'list of repositories',
     )
     if (!result.ok) {
-      debugLog(
-        '[DEBUG] fetchListAllRepos: At least one fetch failed, bailing...',
+      debugFn(
+        fetchListAllRepos,
+        'At least one fetch failed, bailing...',
+        result,
       )
-      debugLog(result)
       return result
     }
 

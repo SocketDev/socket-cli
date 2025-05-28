@@ -9,7 +9,7 @@ import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
 import semver from 'semver'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn, debugLog } from '@socketsecurity/registry/lib/debug'
 import { readJson, writeJson } from '@socketsecurity/registry/lib/fs'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -154,14 +154,18 @@ export async function cleanupOpenPrs(
             pull_number: prNum,
             state: 'closed',
           })
-          debugLog(`Closed ${prRef} for older version ${prToVersion}.`)
+          debugFn(
+            cleanupOpenPrs,
+            `Closed ${prRef} for older version ${prToVersion}.`,
+          )
           // Remove entry from parent object.
           context.parent.splice(context.index, 1)
           // Mark cache to be saved.
           cachesToSave.set(context.cacheKey, context.data)
           return null
         } catch (e) {
-          debugLog(
+          debugFn(
+            cleanupOpenPrs,
             `Failed to close ${prRef}: ${(e as Error)?.message || 'Unknown error'}`,
           )
         }
@@ -176,7 +180,7 @@ export async function cleanupOpenPrs(
             base: match.headRefName,
             head: match.baseRefName,
           })
-          debugLog(`Updated stale ${prRef}.`)
+          debugFn(cleanupOpenPrs, `Updated stale ${prRef}.`)
           // Update entry entry.
           if (context.apiType === 'graphql') {
             context.entry.mergeStateStatus = 'CLEAN'
@@ -187,7 +191,7 @@ export async function cleanupOpenPrs(
           cachesToSave.set(context.cacheKey, context.data)
         } catch (e) {
           const message = (e as Error)?.message || 'Unknown error'
-          debugLog(`Failed to update ${prRef}: ${message}`)
+          debugFn(cleanupOpenPrs, `Failed to update ${prRef}: ${message}`)
         }
       }
       return match
