@@ -23,13 +23,19 @@ export async function applyOptimization(
   pin: boolean,
   prod: boolean,
 ) {
-  const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
+  const result = await detectAndValidatePackageEnvironment(cwd, {
     cmdName: CMD_NAME,
     logger,
     prod,
   })
 
+  if (!result.ok) {
+    return result
+  }
+
+  const pkgEnvDetails = result.data
   if (!pkgEnvDetails) {
+    // TODO: probably not necessary
     return
   }
 

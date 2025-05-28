@@ -28,12 +28,15 @@ export async function runFix({
   test: boolean
   testScript: string
 }): Promise<CResult<unknown>> {
-  // TODO: make detectAndValidatePackageEnvironment return a CResult<pkgEnvDetails> and propagate it
-  const pkgEnvDetails = await detectAndValidatePackageEnvironment(cwd, {
+  const result = await detectAndValidatePackageEnvironment(cwd, {
     cmdName: CMD_NAME,
     logger,
   })
 
+  if (!result.ok) {
+    return result
+  }
+  const pkgEnvDetails = result.data
   if (!pkgEnvDetails) {
     return {
       ok: false,
