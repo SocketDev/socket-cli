@@ -27,6 +27,7 @@ import {
   cleanupOpenPrs,
   enablePrAutoMerge,
   getGitHubEnvRepoInfo,
+  getOpenSocketPrs,
   openPr,
   prExistForBranch,
   setGitRemoteGitHubRepoUrl,
@@ -60,6 +61,7 @@ import { applyRange } from '../../utils/semver.mts'
 import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
+import type { GitHubRepoInfo } from './open-pr.mts'
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { CResult, StringKeyValueObject } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
@@ -138,7 +140,28 @@ export async function pnpmFix(
   const { spinner } = constants
   const { pkgPath: rootPath } = pkgEnvDetails
 
+  // Lazily access constants.ENV properties.
+  const token = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
+  const isCi = !!(
+    constants.ENV.CI &&
+    constants.ENV.GITHUB_ACTIONS &&
+    constants.ENV.GITHUB_REPOSITORY &&
+    token
+  )
+
   spinner?.start()
+
+  let count = 0
+  let repoInfo: GitHubRepoInfo | null = null
+  if (isCi) {
+    repoInfo = getGitHubEnvRepoInfo()!
+    count += (
+      await getOpenSocketPrs(repoInfo.owner, repoInfo.repo, {
+        // Lazily access constants.ENV.SOCKET_CLI_GIT_USER_NAME.
+        author: constants.ENV.SOCKET_CLI_GIT_USER_NAME,
+      })
+    ).length
+  }
 
   let actualTree: NodeClass | undefined
   const lockfilePath = path.join(rootPath, 'pnpm-lock.yaml')
@@ -202,7 +225,7 @@ export async function pnpmFix(
         )
   } catch (e) {
     spinner?.stop()
-    debugFn('fail: PURL API\n', e)
+    debugFn('catch: PURL API\n', e)
     return {
       ok: false,
       message: 'API Error',
@@ -217,14 +240,6 @@ export async function pnpmFix(
     return { ok: true, data: { fixed: false } }
   }
 
-  // Lazily access constants.ENV properties.
-  const token = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
-  const isCi = !!(
-    constants.ENV.CI &&
-    constants.ENV.GITHUB_ACTIONS &&
-    constants.ENV.GITHUB_REPOSITORY &&
-    token
-  )
   const baseBranch = isCi ? getBaseGitBranch() : ''
   const workspacePkgJsonPaths = await globWorkspace(
     pkgEnvDetails.agent,
@@ -251,8 +266,6 @@ export async function pnpmFix(
   }
 
   spinner?.stop()
-
-  let count = 0
 
   infoEntriesLoop: for (
     let i = 0, { length } = sortedInfoEntries;
@@ -545,12 +558,11 @@ export async function pnpmFix(
                 continue infosLoop
               }
 
-              const repoInfo = getGitHubEnvRepoInfo()!
               const branch = getSocketBranchName(oldPurl, newVersion, workspace)
               let skipPr = false
               if (
                 // eslint-disable-next-line no-await-in-loop
-                await prExistForBranch(repoInfo.owner, repoInfo.repo, branch)
+                await prExistForBranch(repoInfo!.owner, repoInfo!.repo, branch)
               ) {
                 skipPr = true
                 debugFn(`skip: branch "${branch}" exists`)
@@ -599,20 +611,20 @@ export async function pnpmFix(
               // eslint-disable-next-line no-await-in-loop
               await Promise.allSettled([
                 setGitRemoteGitHubRepoUrl(
-                  repoInfo.owner,
-                  repoInfo.repo,
+                  repoInfo!.owner,
+                  repoInfo!.repo,
                   token,
                   cwd,
                 ),
-                cleanupOpenPrs(repoInfo.owner, repoInfo.repo, newVersion, {
+                cleanupOpenPrs(repoInfo!.owner, repoInfo!.repo, newVersion, {
                   purl: oldPurl,
                   workspace,
                 }),
               ])
               // eslint-disable-next-line no-await-in-loop
               const prResponse = await openPr(
-                repoInfo.owner,
-                repoInfo.repo,
+                repoInfo!.owner,
+                repoInfo!.repo,
                 branch,
                 oldPurl,
                 newVersion,
