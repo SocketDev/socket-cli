@@ -1,4 +1,4 @@
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import type { CResult } from '../types.mts'
@@ -11,9 +11,9 @@ export function serializeResultJson(data: CResult<unknown>): string {
     // We should not allow to expect the json value to be "null", or a boolean/number/string, even if they are valid "json".
     const msg =
       'There was a problem converting the data set to JSON. The JSON was not an object. Please try again without --json'
-    debugLog('typeof data=', typeof data)
+    debugFn(serializeResultJson, 'typeof data=', typeof data)
     if (typeof data !== 'object' && data) {
-      debugLog('data:\n', data)
+      debugFn(serializeResultJson, 'data:\n', data)
     }
     return (
       JSON.stringify({
@@ -27,7 +27,7 @@ export function serializeResultJson(data: CResult<unknown>): string {
   try {
     return JSON.stringify(data, null, 2).trim() + '\n'
   } catch (e) {
-    debugLog('Error:\n', e)
+    debugFn(serializeResultJson, 'Unexpected error:\n', e)
     process.exitCode = 1
     // This could be caused by circular references, which is an "us" problem
     const msg =
