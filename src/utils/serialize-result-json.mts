@@ -11,9 +11,9 @@ export function serializeResultJson(data: CResult<unknown>): string {
     // We should not allow to expect the json value to be "null", or a boolean/number/string, even if they are valid "json".
     const msg =
       'There was a problem converting the data set to JSON. The JSON was not an object. Please try again without --json'
-    debugFn(serializeResultJson, 'typeof data=', typeof data)
+    debugFn('typeof data=', typeof data)
     if (typeof data !== 'object' && data) {
-      debugFn(serializeResultJson, 'data:\n', data)
+      debugFn('data:\n', data)
     }
     return (
       JSON.stringify({
@@ -27,7 +27,7 @@ export function serializeResultJson(data: CResult<unknown>): string {
   try {
     return JSON.stringify(data, null, 2).trim() + '\n'
   } catch (e) {
-    debugFn(serializeResultJson, 'Unexpected error:\n', e)
+    debugFn('Unexpected error:\n', e)
     process.exitCode = 1
     // This could be caused by circular references, which is an "us" problem
     const msg =

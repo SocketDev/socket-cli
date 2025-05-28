@@ -223,11 +223,7 @@ async function scanOneRepo(
   }
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), repoSlug))
-  debugFn(
-    scanOneRepo,
-    'Temp dir for downloaded manifest (serves as scan root):',
-    tmpDir,
-  )
+  debugFn('Temp dir for downloaded manifest (serves as scan root):', tmpDir)
 
   const downloadResult = await testAndDownloadManifestFiles({
     files,
@@ -353,7 +349,7 @@ async function testAndDownloadManifestFile({
   repoApiUrl: string
   githubToken: string
 }): Promise<CResult<{ isManifest: boolean }>> {
-  debugFn(testAndDownloadManifestFile, 'Testing file:', file)
+  debugFn('Testing file:', file)
   if (!SUPPORTED_FILE_PATTERNS.some(regex => regex.test(file))) {
     // Not an error.
     return { ok: true, data: { isManifest: false } }
@@ -395,7 +391,7 @@ async function downloadManifestFile({
 }): Promise<CResult<undefined>> {
   logger.info('Requesting download url from GitHub...')
   const fileUrl = `${repoApiUrl}/contents/${file}?ref=${defaultBranch}`
-  debugFn(downloadManifestFile, 'File url:', fileUrl)
+  debugFn('File url:', fileUrl)
 
   const downloadUrlResponse = await fetch(fileUrl, {
     method: 'GET',
@@ -407,7 +403,7 @@ async function downloadManifestFile({
 
   const downloadUrlText = await downloadUrlResponse.text()
 
-  debugFn(downloadManifestFile, 'Raw download url response:', downloadUrlText)
+  debugFn('Raw download url response:', downloadUrlText)
 
   let downloadUrl
   try {
@@ -427,13 +423,7 @@ async function downloadManifestFile({
   logger.info(`Downloading manifest file...`)
 
   const localPath = path.join(tmpDir, file)
-  debugFn(
-    downloadManifestFile,
-    'Downloading from',
-    downloadUrl,
-    'to',
-    localPath,
-  )
+  debugFn('Downloading from', downloadUrl, 'to', localPath)
 
   // Now stream the file to that file...
 
@@ -532,7 +522,7 @@ async function getLastCommitDetails({
     `Requesting last commit for default branch ${defaultBranch} for ${orgGithub}/${repoSlug}...`,
   )
   const commitApiUrl = `${repoApiUrl}/commits?sha=${defaultBranch}&per_page=1`
-  debugFn(getLastCommitDetails, 'Commit url:', commitApiUrl)
+  debugFn('Commit url:', commitApiUrl)
   const commitResponse = await fetch(commitApiUrl, {
     headers: {
       Authorization: `Bearer ${githubToken}`,
@@ -541,7 +531,7 @@ async function getLastCommitDetails({
 
   const commitText = await commitResponse.text()
 
-  debugFn(getLastCommitDetails, 'Raw commit response:', commitText)
+  debugFn('Raw commit response:', commitText)
 
   let lastCommit
   try {
@@ -636,7 +626,7 @@ async function getRepoDetails({
   CResult<{ defaultBranch: string; repoDetails: unknown; repoApiUrl: string }>
 > {
   const repoApiUrl = `${githubApiUrl}/repos/${orgGithub}/${repoSlug}`
-  debugFn(getRepoDetails, 'Repo URL:', repoApiUrl)
+  debugFn('Repo URL:', repoApiUrl)
   const repoDetailsResponse = await fetch(repoApiUrl, {
     method: 'GET',
     headers: {
@@ -647,7 +637,7 @@ async function getRepoDetails({
 
   const repoDetailsText = await repoDetailsResponse.text()
 
-  debugFn(getRepoDetails, 'Raw repo response:', repoDetailsText)
+  debugFn('Raw repo response:', repoDetailsText)
 
   let repoDetails
   try {
@@ -691,7 +681,7 @@ async function getRepoBranchTree({
     `Requesting default branch file tree; branch \`${defaultBranch}\`, repo \`${orgGithub}/${repoSlug}\`...`,
   )
   const treeApiUrl = `${repoApiUrl}/git/trees/${defaultBranch}?recursive=1`
-  debugFn(getRepoBranchTree, 'Tree URL:', treeApiUrl)
+  debugFn('Tree URL:', treeApiUrl)
   const treeResponse = await fetch(treeApiUrl, {
     method: 'GET',
     headers: {
@@ -701,7 +691,7 @@ async function getRepoBranchTree({
 
   const treeText = await treeResponse.text()
 
-  debugFn(getRepoBranchTree, 'Raw tree response:', treeText)
+  debugFn('Raw tree response:', treeText)
 
   let treeDetails
   try {
@@ -735,7 +725,7 @@ async function getRepoBranchTree({
   }
 
   if (!treeDetails.tree || !Array.isArray(treeDetails.tree)) {
-    debugFn(getRepoBranchTree, 'treeDetails.tree:', treeDetails.tree)
+    debugFn('treeDetails.tree:', treeDetails.tree)
     return {
       ok: false,
       message: `Tree response for default branch ${defaultBranch} for ${orgGithub}/${repoSlug} was not a list`,

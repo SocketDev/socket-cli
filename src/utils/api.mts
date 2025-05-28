@@ -57,7 +57,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   } catch (e) {
     spinner.failAndStop(`An error was thrown while requesting ${fetchingDesc}`)
 
-    debugFn(handleApiCall, `${fetchingDesc} threw error:\n`, e)
+    debugFn(`${fetchingDesc} threw error:\n`, e)
 
     const message = `${e || 'No error message returned'}`
     const cause = `${e || 'No error message returned'}`
@@ -76,7 +76,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     const err = result as SocketSdkErrorType<T>
     const message = `${err.error || 'No error message returned'}`
 
-    debugFn(handleApiCall, `${fetchingDesc} bad response:\n`, err)
+    debugFn(`${fetchingDesc} bad response:\n`, err)
 
     return {
       ok: false,
@@ -103,7 +103,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   try {
     result = await value
   } catch (e) {
-    debugFn(handleApiCall, `${description} threw error:\n`, e)
+    debugFn(`${description} threw error:\n`, e)
 
     const message = `${e || 'No error message returned'}`
     const cause = `${e || 'No error message returned'}`
@@ -120,7 +120,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
     const err = result as SocketSdkErrorType<T>
     const message = `${err.error || 'No error message returned'}`
 
-    debugFn(handleApiCall, `${description} bad response:\n`, err)
+    debugFn(`${description} bad response:\n`, err)
 
     return {
       ok: false,
@@ -224,7 +224,7 @@ export async function queryApiSafeText(
         `An error was thrown while requesting ${fetchSpinnerDesc}`,
       )
     }
-    debugFn(queryApi, 'Error thrown trying to await queryApi():\n', e)
+    debugFn('Error thrown trying to await queryApi():\n', e)
 
     const msg = (e as undefined | { message: string })?.message
 
@@ -252,7 +252,7 @@ export async function queryApiSafeText(
       data,
     }
   } catch (e) {
-    debugFn(queryApi, 'Error thrown trying to await result.text():\n', e)
+    debugFn('Error thrown trying to await result.text():\n', e)
 
     return {
       ok: false,

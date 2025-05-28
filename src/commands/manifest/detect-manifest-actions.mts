@@ -26,20 +26,14 @@ export async function detectManifestActions(
   }
 
   if (existsSync(path.join(cwd, 'build.sbt'))) {
-    debugFn(
-      detectManifestActions,
-      'Detected a Scala sbt build, running default Scala generator...',
-    )
+    debugFn('Detected a Scala sbt build, running default Scala generator...')
 
     output.sbt = true
     output.count += 1
   }
 
   if (existsSync(path.join(cwd, 'gradlew'))) {
-    debugFn(
-      detectManifestActions,
-      'Detected a gradle build, running default gradle generator...',
-    )
+    debugFn('Detected a gradle build, running default gradle generator...')
     output.gradle = true
     output.count += 1
   }
@@ -50,7 +44,6 @@ export async function detectManifestActions(
   const hasEnvyaml = !hasEnvyml && existsSync(envyaml)
   if (hasEnvyml || hasEnvyaml) {
     debugFn(
-      detectManifestActions,
       'Detected an environment.yml file, running default Conda generator...',
     )
     output.conda = true

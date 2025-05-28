@@ -79,7 +79,7 @@ async function getAgentVersion(
         ).stdout.trim(),
       ) ?? undefined
   } catch (e) {
-    debugFn(getAgentVersion, 'Unexpected error:\n', e)
+    debugFn('Unexpected error:\n', e)
   }
   return result
 }

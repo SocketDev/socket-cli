@@ -182,7 +182,7 @@ export async function npmFix(
     spinner?.indent()
 
     if (getManifestData(NPM, name)) {
-      debugFn(npmFix, `Socket Optimize package exists for ${name}.`)
+      debugFn(`Socket Optimize package exists for ${name}.`)
     }
     // eslint-disable-next-line no-await-in-loop
     const packument = await fetchPackagePackument(name)
@@ -218,7 +218,7 @@ export async function npmFix(
       )
 
       if (!oldVersions.length) {
-        debugFn(npmFix, `${name} not found, skipping.\n`)
+        debugFn(`${name} not found, skipping.\n`)
         // Skip to next package.
         logger.dedent()
         spinner?.dedent()
@@ -235,7 +235,7 @@ export async function npmFix(
       let hasAnnouncedWorkspace = false
       let workspaceLogCallCount = logger.logCallCount
       if (isDebug()) {
-        debugFn(npmFix, `Checking workspace ${workspace}.`)
+        debugFn(`Checking workspace ${workspace}.`)
         hasAnnouncedWorkspace = true
         workspaceLogCallCount = logger.logCallCount
       }
@@ -246,7 +246,7 @@ export async function npmFix(
 
         const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
-          debugFn(npmFix, `${oldId} not found, skipping.`)
+          debugFn(`${oldId} not found, skipping.`)
           continue oldVersionsLoop
         }
 
@@ -256,7 +256,6 @@ export async function npmFix(
         } of infos.values()) {
           if (semver.gte(oldVersion, firstPatchedVersionIdentifier)) {
             debugFn(
-              npmFix,
               `${oldId} is >= ${firstPatchedVersionIdentifier}, skipping.`,
             )
             continue infosLoop
@@ -306,7 +305,7 @@ export async function npmFix(
           )
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
-            debugFn(npmFix, `${workspace}/package.json not changed, skipping.`)
+            debugFn(`${workspace}/package.json not changed, skipping.`)
             // Reset things just in case.
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
@@ -373,16 +372,12 @@ export async function npmFix(
                 await prExistForBranch(repoInfo.owner, repoInfo.repo, branch)
               ) {
                 skipPr = true
-                debugFn(
-                  npmFix,
-                  `Branch "${branch}" exists, skipping PR creation.`,
-                )
+                debugFn(`Branch "${branch}" exists, skipping PR creation.`)
               }
               // eslint-disable-next-line no-await-in-loop
               else if (await gitRemoteBranchExists(branch, cwd)) {
                 skipPr = true
                 debugFn(
-                  npmFix,
                   `Remote branch "${branch}" exists, skipping PR creation.`,
                 )
               } else if (
