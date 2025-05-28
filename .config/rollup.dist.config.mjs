@@ -68,26 +68,24 @@ const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry e
 const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry'
 
 async function copyInitGradle() {
-  // Lazily access constants.srcPath.
+  // Lazily access constants path properties.
   const filepath = path.join(constants.srcPath, 'commands/manifest/init.gradle')
-  // Lazily access constants.distPath.
   const destPath = path.join(constants.distPath, 'init.gradle')
   await fs.copyFile(filepath, destPath)
 }
 
 async function copyBashCompletion() {
-  // Lazily access constants.srcPath.
+  // Lazily access constants path properties.
   const filepath = path.join(
     constants.srcPath,
     'commands/install/socket-completion.bash',
   )
-  // Lazily access constants.distPath.
   const destPath = path.join(constants.distPath, 'socket-completion.bash')
   await fs.copyFile(filepath, destPath)
 }
 
 async function copyPackage(pkgName) {
-  // Lazily access constants.distPath and constants.rootPath.
+  // Lazily access constants path properties.
   const externalPath = path.join(constants.rootPath, EXTERNAL)
   const nmPath = path.join(constants.rootPath, NODE_MODULES)
   const pkgDestPath = path.join(externalPath, pkgName)
@@ -430,6 +428,7 @@ export default async () => {
               copyInitGradle(),
               copyBashCompletion(),
               updatePackageJson(),
+              remove(path.join(distPath, `${VENDOR}.js.map`)),
               ...EXTERNAL_PACKAGES.map(n => copyPackage(n)),
             ])
 
