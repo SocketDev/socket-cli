@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugFn, debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, select } from '@socketsecurity/registry/lib/prompts'
 
@@ -118,9 +118,10 @@ export async function createScanFromGithub({
     }
   }
 
+  let scansCreated = 0
   for (const repoSlug of targetRepos) {
     // eslint-disable-next-line no-await-in-loop
-    await scanRepo(repoSlug, {
+    const result = await scanRepo(repoSlug, {
       githubApiUrl,
       githubToken,
       orgSlug,
@@ -128,9 +129,13 @@ export async function createScanFromGithub({
       outputKind,
       repos,
     })
+    if (result.ok && result.data.scanCreated) {
+      scansCreated += 1
+    }
   }
 
-  logger.success('Scanned', targetRepos.length, 'repos, or tried to, anyways!')
+  logger.success(targetRepos.length, 'Github repos detected')
+  logger.success(scansCreated, 'with supported Manifest files')
 
   return {
     ok: true,
@@ -155,7 +160,7 @@ async function scanRepo(
     outputKind: OutputKind
     repos: string
   },
-): Promise<CResult<unknown>> {
+): Promise<CResult<{ scanCreated: boolean }>> {
   logger.info(
     `Requesting repo details from GitHub API for: \`${orgGithub}/${repoSlug}\`...`,
   )
@@ -189,7 +194,7 @@ async function scanOneRepo(
     outputKind: OutputKind
     repos: string
   },
-): Promise<CResult<unknown>> {
+): Promise<CResult<{ scanCreated: boolean }>> {
   const repoResult = await getRepoDetails({
     orgGithub,
     repoSlug,
@@ -219,7 +224,7 @@ async function scanOneRepo(
     logger.warn(
       'No files were reported for the default branch. Moving on to next repo.',
     )
-    return { ok: true, data: undefined }
+    return { ok: true, data: { scanCreated: false } }
   }
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), repoSlug))
@@ -273,7 +278,7 @@ async function scanOneRepo(
     tmp: false,
   })
 
-  return { ok: true, data: undefined }
+  return { ok: true, data: { scanCreated: true } }
 }
 
 async function testAndDownloadManifestFiles({
@@ -294,7 +299,9 @@ async function testAndDownloadManifestFiles({
   githubToken: string
 }): Promise<CResult<unknown>> {
   logger.info(
-    `File tree for ${defaultBranch} contains ${files.length} entries. Searching for supported manifest files...`,
+    `File tree for ${defaultBranch} contains`,
+    files.length,
+    `entries. Searching for supported manifest files...`,
   )
   logger.group()
   let fileCount = 0
@@ -316,8 +323,8 @@ async function testAndDownloadManifestFiles({
       firstFailureResult = result
     }
   }
-  logger.info('Found and downloaded', fileCount, 'manifest files')
   logger.groupEnd()
+  logger.info('Found and downloaded', fileCount, 'manifest files')
 
   if (!fileCount) {
     if (firstFailureResult) {
@@ -355,10 +362,9 @@ async function testAndDownloadManifestFile({
     return { ok: true, data: { isManifest: false } }
   }
 
-  logger.success(
-    `Found a manifest file: \`${file}\`, will download it to temp dir...`,
+  debugLog(
+    `[DEBUG] Found a manifest file: \`${file}\`, will download it to temp dir...`,
   )
-  logger.group()
 
   const result = await downloadManifestFile({
     file,
@@ -367,8 +373,6 @@ async function testAndDownloadManifestFile({
     repoApiUrl,
     githubToken,
   })
-
-  logger.groupEnd()
 
   if (!result.ok) {
     return result
@@ -389,7 +393,7 @@ async function downloadManifestFile({
   repoApiUrl: string
   githubToken: string
 }): Promise<CResult<undefined>> {
-  logger.info('Requesting download url from GitHub...')
+  debugLog(`[DEBUG] Requesting download url from GitHub...`)
   const fileUrl = `${repoApiUrl}/contents/${file}?ref=${defaultBranch}`
   debugFn('File url:', fileUrl)
 
@@ -399,7 +403,7 @@ async function downloadManifestFile({
       Authorization: `Bearer ${githubToken}`,
     },
   })
-  logger.success(`Request completed.`)
+  debugLog(`[DEBUG] Request completed.`)
 
   const downloadUrlText = await downloadUrlResponse.text()
 
@@ -410,9 +414,10 @@ async function downloadManifestFile({
     downloadUrl = JSON.parse(downloadUrlText).download_url
   } catch {
     logger.fail(
-      `GitHub response contained invalid JSON for download url for file`,
+      `GitHub response contained invalid JSON for download url for: ${file}`,
     )
-    logger.error(downloadUrlText)
+    debugLog(`[DEBUG] The not-json-content:`)
+    debugLog(downloadUrlText)
     return {
       ok: false,
       message: 'Invalid JSON response',
@@ -420,7 +425,7 @@ async function downloadManifestFile({
     }
   }
 
-  logger.info(`Downloading manifest file...`)
+  debugLog(`[DEBUG] Downloading manifest file...`)
 
   const localPath = path.join(tmpDir, file)
   debugFn('Downloading from', downloadUrl, 'to', localPath)
@@ -436,7 +441,7 @@ async function downloadManifestFile({
     return result
   }
 
-  logger.success(`Downloaded manifest file.`)
+  debugLog(`[DEBUG] Downloaded manifest file.`)
   return { ok: true, data: undefined }
 }
 
