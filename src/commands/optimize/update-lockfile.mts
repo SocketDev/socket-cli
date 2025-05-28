@@ -1,9 +1,11 @@
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../../constants.mts'
 import { runAgentInstall } from '../../utils/agent.mts'
 import { cmdPrefixMessage } from '../../utils/cmd.mts'
 
+import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
 
@@ -18,7 +20,7 @@ export type UpdateLockfileOptions = {
 export async function updateLockfile(
   pkgEnvDetails: EnvDetails,
   options: UpdateLockfileOptions,
-) {
+): Promise<CResult<unknown>> {
   const {
     cmdName = '',
     logger,
@@ -42,17 +44,21 @@ export async function updateLockfile(
     }
   } catch (e) {
     spinner?.stop()
-    logger?.fail(
-      cmdPrefixMessage(
+    debugFn(e)
+    return {
+      ok: false,
+      message: 'Update failed',
+      cause: cmdPrefixMessage(
         cmdName,
         `${pkgEnvDetails.agent} install failed to update ${pkgEnvDetails.lockName}`,
       ),
-    )
-    logger?.error(e)
+    }
   }
   if (isSpinning) {
     spinner?.start()
   } else {
     spinner?.stop()
   }
+
+  return { ok: true, data: undefined }
 }

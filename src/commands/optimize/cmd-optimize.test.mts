@@ -19,7 +19,7 @@ describe('socket optimize', async () => {
         "Optimize dependencies with @socketregistry overrides
 
           Usage
-            $ socket optimize
+            $ socket optimize [options] [CWD=.]
 
           Options
             --help            Print this help
@@ -28,7 +28,7 @@ describe('socket optimize', async () => {
 
           Examples
             $ socket optimize
-            $ socket optimize --pin"
+            $ socket optimize ./proj/tree --pin"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
