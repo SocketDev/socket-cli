@@ -10,7 +10,12 @@ import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import { glob as tinyGlob } from 'tinyglobby'
 
-import { readJson, remove, writeJson } from '@socketsecurity/registry/lib/fs'
+import {
+  isDirEmptySync,
+  readJson,
+  remove,
+  writeJson,
+} from '@socketsecurity/registry/lib/fs'
 import { hasKeys, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import {
   fetchPackageManifest,
@@ -34,6 +39,7 @@ const {
   INLINED_SOCKET_CLI_SENTRY_BUILD,
   INSTRUMENT_WITH_SENTRY,
   NODE_MODULES,
+  NODE_MODULES_GLOB_RECURSIVE,
   ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_BIN,
   SHADOW_INJECT,
@@ -56,10 +62,10 @@ const {
 const BLESSED = 'blessed'
 const BLESSED_CONTRIB = 'blessed-contrib'
 const EXTERNAL = 'external'
-const LICENSE_MD = `LICENSE.md`
 const SENTRY_NODE = '@sentry/node'
 const SOCKET_DESCRIPTION = 'CLI tool for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
+const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry'
 
 async function copyInitGradle() {
   // Lazily access constants.srcPath.
@@ -92,7 +98,7 @@ async function copyPackage(pkgName) {
   const jsFiles = await tinyGlob(['**/*.js'], {
     absolute: true,
     cwd: pkgDestPath,
-    ignore: ['node_modules/**'],
+    ignore: [NODE_MODULES_GLOB_RECURSIVE],
   })
   await Promise.all(
     jsFiles.map(async p => {
@@ -209,20 +215,23 @@ async function updatePackageLockFile() {
   await writeJson(rootPackageLockPath, lockJson, { spaces: 2 })
 }
 
-async function removeDirs(thePath, options) {
-  const { exclude } = { __proto__: null, ...options }
-  const ignore = Array.isArray(exclude) ? exclude : exclude ? [exclude] : []
-  return await Promise.all(
-    (
-      await tinyGlob(['**/*'], {
-        absolute: true,
-        onlyDirectories: true,
-        cwd: thePath,
-        dot: true,
-        ignore,
-      })
-    ).map(p => remove(p)),
+async function removeEmptyDirs(thePath) {
+  const dirPaths = (
+    await tinyGlob(['**/'], {
+      ignore: [NODE_MODULES_GLOB_RECURSIVE],
+      absolute: true,
+      cwd: thePath,
+      onlyDirectories: true,
+    })
   )
+  // Sort directory paths longest to shortest.
+  .sort((a, b) => b.length - a.length)
+  for (const dirPath of dirPaths) {
+    if (isDirEmptySync(dirPath)) {
+      // eslint-disable-next-line no-await-in-loop
+      await remove(dirPath)
+    }
+  }
 }
 
 async function removeFiles(thePath, options) {
@@ -421,34 +430,41 @@ export default async () => {
               copyInitGradle(),
               copyBashCompletion(),
               updatePackageJson(),
-              ...EXTERNAL_PACKAGES.filter(n => n !== BLESSED_CONTRIB).map(n =>
-                copyPackage(n),
-              ),
+              ...EXTERNAL_PACKAGES.map(n => copyPackage(n)),
             ])
 
             const blessedExternalPath = path.join(externalPath, BLESSED)
-            const blessedIgnore = [
-              'lib/**',
-              'node_modules/**',
-              'usr/**',
-              'vendor/**',
-              'LICENSE*',
-            ]
-
-            // Remove directories.
-            await removeDirs(blessedExternalPath, { exclude: blessedIgnore })
-            await removeFiles(blessedExternalPath, { exclude: blessedIgnore })
-
             const blessedContribExternalPath = path.join(
               externalPath,
               BLESSED_CONTRIB,
             )
-            const blessedContribNmPath = path.join(nmPath, BLESSED_CONTRIB)
+            const filesEntries = [
+              [
+                blessedExternalPath,
+                ['lib/**/*.js', 'usr/**/**', 'vendor/**/*.js', 'LICENSE*'],
+              ],
+              [
+                blessedContribExternalPath,
+                ['lib/**/*.js', 'index.js', 'LICENSE*'],
+              ],
+              [
+                path.join(externalPath, SOCKET_SECURITY_REGISTRY),
+                [
+                  'external/**/*.js',
+                  'lib/**/*.js',
+                  'index.js',
+                  'extensions.json',
+                  'manifest.json',
+                  'LICENSE*',
+                ],
+              ],
+            ]
 
-            // Copy LICENSE.md.
-            await fs.cp(
-              `${blessedContribNmPath}/${LICENSE_MD}`,
-              `${blessedContribExternalPath}/${LICENSE_MD}`,
+            await Promise.all(
+              filesEntries.map(async ({ 0: thePath, 1: ignorePatterns }) => {
+                await removeFiles(thePath, { exclude: ignorePatterns })
+                await removeEmptyDirs(thePath)
+              }),
             )
 
             // Rewire 'blessed' inside 'blessed-contrib'.
@@ -457,7 +473,7 @@ export default async () => {
                 await tinyGlob(['**/*.js'], {
                   absolute: true,
                   cwd: blessedContribExternalPath,
-                  ignore: ['node_modules/**'],
+                  ignore: [NODE_MODULES_GLOB_RECURSIVE],
                 })
               ).map(async p => {
                 const relPath = path.relative(
