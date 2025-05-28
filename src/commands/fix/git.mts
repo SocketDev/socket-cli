@@ -10,7 +10,19 @@ import {
   getSocketDevPackageOverviewUrlFromPurl,
 } from '../../utils/socket-url.mts'
 
+import type { CResult } from '../../types.mts'
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
+
+export type GetSocketPrTitlePatternOptions = {
+  purl?: string | undefined
+  workspace?: string | undefined
+}
+
+export type GitCreateAndPushBranchOptions = {
+  cwd?: string | undefined
+  email?: string | undefined
+  user?: string | undefined
+}
 
 function formatBranchName(name: string): string {
   return name
@@ -19,7 +31,7 @@ function formatBranchName(name: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
-export function getBaseGitBranch() {
+export function getBaseGitBranch(): string {
   // Lazily access constants.ENV.GITHUB_REF_NAME.
   return (
     constants.ENV.GITHUB_REF_NAME ||
@@ -43,11 +55,6 @@ export function getSocketBranchName(
     : ''
   const fullName = `${maybeWorkspaceName}${maybeNamespace}${formatBranchName(purlObj.name)}`
   return `socket/${fullName}-${formatBranchName(newVersion)}`
-}
-
-export type GetSocketPrTitlePatternOptions = {
-  purl?: string | undefined
-  workspace?: string | undefined
 }
 
 export function getSocketPrTitlePattern(
@@ -105,13 +112,8 @@ export function getSocketCommitMessage(
 
 export async function gitCleanFdx(cwd = process.cwd()): Promise<void> {
   const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
+  // TODO: propagate CResult?
   await spawn('git', ['clean', '-fdx'], stdioIgnoreOptions)
-}
-
-export type GitCreateAndPushBranchOptions = {
-  cwd?: string | undefined
-  email?: string | undefined
-  user?: string | undefined
 }
 
 export async function gitCreateAndPushBranch(
@@ -220,11 +222,20 @@ export async function gitResetHard(
 
 export async function gitUnstagedModifiedFiles(
   cwd = process.cwd(),
-): Promise<string[]> {
-  const stdioPipeOptions: SpawnOptions = { cwd }
-  const stdout = (
-    await spawn('git', ['diff', '--name-only'], stdioPipeOptions)
-  ).stdout.trim()
-  const rawFiles = stdout.split('\n') ?? []
-  return rawFiles.map(relPath => normalizePath(relPath))
+): Promise<CResult<string[]>> {
+  try {
+    const stdioPipeOptions: SpawnOptions = { cwd }
+    const stdout = (
+      await spawn('git', ['diff', '--name-only'], stdioPipeOptions)
+    ).stdout.trim()
+    const rawFiles = stdout.split('\n') ?? []
+    return { ok: true, data: rawFiles.map(relPath => normalizePath(relPath)) }
+  } catch (e) {
+    debugFn('Unexpected error trying to run git diff --name-only')
+    return {
+      ok: false,
+      message: 'Git Error',
+      cause: 'Unexpected error while trying to ask git whether repo is dirty',
+    }
+  }
 }
