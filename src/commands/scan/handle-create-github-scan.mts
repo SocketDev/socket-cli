@@ -46,5 +46,6 @@ export async function handleCreateGithubScan({
     return
   }
 
-  logger.success('Ok! Finished!')
+  logger.log('')
+  logger.success('Finished!')
 }
