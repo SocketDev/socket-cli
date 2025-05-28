@@ -8,18 +8,22 @@ import type { CResult } from '../types.mts'
 export function serializeResultJson(data: CResult<unknown>): string {
   if (typeof data !== 'object' || !data) {
     process.exitCode = 1
-    // We should not allow to expect the json value to be "null", or a boolean/number/string, even if they are valid "json".
-    const msg =
-      'There was a problem converting the data set to JSON. The JSON was not an object. Please try again without --json'
     debugFn('typeof data=', typeof data)
+
     if (typeof data !== 'object' && data) {
       debugFn('data:\n', data)
     }
+
+    // We should not allow the json value to be "null", or a boolean/number/string,
+    // even if they are valid "json".
+    const message =
+      'There was a problem converting the data set to JSON. The JSON was not an object. Please try again without --json'
+
     return (
       JSON.stringify({
         ok: false,
         message: 'Unable to serialize JSON',
-        data: msg,
+        data: message,
       }).trim() + '\n'
     )
   }
@@ -27,17 +31,18 @@ export function serializeResultJson(data: CResult<unknown>): string {
   try {
     return JSON.stringify(data, null, 2).trim() + '\n'
   } catch (e) {
-    debugFn('Unexpected error:\n', e)
+    debugFn('catch: unexpected\n', e)
     process.exitCode = 1
+
     // This could be caused by circular references, which is an "us" problem
-    const msg =
+    const message =
       'There was a problem converting the data set to JSON. Please try again without --json'
-    logger.fail(msg)
+    logger.fail(message)
     return (
       JSON.stringify({
         ok: false,
         message: 'Unable to serialize JSON',
-        data: msg,
+        data: message,
       }).trim() + '\n'
     )
   }

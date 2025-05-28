@@ -82,7 +82,7 @@ export async function fetchReportData(
         return JSON.parse(line)
       } catch {
         ok = false
-        debugFn('NDJSON failed to parse the following line:\n', line)
+        debugFn('fail: parse NDJSON\n', line)
         return
       }
     }) as unknown as Array<components['schemas']['SocketArtifact']>
