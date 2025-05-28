@@ -77,7 +77,8 @@ async function run(
   })
   const { defaultOnReadError = false } = cli.flags
   let [cwd = '.'] = cli.input
-  // Note: path.resolve vs .join: If given path is abs then cwd should not affect it
+  // Note: path.resolve vs .join:
+  // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
   if (cli.flags['dryRun']) {

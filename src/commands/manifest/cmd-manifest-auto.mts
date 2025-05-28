@@ -71,7 +71,8 @@ async function run(
   const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
   const verbose = !!verboseFlag
   let [cwd = '.'] = cli.input
-  // Note: path.resolve vs .join: If given path is abs then cwd should not affect it
+  // Note: path.resolve vs .join:
+  // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
   if (verbose) {
