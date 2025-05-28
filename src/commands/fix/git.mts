@@ -1,5 +1,5 @@
 import { PackageURL } from '@socketregistry/packageurl-js'
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -140,8 +140,7 @@ export async function gitCreateAndPushBranch(
     )
     return true
   } catch (e) {
-    debugLog('gitCreateAndPushBranch: Unexpected error.')
-    debugLog(e)
+    debugFn(gitCreateAndPushBranch, 'Unexpected error:\n', e)
   }
   try {
     // Will throw with exit code 1 if branch does not exist.
@@ -174,8 +173,7 @@ export async function gitEnsureIdentity(
         try {
           await spawn('git', ['config', prop, value], stdioIgnoreOptions)
         } catch (e) {
-          debugLog('gitEnsureIdentity: Unexpected error.')
-          debugLog(e)
+          debugFn(gitEnsureIdentity, 'Unexpected error:\n', e)
         }
       }
     }),

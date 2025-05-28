@@ -16,7 +16,7 @@ export async function setupManifestConfig(
   defaultOnReadError = false,
 ): Promise<CResult<unknown>> {
   const detected = await detectManifestActions(null, cwd)
-  debugLog(detected)
+  debugLog('[DEBUG]', detected)
 
   // - repeat
   //   - give the user an option to configure one of the supported targets

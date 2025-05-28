@@ -1,4 +1,4 @@
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 
 import { queryApiSafeText } from '../../utils/api.mts'
 
@@ -28,8 +28,7 @@ export async function fetchScan(
       return JSON.parse(line)
     } catch {
       ok = false
-      debugLog('ndjson failed to parse the following line:')
-      debugLog(line)
+      debugFn(fetchScan, 'NDJSON failed to parse the following line:', line)
       return null
     }
   }) as unknown as Array<components['schemas']['SocketArtifact']>

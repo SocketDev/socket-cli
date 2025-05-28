@@ -86,7 +86,7 @@ async function run(
   const socketJson = await readOrDefaultSocketJson(cwd)
 
   const detected = await detectManifestActions(socketJson, cwd)
-  debugLog(detected)
+  debugLog('[DEBUG]', detected)
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAILING_NOW)
