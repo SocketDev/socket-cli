@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
@@ -103,7 +105,9 @@ async function run(
   const { json = false, markdown = false } = cli.flags
   let { bin, out, sbtOpts, stdout, verbose } = cli.flags
   const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
-  const [cwd = process.cwd()] = cli.input // no more in v1
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join: If given path is abs then cwd should not affect it
+  cwd = path.resolve(process.cwd(), cwd)
 
   const socketJson = await readOrDefaultSocketJson(String(cwd))
 

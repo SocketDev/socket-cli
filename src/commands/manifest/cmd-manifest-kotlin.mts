@@ -99,7 +99,7 @@ async function run(
   const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join: If given path is abs then cwd should not affect it
-  cwd = path.resolve(process.cwd(), String(cwd))
+  cwd = path.resolve(process.cwd(), cwd)
 
   const socketJson = await readOrDefaultSocketJson(String(cwd))
 

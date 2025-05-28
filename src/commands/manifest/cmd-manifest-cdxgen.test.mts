@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import { cmdit, invokeNpm } from '../../../test/utils.mts'

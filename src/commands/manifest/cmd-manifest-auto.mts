@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
@@ -19,10 +21,6 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    cwd: {
-      type: 'string',
-      description: 'Set the cwd, defaults to process.cwd()',
-    },
     verbose: {
       type: 'boolean',
       default: false,
@@ -32,14 +30,19 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command}
+      $ ${command} [CWD=.]
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
-    Tries to figure out what language your current repo uses. If it finds a
+    Tries to figure out what language your target repo uses. If it finds a
     supported case then it will try to generate the manifest file for that
     language with the default or detected settings.
+
+    Examples
+
+      $ ${command}
+      $ ${command} ./project/foo
   `,
 }
 
@@ -60,10 +63,12 @@ async function run(
     importMeta,
     parentName,
   })
-  const { cwd: cwdFlag, json, markdown, verbose: verboseFlag } = cli.flags
+  const { json, markdown, verbose: verboseFlag } = cli.flags
   const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
-  const cwd = String(cwdFlag || process.cwd())
   const verbose = !!verboseFlag
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join: If given path is abs then cwd should not affect it
+  cwd = path.resolve(process.cwd(), cwd)
 
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')

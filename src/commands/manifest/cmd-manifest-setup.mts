@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleManifestSetup } from './handle-manifest-setup.mts'
@@ -17,10 +19,6 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    cwd: {
-      type: 'string',
-      description: 'Set the cwd, defaults to process.cwd()',
-    },
     defaultOnReadError: {
       type: 'boolean',
       description:
@@ -29,7 +27,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command}
+      $ ${command} [CWD=.]
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -45,6 +43,11 @@ const config: CliCommandConfig = {
     This generated configuration file will only be used locally by the CLI. You
     can commit it to the repo (useful for collaboration) or choose to add it to
     your .gitignore all the same. Only this CLI will use it.
+
+    Examples
+
+      $ ${command}
+      $ ${command} ./proj
   `,
 }
 
@@ -65,8 +68,10 @@ async function run(
     importMeta,
     parentName,
   })
-  const { cwd: cwdFlag, defaultOnReadError = false } = cli.flags
-  const cwd = String(cwdFlag || process.cwd())
+  const { defaultOnReadError = false } = cli.flags
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join: If given path is abs then cwd should not affect it
+  cwd = path.resolve(process.cwd(), cwd)
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAILING_NOW)
