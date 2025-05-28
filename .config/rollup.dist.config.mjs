@@ -314,7 +314,7 @@ export default async () => {
             externalLiveBindings: false,
             format: 'cjs',
             inlineDynamicImports: true,
-            sourcemap: false
+            sourcemap: false,
           },
         ],
         external(rawId) {
