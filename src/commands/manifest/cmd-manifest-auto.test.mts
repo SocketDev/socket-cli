@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,16 +17,23 @@ describe('socket manifest auto', async () => {
         "Auto-detect build and attempt to generate manifest file
 
           Usage
-            $ socket manifest auto
+            $ socket manifest auto [CWD=.]
 
           Options
-            --cwd             Set the cwd, defaults to process.cwd()
             --help            Print this help
-            --verbose         Enable debug output, may help when running into errors
+            --verbose         Enable debug output (only for auto itself; sub-steps need to have it pre-configured), may help when running into errors
 
-          Tries to figure out what language your current repo uses. If it finds a
+          Tries to figure out what language your target repo uses. If it finds a
           supported case then it will try to generate the manifest file for that
-          language with the default or detected settings."
+          language with the default or detected settings.
+
+          Note: you can exclude languages from being auto-generated if you don't want
+                them to. Run \`socket manifest setup\` in the same dir to disable it.
+
+          Examples
+
+            $ socket manifest auto
+            $ socket manifest auto ./project/foo"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
