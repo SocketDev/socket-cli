@@ -251,7 +251,7 @@ export async function meowWithSubcommands(
  * Note: meow will exit immediately if it calls its .showHelp()
  */
 export function meowOrExit({
-  allowUnknownFlags, // commands that pass-through args need to allow this
+  // allowUnknownFlags, // commands that pass-through args need to allow this
   argv,
   config,
   importMeta,
