@@ -340,7 +340,7 @@ export async function pnpmFix(
       let hasAnnouncedWorkspace = false
       let workspaceLogCallCount = logger.logCallCount
       if (isDebug()) {
-        debugFn(`Checking workspace: ${workspace}`)
+        debugFn(`Checking workspace ${workspace}.`)
         hasAnnouncedWorkspace = true
         workspaceLogCallCount = logger.logCallCount
       }
