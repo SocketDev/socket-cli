@@ -47,11 +47,10 @@ import {
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { removeNodeModules } from '../../utils/fs.mts'
 import { globWorkspace } from '../../utils/glob.mts'
-import { applyRange } from '../../utils/semver.mts'
+import { type RangeStyle, applyRange } from '../../utils/semver.mts'
 import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
-import type { NormalizedFixOptions } from './types.mts'
 import type {
   ArboristInstance,
   NodeClass,
@@ -59,7 +58,7 @@ import type {
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
-const { DRY_RUN_NOT_SAVING, NPM } = constants
+const { NPM } = constants
 
 type InstallOptions = {
   cwd?: string | undefined
@@ -88,18 +87,21 @@ export async function npmFix(
   {
     autoMerge,
     cwd,
-    dryRun,
     limit,
     purls,
     rangeStyle,
     test,
     testScript,
-  }: NormalizedFixOptions,
+  }: {
+    autoMerge: boolean
+    cwd: string
+    limit: number
+    purls: string[]
+    rangeStyle: RangeStyle
+    test: boolean
+    testScript: string
+  },
 ) {
-  if (dryRun) {
-    logger.log(DRY_RUN_NOT_SAVING)
-    return
-  }
   // Lazily access constants.spinner.
   const { spinner } = constants
 

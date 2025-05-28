@@ -56,18 +56,17 @@ import {
   parsePnpmLockfileVersion,
   readPnpmLockfile,
 } from '../../utils/pnpm.mts'
-import { applyRange } from '../../utils/semver.mts'
+import { type RangeStyle, applyRange } from '../../utils/semver.mts'
 import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
-import type { NormalizedFixOptions } from './types.mts'
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { StringKeyValueObject } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-const { DRY_RUN_NOT_SAVING, NPM, OVERRIDES, PNPM } = constants
+const { NPM, OVERRIDES, PNPM } = constants
 
 async function getActualTree(cwd: string = process.cwd()): Promise<NodeClass> {
   // @npmcli/arborist DOES have partial support for pnpm structured node_modules
@@ -119,18 +118,21 @@ export async function pnpmFix(
   {
     autoMerge,
     cwd,
-    dryRun,
     limit,
     purls,
     rangeStyle,
     test,
     testScript,
-  }: NormalizedFixOptions,
+  }: {
+    autoMerge: boolean
+    cwd: string
+    limit: number
+    purls: string[]
+    rangeStyle: RangeStyle
+    test: boolean
+    testScript: string
+  },
 ) {
-  if (dryRun) {
-    logger.log(DRY_RUN_NOT_SAVING)
-    return
-  }
   // Lazily access constants.spinner.
   const { spinner } = constants
   const { pkgPath: rootPath } = pkgEnvDetails
