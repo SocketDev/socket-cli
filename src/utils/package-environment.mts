@@ -463,15 +463,6 @@ export async function detectAndValidatePackageEnvironment(
     )
     return
   }
-  if (agent === VLT) {
-    logger?.fail(
-      cmdPrefixMessage(
-        cmdName,
-        `${agent} does not support overrides. Soon, though ⚡`,
-      ),
-    )
-    return
-  }
   const lockName = details.lockName ?? 'lock file'
   if (details.lockName === undefined || details.lockSrc === undefined) {
     logger?.fail(cmdPrefixMessage(cmdName, `No ${lockName} found`))
