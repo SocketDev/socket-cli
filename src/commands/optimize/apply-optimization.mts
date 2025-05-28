@@ -62,6 +62,6 @@ export async function applyOptimization(
       )
     }
   } else {
-    logger?.log('Congratulations! Already Socket.dev optimized 🎉')
+    logger?.log('Scan complete. No Socket.dev optimized overrides applied.')
   }
 }
