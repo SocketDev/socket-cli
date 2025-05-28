@@ -63,7 +63,14 @@ export async function applyOptimization(
   const pkgJsonChanged = addedCount > 0 || updatedCount > 0
 
   if (pkgJsonChanged || pkgEnvDetails.features.npmBuggyOverrides) {
-    await updateLockfile(pkgEnvDetails, { cmdName: CMD_NAME, logger, spinner })
+    const result = await updateLockfile(pkgEnvDetails, {
+      cmdName: CMD_NAME,
+      logger,
+      spinner,
+    })
+    if (!result.ok) {
+      return result
+    }
   }
 
   spinner.stop()
