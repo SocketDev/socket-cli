@@ -47,8 +47,7 @@ export async function runFix({
   const { agent } = pkgEnvDetails
 
   if (agent === NPM) {
-    // TODO: make npmFix return a CResult and propagate it
-    await npmFix(pkgEnvDetails, {
+    return await npmFix(pkgEnvDetails, {
       autoMerge,
       cwd,
       limit,
@@ -58,8 +57,7 @@ export async function runFix({
       testScript,
     })
   } else if (agent === PNPM) {
-    // TODO: make pnpmFix return a CResult and propagate it
-    await pnpmFix(pkgEnvDetails, {
+    return await pnpmFix(pkgEnvDetails, {
       autoMerge,
       cwd,
       limit,
@@ -75,6 +73,4 @@ export async function runFix({
       cause: `${agent} is not supported by this command at the moment.`,
     }
   }
-
-  return { ok: true, data: undefined }
 }
