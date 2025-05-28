@@ -113,7 +113,7 @@ void (async () => {
     logger.error('\n') // Any-spinner-newline
     logger.fail(failMsgWithBadge(errorTitle, errorMessage))
     if (errorBody) {
-      debugLog(`${errorBody}`)
+      debugLog(errorBody)
     }
     await captureException(e)
   }

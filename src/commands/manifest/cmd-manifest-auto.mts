@@ -1,4 +1,4 @@
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
@@ -74,7 +74,8 @@ async function run(
   }
 
   const detected = await detectManifestActions(String(cwd))
-  debugLog(detected)
+
+  debugFn(detectManifestActions, detected)
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAILING_NOW)

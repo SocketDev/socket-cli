@@ -267,7 +267,7 @@ export function getDetailsFromDiff(
           }
         } else {
           // TODO: This debug log has too much information. We should narrow it down.
-          // debugLog('SKIPPING META CHANGE ON', diff)
+          // debugFn(getDetailsFromDiff, 'SKIPPING META CHANGE ON', diff)
         }
       } else {
         keep = action !== DiffAction.remove
