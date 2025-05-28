@@ -26,14 +26,20 @@ export async function detectManifestActions(
   }
 
   if (existsSync(path.join(cwd, 'build.sbt'))) {
-    debugFn(detectManifestActions, 'Detected a Scala sbt build, running default Scala generator...')
+    debugFn(
+      detectManifestActions,
+      'Detected a Scala sbt build, running default Scala generator...',
+    )
 
     output.sbt = true
     output.count += 1
   }
 
   if (existsSync(path.join(cwd, 'gradlew'))) {
-    debugFn(detectManifestActions, 'Detected a gradle build, running default gradle generator...')
+    debugFn(
+      detectManifestActions,
+      'Detected a gradle build, running default gradle generator...',
+    )
     output.gradle = true
     output.count += 1
   }
