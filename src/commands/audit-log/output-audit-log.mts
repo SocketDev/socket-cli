@@ -1,4 +1,4 @@
-import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
@@ -176,9 +176,8 @@ ${table}
       'There was a problem converting the logs to Markdown, please try the `--json` flag',
     )
     if (isDebug()) {
-      debugLog('Error:\n', e)
+      debugFn(outputAsMarkdown, 'Unexpected error:\n', e)
     }
-    // logger.error(e)
     return ''
   }
 }

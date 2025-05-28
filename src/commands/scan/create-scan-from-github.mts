@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, select } from '@socketsecurity/registry/lib/prompts'
 
@@ -223,8 +223,10 @@ async function scanOneRepo(
   }
 
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), repoSlug))
-  debugLog(
-    `[DEBUG] Temp dir for downloaded manifest (serves as scan root): ${tmpDir}`,
+  debugFn(
+    scanOneRepo,
+    'Temp dir for downloaded manifest (serves as scan root):',
+    tmpDir,
   )
 
   const downloadResult = await testAndDownloadManifestFiles({
@@ -351,7 +353,7 @@ async function testAndDownloadManifestFile({
   repoApiUrl: string
   githubToken: string
 }): Promise<CResult<{ isManifest: boolean }>> {
-  debugLog(`[DEBUG] Testing file:`, file)
+  debugFn(testAndDownloadManifestFile, 'Testing file:', file)
   if (!SUPPORTED_FILE_PATTERNS.some(regex => regex.test(file))) {
     // Not an error.
     return { ok: true, data: { isManifest: false } }
@@ -393,7 +395,7 @@ async function downloadManifestFile({
 }): Promise<CResult<undefined>> {
   logger.info('Requesting download url from GitHub...')
   const fileUrl = `${repoApiUrl}/contents/${file}?ref=${defaultBranch}`
-  debugLog('[DEBUG] File url:', fileUrl)
+  debugFn(downloadManifestFile, 'File url:', fileUrl)
 
   const downloadUrlResponse = await fetch(fileUrl, {
     method: 'GET',
@@ -405,8 +407,7 @@ async function downloadManifestFile({
 
   const downloadUrlText = await downloadUrlResponse.text()
 
-  debugLog('[DEBUG] raw download url response:')
-  debugLog(downloadUrlText)
+  debugFn(downloadManifestFile, 'Raw download url response:', downloadUrlText)
 
   let downloadUrl
   try {
@@ -426,7 +427,14 @@ async function downloadManifestFile({
   logger.info(`Downloading manifest file...`)
 
   const localPath = path.join(tmpDir, file)
-  debugLog('[DEBUG] Downloading from', downloadUrl, 'to', localPath)
+  debugFn(
+    downloadManifestFile,
+    'Downloading from',
+    downloadUrl,
+    'to',
+    localPath,
+  )
+
   // Now stream the file to that file...
 
   const result = await streamDownloadWithFetch(localPath, downloadUrl)
@@ -524,7 +532,7 @@ async function getLastCommitDetails({
     `Requesting last commit for default branch ${defaultBranch} for ${orgGithub}/${repoSlug}...`,
   )
   const commitApiUrl = `${repoApiUrl}/commits?sha=${defaultBranch}&per_page=1`
-  debugLog('Commit url:', commitApiUrl)
+  debugFn(getLastCommitDetails, 'Commit url:', commitApiUrl)
   const commitResponse = await fetch(commitApiUrl, {
     headers: {
       Authorization: `Bearer ${githubToken}`,
@@ -533,7 +541,7 @@ async function getLastCommitDetails({
 
   const commitText = await commitResponse.text()
 
-  debugLog('[DEBUG] Raw Commit Response:', commitText)
+  debugFn(getLastCommitDetails, 'Raw commit response:', commitText)
 
   let lastCommit
   try {
@@ -628,7 +636,7 @@ async function getRepoDetails({
   CResult<{ defaultBranch: string; repoDetails: unknown; repoApiUrl: string }>
 > {
   const repoApiUrl = `${githubApiUrl}/repos/${orgGithub}/${repoSlug}`
-  debugLog('Repo url:', repoApiUrl)
+  debugFn(getRepoDetails, 'Repo URL:', repoApiUrl)
   const repoDetailsResponse = await fetch(repoApiUrl, {
     method: 'GET',
     headers: {
@@ -639,7 +647,7 @@ async function getRepoDetails({
 
   const repoDetailsText = await repoDetailsResponse.text()
 
-  debugLog('[DEBUG] Raw Repo Response:', repoDetailsText)
+  debugFn(getRepoDetails, 'Raw repo response:', repoDetailsText)
 
   let repoDetails
   try {
@@ -683,7 +691,7 @@ async function getRepoBranchTree({
     `Requesting default branch file tree; branch \`${defaultBranch}\`, repo \`${orgGithub}/${repoSlug}\`...`,
   )
   const treeApiUrl = `${repoApiUrl}/git/trees/${defaultBranch}?recursive=1`
-  debugLog('Tree url:', treeApiUrl)
+  debugFn(getRepoBranchTree, 'Tree URL:', treeApiUrl)
   const treeResponse = await fetch(treeApiUrl, {
     method: 'GET',
     headers: {
@@ -693,7 +701,7 @@ async function getRepoBranchTree({
 
   const treeText = await treeResponse.text()
 
-  debugLog('[DEBUG] Raw Tree Response:', treeText)
+  debugFn(getRepoBranchTree, 'Raw tree response:', treeText)
 
   let treeDetails
   try {
@@ -727,7 +735,7 @@ async function getRepoBranchTree({
   }
 
   if (!treeDetails.tree || !Array.isArray(treeDetails.tree)) {
-    debugLog('treeDetails.tree:', treeDetails.tree)
+    debugFn(getRepoBranchTree, 'treeDetails.tree:', treeDetails.tree)
     return {
       ok: false,
       message: `Tree response for default branch ${defaultBranch} for ${orgGithub}/${repoSlug} was not a list`,

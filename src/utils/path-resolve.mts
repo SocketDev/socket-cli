@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import which from 'which'
 
-import { debugLog, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { resolveBinPath } from '@socketsecurity/registry/lib/npm'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -98,8 +98,9 @@ export async function getPackageFilesForScan(
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
   config?: SocketYml | undefined,
 ): Promise<string[]> {
-  debugLog(
-    `getPackageFilesForScan: resolving ${inputPaths.length} paths:\n`,
+  debugFn(
+    getPackageFilesForScan,
+    `Resolving ${inputPaths.length} paths:\n`,
     inputPaths,
   )
 
@@ -117,7 +118,8 @@ export async function getPackageFilesForScan(
 
   if (isDebug()) {
     spinner.stop()
-    debugLog(
+    debugFn(
+      getPackageFilesForScan,
       `Resolved ${inputPaths.length} paths to ${entries.length} local paths:\n`,
       entries,
     )
@@ -136,7 +138,7 @@ export async function getPackageFilesForScan(
   spinner.successAndStop(
     `Found ${packageFiles.length} local ${pluralize('file', packageFiles.length)}`,
   )
-  debugLog('Absolute paths:\n', packageFiles)
+  debugFn(getPackageFilesForScan, 'Absolute paths:\n', packageFiles)
 
   return packageFiles
 }
