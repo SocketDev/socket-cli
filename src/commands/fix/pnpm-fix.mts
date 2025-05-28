@@ -540,7 +540,10 @@ export async function pnpmFix(
                 await prExistForBranch(repoInfo.owner, repoInfo.repo, branch)
               ) {
                 skipPr = true
-                debugFn(pnpmFix, `Branch "${branch}" exists, skipping PR creation.`)
+                debugFn(
+                  pnpmFix,
+                  `Branch "${branch}" exists, skipping PR creation.`,
+                )
               }
               // eslint-disable-next-line no-await-in-loop
               else if (await gitRemoteBranchExists(branch, cwd)) {
