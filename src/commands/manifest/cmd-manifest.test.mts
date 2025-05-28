@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -28,6 +26,7 @@ describe('socket manifest', async () => {
             gradle            [beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Gradle/Java/Kotlin/etc project
             kotlin            [beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Kotlin project
             scala             [beta] Generate a manifest file (\`pom.xml\`) from Scala's \`build.sbt\` file
+            setup             Start interactive configurator to customize default flag values for \`socket manifest\` in this dir
 
           Options
             --help            Print this help

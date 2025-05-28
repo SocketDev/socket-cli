@@ -12,6 +12,7 @@ import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
+import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
@@ -266,7 +267,9 @@ async function run(
     }
   }
 
-  const detected = await detectManifestActions(cwd)
+  const socketJson = await readOrDefaultSocketJson(cwd)
+
+  const detected = await detectManifestActions(socketJson, cwd)
   if (detected.count > 0 && !autoManifest) {
     logger.info(
       `Detected ${detected.count} manifest targets we could try to generate. Please set the --autoManifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,

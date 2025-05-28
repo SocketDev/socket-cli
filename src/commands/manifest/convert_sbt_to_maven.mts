@@ -1,50 +1,41 @@
-import path from 'node:path'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
 import { safeReadFile } from '../../utils/fs.mts'
 
-export async function convertSbtToMaven(
-  target: string,
-  bin: string,
-  out: string,
-  verbose: boolean,
-  sbtOpts: string[],
-) {
+export async function convertSbtToMaven({
+  bin,
+  cwd,
+  out,
+  sbtOpts,
+  verbose,
+}: {
+  bin: string
+  cwd: string
+  out: string
+  sbtOpts: string[]
+  verbose: boolean
+}) {
   // TODO: impl json/md
 
   // Lazily access constants.spinner.
   const { spinner } = constants
-  const rBin = path.resolve(bin)
-  const rTarget = path.resolve(target)
 
-  if (verbose) {
-    logger.group('sbt2maven:')
-    logger.log(`[VERBOSE] - Absolute bin path: \`${rBin}\``)
-    logger.log(`[VERBOSE] - Absolute target path: \`${rTarget}\``)
-    // logger.log(`[VERBOSE] - Absolute out path: \`${rout}\``)
-    logger.groupEnd()
-  } else {
-    logger.group('sbt2maven:')
-    logger.log(`- executing: \`${bin}\``)
-    logger.log(`- src dir: \`${target}\``)
-    // logger.log(`- dst dir: \`${out}\``)
-    logger.groupEnd()
-  }
+  logger.group('sbt2maven:')
+  logger.info(`- executing: \`${bin}\``)
+  logger.info(`- src dir: \`${cwd}\``)
+  logger.groupEnd()
 
   try {
-    spinner.start(`Converting sbt to maven from \`${bin}\` on \`${target}\`...`)
+    spinner.start(`Converting sbt to maven from \`${bin}\` on \`${cwd}\`...`)
 
     // Run sbt with the init script we provide which should yield zero or more
     // pom files. We have to figure out where to store those pom files such that
     // we can upload them and predict them through the GitHub API. We could do a
     // .socket folder. We could do a socket.pom.gz with all the poms, although
     // I'd prefer something plain-text if it is to be committed.
-    const output = await spawn(bin, ['makePom', ...sbtOpts], {
-      cwd: target || process.cwd(),
-    })
+    const output = await spawn(bin, ['makePom', ...sbtOpts], { cwd })
 
     spinner.stop()
 
@@ -86,10 +77,19 @@ export async function convertSbtToMaven(
       logger.success(`OK`)
     } else if (out === '-') {
       process.exitCode = 1
+      logger.error('')
       logger.fail(
-        'Requested out target was stdout but there are multiple generated files',
+        'Requested output target was stdout but there are multiple generated files',
       )
-      poms.forEach(fn => logger.error('-', fn))
+      logger.error('')
+      poms.forEach(fn => logger.info('-', fn))
+      if (poms.length > 10) {
+        logger.error('')
+        logger.fail(
+          'Requested output target was stdout but there are multiple generated files',
+        )
+      }
+      logger.error('')
       logger.info('Exiting now...')
       return
     } else {
