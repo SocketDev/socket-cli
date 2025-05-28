@@ -24,5 +24,4 @@ export async function outputFixResult(
 
   logger.log('')
   logger.success('Finished!')
-  logger.log('')
 }
