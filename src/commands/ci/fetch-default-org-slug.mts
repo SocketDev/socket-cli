@@ -11,7 +11,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   const defaultOrgResult = getConfigValueOrUndef('defaultOrg')
 
   if (defaultOrgResult) {
-    debugFn('Using default org:', defaultOrgResult)
+    debugFn('use: default org', defaultOrgResult)
     return { ok: true, data: defaultOrgResult }
   }
 
@@ -51,7 +51,8 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     }
   }
 
-  debugFn('Resolved org to:', slug)
+  debugFn('resolve: org', slug)
+
   return {
     ok: true,
     message: 'Retrieved default org from server',
