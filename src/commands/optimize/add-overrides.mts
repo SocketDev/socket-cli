@@ -76,7 +76,7 @@ export async function addOverrides(
   const isWorkspace = workspacePkgJsonPaths.length > 0
   const isWorkspaceRoot = pkgPath === rootPath
   const isLockScanned = isWorkspaceRoot && !prod
-  const workspaceName = isWorkspaceRoot
+  const workspace = isWorkspaceRoot
     ? 'root'
     : path.relative(rootPath, pkgPath)
   if (
@@ -105,7 +105,7 @@ export async function addOverrides(
     )
   }
 
-  spinner?.setText(`Adding overrides to ${workspaceName}...`)
+  spinner?.setText(`Adding overrides to ${workspace}...`)
 
   const depAliasMap = new Map<string, string>()
   const depEntries = getDependencyEntries(pkgEnvDetails)
@@ -154,7 +154,7 @@ export async function addOverrides(
           depObj[origPkgName] = thisSpec
           state.added.add(sockRegPkgName)
           if (!isWorkspaceRoot) {
-            state.addedInWorkspaces.add(workspaceName)
+            state.addedInWorkspaces.add(workspace)
           }
         }
         depAliasMap.set(origPkgName, thisSpec)
@@ -251,8 +251,7 @@ export async function addOverrides(
         'updatedInWorkspaces',
       ] satisfies
         // Here we're just telling TS that we're looping over key names
-        // of the type and that they're all Set<string> props. This allows
-        // us to do the SetA.add(setB.get) pump type-safe without casts.
+        // of the type and that they're all Set<string> props.
         Array<
           keyof Pick<
             AddOverridesState,
@@ -270,8 +269,10 @@ export async function addOverrides(
     pkgEnvDetails.editablePkgJson.update(
       Object.fromEntries(depEntries) as PackageJson,
     )
-    for (const { overrides, type } of overridesDataObjects) {
-      updateManifestByAgent.get(type)!(pkgEnvDetails, toSortedObject(overrides))
+    if (isWorkspaceRoot) {
+      for (const { overrides, type } of overridesDataObjects) {
+        updateManifestByAgent.get(type)!(pkgEnvDetails, toSortedObject(overrides))
+      }
     }
     await pkgEnvDetails.editablePkgJson.save()
   }
