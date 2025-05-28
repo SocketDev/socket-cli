@@ -1,4 +1,4 @@
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
@@ -74,7 +74,7 @@ export async function fetchReportData(
 
     const jsonsString = result.data
 
-    // This is nd-json; each line is a json object
+    // This is nd-json; each line is a json object.
     const lines = jsonsString.split('\n').filter(Boolean)
     let ok = true
     const data = lines.map(line => {
@@ -82,8 +82,11 @@ export async function fetchReportData(
         return JSON.parse(line)
       } catch {
         ok = false
-        debugLog('ndjson failed to parse the following line:')
-        debugLog(line)
+        debugFn(
+          fetchScanResult,
+          'NDJSON failed to parse the following line:\n',
+          line,
+        )
         return
       }
     }) as unknown as Array<components['schemas']['SocketArtifact']>
