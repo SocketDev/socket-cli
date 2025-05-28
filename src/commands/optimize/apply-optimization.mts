@@ -5,7 +5,10 @@ import { addOverrides } from './add-overrides.mts'
 import { CMD_NAME } from './shared.mts'
 import { updateLockfile } from './update-lockfile.mts'
 import constants from '../../constants.mts'
+import { cmdPrefixMessage } from '../../utils/cmd.mts'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment.mts'
+
+const { VLT } = constants
 
 function createActionMessage(
   verb: string,
@@ -25,9 +28,21 @@ export async function applyOptimization(
     logger,
     prod,
   })
+
   if (!pkgEnvDetails) {
     return
   }
+
+  if (pkgEnvDetails.agent === VLT) {
+    logger.warn(
+      cmdPrefixMessage(
+        CMD_NAME,
+        `${VLT} does not support overrides. Soon, though ⚡`,
+      ),
+    )
+    return
+  }
+
   // Lazily access constants.spinner.
   const { spinner } = constants
 
@@ -50,18 +65,17 @@ export async function applyOptimization(
 
   spinner.stop()
 
-  if (pkgJsonChanged) {
-    if (updatedCount > 0) {
-      logger?.log(
-        `${createActionMessage('Updated', updatedCount, state.updatedInWorkspaces.size)}${addedCount ? '.' : '🚀'}`,
-      )
-    }
-    if (addedCount > 0) {
-      logger?.log(
-        `${createActionMessage('Added', addedCount, state.addedInWorkspaces.size)} 🚀`,
-      )
-    }
-  } else {
+  if (updatedCount > 0) {
+    logger?.log(
+      `${createActionMessage('Updated', updatedCount, state.updatedInWorkspaces.size)}${addedCount ? '.' : '🚀'}`,
+    )
+  }
+  if (addedCount > 0) {
+    logger?.log(
+      `${createActionMessage('Added', addedCount, state.addedInWorkspaces.size)} 🚀`,
+    )
+  }
+  if (!pkgJsonChanged) {
     logger?.log('Scan complete. No Socket.dev optimized overrides applied.')
   }
 }
