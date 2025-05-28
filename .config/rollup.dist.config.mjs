@@ -84,7 +84,8 @@ async function copyBashCompletion() {
   await fs.copyFile(filepath, destPath)
 }
 
-async function copyPackage(pkgName) {
+async function copyPackage(pkgName, options) {
+  const { strict = true } = { __proto__: null, ...options }
   // Lazily access constants path properties.
   const externalPath = path.join(constants.rootPath, EXTERNAL)
   const nmPath = path.join(constants.rootPath, NODE_MODULES)
@@ -92,27 +93,29 @@ async function copyPackage(pkgName) {
   const pkgNmPath = path.join(nmPath, pkgName)
   // Copy entire package folder over to dist.
   await fs.cp(pkgNmPath, pkgDestPath, { recursive: true })
-  // Add 'use strict' directive to js files.
-  const jsFiles = await tinyGlob(['**/*.js'], {
-    absolute: true,
-    cwd: pkgDestPath,
-    ignore: [NODE_MODULES_GLOB_RECURSIVE],
-  })
-  await Promise.all(
-    jsFiles.map(async p => {
-      const content = await fs.readFile(p, 'utf8')
-      // Start by trimming the hashbang.
-      const hashbang = /^#!.*(?:\r?\n)*/.exec(content)?.[0] ?? ''
-      let trimmed = content.slice(hashbang.length).trimStart()
-      // Then, trim "use strict" directive.
-      const useStrict =
-        /^(['"])use strict\1;?(?:\r?\n)*/.exec(trimmed)?.[0] ?? ''
-      trimmed = trimmed.slice(useStrict.length).trimStart()
-      // Add back hashbang and add "use strict" directive.
-      const modded = `${hashbang.trim()}${hashbang ? os.EOL : ''}${useStrict.trim() || "'use strict'"}${os.EOL}${os.EOL}${trimmed}`
-      await fs.writeFile(p, modded, 'utf8')
-    }),
-  )
+  if (strict) {
+    // Add 'use strict' directive to js files.
+    const jsFiles = await tinyGlob(['**/*.js'], {
+      absolute: true,
+      cwd: pkgDestPath,
+      ignore: [NODE_MODULES_GLOB_RECURSIVE],
+    })
+    await Promise.all(
+      jsFiles.map(async p => {
+        const content = await fs.readFile(p, 'utf8')
+        // Start by trimming the hashbang.
+        const hashbang = /^#!.*(?:\r?\n)*/.exec(content)?.[0] ?? ''
+        let trimmed = content.slice(hashbang.length).trimStart()
+        // Then, trim "use strict" directive.
+        const useStrict =
+          /^(['"])use strict\1;?(?:\r?\n)*/.exec(trimmed)?.[0] ?? ''
+        trimmed = trimmed.slice(useStrict.length).trimStart()
+        // Add back hashbang and add "use strict" directive.
+        const modded = `${hashbang.trim()}${hashbang ? os.EOL : ''}${useStrict.trim() || "'use strict'"}${os.EOL}${os.EOL}${trimmed}`
+        await fs.writeFile(p, modded, 'utf8')
+      }),
+    )
+  }
 }
 
 let _sentryManifest
@@ -429,7 +432,9 @@ export default async () => {
               copyBashCompletion(),
               updatePackageJson(),
               remove(path.join(distPath, `${VENDOR}.js.map`)),
-              ...EXTERNAL_PACKAGES.map(n => copyPackage(n)),
+              ...EXTERNAL_PACKAGES.map(n =>
+                copyPackage(n, { strict: n !== SOCKET_SECURITY_REGISTRY }),
+              ),
             ])
 
             const blessedExternalPath = path.join(externalPath, BLESSED)
