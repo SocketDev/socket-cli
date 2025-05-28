@@ -154,10 +154,7 @@ export async function cleanupOpenPrs(
             pull_number: prNum,
             state: 'closed',
           })
-          debugFn(
-            cleanupOpenPrs,
-            `Closed ${prRef} for older version ${prToVersion}.`,
-          )
+          debugFn(`Closed ${prRef} for older version ${prToVersion}.`)
           // Remove entry from parent object.
           context.parent.splice(context.index, 1)
           // Mark cache to be saved.
@@ -165,7 +162,6 @@ export async function cleanupOpenPrs(
           return null
         } catch (e) {
           debugFn(
-            cleanupOpenPrs,
             `Failed to close ${prRef}: ${(e as Error)?.message || 'Unknown error'}`,
           )
         }
@@ -180,7 +176,7 @@ export async function cleanupOpenPrs(
             base: match.headRefName,
             head: match.baseRefName,
           })
-          debugFn(cleanupOpenPrs, `Updated stale ${prRef}.`)
+          debugFn(`Updated stale ${prRef}.`)
           // Update entry entry.
           if (context.apiType === 'graphql') {
             context.entry.mergeStateStatus = 'CLEAN'
@@ -191,7 +187,7 @@ export async function cleanupOpenPrs(
           cachesToSave.set(context.cacheKey, context.data)
         } catch (e) {
           const message = (e as Error)?.message || 'Unknown error'
-          debugFn(cleanupOpenPrs, `Failed to update ${prRef}: ${message}`)
+          debugFn(`Failed to update ${prRef}: ${message}`)
         }
       }
       return match
@@ -447,7 +443,7 @@ export async function openPr(
   } as OpenPrOptions
   // Lazily access constants.ENV.GITHUB_ACTIONS.
   if (!constants.ENV.GITHUB_ACTIONS) {
-    debugFn(openPr, 'Missing GITHUB_ACTIONS environment variable.')
+    debugFn('Missing GITHUB_ACTIONS environment variable.')
     return null
   }
   const octokit = getOctokit()
@@ -475,7 +471,7 @@ export async function openPr(
         .join('\n')
       message += `:\n${details}`
     }
-    debugFn(openPr, message)
+    debugFn(message)
   }
   return null
 }
@@ -510,6 +506,6 @@ export async function setGitRemoteGitHubRepoUrl(
   try {
     await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
   } catch (e) {
-    debugFn(setGitRemoteGitHubRepoUrl, 'Unexpected error:\n', e)
+    debugFn('Unexpected error:\n', e)
   }
 }
