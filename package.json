@@ -84,6 +84,7 @@
     "@babel/preset-typescript": "7.27.1",
     "@babel/runtime": "7.27.3",
     "@biomejs/biome": "1.9.4",
+    "@coana-tech/cli": "14.9.15",
     "@cyclonedx/cdxgen": "11.3.2",
     "@dotenvx/dotenvx": "1.44.1",
     "@eslint/compat": "1.2.9",
