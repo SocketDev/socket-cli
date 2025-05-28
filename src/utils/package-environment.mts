@@ -17,6 +17,7 @@ import { cmdPrefixMessage } from './cmd.mts'
 import { findUp, readFileBinary, readFileUtf8 } from './fs.mts'
 import constants from '../constants.mts'
 
+import type { CResult } from '../types.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { SemVer } from 'semver'
@@ -38,8 +39,6 @@ const {
 
 export const AGENTS = [BUN, NPM, PNPM, YARN_BERRY, YARN_CLASSIC, VLT] as const
 
-export type Agent = (typeof AGENTS)[number]
-
 const binByAgent = new Map<Agent, string>([
   [BUN, BUN],
   [NPM, NPM],
@@ -49,61 +48,59 @@ const binByAgent = new Map<Agent, string>([
   [VLT, VLT],
 ])
 
-async function getAgentExecPath(agent: Agent): Promise<string> {
-  const binName = binByAgent.get(agent)!
-  if (binName === NPM) {
-    // Lazily access constants.npmExecPath.
-    return constants.npmExecPath
+export type Agent = (typeof AGENTS)[number]
+
+type EnvBase = {
+  agent: Agent
+  agentExecPath: string
+  agentSupported: boolean
+  features: {
+    // Fixed by https://github.com/npm/cli/pull/8089.
+    // Landed in npm v11.2.0.
+    npmBuggyOverrides: boolean
   }
-  return (await which(binName, { nothrow: true })) ?? binName
+  nodeSupported: boolean
+  nodeVersion: SemVer
+  npmExecPath: string
+  pkgRequirements: {
+    agent: string
+    node: string
+  }
+  pkgSupports: {
+    agent: boolean
+    node: boolean
+  }
 }
 
-async function getAgentVersion(
-  agentExecPath: string,
-  cwd: string,
-): Promise<SemVer | undefined> {
-  let result
-  try {
-    result =
-      // Coerce version output into a valid semver version by passing it through
-      // semver.coerce which strips leading v's, carets (^), comparators (<,<=,>,>=,=),
-      // and tildes (~).
-      semver.coerce(
-        // All package managers support the "--version" flag.
-        (
-          await spawn(agentExecPath, ['--version'], {
-            cwd,
-            // Lazily access constants.WIN32.
-            shell: constants.WIN32,
-          })
-        ).stdout.trim(),
-      ) ?? undefined
-  } catch (e) {
-    debugFn('Unexpected error:\n', e)
-  }
-  return result
-}
+export type EnvDetails = Readonly<
+  Remap<
+    EnvBase & {
+      agentVersion: SemVer
+      editablePkgJson: EditablePackageJson
+      lockName: string
+      lockPath: string
+      lockSrc: string
+      pkgPath: string
+    }
+  >
+>
 
-// The order of LOCKS properties IS significant as it affects iteration order.
-const LOCKS: Record<string, Agent> = {
-  [`bun${LOCK_EXT}`]: BUN,
-  [`bun${BINARY_LOCK_EXT}`]: BUN,
-  // If both package-lock.json and npm-shrinkwrap.json are present in the root
-  // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
-  // will be ignored.
-  // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#package-lockjson-vs-npm-shrinkwrapjson
-  'npm-shrinkwrap.json': NPM,
-  'package-lock.json': NPM,
-  'pnpm-lock.yaml': PNPM,
-  'pnpm-lock.yml': PNPM,
-  [`yarn${LOCK_EXT}`]: YARN_CLASSIC,
-  'vlt-lock.json': VLT,
-  // Lastly, look for a hidden lock file which is present if .npmrc has package-lock=false:
-  // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
-  //
-  // Unlike the other LOCKS keys this key contains a directory AND filename so
-  // it has to be handled differently.
-  'node_modules/.package-lock.json': NPM,
+export type PartialEnvDetails = Readonly<
+  Remap<
+    EnvBase & {
+      agentVersion: SemVer | undefined
+      editablePkgJson: EditablePackageJson | undefined
+      lockName: string | undefined
+      lockPath: string | undefined
+      lockSrc: string | undefined
+      pkgPath: string | undefined
+    }
+  >
+>
+
+export type DetectOptions = {
+  cwd?: string | undefined
+  onUnknown?: (pkgManager: string | undefined) => void
 }
 
 type ReadLockFile =
@@ -114,6 +111,12 @@ type ReadLockFile =
       agentExecPath: string,
       cwd: string,
     ) => Promise<string | undefined>)
+
+export type DetectAndValidateOptions = {
+  cmdName?: string | undefined
+  logger?: Logger | undefined
+  prod?: boolean | undefined
+}
 
 const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   function wrapReader<T extends (...args: any[]) => Promise<any>>(
@@ -176,57 +179,61 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   ])
 })()
 
-type EnvBase = {
-  agent: Agent
-  agentExecPath: string
-  agentSupported: boolean
-  features: {
-    // Fixed by https://github.com/npm/cli/pull/8089.
-    // Landed in npm v11.2.0.
-    npmBuggyOverrides: boolean
-  }
-  nodeSupported: boolean
-  nodeVersion: SemVer
-  npmExecPath: string
-  pkgRequirements: {
-    agent: string
-    node: string
-  }
-  pkgSupports: {
-    agent: boolean
-    node: boolean
-  }
+// The order of LOCKS properties IS significant as it affects iteration order.
+const LOCKS: Record<string, Agent> = {
+  [`bun${LOCK_EXT}`]: BUN,
+  [`bun${BINARY_LOCK_EXT}`]: BUN,
+  // If both package-lock.json and npm-shrinkwrap.json are present in the root
+  // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
+  // will be ignored.
+  // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#package-lockjson-vs-npm-shrinkwrapjson
+  'npm-shrinkwrap.json': NPM,
+  'package-lock.json': NPM,
+  'pnpm-lock.yaml': PNPM,
+  'pnpm-lock.yml': PNPM,
+  [`yarn${LOCK_EXT}`]: YARN_CLASSIC,
+  'vlt-lock.json': VLT,
+  // Lastly, look for a hidden lock file which is present if .npmrc has package-lock=false:
+  // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
+  //
+  // Unlike the other LOCKS keys this key contains a directory AND filename so
+  // it has to be handled differently.
+  'node_modules/.package-lock.json': NPM,
 }
 
-export type EnvDetails = Readonly<
-  Remap<
-    EnvBase & {
-      agentVersion: SemVer
-      editablePkgJson: EditablePackageJson
-      lockName: string
-      lockPath: string
-      lockSrc: string
-      pkgPath: string
-    }
-  >
->
+async function getAgentExecPath(agent: Agent): Promise<string> {
+  const binName = binByAgent.get(agent)!
+  if (binName === NPM) {
+    // Lazily access constants.npmExecPath.
+    return constants.npmExecPath
+  }
+  return (await which(binName, { nothrow: true })) ?? binName
+}
 
-export type PartialEnvDetails = Readonly<
-  Remap<
-    EnvBase & {
-      agentVersion: SemVer | undefined
-      editablePkgJson: EditablePackageJson | undefined
-      lockName: string | undefined
-      lockPath: string | undefined
-      lockSrc: string | undefined
-      pkgPath: string | undefined
-    }
-  >
->
-
-export type DetectOptions = {
-  cwd?: string | undefined
-  onUnknown?: (pkgManager: string | undefined) => void
+async function getAgentVersion(
+  agentExecPath: string,
+  cwd: string,
+): Promise<SemVer | undefined> {
+  let result
+  try {
+    result =
+      // Coerce version output into a valid semver version by passing it through
+      // semver.coerce which strips leading v's, carets (^), comparators (<,<=,>,>=,=),
+      // and tildes (~).
+      semver.coerce(
+        // All package managers support the "--version" flag.
+        (
+          await spawn(agentExecPath, ['--version'], {
+            cwd,
+            // Lazily access constants.WIN32.
+            shell: constants.WIN32,
+          })
+        ).stdout.trim(),
+      ) ?? undefined
+  } catch (e) {
+    debugFn('Unexpected error:\n', e)
+  }
+  return result
 }
 
 export async function detectPackageEnvironment({
@@ -394,16 +401,10 @@ export async function detectPackageEnvironment({
   }
 }
 
-export type DetectAndValidateOptions = {
-  cmdName?: string | undefined
-  logger?: Logger | undefined
-  prod?: boolean | undefined
-}
-
 export async function detectAndValidatePackageEnvironment(
   cwd: string,
   options?: DetectAndValidateOptions | undefined,
-): Promise<void | EnvDetails> {
+): Promise<CResult<EnvDetails>> {
   const {
     cmdName = '',
     logger,
@@ -427,63 +428,77 @@ export async function detectAndValidatePackageEnvironment(
   const agentVersion = details.agentVersion ?? 'unknown'
   if (!details.agentSupported) {
     const minVersion = constants.minimumVersionByAgent.get(agent)!
-    logger?.fail(
-      cmdPrefixMessage(
+    return {
+      ok: false,
+      message: 'Version Mismatch',
+      cause: cmdPrefixMessage(
         cmdName,
         `Requires ${agent} >=${minVersion}. Current version: ${agentVersion}.`,
       ),
-    )
-    return
+    }
   }
   if (!details.nodeSupported) {
     const minVersion = constants.maintainedNodeVersions.last
-    logger?.fail(
-      cmdPrefixMessage(
+    return {
+      ok: false,
+      message: 'Version Mismatch',
+      cause: cmdPrefixMessage(
         cmdName,
         `Requires Node >=${minVersion}. Current version: ${nodeVersion}.`,
       ),
-    )
-    return
+    }
   }
   if (!details.pkgSupports.agent) {
-    logger?.fail(
-      cmdPrefixMessage(
+    return {
+      ok: false,
+      message: 'Engine Mismatch',
+      cause: cmdPrefixMessage(
         cmdName,
         `Package engine "${agent}" requires ${pkgRequirements.agent}. Current version: ${agentVersion}`,
       ),
-    )
-    return
+    }
   }
   if (!details.pkgSupports.node) {
-    logger?.fail(
-      cmdPrefixMessage(
+    return {
+      ok: false,
+      message: 'Version Mismatch',
+      cause: cmdPrefixMessage(
         cmdName,
         `Package engine "node" requires ${pkgRequirements.node}. Current version: ${nodeVersion}`,
       ),
-    )
-    return
+    }
   }
   const lockName = details.lockName ?? 'lock file'
   if (details.lockName === undefined || details.lockSrc === undefined) {
-    logger?.fail(cmdPrefixMessage(cmdName, `No ${lockName} found`))
-    return
+    return {
+      ok: false,
+      message: 'Missing Lock File',
+      cause: cmdPrefixMessage(cmdName, `No ${lockName} found`),
+    }
   }
   if (details.lockSrc.trim() === '') {
-    logger?.fail(cmdPrefixMessage(cmdName, `${lockName} is empty`))
-    return
+    return {
+      ok: false,
+      message: 'Empty Lock File',
+      cause: cmdPrefixMessage(cmdName, `${lockName} is empty`),
+    }
   }
   if (details.pkgPath === undefined) {
-    logger?.fail(cmdPrefixMessage(cmdName, `No ${PACKAGE_JSON} found`))
-    return
+    return {
+      ok: false,
+      message: 'Missing package.json',
+      cause: cmdPrefixMessage(cmdName, `No ${PACKAGE_JSON} found`),
+    }
   }
   if (prod && (agent === BUN || agent === YARN_BERRY)) {
-    logger?.fail(
-      cmdPrefixMessage(
+    return {
+      ok: false,
+      message: 'Bad input',
+      cause: cmdPrefixMessage(
         cmdName,
         `--prod not supported for ${agent}${agentVersion ? `@${agentVersion}` : ''}`,
       ),
-    )
-    return
+    }
   }
   if (
     details.lockPath &&
@@ -500,5 +515,5 @@ export async function detectAndValidatePackageEnvironment(
       ),
     )
   }
-  return details as EnvDetails
+  return { ok: true, data: details as EnvDetails }
 }
