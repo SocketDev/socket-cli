@@ -412,6 +412,7 @@ export function getCveInfoFromAlertsMap(
         )
         debugDir(alert)
         if (error) {
+          // Explicitly use debugLog here.
           debugLog(error)
         }
       }
