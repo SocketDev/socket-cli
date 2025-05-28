@@ -43,11 +43,7 @@ export async function fetchListAllRepos({
       'list of repositories',
     )
     if (!result.ok) {
-      debugFn(
-        fetchListAllRepos,
-        'At least one fetch failed, bailing...',
-        result,
-      )
+      debugFn('At least one fetch failed, bailing...', result)
       return result
     }
 
