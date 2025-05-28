@@ -267,7 +267,7 @@ export function getDetailsFromDiff(
           }
         } else {
           // TODO: This debug log has too much information. We should narrow it down.
-          // debugFn('SKIPPING META CHANGE ON', diff)
+          // debugFn('skip: meta change diff\n', diff)
         }
       } else {
         keep = action !== DiffAction.remove

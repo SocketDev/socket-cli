@@ -126,8 +126,7 @@ export async function npmFix(
       : await getAlertsMapFromArborist(arb, getAlertsMapOptions({ limit }))
   } catch (e) {
     spinner?.stop()
-    debugFn('API Error thrown:')
-    debugFn(e)
+    debugFn('catch: API error\n', e)
     return {
       ok: false,
       message: 'API Error',
@@ -160,9 +159,12 @@ export async function npmFix(
     // Process the workspace root last since it will add an override to package.json.
     pkgEnvDetails.editablePkgJson.filename!,
   ]
+  const sortedInfoEntries = [...infoByPkgName.entries()].sort((a, b) =>
+    naturalCompare(a[0], b[0]),
+  )
 
   const handleInstallFail = (): CResult<{ fixed: boolean }> => {
-    debugFn(`Unexpected condition: ${pkgEnvDetails.agent} install failed.\n`)
+    debugFn(`fail: ${pkgEnvDetails.agent} install\n`)
     logger.dedent()
     spinner?.dedent()
 
@@ -177,9 +179,6 @@ export async function npmFix(
 
   let count = 0
 
-  const sortedInfoEntries = [...infoByPkgName.entries()].sort((a, b) =>
-    naturalCompare(a[0], b[0]),
-  )
   infoEntriesLoop: for (
     let i = 0, { length } = sortedInfoEntries;
     i < length;
@@ -193,7 +192,7 @@ export async function npmFix(
     spinner?.indent()
 
     if (getManifestData(NPM, name)) {
-      debugFn(`Socket Optimize package exists for ${name}.`)
+      debugFn(`found: Socket Optimize variant for ${name}`)
     }
     // eslint-disable-next-line no-await-in-loop
     const packument = await fetchPackagePackument(name)
@@ -229,7 +228,7 @@ export async function npmFix(
       )
 
       if (!oldVersions.length) {
-        debugFn(`${name} not found, skipping.\n`)
+        debugFn(`skip: ${name} not found\n`)
         // Skip to next package.
         logger.dedent()
         spinner?.dedent()
@@ -246,7 +245,7 @@ export async function npmFix(
       let hasAnnouncedWorkspace = false
       let workspaceLogCallCount = logger.logCallCount
       if (isDebug()) {
-        debugFn(`Checking workspace ${workspace}.`)
+        debugFn(`check: workspace ${workspace}`)
         hasAnnouncedWorkspace = true
         workspaceLogCallCount = logger.logCallCount
       }
@@ -257,7 +256,7 @@ export async function npmFix(
 
         const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
-          debugFn(`${oldId} not found, skipping.`)
+          debugFn(`skip: ${oldId} not found`)
           continue oldVersionsLoop
         }
 
@@ -266,9 +265,7 @@ export async function npmFix(
           vulnerableVersionRange,
         } of infos.values()) {
           if (semver.gte(oldVersion, firstPatchedVersionIdentifier)) {
-            debugFn(
-              `${oldId} is >= ${firstPatchedVersionIdentifier}, skipping.`,
-            )
+            debugFn(`skip: ${oldId} is >= ${firstPatchedVersionIdentifier}`)
             continue infosLoop
           }
           const newVersion = findBestPatchVersion(
@@ -316,7 +313,7 @@ export async function npmFix(
           )
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
-            debugFn(`${workspace}/package.json not changed, skipping.`)
+            debugFn(`skip: ${workspace}/package.json unchanged`)
             // Reset things just in case.
             if (isCi) {
               // eslint-disable-next-line no-await-in-loop
@@ -392,14 +389,12 @@ export async function npmFix(
                 await prExistForBranch(repoInfo.owner, repoInfo.repo, branch)
               ) {
                 skipPr = true
-                debugFn(`Branch "${branch}" exists, skipping PR creation.`)
+                debugFn(`skip: branch "${branch}" exists`)
               }
               // eslint-disable-next-line no-await-in-loop
               else if (await gitRemoteBranchExists(branch, cwd)) {
                 skipPr = true
-                debugFn(
-                  `Remote branch "${branch}" exists, skipping PR creation.`,
-                )
+                debugFn(`skip: remote branch "${branch}" exists`)
               } else if (
                 // eslint-disable-next-line no-await-in-loop
                 !(await gitCreateAndPushBranch(

@@ -28,7 +28,7 @@ export async function fetchScan(
       return JSON.parse(line)
     } catch {
       ok = false
-      debugFn('NDJSON failed to parse the following line:', line)
+      debugFn('fail: parse NDJSON\n', line)
       return null
     }
   }) as unknown as Array<components['schemas']['SocketArtifact']>
