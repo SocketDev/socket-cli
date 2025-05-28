@@ -510,6 +510,6 @@ export async function setGitRemoteGitHubRepoUrl(
   try {
     await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
   } catch (e) {
-    debugFn(setGitRemoteGitHubRepoUrl, 'Unexpected error\n:', e)
+    debugFn(setGitRemoteGitHubRepoUrl, 'Unexpected error:\n', e)
   }
 }
