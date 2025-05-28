@@ -12,9 +12,10 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
-import { type RangeStyle, RangeStyles } from '../../utils/semver.mts'
+import { RangeStyles } from '../../utils/semver.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type { RangeStyle } from '../../utils/semver.mts'
 
 const { DRY_RUN_NOT_SAVING } = constants
 

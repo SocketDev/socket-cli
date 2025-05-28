@@ -56,13 +56,14 @@ import {
   parsePnpmLockfileVersion,
   readPnpmLockfile,
 } from '../../utils/pnpm.mts'
-import { type RangeStyle, applyRange } from '../../utils/semver.mts'
+import { applyRange } from '../../utils/semver.mts'
 import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { StringKeyValueObject } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
+import type { RangeStyle } from '../../utils/semver.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 

@@ -47,7 +47,7 @@ import {
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { removeNodeModules } from '../../utils/fs.mts'
 import { globWorkspace } from '../../utils/glob.mts'
-import { type RangeStyle, applyRange } from '../../utils/semver.mts'
+import { applyRange } from '../../utils/semver.mts'
 import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
@@ -56,6 +56,7 @@ import type {
   NodeClass,
 } from '../../shadow/npm/arborist/types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
+import type { RangeStyle } from '../../utils/semver.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
 const { NPM } = constants
