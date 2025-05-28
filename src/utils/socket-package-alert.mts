@@ -407,7 +407,8 @@ export function getCveInfoFromAlertsMap(
           }
         }
         debugFn(
-          getCveInfoFromAlertsMap, 'Unexpected condition: Invalid SocketPackageAlert.',
+          getCveInfoFromAlertsMap,
+          'Unexpected condition: Invalid SocketPackageAlert.',
         )
         debugDir(alert)
         if (error) {
