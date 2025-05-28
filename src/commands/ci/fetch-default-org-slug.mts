@@ -1,4 +1,4 @@
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 
 import { handleApiCall } from '../../utils/api.mts'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
@@ -11,7 +11,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   const defaultOrgResult = getConfigValueOrUndef('defaultOrg')
 
   if (defaultOrgResult) {
-    debugLog(`Using default org: ${defaultOrgResult}`)
+    debugFn(getDefaultOrgSlug, 'Using default org:', defaultOrgResult)
     return { ok: true, data: defaultOrgResult }
   }
 
@@ -51,7 +51,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     }
   }
 
-  debugLog(`Resolved org to: ${slug}`)
+  debugFn(getDefaultOrgSlug, 'Resolved org to:', slug)
   return {
     ok: true,
     message: 'Retrieved default org from server',
