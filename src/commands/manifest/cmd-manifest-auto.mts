@@ -75,7 +75,7 @@ async function run(
 
   const detected = await detectManifestActions(String(cwd))
 
-  debugFn(detectManifestActions, detected)
+  debugFn(detected)
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAILING_NOW)

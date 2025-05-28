@@ -98,11 +98,7 @@ export async function getPackageFilesForScan(
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
   config?: SocketYml | undefined,
 ): Promise<string[]> {
-  debugFn(
-    getPackageFilesForScan,
-    `Resolving ${inputPaths.length} paths:\n`,
-    inputPaths,
-  )
+  debugFn(`Resolving ${inputPaths.length} paths:\n`, inputPaths)
 
   // Lazily access constants.spinner.
   const { spinner } = constants
@@ -119,7 +115,6 @@ export async function getPackageFilesForScan(
   if (isDebug()) {
     spinner.stop()
     debugFn(
-      getPackageFilesForScan,
       `Resolved ${inputPaths.length} paths to ${entries.length} local paths:\n`,
       entries,
     )
@@ -138,7 +133,7 @@ export async function getPackageFilesForScan(
   spinner.successAndStop(
     `Found ${packageFiles.length} local ${pluralize('file', packageFiles.length)}`,
   )
-  debugFn(getPackageFilesForScan, 'Absolute paths:\n', packageFiles)
+  debugFn('Absolute paths:\n', packageFiles)
 
   return packageFiles
 }
