@@ -315,6 +315,10 @@ export async function pnpmFix(
 
       // actualTree may not be defined on the first iteration of pkgJsonPathsLoop.
       if (!actualTree) {
+        if (!isCi) {
+          // eslint-disable-next-line no-await-in-loop
+          await removeNodeModules(cwd)
+        }
         const maybeActualTree =
           isCi && existsSync(path.join(rootPath, 'node_modules'))
             ? // eslint-disable-next-line no-await-in-loop
