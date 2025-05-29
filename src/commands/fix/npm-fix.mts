@@ -52,7 +52,6 @@ import { applyRange } from '../../utils/semver.mts'
 import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
-import type { GitHubRepoInfo } from './open-pr.mts'
 import type {
   ArboristInstance,
   NodeClass,
@@ -124,18 +123,19 @@ export async function npmFix(
     githubToken
   )
 
+  const repoInfo = isCi ? getGitHubEnvRepoInfo()! : null
+
   spinner?.start()
 
-  let count = 0
-  let repoInfo: GitHubRepoInfo | null = null
-  if (isCi) {
-    repoInfo = getGitHubEnvRepoInfo()!
-    count += (
-      await getOpenSocketPrs(repoInfo.owner, repoInfo.repo, {
-        author: gitUser,
-      })
-    ).length
-  }
+  const openPrs =
+    // Check repoInfo to make TypeScript happy.
+    isCi && repoInfo
+      ? await getOpenSocketPrs(repoInfo.owner, repoInfo.repo, {
+          author: gitUser,
+        })
+      : []
+
+  let count = isCi ? openPrs.length : 0
 
   const arb = new Arborist({
     path: rootPath,
@@ -369,7 +369,8 @@ export async function npmFix(
 
           spinner?.stop()
 
-          if (!errored && isCi) {
+          // Check repoInfo to make TypeScript happy.
+          if (!errored && isCi && repoInfo) {
             try {
               // eslint-disable-next-line no-await-in-loop
               const result = await gitUnstagedModifiedFiles(cwd)
@@ -401,7 +402,7 @@ export async function npmFix(
               let skipPr = false
               if (
                 // eslint-disable-next-line no-await-in-loop
-                await prExistForBranch(repoInfo!.owner, repoInfo!.repo, branch)
+                await prExistForBranch(repoInfo.owner, repoInfo.repo, branch)
               ) {
                 skipPr = true
                 debugFn(`skip: branch "${branch}" exists`)
@@ -444,20 +445,20 @@ export async function npmFix(
               // eslint-disable-next-line no-await-in-loop
               await Promise.allSettled([
                 setGitRemoteGitHubRepoUrl(
-                  repoInfo!.owner,
-                  repoInfo!.repo,
+                  repoInfo.owner,
+                  repoInfo.repo,
                   githubToken,
                   cwd,
                 ),
-                cleanupOpenPrs(repoInfo!.owner, repoInfo!.repo, newVersion, {
+                cleanupOpenPrs(repoInfo.owner, repoInfo.repo, newVersion, {
                   purl: oldPurl,
                   workspace,
                 }),
               ])
               // eslint-disable-next-line no-await-in-loop
               const prResponse = await openPr(
-                repoInfo!.owner,
-                repoInfo!.repo,
+                repoInfo.owner,
+                repoInfo.repo,
                 branch,
                 oldPurl,
                 newVersion,
