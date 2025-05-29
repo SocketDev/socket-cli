@@ -141,12 +141,17 @@ export async function pnpmFix(
   const { pkgPath: rootPath } = pkgEnvDetails
 
   // Lazily access constants.ENV properties.
-  const token = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
+  const gitEmail = constants.ENV.SOCKET_CLI_GIT_USER_EMAIL
+  const gitUser = constants.ENV.SOCKET_CLI_GIT_USER_NAME
+  const githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
+
   const isCi = !!(
     constants.ENV.CI &&
     constants.ENV.GITHUB_ACTIONS &&
     constants.ENV.GITHUB_REPOSITORY &&
-    token
+    gitEmail &&
+    gitUser &&
+    githubToken
   )
 
   spinner?.start()
@@ -157,8 +162,7 @@ export async function pnpmFix(
     repoInfo = getGitHubEnvRepoInfo()!
     count += (
       await getOpenSocketPrs(repoInfo.owner, repoInfo.repo, {
-        // Lazily access constants.ENV.SOCKET_CLI_GIT_USER_NAME.
-        author: constants.ENV.SOCKET_CLI_GIT_USER_NAME,
+        author: gitUser,
       })
     ).length
   }
@@ -579,6 +583,8 @@ export async function pnpmFix(
                   moddedFilepaths,
                   {
                     cwd,
+                    email: gitEmail,
+                    user: gitUser,
                   },
                 ))
               ) {
@@ -613,7 +619,7 @@ export async function pnpmFix(
                 setGitRemoteGitHubRepoUrl(
                   repoInfo!.owner,
                   repoInfo!.repo,
-                  token,
+                  githubToken,
                   cwd,
                 ),
                 cleanupOpenPrs(repoInfo!.owner, repoInfo!.repo, newVersion, {
