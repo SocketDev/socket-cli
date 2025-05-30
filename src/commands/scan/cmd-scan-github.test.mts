@@ -19,7 +19,7 @@ describe('socket scan github', async () => {
         "Create a scan for given GitHub repo
 
           Usage
-            $ socket scan github
+            $ socket scan github [options] [CWD=.]
 
           API Token Requirements
             - Quota: 1 unit
@@ -35,6 +35,8 @@ describe('socket scan github', async () => {
           requires local access to the repo while this command runs entirely through the
           GitHub for file access.
 
+          You can use \`socket scan setup\` to configure certain repo flag defaults.
+
           Options
             --all             Apply for all known repos reported by the Socket API. Supersedes \`repos\`.
             --githubApiUrl    Base URL of the GitHub API (default: https://api.github.com)
@@ -48,7 +50,8 @@ describe('socket scan github', async () => {
             --repos           List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. Use --all to use them all.
 
           Examples
-            $ socket scan github"
+            $ socket scan github
+            $ socket scan github ./proj"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

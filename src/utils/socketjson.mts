@@ -41,6 +41,20 @@ export interface SocketJson {
         verbose?: boolean
       }
     }
+    scan?: {
+      create?: {
+        autoManifest?: boolean
+        repo?: string
+        report?: boolean
+        branch?: string
+      }
+      github?: {
+        all?: boolean
+        githubApiUrl?: string
+        orgGithub?: string
+        repos?: string
+      }
+    }
   }
 }
 

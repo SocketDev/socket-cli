@@ -5,6 +5,7 @@ import { cmdScanGithub } from './cmd-scan-github.mts'
 import { cmdScanList } from './cmd-scan-list.mts'
 import { cmdScanMetadata } from './cmd-scan-metadata.mts'
 import { cmdScanReport } from './cmd-scan-report.mts'
+import { cmdScanSetup } from './cmd-scan-setup.mts'
 import { cmdScanView } from './cmd-scan-view.mts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 
@@ -24,6 +25,7 @@ export const cmdScan: CliSubcommand = {
         list: cmdScanList,
         metadata: cmdScanMetadata,
         report: cmdScanReport,
+        setup: cmdScanSetup,
         view: cmdScanView,
       },
       {
