@@ -9,31 +9,35 @@ import { RequestError } from '@octokit/request-error'
 import { Octokit } from '@octokit/rest'
 import semver from 'semver'
 
+import { PackageURL } from '@socketregistry/packageurl-js'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { readJson, writeJson } from '@socketsecurity/registry/lib/fs'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import {
-  getSocketPrTitlePattern,
+  createSocketBranchParser,
   getSocketPullRequestBody,
   getSocketPullRequestTitle,
 } from './git.mts'
 import constants from '../../constants.mts'
+import { getPurlObject } from '../../utils/purl.mts'
 
-import type { GetSocketPrTitlePatternOptions } from './git.mts'
 import type { components } from '@octokit/openapi-types'
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/registry/lib/fs'
-import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
 let _octokit: Octokit | undefined
 function getOctokit() {
   if (_octokit === undefined) {
+    // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
+    const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
+    if (!SOCKET_CLI_GITHUB_TOKEN) {
+      debugFn('miss: SOCKET_CLI_GITHUB_TOKEN env var')
+    }
     _octokit = new Octokit({
-      // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
-      auth: constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
+      auth: SOCKET_CLI_GITHUB_TOKEN,
     })
   }
   return _octokit
@@ -42,10 +46,14 @@ function getOctokit() {
 let _octokitGraphql: typeof OctokitGraphql | undefined
 export function getOctokitGraphql() {
   if (!_octokitGraphql) {
+    // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
+    const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
+    if (!SOCKET_CLI_GITHUB_TOKEN) {
+      debugFn('miss: SOCKET_CLI_GITHUB_TOKEN env var')
+    }
     _octokitGraphql = OctokitGraphql.defaults({
       headers: {
-        // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
-        authorization: `token ${constants.ENV.SOCKET_CLI_GITHUB_TOKEN}`,
+        authorization: `token ${SOCKET_CLI_GITHUB_TOKEN}`,
       },
     })
   }
@@ -114,16 +122,22 @@ export type PrMatch = {
   baseRefName: string
   headRefName: string
   mergeStateStatus: MERGE_STATE_STATUS
+  newVersion: string
   number: number
+  purl: PackageURL
   title: string
+  workspace: string
 }
 
-export type CleanupPrsOptions = GetSocketPrTitlePatternOptions
+export type CleanupPrsOptions = {
+  newVersion?: string | undefined
+  purl?: string | undefined
+  workspace?: string | undefined
+}
 
 export async function cleanupOpenPrs(
   owner: string,
   repo: string,
-  newVersion: string,
   options?: CleanupPrsOptions | undefined,
 ): Promise<PrMatch[]> {
   const contextualMatches = await getOpenSocketPrsWithContext(
@@ -137,16 +151,15 @@ export async function cleanupOpenPrs(
   }
 
   const cachesToSave = new Map<string, JsonContent>()
+  const { newVersion } = { __proto__: null, ...options } as CleanupPrsOptions
   const octokit = getOctokit()
 
   const settledMatches = await Promise.allSettled(
     contextualMatches.map(async ({ context, match }) => {
-      const { number: prNum } = match
+      const { newVersion: prToVersion, number: prNum } = match
       const prRef = `PR #${prNum}`
-      const prToVersionText = /(?<= to )\S+/.exec(match.title)?.[0]
-      const prToVersion = semver.coerce(prToVersionText)
       // Close older PRs.
-      if (prToVersion && semver.lt(prToVersion, newVersion)) {
+      if (prToVersion && newVersion && semver.lt(prToVersion, newVersion)) {
         try {
           await octokit.pulls.update({
             owner,
@@ -162,7 +175,7 @@ export async function cleanupOpenPrs(
           return null
         } catch (e) {
           debugFn(
-            `fail: close ${prRef}\n`,
+            `fail: close ${prRef} for ${prToVersion}\n`,
             (e as Error)?.message || 'unknown error',
           )
         }
@@ -204,6 +217,7 @@ export async function cleanupOpenPrs(
   const fulfilledMatches = settledMatches.filter(
     r => r.status === 'fulfilled' && r.value,
   ) as unknown as Array<PromiseFulfilledResult<ContextualPrMatch>>
+
   return fulfilledMatches.map(r => r.value.match)
 }
 
@@ -247,14 +261,18 @@ export async function enablePrAutoMerge({
   return { enabled: false }
 }
 
-export type GitHubRepoInfo = {
+export type GithubRepoInfo = {
   owner: string
   repo: string
 }
 
-export function getGitHubEnvRepoInfo(): GitHubRepoInfo | null {
+export function getGithubEnvRepoInfo(): GithubRepoInfo | null {
   // Lazily access constants.ENV.GITHUB_REPOSITORY.
-  const ownerSlashRepo = constants.ENV.GITHUB_REPOSITORY
+  const { GITHUB_REPOSITORY } = constants.ENV
+  if (!GITHUB_REPOSITORY) {
+    debugFn('miss: GITHUB_REPOSITORY env var')
+  }
+  const ownerSlashRepo = GITHUB_REPOSITORY
   const slashIndex = ownerSlashRepo.indexOf('/')
   if (slashIndex === -1) {
     return null
@@ -265,11 +283,12 @@ export function getGitHubEnvRepoInfo(): GitHubRepoInfo | null {
   }
 }
 
-export type GetOpenSocketPrsOptions = Remap<
-  GetSocketPrTitlePatternOptions & {
-    author?: string | undefined
-  }
->
+export type GetOpenSocketPrsOptions = {
+  author?: string | undefined
+  newVersion?: string | undefined
+  purl?: string | undefined
+  workspace?: string | undefined
+}
 
 export async function getOpenSocketPrs(
   owner: string,
@@ -303,7 +322,7 @@ async function getOpenSocketPrsWithContext(
   const checkAuthor = isNonEmptyString(author)
   const octokit = getOctokit()
   const octokitGraphql = getOctokitGraphql()
-  const titlePattern = getSocketPrTitlePattern(options)
+  const prBranchParser = createSocketBranchParser(options)
 
   const contextualMatches: ContextualPrMatch[] = []
   try {
@@ -350,7 +369,8 @@ async function getOpenSocketPrsWithContext(
       const node = nodes[i]!
       const login = node.author?.login
       const matchesAuthor = checkAuthor ? login === author : true
-      if (matchesAuthor && titlePattern.test(node.title)) {
+      const matchesBranch = prBranchParser(node.headRefName)
+      if (matchesAuthor && matchesBranch) {
         contextualMatches.push({
           context: {
             apiType: 'graphql',
@@ -362,6 +382,7 @@ async function getOpenSocketPrsWithContext(
           },
           match: {
             ...node,
+            ...matchesBranch,
             author: login ?? '<unknown>',
           },
         })
@@ -397,7 +418,8 @@ async function getOpenSocketPrsWithContext(
     const pr = allOpenPrs[i]!
     const login = pr.user?.login
     const matchesAuthor = checkAuthor ? login === author : true
-    if (matchesAuthor && titlePattern.test(pr.title)) {
+    const matchesBranch = prBranchParser(pr.head.ref)
+    if (matchesAuthor && matchesBranch) {
       contextualMatches.push({
         context: {
           apiType: 'rest',
@@ -408,6 +430,7 @@ async function getOpenSocketPrsWithContext(
           parent: allOpenPrs,
         },
         match: {
+          ...matchesBranch,
           author: login ?? '<unknown>',
           baseRefName: pr.base.ref,
           headRefName: pr.head.ref,
@@ -434,7 +457,7 @@ export async function openPr(
   owner: string,
   repo: string,
   branch: string,
-  purl: string,
+  purl: string | PackageURL,
   newVersion: string,
   options?: OpenPrOptions | undefined,
 ): Promise<OctokitResponse<Pr> | null> {
@@ -447,15 +470,16 @@ export async function openPr(
     debugFn('miss: GITHUB_ACTIONS env var')
     return null
   }
+  const purlObj = getPurlObject(purl)
   const octokit = getOctokit()
   try {
     return await octokit.pulls.create({
       owner,
       repo,
-      title: getSocketPullRequestTitle(purl, newVersion, workspace),
+      title: getSocketPullRequestTitle(purlObj, newVersion, workspace),
       head: branch,
       base: baseBranch,
-      body: getSocketPullRequestBody(purl, newVersion, workspace),
+      body: getSocketPullRequestBody(purlObj, newVersion, workspace),
     })
   } catch (e) {
     let message = `Failed to open pull request`
@@ -496,7 +520,7 @@ export async function prExistForBranch(
   return false
 }
 
-export async function setGitRemoteGitHubRepoUrl(
+export async function setGitRemoteGithubRepoUrl(
   owner: string,
   repo: string,
   token: string,

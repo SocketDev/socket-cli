@@ -5,6 +5,7 @@ import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
+import { getPurlObject } from '../../utils/purl.mts'
 import {
   getPkgFullNameFromPurlObj,
   getSocketDevPackageOverviewUrlFromPurl,
@@ -12,11 +13,6 @@ import {
 
 import type { CResult } from '../../types.mts'
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
-
-export type GetSocketPrTitlePatternOptions = {
-  purl?: string | undefined
-  workspace?: string | undefined
-}
 
 export type GitCreateAndPushBranchOptions = {
   cwd?: string | undefined
@@ -42,72 +38,120 @@ export function getBaseGitBranch(): string {
 }
 
 export function getSocketBranchName(
-  purl: string,
+  purl: string | PackageURL,
   newVersion: string,
-  workspaceName?: string | undefined,
+  workspace?: string | undefined,
 ): string {
-  const purlObj = PackageURL.fromString(purl)
-  const maybeWorkspaceName = workspaceName
-    ? `${formatBranchName(workspaceName)}-`
+  const purlObj = getPurlObject(purl)
+  const fmtType = formatBranchName(purlObj.type)
+  const fmtWorkspace = workspace ? `${formatBranchName(workspace)}` : 'root'
+  const fmtMaybeNamespace = purlObj.namespace
+    ? `${formatBranchName(purlObj.namespace)}--`
     : ''
-  const maybeNamespace = purlObj.namespace
-    ? `${formatBranchName(purlObj.namespace)}-`
-    : ''
-  const fullName = `${maybeWorkspaceName}${maybeNamespace}${formatBranchName(purlObj.name)}`
-  return `socket/${fullName}-${formatBranchName(newVersion)}`
+  const fmtFullName = `${fmtMaybeNamespace}${formatBranchName(purlObj.name)}`
+  const fmtVersion = formatBranchName(purlObj.version!)
+  const fmtNewVersion = formatBranchName(newVersion)
+  return `socket/${fmtType}_${fmtWorkspace}_${fmtFullName}_${fmtVersion}_${fmtNewVersion}`
 }
 
-export function getSocketPrTitlePattern(
-  options?: GetSocketPrTitlePatternOptions | undefined,
+export type SocketBranchPatternOptions = {
+  newVersion?: string | undefined
+  purl?: string | undefined
+  workspace?: string | undefined
+}
+
+export function getSocketBranchPattern(
+  options?: SocketBranchPatternOptions | undefined,
 ): RegExp {
-  const { purl, workspace } = {
+  const { newVersion, purl, workspace } = {
     __proto__: null,
     ...options,
-  } as GetSocketPrTitlePatternOptions
-  const purlObj = purl ? PackageURL.fromString(purl) : null
-  const escapedPkgFullName = purlObj
-    ? escapeRegExp(getPkgFullNameFromPurlObj(purlObj))
-    : '\\S+'
-  const escapedPkgVersion = purlObj ? escapeRegExp(purlObj.version!) : '\\S+'
-  const escapedWorkspaceDetails = workspace
-    ? ` in ${escapeRegExp(workspace)}`
+  } as SocketBranchPatternOptions
+  const purlObj = purl ? getPurlObject(purl) : null
+  const escType = purlObj ? escapeRegExp(purlObj.type) : '[^_]+'
+  const escWorkspace = workspace
+    ? `${escapeRegExp(formatBranchName(workspace))}`
+    : 'root'
+  const escMaybeNamespace = purlObj?.namespace
+    ? `${escapeRegExp(formatBranchName(purlObj.namespace))}--`
     : ''
+  const escFullName = purlObj
+    ? `${escMaybeNamespace}${escapeRegExp(formatBranchName(purlObj.name))}`
+    : '[^_]+'
+  const escVersion = purlObj
+    ? escapeRegExp(formatBranchName(purlObj.version!))
+    : '[^_]+'
+  const escNewVersion = newVersion
+    ? escapeRegExp(formatBranchName(newVersion))
+    : '[^_]+'
   return new RegExp(
-    `Bump ${escapedPkgFullName} from ${escapedPkgVersion} to \\S+${escapedWorkspaceDetails}`,
+    `^socket/(${escType})_(${escWorkspace})_(${escFullName})_(${escVersion})_(${escNewVersion})$`,
   )
 }
 
+export type SocketBranchParser = (
+  branch: string,
+) => SocketBranchParseResult | null
+
+export type SocketBranchParseResult = {
+  newVersion: string
+  purl: PackageURL
+  workspace: string
+}
+
+export function createSocketBranchParser(
+  options?: SocketBranchPatternOptions | undefined,
+): SocketBranchParser {
+  const pattern = getSocketBranchPattern(options)
+  return function parse(branch: string): SocketBranchParseResult | null {
+    const match = pattern.exec(branch)
+    if (!match) {
+      return null
+    }
+    const {
+      0: type,
+      1: workspace,
+      2: fullName,
+      3: version,
+      4: newVersion,
+    } = match
+    return {
+      newVersion,
+      purl: getPurlObject(`pkg:${type}/${fullName}@${version}`),
+      workspace,
+    } as SocketBranchParseResult
+  }
+}
+
 export function getSocketPullRequestTitle(
-  purl: string,
-  toVersion: string,
+  purl: string | PackageURL,
+  newVersion: string,
   workspace?: string | undefined,
 ): string {
-  const purlObj = PackageURL.fromString(purl)
-  const pkgFullName = getPkgFullNameFromPurlObj(purlObj)
-  const workspaceDetails = workspace ? ` in ${workspace}` : ''
-  return `Bump ${pkgFullName} from ${purlObj.version} to ${toVersion}${workspaceDetails}`
+  const purlObj = getPurlObject(purl)
+  const fullName = getPkgFullNameFromPurlObj(purlObj)
+  return `Bump ${fullName} from ${purlObj.version} to ${newVersion}${workspace ? ` in ${workspace}` : ''}`
 }
 
 export function getSocketPullRequestBody(
-  purl: string,
+  purl: string | PackageURL,
   newVersion: string,
-  workspaceName?: string | undefined,
+  workspace?: string | undefined,
 ): string {
-  const purlObj = PackageURL.fromString(purl)
-  const pkgFullName = getPkgFullNameFromPurlObj(purlObj)
-  const workspaceDetails = workspaceName ? ` in ${workspaceName}` : ''
-  return `Bump [${pkgFullName}](${getSocketDevPackageOverviewUrlFromPurl(purlObj)}) from ${purlObj.version} to ${newVersion}${workspaceDetails}.`
+  const purlObj = getPurlObject(purl)
+  const fullName = getPkgFullNameFromPurlObj(purlObj)
+  const pkgOverviewUrl = getSocketDevPackageOverviewUrlFromPurl(purlObj)
+  return `Bump [${fullName}](${pkgOverviewUrl}) from ${purlObj.version} to ${newVersion}${workspace ? ` in ${workspace}` : ''}.`
 }
 
 export function getSocketCommitMessage(
-  purl: string,
+  purl: string | PackageURL,
   newVersion: string,
-  workspaceName?: string | undefined,
+  workspace?: string | undefined,
 ): string {
-  const purlObj = PackageURL.fromString(purl)
-  const pkgFullName = getPkgFullNameFromPurlObj(purlObj)
-  const workspaceDetails = workspaceName ? ` in ${workspaceName}` : ''
-  return `socket: Bump ${pkgFullName} from ${purlObj.version} to ${newVersion}${workspaceDetails}`
+  const purlObj = getPurlObject(purl)
+  const fullName = getPkgFullNameFromPurlObj(purlObj)
+  return `socket: Bump ${fullName} from ${purlObj.version} to ${newVersion}${workspace ? ` in ${workspace}` : ''}`
 }
 
 export async function gitCleanFdx(cwd = process.cwd()): Promise<void> {
