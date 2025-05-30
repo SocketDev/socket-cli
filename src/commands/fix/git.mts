@@ -109,11 +109,11 @@ export function createSocketBranchParser(
       return null
     }
     const {
-      0: type,
-      1: workspace,
-      2: fullName,
-      3: version,
-      4: newVersion,
+      1: type,
+      2: workspace,
+      3: fullName,
+      4: version,
+      5: newVersion,
     } = match
     return {
       newVersion,
