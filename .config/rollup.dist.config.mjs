@@ -63,7 +63,7 @@ const BLESSED = 'blessed'
 const BLESSED_CONTRIB = 'blessed-contrib'
 const EXTERNAL = 'external'
 const SENTRY_NODE = '@sentry/node'
-const SOCKET_DESCRIPTION = 'CLI tool for Socket.dev'
+const SOCKET_DESCRIPTION = 'CLI for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
 const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry'
 
