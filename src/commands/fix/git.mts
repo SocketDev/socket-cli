@@ -71,7 +71,7 @@ export function getSocketBranchPattern(
   const escType = purlObj ? escapeRegExp(purlObj.type) : '[^_]+'
   const escWorkspace = workspace
     ? `${escapeRegExp(formatBranchName(workspace))}`
-    : 'root'
+    : '[^_]+'
   const escMaybeNamespace = purlObj?.namespace
     ? `${escapeRegExp(formatBranchName(purlObj.namespace))}--`
     : ''
