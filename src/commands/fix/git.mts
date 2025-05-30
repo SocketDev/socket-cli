@@ -71,7 +71,7 @@ export function getSocketBranchPattern(
   const escType = purlObj ? escapeRegExp(purlObj.type) : '[^_]+'
   const escWorkspace = workspace
     ? `${escapeRegExp(formatBranchName(workspace))}`
-    : 'root'
+    : '[^_]+'
   const escMaybeNamespace = purlObj?.namespace
     ? `${escapeRegExp(formatBranchName(purlObj.namespace))}--`
     : ''
@@ -104,6 +104,7 @@ export function createSocketBranchParser(
 ): SocketBranchParser {
   const pattern = getSocketBranchPattern(options)
   return function parse(branch: string): SocketBranchParseResult | null {
+    debugFn('pattern', pattern.toString())
     const match = pattern.exec(branch)
     if (!match) {
       return null

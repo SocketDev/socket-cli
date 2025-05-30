@@ -168,6 +168,8 @@ export async function pnpmFix(
 
   if (openPrs.length) {
     debugFn(`found: ${openPrs.length} open PRs\n`, openPrs)
+  } else {
+    debugFn('miss: 0 open PRs found')
   }
 
   let count = isCi ? openPrs.length : 0
