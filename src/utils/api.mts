@@ -60,7 +60,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     const message = `${e || 'No error message returned'}`
     const reason = `${e || 'No error message returned'}`
 
-    debugFn(`${fetchingDesc} threw error:\n`, e)
+    debugFn(`catch: ${fetchingDesc} error:\n`, e)
 
     return {
       ok: false,
@@ -77,7 +77,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     const message = `${err.error || 'No error message returned'}`
     const { cause: reason } = err
 
-    debugFn(`${fetchingDesc} bad response:\n`, err)
+    debugFn(`fail: ${fetchingDesc} bad response:\n`, err)
 
     return {
       ok: false,
@@ -107,7 +107,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
     const message = `${e || 'No error message returned'}`
     const reason = `${e || 'No error message returned'}`
 
-    debugFn(`${description} threw error:\n`, e)
+    debugFn(`catch: ${description} error:\n`, e)
 
     return {
       ok: false,
@@ -121,7 +121,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
     const err = result as SocketSdkErrorType<T>
     const message = `${err.error || 'No error message returned'}`
 
-    debugFn(`${description} bad response:\n`, err)
+    debugFn(`fail: ${description} bad response:\n`, err)
 
     return {
       ok: false,
@@ -228,7 +228,7 @@ export async function queryApiSafeText(
 
     const cause = (e as undefined | { message: string })?.message
 
-    debugFn('catch: error in queryApi()\n', e)
+    debugFn('catch: queryApi() error\n', e)
 
     return {
       ok: false,
@@ -254,7 +254,7 @@ export async function queryApiSafeText(
       data,
     }
   } catch (e) {
-    debugFn('catch: await result.text()\n', e)
+    debugFn('catch: await result.text() error\n', e)
 
     return {
       ok: false,
