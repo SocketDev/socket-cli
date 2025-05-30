@@ -256,6 +256,6 @@ async function run(
     orgSlug,
     orgGithub,
     outputKind,
-    repos: repos,
+    repos,
   })
 }
