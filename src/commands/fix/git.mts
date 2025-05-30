@@ -104,7 +104,7 @@ export function createSocketBranchParser(
 ): SocketBranchParser {
   const pattern = getSocketBranchPattern(options)
   return function parse(branch: string): SocketBranchParseResult | null {
-    debugFn('pattern', pattern)
+    debugFn('pattern', pattern.toString())
     const match = pattern.exec(branch)
     if (!match) {
       return null
