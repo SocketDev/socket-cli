@@ -95,16 +95,42 @@ export async function meowWithSubcommands(
   }
 
   // No further args or first arg is a flag (shrug)
-  if (
+  const isRootCommand =
     name === 'socket' &&
     (!commandOrAliasName || commandOrAliasName?.startsWith('-'))
-  ) {
+
+  if (isRootCommand) {
+    flags['help'] = {
+      type: 'boolean',
+      hidden: false, // Only show on root
+      description: 'Give you detailed help information about any sub-command',
+    }
+    flags['config'] = {
+      type: 'string',
+      hidden: false, // Only show on root
+      description: 'Allows you to temp overrides the internal CLI config',
+    }
     flags['dryRun'] = {
       type: 'boolean',
-      default: false,
+      hidden: false, // Only show on root
+      description: 'Do input validation for a sub-command and then exit',
+    }
+    flags['json'] = {
+      type: 'boolean',
       hidden: false, // Only show on root
       description:
-        'Do input validation for a command and exit 0 when input is ok. Every command should support this flag (not shown on help screens)',
+        'Ensure stdout only receives proper JSON (Most non-interactive commands support this)',
+    }
+    flags['markdown'] = {
+      type: 'boolean',
+      hidden: false, // Only show on root
+      description:
+        'Ensure stdout only receives a markdown report (Many commands that support --json also support this)',
+    }
+    flags['version'] = {
+      type: 'boolean',
+      hidden: false, // Only show on root
+      description: 'Show version of CLI',
     }
   }
 
@@ -184,14 +210,9 @@ export async function meowWithSubcommands(
     delete subcommands['report']
   }
 
-  // Parse it again. Config overrides should now be applied (may affect help).
-  const cli2 = meow(
-    `
-    Usage
-      $ ${name} <command>
-
-    Commands
-      ${getHelpListOutput(
+  function formatCommandsForHelp() {
+    if (!isTestingV1()) {
+      return getHelpListOutput(
         {
           ...toSortedObject(
             Object.fromEntries(
@@ -212,14 +233,141 @@ export async function meowWithSubcommands(
           ),
         },
         6,
-      )}
+      )
+    }
 
-    Options
-      ${getFlagListOutput(flags, 6)}
+    // "Bucket" some commands for easier usage
+
+    const commands = new Set([
+      'analytics',
+      'audit-log',
+      'config',
+      'dependencies',
+      'fix',
+      'install',
+      'login',
+      'logout',
+      'manifest',
+      'npm',
+      'npx',
+      'optimize',
+      'organization',
+      'package',
+      'raw-npm',
+      'raw-npx',
+      'repos',
+      'scan',
+      'threat-feed',
+      'uninstall',
+      'wrapper',
+    ])
+    Object.entries(subcommands)
+      .filter(([_name, subcommand]) => !subcommand.hidden)
+      .map(([name]) => name)
+      .forEach(name => {
+        if (commands.has(name)) {
+          commands.delete(name)
+        } else {
+          logger.fail(
+            'Received a visible command that was not added to the list here;',
+            name,
+          )
+        }
+      })
+    if (commands.size) {
+      logger.fail(
+        'Found commands in the list that were not marked as public or were not defined at all:',
+        Array.from(commands).sort(),
+      )
+    }
+
+    const out = []
+    out.push('All commands have their own --help page')
+    out.push('    ')
+    out.push('    Main commands')
+    out.push('    ')
+    out.push(
+      '      socket login             Setup the CLI with an API Token and defaults',
+    )
+    out.push('      socket scan create       Create a new Scan and report')
+    out.push(
+      '      socket package score     Request the (shallow) security score of a particular package',
+    )
+    out.push(
+      '      socket ci                Shorthand for CI; socket scan create --report --no-interactive',
+    )
+    out.push('    ')
+    out.push('    Socket API')
+    out.push('    ')
+    out.push('      analytics                Look up analytics data')
+    out.push(
+      '      audit-log                Look up the audit log for an organization',
+    )
+    out.push(
+      '      organization             Manage organization account details',
+    )
+    out.push('      package                  Look up published package details')
+    out.push('      repository               Manage registered repositories')
+    out.push('      scan                     Manage Socket scans')
+    out.push('      threat-feed              [beta] View the threat feed')
+    out.push('    ')
+    out.push('    Local tools')
+    out.push('    ')
+    out.push(
+      '      fix                      Update dependencies with "fixable" Socket alerts',
+    )
+    out.push(
+      '      manifest                 Generate a dependency manifest for certain languages',
+    )
+    out.push('      npm                      npm wrapper functionality')
+    out.push('      npx                      npx wrapper functionality')
+    out.push(
+      '      optimize                 Optimize dependencies with @socketregistry overrides',
+    )
+    out.push(
+      '      raw-npm                  Temporarily disable the Socket npm wrapper',
+    )
+    out.push(
+      '      raw-npx                  Temporarily disable the Socket npx wrapper',
+    )
+    out.push('    ')
+    out.push('    CLI configuration')
+    out.push('    ')
+    out.push(
+      '      config                   Manage the CLI configuration directly',
+    )
+    out.push(
+      '      install                  Manually install CLI tab completion on your system',
+    )
+    out.push('      login                    Socket API login and CLI setup')
+    out.push('      logout                   Socket API logout')
+    out.push(
+      '      uninstall                Remove the CLI tab completion from your system',
+    )
+    out.push(
+      '      wrapper                  Enable or disable the Socket npm/npx wrapper',
+    )
+
+    return out.join('\n')
+  }
+
+  // Parse it again. Config overrides should now be applied (may affect help).
+  // Note: this is displayed as help screen if the command does not override it
+  //       (which is the case for most sub-commands with sub-commands)
+  const cli2 = meow(
+    `
+    Usage
+      $ ${name} <command>
+
+${isRootCommand && isTestingV1() ? '' : '    Commands'}
+      ${formatCommandsForHelp()}
+
+${isRootCommand && isTestingV1() ? '    Options' : '    Options'}${isRootCommand ? '       (Note: all CLI commands have these flags even when not displayed in their help)\n' : ''}
+      ${getFlagListOutput(flags, 6, isTestingV1() ? { padName: 25 } : undefined)}
 
     Examples
       $ ${name} --help
-  `,
+${isRootCommand ? `      $ ${name} scan create` : ''}${isRootCommand ? `\n      $ ${name} package score npm left-pad` : ''}`,
     {
       argv,
       importMeta,
