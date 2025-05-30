@@ -1,8 +1,8 @@
 import type { MeowFlags } from '../flags.mts'
 
 type HelpListOptions = {
-  keyPrefix: string
-  padName: number
+  keyPrefix?: string | undefined
+  padName?: number | undefined
 }
 
 type ListDescription =
