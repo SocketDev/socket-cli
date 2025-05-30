@@ -1,0 +1,348 @@
+import fs from 'node:fs'
+import path from 'node:path'
+
+import { logger } from '@socketsecurity/registry/lib/logger'
+import { input, select } from '@socketsecurity/registry/lib/prompts'
+
+import {
+  type SocketJson,
+  readSocketJson,
+  writeSocketJson,
+} from '../../utils/socketjson.mts'
+
+import type { CResult } from '../../types.mts'
+
+export async function setupScanConfig(
+  cwd: string,
+  defaultOnReadError = false,
+): Promise<CResult<unknown>> {
+  const jsonPath = path.join(cwd, `socket.json`)
+  if (fs.existsSync(jsonPath)) {
+    logger.info(`Found socket.json at ${jsonPath}`)
+  } else {
+    logger.info(`No socket.json found at ${cwd}, will generate a new one`)
+  }
+
+  logger.log('')
+  logger.log(
+    'Note: This tool will set up flag and argument defaults for certain',
+  )
+  logger.log('      CLI commands. You can still override them by explicitly')
+  logger.log('      setting the flag. It is meant to be a convenience tool.')
+  logger.log('')
+  logger.log(
+    'This command will generate a `socket.json` file in the target cwd.',
+  )
+  logger.log('You can choose to add this file to your repo (handy for collab)')
+  logger.log('or to add it to the ignored files, or neither. This file is only')
+  logger.log('used in CLI workflows.')
+  logger.log('')
+  logger.log('Note: For details on a flag you can run `socket <cmd> --help`')
+  logger.log('')
+
+  const socketJsonResult = await readSocketJson(cwd, defaultOnReadError)
+  if (!socketJsonResult.ok) {
+    return socketJsonResult
+  }
+
+  const socketJson = socketJsonResult.data
+  if (!socketJson.defaults) {
+    socketJson.defaults = {}
+  }
+  if (!socketJson.defaults.scan) {
+    socketJson.defaults.scan = {}
+  }
+
+  const targetCommand = await select({
+    message: 'Which scan command do you want to configure?',
+    choices: [
+      {
+        name: 'socket scan create',
+        value: 'create',
+      },
+      {
+        name: 'socket scan github',
+        value: 'github',
+      },
+      {
+        name: '(cancel)',
+        value: '',
+        description: 'Exit configurator, make no changes',
+      },
+    ],
+  })
+  switch (targetCommand) {
+    case 'create': {
+      if (!socketJson.defaults.scan.create) {
+        socketJson.defaults.scan.create = {}
+      }
+      const result = await configureScan(socketJson.defaults.scan.create)
+      if (!result.ok || result.data.canceled) {
+        return result
+      }
+      break
+    }
+    case 'github': {
+      if (!socketJson.defaults.scan.github) {
+        socketJson.defaults.scan.github = {}
+      }
+      const result = await configureGithub(socketJson.defaults.scan.github)
+      if (!result.ok || result.data.canceled) {
+        return result
+      }
+      break
+    }
+    default: {
+      return canceledByUser()
+    }
+  }
+
+  logger.log('')
+  logger.log('Setup complete. Writing socket.json')
+  logger.log('')
+
+  if (
+    await select({
+      message: `Do you want to write the new config to ${jsonPath} ?`,
+      choices: [
+        {
+          name: 'yes',
+          value: true,
+          description: 'Update config',
+        },
+        {
+          name: 'no',
+          value: false,
+          description: 'Do not update the config',
+        },
+      ],
+    })
+  ) {
+    return await writeSocketJson(cwd, socketJson)
+  }
+
+  return canceledByUser()
+}
+
+async function configureScan(
+  config: NonNullable<
+    NonNullable<NonNullable<SocketJson['defaults']>['scan']>['create']
+  >,
+): Promise<CResult<{ canceled: boolean }>> {
+  const defaultRepoName = await input({
+    message:
+      '(--repo) What repo name (slug) should be reported to Socket for this dir?',
+    default: config.repo || 'socket-default-repository',
+    required: false,
+    // validate: async string => bool
+  })
+  if (defaultRepoName === undefined) {
+    return canceledByUser()
+  }
+  if (defaultRepoName.trim()) {
+    // Even if it's 'socket-default-repository' store it because if we change
+    // this default then an existing user probably would not expect the change?
+    config.repo = defaultRepoName.trim()
+  } else {
+    delete config.repo
+  }
+
+  const defaultBranchName = await input({
+    message:
+      '(--branch) What branch name (slug) should be reported to Socket for this dir?',
+    default: config.branch || 'socket-default-branch',
+    required: false,
+    // validate: async string => bool
+  })
+  if (defaultBranchName === undefined) {
+    return canceledByUser()
+  }
+  if (defaultBranchName.trim()) {
+    // Even if it's 'socket-default-branch' store it because if we change
+    // this default then an existing user probably would not expect the change?
+    config.branch = defaultBranchName.trim()
+  } else {
+    delete config.branch
+  }
+
+  const autoManifest = await select({
+    message:
+      '(--autoManifest) Do you want to run `socket manifest auto` before creating a scan? You would need this for sbt, gradle, etc.',
+    choices: [
+      {
+        name: 'no',
+        value: 'no',
+        description: 'Do not generate local manifest files',
+      },
+      {
+        name: 'yes',
+        value: 'yes',
+        description:
+          'Locally generate manifest files for languages like gradle, sbt, and conda (see `socket manifest auto`), before creating a scan',
+      },
+      {
+        name: '(leave default)',
+        value: '',
+        description: 'Do not store a setting for this',
+      },
+    ],
+    default:
+      config.autoManifest === true
+        ? 'yes'
+        : config.autoManifest === false
+          ? 'no'
+          : '',
+  })
+  if (autoManifest === undefined) {
+    return canceledByUser()
+  }
+  if (autoManifest === 'yes') {
+    config.autoManifest = true
+  } else if (autoManifest === 'no') {
+    config.autoManifest = false
+  } else {
+    delete config.autoManifest
+  }
+
+  const alwaysReport = await select({
+    message: '(--report) Do you want to enable --report by default?',
+    choices: [
+      {
+        name: 'no',
+        value: 'no',
+        description: 'Do not wait for Scan result and report by default',
+      },
+      {
+        name: 'yes',
+        value: 'yes',
+        description:
+          'After submitting a Scan request, wait for scan to complete, then show a report (like --report would)',
+      },
+      {
+        name: '(leave default)',
+        value: '',
+        description: 'Do not store a setting for this',
+      },
+    ],
+    default:
+      config.report === true ? 'yes' : config.report === false ? 'no' : '',
+  })
+  if (alwaysReport === undefined) {
+    return canceledByUser()
+  }
+  if (alwaysReport === 'yes') {
+    config.report = true
+  } else if (alwaysReport === 'no') {
+    config.report = false
+  } else {
+    delete alwaysReport.defaults.scan.report
+  }
+
+  return notCanceled()
+}
+
+async function configureGithub(
+  config: NonNullable<
+    NonNullable<NonNullable<SocketJson['defaults']>['scan']>['github']
+  >,
+): Promise<CResult<{ canceled: boolean }>> {
+  // Do not store the github API token. Just leads to a security rabbit hole.
+
+  const all = await select({
+    message:
+      '(--all) Do you by default want to fetch all repos from the GitHub API and scan all known repos?',
+    choices: [
+      {
+        name: 'no',
+        value: 'no',
+        description: 'Fetch repos if not given and ask which repo to run on',
+      },
+      {
+        name: 'yes',
+        value: 'yes',
+        description: 'Run on all remote repos by default',
+      },
+      {
+        name: '(leave default)',
+        value: '',
+        description: 'Do not store a setting for this',
+      },
+    ],
+    default: config.all === true ? 'yes' : config.all === false ? 'no' : '',
+  })
+  if (all === undefined) {
+    return canceledByUser()
+  }
+  if (all === 'yes') {
+    config.all = true
+  } else if (all === 'no') {
+    config.all = false
+  } else {
+    delete config.all
+  }
+
+  if (!all) {
+    const defaultRepos = await input({
+      message:
+        '(--repos) Please enter the default repos to run this on, leave empty (backspace) to fetch from GitHub and ask interactive',
+      default: config.repos,
+      required: false,
+      // validate: async string => bool
+    })
+    if (defaultRepos === undefined) {
+      return canceledByUser()
+    }
+    if (defaultRepos.trim()) {
+      config.repos = defaultRepos.trim()
+    } else {
+      delete config.repos
+    }
+  }
+
+  const defaultGithubApiUrl = await input({
+    message: '(--githubApiUrl) Do you want to override the default github url?',
+    default: config.githubApiUrl || 'https://api.github.com',
+    required: false,
+    // validate: async string => bool
+  })
+  if (defaultGithubApiUrl === undefined) {
+    return canceledByUser()
+  }
+  if (
+    defaultGithubApiUrl.trim() &&
+    defaultGithubApiUrl.trim() !== 'https://api.github.com'
+  ) {
+    config.repos = defaultGithubApiUrl.trim()
+  } else {
+    delete config.repos
+  }
+
+  const defaultOrgGithub = await input({
+    message:
+      '(--orgGithub) Do you want to change the org slug that is used when talking to the GitHub API? Defaults to your Socket org slug.',
+    default: config.orgGithub || '',
+    required: false,
+    // validate: async string => bool
+  })
+  if (defaultOrgGithub === undefined) {
+    return canceledByUser()
+  }
+  if (defaultOrgGithub.trim()) {
+    config.repos = defaultOrgGithub.trim()
+  } else {
+    delete config.repos
+  }
+
+  return notCanceled()
+}
+
+function canceledByUser(): CResult<{ canceled: boolean }> {
+  logger.log('')
+  logger.info('User canceled')
+  logger.log('')
+  return { ok: true, data: { canceled: true } }
+}
+
+function notCanceled(): CResult<{ canceled: boolean }> {
+  return { ok: true, data: { canceled: false } }
+}

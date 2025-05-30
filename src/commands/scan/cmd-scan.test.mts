@@ -28,6 +28,7 @@ describe('socket scan', async () => {
             list              List the scans for an organization
             metadata          Get a scan's metadata
             report            Check whether a scan result passes the organizational policies (security, license)
+            setup             Start interactive configurator to customize default flag values for \`socket scan\` in this dir
             view              View the raw results of a scan
 
           Options

@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateGithubScan } from './handle-create-github-scan.mts'
@@ -11,6 +13,7 @@ import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
+import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -35,7 +38,6 @@ const config: CliCommandConfig = {
     },
     githubApiUrl: {
       type: 'string',
-      default: 'https://api.github.com',
       description:
         'Base URL of the GitHub API (default: https://api.github.com)',
     },
@@ -63,7 +65,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command}
+      $ ${command} [options] [CWD=.]
 
     API Token Requirements
       - Quota: 1 unit
@@ -79,11 +81,14 @@ const config: CliCommandConfig = {
     requires local access to the repo while this command runs entirely through the
     GitHub for file access.
 
+    You can use \`socket scan setup\` to configure certain repo flag defaults.
+
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
       $ ${command}
+      $ ${command} ./proj
   `,
 }
 
@@ -106,31 +111,33 @@ async function run(
   })
 
   const {
-    all = false,
     dryRun = false,
-    githubApiUrl = 'https://api.github.com',
     // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
     githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
     interactive = true,
     json,
     markdown,
     org: orgFlag,
-    orgGithub: orgGithubFlag,
-    repos,
   } = cli.flags as {
-    all: boolean
     dryRun: boolean
-    githubApiUrl: string
     githubToken: string
     interactive: boolean
     json: boolean
     markdown: boolean
     org: string
     orgGithub: string
-    report: boolean
+  }
+  let { all, githubApiUrl, orgGithub, repos } = cli.flags as {
+    all: boolean
+    githubApiUrl: string
+    orgGithub: string
     repos: string
   }
   const outputKind = getOutputKind(json, markdown)
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join:
+  // If given path is absolute then cwd should not affect it.
+  cwd = path.resolve(process.cwd(), cwd)
 
   let [orgSlug, defaultOrgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
@@ -143,8 +150,39 @@ async function run(
     defaultOrgSlug = ''
   }
 
-  // Default to Socket org slug. Often that's fine. Vanity and all that.
-  const orgGithub = orgGithubFlag || orgSlug
+  const socketJson = await readOrDefaultSocketJson(cwd)
+
+  if (all === undefined) {
+    if (socketJson.defaults?.scan?.github?.all !== undefined) {
+      all = socketJson.defaults?.scan?.github?.all
+    } else {
+      all = false
+    }
+  }
+  if (!githubApiUrl) {
+    if (socketJson.defaults?.scan?.github?.githubApiUrl !== undefined) {
+      githubApiUrl = socketJson.defaults.scan.github.githubApiUrl
+    } else {
+      githubApiUrl = 'https://api.github.com'
+    }
+  }
+  if (!orgGithub) {
+    if (orgGithub) {
+      orgSlug = orgGithub
+    } else if (socketJson.defaults?.scan?.github?.orgGithub !== undefined) {
+      orgGithub = socketJson.defaults.scan.github.orgGithub
+    } else {
+      // Default to Socket org slug. Often that's fine. Vanity and all that.
+      orgGithub = orgSlug
+    }
+  }
+  if (!all && !repos) {
+    if (socketJson.defaults?.scan?.github?.repos !== undefined) {
+      repos = socketJson.defaults.scan.github.repos
+    } else {
+      repos = ''
+    }
+  }
 
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
@@ -218,6 +256,6 @@ async function run(
     orgSlug,
     orgGithub,
     outputKind,
-    repos: String(repos || ''),
+    repos: repos,
   })
 }
