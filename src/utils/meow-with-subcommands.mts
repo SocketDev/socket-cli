@@ -117,6 +117,7 @@ export async function meowWithSubcommands(
     flags,
     // Do not strictly check for flags here.
     allowUnknownFlags: true,
+    booleanDefault: undefined, // We want to detect whether a bool flag is given at all.
     // We will emit help when we're ready
     // Plus, if we allow this then meow() can just exit here.
     autoHelp: false,
@@ -226,6 +227,7 @@ export async function meowWithSubcommands(
       flags,
       // Do not strictly check for flags here.
       allowUnknownFlags: true,
+      booleanDefault: undefined, // We want to detect whether a bool flag is given at all.
       // We will emit help when we're ready
       // Plus, if we allow this then meow() can just exit here.
       autoHelp: false,
@@ -274,6 +276,7 @@ export function meowOrExit({
     importMeta,
     flags: config.flags,
     allowUnknownFlags: true, // meow will exit(1) before printing the banner
+    booleanDefault: undefined, // We want to detect whether a bool flag is given at all.
     autoHelp: false, // meow will exit(0) before printing the banner
   })
 

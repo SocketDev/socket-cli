@@ -18,38 +18,11 @@ describe('socket scan create', async () => {
         "Create a scan
 
           Usage
-            $ socket scan create [...options] <org> <TARGET> [TARGET...]
+            $ socket scan create [options] <org> [TARGET...]
 
           API Token Requirements
             - Quota: 1 unit
             - Permissions: full-scans:create
-
-          Uploads the specified "package.json" and lock files for JavaScript, Python,
-          Go, Scala, Gradle, and Kotlin dependency manifests.
-          If any folder is specified, the ones found in there recursively are uploaded.
-
-          Supports globbing such as "**/package.json", "**/requirements.txt", etc.
-
-          Ignores any file specified in your project's ".gitignore" and also has a
-          sensible set of default ignores from the "ignore-by-default" module.
-
-          TARGET should be a FILE or DIR that _must_ be inside the CWD.
-
-          When a FILE is given only that FILE is targeted. Otherwise any eligible
-          files in the given DIR will be considered.
-
-          The --repo and --branch flags tell Socket to associate this Scan with that
-          repo/branch. The names will show up on your dashboard on the Socket website.
-
-          Note: for a first run you probably want to set --defaultBranch to indicate
-                the default branch name, like "main" or "master".
-
-          The "alerts page" (https://socket.dev/dashboard/org/YOURORG/alerts) will show
-          the results from the last scan designated as the "pending head" on the branch
-          configured on Socket to be the "default branch". When creating a scan the
-          --setAsAlertsPage flag will default to true to update this. You can prevent
-          this by using --no-setAsAlertsPage. This flag is ignored for any branch that
-          is not designated as the "default branch". It is disabled when using --tmp.
 
           Options
             --autoManifest    Run \`socket manifest auto\` before collecting manifest files? This would be necessary for languages like Scala, Gradle, and Kotlin, See \`socket manifest auto --help\`.
@@ -71,8 +44,38 @@ describe('socket scan create', async () => {
             --setAsAlertsPage When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
             --tmp             Set the visibility (true/false) of the scan in your dashboard.
 
+          Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
+          Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".
+          If any folder is specified, the ones found in there recursively are uploaded.
+
+          Details on TARGET:
+
+          - Defaults to the current dir (cwd) if none given
+          - Multiple targets can be specified
+          - If a target is a file, only that file is checked
+          - If it is a dir, the dir is scanned for any supported manifest files
+          - Dirs MUST be within the current dir (cwd), you can use --cwd to change it
+          - Supports globbing such as "**/package.json", "**/requirements.txt", etc.
+          - Ignores any file specified in your project's ".gitignore"
+          - Also a sensible set of default ignores from the "ignore-by-default" module
+
+          The --repo and --branch flags tell Socket to associate this Scan with that
+          repo/branch. The names will show up on your dashboard on the Socket website.
+
+          Note: for a first run you probably want to set --defaultBranch to indicate
+                the default branch name, like "main" or "master".
+
+          The "alerts page" (https://socket.dev/dashboard/org/YOURORG/alerts) will show
+          the results from the last scan designated as the "pending head" on the branch
+          configured on Socket to be the "default branch". When creating a scan the
+          --setAsAlertsPage flag will default to true to update this. You can prevent
+          this by using --no-setAsAlertsPage. This flag is ignored for any branch that
+          is not designated as the "default branch". It is disabled when using --tmp.
+
+          You can use \`socket scan setup\` to configure certain repo flag defaults.
+
           Examples
-            $ socket scan create FakeOrg .
+            $ socket scan create FakeOrg
             $ socket scan create --repo=test-repo --branch=main FakeOrg ./package.json"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

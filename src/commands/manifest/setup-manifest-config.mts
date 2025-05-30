@@ -365,13 +365,11 @@ async function askForStdout(
       {
         name: 'no',
         value: 'no',
-        selected: defaultValue === false,
         description: 'Write output to a file, not stdout',
       },
       {
         name: 'yes',
         value: 'yes',
-        selected: defaultValue === true,
         description: 'Print in stdout (this will supersede --out)',
       },
       {
@@ -394,13 +392,11 @@ async function askForEnabled(
       {
         name: 'Enable',
         value: true,
-        selected: defaultValue === true,
         description: 'Generate manifest files for this language when detected',
       },
       {
         name: 'Disable',
         value: false,
-        selected: defaultValue === false,
         description:
           'Do not generate manifest files for this language when detected, unless explicitly asking for it',
       },
@@ -461,13 +457,11 @@ async function askForVerboseFlag(
       {
         name: 'no',
         value: 'no',
-        selected: current === false,
         description: 'Do not run this manifest in verbose mode',
       },
       {
         name: 'yes',
         value: 'yes',
-        selected: current === true,
         description: 'Run this manifest in verbose mode',
       },
       {
