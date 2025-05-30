@@ -35,7 +35,7 @@ const config: CliCommandConfig = {
     Interactive configurator to create a local json file in the target directory
     that helps to set flag defaults for \`socket scan create\`.
 
-    This helps to configure the (Socket reported) repo and branch nanes, as well
+    This helps to configure the (Socket reported) repo and branch names, as well
     as which branch name is the "default branch" (main, master, etc). This way
     you don't have to specify these flags when creating a scan in this dir.
 

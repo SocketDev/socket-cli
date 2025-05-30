@@ -135,7 +135,7 @@ const config: CliCommandConfig = {
     - Multiple targets can be specified
     - If a target is a file, only that file is checked
     - If it is a dir, the dir is scanned for any supported manifest files
-    - Dirs MUST be withing the current dir (cwd), you can use --cwd to change it
+    - Dirs MUST be within the current dir (cwd), you can use --cwd to change it
     - Supports globbing such as "**/package.json", "**/requirements.txt", etc.
     - Ignores any file specified in your project's ".gitignore"
     - Also a sensible set of default ignores from the "ignore-by-default" module

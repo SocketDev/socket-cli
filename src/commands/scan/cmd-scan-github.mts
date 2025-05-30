@@ -167,9 +167,7 @@ async function run(
     }
   }
   if (!orgGithub) {
-    if (orgGithub) {
-      orgSlug = orgGithub
-    } else if (socketJson.defaults?.scan?.github?.orgGithub !== undefined) {
+    if (socketJson.defaults?.scan?.github?.orgGithub !== undefined) {
       orgGithub = socketJson.defaults.scan.github.orgGithub
     } else {
       // Default to Socket org slug. Often that's fine. Vanity and all that.

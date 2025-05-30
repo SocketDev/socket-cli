@@ -235,7 +235,7 @@ async function configureScan(
   } else if (alwaysReport === 'no') {
     config.report = false
   } else {
-    delete alwaysReport.defaults.scan.report
+    delete config.report
   }
 
   return notCanceled()
@@ -312,9 +312,9 @@ async function configureGithub(
     defaultGithubApiUrl.trim() &&
     defaultGithubApiUrl.trim() !== 'https://api.github.com'
   ) {
-    config.repos = defaultGithubApiUrl.trim()
+    config.githubApiUrl = defaultGithubApiUrl.trim()
   } else {
-    delete config.repos
+    delete config.githubApiUrl
   }
 
   const defaultOrgGithub = await input({
@@ -328,9 +328,9 @@ async function configureGithub(
     return canceledByUser()
   }
   if (defaultOrgGithub.trim()) {
-    config.repos = defaultOrgGithub.trim()
+    config.orgGithub = defaultOrgGithub.trim()
   } else {
-    delete config.repos
+    delete config.orgGithub
   }
 
   return notCanceled()
