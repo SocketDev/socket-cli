@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 
-import { debugFn, debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, select } from '@socketsecurity/registry/lib/prompts'
 
@@ -134,7 +134,7 @@ export async function createScanFromGithub({
     }
   }
 
-  logger.success(targetRepos.length, 'Github repos detected')
+  logger.success(targetRepos.length, 'GitHub repos detected')
   logger.success(scansCreated, 'with supported Manifest files')
 
   return {
@@ -209,11 +209,11 @@ async function scanOneRepo(
   logger.info(`Default branch: \`${defaultBranch}\``)
 
   const treeResult = await getRepoBranchTree({
+    defaultBranch,
+    githubToken,
     orgGithub,
     repoSlug,
     repoApiUrl,
-    defaultBranch,
-    githubToken,
   })
   if (!treeResult.ok) {
     return treeResult
@@ -414,8 +414,6 @@ async function downloadManifestFile({
       `GitHub response contained invalid JSON for download url for: ${file}`,
     )
 
-    debugFn('content: raw (not JSON)', downloadUrlText)
-
     return {
       ok: false,
       message: 'Invalid JSON response',
@@ -423,13 +421,10 @@ async function downloadManifestFile({
     }
   }
 
-  debugFn('download: manifest file')
-
   const localPath = path.join(tmpDir, file)
-  debugFn('download:', downloadUrl, '->', localPath)
+  debugFn('download: manifest file started', downloadUrl, '->', localPath)
 
   // Now stream the file to that file...
-
   const result = await streamDownloadWithFetch(localPath, downloadUrl)
   if (!result.ok) {
     // Do we proceed? Bail? Hrm...
@@ -439,7 +434,8 @@ async function downloadManifestFile({
     return result
   }
 
-  debugLog(`[DEBUG] Downloaded manifest file.`)
+  debugFn('download: manifest file completed')
+
   return { ok: true, data: undefined }
 }
 
@@ -675,11 +671,11 @@ async function getRepoBranchTree({
   repoApiUrl,
   repoSlug,
 }: {
-  orgGithub: string
-  repoSlug: string
-  repoApiUrl: string
   defaultBranch: string
   githubToken: string
+  orgGithub: string
+  repoApiUrl: string
+  repoSlug: string
 }): Promise<CResult<string[]>> {
   logger.info(
     `Requesting default branch file tree; branch \`${defaultBranch}\`, repo \`${orgGithub}/${repoSlug}\`...`,
