@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
@@ -28,14 +30,12 @@ const config: CliCommandConfig = {
     ...outputFlags,
     autoManifest: {
       type: 'boolean',
-      default: false,
       description:
         'Run `socket manifest auto` before collecting manifest files? This would be necessary for languages like Scala, Gradle, and Kotlin, See `socket manifest auto --help`.',
     },
     branch: {
       type: 'string',
       shortFlag: 'b',
-      default: 'socket-default-branch',
       description: 'Branch name',
     },
     commitMessage: {
@@ -91,12 +91,10 @@ const config: CliCommandConfig = {
     repo: {
       type: 'string',
       shortFlag: 'r',
-      default: 'socket-default-repository',
       description: 'Repository name',
     },
     report: {
       type: 'boolean',
-      default: false,
       description:
         'Wait for the scan creation to complete, then basically run `socket scan report` on it',
     },
@@ -118,25 +116,29 @@ const config: CliCommandConfig = {
   // TODO: your project's "socket.yml" file's "projectIgnorePaths"
   help: (command, config) => `
     Usage
-      $ ${command} [...options]${isTestingV1() ? '' : ' <org>'} <TARGET> [TARGET...]
+      $ ${command} [options]${isTestingV1() ? '' : ' <org>'} [TARGET...]
 
     API Token Requirements
       - Quota: 1 unit
       - Permissions: full-scans:create
 
-    Uploads the specified "package.json" and lock files for JavaScript, Python,
-    Go, Scala, Gradle, and Kotlin dependency manifests.
+    Options
+      ${getFlagListOutput(config.flags, 6)}
+
+    Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
+    Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".
     If any folder is specified, the ones found in there recursively are uploaded.
 
-    Supports globbing such as "**/package.json", "**/requirements.txt", etc.
+    Details on TARGET:
 
-    Ignores any file specified in your project's ".gitignore" and also has a
-    sensible set of default ignores from the "ignore-by-default" module.
-
-    TARGET should be a FILE or DIR that _must_ be inside the CWD.
-
-    When a FILE is given only that FILE is targeted. Otherwise any eligible
-    files in the given DIR will be considered.
+    - Defaults to the current dir (cwd) if none given
+    - Multiple targets can be specified
+    - If a target is a file, only that file is checked
+    - If it is a dir, the dir is scanned for any supported manifest files
+    - Dirs MUST be within the current dir (cwd), you can use --cwd to change it
+    - Supports globbing such as "**/package.json", "**/requirements.txt", etc.
+    - Ignores any file specified in your project's ".gitignore"
+    - Also a sensible set of default ignores from the "ignore-by-default" module
 
     The --repo and --branch flags tell Socket to associate this Scan with that
     repo/branch. The names will show up on your dashboard on the Socket website.
@@ -151,11 +153,10 @@ const config: CliCommandConfig = {
     this by using --no-setAsAlertsPage. This flag is ignored for any branch that
     is not designated as the "default branch". It is disabled when using --tmp.
 
-    Options
-      ${getFlagListOutput(config.flags, 6)}
+    You can use \`socket scan setup\` to configure certain repo flag defaults.
 
     Examples
-      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} .
+      $ ${command}${isTestingV1() ? '' : ' FakeOrg'}
       $ ${command} --repo=test-repo --branch=main${isTestingV1() ? '' : ' FakeOrg'} ./package.json
   `,
 }
@@ -179,8 +180,6 @@ async function run(
   })
 
   const {
-    autoManifest = false,
-    branch: branchName = 'socket-default-branch',
     commitHash,
     commitMessage,
     committers,
@@ -193,13 +192,9 @@ async function run(
     org: orgFlag,
     pullRequest,
     readOnly,
-    repo: repoName = 'socket-default-repository',
-    report,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
   } = cli.flags as {
-    autoManifest: boolean
-    branch: string
     cwd: string
     commitHash: string
     commitMessage: string
@@ -212,10 +207,19 @@ async function run(
     org: string
     pullRequest: number
     readOnly: boolean
-    repo: string
-    report: boolean
     setAsAlertsPage: boolean
     tmp: boolean
+  }
+  let {
+    autoManifest,
+    branch: branchName,
+    repo: repoName,
+    report,
+  } = cli.flags as {
+    autoManifest?: boolean
+    branch: string
+    repo: string
+    report?: boolean
   }
   const outputKind = getOutputKind(json, markdown)
 
@@ -232,12 +236,53 @@ async function run(
     defaultOrgSlug = ''
   }
 
-  let targets = cli.input.slice(isTestingV1() || defaultOrgSlug ? 0 : 1)
+  // Accept zero or more paths. Default to cwd() if none given.
+  let targets =
+    cli.input.slice(isTestingV1() || defaultOrgSlug ? 0 : 1) || process.cwd()
 
   const cwd =
     cwdOverride && cwdOverride !== 'process.cwd()'
-      ? String(cwdOverride)
+      ? path.resolve(process.cwd(), String(cwdOverride))
       : process.cwd()
+
+  const socketJson = await readOrDefaultSocketJson(cwd)
+
+  // Note: This needs meow booleanDefault=undefined
+  if (typeof autoManifest !== 'boolean') {
+    if (socketJson.defaults?.scan?.create?.autoManifest !== undefined) {
+      autoManifest = socketJson.defaults.scan.create.autoManifest
+      logger.info(
+        'Using default --autoManifest from socket.json:',
+        autoManifest,
+      )
+    } else {
+      autoManifest = false
+    }
+  }
+  if (!branchName) {
+    if (socketJson.defaults?.scan?.create?.branch) {
+      branchName = socketJson.defaults.scan.create.branch
+      logger.info('Using default --branch from socket.json:', branchName)
+    } else {
+      branchName = 'socket-default-branch'
+    }
+  }
+  if (!repoName) {
+    if (socketJson.defaults?.scan?.create?.repo) {
+      repoName = socketJson.defaults.scan.create.repo
+      logger.info('Using default --repo from socket.json:', repoName)
+    } else {
+      repoName = 'socket-default-repository'
+    }
+  }
+  if (typeof report !== 'boolean') {
+    if (socketJson.defaults?.scan?.create?.report !== undefined) {
+      report = socketJson.defaults.scan.create.report
+      logger.info('Using default --report from socket.json:', report)
+    } else {
+      report = false
+    }
+  }
 
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
@@ -266,8 +311,6 @@ async function run(
       updatedInput = true
     }
   }
-
-  const socketJson = await readOrDefaultSocketJson(cwd)
 
   const detected = await detectManifestActions(socketJson, cwd)
   if (detected.count > 0 && !autoManifest) {
