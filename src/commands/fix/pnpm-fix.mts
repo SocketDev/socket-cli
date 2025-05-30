@@ -11,6 +11,7 @@ import { runScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
   readPackageJson,
+  resolvePackageName,
 } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
@@ -26,11 +27,11 @@ import {
 import {
   cleanupOpenPrs,
   enablePrAutoMerge,
-  getGitHubEnvRepoInfo,
+  getGithubEnvRepoInfo,
   getOpenSocketPrs,
   openPr,
   prExistForBranch,
-  setGitRemoteGitHubRepoUrl,
+  setGitRemoteGithubRepoUrl,
 } from './open-pr.mts'
 import { getAlertsMapOptions } from './shared.mts'
 import constants from '../../constants.mts'
@@ -153,7 +154,7 @@ export async function pnpmFix(
     githubToken
   )
 
-  const repoInfo = isCi ? getGitHubEnvRepoInfo()! : null
+  const repoInfo = isCi ? getGithubEnvRepoInfo()! : null
 
   spinner?.start()
 
@@ -164,6 +165,10 @@ export async function pnpmFix(
           author: gitUser,
         })
       : []
+
+  if (openPrs.length) {
+    debugFn(`found: ${openPrs.length} open PRs`)
+  }
 
   let count = isCi ? openPrs.length : 0
 
@@ -222,10 +227,13 @@ export async function pnpmFix(
   let alertsMap
   try {
     alertsMap = purls.length
-      ? await getAlertsMapFromPurls(purls, getAlertsMapOptions({ limit }))
+      ? await getAlertsMapFromPurls(
+          purls,
+          getAlertsMapOptions({ limit: limit + openPrs.length }),
+        )
       : await getAlertsMapFromPnpmLockfile(
           lockfile,
-          getAlertsMapOptions({ limit }),
+          getAlertsMapOptions({ limit: limit + openPrs.length }),
         )
   } catch (e) {
     spinner?.stop()
@@ -237,7 +245,9 @@ export async function pnpmFix(
     }
   }
 
-  const infoByPkgName = getCveInfoFromAlertsMap(alertsMap, { limit })
+  const infoByPkgName = getCveInfoFromAlertsMap(alertsMap, {
+    limit: limit + openPrs.length,
+  })
   if (!infoByPkgName) {
     spinner?.stop()
     logger.info('No fixable vulns found.')
@@ -277,7 +287,21 @@ export async function pnpmFix(
     i += 1
   ) {
     const isLastInfoEntry = i === length - 1
-    const { 0: name, 1: infos } = sortedInfoEntries[i]!
+    const infoEntry = sortedInfoEntries[i]!
+    const { 0: name } = infoEntry
+    const openPrsForPkg = openPrs.filter(
+      pr => name === resolvePackageName(pr.purl),
+    )
+    const infos = [...infoEntry[1].values()].filter(
+      info =>
+        !openPrsForPkg.find(
+          pr => pr.newVersion === info.firstPatchedVersionIdentifier,
+        ),
+    )
+
+    if (!infos.length) {
+      continue infoEntriesLoop
+    }
 
     logger.log(`Processing vulns for ${name}:`)
     logger.indent()
@@ -621,13 +645,14 @@ export async function pnpmFix(
 
               // eslint-disable-next-line no-await-in-loop
               await Promise.allSettled([
-                setGitRemoteGitHubRepoUrl(
+                setGitRemoteGithubRepoUrl(
                   repoInfo.owner,
                   repoInfo.repo,
                   githubToken,
                   cwd,
                 ),
-                cleanupOpenPrs(repoInfo.owner, repoInfo.repo, newVersion, {
+                cleanupOpenPrs(repoInfo.owner, repoInfo.repo, {
+                  newVersion,
                   purl: oldPurl,
                   workspace,
                 }),
