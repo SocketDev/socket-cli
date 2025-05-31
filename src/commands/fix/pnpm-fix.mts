@@ -294,12 +294,19 @@ export async function pnpmFix(
     const openPrsForPkg = openPrs.filter(
       pr => name === resolvePackageName(pr.purl),
     )
-    const infos = [...infoEntry[1].values()].filter(
-      info =>
-        !openPrsForPkg.find(
-          pr => pr.newVersion === info.firstPatchedVersionIdentifier,
-        ),
-    )
+    const infos = [...infoEntry[1].values()].filter(info => {
+      debugFn(
+        'pr.newVersion',
+        openPrsForPkg.map(pr => pr.newVersion),
+      )
+      debugFn(
+        'info.firstPatchedVersionIdentifier',
+        info.firstPatchedVersionIdentifier,
+      )
+      return !openPrsForPkg.find(
+        pr => pr.newVersion === info.firstPatchedVersionIdentifier,
+      )
+    })
 
     if (!infos.length) {
       continue infoEntriesLoop

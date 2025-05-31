@@ -370,8 +370,6 @@ async function getOpenSocketPrsWithContext(
       const login = node.author?.login
       const matchesAuthor = checkAuthor ? login === author : true
       const matchesBranch = prBranchParser(node.headRefName)
-      debugFn('gql node.headRefName', node.headRefName)
-      debugFn('qgl matchesBranch', matchesBranch)
       if (matchesAuthor && matchesBranch) {
         contextualMatches.push({
           context: {
@@ -421,8 +419,6 @@ async function getOpenSocketPrsWithContext(
     const login = pr.user?.login
     const matchesAuthor = checkAuthor ? login === author : true
     const matchesBranch = prBranchParser(pr.head.ref)
-    debugFn('octa node.headRefName', pr.head.ref)
-    debugFn('octa matchesBranch', matchesBranch)
     if (matchesAuthor && matchesBranch) {
       contextualMatches.push({
         context: {
