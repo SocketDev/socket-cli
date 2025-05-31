@@ -22,7 +22,7 @@ import { commonFlags } from '../flags.mts'
 import { getVisibleTokenPrefix } from './sdk.mts'
 
 import type { MeowFlags } from '../flags.mts'
-import type { Options } from 'meow'
+import type { Options, Result } from 'meow'
 
 interface CliAlias {
   description: string
@@ -412,7 +412,7 @@ export function meowOrExit({
   config: CliCommandConfig
   parentName: string
   importMeta: ImportMeta
-}) {
+}): Result<MeowFlags> {
   const command = `${parentName} ${config.commandName}`
   lastSeenCommand = command
 
