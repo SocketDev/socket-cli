@@ -44,7 +44,7 @@ function getOctokit() {
 }
 
 let _octokitGraphql: typeof OctokitGraphql | undefined
-export function getOctokitGraphql() {
+export function getOctokitGraphql(): typeof OctokitGraphql {
   if (!_octokitGraphql) {
     // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
     const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV

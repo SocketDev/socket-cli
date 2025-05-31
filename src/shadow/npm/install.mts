@@ -12,6 +12,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import constants from '../../constants.mts'
 import { getNpmBinPath } from '../../utils/npm-paths.mts'
 
+import type { SpawnResult } from '@socketsecurity/registry/lib/spawn'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const {
@@ -30,7 +31,9 @@ export type SafeNpmInstallOptions = SpawnOption & {
   spinner?: Spinner | undefined
 }
 
-export function safeNpmInstall(options?: SafeNpmInstallOptions) {
+export function safeNpmInstall(
+  options?: SafeNpmInstallOptions,
+): SpawnResult<string, Record<any, any> | undefined> {
   const {
     agentExecPath = getNpmBinPath(),
     args = [],
