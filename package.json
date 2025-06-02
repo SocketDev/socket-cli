@@ -110,7 +110,7 @@
     "@socketregistry/is-interactive": "1.0.5",
     "@socketregistry/packageurl-js": "1.0.6",
     "@socketsecurity/config": "3.0.1",
-    "@socketsecurity/registry": "1.0.202",
+    "@socketsecurity/registry": "1.0.203",
     "@socketsecurity/sdk": "1.4.41",
     "@types/blessed": "0.1.25",
     "@types/cmd-shim": "5.0.2",
