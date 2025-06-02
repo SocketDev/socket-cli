@@ -17,8 +17,8 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
-  commandName: 'del',
-  description: 'Delete a scan',
+  commandName: 'reach',
+  description: 'Compute tier 1 reachability',
   hidden: true, // b-e-tah
   flags: {
     ...commonFlags,
@@ -32,17 +32,14 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command}${isTestingV1() ? '' : ' <org slug>'} <scan ID>
-
-    API Token Requirements
-      - Quota: 1 unit
-      - Permissions: full-scans:delete
+      $ ${command} [CWD=.]
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} 000aaaa1-0000-0a0a-00a0-00a0000000a0
+      $ ${command}
+      $ ${command} ./proj
   `,
 }
 
