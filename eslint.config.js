@@ -138,6 +138,7 @@ const sharedRulesForNode = {
         'readline/promises',
         'test',
         'test.describe',
+        'fetch',
       ],
       // Lazily access constants.maintainedNodeVersions.
       version: constants.maintainedNodeVersions.current,
