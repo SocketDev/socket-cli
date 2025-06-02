@@ -9,7 +9,6 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
-import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -66,18 +65,12 @@ async function run(
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
-  logger.info('If you dont have any interactive bits then drop the flag', interactive);
+  logger.info(
+    'If you dont have any interactive bits then drop the flag',
+    interactive,
+  )
 
-  const hasApiToken = hasDefaultToken()
-
-  const wasValidInput = checkCommandInput(outputKind, {
-    nook: true,
-    test: hasApiToken,
-    message:
-      'You need to be logged in to use this command. See `socket login`.',
-    pass: 'ok',
-    fail: 'missing API token',
-  })
+  const wasValidInput = checkCommandInput(outputKind)
   if (!wasValidInput) {
     return
   }
