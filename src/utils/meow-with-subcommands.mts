@@ -210,8 +210,8 @@ export async function meowWithSubcommands(
     delete subcommands['report']
   }
 
-  function formatCommandsForHelp() {
-    if (!isTestingV1()) {
+  function formatCommandsForHelp(isRootCommand: boolean) {
+    if (!isRootCommand || !isTestingV1()) {
       return getHelpListOutput(
         {
           ...toSortedObject(
@@ -360,7 +360,7 @@ export async function meowWithSubcommands(
       $ ${name} <command>
 
 ${isRootCommand && isTestingV1() ? '' : '    Commands'}
-      ${formatCommandsForHelp()}
+      ${formatCommandsForHelp(isRootCommand)}
 
 ${isRootCommand && isTestingV1() ? '    Options' : '    Options'}${isRootCommand ? '       (Note: all CLI commands have these flags even when not displayed in their help)\n' : ''}
       ${getFlagListOutput(flags, 6, isTestingV1() ? { padName: 25 } : undefined)}
