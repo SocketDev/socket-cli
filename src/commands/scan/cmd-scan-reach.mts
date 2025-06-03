@@ -17,7 +17,7 @@ const { DRY_RUN_BAILING_NOW } = constants
 const config: CliCommandConfig = {
   commandName: 'reach',
   description: 'Compute tier 1 reachability',
-  hidden: true, // b-e-tah
+  hidden: true,
   flags: {
     ...commonFlags,
     ...outputFlags,
