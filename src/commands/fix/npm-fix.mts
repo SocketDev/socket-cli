@@ -236,6 +236,14 @@ export async function npmFix(
           activeBranches.push(parsedBranch)
         }
       }
+      if (activeBranches.length) {
+        debugFn(
+          `found: ${activeBranches.length} active branches\n`,
+          activeBranches,
+        )
+      } else if (openPrs.length) {
+        debugFn('miss: 0 active branches found')
+      }
       infos = infos.filter(
         info =>
           !activeBranches.find(
