@@ -103,16 +103,16 @@ export function getSocketBranchPattern(
     ...options,
   } as SocketBranchPatternOptions
   const purlObj = purl ? getPurlObject(purl) : null
-  const escType = purlObj ? escapeRegExp(purlObj.type) : '[^_]+'
+  const escType = purlObj ? escapeRegExp(purlObj.type) : '[^/]+'
   const escWorkspace = workspace
     ? `${escapeRegExp(formatBranchName(workspace))}`
-    : '[^_]+'
+    : '.+'
   const escMaybeNamespace = purlObj?.namespace
     ? `${escapeRegExp(formatBranchName(purlObj.namespace))}--`
     : ''
   const escFullName = purlObj
     ? `${escMaybeNamespace}${escapeRegExp(formatBranchName(purlObj.name))}`
-    : '[^_]+'
+    : '[^/_]+'
   const escVersion = purlObj
     ? escapeRegExp(formatBranchName(purlObj.version!))
     : '[^_]+'
