@@ -2,7 +2,7 @@ import { fetchPurlsShallowScore } from './fetch-purls-shallow-score.mts'
 import { outputPurlsShallowScore } from './output-purls-shallow-score.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { components } from '@socketsecurity/sdk/types/api'
+import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 
 export async function handlePurlsShallowScore({
   outputKind,
@@ -15,7 +15,7 @@ export async function handlePurlsShallowScore({
 
   outputPurlsShallowScore(
     purls,
-    packageData as CResult<Array<components['schemas']['SocketArtifact']>>,
+    packageData as CResult<SocketArtifact[]>,
     outputKind,
   )
 }

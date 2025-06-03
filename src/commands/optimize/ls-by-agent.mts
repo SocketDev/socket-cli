@@ -14,7 +14,7 @@ function cleanupQueryStdout(stdout: string): string {
   try {
     pkgs = JSON.parse(stdout)
   } catch {}
-  if (!Array.isArray(pkgs)) {
+  if (!Array.isArray(pkgs) || !pkgs.length) {
     return ''
   }
   const names = new Set<string>()

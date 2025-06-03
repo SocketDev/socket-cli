@@ -6,8 +6,8 @@ import { handleApiCallNoSpinner, queryApiSafeText } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
+import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
-import type { components } from '@socketsecurity/sdk/types/api'
 
 /**
  * This fetches all the relevant pieces of data to generate a report, given a
@@ -19,7 +19,7 @@ export async function fetchReportData(
   includeLicensePolicy: boolean,
 ): Promise<
   CResult<{
-    scan: Array<components['schemas']['SocketArtifact']>
+    scan: SocketArtifact[]
     securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>['data']
   }>
 > {
@@ -59,9 +59,7 @@ export async function fetchReportData(
     }
   }
 
-  async function fetchScanResult(): Promise<
-    CResult<Array<components['schemas']['SocketArtifact']>>
-  > {
+  async function fetchScanResult(): Promise<CResult<SocketArtifact[]>> {
     const result = await queryApiSafeText(
       `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}${includeLicensePolicy ? '?include_license_details=true' : ''}`,
     )
@@ -85,7 +83,7 @@ export async function fetchReportData(
         debugFn('fail: parse NDJSON\n', line)
         return
       }
-    }) as unknown as Array<components['schemas']['SocketArtifact']>
+    }) as unknown as SocketArtifact[]
 
     if (ok) {
       updateScan(`success`)
@@ -118,7 +116,7 @@ export async function fetchReportData(
   updateProgress()
 
   const [scan, securityPolicy]: [
-    CResult<Array<components['schemas']['SocketArtifact']>>,
+    CResult<SocketArtifact[]>,
     CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>,
   ] = await Promise.all([
     fetchScanResult().catch(e => {
@@ -160,7 +158,7 @@ export async function fetchReportData(
   return {
     ok: true,
     data: {
-      scan: scan.data satisfies Array<components['schemas']['SocketArtifact']>,
+      scan: scan.data satisfies SocketArtifact[],
       securityPolicy: securityPolicy.data,
     },
   }
