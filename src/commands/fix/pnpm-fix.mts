@@ -306,6 +306,9 @@ export async function pnpmFix(
       const activeBranches: SocketBranchParseResult[] = []
       for (const pr of openPrs) {
         const parsedBranch = branchParser!(pr.headRefName)
+        debugFn(`parse: ${pr.headRefName}\n`, parsedBranch)
+        debugFn(`check: branchPurlType ${branchPurlType} === ${parsedBranch?.type}`)
+        debugFn(`check: branchFullName ${branchFullName} === ${parsedBranch?.fullName}`)
         if (
           branchPurlType === parsedBranch?.type &&
           branchFullName === parsedBranch?.fullName
@@ -318,7 +321,7 @@ export async function pnpmFix(
           `found: ${activeBranches.length} active branches\n`,
           activeBranches,
         )
-      } else {
+      } else if (openPrs.length) {
         debugFn('miss: 0 active branches found')
       }
       infos = infos.filter(
