@@ -245,8 +245,9 @@ export async function globWithGitIgnore(
 }
 
 export async function globNodeModules(cwd = process.cwd()): Promise<string[]> {
-  return await tinyGlob('**/node_modules/**', {
+  return await tinyGlob('**/node_modules', {
     absolute: true,
+    onlyDirectories: true,
     cwd,
   })
 }

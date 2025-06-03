@@ -8,12 +8,12 @@ import { mdTable } from '../../utils/markdown.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { components } from '@socketsecurity/sdk/types/api'
+import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 
 const { SOCKET_WEBSITE_URL } = constants
 
 export async function outputScanView(
-  result: CResult<Array<components['schemas']['SocketArtifact']>>,
+  result: CResult<SocketArtifact[]>,
   orgSlug: string,
   scanId: string,
   filePath: string,

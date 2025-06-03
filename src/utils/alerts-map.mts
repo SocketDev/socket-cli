@@ -7,7 +7,7 @@ import { addArtifactToAlertsMap } from './socket-package-alert.mts'
 import type { CompactSocketArtifact } from './alert/artifact.mts'
 import type {
   AlertIncludeFilter,
-  AlertsByPkgId,
+  AlertsByPurl,
 } from './socket-package-alert.mts'
 import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -23,7 +23,7 @@ export type GetAlertsMapFromPnpmLockfileOptions = {
 export async function getAlertsMapFromPnpmLockfile(
   lockfile: LockfileObject,
   options?: GetAlertsMapFromPnpmLockfileOptions | undefined,
-): Promise<AlertsByPkgId> {
+): Promise<AlertsByPurl> {
   const purls = await extractPurlsFromPnpmLockfile(lockfile)
   return await getAlertsMapFromPurls(purls, {
     overrides: lockfile.overrides,
@@ -43,7 +43,7 @@ export type GetAlertsMapFromPurlsOptions = {
 export async function getAlertsMapFromPurls(
   purls: string[] | readonly string[],
   options_?: GetAlertsMapFromPurlsOptions | undefined,
-): Promise<AlertsByPkgId> {
+): Promise<AlertsByPurl> {
   const options = {
     __proto__: null,
     consolidate: false,
@@ -71,9 +71,9 @@ export async function getAlertsMapFromPurls(
 
   const uniqPurls = arrayUnique(purls)
   let { length: remaining } = uniqPurls
-  const alertsByPkgId: AlertsByPkgId = new Map()
+  const alertsByPurl: AlertsByPurl = new Map()
   if (!remaining) {
-    return alertsByPkgId
+    return alertsByPurl
   }
   const getText = () => `Looking up data for ${remaining} packages`
 
@@ -108,7 +108,7 @@ export async function getAlertsMapFromPurls(
     if (batchResult.success) {
       await addArtifactToAlertsMap(
         batchResult.data as CompactSocketArtifact,
-        alertsByPkgId,
+        alertsByPurl,
         alertsMapOptions,
       )
     } else if (!options.nothrow) {
@@ -127,5 +127,5 @@ export async function getAlertsMapFromPurls(
 
   spinner?.stop()
 
-  return alertsByPkgId
+  return alertsByPurl
 }
