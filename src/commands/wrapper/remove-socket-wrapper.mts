@@ -22,10 +22,12 @@ export function removeSocketWrapper(file: string): void {
         logger.error(err)
         return
       }
-      // TODO: pretty sure you need to source the file or restart
-      //       any terminal session before changes are reflected.
-      logger.log(
-        `The alias was removed from ${file}. Running 'npm install' will now run the standard npm command.`,
+      logger.success(
+        `The alias was removed from ${file}. Running 'npm install' will now run the standard npm command in new terminals going forward.`,
+      )
+      logger.log('')
+      logger.info(
+        `Note: We cannot deactivate the alias from current terminal sessions. You have to restart existing terminal sessions to finalize this step.`,
       )
     })
   })
