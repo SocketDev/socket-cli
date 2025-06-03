@@ -314,7 +314,10 @@ export async function pnpmFix(
         }
       }
       if (activeBranches.length) {
-        debugFn(`found: ${activeBranches.length} active branches\n`, activeBranches)
+        debugFn(
+          `found: ${activeBranches.length} active branches\n`,
+          activeBranches,
+        )
       } else {
         debugFn('miss: 0 active branches found')
       }
