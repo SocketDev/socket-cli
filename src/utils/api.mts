@@ -176,6 +176,7 @@ export async function queryApi(path: string, apiToken: string) {
       'API endpoint is not set and default was empty. Request is likely to fail.',
     )
   }
+
   return await fetch(`${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`, {
     method: 'GET',
     headers: {
