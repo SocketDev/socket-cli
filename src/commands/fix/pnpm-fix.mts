@@ -320,9 +320,9 @@ export async function pnpmFix(
           ),
       )
     }
-    console.log(infos)
+
     if (!infos.length) {
-      //continue infoEntriesLoop
+      continue infoEntriesLoop
     }
 
     logger.log(`Processing vulns for ${name}:`)

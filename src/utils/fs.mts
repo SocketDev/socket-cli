@@ -2,6 +2,7 @@ import { promises as fs, readFileSync as fsReadFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { remove } from '@socketsecurity/registry/lib/fs'
+import { pEach } from '@socketsecurity/registry/lib/promises'
 
 import constants from '../constants.mts'
 import { globNodeModules } from './glob.mts'
@@ -20,8 +21,11 @@ const { abortSignal } = constants
 
 export async function removeNodeModules(cwd = process.cwd()) {
   const nodeModulesPaths = await globNodeModules(cwd)
-  await Promise.all(
-    nodeModulesPaths.map(p => remove(p, { force: true, recursive: true })),
+  await pEach(
+    nodeModulesPaths,
+    3,
+    p => remove(p, { force: true, recursive: true }),
+    { retries: 3 },
   )
 }
 
