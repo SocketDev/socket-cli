@@ -7,7 +7,7 @@ import { isObjectObject } from '@socketsecurity/registry/lib/objects'
 import { stripBom } from '@socketsecurity/registry/lib/strings'
 
 import { readFileUtf8 } from './fs.mts'
-import { idToPurl } from './spec.mts'
+import { idToNpmPurl } from './spec.mts'
 
 import type { LockfileObject, PackageSnapshot } from '@pnpm/lockfile.fs'
 import type { SemVer } from 'semver'
@@ -50,7 +50,7 @@ export async function extractPurlsFromPnpmLockfile(
     visit(pkgPath)
   }
   return [...seen].map(p =>
-    idToPurl(stripPnpmPeerSuffix(stripLeadingPnpmDepPathSlash(p))),
+    idToNpmPurl(stripPnpmPeerSuffix(stripLeadingPnpmDepPathSlash(p))),
   )
 }
 

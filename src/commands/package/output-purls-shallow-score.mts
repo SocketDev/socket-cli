@@ -6,11 +6,12 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
+import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 import type { components } from '@socketsecurity/sdk/types/api'
 
 export function outputPurlsShallowScore(
   purls: string[],
-  result: CResult<Array<components['schemas']['SocketArtifact']>>,
+  result: CResult<SocketArtifact[]>,
   outputKind: OutputKind,
 ): void {
   if (!result.ok) {
@@ -80,10 +81,7 @@ ${result.data.map(data => '## ' + formatReportCard(data, false)).join('\n\n\n')}
   logger.log('')
 }
 
-function formatReportCard(
-  data: components['schemas']['SocketArtifact'],
-  color: boolean,
-): string {
+function formatReportCard(data: SocketArtifact, color: boolean): string {
   const scoreResult = {
     'Supply Chain Risk': Math.floor((data.score?.supplyChain ?? 0) * 100),
     Maintenance: Math.floor((data.score?.maintenance ?? 0) * 100),
