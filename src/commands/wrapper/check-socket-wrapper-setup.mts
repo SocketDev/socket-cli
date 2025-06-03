@@ -16,10 +16,10 @@ export function checkSocketWrapperSetup(file: string): boolean {
     )
     logger.log('')
     logger.log(
-      `If you haven't already since enabling; Restart your terminal or run this command to activate it in the current session:`
+      `If you haven't already since enabling; Restart your terminal or run this command to activate it in the current session:`,
     )
     logger.log('')
-    logger.log('    source ${file}')
+    logger.log(`    source ${file}`)
     logger.log('')
 
     return true
