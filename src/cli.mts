@@ -88,6 +88,16 @@ void (async () => {
       },
       {
         aliases: {
+          audit: {
+            description: cmdAuditLog.description,
+            hidden: true,
+            argv: ['audit-log'],
+          },
+          auditLogs: {
+            description: cmdAuditLog.description,
+            hidden: true,
+            argv: ['audit-log'],
+          },
           deps: {
             description: cmdScanCreate.description,
             hidden: true,
