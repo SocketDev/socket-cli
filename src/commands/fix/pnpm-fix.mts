@@ -307,8 +307,12 @@ export async function pnpmFix(
       for (const pr of openPrs) {
         const parsedBranch = branchParser!(pr.headRefName)
         debugFn(`parse: ${pr.headRefName}\n`, parsedBranch)
-        debugFn(`check: branchPurlType ${branchPurlType} === ${parsedBranch?.type}`)
-        debugFn(`check: branchFullName ${branchFullName} === ${parsedBranch?.fullName}`)
+        debugFn(
+          `check: branchPurlType ${branchPurlType} === ${parsedBranch?.type}`,
+        )
+        debugFn(
+          `check: branchFullName ${branchFullName} === ${parsedBranch?.fullName}`,
+        )
         if (
           branchPurlType === parsedBranch?.type &&
           branchFullName === parsedBranch?.fullName
