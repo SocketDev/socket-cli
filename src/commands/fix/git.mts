@@ -86,7 +86,7 @@ export function getSocketBranchName(
   const fmtFullName = getSocketBranchFullNameComponent(purlObj)
   const fmtVersion = getSocketBranchPackageVersionComponent(purlObj.version!)
   const fmtNewVersion = formatBranchName(newVersion)
-  return `socket/${fmtType}_${fmtWorkspace}_${fmtFullName}_${fmtVersion}_${fmtNewVersion}`
+  return `socket/${fmtType}/${fmtWorkspace}/${fmtFullName}_${fmtVersion}_${fmtNewVersion}`
 }
 
 export type SocketBranchPatternOptions = {
@@ -120,7 +120,7 @@ export function getSocketBranchPattern(
     ? escapeRegExp(formatBranchName(newVersion))
     : '[^_]+'
   return new RegExp(
-    `^socket/(${escType})_(${escWorkspace})_(${escFullName})_(${escVersion})_(${escNewVersion})$`,
+    `^socket/(${escType})/(${escWorkspace})/(${escFullName})_(${escVersion})_(${escNewVersion})$`,
   )
 }
 
