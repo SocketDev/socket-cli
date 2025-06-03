@@ -30,7 +30,6 @@ describe('socket manifest conda', async () => {
 
           Options
             --file            Input file name (by default for Conda this is "environment.yml"), relative to cwd
-            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
             --out             Output path (relative to cwd)

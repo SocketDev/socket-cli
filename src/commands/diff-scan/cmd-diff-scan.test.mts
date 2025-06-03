@@ -25,7 +25,7 @@ describe('socket diff-scan', async () => {
             get               Get a diff scan for an organization
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
             $ socket diff-scan --help"

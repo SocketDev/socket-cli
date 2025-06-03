@@ -23,7 +23,6 @@ describe('socket config get', async () => {
 
           Options
             --full            Show full tokens in plaintext (unsafe)
-            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
 

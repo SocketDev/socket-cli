@@ -11,7 +11,7 @@ const description = 'Commands related to the local CLI configuration'
 
 export const cmdConfig: CliSubcommand = {
   description,
-  hidden: true, // [beta]
+  hidden: true, // [beta]; isTestingV1
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {

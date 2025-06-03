@@ -22,7 +22,6 @@ describe('socket config get', async () => {
             $ socket config get <org slug>
 
           Options
-            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
 

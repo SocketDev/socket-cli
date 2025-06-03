@@ -25,7 +25,7 @@ describe('socket organization', async () => {
             list              List organizations associated with the API key used
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
             $ socket organization --help"

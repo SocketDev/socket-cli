@@ -16,7 +16,7 @@ describe('socket package score', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "[beta] Look up score for one package which reflects all of its transitive dependencies as well
+        "Look up score for one package which reflects all of its transitive dependencies as well
 
           Usage
             $ socket package score <<ecosystem> <name> | <purl>>
@@ -26,7 +26,6 @@ describe('socket package score', async () => {
             - Permissions: packages:list
 
           Options
-            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
 

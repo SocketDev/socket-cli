@@ -26,7 +26,6 @@ describe('socket repos view', async () => {
             - Permissions: repo:list
 
           Options
-            --help            Print this help
             --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown

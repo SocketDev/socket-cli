@@ -17,7 +17,7 @@ const { DRY_RUN_BAILING_NOW } = constants
 const config: CliCommandConfig = {
   commandName: 'score',
   description:
-    '[beta] Look up score for one package which reflects all of its transitive dependencies as well',
+    'Look up score for one package which reflects all of its transitive dependencies as well',
   hidden: false,
   flags: {
     ...commonFlags,

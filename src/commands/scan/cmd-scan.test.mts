@@ -32,7 +32,7 @@ describe('socket scan', async () => {
             view              View the raw results of a scan
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
             $ socket scan --help"

@@ -23,7 +23,6 @@ describe('socket scan setup', async () => {
 
           Options
             --defaultOnReadErrorIf reading the socket.json fails, just use a default config? Warning: This might override the existing json file!
-            --help            Print this help
 
           Interactive configurator to create a local json file in the target directory
           that helps to set flag defaults for \`socket scan create\`.

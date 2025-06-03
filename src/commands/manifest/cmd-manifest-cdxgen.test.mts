@@ -75,12 +75,12 @@ describe('socket manifest cdxgen', async () => {
     `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-      "
-         _____         _       _        /---------------
-        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-        |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest cdxgen\`, cwd: <redacted>"
-    `)
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest cdxgen\`, cwd: <redacted>"
+      `)
 
       // expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(code, 'help should exit with code 2').toBe(0) // cdxgen special case

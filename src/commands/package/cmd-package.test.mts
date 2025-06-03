@@ -22,11 +22,11 @@ describe('socket package', async () => {
             $ socket package <command>
 
           Commands
-            score             [beta] Look up score for one package which reflects all of its transitive dependencies as well
-            shallow           [beta] Look up info regarding one or more packages but not their transitives
+            score             Look up score for one package which reflects all of its transitive dependencies as well
+            shallow           Look up info regarding one or more packages but not their transitives
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
             $ socket package --help"

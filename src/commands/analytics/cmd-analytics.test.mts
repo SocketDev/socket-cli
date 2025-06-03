@@ -30,7 +30,6 @@ describe('socket analytics', async () => {
 
           Options
             --file            Filepath to save output. Only valid with --json/--markdown. Defaults to stdout.
-            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
             --repo            Name of the repository. Only valid when scope=repo
@@ -134,7 +133,6 @@ describe('socket analytics', async () => {
 
           Options
             --file            Filepath to save output. Only valid with --json/--markdown. Defaults to stdout.
-            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
             --repo            Name of the repository. Only valid when scope=repo

@@ -13,7 +13,7 @@ const { DRY_RUN_BAILING_NOW } = constants
 const config: CliCommandConfig = {
   commandName: 'completion',
   description: 'Install bash completion for Socket CLI',
-  hidden: true, // beta
+  hidden: true, // beta; isTestingV1
   flags: {
     ...commonFlags,
   },

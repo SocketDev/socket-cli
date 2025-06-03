@@ -25,6 +25,8 @@ import { cmdNpm } from './commands/npm/cmd-npm.mts'
 import { cmdNpx } from './commands/npx/cmd-npx.mts'
 import { cmdOops } from './commands/oops/cmd-oops.mts'
 import { cmdOptimize } from './commands/optimize/cmd-optimize.mts'
+import { cmdOrganizationPolicyLicense } from './commands/organization/cmd-organization-policy-license.mts'
+import { cmdOrganizationPolicyPolicy } from './commands/organization/cmd-organization-policy-security.mts'
 import { cmdOrganization } from './commands/organization/cmd-organization.mts'
 import { cmdPackage } from './commands/package/cmd-package.mts'
 import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm.mts'
@@ -85,7 +87,73 @@ void (async () => {
         uninstall: cmdUninstall,
       },
       {
-        aliases: {},
+        aliases: {
+          deps: {
+            description: cmdScanCreate.description,
+            hidden: true,
+            argv: ['dependencies'],
+          },
+          feed: {
+            description: cmdThreatFeed.description,
+            hidden: true,
+            argv: ['threat-feed'],
+          },
+          license: {
+            description: cmdOrganizationPolicyLicense.description,
+            hidden: true,
+            argv: ['organization', 'policy', 'license'],
+          },
+          org: {
+            description: cmdOrganization.description,
+            hidden: true,
+            argv: ['organization'],
+          },
+          orgs: {
+            description: cmdOrganization.description,
+            hidden: true,
+            argv: ['organization'],
+          },
+          organizations: {
+            description: cmdOrganization.description,
+            hidden: true,
+            argv: ['organization'],
+          },
+          organisation: {
+            description: cmdOrganization.description,
+            hidden: true,
+            argv: ['organization'],
+          },
+          organisations: {
+            description: cmdOrganization.description,
+            hidden: true,
+            argv: ['organization'],
+          },
+          pkg: {
+            description: cmdPackage.description,
+            hidden: true,
+            argv: ['package'],
+          },
+          repo: {
+            description: cmdRepos.description,
+            hidden: true,
+            argv: ['repos'],
+          },
+          repository: {
+            description: cmdRepos.description,
+            hidden: true,
+            argv: ['repos'],
+          },
+          repositories: {
+            description: cmdRepos.description,
+            hidden: true,
+            argv: ['repos'],
+          },
+          security: {
+            description: cmdOrganizationPolicyPolicy.description,
+            hidden: true,
+            argv: ['organization', 'policy', 'security'],
+          },
+        },
         argv: process.argv.slice(2),
         name: SOCKET_CLI_BIN_NAME,
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,

@@ -21,7 +21,6 @@ describe('socket manifest scala', async () => {
 
           Options
             --bin             Location of sbt binary to use
-            --help            Print this help
             --out             Path of output file; where to store the resulting manifest, see also --stdout
             --sbtOpts         Additional options to pass on to sbt, as per \`sbt --help\`
             --stdout          Print resulting pom.xml to stdout (supersedes --out)

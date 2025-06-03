@@ -115,18 +115,6 @@ export async function meowWithSubcommands(
       hidden: false, // Only show on root
       description: 'Do input validation for a sub-command and then exit',
     }
-    flags['json'] = {
-      type: 'boolean',
-      hidden: false, // Only show on root
-      description:
-        'Ensure stdout only receives proper JSON (Most non-interactive commands support this)',
-    }
-    flags['markdown'] = {
-      type: 'boolean',
-      hidden: false, // Only show on root
-      description:
-        'Ensure stdout only receives a markdown report (Many commands that support --json also support this)',
-    }
     flags['version'] = {
       type: 'boolean',
       hidden: false, // Only show on root
@@ -367,7 +355,7 @@ ${isRootCommand && isTestingV1() ? '    Options' : '    Options'}${isRootCommand
 
     Examples
       $ ${name} --help
-${isRootCommand ? `      $ ${name} scan create` : ''}${isRootCommand ? `\n      $ ${name} package score npm left-pad` : ''}`,
+${isRootCommand ? `      $ ${name} scan create --json` : ''}${isRootCommand ? `\n      $ ${name} package score npm left-pad --markdown` : ''}`,
     {
       argv,
       importMeta,
@@ -383,7 +371,7 @@ ${isRootCommand ? `      $ ${name} scan create` : ''}${isRootCommand ? `\n      
   )
 
   // ...else we provide basic instructions and help.
-  if (!cli2.flags['silent']) {
+  if (!cli2.flags['nobanner']) {
     emitBanner(name)
   }
   if (!cli2.flags['help'] && cli2.flags['dryRun']) {
@@ -428,7 +416,7 @@ export function meowOrExit({
     autoHelp: false, // meow will exit(0) before printing the banner
   })
 
-  if (!cli.flags['silent']) {
+  if (!cli.flags['nobanner']) {
     emitBanner(command)
   }
 
