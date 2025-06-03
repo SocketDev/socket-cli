@@ -24,7 +24,6 @@ describe('socket wrapper', async () => {
           Options
             --disable         Disables the Socket npm/npx wrapper
             --enable          Enables the Socket npm/npx wrapper
-            --help            Print this help
 
           Examples
             $ socket wrapper --enable

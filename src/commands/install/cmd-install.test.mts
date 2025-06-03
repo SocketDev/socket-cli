@@ -25,7 +25,7 @@ describe('socket install', async () => {
             (none)
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
             $ socket install --help"

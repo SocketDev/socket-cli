@@ -37,7 +37,7 @@ describe('socket install completion', async () => {
           different alias for socket on your system.
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
 

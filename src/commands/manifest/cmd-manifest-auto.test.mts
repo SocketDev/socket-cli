@@ -20,7 +20,6 @@ describe('socket manifest auto', async () => {
             $ socket manifest auto [CWD=.]
 
           Options
-            --help            Print this help
             --verbose         Enable debug output (only for auto itself; sub-steps need to have it pre-configured), may help when running into errors
 
           Tries to figure out what language your target repo uses. If it finds a

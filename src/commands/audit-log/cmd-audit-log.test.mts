@@ -28,10 +28,9 @@ describe('socket audit-log', async () => {
             - Permissions: audit-log:list
 
           This feature requires an Enterprise Plan. To learn more about getting access
-          to this feature and many more, please visit ${SOCKET_WEBSITE_URL}/pricing
+          to this feature and many more, please visit https://socket.dev/pricing
 
           Options
-            --help            Print this help
             --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown

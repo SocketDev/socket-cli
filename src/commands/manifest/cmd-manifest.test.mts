@@ -29,7 +29,7 @@ describe('socket manifest', async () => {
             setup             Start interactive configurator to customize default flag values for \`socket manifest\` in this dir
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
             $ socket manifest --help"

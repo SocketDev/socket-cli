@@ -27,7 +27,6 @@ describe('socket repos create', async () => {
 
           Options
             --defaultBranch   Repository default branch
-            --help            Print this help
             --homepage        Repository url
             --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json

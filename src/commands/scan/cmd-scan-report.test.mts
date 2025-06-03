@@ -27,7 +27,6 @@ describe('socket scan report', async () => {
 
           Options
             --fold            Fold reported alerts to some degree
-            --help            Print this help
             --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --license         Also report the license policy status. Default: false

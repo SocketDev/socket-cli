@@ -26,7 +26,6 @@ describe('socket dependencies', async () => {
             - Permissions: none (does need token with access to target org)
 
           Options
-            --help            Print this help
             --json            Output result as json
             --limit           Maximum number of dependencies returned
             --markdown        Output result as markdown

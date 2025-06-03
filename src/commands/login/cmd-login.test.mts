@@ -29,7 +29,6 @@ describe('socket login', async () => {
           Options
             --apiBaseUrl      API server to connect to for login
             --apiProxy        Proxy to use when making connection to API server
-            --help            Print this help
 
           Examples
             $ socket login
