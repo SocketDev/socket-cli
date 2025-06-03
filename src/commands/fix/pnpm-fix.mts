@@ -328,12 +328,22 @@ export async function pnpmFix(
       } else if (openPrs.length) {
         debugFn('miss: 0 active branches found')
       }
-      infos = infos.filter(
-        info =>
-          !activeBranches.find(
-            b => b.newVersion === info.firstPatchedVersionIdentifier,
-          ),
-      )
+      infos = infos.filter(info => {
+        const found = activeBranches.find(
+          b => b.newVersion === info.firstPatchedVersionIdentifier,
+        )
+        if (found) {
+          debugFn(
+            `found: active branch for ${name}@${info.firstPatchedVersionIdentifier}`,
+          )
+          return false
+        } else {
+          debugFn(
+            `miss: no active branch found for ${name}@${info.firstPatchedVersionIdentifier}`,
+          )
+          return true
+        }
+      })
     }
 
     if (!infos.length) {
