@@ -16,8 +16,11 @@ import {
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
 import {
+  createSocketBranchParser,
   getBaseGitBranch,
+  getSocketBranchFullNameComponent,
   getSocketBranchName,
+  getSocketBranchPurlTypeComponent,
   getSocketCommitMessage,
   gitCreateAndPushBranch,
   gitRemoteBranchExists,
@@ -58,18 +61,21 @@ import {
   parsePnpmLockfileVersion,
   readPnpmLockfile,
 } from '../../utils/pnpm.mts'
+import { getPurlObject } from '../../utils/purl.mts'
 import { applyRange } from '../../utils/semver.mts'
 import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
+import type { SocketBranchParseResult } from './git.mts'
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { CResult, StringKeyValueObject } from '../../types.mts'
+import type { PURL_Type } from '../../utils/alert/artifact.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-const { NPM, OVERRIDES, PNPM } = constants
+const { OVERRIDES, PNPM } = constants
 
 type InstallOptions = {
   args?: string[] | undefined
@@ -247,16 +253,17 @@ export async function pnpmFix(
     }
   }
 
-  const infoByPkgName = getCveInfoFromAlertsMap(alertsMap, {
+  const infoByPartialPurl = getCveInfoFromAlertsMap(alertsMap, {
     limit: limit + openPrs.length,
   })
-  if (!infoByPkgName) {
+  if (!infoByPartialPurl) {
     spinner?.stop()
     logger.info('No fixable vulns found.')
     return { ok: true, data: { fixed: false } }
   }
 
   const baseBranch = isCi ? getBaseGitBranch() : ''
+  const branchParser = isCi ? createSocketBranchParser() : null
   const workspacePkgJsonPaths = await globWorkspace(
     pkgEnvDetails.agent,
     rootPath,
@@ -266,7 +273,7 @@ export async function pnpmFix(
     // Process the workspace root last since it will add an override to package.json.
     pkgEnvDetails.editablePkgJson.filename!,
   ]
-  const sortedInfoEntries = [...infoByPkgName.entries()].sort((a, b) =>
+  const sortedInfoEntries = [...infoByPartialPurl.entries()].sort((a, b) =>
     naturalCompare(a[0], b[0]),
   )
 
@@ -290,33 +297,39 @@ export async function pnpmFix(
   ) {
     const isLastInfoEntry = i === length - 1
     const infoEntry = sortedInfoEntries[i]!
-    const { 0: name } = infoEntry
-    const openPrsForPkg = openPrs.filter(
-      pr => name === resolvePackageName(pr.purl),
-    )
-    const infos = [...infoEntry[1].values()].filter(info => {
-      debugFn(
-        'pr.newVersion',
-        openPrsForPkg.map(pr => pr.newVersion),
+    const partialPurlObj = getPurlObject(infoEntry[0])
+    const name = resolvePackageName(partialPurlObj)
+    let infos = [...infoEntry[1].values()]
+    if (isCi) {
+      const branchFullName = getSocketBranchFullNameComponent(partialPurlObj)
+      const branchPurlType = getSocketBranchPurlTypeComponent(partialPurlObj)
+      const activeBranches: SocketBranchParseResult[] = []
+      for (const pr of openPrs) {
+        const parsedBranch = branchParser!(pr.headRefName)
+        if (
+          branchPurlType === parsedBranch?.type &&
+          branchFullName === parsedBranch?.fullName
+        ) {
+          activeBranches.push(parsedBranch)
+        }
+      }
+      infos = infos.filter(
+        info =>
+          !activeBranches.find(
+            b => b.newVersion === info.firstPatchedVersionIdentifier,
+          ),
       )
-      debugFn(
-        'info.firstPatchedVersionIdentifier',
-        info.firstPatchedVersionIdentifier,
-      )
-      return !openPrsForPkg.find(
-        pr => pr.newVersion === info.firstPatchedVersionIdentifier,
-      )
-    })
-
+    }
+    console.log(infos)
     if (!infos.length) {
-      continue infoEntriesLoop
+      //continue infoEntriesLoop
     }
 
     logger.log(`Processing vulns for ${name}:`)
     logger.indent()
     spinner?.indent()
 
-    if (getManifestData(NPM, name)) {
+    if (getManifestData(partialPurlObj.type as PURL_Type, name)) {
       debugFn(`found: Socket Optimize variant for ${name}`)
     }
     // eslint-disable-next-line no-await-in-loop
@@ -411,7 +424,7 @@ export async function pnpmFix(
 
       oldVersionsLoop: for (const oldVersion of oldVersions) {
         const oldId = `${name}@${oldVersion}`
-        const oldPurl = idToPurl(oldId)
+        const oldPurl = idToPurl(oldId, partialPurlObj.type)
 
         const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {

@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest'
 
 import { generateReport } from './generate-report.mts'
+import { SocketArtifact } from '../../utils/alert/artifact.mts'
 
 import type { ScanReport } from './generate-report.mts'
-import type { components } from '@socketsecurity/sdk/types/api'
+import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+
+type SecurityPolicyData = SocketSdkReturnType<'getOrgSecurityPolicy'>['data']
 
 describe('generate-report', () => {
   it('should accept empty args', () => {
     const result = generateReport(
       [],
-      { securityPolicyRules: [] },
+      { securityPolicyRules: [] } as SecurityPolicyData,
       {
         orgSlug: 'fakeorg',
         scanId: 'scan-ai-dee',
@@ -332,7 +335,7 @@ describe('generate-report', () => {
               envVars: {},
             },
             securityPolicyDefault: 'medium',
-          },
+          } as SecurityPolicyData,
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -741,7 +744,7 @@ describe('generate-report', () => {
               envVars: {},
             },
             securityPolicyDefault: 'medium',
-          },
+          } as SecurityPolicyData,
           {
             orgSlug: 'fakeorg',
             scanId: 'scan-ai-dee',
@@ -1022,7 +1025,7 @@ describe('generate-report', () => {
   })
 })
 
-function getSimpleCleanScan(): Array<components['schemas']['SocketArtifact']> {
+function getSimpleCleanScan(): SocketArtifact[] {
   return [
     {
       id: '12521',
@@ -1054,7 +1057,7 @@ function getSimpleCleanScan(): Array<components['schemas']['SocketArtifact']> {
   ]
 }
 
-function getScanWithEnvVars(): Array<components['schemas']['SocketArtifact']> {
+function getScanWithEnvVars(): SocketArtifact[] {
   return [
     {
       id: '12521',

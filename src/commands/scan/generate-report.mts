@@ -1,9 +1,9 @@
 import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket-url.mts'
 
 import type { CResult } from '../../types.mts'
+import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
-import type { components } from '@socketsecurity/sdk/types/api'
 
 type AlertAction = 'defer' | 'ignore' | 'monitor' | 'error' | 'warn'
 type AlertKey = string
@@ -35,7 +35,7 @@ export type ReportLeafNode = {
 // Note: The returned cresult will only be ok:false when the generation
 //       failed. It won't reflect the healthy state.
 export function generateReport(
-  scan: Array<components['schemas']['SocketArtifact']>,
+  scan: SocketArtifact[],
   securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>['data'],
   {
     fold,
@@ -100,11 +100,7 @@ export function generateReport(
       } = artifact
 
       alerts?.forEach(
-        (
-          alert: NonNullable<
-            components['schemas']['SocketArtifact']['alerts']
-          >[number],
-        ) => {
+        (alert: NonNullable<SocketArtifact['alerts']>[number]) => {
           const alertName = alert.type as keyof typeof securityRules // => policy[type]
           const action = securityRules[alertName]?.action || ''
           switch (action) {
@@ -235,8 +231,8 @@ export function generateReport(
 }
 
 function createLeaf(
-  art: components['schemas']['SocketArtifact'],
-  alert: NonNullable<components['schemas']['SocketArtifact']['alerts']>[number],
+  art: SocketArtifact,
+  alert: NonNullable<SocketArtifact['alerts']>[number],
   policyAction: AlertAction,
 ): ReportLeafNode {
   const leaf: ReportLeafNode = {
@@ -249,13 +245,13 @@ function createLeaf(
 }
 
 function addAlert(
-  art: components['schemas']['SocketArtifact'],
+  art: SocketArtifact,
   violations: ViolationsMap,
   foldSetting: 'pkg' | 'version' | 'file' | 'none',
   ecosystem: string,
   pkgName: string,
   version: string,
-  alert: NonNullable<components['schemas']['SocketArtifact']['alerts']>[number],
+  alert: NonNullable<SocketArtifact['alerts']>[number],
   policyAction: AlertAction,
 ): void {
   if (!violations.has(ecosystem)) {

@@ -4,13 +4,22 @@ import { PackageURL } from '@socketregistry/packageurl-js'
 
 import { stripPnpmPeerSuffix } from './pnpm.mts'
 
-export function idToPurl(id: string): string {
+export function idToNpmPurl(id: string): string {
   return `pkg:npm/${id}`
+}
+
+export function idToPurl(id: string, type: string): string {
+  return `pkg:${type}/${id}`
 }
 
 export function resolvePackageVersion(purlObj: PackageURL): string {
   const { version } = purlObj
-  return version
-    ? (semver.coerce(stripPnpmPeerSuffix(version))?.version ?? '')
-    : ''
+  if (!version) {
+    return ''
+  }
+  const { type } = purlObj
+  return (
+    semver.coerce(type === 'npm' ? stripPnpmPeerSuffix(version) : version)
+      ?.version ?? ''
+  )
 }

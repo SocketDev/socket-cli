@@ -3,12 +3,12 @@ import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { queryApiSafeText } from '../../utils/api.mts'
 
 import type { CResult } from '../../types.mts'
-import type { components } from '@socketsecurity/sdk/types/api'
+import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 
 export async function fetchScan(
   orgSlug: string,
   scanId: string,
-): Promise<CResult<Array<components['schemas']['SocketArtifact']>>> {
+): Promise<CResult<SocketArtifact[]>> {
   const result = await queryApiSafeText(
     `orgs/${orgSlug}/full-scans/${encodeURIComponent(scanId)}`,
     'a scan',
@@ -31,7 +31,7 @@ export async function fetchScan(
       debugFn('fail: parse NDJSON\n', line)
       return null
     }
-  }) as unknown as Array<components['schemas']['SocketArtifact']>
+  }) as unknown as SocketArtifact[]
 
   if (ok) {
     return { ok: true, data }
