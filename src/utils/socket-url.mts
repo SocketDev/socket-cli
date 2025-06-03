@@ -1,13 +1,15 @@
 import constants from '../constants.mts'
+import { getPurlObject } from './purl.mts'
 
+import type { PURL_Type, SocketArtifact } from './alert/artifact.mts'
 import type { PackageURL } from '@socketregistry/packageurl-js'
-import type { components } from '@socketsecurity/sdk/types/api'
-
-type PurlLikeType = PackageURL | components['schemas']['SocketPURL']
 
 const { SOCKET_WEBSITE_URL } = constants
 
-export function getPkgFullNameFromPurlObj(purlObj: PurlLikeType): string {
+export function getPkgFullNameFromPurl(
+  purl: string | PackageURL | SocketArtifact,
+): string {
+  const purlObj = getPurlObject(purl)
   const { name, namespace } = purlObj
   return namespace
     ? `${namespace}${purlObj.type === 'maven' ? ':' : '/'}${name}`
@@ -19,19 +21,24 @@ export function getSocketDevAlertUrl(alertType: string): string {
 }
 
 export function getSocketDevPackageOverviewUrlFromPurl(
-  purlObj: PurlLikeType,
+  purl: string | PackageURL | SocketArtifact,
 ): string {
-  const fullName = getPkgFullNameFromPurlObj(purlObj)
-  return getSocketDevPackageOverviewUrl(purlObj.type, fullName, purlObj.version)
+  const purlObj = getPurlObject(purl)
+  const fullName = getPkgFullNameFromPurl(purlObj)
+  return getSocketDevPackageOverviewUrl(
+    purlObj.type as PURL_Type,
+    fullName,
+    purlObj.version,
+  )
 }
 
 export function getSocketDevPackageOverviewUrl(
-  ecosystem: string,
+  ecosystem: PURL_Type,
   fullName: string,
   version?: string | undefined,
 ): string {
   const url = `${SOCKET_WEBSITE_URL}/${ecosystem}/package/${fullName}`
-  return ecosystem === 'go'
+  return ecosystem === 'golang'
     ? `${url}${version ? `?section=overview&version=${version}` : ''}`
     : `${url}${version ? `/overview/${version}` : ''}`
 }

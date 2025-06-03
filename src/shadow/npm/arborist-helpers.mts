@@ -2,6 +2,7 @@ import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { fetchPackagePackument } from '@socketsecurity/registry/lib/packages'
 
@@ -11,7 +12,7 @@ import { DiffAction } from './arborist/types.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { type AliasResult, npa } from '../../utils/npm-package-arg.mts'
 import { applyRange, getMajor, getMinVersion } from '../../utils/semver.mts'
-import { idToPurl } from '../../utils/spec.mts'
+import { idToNpmPurl } from '../../utils/spec.mts'
 
 import type {
   ArboristInstance,
@@ -23,7 +24,7 @@ import type {
 import type { RangeStyle } from '../../utils/semver.mts'
 import type {
   AlertIncludeFilter,
-  AlertsByPkgId,
+  AlertsByPurl,
 } from '../../utils/socket-package-alert.mts'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -127,6 +128,11 @@ export function findPackageNodes(
       continue
     }
     visited.add(node)
+
+    const { version: targetVersion } = node
+    if (!targetVersion && Array.isArray(node.errors) && node.errors.length) {
+      debugFn(`miss: version for ${node.name} due to errors:\n`, node.errors)
+    }
     if (
       node.name === name &&
       (typeof version !== 'string' || node.version === version)
@@ -156,7 +162,7 @@ export type GetAlertsMapFromArboristOptions = {
 export async function getAlertsMapFromArborist(
   arb: ArboristInstance,
   options_?: GetAlertsMapFromArboristOptions | undefined,
-): Promise<AlertsByPkgId> {
+): Promise<AlertsByPurl> {
   const options = {
     __proto__: null,
     consolidate: false,
@@ -186,7 +192,7 @@ export async function getAlertsMapFromArborist(
     },
   })
 
-  const purls = needInfoOn.map(d => idToPurl(d.node.pkgid))
+  const purls = needInfoOn.map(d => idToNpmPurl(d.node.pkgid))
 
   let overrides: { [key: string]: string } | undefined
   const overridesMap = (
@@ -336,7 +342,7 @@ export function updateNode(
   // Update package.version associated with the node.
   node.package.version = newVersion
   // Update node.resolved.
-  const purlObj = PackageURL.fromString(idToPurl(node.name))
+  const purlObj = PackageURL.fromString(idToNpmPurl(node.name))
   node.resolved = `${NPM_REGISTRY_URL}/${node.name}/-/${purlObj.name}-${newVersion}.tgz`
   // Update node.integrity with the targetPackument.dist.integrity value if available
   // else delete node.integrity so a new value is resolved for the target version.

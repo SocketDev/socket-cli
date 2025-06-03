@@ -1,3 +1,5 @@
+import semver from 'semver'
+
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
@@ -7,11 +9,12 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import constants from '../../constants.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 import {
-  getPkgFullNameFromPurlObj,
+  getPkgFullNameFromPurl,
   getSocketDevPackageOverviewUrlFromPurl,
 } from '../../utils/socket-url.mts'
 
 import type { CResult } from '../../types.mts'
+import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
 export type GitCreateAndPushBranchOptions = {
@@ -21,10 +24,7 @@ export type GitCreateAndPushBranchOptions = {
 }
 
 function formatBranchName(name: string): string {
-  return name
-    .replace(/[-_.\\/]+/g, '-')
-    .replace(/[^-a-zA-Z0-9]+/g, '')
-    .replace(/^-+|-+$/g, '')
+  return name.replace(/[^-a-zA-Z0-9/._-]+/g, '+')
 }
 
 export function getBaseGitBranch(): string {
@@ -37,19 +37,54 @@ export function getBaseGitBranch(): string {
   )
 }
 
+export function getSocketBranchPurlTypeComponent(
+  purl: string | PackageURL | SocketArtifact,
+): string {
+  const purlObj = getPurlObject(purl)
+  return formatBranchName(purlObj.type)
+}
+
+export function getSocketBranchFullNameComponent(
+  pkgName: string | PackageURL | SocketArtifact,
+): string {
+  const purlObj = getPurlObject(
+    typeof pkgName === 'string' && !pkgName.startsWith('pkg:')
+      ? PackageURL.fromString(`pkg:unknown/${pkgName}`)
+      : pkgName,
+  )
+  const fmtMaybeNamespace = purlObj.namespace
+    ? `${formatBranchName(purlObj.namespace)}--`
+    : ''
+  return `${fmtMaybeNamespace}${formatBranchName(purlObj.name)}`
+}
+
+export function getSocketBranchPackageVersionComponent(
+  version: string | PackageURL | SocketArtifact,
+): string {
+  const purlObj = getPurlObject(
+    typeof version === 'string' && !version.startsWith('pkg:')
+      ? PackageURL.fromString(`pkg:unknown/unknown@${version}`)
+      : version,
+  )
+  return formatBranchName(purlObj.version!)
+}
+
+export function getSocketBranchWorkspaceComponent(
+  workspace: string | undefined,
+): string {
+  return workspace ? formatBranchName(workspace) : 'root'
+}
+
 export function getSocketBranchName(
-  purl: string | PackageURL,
+  purl: string | PackageURL | SocketArtifact,
   newVersion: string,
   workspace?: string | undefined,
 ): string {
   const purlObj = getPurlObject(purl)
-  const fmtType = formatBranchName(purlObj.type)
-  const fmtWorkspace = workspace ? `${formatBranchName(workspace)}` : 'root'
-  const fmtMaybeNamespace = purlObj.namespace
-    ? `${formatBranchName(purlObj.namespace)}--`
-    : ''
-  const fmtFullName = `${fmtMaybeNamespace}${formatBranchName(purlObj.name)}`
-  const fmtVersion = formatBranchName(purlObj.version!)
+  const fmtType = getSocketBranchPurlTypeComponent(purlObj)
+  const fmtWorkspace = getSocketBranchWorkspaceComponent(workspace)
+  const fmtFullName = getSocketBranchFullNameComponent(purlObj)
+  const fmtVersion = getSocketBranchPackageVersionComponent(purlObj.version!)
   const fmtNewVersion = formatBranchName(newVersion)
   return `socket/${fmtType}_${fmtWorkspace}_${fmtFullName}_${fmtVersion}_${fmtNewVersion}`
 }
@@ -94,9 +129,11 @@ export type SocketBranchParser = (
 ) => SocketBranchParseResult | null
 
 export type SocketBranchParseResult = {
+  fullName: string
   newVersion: string
-  purl: PackageURL
+  type: string
   workspace: string
+  version: string
 }
 
 export function createSocketBranchParser(
@@ -104,8 +141,9 @@ export function createSocketBranchParser(
 ): SocketBranchParser {
   const pattern = getSocketBranchPattern(options)
   return function parse(branch: string): SocketBranchParseResult | null {
-    debugFn('pattern', pattern.toString())
-    const match = pattern.exec(branch)
+    const match = pattern.exec(branch) as
+      | [string, string, string, string, string, string]
+      | null
     if (!match) {
       return null
     }
@@ -117,41 +155,43 @@ export function createSocketBranchParser(
       5: newVersion,
     } = match
     return {
-      newVersion,
-      purl: getPurlObject(`pkg:${type}/${fullName}@${version}`),
+      fullName,
+      newVersion: semver.coerce(newVersion.replaceAll('+', '.'))?.version,
+      type,
       workspace,
+      version: semver.coerce(version.replaceAll('+', '.'))?.version,
     } as SocketBranchParseResult
   }
 }
 
 export function getSocketPullRequestTitle(
-  purl: string | PackageURL,
+  purl: string | PackageURL | SocketArtifact,
   newVersion: string,
   workspace?: string | undefined,
 ): string {
   const purlObj = getPurlObject(purl)
-  const fullName = getPkgFullNameFromPurlObj(purlObj)
+  const fullName = getPkgFullNameFromPurl(purlObj)
   return `Bump ${fullName} from ${purlObj.version} to ${newVersion}${workspace ? ` in ${workspace}` : ''}`
 }
 
 export function getSocketPullRequestBody(
-  purl: string | PackageURL,
+  purl: string | PackageURL | SocketArtifact,
   newVersion: string,
   workspace?: string | undefined,
 ): string {
   const purlObj = getPurlObject(purl)
-  const fullName = getPkgFullNameFromPurlObj(purlObj)
+  const fullName = getPkgFullNameFromPurl(purlObj)
   const pkgOverviewUrl = getSocketDevPackageOverviewUrlFromPurl(purlObj)
   return `Bump [${fullName}](${pkgOverviewUrl}) from ${purlObj.version} to ${newVersion}${workspace ? ` in ${workspace}` : ''}.`
 }
 
 export function getSocketCommitMessage(
-  purl: string | PackageURL,
+  purl: string | PackageURL | SocketArtifact,
   newVersion: string,
   workspace?: string | undefined,
 ): string {
   const purlObj = getPurlObject(purl)
-  const fullName = getPkgFullNameFromPurlObj(purlObj)
+  const fullName = getPkgFullNameFromPurl(purlObj)
   return `socket: Bump ${fullName} from ${purlObj.version} to ${newVersion}${workspace ? ` in ${workspace}` : ''}`
 }
 

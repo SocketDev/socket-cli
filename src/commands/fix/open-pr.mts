@@ -17,12 +17,14 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import {
   createSocketBranchParser,
+  getSocketBranchPattern,
   getSocketPullRequestBody,
   getSocketPullRequestTitle,
 } from './git.mts'
 import constants from '../../constants.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 
+import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 import type { components } from '@octokit/openapi-types'
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/registry/lib/fs'
@@ -122,11 +124,8 @@ export type PrMatch = {
   baseRefName: string
   headRefName: string
   mergeStateStatus: MERGE_STATE_STATUS
-  newVersion: string
   number: number
-  purl: PackageURL
   title: string
-  workspace: string
 }
 
 export type CleanupPrsOptions = {
@@ -152,12 +151,16 @@ export async function cleanupOpenPrs(
 
   const cachesToSave = new Map<string, JsonContent>()
   const { newVersion } = { __proto__: null, ...options } as CleanupPrsOptions
+  const branchParser = createSocketBranchParser(options)
   const octokit = getOctokit()
 
   const settledMatches = await Promise.allSettled(
     contextualMatches.map(async ({ context, match }) => {
-      const { newVersion: prToVersion, number: prNum } = match
+      const { number: prNum } = match
       const prRef = `PR #${prNum}`
+      const parsedBranch = branchParser(match.headRefName)
+      const prToVersion = parsedBranch?.newVersion
+
       // Close older PRs.
       if (prToVersion && newVersion && semver.lt(prToVersion, newVersion)) {
         try {
@@ -254,7 +257,11 @@ export async function enablePrAutoMerge({
   } catch (e) {
     error = e
   }
-  if (error instanceof GraphqlResponseError && Array.isArray(error.errors)) {
+  if (
+    error instanceof GraphqlResponseError &&
+    Array.isArray(error.errors) &&
+    error.errors.length
+  ) {
     const details = error.errors.map(({ message }) => message.trim())
     return { enabled: false, details }
   }
@@ -322,7 +329,7 @@ async function getOpenSocketPrsWithContext(
   const checkAuthor = isNonEmptyString(author)
   const octokit = getOctokit()
   const octokitGraphql = getOctokitGraphql()
-  const prBranchParser = createSocketBranchParser(options)
+  const branchPattern = getSocketBranchPattern(options)
 
   const contextualMatches: ContextualPrMatch[] = []
   try {
@@ -369,7 +376,7 @@ async function getOpenSocketPrsWithContext(
       const node = nodes[i]!
       const login = node.author?.login
       const matchesAuthor = checkAuthor ? login === author : true
-      const matchesBranch = prBranchParser(node.headRefName)
+      const matchesBranch = branchPattern.test(node.headRefName)
       if (matchesAuthor && matchesBranch) {
         contextualMatches.push({
           context: {
@@ -382,7 +389,6 @@ async function getOpenSocketPrsWithContext(
           },
           match: {
             ...node,
-            ...matchesBranch,
             author: login ?? '<unknown>',
           },
         })
@@ -418,7 +424,7 @@ async function getOpenSocketPrsWithContext(
     const pr = allOpenPrs[i]!
     const login = pr.user?.login
     const matchesAuthor = checkAuthor ? login === author : true
-    const matchesBranch = prBranchParser(pr.head.ref)
+    const matchesBranch = branchPattern.test(pr.head.ref)
     if (matchesAuthor && matchesBranch) {
       contextualMatches.push({
         context: {
@@ -430,7 +436,6 @@ async function getOpenSocketPrsWithContext(
           parent: allOpenPrs,
         },
         match: {
-          ...matchesBranch,
           author: login ?? '<unknown>',
           baseRefName: pr.base.ref,
           headRefName: pr.head.ref,
@@ -457,7 +462,7 @@ export async function openPr(
   owner: string,
   repo: string,
   branch: string,
-  purl: string | PackageURL,
+  purl: string | PackageURL | SocketArtifact,
   newVersion: string,
   options?: OpenPrOptions | undefined,
 ): Promise<OctokitResponse<Pr> | null> {
@@ -487,7 +492,7 @@ export async function openPr(
       e instanceof RequestError
         ? (e.response?.data as any)?.['errors']
         : undefined
-    if (Array.isArray(errors)) {
+    if (Array.isArray(errors) && errors.length) {
       const details = errors
         .map(
           d =>

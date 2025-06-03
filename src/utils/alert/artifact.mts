@@ -46,6 +46,8 @@ export type CveProps = {
   [key: string]: any
 }
 
+export type PURL_Type = components['schemas']['SocketPURL_Type']
+
 export type SocketArtifact = Remap<
   Omit<components['schemas']['SocketArtifact'], 'alerts'> & {
     alerts?: SocketArtifactAlert[]

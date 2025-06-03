@@ -15,8 +15,11 @@ import {
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
 import {
+  createSocketBranchParser,
   getBaseGitBranch,
+  getSocketBranchFullNameComponent,
   getSocketBranchName,
+  getSocketBranchPurlTypeComponent,
   getSocketCommitMessage,
   gitCreateAndPushBranch,
   gitRemoteBranchExists,
@@ -49,20 +52,21 @@ import {
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { removeNodeModules } from '../../utils/fs.mts'
 import { globWorkspace } from '../../utils/glob.mts'
+import { getPurlObject } from '../../utils/purl.mts'
 import { applyRange } from '../../utils/semver.mts'
 import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
+import type { SocketBranchParseResult } from './git.mts'
 import type {
   ArboristInstance,
   NodeClass,
 } from '../../shadow/npm/arborist/types.mts'
 import type { CResult } from '../../types.mts'
+import type { PURL_Type } from '../../utils/alert/artifact.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
-
-const { NPM } = constants
 
 type InstallOptions = {
   cwd?: string | undefined
@@ -171,16 +175,17 @@ export async function npmFix(
     }
   }
 
-  const infoByPkgName = getCveInfoFromAlertsMap(alertsMap, {
+  const infoByPartialPurl = getCveInfoFromAlertsMap(alertsMap, {
     limit: limit + openPrs.length,
   })
-  if (!infoByPkgName) {
+  if (!infoByPartialPurl) {
     spinner?.stop()
     logger.info('No fixable vulns found.')
     return { ok: true, data: { fixed: false } }
   }
 
   const baseBranch = isCi ? getBaseGitBranch() : ''
+  const branchParser = isCi ? createSocketBranchParser() : null
   const workspacePkgJsonPaths = await globWorkspace(
     pkgEnvDetails.agent,
     rootPath,
@@ -190,7 +195,7 @@ export async function npmFix(
     // Process the workspace root last since it will add an override to package.json.
     pkgEnvDetails.editablePkgJson.filename!,
   ]
-  const sortedInfoEntries = [...infoByPkgName.entries()].sort((a, b) =>
+  const sortedInfoEntries = [...infoByPartialPurl.entries()].sort((a, b) =>
     naturalCompare(a[0], b[0]),
   )
 
@@ -215,16 +220,29 @@ export async function npmFix(
   ) {
     const isLastInfoEntry = i === length - 1
     const infoEntry = sortedInfoEntries[i]!
-    const { 0: name } = infoEntry
-    const openPrsForPkg = openPrs.filter(
-      pr => name === resolvePackageName(pr.purl),
-    )
-    const infos = [...infoEntry[1].values()].filter(
-      info =>
-        !openPrsForPkg.find(
-          pr => pr.newVersion === info.firstPatchedVersionIdentifier,
-        ),
-    )
+    const partialPurlObj = getPurlObject(infoEntry[0])
+    const name = resolvePackageName(partialPurlObj)
+    let infos = [...infoEntry[1].values()]
+    if (isCi) {
+      const branchFullName = getSocketBranchFullNameComponent(partialPurlObj)
+      const branchPurlType = getSocketBranchPurlTypeComponent(partialPurlObj)
+      const activeBranches: SocketBranchParseResult[] = []
+      for (const pr of openPrs) {
+        const parsedBranch = branchParser!(pr.headRefName)
+        if (
+          branchPurlType === parsedBranch?.type &&
+          branchFullName === parsedBranch?.fullName
+        ) {
+          activeBranches.push(parsedBranch)
+        }
+      }
+      infos = infos.filter(
+        info =>
+          !activeBranches.find(
+            b => b.newVersion === info.firstPatchedVersionIdentifier,
+          ),
+      )
+    }
 
     if (!infos.length) {
       continue infoEntriesLoop
@@ -234,7 +252,7 @@ export async function npmFix(
     logger.indent()
     spinner?.indent()
 
-    if (getManifestData(NPM, name)) {
+    if (getManifestData(partialPurlObj.type as PURL_Type, name)) {
       debugFn(`found: Socket Optimize variant for ${name}`)
     }
     // eslint-disable-next-line no-await-in-loop
@@ -295,7 +313,7 @@ export async function npmFix(
 
       oldVersionsLoop: for (const oldVersion of oldVersions) {
         const oldId = `${name}@${oldVersion}`
-        const oldPurl = idToPurl(oldId)
+        const oldPurl = idToPurl(oldId, partialPurlObj.type)
 
         const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {

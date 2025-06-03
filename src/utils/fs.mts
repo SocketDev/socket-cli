@@ -20,7 +20,9 @@ const { abortSignal } = constants
 
 export async function removeNodeModules(cwd = process.cwd()) {
   const nodeModulesPaths = await globNodeModules(cwd)
-  await Promise.all(nodeModulesPaths.map(p => remove(p)))
+  await Promise.all(
+    nodeModulesPaths.map(p => remove(p, { force: true, recursive: true })),
+  )
 }
 
 export type FindUpOptions = {
