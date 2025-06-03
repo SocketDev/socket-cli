@@ -61,7 +61,7 @@ describe('socket wrapper', async () => {
 
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
-          - Must use --enabled or --disable (\\x1b[31mmissing\\x1b[39m)
+          - Must use --enable or --disable (\\x1b[31mmissing\\x1b[39m)
         \\x1b[22m"
       `)
 
