@@ -37,7 +37,6 @@ describe('socket diff-scan get', async () => {
             --before          The scan ID of the base scan
             --depth           Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)
             --file            Path to a local file where the output should be saved. Use \`-\` to force stdout.
-            --help            Print this help
             --json            Output result as json. This can be big. Use --file to store it to disk without truncation.
 
           Examples

@@ -41,7 +41,6 @@ describe('socket scan github', async () => {
             --all             Apply for all known repos reported by the Socket API. Supersedes \`repos\`.
             --githubApiUrl    Base URL of the GitHub API (default: https://api.github.com)
             --githubToken     (required) GitHub token for authentication (or set GITHUB_TOKEN as an environment variable)
-            --help            Print this help
             --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown

@@ -25,7 +25,7 @@ describe('socket organization list', async () => {
             (none)
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
             $ socket organization policy --help"

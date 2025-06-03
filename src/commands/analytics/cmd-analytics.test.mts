@@ -29,8 +29,7 @@ describe('socket analytics', async () => {
           last 30 days.
 
           Options
-            --file            Filepath to save output. Only valid with --json/--markdown. Defaults to stdout.
-            --help            Print this help
+            --file            Filepath to save output when given. Only valid with --json/--markdown.
             --json            Output result as json
             --markdown        Output result as markdown
             --repo            Name of the repository. Only valid when scope=repo
@@ -133,8 +132,7 @@ describe('socket analytics', async () => {
           The time argument must be number 7, 30, or 90 and defaults to 30.
 
           Options
-            --file            Filepath to save output. Only valid with --json/--markdown. Defaults to stdout.
-            --help            Print this help
+            --file            Filepath to save output when given. Only valid with --json/--markdown.
             --json            Output result as json
             --markdown        Output result as markdown
             --repo            Name of the repository. Only valid when scope=repo

@@ -26,7 +26,7 @@ describe('socket report', async () => {
             view              [Deprecated] View a project report
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
             $ socket report --help"

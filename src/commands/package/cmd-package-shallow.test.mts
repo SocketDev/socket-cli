@@ -16,7 +16,7 @@ describe('socket package shallow', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "[beta] Look up info regarding one or more packages but not their transitives
+        "Look up info regarding one or more packages but not their transitives
 
           Usage
             $ socket package shallow <<ecosystem> <name> [<name> ...] | <purl> [<purl> ...]>
@@ -26,7 +26,6 @@ describe('socket package shallow', async () => {
             - Permissions: packages:list
 
           Options
-            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
 

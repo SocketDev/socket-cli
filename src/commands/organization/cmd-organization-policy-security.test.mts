@@ -26,7 +26,6 @@ describe('socket organization policy security', async () => {
             - Permissions: security-policy:read
 
           Options
-            --help            Print this help
             --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown

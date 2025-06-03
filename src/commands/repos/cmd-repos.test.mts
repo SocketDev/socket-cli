@@ -29,7 +29,7 @@ describe('socket repos', async () => {
             view              View repositories in an organization
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
             $ socket repos --help"
