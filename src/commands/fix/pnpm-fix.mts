@@ -178,7 +178,7 @@ export async function pnpmFix(
     debugFn('miss: 0 open PRs found')
   }
 
-  let count = isCi ? openPrs.length : 0
+  let count = 0
 
   let actualTree: NodeClass | undefined
   const lockfilePath = path.join(rootPath, 'pnpm-lock.yaml')
@@ -452,6 +452,7 @@ export async function pnpmFix(
 
           if (activeBranches.find(b => b.newVersion === newVersion)) {
             debugFn(`skip: open PR found for ${name}@${newVersion}`)
+            count += 1
             continue infosLoop
           }
 
