@@ -299,20 +299,18 @@ export async function pnpmFix(
     const infoEntry = sortedInfoEntries[i]!
     const partialPurlObj = getPurlObject(infoEntry[0])
     const name = resolvePackageName(partialPurlObj)
-    let infos = [...infoEntry[1].values()]
+
+    const infos = [...infoEntry[1].values()]
+    if (!infos.length) {
+      continue infoEntriesLoop
+    }
+
+    const activeBranches: SocketBranchParseResult[] = []
     if (isCi) {
       const branchFullName = getSocketBranchFullNameComponent(partialPurlObj)
       const branchPurlType = getSocketBranchPurlTypeComponent(partialPurlObj)
-      const activeBranches: SocketBranchParseResult[] = []
       for (const pr of openPrs) {
         const parsedBranch = branchParser!(pr.headRefName)
-        debugFn(`parse: ${pr.headRefName}\n`, parsedBranch)
-        debugFn(
-          `check: branchPurlType ${branchPurlType} === ${parsedBranch?.type}`,
-        )
-        debugFn(
-          `check: branchFullName ${branchFullName} === ${parsedBranch?.fullName}`,
-        )
         if (
           branchPurlType === parsedBranch?.type &&
           branchFullName === parsedBranch?.fullName
@@ -328,26 +326,6 @@ export async function pnpmFix(
       } else if (openPrs.length) {
         debugFn('miss: 0 active branches found')
       }
-      infos = infos.filter(info => {
-        const found = activeBranches.find(
-          b => b.newVersion === info.firstPatchedVersionIdentifier,
-        )
-        if (found) {
-          debugFn(
-            `found: active branch for ${name}@${info.firstPatchedVersionIdentifier}`,
-          )
-          return false
-        } else {
-          debugFn(
-            `miss: no active branch found for ${name}@${info.firstPatchedVersionIdentifier}`,
-          )
-          return true
-        }
-      })
-    }
-
-    if (!infos.length) {
-      continue infoEntriesLoop
     }
 
     logger.log(`Processing vulns for ${name}:`)
@@ -459,17 +437,24 @@ export async function pnpmFix(
         infosLoop: for (const {
           firstPatchedVersionIdentifier,
           vulnerableVersionRange,
-        } of infos.values()) {
+        } of infos) {
           if (semver.gte(oldVersion, firstPatchedVersionIdentifier)) {
             debugFn(`skip: ${oldId} is >= ${firstPatchedVersionIdentifier}`)
             continue infosLoop
           }
+
           const newVersion = findBestPatchVersion(
             node,
             availableVersions,
             vulnerableVersionRange,
             firstPatchedVersionIdentifier,
           )
+
+          if (activeBranches.find(b => b.newVersion === newVersion)) {
+            debugFn(`skip: open PR found for ${name}@${newVersion}`)
+            continue infosLoop
+          }
+
           const newVersionPackument = newVersion
             ? packument.versions[newVersion]
             : undefined
