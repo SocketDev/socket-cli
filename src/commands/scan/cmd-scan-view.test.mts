@@ -28,7 +28,6 @@ describe('socket scan view', async () => {
           When no output path is given the contents is sent to stdout.
 
           Options
-            --help            Print this help
             --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown

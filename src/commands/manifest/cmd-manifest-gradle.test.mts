@@ -22,7 +22,6 @@ describe('socket manifest gradle', async () => {
           Options
             --bin             Location of gradlew binary to use, default: CWD/gradlew
             --gradleOpts      Additional options to pass on to ./gradlew, see \`./gradlew --help\`
-            --help            Print this help
             --verbose         Print debug messages
 
           Uses gradle, preferably through your local project \`gradlew\`, to generate a

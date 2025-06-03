@@ -28,7 +28,6 @@ describe('socket repos list', async () => {
           Options
             --all             By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --perPage.
             --direction       Direction option
-            --help            Print this help
             --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown

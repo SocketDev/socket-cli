@@ -29,6 +29,7 @@ describe('socket root command', async () => {
           npm               npm wrapper functionality
           npx               npx wrapper functionality
           optimize          Optimize dependencies with @socketregistry overrides
+          organization      Account details
           package           Commands relating to looking up published packages
           raw-npm           Temporarily disable the Socket npm wrapper
           raw-npx           Temporarily disable the Socket npx wrapper
@@ -42,23 +43,21 @@ describe('socket root command', async () => {
           --config          Allows you to temp overrides the internal CLI config
           --dryRun          Do input validation for a sub-command and then exit
           --help            Give you detailed help information about any sub-command
-          --json            Ensure stdout only receives proper JSON (Most non-interactive commands support this)
-          --markdown        Ensure stdout only receives a markdown report (Many commands that support --json also support this)
           --version         Show version of CLI
 
         Examples
           $ socket --help
-          $ socket scan create
-          $ socket package score npm left-pad"
+          $ socket scan create --json
+          $ socket package score npm left-pad --markdown"
     `,
     )
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-        "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>"
-      `)
+      "
+         _____         _       _        /---------------
+        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+        |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+        |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>"
+    `)
 
     expect(code, 'explicit help should exit with code 0').toBe(0)
     expect(stderr, 'banner includes base command').toContain('`socket`')
@@ -71,75 +70,73 @@ describe('socket root command', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-      "CLI for Socket.dev
+        "CLI for Socket.dev
 
-        Usage
-          $ socket <command>
+          Usage
+            $ socket <command>
 
 
-          All commands have their own --help page
+            All commands have their own --help page
 
-        Main commands
+          Main commands
 
-          socket login             Setup the CLI with an API Token and defaults
-          socket scan create       Create a new Scan and report
-          socket package score     Request the (shallow) security score of a particular package
-          socket ci                Shorthand for CI; socket scan create --report --no-interactive
+            socket login             Setup the CLI with an API Token and defaults
+            socket scan create       Create a new Scan and report
+            socket package score     Request the (shallow) security score of a particular package
+            socket ci                Shorthand for CI; socket scan create --report --no-interactive
 
-        Socket API
+          Socket API
 
-          analytics                Look up analytics data
-          audit-log                Look up the audit log for an organization
-          organization             Manage organization account details
-          package                  Look up published package details
-          repository               Manage registered repositories
-          scan                     Manage Socket scans
-          threat-feed              [beta] View the threat feed
+            analytics                Look up analytics data
+            audit-log                Look up the audit log for an organization
+            organization             Manage organization account details
+            package                  Look up published package details
+            repository               Manage registered repositories
+            scan                     Manage Socket scans
+            threat-feed              [beta] View the threat feed
 
-        Local tools
+          Local tools
 
-          fix                      Update dependencies with "fixable" Socket alerts
-          manifest                 Generate a dependency manifest for certain languages
-          npm                      npm wrapper functionality
-          npx                      npx wrapper functionality
-          optimize                 Optimize dependencies with @socketregistry overrides
-          raw-npm                  Temporarily disable the Socket npm wrapper
-          raw-npx                  Temporarily disable the Socket npx wrapper
+            fix                      Update dependencies with "fixable" Socket alerts
+            manifest                 Generate a dependency manifest for certain languages
+            npm                      npm wrapper functionality
+            npx                      npx wrapper functionality
+            optimize                 Optimize dependencies with @socketregistry overrides
+            raw-npm                  Temporarily disable the Socket npm wrapper
+            raw-npx                  Temporarily disable the Socket npx wrapper
 
-        CLI configuration
+          CLI configuration
 
-          config                   Manage the CLI configuration directly
-          install                  Manually install CLI tab completion on your system
-          login                    Socket API login and CLI setup
-          logout                   Socket API logout
-          uninstall                Remove the CLI tab completion from your system
-          wrapper                  Enable or disable the Socket npm/npx wrapper
+            config                   Manage the CLI configuration directly
+            install                  Manually install CLI tab completion on your system
+            login                    Socket API login and CLI setup
+            logout                   Socket API logout
+            uninstall                Remove the CLI tab completion from your system
+            wrapper                  Enable or disable the Socket npm/npx wrapper
 
-        Options       (Note: all CLI commands have these flags even when not displayed in their help)
+          Options       (Note: all CLI commands have these flags even when not displayed in their help)
 
-          --config                 Allows you to temp overrides the internal CLI config
-          --dryRun                 Do input validation for a sub-command and then exit
-          --help                   Give you detailed help information about any sub-command
-          --json                   Ensure stdout only receives proper JSON (Most non-interactive commands support this)
-          --markdown               Ensure stdout only receives a markdown report (Many commands that support --json also support this)
-          --version                Show version of CLI
+            --config                 Allows you to temp overrides the internal CLI config
+            --dryRun                 Do input validation for a sub-command and then exit
+            --help                   Give you detailed help information about any sub-command
+            --version                Show version of CLI
 
-        Examples
-          $ socket --help
-          $ socket scan create
-          $ socket package score npm left-pad"
-    `,
+          Examples
+            $ socket --help
+            $ socket scan create --json
+            $ socket package score npm left-pad --markdown"
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-      "
-         \\x1b[31m\\xd7\\x1b[39m Found commands in the list that were not marked as public or were not defined at all: [ 'config', 'install', 'organization', 'uninstall' ]
-         _____         _       _        /---------------
-        |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
-        |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-        |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
-      \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-      \\x1b[39m"
-    `)
+        "
+           \\x1b[31m\\xd7\\x1b[39m Found commands in the list that were not marked as public or were not defined at all: [ 'config', 'install', 'uninstall' ]
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
+        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
+        \\x1b[39m"
+      `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain('`socket`')

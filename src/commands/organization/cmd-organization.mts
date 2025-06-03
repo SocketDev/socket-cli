@@ -1,4 +1,6 @@
 import { cmdOrganizationList } from './cmd-organization-list.mts'
+import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.mts'
+import { cmdOrganizationPolicyPolicy } from './cmd-organization-policy-security.mts'
 import { cmdOrganizationPolicy } from './cmd-organization-policy.mts'
 import { cmdOrganizationQuota } from './cmd-organization-quota.mts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
@@ -9,11 +11,7 @@ const description = 'Account details'
 
 export const cmdOrganization: CliSubcommand = {
   description,
-  // Hidden because it was broken all this time (nobody could be using it)
-  // and we're not sure if it's useful to anyone in its current state.
-  // Until we do, we'll hide this to keep the help tidier.
-  // And later, we may simply move this under `scan`, anyways.
-  hidden: true,
+  hidden: false,
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
@@ -22,6 +20,18 @@ export const cmdOrganization: CliSubcommand = {
         policy: cmdOrganizationPolicy,
       },
       {
+        aliases: {
+          license: {
+            description: cmdOrganizationPolicyLicense.description,
+            hidden: true,
+            argv: ['policy', 'license'],
+          },
+          security: {
+            description: cmdOrganizationPolicyPolicy.description,
+            hidden: true,
+            argv: ['policy', 'security'],
+          },
+        },
         argv,
         description,
         defaultSub: 'list', // Backwards compat

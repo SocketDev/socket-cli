@@ -25,7 +25,7 @@ describe('socket uninstall', async () => {
             (none)
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
             $ socket uninstall --help"

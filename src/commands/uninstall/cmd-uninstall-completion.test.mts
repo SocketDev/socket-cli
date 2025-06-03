@@ -30,7 +30,7 @@ describe('socket uninstall completion', async () => {
           tab completion that is registered for it in bash.
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
 

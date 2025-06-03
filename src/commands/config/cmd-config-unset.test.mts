@@ -22,7 +22,6 @@ describe('socket config unset', async () => {
             $ socket config unset <org slug>
 
           Options
-            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
 

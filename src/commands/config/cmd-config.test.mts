@@ -29,7 +29,7 @@ describe('socket config', async () => {
             unset             Clear the value of a local CLI config item
 
           Options
-            --help            Print this help
+            (none)
 
           Examples
             $ socket config --help"

@@ -25,7 +25,6 @@ describe('socket info', async () => {
 
           Options
             --all             Include all issues
-            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown
             --strict          Exits with an error code if any matching issues are found

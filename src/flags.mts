@@ -30,14 +30,21 @@ export const commonFlags: MeowFlags = {
     type: 'boolean',
     default: false,
     shortFlag: 'h',
+    hidden: true,
     description: 'Print this help',
   },
-  silent: {
+  nobanner: {
+    // I know this would be `--no-banner` but that doesn't work with cdxgen.
+    // Mostly for internal usage anyways.
     type: 'boolean',
     default: false,
     hidden: true,
-    shortFlag: 's',
-    description: 'Make the CLI less chatty',
+    description: 'Hide the Socket banner',
+  },
+  version: {
+    type: 'boolean',
+    hidden: true,
+    description: 'Print the app version',
   },
 }
 

@@ -26,7 +26,6 @@ describe('socket organization list', async () => {
             - Permissions: none (does need a token)
 
           Options
-            --help            Print this help
             --json            Output result as json
             --markdown        Output result as markdown"
       `,

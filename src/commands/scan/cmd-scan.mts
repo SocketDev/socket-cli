@@ -32,7 +32,17 @@ export const cmdScan: CliSubcommand = {
       },
       {
         aliases: {
-          // Backwards compat. TODO: Drop next major bump
+          meta: {
+            description: cmdScanMetadata.description,
+            hidden: true,
+            argv: ['metadata'],
+          },
+          reachability: {
+            description: cmdScanReach.description,
+            hidden: true,
+            argv: ['reach'],
+          },
+          // Backwards compat. TODO: Drop next major bump; isTestingV1
           stream: {
             description: cmdScanView.description,
             hidden: true,
