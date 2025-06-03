@@ -785,6 +785,8 @@ export async function pnpmFix(
               cause: `Update failed for ${oldId} in ${workspace}${error ? '; ' + error : ''}`,
             }
           }
+          debugFn('name:', name)
+          debugFn('increment: count', count + 1)
           if (++count >= limit) {
             logger.dedent()
             spinner?.dedent()
