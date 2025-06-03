@@ -452,7 +452,11 @@ export async function pnpmFix(
 
           if (activeBranches.find(b => b.newVersion === newVersion)) {
             debugFn(`skip: open PR found for ${name}@${newVersion}`)
-            count += 1
+            if (++count >= limit) {
+              logger.dedent()
+              spinner?.dedent()
+              break infoEntriesLoop
+            }
             continue infosLoop
           }
 
