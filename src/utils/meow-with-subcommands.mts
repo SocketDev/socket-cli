@@ -120,6 +120,11 @@ export async function meowWithSubcommands(
       hidden: false, // Only show on root
       description: 'Show version of CLI',
     }
+    delete flags['json']
+    delete flags['markdown']
+  } else {
+    delete flags['help']
+    delete flags['version']
   }
 
   // This is basically a dry-run parse of cli args and flags. We use this to
