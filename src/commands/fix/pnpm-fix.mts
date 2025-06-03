@@ -21,6 +21,7 @@ import {
   getSocketBranchFullNameComponent,
   getSocketBranchName,
   getSocketBranchPurlTypeComponent,
+  getSocketBranchWorkspaceComponent,
   getSocketCommitMessage,
   gitCreateAndPushBranch,
   gitRemoteBranchExists,
@@ -172,12 +173,6 @@ export async function pnpmFix(
         })
       : []
 
-  if (openPrs.length) {
-    debugFn(`found: ${openPrs.length} open PRs\n`, openPrs)
-  } else {
-    debugFn('miss: 0 open PRs found')
-  }
-
   let count = 0
 
   let actualTree: NodeClass | undefined
@@ -237,11 +232,11 @@ export async function pnpmFix(
     alertsMap = purls.length
       ? await getAlertsMapFromPurls(
           purls,
-          getAlertsMapOptions({ limit: limit + openPrs.length }),
+          getAlertsMapOptions({ limit: Math.max(limit, openPrs.length) }),
         )
       : await getAlertsMapFromPnpmLockfile(
           lockfile,
-          getAlertsMapOptions({ limit: limit + openPrs.length }),
+          getAlertsMapOptions({ limit: Math.max(limit, openPrs.length) }),
         )
   } catch (e) {
     spinner?.stop()
@@ -254,7 +249,7 @@ export async function pnpmFix(
   }
 
   const infoByPartialPurl = getCveInfoFromAlertsMap(alertsMap, {
-    limit: limit + openPrs.length,
+    limit: Math.max(limit, openPrs.length),
   })
   if (!infoByPartialPurl) {
     spinner?.stop()
@@ -361,6 +356,9 @@ export async function pnpmFix(
       const workspace = isWorkspaceRoot
         ? 'root'
         : path.relative(rootPath, pkgPath)
+      const branchWorkspace = isCi
+        ? getSocketBranchWorkspaceComponent(workspace)
+        : ''
 
       // actualTree may not be defined on the first iteration of pkgJsonPathsLoop.
       if (!actualTree) {
@@ -450,7 +448,12 @@ export async function pnpmFix(
             firstPatchedVersionIdentifier,
           )
 
-          if (activeBranches.find(b => b.newVersion === newVersion)) {
+          if (
+            activeBranches.find(
+              b =>
+                b.workspace === branchWorkspace && b.newVersion === newVersion,
+            )
+          ) {
             debugFn(`skip: open PR found for ${name}@${newVersion}`)
             if (++count >= limit) {
               logger.dedent()
