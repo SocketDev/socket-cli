@@ -357,14 +357,15 @@ async function testAndDownloadManifestFile({
   repoApiUrl: string
   githubToken: string
 }): Promise<CResult<{ isManifest: boolean }>> {
-  debugFn('test: file', file)
+  debugFn('testing: file', file)
 
   if (!SUPPORTED_FILE_PATTERNS.some(regex => regex.test(file))) {
+    debugFn('  - skip: not a known pattern')
     // Not an error.
     return { ok: true, data: { isManifest: false } }
   }
 
-  debugFn('found: manifest file', file)
+  debugFn('found: manifest file, going to attempt to download it;', file)
 
   const result = await downloadManifestFile({
     file,
@@ -450,11 +451,15 @@ async function streamDownloadWithFetch(
     response = await fetch(downloadUrl)
 
     if (!response.ok) {
-      const errorMsg = `Download failed: ${response.status} ${response.statusText} for ${downloadUrl}`
+      const errorMsg = `Download failed due to bad server response: ${response.status} ${response.statusText} for ${downloadUrl}`
+      logger.fail(errorMsg)
       return { ok: false, message: 'Download Failed', cause: errorMsg }
     }
 
     if (!response.body) {
+      logger.fail(
+        `Download failed because the server response was empty, for ${downloadUrl}`,
+      )
       return {
         ok: false,
         message: 'Download Failed',
@@ -471,7 +476,13 @@ async function streamDownloadWithFetch(
     // It resolves when the piping is fully complete and fileStream is closed.
     return { ok: true, data: localPath }
   } catch (error) {
-    logger.fail('An error occurred trying to download the file...')
+    logger.fail(
+      'An error was thrown while trying to download a manifest file... url:',
+      downloadUrl,
+    )
+    debugFn('Raw error:')
+    debugFn(error)
+
     // If an error occurs and fileStream was created, attempt to clean up.
     if (fs.existsSync(localPath)) {
       // Check if fileStream was even opened before trying to delete
@@ -494,6 +505,7 @@ async function streamDownloadWithFetch(
       // If error was due to bad HTTP status
       detailedError += ` (HTTP Status: ${response.status} ${response.statusText})`
     }
+    debugFn(detailedError)
     return { ok: false, message: 'Download Failed', cause: detailedError }
   }
 }
