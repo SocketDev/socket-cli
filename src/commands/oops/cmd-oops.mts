@@ -17,6 +17,12 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags,
     ...outputFlags,
+    throw: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Throw an explicit error even if --json or --markdown are set',
+    },
   },
   help: (parentName, config) => `
     Usage
@@ -44,14 +50,14 @@ async function run(
     parentName,
   })
 
-  const { json, markdown } = cli.flags
+  const { json, markdown, throw: justThrow } = cli.flags
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
-  if (json) {
+  if (json && !justThrow) {
     process.exitCode = 1
     logger.log(
       serializeResultJson({
@@ -62,7 +68,7 @@ async function run(
     )
   }
 
-  if (markdown) {
+  if (markdown && !justThrow) {
     process.exitCode = 1
     logger.fail(
       failMsgWithBadge('Oops', 'This error was intentionally left blank'),
