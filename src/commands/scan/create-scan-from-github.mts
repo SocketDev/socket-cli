@@ -467,6 +467,13 @@ async function streamDownloadWithFetch(
       }
     }
 
+    // Make sure the dir exists. It may be nested and we need to construct that
+    // before starting the download.
+    const dir = path.dirname(localPath)
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+
     const fileStream = fs.createWriteStream(localPath)
 
     // Using stream.pipeline for better error handling and cleanup
