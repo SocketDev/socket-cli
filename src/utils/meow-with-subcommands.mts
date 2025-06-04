@@ -97,11 +97,11 @@ export async function meowWithSubcommands(
   // No further args or first arg is a flag (shrug)
   const isRootCommand =
     name === 'socket' &&
-    (!commandOrAliasName || commandOrAliasName?.startsWith('-'))
+    (!commandOrAliasName || commandOrAliasName?.startsWith?.('-'))
 
   // Try to support `socket <purl>` as a shorthand for `socket package score <purl>`
   if (!isRootCommand) {
-    if (commandOrAliasName?.startsWith('pkg:')) {
+    if (commandOrAliasName?.startsWith?.('pkg:')) {
       logger.info('Note: Invoking `socket package score` now...')
       return await meowWithSubcommands(subcommands, {
         ...options,
