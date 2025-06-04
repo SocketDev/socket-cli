@@ -1,0 +1,79 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package shallow pkg:nuget/needpluscommonlibrary@1.0.0 --json",
+  "    ": "It's a nuget example.",
+
+  "ok": true,
+  "data": [
+    {
+      "id": "25365656705",
+      "size": -2147483648,
+      "type": "nuget",
+      "name": "needpluscommonlibrary",
+      "version": "1.0.0",
+      "alerts": [
+        {
+          "key": "QcOiRWGZHFCsg4F7HD7WFQ8GX5GFipIFumyREwxAOszE",
+          "type": "unpopularPackage",
+          "severity": "middle",
+          "category": "quality",
+          "action": "monitor"
+        },
+        {
+          "key": "QHpSpibUzkquAkqaL_p7xsvhzBxdiOMJ7EFOV8Vo7bXg",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Qhrcrs8C-wpnK_tuOK38vsM9NXIsO5mtEIhc9C8JLxoo",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QM3FaNvuD2gcRqFHxLCawU64fNZg7YBKAI2nwIR55qE0",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QQYS9GbDdATF63BCEMuIB9Y3zsqqAPnikcZDKM8puxCQ",
+          "type": "unidentifiedLicense",
+          "severity": "low",
+          "category": "license",
+          "props": {
+            "location": "NeedplusCommonLibrary.nuspec",
+            "maybeByteSpan": {
+              "end": 303,
+              "start": 270
+            },
+            "match_strength": 0,
+            "maybeTruncatedSource": "http://dev.naver.com/projects/ncl"
+          },
+          "action": "ignore"
+        },
+        {
+          "key": "QyrILU7exT4Cr3BP4-lzyHCM08wmnW8lFBf0GYhChC8k",
+          "type": "shellAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.86,
+        "quality": 0.86,
+        "supplyChain": 0.91,
+        "vulnerability": 1
+      },
+      "batchIndex": 0,
+      "licenseDetails": []
+    }
+  ]
+}

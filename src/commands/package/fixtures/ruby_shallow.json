@@ -1,0 +1,90 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package shallow pkg:gem/plaid@14.11.0?platform=ruby --json",
+  "    ": "It's a ruby example.",
+
+  "ok": true,
+  "data": [
+    {
+      "id": "37343115532",
+      "size": -2147483648,
+      "type": "gem",
+      "name": "plaid",
+      "version": "14.11.0",
+      "alerts": [
+        {
+          "key": "QC-Zh7b7RCkl-fH_bg_2_sbAkxzQtyrSyKivAs6ceJAU",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "doc/rdoc/js/jquery-1.3.2.min.js",
+          "action": "ignore"
+        },
+        {
+          "key": "QCZSs9rdbcOLUcPqiqHyX-W_QhbZN6xqVDSWF-Jcfn5Y",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QI83bv-pxTSqQZQMIRWV3X0oDmKdlA96xc4EvJtyGnsk",
+          "type": "envVars",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QOR06D8DR9_frmpbG3RmbpkFqC3PzRxVz0D5mpfY6wFc",
+          "type": "gptMalware",
+          "severity": "high",
+          "category": "supplyChainRisk",
+          "file": "pkg/plaid-14.1.0.gem",
+          "props": {
+            "notes": "Extremely high-risk package due to complete code obfuscation. The source code is unreadable and appears to be intentionally encrypted or encoded to prevent analysis. This level of obfuscation is a major security red flag and the package should not be used.",
+            "severity": 0.85,
+            "confidence": 1
+          },
+          "action": "ignore"
+        },
+        {
+          "key": "QvR8wPIA7fzSUfKZImUCW_8FEFiuTUnMmSTb0-iSxtT8",
+          "type": "obfuscatedFile",
+          "severity": "high",
+          "category": "supplyChainRisk",
+          "file": "pkg/plaid-14.3.0.gem",
+          "props": {
+            "notes": "Cannot perform security analysis - content appears to be binary data or heavily corrupted text rather than readable source code. Proper analysis would require decoding or accessing the original source code.",
+            "confidence": 0.85
+          },
+          "action": "warn"
+        },
+        {
+          "key": "QXPOGwOtwzgtzQXIS6gaVpnLbXp1uNW195smn6EZFuhA",
+          "type": "shellAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QZhzHR5ZGwxHxb7eQpMnsHciv_q2-osP06yg14TFjiKg",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.86,
+        "quality": 1,
+        "supplyChain": 0.86,
+        "vulnerability": 1
+      },
+      "batchIndex": 0,
+      "license": "MIT",
+      "licenseDetails": []
+    }
+  ]
+}

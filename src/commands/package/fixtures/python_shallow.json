@@ -1,0 +1,148 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package shallow pkg:pypi/discordpydebug@0.0.4?artifact_id=tar-gz --json",
+  "    ": "It's a python example.",
+
+  "ok": true,
+  "data": [
+    {
+      "id": "18233304194",
+      "author": ["JadenV"],
+      "size": 4979,
+      "type": "pypi",
+      "name": "discordpydebug",
+      "version": "0.0.4",
+      "release": "tar-gz",
+      "alerts": [
+        {
+          "key": "QK10CANN9jKjZ3JNWacfRclC4apGhqoBgcU4ovr_rHiY",
+          "type": "unpopularPackage",
+          "severity": "middle",
+          "category": "quality",
+          "action": "monitor"
+        },
+        {
+          "key": "QT3Hno8Yw2OzZRk0HJt35prb_-Yuc9te_fOuuNVuj0eY",
+          "type": "unidentifiedLicense",
+          "severity": "low",
+          "category": "license",
+          "file": "discordpydebug-0.0.4/PKG-INFO",
+          "start": 192,
+          "end": 199,
+          "props": {
+            "location": "discordpydebug-0.0.4/PKG-INFO",
+            "maybeByteSpan": {
+              "end": 199,
+              "start": 192
+            },
+            "match_strength": 0,
+            "maybeTruncatedSource": "UNKNOWN"
+          },
+          "action": "ignore"
+        },
+        {
+          "key": "QCoaJyqBSWwm4u_FRu3IiBSaSsHz3wXi9D2giXlMX1Bs",
+          "type": "unidentifiedLicense",
+          "severity": "low",
+          "category": "license",
+          "file": "discordpydebug-0.0.4/src/Discordpydebug.egg-info/PKG-INFO",
+          "start": 192,
+          "end": 199,
+          "props": {
+            "location": "discordpydebug-0.0.4/src/Discordpydebug.egg-info/PKG-INFO",
+            "maybeByteSpan": {
+              "end": 199,
+              "start": 192
+            },
+            "match_strength": 0,
+            "maybeTruncatedSource": "UNKNOWN"
+          },
+          "action": "ignore"
+        },
+        {
+          "key": "QI-7hIeLbOooO24J81LBzClc-adS9SVqFu_0yHFgAD50",
+          "type": "malware",
+          "severity": "critical",
+          "category": "supplyChainRisk",
+          "file": "discordpydebug-0.0.4/src/discordpydebug/__init__.py",
+          "props": {
+            "id": 306150,
+            "note": "The code contains significant security risks, including potential remote code execution and data exfiltration, due to its interaction with a suspicious remote server. The use of subprocess to execute commands from an untrusted source is particularly concerning."
+          },
+          "action": "error",
+          "fix": {
+            "type": "remove",
+            "description": "Remove this package and either replace with a verified alternative from a trusted source or revert to a known-safe previous version."
+          }
+        },
+        {
+          "key": "Q7741rMGDCnojUlSiWvpQ30iEu5ASL0YtBcYPBNkEZG0",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "file": "discordpydebug-0.0.4/src/discordpydebug/__init__.py",
+          "action": "ignore"
+        },
+        {
+          "key": "QdIHbJUc-xF0XPtamDpNJKhQAq5lRwwkobwmgvv5P6Ko",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "discordpydebug-0.0.4/src/discordpydebug/__init__.py",
+          "start": 40,
+          "end": 55,
+          "action": "ignore"
+        },
+        {
+          "key": "QdIHbJUc-xF0XPtamDpNJKhQAq5lRwwkobwmgvv5P6Ko",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "discordpydebug-0.0.4/src/discordpydebug/__init__.py",
+          "start": 40,
+          "end": 62,
+          "action": "ignore"
+        },
+        {
+          "key": "Q8CBXjiuHycxgtNztu-byd7vHeHEu6HbkGbKAMRbFCPk",
+          "type": "shellAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "discordpydebug-0.0.4/src/discordpydebug/__init__.py",
+          "start": 19,
+          "end": 29,
+          "action": "ignore"
+        },
+        {
+          "key": "Q8CBXjiuHycxgtNztu-byd7vHeHEu6HbkGbKAMRbFCPk",
+          "type": "shellAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "discordpydebug-0.0.4/src/discordpydebug/__init__.py",
+          "start": 12,
+          "end": 29,
+          "action": "ignore"
+        },
+        {
+          "key": "Q7741rMGDCnojUlSiWvpQ30iEu5ASL0YtBcYPBNkEZG0",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "file": "discordpydebug-0.0.4/setup.py",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.22,
+        "quality": 0.99,
+        "supplyChain": 0.22,
+        "vulnerability": 1
+      },
+      "batchIndex": 0,
+      "license": "MIT",
+      "licenseDetails": []
+    }
+  ]
+}

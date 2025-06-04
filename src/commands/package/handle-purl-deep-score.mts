@@ -1,5 +1,5 @@
 import { fetchPurlDeepScore } from './fetch-purl-deep-score.mts'
-import { outputPurlScore } from './output-purl-score.mts'
+import { outputPurlsDeepScore } from './output-purls-deep-score.mts'
 
 import type { OutputKind } from '../../types.mts'
 
@@ -9,5 +9,5 @@ export async function handlePurlDeepScore(
 ) {
   const result = await fetchPurlDeepScore(purl)
 
-  await outputPurlScore(purl, result, outputKind)
+  await outputPurlsDeepScore(purl, result, outputKind)
 }

@@ -1,0 +1,160 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package deep 'pkg:maven/org.apache.beam/beam-runners-flink-1.15-job-server@2.58.0?classifier=tests&ext=jar' --json",
+  "    ": "It's a maven example",
+
+  "ok": true,
+  "data": {
+    "purl": "pkg:maven/org.apache.beam/beam-runners-flink-1.15-job-server@2.58.0?classifier=tests&ext=jar",
+    "self": {
+      "purl": "pkg:maven/org.apache.beam/beam-runners-flink-1.15-job-server@2.58.0?classifier=tests&ext=jar",
+      "score": {
+        "license": 100,
+        "maintenance": 100,
+        "overall": 100,
+        "quality": 100,
+        "supplyChain": 100,
+        "vulnerability": 100
+      },
+      "capabilities": [],
+      "alerts": []
+    },
+    "transitively": {
+      "dependencyCount": 404,
+      "func": "min",
+      "score": {
+        "license": 50,
+        "maintenance": 71,
+        "overall": 6,
+        "quality": 88,
+        "supplyChain": 6,
+        "vulnerability": 25
+      },
+      "lowest": {
+        "license": "maven/com.fasterxml.jackson.datatype/jackson-datatype-joda@2.15.4",
+        "maintenance": "maven/org.apache.beam/beam-sdks-java-extensions-arrow@2.58.0",
+        "overall": "maven/io.trino.hadoop/hadoop-apache@3.2.0-12",
+        "quality": "maven/log4j/log4j@1.2.17",
+        "supplyChain": "maven/io.trino.hadoop/hadoop-apache@3.2.0-12",
+        "vulnerability": "maven/log4j/log4j@1.2.17"
+      },
+      "capabilities": ["env", "eval", "fs", "net", "shell", "unsafe"],
+      "alerts": [
+        {
+          "name": "criticalCVE",
+          "severity": "critical",
+          "category": "vulnerability",
+          "example": "maven/log4j/log4j@1.2.17"
+        },
+        {
+          "name": "didYouMean",
+          "severity": "critical",
+          "category": "supplyChainRisk",
+          "example": "maven/io.trino.hadoop/hadoop-apache@3.2.0-12"
+        },
+        {
+          "name": "cve",
+          "severity": "high",
+          "category": "vulnerability",
+          "example": "maven/log4j/log4j@1.2.17"
+        },
+        {
+          "name": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "maven/org.apache.beam/beam-vendor-grpc-1_60_1@0.2"
+        },
+        {
+          "name": "mediumCVE",
+          "severity": "middle",
+          "category": "vulnerability",
+          "example": "maven/org.apache.ant/ant@1.10.9"
+        },
+        {
+          "name": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "maven/log4j/log4j@1.2.17"
+        },
+        {
+          "name": "potentialVulnerability",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "maven/log4j/log4j@1.2.17"
+        },
+        {
+          "name": "shellAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "maven/org.apache.beam/beam-vendor-calcite-1_28_0@0.2"
+        },
+        {
+          "name": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "maven/log4j/log4j@1.2.17"
+        },
+        {
+          "name": "copyleftLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "maven/javax.annotation/javax.annotation-api@1.3.2"
+        },
+        {
+          "name": "envVars",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "maven/org.apache.beam/beam-vendor-calcite-1_28_0@0.2"
+        },
+        {
+          "name": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "maven/log4j/log4j@1.2.17"
+        },
+        {
+          "name": "gptAnomaly",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "maven/io.netty/netty-transport@4.1.100.Final"
+        },
+        {
+          "name": "licenseException",
+          "severity": "low",
+          "category": "license",
+          "example": "maven/javax.annotation/javax.annotation-api@1.3.2"
+        },
+        {
+          "name": "mildCVE",
+          "severity": "low",
+          "category": "vulnerability",
+          "example": "maven/org.apache.hadoop/hadoop-common@2.10.2"
+        },
+        {
+          "name": "noLicenseFound",
+          "severity": "low",
+          "category": "license",
+          "example": "maven/com.google.guava/failureaccess@1.0.2"
+        },
+        {
+          "name": "nonpermissiveLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "maven/org.apache.commons/commons-math3@3.6.1"
+        },
+        {
+          "name": "unidentifiedLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "maven/log4j/log4j@1.2.17"
+        },
+        {
+          "name": "unmaintained",
+          "severity": "low",
+          "category": "maintenance",
+          "example": "maven/log4j/log4j@1.2.17"
+        }
+      ]
+    }
+  }
+}
