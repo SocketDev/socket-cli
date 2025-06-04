@@ -20,6 +20,7 @@ import {
   getSocketBranchFullNameComponent,
   getSocketBranchName,
   getSocketBranchPurlTypeComponent,
+  getSocketBranchWorkspaceComponent,
   getSocketCommitMessage,
   gitCreateAndPushBranch,
   gitRemoteBranchExists,
@@ -140,11 +141,7 @@ export async function npmFix(
         })
       : []
 
-  if (openPrs.length) {
-    debugFn(`found: ${openPrs.length} open PRs`)
-  }
-
-  let count = isCi ? openPrs.length : 0
+  let count = 0
 
   const arb = new Arborist({
     path: rootPath,
@@ -159,11 +156,11 @@ export async function npmFix(
     alertsMap = purls.length
       ? await getAlertsMapFromPurls(
           purls,
-          getAlertsMapOptions({ limit: limit + openPrs.length }),
+          getAlertsMapOptions({ limit: Math.max(limit, openPrs.length) }),
         )
       : await getAlertsMapFromArborist(
           arb,
-          getAlertsMapOptions({ limit: limit + openPrs.length }),
+          getAlertsMapOptions({ limit: Math.max(limit, openPrs.length) }),
         )
   } catch (e) {
     spinner?.stop()
@@ -176,7 +173,7 @@ export async function npmFix(
   }
 
   const infoByPartialPurl = getCveInfoFromAlertsMap(alertsMap, {
-    limit: limit + openPrs.length,
+    limit: Math.max(limit, openPrs.length),
   })
   if (!infoByPartialPurl) {
     spinner?.stop()
@@ -222,11 +219,16 @@ export async function npmFix(
     const infoEntry = sortedInfoEntries[i]!
     const partialPurlObj = getPurlObject(infoEntry[0])
     const name = resolvePackageName(partialPurlObj)
-    let infos = [...infoEntry[1].values()]
+
+    const infos = [...infoEntry[1].values()]
+    if (!infos.length) {
+      continue infoEntriesLoop
+    }
+
+    const activeBranches: SocketBranchParseResult[] = []
     if (isCi) {
       const branchFullName = getSocketBranchFullNameComponent(partialPurlObj)
       const branchPurlType = getSocketBranchPurlTypeComponent(partialPurlObj)
-      const activeBranches: SocketBranchParseResult[] = []
       for (const pr of openPrs) {
         const parsedBranch = branchParser!(pr.headRefName)
         if (
@@ -244,16 +246,6 @@ export async function npmFix(
       } else if (openPrs.length) {
         debugFn('miss: 0 active branches found')
       }
-      infos = infos.filter(
-        info =>
-          !activeBranches.find(
-            b => b.newVersion === info.firstPatchedVersionIdentifier,
-          ),
-      )
-    }
-
-    if (!infos.length) {
-      continue infoEntriesLoop
     }
 
     logger.log(`Processing vulns for ${name}:`)
@@ -289,6 +281,9 @@ export async function npmFix(
       const workspace = isWorkspaceRoot
         ? 'root'
         : path.relative(rootPath, pkgPath)
+      const branchWorkspace = isCi
+        ? getSocketBranchWorkspaceComponent(workspace)
+        : ''
 
       const oldVersions = arrayUnique(
         findPackageNodes(actualTree, name)
@@ -343,6 +338,22 @@ export async function npmFix(
             vulnerableVersionRange,
             firstPatchedVersionIdentifier,
           )
+
+          if (
+            activeBranches.find(
+              b =>
+                b.workspace === branchWorkspace && b.newVersion === newVersion,
+            )
+          ) {
+            debugFn(`skip: open PR found for ${name}@${newVersion}`)
+            if (++count >= limit) {
+              logger.dedent()
+              spinner?.dedent()
+              break infoEntriesLoop
+            }
+            continue infosLoop
+          }
+
           const newVersionPackument = newVersion
             ? packument.versions[newVersion]
             : undefined
