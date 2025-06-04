@@ -1,0 +1,105 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package shallow pkg:npm/bowserify@10.2.1 --json",
+  "    ": "It's an npm example.",
+
+  "ok": true,
+  "data": [
+    {
+      "id": "218937812",
+      "author": ["jzetlen"],
+      "size": 288533,
+      "type": "npm",
+      "name": "bowserify",
+      "version": "10.2.1",
+      "alerts": [
+        {
+          "key": "QCzQCPBS741CfI3yurbOFtIFkqmc-tZYuBn_KFkBNkyQ",
+          "type": "didYouMean",
+          "severity": "critical",
+          "category": "supplyChainRisk",
+          "props": {
+            "alternatePackage": "browserify"
+          },
+          "action": "warn"
+        },
+        {
+          "key": "QW5Xmqn6D3l9gMIDLymAV8_5sXUHwoa-koyccKhibv7g",
+          "type": "troll",
+          "severity": "high",
+          "category": "supplyChainRisk",
+          "props": {
+            "id": 16,
+            "note": "This package is a parody of browserify"
+          },
+          "action": "warn"
+        },
+        {
+          "key": "Q6Lyt_tIpn-R2heJKTEycfEnPAIRK383f6hs9ZkG6Kl8",
+          "type": "unmaintained",
+          "severity": "low",
+          "category": "maintenance",
+          "props": {
+            "lastPublish": "2015-05-21T21:38:06.504Z"
+          },
+          "action": "ignore"
+        },
+        {
+          "key": "Qe9I_crHp-jI9tctUWA3wY_GR08BcmG64F0fHDH2Wy2A",
+          "type": "unpopularPackage",
+          "severity": "middle",
+          "category": "quality",
+          "action": "monitor"
+        },
+        {
+          "key": "QaErFQqs8ac2bZUZW_ViFRsv8IfgUvQFnhIPR3PkUQw4",
+          "type": "debugAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "props": {
+            "module": "module-deps"
+          },
+          "action": "ignore"
+        },
+        {
+          "key": "QAIHs2KR4LDH4GKo7Q77MCqZZ7tnbD5AZCdKPm0qrghA",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "props": {
+            "module": "fs"
+          },
+          "action": "ignore"
+        },
+        {
+          "key": "Qdf9eklxSMO6Swreitf8J0QBHKOlHASTuyxSvbA7rLHg",
+          "type": "dynamicRequire",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Q_f4RyCSZsKFN9YpzURqL_ENwTlYrMmUkVKNQtLNvOwE",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "props": {
+            "module": "http-browserify"
+          },
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 0.75,
+        "overall": 0.36,
+        "quality": 0.99,
+        "supplyChain": 0.36,
+        "vulnerability": 1
+      },
+      "batchIndex": 0,
+      "license": "BSD-3-Clause AND MIT AND NCSA",
+      "licenseDetails": []
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package shallow 'pkg:maven/org.apache.beam/beam-runners-flink-1.15-job-server@2.58.0?classifier=tests&ext=jar' --json",
+  "    ": "This is an example maven response. Most alerts were snipped from this. The total json was 34mb.",
+
+  "ok": true,
+  "data": [
+    {
+      "id": "28653807553",
+      "size": 1164128573,
+      "type": "maven",
+      "namespace": "org.apache.beam",
+      "name": "beam-runners-flink-1.15-job-server",
+      "version": "2.58.0",
+      "alerts": [
+        {
+          "key": "QfZ80rqPZtS5sh1rBVgwshMMG7TPuqBraCnEGwWnroU4",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "autovalue/shaded/com/google/common/hash/Murmur3_32HashFunction.class",
+          "start": 1271,
+          "end": 1288,
+          "action": "ignore"
+        },
+        {
+          "key": "QfZ80rqPZtS5sh1rBVgwshMMG7TPuqBraCnEGwWnroU4",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "autovalue/shaded/com/google/common/hash/SipHashFunction.class",
+          "start": 1481,
+          "end": 1498,
+          "action": "ignore"
+        },
+        {
+          "key": "QfZ80rqPZtS5sh1rBVgwshMMG7TPuqBraCnEGwWnroU4",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "autovalue/shaded/com/google/common/math/LongMath$MillerRabinTester.class",
+          "start": 911,
+          "end": 928,
+          "action": "ignore"
+        },
+        {
+          "key": "QfZ80rqPZtS5sh1rBVgwshMMG7TPuqBraCnEGwWnroU4",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "org/apache/flink/runtime/jobgraph/tasks/CheckpointCoordinatorConfiguration.class",
+          "start": 3603,
+          "end": 3620,
+          "action": "ignore"
+        },
+        {
+          "key": "QfZ80rqPZtS5sh1rBVgwshMMG7TPuqBraCnEGwWnroU4",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "org/apache/flink/runtime/jobmanager/DefaultJobGraphStore.class",
+          "start": 9155,
+          "end": 9172,
+          "action": "ignore"
+        },
+        {
+          "key": "QfZ80rqPZtS5sh1rBVgwshMMG7TPuqBraCnEGwWnroU4",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "org/apache/flink/runtime/jobmanager/DefaultJobGraphStore.class",
+          "start": 10144,
+          "end": 10161,
+          "action": "ignore"
+        },
+        {
+          "key": "QfZ80rqPZtS5sh1rBVgwshMMG7TPuqBraCnEGwWnroU4",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "org/apache/flink/runtime/jobmanager/HaServicesJobPersistenceComponentFactory.class",
+          "start": 638,
+          "end": 655,
+          "action": "ignore"
+        },
+        {
+          "key": "QfZ80rqPZtS5sh1rBVgwshMMG7TPuqBraCnEGwWnroU4",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "org/apache/flink/runtime/jobmanager/HaServicesJobPersistenceComponentFactory.class",
+          "start": 781,
+          "end": 798,
+          "action": "ignore"
+        },
+        {
+          "key": "QfZ80rqPZtS5sh1rBVgwshMMG7TPuqBraCnEGwWnroU4",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "autovalue/shaded/com/google/common/primitives/Booleans$BooleanComparator.class",
+          "start": 879,
+          "end": 896,
+          "action": "ignore"
+        },
+        {
+          "key": "QfZ80rqPZtS5sh1rBVgwshMMG7TPuqBraCnEGwWnroU4",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "autovalue/shaded/com/google/common/primitives/Booleans$LexicographicalComparator.class",
+          "start": 852,
+          "end": 869,
+          "action": "ignore"
+        },
+        {
+          "key": "QfZ80rqPZtS5sh1rBVgwshMMG7TPuqBraCnEGwWnroU4",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "autovalue/shaded/com/google/common/primitives/Chars$LexicographicalComparator.class",
+          "start": 828,
+          "end": 845,
+          "action": "ignore"
+        },
+        {
+          "key": "QKLpHIYHOVD2en4XLA7MPy4oW-HWUgLDrVTGclewfM6g",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "web/runtime.37568f5d6d7e8f5e.js",
+          "action": "ignore"
+        },
+        {
+          "key": "QGPWr_LvSKLG7O3U8sn9IbBedI_nJ8ZlbjtwO0jRxK1M",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "zetasql/local_service/liblocal_service_jni.dylib",
+          "action": "ignore"
+        },
+        {
+          "key": "QGPWr_LvSKLG7O3U8sn9IbBedI_nJ8ZlbjtwO0jRxK1M",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "zetasql/local_service/liblocal_service_jni.so",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 0.6,
+        "maintenance": 1,
+        "overall": 0.67,
+        "quality": 1,
+        "supplyChain": 0.67,
+        "vulnerability": 1
+      },
+      "batchIndex": 0,
+      "license": "(0BSD AND Apache-2.0 AND BSD-3-Clause AND BSD-4-Clause-Shortened AND BSD-Advertising-Acknowledgement AND CC-PDDC AND CC0-1.0 AND CDDL-1.0 AND CDDL-1.1 AND EPL-1.0 AND EPL-2.0 AND GFDL-1.3-no-invariants-only AND GPL-2.0-only WITH Classpath-exception-2.0 AND ISC AND LGPL-2.1+ AND MIT AND MPL-2.0 AND NCSA AND OpenSSL AND OpenSSL-standalone AND SSLeay-standalone AND Unlicense AND W3C) OR (0BSD AND Apache-2.0 AND BSD-3-Clause AND BSD-4-Clause-Shortened AND BSD-Advertising-Acknowledgement AND CC-PDDC AND CC0-1.0 AND CDDL-1.0 AND CDDL-1.1 AND EPL-1.0 AND EPL-2.0 AND GFDL-1.3-no-invariants-only AND ISC AND LGPL-2.1+ AND MIT AND MPL-2.0 AND NCSA AND OpenSSL AND OpenSSL-standalone AND SSLeay-standalone AND Unlicense AND W3C) OR (0BSD AND Apache-2.0 AND BSD-3-Clause AND BSD-4-Clause-Shortened AND BSD-Advertising-Acknowledgement AND CC-PDDC AND CC0-1.0 AND CDDL-1.1 AND EPL-1.0 AND EPL-2.0 AND GFDL-1.3-no-invariants-only AND GPL-2.0-only WITH Classpath-exception-2.0 AND ISC AND LGPL-2.1+ AND MIT AND MPL-2.0 AND NCSA AND OpenSSL AND OpenSSL-standalone AND SSLeay-standalone AND Unlicense AND W3C)",
+      "licenseDetails": []
+    }
+  ]
+}
