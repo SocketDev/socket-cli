@@ -32,12 +32,14 @@ function includesBun(lockSrc: string, name: string, lockName?: string) {
 function includesPnpm(lockSrc: string, name: string) {
   const escapedName = escapeRegExp(name)
   return new RegExp(
-    // Detects the package name in the following cases:
-    //   /name/
+    // Detects the package name.
+    // v9.0 and v6.0 lockfile patterns:
     //   'name'
     //   name:
     //   name@
-    `(?<=^\\s*)(?:(['/])${escapedName}\\1|${escapedName}(?=[:@]))`,
+    // v6.0 lockfile patterns:
+    //   /name@
+    `(?<=^\\s*)(?:'${escapedName}'|/?${escapedName}(?=[:@]))`,
     'm',
   ).test(lockSrc)
 }
