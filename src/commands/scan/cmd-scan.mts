@@ -49,7 +49,6 @@ export const cmdScan: CliSubcommand = {
             argv: ['view'], // Original args will be appended (!)
           },
         },
-        defaultSub: true,
         argv,
         description,
         importMeta,
