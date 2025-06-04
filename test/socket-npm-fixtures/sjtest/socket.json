@@ -1,0 +1,17 @@
+{
+  " _____         _       _     ": "Local config file for Socket CLI tool ( https://npmjs.org/socket ), to work with https://socket.dev",
+  "|   __|___ ___| |_ ___| |_   ": "     The config in this file is used to set as defaults for flags or cmmand args when using the CLI",
+  "|__   | . |  _| '_| -_|  _|  ": "     in this dir, often a repo root. You can choose commit or .ignore this file, both works.",
+  "|_____|___|___|_,_|___|_|.dev": "Warning: This file may be overwritten without warning by `socket manifest setup` or other commands",
+  "version": 1,
+  "defaults": {
+    "manifest": {
+      "sbt": {
+        "bin": "/bin/sbt",
+        "outfile": "sbt.pom.xml",
+        "stdout": false,
+        "verbose": true
+      }
+    }
+  }
+}

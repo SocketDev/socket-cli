@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import meow from 'meow'
 import semver from 'semver'
 import colors from 'yoctocolors-cjs'
@@ -7,7 +5,6 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 
 import {
   getConfigValueOrUndef,
@@ -20,6 +17,7 @@ import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
 import constants from '../constants.mts'
 import { commonFlags } from '../flags.mts'
 import { getVisibleTokenPrefix } from './sdk.mts'
+import { tildify } from './tildify.mts'
 
 import type { MeowFlags } from '../flags.mts'
 import type { Options, Result } from 'meow'
@@ -496,19 +494,7 @@ function getAsciiHeader(command: string) {
       )
     : ''
   const shownToken = redacting ? REDACTED : getVisibleTokenPrefix() || 'no'
-  const relCwd = redacting
-    ? REDACTED
-    : normalizePath(
-        process
-          .cwd()
-          .replace(
-            new RegExp(
-              `^${escapeRegExp(constants.homePath)}(?:${path.sep}|$)`,
-              'i',
-            ),
-            '~/',
-          ),
-      )
+  const relCwd = redacting ? REDACTED : normalizePath(tildify(process.cwd()))
   let nodeVerWarn = ''
   if (semver.parse(constants.NODE_VERSION)!.major < 20) {
     nodeVerWarn += colors.bold(
