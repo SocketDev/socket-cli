@@ -1,0 +1,130 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package deep pkg:pypi/charset-normalizer@3.4.0 --json",
+  "    ": "A python example",
+
+  "ok": true,
+  "data": {
+    "purl": "pkg:pypi/discordpydebug@0.0.4?artifact_id=tar-gz",
+    "self": {
+      "purl": "pkg:pypi/discordpydebug@0.0.4?artifact_id=tar-gz",
+      "score": {
+        "license": 100,
+        "maintenance": 100,
+        "overall": 100,
+        "quality": 100,
+        "supplyChain": 100,
+        "vulnerability": 100
+      },
+      "capabilities": [],
+      "alerts": []
+    },
+    "transitively": {
+      "dependencyCount": 825,
+      "func": "min",
+      "score": {
+        "license": 70,
+        "maintenance": 99,
+        "overall": 70,
+        "quality": 88,
+        "supplyChain": 70,
+        "vulnerability": 100
+      },
+      "lowest": {
+        "license": "pypi/chardet@5.2.0",
+        "maintenance": "pypi/webencodings@0.5.1",
+        "overall": "pypi/virtualenv@20.31.2",
+        "quality": "pypi/coverage-enable-subprocess@1.0",
+        "supplyChain": "pypi/virtualenv@20.31.2",
+        "vulnerability": "pypi/chardet@5.2.0"
+      },
+      "capabilities": ["env", "eval", "fs", "net", "shell", "unsafe", "url"],
+      "alerts": [
+        {
+          "name": "gptDidYouMean",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "pypi/jinja2@3.1.6"
+        },
+        {
+          "name": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "pypi/pyyaml@6.0.2"
+        },
+        {
+          "name": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "pypi/webencodings@0.5.1"
+        },
+        {
+          "name": "shellAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "pypi/colorama@0.4.6"
+        },
+        {
+          "name": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "pypi/stack-data@0.6.3"
+        },
+        {
+          "name": "ambiguousClassifier",
+          "severity": "low",
+          "category": "license",
+          "example": "pypi/jinja2@3.1.6"
+        },
+        {
+          "name": "copyleftLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "pypi/chardet@5.2.0"
+        },
+        {
+          "name": "envVars",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "pypi/sphinxcontrib-jquery@4.1"
+        },
+        {
+          "name": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "pypi/chardet@5.2.0"
+        },
+        {
+          "name": "gptAnomaly",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "pypi/genshi@0.7.9"
+        },
+        {
+          "name": "licenseException",
+          "severity": "low",
+          "category": "license",
+          "example": "pypi/pygments@2.19.1"
+        },
+        {
+          "name": "nonpermissiveLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "pypi/chardet@5.2.0"
+        },
+        {
+          "name": "unidentifiedLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "pypi/webencodings@0.5.1"
+        },
+        {
+          "name": "unmaintained",
+          "severity": "low",
+          "category": "maintenance",
+          "example": "pypi/webencodings@0.5.1"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,4510 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package shallow pkg:pypi/charset-normalizer@3.4.0 --json",
+  "    ": "It contains a bunch of duplicate reports from the python package; one per platform target.",
+
+  "ok": true,
+  "data": [
+    {
+      "id": "15899103876",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-macosx-10-9-universal2-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 0,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103877",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-macosx-10-9-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 1,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103878",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-macosx-11-0-arm64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 2,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103879",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-manylinux-2-17-aarch64-manylinux2014-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 3,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103880",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-manylinux-2-17-ppc64le-manylinux2014-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 4,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103881",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-manylinux-2-17-s390x-manylinux2014-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 5,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103882",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-manylinux-2-17-x86-64-manylinux2014-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 6,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103883",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-manylinux-2-5-i686-manylinux1-i686-manylinux-2-17-i686-manylinux2014-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 7,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103884",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-musllinux-1-2-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 8,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103885",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-musllinux-1-2-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 9,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103886",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-musllinux-1-2-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 10,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103887",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-musllinux-1-2-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 11,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103888",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-musllinux-1-2-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 12,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103889",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-win-amd64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 14,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103890",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp310-cp310-win32-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 13,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103891",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-macosx-10-9-universal2-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 15,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103892",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-macosx-10-9-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 16,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103893",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-macosx-11-0-arm64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 17,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103894",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-manylinux-2-17-aarch64-manylinux2014-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 18,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103895",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-manylinux-2-17-ppc64le-manylinux2014-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 19,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103896",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-manylinux-2-17-s390x-manylinux2014-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 20,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103897",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-manylinux-2-17-x86-64-manylinux2014-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 21,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103898",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-manylinux-2-5-i686-manylinux1-i686-manylinux-2-17-i686-manylinux2014-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 22,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103899",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-musllinux-1-2-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 23,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103900",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-musllinux-1-2-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 24,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103901",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-musllinux-1-2-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 25,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103902",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-musllinux-1-2-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 26,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103903",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-musllinux-1-2-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 27,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103904",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-win-amd64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 29,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103905",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp311-cp311-win32-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 28,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103906",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-macosx-10-13-universal2-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 30,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103907",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-macosx-10-13-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 31,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103908",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-macosx-11-0-arm64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 32,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103909",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-manylinux-2-17-aarch64-manylinux2014-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 33,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103910",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-manylinux-2-17-ppc64le-manylinux2014-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 34,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103911",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-manylinux-2-17-s390x-manylinux2014-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 35,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103912",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-manylinux-2-17-x86-64-manylinux2014-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 36,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103913",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-manylinux-2-5-i686-manylinux1-i686-manylinux-2-17-i686-manylinux2014-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 37,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899103914",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-musllinux-1-2-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 38,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104784",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "tar-gz",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 104,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104785",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "py3-none-any-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 103,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104825",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-musllinux-1-2-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 39,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104826",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-musllinux-1-2-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 40,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104827",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-musllinux-1-2-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 41,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104828",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-musllinux-1-2-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 42,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104829",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-win-amd64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 44,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104830",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp312-cp312-win32-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 43,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104831",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-macosx-10-13-universal2-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 45,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104832",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-macosx-10-13-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 46,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104833",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-macosx-11-0-arm64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 47,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104834",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-manylinux-2-17-aarch64-manylinux2014-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 48,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104835",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-manylinux-2-17-ppc64le-manylinux2014-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 49,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104836",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-manylinux-2-17-s390x-manylinux2014-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 50,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104837",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-manylinux-2-17-x86-64-manylinux2014-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 51,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104838",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-manylinux-2-5-i686-manylinux1-i686-manylinux-2-17-i686-manylinux2014-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 52,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104839",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-musllinux-1-2-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 53,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104840",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-musllinux-1-2-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 54,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104841",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-musllinux-1-2-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 55,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104842",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-musllinux-1-2-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 56,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104843",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-musllinux-1-2-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 57,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104844",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-win-amd64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 59,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104845",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp313-cp313-win32-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 58,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104846",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-macosx-10-9-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 60,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104847",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-manylinux-2-17-aarch64-manylinux2014-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 61,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104848",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-manylinux-2-17-ppc64le-manylinux2014-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 62,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104849",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-manylinux-2-17-s390x-manylinux2014-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 63,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104850",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-manylinux-2-17-x86-64-manylinux2014-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 64,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104851",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-manylinux-2-5-i686-manylinux1-i686-manylinux-2-17-i686-manylinux2014-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 65,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104852",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-musllinux-1-2-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 66,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104853",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-musllinux-1-2-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 67,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104854",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-musllinux-1-2-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 68,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104855",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-musllinux-1-2-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 69,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104856",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-musllinux-1-2-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 70,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104857",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-win-amd64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 72,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104858",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp37-cp37m-win32-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 71,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104859",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-macosx-10-9-universal2-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 73,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104860",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-macosx-10-9-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 74,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104861",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-macosx-11-0-arm64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 75,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104862",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-manylinux-2-17-aarch64-manylinux2014-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 76,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104863",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-manylinux-2-17-ppc64le-manylinux2014-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 77,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104864",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-manylinux-2-17-s390x-manylinux2014-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 78,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104865",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-manylinux-2-17-x86-64-manylinux2014-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 79,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104866",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-manylinux-2-5-i686-manylinux1-i686-manylinux-2-17-i686-manylinux2014-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 80,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104867",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-musllinux-1-2-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 81,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104868",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-musllinux-1-2-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 82,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104869",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-musllinux-1-2-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 83,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104870",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-musllinux-1-2-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 84,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104871",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-musllinux-1-2-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 85,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104872",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-win-amd64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 87,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104873",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp38-cp38-win32-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 86,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104874",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-macosx-10-9-universal2-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 88,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104875",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-macosx-10-9-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 89,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104876",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-macosx-11-0-arm64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 90,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104877",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-manylinux-2-17-aarch64-manylinux2014-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 91,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104878",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-manylinux-2-17-ppc64le-manylinux2014-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 92,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104879",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-manylinux-2-17-s390x-manylinux2014-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 93,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104880",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-manylinux-2-17-x86-64-manylinux2014-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 94,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104881",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-manylinux-2-5-i686-manylinux1-i686-manylinux-2-17-i686-manylinux2014-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 95,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104882",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-musllinux-1-2-aarch64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 96,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104883",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-musllinux-1-2-i686-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 97,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104884",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-musllinux-1-2-ppc64le-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 98,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104885",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-musllinux-1-2-s390x-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 99,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104886",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-musllinux-1-2-x86-64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 100,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104887",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-win-amd64-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 102,
+      "license": "MIT",
+      "licenseDetails": []
+    },
+    {
+      "id": "15899104888",
+      "author": ["Ousret"],
+      "size": -2147483648,
+      "type": "pypi",
+      "name": "charset-normalizer",
+      "version": "3.4.0",
+      "release": "cp39-cp39-win32-whl",
+      "alerts": [
+        {
+          "key": "QjQGjj2Vl77voqG4gA9FmYo5KoBGC11qaw4jCjXvkBE8",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "QkYTPujIBhv9ahGKYpRFVHVazjLYXHv5l45xvObur3_w",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        },
+        {
+          "key": "Ql--R0-h1UlXn89AmMbYdcSZdaJfYtZfWPdaxaYPaWAY",
+          "type": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.99,
+        "quality": 1,
+        "supplyChain": 0.99,
+        "vulnerability": 1
+      },
+      "batchIndex": 101,
+      "license": "MIT",
+      "licenseDetails": []
+    }
+  ]
+}

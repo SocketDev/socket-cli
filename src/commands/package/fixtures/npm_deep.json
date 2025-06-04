@@ -1,0 +1,215 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package shallow pkg:npm/bowserify@10.2.1 --json",
+  "    ": "It's an npm example.",
+
+  "ok": true,
+  "data": {
+    "purl": "pkg:npm/bowserify@10.2.1",
+    "self": {
+      "purl": "npm/bowserify@10.2.1",
+      "score": {
+        "license": 100,
+        "maintenance": 74,
+        "overall": 35,
+        "quality": 99,
+        "supplyChain": 35,
+        "vulnerability": 100
+      },
+      "capabilities": ["fs", "net", "unsafe", "url"],
+      "alerts": [
+        {
+          "name": "didYouMean",
+          "severity": "critical",
+          "category": "supplyChainRisk",
+          "example": "npm/bowserify@10.2.1"
+        },
+        {
+          "name": "troll",
+          "severity": "high",
+          "category": "supplyChainRisk",
+          "example": "npm/bowserify@10.2.1"
+        },
+        {
+          "name": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "npm/bowserify@10.2.1"
+        },
+        {
+          "name": "unpopularPackage",
+          "severity": "middle",
+          "category": "quality",
+          "example": "npm/bowserify@10.2.1"
+        },
+        {
+          "name": "debugAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "npm/bowserify@10.2.1"
+        },
+        {
+          "name": "dynamicRequire",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "npm/bowserify@10.2.1"
+        },
+        {
+          "name": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "npm/bowserify@10.2.1"
+        },
+        {
+          "name": "unmaintained",
+          "severity": "low",
+          "category": "maintenance",
+          "example": "npm/bowserify@10.2.1"
+        }
+      ]
+    },
+    "transitively": {
+      "dependencyCount": 171,
+      "func": "min",
+      "score": {
+        "license": 80,
+        "maintenance": 50,
+        "overall": 25,
+        "quality": 49,
+        "supplyChain": 35,
+        "vulnerability": 25
+      },
+      "lowest": {
+        "license": "npm/acorn-node@1.8.2",
+        "maintenance": "npm/jsonify@0.0.1",
+        "overall": "npm/shell-quote@0.0.1",
+        "quality": "npm/tty-browserify@0.0.1",
+        "supplyChain": "npm/bowserify@10.2.1",
+        "vulnerability": "npm/shell-quote@0.0.1"
+      },
+      "capabilities": ["env", "eval", "fs", "net", "unsafe", "url"],
+      "alerts": [
+        {
+          "name": "criticalCVE",
+          "severity": "critical",
+          "category": "vulnerability",
+          "example": "npm/shell-quote@0.0.1"
+        },
+        {
+          "name": "didYouMean",
+          "severity": "critical",
+          "category": "supplyChainRisk",
+          "example": "npm/bowserify@10.2.1"
+        },
+        {
+          "name": "cve",
+          "severity": "high",
+          "category": "vulnerability",
+          "example": "npm/minimatch@2.0.10"
+        },
+        {
+          "name": "socketUpgradeAvailable",
+          "severity": "high",
+          "category": "maintenance",
+          "example": "npm/safe-buffer@5.1.2"
+        },
+        {
+          "name": "troll",
+          "severity": "high",
+          "category": "supplyChainRisk",
+          "example": "npm/bowserify@10.2.1"
+        },
+        {
+          "name": "deprecated",
+          "severity": "middle",
+          "category": "maintenance",
+          "example": "npm/querystring@0.2.0"
+        },
+        {
+          "name": "miscLicenseIssues",
+          "severity": "middle",
+          "category": "license",
+          "example": "npm/duplexer2@0.0.2"
+        },
+        {
+          "name": "missingAuthor",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "npm/indexof@0.0.1"
+        },
+        {
+          "name": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "npm/https-browserify@0.0.1"
+        },
+        {
+          "name": "trivialPackage",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "npm/tty-browserify@0.0.1"
+        },
+        {
+          "name": "unpopularPackage",
+          "severity": "middle",
+          "category": "quality",
+          "example": "npm/b@1.0.0"
+        },
+        {
+          "name": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "npm/syntax-error@1.4.0"
+        },
+        {
+          "name": "debugAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "npm/asn1.js@4.10.1"
+        },
+        {
+          "name": "dynamicRequire",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "npm/module-deps@3.9.1"
+        },
+        {
+          "name": "envVars",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "npm/readable-stream@2.3.8"
+        },
+        {
+          "name": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "npm/browser-resolve@1.11.3"
+        },
+        {
+          "name": "newAuthor",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "npm/wrappy@1.0.2"
+        },
+        {
+          "name": "noLicenseFound",
+          "severity": "low",
+          "category": "license",
+          "example": "npm/indexof@0.0.1"
+        },
+        {
+          "name": "unidentifiedLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "npm/jsonify@0.0.1"
+        },
+        {
+          "name": "unmaintained",
+          "severity": "low",
+          "category": "maintenance",
+          "example": "npm/bowserify@10.2.1"
+        }
+      ]
+    }
+  }
+}

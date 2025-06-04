@@ -1,0 +1,124 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package deep pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60 --json",
+  "    ": "It's a go example.",
+
+  "ok": true,
+  "data": {
+    "purl": "pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60",
+    "self": {
+      "purl": "pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60",
+      "score": {
+        "license": 100,
+        "maintenance": 100,
+        "overall": 100,
+        "quality": 100,
+        "supplyChain": 100,
+        "vulnerability": 100
+      },
+      "capabilities": [],
+      "alerts": []
+    },
+    "transitively": {
+      "dependencyCount": 81,
+      "func": "min",
+      "score": {
+        "license": 70,
+        "maintenance": 100,
+        "overall": 70,
+        "quality": 100,
+        "supplyChain": 70,
+        "vulnerability": 84
+      },
+      "lowest": {
+        "license": "golang/github.com/hashicorp/go-cleanhttp@v0.5.2",
+        "maintenance": "golang/github.com/stretchr/objx@v0.1.0",
+        "overall": "golang/go.uber.org/mock@v0.5.0",
+        "quality": "golang/github.com/stretchr/objx@v0.1.0",
+        "supplyChain": "golang/go.uber.org/mock@v0.5.0",
+        "vulnerability": "golang/github.com/golang-jwt/jwt/v5@v5.2.1"
+      },
+      "capabilities": ["env", "eval", "fs", "net", "shell", "unsafe"],
+      "alerts": [
+        {
+          "name": "cve",
+          "severity": "high",
+          "category": "vulnerability",
+          "example": "golang/github.com/golang-jwt/jwt/v5@v5.2.1"
+        },
+        {
+          "name": "hasNativeCode",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "golang/github.com/pkg/diff@v0.0.0-20210226163009-20ebb0f2a09e"
+        },
+        {
+          "name": "mediumCVE",
+          "severity": "middle",
+          "category": "vulnerability",
+          "example": "golang/golang.org/x/net@v0.35.0"
+        },
+        {
+          "name": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "golang/github.com/stretchr/objx@v0.1.0"
+        },
+        {
+          "name": "potentialVulnerability",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "golang/github.com/onsi/ginkgo/v2@v2.22.2"
+        },
+        {
+          "name": "shellAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "golang/github.com/stretchr/testify@v1.9.0"
+        },
+        {
+          "name": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "golang/gopkg.in/yaml.v3@v3.0.1"
+        },
+        {
+          "name": "copyleftLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "golang/github.com/hashicorp/go-cleanhttp@v0.5.2"
+        },
+        {
+          "name": "envVars",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "golang/gopkg.in/yaml.v3@v3.0.1"
+        },
+        {
+          "name": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "golang/github.com/stretchr/objx@v0.1.0"
+        },
+        {
+          "name": "gptAnomaly",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "golang/github.com/stretchr/objx@v0.1.0"
+        },
+        {
+          "name": "nonpermissiveLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "golang/github.com/hashicorp/go-cleanhttp@v0.5.2"
+        },
+        {
+          "name": "unidentifiedLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "golang/gopkg.in/yaml.v3@v3.0.1"
+        }
+      ]
+    }
+  }
+}

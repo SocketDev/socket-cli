@@ -1,0 +1,88 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package deep pkg:nuget/needpluscommonlibrary@1.0.0 --json",
+  "    ": "It's a nuget example.",
+
+  "ok": true,
+  "data": {
+    "purl": "pkg:nuget/needpluscommonlibrary@1.0.0",
+    "self": {
+      "purl": "pkg:nuget/needpluscommonlibrary@1.0.0",
+      "score": {
+        "license": 100,
+        "maintenance": 100,
+        "overall": 100,
+        "quality": 100,
+        "supplyChain": 100,
+        "vulnerability": 100
+      },
+      "capabilities": [],
+      "alerts": []
+    },
+    "transitively": {
+      "dependencyCount": 3,
+      "func": "min",
+      "score": {
+        "license": 100,
+        "maintenance": 100,
+        "overall": 84,
+        "quality": 88,
+        "supplyChain": 89,
+        "vulnerability": 84
+      },
+      "lowest": {
+        "license": "nuget/dotnetzip@1.9.1.8",
+        "maintenance": "nuget/dotnetzip@1.9.1.8",
+        "overall": "nuget/newtonsoft.json@4.5.10",
+        "quality": "nuget/dotnetzip@1.9.1.8",
+        "supplyChain": "nuget/nlog@2.0.0.2000",
+        "vulnerability": "nuget/newtonsoft.json@4.5.10"
+      },
+      "capabilities": ["eval", "fs", "net", "shell", "unsafe"],
+      "alerts": [
+        {
+          "name": "cve",
+          "severity": "high",
+          "category": "vulnerability",
+          "example": "nuget/newtonsoft.json@4.5.10"
+        },
+        {
+          "name": "mediumCVE",
+          "severity": "middle",
+          "category": "vulnerability",
+          "example": "nuget/dotnetzip@1.9.1.8"
+        },
+        {
+          "name": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "nuget/nlog@2.0.0.2000"
+        },
+        {
+          "name": "shellAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "nuget/dotnetzip@1.9.1.8"
+        },
+        {
+          "name": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "nuget/dotnetzip@1.9.1.8"
+        },
+        {
+          "name": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "nuget/dotnetzip@1.9.1.8"
+        },
+        {
+          "name": "unidentifiedLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "nuget/dotnetzip@1.9.1.8"
+        }
+      ]
+    }
+  }
+}
