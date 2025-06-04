@@ -2,10 +2,11 @@
 
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
+import meow from 'meow'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import updateNotifier from 'tiny-updater'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn, debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
@@ -42,6 +43,7 @@ import constants from './constants.mts'
 import { AuthError, InputError, captureException } from './utils/errors.mts'
 import { failMsgWithBadge } from './utils/fail-msg-with-badge.mts'
 import { meowWithSubcommands } from './utils/meow-with-subcommands.mts'
+import { serializeResultJson } from './utils/serialize-result-json.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 
@@ -173,6 +175,23 @@ void (async () => {
     )
   } catch (e) {
     process.exitCode = 1
+    debugFn('Uncaught error (BAD!):')
+    debugFn(e)
+
+    // Try to parse the flags, find out if --json or --markdown is set
+    let isJson = false
+    try {
+      const cli = meow(``, {
+        argv: process.argv.slice(2),
+        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
+        flags: {},
+        // Do not strictly check for flags here.
+        allowUnknownFlags: true,
+        autoHelp: false,
+      })
+      isJson = !!cli.flags['json']
+    } catch {}
+
     let errorBody: string | undefined
     let errorTitle: string
     let errorMessage = ''
@@ -190,12 +209,24 @@ void (async () => {
     } else {
       errorTitle = 'Unexpected error with no details'
     }
-    logger.error('\n') // Any-spinner-newline
-    logger.fail(failMsgWithBadge(errorTitle, errorMessage))
-    if (errorBody) {
-      // Explicitly use debugLog here.
-      debugLog(errorBody)
+
+    if (isJson) {
+      logger.log(
+        serializeResultJson({
+          ok: false,
+          message: errorTitle,
+          cause: errorMessage,
+        }),
+      )
+    } else {
+      logger.error('\n') // Any-spinner-newline
+      logger.fail(failMsgWithBadge(errorTitle, errorMessage))
+      if (errorBody) {
+        // Explicitly use debugLog here.
+        debugLog(errorBody)
+      }
     }
+
     await captureException(e)
   }
 })()
