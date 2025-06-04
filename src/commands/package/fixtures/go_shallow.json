@@ -1,0 +1,867 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package shallow pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60 --json",
+  "    ": "It's a go example.",
+
+  "ok": true,
+  "data": [
+    {
+      "id": "24826863314",
+      "size": 709723,
+      "type": "golang",
+      "namespace": "github.com/steelpoor",
+      "name": "tlsproxy",
+      "version": "v0.0.0-20250304082521-29051ed19c60",
+      "alerts": [
+        {
+          "key": "QDGzprFhbPE1gHK5mTE3C6pxAb83Bm7IsJ893tT0o6GY",
+          "type": "malware",
+          "severity": "critical",
+          "category": "supplyChainRisk",
+          "file": "certmanager/certmanager.go",
+          "props": {
+            "id": 546961,
+            "note": "The package contains a hidden, obfuscated backdoor that executes an arbitrary shell command immediately upon import. This is a critical security risk and constitutes malicious behavior. The legitimate certificate management code is overshadowed by this severe supply chain compromise. The package should be considered malicious and untrusted."
+          },
+          "action": "error",
+          "fix": {
+            "type": "remove",
+            "description": "Remove this package and either replace with a verified alternative from a trusted source or revert to a known-safe previous version."
+          }
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "certmanager/certmanager.go",
+          "start": 1693,
+          "end": 1701,
+          "action": "ignore"
+        },
+        {
+          "key": "QGucPoxgMupfdFCc0twPFl38pB1osOqeLuVaM-3l7uq0",
+          "type": "shellAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "certmanager/certmanager.go",
+          "start": 1550,
+          "end": 1557,
+          "action": "ignore"
+        },
+        {
+          "key": "QUsoO3hgfLA9eoH4SOlECxh6pP08eWzY2QgLIzhwrlEQ",
+          "type": "envVars",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "file": "certmanager/certmanager.go",
+          "props": {
+            "envVars": ""
+          },
+          "action": "ignore"
+        },
+        {
+          "key": "QUsoO3hgfLA9eoH4SOlECxh6pP08eWzY2QgLIzhwrlEQ",
+          "type": "envVars",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "file": "main.go",
+          "props": {
+            "envVars": ""
+          },
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/backend-http.go",
+          "start": 1300,
+          "end": 1303,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/backend-http.go",
+          "start": 1307,
+          "end": 1315,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/backend-http.go",
+          "start": 1340,
+          "end": 1347,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/backend-http_test.go",
+          "start": 1237,
+          "end": 1240,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/backend-http_test.go",
+          "start": 1244,
+          "end": 1252,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/backend-sso.go",
+          "start": 1305,
+          "end": 1313,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/backend-sso_test.go",
+          "start": 1276,
+          "end": 1279,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/backend-sso_test.go",
+          "start": 1283,
+          "end": 1291,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/backend.go",
+          "start": 1305,
+          "end": 1308,
+          "action": "ignore"
+        },
+        {
+          "key": "Q8R0ryhj03R9pJ_sFpPtLtkFVIBdD2XcffmyFOJ_3TaQ",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "file": "proxy/config.go",
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/config.go",
+          "start": 1298,
+          "end": 1301,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/config.go",
+          "start": 1305,
+          "end": 1313,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/config.go",
+          "start": 1317,
+          "end": 1324,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/conntracker.go",
+          "start": 1226,
+          "end": 1229,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/ech.go",
+          "start": 1291,
+          "end": 1299,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/http.go",
+          "start": 1244,
+          "end": 1247,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/http.go",
+          "start": 1251,
+          "end": 1259,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/cookiemanager/cookiemanager.go",
+          "start": 1277,
+          "end": 1280,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/cookiemanager/cookiemanager.go",
+          "start": 1284,
+          "end": 1292,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/cookiemanager/cookiemanager_test.go",
+          "start": 1234,
+          "end": 1242,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/netw/netw.go",
+          "start": 1340,
+          "end": 1343,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/netw/noquic.go",
+          "start": 1233,
+          "end": 1245,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/netw/quic.go",
+          "start": 1301,
+          "end": 1304,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/ocspcache/ocsp.go",
+          "start": 1314,
+          "end": 1322,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/oidc/client.go",
+          "start": 1322,
+          "end": 1330,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/oidc/client.go",
+          "start": 1334,
+          "end": 1341,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/oidc/server.go",
+          "start": 1348,
+          "end": 1351,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/oidc/server.go",
+          "start": 1355,
+          "end": 1363,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/oidc/server.go",
+          "start": 1367,
+          "end": 1374,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/passkeys/manager.go",
+          "start": 1416,
+          "end": 1419,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/passkeys/manager.go",
+          "start": 1423,
+          "end": 1431,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/passkeys/manager.go",
+          "start": 1435,
+          "end": 1442,
+          "action": "ignore"
+        },
+        {
+          "key": "QCcAuGq_kdM0yDaDsSN1kWRFyM66JoNgxoo3bjZHJ0Gg",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/passkeys/manager.go",
+          "start": 1446,
+          "end": 1453,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/passkeys/webauthn.js",
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/pki/certs.js",
+          "action": "ignore"
+        },
+        {
+          "key": "QUsoO3hgfLA9eoH4SOlECxh6pP08eWzY2QgLIzhwrlEQ",
+          "type": "envVars",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/pki/certs.js",
+          "props": {
+            "envVars": ""
+          },
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/pki/clientwasm/impl/impl.go",
+          "start": 1356,
+          "end": 1364,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/pki/http.go",
+          "start": 1433,
+          "end": 1441,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/pki/http.go",
+          "start": 1445,
+          "end": 1452,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/pki/pki.go",
+          "start": 1552,
+          "end": 1559,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/saml/saml.go",
+          "start": 1362,
+          "end": 1365,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/saml/saml.go",
+          "start": 1369,
+          "end": 1377,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/saml/saml.go",
+          "start": 1381,
+          "end": 1388,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/sshca/sshca.go",
+          "start": 1403,
+          "end": 1411,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/sshca/sshca.go",
+          "start": 1415,
+          "end": 1422,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/sshca/sshca_test.go",
+          "start": 1285,
+          "end": 1293,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/tokenmanager/tokenmanager.go",
+          "start": 1648,
+          "end": 1656,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/tokenmanager/urltoken.go",
+          "start": 1280,
+          "end": 1288,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/internal/tokenmanager/urltoken.go",
+          "start": 1292,
+          "end": 1299,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/metrics.go",
+          "start": 1270,
+          "end": 1278,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/noquic.go",
+          "start": 1286,
+          "end": 1289,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/noquic.go",
+          "start": 1293,
+          "end": 1301,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/pprof.go",
+          "start": 1244,
+          "end": 1252,
+          "action": "ignore"
+        },
+        {
+          "key": "Q8R0ryhj03R9pJ_sFpPtLtkFVIBdD2XcffmyFOJ_3TaQ",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "file": "proxy/proxy.go",
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/proxy.go",
+          "start": 1662,
+          "end": 1665,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/proxy.go",
+          "start": 1669,
+          "end": 1677,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/proxy.go",
+          "start": 1681,
+          "end": 1688,
+          "action": "ignore"
+        },
+        {
+          "key": "Q8R0ryhj03R9pJ_sFpPtLtkFVIBdD2XcffmyFOJ_3TaQ",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "file": "proxy/proxy_test.go",
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/proxy_test.go",
+          "start": 1350,
+          "end": 1353,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/proxy_test.go",
+          "start": 1357,
+          "end": 1365,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/proxy_test.go",
+          "start": 1369,
+          "end": 1376,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/quic.go",
+          "start": 1340,
+          "end": 1343,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/quic.go",
+          "start": 1347,
+          "end": 1355,
+          "action": "ignore"
+        },
+        {
+          "key": "Q8R0ryhj03R9pJ_sFpPtLtkFVIBdD2XcffmyFOJ_3TaQ",
+          "type": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "file": "proxy/quic_test.go",
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/quic_test.go",
+          "start": 1303,
+          "end": 1306,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/quic_test.go",
+          "start": 1310,
+          "end": 1318,
+          "action": "ignore"
+        },
+        {
+          "key": "QCcAuGq_kdM0yDaDsSN1kWRFyM66JoNgxoo3bjZHJ0Gg",
+          "type": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/quic_test.go",
+          "start": 1345,
+          "end": 1352,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/sso_test.go",
+          "start": 1309,
+          "end": 1312,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/sso_test.go",
+          "start": 1316,
+          "end": 1324,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/sso_test.go",
+          "start": 1371,
+          "end": 1378,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/static_test.go",
+          "start": 1257,
+          "end": 1260,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/static_test.go",
+          "start": 1264,
+          "end": 1272,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/static_test.go",
+          "start": 1276,
+          "end": 1283,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/util.go",
+          "start": 1268,
+          "end": 1271,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/websocket.go",
+          "start": 1232,
+          "end": 1235,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/websocket.go",
+          "start": 1239,
+          "end": 1247,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/xfcc.go",
+          "start": 1284,
+          "end": 1292,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "proxy/xfcc.go",
+          "start": 1296,
+          "end": 1303,
+          "action": "ignore"
+        },
+        {
+          "key": "QVCaJYbUQLjtAllo82dlU6sngUDrj3BQOJW7FfXjBRic",
+          "type": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "file": "tlsclient/main.go",
+          "start": 1427,
+          "end": 1430,
+          "action": "ignore"
+        }
+      ],
+      "score": {
+        "license": 1,
+        "maintenance": 1,
+        "overall": 0.39,
+        "quality": 1,
+        "supplyChain": 0.39,
+        "vulnerability": 1
+      },
+      "batchIndex": 0,
+      "license": "BSD-3-Clause AND MIT",
+      "licenseDetails": []
+    }
+  ]
+}

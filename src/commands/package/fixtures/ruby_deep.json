@@ -1,0 +1,106 @@
+{
+  "desc": "(2025-06) This fixture was the result of running:",
+  "   $": "socket package deep pkg:gem/plaid@14.11.0?platform=ruby --json",
+  "    ": "It's a ruby example.",
+
+  "ok": true,
+  "data": {
+    "purl": "pkg:gem/plaid@14.11.0?platform=ruby",
+    "self": {
+      "purl": "pkg:gem/plaid@14.11.0?platform=ruby",
+      "score": {
+        "license": 100,
+        "maintenance": 100,
+        "overall": 100,
+        "quality": 100,
+        "supplyChain": 100,
+        "vulnerability": 100
+      },
+      "capabilities": [],
+      "alerts": []
+    },
+    "transitively": {
+      "dependencyCount": 31,
+      "func": "min",
+      "score": {
+        "license": 70,
+        "maintenance": 100,
+        "overall": 72,
+        "quality": 92,
+        "supplyChain": 84,
+        "vulnerability": 72
+      },
+      "lowest": {
+        "license": "gem/diff-lcs@1.4.4",
+        "maintenance": "gem/diff-lcs@1.4.4",
+        "overall": "gem/rexml@3.2.4",
+        "quality": "gem/rspec@3.10.0",
+        "supplyChain": "gem/rubocop@0.91.1",
+        "vulnerability": "gem/rexml@3.2.4"
+      },
+      "capabilities": ["env", "eval", "fs", "net", "shell", "unsafe"],
+      "alerts": [
+        {
+          "name": "cve",
+          "severity": "high",
+          "category": "vulnerability",
+          "example": "gem/rexml@3.2.4"
+        },
+        {
+          "name": "mediumCVE",
+          "severity": "middle",
+          "category": "vulnerability",
+          "example": "gem/rexml@3.2.4"
+        },
+        {
+          "name": "networkAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "gem/faraday@1.8.0"
+        },
+        {
+          "name": "shellAccess",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "gem/diff-lcs@1.4.4"
+        },
+        {
+          "name": "usesEval",
+          "severity": "middle",
+          "category": "supplyChainRisk",
+          "example": "gem/ruby2_keywords@0.0.5"
+        },
+        {
+          "name": "copyleftLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "gem/diff-lcs@1.4.4"
+        },
+        {
+          "name": "envVars",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "gem/parser@2.7.2.0"
+        },
+        {
+          "name": "filesystemAccess",
+          "severity": "low",
+          "category": "supplyChainRisk",
+          "example": "gem/diff-lcs@1.4.4"
+        },
+        {
+          "name": "noLicenseFound",
+          "severity": "low",
+          "category": "license",
+          "example": "gem/minitest@5.14.2"
+        },
+        {
+          "name": "nonpermissiveLicense",
+          "severity": "low",
+          "category": "license",
+          "example": "gem/diff-lcs@1.4.4"
+        }
+      ]
+    }
+  }
+}
