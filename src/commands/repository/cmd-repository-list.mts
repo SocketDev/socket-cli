@@ -1,10 +1,9 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { handleViewRepo } from './handle-view-repo.mts'
+import { handleListRepos } from './handle-list-repos.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -16,12 +15,23 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
-  commandName: 'view',
-  description: 'View repositories in an organization',
+  commandName: 'list',
+  description: 'List repositories in an organization',
   hidden: false,
   flags: {
     ...commonFlags,
     ...outputFlags,
+    all: {
+      type: 'boolean',
+      default: false,
+      description:
+        'By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --perPage.',
+    },
+    direction: {
+      type: 'string',
+      default: 'desc',
+      description: 'Direction option',
+    },
     interactive: {
       type: 'boolean',
       default: true,
@@ -33,15 +43,28 @@ const config: CliCommandConfig = {
       description:
         'Force override the organization slug, overrides the default org from config',
     },
-    repoName: {
-      description: 'The repository to check',
-      default: '',
+    perPage: {
+      type: 'number',
+      shortFlag: 'pp',
+      default: 30,
+      description: 'Number of results per page',
+    },
+    page: {
+      type: 'number',
+      shortFlag: 'p',
+      default: 1,
+      description: 'Page number',
+    },
+    sort: {
       type: 'string',
+      shortFlag: 's',
+      default: 'created_at',
+      description: 'Sorting option',
     },
   },
   help: (command, config) => `
     Usage
-      $ ${command} ${isTestingV1() ? '<repo>' : '<org slug> --repo-name=<name>'}
+      $ ${command} [options]
 
     API Token Requirements
       - Quota: 1 unit
@@ -51,11 +74,12 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command} ${isTestingV1() ? 'test-repo' : 'FakeOrg test-repo'}
+      $ ${command}
+      $ ${command} --json
   `,
 }
 
-export const cmdReposView = {
+export const cmdRepositoryList = {
   description: config.description,
   hidden: config.hidden,
   run,
@@ -74,23 +98,21 @@ async function run(
   })
 
   const {
+    all,
+    direction = 'desc',
     dryRun,
     interactive,
     json,
     markdown,
     org: orgFlag,
-    repoName: repoNameFlag,
   } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     !!interactive,
     !!dryRun,
   )
-
-  const repoName = (isTestingV1() ? cli.input[0] : repoNameFlag) || ''
 
   const hasApiToken = hasDefaultToken()
 
@@ -99,17 +121,7 @@ async function run(
     {
       nook: true,
       test: !!orgSlug,
-      message: isTestingV1()
-        ? 'Org name by default setting, --org, or auto-discovered'
-        : 'Org name must be the first argument',
-      pass: 'ok',
-      fail: 'missing',
-    },
-    {
-      test: !!repoName,
-      message: isTestingV1()
-        ? 'Repository name as first argument'
-        : 'Repository name using --repoName',
+      message: 'Org name by default setting, --org, or auto-discovered',
       pass: 'ok',
       fail: 'missing',
     },
@@ -131,10 +143,10 @@ async function run(
     },
     {
       nook: true,
-      test: !isTestingV1() || !repoNameFlag,
-      message: 'In v1 the first arg should be the repo, not the flag',
+      test: direction === 'asc' || direction === 'desc',
+      message: 'The --direction value must be "asc" or "desc"',
       pass: 'ok',
-      fail: 'received --repo-name flag',
+      fail: 'unexpected value',
     },
   )
   if (!wasValidInput) {
@@ -146,5 +158,13 @@ async function run(
     return
   }
 
-  await handleViewRepo(orgSlug, String(repoName), outputKind)
+  await handleListRepos({
+    all: Boolean(all),
+    direction: direction === 'asc' ? 'asc' : 'desc',
+    orgSlug,
+    outputKind,
+    page: Number(cli.flags['page']) || 1,
+    per_page: Number(cli.flags['perPage']) || 30,
+    sort: String(cli.flags['sort'] || 'created_at'),
+  })
 }

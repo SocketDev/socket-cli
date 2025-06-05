@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,10 +17,17 @@ describe('socket raw-npm', async () => {
         "Temporarily disable the Socket npm wrapper
 
           Usage
-            $ socket raw-npm <command>
+            $ socket raw-npm ...
+
+          This does the opposite of \`socket npm\`: it will execute the real \`npm\`
+          command without Socket. This can be useful when you have the wrapper on
+          and want to install a certain package anyways. Use at your own risk.
+
+          Note: Everything after "raw-npm" is sent straight to the npm command.
+                Only the \`--dryRun\` and \`--help\` flags are caught here.
 
           Examples
-            $ socket raw-npm install"
+            $ socket raw-npm install -g socket"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

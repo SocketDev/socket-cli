@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,7 +17,7 @@ describe('socket scan diff', async () => {
         "See what changed between two Scans
 
           Usage
-            $ socket scan diff <org slug> <ID1> <ID2>
+            $ socket scan diff [options] <SCAN_ID1> <SCAN_ID2>
 
           API Token Requirements
             - Quota: 1 unit
@@ -29,8 +27,9 @@ describe('socket scan diff', async () => {
           can be pretty large depending on the size of your repo and time range. It is
           best stored to disk (with --json) to be further analyzed by other tools.
 
-          Note: First Scan ID is assumed to be the older ID. This is only relevant for
-                the added/removed list (similar to diffing two files with git).
+          Note: While it will work in any order, the first Scan ID is assumed to be the
+                older ID, even if it is a newer Scan. This is only relevant for the
+                added/removed list (similar to diffing two files with git).
 
           Options
             --depth           Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)
@@ -41,8 +40,8 @@ describe('socket scan diff', async () => {
             --org             Force override the organization slug, overrides the default org from config
 
           Examples
-            $ socket scan diff FakeOrg aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
-            $ socket scan diff FakeOrg aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json"
+            $ socket scan diff aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
+            $ socket scan diff aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -73,12 +72,15 @@ describe('socket scan diff', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan diff\`, cwd: <redacted>
 
+        \\x1b[33m\\u203c\\x1b[39m Missing the org slug and no --org flag set. Trying to auto-discover the org now...
+        \\x1b[34mi\\x1b[39m Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.
+        \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
           - Specify two Scan IDs. (\\x1b[31mmissing both Scan IDs\\x1b[39m)
             A Scan ID looks like \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\`.
 
-          - Org name must be the first argument (\\x1b[31mmissing\\x1b[39m)
+          - Org name by default setting, --org, or auto-discovered (\\x1b[31mmissing\\x1b[39m)
 
           - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)
         \\x1b[22m"
@@ -92,6 +94,7 @@ describe('socket scan diff', async () => {
     [
       'scan',
       'diff',
+      '--org',
       'fakeorg',
       '--dry-run',
       '--config',

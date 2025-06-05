@@ -22,7 +22,7 @@ describe('socket organization list', async () => {
             $ socket organization policy <command>
 
           Commands
-            (none)
+            license           Retrieve the license policy of an organization
 
           Options
             (none)

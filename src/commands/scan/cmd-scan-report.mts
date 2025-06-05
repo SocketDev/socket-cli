@@ -4,7 +4,6 @@ import { handleScanReport } from './handle-scan-report.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -60,7 +59,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command}${isTestingV1() ? '' : ' <org slug>'} <scan ID> [path to output file]
+      $ ${command} [options] <SCAN_ID> [OUTPUT_PATH]
 
     API Token Requirements
       - Quota: 2 units
@@ -69,18 +68,34 @@ const config: CliCommandConfig = {
     Options
       ${getFlagListOutput(config.flags, 6)}
 
+    When no output path is given the contents is sent to stdout.
+
     By default the result is a nested object that looks like this:
-      \`{[ecosystem]: {[pkgName]: {[version]: {[file]: {[type:loc]: policy}}}}\`
-    You can fold this up to given level: 'pkg', 'version', 'file', and 'none'.
+      \`{
+        [ecosystem]: {
+          [pkgName]: {
+            [version]: {
+              [file]: {
+                [line:col]: alert
+      }}}}\`
+    So one alert for each occurrence in every file, version, etc, a huge response.
+
+    You can --fold these up to given level: 'pkg', 'version', 'file', and 'none'.
+    For example: \`socket scan report --fold=version\` will dedupe alerts to only
+    show one alert of a particular kind, no matter how often it was foud in a
+    file or in how many files it was found. At most one per version that has it.
 
     By default only the warn and error policy level alerts are reported. You can
     override this and request more ('defer' < 'ignore' < 'monitor' < 'warn' < 'error')
 
-    Short responses: JSON: \`{healthy:bool}\`, markdown: \`healthy = bool\`, text: \`OK/ERR\`
+    Short responses look like this:
+      --json:     \`{healthy:bool}\`
+      --markdown: \`healthy = bool\`
+      neither:    \`OK/ERR\`
 
     Examples
-      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
-      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short
+      $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
+      $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short
   `,
 }
 
@@ -103,42 +118,34 @@ async function run(
   })
 
   const {
+    dryRun,
     fold = 'none',
+    interactive,
     json,
     license,
     markdown,
+    org: orgFlag,
     reportLevel = 'warn',
   } = cli.flags
   const outputKind = getOutputKind(json, markdown)
+  const [scanId = '', file = ''] = cli.input
 
-  const { dryRun, interactive, org: orgFlag } = cli.flags
-
-  const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+  const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     !!interactive,
     !!dryRun,
   )
 
-  const scanId =
-    (isTestingV1() || defaultOrgSlug ? cli.input[0] : cli.input[1]) || ''
-  const file =
-    (isTestingV1() || defaultOrgSlug ? cli.input[1] : cli.input[2]) || '-'
   const hasApiToken = hasDefaultToken()
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
-      nook: !!defaultOrgSlug,
-      test: !!orgSlug && orgSlug !== '.',
-      message: isTestingV1()
-        ? 'Org name by default setting, --org, or auto-discovered'
-        : 'Org name must be the first argument',
+      nook: true,
+      test: !!orgSlug,
+      message: 'Org name by default setting, --org, or auto-discovered',
       pass: 'ok',
-      fail:
-        orgSlug === '.'
-          ? 'dot is an invalid org, most likely you forgot the org name here?'
-          : 'missing',
+      fail: 'dot is an invalid org, most likely you forgot the org name here?',
     },
     {
       test: !!scanId,
@@ -173,7 +180,7 @@ async function run(
 
   await handleScanReport({
     orgSlug,
-    scanId: scanId,
+    scanId,
     includeLicensePolicy: !!license,
     outputKind,
     filePath: file,

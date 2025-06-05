@@ -18,27 +18,27 @@ describe('socket analytics', async () => {
         "Look up analytics data
 
           Usage
-            $ socket analytics --scope=<scope> --time=<time filter>
+            $ socket analytics [options] [ "org" | "repo" <reponame>] [TIME]
 
           API Token Requirements
             - Quota: 1 unit
             - Permissions: report:write
 
-          Default parameters are set to show the organization-level analytics over the
-          last 30 days.
+          The scope is either org or repo level, defaults to org.
+
+          When scope is repo, a repo slug must be given as well.
+
+          The TIME argument must be number 7, 30, or 90 and defaults to 30.
 
           Options
-            --file            Filepath to save output when given. Only valid with --json/--markdown.
+            --file            Path to store result, only valid with --json/--markdown
             --json            Output result as json
             --markdown        Output result as markdown
-            --repo            Name of the repository. Only valid when scope=repo
-            --scope           Scope of the analytics data - either 'org' or 'repo', default: org
-            --time            Time filter - either 7, 30 or 90, default: 30
 
           Examples
-            $ socket analytics --scope=org --time=7
-            $ socket analytics --scope=org --time=30
-            $ socket analytics --scope=repo --repo=test-repo --time=30"
+            $ socket analytics org 7
+            $ socket analytics repo test-repo 30
+            $ socket analytics 90"
       `,
       )
       // Node 24 on Windows currently fails this test with added stderr:
@@ -64,7 +64,7 @@ describe('socket analytics', async () => {
 
   cmdit(
     ['analytics', '--dry-run', '--config', '{}'],
-    'should require args with just dry-run',
+    'should report missing token with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
@@ -98,7 +98,32 @@ describe('socket analytics', async () => {
       '--config',
       '{"apiToken":"anything"}',
     ],
-    'should require args with just dry-run',
+    'should reject legacy flags',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
+
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+
+          - Legacy flags are no longer supported. See v1 migration guide. (\\x1b[31mreceived legacy flags\\x1b[39m)
+
+          - The time filter must either be 7, 30 or 90 (\\x1b[32mok\\x1b[39m)
+        \\x1b[22m"
+      `)
+
+      expect(code, 'dry-run should reject legacy flags with code 2').toBe(2)
+    },
+  )
+
+  cmdit(
+    ['analytics', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    'should run to dryrun without args',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
@@ -115,77 +140,17 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '--help', '--config', '{"isTestingV1": true}'],
-    'should support --help in v1',
-    async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(
-        `
-        "Look up analytics data
-
-          Usage
-            $ socket analytics [ org | repo <reponame>] [time]
-
-          API Token Requirements
-            - Quota: 1 unit
-            - Permissions: report:write
-
-          The scope is either org or repo level, defaults to org.
-
-          When scope is repo, a repo slug must be given as well.
-
-          The time argument must be number 7, 30, or 90 and defaults to 30.
-
-          Options
-            --file            Filepath to save output when given. Only valid with --json/--markdown.
-            --json            Output result as json
-            --markdown        Output result as markdown
-            --repo            Name of the repository. Only valid when scope=repo
-            --scope           Scope of the analytics data - either 'org' or 'repo', default: org
-            --time            Time filter - either 7, 30 or 90, default: 30
-
-          Examples
-            $ socket analytics org 7
-            $ socket analytics repo test-repo 30
-            $ socket analytics 90"
-      `,
-      )
-      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-        "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m"
-      `)
-
-      expect(code, 'explicit help should exit with code 0').toBe(0)
-      expect(stderr, 'banner includes base command').toContain(
-        '`socket analytics`',
-      )
-    },
-  )
-
-  cmdit(
-    [
-      'analytics',
-      '--dry-run',
-      '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}',
-    ],
-    'should run to dryrun without args in v1',
+    ['analytics', 'org', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    'should accept org arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -193,54 +158,19 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    [
-      'analytics',
-      'org',
-      '--dry-run',
-      '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}',
-    ],
-    'should accept org arg in v1',
-    async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-        "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m"
-      `)
-
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'analytics',
-      'repo',
-      '--dry-run',
-      '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}',
-    ],
-    'should ask for repo name with repo arg in v1',
+    ['analytics', 'repo', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    'should ask for repo name with repo arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
-          - Scope must be "repo" or "org" (\\x1b[32mok\\x1b[39m)
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
           - When scope=repo, repo name should be the second argument (\\x1b[31mmissing\\x1b[39m)
 
@@ -259,20 +189,18 @@ describe('socket analytics', async () => {
       'daname',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}',
+      '{"apiToken":"anything"}',
     ],
-    'should accept repo with arg in v1',
+    'should accept repo with arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -280,25 +208,17 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    [
-      'analytics',
-      '7',
-      '--dry-run',
-      '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}',
-    ],
-    'should accept time 7 arg in v1',
+    ['analytics', '7', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    'should accept time 7 arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -306,25 +226,17 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    [
-      'analytics',
-      '30',
-      '--dry-run',
-      '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}',
-    ],
-    'should accept time 30 arg in v1',
+    ['analytics', '30', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    'should accept time 30 arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -332,25 +244,17 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    [
-      'analytics',
-      '90',
-      '--dry-run',
-      '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}',
-    ],
-    'should accept time 90 arg in v1',
+    ['analytics', '90', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    'should accept time 90 arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -361,23 +265,54 @@ describe('socket analytics', async () => {
     [
       'analytics',
       'org',
+      '--time',
       '7',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}',
+      '{"apiToken":"anything"}',
     ],
-    'should accept org and time arg in v1',
+    'should report legacy flag',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`""`)
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+        "
+           _____         _       _        /---------------
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
+
+        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+
+          - Legacy flags are no longer supported. See v1 migration guide. (\\x1b[31mreceived legacy flags\\x1b[39m)
+
+          - The time filter must either be 7, 30 or 90 (\\x1b[32mok\\x1b[39m)
+        \\x1b[22m"
+      `)
+
+      expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
+    },
+  )
+
+  cmdit(
+    [
+      'analytics',
+      'org',
+      '7',
+      '--dry-run',
+      '--config',
+      '{"apiToken":"anything"}',
+    ],
+    'should accept org and time arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -392,20 +327,18 @@ describe('socket analytics', async () => {
       '30',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}',
+      '{"apiToken":"anything"}',
     ],
-    'should accept repo and time arg in v1',
+    'should accept repo and time arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

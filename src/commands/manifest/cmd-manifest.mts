@@ -20,7 +20,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} <language> <target>
+      $ ${command} [options] <LANGUAGE> <TARGET>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -42,7 +42,7 @@ const config: CliCommandConfig = {
 
     To have it auto-detect and attempt to run:
 
-      $ ${command} yolo
+      $ ${command} auto
   `,
 }
 

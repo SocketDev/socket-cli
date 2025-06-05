@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -22,7 +20,7 @@ describe('socket uninstall', async () => {
             $ socket uninstall <command>
 
           Commands
-            (none)
+            completion        Uninstall bash completion for Socket CLI
 
           Options
             (none)

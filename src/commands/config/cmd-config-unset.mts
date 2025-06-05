@@ -24,10 +24,13 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} <org slug>
+      $ ${command} [options] <KEY> <VALUE>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
+
+    Removes a value from a config key, allowing the default value to be used
+    for it instead.
 
     Keys:
 
@@ -36,7 +39,7 @@ ${Array.from(supportedConfigKeys.entries())
   .join('\n')}
 
     Examples
-      $ ${command} FakeOrg --repoName=test-repo
+      $ ${command} defaultOrg
   `,
 }
 

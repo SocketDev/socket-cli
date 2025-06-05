@@ -19,7 +19,7 @@ describe('socket organization list', async () => {
         "List organizations associated with the API key used
 
           Usage
-            $ socket organization list
+            $ socket organization list [options]
 
           API Token Requirements
             - Quota: 1 unit
@@ -27,7 +27,11 @@ describe('socket organization list', async () => {
 
           Options
             --json            Output result as json
-            --markdown        Output result as markdown"
+            --markdown        Output result as markdown
+
+          Examples
+            $ socket organization list
+            $ socket organization list --json"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
