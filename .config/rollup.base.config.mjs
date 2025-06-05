@@ -36,6 +36,7 @@ const {
 } = constants
 
 export const EXTERNAL_PACKAGES = [
+  '@coana-tech/cli',
   '@socketsecurity/registry',
   'blessed',
   'blessed-contrib',

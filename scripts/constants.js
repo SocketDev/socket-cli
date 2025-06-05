@@ -72,6 +72,10 @@ const lazyDistPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'dist')
 
+const lazyExternalPath = () =>
+  // Lazily access constants.rootPath.
+  path.join(constants.rootPath, 'external')
+
 const lazyRootPackageJsonPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'package.json')
@@ -122,6 +126,7 @@ const constants = createConstantsObject(
     WITH_SENTRY,
     configPath: undefined,
     distPath: undefined,
+    externalPath: undefined,
     rootPackageJsonPath: undefined,
     rootPath: undefined,
     srcPath: undefined,
@@ -132,6 +137,7 @@ const constants = createConstantsObject(
       ENV: LAZY_ENV,
       configPath: lazyConfigPath,
       distPath: lazyDistPath,
+      externalPath: lazyExternalPath,
       rootPackageJsonPath: lazyRootPackageJsonPath,
       rootPackageLockPath: lazyRootPackageLockPath,
       rootPath: lazyRootPath,

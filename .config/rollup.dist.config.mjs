@@ -61,6 +61,7 @@ const {
 
 const BLESSED = 'blessed'
 const BLESSED_CONTRIB = 'blessed-contrib'
+const COANA_TECH_CLI = '@coana-tech/cli'
 const EXTERNAL = 'external'
 const SENTRY_NODE = '@sentry/node'
 const SOCKET_DESCRIPTION = 'CLI for Socket.dev'
@@ -87,9 +88,8 @@ async function copyBashCompletion() {
 async function copyPackage(pkgName, options) {
   const { strict = true } = { __proto__: null, ...options }
   // Lazily access constants path properties.
-  const externalPath = path.join(constants.rootPath, EXTERNAL)
   const nmPath = path.join(constants.rootPath, NODE_MODULES)
-  const pkgDestPath = path.join(externalPath, pkgName)
+  const pkgDestPath = path.join(constants.externalPath, pkgName)
   const pkgNmPath = path.join(nmPath, pkgName)
   // Copy entire package folder over to dist.
   await fs.cp(pkgNmPath, pkgDestPath, { recursive: true })
@@ -289,9 +289,8 @@ function resetDependencies(deps) {
 
 export default async () => {
   // Lazily access constants path properties.
-  const { configPath, distPath, rootPath, srcPath } = constants
+  const { configPath, distPath, externalPath, rootPath, srcPath } = constants
   const constantsSrcPath = path.join(srcPath, `constants.mts`)
-  const externalPath = path.join(rootPath, EXTERNAL)
   const externalSrcPath = path.join(srcPath, EXTERNAL)
   const nmPath = path.join(rootPath, NODE_MODULES)
   const shadowNpmBinSrcPath = path.join(srcPath, 'shadow/npm/bin.mts')
@@ -432,7 +431,10 @@ export default async () => {
               updatePackageJson(),
               remove(path.join(distPath, `${VENDOR}.js.map`)),
               ...EXTERNAL_PACKAGES.map(n =>
-                copyPackage(n, { strict: n !== SOCKET_SECURITY_REGISTRY }),
+                copyPackage(n, {
+                  strict:
+                    n !== COANA_TECH_CLI && n !== SOCKET_SECURITY_REGISTRY,
+                }),
               ),
             ])
 
@@ -450,6 +452,7 @@ export default async () => {
                 blessedContribExternalPath,
                 ['lib/**/*.js', 'index.js', 'LICENSE*'],
               ],
+              [path.join(externalPath, COANA_TECH_CLI), ['**/*.mjs']],
               [
                 path.join(externalPath, SOCKET_SECURITY_REGISTRY),
                 [
