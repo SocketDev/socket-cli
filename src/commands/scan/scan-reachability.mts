@@ -28,8 +28,8 @@ export async function scanReachability(cwd: string): Promise<CResult<unknown>> {
         env: {
           ...process.env,
           // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN
-          SOCKET_CLI_API_TOKEN: constants.ENV.SOCKET_CLI_API_TOKEN
-        }
+          SOCKET_CLI_API_TOKEN: constants.ENV.SOCKET_CLI_API_TOKEN,
+        },
       },
     )
     return { ok: true, data: result.stdout.trim() }
