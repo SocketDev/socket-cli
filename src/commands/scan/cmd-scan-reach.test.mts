@@ -20,7 +20,6 @@ describe('socket scan reach', async () => {
             $ socket scan reach [CWD=.]
 
           Options
-            --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown
 
@@ -55,9 +54,7 @@ describe('socket scan reach', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan reach\`, cwd: <redacted>
-
-        \\x1b[34mi\\x1b[39m If you dont have any interactive bits then drop the flag true"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan reach\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
