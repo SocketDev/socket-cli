@@ -199,7 +199,7 @@
     "side-channel": "npm:@socketregistry/side-channel@^1",
     "tiny-colors": "$yoctocolors-cjs",
     "typedarray": "npm:@socketregistry/typedarray@^1",
-    "undici": "6.21.1",
+    "undici": "6.21.2",
     "vite": "6.3.5",
     "xml2js": "0.5.0",
     "yaml": "2.8.0"
