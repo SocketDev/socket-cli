@@ -21,12 +21,6 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags,
     ...outputFlags,
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
   },
   help: (command, config) => `
     Usage
@@ -59,16 +53,12 @@ async function run(
     parentName,
   })
 
-  const { dryRun, interactive, json, markdown } = cli.flags
+  const { dryRun, json, markdown } = cli.flags
   const outputKind = getOutputKind(json, markdown)
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
-  logger.info(
-    'If you dont have any interactive bits then drop the flag',
-    interactive,
-  )
 
   const wasValidInput = checkCommandInput(outputKind)
   if (!wasValidInput) {

@@ -97,6 +97,7 @@ type Constants = Remap<
     readonly BINARY_LOCK_EXT: '.lockb'
     readonly BUN: 'bun'
     readonly ENV: ENV
+    readonly DOT_SOCKET_DOT_FACTS_JSON: '.socket.facts.json'
     readonly DRY_RUN_LABEL: '[DryRun]'
     readonly DRY_RUN_BAILING_NOW: '[DryRun] Bailing now'
     readonly DRY_RUN_NOT_SAVING: '[DryRun] Not saving'
@@ -143,10 +144,12 @@ type Constants = Remap<
       term: string
       useBCE: boolean
     }
+    readonly coanaBinPath: string
     readonly distCliPath: string
     readonly distInstrumentWithSentryPath: string
     readonly distPath: string
     readonly distShadowBinPath: string
+    readonly externalPath: string
     readonly distShadowInjectPath: string
     readonly githubCachePath: string
     readonly homePath: string
@@ -168,6 +171,7 @@ const ALERT_TYPE_MILD_CVE = 'mildCVE'
 const API_V0_URL = 'https://api.socket.dev/v0/'
 const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
+const DOT_SOCKET_DOT_FACTS_JSON = '.socket.facts.json'
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
 const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
@@ -375,6 +379,10 @@ const lazyBlessedOptions = () =>
     useBCE: true,
   })
 
+const lazyCoanaBinPath = () =>
+  // Lazily access constants.externalPath.
+  path.join(constants.externalPath, '@coana-tech/cli/cli.mjs')
+
 const lazyDistPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'dist')
@@ -394,6 +402,10 @@ const lazyDistShadowBinPath = () =>
 const lazyDistShadowInjectPath = () =>
   // Lazily access constants.distPath.
   path.join(constants.distPath, `${SHADOW_INJECT}.js`)
+
+const lazyExternalPath = () =>
+  // Lazily access constants.rootPath.
+  path.join(constants.rootPath, 'external')
 
 const lazyGithubCachePath = () =>
   // Lazily access constants.socketCachePath.
@@ -510,6 +522,7 @@ const constants: Constants = createConstantsObject(
     API_V0_URL,
     BINARY_LOCK_EXT,
     BUN,
+    DOT_SOCKET_DOT_FACTS_JSON,
     DRY_RUN_LABEL,
     DRY_RUN_BAILING_NOW,
     DRY_RUN_NOT_SAVING,
@@ -551,11 +564,13 @@ const constants: Constants = createConstantsObject(
     binPath: undefined,
     binCliPath: undefined,
     blessedOptions: undefined,
+    coanaBinPath: undefined,
     distCliPath: undefined,
     distInstrumentWithSentryPath: undefined,
     distPath: undefined,
     distShadowBinPath: undefined,
     distShadowInjectPath: undefined,
+    externalPath: undefined,
     githubCachePath: undefined,
     homePath: undefined,
     minimumVersionByAgent: undefined,
@@ -575,11 +590,13 @@ const constants: Constants = createConstantsObject(
       binCliPath: lazyBinCliPath,
       binPath: lazyBinPath,
       blessedOptions: lazyBlessedOptions,
+      coanaBinPath: lazyCoanaBinPath,
       distCliPath: lazyDistCliPath,
       distInstrumentWithSentryPath: lazyDistInstrumentWithSentryPath,
       distPath: lazyDistPath,
       distShadowBinPath: lazyDistShadowBinPath,
       distShadowInjectPath: lazyDistShadowInjectPath,
+      externalPath: lazyExternalPath,
       githubCachePath: lazyGithubCachePath,
       homePath: lazyHomePath,
       minimumVersionByAgent: lazyMinimumVersionByAgent,
