@@ -19,6 +19,7 @@ import { cmdDiffScan } from './commands/diff-scan/cmd-diff-scan.mts'
 import { cmdFix } from './commands/fix/cmd-fix.mts'
 import { cmdInfo } from './commands/info/cmd-info.mts'
 import { cmdInstall } from './commands/install/cmd-install.mts'
+import { cmdJson } from './commands/json/cmd-json.mts'
 import { cmdLogin } from './commands/login/cmd-login.mts'
 import { cmdLogout } from './commands/logout/cmd-logout.mts'
 import { cmdManifest } from './commands/manifest/cmd-manifest.mts'
@@ -66,6 +67,7 @@ void (async () => {
         fix: cmdFix,
         info: cmdInfo,
         install: cmdInstall,
+        json: cmdJson,
         login: cmdLogin,
         logout: cmdLogout,
         npm: cmdNpm,
