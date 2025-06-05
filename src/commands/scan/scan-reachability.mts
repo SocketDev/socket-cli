@@ -11,20 +11,30 @@ export async function scanReachability(cwd: string): Promise<CResult<unknown>> {
     const result = await spawn(
       constants.execPath,
       [
+        // Lazily access constants.nodeNoWarningsFlags.
+        ...constants.nodeNoWarningsFlags,
         // Lazily access constants.coanaBinPath.
         constants.coanaBinPath,
         'run',
         cwd,
-        '--disable-report-submission',
         '--output-dir',
         cwd,
+        '--disable-report-submission',
         '--socket-mode',
-        `./${DOT_SOCKET_DOT_FACTS_JSON}`,
+        DOT_SOCKET_DOT_FACTS_JSON,
       ],
-      { cwd },
+      {
+        cwd,
+        env: {
+          ...process.env,
+          // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN
+          SOCKET_CLI_API_TOKEN: constants.ENV.SOCKET_CLI_API_TOKEN
+        }
+      },
     )
     return { ok: true, data: result.stdout.trim() }
   } catch (e) {
-    return { ok: false, data: e, message: (e as Error)?.message }
+    const message = (e as any)?.stdout ?? (e as Error)?.message
+    return { ok: false, data: e, message }
   }
 }
