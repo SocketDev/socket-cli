@@ -121,7 +121,7 @@ describe('socket manifest conda', async () => {
       async cmd => {
         const { stderr, stdout } = await invokeNpm(binCliPath, cmd)
         // (Must normalize newlines to fix snapshot test for Windows)
-        expect(stdout.replace(/\\r\\n/g, '\\n')).toMatchInlineSnapshot(`
+        expect(stdout).toMatchInlineSnapshot(`
           "{
             "ok": false,
             "message": "Input error",
