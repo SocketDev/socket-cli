@@ -23,7 +23,7 @@ const config: CliCommandConfig = {
   },
   help: (command, _config) => `
     Usage
-      $ ${command}
+      $ ${command} [options]
 
     API Token Requirements
       - Quota: 1 unit
@@ -31,6 +31,10 @@ const config: CliCommandConfig = {
 
     Options
       ${getFlagListOutput(config.flags, 6)}
+
+    Examples
+      $ ${command}
+      $ ${command} --json
   `,
 }
 

@@ -24,7 +24,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} <key> <value>
+      $ ${command} [options] <KEY> <VALUE>
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -32,7 +32,11 @@ const config: CliCommandConfig = {
     This is a crude way of updating the local configuration for this CLI tool.
 
     Note that updating a value here is nothing more than updating a key/value
-    store entry. No validation is happening. The server may reject your config.
+    store entry. No validation is happening. The server may reject your values
+    in some cases. Use at your own risk.
+
+    Note: use \`socket config unset\` to restore to defaults. Setting a key
+    to \`undefined\` will not allow default values to be set on it.
 
     Keys:
 

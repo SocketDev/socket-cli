@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,10 +17,13 @@ describe('socket json', async () => {
         "Display the \`socket.json\` that would be applied for target folder
 
           Usage
-            $ socket json [CWD=.]
+            $ socket json [options] [CWD=.]
 
           Display the \`socket.json\` file that would apply when running relevant commands
-          in the target directory."
+          in the target directory.
+
+          Examples
+            $ socket json"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

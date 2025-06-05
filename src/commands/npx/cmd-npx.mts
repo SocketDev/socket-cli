@@ -21,7 +21,20 @@ const config: CliCommandConfig = {
   },
   help: (command, _config) => `
     Usage
+      $ ${command} ...
+
+    This runs npx but checks packages through Socket before running them.
+    See docs for more details.
+
+    Note: Everything after "npx" is sent straight to the npx command.
+          Only the \`--dryRun\` and \`--help\` flags are caught here.
+
+    Use \`socket wrapper on\` to automatically enable this such that you don't
+    have to write \`socket npx\` for that purpose.
+
+    Examples
       $ ${command}
+      $ ${command} prettier
   `,
 }
 
