@@ -14,7 +14,8 @@
       "**/.vscode",
       "**/coverage",
       "**/package.json",
-      "**/package-lock.json"
+      "**/package-lock.json",
+      "external/@coana-tech"
     ],
     "maxSize": 8388608
   },
