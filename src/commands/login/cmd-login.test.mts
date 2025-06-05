@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,7 +17,7 @@ describe('socket login', async () => {
         "Socket API login
 
           Usage
-            $ socket login
+            $ socket login [options]
 
           API Token Requirements
             - Quota: 1 unit

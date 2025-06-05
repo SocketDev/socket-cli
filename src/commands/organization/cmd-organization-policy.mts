@@ -1,5 +1,5 @@
 import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.mts'
-import { cmdOrganizationPolicyPolicy } from './cmd-organization-policy-security.mts'
+import { cmdOrganizationPolicySecurity } from './cmd-organization-policy-security.mts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
@@ -12,11 +12,11 @@ export const cmdOrganizationPolicy: CliSubcommand = {
   // and we're not sure if it's useful to anyone in its current state.
   // Until we do, we'll hide this to keep the help tidier.
   // And later, we may simply move this under `scan`, anyways.
-  hidden: true,
+  hidden: false,
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
-        security: cmdOrganizationPolicyPolicy,
+        security: cmdOrganizationPolicySecurity,
         license: cmdOrganizationPolicyLicense,
       },
       {

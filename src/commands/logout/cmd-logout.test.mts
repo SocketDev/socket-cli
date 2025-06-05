@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,9 +17,12 @@ describe('socket logout', async () => {
         "Socket API logout
 
           Usage
-            $ socket logout
+            $ socket logout [options]
 
-          Logs out of the Socket API and clears all Socket credentials from disk"
+          Logs out of the Socket API and clears all Socket credentials from disk
+
+          Examples
+            $ socket logout"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

@@ -19,24 +19,15 @@ describe('socket config get', async () => {
         "Show all local CLI config items and their values
 
           Usage
-            $ socket config list <org slug>
+            $ socket config list [options]
 
           Options
             --full            Show full tokens in plaintext (unsafe)
             --json            Output result as json
             --markdown        Output result as markdown
 
-          Keys:
-
-           - apiBaseUrl -- Base URL of the API endpoint
-           - apiProxy -- A proxy through which to access the API
-           - apiToken -- The API token required to access most API endpoints
-           - defaultOrg -- The default org slug to use; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.
-           - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
-           - isTestingV1 -- For development of testing the next major bump
-
           Examples
-            $ socket config list FakeOrg --repoName=test-repo"
+            $ socket config list"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

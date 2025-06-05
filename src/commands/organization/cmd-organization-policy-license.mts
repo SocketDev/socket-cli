@@ -4,7 +4,6 @@ import { handleLicensePolicy } from './handle-license-policy.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -15,11 +14,10 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-// TODO: secret toplevel alias `socket license policy`?
 const config: CliCommandConfig = {
   commandName: 'license',
   description: 'Retrieve the license policy of an organization',
-  hidden: true,
+  hidden: false,
   flags: {
     ...commonFlags,
     ...outputFlags,
@@ -37,7 +35,7 @@ const config: CliCommandConfig = {
   },
   help: (command, _config) => `
     Usage
-      $ ${command}${isTestingV1() ? '' : ' <org slug>'}
+      $ ${command} [options]
 
     API Token Requirements
       - Quota: 1 unit
@@ -50,8 +48,8 @@ const config: CliCommandConfig = {
     the request will fail with an authentication error.
 
     Examples
-      $ ${command}${isTestingV1() ? '' : ' mycorp'}
-      $ ${command}${isTestingV1() ? '' : ' mycorp'} --json
+      $ ${command}
+      $ ${command} --json
   `,
 }
 
@@ -78,7 +76,6 @@ async function run(
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     !!interactive,
     !!dryRun,
   )
@@ -87,15 +84,6 @@ async function run(
 
   const wasValidInput = checkCommandInput(
     outputKind,
-    {
-      nook: true,
-      test: !!orgSlug,
-      message: isTestingV1()
-        ? 'Org name by default setting, --org, or auto-discovered'
-        : 'Org name must be the first argument',
-      pass: 'ok',
-      fail: 'missing',
-    },
     {
       nook: true,
       test: !json || !markdown,

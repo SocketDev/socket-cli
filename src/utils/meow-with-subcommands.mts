@@ -11,7 +11,6 @@ import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import {
   getConfigValueOrUndef,
   isReadOnlyConfig,
-  isTestingV1,
   overrideCachedConfig,
   overrideConfigApiToken,
 } from './config.mts'
@@ -222,14 +221,8 @@ export async function meowWithSubcommands(
     }
   }
 
-  if (isTestingV1()) {
-    delete subcommands['diff-scan']
-    delete subcommands['info']
-    delete subcommands['report']
-  }
-
   function formatCommandsForHelp(isRootCommand: boolean) {
-    if (!isRootCommand || !isTestingV1()) {
+    if (!isRootCommand) {
       return getHelpListOutput(
         {
           ...toSortedObject(
@@ -384,11 +377,11 @@ export async function meowWithSubcommands(
     Usage
       $ ${name} <command>
 
-${isRootCommand && isTestingV1() ? '' : '    Commands'}
+${isRootCommand ? '' : '    Commands'}
       ${formatCommandsForHelp(isRootCommand)}
 
-${isRootCommand && isTestingV1() ? '    Options' : '    Options'}${isRootCommand ? '       (Note: all CLI commands have these flags even when not displayed in their help)\n' : ''}
-      ${getFlagListOutput(flags, 6, isTestingV1() ? { padName: 25 } : undefined)}
+${isRootCommand ? '    Options' : '    Options'}${isRootCommand ? '       (Note: all CLI commands have these flags even when not displayed in their help)\n' : ''}
+      ${getFlagListOutput(flags, 6, { padName: 25 })}
 
     Examples
       $ ${name} --help
@@ -521,12 +514,6 @@ function getAsciiHeader(command: string) {
   const nodeVersion = redacting ? REDACTED : process.version
   const defaultOrg = getConfigValueOrUndef('defaultOrg')
   const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
-  const v1test = isTestingV1() ? ' (is testing v1)' : ''
-  const feedback = isTestingV1()
-    ? colors.green(
-        '   (Thank you for testing the v1 bump! Please send us any feedback you might have!)\n',
-      )
-    : ''
   const shownToken = redacting ? REDACTED : getVisibleTokenPrefix() || 'no'
   const relCwd = redacting ? REDACTED : normalizePath(tildify(process.cwd()))
   let nodeVerWarn = ''
@@ -541,9 +528,9 @@ function getAsciiHeader(command: string) {
   }
   const body = `
    _____         _       _        /---------------
-  |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}${v1test}
+  |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
   |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${shownToken}${defaultOrg ? `, default org: ${redacting ? REDACTED : defaultOrg}` : ''}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}`.trimStart()
 
-  return `   ${body}\n${nodeVerWarn}${feedback}`
+  return `   ${body}\n${nodeVerWarn}`
 }

@@ -17,7 +17,7 @@ describe('socket manifest auto', async () => {
         "Auto-detect build and attempt to generate manifest file
 
           Usage
-            $ socket manifest auto [CWD=.]
+            $ socket manifest auto [options] [CWD=.]
 
           Options
             --verbose         Enable debug output (only for auto itself; sub-steps need to have it pre-configured), may help when running into errors
