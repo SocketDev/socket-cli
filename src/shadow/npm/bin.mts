@@ -75,13 +75,13 @@ export default async function shadowBin(
       ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
         ? [
             '--require',
-            // Lazily access constants.distInstrumentWithSentryPath.
-            constants.distInstrumentWithSentryPath,
+            // Lazily access constants.instrumentWithSentryPath.
+            constants.instrumentWithSentryPath,
           ]
         : []),
       '--require',
-      // Lazily access constants.distShadowInjectPath.
-      constants.distShadowInjectPath,
+      // Lazily access constants.shadowNpmInjectPath.
+      constants.shadowNpmInjectPath,
       // Lazily access constants.shadowBinPath.
       await installLinks(constants.shadowBinPath, binName),
       ...(useDebug ? ['--trace-uncaught', '--trace-warnings'] : []),

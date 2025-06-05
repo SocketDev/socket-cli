@@ -49,7 +49,7 @@ async function run(
     return
   }
 
-  // Lazily access constants.distShadowBinPath.
-  const shadowBin = require(constants.distShadowBinPath)
+  // Lazily access constants.shadowNpmBinPath.
+  const shadowBin = require(constants.shadowNpmBinPath)
   await shadowBin('npx', argv)
 }

@@ -75,13 +75,13 @@ export function safeNpmInstall(
       ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
         ? [
             '--require',
-            // Lazily access constants.distInstrumentWithSentryPath.
-            constants.distInstrumentWithSentryPath,
+            // Lazily access constants.instrumentWithSentryPath.
+            constants.instrumentWithSentryPath,
           ]
         : []),
       '--require',
-      // Lazily access constants.distShadowInjectPath.
-      constants.distShadowInjectPath,
+      // Lazily access constants.shadowNpmInjectPath.
+      constants.shadowNpmInjectPath,
       realExecPathSync(agentExecPath),
       'install',
       // Avoid code paths for 'audit' and 'fund'.

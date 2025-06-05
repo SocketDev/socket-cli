@@ -28,8 +28,8 @@ spawn(
     ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
       ? [
           '--require',
-          // Lazily access constants.distInstrumentWithSentryPath.
-          constants.distInstrumentWithSentryPath,
+          // Lazily access constants.instrumentWithSentryPath.
+          constants.instrumentWithSentryPath,
         ]
       : []),
     // Lazily access constants.distCliPath.
