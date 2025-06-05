@@ -112,7 +112,8 @@ describe('socket json', async () => {
     'should print a socket.json when found',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`
+      // (Must normalize newlines to fix snapshot test for Windows)
+      expect(stdout.replace(/\\r\\n/g, '\\n').replace(/(?:\\r|\\x0d)/g, '')).toMatchInlineSnapshot(`
         "{
           " _____         _       _     ": "Local config file for Socket CLI tool ( https://npmjs.org/socket ), to work with https://socket.dev",
           "|   __|___ ___| |_ ___| |_   ": "     The config in this file is used to set as defaults for flags or cmmand args when using the CLI",
