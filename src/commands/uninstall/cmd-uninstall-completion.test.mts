@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,7 +17,7 @@ describe('socket uninstall completion', async () => {
         "Uninstall bash completion for Socket CLI
 
           Usage
-            $ socket uninstall completion [name=socket]
+            $ socket uninstall completion [options] [COMMAND_NAME=socket]
 
           Uninstalls bash tab completion for the Socket CLI. This will:
           1. Remove tab completion from your current shell for given command

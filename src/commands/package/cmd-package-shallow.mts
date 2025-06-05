@@ -24,7 +24,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} <<ecosystem> <name> [<name> ...] | <purl> [<purl> ...]>
+      $ ${command} [options] <<ECOSYSTEM> <PKGNAME> [<PKGNAME> ...] | <PURL> [<PURL> ...]>
 
     API Token Requirements
       - Quota: 100 units
@@ -37,13 +37,16 @@ const config: CliCommandConfig = {
     This means that any dependency scores are not reflected by the score. You can
     use the \`socket package score <pkg>\` command to get its full transitive score.
 
-    Only a few ecosystems are supported like npm, golang, and maven.
+    Only a few ecosystems are supported like npm, pypi, nuget, gem, golang, and maven.
 
     A "purl" is a standard package name formatting: \`pkg:eco/name@version\`
     This command will automatically prepend "pkg:" when not present.
 
     If the first arg is an ecosystem, remaining args that are not a purl are
-    assumed to be scoped to that ecosystem.
+    assumed to be scoped to that ecosystem. The \`pkg:\` prefix is optional.
+
+    Note: if a package cannot be found, it may be too old or perhaps was removed
+          before we had the opportunity to process it.
 
     Examples
       $ ${command} npm webtorrent

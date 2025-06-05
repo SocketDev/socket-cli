@@ -4,7 +4,6 @@ import { handleThreatFeed } from './handle-threat-feed.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -15,6 +14,8 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
+const ECOSYSTEMS = new Set(['gem', 'golang', 'maven', 'npm', 'nuget', 'pypi'])
+
 const config: CliCommandConfig = {
   commandName: 'threat-feed',
   description: '[beta] View the threat feed',
@@ -24,7 +25,6 @@ const config: CliCommandConfig = {
     ...outputFlags,
     direction: {
       type: 'string',
-      shortFlag: 'd',
       default: 'desc',
       description: 'Order asc or desc by the createdAt attribute',
     },
@@ -74,7 +74,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command}${isTestingV1() ? '' : ' <org slug>'}
+      $ ${command} [options] [ECOSYSTEM] [TYPE_FILTER]
 
     API Token Requirements
       - Quota: 1 unit
@@ -87,7 +87,16 @@ const config: CliCommandConfig = {
     Options
       ${getFlagListOutput(config.flags, 6)}
 
-    Valid filters:
+    Valid ecosystems:
+
+      - gem
+      - golang
+      - maven
+      - npm
+      - nuget
+      - pypi
+
+    Valid type filters:
 
       - anom    Anomaly
       - c       Do not filter
@@ -101,23 +110,16 @@ const config: CliCommandConfig = {
       - u       Unreviewed
       - vuln    Vulnerability
 
-    Valid ecosystems:
-
-      - gem
-      - golang
-      - maven
-      - npm
-      - nuget
-      - pypi
-
     Note: if you filter by package name or version, it will do so for anything
           unless you also filter by that ecosystem and/or package name. When in
           doubt, look at the threat-feed and see the names in the name/version
           column. That's what you want to search for.
 
     Examples
-      $ ${command}${isTestingV1() ? '' : ' FakeOrg'}
-      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} --perPage=5 --page=2 --direction=asc --filter=joke
+      $ ${command}
+      $ ${command} maven --json
+      $ ${command} typo
+      $ ${command} npm joke --perPage=5 --page=2 --direction=asc
   `,
 }
 
@@ -149,10 +151,12 @@ async function run(
     version,
   } = cli.flags
   const outputKind = getOutputKind(json, markdown)
+  const [filter1 = '', filter2 = ''] = cli.input
+  const ecoFilter = ECOSYSTEMS.has(filter1) ? filter1 : ''
+  const typeFilter = (ecoFilter ? filter2 : filter1) || ''
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     !!interactive,
     !!dryRun,
   )
@@ -164,9 +168,17 @@ async function run(
     {
       nook: true,
       test: !!orgSlug,
-      message: 'Org name as the first argument',
+      message: 'Org name by default setting, --org, or auto-discovered',
       pass: 'ok',
       fail: 'missing',
+    },
+    {
+      nook: true,
+      test: !!typeFilter || !filter2,
+      message:
+        'Second arg should only be given with first arg being a valid ecosystem',
+      pass: 'ok',
+      fail: 'first arg was not ecosystem and second arg received too',
     },
     {
       nook: true,
@@ -195,8 +207,8 @@ async function run(
 
   await handleThreatFeed({
     direction: String(cli.flags['direction'] || 'desc'),
-    ecosystem: String(cli.flags['eco'] || ''),
-    filter: String(cli.flags['filter'] || 'mal'),
+    ecosystem: ecoFilter,
+    filter: typeFilter,
     outputKind,
     orgSlug,
     page: String(cli.flags['page'] || '1'),

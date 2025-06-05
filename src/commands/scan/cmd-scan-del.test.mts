@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,7 +17,7 @@ describe('socket scan del', async () => {
         "Delete a scan
 
           Usage
-            $ socket scan del <org slug> <scan ID>
+            $ socket scan del [options] <SCAN_ID>
 
           API Token Requirements
             - Quota: 1 unit
@@ -32,7 +30,8 @@ describe('socket scan del', async () => {
             --org             Force override the organization slug, overrides the default org from config
 
           Examples
-            $ socket scan del FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0"
+            $ socket scan del 000aaaa1-0000-0a0a-00a0-00a0000000a0
+            $ socket scan del 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -63,9 +62,12 @@ describe('socket scan del', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan del\`, cwd: <redacted>
 
+        \\x1b[33m\\u203c\\x1b[39m Missing the org slug and no --org flag set. Trying to auto-discover the org now...
+        \\x1b[34mi\\x1b[39m Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.
+        \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
-          - Org name must be the first argument (\\x1b[31mmissing\\x1b[39m)
+          - Org name by default setting, --org, or auto-discovered (\\x1b[31mmissing\\x1b[39m)
 
           - Scan ID to delete (\\x1b[31mmissing\\x1b[39m)
 
@@ -81,6 +83,7 @@ describe('socket scan del', async () => {
     [
       'scan',
       'del',
+      '--org',
       'fakeorg',
       'scanidee',
       '--dry-run',

@@ -52,7 +52,6 @@ const config: CliCommandConfig = {
     your .gitignore all the same. Only this CLI will use it.
 
     Examples
-
       $ ${command}
       $ ${command} ./proj
   `,

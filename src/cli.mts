@@ -11,30 +11,27 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
 import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.mts'
-import { cmdCdxgen } from './commands/cdxgen/cmd-cdxgen.mts'
 import { cmdCI } from './commands/ci/cmd-ci.mts'
 import { cmdConfig } from './commands/config/cmd-config.mts'
 import { cmdScanCreate } from './commands/dependencies/cmd-dependencies.mts'
-import { cmdDiffScan } from './commands/diff-scan/cmd-diff-scan.mts'
 import { cmdFix } from './commands/fix/cmd-fix.mts'
-import { cmdInfo } from './commands/info/cmd-info.mts'
 import { cmdInstall } from './commands/install/cmd-install.mts'
 import { cmdJson } from './commands/json/cmd-json.mts'
 import { cmdLogin } from './commands/login/cmd-login.mts'
 import { cmdLogout } from './commands/logout/cmd-logout.mts'
+import { cmdManifestCdxgen } from './commands/manifest/cmd-manifest-cdxgen.mts'
 import { cmdManifest } from './commands/manifest/cmd-manifest.mts'
 import { cmdNpm } from './commands/npm/cmd-npm.mts'
 import { cmdNpx } from './commands/npx/cmd-npx.mts'
 import { cmdOops } from './commands/oops/cmd-oops.mts'
 import { cmdOptimize } from './commands/optimize/cmd-optimize.mts'
 import { cmdOrganizationPolicyLicense } from './commands/organization/cmd-organization-policy-license.mts'
-import { cmdOrganizationPolicyPolicy } from './commands/organization/cmd-organization-policy-security.mts'
+import { cmdOrganizationPolicySecurity } from './commands/organization/cmd-organization-policy-security.mts'
 import { cmdOrganization } from './commands/organization/cmd-organization.mts'
 import { cmdPackage } from './commands/package/cmd-package.mts'
 import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm.mts'
 import { cmdRawNpx } from './commands/raw-npx/cmd-raw-npx.mts'
-import { cmdReport } from './commands/report/cmd-report.mts'
-import { cmdRepos } from './commands/repos/cmd-repos.mts'
+import { cmdRepository } from './commands/repository/cmd-repository.mts'
 import { cmdScan } from './commands/scan/cmd-scan.mts'
 import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed.mts'
 import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
@@ -62,10 +59,8 @@ void (async () => {
     await meowWithSubcommands(
       {
         ci: cmdCI,
-        cdxgen: cmdCdxgen,
         config: cmdConfig,
         fix: cmdFix,
-        info: cmdInfo,
         install: cmdInstall,
         json: cmdJson,
         login: cmdLogin,
@@ -78,14 +73,12 @@ void (async () => {
         package: cmdPackage,
         'raw-npm': cmdRawNpm,
         'raw-npx': cmdRawNpx,
-        report: cmdReport,
         wrapper: cmdWrapper,
         scan: cmdScan,
         'audit-log': cmdAuditLog,
-        repos: cmdRepos,
+        repos: cmdRepository,
         dependencies: cmdScanCreate,
         analytics: cmdAnalytics,
-        'diff-scan': cmdDiffScan,
         'threat-feed': cmdThreatFeed,
         manifest: cmdManifest,
         uninstall: cmdUninstall,
@@ -101,6 +94,11 @@ void (async () => {
             description: cmdAuditLog.description,
             hidden: true,
             argv: ['audit-log'],
+          },
+          cdxgen: {
+            description: cmdManifestCdxgen.description,
+            hidden: true,
+            argv: ['manifest', 'cdxgen'],
           },
           deps: {
             description: cmdScanCreate.description,
@@ -148,22 +146,22 @@ void (async () => {
             argv: ['package'],
           },
           repo: {
-            description: cmdRepos.description,
+            description: cmdRepository.description,
             hidden: true,
             argv: ['repos'],
           },
           repository: {
-            description: cmdRepos.description,
+            description: cmdRepository.description,
             hidden: true,
             argv: ['repos'],
           },
           repositories: {
-            description: cmdRepos.description,
+            description: cmdRepository.description,
             hidden: true,
             argv: ['repos'],
           },
           security: {
-            description: cmdOrganizationPolicyPolicy.description,
+            description: cmdOrganizationPolicySecurity.description,
             hidden: true,
             argv: ['organization', 'policy', 'security'],
           },

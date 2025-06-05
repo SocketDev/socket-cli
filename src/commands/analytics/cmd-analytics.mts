@@ -4,7 +4,6 @@ import { handleAnalytics } from './handle-analytics.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -23,58 +22,32 @@ const config: CliCommandConfig = {
     ...outputFlags,
     file: {
       type: 'string',
-      shortFlag: 'f',
-      description:
-        'Filepath to save output when given. Only valid with --json/--markdown.',
-    },
-    repo: {
-      type: 'string',
-      shortFlag: 'r',
-      default: '',
-      description: 'Name of the repository. Only valid when scope=repo',
-    },
-    scope: {
-      type: 'string',
-      shortFlag: 's',
-      default: 'org',
-      description:
-        "Scope of the analytics data - either 'org' or 'repo', default: org",
-    },
-    time: {
-      type: 'number',
-      shortFlag: 't',
-      default: 30,
-      description: 'Time filter - either 7, 30 or 90, default: 30',
+      description: 'Path to store result, only valid with --json/--markdown',
     },
   },
   help: (command, { flags }) =>
     `
     Usage
-      $ ${command} ${isTestingV1() ? '[ org | repo <reponame>] [time]' : '--scope=<scope> --time=<time filter>'}
+      $ ${command} [options] [ "org" | "repo" <reponame>] [TIME]
 
     API Token Requirements
       - Quota: 1 unit
       - Permissions: report:write
 
-    ${isTestingV1() ? '' : 'Default parameters are set to show the organization-level analytics over the'}
-    ${isTestingV1() ? '' : 'last 30 days.'}
+    The scope is either org or repo level, defaults to org.
 
-    ${isTestingV1() ? 'The scope is either org or repo level, defaults to org.' : ''}
+    When scope is repo, a repo slug must be given as well.
 
-    ${isTestingV1() ? 'When scope is repo, a repo slug must be given as well.' : ''}
-
-    ${isTestingV1() ? 'The time argument must be number 7, 30, or 90 and defaults to 30.' : ''}
+    The TIME argument must be number 7, 30, or 90 and defaults to 30.
 
     Options
       ${getFlagListOutput(flags, 6)}
 
     Examples
-      $ ${command} ${isTestingV1() ? 'org 7' : '--scope=org --time=7'}
-      $ ${command} ${isTestingV1() ? 'repo test-repo 30' : '--scope=org --time=30'}
-      $ ${command} ${isTestingV1() ? '90' : '--scope=repo --repo=test-repo --time=30'}
-  `
-      // Drop consecutive empty lines. Temporarily necessary to deal with v1 prep.
-      .replace(/\n(?: *\n)+/g, '\n\n'),
+      $ ${command} org 7
+      $ ${command} repo test-repo 30
+      $ ${command} 90
+  `,
 }
 
 export const cmdAnalytics = {
@@ -98,7 +71,7 @@ async function run(
   const { file, json, markdown } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
-  // In v1 mode support:
+  // Supported inputs:
   // - []        (no args)
   // - ['org']
   // - ['org', '30']
@@ -107,62 +80,42 @@ async function run(
   // - ['30']
   // Validate final values in the next step
   let scope = 'org'
-  let time = isTestingV1() ? '30' : 30
+  let time = '30'
   let repoName = ''
-  if (isTestingV1()) {
-    if (cli.input[0] === 'org') {
-      if (cli.input[1]) {
-        time = cli.input[1]
-      }
-    } else if (cli.input[0] === 'repo') {
-      scope = 'repo'
-      if (cli.input[1]) {
-        repoName = cli.input[1]
-      }
-      if (cli.input[2]) {
-        time = cli.input[2]
-      }
-    } else if (cli.input[0]) {
-      time = cli.input[0]
+  if (cli.input[0] === 'org') {
+    if (cli.input[1]) {
+      time = cli.input[1]
     }
-  } else {
-    if (cli.flags['scope']) {
-      scope = String(cli.flags['scope'] || '')
+  } else if (cli.input[0] === 'repo') {
+    scope = 'repo'
+    if (cli.input[1]) {
+      repoName = cli.input[1]
     }
-    if (scope === 'repo') {
-      repoName = String(cli.flags['repo'] || '')
+    if (cli.input[2]) {
+      time = cli.input[2]
     }
-    if (cli.flags['time']) {
-      time = Number(cli.flags['time'] || 30)
-    }
+  } else if (cli.input[0]) {
+    time = cli.input[0]
   }
 
   const hasApiToken = hasDefaultToken()
 
+  const noLegacy =
+    !cli.flags['scope'] && !cli.flags['repo'] && !cli.flags['time']
+
   const wasValidInput = checkCommandInput(
     outputKind,
     {
-      // In v1 this can't go wrong anymore since the unknown value goes to time
-      nook: !isTestingV1(),
-      test: scope === 'org' || scope === 'repo',
-      message: 'Scope must be "repo" or "org"',
-      pass: 'ok',
-      fail: 'bad',
-    },
-    {
       nook: true,
-      // Before v1 there were no args, only flags
-      test: isTestingV1() || cli.input.length === 0,
-      message: 'This command does not accept any arguments (use flags instead)',
+      test: noLegacy,
+      message: 'Legacy flags are no longer supported. See v1 migration guide.',
       pass: 'ok',
-      fail: `bad`,
+      fail: `received legacy flags`,
     },
     {
       nook: true,
       test: scope === 'org' || !!repoName,
-      message: isTestingV1()
-        ? 'When scope=repo, repo name should be the second argument'
-        : 'When scope=repo, repo name should be set through --repo',
+      message: 'When scope=repo, repo name should be the second argument',
       pass: 'ok',
       fail: 'missing',
     },
@@ -170,21 +123,16 @@ async function run(
       nook: true,
       test:
         scope === 'org' ||
-        !isTestingV1() ||
         (repoName !== '7' && repoName !== '30' && repoName !== '90'),
       message: 'When scope is repo, the second arg should be repo, not time',
       pass: 'ok',
       fail: 'missing',
     },
     {
-      test: isTestingV1()
-        ? time === '7' || time === '30' || time === '90'
-        : time === 7 || time === 30 || time === 90,
+      test: time === '7' || time === '30' || time === '90',
       message: 'The time filter must either be 7, 30 or 90',
       pass: 'ok',
-      fail: isTestingV1()
-        ? 'invalid range set, see --help for command arg details.'
-        : 'bad',
+      fail: 'invalid range set, see --help for command arg details.',
     },
     {
       nook: true,
@@ -222,8 +170,7 @@ async function run(
 
   return await handleAnalytics({
     scope,
-    time:
-      time === '90' || time === 90 ? 90 : time === '30' || time === 30 ? 30 : 7,
+    time: time === '90' ? 90 : time === '30' ? 30 : 7,
     repo: repoName,
     outputKind,
     filePath: String(file || ''),

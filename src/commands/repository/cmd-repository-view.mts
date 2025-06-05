@@ -1,10 +1,9 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { handleDeleteRepo } from './handle-delete-repo.mts'
+import { handleViewRepo } from './handle-view-repo.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -16,8 +15,8 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
-  commandName: 'del',
-  description: 'Delete a repository in an organization',
+  commandName: 'view',
+  description: 'View repositories in an organization',
   hidden: false,
   flags: {
     ...commonFlags,
@@ -36,21 +35,22 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} ${isTestingV1() ? '<repo>' : '<org slug> --repo-name=<name>'}
+      $ ${command} [options] <REPO>
 
     API Token Requirements
       - Quota: 1 unit
-      - Permissions: repo:delete
+      - Permissions: repo:list
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command} ${isTestingV1() ? 'test-repo' : 'FakeOrg test-repo'}
+      $ ${command} test-repo
+      $ ${command} test-repo --json
   `,
 }
 
-export const cmdReposDel = {
+export const cmdRepositoryView = {
   description: config.description,
   hidden: config.hidden,
   run,
@@ -70,37 +70,47 @@ async function run(
 
   const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
   const outputKind = getOutputKind(json, markdown)
+  const [repoName = ''] = cli.input
 
-  const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+  const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     !!interactive,
     !!dryRun,
   )
 
-  const repoName =
-    (defaultOrgSlug || isTestingV1() ? cli.input[0] : cli.input[1]) || ''
-
   const hasApiToken = hasDefaultToken()
+
+  const noLegacy = !cli.flags['repoName']
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
+      test: noLegacy,
+      message: 'Legacy flags are no longer supported. See v1 migration guide.',
+      pass: 'ok',
+      fail: `received legacy flags`,
+    },
+    {
+      nook: true,
       test: !!orgSlug,
-      message: isTestingV1()
-        ? 'Org name by default setting, --org, or auto-discovered'
-        : 'Org name must be the first argument',
+      message: 'Org name by default setting, --org, or auto-discovered',
       pass: 'ok',
       fail: 'missing',
     },
     {
       test: !!repoName,
-      message: isTestingV1()
-        ? 'Repository name as first argument'
-        : 'Repository name using --repoName',
+      message: 'Repository name as first argument',
       pass: 'ok',
       fail: 'missing',
+    },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message:
+        'The `--json` and `--markdown` flags can not be used at the same time',
+      pass: 'ok',
+      fail: 'bad',
     },
     {
       nook: true,
@@ -115,10 +125,10 @@ async function run(
     return
   }
 
-  if (dryRun) {
+  if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
-  await handleDeleteRepo(orgSlug, repoName, outputKind)
+  await handleViewRepo(orgSlug, String(repoName), outputKind)
 }

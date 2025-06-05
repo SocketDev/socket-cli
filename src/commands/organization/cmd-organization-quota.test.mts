@@ -19,11 +19,15 @@ describe('socket organization quota', async () => {
         "List organizations associated with the API key used
 
           Usage
-            $ socket organization quota
+            $ socket organization quota [options]
 
           Options
             --json            Output result as json
-            --markdown        Output result as markdown"
+            --markdown        Output result as markdown
+
+          Examples
+            $ socket organization quota
+            $ socket organization quota --json"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

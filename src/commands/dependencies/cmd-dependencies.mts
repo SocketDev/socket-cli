@@ -22,13 +22,11 @@ const config: CliCommandConfig = {
     ...commonFlags,
     limit: {
       type: 'number',
-      shortFlag: 'l',
       default: 50,
       description: 'Maximum number of dependencies returned',
     },
     offset: {
       type: 'number',
-      shortFlag: 'o',
       default: 0,
       description: 'Page number',
     },
@@ -36,7 +34,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      ${command}
+      ${command} [options]
 
     API Token Requirements
       - Quota: 1 unit
@@ -46,6 +44,7 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
+      ${command}
       ${command} --limit 20 --offset 10
   `,
 }

@@ -42,7 +42,6 @@ describe('socket manifest setup', async () => {
           your .gitignore all the same. Only this CLI will use it.
 
           Examples
-
             $ socket manifest setup
             $ socket manifest setup ./proj"
       `,

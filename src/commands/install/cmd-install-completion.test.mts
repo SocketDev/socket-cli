@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,7 +17,7 @@ describe('socket install completion', async () => {
         "Install bash completion for Socket CLI
 
           Usage
-            $ socket install completion [name=socket]
+            $ socket install completion [options] [NAME=socket]
 
           Installs bash completion for the Socket CLI. This will:
           1. Source the completion script in your current shell

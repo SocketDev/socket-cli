@@ -17,7 +17,7 @@ describe('socket scan reach', async () => {
         "Compute tier 1 reachability
 
           Usage
-            $ socket scan reach [CWD=.]
+            $ socket scan reach [options] [CWD=.]
 
           Options
             --json            Output result as json

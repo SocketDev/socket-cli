@@ -9,7 +9,6 @@ import { removeSocketWrapper } from './remove-socket-wrapper.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -24,27 +23,21 @@ const config: CliCommandConfig = {
   hidden: false,
   flags: {
     ...commonFlags,
-    enable: {
-      type: 'boolean',
-      default: false,
-      description: 'Enables the Socket npm/npx wrapper',
-    },
-    disable: {
-      type: 'boolean',
-      default: false,
-      description: 'Disables the Socket npm/npx wrapper',
-    },
   },
   help: (command, config) => `
     Usage
-      $ ${command} <flag>
+      $ ${command} <"on" | "off">
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
+    While enabled, the wrapper makes it so that when you call npm/npx on your
+    machine, it will automatically actually run \`socket npm\` / \`socket npx\`
+    instead.
+
     Examples
-      $ ${command} --enable
-      $ ${command} --disable
+      $ ${command} on
+      $ ${command} off
   `,
 }
 
@@ -73,38 +66,33 @@ async function run(
   })
 
   const { json, markdown } = cli.flags
-  let { disable, enable } = cli.flags
   const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
 
-  if (isTestingV1()) {
-    const [arg] = cli.input
-    if (arg === 'on' || arg === 'enable' || arg === 'enabled') {
-      enable = true
-      disable = false
-    } else if (arg === 'off' || arg === 'disable' || arg === 'disabled') {
-      enable = false
-      disable = true
-    }
+  let enable = false
+  let disable = false
+  const [arg] = cli.input
+  if (arg === 'on' || arg === 'enable' || arg === 'enabled') {
+    enable = true
+    disable = false
+  } else if (arg === 'off' || arg === 'disable' || arg === 'disabled') {
+    enable = false
+    disable = true
   }
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
-      test: !!(enable || disable),
-      message: isTestingV1()
-        ? 'Must use on or off argument'
-        : 'Must use --enable or --disable',
+      test: enable || disable,
+      message: 'Must specify "on" or "off" argument',
       pass: 'ok',
       fail: 'missing',
     },
     {
       nook: true,
-      test: !enable || !disable,
-      message: isTestingV1()
-        ? 'Do not use both on and off'
-        : 'Do not use both --enable and --disable',
+      test: cli.input.length <= 1,
+      message: 'expecting exactly one argument',
       pass: 'ok',
-      fail: 'missing',
+      fail: `got multiple`,
     },
   )
   if (!wasValidInput) {

@@ -7,7 +7,7 @@ const description = 'Teardown the Socket command from your environment'
 
 export const cmdUninstall: CliSubcommand = {
   description,
-  hidden: true, // beta; isTestingV1
+  hidden: false,
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {

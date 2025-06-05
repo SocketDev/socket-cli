@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,7 +17,7 @@ describe('socket package shallow', async () => {
         "Look up info regarding one or more packages but not their transitives
 
           Usage
-            $ socket package shallow <<ecosystem> <name> [<name> ...] | <purl> [<purl> ...]>
+            $ socket package shallow [options] <<ECOSYSTEM> <PKGNAME> [<PKGNAME> ...] | <PURL> [<PURL> ...]>
 
           API Token Requirements
             - Quota: 100 units
@@ -33,13 +31,16 @@ describe('socket package shallow', async () => {
           This means that any dependency scores are not reflected by the score. You can
           use the \`socket package score <pkg>\` command to get its full transitive score.
 
-          Only a few ecosystems are supported like npm, golang, and maven.
+          Only a few ecosystems are supported like npm, pypi, nuget, gem, golang, and maven.
 
           A "purl" is a standard package name formatting: \`pkg:eco/name@version\`
           This command will automatically prepend "pkg:" when not present.
 
           If the first arg is an ecosystem, remaining args that are not a purl are
-          assumed to be scoped to that ecosystem.
+          assumed to be scoped to that ecosystem. The \`pkg:\` prefix is optional.
+
+          Note: if a package cannot be found, it may be too old or perhaps was removed
+                before we had the opportunity to process it.
 
           Examples
             $ socket package shallow npm webtorrent

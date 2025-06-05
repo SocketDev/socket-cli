@@ -15,10 +15,17 @@ const config: CliCommandConfig = {
   flags: {},
   help: command => `
     Usage
-      $ ${command} <command>
+      $ ${command} ...
+
+    This does the opposite of \`socket npm\`: it will execute the real \`npm\`
+    command without Socket. This can be useful when you have the wrapper on
+    and want to install a certain package anyways. Use at your own risk.
+
+    Note: Everything after "raw-npm" is sent straight to the npm command.
+          Only the \`--dryRun\` and \`--help\` flags are caught here.
 
     Examples
-      $ ${command} install
+      $ ${command} install -g socket
   `,
 }
 

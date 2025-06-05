@@ -143,7 +143,8 @@ export function isReadOnlyConfig() {
 }
 
 export function isTestingV1() {
-  return !!getConfigValueOrUndef('isTestingV1')
+  return true
+  // return !!getConfigValueOrUndef('isTestingV1')
 }
 
 let _cachedConfig: LocalConfig | undefined

@@ -1,10 +1,9 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { handleListRepos } from './handle-list-repos.mts'
+import { handleCreateRepo } from './handle-create-repo.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -16,22 +15,21 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
-  commandName: 'list',
-  description: 'List repositories in an organization',
+  commandName: 'create',
+  description: 'Create a repository in an organization',
   hidden: false,
   flags: {
     ...commonFlags,
     ...outputFlags,
-    all: {
-      type: 'boolean',
-      default: false,
-      description:
-        'By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --perPage.',
-    },
-    direction: {
+    defaultBranch: {
       type: 'string',
-      default: 'desc',
-      description: 'Direction option',
+      default: 'main',
+      description: 'Repository default branch. Defaults to "main"',
+    },
+    homepage: {
+      type: 'string',
+      default: '',
+      description: 'Repository url',
     },
     interactive: {
       type: 'boolean',
@@ -44,42 +42,37 @@ const config: CliCommandConfig = {
       description:
         'Force override the organization slug, overrides the default org from config',
     },
-    perPage: {
-      type: 'number',
-      shortFlag: 'pp',
-      default: 30,
-      description: 'Number of results per page',
-    },
-    page: {
-      type: 'number',
-      shortFlag: 'p',
-      default: 1,
-      description: 'Page number',
-    },
-    sort: {
+    repoDescription: {
       type: 'string',
-      shortFlag: 's',
-      default: 'created_at',
-      description: 'Sorting option',
+      default: '',
+      description: 'Repository description',
+    },
+    visibility: {
+      type: 'string',
+      default: 'private',
+      description: 'Repository visibility (Default Private)',
     },
   },
   help: (command, config) => `
     Usage
-      $ ${command} ${isTestingV1() ? '' : '<org slug>'}
+      $ ${command} [options] <REPO>
 
     API Token Requirements
       - Quota: 1 unit
-      - Permissions: repo:list
+      - Permissions: repo:create
+
+    The REPO name should be a "slug". Follows the same naming convention as GitHub.
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command} ${isTestingV1() ? '' : '<org slug>'}
+      $ ${command} test-repo
+      $ ${command} our-repo --homepage=socket.dev --default-branch=trunk
   `,
 }
 
-export const cmdReposList = {
+export const cmdRepositoryCreate = {
   description: config.description,
   hidden: config.hidden,
   run,
@@ -97,44 +90,41 @@ async function run(
     parentName,
   })
 
-  const {
-    all,
-    direction = 'desc',
-    dryRun,
-    interactive,
-    json,
-    markdown,
-    org: orgFlag,
-  } = cli.flags
+  const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
   const outputKind = getOutputKind(json, markdown)
+  const [repoName = ''] = cli.input
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     !!interactive,
     !!dryRun,
   )
 
   const hasApiToken = hasDefaultToken()
 
+  const noLegacy = !cli.flags['repoName']
+
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
       test: !!orgSlug,
-      message: isTestingV1()
-        ? 'Org name by default setting, --org, or auto-discovered'
-        : 'Org name must be the first argument',
+      message: 'Org name by default setting, --org, or auto-discovered',
       pass: 'ok',
       fail: 'missing',
     },
     {
       nook: true,
-      test: !json || !markdown,
-      message:
-        'The `--json` and `--markdown` flags can not be used at the same time',
+      test: noLegacy,
+      message: 'Legacy flags are no longer supported. See v1 migration guide.',
       pass: 'ok',
-      fail: 'bad',
+      fail: `received legacy flags`,
+    },
+    {
+      test: !!repoName,
+      message: 'Repository name as first argument',
+      pass: 'ok',
+      fail: 'missing',
     },
     {
       nook: true,
@@ -144,30 +134,25 @@ async function run(
       pass: 'ok',
       fail: 'missing API token',
     },
-    {
-      nook: true,
-      test: direction === 'asc' || direction === 'desc',
-      message: 'The --direction value must be "asc" or "desc"',
-      pass: 'ok',
-      fail: 'unexpected value',
-    },
   )
   if (!wasValidInput) {
     return
   }
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 
-  await handleListRepos({
-    all: Boolean(all),
-    direction: direction === 'asc' ? 'asc' : 'desc',
-    orgSlug,
+  await handleCreateRepo(
+    {
+      orgSlug,
+      repoName: String(repoName),
+      description: String(cli.flags['repoDescription'] || ''),
+      homepage: String(cli.flags['homepage'] || ''),
+      default_branch: String(cli.flags['defaultBranch'] || ''),
+      visibility: String(cli.flags['visibility'] || 'private'),
+    },
     outputKind,
-    page: Number(cli.flags['page']) || 1,
-    per_page: Number(cli.flags['perPage']) || 30,
-    sort: String(cli.flags['sort'] || 'created_at'),
-  })
+  )
 }

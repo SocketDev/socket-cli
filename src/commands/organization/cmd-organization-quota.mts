@@ -23,10 +23,14 @@ const config: CliCommandConfig = {
   },
   help: (command, _config) => `
     Usage
-      $ ${command}
+      $ ${command} [options]
 
     Options
       ${getFlagListOutput(config.flags, 6)}
+
+    Examples
+      $ ${command}
+      $ ${command} --json
   `,
 }
 

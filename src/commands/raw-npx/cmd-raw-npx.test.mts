@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,10 +17,17 @@ describe('socket raw-npx', async () => {
         "Temporarily disable the Socket npx wrapper
 
           Usage
-            $ socket raw-npx <command>
+            $ socket raw-npx ...
+
+          This does the opposite of \`socket npx\`: it will execute the real \`npx\`
+          command without Socket. This can be useful when you have the wrapper on
+          and want to run a certain package anyways. Use at your own risk.
+
+          Note: Everything after "raw-npx" is sent straight to the npx command.
+                Only the \`--dryRun\` and \`--help\` flags are caught here.
 
           Examples
-            $ socket raw-npx install"
+            $ socket raw-npx prettier"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

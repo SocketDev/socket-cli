@@ -4,7 +4,6 @@ import { handleDiffScan } from './handle-diff-scan.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -53,7 +52,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command}${isTestingV1() ? '' : ' <org slug>'} <ID1> <ID2>
+      $ ${command} [options] <SCAN_ID1> <SCAN_ID2>
 
     API Token Requirements
       - Quota: 1 unit
@@ -63,15 +62,16 @@ const config: CliCommandConfig = {
     can be pretty large depending on the size of your repo and time range. It is
     best stored to disk (with --json) to be further analyzed by other tools.
 
-    Note: First Scan ID is assumed to be the older ID. This is only relevant for
-          the added/removed list (similar to diffing two files with git).
+    Note: While it will work in any order, the first Scan ID is assumed to be the
+          older ID, even if it is a newer Scan. This is only relevant for the
+          added/removed list (similar to diffing two files with git).
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
-      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json
+      $ ${command} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
+      $ ${command} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json
   `,
 }
 
@@ -103,22 +103,20 @@ async function run(
     org: orgFlag,
   } = cli.flags
   const outputKind = getOutputKind(json, markdown)
-
-  const [orgSlug] = await determineOrgSlug(
-    String(orgFlag || ''),
-    cli.input[0] || '',
-    !!interactive,
-    !!dryRun,
-  )
-
-  let id1 = cli.input[isTestingV1() || orgSlug ? 0 : 1] || ''
-  let id2 = cli.input[isTestingV1() || orgSlug ? 1 : 2] || ''
+  let [id1 = '', id2 = ''] = cli.input
+  // Support dropping in full socket urls to an sbom
   if (id1.startsWith(SOCKET_SBOM_URL_PREFIX)) {
     id1 = id1.slice(SOCKET_SBOM_URL_PREFIX_LENGTH)
   }
   if (id2.startsWith(SOCKET_SBOM_URL_PREFIX)) {
     id2 = id2.slice(SOCKET_SBOM_URL_PREFIX_LENGTH)
   }
+
+  const [orgSlug] = await determineOrgSlug(
+    String(orgFlag || ''),
+    !!interactive,
+    !!dryRun,
+  )
 
   const hasApiToken = hasDefaultToken()
 
@@ -139,9 +137,7 @@ async function run(
     {
       test: !!orgSlug,
       nook: true,
-      message: isTestingV1()
-        ? 'Org name by default setting, --org, or auto-discovered'
-        : 'Org name must be the first argument',
+      message: 'Org name by default setting, --org, or auto-discovered',
       pass: 'ok',
       fail: 'missing',
     },

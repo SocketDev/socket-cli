@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,7 +17,7 @@ describe('socket dependencies', async () => {
         "Search for any dependency that is being used in your organization
 
           Usage
-            socket dependencies
+            socket dependencies [options]
 
           API Token Requirements
             - Quota: 1 unit
@@ -32,6 +30,7 @@ describe('socket dependencies', async () => {
             --offset          Page number
 
           Examples
+            socket dependencies
             socket dependencies --limit 20 --offset 10"
       `,
       )

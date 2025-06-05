@@ -29,7 +29,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command}
+      $ ${command} [options]
 
     API Token Requirements
       - Quota: 1 unit

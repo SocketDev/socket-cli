@@ -24,7 +24,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} [CWD=.]
+      $ ${command} [options] [CWD=.]
 
     Options
       ${getFlagListOutput(config.flags, 6)}

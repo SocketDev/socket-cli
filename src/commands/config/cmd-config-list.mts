@@ -4,7 +4,6 @@ import { outputConfigList } from './output-config-list.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { supportedConfigKeys } from '../../utils/config.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -28,19 +27,13 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} <org slug>
+      $ ${command} [options]
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
-    Keys:
-
-${Array.from(supportedConfigKeys.entries())
-  .map(([key, desc]) => `     - ${key} -- ${desc}`)
-  .join('\n')}
-
     Examples
-      $ ${command} FakeOrg --repoName=test-repo
+      $ ${command}
   `,
 }
 
