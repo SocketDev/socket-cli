@@ -24,19 +24,22 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} <org slug>
+      $ ${command} [options] KEY
+
+    Retrieve the value for given KEY at this time. If you have overridden the
+    config then the value will come from that override.
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
-    Keys:
+    KEY is an enum. Valid keys:
 
 ${Array.from(supportedConfigKeys.entries())
   .map(([key, desc]) => `     - ${key} -- ${desc}`)
   .join('\n')}
 
     Examples
-      $ ${command} FakeOrg --repoName=test-repo
+      $ ${command} defaultOrg
   `,
 }
 

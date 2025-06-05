@@ -4,7 +4,6 @@ import { handleSecurityPolicy } from './handle-security-policy.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -37,7 +36,7 @@ const config: CliCommandConfig = {
   },
   help: (command, _config) => `
     Usage
-      $ ${command}${isTestingV1() ? '' : ' <org slug>'}
+      $ ${command} [options]
 
     API Token Requirements
       - Quota: 1 unit
@@ -50,12 +49,12 @@ const config: CliCommandConfig = {
     the request will fail with an authentication error.
 
     Examples
-      $ ${command}${isTestingV1() ? '' : ' mycorp'}
-      $ ${command}${isTestingV1() ? '' : ' mycorp'} --json
+      $ ${command}
+      $ ${command} --json
   `,
 }
 
-export const cmdOrganizationPolicyPolicy = {
+export const cmdOrganizationPolicySecurity = {
   description: config.description,
   hidden: config.hidden,
   run,
@@ -78,7 +77,6 @@ async function run(
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     !!interactive,
     !!dryRun,
   )

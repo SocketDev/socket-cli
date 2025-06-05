@@ -18,9 +18,12 @@ const config: CliCommandConfig = {
   },
   help: (command, _config) => `
     Usage
-      $ ${command}
+      $ ${command} [options]
 
     Logs out of the Socket API and clears all Socket credentials from disk
+
+    Examples
+      $ ${command}
   `,
 }
 

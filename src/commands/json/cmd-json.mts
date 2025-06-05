@@ -10,16 +10,19 @@ const config: CliCommandConfig = {
   commandName: 'json',
   description:
     'Display the `socket.json` that would be applied for target folder',
-  hidden: true, // This is a power tool. No need to clutter the toplevel.
+  hidden: false,
   flags: {
     ...commonFlags,
   },
-  help: parentName => `
+  help: command => `
     Usage
-      $ ${parentName} [CWD=.]
+      $ ${command} [options] [CWD=.]
 
     Display the \`socket.json\` file that would apply when running relevant commands
     in the target directory.
+
+    Examples
+      $ ${command}
   `,
 }
 

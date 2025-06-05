@@ -24,12 +24,18 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} <org slug>
+      $ ${command} [options] KEY
 
     Options
       ${getFlagListOutput(config.flags, 6)}
 
-    Attempt to automatically discover the correct value for a certain config key.
+    Attempt to automatically discover the correct value for given config KEY.
+
+    Keys:
+
+${Array.from(supportedConfigKeys.entries())
+  .map(([key, desc]) => `     - ${key} -- ${desc}`)
+  .join('\n')}
 
     For certain keys it will request the value from server, for others it will
     reset the value to the default. For some keys this has no effect.
@@ -41,7 +47,7 @@ ${Array.from(supportedConfigKeys.entries())
   .join('\n')}
 
     Examples
-      $ ${command} auto defaultOrg
+      $ ${command} defaultOrg
   `,
 }
 

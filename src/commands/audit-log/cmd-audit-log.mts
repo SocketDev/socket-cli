@@ -4,7 +4,6 @@ import { handleAuditLog } from './handle-audit-log.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -33,28 +32,19 @@ const config: CliCommandConfig = {
       description:
         'Force override the organization slug, overrides the default org from config',
     },
-    type: {
-      type: 'string',
-      shortFlag: 't',
-      default: '',
-      description: 'Type of log event',
+    page: {
+      type: 'number',
+      description: 'Result page to fetch',
     },
     perPage: {
       type: 'number',
-      shortFlag: 'pp',
       default: 30,
       description: 'Results per page - default is 30',
-    },
-    page: {
-      type: 'number',
-      shortFlag: 'p',
-      default: 1,
-      description: 'Page number - default is 1',
     },
   },
   help: (command, config) => `
     Usage
-      $ ${command} ${isTestingV1() ? '<repo>' : '<org slug>'}
+      $ ${command} [options] [FILTER]
 
     API Token Requirements
       - Quota: 1 unit
@@ -63,11 +53,24 @@ const config: CliCommandConfig = {
     This feature requires an Enterprise Plan. To learn more about getting access
     to this feature and many more, please visit ${SOCKET_WEBSITE_URL}/pricing
 
+    The type FILTER arg is an enum. Defaults to any. It should be one of these:
+      associateLabel, cancelInvitation, changeMemberRole, changePlanSubscriptionSeats,
+      createApiToken, createLabel, deleteLabel, deleteLabelSetting, deleteReport,
+      deleteRepository, disassociateLabel, joinOrganization, removeMember,
+      resetInvitationLink, resetOrganizationSettingToDefault, rotateApiToken,
+      sendInvitation, setLabelSettingToDefault, syncOrganization, transferOwnership,
+      updateAlertTriage, updateApiTokenCommitter, updateApiTokenMaxQuota,
+      updateApiTokenName', updateApiTokenScopes, updateApiTokenVisibility,
+      updateLabelSetting, updateOrganizationSetting, upgradeOrganizationPlan
+
+    The page arg should be a positive integer, offset 1. Defaults to 1.
+
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command} ${isTestingV1() ? '' : 'FakeOrg'}
+      $ ${command}
+      $ ${command} deleteReport --page 2 --perPage 10
   `,
 }
 
@@ -97,28 +100,34 @@ async function run(
     org: orgFlag,
     page,
     perPage,
-    type,
   } = cli.flags
   const outputKind = getOutputKind(json, markdown)
-  const logType = String(type || '')
+  let [typeFilter = ''] = cli.input
+  typeFilter = String(typeFilter)
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     !!interactive,
     !!dryRun,
   )
 
   const hasApiToken = hasDefaultToken()
 
+  const noLegacy = !cli.flags['type']
+
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
+      test: noLegacy,
+      message: 'Legacy flags are no longer supported. See v1 migration guide.',
+      pass: 'ok',
+      fail: `received legacy flags`,
+    },
+    {
+      nook: true,
       test: !!orgSlug,
-      message: isTestingV1()
-        ? 'Org name by default setting, --org, or auto-discovered'
-        : 'Org name must be the first argument',
+      message: 'Org name by default setting, --org, or auto-discovered',
       pass: 'ok',
       fail: 'missing',
     },
@@ -138,6 +147,13 @@ async function run(
       pass: 'ok',
       fail: 'bad',
     },
+    {
+      nook: true,
+      test: /^[a-zA-Z]*$/.test(typeFilter),
+      message: 'The filter must be an a-zA-Z string, it is an enum',
+      pass: 'ok',
+      fail: 'it was given but not a-zA-Z',
+    },
   )
   if (!wasValidInput) {
     return
@@ -153,6 +169,6 @@ async function run(
     outputKind,
     page: Number(page || 0),
     perPage: Number(perPage || 0),
-    logType: logType.charAt(0).toUpperCase() + logType.slice(1),
+    logType: typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1),
   })
 }
