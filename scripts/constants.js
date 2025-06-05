@@ -24,8 +24,8 @@ const INLINED_SOCKET_CLI_VERSION_HASH = 'INLINED_SOCKET_CLI_VERSION_HASH'
 const INLINED_SYNP_VERSION = 'INLINED_SYNP_VERSION'
 const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
 const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
-const SHADOW_BIN = 'shadow-bin'
-const SHADOW_INJECT = 'shadow-inject'
+const SHADOW_NPM_BIN = 'shadow-npm-bin'
+const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
 const SOCKET = 'socket'
 const SOCKET_CLI_BIN_NAME = 'socket'
@@ -64,6 +64,22 @@ const LAZY_ENV = () => {
   })
 }
 
+const lazyBlessedContribPath = () =>
+  // Lazily access constants.externalPath.
+  path.join(constants.externalPath, 'blessed-contrib')
+
+const lazyBlessedPath = () =>
+  // Lazily access constants.externalPath.
+  path.join(constants.externalPath, 'blessed')
+
+const lazyCoanaBinPath = () =>
+  // Lazily access constants.coanaPath.
+  path.join(constants.coanaPath, 'cli.mjs')
+
+const lazyCoanaPath = () =>
+  // Lazily access constants.externalPath.
+  path.join(constants.externalPath, '@coana-tech/cli')
+
 const lazyConfigPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, '.config')
@@ -86,6 +102,10 @@ const lazyRootPackageLockPath = () =>
 
 const lazyRootPath = () => path.resolve(__dirname, '..')
 
+const lazySocketRegistryPath = () =>
+  // Lazily access constants.externalPath.
+  path.join(constants.externalPath, '@socketsecurity/registry')
+
 const lazySrcPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'src')
@@ -106,8 +126,8 @@ const constants = createConstantsObject(
     INLINED_SYNP_VERSION,
     INSTRUMENT_WITH_SENTRY,
     ROLLUP_EXTERNAL_SUFFIX,
-    SHADOW_BIN,
-    SHADOW_INJECT,
+    SHADOW_NPM_BIN,
+    SHADOW_NPM_INJECT,
     SLASH_NODE_MODULES_SLASH,
     SOCKET,
     SOCKET_CLI_BIN_NAME,
@@ -124,23 +144,34 @@ const constants = createConstantsObject(
     UTILS,
     VENDOR,
     WITH_SENTRY,
+    blessedContribPath: undefined,
+    blessedOptions: undefined,
+    blessedPath: undefined,
+    coanaBinPath: undefined,
+    coanaPath: undefined,
     configPath: undefined,
     distPath: undefined,
     externalPath: undefined,
     rootPackageJsonPath: undefined,
     rootPath: undefined,
+    socketRegistryPath: undefined,
     srcPath: undefined,
   },
   {
     getters: {
       ...registryConstantsAttribs.getters,
       ENV: LAZY_ENV,
+      blessedContribPath: lazyBlessedContribPath,
+      blessedPath: lazyBlessedPath,
+      coanaBinPath: lazyCoanaBinPath,
+      coanaPath: lazyCoanaPath,
       configPath: lazyConfigPath,
       distPath: lazyDistPath,
       externalPath: lazyExternalPath,
       rootPackageJsonPath: lazyRootPackageJsonPath,
       rootPackageLockPath: lazyRootPackageLockPath,
       rootPath: lazyRootPath,
+      socketRegistryPath: lazySocketRegistryPath,
       srcPath: lazySrcPath,
     },
   },
