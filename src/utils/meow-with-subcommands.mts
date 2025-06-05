@@ -97,6 +97,31 @@ export async function meowWithSubcommands(
     name === 'socket' &&
     (!commandOrAliasName || commandOrAliasName?.startsWith('-'))
 
+  // Try to support `socket <purl>` as a shorthand for `socket package score <purl>`
+  if (!isRootCommand) {
+    if (commandOrAliasName?.startsWith('pkg:')) {
+      logger.info('Note: Invoking `socket package score` now...')
+      return await meowWithSubcommands(subcommands, {
+        ...options,
+        argv: ['package', 'deep', ...argv],
+      })
+    }
+    // Support `socket npm/babel` or whatever as a shorthand, too.
+    // Accept any ecosystem and let the remote sort it out.
+    if (/^[a-z]+\//.test(commandOrAliasName || '')) {
+      logger.info('Note: Invoking `socket package score` now...')
+      return await meowWithSubcommands(subcommands, {
+        ...options,
+        argv: [
+          'package',
+          'deep',
+          `pkg:${commandOrAliasName}`,
+          ...rawCommandArgv,
+        ],
+      })
+    }
+  }
+
   if (isRootCommand) {
     flags['help'] = {
       type: 'boolean',
@@ -274,69 +299,71 @@ export async function meowWithSubcommands(
 
     const out = []
     out.push('All commands have their own --help page')
-    out.push('    ')
+    out.push('')
     out.push('    Main commands')
-    out.push('    ')
+    out.push('')
     out.push(
-      '      socket login             Setup the CLI with an API Token and defaults',
+      '      socket login              Setup the CLI with an API Token and defaults',
     )
-    out.push('      socket scan create       Create a new Scan and report')
+    out.push('      socket scan create        Create a new Scan and report')
     out.push(
-      '      socket package score     Request the (shallow) security score of a particular package',
+      '      socket npm/eslint@1.0.0   Request the security score of a particular package',
     )
     out.push(
-      '      socket ci                Shorthand for CI; socket scan create --report --no-interactive',
+      '      socket ci                 Shorthand for CI; socket scan create --report --no-interactive',
     )
-    out.push('    ')
+    out.push('')
     out.push('    Socket API')
-    out.push('    ')
-    out.push('      analytics                Look up analytics data')
+    out.push('')
+    out.push('      analytics                 Look up analytics data')
     out.push(
-      '      audit-log                Look up the audit log for an organization',
+      '      audit-log                 Look up the audit log for an organization',
     )
     out.push(
-      '      organization             Manage organization account details',
+      '      organization              Manage organization account details',
     )
-    out.push('      package                  Look up published package details')
-    out.push('      repository               Manage registered repositories')
-    out.push('      scan                     Manage Socket scans')
-    out.push('      threat-feed              [beta] View the threat feed')
-    out.push('    ')
+    out.push(
+      '      package                   Look up published package details',
+    )
+    out.push('      repository                Manage registered repositories')
+    out.push('      scan                      Manage Socket scans')
+    out.push('      threat-feed               [beta] View the threat feed')
+    out.push('')
     out.push('    Local tools')
-    out.push('    ')
+    out.push('')
     out.push(
-      '      fix                      Update dependencies with "fixable" Socket alerts',
+      '      fix                       Update dependencies with "fixable" Socket alerts',
     )
     out.push(
-      '      manifest                 Generate a dependency manifest for certain languages',
+      '      manifest                  Generate a dependency manifest for certain languages',
     )
-    out.push('      npm                      npm wrapper functionality')
-    out.push('      npx                      npx wrapper functionality')
+    out.push('      npm                       npm wrapper functionality')
+    out.push('      npx                       npx wrapper functionality')
     out.push(
-      '      optimize                 Optimize dependencies with @socketregistry overrides',
-    )
-    out.push(
-      '      raw-npm                  Temporarily disable the Socket npm wrapper',
+      '      optimize                  Optimize dependencies with @socketregistry overrides',
     )
     out.push(
-      '      raw-npx                  Temporarily disable the Socket npx wrapper',
+      '      raw-npm                   Temporarily disable the Socket npm wrapper',
     )
-    out.push('    ')
+    out.push(
+      '      raw-npx                   Temporarily disable the Socket npx wrapper',
+    )
+    out.push('')
     out.push('    CLI configuration')
-    out.push('    ')
+    out.push('')
     out.push(
-      '      config                   Manage the CLI configuration directly',
+      '      config                    Manage the CLI configuration directly',
     )
     out.push(
-      '      install                  Manually install CLI tab completion on your system',
+      '      install                   Manually install CLI tab completion on your system',
     )
-    out.push('      login                    Socket API login and CLI setup')
-    out.push('      logout                   Socket API logout')
+    out.push('      login                     Socket API login and CLI setup')
+    out.push('      logout                    Socket API logout')
     out.push(
-      '      uninstall                Remove the CLI tab completion from your system',
+      '      uninstall                 Remove the CLI tab completion from your system',
     )
     out.push(
-      '      wrapper                  Enable or disable the Socket npm/npx wrapper',
+      '      wrapper                   Enable or disable the Socket npm/npx wrapper',
     )
 
     return out.join('\n')
