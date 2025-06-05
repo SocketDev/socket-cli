@@ -9,11 +9,11 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import { glob as tinyGlob } from 'tinyglobby'
+import trash from 'trash'
 
 import {
   isDirEmptySync,
   readJson,
-  remove,
   writeJson,
 } from '@socketsecurity/registry/lib/fs'
 import { hasKeys, toSortedObject } from '@socketsecurity/registry/lib/objects'
@@ -41,8 +41,8 @@ const {
   NODE_MODULES,
   NODE_MODULES_GLOB_RECURSIVE,
   ROLLUP_EXTERNAL_SUFFIX,
-  SHADOW_BIN,
-  SHADOW_INJECT,
+  SHADOW_NPM_BIN,
+  SHADOW_NPM_INJECT,
   SLASH_NODE_MODULES_SLASH,
   SOCKET_CLI_BIN_NAME,
   SOCKET_CLI_BIN_NAME_ALIAS,
@@ -62,7 +62,7 @@ const {
 const BLESSED = 'blessed'
 const BLESSED_CONTRIB = 'blessed-contrib'
 const COANA_TECH_CLI = '@coana-tech/cli'
-const EXTERNAL = 'external'
+const LICENSE_MD = `LICENSE.md`
 const SENTRY_NODE = '@sentry/node'
 const SOCKET_DESCRIPTION = 'CLI for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
@@ -83,6 +83,77 @@ async function copyBashCompletion() {
   )
   const destPath = path.join(constants.distPath, 'socket-completion.bash')
   await fs.copyFile(filepath, destPath)
+}
+
+async function copyExternalPackages() {
+  // Lazily access constants path properties.
+  const { blessedContribPath, blessedPath, coanaPath, socketRegistryPath } =
+    constants
+  const nmPath = path.join(constants.rootPath, NODE_MODULES)
+  const blessedContribNmPath = path.join(nmPath, BLESSED_CONTRIB)
+
+  // Copy package folders.
+  await Promise.all([
+    ...EXTERNAL_PACKAGES
+      // Skip copying 'blessed-contrib' over because we already
+      // have it bundled as ./external/blessed-contrib.
+      .filter(n => n !== BLESSED_CONTRIB)
+      // Copy the other packages over to ./external/.
+      .map(n =>
+        copyPackage(n, {
+          strict:
+            // Skip adding 'use strict' directives to Coana and
+            // Socket packages.
+            n !== COANA_TECH_CLI && n !== SOCKET_SECURITY_REGISTRY,
+        }),
+      ),
+    // Copy 'blessed-contrib' license over to
+    // ./external/blessed-contrib/LICENSE.md.
+    await fs.cp(
+      `${blessedContribNmPath}/${LICENSE_MD}`,
+      `${blessedContribPath}/${LICENSE_MD}`,
+    ),
+  ])
+  // Cleanup package files.
+  await Promise.all(
+    [
+      [blessedPath, ['lib/**/*.js', 'usr/**/**', 'vendor/**/*.js', 'LICENSE*']],
+      [blessedContribPath, ['lib/**/*.js', 'index.js', 'LICENSE*']],
+      [coanaPath, ['**/*.mjs']],
+      [
+        socketRegistryPath,
+        [
+          'external/**/*.js',
+          'lib/**/*.js',
+          'index.js',
+          'extensions.json',
+          'manifest.json',
+          'LICENSE*',
+        ],
+      ],
+    ].map(async ({ 0: thePath, 1: ignorePatterns }) => {
+      await removeFiles(thePath, { exclude: ignorePatterns })
+      await removeEmptyDirs(thePath)
+    }),
+  )
+  // Rewire 'blessed' inside 'blessed-contrib'.
+  await Promise.all(
+    (
+      await tinyGlob(['**/*.js'], {
+        absolute: true,
+        cwd: blessedContribPath,
+        ignore: [NODE_MODULES_GLOB_RECURSIVE],
+      })
+    ).map(async p => {
+      const relPath = path.relative(path.dirname(p), blessedPath)
+      const content = await fs.readFile(p, 'utf8')
+      const modded = content.replace(
+        /(?<=require\(["'])blessed(?=(?:\/[^"']+)?["']\))/g,
+        () => relPath,
+      )
+      await fs.writeFile(p, modded, 'utf8')
+    }),
+  )
 }
 
 async function copyPackage(pkgName, options) {
@@ -217,37 +288,32 @@ async function updatePackageLockFile() {
 }
 
 async function removeEmptyDirs(thePath) {
-  const dirPaths = (
-    await tinyGlob(['**/'], {
-      ignore: [NODE_MODULES_GLOB_RECURSIVE],
-      absolute: true,
-      cwd: thePath,
-      onlyDirectories: true,
-    })
+  await trash(
+    (
+      await tinyGlob(['**/'], {
+        ignore: [NODE_MODULES_GLOB_RECURSIVE],
+        absolute: true,
+        cwd: thePath,
+        onlyDirectories: true,
+      })
+    )
+      // Sort directory paths longest to shortest.
+      .sort((a, b) => b.length - a.length)
+      .filter(isDirEmptySync),
   )
-    // Sort directory paths longest to shortest.
-    .sort((a, b) => b.length - a.length)
-  for (const dirPath of dirPaths) {
-    if (isDirEmptySync(dirPath)) {
-      // eslint-disable-next-line no-await-in-loop
-      await remove(dirPath)
-    }
-  }
 }
 
 async function removeFiles(thePath, options) {
   const { exclude } = { __proto__: null, ...options }
   const ignore = Array.isArray(exclude) ? exclude : exclude ? [exclude] : []
-  return await Promise.all(
-    (
-      await tinyGlob(['**/*'], {
-        absolute: true,
-        onlyFiles: true,
-        cwd: thePath,
-        dot: true,
-        ignore,
-      })
-    ).map(p => remove(p)),
+  return await trash(
+    await tinyGlob(['**/*'], {
+      absolute: true,
+      onlyFiles: true,
+      cwd: thePath,
+      dot: true,
+      ignore,
+    }),
   )
 }
 
@@ -289,9 +355,9 @@ function resetDependencies(deps) {
 
 export default async () => {
   // Lazily access constants path properties.
-  const { configPath, distPath, externalPath, rootPath, srcPath } = constants
+  const { configPath, distPath, rootPath, srcPath } = constants
   const constantsSrcPath = path.join(srcPath, `constants.mts`)
-  const externalSrcPath = path.join(srcPath, EXTERNAL)
+  const externalSrcPath = path.join(srcPath, 'external')
   const nmPath = path.join(rootPath, NODE_MODULES)
   const shadowNpmBinSrcPath = path.join(srcPath, 'shadow/npm/bin.mts')
   const shadowNpmInjectSrcPath = path.join(srcPath, 'shadow/npm/inject.mts')
@@ -356,8 +422,8 @@ export default async () => {
       input: {
         cli: `${srcPath}/cli.mts`,
         [CONSTANTS]: `${srcPath}/constants.mts`,
-        [SHADOW_BIN]: `${srcPath}/shadow/npm/bin.mts`,
-        [SHADOW_INJECT]: `${srcPath}/shadow/npm/inject.mts`,
+        [SHADOW_NPM_BIN]: `${srcPath}/shadow/npm/bin.mts`,
+        [SHADOW_NPM_INJECT]: `${srcPath}/shadow/npm/inject.mts`,
         // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
         ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
           ? {
@@ -379,9 +445,9 @@ export default async () => {
               case constantsSrcPath:
                 return CONSTANTS
               case shadowNpmBinSrcPath:
-                return SHADOW_BIN
+                return SHADOW_NPM_BIN
               case shadowNpmInjectSrcPath:
-                return SHADOW_INJECT
+                return SHADOW_NPM_INJECT
               default:
                 if (id.startsWith(utilsSrcPath)) {
                   return UTILS
@@ -429,72 +495,10 @@ export default async () => {
               copyInitGradle(),
               copyBashCompletion(),
               updatePackageJson(),
-              remove(path.join(distPath, `${VENDOR}.js.map`)),
-              ...EXTERNAL_PACKAGES.map(n =>
-                copyPackage(n, {
-                  strict:
-                    n !== COANA_TECH_CLI && n !== SOCKET_SECURITY_REGISTRY,
-                }),
-              ),
+              // Remove dist/vendor.js.map file.
+              trash([path.join(distPath, `${VENDOR}.js.map`)]),
+              copyExternalPackages(),
             ])
-
-            const blessedExternalPath = path.join(externalPath, BLESSED)
-            const blessedContribExternalPath = path.join(
-              externalPath,
-              BLESSED_CONTRIB,
-            )
-            const filesEntries = [
-              [
-                blessedExternalPath,
-                ['lib/**/*.js', 'usr/**/**', 'vendor/**/*.js', 'LICENSE*'],
-              ],
-              [
-                blessedContribExternalPath,
-                ['lib/**/*.js', 'index.js', 'LICENSE*'],
-              ],
-              [path.join(externalPath, COANA_TECH_CLI), ['**/*.mjs']],
-              [
-                path.join(externalPath, SOCKET_SECURITY_REGISTRY),
-                [
-                  'external/**/*.js',
-                  'lib/**/*.js',
-                  'index.js',
-                  'extensions.json',
-                  'manifest.json',
-                  'LICENSE*',
-                ],
-              ],
-            ]
-
-            await Promise.all(
-              filesEntries.map(async ({ 0: thePath, 1: ignorePatterns }) => {
-                await removeFiles(thePath, { exclude: ignorePatterns })
-                await removeEmptyDirs(thePath)
-              }),
-            )
-
-            // Rewire 'blessed' inside 'blessed-contrib'.
-            await Promise.all(
-              (
-                await tinyGlob(['**/*.js'], {
-                  absolute: true,
-                  cwd: blessedContribExternalPath,
-                  ignore: [NODE_MODULES_GLOB_RECURSIVE],
-                })
-              ).map(async p => {
-                const relPath = path.relative(
-                  path.dirname(p),
-                  blessedExternalPath,
-                )
-                const content = await fs.readFile(p, 'utf8')
-                const modded = content.replace(
-                  /(?<=require\(["'])blessed(?=(?:\/[^"']+)?["']\))/g,
-                  () => relPath,
-                )
-                await fs.writeFile(p, modded, 'utf8')
-              }),
-            )
-
             // Update package-lock.json AFTER package.json.
             await updatePackageLockFile()
           },
