@@ -107,8 +107,8 @@ type Constants = Remap<
     readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
     readonly PNPM: 'pnpm'
     readonly REDACTED: '<redacted>'
-    readonly SHADOW_BIN: 'shadow-bin'
-    readonly SHADOW_INJECT: 'shadow-inject'
+    readonly SHADOW_NPM_BIN: 'shadow-npm-bin'
+    readonly SHADOW_NPM_INJECT: 'shadow-npm-inject'
     readonly SOCKET: 'socket'
     readonly SOCKET_CLI_ACCEPT_RISKS: 'SOCKET_CLI_ACCEPT_RISKS'
     readonly SOCKET_CLI_BIN_NAME: 'socket'
@@ -139,27 +139,31 @@ type Constants = Remap<
     readonly bashRcPath: string
     readonly binCliPath: string
     readonly binPath: string
+    readonly blessedContribPath: string
     readonly blessedOptions: {
       smartCSR: boolean
       term: string
       useBCE: boolean
     }
+    readonly blessedPath: string
     readonly coanaBinPath: string
+    readonly coanaPath: string
     readonly distCliPath: string
-    readonly distInstrumentWithSentryPath: string
     readonly distPath: string
-    readonly distShadowBinPath: string
     readonly externalPath: string
-    readonly distShadowInjectPath: string
     readonly githubCachePath: string
     readonly homePath: string
+    readonly instrumentWithSentryPath: string
     readonly minimumVersionByAgent: Map<Agent, string>
     readonly nmBinPath: string
     readonly nodeHardenFlags: string[]
     readonly rootPath: string
     readonly shadowBinPath: string
+    readonly shadowNpmBinPath: string
+    readonly shadowNpmInjectPath: string
     readonly socketAppDataPath: string
     readonly socketCachePath: string
+    readonly socketRegistryPath: string
     readonly zshRcPath: string
   }
 >
@@ -181,8 +185,8 @@ const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const PNPM = 'pnpm'
 const REDACTED = '<redacted>'
-const SHADOW_BIN = 'shadow-bin'
-const SHADOW_INJECT = 'shadow-inject'
+const SHADOW_NPM_BIN = 'shadow-npm-bin'
+const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 const SOCKET = 'socket'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 const SOCKET_CLI_BIN_NAME = 'socket'
@@ -371,6 +375,10 @@ const lazyBinCliPath = () =>
   // Lazily access constants.binPath.
   path.join(constants.binPath, 'cli.js')
 
+const lazyBlessedContribPath = () =>
+  // Lazily access constants.externalPath.
+  path.join(constants.externalPath, 'blessed-contrib')
+
 const lazyBlessedOptions = () =>
   Object.freeze({
     smartCSR: true,
@@ -379,29 +387,25 @@ const lazyBlessedOptions = () =>
     useBCE: true,
   })
 
-const lazyCoanaBinPath = () =>
+const lazyBlessedPath = () =>
   // Lazily access constants.externalPath.
-  path.join(constants.externalPath, '@coana-tech/cli/cli.mjs')
+  path.join(constants.externalPath, 'blessed')
 
-const lazyDistPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'dist')
+const lazyCoanaBinPath = () =>
+  // Lazily access constants.coanaPath.
+  path.join(constants.coanaPath, 'cli.mjs')
+
+const lazyCoanaPath = () =>
+  // Lazily access constants.externalPath.
+  path.join(constants.externalPath, '@coana-tech/cli')
 
 const lazyDistCliPath = () =>
   // Lazily access constants.distPath.
   path.join(constants.distPath, 'cli.js')
 
-const lazyDistInstrumentWithSentryPath = () =>
-  // Lazily access constants.distPath.
-  path.join(constants.distPath, 'instrument-with-sentry.js')
-
-const lazyDistShadowBinPath = () =>
-  // Lazily access constants.distPath.
-  path.join(constants.distPath, `${SHADOW_BIN}.js`)
-
-const lazyDistShadowInjectPath = () =>
-  // Lazily access constants.distPath.
-  path.join(constants.distPath, `${SHADOW_INJECT}.js`)
+const lazyDistPath = () =>
+  // Lazily access constants.rootPath.
+  path.join(constants.rootPath, 'dist')
 
 const lazyExternalPath = () =>
   // Lazily access constants.rootPath.
@@ -412,6 +416,10 @@ const lazyGithubCachePath = () =>
   path.join(constants.socketCachePath, 'github')
 
 const lazyHomePath = () => os.homedir()
+
+const lazyInstrumentWithSentryPath = () =>
+  // Lazily access constants.distPath.
+  path.join(constants.distPath, 'instrument-with-sentry.js')
 
 const lazyMinimumVersionByAgent = () =>
   new Map([
@@ -464,6 +472,18 @@ const lazyNodeHardenFlags = () =>
 
 const lazyRootPath = () => path.join(realpathSync.native(__dirname), '..')
 
+const lazyShadowBinPath = () =>
+  // Lazily access constants.rootPath.
+  path.join(constants.rootPath, 'shadow-bin')
+
+const lazyShadowNpmBinPath = () =>
+  // Lazily access constants.distPath.
+  path.join(constants.distPath, `${SHADOW_NPM_BIN}.js`)
+
+const lazyShadowNpmInjectPath = () =>
+  // Lazily access constants.distPath.
+  path.join(constants.distPath, `${SHADOW_NPM_INJECT}.js`)
+
 const lazySocketAppDataPath = (): string | undefined => {
   // Get the OS app data folder:
   // - Win: %LOCALAPPDATA% or fail?
@@ -504,9 +524,9 @@ const lazySocketCachePath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, '.cache')
 
-const lazyShadowBinPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, SHADOW_BIN)
+const lazySocketRegistryPath = () =>
+  // Lazily access constants.externalPath.
+  path.join(constants.externalPath, '@socketsecurity/registry')
 
 const lazyZshRcPath = () =>
   // Lazily access constants.homePath.
@@ -532,8 +552,8 @@ const constants: Constants = createConstantsObject(
     NPM_REGISTRY_URL,
     PNPM,
     REDACTED,
-    SHADOW_BIN,
-    SHADOW_INJECT,
+    SHADOW_NPM_BIN,
+    SHADOW_NPM_INJECT,
     SOCKET,
     SOCKET_CLI_ACCEPT_RISKS,
     SOCKET_CLI_BIN_NAME,
@@ -563,23 +583,27 @@ const constants: Constants = createConstantsObject(
     bashRcPath: undefined,
     binPath: undefined,
     binCliPath: undefined,
+    blessedContribPath: undefined,
     blessedOptions: undefined,
+    blessedPath: undefined,
     coanaBinPath: undefined,
+    coanaPath: undefined,
     distCliPath: undefined,
-    distInstrumentWithSentryPath: undefined,
     distPath: undefined,
-    distShadowBinPath: undefined,
-    distShadowInjectPath: undefined,
     externalPath: undefined,
     githubCachePath: undefined,
     homePath: undefined,
+    instrumentWithSentryPath: undefined,
     minimumVersionByAgent: undefined,
     nmBinPath: undefined,
     nodeHardenFlags: undefined,
     rootPath: undefined,
     shadowBinPath: undefined,
+    shadowNpmInjectPath: undefined,
+    shadowNpmBinPath: undefined,
     socketAppDataPath: undefined,
     socketCachePath: undefined,
+    socketRegistryPath: undefined,
     zshRcPath: undefined,
   },
   {
@@ -589,23 +613,27 @@ const constants: Constants = createConstantsObject(
       bashRcPath: lazyBashRcPath,
       binCliPath: lazyBinCliPath,
       binPath: lazyBinPath,
+      blessedContribPath: lazyBlessedContribPath,
       blessedOptions: lazyBlessedOptions,
+      blessedPath: lazyBlessedPath,
       coanaBinPath: lazyCoanaBinPath,
+      coanaPath: lazyCoanaPath,
       distCliPath: lazyDistCliPath,
-      distInstrumentWithSentryPath: lazyDistInstrumentWithSentryPath,
       distPath: lazyDistPath,
-      distShadowBinPath: lazyDistShadowBinPath,
-      distShadowInjectPath: lazyDistShadowInjectPath,
       externalPath: lazyExternalPath,
       githubCachePath: lazyGithubCachePath,
       homePath: lazyHomePath,
+      instrumentWithSentryPath: lazyInstrumentWithSentryPath,
       minimumVersionByAgent: lazyMinimumVersionByAgent,
       nmBinPath: lazyNmBinPath,
       nodeHardenFlags: lazyNodeHardenFlags,
       rootPath: lazyRootPath,
       shadowBinPath: lazyShadowBinPath,
+      shadowNpmBinPath: lazyShadowNpmBinPath,
+      shadowNpmInjectPath: lazyShadowNpmInjectPath,
       socketAppDataPath: lazySocketAppDataPath,
       socketCachePath: lazySocketCachePath,
+      socketRegistryPath: lazySocketRegistryPath,
       zshRcPath: lazyZshRcPath,
     },
     internals: {
