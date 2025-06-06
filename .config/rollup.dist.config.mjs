@@ -356,20 +356,22 @@ function resetDependencies(deps) {
 export default async () => {
   // Lazily access constants path properties.
   const { configPath, distPath, rootPath, srcPath } = constants
-  const constantsSrcPath = path.join(srcPath, `constants.mts`)
-  const externalSrcPath = path.join(srcPath, 'external')
   const nmPath = path.join(rootPath, NODE_MODULES)
+  const constantsSrcPath = path.join(srcPath, 'constants.mts')
+  const externalSrcPath = path.join(srcPath, 'external')
+  const blessedContribSrcPath = path.join(externalSrcPath, BLESSED_CONTRIB)
   const shadowNpmBinSrcPath = path.join(srcPath, 'shadow/npm/bin.mts')
   const shadowNpmInjectSrcPath = path.join(srcPath, 'shadow/npm/inject.mts')
   const utilsSrcPath = path.join(srcPath, UTILS)
-  const blessedContribFilepaths = await tinyGlob(['**/*.mjs'], {
-    absolute: true,
-    cwd: path.join(externalSrcPath, BLESSED_CONTRIB),
-  })
 
   return [
-    ...blessedContribFilepaths.map(filepath => {
-      const relPath = `${path.relative(srcPath, filepath).slice(0, -4)}.js`
+    ...(
+      await tinyGlob(['**/*.mjs'], {
+        absolute: true,
+        cwd: blessedContribSrcPath,
+      })
+    ).map(filepath => {
+      const relPath = `${path.relative(srcPath, filepath).slice(0, -4 /*.mjs*/)}.js`
       return {
         input: filepath,
         output: [
