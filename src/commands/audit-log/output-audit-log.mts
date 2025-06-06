@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module'
+
 import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
@@ -8,11 +10,14 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { Widgets } from 'blessed'
+
+const require = createRequire(import.meta.url)
 
 const { REDACTED } = constants
 
 export async function outputAuditLog(
-  auditLogs: CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
+  result: CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
   {
     logType,
     orgSlug,
@@ -27,24 +32,13 @@ export async function outputAuditLog(
     logType: string
   },
 ): Promise<void> {
-  if (!auditLogs.ok) {
-    process.exitCode = auditLogs.code ?? 1
+  if (!result.ok) {
+    process.exitCode = result.code ?? 1
   }
 
   if (outputKind === 'json') {
     logger.log(
-      await outputAsJson(auditLogs, {
-        logType,
-        orgSlug,
-        page,
-        perPage,
-      }),
-    )
-  } else if (outputKind !== 'markdown' && !auditLogs.ok) {
-    logger.fail(failMsgWithBadge(auditLogs.message, auditLogs.cause))
-  } else {
-    logger.log(
-      await outputAsMarkdown(auditLogs, {
+      await outputAsJson(result, {
         logType,
         orgSlug,
         page,
@@ -52,6 +46,134 @@ export async function outputAuditLog(
       }),
     )
   }
+
+  if (!result.ok) {
+    logger.fail(failMsgWithBadge(result.message, result.cause))
+    return
+  }
+
+  if (outputKind === 'markdown') {
+    logger.log(
+      await outputAsMarkdown(result.data, {
+        logType,
+        orgSlug,
+        page,
+        perPage,
+      }),
+    )
+    return
+  }
+
+  const filteredLogs = result.data.results
+  const formattedOutput = filteredLogs.map(logs => [
+    logs.event_id ?? '',
+    logs.created_at ?? '',
+    (logs.type || '').padEnd(30, ' '),
+    logs.user_email ?? '',
+    logs.ip_address ?? '',
+    logs.user_agent ?? '',
+  ])
+  const headers = [
+    'event id',
+    '  created at',
+    '  event type',
+    '  user email',
+    '  ip address',
+    '  user agent',
+  ]
+
+  // Note: this temporarily takes over the terminal (just like `man` does).
+  const ScreenWidget = require('blessed/lib/widgets/screen.js')
+  // Lazily access constants.blessedOptions.
+  const screen: Widgets.Screen = new ScreenWidget({
+    ...constants.blessedOptions,
+  })
+  // Register these keys first so you can always exit, even when it gets stuck
+  // If we don't do this and the code crashes, the user must hard-kill the
+  // node process just to exit it. That's very bad UX.
+  // eslint-disable-next-line n/no-process-exit
+  screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
+
+  const TableWidget = require('blessed-contrib/lib/widget/table.js')
+  const table: any = new TableWidget({
+    keys: 'true',
+    fg: 'white',
+    selectedFg: 'white',
+    selectedBg: 'magenta',
+    interactive: 'true',
+    label: `Audit Logs for ${orgSlug}`,
+    width: '100%',
+    height: '70%', // Changed from 100% to 70%
+    border: {
+      type: 'line',
+      fg: 'cyan',
+    },
+    columnWidth: [10, 30, 30, 25, 15, 200],
+    // TODO: the truncation doesn't seem to work too well yet but when we add
+    //       `pad` alignment fails, when we extend columnSpacing alignment fails
+    columnSpacing: 1,
+    truncate: '_',
+  })
+
+  // Create details box at the bottom
+  const BoxWidget = require('blessed/lib/widgets/box.js')
+  const detailsBox: Widgets.BoxElement = new BoxWidget({
+    bottom: 0,
+    height: '30%',
+    width: '100%',
+    border: {
+      type: 'line',
+      fg: 'cyan',
+    },
+    label: 'Details',
+    content:
+      'Use arrow keys to navigate. Press Enter to select an event. Press q to exit.',
+    style: {
+      fg: 'white',
+    },
+  })
+
+  table.setData({
+    headers: headers,
+    data: formattedOutput,
+  })
+
+  // allow control the table with the keyboard
+  table.focus()
+
+  screen.append(table)
+  screen.append(detailsBox)
+
+  // Update details box when selection changes
+  table.rows.on('select item', () => {
+    const selectedIndex = table.rows.selected
+    if (selectedIndex !== undefined && selectedIndex >= 0) {
+      const selectedRow = filteredLogs[selectedIndex]
+      if (selectedRow) {
+        // Format the object with spacing but keep the payload compact because
+        // that can contain just about anything and spread many lines.
+        const obj = { ...selectedRow, payload: 'REPLACEME' }
+        const json = JSON.stringify(obj, null, 2)
+          .replace(
+            /"payload": "REPLACEME"/,
+            `"payload": ${JSON.stringify(selectedRow.payload ?? {})}`,
+          )
+          .replace(/^\s*"([^"]+)?"/gm, '  $1')
+        // Note: the spacing works around issues with the table; it refuses to pad!
+        detailsBox.setContent(json)
+        screen.render()
+      }
+    }
+  })
+
+  screen.render()
+
+  screen.key(['return'], () => {
+    const selectedIndex = table.rows.selected
+    screen.destroy()
+    const selectedRow = formattedOutput[selectedIndex]
+    logger.log('Last selection:\n', selectedRow)
+  })
 }
 
 export async function outputAsJson(
@@ -107,7 +229,7 @@ export async function outputAsJson(
 }
 
 export async function outputAsMarkdown(
-  auditLogs: CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
+  auditLogs: SocketSdkReturnType<'getAuditLogEvents'>['data'],
   {
     logType,
     orgSlug,
@@ -120,35 +242,8 @@ export async function outputAsMarkdown(
     logType: string
   },
 ): Promise<string> {
-  if (!auditLogs.ok) {
-    return `
-# Socket Audit Logs
-
-There was a problem fetching the audit logs:
-
-> ${auditLogs.message}
-${
-  auditLogs.cause
-    ? '>\n' +
-      (
-        auditLogs.cause
-          .split('\n')
-          .map(s => `> ${s}\n`)
-          .join('') ?? ''
-      )
-    : ''
-}
-Parameters:
-
-- org: ${orgSlug}
-- type filter: ${logType || '(none)'}
-- page: ${page}
-- per page: ${perPage}
-`
-  }
-
   try {
-    const table = mdTable<any>(auditLogs.data.results, [
+    const table = mdTable<any>(auditLogs.results, [
       'event_id',
       'created_at',
       'type',
@@ -164,7 +259,7 @@ These are the Socket.dev audit logs as per requested query.
 - org: ${orgSlug}
 - type filter: ${logType || '(none)'}
 - page: ${page}
-- next page: ${auditLogs.data.nextPage}
+- next page: ${auditLogs.nextPage}
 - per page: ${perPage}
 - generated: ${constants.ENV.VITEST ? REDACTED : new Date().toISOString()}
 
