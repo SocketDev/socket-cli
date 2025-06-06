@@ -6,7 +6,10 @@ import type { CResult } from '../../types.mts'
 
 const { DOT_SOCKET_DOT_FACTS_JSON } = constants
 
-export async function scanReachability(cwd: string): Promise<CResult<unknown>> {
+export async function scanReachability(
+  argv: string[] | readonly string[],
+  cwd: string,
+): Promise<CResult<unknown>> {
   try {
     const result = await spawn(
       constants.execPath,
@@ -19,9 +22,10 @@ export async function scanReachability(cwd: string): Promise<CResult<unknown>> {
         cwd,
         '--output-dir',
         cwd,
-        '--disable-report-submission',
         '--socket-mode',
         DOT_SOCKET_DOT_FACTS_JSON,
+        '--disable-report-submission',
+        ...argv,
       ],
       {
         cwd,

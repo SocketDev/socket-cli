@@ -70,5 +70,5 @@ async function run(
     return
   }
 
-  await handleScanReach(cwd, outputKind)
+  await handleScanReach(argv, cwd, outputKind)
 }
