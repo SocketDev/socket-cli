@@ -4,6 +4,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { msAtHome } from '../../utils/ms-at-home.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { ThreadFeedResponse, ThreatResult } from './types.mts'
@@ -50,6 +51,9 @@ export async function outputThreatFeed(
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 
   const TableWidget = require('blessed-contrib/lib/widget/table.js')
+  const detailsBoxHeight = 20 // bottom N rows for details box
+  const tipsBoxHeight = 1 // 1 row for tips box
+
   const table: any = new TableWidget({
     keys: 'true',
     fg: 'white',
@@ -58,7 +62,8 @@ export async function outputThreatFeed(
     interactive: 'true',
     label: 'Threat feed',
     width: '100%',
-    height: '70%', // Changed from 100% to 70%
+    top: 0,
+    bottom: detailsBoxHeight + tipsBoxHeight,
     border: {
       type: 'line',
       fg: 'cyan',
@@ -70,11 +75,21 @@ export async function outputThreatFeed(
     truncate: '_',
   })
 
-  // Create details box at the bottom
   const BoxWidget = require('blessed/lib/widgets/box.js')
+  const tipsBox: Widgets.BoxElement = new BoxWidget({
+    bottom: detailsBoxHeight, // sits just above the details box
+    height: tipsBoxHeight,
+    width: '100%',
+    style: {
+      fg: 'yellow',
+      bg: 'black',
+    },
+    tags: true,
+    content: '↑/↓: Move    Enter: Select    q/ESC: Quit',
+  })
   const detailsBox: Widgets.BoxElement = new BoxWidget({
     bottom: 0,
-    height: '30%',
+    height: detailsBoxHeight,
     width: '100%',
     border: {
       type: 'line',
@@ -100,10 +115,20 @@ export async function outputThreatFeed(
     data: formattedOutput,
   })
 
+  // Initialize details box with the first selection if available
+  if (formattedOutput.length > 0) {
+    const selectedRow = formattedOutput[0]
+    if (selectedRow) {
+      detailsBox.setContent(formatDetailBox(selectedRow, descriptions, 0))
+    }
+  }
+
   // allow control the table with the keyboard
   table.focus()
 
+  // Stacking order: table (top), tipsBox (middle), detailsBox (bottom)
   screen.append(table)
+  screen.append(tipsBox)
   screen.append(detailsBox)
 
   // Update details box when selection changes
@@ -114,13 +139,7 @@ export async function outputThreatFeed(
       if (selectedRow) {
         // Note: the spacing works around issues with the table; it refuses to pad!
         detailsBox.setContent(
-          `Ecosystem: ${selectedRow[0]}\n` +
-            `Name: ${selectedRow[1]}\n` +
-            `Version:${selectedRow[2]}\n` +
-            `Threat type:${selectedRow[3]}\n` +
-            `Detected at:${selectedRow[4]}\n` +
-            `Details: ${selectedRow[5]}\n` +
-            `Description: ${descriptions[selectedIndex]}`,
+          formatDetailBox(selectedRow, descriptions, selectedIndex),
         )
         screen.render()
       }
@@ -135,6 +154,22 @@ export async function outputThreatFeed(
     const selectedRow = formattedOutput[selectedIndex]
     logger.log('Last selection:\n', selectedRow)
   })
+}
+
+function formatDetailBox(
+  selectedRow: string[],
+  descriptions: string[],
+  selectedIndex: number,
+): string {
+  return (
+    `Ecosystem:    ${selectedRow[0]?.trim()}\n` +
+    `Name:         ${selectedRow[1]?.trim()}\n` +
+    `Version:      ${selectedRow[2]?.trim()}\n` +
+    `Threat type:  ${selectedRow[3]?.trim()}\n` +
+    `Detected at:  ${selectedRow[4]?.trim()}\n` +
+    `Details:      ${selectedRow[5]?.trim()}\n` +
+    `Description:  ${descriptions[selectedIndex]?.trim()}`
+  )
 }
 
 function formatResults(data: ThreatResult[]) {
@@ -155,28 +190,4 @@ function formatResults(data: ThreatResult[]) {
       d.locationHtmlUrl,
     ]
   })
-}
-
-function msAtHome(isoTimeStamp: string): string {
-  const timeStart = Date.parse(isoTimeStamp)
-  const timeEnd = Date.now()
-
-  const rtf = new Intl.RelativeTimeFormat('en', {
-    numeric: 'always',
-    style: 'short',
-  })
-
-  const delta = timeEnd - timeStart
-  if (delta < 60 * 60 * 1000) {
-    return rtf.format(-Math.round(delta / (60 * 1000)), 'minute')
-    // return Math.round(delta / (60 * 1000)) + ' min ago'
-  } else if (delta < 24 * 60 * 60 * 1000) {
-    return rtf.format(-(delta / (60 * 60 * 1000)).toFixed(1), 'hour')
-    // return (delta / (60 * 60 * 1000)).toFixed(1) + ' hr ago'
-  } else if (delta < 7 * 24 * 60 * 60 * 1000) {
-    return rtf.format(-(delta / (24 * 60 * 60 * 1000)).toFixed(1), 'day')
-    // return (delta / (24 * 60 * 60 * 1000)).toFixed(1) + ' day ago'
-  } else {
-    return isoTimeStamp.slice(0, 10)
-  }
 }
