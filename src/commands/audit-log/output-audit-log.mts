@@ -6,6 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/markdown.mts'
+import { msAtHome } from '../../utils/ms-at-home.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
@@ -67,8 +68,8 @@ export async function outputAuditLog(
   const filteredLogs = result.data.results
   const formattedOutput = filteredLogs.map(logs => [
     logs.event_id ?? '',
-    logs.created_at ?? '',
-    (logs.type || '').padEnd(30, ' '),
+    msAtHome(logs.created_at ?? ''),
+    logs.type ?? '',
     logs.user_email ?? '',
     logs.ip_address ?? '',
     logs.user_agent ?? '',
@@ -95,6 +96,16 @@ export async function outputAuditLog(
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 
   const TableWidget = require('blessed-contrib/lib/widget/table.js')
+  const tipsBoxHeight = 1 // 1 row for tips box
+  const detailsBoxHeight = 20 // bottom N rows for details box. 20 gives 4 lines for condensed payload before it scrolls out of view
+
+  const maxWidths = [10, 10, 10, 10, 10, 10]
+  formattedOutput.forEach(row => {
+    row.forEach((str, i) => {
+      maxWidths[i] = Math.max(str.length, maxWidths[i] ?? str.length)
+    })
+  })
+
   const table: any = new TableWidget({
     keys: 'true',
     fg: 'white',
@@ -103,31 +114,40 @@ export async function outputAuditLog(
     interactive: 'true',
     label: `Audit Logs for ${orgSlug}`,
     width: '100%',
-    height: '70%', // Changed from 100% to 70%
+    top: 0,
+    bottom: detailsBoxHeight + tipsBoxHeight,
     border: {
       type: 'line',
       fg: 'cyan',
     },
-    columnWidth: [10, 30, 30, 25, 15, 200],
-    // TODO: the truncation doesn't seem to work too well yet but when we add
-    //       `pad` alignment fails, when we extend columnSpacing alignment fails
-    columnSpacing: 1,
+    columnWidth: maxWidths, //[10, 30, 40, 25, 15, 200],
+    // Note: spacing works as long as you don't reserve more than total width
+    columnSpacing: 4,
     truncate: '_',
   })
 
-  // Create details box at the bottom
   const BoxWidget = require('blessed/lib/widgets/box.js')
+  const tipsBox: Widgets.BoxElement = new BoxWidget({
+    bottom: detailsBoxHeight, // sits just above the details box
+    height: tipsBoxHeight,
+    width: '100%',
+    style: {
+      fg: 'yellow',
+      bg: 'black',
+    },
+    tags: true,
+    content: '↑/↓: Move    Enter: Select    q/ESC: Quit',
+  })
   const detailsBox: Widgets.BoxElement = new BoxWidget({
     bottom: 0,
-    height: '30%',
+    height: detailsBoxHeight,
     width: '100%',
     border: {
       type: 'line',
       fg: 'cyan',
     },
     label: 'Details',
-    content:
-      'Use arrow keys to navigate. Press Enter to select an event. Press q to exit.',
+    content: formatResult(filteredLogs[0], true),
     style: {
       fg: 'white',
     },
@@ -141,7 +161,9 @@ export async function outputAuditLog(
   // allow control the table with the keyboard
   table.focus()
 
+  // Stacking order: table (top), tipsBox (middle), detailsBox (bottom)
   screen.append(table)
+  screen.append(tipsBox)
   screen.append(detailsBox)
 
   // Update details box when selection changes
@@ -149,20 +171,8 @@ export async function outputAuditLog(
     const selectedIndex = table.rows.selected
     if (selectedIndex !== undefined && selectedIndex >= 0) {
       const selectedRow = filteredLogs[selectedIndex]
-      if (selectedRow) {
-        // Format the object with spacing but keep the payload compact because
-        // that can contain just about anything and spread many lines.
-        const obj = { ...selectedRow, payload: 'REPLACEME' }
-        const json = JSON.stringify(obj, null, 2)
-          .replace(
-            /"payload": "REPLACEME"/,
-            `"payload": ${JSON.stringify(selectedRow.payload ?? {})}`,
-          )
-          .replace(/^\s*"([^"]+)?"/gm, '  $1')
-        // Note: the spacing works around issues with the table; it refuses to pad!
-        detailsBox.setContent(json)
-        screen.render()
-      }
+      detailsBox.setContent(formatResult(selectedRow))
+      screen.render()
     }
   })
 
@@ -172,8 +182,30 @@ export async function outputAuditLog(
     const selectedIndex = table.rows.selected
     screen.destroy()
     const selectedRow = formattedOutput[selectedIndex]
-    logger.log('Last selection:\n', selectedRow)
+      ? formatResult(filteredLogs[selectedIndex], true)
+      : '(none)'
+    logger.log(`Last selection:\n${selectedRow.trim()}`)
   })
+}
+
+function formatResult(
+  selectedRow?: SocketSdkReturnType<'getAuditLogEvents'>['data']['results'][number],
+  keepQuotes = false,
+): string {
+  if (!selectedRow) {
+    return '(none)'
+  }
+  // Format the object with spacing but keep the payload compact because
+  // that can contain just about anything and spread many lines.
+  const obj = { ...selectedRow, payload: 'REPLACEME' }
+  const json = JSON.stringify(obj, null, 2).replace(
+    /"payload": "REPLACEME"/,
+    `"payload": ${JSON.stringify(selectedRow.payload ?? {})}`,
+  )
+  if (keepQuotes) {
+    return json
+  }
+  return json.replace(/^\s*"([^"]+)?"/gm, '  $1')
 }
 
 export async function outputAsJson(
