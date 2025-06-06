@@ -22,29 +22,6 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags,
     ...outputFlags,
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-    perPage: {
-      type: 'number',
-      shortFlag: 'pp',
-      default: 30,
-      description: 'Number of items per page',
-    },
-    page: {
-      type: 'string',
-      shortFlag: 'p',
-      default: '1',
-      description: 'Page token',
-    },
     direction: {
       type: 'string',
       shortFlag: 'd',
@@ -62,6 +39,37 @@ const config: CliCommandConfig = {
       shortFlag: 'f',
       default: 'mal',
       description: 'Filter what type of threats to return',
+    },
+    interactive: {
+      type: 'boolean',
+      default: true,
+      description:
+        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+    },
+    org: {
+      type: 'string',
+      description:
+        'Force override the organization slug, overrides the default org from config',
+    },
+    page: {
+      type: 'string',
+      shortFlag: 'p',
+      default: '1',
+      description: 'Page token',
+    },
+    perPage: {
+      type: 'number',
+      shortFlag: 'pp',
+      default: 30,
+      description: 'Number of items per page',
+    },
+    pkg: {
+      type: 'string',
+      description: 'Filter by this package name',
+    },
+    version: {
+      type: 'string',
+      description: 'Filter by this package version',
     },
   },
   help: (command, config) => `
@@ -102,6 +110,11 @@ const config: CliCommandConfig = {
       - nuget
       - pypi
 
+    Note: if you filter by package name or version, it will do so for anything
+          unless you also filter by that ecosystem and/or package name. When in
+          doubt, look at the threat-feed and see the names in the name/version
+          column. That's what you want to search for.
+
     Examples
       $ ${command}${isTestingV1() ? '' : ' FakeOrg'}
       $ ${command}${isTestingV1() ? '' : ' FakeOrg'} --perPage=5 --page=2 --direction=asc --filter=joke
@@ -126,7 +139,15 @@ async function run(
     parentName,
   })
 
-  const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
+  const {
+    dryRun,
+    interactive,
+    json,
+    markdown,
+    org: orgFlag,
+    pkg,
+    version,
+  } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
   const [orgSlug] = await determineOrgSlug(
@@ -177,7 +198,10 @@ async function run(
     ecosystem: String(cli.flags['eco'] || ''),
     filter: String(cli.flags['filter'] || 'mal'),
     outputKind,
+    orgSlug,
     page: String(cli.flags['page'] || '1'),
     perPage: Number(cli.flags['perPage']) || 30,
+    pkg: String(pkg || ''),
+    version: String(version || ''),
   })
 }
