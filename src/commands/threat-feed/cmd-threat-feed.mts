@@ -15,6 +15,19 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 const { DRY_RUN_BAILING_NOW } = constants
 
 const ECOSYSTEMS = new Set(['gem', 'golang', 'maven', 'npm', 'nuget', 'pypi'])
+const TYPE_FILTERS = new Set([
+  'anom',
+  'c',
+  'fp',
+  'joke',
+  'mal',
+  'secret',
+  'spy',
+  'tp',
+  'typo',
+  'u',
+  'vuln',
+])
 
 const config: CliCommandConfig = {
   commandName: 'threat-feed',
@@ -30,13 +43,11 @@ const config: CliCommandConfig = {
     },
     eco: {
       type: 'string',
-      shortFlag: 'e',
       default: '',
       description: 'Only show threats for a particular ecosystem',
     },
     filter: {
       type: 'string',
-      shortFlag: 'f',
       default: 'mal',
       description: 'Filter what type of threats to return',
     },
@@ -53,7 +64,6 @@ const config: CliCommandConfig = {
     },
     page: {
       type: 'string',
-      shortFlag: 'p',
       default: '1',
       description: 'Page token',
     },
@@ -65,10 +75,12 @@ const config: CliCommandConfig = {
     },
     pkg: {
       type: 'string',
+      default: '',
       description: 'Filter by this package name',
     },
     version: {
       type: 'string',
+      default: '',
       description: 'Filter by this package version',
     },
   },
@@ -115,11 +127,20 @@ const config: CliCommandConfig = {
           doubt, look at the threat-feed and see the names in the name/version
           column. That's what you want to search for.
 
+    You can put filters as args instead, we'll try to match the strings with the
+    correct filter type but since this would not allow you to search for a package
+    called "mal", you can also specify the filters through flags.
+
+    First arg that matches a typo, eco, or version enum is used as such. First arg
+    that matches none of them becomes the package name filter. Rest is ignored.
+
+    Note: The version filter is a prefix search, pkg name is a substring search.
+
     Examples
       $ ${command}
       $ ${command} maven --json
       $ ${command} typo
-      $ ${command} npm joke --perPage=5 --page=2 --direction=asc
+      $ ${command} npm joke 1.0.0 --perPage=5 --page=2 --direction=asc
   `,
 }
 
@@ -143,17 +164,57 @@ async function run(
 
   const {
     dryRun,
+    eco,
     interactive,
     json,
     markdown,
     org: orgFlag,
     pkg,
+    type: typef,
     version,
   } = cli.flags
   const outputKind = getOutputKind(json, markdown)
-  const [filter1 = '', filter2 = ''] = cli.input
-  const ecoFilter = ECOSYSTEMS.has(filter1) ? filter1 : ''
-  const typeFilter = (ecoFilter ? filter2 : filter1) || ''
+
+  const argSet = new Set(cli.input)
+  let ecoFilter = String(eco || '')
+  let versionFilter = String(version || '')
+  let typeFilter = String(typef || '')
+  let nameFilter = String(pkg || '')
+  cli.input.some(str => {
+    if (ECOSYSTEMS.has(str)) {
+      ecoFilter = str
+      argSet.delete(str)
+      return true
+    }
+  })
+  cli.input.some(str => {
+    if (/^v?\d+\.\d+\.\d+$/.test(str)) {
+      versionFilter = str
+      argSet.delete(str)
+      return true
+    }
+  })
+  cli.input.some(str => {
+    if (TYPE_FILTERS.has(str)) {
+      typeFilter = str
+      argSet.delete(str)
+      return true
+    }
+  })
+  const haves = new Set([ecoFilter, versionFilter, typeFilter])
+  cli.input.some(str => {
+    if (!haves.has(str)) {
+      nameFilter = str
+      argSet.delete(str)
+      return true
+    }
+  })
+
+  if (argSet.size) {
+    logger.info(
+      `Warning: ignoring these excessive args: ${Array.from(argSet).join(', ')}`,
+    )
+  }
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
@@ -171,14 +232,6 @@ async function run(
       message: 'Org name by default setting, --org, or auto-discovered',
       pass: 'ok',
       fail: 'missing',
-    },
-    {
-      nook: true,
-      test: !!typeFilter || !filter2,
-      message:
-        'Second arg should only be given with first arg being a valid ecosystem',
-      pass: 'ok',
-      fail: 'first arg was not ecosystem and second arg received too',
     },
     {
       nook: true,
@@ -213,7 +266,7 @@ async function run(
     orgSlug,
     page: String(cli.flags['page'] || '1'),
     perPage: Number(cli.flags['perPage']) || 30,
-    pkg: String(pkg || ''),
-    version: String(version || ''),
+    pkg: nameFilter,
+    version: versionFilter,
   })
 }
