@@ -10,6 +10,7 @@ import {
   getConfigValueOrUndef,
   isReadOnlyConfig,
   isTestingV1,
+  updateConfigValue,
 } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { setupSdk } from '../../utils/sdk.mts'
@@ -61,8 +62,9 @@ export async function attemptLogin(
   }
 
   const orgs: SocketSdkReturnType<'getOrganizations'>['data'] = result.data
+  const orgSlugs = Object.values(orgs.organizations).map(obj => obj.slug)
 
-  logger.success(`API key verified: ${Object.values(orgs.organizations)}`)
+  logger.success(`API key verified: ${orgSlugs}`)
 
   const enforcedChoices: OrgChoices = Object.values(orgs.organizations)
     .filter(org => org?.plan === 'enterprise')
@@ -140,6 +142,8 @@ export async function attemptLogin(
       )
     }
   }
+
+  updateConfigValue('defaultOrg', orgSlugs[0])
 
   const previousPersistedToken = getConfigValueOrUndef('apiToken')
   try {
