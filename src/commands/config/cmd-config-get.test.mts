@@ -19,13 +19,16 @@ describe('socket config get', async () => {
         "Get the value of a local CLI config item
 
           Usage
-            $ socket config get <org slug>
+            $ socket config get [options] KEY
+
+          Retrieve the value for given KEY at this time. If you have overridden the
+          config then the value will come from that override.
 
           Options
             --json            Output result as json
             --markdown        Output result as markdown
 
-          Keys:
+          KEY is an enum. Valid keys:
 
            - apiBaseUrl -- Base URL of the API endpoint
            - apiProxy -- A proxy through which to access the API
@@ -35,7 +38,7 @@ describe('socket config get', async () => {
            - isTestingV1 -- For development of testing the next major bump
 
           Examples
-            $ socket config get FakeOrg --repoName=test-repo"
+            $ socket config get defaultOrg"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

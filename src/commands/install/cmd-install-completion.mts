@@ -19,7 +19,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} [name=socket]
+      $ ${command} [options] [NAME=socket]
 
     Installs bash completion for the Socket CLI. This will:
     1. Source the completion script in your current shell

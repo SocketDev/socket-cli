@@ -19,7 +19,7 @@ describe('socket config get', async () => {
         "Update the value of a local CLI config item
 
           Usage
-            $ socket config set <key> <value>
+            $ socket config set [options] <KEY> <VALUE>
 
           Options
             --json            Output result as json
@@ -28,7 +28,11 @@ describe('socket config get', async () => {
           This is a crude way of updating the local configuration for this CLI tool.
 
           Note that updating a value here is nothing more than updating a key/value
-          store entry. No validation is happening. The server may reject your config.
+          store entry. No validation is happening. The server may reject your values
+          in some cases. Use at your own risk.
+
+          Note: use \`socket config unset\` to restore to defaults. Setting a key
+          to \`undefined\` will not allow default values to be set on it.
 
           Keys:
 

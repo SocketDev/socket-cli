@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,7 +17,20 @@ describe('socket npm', async () => {
         "npm wrapper functionality
 
           Usage
-            $ socket npm"
+            $ socket npm ...
+
+          This runs npm but checks packages through Socket before installing anything.
+          See docs for more details.
+
+          Note: Everything after "npm" is sent straight to the npm command.
+                Only the \`--dryRun\` and \`--help\` flags are caught here.
+
+          Use \`socket wrapper on\` to automatically enable this such that you don't
+          have to write \`socket npm\` for that purpose.
+
+          Examples
+            $ socket npm
+            $ socket npm install -g socket"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

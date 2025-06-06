@@ -19,7 +19,7 @@ describe('socket organization policy security', async () => {
         "Retrieve the security policy of an organization
 
           Usage
-            $ socket organization policy security <org slug>
+            $ socket organization policy security [options]
 
           API Token Requirements
             - Quota: 1 unit
@@ -35,8 +35,8 @@ describe('socket organization policy security', async () => {
           the request will fail with an authentication error.
 
           Examples
-            $ socket organization policy security mycorp
-            $ socket organization policy security mycorp --json"
+            $ socket organization policy security
+            $ socket organization policy security --json"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -67,6 +67,9 @@ describe('socket organization policy security', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>
 
+        \\x1b[33m\\u203c\\x1b[39m Missing the org slug and no --org flag set. Trying to auto-discover the org now...
+        \\x1b[34mi\\x1b[39m Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.
+        \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
           - Org name as the first argument (\\x1b[31mmissing\\x1b[39m)
@@ -76,32 +79,6 @@ describe('socket organization policy security', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 2 if input bad').toBe(2)
-    },
-  )
-
-  cmdit(
-    [
-      'organization',
-      'policy',
-      'security',
-      'fakeorg',
-      '--dry-run',
-      '--config',
-      '{"apiToken":"anything"}',
-    ],
-    'should be ok with org name and id',
-    async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-        "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>"
-      `)
-
-      expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     },
   )
 
@@ -121,11 +98,10 @@ describe('socket organization policy security', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m
+
         \\x1b[33m\\u203c\\x1b[39m Missing the org slug and no --org flag set. Trying to auto-discover the org now...
         \\x1b[34mi\\x1b[39m Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.
         \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode
@@ -155,11 +131,9 @@ describe('socket organization policy security', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>, default org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
@@ -184,11 +158,9 @@ describe('socket organization policy security', async () => {
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
+          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>
-        \\x1b[32m   (Thank you for testing the v1 bump! Please send us any feedback you might have!)
-        \\x1b[39m"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy security\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

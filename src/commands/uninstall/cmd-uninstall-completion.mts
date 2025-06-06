@@ -13,13 +13,13 @@ const { DRY_RUN_BAILING_NOW } = constants
 const config: CliCommandConfig = {
   commandName: 'completion',
   description: 'Uninstall bash completion for Socket CLI',
-  hidden: true, // beta; isTestingV1
+  hidden: false,
   flags: {
     ...commonFlags,
   },
   help: (command, config) => `
     Usage
-      $ ${command} [name=socket]
+      $ ${command} [options] [COMMAND_NAME=socket]
 
     Uninstalls bash tab completion for the Socket CLI. This will:
     1. Remove tab completion from your current shell for given command

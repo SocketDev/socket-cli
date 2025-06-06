@@ -7,7 +7,7 @@ const description = 'Setup the Socket CLI command in your environment'
 
 export const cmdInstall: CliSubcommand = {
   description,
-  hidden: true, // beta; isTestingV1
+  hidden: false,
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {

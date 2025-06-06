@@ -1,34 +1,36 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
 import { cmdit, invokeNpm } from '../../../test/utils.mts'
 
-describe('socket diff-scan', async () => {
+describe('socket repository', async () => {
   // Lazily access constants.binCliPath.
   const { binCliPath } = constants
 
   cmdit(
-    ['diff-scan', '--help', '--config', '{}'],
+    ['repository', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Diff scans related commands
+        "Repository related commands
 
           Usage
-            $ socket diff-scan <command>
+            $ socket repository <command>
 
           Commands
-            get               Get a diff scan for an organization
+            create            Create a repository in an organization
+            del               Delete a repository in an organization
+            list              List repositories in an organization
+            update            Update a repository in an organization
+            view              View repositories in an organization
 
           Options
             (none)
 
           Examples
-            $ socket diff-scan --help"
+            $ socket repository --help"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -36,18 +38,18 @@ describe('socket diff-scan', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository\`, cwd: <redacted>"
       `)
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
-        '`socket diff-scan`',
+        '`socket repository`',
       )
     },
   )
 
   cmdit(
-    ['diff-scan', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['repository', '--dry-run', '--config', '{"apiToken":"anything"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
@@ -59,7 +61,7 @@ describe('socket diff-scan', async () => {
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket diff-scan\`, cwd: <redacted>"
+          |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository\`, cwd: <redacted>"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)

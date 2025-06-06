@@ -4,7 +4,6 @@ import { handleListScans } from './handle-list-scans.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -64,10 +63,6 @@ const config: CliCommandConfig = {
       description:
         'Force override the organization slug, overrides the default org from config',
     },
-    repo: {
-      type: 'string',
-      description: 'Filter to show only scans with this repository name',
-    },
     sort: {
       type: 'string',
       shortFlag: 's',
@@ -84,17 +79,22 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command}${isTestingV1() ? '' : ' <org slug>'}
+      $ ${command} [options] [REPO [BRANCH]]
 
     API Token Requirements
       - Quota: 1 unit
       - Permissions: full-scans:list
 
+    Optionally filter by REPO. If you specify a repo, you can also specify a
+    branch to filter by. (Note: If you don't specify a repo then you must use
+    \`--branch\` to filter by branch across all repos).
+
     Options
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command}${isTestingV1() ? '' : ' FakeOrg'}
+      $ ${command}
+      $ ${command} webtools badbranch --markdown
   `,
 }
 
@@ -117,38 +117,42 @@ async function run(
   })
 
   const {
-    branch,
+    branch: branchFlag,
     dryRun,
     interactive,
     json,
     markdown,
     org: orgFlag,
-    repo,
   } = cli.flags
   const outputKind = getOutputKind(json, markdown)
+  const [repo = '', branchArg = ''] = cli.input
+  const branch = String(branchFlag || branchArg || '')
 
-  const [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+  const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     !!interactive,
     !!dryRun,
   )
 
   const hasApiToken = hasDefaultToken()
 
+  const noLegacy = !cli.flags['repo']
+
   const wasValidInput = checkCommandInput(
     outputKind,
     {
-      nook: !!defaultOrgSlug,
-      test: !!orgSlug && orgSlug !== '.',
-      message: isTestingV1()
-        ? 'Org name by default setting, --org, or auto-discovered'
-        : 'Org name must be the first argument',
+      nook: true,
+      test: noLegacy,
+      message: 'Legacy flags are no longer supported. See v1 migration guide.',
       pass: 'ok',
-      fail:
-        orgSlug === '.'
-          ? 'dot is an invalid org, most likely you forgot the org name here?'
-          : 'missing',
+      fail: `received legacy flags`,
+    },
+    {
+      nook: true,
+      test: !!orgSlug,
+      message: 'Org name by default setting, --org, or auto-discovered',
+      pass: 'ok',
+      fail: 'dot is an invalid org, most likely you forgot the org name here?',
     },
     {
       nook: true,
@@ -164,6 +168,14 @@ async function run(
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
       fail: 'missing API token',
+    },
+    {
+      nook: true,
+      test: !branchFlag || !branchArg,
+      message:
+        'You should not set --branch and also give a second arg for branch name',
+      pass: 'ok',
+      fail: 'received flag and second arg',
     },
   )
   if (!wasValidInput) {

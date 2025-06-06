@@ -15,10 +15,17 @@ const config: CliCommandConfig = {
   flags: {},
   help: command => `
     Usage
-      $ ${command} <command>
+      $ ${command} ...
+
+    This does the opposite of \`socket npx\`: it will execute the real \`npx\`
+    command without Socket. This can be useful when you have the wrapper on
+    and want to run a certain package anyways. Use at your own risk.
+
+    Note: Everything after "raw-npx" is sent straight to the npx command.
+          Only the \`--dryRun\` and \`--help\` flags are caught here.
 
     Examples
-      $ ${command} install
+      $ ${command} prettier
   `,
 }
 

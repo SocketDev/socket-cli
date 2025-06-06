@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,7 +17,7 @@ describe('socket ci', async () => {
         "Create a new scan and report whether it passes your security policy
 
           Usage
-            $ socket ci
+            $ socket ci [options]
 
           Options
             --autoManifest    Auto generate manifest files where detected? See autoManifest flag in \`socket scan create\`
@@ -33,7 +31,11 @@ describe('socket ci', async () => {
           The --autoManifest flag does the same as the one from \`socket scan create\`
           but is not enabled by default since the CI is less likely to be set up with
           all the necessary dev tooling. Enable it if you want the scan to include
-          locally generated manifests like for gradle and sbt."
+          locally generated manifests like for gradle and sbt.
+
+          Examples
+            $ socket ci
+            $ socket ci --autoManifest"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

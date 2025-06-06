@@ -23,6 +23,7 @@ describe('socket organization', async () => {
 
           Commands
             list              List organizations associated with the API key used
+            policy            Organization policy details
 
           Options
             (none)

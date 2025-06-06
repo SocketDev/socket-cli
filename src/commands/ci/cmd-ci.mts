@@ -24,9 +24,9 @@ const config: CliCommandConfig = {
         'Auto generate manifest files where detected? See autoManifest flag in `socket scan create`',
     },
   },
-  help: (parentName, _config) => `
+  help: (command, _config) => `
     Usage
-      $ ${parentName}
+      $ ${command} [options]
 
     Options
       ${getFlagListOutput(config.flags, 6)}
@@ -41,6 +41,10 @@ const config: CliCommandConfig = {
     but is not enabled by default since the CI is less likely to be set up with
     all the necessary dev tooling. Enable it if you want the scan to include
     locally generated manifests like for gradle and sbt.
+
+    Examples
+      $ ${command}
+      $ ${command} --autoManifest
   `,
 }
 

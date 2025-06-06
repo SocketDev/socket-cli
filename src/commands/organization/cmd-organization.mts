@@ -1,6 +1,6 @@
 import { cmdOrganizationList } from './cmd-organization-list.mts'
 import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.mts'
-import { cmdOrganizationPolicyPolicy } from './cmd-organization-policy-security.mts'
+import { cmdOrganizationPolicySecurity } from './cmd-organization-policy-security.mts'
 import { cmdOrganizationPolicy } from './cmd-organization-policy.mts'
 import { cmdOrganizationQuota } from './cmd-organization-quota.mts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
@@ -27,7 +27,7 @@ export const cmdOrganization: CliSubcommand = {
             argv: ['policy', 'license'],
           },
           security: {
-            description: cmdOrganizationPolicyPolicy.description,
+            description: cmdOrganizationPolicySecurity.description,
             hidden: true,
             argv: ['policy', 'security'],
           },

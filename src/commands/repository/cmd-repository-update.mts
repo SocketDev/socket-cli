@@ -4,7 +4,6 @@ import { handleUpdateRepo } from './handle-update-repo.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -45,12 +44,6 @@ const config: CliCommandConfig = {
       description:
         'Force override the organization slug, overrides the default org from config',
     },
-    repoName: {
-      type: 'string',
-      shortFlag: 'n',
-      default: '',
-      description: 'Repository name',
-    },
     repoDescription: {
       type: 'string',
       shortFlag: 'd',
@@ -66,7 +59,7 @@ const config: CliCommandConfig = {
   },
   help: (command, config) => `
     Usage
-      $ ${command} ${isTestingV1() ? '<repo>' : '<org slug> --repo-name=<name>'}
+      $ ${command} [options] <REPO>
 
     API Token Requirements
       - Quota: 1 unit
@@ -76,11 +69,12 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(config.flags, 6)}
 
     Examples
-      $ ${command} ${isTestingV1() ? 'test-repo' : 'FakeOrg test-repo'}
+      $ ${command} test-repo
+      $ ${command} test-repo --homepage https://example.com
   `,
 }
 
-export const cmdReposUpdate = {
+export const cmdRepositoryUpdate = {
   description: config.description,
   hidden: config.hidden,
   run,
@@ -99,36 +93,38 @@ async function run(
   })
 
   const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
-  const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
+  const outputKind = getOutputKind(json, markdown)
+  const [repoName = ''] = cli.input
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     !!interactive,
     !!dryRun,
   )
 
-  const repoNameFlag = cli.flags['repoName']
-  const repoName = (isTestingV1() ? cli.input[0] : repoNameFlag) || ''
-
   const hasApiToken = hasDefaultToken()
+
+  const noLegacy = !cli.flags['repoName']
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
       nook: true,
+      test: noLegacy,
+      message: 'Legacy flags are no longer supported. See v1 migration guide.',
+      pass: 'ok',
+      fail: `received legacy flags`,
+    },
+    {
+      nook: true,
       test: !!orgSlug,
-      message: isTestingV1()
-        ? 'Org name by default setting, --org, or auto-discovered'
-        : 'Org name must be the first argument',
+      message: 'Org name by default setting, --org, or auto-discovered',
       pass: 'ok',
       fail: 'missing',
     },
     {
       test: !!repoName,
-      message: isTestingV1()
-        ? 'Repository name as first argument'
-        : 'Repository name using --repoName',
+      message: 'Repository name as first argument',
       pass: 'ok',
       fail: 'missing',
     },
@@ -139,13 +135,6 @@ async function run(
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
       fail: 'missing API token',
-    },
-    {
-      nook: true,
-      test: !isTestingV1() || !repoNameFlag,
-      message: 'In v1 the first arg should be the repo, not the flag',
-      pass: 'ok',
-      fail: 'received --repo-name flag',
     },
   )
   if (!wasValidInput) {

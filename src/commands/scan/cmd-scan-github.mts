@@ -7,7 +7,6 @@ import { suggestOrgSlug } from './suggest-org-slug.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -141,7 +140,6 @@ async function run(
 
   let [orgSlug, defaultOrgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     interactive,
     dryRun,
   )
@@ -203,18 +201,6 @@ async function run(
 
   const wasValidInput = checkCommandInput(
     outputKind,
-    {
-      nook: !isTestingV1() && !!defaultOrgSlug,
-      test: !!orgSlug && orgSlug !== '.',
-      message: isTestingV1()
-        ? 'Org name by default setting, --org, or auto-discovered'
-        : 'Org name must be the first argument',
-      pass: 'ok',
-      fail:
-        orgSlug === '.'
-          ? 'dot is an invalid org, most likely you forgot the org name here?'
-          : 'missing',
-    },
     {
       nook: true,
       test: !json || !markdown,

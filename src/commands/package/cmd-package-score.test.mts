@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,7 +17,7 @@ describe('socket package score', async () => {
         "Look up score for one package which reflects all of its transitive dependencies as well
 
           Usage
-            $ socket package score <<ecosystem> <name> | <purl>>
+            $ socket package score [options] <<ECOSYSTEM> <NAME> | <PURL>>
 
           API Token Requirements
             - Quota: 100 units
@@ -37,18 +35,22 @@ describe('socket package score', async () => {
           See also the \`socket package shallow\` command, which returns the shallow
           score for any number of packages. That will not reflect the dependency scores.
 
-          Only a few ecosystems are supported like npm, golang, and maven.
+          Only a few ecosystems are supported like npm, pypi, nuget, gem, golang, and maven.
 
           A "purl" is a standard package name formatting: \`pkg:eco/name@version\`
           This command will automatically prepend "pkg:" when not present.
 
-          The version is optional but when given should be a direct match.
+          The version is optional but when given should be a direct match. The \`pkg:\`
+          prefix is optional.
+
+          Note: if a package cannot be found it may be too old or perhaps was removed
+                before we had the opportunity to process it.
 
           Examples
             $ socket package score npm babel-cli
-            $ socket package score npm babel-cli@1.9.1
-            $ socket package score npm/babel-cli@1.9.1
-            $ socket package score pkg:npm/babel-cli@1.9.1"
+            $ socket package score npm eslint@1.0.0 --json
+            $ socket package score pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60
+            $ socket package score nuget/needpluscommonlibrary@1.0.0 --markdown"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,15 +17,18 @@ describe('socket wrapper', async () => {
         "Enable or disable the Socket npm/npx wrapper
 
           Usage
-            $ socket wrapper <flag>
+            $ socket wrapper <"on" | "off">
 
           Options
-            --disable         Disables the Socket npm/npx wrapper
-            --enable          Enables the Socket npm/npx wrapper
+            (none)
+
+          While enabled, the wrapper makes it so that when you call npm/npx on your
+          machine, it will automatically actually run \`socket npm\` / \`socket npx\`
+          instead.
 
           Examples
-            $ socket wrapper --enable
-            $ socket wrapper --disable"
+            $ socket wrapper on
+            $ socket wrapper off"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -60,7 +61,7 @@ describe('socket wrapper', async () => {
 
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
-          - Must use --enable or --disable (\\x1b[31mmissing\\x1b[39m)
+          - Must specify "on" or "off" argument (\\x1b[31mmissing\\x1b[39m)
         \\x1b[22m"
       `)
 
@@ -69,7 +70,7 @@ describe('socket wrapper', async () => {
   )
 
   cmdit(
-    ['wrapper', '--dry-run', '--enable', '--config', '{"apiToken":"anything"}'],
+    ['wrapper', '--dry-run', 'on', '--config', '{"apiToken":"anything"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)

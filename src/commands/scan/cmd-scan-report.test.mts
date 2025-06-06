@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,7 +17,7 @@ describe('socket scan report', async () => {
         "Check whether a scan result passes the organizational policies (security, license)
 
           Usage
-            $ socket scan report <org slug> <scan ID> [path to output file]
+            $ socket scan report [options] <SCAN_ID> [OUTPUT_PATH]
 
           API Token Requirements
             - Quota: 2 units
@@ -35,18 +33,34 @@ describe('socket scan report', async () => {
             --reportLevel     Which policy level alerts should be reported
             --short           Report only the healthy status
 
+          When no output path is given the contents is sent to stdout.
+
           By default the result is a nested object that looks like this:
-            \`{[ecosystem]: {[pkgName]: {[version]: {[file]: {[type:loc]: policy}}}}\`
-          You can fold this up to given level: 'pkg', 'version', 'file', and 'none'.
+            \`{
+              [ecosystem]: {
+                [pkgName]: {
+                  [version]: {
+                    [file]: {
+                      [line:col]: alert
+            }}}}\`
+          So one alert for each occurrence in every file, version, etc, a huge response.
+
+          You can --fold these up to given level: 'pkg', 'version', 'file', and 'none'.
+          For example: \`socket scan report --fold=version\` will dedupe alerts to only
+          show one alert of a particular kind, no matter how often it was foud in a
+          file or in how many files it was found. At most one per version that has it.
 
           By default only the warn and error policy level alerts are reported. You can
           override this and request more ('defer' < 'ignore' < 'monitor' < 'warn' < 'error')
 
-          Short responses: JSON: \`{healthy:bool}\`, markdown: \`healthy = bool\`, text: \`OK/ERR\`
+          Short responses look like this:
+            --json:     \`{healthy:bool}\`
+            --markdown: \`healthy = bool\`
+            neither:    \`OK/ERR\`
 
           Examples
-            $ socket scan report FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
-            $ socket scan report FakeOrg 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short"
+            $ socket scan report 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
+            $ socket scan report 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -77,9 +91,12 @@ describe('socket scan report', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan report\`, cwd: <redacted>
 
+        \\x1b[33m\\u203c\\x1b[39m Missing the org slug and no --org flag set. Trying to auto-discover the org now...
+        \\x1b[34mi\\x1b[39m Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.
+        \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
-          - Org name must be the first argument (\\x1b[31mmissing\\x1b[39m)
+          - Org name by default setting, --org, or auto-discovered (\\x1b[31mdot is an invalid org, most likely you forgot the org name here?\\x1b[39m)
 
           - Scan ID to report on (\\x1b[31mmissing\\x1b[39m)
 
@@ -98,6 +115,8 @@ describe('socket scan report', async () => {
       'org',
       'report-id',
       '--dry-run',
+      '--org',
+      'foorg',
       '--config',
       '{"apiToken":"anything"}',
     ],

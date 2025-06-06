@@ -8,7 +8,6 @@ import { suggestTarget } from './suggest_target.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -116,7 +115,7 @@ const config: CliCommandConfig = {
   // TODO: your project's "socket.yml" file's "projectIgnorePaths"
   help: (command, config) => `
     Usage
-      $ ${command} [options]${isTestingV1() ? '' : ' <org>'} [TARGET...]
+      $ ${command} [options] [TARGET...]
 
     API Token Requirements
       - Quota: 1 unit
@@ -156,8 +155,9 @@ const config: CliCommandConfig = {
     You can use \`socket scan setup\` to configure certain repo flag defaults.
 
     Examples
-      $ ${command}${isTestingV1() ? '' : ' FakeOrg'}
-      $ ${command} --repo=test-repo --branch=main${isTestingV1() ? '' : ' FakeOrg'} ./package.json
+      $ ${command}
+      $ ${command} ./proj --json
+      $ ${command} --repo=test-repo --branch=main ./package.json
   `,
 }
 
@@ -225,20 +225,14 @@ async function run(
 
   const pendingHead = tmp ? false : pendingHeadFlag
 
-  let [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+  let [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     interactive,
     dryRun,
   )
-  if (!defaultOrgSlug) {
-    // Tmp. just for TS. will drop this later.
-    defaultOrgSlug = ''
-  }
 
   // Accept zero or more paths. Default to cwd() if none given.
-  let targets =
-    cli.input.slice(isTestingV1() || defaultOrgSlug ? 0 : 1) || process.cwd()
+  let targets = cli.input || [process.cwd()]
 
   const cwd =
     cwdOverride && cwdOverride !== 'process.cwd()'
@@ -325,24 +319,24 @@ async function run(
     )
     logger.info('```')
     logger.info(
-      `    socket scan create [other flags...] ${defaultOrgSlug ? '' : orgSlug} ${targets.join(' ')}`,
+      `    socket scan create [other flags...] ${orgSlug} ${targets.join(' ')}`,
     )
-    logger.info('```\n')
+    logger.info('```')
+    logger.error('')
+    logger.info(
+      'You can also run `socket scan setup` to persist these flag defaults to a socket.json file.',
+    )
+    logger.error('')
   }
 
   const wasValidInput = checkCommandInput(
     outputKind,
     {
-      nook: !isTestingV1() && !!defaultOrgSlug,
-      test: !!orgSlug && orgSlug !== '.',
-      message: isTestingV1()
-        ? 'Org name by default setting, --org, or auto-discovered'
-        : 'Org name must be the first argument',
+      nook: true,
+      test: !!orgSlug,
+      message: 'Org name by default setting, --org, or auto-discovered',
       pass: 'ok',
-      fail:
-        orgSlug === '.'
-          ? 'dot is an invalid org, most likely you forgot the org name here?'
-          : 'missing',
+      fail: 'missing',
     },
     {
       test: !!targets.length,

@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -18,7 +16,7 @@ describe('socket scan create', async () => {
         "Create a scan
 
           Usage
-            $ socket scan create [options] <org> [TARGET...]
+            $ socket scan create [options] [TARGET...]
 
           API Token Requirements
             - Quota: 1 unit
@@ -74,8 +72,9 @@ describe('socket scan create', async () => {
           You can use \`socket scan setup\` to configure certain repo flag defaults.
 
           Examples
-            $ socket scan create FakeOrg
-            $ socket scan create --repo=test-repo --branch=main FakeOrg ./package.json"
+            $ socket scan create
+            $ socket scan create ./proj --json
+            $ socket scan create --repo=test-repo --branch=main ./package.json"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -96,6 +95,7 @@ describe('socket scan create', async () => {
     [
       'scan',
       'create',
+      '--org',
       'fakeorg',
       'target',
       '--dry-run',

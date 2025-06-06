@@ -1,5 +1,3 @@
-import path from 'node:path'
-
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -19,7 +17,20 @@ describe('socket npx', async () => {
         "npx wrapper functionality
 
           Usage
-            $ socket npx"
+            $ socket npx ...
+
+          This runs npx but checks packages through Socket before running them.
+          See docs for more details.
+
+          Note: Everything after "npx" is sent straight to the npx command.
+                Only the \`--dryRun\` and \`--help\` flags are caught here.
+
+          Use \`socket wrapper on\` to automatically enable this such that you don't
+          have to write \`socket npx\` for that purpose.
+
+          Examples
+            $ socket npx
+            $ socket npx prettier"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

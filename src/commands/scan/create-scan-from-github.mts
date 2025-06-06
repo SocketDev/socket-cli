@@ -8,7 +8,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, select } from '@socketsecurity/registry/lib/prompts'
 
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
-import { fetchListAllRepos } from '../repos/fetch-list-all-repos.mts'
+import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
 

@@ -4,7 +4,6 @@ import { handleThreatFeed } from './handle-threat-feed.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { isTestingV1 } from '../../utils/config.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -15,6 +14,21 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
+const ECOSYSTEMS = new Set(['gem', 'golang', 'maven', 'npm', 'nuget', 'pypi'])
+const TYPE_FILTERS = new Set([
+  'anom',
+  'c',
+  'fp',
+  'joke',
+  'mal',
+  'secret',
+  'spy',
+  'tp',
+  'typo',
+  'u',
+  'vuln',
+])
+
 const config: CliCommandConfig = {
   commandName: 'threat-feed',
   description: '[beta] View the threat feed',
@@ -24,19 +38,16 @@ const config: CliCommandConfig = {
     ...outputFlags,
     direction: {
       type: 'string',
-      shortFlag: 'd',
       default: 'desc',
       description: 'Order asc or desc by the createdAt attribute',
     },
     eco: {
       type: 'string',
-      shortFlag: 'e',
       default: '',
       description: 'Only show threats for a particular ecosystem',
     },
     filter: {
       type: 'string',
-      shortFlag: 'f',
       default: 'mal',
       description: 'Filter what type of threats to return',
     },
@@ -53,7 +64,6 @@ const config: CliCommandConfig = {
     },
     page: {
       type: 'string',
-      shortFlag: 'p',
       default: '1',
       description: 'Page token',
     },
@@ -65,16 +75,18 @@ const config: CliCommandConfig = {
     },
     pkg: {
       type: 'string',
+      default: '',
       description: 'Filter by this package name',
     },
     version: {
       type: 'string',
+      default: '',
       description: 'Filter by this package version',
     },
   },
   help: (command, config) => `
     Usage
-      $ ${command}${isTestingV1() ? '' : ' <org slug>'}
+      $ ${command} [options] [ECOSYSTEM] [TYPE_FILTER]
 
     API Token Requirements
       - Quota: 1 unit
@@ -87,7 +99,16 @@ const config: CliCommandConfig = {
     Options
       ${getFlagListOutput(config.flags, 6)}
 
-    Valid filters:
+    Valid ecosystems:
+
+      - gem
+      - golang
+      - maven
+      - npm
+      - nuget
+      - pypi
+
+    Valid type filters:
 
       - anom    Anomaly
       - c       Do not filter
@@ -101,23 +122,25 @@ const config: CliCommandConfig = {
       - u       Unreviewed
       - vuln    Vulnerability
 
-    Valid ecosystems:
-
-      - gem
-      - golang
-      - maven
-      - npm
-      - nuget
-      - pypi
-
     Note: if you filter by package name or version, it will do so for anything
           unless you also filter by that ecosystem and/or package name. When in
           doubt, look at the threat-feed and see the names in the name/version
           column. That's what you want to search for.
 
+    You can put filters as args instead, we'll try to match the strings with the
+    correct filter type but since this would not allow you to search for a package
+    called "mal", you can also specify the filters through flags.
+
+    First arg that matches a typo, eco, or version enum is used as such. First arg
+    that matches none of them becomes the package name filter. Rest is ignored.
+
+    Note: The version filter is a prefix search, pkg name is a substring search.
+
     Examples
-      $ ${command}${isTestingV1() ? '' : ' FakeOrg'}
-      $ ${command}${isTestingV1() ? '' : ' FakeOrg'} --perPage=5 --page=2 --direction=asc --filter=joke
+      $ ${command}
+      $ ${command} maven --json
+      $ ${command} typo
+      $ ${command} npm joke 1.0.0 --perPage=5 --page=2 --direction=asc
   `,
 }
 
@@ -141,18 +164,60 @@ async function run(
 
   const {
     dryRun,
+    eco,
     interactive,
     json,
     markdown,
     org: orgFlag,
     pkg,
+    type: typef,
     version,
   } = cli.flags
   const outputKind = getOutputKind(json, markdown)
 
+  const argSet = new Set(cli.input)
+  let ecoFilter = String(eco || '')
+  let versionFilter = String(version || '')
+  let typeFilter = String(typef || '')
+  let nameFilter = String(pkg || '')
+  cli.input.some(str => {
+    if (ECOSYSTEMS.has(str)) {
+      ecoFilter = str
+      argSet.delete(str)
+      return true
+    }
+  })
+  cli.input.some(str => {
+    if (/^v?\d+\.\d+\.\d+$/.test(str)) {
+      versionFilter = str
+      argSet.delete(str)
+      return true
+    }
+  })
+  cli.input.some(str => {
+    if (TYPE_FILTERS.has(str)) {
+      typeFilter = str
+      argSet.delete(str)
+      return true
+    }
+  })
+  const haves = new Set([ecoFilter, versionFilter, typeFilter])
+  cli.input.some(str => {
+    if (!haves.has(str)) {
+      nameFilter = str
+      argSet.delete(str)
+      return true
+    }
+  })
+
+  if (argSet.size) {
+    logger.info(
+      `Warning: ignoring these excessive args: ${Array.from(argSet).join(', ')}`,
+    )
+  }
+
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    cli.input[0] || '',
     !!interactive,
     !!dryRun,
   )
@@ -164,7 +229,7 @@ async function run(
     {
       nook: true,
       test: !!orgSlug,
-      message: 'Org name as the first argument',
+      message: 'Org name by default setting, --org, or auto-discovered',
       pass: 'ok',
       fail: 'missing',
     },
@@ -195,13 +260,13 @@ async function run(
 
   await handleThreatFeed({
     direction: String(cli.flags['direction'] || 'desc'),
-    ecosystem: String(cli.flags['eco'] || ''),
-    filter: String(cli.flags['filter'] || 'mal'),
+    ecosystem: ecoFilter,
+    filter: typeFilter,
     outputKind,
     orgSlug,
     page: String(cli.flags['page'] || '1'),
     perPage: Number(cli.flags['perPage']) || 30,
-    pkg: String(pkg || ''),
-    version: String(version || ''),
+    pkg: nameFilter,
+    version: versionFilter,
   })
 }
