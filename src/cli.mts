@@ -90,7 +90,17 @@ void (async () => {
             hidden: true,
             argv: ['audit-log'],
           },
+          auditLog: {
+            description: cmdAuditLog.description,
+            hidden: true,
+            argv: ['audit-log'],
+          },
           auditLogs: {
+            description: cmdAuditLog.description,
+            hidden: true,
+            argv: ['audit-log'],
+          },
+          ['audit-logs']: {
             description: cmdAuditLog.description,
             hidden: true,
             argv: ['audit-log'],
