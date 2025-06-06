@@ -68,11 +68,20 @@ describe('socket threat-feed', async () => {
                 doubt, look at the threat-feed and see the names in the name/version
                 column. That's what you want to search for.
 
+          You can put filters as args instead, we'll try to match the strings with the
+          correct filter type but since this would not allow you to search for a package
+          called "mal", you can also specify the filters through flags.
+
+          First arg that matches a typo, eco, or version enum is used as such. First arg
+          that matches none of them becomes the package name filter. Rest is ignored.
+
+          Note: The version filter is a prefix search, pkg name is a substring search.
+
           Examples
             $ socket threat-feed
             $ socket threat-feed maven --json
             $ socket threat-feed typo
-            $ socket threat-feed npm joke --perPage=5 --page=2 --direction=asc"
+            $ socket threat-feed npm joke 1.0.0 --perPage=5 --page=2 --direction=asc"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
