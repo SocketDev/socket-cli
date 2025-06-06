@@ -39,6 +39,8 @@ describe('socket threat-feed', async () => {
             --org             Force override the organization slug, overrides the default org from config
             --page            Page token
             --perPage         Number of items per page
+            --pkg             Filter by this package name
+            --version         Filter by this package version
 
           Valid filters:
 
@@ -62,6 +64,11 @@ describe('socket threat-feed', async () => {
             - npm
             - nuget
             - pypi
+
+          Note: if you filter by package name or version, it will do so for anything
+                unless you also filter by that ecosystem and/or package name. When in
+                doubt, look at the threat-feed and see the names in the name/version
+                column. That's what you want to search for.
 
           Examples
             $ socket threat-feed FakeOrg
