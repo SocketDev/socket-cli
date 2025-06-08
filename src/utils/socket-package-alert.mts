@@ -555,11 +555,7 @@ export function logAlertsMap(
     const pkgName = resolvePackageName(purlObj)
     const hyperlink = format.hyperlink(
       pkgName,
-      getSocketDevPackageOverviewUrl(
-        purlObj.type as PURL_Type,
-        pkgName,
-        purlObj.version,
-      ),
+      getSocketDevPackageOverviewUrl(purlObj.type, pkgName, purlObj.version),
     )
     const isAboveTheFold = aboveTheFoldPurls.has(purl)
     if (isAboveTheFold) {
