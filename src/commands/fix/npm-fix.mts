@@ -64,7 +64,6 @@ import type {
   NodeClass,
 } from '../../shadow/npm/arborist/types.mts'
 import type { CResult } from '../../types.mts'
-import type { PURL_Type } from '../../utils/alert/artifact.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
@@ -252,7 +251,7 @@ export async function npmFix(
     logger.indent()
     spinner?.indent()
 
-    if (getManifestData(partialPurlObj.type as PURL_Type, name)) {
+    if (getManifestData(partialPurlObj.type, name)) {
       debugFn(`found: Socket Optimize variant for ${name}`)
     }
     // eslint-disable-next-line no-await-in-loop
