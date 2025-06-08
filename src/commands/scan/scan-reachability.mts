@@ -1,6 +1,7 @@
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
+import { getDefaultToken } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 
@@ -31,8 +32,7 @@ export async function scanReachability(
         cwd,
         env: {
           ...process.env,
-          // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN
-          SOCKET_CLI_API_TOKEN: constants.ENV.SOCKET_CLI_API_TOKEN,
+          SOCKET_CLI_API_TOKEN: getDefaultToken(),
         },
       },
     )
