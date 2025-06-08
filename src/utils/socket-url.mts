@@ -25,11 +25,7 @@ export function getSocketDevPackageOverviewUrlFromPurl(
 ): string {
   const purlObj = getPurlObject(purl)
   const fullName = getPkgFullNameFromPurl(purlObj)
-  return getSocketDevPackageOverviewUrl(
-    purlObj.type as PURL_Type,
-    fullName,
-    purlObj.version,
-  )
+  return getSocketDevPackageOverviewUrl(purlObj.type, fullName, purlObj.version)
 }
 
 export function getSocketDevPackageOverviewUrl(
