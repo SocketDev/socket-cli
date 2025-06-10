@@ -1,5 +1,4 @@
-import path from 'node:path'
-
+import semver from 'semver'
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
@@ -38,13 +37,19 @@ describe('socket config get', async () => {
             $ socket config get FakeOrg --repoName=test-repo"
       `,
       )
-      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
-        "
-           _____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
-      `)
+      // Node 24 on Windows currently fails this test with added stderr:
+      // Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 76
+      const skipOnWin32Node24 =
+        constants.WIN32 && semver.parse(constants.NODE_VERSION)!.major >= 24
+      if (!skipOnWin32Node24) {
+        expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+          "
+            _____         _       _        /---------------
+            |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
+            |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+            |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
+        `)
+      }
 
       expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
