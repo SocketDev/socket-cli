@@ -34,6 +34,7 @@ describe('socket config get', async () => {
            - apiToken -- The API token required to access most API endpoints
            - defaultOrg -- The default org slug to use; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.
            - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
+           - org -- Alias for defaultOrg
 
           Examples
             $ socket config get defaultOrg"
@@ -72,7 +73,6 @@ describe('socket config get', async () => {
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>
-
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
           - Config key should be the first arg (\\x1b[31mmissing\\x1b[39m)

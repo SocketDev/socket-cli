@@ -1,6 +1,4 @@
 import meow from 'meow'
-import semver from 'semver'
-import colors from 'yoctocolors-cjs'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -515,21 +513,11 @@ function getAsciiHeader(command: string) {
   const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
   const shownToken = redacting ? REDACTED : getVisibleTokenPrefix() || 'no'
   const relCwd = redacting ? REDACTED : normalizePath(tildify(process.cwd()))
-  let nodeVerWarn = ''
-  if (semver.parse(constants.NODE_VERSION)!.major < 20) {
-    nodeVerWarn += colors.bold(
-      `   ${colors.red('Warning:')} NodeJS version 19 and lower will be ${colors.red('unsupported')} after April 30th, 2025.`,
-    )
-    nodeVerWarn += '\n'
-    nodeVerWarn +=
-      '            Soon after the Socket CLI will require NodeJS version 20 or higher.'
-    nodeVerWarn += '\n'
-  }
   const body = `
    _____         _       _        /---------------
   |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
   |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${shownToken}${defaultOrg ? `, org: ${redacting ? REDACTED : defaultOrg}` : ''}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}`.trimStart()
 
-  return `   ${body}\n${nodeVerWarn}`
+  return `   ${body}` // Note: logger will auto-append a newline
 }
