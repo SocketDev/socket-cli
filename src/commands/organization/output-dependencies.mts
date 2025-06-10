@@ -35,26 +35,38 @@ export async function outputDependencies(
     return
   }
 
-  logger.log(
-    'Request details: Offset:',
-    offset,
-    ', limit:',
+  outputMarkdown(result.data, { limit, offset })
+}
+
+function outputMarkdown(
+  result: SocketSdkReturnType<'searchDependencies'>['data'],
+  {
     limit,
-    ', is there more data after this?',
-    result.data.end ? 'no' : 'yes',
-  )
+    offset,
+  }: {
+    limit: number
+    offset: number
+  },
+) {
+  logger.log('# Organization dependencies')
+  logger.log('')
+  logger.log('Request details:')
+  logger.log('- Offset:', offset)
+  logger.log('- Limit:', limit)
+  logger.log('- Is there more data after this?', result.end ? 'no' : 'yes')
+  logger.log('')
 
   const options = {
     columns: [
+      { field: 'type', name: colors.cyan('Ecosystem') },
       { field: 'namespace', name: colors.cyan('Namespace') },
       { field: 'name', name: colors.cyan('Name') },
       { field: 'version', name: colors.cyan('Version') },
       { field: 'repository', name: colors.cyan('Repository') },
       { field: 'branch', name: colors.cyan('Branch') },
-      { field: 'type', name: colors.cyan('Type') },
       { field: 'direct', name: colors.cyan('Direct') },
     ],
   }
 
-  logger.log(chalkTable(options, result.data.rows))
+  logger.log(chalkTable(options, result.rows))
 }

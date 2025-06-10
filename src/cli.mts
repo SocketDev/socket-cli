@@ -13,7 +13,6 @@ import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
 import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.mts'
 import { cmdCI } from './commands/ci/cmd-ci.mts'
 import { cmdConfig } from './commands/config/cmd-config.mts'
-import { cmdScanCreate } from './commands/dependencies/cmd-dependencies.mts'
 import { cmdFix } from './commands/fix/cmd-fix.mts'
 import { cmdInstall } from './commands/install/cmd-install.mts'
 import { cmdJson } from './commands/json/cmd-json.mts'
@@ -25,6 +24,7 @@ import { cmdNpm } from './commands/npm/cmd-npm.mts'
 import { cmdNpx } from './commands/npx/cmd-npx.mts'
 import { cmdOops } from './commands/oops/cmd-oops.mts'
 import { cmdOptimize } from './commands/optimize/cmd-optimize.mts'
+import { cmdOrganizationDependencies } from './commands/organization/cmd-organization-dependencies.mts'
 import { cmdOrganizationPolicyLicense } from './commands/organization/cmd-organization-policy-license.mts'
 import { cmdOrganizationPolicySecurity } from './commands/organization/cmd-organization-policy-security.mts'
 import { cmdOrganization } from './commands/organization/cmd-organization.mts'
@@ -77,7 +77,6 @@ void (async () => {
         scan: cmdScan,
         'audit-log': cmdAuditLog,
         repos: cmdRepository,
-        dependencies: cmdScanCreate,
         analytics: cmdAnalytics,
         'threat-feed': cmdThreatFeed,
         manifest: cmdManifest,
@@ -111,7 +110,7 @@ void (async () => {
             argv: ['manifest', 'cdxgen'],
           },
           deps: {
-            description: cmdScanCreate.description,
+            description: cmdOrganizationDependencies.description,
             hidden: true,
             argv: ['dependencies'],
           },
