@@ -70,8 +70,6 @@ describe('socket root command', async () => {
     )
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
-         \\x1b[31m\\xd7\\x1b[39m Received a visible command that was not added to the list here: json
-      \\x1b[31m\\xd7\\x1b[39m Found commands in the list that were not marked as public or not defined at all: 'dependencies'
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
         |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
