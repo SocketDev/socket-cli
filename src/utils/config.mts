@@ -20,6 +20,7 @@ export interface LocalConfig {
   apiToken?: string | null | undefined
   defaultOrg?: string
   enforcedOrgs?: string[] | readonly string[] | null | undefined
+  org?: string // convenience alias for defaultOrg
 }
 
 export const sensitiveConfigKeys: Set<keyof LocalConfig> = new Set(['apiToken'])
@@ -36,6 +37,7 @@ export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
     'enforcedOrgs',
     'Orgs in this list have their security policies enforced on this machine',
   ],
+  ['org', 'Alias for defaultOrg'],
 ])
 
 function getConfigValues(): LocalConfig {
@@ -75,7 +77,9 @@ function normalizeConfigKey(
 ): CResult<keyof LocalConfig> {
   // Note: apiKey was the old name of the token. When we load a config with
   //       property apiKey, we'll copy that to apiToken and delete the old property.
-  const normalizedKey = key === 'apiKey' ? 'apiToken' : key
+  // We added `org` as a convenience alias for `defaultOrg`
+  const normalizedKey =
+    key === 'apiKey' ? 'apiToken' : key === 'org' ? 'defaultOrg' : key
   if (!supportedConfigKeys.has(normalizedKey)) {
     return {
       ok: false,
@@ -83,7 +87,7 @@ function normalizeConfigKey(
       data: undefined,
     }
   }
-  return { ok: true, data: key }
+  return { ok: true, data: normalizedKey }
 }
 
 export function findSocketYmlSync(dir = process.cwd()) {
@@ -175,7 +179,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   _cachedConfig = config as LocalConfig
   _readOnlyConfig = true
 
-  // Normalize apiKey to apiToken.
+  // Normalize apiKey to apiToken
   if (_cachedConfig['apiKey']) {
     if (_cachedConfig['apiToken']) {
       logger.warn(
@@ -214,7 +218,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
   if (_readOnlyConfig) {
     return {
       ok: true,
-      message: `Config key '${key}' was updated`,
+      message: `Config key '${keyResult.data}' was updated`,
       data: 'Change applied but not persisted; current config is overridden through env var or flag',
     }
   }
@@ -236,7 +240,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
 
   return {
     ok: true,
-    message: `Config key '${key}' was updated`,
+    message: `Config key '${keyResult.data}' was updated`,
     data: undefined,
   }
 }
