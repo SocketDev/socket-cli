@@ -252,7 +252,6 @@ export async function meowWithSubcommands(
       'analytics',
       'audit-log',
       'config',
-      'dependencies',
       'fix',
       'install',
       'login',
@@ -529,7 +528,7 @@ function getAsciiHeader(command: string) {
   const body = `
    _____         _       _        /---------------
   |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
-  |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${shownToken}${defaultOrg ? `, default org: ${redacting ? REDACTED : defaultOrg}` : ''}
+  |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${shownToken}${defaultOrg ? `, org: ${redacting ? REDACTED : defaultOrg}` : ''}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}`.trimStart()
 
   return `   ${body}\n${nodeVerWarn}`
