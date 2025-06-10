@@ -9,7 +9,6 @@ import { handleApiCall } from '../../utils/api.mts'
 import {
   getConfigValueOrUndef,
   isReadOnlyConfig,
-  isTestingV1,
   updateConfigValue,
 } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'

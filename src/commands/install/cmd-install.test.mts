@@ -20,7 +20,7 @@ describe('socket install', async () => {
             $ socket install <command>
 
           Commands
-            (none)
+            completion        Install bash completion for Socket CLI
 
           Options
             (none)
