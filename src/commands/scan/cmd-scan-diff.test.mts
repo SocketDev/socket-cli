@@ -71,7 +71,6 @@ describe('socket scan diff', async () => {
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan diff\`, cwd: <redacted>
-
         \\x1b[33m\\u203c\\x1b[39m Missing the org slug and no --org flag set. Trying to auto-discover the org now...
         \\x1b[34mi\\x1b[39m Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.
         \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode
