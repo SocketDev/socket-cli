@@ -2,6 +2,7 @@ import meow from 'meow'
 import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
@@ -22,7 +23,6 @@ import { tildify } from './tildify.mts'
 
 import type { MeowFlags } from '../flags.mts'
 import type { Options, Result } from 'meow'
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 
 interface CliAlias {
   description: string
@@ -296,7 +296,11 @@ export async function meowWithSubcommands(
         'Found commands in the list that were not marked as public or not defined at all:',
         // Node < 22 will print 'Object (n)' before the array. So to have
         // consistent test snapshots we use joinAnd.
-        joinAnd(Array.from(commands).sort(naturalCompare).map(c => `'${c}'`)),
+        joinAnd(
+          Array.from(commands)
+            .sort(naturalCompare)
+            .map(c => `'${c}'`),
+        ),
       )
     }
 
