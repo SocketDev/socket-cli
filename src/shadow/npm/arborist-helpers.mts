@@ -45,7 +45,6 @@ export function findBestPatchVersion(
   node: NodeClass,
   availableVersions: string[],
   vulnerableVersionRange?: string,
-  _firstPatchedVersionIdentifier?: string | undefined,
 ): string | null {
   const manifestData = getManifestData(NPM, node.name)
   let eligibleVersions
