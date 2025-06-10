@@ -129,7 +129,7 @@ describe('socket root command', async () => {
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
-           \\x1b[31m\\xd7\\x1b[39m Found commands in the list that were not marked as public or were not defined at all: [ 'config', 'install', 'uninstall' ]
+           \\x1b[31m\\xd7\\x1b[39m Found commands in the list that were not marked as public or not defined at all: 'config', 'install', and 'uninstall'
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted> (is testing v1)
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>

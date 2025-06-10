@@ -1,3 +1,5 @@
+import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
+
 import type { MeowFlags } from '../flags.mts'
 
 type HelpListOptions = {
@@ -29,7 +31,7 @@ export function getHelpListOutput(
   { keyPrefix = '', padName = 18 } = {} as HelpListOptions,
 ): string {
   let result = ''
-  const names = Object.keys(list).sort()
+  const names = Object.keys(list).sort(naturalCompare)
   for (const name of names) {
     const entry = list[name]
     if (entry && 'hidden' in entry && entry?.hidden) {
