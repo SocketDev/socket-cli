@@ -15,9 +15,8 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
+import { getCiEnv, getOpenPrsForEnvironment } from './fix-env-helpers.mts'
 import {
-  createSocketBranchParser,
-  getBaseGitBranch,
   getSocketBranchFullNameComponent,
   getSocketBranchName,
   getSocketBranchPurlTypeComponent,
@@ -31,8 +30,6 @@ import {
 import {
   cleanupOpenPrs,
   enablePrAutoMerge,
-  getGithubEnvRepoInfo,
-  getOpenSocketPrs,
   openPr,
   prExistForBranch,
   setGitRemoteGithubRepoUrl,
@@ -146,31 +143,10 @@ export async function pnpmFix(
   const { spinner } = constants
   const { pkgPath: rootPath } = pkgEnvDetails
 
-  // Lazily access constants.ENV properties.
-  const gitEmail = constants.ENV.SOCKET_CLI_GIT_USER_EMAIL
-  const gitUser = constants.ENV.SOCKET_CLI_GIT_USER_NAME
-  const githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
-
-  const isCi = !!(
-    constants.ENV.CI &&
-    constants.ENV.GITHUB_ACTIONS &&
-    constants.ENV.GITHUB_REPOSITORY &&
-    gitEmail &&
-    gitUser &&
-    githubToken
-  )
-
-  const repoInfo = isCi ? getGithubEnvRepoInfo()! : null
-
   spinner?.start()
 
-  const openPrs =
-    // Check repoInfo to make TypeScript happy.
-    isCi && repoInfo
-      ? await getOpenSocketPrs(repoInfo.owner, repoInfo.repo, {
-          author: gitUser,
-        })
-      : []
+  const ciEnv = getCiEnv()
+  const openPrs = ciEnv ? await getOpenPrsForEnvironment(ciEnv) : []
 
   let count = 0
 
@@ -256,8 +232,7 @@ export async function pnpmFix(
     return { ok: true, data: { fixed: false } }
   }
 
-  const baseBranch = isCi ? getBaseGitBranch() : ''
-  const branchParser = isCi ? createSocketBranchParser() : null
+  // baseBranch and branchParser are now from env
   const workspacePkgJsonPaths = await globWorkspace(
     pkgEnvDetails.agent,
     rootPath,
@@ -300,11 +275,11 @@ export async function pnpmFix(
     }
 
     const activeBranches: SocketBranchParseResult[] = []
-    if (isCi) {
+    if (ciEnv) {
       const branchFullName = getSocketBranchFullNameComponent(partialPurlObj)
       const branchPurlType = getSocketBranchPurlTypeComponent(partialPurlObj)
       for (const pr of openPrs) {
-        const parsedBranch = branchParser!(pr.headRefName)
+        const parsedBranch = ciEnv.branchParser!(pr.headRefName)
         if (
           branchPurlType === parsedBranch?.type &&
           branchFullName === parsedBranch?.fullName
@@ -355,18 +330,18 @@ export async function pnpmFix(
       const workspace = isWorkspaceRoot
         ? 'root'
         : path.relative(rootPath, pkgPath)
-      const branchWorkspace = isCi
+      const branchWorkspace = ciEnv
         ? getSocketBranchWorkspaceComponent(workspace)
         : ''
 
       // actualTree may not be defined on the first iteration of pkgJsonPathsLoop.
       if (!actualTree) {
-        if (!isCi) {
+        if (!ciEnv) {
           // eslint-disable-next-line no-await-in-loop
           await removeNodeModules(cwd)
         }
         const maybeActualTree =
-          isCi && existsSync(path.join(rootPath, 'node_modules'))
+          ciEnv && existsSync(path.join(rootPath, 'node_modules'))
             ? // eslint-disable-next-line no-await-in-loop
               await getActualTree(cwd)
             : // eslint-disable-next-line no-await-in-loop
@@ -541,9 +516,9 @@ export async function pnpmFix(
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
             debugFn(`skip: ${workspace}/package.json unchanged`)
             // Reset things just in case.
-            if (isCi) {
+            if (ciEnv) {
               // eslint-disable-next-line no-await-in-loop
-              await gitResetAndClean(baseBranch, cwd)
+              await gitResetAndClean(ciEnv.baseBranch, cwd)
             }
             continue infosLoop
           }
@@ -605,7 +580,7 @@ export async function pnpmFix(
           spinner?.stop()
 
           // Check repoInfo to make TypeScript happy.
-          if (!errored && isCi && repoInfo) {
+          if (!errored && ciEnv?.repoInfo) {
             try {
               // eslint-disable-next-line no-await-in-loop
               const result = await gitUnstagedModifiedFiles(cwd)
@@ -632,7 +607,11 @@ export async function pnpmFix(
               let skipPr = false
               if (
                 // eslint-disable-next-line no-await-in-loop
-                await prExistForBranch(repoInfo.owner, repoInfo.repo, branch)
+                await prExistForBranch(
+                  ciEnv.repoInfo.owner,
+                  ciEnv.repoInfo.repo,
+                  branch,
+                )
               ) {
                 skipPr = true
                 debugFn(`skip: branch "${branch}" exists`)
@@ -649,8 +628,8 @@ export async function pnpmFix(
                   moddedFilepaths,
                   {
                     cwd,
-                    email: gitEmail,
-                    user: gitUser,
+                    email: ciEnv.gitEmail,
+                    user: ciEnv.gitUser,
                   },
                 ))
               ) {
@@ -661,7 +640,7 @@ export async function pnpmFix(
               }
               if (skipPr) {
                 // eslint-disable-next-line no-await-in-loop
-                await gitResetAndClean(baseBranch, cwd)
+                await gitResetAndClean(ciEnv.baseBranch, cwd)
                 // eslint-disable-next-line no-await-in-loop
                 const maybeActualTree = await install(pkgEnvDetails, {
                   cwd,
@@ -683,12 +662,12 @@ export async function pnpmFix(
               // eslint-disable-next-line no-await-in-loop
               await Promise.allSettled([
                 setGitRemoteGithubRepoUrl(
-                  repoInfo.owner,
-                  repoInfo.repo,
-                  githubToken,
+                  ciEnv.repoInfo.owner,
+                  ciEnv.repoInfo.repo,
+                  ciEnv.githubToken!,
                   cwd,
                 ),
-                cleanupOpenPrs(repoInfo.owner, repoInfo.repo, {
+                cleanupOpenPrs(ciEnv.repoInfo.owner, ciEnv.repoInfo.repo, {
                   newVersion,
                   purl: oldPurl,
                   workspace,
@@ -696,13 +675,13 @@ export async function pnpmFix(
               ])
               // eslint-disable-next-line no-await-in-loop
               const prResponse = await openPr(
-                repoInfo.owner,
-                repoInfo.repo,
+                ciEnv.repoInfo.owner,
+                ciEnv.repoInfo.repo,
                 branch,
                 oldPurl,
                 newVersion,
                 {
-                  baseBranch,
+                  baseBranch: ciEnv.baseBranch,
                   cwd,
                   workspace,
                 },
@@ -736,10 +715,10 @@ export async function pnpmFix(
             }
           }
 
-          if (isCi) {
+          if (ciEnv) {
             spinner?.start()
             // eslint-disable-next-line no-await-in-loop
-            await gitResetAndClean(baseBranch, cwd)
+            await gitResetAndClean(ciEnv.baseBranch, cwd)
             // eslint-disable-next-line no-await-in-loop
             const maybeActualTree = await install(pkgEnvDetails, {
               cwd,
@@ -758,7 +737,7 @@ export async function pnpmFix(
             }
           }
           if (errored) {
-            if (!isCi) {
+            if (!ciEnv) {
               spinner?.start()
               editablePkgJson.update(revertData)
               // eslint-disable-next-line no-await-in-loop
