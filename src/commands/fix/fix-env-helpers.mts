@@ -38,7 +38,9 @@ export function getCiEnv(): CiEnv | null {
     : null
 }
 
-export async function getOpenPrsForEnvironment(env: CiEnv): Promise<PrMatch[]> {
+export async function getOpenPrsForEnvironment(
+  env: CiEnv | null | undefined,
+): Promise<PrMatch[]> {
   return env
     ? await getOpenSocketPrs(env.repoInfo.owner, env.repoInfo.repo, {
         author: env.gitUser,

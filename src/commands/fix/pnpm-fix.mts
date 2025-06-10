@@ -15,11 +15,10 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
+import { getActiveBranchesForPackage } from './fix-branch-helpers.mts'
 import { getCiEnv, getOpenPrsForEnvironment } from './fix-env-helpers.mts'
 import {
-  getSocketBranchFullNameComponent,
   getSocketBranchName,
-  getSocketBranchPurlTypeComponent,
   getSocketBranchWorkspaceComponent,
   getSocketCommitMessage,
   gitCreateAndPushBranch,
@@ -64,7 +63,6 @@ import { applyRange } from '../../utils/semver.mts'
 import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 
-import type { SocketBranchParseResult } from './git.mts'
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { CResult, StringKeyValueObject } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
@@ -274,28 +272,11 @@ export async function pnpmFix(
       continue infoEntriesLoop
     }
 
-    const activeBranches: SocketBranchParseResult[] = []
-    if (ciEnv) {
-      const branchFullName = getSocketBranchFullNameComponent(partialPurlObj)
-      const branchPurlType = getSocketBranchPurlTypeComponent(partialPurlObj)
-      for (const pr of openPrs) {
-        const parsedBranch = ciEnv.branchParser!(pr.headRefName)
-        if (
-          branchPurlType === parsedBranch?.type &&
-          branchFullName === parsedBranch?.fullName
-        ) {
-          activeBranches.push(parsedBranch)
-        }
-      }
-      if (activeBranches.length) {
-        debugFn(
-          `found: ${activeBranches.length} active branches\n`,
-          activeBranches,
-        )
-      } else if (openPrs.length) {
-        debugFn('miss: 0 active branches found')
-      }
-    }
+    const activeBranches = getActiveBranchesForPackage(
+      ciEnv,
+      infoEntry[0],
+      openPrs,
+    )
 
     logger.log(`Processing vulns for ${name}:`)
     logger.indent()
