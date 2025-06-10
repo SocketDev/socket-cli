@@ -10,7 +10,7 @@ const config: CliCommandConfig = {
   commandName: 'json',
   description:
     'Display the `socket.json` that would be applied for target folder',
-  hidden: false,
+  hidden: true,
   flags: {
     ...commonFlags,
   },

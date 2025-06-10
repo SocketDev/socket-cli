@@ -23,6 +23,11 @@ export const cmdOrganization: CliSubcommand = {
       },
       {
         aliases: {
+          deps: {
+            description: cmdOrganizationDependencies.description,
+            hidden: true,
+            argv: ['dependencies'],
+          },
           license: {
             description: cmdOrganizationPolicyLicense.description,
             hidden: true,
@@ -36,7 +41,6 @@ export const cmdOrganization: CliSubcommand = {
         },
         argv,
         description,
-        defaultSub: 'list', // Backwards compat
         importMeta,
         name: parentName + ' organization',
       },
