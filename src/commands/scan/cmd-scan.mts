@@ -42,12 +42,6 @@ export const cmdScan: CliSubcommand = {
             hidden: true,
             argv: ['reach'],
           },
-          // Backwards compat. TODO: Drop next major bump; isTestingV1
-          stream: {
-            description: cmdScanView.description,
-            hidden: true,
-            argv: ['view'], // Original args will be appended (!)
-          },
         },
         argv,
         description,
