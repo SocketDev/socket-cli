@@ -1,3 +1,4 @@
+import { cmdOrganizationDependencies } from './cmd-organization-dependencies.mts'
 import { cmdOrganizationList } from './cmd-organization-list.mts'
 import { cmdOrganizationPolicyLicense } from './cmd-organization-policy-license.mts'
 import { cmdOrganizationPolicySecurity } from './cmd-organization-policy-security.mts'
@@ -15,6 +16,7 @@ export const cmdOrganization: CliSubcommand = {
   async run(argv, importMeta, { parentName }) {
     await meowWithSubcommands(
       {
+        dependencies: cmdOrganizationDependencies,
         list: cmdOrganizationList,
         quota: cmdOrganizationQuota,
         policy: cmdOrganizationPolicy,
