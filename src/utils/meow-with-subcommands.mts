@@ -5,6 +5,7 @@ import colors from 'yoctocolors-cjs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
+import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
 import {
   getConfigValueOrUndef,
@@ -21,6 +22,7 @@ import { tildify } from './tildify.mts'
 
 import type { MeowFlags } from '../flags.mts'
 import type { Options, Result } from 'meow'
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 
 interface CliAlias {
   description: string
@@ -252,8 +254,7 @@ export async function meowWithSubcommands(
       )
     }
 
-    // "Bucket" some commands for easier usage
-
+    // "Bucket" some commands for easier usage.
     const commands = new Set([
       'analytics',
       'audit-log',
@@ -285,15 +286,17 @@ export async function meowWithSubcommands(
           commands.delete(name)
         } else {
           logger.fail(
-            'Received a visible command that was not added to the list here;',
+            'Received a visible command that was not added to the list here:',
             name,
           )
         }
       })
     if (commands.size) {
       logger.fail(
-        'Found commands in the list that were not marked as public or were not defined at all:',
-        Array.from(commands).sort(),
+        'Found commands in the list that were not marked as public or not defined at all:',
+        // Node < 22 will print 'Object (n)' before the array. So to have
+        // consistent test snapshots we use joinAnd.
+        joinAnd(Array.from(commands).sort(naturalCompare).map(c => `'${c}'`)),
       )
     }
 
