@@ -44,7 +44,7 @@ describe('socket config get', async () => {
       if (!skipOnWin32Node24) {
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
-            _____         _       _        /---------------
+             _____         _       _        /---------------
             |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
