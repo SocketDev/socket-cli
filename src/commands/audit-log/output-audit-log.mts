@@ -65,127 +65,7 @@ export async function outputAuditLog(
     return
   }
 
-  const filteredLogs = result.data.results
-  const formattedOutput = filteredLogs.map(logs => [
-    logs.event_id ?? '',
-    msAtHome(logs.created_at ?? ''),
-    logs.type ?? '',
-    logs.user_email ?? '',
-    logs.ip_address ?? '',
-    logs.user_agent ?? '',
-  ])
-  const headers = [
-    'event id',
-    '  created at',
-    '  event type',
-    '  user email',
-    '  ip address',
-    '  user agent',
-  ]
-
-  // Note: this temporarily takes over the terminal (just like `man` does).
-  const ScreenWidget = require('blessed/lib/widgets/screen.js')
-  // Lazily access constants.blessedOptions.
-  const screen: Widgets.Screen = new ScreenWidget({
-    ...constants.blessedOptions,
-  })
-  // Register these keys first so you can always exit, even when it gets stuck
-  // If we don't do this and the code crashes, the user must hard-kill the
-  // node process just to exit it. That's very bad UX.
-  // eslint-disable-next-line n/no-process-exit
-  screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
-
-  const TableWidget = require('blessed-contrib/lib/widget/table.js')
-  const tipsBoxHeight = 1 // 1 row for tips box
-  const detailsBoxHeight = 20 // bottom N rows for details box. 20 gives 4 lines for condensed payload before it scrolls out of view
-
-  const maxWidths = [10, 10, 10, 10, 10, 10]
-  formattedOutput.forEach(row => {
-    row.forEach((str, i) => {
-      maxWidths[i] = Math.max(str.length, maxWidths[i] ?? str.length)
-    })
-  })
-
-  const table: any = new TableWidget({
-    keys: 'true',
-    fg: 'white',
-    selectedFg: 'white',
-    selectedBg: 'magenta',
-    interactive: 'true',
-    label: `Audit Logs for ${orgSlug}`,
-    width: '100%',
-    top: 0,
-    bottom: detailsBoxHeight + tipsBoxHeight,
-    border: {
-      type: 'line',
-      fg: 'cyan',
-    },
-    columnWidth: maxWidths, //[10, 30, 40, 25, 15, 200],
-    // Note: spacing works as long as you don't reserve more than total width
-    columnSpacing: 4,
-    truncate: '_',
-  })
-
-  const BoxWidget = require('blessed/lib/widgets/box.js')
-  const tipsBox: Widgets.BoxElement = new BoxWidget({
-    bottom: detailsBoxHeight, // sits just above the details box
-    height: tipsBoxHeight,
-    width: '100%',
-    style: {
-      fg: 'yellow',
-      bg: 'black',
-    },
-    tags: true,
-    content: '↑/↓: Move    Enter: Select    q/ESC: Quit',
-  })
-  const detailsBox: Widgets.BoxElement = new BoxWidget({
-    bottom: 0,
-    height: detailsBoxHeight,
-    width: '100%',
-    border: {
-      type: 'line',
-      fg: 'cyan',
-    },
-    label: 'Details',
-    content: formatResult(filteredLogs[0], true),
-    style: {
-      fg: 'white',
-    },
-  })
-
-  table.setData({
-    headers: headers,
-    data: formattedOutput,
-  })
-
-  // allow control the table with the keyboard
-  table.focus()
-
-  // Stacking order: table (top), tipsBox (middle), detailsBox (bottom)
-  screen.append(table)
-  screen.append(tipsBox)
-  screen.append(detailsBox)
-
-  // Update details box when selection changes
-  table.rows.on('select item', () => {
-    const selectedIndex = table.rows.selected
-    if (selectedIndex !== undefined && selectedIndex >= 0) {
-      const selectedRow = filteredLogs[selectedIndex]
-      detailsBox.setContent(formatResult(selectedRow))
-      screen.render()
-    }
-  })
-
-  screen.render()
-
-  screen.key(['return'], () => {
-    const selectedIndex = table.rows.selected
-    screen.destroy()
-    const selectedRow = formattedOutput[selectedIndex]
-      ? formatResult(filteredLogs[selectedIndex], true)
-      : '(none)'
-    logger.log(`Last selection:\n${selectedRow.trim()}`)
-  })
+  await outputWithBlessed(result.data, orgSlug)
 }
 
 function formatResult(
@@ -307,4 +187,131 @@ ${table}
     }
     return ''
   }
+}
+
+async function outputWithBlessed(
+  data: SocketSdkReturnType<'getAuditLogEvents'>['data'],
+  orgSlug: string,
+) {
+  const filteredLogs = data.results
+  const formattedOutput = filteredLogs.map(logs => [
+    logs.event_id ?? '',
+    msAtHome(logs.created_at ?? ''),
+    logs.type ?? '',
+    logs.user_email ?? '',
+    logs.ip_address ?? '',
+    logs.user_agent ?? '',
+  ])
+  const headers = [
+    ' Event id',
+    ' Created at',
+    ' Event type',
+    ' User email',
+    ' IP address',
+    ' User agent',
+  ]
+
+  // Note: this temporarily takes over the terminal (just like `man` does).
+  const ScreenWidget = require('blessed/lib/widgets/screen.js')
+  // Lazily access constants.blessedOptions.
+  const screen: Widgets.Screen = new ScreenWidget({
+    ...constants.blessedOptions,
+  })
+  // Register these keys first so you can always exit, even when it gets stuck
+  // If we don't do this and the code crashes, the user must hard-kill the
+  // node process just to exit it. That's very bad UX.
+  // eslint-disable-next-line n/no-process-exit
+  screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
+
+  const TableWidget = require('blessed-contrib/lib/widget/table.js')
+  const tipsBoxHeight = 1 // 1 row for tips box
+  const detailsBoxHeight = 20 // bottom N rows for details box. 20 gives 4 lines for condensed payload before it scrolls out of view
+
+  const maxWidths = headers.map(s => s.length + 1)
+  formattedOutput.forEach(row => {
+    row.forEach((str, i) => {
+      maxWidths[i] = Math.max(str.length, maxWidths[i] ?? str.length)
+    })
+  })
+
+  const table: any = new TableWidget({
+    keys: 'true',
+    fg: 'white',
+    selectedFg: 'white',
+    selectedBg: 'magenta',
+    interactive: 'true',
+    label: `Audit Logs for ${orgSlug}`,
+    width: '100%',
+    top: 0,
+    bottom: detailsBoxHeight + tipsBoxHeight,
+    border: {
+      type: 'line',
+      fg: 'cyan',
+    },
+    columnWidth: maxWidths, //[10, 30, 40, 25, 15, 200],
+    // Note: spacing works as long as you don't reserve more than total width
+    columnSpacing: 4,
+    truncate: '_',
+  })
+
+  const BoxWidget = require('blessed/lib/widgets/box.js')
+  const tipsBox: Widgets.BoxElement = new BoxWidget({
+    bottom: detailsBoxHeight, // sits just above the details box
+    height: tipsBoxHeight,
+    width: '100%',
+    style: {
+      fg: 'yellow',
+      bg: 'black',
+    },
+    tags: true,
+    content: `↑/↓: Move    Enter: Select    q/ESC: Quit`,
+  })
+  const detailsBox: Widgets.BoxElement = new BoxWidget({
+    bottom: 0,
+    height: detailsBoxHeight,
+    width: '100%',
+    border: {
+      type: 'line',
+      fg: 'cyan',
+    },
+    label: 'Details',
+    content: formatResult(filteredLogs[0], true),
+    style: {
+      fg: 'white',
+    },
+  })
+
+  table.setData({
+    headers: headers,
+    data: formattedOutput,
+  })
+
+  // allow control the table with the keyboard
+  table.focus()
+
+  // Stacking order: table (top), tipsBox (middle), detailsBox (bottom)
+  screen.append(table)
+  screen.append(tipsBox)
+  screen.append(detailsBox)
+
+  // Update details box when selection changes
+  table.rows.on('select item', () => {
+    const selectedIndex = table.rows.selected
+    if (selectedIndex !== undefined && selectedIndex >= 0) {
+      const selectedRow = filteredLogs[selectedIndex]
+      detailsBox.setContent(formatResult(selectedRow))
+      screen.render()
+    }
+  })
+
+  screen.render()
+
+  screen.key(['return'], () => {
+    const selectedIndex = table.rows.selected
+    screen.destroy()
+    const selectedRow = formattedOutput[selectedIndex]
+      ? formatResult(filteredLogs[selectedIndex], true)
+      : '(none)'
+    logger.log(`Last selection:\n${selectedRow.trim()}`)
+  })
 }
