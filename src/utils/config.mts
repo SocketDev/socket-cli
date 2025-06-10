@@ -20,8 +20,6 @@ export interface LocalConfig {
   apiToken?: string | null | undefined
   defaultOrg?: string
   enforcedOrgs?: string[] | readonly string[] | null | undefined
-  // Temporary to prepare (and mark) CLI API changes for the major bump
-  isTestingV1?: boolean
 }
 
 export const sensitiveConfigKeys: Set<keyof LocalConfig> = new Set(['apiToken'])
@@ -38,7 +36,6 @@ export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
     'enforcedOrgs',
     'Orgs in this list have their security policies enforced on this machine',
   ],
-  ['isTestingV1', 'For development of testing the next major bump'],
 ])
 
 function getConfigValues(): LocalConfig {
@@ -140,11 +137,6 @@ export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
 
 export function isReadOnlyConfig() {
   return _readOnlyConfig
-}
-
-export function isTestingV1() {
-  return true
-  // return !!getConfigValueOrUndef('isTestingV1')
 }
 
 let _cachedConfig: LocalConfig | undefined
