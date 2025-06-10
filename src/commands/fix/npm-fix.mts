@@ -327,16 +327,26 @@ export async function npmFix(
           firstPatchedVersionIdentifier,
           vulnerableVersionRange,
         } of infos.values()) {
-          if (semver.gte(oldVersion, firstPatchedVersionIdentifier)) {
-            debugFn(`skip: ${oldId} is >= ${firstPatchedVersionIdentifier}`)
-            continue infosLoop
-          }
           const newVersion = findBestPatchVersion(
             node,
             availableVersions,
             vulnerableVersionRange,
-            firstPatchedVersionIdentifier,
           )
+          const newVersionPackument = newVersion
+            ? packument.versions[newVersion]
+            : undefined
+
+          if (!(newVersion && newVersionPackument)) {
+            warningsForAfter.add(
+              `${oldId} not updated: requires >=${firstPatchedVersionIdentifier}`,
+            )
+            continue infosLoop
+          }
+
+          if (semver.gte(oldVersion, newVersion)) {
+            debugFn(`skip: ${oldId} is >= ${newVersion}`)
+            continue infosLoop
+          }
 
           if (
             activeBranches.find(
@@ -350,17 +360,6 @@ export async function npmFix(
               spinner?.dedent()
               break infoEntriesLoop
             }
-            continue infosLoop
-          }
-
-          const newVersionPackument = newVersion
-            ? packument.versions[newVersion]
-            : undefined
-
-          if (!(newVersion && newVersionPackument)) {
-            warningsForAfter.add(
-              `${oldId} not updated: requires >=${firstPatchedVersionIdentifier}`,
-            )
             continue infosLoop
           }
 
