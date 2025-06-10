@@ -49,7 +49,7 @@ const config: CliCommandConfig = {
   `,
 }
 
-export const cmdScanCreate = {
+export const cmdOrganizationDependencies = {
   description: config.description,
   hidden: config.hidden,
   run,
