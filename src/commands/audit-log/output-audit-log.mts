@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module'
 
-import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
@@ -182,10 +182,8 @@ ${table}
     logger.fail(
       'There was a problem converting the logs to Markdown, please try the `--json` flag',
     )
-    if (isDebug()) {
-      debugFn('catch: unexpected\n', e)
-    }
-    return ''
+    debugFn('catch: unexpected\n', e)
+    return 'Failed to generate the markdown report'
   }
 }
 
