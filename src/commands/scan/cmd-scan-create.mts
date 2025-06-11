@@ -342,7 +342,7 @@ async function run(
       test: !!targets.length,
       message: 'At least one TARGET (e.g. `.` or `./package.json`)',
       pass: 'ok',
-      fail: 'missing (or perhaps you forgot the org slug?)',
+      fail: 'missing',
     },
     {
       nook: true,
