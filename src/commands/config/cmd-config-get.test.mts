@@ -49,9 +49,9 @@ describe('socket config get', async () => {
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket config get\`, cwd: <redacted>"
         `)
+        expect(code, 'explicit help should exit with code 0').toBe(0)
       }
 
-      expect(code, 'explicit help should exit with code 0').toBe(0)
       expect(stderr, 'banner includes base command').toContain(
         '`socket config get`',
       )
