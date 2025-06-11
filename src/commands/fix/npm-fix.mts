@@ -154,7 +154,9 @@ export async function npmFix(
     return { ok: true, data: { fixed: false } }
   }
 
-  // baseBranch and branchParser are now from env
+  // Lazily access constants.packumentCache.
+  const { packumentCache } = constants
+
   const workspacePkgJsonPaths = await globWorkspace(
     pkgEnvDetails.agent,
     rootPath,
@@ -168,11 +170,14 @@ export async function npmFix(
     naturalCompare(a[0], b[0]),
   )
 
-  const handleInstallFail = (): CResult<{ fixed: boolean }> => {
-    debugFn(`fail: ${pkgEnvDetails.agent} install\n`)
+  const cleanupInfoEntriesLoop = () => {
     logger.dedent()
     spinner?.dedent()
+    packumentCache.clear()
+  }
 
+  const handleInstallFail = (): CResult<{ fixed: boolean }> => {
+    cleanupInfoEntriesLoop()
     return {
       ok: false,
       message: 'Installation failure',
@@ -214,8 +219,7 @@ export async function npmFix(
     const packument = await fetchPackagePackument(name)
     if (!packument) {
       logger.warn(`Unexpected condition: No packument found for ${name}.\n`)
-      logger.dedent()
-      spinner?.dedent()
+      cleanupInfoEntriesLoop()
       continue infoEntriesLoop
     }
 
@@ -249,8 +253,7 @@ export async function npmFix(
       if (!oldVersions.length) {
         debugFn(`skip: ${name} not found\n`)
         // Skip to next package.
-        logger.dedent()
-        spinner?.dedent()
+        cleanupInfoEntriesLoop()
         continue infoEntriesLoop
       }
 
@@ -312,8 +315,7 @@ export async function npmFix(
           ) {
             debugFn(`skip: open PR found for ${name}@${newVersion}`)
             if (++count >= limit) {
-              logger.dedent()
-              spinner?.dedent()
+              cleanupInfoEntriesLoop()
               break infoEntriesLoop
             }
             continue infosLoop
@@ -554,8 +556,7 @@ export async function npmFix(
             logger.fail(`Update failed for ${oldId} in ${workspace}.`, error)
           }
           if (++count >= limit) {
-            logger.dedent()
-            spinner?.dedent()
+            cleanupInfoEntriesLoop()
             break infoEntriesLoop
           }
         }
@@ -571,8 +572,7 @@ export async function npmFix(
     if (!isLastInfoEntry) {
       logger.logNewline()
     }
-    logger.dedent()
-    spinner?.dedent()
+    cleanupInfoEntriesLoop()
   }
 
   spinner?.stop()

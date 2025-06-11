@@ -230,7 +230,9 @@ export async function pnpmFix(
     return { ok: true, data: { fixed: false } }
   }
 
-  // baseBranch and branchParser are now from env
+  // Lazily access constants.packumentCache.
+  const { packumentCache } = constants
+
   const workspacePkgJsonPaths = await globWorkspace(
     pkgEnvDetails.agent,
     rootPath,
@@ -244,10 +246,14 @@ export async function pnpmFix(
     naturalCompare(a[0], b[0]),
   )
 
-  const handleInstallFail = (): CResult<{ fixed: boolean }> => {
+  const cleanupInfoEntriesLoop = () => {
     logger.dedent()
     spinner?.dedent()
+    packumentCache.clear()
+  }
 
+  const handleInstallFail = (): CResult<{ fixed: boolean }> => {
+    cleanupInfoEntriesLoop()
     return {
       ok: false,
       message: 'Install failed',
@@ -289,8 +295,7 @@ export async function pnpmFix(
     const packument = await fetchPackagePackument(name)
     if (!packument) {
       logger.warn(`Unexpected condition: No packument found for ${name}.\n`)
-      logger.dedent()
-      spinner?.dedent()
+      cleanupInfoEntriesLoop()
       continue infoEntriesLoop
     }
 
@@ -350,8 +355,7 @@ export async function pnpmFix(
       if (!oldVersions.length) {
         debugFn(`skip: ${name} not found\n`)
         // Skip to next package.
-        logger.dedent()
-        spinner?.dedent()
+        cleanupInfoEntriesLoop()
         continue infoEntriesLoop
       }
 
@@ -420,8 +424,7 @@ export async function pnpmFix(
           ) {
             debugFn(`skip: open PR found for ${name}@${newVersion}`)
             if (++count >= limit) {
-              logger.dedent()
-              spinner?.dedent()
+              cleanupInfoEntriesLoop()
               break infoEntriesLoop
             }
             continue infosLoop
@@ -753,8 +756,7 @@ export async function pnpmFix(
           debugFn('name:', name)
           debugFn('increment: count', count + 1)
           if (++count >= limit) {
-            logger.dedent()
-            spinner?.dedent()
+            cleanupInfoEntriesLoop()
             break infoEntriesLoop
           }
         }
@@ -770,8 +772,7 @@ export async function pnpmFix(
     if (!isLastInfoEntry) {
       logger.logNewline()
     }
-    logger.dedent()
-    spinner?.dedent()
+    cleanupInfoEntriesLoop()
   }
 
   spinner?.stop()
