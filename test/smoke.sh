@@ -47,7 +47,6 @@ restore_config() {
     echo -e "\n${YELLOW}Restoring backed up configuration values...${NC}"
     eval "${COMMAND_PREFIX} config set defaultOrg ${DEFORG_BAK}"
     eval "${COMMAND_PREFIX} config set apiToken ${TOKEN_BAK}"
-    eval "${COMMAND_PREFIX} config set isTestingV1 ${TESTV1_BAK}"
     echo -e "${GREEN}Configuration restored!${NC}"
 }
 
@@ -259,14 +258,10 @@ fi
 echo "Backing up default org and apitoken..."
 DEFORG_BAK=$(eval "$COMMAND_PREFIX config get defaultOrg --json" | jq -r '.data' )
 TOKEN_BAK=$(eval "$COMMAND_PREFIX config get apiToken --json" | jq -r '.data' )
-TESTV1_BAK=$(eval "$COMMAND_PREFIX config get isTestingV1 --json" | jq -r '.data' )
 echo "Backing complete!"
 
 # Set up trap to restore config on any exit
 trap restore_config EXIT
-
-# This smoke test assumes the <v1 cli api
-run_socket 0 config set isTestingV1 true
 
 ### Analytics
 
@@ -343,20 +338,20 @@ fi
 ### dependencies
 
 if should_run_section "dependencies"; then
-    run_socket 0 dependencies
-    run_socket 0 dependencies --help
-    run_socket 0 dependencies --dry-run
-    run_json   0 dependencies --json
-    run_socket 0 dependencies --markdown
+    run_socket 0 organization dependencies
+    run_socket 0 organization dependencies --help
+    run_socket 0 organization dependencies --dry-run
+    run_json   0 organization dependencies --json
+    run_socket 0 organization dependencies --markdown
 
-    run_socket 0 dependencies --limit 1
-    run_socket 0 dependencies --offset 5
-    run_socket 0 dependencies --limit 1 --offset 10
+    run_socket 0 organization dependencies --limit 1
+    run_socket 0 organization dependencies --offset 5
+    run_socket 0 organization dependencies --limit 1 --offset 10
 
-    #run_json   2 dependencies --json --wat foo
-    run_json   0 dependencies --json --limit -200
-    run_json   0 dependencies --json --limit NaN
-    run_json   0 dependencies --json --limit foo
+    #run_json   2 organization dependencies --json --wat foo
+    run_json   0 organization dependencies --json --limit -200
+    run_json   0 organization dependencies --json --limit NaN
+    run_json   0 organization dependencies --json --limit foo
 fi
 
 ### fix
@@ -404,27 +399,27 @@ if should_run_section "manifest"; then
     run_socket 2 manifest
     run_socket 0 manifest --help
     run_socket 0 manifest --dry-run
-    run_socket 2 manifest auto
+    run_socket 1 manifest auto
     run_socket 0 manifest auto --help
     run_socket 0 manifest auto --dry-run
-    run_socket 2 manifest conda
+    run_socket 1 manifest conda
     run_socket 0 manifest conda --help
-    run_socket 2 manifest conda --dry-run
-    run_socket 2 manifest gradle
+    run_socket 0 manifest conda --dry-run
+    run_socket 1 manifest gradle
     run_socket 0 manifest gradle --help
-    run_socket 2 manifest gradle --dry-run
-    run_socket 2 manifest kotlin
+    run_socket 1 manifest gradle --dry-run
+    run_socket 1 manifest kotlin
     run_socket 0 manifest kotlin --help
-    run_socket 2 manifest kotlin --dry-run
-    run_socket 2 manifest scala
+    run_socket 0 manifest kotlin --dry-run
+    run_socket 1 manifest scala
     run_socket 0 manifest scala --help
-    run_socket 2 manifest scala --dry-run
+    run_socket 0 manifest scala --dry-run
 fi
 
 ### npm
 
 if should_run_section "npm"; then
-    run_socket 1 npm
+    run_socket 0 npm info
     run_socket 0 npm --help
     run_socket 0 npm --dry-run
     run_socket 0 npm info
@@ -433,7 +428,7 @@ fi
 ### npx
 
 if should_run_section "npx"; then
-    run_socket 2 npx
+    run_socket 0 npx cowsay moo
     run_socket 0 npx --help
     run_socket 0 npx --dry-run
     run_socket 0 npx socket --dry-run
@@ -452,6 +447,8 @@ fi
 
 if should_run_section "optimize"; then
     run_socket 0 optimize
+    run_socket 0 optimize --prod
+    run_socket 0 optimize --pin
     run_socket 0 optimize --help
     run_socket 0 optimize --dry-run
 fi
@@ -459,7 +456,7 @@ fi
 ### organization
 
 if should_run_section "organization"; then
-    run_socket 0 organization
+    run_socket 2 organization
     run_socket 0 organization --help
     run_socket 0 organization --dry-run
     run_socket 0 organization list
@@ -495,9 +492,20 @@ if should_run_section "organization"; then
     run_json   1 organization policy license --org trash --json
     run_socket 0 organization policy license --org $DEFORG_BAK
 
+    echo ""
+    echo ""
+    echo "Clearing defaultOrg for next tests"
     eval "$COMMAND_PREFIX config unset defaultOrg"
-    run_json   2 organization policy security --json --no-interactive
-    run_json   2 organization policy license --json --no-interactive
+    run_json   1 organization policy security --json --no-interactive
+    run_json   1 organization policy license --json --no-interactive
+    echo ""
+    echo ""
+    echo "Setting defaultOrg to an invalid org for the next tests"
+    eval "$COMMAND_PREFIX config set defaultOrg fake_org"
+    run_json   1 organization policy security --json --no-interactive
+    run_json   1 organization policy license --json --no-interactive
+    echo ""
+    echo ""
     echo "Restoring default org to $DEFORG_BAK"
     eval "${COMMAND_PREFIX} config set defaultOrg $DEFORG_BAK"
 fi
@@ -548,7 +556,7 @@ fi
 ### raw-npx
 
 if should_run_section "raw-npx"; then
-    run_socket 0 raw-npx                                    # interactive shell...
+    run_socket 0 raw-npx cowsay moo
     run_socket 0 raw-npx --help
     run_socket 0 raw-npx --dry-run
     run_socket 0 raw-npx socket --dry-run
@@ -577,18 +585,26 @@ if should_run_section "repos"; then
     run_socket 2 repos del --dry-run
     run_socket 0 repos del cli-smoke-test
 
+    echo ""
+    echo ""
+    echo "Clearing defaultOrg for next tests"
     eval "$COMMAND_PREFIX config unset defaultOrg"
     run_json   2 repos create 'cli_donotcreate' --json --no-interactive
     run_json   2 repos del 'cli_donotcreate' --json --no-interactive
     run_json   2 repos view 'cli_donotcreate' --json --no-interactive
     run_json   2 repos list --json --no-interactive
     run_json   2 repos update 'cli_donotcreate' --homepage evil --json --no-interactive
+    echo ""
+    echo ""
+    echo "Setting defaultOrg to an invalid org for the next tests"
     eval "$COMMAND_PREFIX config set defaultOrg fake_org"
     run_json   1 repos create 'cli_donotcreate' --json
     run_json   1 repos del 'cli_donotcreate' --json
     run_json   1 repos view 'cli_donotcreate' --json
     run_json   1 repos list --json
     run_json   1 repos update 'cli_donotcreate' --homepage evil --json
+    echo ""
+    echo ""
     echo "Restoring default org to $DEFORG_BAK"
     eval "${COMMAND_PREFIX} config set defaultOrg $DEFORG_BAK"
     run_json   1 repos view 'cli_donotcreate' --json
@@ -653,18 +669,27 @@ if should_run_section "scan"; then
     run_json   1 scan metadata "$SBOM_ID" --org fake_org --json
     run_socket 1 scan diff "$SBOM_ID" "$SBOM_ID" --org fake_org
     run_json   1 scan diff "$SBOM_ID" "$SBOM_ID" --org fake_org --json
+
+    echo ""
+    echo ""
+    echo "Clearing defaultOrg for the next tests"
     eval "$COMMAND_PREFIX config unset defaultOrg"
     run_json   2 scan create . --json --no-interactive
     run_json   2 scan view "$SBOM_ID" --json --no-interactive
     run_json   2 scan report "$SBOM_ID" --json --no-interactive
     run_json   2 scan metadata "$SBOM_ID" --json --no-interactive
     run_json   2 scan diff "$SBOM_ID" "$SBOM_ID" --json --no-interactive
+    echo ""
+    echo ""
+    echo "Setting defaultOrg to an invalid org for the next tests"
     eval "$COMMAND_PREFIX config set defaultOrg fake_org"
     run_json   1 scan create . --json
     run_json   1 scan view "$SBOM_ID" --json
     run_json   1 scan report "$SBOM_ID" --json
     run_json   1 scan metadata "$SBOM_ID" --json
     run_json   1 scan diff "$SBOM_ID" "$SBOM_ID" --json
+    echo ""
+    echo ""
     echo "Restoring default org to $DEFORG_BAK"
     eval "${COMMAND_PREFIX} config set defaultOrg $DEFORG_BAK"
 fi
@@ -687,8 +712,8 @@ if should_run_section "wrapper"; then
     run_socket 2 wrapper
     run_socket 0 wrapper --help
     run_socket 2 wrapper --dry-run
-    run_socket 0 wrapper --enable
-    run_socket 0 wrapper --disable
+    run_socket 0 wrapper on
+    run_socket 0 wrapper off
 fi
 
 ### The end
