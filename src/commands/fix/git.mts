@@ -27,21 +27,77 @@ function formatBranchName(name: string): string {
   return name.replace(/[^-a-zA-Z0-9/._-]+/g, '+')
 }
 
-export function getBaseGitBranch(): string {
-  // Lazily access constants.ENV.GITHUB_REF_NAME.
-  return (
-    constants.ENV.GITHUB_REF_NAME ||
-    // GitHub defaults to branch name "main"
-    // https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches#about-the-default-branch
-    'main'
-  )
+export type SocketBranchParser = (
+  branch: string,
+) => SocketBranchParseResult | null
+
+export type SocketBranchParseResult = {
+  fullName: string
+  newVersion: string
+  type: string
+  workspace: string
+  version: string
 }
 
-export function getSocketBranchPurlTypeComponent(
-  purl: string | PackageURL | SocketArtifact,
-): string {
-  const purlObj = getPurlObject(purl)
-  return formatBranchName(purlObj.type)
+export type SocketBranchPatternOptions = {
+  newVersion?: string | undefined
+  purl?: string | undefined
+  workspace?: string | undefined
+}
+
+export function createSocketBranchParser(
+  options?: SocketBranchPatternOptions | undefined,
+): SocketBranchParser {
+  const pattern = getSocketBranchPattern(options)
+  return function parse(branch: string): SocketBranchParseResult | null {
+    const match = pattern.exec(branch) as
+      | [string, string, string, string, string, string]
+      | null
+    if (!match) {
+      return null
+    }
+    const {
+      1: type,
+      2: workspace,
+      3: fullName,
+      4: version,
+      5: newVersion,
+    } = match
+    return {
+      fullName,
+      newVersion: semver.coerce(newVersion.replaceAll('+', '.'))?.version,
+      type,
+      workspace,
+      version: semver.coerce(version.replaceAll('+', '.'))?.version,
+    } as SocketBranchParseResult
+  }
+}
+
+export async function getBaseGitBranch(cwd = process.cwd()): Promise<string> {
+  // Lazily access constants.ENV properties.
+  const { GITHUB_BASE_REF, GITHUB_REF_NAME, GITHUB_REF_TYPE } = constants.ENV
+  // 1. In a pull request, this is always the base branch.
+  if (GITHUB_BASE_REF) {
+    return GITHUB_BASE_REF
+  }
+  // 2. If it's a branch (not a tag), GITHUB_REF_TYPE should be 'branch'.
+  if (GITHUB_REF_TYPE === 'branch' && GITHUB_REF_NAME) {
+    return GITHUB_REF_NAME
+  }
+  // 3. Try to resolve the default remote branch using 'git remote show origin'.
+  // This handles detached HEADs or workflows triggered by tags/releases.
+  try {
+    const stdout = (
+      await spawn('git', ['remote', 'show', 'origin'], { cwd })
+    ).stdout.trim()
+    const match = /(?<=HEAD branch: ).+/.exec(stdout)
+    if (match?.[0]) {
+      return match[0].trim()
+    }
+  } catch {}
+  // GitHub defaults to branch name "main"
+  // https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-branches#about-the-default-branch
+  return 'main'
 }
 
 export function getSocketBranchFullNameComponent(
@@ -58,23 +114,6 @@ export function getSocketBranchFullNameComponent(
   return `${fmtMaybeNamespace}${formatBranchName(purlObj.name)}`
 }
 
-export function getSocketBranchPackageVersionComponent(
-  version: string | PackageURL | SocketArtifact,
-): string {
-  const purlObj = getPurlObject(
-    typeof version === 'string' && !version.startsWith('pkg:')
-      ? PackageURL.fromString(`pkg:unknown/unknown@${version}`)
-      : version,
-  )
-  return formatBranchName(purlObj.version!)
-}
-
-export function getSocketBranchWorkspaceComponent(
-  workspace: string | undefined,
-): string {
-  return workspace ? formatBranchName(workspace) : 'root'
-}
-
 export function getSocketBranchName(
   purl: string | PackageURL | SocketArtifact,
   newVersion: string,
@@ -89,10 +128,15 @@ export function getSocketBranchName(
   return `socket/${fmtType}/${fmtWorkspace}/${fmtFullName}_${fmtVersion}_${fmtNewVersion}`
 }
 
-export type SocketBranchPatternOptions = {
-  newVersion?: string | undefined
-  purl?: string | undefined
-  workspace?: string | undefined
+export function getSocketBranchPackageVersionComponent(
+  version: string | PackageURL | SocketArtifact,
+): string {
+  const purlObj = getPurlObject(
+    typeof version === 'string' && !version.startsWith('pkg:')
+      ? PackageURL.fromString(`pkg:unknown/unknown@${version}`)
+      : version,
+  )
+  return formatBranchName(purlObj.version!)
 }
 
 export function getSocketBranchPattern(
@@ -124,54 +168,27 @@ export function getSocketBranchPattern(
   )
 }
 
-export type SocketBranchParser = (
-  branch: string,
-) => SocketBranchParseResult | null
-
-export type SocketBranchParseResult = {
-  fullName: string
-  newVersion: string
-  type: string
-  workspace: string
-  version: string
+export function getSocketBranchPurlTypeComponent(
+  purl: string | PackageURL | SocketArtifact,
+): string {
+  const purlObj = getPurlObject(purl)
+  return formatBranchName(purlObj.type)
 }
 
-export function createSocketBranchParser(
-  options?: SocketBranchPatternOptions | undefined,
-): SocketBranchParser {
-  const pattern = getSocketBranchPattern(options)
-  return function parse(branch: string): SocketBranchParseResult | null {
-    const match = pattern.exec(branch) as
-      | [string, string, string, string, string, string]
-      | null
-    if (!match) {
-      return null
-    }
-    const {
-      1: type,
-      2: workspace,
-      3: fullName,
-      4: version,
-      5: newVersion,
-    } = match
-    return {
-      fullName,
-      newVersion: semver.coerce(newVersion.replaceAll('+', '.'))?.version,
-      type,
-      workspace,
-      version: semver.coerce(version.replaceAll('+', '.'))?.version,
-    } as SocketBranchParseResult
-  }
+export function getSocketBranchWorkspaceComponent(
+  workspace: string | undefined,
+): string {
+  return workspace ? formatBranchName(workspace) : 'root'
 }
 
-export function getSocketPullRequestTitle(
+export function getSocketCommitMessage(
   purl: string | PackageURL | SocketArtifact,
   newVersion: string,
   workspace?: string | undefined,
 ): string {
   const purlObj = getPurlObject(purl)
   const fullName = getPkgFullNameFromPurl(purlObj)
-  return `Bump ${fullName} from ${purlObj.version} to ${newVersion}${workspace ? ` in ${workspace}` : ''}`
+  return `socket: Bump ${fullName} from ${purlObj.version} to ${newVersion}${workspace ? ` in ${workspace}` : ''}`
 }
 
 export function getSocketPullRequestBody(
@@ -185,14 +202,14 @@ export function getSocketPullRequestBody(
   return `Bump [${fullName}](${pkgOverviewUrl}) from ${purlObj.version} to ${newVersion}${workspace ? ` in ${workspace}` : ''}.`
 }
 
-export function getSocketCommitMessage(
+export function getSocketPullRequestTitle(
   purl: string | PackageURL | SocketArtifact,
   newVersion: string,
   workspace?: string | undefined,
 ): string {
   const purlObj = getPurlObject(purl)
   const fullName = getPkgFullNameFromPurl(purlObj)
-  return `socket: Bump ${fullName} from ${purlObj.version} to ${newVersion}${workspace ? ` in ${workspace}` : ''}`
+  return `Bump ${fullName} from ${purlObj.version} to ${newVersion}${workspace ? ` in ${workspace}` : ''}`
 }
 
 export async function gitCleanFdx(cwd = process.cwd()): Promise<void> {
@@ -227,13 +244,50 @@ export async function gitCreateAndPushBranch(
     )
     return true
   } catch (e) {
-    debugFn('catch: unexpected\n', e)
+    debugFn(
+      `catch: git push --force --set-upstream origin ${branch} failed\n`,
+      e,
+    )
   }
   try {
     // Will throw with exit code 1 if branch does not exist.
     await spawn('git', ['branch', '-D', branch], stdioIgnoreOptions)
   } catch {}
   return false
+}
+
+export type RepoInfo = {
+  owner: string
+  repo: string
+}
+
+export async function gitRepoInfo(
+  cwd = process.cwd(),
+): Promise<RepoInfo | null> {
+  try {
+    const remoteUrl = (
+      await spawn('git', ['remote', 'get-url', 'origin'], { cwd })
+    ).stdout.trim()
+    // 1. Handle SSH-style, e.g. git@github.com:owner/repo.git
+    const sshMatch = /^git@[^:]+:([^/]+)\/(.+?)(?:\.git)?$/.exec(remoteUrl)
+    if (sshMatch) {
+      return { owner: sshMatch[1]!, repo: sshMatch[2]! }
+    }
+    // 2. Handle HTTPS/URL-style, e.g. https://github.com/owner/repo.git
+    try {
+      const parsed = new URL(remoteUrl)
+      const segments = parsed.pathname.split('/')
+      const owner = segments.at(-2)
+      const repo = segments.at(-1)?.replace(/\.git$/, '')
+      if (owner && repo) {
+        return { owner, repo }
+      }
+    } catch {}
+    debugFn('git: unmatched git remote URL format', remoteUrl)
+  } catch (e) {
+    debugFn('catch: git remote get-url origin failed\n', e)
+  }
+  return null
 }
 
 export async function gitEnsureIdentity(
@@ -260,7 +314,7 @@ export async function gitEnsureIdentity(
         try {
           await spawn('git', ['config', prop, value], stdioIgnoreOptions)
         } catch (e) {
-          debugFn('catch: unexpected\n', e)
+          debugFn(`catch: git config ${prop} ${value} failed\n`, e)
         }
       }
     }),

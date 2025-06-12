@@ -111,7 +111,7 @@ export async function npmFix(
 
   spinner?.start()
 
-  const ciEnv = getCiEnv()
+  const ciEnv = await getCiEnv()
   const openPrs = ciEnv ? await getOpenPrsForEnvironment(ciEnv) : []
 
   let count = 0
