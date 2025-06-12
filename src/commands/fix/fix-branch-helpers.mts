@@ -1,4 +1,5 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 
 import {
   getSocketBranchFullNameComponent,
@@ -19,8 +20,8 @@ export function getActiveBranchesForPackage(
     return []
   }
 
-  const partialPurlObj = getPurlObject(partialPurl)
   const activeBranches: SocketBranchParseResult[] = []
+  const partialPurlObj = getPurlObject(partialPurl)
   const branchFullName = getSocketBranchFullNameComponent(partialPurlObj)
   const branchPurlType = getSocketBranchPurlTypeComponent(partialPurlObj)
 
@@ -34,10 +35,16 @@ export function getActiveBranchesForPackage(
     }
   }
 
-  if (activeBranches.length) {
-    debugFn(`found: ${activeBranches.length} active branches\n`, activeBranches)
-  } else if (openPrs.length) {
-    debugFn('miss: 0 active branches found')
+  if (isDebug()) {
+    const fullName = resolvePackageName(partialPurlObj)
+    if (activeBranches.length) {
+      debugFn(
+        `found: ${activeBranches.length} active branches for ${fullName}\n`,
+        activeBranches,
+      )
+    } else if (openPrs.length) {
+      debugFn(`miss: 0 active branches found for ${fullName}`)
+    }
   }
 
   return activeBranches

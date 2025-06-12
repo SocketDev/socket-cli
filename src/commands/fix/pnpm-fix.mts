@@ -230,6 +230,10 @@ export async function pnpmFix(
     return { ok: true, data: { fixed: false } }
   }
 
+  if (isDebug()) {
+    debugFn('found: cves for', Array.from(infoByPartialPurl.keys()))
+  }
+
   // Lazily access constants.packumentCache.
   const { packumentCache } = constants
 
@@ -278,12 +282,6 @@ export async function pnpmFix(
       continue infoEntriesLoop
     }
 
-    const activeBranches = getActiveBranchesForPackage(
-      ciEnv,
-      infoEntry[0],
-      openPrs,
-    )
-
     logger.log(`Processing vulns for ${name}:`)
     logger.indent()
     spinner?.indent()
@@ -299,6 +297,11 @@ export async function pnpmFix(
       continue infoEntriesLoop
     }
 
+    const activeBranches = getActiveBranchesForPackage(
+      ciEnv,
+      infoEntry[0],
+      openPrs,
+    )
     const availableVersions = Object.keys(packument.versions)
     const warningsForAfter = new Set<string>()
 
