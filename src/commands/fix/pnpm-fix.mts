@@ -365,6 +365,8 @@ export async function pnpmFix(
       const editablePkgJson = await readPackageJson(pkgJsonPath, {
         editable: true,
       })
+      const fixedVersions = new Set<string>()
+
       // Get current overrides for revert logic.
       const oldPnpmSection = editablePkgJson.content[PNPM] as
         | StringKeyValueObject
@@ -410,12 +412,13 @@ export async function pnpmFix(
             )
             continue infosLoop
           }
-
+          if (fixedVersions.has(newVersion)) {
+            continue infosLoop
+          }
           if (semver.gte(oldVersion, newVersion)) {
             debugFn(`skip: ${oldId} is >= ${newVersion}`)
             continue infosLoop
           }
-
           if (
             activeBranches.find(
               b =>
@@ -553,6 +556,7 @@ export async function pnpmFix(
                 await runScript(testScript, [], { spinner, stdio: 'ignore' })
               }
               spinner?.success(`Fixed ${name} in ${workspace}.`)
+              fixedVersions.add(newVersion)
             } else {
               errored = true
             }

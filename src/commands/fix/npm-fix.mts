@@ -263,6 +263,7 @@ export async function npmFix(
       const editablePkgJson = await readPackageJson(pkgJsonPath, {
         editable: true,
       })
+      const fixedVersions = new Set<string>()
 
       let hasAnnouncedWorkspace = false
       let workspaceLogCallCount = logger.logCallCount
@@ -301,12 +302,13 @@ export async function npmFix(
             )
             continue infosLoop
           }
-
+          if (fixedVersions.has(newVersion)) {
+            continue infosLoop
+          }
           if (semver.gte(oldVersion, newVersion)) {
             debugFn(`skip: ${oldId} is >= ${newVersion}`)
             continue infosLoop
           }
-
           if (
             activeBranches.find(
               b =>
@@ -379,6 +381,7 @@ export async function npmFix(
                 await runScript(testScript, [], { spinner, stdio: 'ignore' })
               }
               spinner?.success(`Fixed ${name} in ${workspace}.`)
+              fixedVersions.add(newVersion)
             } else {
               errored = true
             }
