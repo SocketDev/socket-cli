@@ -201,7 +201,7 @@ export async function getAlertsMapFromArborist(
   )?.overrides?.children
   if (overridesMap) {
     overrides = Object.fromEntries(
-      [...overridesMap.entries()].map(([key, overrideSet]) => {
+      Array.from(overridesMap.entries()).map(([key, overrideSet]) => {
         return [key, overrideSet.value!]
       }),
     )

@@ -49,7 +49,7 @@ export async function extractPurlsFromPnpmLockfile(
   for (const pkgPath of Object.keys(packages)) {
     visit(pkgPath)
   }
-  return [...seen].map(p =>
+  return Array.from(seen).map(p =>
     idToNpmPurl(stripPnpmPeerSuffix(stripLeadingPnpmDepPathSlash(p))),
   )
 }
