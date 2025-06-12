@@ -242,8 +242,8 @@ export async function pnpmFix(
     // Process the workspace root last since it will add an override to package.json.
     pkgEnvDetails.editablePkgJson.filename!,
   ]
-  const sortedInfoEntries = [...infoByPartialPurl.entries()].sort((a, b) =>
-    naturalCompare(a[0], b[0]),
+  const sortedInfoEntries = Array.from(infoByPartialPurl.entries()).sort(
+    (a, b) => naturalCompare(a[0], b[0]),
   )
 
   const cleanupInfoEntriesLoop = () => {
@@ -273,7 +273,7 @@ export async function pnpmFix(
     const partialPurlObj = getPurlObject(infoEntry[0])
     const name = resolvePackageName(partialPurlObj)
 
-    const infos = [...infoEntry[1].values()]
+    const infos = Array.from(infoEntry[1].values())
     if (!infos.length) {
       continue infoEntriesLoop
     }

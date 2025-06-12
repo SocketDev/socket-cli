@@ -261,10 +261,10 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
     }
     sockPkgAlerts = [
       // Sort CVE alerts by severity: critical, high, middle, then low.
-      ...[...highestForCve.values()]
+      ...Array.from(highestForCve.values())
         .map(d => d.alert)
         .sort(alertSeverityComparator),
-      ...[...highestForUpgrade.values()].map(d => d.alert),
+      ...Array.from(highestForUpgrade.values()).map(d => d.alert),
       ...unfixableAlerts,
     ]
   } else {
@@ -448,7 +448,7 @@ export function logAlertsMap(
   } as LogAlertsMapOptions
 
   const translations = getTranslations()
-  const sortedEntries = [...alertsMap.entries()].sort(
+  const sortedEntries = Array.from(alertsMap.entries()).sort(
     (a, b) => getAlertsSeverityOrder(a[1]) - getAlertsSeverityOrder(b[1]),
   )
 
@@ -522,7 +522,7 @@ export function logAlertsMap(
   for (
     let i = 0,
       prevAboveTheFold = true,
-      entries = [...viewableAlertsByPurl.entries()],
+      entries = Array.from(viewableAlertsByPurl.entries()),
       { length } = entries;
     i < length;
     i += 1

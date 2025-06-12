@@ -213,7 +213,9 @@ export async function cleanupOpenPrs(
 
   if (cachesToSave.size) {
     await Promise.allSettled(
-      [...cachesToSave].map(({ 0: key, 1: data }) => writeCache(key, data)),
+      Array.from(cachesToSave).map(({ 0: key, 1: data }) =>
+        writeCache(key, data),
+      ),
     )
   }
 

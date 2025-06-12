@@ -35,7 +35,7 @@ export function applyRange(
     case 'preserve': {
       const range = new semver.Range(refRange)
       const { raw } = range
-      const comparators = [...range.set].flat()
+      const comparators = range.set.flat()
       const { length } = comparators
       if (length === 1) {
         const char = /^[<>]=?/.exec(raw)?.[0]

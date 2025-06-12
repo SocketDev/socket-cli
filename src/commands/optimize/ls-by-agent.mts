@@ -30,7 +30,7 @@ function cleanupQueryStdout(stdout: string): string {
       names.add(resolvedName)
     }
   }
-  return JSON.stringify([...names], null, 2)
+  return JSON.stringify(Array.from(names), null, 2)
 }
 
 function parsableToQueryStdout(stdout: string) {
@@ -41,7 +41,7 @@ function parsableToQueryStdout(stdout: string) {
   // The matchAll regexp looks for a forward (posix) or backward (win32) slash
   // and matches one or more non-slashes until the newline.
   const names = new Set(stdout.matchAll(/(?<=[/\\])[^/\\]+(?=\n)/g))
-  return JSON.stringify([...names], null, 2)
+  return JSON.stringify(Array.from(names), null, 2)
 }
 
 async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
