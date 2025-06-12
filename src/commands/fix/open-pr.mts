@@ -268,28 +268,6 @@ export async function enablePrAutoMerge({
   return { enabled: false }
 }
 
-export type GithubRepoInfo = {
-  owner: string
-  repo: string
-}
-
-export function getGithubEnvRepoInfo(): GithubRepoInfo | null {
-  // Lazily access constants.ENV.GITHUB_REPOSITORY.
-  const { GITHUB_REPOSITORY } = constants.ENV
-  if (!GITHUB_REPOSITORY) {
-    debugFn('miss: GITHUB_REPOSITORY env var')
-  }
-  const ownerSlashRepo = GITHUB_REPOSITORY
-  const slashIndex = ownerSlashRepo.indexOf('/')
-  if (slashIndex === -1) {
-    return null
-  }
-  return {
-    owner: ownerSlashRepo.slice(0, slashIndex),
-    repo: ownerSlashRepo.slice(slashIndex + 1),
-  }
-}
-
 export type GetOpenSocketPrsOptions = {
   author?: string | undefined
   newVersion?: string | undefined
@@ -470,11 +448,6 @@ export async function openPr(
     __proto__: null,
     ...options,
   } as OpenPrOptions
-  // Lazily access constants.ENV.GITHUB_ACTIONS.
-  if (!constants.ENV.GITHUB_ACTIONS) {
-    debugFn('miss: GITHUB_ACTIONS env var')
-    return null
-  }
   const purlObj = getPurlObject(purl)
   const octokit = getOctokit()
   try {

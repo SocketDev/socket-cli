@@ -143,7 +143,7 @@ export async function pnpmFix(
 
   spinner?.start()
 
-  const ciEnv = getCiEnv()
+  const ciEnv = await getCiEnv()
   const openPrs = ciEnv ? await getOpenPrsForEnvironment(ciEnv) : []
 
   let count = 0

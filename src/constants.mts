@@ -46,7 +46,7 @@ type ENV = Remap<
   RegistryEnv &
     Readonly<{
       DISABLE_GITHUB_CACHE: boolean
-      GITHUB_ACTIONS: boolean
+      GITHUB_BASE_REF: string
       GITHUB_REF_NAME: string
       GITHUB_REF_TYPE: string
       GITHUB_REPOSITORY: string
@@ -232,10 +232,11 @@ const LAZY_ENV = () => {
     // Flag to disable using GitHub's workflow actions/cache.
     // https://github.com/actions/cache
     DISABLE_GITHUB_CACHE: envAsBoolean(env['DISABLE_GITHUB_CACHE']),
-    // Always set to true when GitHub Actions is running the workflow. This variable
-    // can be used to differentiate when tests are being run locally or by GitHub Actions.
+    // The name of the base ref or target branch of the pull request in a workflow
+    // run. This is only set when the event that triggers a workflow run is either
+    // pull_request or pull_request_target. For example, main.
     // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
-    GITHUB_ACTIONS: envAsBoolean(env['GITHUB_ACTIONS']),
+    GITHUB_BASE_REF: envAsString(env['GITHUB_BASE_REF']),
     // The short ref name of the branch or tag that triggered the GitHub workflow
     // run. This value matches the branch or tag name shown on GitHub. For example,
     // feature-branch-1. For pull requests, the format is <pr_number>/merge.
@@ -337,7 +338,7 @@ const LAZY_ENV = () => {
     // The git config user.email used by Socket CLI.
     SOCKET_CLI_GIT_USER_EMAIL:
       envAsString(env['SOCKET_CLI_GIT_USER_EMAIL']) ||
-      `github-actions[bot]@users.noreply.github.com`,
+      'github-actions[bot]@users.noreply.github.com',
     // The git config user.name used by Socket CLI.
     SOCKET_CLI_GIT_USER_NAME:
       envAsString(env['SOCKET_CLI_GIT_USER_NAME']) ||
