@@ -87,13 +87,6 @@ async function run(
     outputKind,
     {
       nook: true,
-      test: !!orgSlug,
-      message: 'Org name as the first argument',
-      pass: 'ok',
-      fail: 'missing',
-    },
-    {
-      nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       pass: 'ok',
