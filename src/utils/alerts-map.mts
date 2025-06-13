@@ -1,8 +1,11 @@
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractPurlsFromPnpmLockfile } from './pnpm.mts'
 import { getPublicToken, setupSdk } from './sdk.mts'
 import { addArtifactToAlertsMap } from './socket-package-alert.mts'
+import constants from '../constants.mts'
 
 import type { CompactSocketArtifact } from './alert/artifact.mts'
 import type {
@@ -117,6 +120,16 @@ export async function getAlertsMapFromPurls(
       throw new Error(
         `Socket API server error (${statusCode}): ${statusMessage}`,
       )
+    } else {
+      const { spinner } = constants
+      spinner.stop()
+      debugFn('Received a result=false:', batchResult)
+      logger.fail(
+        `Received a ${batchResult.status} response from Socket API which we consider a permanent failure:`,
+        batchResult.error,
+        batchResult.cause ? `( ${batchResult.cause} )` : '',
+      )
+      break
     }
     remaining -= 1
     if (spinner && remaining > 0) {
