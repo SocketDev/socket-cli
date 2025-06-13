@@ -15,7 +15,6 @@ import type {
 import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-
 export type GetAlertsMapFromPnpmLockfileOptions = {
   consolidate?: boolean | undefined
   include?: AlertIncludeFilter | undefined
