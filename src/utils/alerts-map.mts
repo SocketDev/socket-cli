@@ -121,7 +121,7 @@ export async function getAlertsMapFromPurls(
         `Socket API server error (${statusCode}): ${statusMessage}`,
       )
     } else {
-      if (batchResult.status >= 300 && batchResult.status !== 400) {
+      if (batchResult.status >= 300) {
         const { spinner } = constants
         spinner.stop()
         debugFn('Received a result=false:', batchResult)
