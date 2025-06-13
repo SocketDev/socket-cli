@@ -121,18 +121,15 @@ export async function getAlertsMapFromPurls(
         `Socket API server error (${statusCode}): ${statusMessage}`,
       )
     } else {
-      if (batchResult.status >= 300) {
-        const { spinner } = constants
-        spinner.stop()
-        debugFn('Received a result=false:', batchResult)
-        logger.fail(
-          `Received a ${batchResult.status} response from Socket API which we consider a permanent failure:`,
-          batchResult.error,
-          batchResult.cause ? `( ${batchResult.cause} )` : '',
-        )
-        break
-      }
+      const { spinner } = constants
+      spinner.stop()
       debugFn('Received a result=false:', batchResult)
+      logger.fail(
+        `Received a ${batchResult.status} response from Socket API which we consider a permanent failure:`,
+        batchResult.error,
+        batchResult.cause ? `( ${batchResult.cause} )` : '',
+      )
+      break
     }
     remaining -= 1
     if (spinner && remaining > 0) {
