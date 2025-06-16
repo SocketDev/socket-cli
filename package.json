@@ -146,7 +146,7 @@
     "ignore": "7.0.5",
     "js-yaml": "npm:@zkochan/js-yaml@0.0.7",
     "knip": "5.61.0",
-    "lint-staged": "16.1.0",
+    "lint-staged": "16.1.2",
     "magic-string": "0.30.17",
     "meow": "13.2.0",
     "micromatch": "4.0.8",
