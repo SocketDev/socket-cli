@@ -100,7 +100,7 @@
     "@pnpm/lockfile.fs": "1001.1.13",
     "@pnpm/logger": "1001.0.0",
     "@rollup/plugin-babel": "6.0.4",
-    "@rollup/plugin-commonjs": "28.0.3",
+    "@rollup/plugin-commonjs": "28.0.5",
     "@rollup/plugin-json": "6.1.0",
     "@rollup/plugin-node-resolve": "16.0.1",
     "@rollup/plugin-replace": "6.0.2",
