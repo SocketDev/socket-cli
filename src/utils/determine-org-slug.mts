@@ -2,6 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getConfigValueOrUndef } from './config.mts'
 import { suggestOrgSlug } from '../commands/scan/suggest-org-slug.mts'
+import { suggestToPersistOrgSlug } from '../commands/scan/suggest-to-persist-orgslug.mts'
 
 export async function determineOrgSlug(
   orgFlag: string,
@@ -55,6 +56,10 @@ export async function determineOrgSlug(
       logger.fail('Skipping auto-discovery of org in dry-run mode')
     } else {
       orgSlug = (await suggestOrgSlug()) || ''
+
+      if (orgSlug) {
+        await suggestToPersistOrgSlug(orgSlug)
+      }
     }
   }
 

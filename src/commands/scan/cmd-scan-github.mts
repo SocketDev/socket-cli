@@ -3,7 +3,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateGithubScan } from './handle-create-github-scan.mts'
-import { outputScanGithub } from './output-scan-github.mjs'
+import { outputScanGithub } from './output-scan-github.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'

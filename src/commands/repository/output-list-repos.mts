@@ -67,7 +67,9 @@ export async function outputListRepos(
     logger.info(
       `This is page ${page}. Server indicated there are more results available on page ${nextPage}...`,
     )
-    logger.info(`(Hint: you can use \`socket repos list --page ${nextPage}\`)`)
+    logger.info(
+      `(Hint: you can use \`socket repository list --page ${nextPage}\`)`,
+    )
   } else if (perPage === Infinity) {
     logger.info(`This should be the entire list available on the server.`)
   } else {
