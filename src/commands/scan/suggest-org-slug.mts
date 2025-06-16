@@ -39,6 +39,9 @@ export async function suggestOrgSlug(): Promise<string | void> {
         },
       ],
     })
+    if (proceed === undefined) {
+      return undefined
+    }
     if (proceed) {
       return proceed
     }

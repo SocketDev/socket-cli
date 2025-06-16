@@ -3,6 +3,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateGithubScan } from './handle-create-github-scan.mts'
+import { outputScanGithub } from './output-scan-github.mjs'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
@@ -193,6 +194,17 @@ async function run(
   if (hasSocketApiToken && !dryRun && interactive) {
     if (!orgSlug) {
       const suggestion = await suggestOrgSlug()
+      if (suggestion === undefined) {
+        await outputScanGithub(
+          {
+            ok: false,
+            message: 'Canceled by user',
+            cause: 'Org selector was canceled by user',
+          },
+          outputKind,
+        )
+        return
+      }
       if (suggestion) {
         orgSlug = suggestion
       }

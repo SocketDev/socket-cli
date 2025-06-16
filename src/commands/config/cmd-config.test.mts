@@ -84,6 +84,7 @@ describe('socket config', async () => {
             |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
+
           \\x1b[31m\\xd7\\x1b[39m Could not parse Config as JSON"
         `)
 
@@ -104,6 +105,7 @@ describe('socket config', async () => {
             |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>
+
           \\x1b[31m\\xd7\\x1b[39m Could not parse Config as JSON"
         `)
 

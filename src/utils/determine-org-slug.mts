@@ -50,6 +50,7 @@ export async function determineOrgSlug(
     logger.info(
       'Note: you can run `socket login` to set a default org. You can also override it with the --org flag.',
     )
+    logger.error('') // spacing in stderr
     if (dryRun) {
       logger.fail('Skipping auto-discovery of org in dry-run mode')
     } else {

@@ -3,6 +3,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
+import { outputCreateNewScan } from './output-create-new-scan.mjs'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import constants from '../../constants.mts'
@@ -299,6 +300,18 @@ async function run(
   if (hasApiToken && !dryRun && interactive) {
     if (!orgSlug) {
       const suggestion = await suggestOrgSlug()
+      if (suggestion === undefined) {
+        await outputCreateNewScan(
+          {
+            ok: false,
+            message: 'Canceled by user',
+            cause: 'Org selector was canceled by user',
+          },
+          outputKind,
+          false,
+        )
+        return
+      }
       if (suggestion) {
         orgSlug = suggestion
       }
