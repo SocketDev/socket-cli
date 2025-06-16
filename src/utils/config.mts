@@ -20,6 +20,7 @@ export interface LocalConfig {
   apiToken?: string | null | undefined
   defaultOrg?: string
   enforcedOrgs?: string[] | readonly string[] | null | undefined
+  skipAskToPersistDefaultOrg?: boolean
   org?: string // convenience alias for defaultOrg
 }
 
@@ -36,6 +37,10 @@ export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
   [
     'enforcedOrgs',
     'Orgs in this list have their security policies enforced on this machine',
+  ],
+  [
+    'skipAskToPersistDefaultOrg',
+    'This flag prevents the CLI from asking you to persist the org slug when you selected one interactively',
   ],
   ['org', 'Alias for defaultOrg'],
 ])
@@ -206,19 +211,35 @@ export function overrideConfigApiToken(apiToken: unknown) {
 
 let _pendingSave = false
 export function updateConfigValue<Key extends keyof LocalConfig>(
-  key: keyof LocalConfig,
+  configKey: keyof LocalConfig,
   value: LocalConfig[Key],
 ): CResult<undefined | string> {
   const localConfig = getConfigValues()
-  const keyResult = normalizeConfigKey(key)
+  const keyResult = normalizeConfigKey(configKey)
   if (!keyResult.ok) {
     return keyResult
   }
-  localConfig[keyResult.data as Key] = value
+  const key: Key = keyResult.data as Key
+  let wasDeleted = value === undefined // implicitly when serializing
+  if (key === 'skipAskToPersistDefaultOrg') {
+    if (value === 'true' || value === 'false') {
+      localConfig['skipAskToPersistDefaultOrg'] = value === 'true'
+    } else {
+      delete localConfig['skipAskToPersistDefaultOrg']
+      wasDeleted = true
+    }
+  } else {
+    if (value === 'undefined' || value === 'true' || value === 'false') {
+      logger.warn(
+        `Note: The value is set to "${value}", as a string (!). Use \`socket config unset\` to reset a key.`,
+      )
+    }
+    localConfig[key] = value
+  }
   if (_readOnlyConfig) {
     return {
       ok: true,
-      message: `Config key '${keyResult.data}' was updated`,
+      message: `Config key '${key}' was ${wasDeleted ? 'deleted' : `updated`}`,
       data: 'Change applied but not persisted; current config is overridden through env var or flag',
     }
   }
@@ -240,7 +261,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
 
   return {
     ok: true,
-    message: `Config key '${keyResult.data}' was updated`,
+    message: `Config key '${key}' was ${wasDeleted ? 'deleted' : `updated`}`,
     data: undefined,
   }
 }
