@@ -32,6 +32,7 @@ describe('socket config auto', async () => {
            - apiToken -- The API token required to access most API endpoints
            - defaultOrg -- The default org slug to use; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.
            - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
+           - skipAskToPersistDefaultOrg -- This flag prevents the CLI from asking you to persist the org slug when you selected one interactively
            - org -- Alias for defaultOrg
 
           For certain keys it will request the value from server, for others it will
@@ -44,6 +45,7 @@ describe('socket config auto', async () => {
            - apiToken -- The API token required to access most API endpoints
            - defaultOrg -- The default org slug to use; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.
            - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
+           - skipAskToPersistDefaultOrg -- This flag prevents the CLI from asking you to persist the org slug when you selected one interactively
            - org -- Alias for defaultOrg
 
           Examples
