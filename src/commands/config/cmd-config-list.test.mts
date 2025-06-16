@@ -34,7 +34,7 @@ describe('socket config get', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket config list\`, cwd: <redacted>"
       `)
 
@@ -55,7 +55,7 @@ describe('socket config get', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket config list\`, cwd: <redacted>"
       `)
 

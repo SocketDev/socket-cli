@@ -44,7 +44,7 @@ describe('socket repository create', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>"
       `)
 
@@ -65,11 +65,12 @@ describe('socket repository create', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>
-        \\x1b[33m\\u203c\\x1b[39m Missing the org slug and no --org flag set. Trying to auto-discover the org now...
-        \\x1b[34mi\\x1b[39m Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.
+        \\x1b[33m\\u203c\\x1b[39m Unable to determine the target org. Trying to auto-discover it now...
+        \\x1b[34mi\\x1b[39m Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
         \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode
+
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
           - Org name by default setting, --org, or auto-discovered (\\x1b[31mmissing\\x1b[39m)
@@ -104,7 +105,7 @@ describe('socket repository create', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, --org: fakeorg
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>"
       `)
 
@@ -129,11 +130,12 @@ describe('socket repository create', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>
-        \\x1b[33m\\u203c\\x1b[39m Missing the org slug and no --org flag set. Trying to auto-discover the org now...
-        \\x1b[34mi\\x1b[39m Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.
+        \\x1b[33m\\u203c\\x1b[39m Unable to determine the target org. Trying to auto-discover it now...
+        \\x1b[34mi\\x1b[39m Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
         \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode
+
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
           - Org name by default setting, --org, or auto-discovered (\\x1b[31mmissing\\x1b[39m)
@@ -162,8 +164,9 @@ describe('socket repository create', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>, org: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>
+
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
           - Repository name as first argument (\\x1b[31mmissing\\x1b[39m)
@@ -192,8 +195,9 @@ describe('socket repository create', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, --org: forcedorg
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>
+
         \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
 
           - Repository name as first argument (\\x1b[31mmissing\\x1b[39m)
@@ -221,7 +225,7 @@ describe('socket repository create', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>, org: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository create\`, cwd: <redacted>"
       `)
 

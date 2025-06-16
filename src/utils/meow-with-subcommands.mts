@@ -164,6 +164,8 @@ export async function meowWithSubcommands(
     autoHelp: false,
   })
 
+  const orgFlag = String(cli1.flags['org'] || '') || undefined
+
   // Hard override the config if instructed to do so.
   // The env var overrides the --flag, which overrides the persisted config
   // Also, when either of these are used, config updates won't persist.
@@ -196,7 +198,7 @@ export async function meowWithSubcommands(
   }
 
   if (configOverrideResult?.ok === false) {
-    emitBanner(name)
+    emitBanner(name, orgFlag)
     logger.fail(configOverrideResult.message)
     process.exitCode = 2
     return
@@ -373,8 +375,7 @@ export async function meowWithSubcommands(
     `
     Usage
       $ ${name} <command>
-
-${isRootCommand ? '' : '    Commands'}
+${isRootCommand ? '' : '\n    Commands'}
       ${formatCommandsForHelp(isRootCommand)}
 
 ${isRootCommand ? '    Options' : '    Options'}${isRootCommand ? '       (Note: all CLI commands have these flags even when not displayed in their help)\n' : ''}
@@ -399,7 +400,7 @@ ${isRootCommand ? `      $ ${name} scan create --json` : ''}${isRootCommand ? `\
 
   // ...else we provide basic instructions and help.
   if (!cli2.flags['nobanner']) {
-    emitBanner(name)
+    emitBanner(name, orgFlag)
   }
   if (!cli2.flags['help'] && cli2.flags['dryRun']) {
     process.exitCode = 0
@@ -444,7 +445,7 @@ export function meowOrExit({
   })
 
   if (!cli.flags['nobanner']) {
-    emitBanner(command)
+    emitBanner(command, String(cli.flags['org'] || '') || undefined)
   }
 
   // As per https://github.com/sindresorhus/meow/issues/178
@@ -487,7 +488,7 @@ export function meowOrExit({
   return cli
 }
 
-export function emitBanner(name: string) {
+export function emitBanner(name: string, orgFlag: string | undefined) {
   // Print a banner at the top of each command.
   // This helps with brand recognition and marketing.
   // It also helps with debugging since it contains version and command details.
@@ -496,10 +497,10 @@ export function emitBanner(name: string) {
   //       and pipe the result to other tools. By emitting the banner over stderr
   //       you can do something like `socket scan view xyz | jq | process`.
   //       The spinner also emits over stderr for example.
-  logger.error(getAsciiHeader(name))
+  logger.error(getAsciiHeader(name, orgFlag))
 }
 
-function getAsciiHeader(command: string) {
+function getAsciiHeader(command: string, orgFlag: string | undefined) {
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
   const { REDACTED } = constants
   // Lazily access constants.ENV.VITEST.
@@ -511,13 +512,25 @@ function getAsciiHeader(command: string) {
   const nodeVersion = redacting ? REDACTED : process.version
   const defaultOrg = getConfigValueOrUndef('defaultOrg')
   const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
-  const shownToken = redacting ? REDACTED : getVisibleTokenPrefix() || 'no'
+  const shownToken = redacting
+    ? REDACTED
+    : getVisibleTokenPrefix() || '(not set)'
   const relCwd = redacting ? REDACTED : normalizePath(tildify(process.cwd()))
+  // Note: we must redact org when creating snapshots because dev machine probably
+  //       has a default org set but CI won't. Showing --org is fine either way.
+  const orgPart = orgFlag
+    ? `--org: ${orgFlag}`
+    : redacting
+      ? 'org: <redacted>'
+      : defaultOrg
+        ? `default org: ${defaultOrg}`
+        : '(org not set)'
   const body = `
    _____         _       _        /---------------
   |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
-  |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token set: ${shownToken}${defaultOrg ? `, org: ${redacting ? REDACTED : defaultOrg}` : ''}
-  |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}`.trimStart()
+  |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token: ${shownToken}, ${orgPart}
+  |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}
+  `.trim()
 
   return `   ${body}` // Note: logger will auto-append a newline
 }

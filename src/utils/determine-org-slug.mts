@@ -11,17 +11,47 @@ export async function determineOrgSlug(
   const defaultOrgSlug = getConfigValueOrUndef('defaultOrg')
   let orgSlug = String(orgFlag || defaultOrgSlug || '')
   if (!orgSlug) {
+    if (!interactive) {
+      logger.warn(
+        'Note: This command requires an org slug because the remote API endpoint does.',
+      )
+      logger.warn('')
+      logger.warn(
+        'It seems no default org was setup and the `--org` flag was not used.',
+      )
+      logger.warn(
+        "Additionally, `--no-interactive` was set so we can't ask for it.",
+      )
+      logger.warn(
+        'Since v1.0.0 the org _argument_ for all commands was dropped in favor of an',
+      )
+      logger.warn(
+        'implicit default org setting, which will be setup when you run `socket login`.',
+      )
+      logger.warn('')
+      logger.warn(
+        'Note: When running in CI, you probably want to set the `--org` flag.',
+      )
+      logger.warn('')
+      logger.warn(
+        'For details, see: https://docs.socket.dev/docs/v1-migration-guide',
+      )
+      logger.warn('')
+      logger.warn(
+        'This command will exit now because the org slug is required to proceed.',
+      )
+      return ['', undefined]
+    }
+
     // ask from server
     logger.warn(
-      'Missing the org slug and no --org flag set. Trying to auto-discover the org now...',
+      'Unable to determine the target org. Trying to auto-discover it now...',
     )
     logger.info(
-      'Note: you can set the default org slug to prevent this issue. You can also override all that with the --org flag.',
+      'Note: you can run `socket login` to set a default org. You can also override it with the --org flag.',
     )
     if (dryRun) {
       logger.fail('Skipping auto-discovery of org in dry-run mode')
-    } else if (!interactive) {
-      logger.fail('Skipping auto-discovery of org when interactive = false')
     } else {
       orgSlug = (await suggestOrgSlug()) || ''
     }

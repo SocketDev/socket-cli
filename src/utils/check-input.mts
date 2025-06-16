@@ -57,6 +57,7 @@ export function checkCommandInput(
       }),
     )
   } else {
+    logger.error('') // Empty line between banner and error
     logger.fail(failMsgWithBadge('Input error', msg.join('\n')))
   }
 
