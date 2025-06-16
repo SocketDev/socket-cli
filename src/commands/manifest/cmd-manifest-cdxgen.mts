@@ -56,7 +56,7 @@ const arrayToLower = (arg: string[]) => arg.map(toLower)
 //                                sable.                                                          [boolean] [default: true]
 //       --evidence               Generate SBOM with evidence for supported languages.           [boolean] [default: false]
 //       --spec-version           CycloneDX Specification version to use. Defaults to 1.6
-//                                                                         [number] [choices: 1.4, 1.5, 1.6] [default: 1.6]
+//                                                                         [number] [choices: 1.4, 1.5, 1.6, 1.7] [default: 1.6]
 //       --filter                 Filter components containing this word in purl or component.properties.value. Multiple va
 //                                lues allowed.                                                                     [array]
 //       --only                   Include components only containing this word in purl. Useful to generate BOM with first p
