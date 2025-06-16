@@ -30,7 +30,7 @@ describe('socket json', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>"
       `)
 
@@ -49,7 +49,7 @@ describe('socket json', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
         \\x1b[34mi\\x1b[39m Target cwd: <redacted>
         \\x1b[31m\\xd7\\x1b[39m Not found: <redacted>"
@@ -69,7 +69,7 @@ describe('socket json', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
         \\x1b[34mi\\x1b[39m Target cwd: <redacted>
         \\x1b[31m\\xd7\\x1b[39m Not found: <redacted>"
@@ -95,7 +95,7 @@ describe('socket json', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
         \\x1b[34mi\\x1b[39m Target cwd: <redacted>
         \\x1b[31m\\xd7\\x1b[39m Not found: <redacted>"
@@ -134,7 +134,7 @@ describe('socket json', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token set: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
         \\x1b[34mi\\x1b[39m Target cwd: <redacted>
         \\x1b[32m\\u221a\\x1b[39m This is the contents of <redacted>:"
