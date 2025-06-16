@@ -134,7 +134,7 @@
     "custompatch": "1.1.7",
     "del-cli": "6.0.0",
     "dev-null-cli": "2.0.0",
-    "eslint": "9.28.0",
+    "eslint": "9.29.0",
     "eslint-import-resolver-typescript": "4.4.3",
     "eslint-plugin-import-x": "4.15.2",
     "eslint-plugin-n": "17.20.0",
