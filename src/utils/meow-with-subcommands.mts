@@ -199,6 +199,7 @@ export async function meowWithSubcommands(
 
   if (configOverrideResult?.ok === false) {
     emitBanner(name, orgFlag)
+    logger.error('') // spacing in stderr
     logger.fail(configOverrideResult.message)
     process.exitCode = 2
     return
@@ -401,6 +402,7 @@ ${isRootCommand ? `      $ ${name} scan create --json` : ''}${isRootCommand ? `\
   // ...else we provide basic instructions and help.
   if (!cli2.flags['nobanner']) {
     emitBanner(name, orgFlag)
+    // meow will add newline so don't add stderr spacing here
   }
   if (!cli2.flags['help'] && cli2.flags['dryRun']) {
     process.exitCode = 0
@@ -446,6 +448,8 @@ export function meowOrExit({
 
   if (!cli.flags['nobanner']) {
     emitBanner(command, String(cli.flags['org'] || '') || undefined)
+    // Add spacing in stderr. meow.help adds a newline too so we do it here
+    logger.error('')
   }
 
   // As per https://github.com/sindresorhus/meow/issues/178
@@ -525,6 +529,8 @@ function getAsciiHeader(command: string, orgFlag: string | undefined) {
       : defaultOrg
         ? `default org: ${defaultOrg}`
         : '(org not set)'
+  // Note: We could draw these with ascii box art instead but I worry about
+  //       portability and paste-ability. "simple" ascii chars just work.
   const body = `
    _____         _       _        /---------------
   |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
