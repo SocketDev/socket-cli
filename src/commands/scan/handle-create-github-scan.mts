@@ -1,8 +1,5 @@
-import { logger } from '@socketsecurity/registry/lib/logger'
-
 import { createScanFromGithub } from './create-scan-from-github.mts'
-import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
-import { serializeResultJson } from '../../utils/serialize-result-json.mts'
+import { outputScanGithub } from './output-scan-github.mts'
 
 import type { OutputKind } from '../../types.mts'
 
@@ -36,16 +33,5 @@ export async function handleCreateGithubScan({
     repos: String(repos || ''),
   })
 
-  if (outputKind === 'json') {
-    logger.log(serializeResultJson(result))
-    return
-  }
-
-  if (!result.ok) {
-    logger.fail(failMsgWithBadge(result.message, result.cause))
-    return
-  }
-
-  logger.log('')
-  logger.success('Finished!')
+  await outputScanGithub(result, outputKind)
 }
