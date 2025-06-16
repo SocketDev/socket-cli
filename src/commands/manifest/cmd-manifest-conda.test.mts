@@ -70,6 +70,7 @@ describe('socket manifest conda', async () => {
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
+
         \\x1b[33m\\u203c\\x1b[39m Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
       `)
 
