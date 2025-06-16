@@ -3,7 +3,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
-import { outputCreateNewScan } from './output-create-new-scan.mjs'
+import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import constants from '../../constants.mts'
