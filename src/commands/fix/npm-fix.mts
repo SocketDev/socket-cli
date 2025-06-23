@@ -1,5 +1,12 @@
 import path from 'node:path'
 
+import Config from '@npmcli/config'
+import {
+  definitions,
+  flatten,
+  shorthands,
+  // @ts-ignore
+} from '@npmcli/config/lib/definitions'
 import semver from 'semver'
 
 import { getManifestData } from '@socketsecurity/registry'
@@ -68,6 +75,7 @@ type InstallOptions = {
 }
 
 async function install(
+  pkgEnvDetails: EnvDetails,
   arb: ArboristInstance,
   options: InstallOptions,
 ): Promise<NodeClass | null> {
@@ -76,11 +84,26 @@ async function install(
     ...options,
   } as InstallOptions
   try {
-    const newArb = new Arborist({ path: cwd })
+    const config = new Config({
+      argv: [],
+      cwd,
+      definitions,
+      flatten,
+      npmPath: pkgEnvDetails.agentExecPath,
+      shorthands,
+    })
+    await config.load()
+
+    const legacyPeerDeps = config.get('legacy-peer-deps')
+    const newArb = new Arborist({
+      legacyPeerDeps,
+      path: cwd,
+    })
     newArb.idealTree = await arb.buildIdealTree()
-    const actualTree = await newArb.reify()
-    arb.actualTree = actualTree
-    return actualTree
+    await newArb.reify()
+    arb.actualTree = null
+    await arb.loadActual()
+    return arb.actualTree
   } catch {}
   return null
 }
@@ -116,13 +139,15 @@ export async function npmFix(
 
   let count = 0
 
-  const arb = new Arborist({
+  let arb = new Arborist({
     path: rootPath,
     ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   })
   // Calling arb.reify() creates the arb.diff object, nulls-out arb.idealTree,
   // and populates arb.actualTree.
-  let actualTree = await arb.reify()
+  await arb.reify()
+  await arb.loadActual()
+  let actualTree = arb.actualTree!
 
   let alertsMap
   try {
@@ -231,6 +256,13 @@ export async function npmFix(
       j < length_j;
       j += 1
     ) {
+      arb = new Arborist({
+        path: rootPath,
+        ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
+      })
+      // eslint-disable-next-line no-await-in-loop
+      await arb.loadActual()
+      actualTree = arb.actualTree!
       const isLastPkgJsonPath = j === length_j - 1
       const pkgJsonPath = pkgJsonPaths[j]!
       const pkgPath = path.dirname(pkgJsonPath)
@@ -262,7 +294,7 @@ export async function npmFix(
       const editablePkgJson = await readPackageJson(pkgJsonPath, {
         editable: true,
       })
-      const fixedVersions = new Set<string>()
+      const seenVersions = new Set<string>()
 
       let hasAnnouncedWorkspace = false
       let workspaceLogCallCount = logger.logCallCount
@@ -301,7 +333,7 @@ export async function npmFix(
             )
             continue infosLoop
           }
-          if (fixedVersions.has(newVersion)) {
+          if (seenVersions.has(newVersion)) {
             continue infosLoop
           }
           if (semver.gte(oldVersion, newVersion)) {
@@ -371,7 +403,7 @@ export async function npmFix(
           let errored = false
           try {
             // eslint-disable-next-line no-await-in-loop
-            const maybeActualTree = await install(arb, { cwd })
+            const maybeActualTree = await install(pkgEnvDetails, arb, { cwd })
             if (maybeActualTree) {
               actualTree = maybeActualTree
               if (test) {
@@ -380,7 +412,7 @@ export async function npmFix(
                 await runScript(testScript, [], { spinner, stdio: 'ignore' })
               }
               spinner?.success(`Fixed ${name} in ${workspace}.`)
-              fixedVersions.add(newVersion)
+              seenVersions.add(newVersion)
             } else {
               errored = true
             }
@@ -459,13 +491,15 @@ export async function npmFix(
                 // eslint-disable-next-line no-await-in-loop
                 await gitResetAndClean(ciEnv.baseBranch, cwd)
                 // eslint-disable-next-line no-await-in-loop
-                const maybeActualTree = await install(arb, { cwd })
-                if (!maybeActualTree) {
-                  // Exit early if install fails.
-                  return handleInstallFail()
+                const maybeActualTree = await install(pkgEnvDetails, arb, {
+                  cwd,
+                })
+                if (maybeActualTree) {
+                  actualTree = maybeActualTree
+                  continue infosLoop
                 }
-                actualTree = maybeActualTree
-                continue infosLoop
+                // Exit early if install fails.
+                return handleInstallFail()
               }
 
               // eslint-disable-next-line no-await-in-loop
@@ -529,7 +563,7 @@ export async function npmFix(
             // eslint-disable-next-line no-await-in-loop
             await gitResetAndClean(ciEnv.baseBranch, cwd)
             // eslint-disable-next-line no-await-in-loop
-            const maybeActualTree = await install(arb, { cwd })
+            const maybeActualTree = await install(pkgEnvDetails, arb, { cwd })
             spinner?.stop()
             if (maybeActualTree) {
               actualTree = maybeActualTree
@@ -547,13 +581,14 @@ export async function npmFix(
                 editablePkgJson.save({ ignoreWhitespace: true }),
               ])
               // eslint-disable-next-line no-await-in-loop
-              const maybeActualTree = await install(arb, { cwd })
+              const maybeActualTree = await install(pkgEnvDetails, arb, { cwd })
               spinner?.stop()
-              if (!maybeActualTree) {
+              if (maybeActualTree) {
+                actualTree = maybeActualTree
+              } else {
                 // Exit early if install fails.
                 return handleInstallFail()
               }
-              actualTree = maybeActualTree
             }
             logger.fail(`Update failed for ${oldId} in ${workspace}.`, error)
           }
@@ -579,5 +614,6 @@ export async function npmFix(
 
   spinner?.stop()
 
-  return { ok: true, data: { fixed: true } } // true? did we actually change anything?
+  // Or, did we change anything?
+  return { ok: true, data: { fixed: true } }
 }
