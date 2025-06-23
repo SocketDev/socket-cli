@@ -2,7 +2,16 @@ import semver from 'semver'
 
 import type { SemVer } from 'semver'
 
-export const RangeStyles = ['caret', 'gt', 'lt', 'pin', 'preserve', 'tilde']
+export const RangeStyles = [
+  'caret',
+  'gt',
+  'gte',
+  'lt',
+  'lte',
+  'pin',
+  'preserve',
+  'tilde',
+]
 
 export type RangeStyle =
   | 'caret'
