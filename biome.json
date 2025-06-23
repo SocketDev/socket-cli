@@ -1,21 +1,22 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
-    "ignore": [
-      "**/.DS_Store",
-      "**/._.DS_Store",
-      "**/.env",
-      "**/.git",
-      "**/.github",
-      "**/.husky",
-      "**/.nvm",
-      "**/.rollup.cache",
-      "**/.type-coverage",
-      "**/.vscode",
-      "**/coverage",
-      "**/package.json",
-      "**/package-lock.json",
-      "external/@coana-tech"
+    "includes": [
+      "**",
+      "!**/.DS_Store",
+      "!**/._.DS_Store",
+      "!**/.env",
+      "!**/.git",
+      "!**/.github",
+      "!**/.husky",
+      "!**/.nvm",
+      "!**/.rollup.cache",
+      "!**/.type-coverage",
+      "!**/.vscode",
+      "!**/coverage",
+      "!**/package.json",
+      "!**/package-lock.json",
+      "!external/@coana-tech"
     ],
     "maxSize": 8388608
   },

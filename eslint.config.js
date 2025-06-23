@@ -34,7 +34,9 @@ const biomeConfigPath = path.join(rootPath, BIOME_JSON)
 const biomeConfig = require(biomeConfigPath)
 const biomeIgnores = {
   name: 'Imported biome.json ignore patterns',
-  ignores: biomeConfig.files.ignore.map(convertIgnorePatternToMinimatch),
+  ignores: biomeConfig.files.includes
+    .filter(p => p.startsWith('!'))
+    .map(p => convertIgnorePatternToMinimatch(p.slice(1))),
 }
 
 const gitignorePath = path.join(rootPath, GITIGNORE)

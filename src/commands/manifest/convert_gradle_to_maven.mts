@@ -11,7 +11,12 @@ export async function convertGradleToMaven({
   cwd,
   gradleOpts,
   verbose,
-}: { bin: string; cwd: string; verbose: boolean; gradleOpts: string[] }) {
+}: {
+  bin: string
+  cwd: string
+  verbose: boolean
+  gradleOpts: string[]
+}) {
   // TODO: impl json/md
 
   // Note: use resolve because the bin could be an absolute path, away from cwd
