@@ -45,7 +45,9 @@ export async function runFix({
     }
   }
 
-  logger.info(`Fixing packages for ${pkgEnvDetails.agent}.\n`)
+  logger.info(
+    `Fixing packages for ${pkgEnvDetails.agent} v${pkgEnvDetails.agentVersion}.\n`,
+  )
 
   const { agent } = pkgEnvDetails
 
