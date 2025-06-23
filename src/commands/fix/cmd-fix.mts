@@ -111,24 +111,23 @@ async function run(
     parentName,
   })
 
-  const { autopilot, json, markdown } = cli.flags
-  let { autoMerge, rangeStyle, test } = cli.flags
+  const { autopilot, json, markdown } = cli.flags as {
+    autopilot: boolean
+    json: boolean
+    markdown: boolean
+  }
   const outputKind = getOutputKind(json, markdown)
-  let [cwd = '.'] = cli.input
-  // Note: path.resolve vs .join:
-  // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
 
-  if (autopilot) {
-    autoMerge = true
-    test = true
+  let rangeStyle = cli.flags['rangeStyle'] as RangeStyle
+  if (!rangeStyle) {
+    rangeStyle = 'preserve'
   }
 
   const wasValidInput = checkCommandInput(outputKind, {
-    test: RangeStyles.includes(cli.flags['rangeStyle'] as string),
+    test: RangeStyles.includes(rangeStyle),
     message: `Expecting range style of ${joinOr(RangeStyles)}`,
     pass: 'ok',
-    fail: 'missing',
+    fail: 'invalid',
   })
   if (!wasValidInput) {
     return
@@ -139,30 +138,37 @@ async function run(
     return
   }
 
-  let purls: string[] = Array.isArray(cli.flags['purl'])
-    ? cli.flags['purl']
-    : []
-  purls = purls.flatMap(p => p.split(/, */))
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join:
+  // If given path is absolute then cwd should not affect it.
+  cwd = path.resolve(process.cwd(), cwd)
 
-  if (
-    !['caret', 'gt', 'gte', 'lt', 'lte', 'pin', 'preserve', 'tilde'].includes(
-      rangeStyle as string,
-    )
-  ) {
-    rangeStyle = 'preserve'
+  let autoMerge = Boolean(cli.flags['autoMerge'])
+  let test = Boolean(cli.flags['test'])
+  if (autopilot) {
+    autoMerge = true
+    test = true
   }
 
+  const limit =
+    (cli.flags['limit']
+      ? parseInt(String(cli.flags['limit'] || ''), 10)
+      : Infinity) || Infinity
+
+  const purls: string[] = Array.isArray(cli.flags['purl'])
+    ? cli.flags['purl'].flatMap(p => p.split(/, */))
+    : []
+
+  const testScript = String(cli.flags['testScript'] || 'test')
+
   await handleFix({
-    autoMerge: Boolean(autoMerge),
+    autoMerge,
     cwd,
-    limit:
-      (cli.flags['limit']
-        ? parseInt(String(cli.flags['limit'] || ''), 10)
-        : Infinity) || Infinity,
+    limit,
     outputKind,
     purls,
-    rangeStyle: rangeStyle as RangeStyle,
-    test: Boolean(test),
-    testScript: String(cli.flags['testScript'] || 'test'),
+    rangeStyle,
+    test,
+    testScript,
   })
 }
