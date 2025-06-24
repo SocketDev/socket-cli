@@ -1,94 +1,34 @@
-import { existsSync, promises as fs } from 'node:fs'
-import path from 'node:path'
+import { promises as fs } from 'node:fs'
 
-import semver from 'semver'
-
-import { getManifestData } from '@socketsecurity/registry'
-import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
-import { runScript } from '@socketsecurity/registry/lib/npm'
-import {
-  fetchPackagePackument,
-  readPackageJson,
-  resolvePackageName,
-} from '@socketsecurity/registry/lib/packages'
-import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
+import { hasKeys } from '@socketsecurity/registry/lib/objects'
 
-import { getActiveBranchesForPackage } from './fix-branch-helpers.mts'
+import { agentFix } from './agent-fix.mts'
 import { getCiEnv, getOpenPrsForEnvironment } from './fix-env-helpers.mts'
-import {
-  getSocketBranchName,
-  getSocketBranchWorkspaceComponent,
-  getSocketCommitMessage,
-  gitCreateAndPushBranch,
-  gitRemoteBranchExists,
-  gitResetAndClean,
-  gitUnstagedModifiedFiles,
-} from './git.mts'
-import {
-  cleanupOpenPrs,
-  enablePrAutoMerge,
-  openPr,
-  prExistForBranch,
-  setGitRemoteGithubRepoUrl,
-} from './open-pr.mts'
+import { getActualTree } from './get-actual-tree.mts'
 import { getAlertsMapOptions } from './shared.mts'
 import constants from '../../constants.mts'
-import {
-  Arborist,
-  SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
-} from '../../shadow/npm/arborist/index.mts'
-import {
-  findBestPatchVersion,
-  findPackageNode,
-  findPackageNodes,
-  updatePackageJsonFromNode,
-} from '../../shadow/npm/arborist-helpers.mts'
 import { runAgentInstall } from '../../utils/agent.mts'
 import {
   getAlertsMapFromPnpmLockfile,
   getAlertsMapFromPurls,
 } from '../../utils/alerts-map.mts'
-import { removeNodeModules } from '../../utils/fs.mts'
-import { globWorkspace } from '../../utils/glob.mts'
+import { readLockfile } from '../../utils/lockfile.mts'
 import {
-  extractOverridesFromPnpmLockfileContent,
+  extractOverridesFromPnpmLockSrc,
   parsePnpmLockfile,
   parsePnpmLockfileVersion,
-  readPnpmLockfile,
 } from '../../utils/pnpm.mts'
-import { getPurlObject } from '../../utils/purl.mts'
 import { applyRange } from '../../utils/semver.mts'
-import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
-import { idToPurl } from '../../utils/spec.mts'
+import { getOverridesDataPnpm } from '../optimize/get-overrides-by-agent.mts'
 
+import type { FixOptions, InstallOptions } from './agent-fix.mts'
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { CResult, StringKeyValueObject } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
-import type { RangeStyle } from '../../utils/semver.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const { OVERRIDES, PNPM } = constants
-
-type InstallOptions = {
-  args?: string[] | undefined
-  cwd?: string | undefined
-  spinner?: Spinner | undefined
-}
-
-async function getActualTree(cwd: string = process.cwd()): Promise<NodeClass> {
-  // @npmcli/arborist DOES have partial support for pnpm structured node_modules
-  // folders. However, support is iffy resulting in unhappy path errors and hangs.
-  // So, to avoid the unhappy path, we restrict our usage to --dry-run loading
-  // of the node_modules folder.
-  const arb = new Arborist({
-    path: cwd,
-    ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
-  })
-  return await arb.loadActual()
-}
 
 async function install(
   pkgEnvDetails: EnvDetails,
@@ -119,56 +59,18 @@ async function install(
 
 export async function pnpmFix(
   pkgEnvDetails: EnvDetails,
-  {
-    autoMerge,
-    cwd,
-    limit,
-    purls,
-    rangeStyle,
-    test,
-    testScript,
-  }: {
-    autoMerge: boolean
-    cwd: string
-    limit: number
-    purls: string[]
-    rangeStyle: RangeStyle
-    test: boolean
-    testScript: string
-  },
+  options: FixOptions,
 ): Promise<CResult<{ fixed: boolean }>> {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-  const { pkgPath: rootPath } = pkgEnvDetails
+  const { cwd, limit, purls, spinner } = options
 
   spinner?.start()
 
-  const ciEnv = await getCiEnv()
-  const openPrs = ciEnv ? await getOpenPrsForEnvironment(ciEnv) : []
-
-  let count = 0
-
   let actualTree: NodeClass | undefined
-  const lockfilePath = path.join(rootPath, 'pnpm-lock.yaml')
-  let lockfileContent = await readPnpmLockfile(lockfilePath)
-
-  // If pnpm-lock.yaml does NOT exist then install with pnpm to create it.
-  if (!lockfileContent) {
-    const maybeActualTree = await install(pkgEnvDetails, { cwd, spinner })
-    const maybeLockfileContent = maybeActualTree
-      ? await readPnpmLockfile(lockfilePath)
-      : null
-    if (maybeActualTree) {
-      actualTree = maybeActualTree
-      lockfileContent = maybeLockfileContent
-    }
-  }
-
-  let lockfile = parsePnpmLockfile(lockfileContent)
+  let { lockSrc } = pkgEnvDetails
+  let lockfile = parsePnpmLockfile(lockSrc)
   // Update pnpm-lock.yaml if its version is older than what the installed pnpm
   // produces.
   if (
-    lockfileContent &&
     pkgEnvDetails.agentVersion.major >= 10 &&
     (parsePnpmLockfileVersion(lockfile?.lockfileVersion)?.major ?? 0) <= 6
   ) {
@@ -177,21 +79,21 @@ export async function pnpmFix(
       cwd,
       spinner,
     })
-    const maybeLockfileContent = maybeActualTree
-      ? await readPnpmLockfile(lockfilePath)
+    const maybeLockSrc = maybeActualTree
+      ? await readLockfile(pkgEnvDetails.lockPath)
       : null
-    if (maybeActualTree && maybeLockfileContent) {
+    if (maybeActualTree && maybeLockSrc) {
       actualTree = maybeActualTree
-      lockfileContent = maybeLockfileContent
-      lockfile = parsePnpmLockfile(lockfileContent)
+      lockSrc = maybeLockSrc
+      lockfile = parsePnpmLockfile(lockSrc)
     } else {
       lockfile = null
     }
   }
 
   // Exit early if pnpm-lock.yaml is not found or usable.
-  // Check !lockfileContent to make TypeScript happy.
-  if (!lockfile || !lockfileContent) {
+  // Check !lockSrc to make TypeScript happy.
+  if (!lockfile || !lockSrc) {
     spinner?.stop()
     return {
       ok: false,
@@ -199,6 +101,9 @@ export async function pnpmFix(
       cause: 'Required pnpm-lock.yaml not found or usable',
     }
   }
+
+  const ciEnv = await getCiEnv()
+  const openPrs = ciEnv ? await getOpenPrsForEnvironment(ciEnv) : []
 
   let alertsMap
   try {
@@ -221,569 +126,109 @@ export async function pnpmFix(
     }
   }
 
-  const infoByPartialPurl = getCveInfoFromAlertsMap(alertsMap, {
-    limit: Math.max(limit, openPrs.length),
-  })
-  if (!infoByPartialPurl) {
-    spinner?.stop()
-    logger.info('No fixable vulns found.')
-    return { ok: true, data: { fixed: false } }
-  }
+  let revertData: PackageJson | undefined
+  let revertOverrides: PackageJson | undefined
+  let revertOverridesSrc: string | undefined
 
-  if (isDebug()) {
-    debugFn('found: cves for', Array.from(infoByPartialPurl.keys()))
-  }
+  return await agentFix(
+    pkgEnvDetails,
+    actualTree,
+    alertsMap,
+    install,
+    {
+      async beforeInstall(
+        editablePkgJson,
+        name,
+        oldVersion,
+        newVersion,
+        vulnerableVersionRange,
+        options,
+      ) {
+        const isWorkspaceRoot =
+          editablePkgJson.path === pkgEnvDetails.editablePkgJson.filename
+        // Get current overrides for revert logic.
+        const { overrides: oldOverrides } = getOverridesDataPnpm(
+          pkgEnvDetails,
+          editablePkgJson.content,
+        )
+        const oldPnpmSection = editablePkgJson.content[PNPM] as
+          | StringKeyValueObject
+          | undefined
+        const overrideKey = `${name}@${vulnerableVersionRange}`
 
-  // Lazily access constants.packumentCache.
-  const { packumentCache } = constants
+        revertOverrides = undefined
+        revertOverridesSrc = extractOverridesFromPnpmLockSrc(lockSrc)
 
-  const workspacePkgJsonPaths = await globWorkspace(
-    pkgEnvDetails.agent,
-    rootPath,
-  )
-  const pkgJsonPaths = [
-    ...workspacePkgJsonPaths,
-    // Process the workspace root last since it will add an override to package.json.
-    pkgEnvDetails.editablePkgJson.filename!,
-  ]
-  const sortedInfoEntries = Array.from(infoByPartialPurl.entries()).sort(
-    (a, b) => naturalCompare(a[0], b[0]),
-  )
-
-  const cleanupInfoEntriesLoop = () => {
-    logger.dedent()
-    spinner?.dedent()
-    packumentCache.clear()
-  }
-
-  const handleInstallFail = (): CResult<{ fixed: boolean }> => {
-    cleanupInfoEntriesLoop()
-    return {
-      ok: false,
-      message: 'Install failed',
-      cause: `Unexpected condition: ${pkgEnvDetails.agent} install failed`,
-    }
-  }
-
-  spinner?.stop()
-
-  infoEntriesLoop: for (
-    let i = 0, { length } = sortedInfoEntries;
-    i < length;
-    i += 1
-  ) {
-    const isLastInfoEntry = i === length - 1
-    const infoEntry = sortedInfoEntries[i]!
-    const partialPurlObj = getPurlObject(infoEntry[0])
-    const name = resolvePackageName(partialPurlObj)
-
-    const infos = Array.from(infoEntry[1].values())
-    if (!infos.length) {
-      continue infoEntriesLoop
-    }
-
-    logger.log(`Processing vulns for ${name}:`)
-    logger.indent()
-    spinner?.indent()
-
-    if (getManifestData(partialPurlObj.type, name)) {
-      debugFn(`found: Socket Optimize variant for ${name}`)
-    }
-    // eslint-disable-next-line no-await-in-loop
-    const packument = await fetchPackagePackument(name)
-    if (!packument) {
-      logger.warn(`Unexpected condition: No packument found for ${name}.\n`)
-      cleanupInfoEntriesLoop()
-      continue infoEntriesLoop
-    }
-
-    const activeBranches = getActiveBranchesForPackage(
-      ciEnv,
-      infoEntry[0],
-      openPrs,
-    )
-    const availableVersions = Object.keys(packument.versions)
-    const warningsForAfter = new Set<string>()
-
-    // eslint-disable-next-line no-unused-labels
-    pkgJsonPathsLoop: for (
-      let j = 0, { length: length_j } = pkgJsonPaths;
-      j < length_j;
-      j += 1
-    ) {
-      const isLastPkgJsonPath = j === length_j - 1
-      const pkgJsonPath = pkgJsonPaths[j]!
-      const pkgPath = path.dirname(pkgJsonPath)
-      const isWorkspaceRoot =
-        pkgJsonPath === pkgEnvDetails.editablePkgJson.filename
-      const workspace = isWorkspaceRoot
-        ? 'root'
-        : path.relative(rootPath, pkgPath)
-      const branchWorkspace = ciEnv
-        ? getSocketBranchWorkspaceComponent(workspace)
-        : ''
-
-      // actualTree may not be defined on the first iteration of pkgJsonPathsLoop.
-      if (!actualTree) {
-        if (!ciEnv) {
-          // eslint-disable-next-line no-await-in-loop
-          await removeNodeModules(cwd)
-        }
-        const maybeActualTree =
-          ciEnv && existsSync(path.join(rootPath, 'node_modules'))
-            ? // eslint-disable-next-line no-await-in-loop
-              await getActualTree(cwd)
-            : // eslint-disable-next-line no-await-in-loop
-              await install(pkgEnvDetails, { cwd, spinner })
-        const maybeLockfileContent = maybeActualTree
-          ? // eslint-disable-next-line no-await-in-loop
-            await readPnpmLockfile(lockfilePath)
-          : null
-        if (maybeActualTree && maybeLockfileContent) {
-          actualTree = maybeActualTree
-          lockfileContent = maybeLockfileContent
-        }
-      }
-      if (!actualTree) {
-        // Exit early if install fails.
-        return handleInstallFail()
-      }
-
-      const oldVersions = arrayUnique(
-        findPackageNodes(actualTree, name)
-          .map(n => n.version)
-          .filter(Boolean),
-      )
-
-      if (!oldVersions.length) {
-        debugFn(`skip: ${name} not found\n`)
-        // Skip to next package.
-        cleanupInfoEntriesLoop()
-        continue infoEntriesLoop
-      }
-
-      // Always re-read the editable package.json to avoid stale mutations
-      // across iterations.
-      // eslint-disable-next-line no-await-in-loop
-      const editablePkgJson = await readPackageJson(pkgJsonPath, {
-        editable: true,
-      })
-      const fixedVersions = new Set<string>()
-
-      // Get current overrides for revert logic.
-      const oldPnpmSection = editablePkgJson.content[PNPM] as
-        | StringKeyValueObject
-        | undefined
-
-      const oldOverrides = oldPnpmSection?.[OVERRIDES] as
-        | Record<string, string>
-        | undefined
-
-      let hasAnnouncedWorkspace = false
-      let workspaceLogCallCount = logger.logCallCount
-      if (isDebug()) {
-        debugFn(`check: workspace ${workspace}`)
-        hasAnnouncedWorkspace = true
-        workspaceLogCallCount = logger.logCallCount
-      }
-
-      oldVersionsLoop: for (const oldVersion of oldVersions) {
-        const oldId = `${name}@${oldVersion}`
-        const oldPurl = idToPurl(oldId, partialPurlObj.type)
-
-        const node = findPackageNode(actualTree, name, oldVersion)
-        if (!node) {
-          debugFn(`skip: ${oldId} not found`)
-          continue oldVersionsLoop
-        }
-        infosLoop: for (const {
-          firstPatchedVersionIdentifier,
-          vulnerableVersionRange,
-        } of infos) {
-          const newVersion = findBestPatchVersion(
-            node,
-            availableVersions,
-            vulnerableVersionRange,
-          )
-          const newVersionPackument = newVersion
-            ? packument.versions[newVersion]
-            : undefined
-
-          if (!(newVersion && newVersionPackument)) {
-            warningsForAfter.add(
-              `${oldId} not updated: requires >=${firstPatchedVersionIdentifier}`,
-            )
-            continue infosLoop
-          }
-          if (fixedVersions.has(newVersion)) {
-            continue infosLoop
-          }
-          if (semver.gte(oldVersion, newVersion)) {
-            debugFn(`skip: ${oldId} is >= ${newVersion}`)
-            continue infosLoop
-          }
-          if (
-            activeBranches.find(
-              b =>
-                b.workspace === branchWorkspace && b.newVersion === newVersion,
-            )
-          ) {
-            debugFn(`skip: open PR found for ${name}@${newVersion}`)
-            if (++count >= limit) {
-              cleanupInfoEntriesLoop()
-              break infoEntriesLoop
-            }
-            continue infosLoop
-          }
-
-          const overrideKey = `${name}@${vulnerableVersionRange}`
-          const newVersionRange = applyRange(
-            oldOverrides?.[overrideKey] ?? oldVersion,
-            newVersion,
-            rangeStyle,
-          )
-          const newId = `${name}@${newVersionRange}`
-
-          const updateOverrides = isWorkspaceRoot
-            ? ({
-                [PNPM]: {
-                  ...oldPnpmSection,
-                  [OVERRIDES]: {
-                    ...oldOverrides,
-                    [overrideKey]: newVersionRange,
-                  },
-                },
-              } as PackageJson)
-            : undefined
-
-          const revertOverrides = (
-            isWorkspaceRoot
+        if (isWorkspaceRoot) {
+          revertOverrides = {
+            [PNPM]: oldPnpmSection
               ? {
-                  [PNPM]: oldPnpmSection
+                  ...oldPnpmSection,
+                  [OVERRIDES]: hasKeys(oldOverrides)
                     ? {
-                        ...oldPnpmSection,
-                        [OVERRIDES]:
-                          oldOverrides && Object.keys(oldOverrides).length > 1
-                            ? {
-                                ...oldOverrides,
-                                [overrideKey]: undefined,
-                              }
-                            : undefined,
+                        ...oldOverrides,
+                        [overrideKey]: undefined,
                       }
                     : undefined,
                 }
-              : {}
-          ) as PackageJson
-
-          const revertData = {
-            ...revertOverrides,
-            ...(editablePkgJson.content.dependencies && {
-              dependencies: { ...editablePkgJson.content.dependencies },
-            }),
-            ...(editablePkgJson.content.optionalDependencies && {
-              optionalDependencies: {
-                ...editablePkgJson.content.optionalDependencies,
-              },
-            }),
-            ...(editablePkgJson.content.peerDependencies && {
-              peerDependencies: { ...editablePkgJson.content.peerDependencies },
-            }),
+              : undefined,
           } as PackageJson
-
-          if (updateOverrides) {
-            // Update overrides in the root package.json so that when `pnpm install`
-            // generates pnpm-lock.yaml it updates transitive dependencies too.
-            editablePkgJson.update(updateOverrides)
-          }
-          updatePackageJsonFromNode(
-            editablePkgJson,
-            actualTree,
-            node,
-            newVersion,
-            rangeStyle,
-          )
-          // eslint-disable-next-line no-await-in-loop
-          if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
-            debugFn(`skip: ${workspace}/package.json unchanged`)
-            // Reset things just in case.
-            if (ciEnv) {
-              // eslint-disable-next-line no-await-in-loop
-              await gitResetAndClean(ciEnv.baseBranch, cwd)
-            }
-            continue infosLoop
-          }
-
-          if (!hasAnnouncedWorkspace) {
-            hasAnnouncedWorkspace = true
-            workspaceLogCallCount = logger.logCallCount
-          }
-
-          spinner?.start()
-          spinner?.info(`Installing ${newId} in ${workspace}.`)
-
-          let error
-          let errored = false
-          try {
-            const revertOverridesContent =
-              extractOverridesFromPnpmLockfileContent(lockfileContent)
-            // eslint-disable-next-line no-await-in-loop
-            const maybeActualTree = await install(pkgEnvDetails, {
-              cwd,
-              spinner,
-            })
-            const maybeLockfileContent = maybeActualTree
-              ? // eslint-disable-next-line no-await-in-loop
-                await readPnpmLockfile(lockfilePath)
-              : null
-            if (maybeActualTree && maybeLockfileContent) {
-              actualTree = maybeActualTree
-              lockfileContent = maybeLockfileContent
-              // Revert overrides metadata in package.json now that pnpm-lock.yaml
-              // has been updated.
-              editablePkgJson.update(revertOverrides)
-              // eslint-disable-next-line no-await-in-loop
-              await editablePkgJson.save({ ignoreWhitespace: true })
-              const updatedOverridesContent =
-                extractOverridesFromPnpmLockfileContent(lockfileContent)
-              if (updatedOverridesContent) {
-                lockfileContent = lockfileContent!.replace(
-                  updatedOverridesContent,
-                  revertOverridesContent,
-                )
-                // eslint-disable-next-line no-await-in-loop
-                await fs.writeFile(lockfilePath, lockfileContent, 'utf8')
-              }
-              if (test) {
-                spinner?.info(`Testing ${newId} in ${workspace}.`)
-                // eslint-disable-next-line no-await-in-loop
-                await runScript(testScript, [], { spinner, stdio: 'ignore' })
-              }
-              spinner?.success(`Fixed ${name} in ${workspace}.`)
-              fixedVersions.add(newVersion)
-            } else {
-              errored = true
-            }
-          } catch (e) {
-            error = e
-            errored = true
-          }
-
-          spinner?.stop()
-
-          // Check repoInfo to make TypeScript happy.
-          if (!errored && ciEnv?.repoInfo) {
-            try {
-              // eslint-disable-next-line no-await-in-loop
-              const result = await gitUnstagedModifiedFiles(cwd)
-              if (!result.ok) {
-                logger.warn(
-                  'Unexpected condition: Nothing to commit, skipping PR creation.',
-                )
-                continue
-              }
-              const moddedFilepaths = result.data.filter(p => {
-                const basename = path.basename(p)
-                return (
-                  basename === 'package.json' || basename === 'pnpm-lock.yaml'
-                )
-              })
-              if (!moddedFilepaths.length) {
-                logger.warn(
-                  'Unexpected condition: Nothing to commit, skipping PR creation.',
-                )
-                continue infosLoop
-              }
-
-              const branch = getSocketBranchName(oldPurl, newVersion, workspace)
-              let skipPr = false
-              if (
-                // eslint-disable-next-line no-await-in-loop
-                await prExistForBranch(
-                  ciEnv.repoInfo.owner,
-                  ciEnv.repoInfo.repo,
-                  branch,
-                )
-              ) {
-                skipPr = true
-                debugFn(`skip: branch "${branch}" exists`)
-              }
-              // eslint-disable-next-line no-await-in-loop
-              else if (await gitRemoteBranchExists(branch, cwd)) {
-                skipPr = true
-                debugFn(`skip: remote branch "${branch}" exists`)
-              } else if (
-                // eslint-disable-next-line no-await-in-loop
-                !(await gitCreateAndPushBranch(
-                  branch,
-                  getSocketCommitMessage(oldPurl, newVersion, workspace),
-                  moddedFilepaths,
-                  {
-                    cwd,
-                    email: ciEnv.gitEmail,
-                    user: ciEnv.gitUser,
-                  },
-                ))
-              ) {
-                skipPr = true
-                logger.warn(
-                  'Unexpected condition: Push failed, skipping PR creation.',
-                )
-              }
-              if (skipPr) {
-                // eslint-disable-next-line no-await-in-loop
-                await gitResetAndClean(ciEnv.baseBranch, cwd)
-                // eslint-disable-next-line no-await-in-loop
-                const maybeActualTree = await install(pkgEnvDetails, {
-                  cwd,
-                  spinner,
-                })
-                const maybeLockfileContent = maybeActualTree
-                  ? // eslint-disable-next-line no-await-in-loop
-                    await readPnpmLockfile(lockfilePath)
-                  : null
-                if (maybeActualTree && maybeLockfileContent) {
-                  actualTree = maybeActualTree
-                  lockfileContent = maybeLockfileContent
-                  continue infosLoop
-                }
-                // Exit early if install fails.
-                return handleInstallFail()
-              }
-
-              // eslint-disable-next-line no-await-in-loop
-              await Promise.allSettled([
-                setGitRemoteGithubRepoUrl(
-                  ciEnv.repoInfo.owner,
-                  ciEnv.repoInfo.repo,
-                  ciEnv.githubToken!,
-                  cwd,
-                ),
-                cleanupOpenPrs(ciEnv.repoInfo.owner, ciEnv.repoInfo.repo, {
+          // Update overrides in the root package.json so that when `pnpm install`
+          // generates pnpm-lock.yaml it updates transitive dependencies too.
+          editablePkgJson.update({
+            [PNPM]: {
+              ...oldPnpmSection,
+              [OVERRIDES]: {
+                ...oldOverrides,
+                [overrideKey]: applyRange(
+                  oldOverrides?.[overrideKey] ?? oldVersion,
                   newVersion,
-                  purl: oldPurl,
-                  workspace,
-                }),
-              ])
-              // eslint-disable-next-line no-await-in-loop
-              const prResponse = await openPr(
-                ciEnv.repoInfo.owner,
-                ciEnv.repoInfo.repo,
-                branch,
-                oldPurl,
-                newVersion,
-                {
-                  baseBranch: ciEnv.baseBranch,
-                  cwd,
-                  workspace,
-                },
-              )
-              if (prResponse) {
-                const { data } = prResponse
-                const prRef = `PR #${data.number}`
-                logger.success(`Opened ${prRef}.`)
-                if (autoMerge) {
-                  logger.indent()
-                  spinner?.indent()
-                  // eslint-disable-next-line no-await-in-loop
-                  const { details, enabled } = await enablePrAutoMerge(data)
-                  if (enabled) {
-                    logger.info(`Auto-merge enabled for ${prRef}.`)
-                  } else {
-                    const message = `Failed to enable auto-merge for ${prRef}${
-                      details
-                        ? `:\n${details.map(d => ` - ${d}`).join('\n')}`
-                        : '.'
-                    }`
-                    logger.error(message)
-                  }
-                  logger.dedent()
-                  spinner?.dedent()
-                }
-              }
-            } catch (e) {
-              error = e
-              errored = true
-            }
-          }
-
-          if (ciEnv) {
-            spinner?.start()
-            // eslint-disable-next-line no-await-in-loop
-            await gitResetAndClean(ciEnv.baseBranch, cwd)
-            // eslint-disable-next-line no-await-in-loop
-            const maybeActualTree = await install(pkgEnvDetails, {
-              cwd,
-              spinner,
-            })
-            const maybeLockfileContent = maybeActualTree
-              ? // eslint-disable-next-line no-await-in-loop
-                await readPnpmLockfile(lockfilePath)
-              : null
-            spinner?.stop()
-            if (maybeActualTree) {
-              actualTree = maybeActualTree
-              lockfileContent = maybeLockfileContent
-            } else {
-              errored = true
-            }
-          }
-          if (errored) {
-            if (!ciEnv) {
-              spinner?.start()
-              editablePkgJson.update(revertData)
-              // eslint-disable-next-line no-await-in-loop
-              await Promise.all([
-                removeNodeModules(cwd),
-                editablePkgJson.save({ ignoreWhitespace: true }),
-              ])
-              // eslint-disable-next-line no-await-in-loop
-              const maybeActualTree = await install(pkgEnvDetails, {
-                cwd,
-                spinner,
-              })
-              const maybeLockfileContent = maybeActualTree
-                ? // eslint-disable-next-line no-await-in-loop
-                  await readPnpmLockfile(lockfilePath)
-                : null
-              spinner?.stop()
-              if (maybeActualTree) {
-                actualTree = maybeActualTree
-                lockfileContent = maybeLockfileContent
-              } else {
-                // Exit early if install fails.
-                return handleInstallFail()
-              }
-            }
-            return {
-              ok: false,
-              message: 'Update failed',
-              cause: `Update failed for ${oldId} in ${workspace}${error ? '; ' + error : ''}`,
-            }
-          }
-          debugFn('name:', name)
-          debugFn('increment: count', count + 1)
-          if (++count >= limit) {
-            cleanupInfoEntriesLoop()
-            break infoEntriesLoop
-          }
+                  options.rangeStyle,
+                ),
+              },
+            },
+          })
         }
-      }
-      if (!isLastPkgJsonPath && logger.logCallCount > workspaceLogCallCount) {
-        logger.logNewline()
-      }
-    }
 
-    for (const warningText of warningsForAfter) {
-      logger.warn(warningText)
-    }
-    if (!isLastInfoEntry) {
-      logger.logNewline()
-    }
-    cleanupInfoEntriesLoop()
-  }
-
-  spinner?.stop()
-
-  // Or, did we change anything?
-  return { ok: true, data: { fixed: true } }
+        revertData = {
+          ...revertOverrides,
+          ...(editablePkgJson.content.dependencies && {
+            dependencies: { ...editablePkgJson.content.dependencies },
+          }),
+          ...(editablePkgJson.content.optionalDependencies && {
+            optionalDependencies: {
+              ...editablePkgJson.content.optionalDependencies,
+            },
+          }),
+          ...(editablePkgJson.content.peerDependencies && {
+            peerDependencies: { ...editablePkgJson.content.peerDependencies },
+          }),
+        } as PackageJson
+      },
+      async afterInstall(editablePkgJson) {
+        if (revertOverrides) {
+          // Revert overrides metadata in package.json now that pnpm-lock.yaml
+          // has been updated.
+          editablePkgJson.update(revertOverrides)
+        }
+        await editablePkgJson.save({ ignoreWhitespace: true })
+        const updatedOverridesContent = extractOverridesFromPnpmLockSrc(lockSrc)
+        if (updatedOverridesContent && revertOverridesSrc) {
+          lockSrc = lockSrc!.replace(
+            updatedOverridesContent,
+            revertOverridesSrc,
+          )
+          await fs.writeFile(pkgEnvDetails.lockPath, lockSrc, 'utf8')
+        }
+      },
+      async revertInstall(editablePkgJson) {
+        if (revertData) {
+          editablePkgJson.update(revertData)
+        }
+      },
+    },
+    ciEnv,
+    openPrs,
+    options,
+  )
 }
