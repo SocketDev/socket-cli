@@ -15,60 +15,60 @@ const {
   YARN_CLASSIC,
 } = constants
 
-function getOverridesDataBun(
+export function getOverridesDataBun(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
 ) {
-  const overrides = pkgJson?.[RESOLUTIONS] ?? ({} as PnpmOrYarnOverrides)
+  const overrides = (pkgJson?.[RESOLUTIONS] ?? {}) as PnpmOrYarnOverrides
   return { type: YARN_BERRY, overrides }
 }
 
 // npm overrides documentation:
 // https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
-function getOverridesDataNpm(
+export function getOverridesDataNpm(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
 ) {
-  const overrides = pkgJson?.[OVERRIDES] ?? ({} as NpmOverrides)
+  const overrides = (pkgJson?.[OVERRIDES] ?? {}) as NpmOverrides
   return { type: NPM, overrides }
 }
 
 // pnpm overrides documentation:
 // https://pnpm.io/package_json#pnpmoverrides
-function getOverridesDataPnpm(
+export function getOverridesDataPnpm(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
 ) {
-  const overrides =
-    (pkgJson as any)?.[PNPM]?.[OVERRIDES] ?? ({} as PnpmOrYarnOverrides)
+  const overrides = ((pkgJson as any)?.[PNPM]?.[OVERRIDES] ??
+    {}) as PnpmOrYarnOverrides
   return { type: PNPM, overrides }
 }
 
-function getOverridesDataVlt(
+export function getOverridesDataVlt(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
 ) {
-  const overrides = pkgJson?.[OVERRIDES] ?? ({} as NpmOverrides)
+  const overrides = (pkgJson?.[OVERRIDES] ?? {}) as NpmOverrides
   return { type: VLT, overrides }
 }
 
 // Yarn resolutions documentation:
 // https://yarnpkg.com/configuration/manifest#resolutions
-function getOverridesDataYarn(
+export function getOverridesDataYarn(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
 ) {
-  const overrides = pkgJson?.[RESOLUTIONS] ?? ({} as PnpmOrYarnOverrides)
+  const overrides = (pkgJson?.[RESOLUTIONS] ?? {}) as PnpmOrYarnOverrides
   return { type: YARN_BERRY, overrides }
 }
 
 // Yarn resolutions documentation:
 // https://classic.yarnpkg.com/en/docs/selective-version-resolutions
-function getOverridesDataYarnClassic(
+export function getOverridesDataYarnClassic(
   pkgEnvDetails: EnvDetails,
   pkgJson = pkgEnvDetails.editablePkgJson.content,
 ) {
-  const overrides = pkgJson?.[RESOLUTIONS] ?? ({} as PnpmOrYarnOverrides)
+  const overrides = (pkgJson?.[RESOLUTIONS] ?? {}) as PnpmOrYarnOverrides
   return { type: YARN_CLASSIC, overrides }
 }
 
