@@ -12,9 +12,7 @@ import { idToNpmPurl } from './spec.mts'
 import type { LockfileObject, PackageSnapshot } from '@pnpm/lockfile.fs'
 import type { SemVer } from 'semver'
 
-export function extractOverridesFromPnpmLockfileContent(
-  lockfileContent: any,
-): string {
+export function extractOverridesFromPnpmLockSrc(lockfileContent: any): string {
   return typeof lockfileContent === 'string'
     ? (/^overrides:(\r?\n {2}.+)+(?:\r?\n)*/m.exec(lockfileContent)?.[0] ?? '')
     : ''
