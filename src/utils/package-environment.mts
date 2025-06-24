@@ -50,7 +50,7 @@ const binByAgent = new Map<Agent, string>([
 
 export type Agent = (typeof AGENTS)[number]
 
-type EnvBase = {
+export type EnvBase = {
   agent: Agent
   agentExecPath: string
   agentSupported: boolean
@@ -85,6 +85,17 @@ export type EnvDetails = Readonly<
   >
 >
 
+export type DetectAndValidateOptions = {
+  cmdName?: string | undefined
+  logger?: Logger | undefined
+  prod?: boolean | undefined
+}
+
+export type DetectOptions = {
+  cwd?: string | undefined
+  onUnknown?: (pkgManager: string | undefined) => void
+}
+
 export type PartialEnvDetails = Readonly<
   Remap<
     EnvBase & {
@@ -98,12 +109,7 @@ export type PartialEnvDetails = Readonly<
   >
 >
 
-export type DetectOptions = {
-  cwd?: string | undefined
-  onUnknown?: (pkgManager: string | undefined) => void
-}
-
-type ReadLockFile =
+export type ReadLockFile =
   | ((lockPath: string) => Promise<string | undefined>)
   | ((lockPath: string, agentExecPath: string) => Promise<string | undefined>)
   | ((
@@ -111,12 +117,6 @@ type ReadLockFile =
       agentExecPath: string,
       cwd: string,
     ) => Promise<string | undefined>)
-
-export type DetectAndValidateOptions = {
-  cmdName?: string | undefined
-  logger?: Logger | undefined
-  prod?: boolean | undefined
-}
 
 const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
   function wrapReader<T extends (...args: any[]) => Promise<any>>(
