@@ -1,3 +1,4 @@
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -57,6 +58,10 @@ export async function handleFix(
         )
         ghsasCount = ghsas.length
       } else {
+        debugFn('coana fail:', {
+          message: autoCResult.message,
+          cause: autoCResult.cause,
+        })
         ghsas = []
         ghsasCount = 0
       }
