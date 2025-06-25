@@ -1,9 +1,21 @@
+import { realpathSync } from 'node:fs'
+import path from 'node:path'
+
+import NpmConfig from '@npmcli/config'
+import {
+  definitions as npmConfigDefinitions,
+  flatten as npmConfigFlatten,
+  shorthands as npmConfigShorthands,
+  // @ts-ignore
+} from '@npmcli/config/lib/definitions'
+
 import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 
 import { agentFix } from './agent-fix.mts'
 import { getCiEnv, getOpenPrsForEnvironment } from './fix-env-helpers.mts'
 import { getActualTree } from './get-actual-tree.mts'
 import { getAlertsMapOptions } from './shared.mts'
+import constants from '../../constants.mts'
 import {
   Arborist,
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
@@ -57,9 +69,27 @@ export async function npmFix(
         getAlertsMapOptions({ limit: Math.max(limit, openPrs.length) }),
       )
     } else {
+      const npmPath = path.resolve(
+        realpathSync(pkgEnvDetails.agentExecPath),
+        '../..',
+      )
+      const config = new NpmConfig({
+        argv: [],
+        cwd: process.cwd(),
+        definitions: npmConfigDefinitions,
+        // Lazily access constants.execPath.
+        execPath: constants.execPath,
+        env: process.env,
+        flatten: npmConfigFlatten,
+        npmPath,
+        platform: process.platform,
+        shorthands: npmConfigShorthands,
+      })
+      await config.load()
       const arb = new Arborist({
         path: pkgEnvDetails.pkgPath,
         ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
+        config,
       })
       actualTree = await arb.reify()
       // Calling arb.reify() creates the arb.diff object, nulls-out arb.idealTree,
