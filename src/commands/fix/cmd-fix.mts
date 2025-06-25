@@ -168,7 +168,7 @@ async function run(
   const purls = cmdFlagValueToArray(cli.flags['purl'])
   const testScript = String(cli.flags['testScript'] || 'test')
 
-  await handleFix({
+  await handleFix(argv, {
     autoMerge,
     cwd,
     ghsas,
