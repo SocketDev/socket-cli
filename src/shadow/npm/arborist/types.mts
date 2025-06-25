@@ -1,9 +1,9 @@
 import { createEnum } from '../../../utils/objects.mts'
 
 import type {
-  Options as ArboristOptions,
   Advisory as BaseAdvisory,
   Arborist as BaseArborist,
+  Options as BaseArboristOptions,
   AuditReport as BaseAuditReport,
   Diff as BaseDiff,
   Edge as BaseEdge,
@@ -12,6 +12,11 @@ import type {
   BuildIdealTreeOptions,
   ReifyOptions,
 } from '@npmcli/arborist'
+
+export type ArboristOptions = BaseArboristOptions & {
+  npmCommand?: string
+  npmVersion?: string
+}
 
 export type ArboristClass = ArboristInstance & {
   new (...args: any): ArboristInstance
