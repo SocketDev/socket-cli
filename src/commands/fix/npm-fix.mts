@@ -86,6 +86,7 @@ export async function npmFix(
         shorthands: npmConfigShorthands,
       })
       await config.load()
+      debugFn('npm config:', config)
       const arb = new Arborist({
         path: pkgEnvDetails.pkgPath,
         ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
