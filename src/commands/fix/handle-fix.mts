@@ -87,7 +87,7 @@ export async function handleFix(
     await outputFixResult(
       {
         ok: true,
-        data: ''
+        data: '',
       },
       outputKind,
     )
