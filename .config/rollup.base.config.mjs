@@ -40,6 +40,7 @@ export const EXTERNAL_PACKAGES = [
   '@socketsecurity/registry',
   'blessed',
   'blessed-contrib',
+  'node-gyp',
 ]
 
 const builtinAliases = builtinModules.reduce((o, n) => {

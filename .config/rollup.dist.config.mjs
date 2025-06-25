@@ -480,12 +480,15 @@ export default async () => {
         },
       ],
       plugins: [
-        // Replace requires like require('blessed/lib/widgets/screen') with
-        // require('../external/blessed/lib/widgets/screen').
+        // Replace requires like
+        // require('blessed/lib/widgets/screen') with
+        // require('../external/blessed/lib/widgets/screen') OR
+        // require.resolve('node-gyp/bin/node-gyp.js') with
+        // require.resolve('../external/node-gyp/bin/node-gyp.js')
         ...EXTERNAL_PACKAGES.map(n =>
           socketModifyPlugin({
             find: new RegExp(
-              `(?<=require(?:\\$+\\d+)?\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
+              `(?<=require(?:\\$+\\d+)?(?:\\.resolve)?\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
               'g',
             ),
             replace: id => `../external/${id}`,
