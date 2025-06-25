@@ -1,5 +1,8 @@
 import { outputScanReach } from './output-scan-reach.mts'
-import { scanReachability } from './scan-reachability.mts'
+import constants from '../../constants.mts'
+import { spawnCoana } from '../../utils/coana.mts'
+
+const { DOT_SOCKET_DOT_FACTS_JSON } = constants
 
 import type { OutputKind } from '../../types.mts'
 
@@ -8,7 +11,27 @@ export async function handleScanReach(
   cwd: string,
   outputKind: OutputKind,
 ) {
-  const result = await scanReachability(argv, cwd)
+  // Lazily access constants.spinner.
+  const { spinner } = constants
 
-  await outputScanReach(result, cwd, outputKind)
+  spinner.start()
+  spinner.info('Running reachability scan...')
+
+  const result = await spawnCoana(
+    [
+      'run',
+      cwd,
+      '--output-dir',
+      cwd,
+      '--socket-mode',
+      DOT_SOCKET_DOT_FACTS_JSON,
+      '--disable-report-submission',
+      ...argv,
+    ],
+    { cwd, spinner },
+  )
+
+  spinner.stop()
+
+  await outputScanReach(result, outputKind)
 }
