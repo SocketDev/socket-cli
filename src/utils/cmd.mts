@@ -16,6 +16,16 @@ export function cmdFlagsToString(args: string[]) {
   return result.join(' ')
 }
 
+export function cmdFlagValueToArray(flagValue: any): string[] {
+  if (typeof flagValue === 'string') {
+    return flagValue.trim().split(/, */)
+  }
+  if (Array.isArray(flagValue)) {
+    return flagValue.flatMap(v => v.split(/, */))
+  }
+  return []
+}
+
 export function cmdPrefixMessage(cmdName: string, text: string): string {
   const cmdPrefix = cmdName ? `${cmdName}: ` : ''
   return `${cmdPrefix}${text}`

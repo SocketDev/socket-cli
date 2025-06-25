@@ -9,6 +9,7 @@ import { handleFix } from './handle-fix.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -38,6 +39,15 @@ const config: CliCommandConfig = {
       default: false,
       description: `Shorthand for --autoMerge --test`,
     },
+    ghsa: {
+      type: 'string',
+      default: [],
+      description: `Provide a list of ${terminalLink(
+        'GHSA IDs',
+        'https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids',
+      )} to compute fixes for, as either a comma separated value or as multiple flags`,
+      isMultiple: true,
+    },
     limit: {
       type: 'number',
       default: Infinity,
@@ -47,9 +57,9 @@ const config: CliCommandConfig = {
       type: 'string',
       default: [],
       description: `Provide a list of ${terminalLink(
-        'package URLs',
+        'PURLs',
         'https://github.com/package-url/purl-spec?tab=readme-ov-file#purl',
-      )} (PURLs) to fix, as either a comma separated value or as multiple flags,\n                        instead of querying the Socket API`,
+      )} to compute fixes for, as either a comma separated value or as multiple flags,\n                        instead of querying the Socket API`,
       isMultiple: true,
       shortFlag: 'p',
     },
@@ -150,20 +160,18 @@ async function run(
     test = true
   }
 
+  const ghsas = cmdFlagValueToArray(cli.flags['ghsa'])
   const limit =
     (cli.flags['limit']
       ? parseInt(String(cli.flags['limit'] || ''), 10)
       : Infinity) || Infinity
-
-  const purls: string[] = Array.isArray(cli.flags['purl'])
-    ? cli.flags['purl'].flatMap(p => p.split(/, */))
-    : []
-
+  const purls = cmdFlagValueToArray(cli.flags['purl'])
   const testScript = String(cli.flags['testScript'] || 'test')
 
   await handleFix({
     autoMerge,
     cwd,
+    ghsas,
     limit,
     outputKind,
     purls,
