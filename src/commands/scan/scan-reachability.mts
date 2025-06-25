@@ -9,7 +9,12 @@ export async function scanReachability(
   argv: string[] | readonly string[],
   cwd: string,
 ): Promise<CResult<unknown>> {
-  return await spawnCoana(
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start()
+
+  const result = await spawnCoana(
     [
       'run',
       cwd,
@@ -20,6 +25,10 @@ export async function scanReachability(
       '--disable-report-submission',
       ...argv,
     ],
-    { cwd },
+    { cwd, spinner },
   )
+
+  spinner.stop()
+
+  return result
 }
