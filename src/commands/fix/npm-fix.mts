@@ -25,7 +25,10 @@ import { runAgentInstall } from '../../utils/agent.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 
 import type { FixOptions, InstallOptions } from './agent-fix.mts'
-import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
+import type {
+  ArboristOptions,
+  NodeClass,
+} from '../../shadow/npm/arborist/types.mts'
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
@@ -86,11 +89,17 @@ export async function npmFix(
         shorthands: npmConfigShorthands,
       })
       await config.load()
-      debugFn('npm config:', config)
+
+      const flatConfig = { __proto__: null, ...config.flat } as ArboristOptions
+      flatConfig.nodeVersion = constants.NODE_VERSION
+      flatConfig.npmVersion = pkgEnvDetails.agentVersion.toString()
+      flatConfig.npmCommand = 'install'
+      debugFn('npm config:', flatConfig)
+
       const arb = new Arborist({
         path: pkgEnvDetails.pkgPath,
+        ...flatConfig,
         ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
-        config,
       })
       actualTree = await arb.reify()
       // Calling arb.reify() creates the arb.diff object, nulls-out arb.idealTree,
