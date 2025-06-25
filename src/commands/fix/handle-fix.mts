@@ -48,7 +48,6 @@ export async function handleFix({
         { cwd, spinner },
       )
       if (autoCResult.ok) {
-        console.log(autoCResult.data)
         ghsas = cmdFlagValueToArray(
           /(?<=Vulnerabilities found: )[^\n]+/.exec(
             autoCResult.data as string,
