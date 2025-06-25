@@ -42,8 +42,7 @@ export async function handleFix(
     // Lazily access constants.spinner.
     const { spinner } = constants
 
-    spinner.start()
-    spinner.info('Fetching GHSA IDs...')
+    spinner.start('Fetching GHSA IDs...')
 
     if (ghsasCount === 1 && ghsas[0] === 'auto') {
       const autoCResult = await spawnCoana(
@@ -83,11 +82,12 @@ export async function handleFix(
       return
     }
 
+    spinner.infoAndStop('No GHSA IDs found.')
+
     await outputFixResult(
       {
-        ok: false,
-        message: 'No GHSA IDs found.',
-        cause: `No GHSA IDs found for project path: ${cwd}`,
+        ok: true,
+        data: ''
       },
       outputKind,
     )

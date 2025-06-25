@@ -14,8 +14,7 @@ export async function handleScanReach(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  spinner.start()
-  spinner.info('Running reachability scan...')
+  spinner.start('Running reachability scan...')
 
   const result = await spawnCoana(
     [
