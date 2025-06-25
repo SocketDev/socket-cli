@@ -1,5 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
+import { debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
@@ -70,7 +71,7 @@ function formatReportCard(artifact: DedupedArtifact, color: boolean): string {
   }
   const alertString = getAlertString(artifact.alerts, !color)
   if (!artifact.ecosystem) {
-    console.log('WTF?', artifact)
+    debugLog('miss: Artifact ecosystem', artifact)
   }
   const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? '@' + artifact.version : ''}`
 
