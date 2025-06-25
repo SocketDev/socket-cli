@@ -79,11 +79,23 @@ export type GetOverrides = (
 
 export type GetOverridesResult = { type: Agent; overrides: Overrides }
 
-export const overridesDataByAgent = new Map<Agent, GetOverrides>([
-  [BUN, getOverridesDataBun],
-  [NPM, getOverridesDataNpm],
-  [PNPM, getOverridesDataPnpm],
-  [VLT, getOverridesDataVlt],
-  [YARN_BERRY, getOverridesDataYarn],
-  [YARN_CLASSIC, getOverridesDataYarnClassic],
-] as ReadonlyArray<[Agent, GetOverrides]>)
+export function getOverridesData(
+  pkgEnvDetails: EnvDetails,
+  pkgJson?: PackageJson | undefined,
+): GetOverridesResult {
+  switch (pkgEnvDetails.agent) {
+    case BUN:
+      return getOverridesDataBun(pkgEnvDetails, pkgJson)
+    case PNPM:
+      return getOverridesDataPnpm(pkgEnvDetails, pkgJson)
+    case VLT:
+      return getOverridesDataVlt(pkgEnvDetails, pkgJson)
+    case YARN_BERRY:
+      return getOverridesDataYarn(pkgEnvDetails, pkgJson)
+    case YARN_CLASSIC:
+      return getOverridesDataYarnClassic(pkgEnvDetails, pkgJson)
+    case NPM:
+    default:
+      return getOverridesDataNpm(pkgEnvDetails, pkgJson)
+  }
+}

@@ -14,6 +14,7 @@ import {
   resolvePackageName,
 } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
+import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { getActiveBranchesForPackage } from './fix-branch-helpers.mts'
 import { getActualTree } from './get-actual-tree.mts'
@@ -47,7 +48,7 @@ import { getPurlObject } from '../../utils/purl.mts'
 import { applyRange } from '../../utils/semver.mts'
 import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
-import { overridesDataByAgent } from '../optimize/get-overrides-by-agent.mts'
+import { getOverridesData } from '../optimize/get-overrides-by-agent.mts'
 
 import type { CiEnv } from './fix-env-helpers.mts'
 import type { PrMatch } from './open-pr.mts'
@@ -145,8 +146,6 @@ export async function agentFix(
   const sortedInfoEntries = Array.from(infoByPartialPurl.entries()).sort(
     (a, b) => naturalCompare(a[0], b[0]),
   )
-
-  const getOverridesData = overridesDataByAgent.get(pkgEnvDetails.agent)!
 
   const cleanupInfoEntriesLoop = () => {
     logger.dedent()
@@ -324,18 +323,17 @@ export async function agentFix(
             continue infosLoop
           }
 
-          const oldOverrides = getOverridesData(
+          const { overrides: oldOverrides } = getOverridesData(
             pkgEnvDetails,
             editablePkgJson.content,
           )
-          const overrideKey = `${name}@${vulnerableVersionRange}`
-
-          const newVersionRange = applyRange(
-            (oldOverrides as any)?.[overrideKey] ?? oldVersion,
-            newVersion,
-            rangeStyle,
-          )
-          const newId = `${name}@${newVersionRange}`
+          let refRange = oldOverrides?.[`${name}@${vulnerableVersionRange}`]
+          if (!isNonEmptyString(refRange)) {
+            refRange = oldOverrides?.[name]
+          }
+          if (!isNonEmptyString(refRange)) {
+            refRange = oldVersion
+          }
 
           // eslint-disable-next-line no-await-in-loop
           await beforeInstall(
@@ -346,7 +344,6 @@ export async function agentFix(
             vulnerableVersionRange,
             options,
           )
-
           updatePackageJsonFromNode(
             editablePkgJson,
             actualTree,
@@ -369,6 +366,8 @@ export async function agentFix(
             hasAnnouncedWorkspace = true
             workspaceLogCallCount = logger.logCallCount
           }
+
+          const newId = `${name}@${applyRange(refRange, newVersion, rangeStyle)}`
 
           spinner?.start()
           spinner?.info(`Installing ${newId} in ${workspace}.`)
