@@ -7,7 +7,6 @@ import type { CResult, OutputKind } from '../../types.mts'
 
 export async function outputScanReach(
   result: CResult<unknown>,
-  cwd: string,
   outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {
@@ -23,5 +22,6 @@ export async function outputScanReach(
     return
   }
 
-  logger.success('finished on', cwd)
+  logger.log('')
+  logger.success('Finished!')
 }
