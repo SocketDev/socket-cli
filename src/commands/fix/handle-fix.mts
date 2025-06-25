@@ -1,4 +1,5 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { npmFix } from './npm-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
@@ -9,38 +10,40 @@ import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { spawnCoana } from '../../utils/coana.mts'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment.mts'
 
+import type { FixOptions } from './agent-fix.mts'
 import type { OutputKind } from '../../types.mts'
-import type { RangeStyle } from '../../utils/semver.mts'
+import type { Remap } from '@socketsecurity/registry/lib/objects'
 
 const { NPM, PNPM } = constants
 
-export async function handleFix({
-  autoMerge,
-  cwd,
-  ghsas,
-  limit,
-  outputKind,
-  purls,
-  rangeStyle,
-  test,
-  testScript,
-}: {
-  autoMerge: boolean
-  cwd: string
-  ghsas: string[]
-  limit: number
-  outputKind: OutputKind
-  purls: string[]
-  rangeStyle: RangeStyle
-  test: boolean
-  testScript: string
-}) {
+export type HandleFixOptions = Remap<
+  FixOptions & {
+    ghsas: string[]
+    outputKind: OutputKind
+  }
+>
+
+export async function handleFix(
+  argv: string[] | readonly string[],
+  {
+    autoMerge,
+    cwd,
+    ghsas,
+    limit,
+    outputKind,
+    purls,
+    rangeStyle,
+    test,
+    testScript,
+  }: HandleFixOptions,
+) {
   let { length: ghsasCount } = ghsas
   if (ghsasCount) {
     // Lazily access constants.spinner.
     const { spinner } = constants
 
     spinner.start()
+    spinner.info('Fetching GHSA IDs...')
 
     if (ghsasCount === 1 && ghsas[0] === 'auto') {
       const autoCResult = await spawnCoana(
@@ -60,10 +63,9 @@ export async function handleFix({
       }
     }
 
-    spinner.stop()
-
     if (ghsasCount) {
-      spinner.start()
+      spinner.info(`Found ${ghsasCount} GHSA ${pluralize('ID', ghsasCount)}.`)
+
       await outputFixResult(
         await spawnCoana(
           [
@@ -71,6 +73,7 @@ export async function handleFix({
             cwd,
             '--apply-fixes-to',
             ...ghsas,
+            ...argv,
           ],
           { cwd, spinner },
         ),
@@ -79,6 +82,16 @@ export async function handleFix({
       spinner.stop()
       return
     }
+
+    await outputFixResult(
+      {
+        ok: false,
+        message: 'No GHSA IDs found.',
+        cause: `No GHSA IDs found for project path: ${cwd}`,
+      },
+      outputKind,
+    )
+    return
   }
 
   const pkgEnvCResult = await detectAndValidatePackageEnvironment(cwd, {
@@ -95,8 +108,8 @@ export async function handleFix({
     await outputFixResult(
       {
         ok: false,
-        message: 'No package found',
-        cause: `No valid package environment was found in given cwd (${cwd})`,
+        message: 'No package found.',
+        cause: `No valid package environment found for project path: ${cwd}`,
       },
       outputKind,
     )
@@ -112,7 +125,7 @@ export async function handleFix({
     await outputFixResult(
       {
         ok: false,
-        message: 'Not supported',
+        message: 'Not supported.',
         cause: `${agent} is not supported by this command at the moment.`,
       },
       outputKind,
