@@ -10,7 +10,11 @@ import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import { depsIncludesByAgent } from './deps-includes-by-agent.mts'
 import { getDependencyEntries } from './get-dependency-entries.mts'
-import { overridesDataByAgent } from './get-overrides-by-agent.mts'
+import {
+  getOverridesData,
+  getOverridesDataNpm,
+  getOverridesDataYarnClassic,
+} from './get-overrides-by-agent.mts'
 import { lockfileIncludesByAgent } from './lockfile-includes-by-agent.mts'
 import { lsByAgent } from './ls-by-agent.mts'
 import { CMD_NAME } from './shared.mts'
@@ -43,7 +47,7 @@ type AddOverridesState = {
   warnedPnpmWorkspaceRequiresNpm: boolean
 }
 
-const { NPM, PNPM, YARN_CLASSIC } = constants
+const { NPM, PNPM } = constants
 
 const manifestNpmOverrides = getManifestData(NPM)
 
@@ -95,11 +99,11 @@ export async function addOverrides(
 
   const overridesDataObjects = [] as GetOverridesResult[]
   if (isWorkspace || pkgEnvDetails.editablePkgJson.content['private']) {
-    overridesDataObjects.push(overridesDataByAgent.get(agent)!(pkgEnvDetails))
+    overridesDataObjects.push(getOverridesData(pkgEnvDetails))
   } else {
     overridesDataObjects.push(
-      overridesDataByAgent.get(NPM)!(pkgEnvDetails),
-      overridesDataByAgent.get(YARN_CLASSIC)!(pkgEnvDetails),
+      getOverridesDataNpm(pkgEnvDetails),
+      getOverridesDataYarnClassic(pkgEnvDetails),
     )
   }
 
