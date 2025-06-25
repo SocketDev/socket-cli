@@ -23,8 +23,9 @@ describe('socket fix', async () => {
             --autoMerge       Enable auto-merge for pull requests that Socket opens.
                               See GitHub documentation (\\u200bhttps://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository\\u200b) for managing auto-merge for pull requests in your repository.
             --autopilot       Shorthand for --autoMerge --test
+            --ghsa            Provide a list of GHSA IDs (\\u200bhttps://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids\\u200b) to compute fixes for, as either a comma separated value or as multiple flags
             --limit           The number of fixes to attempt at a time
-            --purl            Provide a list of package URLs (\\u200bhttps://github.com/package-url/purl-spec?tab=readme-ov-file#purl\\u200b) (PURLs) to fix, as either a comma separated value or as multiple flags,
+            --purl            Provide a list of PURLs (\\u200bhttps://github.com/package-url/purl-spec?tab=readme-ov-file#purl\\u200b) to compute fixes for, as either a comma separated value or as multiple flags,
                               instead of querying the Socket API
             --rangeStyle      Define how updated dependency versions should be written in package.json.
                               Available styles:
