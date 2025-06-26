@@ -1,10 +1,10 @@
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import {
-  isAuditFlag,
-  isFundFlag,
-  isLoglevelFlag,
-  isProgressFlag,
-  realExecPathSync,
+  isNpmAuditFlag,
+  isNpmFundFlag,
+  isNpmLoglevelFlag,
+  isNpmProgressFlag,
+  realNpmExecPathSync,
 } from '@socketsecurity/registry/lib/npm'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -56,12 +56,12 @@ export function safeNpmInstall(
   const useDebug = isDebug()
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
-  const progressArg = rawBinArgs.findLast(isProgressFlag) !== '--no-progress'
+  const progressArg = rawBinArgs.findLast(isNpmProgressFlag) !== '--no-progress'
   const binArgs = rawBinArgs.filter(
-    a => !isAuditFlag(a) && !isFundFlag(a) && !isProgressFlag(a),
+    a => !isNpmAuditFlag(a) && !isNpmFundFlag(a) && !isNpmProgressFlag(a),
   )
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
-  const isSilent = !useDebug && !binArgs.some(isLoglevelFlag)
+  const isSilent = !useDebug && !binArgs.some(isNpmLoglevelFlag)
   const logLevelArgs = isSilent ? ['--loglevel', 'silent'] : []
   const spawnPromise = spawn(
     // Lazily access constants.execPath.
@@ -82,7 +82,7 @@ export function safeNpmInstall(
       '--require',
       // Lazily access constants.shadowNpmInjectPath.
       constants.shadowNpmInjectPath,
-      realExecPathSync(agentExecPath),
+      realNpmExecPathSync(agentExecPath),
       'install',
       // Avoid code paths for 'audit' and 'fund'.
       '--no-audit',

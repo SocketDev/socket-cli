@@ -7,7 +7,7 @@ import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { runScript } from '@socketsecurity/registry/lib/npm'
+import { runNpmScript } from '@socketsecurity/registry/lib/npm'
 import {
   fetchPackagePackument,
   readPackageJson,
@@ -398,7 +398,7 @@ export async function agentFix(
               if (test) {
                 spinner?.info(`Testing ${newId} in ${workspace}.`)
                 // eslint-disable-next-line no-await-in-loop
-                await runScript(testScript, [], { spinner, stdio: 'ignore' })
+                await runNpmScript(testScript, [], { spinner, stdio: 'ignore' })
               }
               spinner?.success(`Fixed ${name} in ${workspace}.`)
               seenVersions.add(newVersion)
