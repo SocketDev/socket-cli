@@ -110,7 +110,8 @@ export function updateInstalledTabCompletionScript(
     content.data.replaceAll(
       '%SOCKET_VERSION_TOKEN%',
       // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH.
-      constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH),
+      constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH,
+    ),
     'utf8',
   )
 
