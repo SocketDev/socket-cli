@@ -365,61 +365,7 @@ export default async () => {
   const utilsSrcPath = path.join(srcPath, UTILS)
 
   return [
-    ...(
-      await tinyGlob(['**/*.mjs'], {
-        absolute: true,
-        cwd: blessedContribSrcPath,
-      })
-    ).map(filepath => {
-      const relPath = `${path.relative(srcPath, filepath).slice(0, -4 /*.mjs*/)}.js`
-      return {
-        input: filepath,
-        output: [
-          {
-            file: path.join(rootPath, relPath),
-            exports: 'auto',
-            externalLiveBindings: false,
-            format: 'cjs',
-            inlineDynamicImports: true,
-            sourcemap: false,
-          },
-        ],
-        external(rawId) {
-          const id = normalizeId(rawId)
-          const pkgName = getPackageName(
-            id,
-            path.isAbsolute(id) ? nmPath.length + 1 : 0,
-          )
-          return (
-            pkgName === BLESSED ||
-            rawId.endsWith(ROLLUP_EXTERNAL_SUFFIX) ||
-            isBuiltin(rawId)
-          )
-        },
-        plugins: [
-          nodeResolve({
-            exportConditions: ['node'],
-            extensions: ['.mjs', '.js', '.json'],
-            preferBuiltins: true,
-          }),
-          jsonPlugin(),
-          commonjsPlugin({
-            defaultIsModuleExports: true,
-            extensions: ['.cjs', '.js'],
-            ignoreDynamicRequires: true,
-            ignoreGlobal: true,
-            ignoreTryCatch: true,
-            strictRequires: true,
-          }),
-          babelPlugin({
-            babelHelpers: 'runtime',
-            babelrc: false,
-            configFile: path.join(configPath, 'babel.config.js'),
-            extensions: ['.js', '.cjs', '.mjs'],
-          }),
-        ],
-      }
-    }),
+    // Bundle <root>/src/ entry point files and output to <root>/dist/.
     baseConfig({
       input: {
         cli: `${srcPath}/cli.mts`,
@@ -480,11 +426,9 @@ export default async () => {
         },
       ],
       plugins: [
-        // Replace requires like
+        // Replace require() and require.resolve() calls like
         // require('blessed/lib/widgets/screen') with
-        // require('../external/blessed/lib/widgets/screen') OR
-        // require.resolve('node-gyp/bin/node-gyp.js') with
-        // require.resolve('../external/node-gyp/bin/node-gyp.js')
+        // require('../external/blessed/lib/widgets/screen')
         ...EXTERNAL_PACKAGES.map(n =>
           socketModifyPlugin({
             find: new RegExp(
@@ -509,6 +453,63 @@ export default async () => {
           },
         },
       ],
+    }),
+    // Bundle <root>/src/external/blessed-contrib/ files and output to
+    // <root>/external/blessed-contrib/.
+    ...(
+      await tinyGlob(['**/*.mjs'], {
+        absolute: true,
+        cwd: blessedContribSrcPath,
+      })
+    ).map(filepath => {
+      const relPath = `${path.relative(srcPath, filepath).slice(0, -4 /*.mjs*/)}.js`
+      return {
+        input: filepath,
+        output: [
+          {
+            file: path.join(rootPath, relPath),
+            exports: 'auto',
+            externalLiveBindings: false,
+            format: 'cjs',
+            inlineDynamicImports: true,
+            sourcemap: false,
+          },
+        ],
+        external(rawId) {
+          const id = normalizeId(rawId)
+          const pkgName = getPackageName(
+            id,
+            path.isAbsolute(id) ? nmPath.length + 1 : 0,
+          )
+          return (
+            pkgName === BLESSED ||
+            rawId.endsWith(ROLLUP_EXTERNAL_SUFFIX) ||
+            isBuiltin(rawId)
+          )
+        },
+        plugins: [
+          nodeResolve({
+            exportConditions: ['node'],
+            extensions: ['.mjs', '.js', '.json'],
+            preferBuiltins: true,
+          }),
+          jsonPlugin(),
+          commonjsPlugin({
+            defaultIsModuleExports: true,
+            extensions: ['.cjs', '.js'],
+            ignoreDynamicRequires: true,
+            ignoreGlobal: true,
+            ignoreTryCatch: true,
+            strictRequires: true,
+          }),
+          babelPlugin({
+            babelHelpers: 'runtime',
+            babelrc: false,
+            configFile: path.join(configPath, 'babel.config.js'),
+            extensions: ['.js', '.cjs', '.mjs'],
+          }),
+        ],
+      }
     }),
   ]
 }
