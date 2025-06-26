@@ -4,7 +4,7 @@ import path from 'node:path'
 import which from 'which'
 
 import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
-import { resolveBinPath } from '@socketsecurity/registry/lib/npm'
+import { resolveBinPathSync } from '@socketsecurity/registry/lib/npm'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../constants.mts'
@@ -37,7 +37,7 @@ export function findBinPathDetailsSync(binName: string): {
     if (path.dirname(binPath) === shadowBinPath) {
       shadowIndex = i
     } else {
-      theBinPath = resolveBinPath(binPath)
+      theBinPath = resolveBinPathSync(binPath)
       break
     }
   }
