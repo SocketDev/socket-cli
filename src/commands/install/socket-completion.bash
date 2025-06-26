@@ -63,6 +63,7 @@ COMMANDS=(
     [scan del]=""
     [scan diff]=""
     [scan metadata]=""
+    [scan reach]=""
     [scan report]=""
     [scan view]=""
     [threat-feed]=""
@@ -85,7 +86,7 @@ FLAGS=(
     [config unset]="--json --markdown"
     [dependencies]="--json --limit --markdown --offset"
     [diff-scan get]="--after --before --depth --file --json"
-    [fix]="--autoMerge --autopilot --limit --purl --rangeStyle --test --testScript"
+    [fix]="--autoMerge --autopilot --ghsa --limit --purl --rangeStyle --test --testScript"
     [info]="--all --strict"
     [install completion]=""
     [login]="--apiBaseUrl --apiProxy"
@@ -118,6 +119,7 @@ FLAGS=(
     [scan diff]="--depth --file --interactive --org"
     [scan list]="--branch --direction --fromTime --interactive --org --page --perPage --repo --sort --untilTime"
     [scan metadata]="--interactive --org"
+    [scan reach]=""
     [scan report]="--fold --interactive --license --org --reportLevel --short"
     [scan view]="--interactive --org --stream"
     [threat-feed]="--direction --eco --filter --interactive --json --markdown --org --page --perPage"
@@ -126,7 +128,7 @@ FLAGS=(
 )
 
 _socket_completion_version() {
-  echo "SOCKET_VERSION_TOKEN" # replaced when installing
+  echo "%SOCKET_VERSION_TOKEN%" # replaced when installing
 }
 
 _socket_completion() {
