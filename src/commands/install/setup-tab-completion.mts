@@ -87,7 +87,7 @@ function getTabCompletionScriptRaw(): CResult<string> {
   if (!fs.existsSync(sourcePath)) {
     return {
       ok: false,
-      message: 'Source not found',
+      message: 'Source not found.',
       cause: `Unable to find the source tab completion bash script that Socket should ship. Expected to find it in \`${sourcePath}\` but it was not there.`,
     }
   }
