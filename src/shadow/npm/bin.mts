@@ -1,8 +1,8 @@
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import {
-  isLoglevelFlag,
-  isNodeOptionsFlag,
-  isProgressFlag,
+  isNpmLoglevelFlag,
+  isNpmNodeOptionsFlag,
+  isNpmProgressFlag,
 } from '@socketsecurity/registry/lib/npm'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -25,10 +25,10 @@ export default async function shadowBin(
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   const binArgs = rawBinArgs.filter(
-    a => !isProgressFlag(a) && !isNodeOptionsFlag(a),
+    a => !isNpmProgressFlag(a) && !isNpmNodeOptionsFlag(a),
   )
-  const nodeOptionsArg = rawBinArgs.findLast(isNodeOptionsFlag)
-  const progressArg = rawBinArgs.findLast(isProgressFlag) !== '--no-progress'
+  const nodeOptionsArg = rawBinArgs.findLast(isNpmNodeOptionsFlag)
+  const progressArg = rawBinArgs.findLast(isNpmProgressFlag) !== '--no-progress'
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const permArgs =
     binName === 'npm' &&
@@ -59,7 +59,7 @@ export default async function shadowBin(
       : []
   const useDebug = isDebug()
   const useNodeOptions = nodeOptionsArg || permArgs.length
-  const isSilent = !useDebug && !binArgs.some(isLoglevelFlag)
+  const isSilent = !useDebug && !binArgs.some(isNpmLoglevelFlag)
   // The default value of loglevel is "notice". We default to "error" which is
   // two levels quieter.
   const logLevelArgs = isSilent ? ['--loglevel', 'error'] : []
