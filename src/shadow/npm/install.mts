@@ -4,7 +4,7 @@ import {
   isNpmFundFlag,
   isNpmLoglevelFlag,
   isNpmProgressFlag,
-  realNpmExecPathSync,
+  resolveBinPathSync
 } from '@socketsecurity/registry/lib/npm'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -82,7 +82,7 @@ export function safeNpmInstall(
       '--require',
       // Lazily access constants.shadowNpmInjectPath.
       constants.shadowNpmInjectPath,
-      realNpmExecPathSync(agentExecPath),
+      resolveBinPathSync(agentExecPath),
       'install',
       // Avoid code paths for 'audit' and 'fund'.
       '--no-audit',
