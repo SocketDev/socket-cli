@@ -4,7 +4,7 @@ import {
   isNpmFundFlag,
   isNpmLoglevelFlag,
   isNpmProgressFlag,
-  resolveBinPathSync
+  resolveBinPathSync,
 } from '@socketsecurity/registry/lib/npm'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
