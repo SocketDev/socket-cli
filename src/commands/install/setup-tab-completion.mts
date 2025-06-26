@@ -103,14 +103,14 @@ export function updateInstalledTabCompletionScript(
     return content
   }
 
-  // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH.
-  const CLI_VERSION = constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
-
   // When installing set the current package.json version.
   // Later, we can call _socket_completion_version to get the installed version.
   fs.writeFileSync(
     targetPath,
-    content.data.replaceAll('SOCKET_VERSION_TOKEN', CLI_VERSION),
+    content.data.replaceAll(
+      '%SOCKET_VERSION_TOKEN%',
+      // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH.
+      constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH),
     'utf8',
   )
 
