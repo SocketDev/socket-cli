@@ -185,16 +185,14 @@ void (async () => {
     debugFn('Uncaught error (BAD!):')
     debugFn(e)
 
-    // Try to parse the flags, find out if --json or --markdown is set
+    // Try to parse the flags, find out if --json or --markdown is set.
     let isJson = false
     try {
       const cli = meow(``, {
         argv: process.argv.slice(2),
-        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
-        flags: {},
-        // Do not strictly check for flags here.
-        allowUnknownFlags: true,
         autoHelp: false,
+        flags: {},
+        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
       })
       isJson = !!cli.flags['json']
     } catch {}

@@ -21,28 +21,27 @@ export type HandleFixOptions = Remap<
   FixOptions & {
     ghsas: string[]
     outputKind: OutputKind
+    unknownFlags: string[]
   }
 >
 
-export async function handleFix(
-  argv: string[] | readonly string[],
-  {
-    autoMerge,
-    cwd,
-    ghsas,
-    limit,
-    outputKind,
-    purls,
-    rangeStyle,
-    test,
-    testScript,
-  }: HandleFixOptions,
-) {
+export async function handleFix({
+  autoMerge,
+  cwd,
+  ghsas,
+  limit,
+  outputKind,
+  purls,
+  rangeStyle,
+  test,
+  testScript,
+  unknownFlags,
+}: HandleFixOptions) {
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
   let { length: ghsasCount } = ghsas
   if (ghsasCount) {
-    // Lazily access constants.spinner.
-    const { spinner } = constants
-
     spinner.start('Fetching GHSA IDs...')
 
     if (ghsasCount === 1 && ghsas[0] === 'auto') {
@@ -50,6 +49,9 @@ export async function handleFix(
         ['compute-fixes-and-upgrade-purls', cwd],
         { cwd, spinner },
       )
+
+      spinner.stop()
+
       if (autoCResult.ok) {
         ghsas = cmdFlagValueToArray(
           /(?<=Vulnerabilities found: )[^\n]+/.exec(
@@ -65,25 +67,34 @@ export async function handleFix(
         ghsas = []
         ghsasCount = 0
       }
+
+      spinner.start()
     }
 
     if (ghsasCount) {
       spinner.info(`Found ${ghsasCount} GHSA ${pluralize('ID', ghsasCount)}.`)
 
-      await outputFixResult(
-        await spawnCoana(
-          [
-            'compute-fixes-and-upgrade-purls',
-            cwd,
-            '--apply-fixes-to',
-            ...ghsas,
-            ...argv,
-          ],
-          { cwd, spinner },
-        ),
-        outputKind,
+      const applyFixesCResult = await spawnCoana(
+        [
+          'compute-fixes-and-upgrade-purls',
+          cwd,
+          '--apply-fixes-to',
+          ...ghsas,
+          ...unknownFlags,
+        ],
+        { cwd, spinner },
       )
+
       spinner.stop()
+
+      if (!applyFixesCResult.ok) {
+        debugFn('coana fail:', {
+          message: applyFixesCResult.message,
+          cause: applyFixesCResult.cause,
+        })
+      }
+
+      await outputFixResult(applyFixesCResult, outputKind)
       return
     }
 
@@ -138,8 +149,6 @@ export async function handleFix(
     return
   }
 
-  // Lazily access spinner.
-  const { spinner } = constants
   const fixer = agent === NPM ? npmFix : pnpmFix
 
   await outputFixResult(
