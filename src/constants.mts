@@ -471,6 +471,13 @@ const lazyNodeHardenFlags = () =>
         ],
   )
 
+const lazyNpmNmNodeGypPath = () =>
+  // Lazily access constants.npmRealExecPath.
+  path.join(
+    constants.npmRealExecPath,
+    '../../node_modules/node-gyp/bin/node-gyp.js',
+  )
+
 const lazyRootPath = () => path.join(realpathSync.native(__dirname), '..')
 
 const lazyShadowBinPath = () =>
@@ -598,6 +605,7 @@ const constants: Constants = createConstantsObject(
     minimumVersionByAgent: undefined,
     nmBinPath: undefined,
     nodeHardenFlags: undefined,
+    npmNmNodeGypPath: undefined,
     rootPath: undefined,
     shadowBinPath: undefined,
     shadowNpmInjectPath: undefined,
@@ -628,6 +636,7 @@ const constants: Constants = createConstantsObject(
       minimumVersionByAgent: lazyMinimumVersionByAgent,
       nmBinPath: lazyNmBinPath,
       nodeHardenFlags: lazyNodeHardenFlags,
+      npmNmNodeGypPath: lazyNpmNmNodeGypPath,
       rootPath: lazyRootPath,
       shadowBinPath: lazyShadowBinPath,
       shadowNpmBinPath: lazyShadowNpmBinPath,
