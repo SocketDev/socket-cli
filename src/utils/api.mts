@@ -199,10 +199,10 @@ export async function queryApiSafeText(
     }
   }
 
-  if (fetchSpinnerDesc) {
-    // Lazily access constants.spinner.
-    const { spinner } = constants
+  // Lazily access constants.spinner.
+  const { spinner } = constants
 
+  if (fetchSpinnerDesc) {
     spinner.start(`Requesting ${fetchSpinnerDesc} from API...`)
   }
 
@@ -210,20 +210,14 @@ export async function queryApiSafeText(
   try {
     result = await queryApi(path, apiToken)
     if (fetchSpinnerDesc) {
-      // Lazily access constants.spinner.
-      const { spinner } = constants
-
       spinner.successAndStop(
         `Received API response (after requesting ${fetchSpinnerDesc}).`,
       )
     }
   } catch (e) {
     if (fetchSpinnerDesc) {
-      // Lazily access constants.spinner.
-      const { spinner } = constants
-
       spinner.failAndStop(
-        `An error was thrown while requesting ${fetchSpinnerDesc}`,
+        `An error was thrown while requesting ${fetchSpinnerDesc}.`,
       )
     }
 

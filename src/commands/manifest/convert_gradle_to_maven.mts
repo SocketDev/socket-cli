@@ -113,7 +113,7 @@ async function execGradleWithSpinner(
     logger.info(
       '(It will show no output, you can use --verbose to see its output)',
     )
-    spinner.start(`Running gradlew`)
+    spinner.start(`Running gradlew...`)
 
     const output = await spawn(bin, commandArgs, {
       // We can pipe the output through to have the user see the result
