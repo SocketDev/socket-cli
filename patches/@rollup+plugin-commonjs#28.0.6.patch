@@ -7,14 +7,14 @@ Index: /@rollup/plugin-commonjs/dist/cjs/index.js
  export function getAugmentedNamespace(n) {
    if (Object.prototype.hasOwnProperty.call(n, '__esModule')) return n;
    var f = n.default;
-+  var a
++  var a;
  	if (typeof f == "function") {
 -		var a = function a () {
 +		a = function a () {
- 			if (this instanceof a) {
-         return Reflect.construct(f, arguments, this.constructor);
- 			}
- 			return f.apply(this, arguments);
+ 			var isInstance = false;
+       try {
+         isInstance = this instanceof a;
+       } catch {}
 Index: /@rollup/plugin-commonjs/dist/es/index.js
 ===================================================================
 --- /@rollup/plugin-commonjs/dist/es/index.js
@@ -24,11 +24,11 @@ Index: /@rollup/plugin-commonjs/dist/es/index.js
  export function getAugmentedNamespace(n) {
    if (Object.prototype.hasOwnProperty.call(n, '__esModule')) return n;
    var f = n.default;
-+  var a
++  var a;
  	if (typeof f == "function") {
 -		var a = function a () {
 +		a = function a () {
- 			if (this instanceof a) {
-         return Reflect.construct(f, arguments, this.constructor);
- 			}
- 			return f.apply(this, arguments);
+ 			var isInstance = false;
+       try {
+         isInstance = this instanceof a;
+       } catch {}
