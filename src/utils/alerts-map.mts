@@ -5,7 +5,6 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { extractPurlsFromPnpmLockfile } from './pnpm.mts'
 import { getPublicToken, setupSdk } from './sdk.mts'
 import { addArtifactToAlertsMap } from './socket-package-alert.mts'
-import constants from '../constants.mts'
 
 import type { CompactSocketArtifact } from './alert/artifact.mts'
 import type {
@@ -121,8 +120,7 @@ export async function getAlertsMapFromPurls(
         `Socket API server error (${statusCode}): ${statusMessage}`,
       )
     } else {
-      const { spinner } = constants
-      spinner.stop()
+      spinner?.stop()
       debugFn('Received a result=false:', batchResult)
       logger.fail(
         `Received a ${batchResult.status} response from Socket API which we consider a permanent failure:`,
@@ -132,9 +130,8 @@ export async function getAlertsMapFromPurls(
       break
     }
     remaining -= 1
-    if (spinner && remaining > 0) {
-      spinner.start()
-      spinner.setText(getText())
+    if (remaining > 0) {
+      spinner?.start(getText())
     }
   }
 
