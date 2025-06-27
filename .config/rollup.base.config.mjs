@@ -40,7 +40,6 @@ export const EXTERNAL_PACKAGES = [
   '@socketsecurity/registry',
   'blessed',
   'blessed-contrib',
-  'node-gyp',
 ]
 
 const builtinAliases = builtinModules.reduce((o, n) => {
@@ -93,7 +92,6 @@ export default function baseConfig(extendConfig = {}) {
       'commonjs',
       'json',
       'node-resolve',
-      'typescript',
       'unplugin-purge-polyfills',
     ]) {
       for (let i = 0, { length } = extendPlugins; i < length; i += 1) {
@@ -236,10 +234,7 @@ export default function baseConfig(extendConfig = {}) {
       }),
       // Convert un-prefixed built-in imports into "node:"" prefixed forms.
       replacePlugin({
-        delimiters: [
-          '(?<=(?:require(?:\\$+\\d+)?\\(|from\\s*)["\'])',
-          '(?=["\'])',
-        ],
+        delimiters: ['(?<=(?:require[$\\d]*\\(|from\\s*)["\'])', '(?=["\'])'],
         preventAssignment: false,
         values: builtinAliases,
       }),
@@ -248,15 +243,15 @@ export default function baseConfig(extendConfig = {}) {
       // builds which causes 'tiny-colors' to be treated as an external, not bundled,
       // require.
       socketModifyPlugin({
-        find: /require(?:\$+\d+)?\(["']tiny-colors["']\)/g,
+        find: /require[$\d]*\(["']tiny-colors["']\)/g,
         replace: "require('yoctocolors-cjs')",
       }),
       // Try to convert `require('u' + 'rl')` into something like `require$$2$3`.
       socketModifyPlugin({
-        find: /require(?:\$+\d+)?\(["']u["']\s*\+\s*["']rl["']\)/g,
+        find: /require[$\d]*\(["']u["']\s*\+\s*["']rl["']\)/g,
         replace(match) {
           return (
-            /(?<=var +)[$\w]+(?=\s*=\s*require(?:\$+\d+)?\(["']node:url["']\))/.exec(
+            /(?<=var +)[$\w]+(?=\s*=\s*require[$\d]*\(["']node:url["']\))/.exec(
               this.input,
             )?.[0] ?? match
           )
@@ -267,7 +262,7 @@ export default function baseConfig(extendConfig = {}) {
       //   require('node:util')
       //   require('graceful-fs')
       socketModifyPlugin({
-        find: /^\s*require(?:\$+\d+)?\(["'].+?["']\);?\r?\n/gm,
+        find: /^\s*require[$\d]*\(["'].+?["']\);?\r?\n/gm,
         replace: '',
       }),
       ...extendPlugins,
