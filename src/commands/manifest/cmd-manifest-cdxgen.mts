@@ -238,7 +238,6 @@ async function run(
   { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
-    allowUnknownFlags: true,
     // Don't let meow take over --help.
     argv: argv.filter(a => !isHelpFlag(a)),
     config,
