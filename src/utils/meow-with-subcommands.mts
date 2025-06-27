@@ -287,8 +287,8 @@ export async function meowWithSubcommands(
     if (commands.size) {
       logger.fail(
         'Found commands in the list that were not marked as public or not defined at all:',
-        // Node < 22 will print 'Object (n)' before the array. So to have
-        // consistent test snapshots we use joinAnd.
+        // Node < 22 will print 'Object (n)' before the array. So to have consistent
+        // test snapshots we use joinAnd.
         joinAnd(
           Array.from(commands)
             .sort(naturalCompare)
@@ -392,10 +392,11 @@ ${isRootCommand ? `      $ ${name} scan create --json` : ''}${isRootCommand ? `\
       flags,
       // Do not strictly check for flags here.
       allowUnknownFlags: true,
-      booleanDefault: undefined, // We want to detect whether a bool flag is given at all.
-      // We will emit help when we're ready
+      // We will emit help when we're ready.
       // Plus, if we allow this then meow() can just exit here.
       autoHelp: false,
+      // We want to detect whether a bool flag is given at all.
+      booleanDefault: undefined,
     },
   )
 
@@ -419,14 +420,15 @@ ${isRootCommand ? `      $ ${name} scan create --json` : ''}${isRootCommand ? `\
  * Note: meow will exit immediately if it calls its .showHelp()
  */
 export function meowOrExit({
-  // allowUnknownFlags, // commands that pass-through args need to allow this
   argv,
+  collectUnknownFlags = true,
   config,
   importMeta,
   parentName,
 }: {
   allowUnknownFlags?: boolean | undefined
   argv: readonly string[]
+  collectUnknownFlags?: boolean | undefined
   config: CliCommandConfig
   parentName: string
   importMeta: ImportMeta
@@ -437,13 +439,13 @@ export function meowOrExit({
   // This exits if .printHelp() is called either by meow itself or by us.
   const cli = meow({
     argv,
+    autoHelp: false, // meow will exit(0) before printing the banner.
+    booleanDefault: undefined, // We want to detect whether a bool flag is given at all.
+    collectUnknownFlags,
     description: config.description,
+    flags: config.flags,
     help: config.help(command, config),
     importMeta,
-    flags: config.flags,
-    allowUnknownFlags: true, // meow will exit(1) before printing the banner
-    booleanDefault: undefined, // We want to detect whether a bool flag is given at all.
-    autoHelp: false, // meow will exit(0) before printing the banner
   })
 
   if (!cli.flags['nobanner']) {
@@ -453,18 +455,18 @@ export function meowOrExit({
   }
 
   // As per https://github.com/sindresorhus/meow/issues/178
-  // Setting allowUnknownFlags:true makes it reject camel cased flags...
+  // Setting `allowUnknownFlags: false` makes it reject camel cased flags.
   // if (!allowUnknownFlags) {
   //   // Run meow specifically with the flag setting. It will exit(2) if an
   //   // invalid flag is set and print a message.
   //   meow({
   //     argv,
-  //     description: config.description,
-  //     help: config.help(command, config),
-  //     importMeta,
-  //     flags: config.flags,
   //     allowUnknownFlags: false,
   //     autoHelp: false,
+  //     description: config.description,
+  //     flags: config.flags,
+  //     help: config.help(command, config),
+  //     importMeta,
   //   })
   // }
 
@@ -482,7 +484,7 @@ export function meowOrExit({
     importMeta,
     flags: config.flags,
     // As per https://github.com/sindresorhus/meow/issues/178
-    // Setting allowUnknownFlags:true makes it reject camel cased flags...
+    // Setting `allowUnknownFlags: false` makes it reject camel cased flags.
     // allowUnknownFlags: Boolean(allowUnknownFlags),
     autoHelp: false,
   })

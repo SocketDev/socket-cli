@@ -1,0 +1,109 @@
+Index: /meow/build/index.d.ts
+===================================================================
+--- /meow/build/index.d.ts
++++ /meow/build/index.d.ts
+@@ -1313,8 +1313,15 @@
+ 	*/
+ 	readonly allowUnknownFlags?: boolean;
+ 
+ 	/**
++	Whether to collect unknown flags or not.
++
++	@default false
++	*/
++  readonly collectUnknownFlags?: boolean;
++
++	/**
+ 	The number of spaces to use for indenting the help text.
+ 
+ 	@default 2
+ 	*/
+@@ -1353,8 +1360,13 @@
+ 	Flags converted to camelCase excluding aliases.
+ 	*/
+ 	flags: CamelCasedProperties<TypedFlags<Flags>> & Record<string, unknown>;
+ 
++  /**
++	Collection of unknown flags.
++	*/
++  unknownFlags: string[]
++
+ 	/**
+ 	Flags converted camelCase including aliases.
+ 	*/
+ 	unnormalizedFlags: TypedFlags<Flags> & Record<string, unknown>;
+Index: /meow/build/index.js
+===================================================================
+--- /meow/build/index.js
++++ /meow/build/index.js
+@@ -1,9 +1,9 @@
+ import process from 'node:process';
+ import { y as yargsParser, t as trimNewlines, r as redent, n as normalizePackageData, c as camelcaseKeys } from './dependencies.js';
+ import { buildOptions } from './options.js';
+ import { buildParserOptions } from './parser.js';
+-import { checkUnknownFlags, validate, checkMissingRequiredFlags } from './validate.js';
++import { checkUnknownFlags, validate, checkMissingRequiredFlags, collectUnknownFlags } from './validate.js';
+ 
+ const buildResult = (options, parserOptions) => {
+ 	const {pkg: package_} = options;
+ 	const argv = yargsParser(options.argv, parserOptions);
+@@ -54,8 +54,9 @@
+ 		checkUnknownFlags(input);
+ 	}
+ 
+ 	const flags = camelcaseKeys(argv, {exclude: ['--', /^\w$/]});
++	const unknownFlags = options.collectUnknownFlags ? collectUnknownFlags(input) : [];
+ 	const unnormalizedFlags = {...flags};
+ 
+ 	validate(flags, options);
+ 
+@@ -73,8 +74,9 @@
+ 
+ 	return {
+ 		input,
+ 		flags,
++		unknownFlags,
+ 		unnormalizedFlags,
+ 		pkg: package_,
+ 		help,
+ 		showHelp,
+Index: /meow/build/parser.js
+===================================================================
+--- /meow/build/parser.js
++++ /meow/build/parser.js
+@@ -72,9 +72,9 @@
+ 	if (parserOptions['--']) {
+ 		parserOptions.configuration['populate--'] = true;
+ 	}
+ 
+-	if (!options.allowUnknownFlags) {
++	if (!options.allowUnknownFlags || options.collectUnknownFlags) {
+ 		// Collect unknown options in `argv._` to be checked later.
+ 		parserOptions.configuration['unknown-options-as-args'] = true;
+ 	}
+ 
+Index: /meow/build/validate.js
+===================================================================
+--- /meow/build/validate.js
++++ /meow/build/validate.js
+@@ -67,10 +67,12 @@
+ 		...unknownFlags,
+ 	].join('\n'));
+ };
+ 
++const collectUnknownFlags = input => input.filter(item => typeof item === 'string' && item.startsWith('-'));
++
+ const checkUnknownFlags = input => {
+-	const unknownFlags = input.filter(item => typeof item === 'string' && item.startsWith('-'));
++	const unknownFlags = collectUnknownFlags(input);
+ 	if (unknownFlags.length > 0) {
+ 		reportUnknownFlags(unknownFlags);
+ 		process.exit(2);
+ 	}
+@@ -118,5 +120,5 @@
+ 		process.exit(2);
+ 	}
+ };
+ 
+-export { checkMissingRequiredFlags, checkUnknownFlags, validate };
++export { checkMissingRequiredFlags, checkUnknownFlags, collectUnknownFlags, validate };
