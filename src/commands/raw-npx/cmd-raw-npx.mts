@@ -2,6 +2,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { runRawNpx } from './run-raw-npx.mts'
 import constants from '../../constants.mts'
+import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
@@ -12,7 +13,9 @@ const config: CliCommandConfig = {
   commandName: 'raw-npx',
   description: `Temporarily disable the Socket ${NPX} wrapper`,
   hidden: false,
-  flags: {},
+  flags: {
+    ...commonFlags,
+  },
   help: command => `
     Usage
       $ ${command} ...
