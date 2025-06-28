@@ -1,0 +1,150 @@
+Index: /tiny-updater/dist/index.d.ts
+===================================================================
+--- /tiny-updater/dist/index.d.ts
++++ /tiny-updater/dist/index.d.ts
+@@ -1,4 +1,10 @@
+ import type { Options } from './types.js';
+-declare const updater: ({ name, version, ttl }: Options) => Promise<boolean>;
++declare const updater: ({
++    authInfo,
++    name,
++    registryUrl,
++    version,
++    ttl
++}: Options) => Promise<boolean>;
+ export default updater;
+ export type { Options };
+Index: /tiny-updater/dist/index.js
+===================================================================
+--- /tiny-updater/dist/index.js
++++ /tiny-updater/dist/index.js
+@@ -2,13 +2,22 @@
+ import Store from './store.js';
+ import Utils from './utils.js';
+ /* MAIN */
+ //TODO: Account for non-latest releases
+-const updater = async ({ name, version, ttl = 0 }) => {
++const updater = async (options) => {
++    const {
++      authInfo,
++      name,
++      registryUrl,
++      version,
++      ttl = 0,
++    } = { __proto__: null, ...options };
+     const record = Store.get(name);
+     const timestamp = Date.now();
+     const isFresh = !record || (timestamp - record.timestampFetch) >= ttl;
+-    const latest = isFresh ? await Utils.getLatestVersion(name).catch(Utils.noop) : record?.version;
++    const latest = isFresh
++      ? await Utils.getLatestVersion(name, { authInfo, registryUrl }).catch(Utils.noop)
++      : record?.version;
+     if (!latest)
+         return false;
+     if (isFresh) {
+         const record = { timestampFetch: timestamp, timestampNotification: timestamp, version: latest };
+Index: /tiny-updater/dist/types.d.ts
+===================================================================
+--- /tiny-updater/dist/types.d.ts
++++ /tiny-updater/dist/types.d.ts
+@@ -1,11 +1,31 @@
++
++type AuthInfo = {
++    type: string;
++    token: string;
++};
+ type Options = {
++    authInfo?: AuthInfo | undefined;
+     name: string;
++    registryUrl?: string | undefined;
+     version: string;
+-    ttl?: number;
++    ttl?: number | undefined;
+ };
+ type StoreRecord = {
+     timestampFetch: number;
+     timestampNotification: number;
+     version: string;
+ };
+-export type { Options, StoreRecord };
++type UtilsFetchOptions = {
++    authInfo?: AuthInfo | undefined;
++};
++type UtilsGetLatestVersionOptions = {
++    authInfo?: AuthInfo | undefined;
++    registryUrl?: string | undefined;
++};
++export type {
++  AuthInfo,
++  Options,
++  StoreRecord,
++  UtilsFetchOptions,
++  UtilsGetLatestVersionOptions
++};
+Index: /tiny-updater/dist/utils.d.ts
+===================================================================
+--- /tiny-updater/dist/utils.d.ts
++++ /tiny-updater/dist/utils.d.ts
+@@ -1,10 +1,14 @@
++import { UtilsFetchOptions, UtilsGetLatestVersionOptions } from './types';
+ declare const Utils: {
+-    fetch: (url: string) => Promise<{
++    fetch: (url: string, options?: UtilsFetchOptions | undefined) => Promise<{
+         version?: string;
+     }>;
+     getExitSignal: () => AbortSignal;
+-    getLatestVersion: (name: string) => Promise<string | undefined>;
++    getLatestVersion: (
++        name: string,
++        options?: UtilsGetLatestVersionOptions | undefined
++    ) => Promise<string | undefined>;
+     isNumber: (value: unknown) => value is number;
+     isString: (value: unknown) => value is string;
+     isUpdateAvailable: (current: string, latest: string) => boolean;
+     noop: () => undefined;
+Index: /tiny-updater/dist/utils.js
+===================================================================
+--- /tiny-updater/dist/utils.js
++++ /tiny-updater/dist/utils.js
+@@ -4,23 +4,35 @@
+ import compare from './compare.js';
+ /* MAIN */
+ const Utils = {
+     /* API */
+-    fetch: async (url) => {
++    fetch: async (url, options = {}) => {
++        const { authInfo } = { __proto__: null, ...options };
++        const headers = new Headers({
++          'Accept': 'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*'
++        });
++        if (authInfo) {
++          headers.set('Authorization', `${authInfo.type} ${authInfo.token}`);
++        }
+         const signal = Utils.getExitSignal();
+-        const request = await fetch(url, { signal });
++        const request = await fetch(url, { headers, signal });
+         const json = await request.json();
+         return json;
+     },
+     getExitSignal: () => {
+         const aborter = new AbortController();
+         whenExit(() => aborter.abort());
+         return aborter.signal;
+     },
+-    getLatestVersion: async (name) => {
+-        const latestUrl = `https://registry.npmjs.org/${name}/latest`;
+-        const latest = await Utils.fetch(latestUrl);
+-        return latest.version;
++    getLatestVersion: async (name, options = {}) => {
++        const {
++          authInfo,
++          registryUrl = 'https://registry.npmjs.org/',
++        } = { __proto__: null, ...options };
++        const maybeSlash = registryUrl.endsWith('/') ? '' : '/';
++        const latestUrl = `${registryUrl}${maybeSlash}${name}/latest`;
++        const json = await Utils.fetch(latestUrl, { authInfo });
++        return json.version;
+     },
+     isNumber: (value) => {
+         return typeof value === 'number';
+     },

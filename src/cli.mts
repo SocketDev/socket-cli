@@ -4,6 +4,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import meow from 'meow'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
+import lookupRegistryAuthToken from 'registry-auth-token'
+import lookupRegistryUrl from 'registry-url'
 import updateNotifier from 'tiny-updater'
 
 import { debugFn, debugLog } from '@socketsecurity/registry/lib/debug'
@@ -46,13 +48,15 @@ const __filename = fileURLToPath(import.meta.url)
 
 const { SOCKET_CLI_BIN_NAME } = constants
 
-// TODO: Add autocompletion using https://socket.dev/npm/package/omelette
 void (async () => {
+  const registryUrl = lookupRegistryUrl()
   await updateNotifier({
+    authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
     name: SOCKET_CLI_BIN_NAME,
+    registryUrl,
+    ttl: 86_400_000 /* 24 hours in milliseconds */,
     // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
     version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
-    ttl: 86_400_000 /* 24 hours in milliseconds */,
   })
 
   try {
