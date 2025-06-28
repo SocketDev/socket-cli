@@ -22,7 +22,7 @@ import {
 import { applyRange } from '../../utils/semver.mts'
 import { getOverridesDataPnpm } from '../optimize/get-overrides-by-agent.mts'
 
-import type { FixOptions, InstallOptions } from './agent-fix.mts'
+import type { FixConfig, InstallOptions } from './agent-fix.mts'
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { CResult, StringKeyValueObject } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
@@ -59,9 +59,9 @@ async function install(
 
 export async function pnpmFix(
   pkgEnvDetails: EnvDetails,
-  options: FixOptions,
+  fixConfig: FixConfig,
 ): Promise<CResult<{ fixed: boolean }>> {
-  const { cwd, limit, purls, spinner } = options
+  const { cwd, limit, purls, spinner } = fixConfig
 
   spinner?.start()
 
@@ -229,6 +229,6 @@ export async function pnpmFix(
     },
     ciEnv,
     openPrs,
-    options,
+    fixConfig,
   )
 }

@@ -60,13 +60,13 @@ import type { AlertsByPurl } from '../../utils/socket-package-alert.mts'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-export type FixOptions = {
+export type FixConfig = {
   autoMerge: boolean
   cwd: string
   limit: number
   purls: string[]
   rangeStyle: RangeStyle
-  spinner?: Spinner | undefined
+  spinner: Spinner | undefined
   test: boolean
   testScript: string
 }
@@ -83,7 +83,7 @@ export type InstallPhaseHandler = (
   oldVersion: string,
   newVersion: string,
   vulnerableVersionRange: string,
-  options: FixOptions,
+  fixConfig: FixConfig,
 ) => Promise<void>
 
 export type Installer = (
@@ -110,11 +110,11 @@ export async function agentFix(
   },
   ciEnv: CiEnv | null,
   openPrs: PrMatch[],
-  options: FixOptions,
+  fixConfig: FixConfig,
 ): Promise<CResult<{ fixed: boolean }>> {
-  const { autoMerge, cwd, limit, rangeStyle, test, testScript } = options
-  const { spinner } = constants
   const { pkgPath: rootPath } = pkgEnvDetails
+  const { autoMerge, cwd, limit, rangeStyle, spinner, test, testScript } =
+    fixConfig
 
   let count = 0
 
@@ -342,7 +342,7 @@ export async function agentFix(
             oldVersion,
             newVersion,
             vulnerableVersionRange,
-            options,
+            fixConfig,
           )
           updatePackageJsonFromNode(
             editablePkgJson,
@@ -393,7 +393,7 @@ export async function agentFix(
                 oldVersion,
                 newVersion,
                 vulnerableVersionRange,
-                options,
+                fixConfig,
               )
               if (test) {
                 spinner?.info(`Testing ${newId} in ${workspace}.`)
@@ -574,7 +574,7 @@ export async function agentFix(
                 oldVersion,
                 newVersion,
                 vulnerableVersionRange,
-                options,
+                fixConfig,
               )
               // eslint-disable-next-line no-await-in-loop
               await Promise.all([
