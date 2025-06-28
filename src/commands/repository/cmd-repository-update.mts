@@ -93,8 +93,12 @@ async function run(
   })
 
   const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
+
   const [repoName = ''] = cli.input
+
+  const hasApiToken = hasDefaultToken()
+
+  const noLegacy = !cli.flags['repoName']
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
@@ -102,9 +106,7 @@ async function run(
     !!dryRun,
   )
 
-  const hasApiToken = hasDefaultToken()
-
-  const noLegacy = !cli.flags['repoName']
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,

@@ -124,9 +124,14 @@ async function run(
     markdown,
     org: orgFlag,
   } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
+
   const [repo = '', branchArg = ''] = cli.input
+
   const branch = String(branchFlag || branchArg || '')
+
+  const hasApiToken = hasDefaultToken()
+
+  const noLegacy = !cli.flags['repo']
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
@@ -134,9 +139,7 @@ async function run(
     !!dryRun,
   )
 
-  const hasApiToken = hasDefaultToken()
-
-  const noLegacy = !cli.flags['repo']
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,

@@ -62,9 +62,10 @@ async function run(
   })
 
   const { json, markdown } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
 
   const [key = ''] = cli.input
+
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,

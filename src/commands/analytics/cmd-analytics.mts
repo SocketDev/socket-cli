@@ -68,9 +68,6 @@ async function run(
     parentName,
   })
 
-  const { file, json, markdown } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
-
   // Supported inputs:
   // - []        (no args)
   // - ['org']
@@ -82,6 +79,7 @@ async function run(
   let scope = 'org'
   let time = '30'
   let repoName = ''
+
   if (cli.input[0] === 'org') {
     if (cli.input[1]) {
       time = cli.input[1]
@@ -98,10 +96,14 @@ async function run(
     time = cli.input[0]
   }
 
+  const { file, json, markdown } = cli.flags
+
   const hasApiToken = hasDefaultToken()
 
   const noLegacy =
     !cli.flags['scope'] && !cli.flags['repo'] && !cli.flags['time']
+
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,
