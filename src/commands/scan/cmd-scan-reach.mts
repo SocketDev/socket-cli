@@ -2,7 +2,7 @@ import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { handleScanReach } from './handle-reach-scan.mts'
+import { handleScanReach } from './handle-scan-reach.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
