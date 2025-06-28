@@ -24,7 +24,7 @@ import { getAlertsMapFromArborist } from '../../shadow/npm/arborist-helpers.mts'
 import { runAgentInstall } from '../../utils/agent.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 
-import type { FixOptions, InstallOptions } from './agent-fix.mts'
+import type { FixConfig, InstallOptions } from './agent-fix.mts'
 import type {
   ArboristOptions,
   NodeClass,
@@ -54,9 +54,9 @@ async function install(
 
 export async function npmFix(
   pkgEnvDetails: EnvDetails,
-  options: FixOptions,
+  fixConfig: FixConfig,
 ): Promise<CResult<{ fixed: boolean }>> {
-  const { limit, purls, spinner } = options
+  const { limit, purls, spinner } = fixConfig
 
   spinner?.start()
 
@@ -150,6 +150,6 @@ export async function npmFix(
     },
     ciEnv,
     openPrs,
-    options,
+    fixConfig,
   )
 }

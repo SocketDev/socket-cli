@@ -11,14 +11,14 @@ import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { spawnCoana } from '../../utils/coana.mts'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment.mts'
 
-import type { FixOptions } from './agent-fix.mts'
+import type { FixConfig } from './agent-fix.mts'
 import type { OutputKind } from '../../types.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 
 const { NPM, PNPM } = constants
 
-export type HandleFixOptions = Remap<
-  FixOptions & {
+export type HandleFixConfig = Remap<
+  FixConfig & {
     ghsas: string[]
     outputKind: OutputKind
     unknownFlags: string[]
@@ -33,16 +33,14 @@ export async function handleFix({
   outputKind,
   purls,
   rangeStyle,
+  spinner,
   test,
   testScript,
   unknownFlags,
-}: HandleFixOptions) {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
+}: HandleFixConfig) {
   let { length: ghsasCount } = ghsas
   if (ghsasCount) {
-    spinner.start('Fetching GHSA IDs...')
+    spinner?.start('Fetching GHSA IDs...')
 
     if (ghsasCount === 1 && ghsas[0] === 'auto') {
       const autoCResult = await spawnCoana(
@@ -50,7 +48,7 @@ export async function handleFix({
         { cwd, spinner },
       )
 
-      spinner.stop()
+      spinner?.stop()
 
       if (autoCResult.ok) {
         ghsas = cmdFlagValueToArray(
@@ -68,11 +66,11 @@ export async function handleFix({
         ghsasCount = 0
       }
 
-      spinner.start()
+      spinner?.start()
     }
 
     if (ghsasCount) {
-      spinner.info(`Found ${ghsasCount} GHSA ${pluralize('ID', ghsasCount)}.`)
+      spinner?.info(`Found ${ghsasCount} GHSA ${pluralize('ID', ghsasCount)}.`)
 
       const applyFixesCResult = await spawnCoana(
         [
@@ -85,7 +83,7 @@ export async function handleFix({
         { cwd, spinner },
       )
 
-      spinner.stop()
+      spinner?.stop()
 
       if (!applyFixesCResult.ok) {
         debugFn('coana fail:', {
@@ -98,7 +96,7 @@ export async function handleFix({
       return
     }
 
-    spinner.infoAndStop('No GHSA IDs found.')
+    spinner?.infoAndStop('No GHSA IDs found.')
 
     await outputFixResult(
       {
