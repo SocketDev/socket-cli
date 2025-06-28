@@ -421,14 +421,12 @@ ${isRootCommand ? `      $ ${name} scan create --json` : ''}${isRootCommand ? `\
  */
 export function meowOrExit({
   argv,
-  collectUnknownFlags = true,
   config,
   importMeta,
   parentName,
 }: {
   allowUnknownFlags?: boolean | undefined
   argv: readonly string[]
-  collectUnknownFlags?: boolean | undefined
   config: CliCommandConfig
   parentName: string
   importMeta: ImportMeta
@@ -441,7 +439,7 @@ export function meowOrExit({
     argv,
     autoHelp: false, // meow will exit(0) before printing the banner.
     booleanDefault: undefined, // We want to detect whether a bool flag is given at all.
-    collectUnknownFlags,
+    collectUnknownFlags: true,
     description: config.description,
     flags: config.flags,
     help: config.help(command, config),
