@@ -126,6 +126,7 @@ async function run(
     json: boolean
     markdown: boolean
   }
+
   const outputKind = getOutputKind(json, markdown)
 
   let rangeStyle = cli.flags['rangeStyle'] as RangeStyle
@@ -148,6 +149,10 @@ async function run(
     return
   }
 
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+  const { unknownFlags } = cli
+
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
@@ -167,7 +172,6 @@ async function run(
       : Infinity) || Infinity
   const purls = cmdFlagValueToArray(cli.flags['purl'])
   const testScript = String(cli.flags['testScript'] || 'test')
-  const { unknownFlags } = cli
 
   await handleFix({
     autoMerge,
@@ -177,6 +181,7 @@ async function run(
     outputKind,
     purls,
     rangeStyle,
+    spinner,
     test,
     testScript,
     unknownFlags,
