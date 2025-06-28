@@ -173,13 +173,13 @@ async function run(
     type: typef,
     version,
   } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
 
-  const argSet = new Set(cli.input)
   let ecoFilter = String(eco || '')
   let versionFilter = String(version || '')
   let typeFilter = String(typef || '')
   let nameFilter = String(pkg || '')
+
+  const argSet = new Set(cli.input)
   cli.input.some(str => {
     if (ECOSYSTEMS.has(str)) {
       ecoFilter = str
@@ -187,6 +187,7 @@ async function run(
       return true
     }
   })
+
   cli.input.some(str => {
     if (/^v?\d+\.\d+\.\d+$/.test(str)) {
       versionFilter = str
@@ -194,6 +195,7 @@ async function run(
       return true
     }
   })
+
   cli.input.some(str => {
     if (TYPE_FILTERS.has(str)) {
       typeFilter = str
@@ -201,6 +203,7 @@ async function run(
       return true
     }
   })
+
   const haves = new Set([ecoFilter, versionFilter, typeFilter])
   cli.input.some(str => {
     if (!haves.has(str)) {
@@ -216,13 +219,15 @@ async function run(
     )
   }
 
+  const hasApiToken = hasDefaultToken()
+
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
     !!interactive,
     !!dryRun,
   )
 
-  const hasApiToken = hasDefaultToken()
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,

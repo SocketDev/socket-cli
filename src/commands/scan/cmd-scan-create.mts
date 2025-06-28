@@ -222,10 +222,6 @@ async function run(
     repo: string
     report?: boolean
   }
-  const outputKind = getOutputKind(json, markdown)
-
-  const pendingHead = tmp ? false : pendingHeadFlag
-
   let [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
     interactive,
@@ -283,6 +279,10 @@ async function run(
   // must come from data we already know. Don't error on missing api token yet.
   // If the api-token is not set, ignore it for the sake of suggestions.
   const hasApiToken = hasDefaultToken()
+
+  const outputKind = getOutputKind(json, markdown)
+
+  const pendingHead = tmp ? false : pendingHeadFlag
 
   // If we updated any inputs then we should print the command line to repeat
   // the command without requiring user input, as a suggestion.
