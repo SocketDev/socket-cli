@@ -6,11 +6,17 @@ const { DOT_SOCKET_DOT_FACTS_JSON } = constants
 
 import type { OutputKind } from '../../types.mts'
 
-export async function handleScanReach(
-  argv: string[] | readonly string[],
-  cwd: string,
-  outputKind: OutputKind,
-) {
+export type HandleScanReachConfig = {
+  cwd: string
+  outputKind: OutputKind
+  unknownFlags: string[]
+}
+
+export async function handleScanReach({
+  cwd,
+  outputKind,
+  unknownFlags,
+}: HandleScanReachConfig) {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
@@ -25,7 +31,7 @@ export async function handleScanReach(
       '--socket-mode',
       DOT_SOCKET_DOT_FACTS_JSON,
       '--disable-report-submission',
-      ...argv,
+      ...unknownFlags,
     ],
     { cwd, spinner },
   )
