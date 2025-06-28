@@ -80,11 +80,12 @@ async function run(
   })
 
   const { json, markdown } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
 
   const [ecosystem = '', purl] = cli.input
 
   const hasApiToken = hasDefaultToken()
+
+  const outputKind = getOutputKind(json, markdown)
 
   const { purls, valid } = parsePackageSpecifiers(ecosystem, purl ? [purl] : [])
 

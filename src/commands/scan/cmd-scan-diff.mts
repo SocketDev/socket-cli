@@ -102,9 +102,11 @@ async function run(
     markdown,
     org: orgFlag,
   } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
+
+  const hasApiToken = hasDefaultToken()
+
   let [id1 = '', id2 = ''] = cli.input
-  // Support dropping in full socket urls to an sbom
+  // Support dropping in full socket urls to an sbom.
   if (id1.startsWith(SOCKET_SBOM_URL_PREFIX)) {
     id1 = id1.slice(SOCKET_SBOM_URL_PREFIX_LENGTH)
   }
@@ -118,7 +120,7 @@ async function run(
     !!dryRun,
   )
 
-  const hasApiToken = hasDefaultToken()
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,

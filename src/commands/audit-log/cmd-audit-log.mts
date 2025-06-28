@@ -101,9 +101,13 @@ async function run(
     page,
     perPage,
   } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
+
   let [typeFilter = ''] = cli.input
   typeFilter = String(typeFilter)
+
+  const hasApiToken = hasDefaultToken()
+
+  const noLegacy = !cli.flags['type']
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
@@ -111,9 +115,7 @@ async function run(
     !!dryRun,
   )
 
-  const hasApiToken = hasDefaultToken()
-
-  const noLegacy = !cli.flags['type']
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,

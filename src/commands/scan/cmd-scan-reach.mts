@@ -54,11 +54,8 @@ async function run(
   })
 
   const { dryRun, json, markdown } = cli.flags
+
   const outputKind = getOutputKind(json, markdown)
-  let [cwd = '.'] = cli.input
-  // Note: path.resolve vs .join:
-  // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
 
   const wasValidInput = checkCommandInput(outputKind)
   if (!wasValidInput) {
@@ -70,5 +67,16 @@ async function run(
     return
   }
 
-  await handleScanReach(argv, cwd, outputKind)
+  const { unknownFlags } = cli
+
+  let [cwd = '.'] = cli.input
+  // Note: path.resolve vs .join:
+  // If given path is absolute then cwd should not affect it.
+  cwd = path.resolve(process.cwd(), cwd)
+
+  await handleScanReach({
+    cwd,
+    outputKind,
+    unknownFlags,
+  })
 }

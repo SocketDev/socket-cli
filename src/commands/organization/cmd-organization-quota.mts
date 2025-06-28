@@ -52,11 +52,13 @@ async function run(
     parentName,
   })
 
-  const json = Boolean(cli.flags['json'])
-  const markdown = Boolean(cli.flags['markdown'])
-  const outputKind = getOutputKind(json, markdown)
-
   const hasApiToken = hasDefaultToken()
+
+  const json = Boolean(cli.flags['json'])
+
+  const markdown = Boolean(cli.flags['markdown'])
+
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,

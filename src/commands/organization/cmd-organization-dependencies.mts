@@ -68,9 +68,10 @@ async function run(
   })
 
   const { json, limit, markdown, offset } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
 
   const hasApiToken = hasDefaultToken()
+
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,

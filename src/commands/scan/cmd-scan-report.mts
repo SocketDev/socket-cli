@@ -127,8 +127,10 @@ async function run(
     org: orgFlag,
     reportLevel = 'warn',
   } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
+
   const [scanId = '', file = ''] = cli.input
+
+  const hasApiToken = hasDefaultToken()
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
@@ -136,7 +138,7 @@ async function run(
     !!dryRun,
   )
 
-  const hasApiToken = hasDefaultToken()
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,
