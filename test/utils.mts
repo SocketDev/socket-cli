@@ -80,9 +80,16 @@ function normalizeLogSymbols(str: string): string {
 }
 
 function toAsciiSafeString(str: string): string {
+  // The asciiUnsafeRegexp match characters that are:
+  //   * Control characters in the Unicode range:
+  //     - \u0000 to \u0007 (e.g., NUL, BEL)
+  //     - \u0009 (Tab, but note: not \u0008 Backspace or \u000A Newline)
+  //     - \u000B to \u001F (other non-printable control characters)
+  //   * All non-ASCII characters:
+  //     - \u0080 to \uFFFF (extended Unicode)
   // eslint-disable-next-line no-control-regex
-  const asciiSafeRegex = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
-  return str.replace(asciiSafeRegex, (m: string) => {
+  const asciiUnsafeRegexp = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
+  return str.replace(asciiUnsafeRegexp, m => {
     const code = m.charCodeAt(0)
     return code < 255
       ? `\\x${code.toString(16).padStart(2, '0')}`
