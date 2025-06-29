@@ -140,7 +140,7 @@ export async function handleFix({
       {
         ok: false,
         message: 'Not supported.',
-        cause: `${agent} is not supported by this command at the moment.`,
+        cause: `${agent} is not supported by this command.`,
       },
       outputKind,
     )
