@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import { LOG_SYMBOLS } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../src/constants.mts'
 
@@ -57,11 +58,13 @@ describe('Socket manifest cdxgen command', async () => {
     expect.extend({
       toHaveStderrInclude(received, expected) {
         const { isNot } = this
+        const strippedExpected = stripAnsi(expected)
+        const stderr = received?.stderr
         return {
           // do not alter your "pass" based on isNot. Vitest does it for you
-          pass: received?.stderr?.includes?.(expected) ?? false,
+          pass: stderr?.includes?.(strippedExpected) ?? false,
           message: () =>
-            `spawn.stderr ${isNot ? 'does NOT include' : 'includes'} \`${expected}\`: ${received?.stderr}`,
+            `spawn.stderr ${isNot ? 'does NOT include' : 'includes'} \`${strippedExpected}\`: ${stderr}`,
         }
       },
     })

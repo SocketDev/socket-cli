@@ -11,10 +11,7 @@ import { Logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
-import {
-  isNonEmptyString,
-  stripAnsi,
-} from '@socketsecurity/registry/lib/strings'
+import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { cmdPrefixMessage } from './cmd.mts'
 import { findUp, readFileBinary, readFileUtf8 } from './fs.mts'
@@ -162,15 +159,13 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
             // To print a Yarn lockfile to your console without writing it to disk
             // use `bun bun.lockb`.
             // https://bun.sh/guides/install/yarnlock
-            return stripAnsi(
-              (
-                await spawn(agentExecPath, [lockPath], {
-                  cwd,
-                  // Lazily access constants.WIN32.
-                  shell: constants.WIN32,
-                })
-              ).stdout.trim(),
-            )
+            return (
+              await spawn(agentExecPath, [lockPath], {
+                cwd,
+                // Lazily access constants.WIN32.
+                shell: constants.WIN32,
+              })
+            ).stdout
           }
           return undefined
         },
@@ -227,15 +222,14 @@ async function getAgentVersion(
       // and tildes (~).
       semver.coerce(
         // All package managers support the "--version" flag.
-        stripAnsi(
-          (
-            await spawn(agentExecPath, ['--version'], {
-              cwd,
-              // Lazily access constants.WIN32.
-              shell: constants.WIN32,
-            })
-          ).stdout.trim(),
-        ),
+
+        (
+          await spawn(agentExecPath, ['--version'], {
+            cwd,
+            // Lazily access constants.WIN32.
+            shell: constants.WIN32,
+          })
+        ).stdout,
       ) ?? undefined
   } catch (e) {
     debugFn('catch: unexpected\n', e)

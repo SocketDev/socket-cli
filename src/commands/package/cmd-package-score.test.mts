@@ -82,14 +82,14 @@ describe('socket package score', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket package score\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+        \\xd7  Input error:  Please review the input requirements and try again
 
-          - First parameter must be an ecosystem or the whole purl (\\x1b[31mbad\\x1b[39m)
+          - First parameter must be an ecosystem or the whole purl (bad)
 
-          - Expecting at least one package (\\x1b[31mmissing\\x1b[39m)
+          - Expecting at least one package (missing)
 
-          - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)
-        \\x1b[22m"
+          - You need to be logged in to use this command. See \`socket login\`. (missing API token)
+        "
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

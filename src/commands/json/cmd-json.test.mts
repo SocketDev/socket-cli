@@ -52,8 +52,8 @@ describe('socket json', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
 
-        \\x1b[34mi\\x1b[39m Target cwd: <redacted>
-        \\x1b[31m\\xd7\\x1b[39m Not found: <redacted>"
+        i Target cwd: <redacted>
+        \\xd7 Not found: <redacted>"
       `)
 
       expect(code, 'not found is failure').toBe(1)
@@ -73,8 +73,8 @@ describe('socket json', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
 
-        \\x1b[34mi\\x1b[39m Target cwd: <redacted>
-        \\x1b[31m\\xd7\\x1b[39m Not found: <redacted>"
+        i Target cwd: <redacted>
+        \\xd7 Not found: <redacted>"
       `)
 
       expect(code, 'not found is failure').toBe(1)
@@ -100,8 +100,8 @@ describe('socket json', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
 
-        \\x1b[34mi\\x1b[39m Target cwd: <redacted>
-        \\x1b[31m\\xd7\\x1b[39m Not found: <redacted>"
+        i Target cwd: <redacted>
+        \\xd7 Not found: <redacted>"
       `)
 
       expect(code, 'not found is failure').toBe(1)
@@ -140,8 +140,8 @@ describe('socket json', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket json\`, cwd: <redacted>
 
-        \\x1b[34mi\\x1b[39m Target cwd: <redacted>
-        \\x1b[32m\\u221a\\x1b[39m This is the contents of <redacted>:"
+        i Target cwd: <redacted>
+        \\u221a This is the contents of <redacted>:"
       `)
 
       expect(code, 'found is ok').toBe(0)

@@ -5,7 +5,6 @@ import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../../constants.mts'
 import { getPurlObject } from '../../utils/purl.mts'
@@ -88,10 +87,11 @@ export async function getBaseGitBranch(cwd = process.cwd()): Promise<string> {
   // 3. Try to resolve the default remote branch using 'git remote show origin'.
   // This handles detached HEADs or workflows triggered by tags/releases.
   try {
-    const stdout = stripAnsi(
-      (await spawn('git', ['remote', 'show', 'origin'], { cwd })).stdout.trim(),
-    )
-    const match = /(?<=HEAD branch: ).+/.exec(stdout)
+    const originDetails = (
+      await spawn('git', ['remote', 'show', 'origin'], { cwd })
+    ).stdout
+
+    const match = /(?<=HEAD branch: ).+/.exec(originDetails)
     if (match?.[0]) {
       return match[0].trim()
     }
@@ -266,11 +266,9 @@ export async function gitRepoInfo(
   cwd = process.cwd(),
 ): Promise<RepoInfo | null> {
   try {
-    const remoteUrl = stripAnsi(
-      (
-        await spawn('git', ['remote', 'get-url', 'origin'], { cwd })
-      ).stdout.trim(),
-    )
+    const remoteUrl = (
+      await spawn('git', ['remote', 'get-url', 'origin'], { cwd })
+    ).stdout
     // 1. Handle SSH-style, e.g. git@github.com:owner/repo.git
     const sshMatch = /^git@[^:]+:([^/]+)\/(.+?)(?:\.git)?$/.exec(remoteUrl)
     if (sshMatch) {
@@ -309,11 +307,9 @@ export async function gitEnsureIdentity(
       let configValue
       try {
         // Will throw with exit code 1 if the config property is not set.
-        configValue = stripAnsi(
-          (
-            await spawn('git', ['config', '--get', prop], stdioPipeOptions)
-          ).stdout.trim(),
-        )
+        configValue = (
+          await spawn('git', ['config', '--get', prop], stdioPipeOptions)
+        ).stdout
       } catch {}
       if (configValue !== value) {
         try {
@@ -333,19 +329,16 @@ export async function gitRemoteBranchExists(
   const stdioPipeOptions: SpawnOptions = { cwd }
   try {
     return (
-      stripAnsi(
-        (
-          await spawn(
-            'git',
-            ['ls-remote', '--heads', 'origin', branch],
-            stdioPipeOptions,
-          )
-        ).stdout.trim(),
-      ).length > 0
+      (
+        await spawn(
+          'git',
+          ['ls-remote', '--heads', 'origin', branch],
+          stdioPipeOptions,
+        )
+      ).stdout.length > 0
     )
-  } catch {
-    return false
-  }
+  } catch {}
+  return false
 }
 
 export async function gitResetAndClean(
@@ -371,13 +364,14 @@ export async function gitUnstagedModifiedFiles(
 ): Promise<CResult<string[]>> {
   try {
     const stdioPipeOptions: SpawnOptions = { cwd }
-    const stdout = stripAnsi(
-      (
-        await spawn('git', ['diff', '--name-only'], stdioPipeOptions)
-      ).stdout.trim(),
-    )
-    const rawFiles = stdout.split('\n') ?? []
-    return { ok: true, data: rawFiles.map(relPath => normalizePath(relPath)) }
+    const changedFilesDetails = (
+      await spawn('git', ['diff', '--name-only'], stdioPipeOptions)
+    ).stdout
+    const rawRelPaths = changedFilesDetails.split('\n') ?? []
+    return {
+      ok: true,
+      data: rawRelPaths.map(relPath => normalizePath(relPath)),
+    }
   } catch (e) {
     debugFn('catch: git diff --name-only failed\n', e)
 

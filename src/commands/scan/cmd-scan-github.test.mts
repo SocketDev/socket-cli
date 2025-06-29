@@ -79,16 +79,16 @@ describe('socket scan github', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan github\`, cwd: <redacted>
 
-        \\x1b[33m\\u203c\\x1b[39m Unable to determine the target org. Trying to auto-discover it now...
-        \\x1b[34mi\\x1b[39m Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
 
-        \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+        \\xd7 Skipping auto-discovery of org in dry-run mode
+        \\xd7  Input error:  Please review the input requirements and try again
 
-          - This command requires an API token for access (\\x1b[31mmissing (try \`socket login\`)\\x1b[39m)
+          - This command requires an API token for access (missing (try \`socket login\`))
 
-          - This command requires a GitHub API token for access (\\x1b[31mmissing\\x1b[39m)
-        \\x1b[22m"
+          - This command requires a GitHub API token for access (missing)
+        "
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -119,10 +119,10 @@ describe('socket scan github', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan github\`, cwd: <redacted>
 
-        \\x1b[33m\\u203c\\x1b[39m Unable to determine the target org. Trying to auto-discover it now...
-        \\x1b[34mi\\x1b[39m Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
 
-        \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode"
+        \\xd7 Skipping auto-discovery of org in dry-run mode"
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
