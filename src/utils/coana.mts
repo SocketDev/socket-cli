@@ -39,7 +39,7 @@ export async function spawnCoana(
     )
     return { ok: true, data: output.stdout.trim() }
   } catch (e) {
-    const message = (e as any)?.stdout ?? (e as Error)?.message
+    const message = (e as any)?.stderr ?? (e as Error)?.message
     return { ok: false, data: e, message }
   }
 }
