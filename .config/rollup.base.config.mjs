@@ -11,6 +11,7 @@ import { purgePolyfills } from 'unplugin-purge-polyfills'
 
 import { readPackageJsonSync } from '@socketsecurity/registry/lib/packages'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
+import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../scripts/constants.js'
 import socketModifyPlugin from '../scripts/rollup/socket-modify-plugin.js'
@@ -63,9 +64,11 @@ function getSocketCliVersionHash() {
     const { version } = getRootPkgJsonSync()
     let gitHash = ''
     try {
-      gitHash = spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
-        encoding: 'utf8',
-      }).stdout.trim()
+      gitHash = stripAnsi(
+        spawnSync('git', ['rev-parse', '--short', 'HEAD'], {
+          encoding: 'utf8',
+        }).stdout.trim(),
+      )
     } catch {}
     // Make each build generate a unique version id, regardless.
     // Mostly for development: confirms the build refreshed. For prod builds
