@@ -5,7 +5,6 @@ import {
   isNpmProgressFlag,
 } from '@socketsecurity/registry/lib/npm'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import { installLinks } from './link.mts'
 import constants from '../../constants.mts'
@@ -38,16 +37,12 @@ export default async function shadowBin(
       ? await (async () => {
           const cwd = process.cwd()
           const stdioPipeOptions: SpawnOptions = { cwd }
-          const globalPrefix = stripAnsi(
-            (
-              await spawn('npm', ['prefix', '-g'], stdioPipeOptions)
-            ).stdout.trim(),
-          )
-          const npmCachePath = stripAnsi(
-            (
-              await spawn('npm', ['config', 'get', 'cache'], stdioPipeOptions)
-            ).stdout.trim(),
-          )
+          const globalPrefix = (
+            await spawn('npm', ['prefix', '-g'], stdioPipeOptions)
+          ).stdout
+          const npmCachePath = (
+            await spawn('npm', ['config', 'get', 'cache'], stdioPipeOptions)
+          ).stdout
           return [
             '--permission',
             '--allow-child-process',

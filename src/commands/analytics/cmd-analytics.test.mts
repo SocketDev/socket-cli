@@ -75,12 +75,12 @@ describe('socket analytics', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+        \\xd7  Input error:  Please review the input requirements and try again
 
-          - The time filter must either be 7, 30 or 90 (\\x1b[32mok\\x1b[39m)
+          - The time filter must either be 7, 30 or 90 (ok)
 
-          - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)
-        \\x1b[22m"
+          - You need to be logged in to use this command. See \`socket login\`. (missing API token)
+        "
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -109,12 +109,12 @@ describe('socket analytics', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+        \\xd7  Input error:  Please review the input requirements and try again
 
-          - Legacy flags are no longer supported. See v1 migration guide. (\\x1b[31mreceived legacy flags\\x1b[39m)
+          - Legacy flags are no longer supported. See v1 migration guide. (received legacy flags)
 
-          - The time filter must either be 7, 30 or 90 (\\x1b[32mok\\x1b[39m)
-        \\x1b[22m"
+          - The time filter must either be 7, 30 or 90 (ok)
+        "
       `)
 
       expect(code, 'dry-run should reject legacy flags with code 2').toBe(2)
@@ -170,12 +170,12 @@ describe('socket analytics', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+        \\xd7  Input error:  Please review the input requirements and try again
 
-          - When scope=repo, repo name should be the second argument (\\x1b[31mmissing\\x1b[39m)
+          - When scope=repo, repo name should be the second argument (missing)
 
-          - The time filter must either be 7, 30 or 90 (\\x1b[32mok\\x1b[39m)
-        \\x1b[22m"
+          - The time filter must either be 7, 30 or 90 (ok)
+        "
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -282,12 +282,12 @@ describe('socket analytics', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket analytics\`, cwd: <redacted>
 
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+        \\xd7  Input error:  Please review the input requirements and try again
 
-          - Legacy flags are no longer supported. See v1 migration guide. (\\x1b[31mreceived legacy flags\\x1b[39m)
+          - Legacy flags are no longer supported. See v1 migration guide. (received legacy flags)
 
-          - The time filter must either be 7, 30 or 90 (\\x1b[32mok\\x1b[39m)
-        \\x1b[22m"
+          - The time filter must either be 7, 30 or 90 (ok)
+        "
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

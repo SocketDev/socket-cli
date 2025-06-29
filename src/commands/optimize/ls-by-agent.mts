@@ -1,5 +1,4 @@
 import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../../constants.mts'
 
@@ -48,15 +47,13 @@ function parsableToQueryStdout(stdout: string) {
 async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
   let stdout = ''
   try {
-    stdout = stripAnsi(
-      (
-        await spawn(npmExecPath, ['query', ':not(.dev)'], {
-          cwd,
-          // Lazily access constants.WIN32.
-          shell: constants.WIN32,
-        })
-      ).stdout.trim(),
-    )
+    stdout = (
+      await spawn(npmExecPath, ['query', ':not(.dev)'], {
+        cwd,
+        // Lazily access constants.WIN32.
+        shell: constants.WIN32,
+      })
+    ).stdout
   } catch {}
   return cleanupQueryStdout(stdout)
 }
@@ -65,15 +62,13 @@ async function lsBun(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
   try {
     // Bun does not support filtering by production packages yet.
     // https://github.com/oven-sh/bun/issues/8283
-    return stripAnsi(
-      (
-        await spawn(pkgEnvDetails.agentExecPath, ['pm', 'ls', '--all'], {
-          cwd,
-          // Lazily access constants.WIN32.
-          shell: constants.WIN32,
-        })
-      ).stdout.trim(),
-    )
+    return (
+      await spawn(pkgEnvDetails.agentExecPath, ['pm', 'ls', '--all'], {
+        cwd,
+        // Lazily access constants.WIN32.
+        shell: constants.WIN32,
+      })
+    ).stdout
   } catch {}
   return ''
 }
@@ -96,21 +91,19 @@ async function lsPnpm(
   }
   let stdout = ''
   try {
-    stdout = stripAnsi(
-      (
-        await spawn(
-          pkgEnvDetails.agentExecPath,
-          // Pnpm uses the alternative spelling of parsable.
-          // https://en.wiktionary.org/wiki/parsable
-          ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
-          {
-            cwd,
-            // Lazily access constants.WIN32.
-            shell: constants.WIN32,
-          },
-        )
-      ).stdout.trim(),
-    )
+    stdout = (
+      await spawn(
+        pkgEnvDetails.agentExecPath,
+        // Pnpm uses the alternative spelling of parsable.
+        // https://en.wiktionary.org/wiki/parsable
+        ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
+        {
+          cwd,
+          // Lazily access constants.WIN32.
+          shell: constants.WIN32,
+        },
+      )
+    ).stdout
   } catch {}
   return parsableToQueryStdout(stdout)
 }
@@ -119,19 +112,17 @@ async function lsVlt(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
   let stdout = ''
   try {
     // See https://docs.vlt.sh/cli/commands/list#options.
-    stdout = stripAnsi(
-      (
-        await spawn(
-          pkgEnvDetails.agentExecPath,
-          ['ls', '--view', 'human', ':not(.dev)'],
-          {
-            cwd,
-            // Lazily access constants.WIN32.
-            shell: constants.WIN32,
-          },
-        )
-      ).stdout.trim(),
-    )
+    stdout = (
+      await spawn(
+        pkgEnvDetails.agentExecPath,
+        ['ls', '--view', 'human', ':not(.dev)'],
+        {
+          cwd,
+          // Lazily access constants.WIN32.
+          shell: constants.WIN32,
+        },
+      )
+    ).stdout
   } catch {}
   return cleanupQueryStdout(stdout)
 }
@@ -141,21 +132,19 @@ async function lsYarnBerry(
   cwd: string,
 ): Promise<string> {
   try {
-    return stripAnsi(
-      // Yarn Berry does not support filtering by production packages yet.
-      // https://github.com/yarnpkg/berry/issues/5117
-      (
-        await spawn(
-          pkgEnvDetails.agentExecPath,
-          ['info', '--recursive', '--name-only'],
-          {
-            cwd,
-            // Lazily access constants.WIN32.
-            shell: constants.WIN32,
-          },
-        )
-      ).stdout.trim(),
-    )
+    // Yarn Berry does not support filtering by production packages yet.
+    // https://github.com/yarnpkg/berry/issues/5117
+    return (
+      await spawn(
+        pkgEnvDetails.agentExecPath,
+        ['info', '--recursive', '--name-only'],
+        {
+          cwd,
+          // Lazily access constants.WIN32.
+          shell: constants.WIN32,
+        },
+      )
+    ).stdout
   } catch {}
   return ''
 }
@@ -169,15 +158,13 @@ async function lsYarnClassic(
     // https://github.com/yarnpkg/yarn/releases/tag/v1.0.0
     // > Fix: Excludes dev dependencies from the yarn list output when the
     //   environment is production
-    return stripAnsi(
-      (
-        await spawn(pkgEnvDetails.agentExecPath, ['list', '--prod'], {
-          cwd,
-          // Lazily access constants.WIN32.
-          shell: constants.WIN32,
-        })
-      ).stdout.trim(),
-    )
+    return (
+      await spawn(pkgEnvDetails.agentExecPath, ['list', '--prod'], {
+        cwd,
+        // Lazily access constants.WIN32.
+        shell: constants.WIN32,
+      })
+    ).stdout
   } catch {}
   return ''
 }
