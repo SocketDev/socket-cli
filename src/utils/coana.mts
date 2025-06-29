@@ -1,5 +1,4 @@
 import { spawn } from '@socketsecurity/registry/lib/spawn'
-import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../constants.mts'
 import { getDefaultToken } from './sdk.mts'
@@ -38,10 +37,10 @@ export async function spawnCoana(
       },
       extra,
     )
-    return { ok: true, data: stripAnsi(output.stdout.trim()) }
+    return { ok: true, data: output.stdout }
   } catch (e) {
     const stderr = (e as any)?.stderr
-    const message = stderr ? stripAnsi(stderr.trim()) : (e as Error)?.message
+    const message = stderr ? stderr : (e as Error)?.message
     return { ok: false, data: e, message }
   }
 }

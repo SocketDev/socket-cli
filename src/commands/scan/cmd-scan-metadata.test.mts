@@ -62,18 +62,18 @@ describe('socket scan metadata', async () => {
           |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan metadata\`, cwd: <redacted>
 
-        \\x1b[33m\\u203c\\x1b[39m Unable to determine the target org. Trying to auto-discover it now...
-        \\x1b[34mi\\x1b[39m Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        \\u203c Unable to determine the target org. Trying to auto-discover it now...
+        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
 
-        \\x1b[31m\\xd7\\x1b[39m Skipping auto-discovery of org in dry-run mode
-        \\x1b[31m\\xd7\\x1b[39m \\x1b[41m\\x1b[1m\\x1b[37m Input error: \\x1b[39m\\x1b[22m\\x1b[49m \\x1b[1mPlease review the input requirements and try again
+        \\xd7 Skipping auto-discovery of org in dry-run mode
+        \\xd7  Input error:  Please review the input requirements and try again
 
-          - Org name by default setting, --org, or auto-discovered (\\x1b[31mmissing\\x1b[39m)
+          - Org name by default setting, --org, or auto-discovered (missing)
 
-          - Scan ID to inspect as argument (\\x1b[31mmissing\\x1b[39m)
+          - Scan ID to inspect as argument (missing)
 
-          - You need to be logged in to use this command. See \`socket login\`. (\\x1b[31mmissing API token\\x1b[39m)
-        \\x1b[22m"
+          - You need to be logged in to use this command. See \`socket login\`. (missing API token)
+        "
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
