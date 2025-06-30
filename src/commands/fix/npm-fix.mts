@@ -94,7 +94,6 @@ export async function npmFix(
       flatConfig.nodeVersion = constants.NODE_VERSION
       flatConfig.npmVersion = pkgEnvDetails.agentVersion.toString()
       flatConfig.npmCommand = 'install'
-      debugFn('npm config:', flatConfig)
 
       const arb = new Arborist({
         path: pkgEnvDetails.pkgPath,
