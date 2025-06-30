@@ -258,11 +258,13 @@ export default function baseConfig(extendConfig = {}) {
           return obj
         }, {}),
       }),
-      // Convert un-prefixed built-in imports into "node:"" prefixed forms.
-      replacePlugin({
-        delimiters: ['(?<=(?:require[$\\w]*\\(|from\\s*)["\'])', '(?=["\'])'],
-        preventAssignment: false,
-        values: builtinAliases,
+      // Remove dangling require calls, e.g. require calls not associated with
+      // an import binding:
+      //   require('node:util')
+      //   require('graceful-fs')
+      socketModifyPlugin({
+        find: /^\s*require[$\w]*\(["'].+?["']\);?\r?\n/gm,
+        replace: '',
       }),
       // Replace require calls to ESM 'tiny-colors' with CJS 'yoctocolors-cjs'
       // because we npm override 'tiny-colors' with 'yoctocolors-cjs' for dist
@@ -283,13 +285,11 @@ export default function baseConfig(extendConfig = {}) {
           )
         },
       }),
-      // Remove dangling require calls, e.g. require calls not associated with
-      // an import binding:
-      //   require('node:util')
-      //   require('graceful-fs')
-      socketModifyPlugin({
-        find: /^\s*require[$\w]*\(["'].+?["']\);?\r?\n/gm,
-        replace: '',
+      // Convert un-prefixed built-in imports into "node:"" prefixed forms.
+      replacePlugin({
+        delimiters: ['(?<=(?:require[$\\w]*\\(|from\\s*)["\'])', '(?=["\'])'],
+        preventAssignment: false,
+        values: builtinAliases,
       }),
       // Reduce duplicate require('node:...') variable assignments.
       socketModifyPlugin({
