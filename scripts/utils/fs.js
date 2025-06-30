@@ -11,8 +11,8 @@ function findUpSync(name, { cwd = process.cwd() }) {
     for (const name of names) {
       const filePath = path.join(dir, name)
       try {
-        const stats = statSync(filePath)
-        if (stats.isFile()) {
+        const stats = statSync(filePath, { throwIfNoEntry: false })
+        if (stats?.isFile()) {
           return filePath
         }
       } catch {}
