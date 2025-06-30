@@ -1,4 +1,3 @@
-import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import ignore from 'ignore'
@@ -214,7 +213,7 @@ export async function globWithGitIgnore(
       await Promise.all(
         ignoreFiles.map(async filepath =>
           ignoreFileToGlobPatterns(
-            await fs.readFile(filepath, 'utf8'),
+            (await safeReadFile(filepath)) ?? '',
             filepath,
             cwd,
           ),
