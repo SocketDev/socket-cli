@@ -1,4 +1,4 @@
-import { promises as fs, readFileSync as fsReadFileSync } from 'node:fs'
+import { promises as fs, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 import { remove } from '@socketsecurity/registry/lib/fs'
@@ -10,10 +10,13 @@ import { globNodeModules } from './glob.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 import type { Abortable } from 'node:events'
 import type {
+  BigIntStats,
   ObjectEncodingOptions,
   OpenMode,
   PathLike,
   PathOrFileDescriptor,
+  StatSyncOptions,
+  Stats,
 } from 'node:fs'
 import type { FileHandle } from 'node:fs/promises'
 
@@ -122,12 +125,48 @@ export function safeReadFileSync(
       }
     | NodeJS.BufferEncoding
     | undefined,
-): ReturnType<typeof fsReadFileSync> | undefined {
+): ReturnType<typeof readFileSync> | undefined {
   try {
-    return fsReadFileSync(filepath, {
+    return readFileSync(filepath, {
       encoding: 'utf8',
       ...(typeof options === 'string' ? { encoding: options } : options),
     })
+  } catch {}
+  return undefined
+}
+
+export function safeStatsSync(
+  filepath: PathLike,
+  options?: undefined,
+): Stats | undefined
+
+export function safeStatsSync(
+  filepath: PathLike,
+  options?: StatSyncOptions & {
+    bigint?: false | undefined
+  },
+): Stats | undefined
+
+export function safeStatsSync(
+  filepath: PathLike,
+  options: StatSyncOptions & {
+    bigint: true
+  },
+): BigIntStats | undefined
+
+export function safeStatsSync(
+  filepath: PathLike,
+  options: StatSyncOptions & {
+    bigint: boolean
+  },
+): Stats | BigIntStats | undefined
+
+export function safeStatsSync(
+  filepath: PathLike,
+  options?: StatSyncOptions,
+): Stats | BigIntStats | undefined {
+  try {
+    return statSync(filepath, { throwIfNoEntry: false, ...options })
   } catch {}
   return undefined
 }

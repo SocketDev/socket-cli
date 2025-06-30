@@ -1,4 +1,4 @@
-import { existsSync, statSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import which from 'which'
@@ -8,6 +8,7 @@ import { resolveBinPathSync } from '@socketsecurity/registry/lib/npm'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../constants.mts'
+import { safeStatsSync } from './fs.mts'
 import {
   filterGlobResultToSupportedFiles,
   globWithGitIgnore,
@@ -59,7 +60,7 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
       // will throw an ENOTDIR error for paths like ./a-file-that-exists/a-directory-that-does-not.
       // See https://github.com/nodejs/node/issues/56993.
       existsSync(libNmNpmPath) &&
-      statSync(libNmNpmPath, { throwIfNoEntry: false })?.isDirectory()
+      safeStatsSync(libNmNpmPath)?.isDirectory()
     ) {
       thePath = path.join(libNmNpmPath, NPM)
     }
@@ -76,7 +77,7 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
       //   /usr/local/share/npm/bin/npm/node_modules
       //   C:\Program Files\nodejs\node_modules
       existsSync(nmPath) &&
-      statSync(nmPath, { throwIfNoEntry: false })?.isDirectory() &&
+      safeStatsSync(nmPath)?.isDirectory() &&
       // Optimistically look for the default location.
       (path.basename(thePath) === NPM ||
         // Chocolatey installs npm bins in the same directory as node bins.
