@@ -114,9 +114,7 @@ export async function readSocketJson(
   try {
     obj = JSON.parse(json)
   } catch {
-    debugLog('[DEBUG] Failed to parse content as JSON')
-    debugLog(`[DEBUG] File contents ${json?.length ?? 0}:`)
-    debugLog(json)
+    debugFn('fail: parse JSON\n', json)
 
     if (defaultOnError) {
       logger.warn('Warning: failed to parse file, using default')
@@ -126,8 +124,7 @@ export async function readSocketJson(
     return {
       ok: false,
       message: 'Failed to parse socket.json',
-      cause:
-        'It seems your socket.json did not contain valid JSON, please verify',
+      cause: 'socket.json does not contain valid JSON, please verify',
     }
   }
 
@@ -150,10 +147,8 @@ export async function writeSocketJson(
   try {
     json = JSON.stringify(sockJson, null, 2)
   } catch (e) {
-    debugFn('fail: JSON.stringify\n', e)
-    debugLog('[DEBUG] Object:')
-    debugLog(sockJson)
-
+    debugFn('fail: stringify JSON\n', e)
+    debugLog('[DEBUG] Object:\n', sockJson)
     return {
       ok: false,
       message: 'Failed to serialize to JSON',
