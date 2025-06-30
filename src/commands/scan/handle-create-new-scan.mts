@@ -51,8 +51,8 @@ export async function handleCreateNewScan({
 }): Promise<void> {
   if (autoManifest) {
     logger.info('Auto generating manifest files ...')
-    const socketJson = await readOrDefaultSocketJson(cwd)
-    const detected = await detectManifestActions(socketJson, cwd)
+    const sockJson = await readOrDefaultSocketJson(cwd)
+    const detected = await detectManifestActions(sockJson, cwd)
     await generateAutoManifest({
       detected,
       cwd,

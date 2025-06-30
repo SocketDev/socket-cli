@@ -95,21 +95,21 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  const socketJson = await readOrDefaultSocketJson(cwd)
+  const sockJson = await readOrDefaultSocketJson(cwd)
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (
     stdin === undefined &&
-    socketJson.defaults?.manifest?.conda?.stdin !== undefined
+    sockJson.defaults?.manifest?.conda?.stdin !== undefined
   ) {
-    stdin = socketJson.defaults?.manifest?.conda?.stdin
+    stdin = sockJson.defaults?.manifest?.conda?.stdin
     logger.info('Using default --stdin from socket.json:', stdin)
   }
   if (stdin) {
     filename = '-'
   } else if (!filename) {
-    if (socketJson.defaults?.manifest?.conda?.infile) {
-      filename = socketJson.defaults?.manifest?.conda?.infile
+    if (sockJson.defaults?.manifest?.conda?.infile) {
+      filename = sockJson.defaults?.manifest?.conda?.infile
       logger.info('Using default --file from socket.json:', filename)
     } else {
       filename = 'environment.yml'
@@ -117,16 +117,16 @@ async function run(
   }
   if (
     stdout === undefined &&
-    socketJson.defaults?.manifest?.conda?.stdout !== undefined
+    sockJson.defaults?.manifest?.conda?.stdout !== undefined
   ) {
-    stdout = socketJson.defaults?.manifest?.conda?.stdout
+    stdout = sockJson.defaults?.manifest?.conda?.stdout
     logger.info('Using default --stdout from socket.json:', stdout)
   }
   if (stdout) {
     out = '-'
   } else if (!out) {
-    if (socketJson.defaults?.manifest?.conda?.outfile) {
-      out = socketJson.defaults?.manifest?.conda?.outfile
+    if (sockJson.defaults?.manifest?.conda?.outfile) {
+      out = sockJson.defaults?.manifest?.conda?.outfile
       logger.info('Using default --out from socket.json:', out)
     } else {
       out = 'requirements.txt'
@@ -134,9 +134,9 @@ async function run(
   }
   if (
     verbose === undefined &&
-    socketJson.defaults?.manifest?.conda?.verbose !== undefined
+    sockJson.defaults?.manifest?.conda?.verbose !== undefined
   ) {
-    verbose = socketJson.defaults?.manifest?.conda?.verbose
+    verbose = sockJson.defaults?.manifest?.conda?.verbose
     logger.info('Using default --verbose from socket.json:', verbose)
   } else if (verbose === undefined) {
     verbose = false

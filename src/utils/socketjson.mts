@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn, debugLog } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import type { CResult } from '../types.mts'
@@ -85,16 +85,15 @@ export async function readSocketJson(
   cwd: string,
   defaultOnError = false,
 ): Promise<CResult<SocketJson>> {
-  const filepath = path.join(cwd, 'socket.json')
-  if (!fs.existsSync(filepath)) {
-    debugLog(`[DEBUG] File not found: ${filepath}`)
-
+  const sockJsonPath = path.join(cwd, 'socket.json')
+  if (!fs.existsSync(sockJsonPath)) {
+    debugFn(`miss: file not found ${sockJsonPath}`)
     return { ok: true, data: getDefaultSocketJson() }
   }
 
   let json = null
   try {
-    json = await fs.promises.readFile(filepath, 'utf8')
+    json = await fs.promises.readFile(sockJsonPath, 'utf8')
   } catch (e) {
     debugLog('[DEBUG] Raw error:')
     debugLog(e)
@@ -145,16 +144,15 @@ export async function readSocketJson(
 
 export async function writeSocketJson(
   cwd: string,
-  socketJson: SocketJson,
+  sockJson: SocketJson,
 ): Promise<CResult<undefined>> {
   let json = ''
   try {
-    json = JSON.stringify(socketJson, null, 2)
+    json = JSON.stringify(sockJson, null, 2)
   } catch (e) {
-    debugLog('[DEBUG] JSON.stringify failed:')
-    debugLog(e)
+    debugFn('fail: JSON.stringify\n', e)
     debugLog('[DEBUG] Object:')
-    debugLog(socketJson)
+    debugLog(sockJson)
 
     return {
       ok: false,
