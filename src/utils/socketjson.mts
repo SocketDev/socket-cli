@@ -100,7 +100,7 @@ export async function readSocketJson(
     debugLog(e)
 
     if (defaultOnError) {
-      logger.warn('Warning: failed to parse file, using default')
+      logger.warn('Warning: failed to read file, using default')
       return { ok: true, data: getDefaultSocketJson() }
     }
     const msg = (e as { message: string })?.message || '(none)'
@@ -120,7 +120,7 @@ export async function readSocketJson(
     debugLog(json)
 
     if (defaultOnError) {
-      logger.warn('Warning: failed to read file, using default')
+      logger.warn('Warning: failed to parse file, using default')
       return { ok: true, data: getDefaultSocketJson() }
     }
 
