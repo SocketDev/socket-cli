@@ -19,7 +19,7 @@ export interface GeneratableManifests {
 export async function detectManifestActions(
   // Passing in null means we attempt detection for every supported language
   // regardless of local socket.json status. Sometimes we want that.
-  socketJson: SocketJson | null,
+  sockJson: SocketJson | null,
   cwd = process.cwd(),
 ): Promise<GeneratableManifests> {
   const output = {
@@ -30,7 +30,7 @@ export async function detectManifestActions(
     sbt: false,
   }
 
-  if (socketJson?.defaults?.manifest?.sbt?.disabled) {
+  if (sockJson?.defaults?.manifest?.sbt?.disabled) {
     debugLog('[DEBUG] - sbt auto-detection is disabled in socket.json')
   } else if (existsSync(path.join(cwd, 'build.sbt'))) {
     debugLog('[DEBUG] - Detected a Scala sbt build file')
@@ -39,7 +39,7 @@ export async function detectManifestActions(
     output.count += 1
   }
 
-  if (socketJson?.defaults?.manifest?.gradle?.disabled) {
+  if (sockJson?.defaults?.manifest?.gradle?.disabled) {
     debugLog('[DEBUG] - gradle auto-detection is disabled in socket.json')
   } else if (existsSync(path.join(cwd, 'gradlew'))) {
     debugLog('[DEBUG] - Detected a gradle build file')
@@ -47,7 +47,7 @@ export async function detectManifestActions(
     output.count += 1
   }
 
-  if (socketJson?.defaults?.manifest?.conda?.disabled) {
+  if (sockJson?.defaults?.manifest?.conda?.disabled) {
     debugLog('[DEBUG] - conda auto-detection is disabled in socket.json')
   } else {
     const envyml = path.join(cwd, 'environment.yml')

@@ -110,40 +110,40 @@ export async function setupManifestConfig(
     choices,
   })) as string | null
 
-  const socketJsonResult = await readSocketJson(cwd, defaultOnReadError)
-  if (!socketJsonResult.ok) {
-    return socketJsonResult
+  const sockJsonCResult = await readSocketJson(cwd, defaultOnReadError)
+  if (!sockJsonCResult.ok) {
+    return sockJsonCResult
   }
-  const socketJson = socketJsonResult.data
+  const sockJson = sockJsonCResult.data
 
-  if (!socketJson.defaults) {
-    socketJson.defaults = {}
+  if (!sockJson.defaults) {
+    sockJson.defaults = {}
   }
-  if (!socketJson.defaults.manifest) {
-    socketJson.defaults.manifest = {}
+  if (!sockJson.defaults.manifest) {
+    sockJson.defaults.manifest = {}
   }
 
   let result: CResult<{ canceled: boolean }>
   switch (targetEco) {
     case 'conda': {
-      if (!socketJson.defaults.manifest.conda) {
-        socketJson.defaults.manifest.conda = {}
+      if (!sockJson.defaults.manifest.conda) {
+        sockJson.defaults.manifest.conda = {}
       }
-      result = await setupConda(socketJson.defaults.manifest.conda)
+      result = await setupConda(sockJson.defaults.manifest.conda)
       break
     }
     case 'gradle': {
-      if (!socketJson.defaults.manifest.gradle) {
-        socketJson.defaults.manifest.gradle = {}
+      if (!sockJson.defaults.manifest.gradle) {
+        sockJson.defaults.manifest.gradle = {}
       }
-      result = await setupGradle(socketJson.defaults.manifest.gradle)
+      result = await setupGradle(sockJson.defaults.manifest.gradle)
       break
     }
     case 'sbt': {
-      if (!socketJson.defaults.manifest.sbt) {
-        socketJson.defaults.manifest.sbt = {}
+      if (!sockJson.defaults.manifest.sbt) {
+        sockJson.defaults.manifest.sbt = {}
       }
-      result = await setupSbt(socketJson.defaults.manifest.sbt)
+      result = await setupSbt(sockJson.defaults.manifest.sbt)
       break
     }
     default: {
@@ -176,7 +176,7 @@ export async function setupManifestConfig(
       ],
     })
   ) {
-    return await writeSocketJson(cwd, socketJson)
+    return await writeSocketJson(cwd, sockJson)
   }
 
   return canceledByUser()

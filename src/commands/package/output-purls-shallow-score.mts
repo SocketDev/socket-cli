@@ -71,7 +71,7 @@ function formatReportCard(artifact: DedupedArtifact, color: boolean): string {
   }
   const alertString = getAlertString(artifact.alerts, !color)
   if (!artifact.ecosystem) {
-    debugFn('miss: Artifact ecosystem', artifact)
+    debugFn('miss: artifact ecosystem', artifact)
   }
   const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? '@' + artifact.version : ''}`
 

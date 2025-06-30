@@ -149,33 +149,33 @@ async function run(
     defaultOrgSlug = ''
   }
 
-  const socketJson = await readOrDefaultSocketJson(cwd)
+  const sockJson = await readOrDefaultSocketJson(cwd)
 
   if (all === undefined) {
-    if (socketJson.defaults?.scan?.github?.all !== undefined) {
-      all = socketJson.defaults?.scan?.github?.all
+    if (sockJson.defaults?.scan?.github?.all !== undefined) {
+      all = sockJson.defaults?.scan?.github?.all
     } else {
       all = false
     }
   }
   if (!githubApiUrl) {
-    if (socketJson.defaults?.scan?.github?.githubApiUrl !== undefined) {
-      githubApiUrl = socketJson.defaults.scan.github.githubApiUrl
+    if (sockJson.defaults?.scan?.github?.githubApiUrl !== undefined) {
+      githubApiUrl = sockJson.defaults.scan.github.githubApiUrl
     } else {
       githubApiUrl = 'https://api.github.com'
     }
   }
   if (!orgGithub) {
-    if (socketJson.defaults?.scan?.github?.orgGithub !== undefined) {
-      orgGithub = socketJson.defaults.scan.github.orgGithub
+    if (sockJson.defaults?.scan?.github?.orgGithub !== undefined) {
+      orgGithub = sockJson.defaults.scan.github.orgGithub
     } else {
       // Default to Socket org slug. Often that's fine. Vanity and all that.
       orgGithub = orgSlug
     }
   }
   if (!all && !repos) {
-    if (socketJson.defaults?.scan?.github?.repos !== undefined) {
-      repos = socketJson.defaults.scan.github.repos
+    if (sockJson.defaults?.scan?.github?.repos !== undefined) {
+      repos = sockJson.defaults.scan.github.repos
     } else {
       repos = ''
     }

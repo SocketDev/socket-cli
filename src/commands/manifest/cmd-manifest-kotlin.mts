@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
@@ -102,33 +102,30 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  const socketJson = await readOrDefaultSocketJson(cwd)
+  const sockJson = await readOrDefaultSocketJson(cwd)
 
-  debugLog(
-    '[DEBUG] socket.json gradle override:',
-    socketJson?.defaults?.manifest?.gradle,
-  )
+  debugFn('override: socket.json gradle', sockJson?.defaults?.manifest?.gradle)
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
-    if (socketJson.defaults?.manifest?.gradle?.bin) {
-      bin = socketJson.defaults?.manifest?.gradle?.bin
+    if (sockJson.defaults?.manifest?.gradle?.bin) {
+      bin = sockJson.defaults?.manifest?.gradle?.bin
       logger.info('Using default --bin from socket.json:', bin)
     } else {
       bin = path.join(cwd, 'gradlew')
     }
   }
   if (!gradleOpts) {
-    if (socketJson.defaults?.manifest?.gradle?.gradleOpts) {
-      gradleOpts = socketJson.defaults?.manifest?.gradle?.gradleOpts
+    if (sockJson.defaults?.manifest?.gradle?.gradleOpts) {
+      gradleOpts = sockJson.defaults?.manifest?.gradle?.gradleOpts
       logger.info('Using default --gradleOpts from socket.json:', gradleOpts)
     } else {
       gradleOpts = ''
     }
   }
   if (verbose === undefined) {
-    if (socketJson.defaults?.manifest?.gradle?.verbose !== undefined) {
-      verbose = socketJson.defaults?.manifest?.gradle?.verbose
+    if (sockJson.defaults?.manifest?.gradle?.verbose !== undefined) {
+      verbose = sockJson.defaults?.manifest?.gradle?.verbose
       logger.info('Using default --verbose from socket.json:', verbose)
     } else {
       verbose = false
