@@ -40,17 +40,17 @@ export async function setupScanConfig(
   logger.log('Note: For details on a flag you can run `socket <cmd> --help`')
   logger.log('')
 
-  const socketJsonResult = await readSocketJson(cwd, defaultOnReadError)
-  if (!socketJsonResult.ok) {
-    return socketJsonResult
+  const sockJsonCResult = await readSocketJson(cwd, defaultOnReadError)
+  if (!sockJsonCResult.ok) {
+    return sockJsonCResult
   }
 
-  const socketJson = socketJsonResult.data
-  if (!socketJson.defaults) {
-    socketJson.defaults = {}
+  const sockJson = sockJsonCResult.data
+  if (!sockJson.defaults) {
+    sockJson.defaults = {}
   }
-  if (!socketJson.defaults.scan) {
-    socketJson.defaults.scan = {}
+  if (!sockJson.defaults.scan) {
+    sockJson.defaults.scan = {}
   }
 
   const targetCommand = await select({
@@ -73,20 +73,20 @@ export async function setupScanConfig(
   })
   switch (targetCommand) {
     case 'create': {
-      if (!socketJson.defaults.scan.create) {
-        socketJson.defaults.scan.create = {}
+      if (!sockJson.defaults.scan.create) {
+        sockJson.defaults.scan.create = {}
       }
-      const result = await configureScan(socketJson.defaults.scan.create)
+      const result = await configureScan(sockJson.defaults.scan.create)
       if (!result.ok || result.data.canceled) {
         return result
       }
       break
     }
     case 'github': {
-      if (!socketJson.defaults.scan.github) {
-        socketJson.defaults.scan.github = {}
+      if (!sockJson.defaults.scan.github) {
+        sockJson.defaults.scan.github = {}
       }
-      const result = await configureGithub(socketJson.defaults.scan.github)
+      const result = await configureGithub(sockJson.defaults.scan.github)
       if (!result.ok || result.data.canceled) {
         return result
       }
@@ -118,7 +118,7 @@ export async function setupScanConfig(
       ],
     })
   ) {
-    return await writeSocketJson(cwd, socketJson)
+    return await writeSocketJson(cwd, sockJson)
   }
 
   return canceledByUser()

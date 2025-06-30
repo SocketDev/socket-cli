@@ -84,9 +84,9 @@ async function run(
     logger.groupEnd()
   }
 
-  const socketJson = await readOrDefaultSocketJson(cwd)
+  const sockJson = await readOrDefaultSocketJson(cwd)
 
-  const detected = await detectManifestActions(socketJson, cwd)
+  const detected = await detectManifestActions(sockJson, cwd)
   debugLog('[DEBUG]', detected)
 
   if (cli.flags['dryRun']) {

@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
@@ -110,17 +110,14 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  const socketJson = await readOrDefaultSocketJson(cwd)
+  const sockJson = await readOrDefaultSocketJson(cwd)
 
-  debugLog(
-    '[DEBUG] socket.json sbt override:',
-    socketJson?.defaults?.manifest?.sbt,
-  )
+  debugFn('override: socket.json sbt', sockJson?.defaults?.manifest?.sbt)
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
-    if (socketJson.defaults?.manifest?.sbt?.bin) {
-      bin = socketJson.defaults?.manifest?.sbt?.bin
+    if (sockJson.defaults?.manifest?.sbt?.bin) {
+      bin = sockJson.defaults?.manifest?.sbt?.bin
       logger.info('Using default --bin from socket.json:', bin)
     } else {
       bin = 'sbt'
@@ -128,24 +125,24 @@ async function run(
   }
   if (
     stdout === undefined &&
-    socketJson.defaults?.manifest?.sbt?.stdout !== undefined
+    sockJson.defaults?.manifest?.sbt?.stdout !== undefined
   ) {
-    stdout = socketJson.defaults?.manifest?.sbt?.stdout
+    stdout = sockJson.defaults?.manifest?.sbt?.stdout
     logger.info('Using default --stdout from socket.json:', stdout)
   }
   if (stdout) {
     out = '-'
   } else if (!out) {
-    if (socketJson.defaults?.manifest?.sbt?.outfile) {
-      out = socketJson.defaults?.manifest?.sbt?.outfile
+    if (sockJson.defaults?.manifest?.sbt?.outfile) {
+      out = sockJson.defaults?.manifest?.sbt?.outfile
       logger.info('Using default --out from socket.json:', out)
     } else {
       out = './socket.pom.xml'
     }
   }
   if (!sbtOpts) {
-    if (socketJson.defaults?.manifest?.sbt?.sbtOpts) {
-      sbtOpts = socketJson.defaults?.manifest?.sbt?.sbtOpts
+    if (sockJson.defaults?.manifest?.sbt?.sbtOpts) {
+      sbtOpts = sockJson.defaults?.manifest?.sbt?.sbtOpts
       logger.info('Using default --sbtOpts from socket.json:', sbtOpts)
     } else {
       sbtOpts = ''
@@ -153,9 +150,9 @@ async function run(
   }
   if (
     verbose === undefined &&
-    socketJson.defaults?.manifest?.sbt?.verbose !== undefined
+    sockJson.defaults?.manifest?.sbt?.verbose !== undefined
   ) {
-    verbose = socketJson.defaults?.manifest?.sbt?.verbose
+    verbose = sockJson.defaults?.manifest?.sbt?.verbose
     logger.info('Using default --verbose from socket.json:', verbose)
   } else if (verbose === undefined) {
     verbose = false

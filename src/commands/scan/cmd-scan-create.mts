@@ -236,12 +236,12 @@ async function run(
       ? path.resolve(process.cwd(), String(cwdOverride))
       : process.cwd()
 
-  const socketJson = await readOrDefaultSocketJson(cwd)
+  const sockJson = await readOrDefaultSocketJson(cwd)
 
   // Note: This needs meow booleanDefault=undefined
   if (typeof autoManifest !== 'boolean') {
-    if (socketJson.defaults?.scan?.create?.autoManifest !== undefined) {
-      autoManifest = socketJson.defaults.scan.create.autoManifest
+    if (sockJson.defaults?.scan?.create?.autoManifest !== undefined) {
+      autoManifest = sockJson.defaults.scan.create.autoManifest
       logger.info(
         'Using default --autoManifest from socket.json:',
         autoManifest,
@@ -251,24 +251,24 @@ async function run(
     }
   }
   if (!branchName) {
-    if (socketJson.defaults?.scan?.create?.branch) {
-      branchName = socketJson.defaults.scan.create.branch
+    if (sockJson.defaults?.scan?.create?.branch) {
+      branchName = sockJson.defaults.scan.create.branch
       logger.info('Using default --branch from socket.json:', branchName)
     } else {
       branchName = 'socket-default-branch'
     }
   }
   if (!repoName) {
-    if (socketJson.defaults?.scan?.create?.repo) {
-      repoName = socketJson.defaults.scan.create.repo
+    if (sockJson.defaults?.scan?.create?.repo) {
+      repoName = sockJson.defaults.scan.create.repo
       logger.info('Using default --repo from socket.json:', repoName)
     } else {
       repoName = 'socket-default-repository'
     }
   }
   if (typeof report !== 'boolean') {
-    if (socketJson.defaults?.scan?.create?.report !== undefined) {
-      report = socketJson.defaults.scan.create.report
+    if (sockJson.defaults?.scan?.create?.report !== undefined) {
+      report = sockJson.defaults.scan.create.report
       logger.info('Using default --report from socket.json:', report)
     } else {
       report = false
@@ -319,7 +319,7 @@ async function run(
     }
   }
 
-  const detected = await detectManifestActions(socketJson, cwd)
+  const detected = await detectManifestActions(sockJson, cwd)
   if (detected.count > 0 && !autoManifest) {
     logger.info(
       `Detected ${detected.count} manifest targets we could try to generate. Please set the --autoManifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
