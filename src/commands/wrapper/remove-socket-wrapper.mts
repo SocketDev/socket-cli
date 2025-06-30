@@ -3,25 +3,25 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 export function removeSocketWrapper(filepath: string): void {
-  let data: string | undefined
+  let content: string | undefined
   try {
-    data = readFileSync(filepath, 'utf8')
+    content = readFileSync(filepath, 'utf8')
   } catch (e) {
-    logger.fail('There was an error removing the alias:')
+    logger.fail(`There was an error removing the alias${e ? ':' : '.'}`)
     if (e) {
       logger.error(e)
     }
     return
   }
 
-  const linesWithoutSocketAlias = data
+  const linesWithoutSocketAlias = content
     .split('\n')
     .filter(
       l => l !== 'alias npm="socket npm"' && l !== 'alias npx="socket npx"',
     )
-  const updatedFileContent = linesWithoutSocketAlias.join('\n')
+  const updatedContent = linesWithoutSocketAlias.join('\n')
   try {
-    writeFileSync(filepath, updatedFileContent, 'utf8')
+    writeFileSync(filepath, updatedContent, 'utf8')
   } catch (e) {
     if (e) {
       logger.error(e)
