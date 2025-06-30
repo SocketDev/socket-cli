@@ -1,34 +1,37 @@
-import fs from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
+import { safeReadFileSync, safeStatsSync } from '../../utils/fs.mts'
 import { tildify } from '../../utils/tildify.mts'
 
 export async function outputCmdJson(cwd: string) {
   logger.info('Target cwd:', constants.ENV.VITEST ? '<redacted>' : tildify(cwd))
 
-  const sjpath = path.join(cwd, 'socket.json')
-  const tildeSjpath = constants.ENV.VITEST ? '<redacted>' : tildify(sjpath)
+  const sockJsonPath = path.join(cwd, 'socket.json')
+  const tildeSockJsonPath = constants.ENV.VITEST
+    ? '<redacted>'
+    : tildify(sockJsonPath)
 
-  if (!fs.existsSync(sjpath)) {
-    logger.fail(`Not found: ${tildeSjpath}`)
+  if (!existsSync(sockJsonPath)) {
+    logger.fail(`Not found: ${tildeSockJsonPath}`)
     process.exitCode = 1
     return
   }
 
-  if (!fs.lstatSync(sjpath).isFile()) {
+  if (!safeStatsSync(sockJsonPath)?.isFile()) {
     logger.fail(
-      `This is not a regular file (maybe a directory?): ${tildeSjpath}`,
+      `This is not a regular file (maybe a directory?): ${tildeSockJsonPath}`,
     )
     process.exitCode = 1
     return
   }
 
-  const data = fs.readFileSync(sjpath, 'utf8')
-
-  logger.success(`This is the contents of ${tildeSjpath}:`)
+  logger.success(`This is the contents of ${tildeSockJsonPath}:`)
   logger.error('')
+
+  const data = safeReadFileSync(sockJsonPath)
   logger.log(data)
 }
