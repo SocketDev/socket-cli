@@ -10,6 +10,7 @@ import replacePlugin from '@rollup/plugin-replace'
 import { purgePolyfills } from 'unplugin-purge-polyfills'
 
 import { readPackageJsonSync } from '@socketsecurity/registry/lib/packages'
+import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
@@ -44,7 +45,9 @@ export const EXTERNAL_PACKAGES = [
 ]
 
 const builtinAliases = builtinModules.reduce((o, n) => {
-  o[n] = `node:${n}`
+  if (!n.startsWith('node:')) {
+    o[n] = `node:${n}`
+  }
   return o
 }, {})
 
@@ -81,13 +84,33 @@ function getSocketCliVersionHash() {
   return _socketVersionHash
 }
 
+const requiredToVarName = new Map()
+function getVarNameForRequireId(filename, id, lookbehindContent) {
+  const key = `${filename}:${id}`
+  let varName = requiredToVarName.get(key)
+  if (varName) {
+    return varName
+  }
+  const varNameRegExp = new RegExp(
+    `(?<=var +)[$\\w]+(?=\\s*=\\s*require[$\\w]*\\(["']${escapeRegExp(id)}["']\\))`,
+  )
+  varName = varNameRegExp.exec(lookbehindContent)?.[0] ?? ''
+  if (varName) {
+    requiredToVarName.set(key, varName)
+  }
+  return varName
+}
+
 export default function baseConfig(extendConfig = {}) {
   // Lazily access constants path properties.
   const { configPath, rootPath } = constants
+
   const nmPath = path.join(rootPath, NODE_MODULES)
+
   const extendPlugins = Array.isArray(extendConfig.plugins)
     ? extendConfig.plugins.slice()
     : []
+
   const extractedPlugins = { __proto__: null }
   if (extendPlugins.length) {
     for (const pluginName of [
@@ -237,7 +260,7 @@ export default function baseConfig(extendConfig = {}) {
       }),
       // Convert un-prefixed built-in imports into "node:"" prefixed forms.
       replacePlugin({
-        delimiters: ['(?<=(?:require[$\\d]*\\(|from\\s*)["\'])', '(?=["\'])'],
+        delimiters: ['(?<=(?:require[$\\w]*\\(|from\\s*)["\'])', '(?=["\'])'],
         preventAssignment: false,
         values: builtinAliases,
       }),
@@ -246,17 +269,17 @@ export default function baseConfig(extendConfig = {}) {
       // builds which causes 'tiny-colors' to be treated as an external, not bundled,
       // require.
       socketModifyPlugin({
-        find: /require[$\d]*\(["']tiny-colors["']\)/g,
+        find: /require[$\w]*\(["']tiny-colors["']\)/g,
         replace: "require('yoctocolors-cjs')",
       }),
       // Try to convert `require('u' + 'rl')` into something like `require$$2$3`.
       socketModifyPlugin({
-        find: /require[$\d]*\(["']u["']\s*\+\s*["']rl["']\)/g,
-        replace(match) {
+        find: /require[$\w]*\(["']u["']\s*\+\s*["']rl["']\)/g,
+        replace(match, index) {
+          const { fileName } = this.chunk
+          const beforeMatch = this.input.slice(0, index)
           return (
-            /(?<=var +)[$\w]+(?=\s*=\s*require[$\d]*\(["']node:url["']\))/.exec(
-              this.input,
-            )?.[0] ?? match
+            getVarNameForRequireId(fileName, 'node:url', beforeMatch) || match
           )
         },
       }),
@@ -265,8 +288,20 @@ export default function baseConfig(extendConfig = {}) {
       //   require('node:util')
       //   require('graceful-fs')
       socketModifyPlugin({
-        find: /^\s*require[$\d]*\(["'].+?["']\);?\r?\n/gm,
+        find: /^\s*require[$\w]*\(["'].+?["']\);?\r?\n/gm,
         replace: '',
+      }),
+      // Reduce duplicate require('node:...') variable assignments.
+      socketModifyPlugin({
+        find: /var +([$\w]+)\s*=\s*require[$\w]*\(["'](node:.+?)["']\)/g,
+        replace(match, currVarName, id, index) {
+          const { fileName } = this.chunk
+          const beforeMatch = this.input.slice(0, index)
+          const prevVarName = getVarNameForRequireId(fileName, id, beforeMatch)
+          return !prevVarName || currVarName === prevVarName
+            ? match
+            : `var ${currVarName} = ${prevVarName}`
+        },
       }),
       ...extendPlugins,
     ],

@@ -409,10 +409,10 @@ export default async () => {
           plugins: [
             // Remove Rollup's browser interop for import.meta.url.
             socketModifyPlugin({
-              find: /(?<=const +require[$\d]*\s*=)\s*Module\.createRequire[^;]+;/g,
+              find: /(?<=const +require[$\w]*\s*=)\s*Module\.createRequire[^;]+;/g,
               replace(match) {
                 const pathToUrlCode =
-                  /require[$\d]*(?:\([^)]+\))?\.pathToFileURL\(__filename\)\.href/.exec(
+                  /require[$\w]*(?:\([^)]+\))?\.pathToFileURL\(__filename\)\.href/.exec(
                     match,
                   )?.[0]
                 return pathToUrlCode
@@ -432,7 +432,7 @@ export default async () => {
         ...EXTERNAL_PACKAGES.map(n =>
           socketModifyPlugin({
             find: new RegExp(
-              `(?<=require[$\\d]*(?:\\.resolve)?\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
+              `(?<=require[$\\w]*(?:\\.resolve)?\\(["'])${escapeRegExp(n)}(?=(?:\\/[^"']+)?["']\\))`,
               'g',
             ),
             replace: id => `../external/${id}`,
@@ -441,7 +441,7 @@ export default async () => {
         // Replace require.resolve('node-gyp/bin/node-gyp.js') with
         // require('./constants.js').npmNmNodeGypPath.
         socketModifyPlugin({
-          find: /require[$\d]*\.resolve\(["']node-gyp\/bin\/node-gyp.js["']\)/g,
+          find: /require[$\w]*\.resolve\(["']node-gyp\/bin\/node-gyp.js["']\)/g,
           replace: "require('./constants.js').npmNmNodeGypPath",
         }),
         // Replace resolve(__dirname, '../lib/node-gyp-bin') with
