@@ -29,8 +29,8 @@ export async function fetchReportData(
   }
   const sockSdk = sockSdkResult.data
 
-  let scanStatus = 'requested..'
-  let policyStatus = 'requested..'
+  let policyStatus = 'requested...'
+  let scanStatus = 'requested...'
   let finishedFetching = false
 
   // Lazily access constants.spinner.
@@ -70,10 +70,10 @@ export async function fetchReportData(
       return result
     }
 
-    const jsonsString = result.data
+    const ndJsonString = result.data
 
     // This is nd-json; each line is a json object.
-    const lines = jsonsString.split('\n').filter(Boolean)
+    const lines = ndJsonString.split('\n').filter(Boolean)
     let ok = true
     const data = lines.map(line => {
       try {
@@ -86,11 +86,11 @@ export async function fetchReportData(
     }) as unknown as SocketArtifact[]
 
     if (ok) {
-      updateScan(`success`)
+      updateScan('success')
       return { ok: true, data }
     }
 
-    updateScan(`received invalid JSON response`)
+    updateScan('received invalid JSON response')
 
     return {
       ok: false,
@@ -120,7 +120,7 @@ export async function fetchReportData(
     CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>,
   ] = await Promise.all([
     fetchScanResult().catch(e => {
-      updateScan(`failure; unknown blocking problem occurred`)
+      updateScan('failure; unknown blocking problem occurred')
       return {
         ok: false as const,
         message: 'Unexpected API problem',
@@ -128,7 +128,7 @@ export async function fetchReportData(
       }
     }),
     fetchSecurityPolicy().catch(e => {
-      updatePolicy(`failure; unknown blocking problem occurred`)
+      updatePolicy('failure; unknown blocking problem occurred')
       return {
         ok: false as const,
         message: 'Unexpected API problem',
