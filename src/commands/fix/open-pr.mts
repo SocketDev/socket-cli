@@ -1,4 +1,4 @@
-import { existsSync, promises as fs, statSync } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import {
@@ -22,6 +22,7 @@ import {
   getSocketPullRequestTitle,
 } from './git.mts'
 import constants from '../../constants.mts'
+import { safeStatsSync } from '../../utils/fs.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
@@ -87,13 +88,13 @@ async function readCache(
 ): Promise<JsonContent | null> {
   // Lazily access constants.githubCachePath.
   const cacheJsonPath = path.join(constants.githubCachePath, `${key}.json`)
-  try {
-    const stat = statSync(cacheJsonPath)
+  const stat = safeStatsSync(cacheJsonPath)
+  if (stat) {
     const isExpired = Date.now() - stat.mtimeMs > ttlMs
     if (!isExpired) {
       return await readJson(cacheJsonPath)
     }
-  } catch {}
+  }
   return null
 }
 
