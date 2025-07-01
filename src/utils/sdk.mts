@@ -1,4 +1,4 @@
-import { HttpsProxyAgent } from 'hpagent'
+import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { password } from '@socketsecurity/registry/lib/prompts'
@@ -10,8 +10,6 @@ import constants from '../constants.mts'
 
 import type { CResult } from '../types.mts'
 
-const { SOCKET_PUBLIC_API_TOKEN } = constants
-
 const TOKEN_PREFIX = 'sktsec_'
 
 const { length: TOKEN_PREFIX_LENGTH } = TOKEN_PREFIX
@@ -21,15 +19,26 @@ function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
     // Lazily access constants.ENV.SOCKET_CLI_API_BASE_URL.
     constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
-  return isNonEmptyString(baseUrl) ? baseUrl : undefined
+  return isUrl(baseUrl) ? baseUrl : undefined
 }
 
 // The API server that should be used for operations.
-function getDefaultHttpProxy(): string | undefined {
+function getDefaultProxyUrl(): string | undefined {
   const apiProxy =
     // Lazily access constants.ENV.SOCKET_CLI_API_PROXY.
     constants.ENV.SOCKET_CLI_API_PROXY || getConfigValueOrUndef('apiProxy')
-  return isNonEmptyString(apiProxy) ? apiProxy : undefined
+  return isUrl(apiProxy) ? apiProxy : undefined
+}
+
+function isUrl(value: any): value is string {
+  if (isNonEmptyString(value)) {
+    try {
+      // eslint-disable-next-line no-new
+      new URL(value)
+      return true
+    } catch {}
+  }
+  return false
 }
 
 // This API key should be stored globally for the duration of the CLI execution.
@@ -64,14 +73,15 @@ export function getPublicToken(): string {
   return (
     // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN.
     (constants.ENV.SOCKET_CLI_API_TOKEN || getDefaultToken()) ??
-    SOCKET_PUBLIC_API_TOKEN
+    // Lazily access constants.SOCKET_PUBLIC_API_TOKEN.
+    constants.SOCKET_PUBLIC_API_TOKEN
   )
 }
 
 export async function setupSdk(
   apiToken: string | undefined = getDefaultToken(),
   apiBaseUrl: string | undefined = getDefaultApiBaseUrl(),
-  proxy: string | undefined = getDefaultHttpProxy(),
+  proxy: string | undefined,
 ): Promise<CResult<SocketSdk>> {
   if (typeof apiToken !== 'string' && isInteractive()) {
     apiToken = await password({
@@ -87,10 +97,22 @@ export async function setupSdk(
       cause: 'You need to provide an API Token. Run `socket login` first.',
     }
   }
+  if (!isUrl(proxy)) {
+    proxy = getDefaultProxyUrl()
+  }
+
+  const ProxyAgent = proxy?.startsWith('http:')
+    ? HttpProxyAgent
+    : HttpsProxyAgent
+
   return {
     ok: true,
     data: new SocketSdk(apiToken, {
-      agent: proxy ? new HttpsProxyAgent({ proxy }) : undefined,
+      agent: proxy
+        ? new ProxyAgent({
+            proxy,
+          })
+        : undefined,
       baseUrl: apiBaseUrl,
       userAgent: createUserAgentFromPkgJson({
         // Lazily access constants.ENV.INLINED_SOCKET_CLI_NAME.
