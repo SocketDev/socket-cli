@@ -130,25 +130,22 @@ export async function handleFix({
     return
   }
 
-  logger.info(
-    `Fixing packages for ${pkgEnvDetails.agent} v${pkgEnvDetails.agentVersion}.\n`,
-  )
-
-  const { agent } = pkgEnvDetails
+  const { agent, agentVersion } = pkgEnvDetails
   if (agent !== NPM && agent !== PNPM) {
     await outputFixResult(
       {
         ok: false,
         message: 'Not supported.',
-        cause: `${agent} is not supported by this command.`,
+        cause: `${agent} v${agentVersion} is not supported by this command.`,
       },
       outputKind,
     )
     return
   }
 
-  const fixer = agent === NPM ? npmFix : pnpmFix
+  logger.info(`Fixing packages for ${agent} v${agentVersion}.\n`)
 
+  const fixer = agent === NPM ? npmFix : pnpmFix
   await outputFixResult(
     await fixer(pkgEnvDetails, {
       autoMerge,
