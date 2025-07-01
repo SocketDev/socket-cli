@@ -81,7 +81,7 @@ export function getPublicToken(): string {
 export async function setupSdk(
   apiToken: string | undefined = getDefaultToken(),
   apiBaseUrl: string | undefined = getDefaultApiBaseUrl(),
-  proxy: string | undefined,
+  proxy?: string | undefined,
 ): Promise<CResult<SocketSdk>> {
   if (typeof apiToken !== 'string' && isInteractive()) {
     apiToken = await password({
