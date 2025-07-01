@@ -429,14 +429,14 @@ export async function agentFix(
           if (!errored && ciEnv?.repoInfo) {
             try {
               // eslint-disable-next-line no-await-in-loop
-              const result = await gitUnstagedModifiedFiles(cwd)
-              if (!result.ok) {
+              const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
+              if (!unstagedCResult.ok) {
                 logger.warn(
                   'Unexpected condition: Nothing to commit, skipping PR creation.',
                 )
                 continue
               }
-              const moddedFilepaths = result.data.filter(filepath => {
+              const moddedFilepaths = unstagedCResult.data.filter(filepath => {
                 const basename = path.basename(filepath)
                 return (
                   basename === 'package.json' ||
