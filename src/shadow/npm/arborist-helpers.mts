@@ -200,9 +200,6 @@ export async function getAlertsMapFromArborist(
     ...options.include,
   } as AlertIncludeFilter
 
-  if (!arb.diff) {
-    debugFn(`miss: arb.diff is ${arb.diff}`)
-  }
   const needInfoOn = getDetailsFromDiff(arb.diff, {
     include: {
       unchanged: options.include.existing,
@@ -252,13 +249,14 @@ export function getDetailsFromDiff(
   const details: PackageDetail[] = []
   // `diff` is `null` when `npm install --package-lock-only` is passed.
   if (!diff) {
+    debugFn(`miss: diff is ${diff}`)
     return details
   }
 
   const include = {
     __proto__: null,
     unchanged: false,
-    unknownOrigin: false,
+    unknownOrigin: true,
     ...({ __proto__: null, ...options } as DiffQueryOptions).include,
   } as DiffQueryIncludeFilter
 
@@ -312,7 +310,7 @@ export function getDetailsFromDiff(
     }
   }
   if (include.unchanged) {
-    const { unchanged } = diff!
+    const { unchanged } = diff
     for (let i = 0, { length } = unchanged; i < length; i += 1) {
       const pkgNode = unchanged[i]!
       if (
