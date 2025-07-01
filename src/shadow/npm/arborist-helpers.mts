@@ -342,66 +342,6 @@ export type Packument = Exclude<
   null
 >
 
-export function updateNode(
-  node: NodeClass,
-  newVersion: string,
-  newVersionPackument: Packument['versions'][number],
-): void {
-  // Object.defineProperty is needed to set the version property and replace
-  // the old value with newVersion.
-  Object.defineProperty(node, 'version', {
-    configurable: true,
-    enumerable: true,
-    get: () => newVersion,
-  })
-  // Update package.version associated with the node.
-  node.package.version = newVersion
-  // Update node.resolved.
-  const purlObj = PackageURL.fromString(idToNpmPurl(node.name))
-  node.resolved = `${NPM_REGISTRY_URL}/${node.name}/-/${purlObj.name}-${newVersion}.tgz`
-  // Update node.integrity with the targetPackument.dist.integrity value if available
-  // else delete node.integrity so a new value is resolved for the target version.
-  const { integrity } = newVersionPackument.dist
-  if (integrity) {
-    node.integrity = integrity
-  } else {
-    delete node.integrity
-  }
-  // Update node.package.deprecated based on targetPackument.deprecated.
-  if (hasOwn(newVersionPackument, 'deprecated')) {
-    node.package['deprecated'] = newVersionPackument.deprecated as string
-  } else {
-    delete node.package['deprecated']
-  }
-  // Update node.package.dependencies.
-  const newDeps = { ...newVersionPackument.dependencies }
-  const { dependencies: oldDeps } = node.package
-  node.package.dependencies = newDeps
-  if (oldDeps) {
-    for (const oldDepName of Object.keys(oldDeps)) {
-      if (!hasOwn(newDeps, oldDepName)) {
-        // Detach old edges for dependencies that don't exist on the updated
-        // node.package.dependencies.
-        node.edgesOut.get(oldDepName)?.detach()
-      }
-    }
-  }
-  for (const newDepName of Object.keys(newDeps)) {
-    if (!hasOwn(oldDeps, newDepName)) {
-      // Add new edges for dependencies that don't exist on the old
-      // node.package.dependencies.
-      node.addEdgeOut(
-        new Edge({
-          from: node,
-          name: newDepName,
-          spec: newDeps[newDepName],
-          type: 'prod',
-        }) as unknown as EdgeClass,
-      )
-    }
-  }
-}
-
 export function updatePackageJsonFromNode(
   editablePkgJson: EditablePackageJson,
   tree: NodeClass,
