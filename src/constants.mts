@@ -337,7 +337,9 @@ const LAZY_ENV = () => {
       // Commonly used environment variables to specify routing requests through
       // a proxy server.
       envAsString(env['HTTPS_PROXY']) ||
-      envAsString(env['https_proxy']),
+      envAsString(env['https_proxy']) ||
+      envAsString(env['HTTP_PROXY']) ||
+      envAsString(env['http_proxy']),
     // Flag to set the API token.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
     SOCKET_CLI_API_TOKEN:
