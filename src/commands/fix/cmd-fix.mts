@@ -53,6 +53,18 @@ const config: CliCommandConfig = {
       default: Infinity,
       description: 'The number of fixes to attempt at a time',
     },
+    maxSatisfying: {
+      type: 'boolean',
+      default: true,
+      description: 'Use the maximum satisfying version for dependency updates',
+      hidden: true,
+    },
+    minSatisfying: {
+      type: 'boolean',
+      default: false,
+      description:
+        'Constrain dependency updates to the minimum satisfying version',
+    },
     purl: {
       type: 'string',
       default: [],
@@ -170,6 +182,8 @@ async function run(
     (cli.flags['limit']
       ? parseInt(String(cli.flags['limit'] || ''), 10)
       : Infinity) || Infinity
+  const maxSatisfying = Boolean(cli.flags['maxSatisfying'])
+  const minSatisfying = Boolean(cli.flags['minSatisfying']) || !maxSatisfying
   const purls = cmdFlagValueToArray(cli.flags['purl'])
   const testScript = String(cli.flags['testScript'] || 'test')
 
@@ -178,6 +192,7 @@ async function run(
     cwd,
     ghsas,
     limit,
+    minSatisfying,
     outputKind,
     purls,
     rangeStyle,

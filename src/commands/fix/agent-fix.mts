@@ -64,6 +64,7 @@ export type FixConfig = {
   autoMerge: boolean
   cwd: string
   limit: number
+  minSatisfying: boolean
   purls: string[]
   rangeStyle: RangeStyle
   spinner: Spinner | undefined
@@ -113,8 +114,16 @@ export async function agentFix(
   fixConfig: FixConfig,
 ): Promise<CResult<{ fixed: boolean }>> {
   const { pkgPath: rootPath } = pkgEnvDetails
-  const { autoMerge, cwd, limit, rangeStyle, spinner, test, testScript } =
-    fixConfig
+  const {
+    autoMerge,
+    cwd,
+    limit,
+    minSatisfying,
+    rangeStyle,
+    spinner,
+    test,
+    testScript,
+  } = fixConfig
 
   let count = 0
 
@@ -292,11 +301,10 @@ export async function agentFix(
           firstPatchedVersionIdentifier,
           vulnerableVersionRange,
         } of infos) {
-          const newVersion = findBestPatchVersion(
-            node,
-            availableVersions,
+          const newVersion = findBestPatchVersion(node, availableVersions, {
+            minSatisfying,
             vulnerableVersionRange,
-          )
+          })
           const newVersionPackument = newVersion
             ? packument.versions[newVersion]
             : undefined
