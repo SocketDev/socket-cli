@@ -4,17 +4,18 @@ import { addOverrides } from './add-overrides.mts'
 import { CMD_NAME } from './shared.mts'
 import { updateLockfile } from './update-lockfile.mts'
 import constants from '../../constants.mts'
-import { cmdPrefixMessage } from '../../utils/cmd.mts'
-import { detectAndValidatePackageEnvironment } from '../../utils/package-environment.mts'
 
 import type { CResult } from '../../types.mts'
+import type { EnvDetails } from '../../utils/package-environment.mts'
 
-const { VLT } = constants
+export type OptimizeConfig = {
+  pin: boolean
+  prod: boolean
+}
 
 export async function applyOptimization(
-  cwd: string,
-  pin: boolean,
-  prod: boolean,
+  pkgEnvDetails: EnvDetails,
+  { pin, prod }: OptimizeConfig,
 ): Promise<
   CResult<{
     addedCount: number
@@ -24,28 +25,6 @@ export async function applyOptimization(
     addedInWorkspaces: number
   }>
 > {
-  const result = await detectAndValidatePackageEnvironment(cwd, {
-    cmdName: CMD_NAME,
-    logger,
-    prod,
-  })
-
-  if (!result.ok) {
-    return result
-  }
-  const pkgEnvDetails = result.data
-
-  if (pkgEnvDetails.agent === VLT) {
-    return {
-      ok: false,
-      message: 'Unsupported',
-      cause: cmdPrefixMessage(
-        CMD_NAME,
-        `${VLT} does not support overrides. Soon, though ⚡`,
-      ),
-    }
-  }
-
   // Lazily access constants.spinner.
   const { spinner } = constants
 
