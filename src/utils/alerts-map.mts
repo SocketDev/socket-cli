@@ -72,17 +72,22 @@ export async function getAlertsMapFromPurls(
   const { spinner } = options
 
   const uniqPurls = arrayUnique(purls)
+  debugFn('inspect:', { purls: uniqPurls })
+
   let { length: remaining } = uniqPurls
   const alertsByPurl: AlertsByPurl = new Map()
+
   if (!remaining) {
     return alertsByPurl
   }
+
   const getText = () => `Looking up data for ${remaining} packages`
 
   spinner?.start(getText())
 
   const sockSdkResult = await setupSdk(getPublicToken())
   if (!sockSdkResult.ok) {
+    spinner?.stop()
     throw new Error('Auth error: Try to run `socket login` first')
   }
   const sockSdk = sockSdkResult.data
@@ -121,12 +126,12 @@ export async function getAlertsMapFromPurls(
       )
     } else {
       spinner?.stop()
-      debugFn('Received a result=false:', batchResult)
       logger.fail(
         `Received a ${batchResult.status} response from Socket API which we consider a permanent failure:`,
         batchResult.error,
         batchResult.cause ? `( ${batchResult.cause} )` : '',
       )
+      debugFn('inspect:', { batchResult })
       break
     }
     remaining -= 1

@@ -124,7 +124,11 @@ export async function agentFix(
   if (!infoByPartialPurl) {
     spinner?.stop()
     logger.info('No fixable vulns found.')
-    debugFn('inspect:\n', { alertsMap })
+    if (alertsMap.size) {
+      debugFn('inspect:', { alertsMap })
+    } else {
+      debugFn('inspect: { alertsMap: Map(0) {} }')
+    }
     return { ok: true, data: { fixed: false } }
   }
 
