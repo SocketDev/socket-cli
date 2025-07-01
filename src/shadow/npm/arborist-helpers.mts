@@ -200,6 +200,9 @@ export async function getAlertsMapFromArborist(
     ...options.include,
   } as AlertIncludeFilter
 
+  if (!arb.diff) {
+    debugFn(`miss: arb.diff is ${arb.diff}`)
+  }
   const needInfoOn = getDetailsFromDiff(arb.diff, {
     include: {
       unchanged: options.include.existing,
@@ -243,12 +246,12 @@ export type PackageDetail = {
 }
 
 export function getDetailsFromDiff(
-  diff_: Diff | null,
+  diff: Diff | null,
   options?: DiffQueryOptions | undefined,
 ): PackageDetail[] {
   const details: PackageDetail[] = []
-  // `diff_` is `null` when `npm install --package-lock-only` is passed.
-  if (!diff_) {
+  // `diff` is `null` when `npm install --package-lock-only` is passed.
+  if (!diff) {
     return details
   }
 
@@ -259,21 +262,21 @@ export function getDetailsFromDiff(
     ...({ __proto__: null, ...options } as DiffQueryOptions).include,
   } as DiffQueryIncludeFilter
 
-  const queue: Diff[] = [...diff_.children]
+  const queue: Diff[] = [...diff.children]
   let pos = 0
   let { length: queueLength } = queue
   while (pos < queueLength) {
     if (pos === LOOP_SENTINEL) {
       throw new Error('Detected infinite loop while walking Arborist diff')
     }
-    const diff = queue[pos++]!
-    const { action } = diff
+    const currDiff = queue[pos++]!
+    const { action } = currDiff
     if (action) {
       // The `pkgNode`, i.e. the `ideal` node, will be `undefined` if the diff
       // action is 'REMOVE'
       // The `oldNode`, i.e. the `actual` node, will be `undefined` if the diff
       // action is 'ADD'.
-      const { actual: oldNode, ideal: pkgNode } = diff
+      const { actual: oldNode, ideal: pkgNode } = currDiff
       let existing: NodeClass | undefined
       let keep = false
       if (action === DiffAction.change) {
@@ -304,12 +307,12 @@ export function getDetailsFromDiff(
         }
       }
     }
-    for (const child of diff.children) {
+    for (const child of currDiff.children) {
       queue[queueLength++] = child
     }
   }
   if (include.unchanged) {
-    const { unchanged } = diff_!
+    const { unchanged } = diff!
     for (let i = 0, { length } = unchanged; i < length; i += 1) {
       const pkgNode = unchanged[i]!
       if (
