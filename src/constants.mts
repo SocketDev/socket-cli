@@ -62,6 +62,7 @@ type ENV = Remap<
       INLINED_SYNP_VERSION: string
       LOCALAPPDATA: string
       NODE_COMPILE_CACHE: string
+      NODE_EXTRA_CA_CERTS: string
       PATH: string
       SOCKET_CLI_ACCEPT_RISKS: boolean
       SOCKET_CLI_API_BASE_URL: string
@@ -308,6 +309,15 @@ const LAZY_ENV = () => {
         ? // Lazily access constants.socketCachePath.
           constants.socketCachePath
         : '',
+    // When set, the well known "root" CAs (like VeriSign) will be extended with
+    // the extra certificates in file. The file should consist of one or more
+    // trusted certificates in PEM format.
+    // https://nodejs.org/api/cli.html#node_extra_ca_certsfile
+    NODE_EXTRA_CA_CERTS:
+      envAsString(env['NODE_EXTRA_CA_CERTS']) ||
+      // Commonly used environment variable to specify the path to a single
+      // PEM-encoded certificate file.
+      envAsString(env['SSL_CERT_FILE']),
     // PATH is an environment variable that lists directories where executable
     // programs are located. When a command is run, the system searches these
     // directories to find the executable.
@@ -323,7 +333,11 @@ const LAZY_ENV = () => {
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_CLI_API_PROXY:
       envAsString(env['SOCKET_CLI_API_PROXY']) ||
-      envAsString(env['SOCKET_SECURITY_API_PROXY']),
+      envAsString(env['SOCKET_SECURITY_API_PROXY']) ||
+      // Commonly used environment variables to specify routing requests through
+      // a proxy server.
+      envAsString(env['HTTPS_PROXY']) ||
+      envAsString(env['https_proxy']),
     // Flag to set the API token.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
     SOCKET_CLI_API_TOKEN:
