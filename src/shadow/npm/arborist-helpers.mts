@@ -41,11 +41,20 @@ function getUrlOrigin(input: string): string {
   return ''
 }
 
+export type BestPatchVersionOptions = {
+  minSatisfying?: boolean | undefined
+  vulnerableVersionRange?: string | undefined
+}
+
 export function findBestPatchVersion(
   node: NodeClass,
   availableVersions: string[],
-  vulnerableVersionRange?: string,
+  options?: BestPatchVersionOptions | undefined,
 ): string | null {
+  const { minSatisfying = false, vulnerableVersionRange } = {
+    __proto__: null,
+    ...options,
+  } as BestPatchVersionOptions
   const manifestData = getManifestData(NPM, node.name)
   let eligibleVersions
   if (manifestData && manifestData.name === manifestData.package) {
@@ -68,7 +77,13 @@ export function findBestPatchVersion(
           !semver.satisfies(v, vulnerableVersionRange)),
     )
   }
-  return eligibleVersions ? semver.maxSatisfying(eligibleVersions, '*') : null
+  if (eligibleVersions) {
+    const satisfying = minSatisfying
+      ? semver.minSatisfying
+      : semver.maxSatisfying
+    return satisfying(eligibleVersions, '*')
+  }
+  return null
 }
 
 export function findPackageNode(

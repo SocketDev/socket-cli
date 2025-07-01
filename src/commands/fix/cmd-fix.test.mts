@@ -26,6 +26,7 @@ describe('socket fix', async () => {
             --ghsa            Provide a list of GHSA IDs (\\u200bhttps://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids\\u200b) to compute fixes for, as either a comma separated value or as multiple flags.
                               Use '--ghsa auto' to automatically lookup GHSA IDs and compute fixes for them.
             --limit           The number of fixes to attempt at a time
+            --minSatisfying   Constrain dependency updates to the minimum satisfying version
             --purl            Provide a list of PURLs (\\u200bhttps://github.com/package-url/purl-spec?tab=readme-ov-file#purl\\u200b) to compute fixes for, as either a comma separated value or as multiple flags,
                               instead of querying the Socket API
             --rangeStyle      Define how updated dependency versions should be written in package.json.
