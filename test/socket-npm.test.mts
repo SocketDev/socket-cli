@@ -56,6 +56,7 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
             {
               cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
               env: {
+                ...process.env,
                 // Lazily access constants.ENV.PATH.
                 PATH: `${npmBinPath}:${constants.ENV.PATH}`,
               },

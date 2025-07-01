@@ -82,7 +82,7 @@ export async function npmFix(
         definitions: npmConfigDefinitions,
         // Lazily access constants.execPath.
         execPath: constants.execPath,
-        env: process.env,
+        env: { ...process.env },
         flatten: npmConfigFlatten,
         npmPath,
         platform: process.platform,
