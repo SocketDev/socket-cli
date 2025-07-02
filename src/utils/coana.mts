@@ -14,7 +14,7 @@ export async function spawnCoana(
   options?: SpawnOptions | undefined,
   extra?: SpawnExtra | undefined,
 ): Promise<CResult<unknown>> {
-  const { env: optionsEnv } = { __proto__: null, ...options } as SpawnOptions
+  const { env: spawnEnv } = { __proto__: null, ...options } as SpawnOptions
   try {
     const output = await spawn(
       constants.execPath,
@@ -29,7 +29,7 @@ export async function spawnCoana(
         ...options,
         env: {
           ...process.env,
-          ...optionsEnv,
+          ...spawnEnv,
           SOCKET_CLI_API_BASE_URL:
             constants.ENV.SOCKET_CLI_API_BASE_URL || undefined,
           SOCKET_CLI_API_TOKEN: getDefaultToken(),
