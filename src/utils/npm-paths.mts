@@ -19,30 +19,6 @@ function exitWithBinPathError(binName: string): never {
   process.exit(127)
 }
 
-let _npmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
-function getNpmBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
-  if (_npmBinPathDetails === undefined) {
-    _npmBinPathDetails = findBinPathDetailsSync(NPM)
-  }
-  return _npmBinPathDetails
-}
-
-let _npxBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
-function getNpxBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
-  if (_npxBinPathDetails === undefined) {
-    _npxBinPathDetails = findBinPathDetailsSync(NPX)
-  }
-  return _npxBinPathDetails
-}
-
-export function isNpmBinPathShadowed() {
-  return getNpmBinPathDetails().shadowed
-}
-
-export function isNpxBinPathShadowed() {
-  return getNpxBinPathDetails().shadowed
-}
-
 let _npmBinPath: string | undefined
 export function getNpmBinPath(): string {
   if (_npmBinPath === undefined) {
@@ -52,6 +28,14 @@ export function getNpmBinPath(): string {
     }
   }
   return _npmBinPath
+}
+
+let _npmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
+function getNpmBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
+  if (_npmBinPathDetails === undefined) {
+    _npmBinPathDetails = findBinPathDetailsSync(NPM)
+  }
+  return _npmBinPathDetails
 }
 
 let _npmPath: string | undefined
@@ -99,4 +83,20 @@ export function getNpxBinPath(): string {
     }
   }
   return _npxBinPath
+}
+
+let _npxBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
+function getNpxBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
+  if (_npxBinPathDetails === undefined) {
+    _npxBinPathDetails = findBinPathDetailsSync(NPX)
+  }
+  return _npxBinPathDetails
+}
+
+export function isNpmBinPathShadowed() {
+  return getNpmBinPathDetails().shadowed
+}
+
+export function isNpxBinPathShadowed() {
+  return getNpxBinPathDetails().shadowed
 }
