@@ -1,21 +1,9 @@
-import { realpathSync } from 'node:fs'
-import path from 'node:path'
-
-import NpmConfig from '@npmcli/config'
-import {
-  definitions as npmConfigDefinitions,
-  flatten as npmConfigFlatten,
-  shorthands as npmConfigShorthands,
-  // @ts-ignore
-} from '@npmcli/config/lib/definitions'
-
 import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 
 import { agentFix } from './agent-fix.mts'
 import { getCiEnv, getOpenPrsForEnvironment } from './fix-env-helpers.mts'
 import { getActualTree } from './get-actual-tree.mts'
 import { getAlertsMapOptions } from './shared.mts'
-import constants from '../../constants.mts'
 import {
   Arborist,
   SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
@@ -23,12 +11,10 @@ import {
 import { getAlertsMapFromArborist } from '../../shadow/npm/arborist-helpers.mts'
 import { runAgentInstall } from '../../utils/agent.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
+import { getNpmConfig } from '../../utils/npm-config.mts'
 
 import type { FixConfig, InstallOptions } from './agent-fix.mts'
-import type {
-  ArboristOptions,
-  NodeClass,
-} from '../../shadow/npm/arborist/types.mts'
+import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
@@ -72,28 +58,9 @@ export async function npmFix(
         getAlertsMapOptions({ limit: Math.max(limit, openPrs.length) }),
       )
     } else {
-      const npmPath = path.resolve(
-        realpathSync(pkgEnvDetails.agentExecPath),
-        '../..',
-      )
-      const config = new NpmConfig({
-        argv: [],
-        cwd: process.cwd(),
-        definitions: npmConfigDefinitions,
-        // Lazily access constants.execPath.
-        execPath: constants.execPath,
-        env: { ...process.env },
-        flatten: npmConfigFlatten,
-        npmPath,
-        platform: process.platform,
-        shorthands: npmConfigShorthands,
+      const flatConfig = await getNpmConfig({
+        npmVersion: pkgEnvDetails.agentVersion,
       })
-      await config.load()
-
-      const flatConfig = { __proto__: null, ...config.flat } as ArboristOptions
-      flatConfig.nodeVersion = constants.NODE_VERSION
-      flatConfig.npmVersion = pkgEnvDetails.agentVersion.toString()
-      flatConfig.npmCommand = 'install'
 
       const arb = new Arborist({
         path: pkgEnvDetails.pkgPath,
