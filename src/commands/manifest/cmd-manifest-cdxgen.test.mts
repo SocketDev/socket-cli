@@ -54,6 +54,8 @@ describe('socket manifest cdxgen', async () => {
               --author                 The person(s) who created the BOM. Set this value if you're intending the modify the BOM and claim authorship.  [array] [default: "OWASP Foundation"]
               --profile                BOM profile to use for generation. Default generic.  [choices: "appsec", "research", "operational", "threat-modeling", "license-compliance", "generic", "machine-learning", "ml", "deep-learning", "ml-deep", "ml-tiny"] [default: "generic"]
               --exclude                Additional glob pattern(s) to ignore  [array]
+              --export-proto           Serialize and export BOM as protobuf binary.  [boolean] [default: false]
+              --proto-bin-file         Path for the serialized protobuf binary.  [default: "bom.cdx"]
               --include-formulation    Generate formulation section with git metadata and build tools. Defaults to false.  [boolean] [default: false]
               --include-crypto         Include crypto libraries as components.  [boolean] [default: false]
               --standard               The list of standards which may consist of regulations, industry or organizational-specific standards, maturity models, best practices, or any other requirements which can be evaluated against or attested to.  [array] [choices: "asvs-5.0", "asvs-4.0.3", "bsimm-v13", "masvs-2.0.0", "nist_ssdf-1.1", "pcissc-secure-slc-1.1", "scvs-1.0.0", "ssaf-DRAFT-2023-11"]
