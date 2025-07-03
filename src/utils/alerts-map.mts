@@ -1,5 +1,5 @@
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { extractPurlsFromPnpmLockfile } from './pnpm.mts'
@@ -72,7 +72,7 @@ export async function getAlertsMapFromPurls(
   const { spinner } = options
 
   const uniqPurls = arrayUnique(purls)
-  debugFn('inspect:', { purls: uniqPurls })
+  debugDir('inspect', { purls: uniqPurls })
 
   let { length: remaining } = uniqPurls
   const alertsByPurl: AlertsByPurl = new Map()
@@ -131,7 +131,7 @@ export async function getAlertsMapFromPurls(
         batchResult.error,
         batchResult.cause ? `( ${batchResult.cause} )` : '',
       )
-      debugFn('inspect:', { batchResult })
+      debugDir('inspect', { batchResult })
       break
     }
     remaining -= 1

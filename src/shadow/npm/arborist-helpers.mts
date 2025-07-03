@@ -142,7 +142,11 @@ export function findPackageNodes(
 
     const { version: targetVersion } = node
     if (!targetVersion && Array.isArray(node.errors) && node.errors.length) {
-      debugFn(`miss: version for ${node.name} due to errors:\n`, node.errors)
+      debugFn(
+        'notice',
+        `miss: version for ${node.name} due to errors:\n`,
+        node.errors,
+      )
     }
     if (
       node.name === name &&
@@ -246,7 +250,7 @@ export function getDetailsFromDiff(
   const details: PackageDetail[] = []
   // `diff` is `null` when `npm install --package-lock-only` is passed.
   if (!diff) {
-    debugFn(`miss: diff is ${diff}`)
+    debugFn('notice', `miss: diff is ${diff}`)
     return details
   }
 
@@ -285,7 +289,7 @@ export function getDetailsFromDiff(
           }
         } else {
           // TODO: This debug log has too much information. We should narrow it down.
-          // debugFn('skip: meta change diff\n', diff)
+          // debugFn('notice', 'skip: meta change diff\n', diff)
         }
       } else {
         keep = action !== DiffAction.remove

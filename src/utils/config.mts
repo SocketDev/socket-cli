@@ -153,7 +153,7 @@ let _cachedConfig: LocalConfig | undefined
 let _readOnlyConfig = false
 
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
-  debugFn('override: full config (not stored)')
+  debugFn('notice', 'override: full config (not stored)')
 
   let config
   try {
@@ -199,7 +199,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
 }
 
 export function overrideConfigApiToken(apiToken: unknown) {
-  debugFn('override: API token (not stored)')
+  debugFn('notice', 'override: API token (not stored)')
 
   // Set token to the local cached config and mark it read-only so it doesn't persist
   _cachedConfig = {

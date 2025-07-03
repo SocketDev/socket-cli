@@ -1,4 +1,4 @@
-import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 
 import { agentFix } from './agent-fix.mts'
 import { getCiEnv, getOpenPrsForEnvironment } from './fix-env-helpers.mts'
@@ -77,7 +77,8 @@ export async function npmFix(
     }
   } catch (e) {
     spinner?.stop()
-    debugFn('catch: PURL API\n', e)
+    debugFn('error', 'caught: PURL API')
+    debugDir('inspect', { error: e })
     return {
       ok: false,
       message: 'API Error',

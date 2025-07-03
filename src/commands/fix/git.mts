@@ -1,7 +1,7 @@
 import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -246,7 +246,8 @@ export async function gitCreateAndPushBranch(
     return true
   } catch (e) {
     debugFn(
-      `catch: git push --force --set-upstream origin ${branch} failed\n`,
+      'error',
+      `caught: git push --force --set-upstream origin ${branch} failed\n`,
       e,
     )
   }
@@ -284,9 +285,11 @@ export async function gitRepoInfo(
         return { owner, repo }
       }
     } catch {}
-    debugFn('git: unmatched git remote URL format', remoteUrl)
+    debugFn('error', 'git: unmatched git remote URL format')
+    debugDir('inspect', { remoteUrl })
   } catch (e) {
-    debugFn('catch: git remote get-url origin failed\n', e)
+    debugFn('error', 'caught: git remote get-url origin failed')
+    debugDir('inspect', { error: e })
   }
   return null
 }
@@ -315,7 +318,8 @@ export async function gitEnsureIdentity(
         try {
           await spawn('git', ['config', prop, value], stdioIgnoreOptions)
         } catch (e) {
-          debugFn(`catch: git config ${prop} ${value} failed\n`, e)
+          debugFn('error', `caught: git config ${prop} ${value} failed`)
+          debugDir('inspect', { error: e })
         }
       }
     }),
@@ -373,7 +377,8 @@ export async function gitUnstagedModifiedFiles(
       data: rawRelPaths.map(relPath => normalizePath(relPath)),
     }
   } catch (e) {
-    debugFn('catch: git diff --name-only failed\n', e)
+    debugFn('error', 'caught: git diff --name-only failed')
+    debugDir('inspect', { error: e })
 
     return {
       ok: false,

@@ -1,4 +1,4 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -59,7 +59,8 @@ export async function handleFix({
         )
         ghsasCount = ghsas.length
       } else {
-        debugFn('coana fail:', {
+        debugFn('error', 'fail: Coana CLI')
+        debugDir('inspect', {
           message: autoCResult.message,
           cause: autoCResult.cause,
         })
@@ -87,7 +88,8 @@ export async function handleFix({
       spinner?.stop()
 
       if (!applyFixesCResult.ok) {
-        debugFn('coana fail:', {
+        debugFn('error', 'fail: Coana CLI')
+        debugDir('inspect', {
           message: applyFixesCResult.message,
           cause: applyFixesCResult.cause,
         })

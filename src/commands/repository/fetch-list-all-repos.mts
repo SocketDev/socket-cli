@@ -1,4 +1,4 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
@@ -33,7 +33,7 @@ export async function fetchListAllRepos({
       }
     }
     // eslint-disable-next-line no-await-in-loop
-    const result = await handleApiCall(
+    const orgRepoListCResult = await handleApiCall(
       sockSdk.getOrgRepoList(orgSlug, {
         sort,
         direction,
@@ -42,13 +42,14 @@ export async function fetchListAllRepos({
       }),
       'list of repositories',
     )
-    if (!result.ok) {
-      debugFn('fail: fetch repo\n', result)
-      return result
+    if (!orgRepoListCResult.ok) {
+      debugFn('error', 'fail: fetch repo')
+      debugDir('inspect', { orgRepoListCResult })
+      return orgRepoListCResult
     }
 
-    result.data.results.forEach(row => rows.push(row))
-    nextPage = result.data.nextPage ?? -1
+    orgRepoListCResult.data.results.forEach(row => rows.push(row))
+    nextPage = orgRepoListCResult.data.nextPage ?? -1
   }
 
   return {

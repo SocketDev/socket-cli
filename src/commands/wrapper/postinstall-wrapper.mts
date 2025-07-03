@@ -1,6 +1,6 @@
 import fs, { existsSync } from 'node:fs'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm } from '@socketsecurity/registry/lib/prompts'
 
@@ -48,7 +48,8 @@ Do you want to install "safe npm" (this will create an alias to the socket-npm c
       }
     }
   } catch (e) {
-    debugFn('fail: setup tab completion\n', e)
+    debugFn('error', 'fail: setup tab completion')
+    debugDir('inspect', { error: e })
     // Ignore. Skip tab completion setup.
   }
   if (!updatedTabCompletion) {
