@@ -67,6 +67,8 @@ const arrayToLower = (arg: string[]) => arg.map(toLower)
 //   [choices: "appsec", "research", "operational", "threat-modeling", "license-compliance", "generic", "machine-learning",
 //                                                        "ml", "deep-learning", "ml-deep", "ml-tiny"] [default: "generic"]
 //       --exclude                Additional glob pattern(s) to ignore                                              [array]
+//       --export-proto           Serialize and export BOM as protobuf binary.  [boolean] [default: false]
+//       --proto-bin-file         Path for the serialized protobuf binary.  [default: "bom.cdx"]
 //       --include-formulation    Generate formulation section with git metadata and build tools. Defaults to false.
 //                                                                                               [boolean] [default: false]
 //       --include-crypto         Include crypto libraries as components.                        [boolean] [default: false]
@@ -122,7 +124,7 @@ const yargsConfig = {
     //'deps-slices-file': 'deps.slices.json', // hidden
     //evidence: false,
     //'exclude-type': [],
-    'export-proto': false,
+    //'export-proto': false,
     //'fail-on-error': isSecureMode,
     //'feature-flags': [], // hidden
     //'include-crypto': false,
@@ -133,7 +135,7 @@ const yargsConfig = {
     //output: 'bom.json',
     //profile: 'generic',
     //'project-version': '',
-    'proto-bin-file': 'bom.cdx',
+    //'proto-bin-file': 'bom.cdx',
     //recurse: true,
     //'skip-dt-tls-check': false,
     //'semantics-slices-file': 'semantics.slices.json',
