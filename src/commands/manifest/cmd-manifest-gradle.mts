@@ -99,7 +99,11 @@ async function run(
 
   const sockJson = await readOrDefaultSocketJson(cwd)
 
-  debugFn('override: socket.json gradle', sockJson?.defaults?.manifest?.gradle)
+  debugFn(
+    'inspect',
+    'override: socket.json gradle',
+    sockJson?.defaults?.manifest?.gradle,
+  )
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {

@@ -112,7 +112,11 @@ async function run(
 
   const sockJson = await readOrDefaultSocketJson(cwd)
 
-  debugFn('override: socket.json sbt', sockJson?.defaults?.manifest?.sbt)
+  debugFn(
+    'inspect',
+    'override: socket.json sbt',
+    sockJson?.defaults?.manifest?.sbt,
+  )
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {

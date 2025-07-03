@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { debugFn, debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import type { CResult } from '../types.mts'
@@ -87,7 +87,7 @@ export async function readSocketJson(
 ): Promise<CResult<SocketJson>> {
   const sockJsonPath = path.join(cwd, 'socket.json')
   if (!fs.existsSync(sockJsonPath)) {
-    debugFn(`miss: file not found ${sockJsonPath}`)
+    debugFn('notice', `miss: file not found ${sockJsonPath}`)
     return { ok: true, data: getDefaultSocketJson() }
   }
 
@@ -95,8 +95,7 @@ export async function readSocketJson(
   try {
     json = await fs.promises.readFile(sockJsonPath, 'utf8')
   } catch (e) {
-    debugLog('[DEBUG] Raw error:')
-    debugLog(e)
+    debugDir('inspect', { error: e })
 
     if (defaultOnError) {
       logger.warn('Warning: failed to read file, using default')
@@ -114,7 +113,8 @@ export async function readSocketJson(
   try {
     obj = JSON.parse(json)
   } catch {
-    debugFn('fail: parse JSON\n', json)
+    debugFn('error', 'fail: parse JSON')
+    debugDir('inspect', { json })
 
     if (defaultOnError) {
       logger.warn('Warning: failed to parse file, using default')
@@ -147,8 +147,9 @@ export async function writeSocketJson(
   try {
     json = JSON.stringify(sockJson, null, 2)
   } catch (e) {
-    debugFn('fail: stringify JSON\n', e)
-    debugLog('[DEBUG] Object:\n', sockJson)
+    debugFn('error', 'fail: stringify JSON')
+    debugDir('inspect', { error: e })
+    debugDir('inspect', { sockJson })
     return {
       ok: false,
       message: 'Failed to serialize to JSON',

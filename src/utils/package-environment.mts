@@ -6,7 +6,7 @@ import semver from 'semver'
 import which from 'which'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { Logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -232,7 +232,8 @@ async function getAgentVersion(
         ).stdout,
       ) ?? undefined
   } catch (e) {
-    debugFn('catch: unexpected\n', e)
+    debugFn('error', 'caught: unexpected error')
+    debugDir('inspect', { error: e })
   }
   return result
 }
