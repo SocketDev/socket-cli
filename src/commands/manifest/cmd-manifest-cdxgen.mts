@@ -122,7 +122,7 @@ const yargsConfig = {
     //'deps-slices-file': 'deps.slices.json', // hidden
     //evidence: false,
     //'exclude-type': [],
-    //'export-proto': true, // hidden
+    'export-proto': false,
     //'fail-on-error': isSecureMode,
     //'feature-flags': [], // hidden
     //'include-crypto': false,
@@ -133,7 +133,7 @@ const yargsConfig = {
     //output: 'bom.json',
     //profile: 'generic',
     //'project-version': '',
-    //'proto-bin-file': 'bom.cdx', // hidden
+    'proto-bin-file': 'bom.cdx',
     //recurse: true,
     //'skip-dt-tls-check': false,
     //'semantics-slices-file': 'semantics.slices.json',
@@ -170,7 +170,7 @@ const yargsConfig = {
     'banner', // hidden
     'deep',
     'evidence',
-    'export-proto', // hidden
+    'export-proto',
     'fail-on-error',
     'generate-key-and-sign',
     'help',
@@ -205,7 +205,7 @@ const yargsConfig = {
     'project-name',
     'project-version',
     'project-id',
-    'proto-bin-file', // hidden
+    'proto-bin-file',
     'reachables-slices-file', // hidden
     'semantics-slices-file', // hidden
     'server-host',
