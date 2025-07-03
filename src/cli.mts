@@ -8,7 +8,7 @@ import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
 import updateNotifier from 'tiny-updater'
 
-import { debugFn, debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
@@ -186,8 +186,8 @@ void (async () => {
     )
   } catch (e) {
     process.exitCode = 1
-    debugFn('Uncaught error (BAD!):')
-    debugFn(e)
+    debugFn('error', 'Uncaught error (BAD!):')
+    debugDir('inspect', { error: e })
 
     // Try to parse the flags, find out if --json or --markdown is set.
     let isJson = false
@@ -231,8 +231,7 @@ void (async () => {
       logger.error('\n') // Any-spinner-newline
       logger.fail(failMsgWithBadge(errorTitle, errorMessage))
       if (errorBody) {
-        // Explicitly use debugLog here.
-        debugLog(errorBody)
+        debugDir('inspect', { errorBody })
       }
     }
 

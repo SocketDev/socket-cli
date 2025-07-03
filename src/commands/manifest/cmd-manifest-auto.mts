@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
@@ -87,7 +87,7 @@ async function run(
   const sockJson = await readOrDefaultSocketJson(cwd)
 
   const detected = await detectManifestActions(sockJson, cwd)
-  debugLog('[DEBUG]', detected)
+  debugDir('inspect', { detected })
 
   if (cli.flags['dryRun']) {
     logger.log(DRY_RUN_BAILING_NOW)

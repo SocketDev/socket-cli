@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs'
 
-import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { hasKeys } from '@socketsecurity/registry/lib/objects'
 
 import { agentFix } from './agent-fix.mts'
@@ -118,7 +118,8 @@ export async function pnpmFix(
         )
   } catch (e) {
     spinner?.stop()
-    debugFn('catch: PURL API\n', e)
+    debugFn('error', 'caught: PURL API')
+    debugDir('inspect', { error: e })
     return {
       ok: false,
       message: 'API Error',

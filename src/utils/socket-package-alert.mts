@@ -3,7 +3,7 @@ import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
 import { getManifestData } from '@socketsecurity/registry'
-import { debugFn, debugLog } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -415,11 +415,11 @@ export function getCveInfoFromAlertsMap(
           }
         }
 
-        debugFn('fail: invalid SocketPackageAlert\n', alert)
+        debugFn('error', 'fail: invalid SocketPackageAlert')
+        debugDir('inspect', { alert })
 
         if (error) {
-          // Explicitly use debugLog here.
-          debugLog((error as Error).message ?? error)
+          debugDir('inspect', { error: (error as Error).message ?? error })
         }
       }
     }
