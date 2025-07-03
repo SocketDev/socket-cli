@@ -35,15 +35,16 @@ export function getActiveBranchesForPackage(
     }
   }
 
-  if (isDebug()) {
+  if (isDebug('notice')) {
     const fullName = resolvePackageName(partialPurlObj)
     if (activeBranches.length) {
       debugFn(
+        'notice',
         `found: ${activeBranches.length} active branches for ${fullName}\n`,
         activeBranches,
       )
     } else if (openPrs.length) {
-      debugFn(`miss: 0 active branches found for ${fullName}`)
+      debugFn('notice', `miss: 0 active branches found for ${fullName}`)
     }
   }
 

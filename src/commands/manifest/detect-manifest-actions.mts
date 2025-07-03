@@ -31,31 +31,40 @@ export async function detectManifestActions(
   }
 
   if (sockJson?.defaults?.manifest?.sbt?.disabled) {
-    debugLog('[DEBUG] - sbt auto-detection is disabled in socket.json')
+    debugLog(
+      'notice',
+      '[DEBUG] - sbt auto-detection is disabled in socket.json',
+    )
   } else if (existsSync(path.join(cwd, 'build.sbt'))) {
-    debugLog('[DEBUG] - Detected a Scala sbt build file')
+    debugLog('notice', '[DEBUG] - Detected a Scala sbt build file')
 
     output.sbt = true
     output.count += 1
   }
 
   if (sockJson?.defaults?.manifest?.gradle?.disabled) {
-    debugLog('[DEBUG] - gradle auto-detection is disabled in socket.json')
+    debugLog(
+      'notice',
+      '[DEBUG] - gradle auto-detection is disabled in socket.json',
+    )
   } else if (existsSync(path.join(cwd, 'gradlew'))) {
-    debugLog('[DEBUG] - Detected a gradle build file')
+    debugLog('notice', '[DEBUG] - Detected a gradle build file')
     output.gradle = true
     output.count += 1
   }
 
   if (sockJson?.defaults?.manifest?.conda?.disabled) {
-    debugLog('[DEBUG] - conda auto-detection is disabled in socket.json')
+    debugLog(
+      'notice',
+      '[DEBUG] - conda auto-detection is disabled in socket.json',
+    )
   } else {
     const envyml = path.join(cwd, 'environment.yml')
     const hasEnvyml = existsSync(envyml)
     const envyaml = path.join(cwd, 'environment.yaml')
     const hasEnvyaml = !hasEnvyml && existsSync(envyaml)
     if (hasEnvyml || hasEnvyaml) {
-      debugLog('[DEBUG] - Detected an environment.yml Conda file')
+      debugLog('notice', '[DEBUG] - Detected an environment.yml Conda file')
       output.conda = true
       output.count += 1
     }

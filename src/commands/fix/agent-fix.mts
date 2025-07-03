@@ -5,7 +5,7 @@ import semver from 'semver'
 
 import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { runNpmScript } from '@socketsecurity/registry/lib/npm'
 import {
@@ -134,15 +134,15 @@ export async function agentFix(
     spinner?.stop()
     logger.info('No fixable vulns found.')
     if (alertsMap.size) {
-      debugFn('inspect:', { alertsMap })
+      debugDir('inspect', { alertsMap })
     } else {
-      debugFn('inspect: { alertsMap: Map(0) {} }')
+      debugFn('inspect', '{ alertsMap: Map(0) {} }')
     }
     return { ok: true, data: { fixed: false } }
   }
 
-  if (isDebug()) {
-    debugFn('found: cves for', Array.from(infoByPartialPurl.keys()))
+  if (isDebug('notice')) {
+    debugFn('notice', 'found: cves for', Array.from(infoByPartialPurl.keys()))
   }
 
   // Lazily access constants.packumentCache.
@@ -198,7 +198,7 @@ export async function agentFix(
     spinner?.indent()
 
     if (getManifestData(partialPurlObj.type, name)) {
-      debugFn(`found: Socket Optimize variant for ${name}`)
+      debugFn('notice', `found: Socket Optimize variant for ${name}`)
     }
     // eslint-disable-next-line no-await-in-loop
     const packument = await fetchPackagePackument(name)
@@ -266,7 +266,7 @@ export async function agentFix(
       )
 
       if (!oldVersions.length) {
-        debugFn(`skip: ${name} not found\n`)
+        debugFn('notice', `skip: ${name} not found\n`)
         // Skip to next package.
         cleanupInfoEntriesLoop()
         continue infoEntriesLoop
@@ -283,7 +283,7 @@ export async function agentFix(
       let hasAnnouncedWorkspace = false
       let workspaceLogCallCount = logger.logCallCount
       if (isDebug()) {
-        debugFn(`check: workspace ${workspace}`)
+        debugFn('notice', `check: workspace ${workspace}`)
         hasAnnouncedWorkspace = true
         workspaceLogCallCount = logger.logCallCount
       }
@@ -294,7 +294,7 @@ export async function agentFix(
 
         const node = findPackageNode(actualTree, name, oldVersion)
         if (!node) {
-          debugFn(`skip: ${oldId} not found`)
+          debugFn('notice', `skip: ${oldId} not found`)
           continue oldVersionsLoop
         }
         infosLoop: for (const {
@@ -319,7 +319,7 @@ export async function agentFix(
             continue infosLoop
           }
           if (semver.gte(oldVersion, newVersion)) {
-            debugFn(`skip: ${oldId} is >= ${newVersion}`)
+            debugFn('notice', `skip: ${oldId} is >= ${newVersion}`)
             continue infosLoop
           }
           if (
@@ -328,7 +328,7 @@ export async function agentFix(
                 b.workspace === branchWorkspace && b.newVersion === newVersion,
             )
           ) {
-            debugFn(`skip: open PR found for ${name}@${newVersion}`)
+            debugFn('notice', `skip: open PR found for ${name}@${newVersion}`)
             if (++count >= limit) {
               cleanupInfoEntriesLoop()
               break infoEntriesLoop
@@ -366,7 +366,7 @@ export async function agentFix(
           )
           // eslint-disable-next-line no-await-in-loop
           if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
-            debugFn(`skip: ${workspace}/package.json unchanged`)
+            debugFn('notice', `skip: ${workspace}/package.json unchanged`)
             // Reset things just in case.
             if (ciEnv) {
               // eslint-disable-next-line no-await-in-loop
@@ -461,12 +461,12 @@ export async function agentFix(
                 )
               ) {
                 skipPr = true
-                debugFn(`skip: branch "${branch}" exists`)
+                debugFn('notice', `skip: branch "${branch}" exists`)
               }
               // eslint-disable-next-line no-await-in-loop
               else if (await gitRemoteBranchExists(branch, cwd)) {
                 skipPr = true
-                debugFn(`skip: remote branch "${branch}" exists`)
+                debugFn('notice', `skip: remote branch "${branch}" exists`)
               } else if (
                 // eslint-disable-next-line no-await-in-loop
                 !(await gitCreateAndPushBranch(
@@ -613,8 +613,7 @@ export async function agentFix(
               cause: `Update failed for ${oldId} in ${workspace}${error ? '; ' + error : ''}`,
             }
           }
-          debugFn('name:', name)
-          debugFn('increment: count', count + 1)
+          debugFn('notice', 'increment: count', count + 1)
           if (++count >= limit) {
             cleanupInfoEntriesLoop()
             break infoEntriesLoop

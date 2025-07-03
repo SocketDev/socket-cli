@@ -10,7 +10,7 @@ import { Octokit } from '@octokit/rest'
 import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { readJson, writeJson } from '@socketsecurity/registry/lib/fs'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -37,7 +37,7 @@ function getOctokit() {
     // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
     const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
     if (!SOCKET_CLI_GITHUB_TOKEN) {
-      debugFn('miss: SOCKET_CLI_GITHUB_TOKEN env var')
+      debugFn('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
     }
     _octokit = new Octokit({
       auth: SOCKET_CLI_GITHUB_TOKEN,
@@ -52,7 +52,7 @@ export function getOctokitGraphql(): typeof OctokitGraphql {
     // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
     const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
     if (!SOCKET_CLI_GITHUB_TOKEN) {
-      debugFn('miss: SOCKET_CLI_GITHUB_TOKEN env var')
+      debugFn('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
     }
     _octokitGraphql = OctokitGraphql.defaults({
       headers: {
@@ -171,7 +171,7 @@ export async function cleanupOpenPrs(
             pull_number: prNum,
             state: 'closed',
           })
-          debugFn(`close: ${prRef} for ${prToVersion}`)
+          debugFn('notice', `close: ${prRef} for ${prToVersion}`)
           // Remove entry from parent object.
           context.parent.splice(context.index, 1)
           // Mark cache to be saved.
@@ -179,6 +179,7 @@ export async function cleanupOpenPrs(
           return null
         } catch (e) {
           debugFn(
+            'error',
             `fail: close ${prRef} for ${prToVersion}\n`,
             (e as Error)?.message || 'unknown error',
           )
@@ -194,7 +195,7 @@ export async function cleanupOpenPrs(
             base: match.headRefName,
             head: match.baseRefName,
           })
-          debugFn('update: stale', prRef)
+          debugFn('notice', 'update: stale', prRef)
           // Update entry entry.
           if (context.apiType === 'graphql') {
             context.entry.mergeStateStatus = 'CLEAN'
@@ -205,7 +206,7 @@ export async function cleanupOpenPrs(
           cachesToSave.set(context.cacheKey, context.data)
         } catch (e) {
           const message = (e as Error)?.message || 'Unknown error'
-          debugFn(`fail: update ${prRef} - ${message}`)
+          debugFn('error', `fail: update ${prRef} - ${message}`)
         }
       }
       return match
@@ -477,7 +478,7 @@ export async function openPr(
         .join('\n')
       message += `:\n${details}`
     }
-    debugFn(message)
+    debugFn('error', message)
   }
   return null
 }
@@ -512,6 +513,7 @@ export async function setGitRemoteGithubRepoUrl(
   try {
     await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
   } catch (e) {
-    debugFn('catch: unexpected\n', e)
+    debugFn('error', 'caught: unexpected error')
+    debugDir('inspect', { error: e })
   }
 }

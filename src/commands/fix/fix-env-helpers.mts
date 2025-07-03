@@ -17,7 +17,7 @@ async function getEnvRepoInfo(
   // Lazily access constants.ENV.GITHUB_REPOSITORY.
   const { GITHUB_REPOSITORY } = constants.ENV
   if (!GITHUB_REPOSITORY) {
-    debugFn('miss: GITHUB_REPOSITORY env var')
+    debugFn('notice', 'miss: GITHUB_REPOSITORY env var')
   }
   const ownerSlashRepo = GITHUB_REPOSITORY
   const slashIndex = ownerSlashRepo.indexOf('/')

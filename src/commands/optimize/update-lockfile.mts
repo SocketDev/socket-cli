@@ -1,4 +1,4 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../../constants.mts'
@@ -45,7 +45,8 @@ export async function updateLockfile(
   } catch (e) {
     spinner?.stop()
 
-    debugFn('fail: update\n', e)
+    debugFn('error', 'fail: update')
+    debugDir('inspect', { error: e })
 
     return {
       ok: false,

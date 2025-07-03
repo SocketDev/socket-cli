@@ -1,4 +1,4 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
@@ -80,7 +80,8 @@ export async function fetchReportData(
         return JSON.parse(line)
       } catch {
         ok = false
-        debugFn('fail: parse NDJSON\n', line)
+        debugFn('error', 'fail: parse NDJSON')
+        debugDir('inspect', { line })
         return
       }
     }) as unknown as SocketArtifact[]

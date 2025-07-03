@@ -31,10 +31,10 @@ export async function setupTabCompletion(targetName: string): Promise<
 
   // Target dir is something like ~/.local/share/socket/settings/completion (linux)
   const targetDir = path.dirname(targetPath)
-  debugFn('target: path + dir', targetPath, targetDir)
+  debugFn('notice', 'target: path + dir', targetPath, targetDir)
 
   if (!fs.existsSync(targetDir)) {
-    debugFn('create: target dir')
+    debugFn('notice', 'create: target dir')
     fs.mkdirSync(targetDir, { recursive: true })
   }
 

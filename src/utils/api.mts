@@ -1,4 +1,4 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
@@ -60,7 +60,8 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     const message = `${e || 'No error message returned'}`
     const reason = `${e || 'No error message returned'}`
 
-    debugFn(`catch: ${fetchingDesc} error:\n`, e)
+    debugFn('error', `caught: ${fetchingDesc} error`)
+    debugDir('inspect', { error: e })
 
     return {
       ok: false,
@@ -73,11 +74,12 @@ export async function handleApiCall<T extends SocketSdkOperations>(
 
   // Note: TS can't narrow down the type of result due to generics
   if (result.success === false) {
-    const err = result as SocketSdkErrorType<T>
-    const message = `${err.error || 'No error message returned'}`
-    const { cause: reason } = err
+    const error = result as SocketSdkErrorType<T>
+    const message = `${error.error || 'No error message returned'}`
+    const { cause: reason } = error
 
-    debugFn(`fail: ${fetchingDesc} bad response:\n`, err)
+    debugFn('error', `fail: ${fetchingDesc} bad response`)
+    debugDir('inspect', { error })
 
     return {
       ok: false,
@@ -107,7 +109,8 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
     const message = `${e || 'No error message returned'}`
     const reason = `${e || 'No error message returned'}`
 
-    debugFn(`catch: ${description} error:\n`, e)
+    debugFn('error', `caught: ${description} error`)
+    debugDir('inspect', { error: e })
 
     return {
       ok: false,
@@ -118,15 +121,16 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
 
   // Note: TS can't narrow down the type of result due to generics
   if (result.success === false) {
-    const err = result as SocketSdkErrorType<T>
-    const message = `${err.error || 'No error message returned'}`
+    const error = result as SocketSdkErrorType<T>
+    const message = `${error.error || 'No error message returned'}`
 
-    debugFn(`fail: ${description} bad response:\n`, err)
+    debugFn('error', `fail: ${description} bad response`)
+    debugDir('inspect', { error })
 
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${message}${err.cause ? ` ( Reason: ${err.cause} )` : ''}`,
+      cause: `${message}${error.cause ? ` ( Reason: ${error.cause} )` : ''}`,
       data: {
         code: result.status,
       },
@@ -223,7 +227,8 @@ export async function queryApiSafeText(
 
     const cause = (e as undefined | { message: string })?.message
 
-    debugFn('catch: queryApi() error\n', e)
+    debugFn('error', 'caught: queryApi() error')
+    debugDir('inspect', { error: e })
 
     return {
       ok: false,
@@ -249,7 +254,8 @@ export async function queryApiSafeText(
       data,
     }
   } catch (e) {
-    debugFn('catch: await result.text() error\n', e)
+    debugFn('error', 'caught: await result.text() error')
+    debugDir('inspect', { error: e })
 
     return {
       ok: false,
