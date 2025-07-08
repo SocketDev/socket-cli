@@ -36,7 +36,6 @@ export async function getAlertsMapFromPnpmLockfile(
 export type GetAlertsMapFromPurlsOptions = {
   consolidate?: boolean | undefined
   include?: AlertIncludeFilter | undefined
-  limit?: number | undefined
   overrides?: { [key: string]: string } | undefined
   nothrow?: boolean | undefined
   spinner?: Spinner | undefined
@@ -50,7 +49,6 @@ export async function getAlertsMapFromPurls(
     __proto__: null,
     consolidate: false,
     include: undefined,
-    limit: Infinity,
     nothrow: false,
     ...options_,
   } as GetAlertsMapFromPurlsOptions

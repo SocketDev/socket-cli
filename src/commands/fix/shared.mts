@@ -3,7 +3,7 @@ import type { Remap } from '@socketsecurity/registry/lib/objects'
 
 export const CMD_NAME = 'socket fix'
 
-export function getAlertsMapOptions(
+export function getFixAlertsMapOptions(
   options: GetAlertsMapFromPurlsOptions = {},
 ) {
   return {

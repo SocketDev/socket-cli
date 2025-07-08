@@ -1,20 +1,23 @@
 import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 
 import { agentFix } from './agent-fix.mts'
-import { getCiEnv, getOpenPrsForEnvironment } from './fix-env-helpers.mts'
 import { getActualTree } from './get-actual-tree.mts'
-import { getAlertsMapOptions } from './shared.mts'
+import { getFixAlertsMapOptions } from './shared.mts'
+import { Arborist } from '../../shadow/npm/arborist/index.mts'
 import {
-  Arborist,
-  SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
-} from '../../shadow/npm/arborist/index.mts'
-import { getAlertsMapFromArborist } from '../../shadow/npm/arborist-helpers.mts'
+  findPackageNode,
+  getAlertsMapFromArborist,
+  updateNode,
+} from '../../shadow/npm/arborist-helpers.mts'
 import { runAgentInstall } from '../../utils/agent.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { getNpmConfig } from '../../utils/npm-config.mts'
 
 import type { FixConfig, InstallOptions } from './agent-fix.mts'
-import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
+import type {
+  ArboristInstance,
+  NodeClass,
+} from '../../shadow/npm/arborist/types.mts'
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
@@ -42,38 +45,28 @@ export async function npmFix(
   pkgEnvDetails: EnvDetails,
   fixConfig: FixConfig,
 ): Promise<CResult<{ fixed: boolean }>> {
-  const { limit, purls, spinner } = fixConfig
+  const { purls, spinner } = fixConfig
 
   spinner?.start()
 
-  const ciEnv = await getCiEnv()
-  const openPrs = ciEnv ? await getOpenPrsForEnvironment(ciEnv) : []
-
+  let arb: ArboristInstance
   let actualTree: NodeClass | undefined
   let alertsMap
   try {
     if (purls.length) {
-      alertsMap = await getAlertsMapFromPurls(
-        purls,
-        getAlertsMapOptions({ limit: Math.max(limit, openPrs.length) }),
-      )
+      alertsMap = await getAlertsMapFromPurls(purls, getFixAlertsMapOptions())
     } else {
       const flatConfig = await getNpmConfig({
         npmVersion: pkgEnvDetails.agentVersion,
       })
-
-      const arb = new Arborist({
+      arb = new Arborist({
         path: pkgEnvDetails.pkgPath,
         ...flatConfig,
-        ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
       })
       actualTree = await arb.reify()
       // Calling arb.reify() creates the arb.diff object, nulls-out arb.idealTree,
       // and populates arb.actualTree.
-      alertsMap = await getAlertsMapFromArborist(
-        arb,
-        getAlertsMapOptions({ limit: Math.max(limit, openPrs.length) }),
-      )
+      alertsMap = await getAlertsMapFromArborist(arb, getFixAlertsMapOptions())
     }
   } catch (e) {
     spinner?.stop()
@@ -94,7 +87,7 @@ export async function npmFix(
     alertsMap,
     install,
     {
-      async beforeInstall(editablePkgJson) {
+      async beforeInstall(editablePkgJson, packument, oldVersion, newVersion) {
         revertData = {
           ...(editablePkgJson.content.dependencies && {
             dependencies: { ...editablePkgJson.content.dependencies },
@@ -108,6 +101,13 @@ export async function npmFix(
             peerDependencies: { ...editablePkgJson.content.peerDependencies },
           }),
         } as PackageJson
+
+        const idealTree = await arb.buildIdealTree()
+        const node = findPackageNode(idealTree, packument.name, oldVersion)
+        if (node) {
+          updateNode(node, newVersion, packument.versions[newVersion]!)
+          await arb.reify()
+        }
       },
       async revertInstall(editablePkgJson) {
         if (revertData) {
@@ -115,8 +115,6 @@ export async function npmFix(
         }
       },
     },
-    ciEnv,
-    openPrs,
     fixConfig,
   )
 }

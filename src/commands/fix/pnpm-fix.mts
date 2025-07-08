@@ -4,9 +4,8 @@ import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { hasKeys } from '@socketsecurity/registry/lib/objects'
 
 import { agentFix } from './agent-fix.mts'
-import { getCiEnv, getOpenPrsForEnvironment } from './fix-env-helpers.mts'
 import { getActualTree } from './get-actual-tree.mts'
-import { getAlertsMapOptions } from './shared.mts'
+import { getFixAlertsMapOptions } from './shared.mts'
 import constants from '../../constants.mts'
 import { runAgentInstall } from '../../utils/agent.mts'
 import {
@@ -61,7 +60,7 @@ export async function pnpmFix(
   pkgEnvDetails: EnvDetails,
   fixConfig: FixConfig,
 ): Promise<CResult<{ fixed: boolean }>> {
-  const { cwd, limit, purls, spinner } = fixConfig
+  const { cwd, purls, spinner } = fixConfig
 
   spinner?.start()
 
@@ -102,20 +101,11 @@ export async function pnpmFix(
     }
   }
 
-  const ciEnv = await getCiEnv()
-  const openPrs = ciEnv ? await getOpenPrsForEnvironment(ciEnv) : []
-
   let alertsMap
   try {
     alertsMap = purls.length
-      ? await getAlertsMapFromPurls(
-          purls,
-          getAlertsMapOptions({ limit: Math.max(limit, openPrs.length) }),
-        )
-      : await getAlertsMapFromPnpmLockfile(
-          lockfile,
-          getAlertsMapOptions({ limit: Math.max(limit, openPrs.length) }),
-        )
+      ? await getAlertsMapFromPurls(purls, getFixAlertsMapOptions())
+      : await getAlertsMapFromPnpmLockfile(lockfile, getFixAlertsMapOptions())
   } catch (e) {
     spinner?.stop()
     debugFn('error', 'caught: PURL API')
@@ -139,7 +129,7 @@ export async function pnpmFix(
     {
       async beforeInstall(
         editablePkgJson,
-        name,
+        packument,
         oldVersion,
         newVersion,
         vulnerableVersionRange,
@@ -155,7 +145,7 @@ export async function pnpmFix(
         const oldPnpmSection = editablePkgJson.content[PNPM] as
           | StringKeyValueObject
           | undefined
-        const overrideKey = `${name}@${vulnerableVersionRange}`
+        const overrideKey = `${packument.name}@${vulnerableVersionRange}`
 
         revertOverrides = undefined
         revertOverridesSrc = extractOverridesFromPnpmLockSrc(lockSrc)
@@ -228,8 +218,6 @@ export async function pnpmFix(
         }
       },
     },
-    ciEnv,
-    openPrs,
     fixConfig,
   )
 }

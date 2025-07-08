@@ -1,15 +1,11 @@
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 
-import {
-  createSocketBranchParser,
-  getBaseGitBranch,
-  gitRepoInfo,
-} from './git.mts'
-import { getOpenSocketPrs } from './open-pr.mts'
+import { getBaseGitBranch, gitRepoInfo } from './git.mts'
+import { getSocketPrs } from './pull-request.mts'
 import constants from '../../constants.mts'
 
-import type { RepoInfo, SocketBranchParser } from './git.mts'
-import type { PrMatch } from './open-pr.mts'
+import type { RepoInfo } from './git.mts'
+import type { PrMatch } from './pull-request.mts'
 
 async function getEnvRepoInfo(
   cwd?: string | undefined,
@@ -27,50 +23,41 @@ async function getEnvRepoInfo(
       repo: ownerSlashRepo.slice(slashIndex + 1),
     }
   }
+  debugFn('notice', 'falling back to `git remote get-url origin`')
   return await gitRepoInfo(cwd)
 }
 
-export interface CiEnv {
-  gitEmail: string
-  gitUser: string
-  githubToken: string
-  repoInfo: RepoInfo
+export interface FixEnv {
   baseBranch: string
-  branchParser: SocketBranchParser
+  gitEmail: string
+  githubToken: string
+  gitUser: string
+  isCi: boolean
+  prs: PrMatch[]
+  repoInfo: RepoInfo | null
 }
 
-export async function getCiEnv(): Promise<CiEnv | null> {
+export async function getFixEnv(): Promise<FixEnv> {
+  const baseBranch = await getBaseGitBranch()
   const gitEmail = constants.ENV.SOCKET_CLI_GIT_USER_EMAIL
   const gitUser = constants.ENV.SOCKET_CLI_GIT_USER_NAME
   const githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
   const isCi = !!(constants.ENV.CI && gitEmail && gitUser && githubToken)
-  if (!isCi) {
-    return null
-  }
-  const baseBranch = await getBaseGitBranch()
-  if (!baseBranch) {
-    return null
-  }
   const repoInfo = await getEnvRepoInfo()
-  if (!repoInfo) {
-    return null
-  }
+  const prs =
+    isCi && repoInfo
+      ? await getSocketPrs(repoInfo.owner, repoInfo.repo, {
+          author: gitUser,
+          states: 'all',
+        })
+      : []
   return {
-    gitEmail,
-    gitUser,
-    githubToken,
-    repoInfo,
     baseBranch,
-    branchParser: createSocketBranchParser(),
+    gitEmail,
+    githubToken,
+    gitUser,
+    isCi,
+    prs,
+    repoInfo,
   }
-}
-
-export async function getOpenPrsForEnvironment(
-  env: CiEnv | null | undefined,
-): Promise<PrMatch[]> {
-  return env
-    ? await getOpenSocketPrs(env.repoInfo.owner, env.repoInfo.repo, {
-        author: env.gitUser,
-      })
-    : []
 }
