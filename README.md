@@ -36,7 +36,7 @@ All aliases support the flags and arguments of the commands they alias.
 
 - `socket ci` - alias for `socket report create --view --strict` which creates a
   report and quits with an exit code if the result is unhealthy. Use like eg.
-  `socket ci .` for a report for the current folder
+  `socket ci .` for a report for the current folder.
 
 ## Flags
 
