@@ -17,7 +17,7 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import {
   createSocketBranchParser,
-  getSocketBranchPattern,
+  genericSocketBranchParser,
   getSocketPullRequestBody,
   getSocketPullRequestTitle,
 } from './git.mts'
@@ -25,6 +25,7 @@ import constants from '../../constants.mts'
 import { safeStatsSync } from '../../utils/fs.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 
+import type { SocketBranchParseResult } from './git.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 import type { components } from '@octokit/openapi-types'
 import type { OctokitResponse } from '@octokit/types'
@@ -110,7 +111,7 @@ async function writeCache(key: string, data: JsonContent): Promise<void> {
 
 export type Pr = components['schemas']['pull-request']
 
-export type MERGE_STATE_STATUS =
+export type GQL_MERGE_STATE_STATUS =
   | 'BEHIND'
   | 'BLOCKED'
   | 'CLEAN'
@@ -120,12 +121,16 @@ export type MERGE_STATE_STATUS =
   | 'UNKNOWN'
   | 'UNSTABLE'
 
+export type GQL_PR_STATE = 'OPEN' | 'CLOSED' | 'MERGED'
+
 export type PrMatch = {
   author: string
   baseRefName: string
   headRefName: string
-  mergeStateStatus: MERGE_STATE_STATUS
+  mergeStateStatus: GQL_MERGE_STATE_STATUS
   number: number
+  parsedBranch: SocketBranchParseResult
+  state: GQL_PR_STATE
   title: string
 }
 
@@ -135,16 +140,12 @@ export type CleanupPrsOptions = {
   workspace?: string | undefined
 }
 
-export async function cleanupOpenPrs(
+export async function cleanupPrs(
   owner: string,
   repo: string,
   options?: CleanupPrsOptions | undefined,
 ): Promise<PrMatch[]> {
-  const contextualMatches = await getOpenSocketPrsWithContext(
-    owner,
-    repo,
-    options,
-  )
+  const contextualMatches = await getSocketPrsWithContext(owner, repo, options)
 
   if (!contextualMatches.length) {
     return []
@@ -272,21 +273,20 @@ export async function enablePrAutoMerge({
   return { enabled: false }
 }
 
-export type GetOpenSocketPrsOptions = {
+export type SocketPrsOptions = {
   author?: string | undefined
   newVersion?: string | undefined
   purl?: string | undefined
+  states?: string[] | string | undefined
   workspace?: string | undefined
 }
 
-export async function getOpenSocketPrs(
+export async function getSocketPrs(
   owner: string,
   repo: string,
-  options?: GetOpenSocketPrsOptions | undefined,
+  options?: SocketPrsOptions | undefined,
 ): Promise<PrMatch[]> {
-  return (await getOpenSocketPrsWithContext(owner, repo, options)).map(
-    d => d.match,
-  )
+  return (await getSocketPrsWithContext(owner, repo, options)).map(d => d.match)
 }
 
 type ContextualPrMatch = {
@@ -301,19 +301,26 @@ type ContextualPrMatch = {
   match: PrMatch
 }
 
-async function getOpenSocketPrsWithContext(
+async function getSocketPrsWithContext(
   owner: string,
   repo: string,
-  options_?: GetOpenSocketPrsOptions | undefined,
+  options?: SocketPrsOptions | undefined,
 ): Promise<ContextualPrMatch[]> {
-  const options = { __proto__: null, ...options_ } as GetOpenSocketPrsOptions
-  const { author } = options
+  const { author, states: statesValue = 'all' } = {
+    __proto__: null,
+    ...options,
+  } as SocketPrsOptions
   const checkAuthor = isNonEmptyString(author)
   const octokit = getOctokit()
   const octokitGraphql = getOctokitGraphql()
-  const branchPattern = getSocketBranchPattern(options)
-
   const contextualMatches: ContextualPrMatch[] = []
+  const states = (
+    typeof statesValue === 'string'
+      ? statesValue.toLowerCase() === 'all'
+        ? ['OPEN', 'CLOSED', 'MERGED']
+        : [statesValue]
+      : statesValue
+  ).map(s => s.toUpperCase())
   try {
     // Optimistically fetch only the first 50 open PRs using GraphQL to minimize
     // API quota usage. Fallback to REST if no matching PRs are found.
@@ -321,9 +328,9 @@ async function getOpenSocketPrsWithContext(
     const gqlResp = await cacheFetch(gqlCacheKey, () =>
       octokitGraphql(
         `
-          query($owner: String!, $repo: String!) {
+          query($owner: String!, $repo: String!, $states: [PullRequestState!]) {
             repository(owner: $owner, name: $repo) {
-              pullRequests(first: 50, states: OPEN, orderBy: {field: CREATED_AT, direction: DESC}) {
+              pullRequests(first: 50, states: $states, orderBy: {field: CREATED_AT, direction: DESC}) {
                 nodes {
                   author {
                     login
@@ -332,13 +339,18 @@ async function getOpenSocketPrsWithContext(
                   headRefName
                   mergeStateStatus
                   number
+                  state
                   title
                 }
               }
             }
           }
           `,
-        { owner, repo },
+        {
+          owner,
+          repo,
+          states,
+        },
       ),
     )
 
@@ -348,8 +360,9 @@ async function getOpenSocketPrsWithContext(
       }
       baseRefName: string
       headRefName: string
-      mergeStateStatus: MERGE_STATE_STATUS
+      mergeStateStatus: GQL_MERGE_STATE_STATUS
       number: number
+      state: GQL_PR_STATE
       title: string
     }
     const nodes: GqlPrNode[] =
@@ -358,8 +371,8 @@ async function getOpenSocketPrsWithContext(
       const node = nodes[i]!
       const login = node.author?.login
       const matchesAuthor = checkAuthor ? login === author : true
-      const matchesBranch = branchPattern.test(node.headRefName)
-      if (matchesAuthor && matchesBranch) {
+      const parsedBranch = genericSocketBranchParser(node.headRefName)
+      if (matchesAuthor && parsedBranch) {
         contextualMatches.push({
           context: {
             apiType: 'graphql',
@@ -372,6 +385,7 @@ async function getOpenSocketPrsWithContext(
           match: {
             ...node,
             author: login ?? '<unknown>',
+            parsedBranch,
           },
         })
       }
@@ -383,49 +397,59 @@ async function getOpenSocketPrsWithContext(
   }
 
   // Fallback to REST if GraphQL found no matching PRs.
-  let allOpenPrs: Pr[] | undefined
-  const cacheKey = `${repo}-open-prs`
+  let allPrs: Pr[] | undefined
+  const cacheKey = `${repo}-pull-requests`
   try {
-    allOpenPrs = await cacheFetch(
+    allPrs = await cacheFetch(
       cacheKey,
       async () =>
         (await octokit.paginate(octokit.pulls.list, {
           owner,
           repo,
-          state: 'open',
+          state: 'all',
           per_page: 100,
         })) as Pr[],
     )
   } catch {}
 
-  if (!allOpenPrs) {
+  if (!allPrs) {
     return contextualMatches
   }
 
-  for (let i = 0, { length } = allOpenPrs; i < length; i += 1) {
-    const pr = allOpenPrs[i]!
+  for (let i = 0, { length } = allPrs; i < length; i += 1) {
+    const pr = allPrs[i]!
     const login = pr.user?.login
+    const headRefName = pr.head.ref
     const matchesAuthor = checkAuthor ? login === author : true
-    const matchesBranch = branchPattern.test(pr.head.ref)
-    if (matchesAuthor && matchesBranch) {
+    const parsedBranch = genericSocketBranchParser(headRefName)
+    if (matchesAuthor && parsedBranch) {
+      // Upper cased mergeable_state is equivalent to mergeStateStatus.
+      // https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
+      const mergeStateStatus = (pr.mergeable_state?.toUpperCase?.() ??
+        'UNKNOWN') as GQL_MERGE_STATE_STATUS
+      // The REST API does not have a distinct merged state for pull requests.
+      // Instead, a merged pull request is represented as a closed pull request
+      // with a non-null merged_at timestamp.
+      const state = (
+        pr.merged_at ? 'MERGED' : pr.state.toUpperCase()
+      ) as GQL_PR_STATE
       contextualMatches.push({
         context: {
           apiType: 'rest',
           cacheKey,
-          data: allOpenPrs,
+          data: allPrs,
           entry: pr,
           index: i,
-          parent: allOpenPrs,
+          parent: allPrs,
         },
         match: {
           author: login ?? '<unknown>',
           baseRefName: pr.base.ref,
-          headRefName: pr.head.ref,
-          // Upper cased mergeable_state is equivalent to mergeStateStatus.
-          // https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
-          mergeStateStatus: (pr.mergeable_state?.toUpperCase?.() ??
-            'UNKNOWN') as MERGE_STATE_STATUS,
+          headRefName,
+          mergeStateStatus,
           number: pr.number,
+          parsedBranch,
+          state,
           title: pr.title,
         },
       })
@@ -494,7 +518,7 @@ export async function prExistForBranch(
       owner,
       repo,
       head: `${owner}:${branch}`,
-      state: 'open',
+      state: 'all',
       per_page: 1,
     })
     return prs.length > 0

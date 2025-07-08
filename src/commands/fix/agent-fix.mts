@@ -15,8 +15,10 @@ import {
 } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
+import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import { getActiveBranchesForPackage } from './fix-branch-helpers.mts'
+import { getPrsForPurl } from './fix-branch-helpers.mts'
+import { getFixEnv } from './fix-env-helpers.mts'
 import { getActualTree } from './get-actual-tree.mts'
 import {
   getSocketBranchName,
@@ -28,12 +30,11 @@ import {
   gitUnstagedModifiedFiles,
 } from './git.mts'
 import {
-  cleanupOpenPrs,
+  cleanupPrs,
   enablePrAutoMerge,
   openPr,
-  prExistForBranch,
   setGitRemoteGithubRepoUrl,
-} from './open-pr.mts'
+} from './pull-request.mts'
 import constants from '../../constants.mts'
 import {
   findBestPatchVersion,
@@ -50,14 +51,15 @@ import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
 import { idToPurl } from '../../utils/spec.mts'
 import { getOverridesData } from '../optimize/get-overrides-by-agent.mts'
 
-import type { CiEnv } from './fix-env-helpers.mts'
-import type { PrMatch } from './open-pr.mts'
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 import type { AlertsByPurl } from '../../utils/socket-package-alert.mts'
-import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
+import type {
+  EditablePackageJson,
+  Packument,
+} from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type FixConfig = {
@@ -80,7 +82,7 @@ export type InstallOptions = {
 
 export type InstallPhaseHandler = (
   editablePkgJson: EditablePackageJson,
-  name: string,
+  packument: Packument,
   oldVersion: string,
   newVersion: string,
   vulnerableVersionRange: string,
@@ -109,11 +111,12 @@ export async function agentFix(
     afterInstall?: InstallPhaseHandler | undefined
     revertInstall?: InstallPhaseHandler | undefined
   },
-  ciEnv: CiEnv | null,
-  openPrs: PrMatch[],
   fixConfig: FixConfig,
 ): Promise<CResult<{ fixed: boolean }>> {
   const { pkgPath: rootPath } = pkgEnvDetails
+
+  const fixEnv = await getFixEnv()
+
   const {
     autoMerge,
     cwd,
@@ -128,7 +131,7 @@ export async function agentFix(
   let count = 0
 
   const infoByPartialPurl = getCveInfoFromAlertsMap(alertsMap, {
-    limit: Math.max(limit, openPrs.length),
+    exclude: { upgradable: true },
   })
   if (!infoByPartialPurl) {
     spinner?.stop()
@@ -141,8 +144,14 @@ export async function agentFix(
     return { ok: true, data: { fixed: false } }
   }
 
-  if (isDebug('notice')) {
-    debugFn('notice', 'found: cves for', Array.from(infoByPartialPurl.keys()))
+  if (isDebug('notice,inspect')) {
+    const partialPurls = Array.from(infoByPartialPurl.keys())
+    const { length: purlsCount } = partialPurls
+    debugFn(
+      'notice',
+      `found: ${purlsCount} ${pluralize('PURL', purlsCount)} with CVEs`,
+    )
+    debugDir('inspect', { partialPurls })
   }
 
   // Lazily access constants.packumentCache.
@@ -190,10 +199,11 @@ export async function agentFix(
 
     const infos = Array.from(infoEntry[1].values())
     if (!infos.length) {
+      debugFn('notice', `miss: CVEs expected, but not found, for ${name}`)
       continue infoEntriesLoop
     }
 
-    logger.log(`Processing vulns for ${name}:`)
+    logger.log(`Processing vulns for ${name}`)
     logger.indent()
     spinner?.indent()
 
@@ -208,12 +218,8 @@ export async function agentFix(
       continue infoEntriesLoop
     }
 
-    const activeBranches = getActiveBranchesForPackage(
-      ciEnv,
-      infoEntry[0],
-      openPrs,
-    )
     const availableVersions = Object.keys(packument.versions)
+    const prs = getPrsForPurl(fixEnv, infoEntry[0])
     const warningsForAfter = new Set<string>()
 
     // eslint-disable-next-line no-unused-labels
@@ -230,18 +236,17 @@ export async function agentFix(
       const workspace = isWorkspaceRoot
         ? 'root'
         : path.relative(rootPath, pkgPath)
-      const branchWorkspace = ciEnv
+      const branchWorkspace = fixEnv.isCi
         ? getSocketBranchWorkspaceComponent(workspace)
         : ''
-
       // actualTree may not be defined on the first iteration of pkgJsonPathsLoop.
       if (!actualTree) {
-        if (!ciEnv) {
+        if (!fixEnv.isCi) {
           // eslint-disable-next-line no-await-in-loop
           await removeNodeModules(cwd)
         }
         const maybeActualTree =
-          ciEnv && existsSync(path.join(rootPath, 'node_modules'))
+          fixEnv.isCi && existsSync(path.join(rootPath, 'node_modules'))
             ? // eslint-disable-next-line no-await-in-loop
               await getActualTree(cwd)
             : // eslint-disable-next-line no-await-in-loop
@@ -282,7 +287,7 @@ export async function agentFix(
 
       let hasAnnouncedWorkspace = false
       let workspaceLogCallCount = logger.logCallCount
-      if (isDebug()) {
+      if (isDebug('notice')) {
         debugFn('notice', `check: workspace ${workspace}`)
         hasAnnouncedWorkspace = true
         workspaceLogCallCount = logger.logCallCount
@@ -319,23 +324,34 @@ export async function agentFix(
             continue infosLoop
           }
           if (semver.gte(oldVersion, newVersion)) {
-            debugFn('notice', `skip: ${oldId} is >= ${newVersion}`)
+            debugFn('silly', `skip: ${oldId} is >= ${newVersion}`)
             continue infosLoop
           }
-          if (
-            activeBranches.find(
-              b =>
-                b.workspace === branchWorkspace && b.newVersion === newVersion,
-            )
-          ) {
-            debugFn('notice', `skip: open PR found for ${name}@${newVersion}`)
+          const branch = getSocketBranchName(oldPurl, newVersion, workspace)
+          const pr = prs.find(
+            ({ parsedBranch: b }) =>
+              b.workspace === branchWorkspace && b.newVersion === newVersion,
+          )
+          if (pr) {
+            debugFn('notice', `skip: PR #${pr.number} for ${name} exists`)
             if (++count >= limit) {
               cleanupInfoEntriesLoop()
               break infoEntriesLoop
             }
             continue infosLoop
           }
-
+          if (
+            fixEnv.isCi &&
+            // eslint-disable-next-line no-await-in-loop
+            (await gitRemoteBranchExists(branch, cwd))
+          ) {
+            debugFn('notice', `skip: remote branch "${branch}" exists`)
+            if (++count >= limit) {
+              cleanupInfoEntriesLoop()
+              break infoEntriesLoop
+            }
+            continue infosLoop
+          }
           const { overrides: oldOverrides } = getOverridesData(
             pkgEnvDetails,
             editablePkgJson.content,
@@ -351,12 +367,13 @@ export async function agentFix(
           // eslint-disable-next-line no-await-in-loop
           await beforeInstall(
             editablePkgJson,
-            name,
+            packument,
             oldVersion,
             newVersion,
             vulnerableVersionRange,
             fixConfig,
           )
+
           updatePackageJsonFromNode(
             editablePkgJson,
             actualTree,
@@ -364,13 +381,26 @@ export async function agentFix(
             newVersion,
             rangeStyle,
           )
+
           // eslint-disable-next-line no-await-in-loop
-          if (!(await editablePkgJson.save({ ignoreWhitespace: true }))) {
-            debugFn('notice', `skip: ${workspace}/package.json unchanged`)
+          const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
+          const moddedFilepaths = unstagedCResult.ok
+            ? unstagedCResult.data.filter(filepath => {
+                const basename = path.basename(filepath)
+                return (
+                  basename === 'package.json' ||
+                  basename === pkgEnvDetails.lockName
+                )
+              })
+            : []
+          if (!moddedFilepaths.length) {
+            logger.warn(
+              'Unexpected condition: Nothing to commit, skipping PR creation.',
+            )
             // Reset things just in case.
-            if (ciEnv) {
+            if (fixEnv.isCi) {
               // eslint-disable-next-line no-await-in-loop
-              await gitResetAndClean(ciEnv.baseBranch, cwd)
+              await gitResetAndClean(fixEnv.baseBranch, cwd)
             }
             continue infosLoop
           }
@@ -402,7 +432,7 @@ export async function agentFix(
               // eslint-disable-next-line no-await-in-loop
               await afterInstall(
                 editablePkgJson,
-                name,
+                packument,
                 oldVersion,
                 newVersion,
                 vulnerableVersionRange,
@@ -426,48 +456,9 @@ export async function agentFix(
           spinner?.stop()
 
           // Check repoInfo to make TypeScript happy.
-          if (!errored && ciEnv?.repoInfo) {
+          if (!errored && fixEnv.isCi && fixEnv.repoInfo) {
             try {
-              // eslint-disable-next-line no-await-in-loop
-              const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
-              if (!unstagedCResult.ok) {
-                logger.warn(
-                  'Unexpected condition: Nothing to commit, skipping PR creation.',
-                )
-                continue
-              }
-              const moddedFilepaths = unstagedCResult.data.filter(filepath => {
-                const basename = path.basename(filepath)
-                return (
-                  basename === 'package.json' ||
-                  basename === pkgEnvDetails.lockName
-                )
-              })
-              if (!moddedFilepaths.length) {
-                logger.warn(
-                  'Unexpected condition: Nothing to commit, skipping PR creation.',
-                )
-                continue infosLoop
-              }
-
-              const branch = getSocketBranchName(oldPurl, newVersion, workspace)
-              let skipPr = false
               if (
-                // eslint-disable-next-line no-await-in-loop
-                await prExistForBranch(
-                  ciEnv.repoInfo.owner,
-                  ciEnv.repoInfo.repo,
-                  branch,
-                )
-              ) {
-                skipPr = true
-                debugFn('notice', `skip: branch "${branch}" exists`)
-              }
-              // eslint-disable-next-line no-await-in-loop
-              else if (await gitRemoteBranchExists(branch, cwd)) {
-                skipPr = true
-                debugFn('notice', `skip: remote branch "${branch}" exists`)
-              } else if (
                 // eslint-disable-next-line no-await-in-loop
                 !(await gitCreateAndPushBranch(
                   branch,
@@ -475,19 +466,16 @@ export async function agentFix(
                   moddedFilepaths,
                   {
                     cwd,
-                    email: ciEnv.gitEmail,
-                    user: ciEnv.gitUser,
+                    email: fixEnv.gitEmail,
+                    user: fixEnv.gitUser,
                   },
                 ))
               ) {
-                skipPr = true
                 logger.warn(
                   'Unexpected condition: Push failed, skipping PR creation.',
                 )
-              }
-              if (skipPr) {
                 // eslint-disable-next-line no-await-in-loop
-                await gitResetAndClean(ciEnv.baseBranch, cwd)
+                await gitResetAndClean(fixEnv.baseBranch, cwd)
                 // eslint-disable-next-line no-await-in-loop
                 const maybeActualTree = await installer(pkgEnvDetails, {
                   cwd,
@@ -508,12 +496,12 @@ export async function agentFix(
               // eslint-disable-next-line no-await-in-loop
               await Promise.allSettled([
                 setGitRemoteGithubRepoUrl(
-                  ciEnv.repoInfo.owner,
-                  ciEnv.repoInfo.repo,
-                  ciEnv.githubToken!,
+                  fixEnv.repoInfo.owner,
+                  fixEnv.repoInfo.repo,
+                  fixEnv.githubToken!,
                   cwd,
                 ),
-                cleanupOpenPrs(ciEnv.repoInfo.owner, ciEnv.repoInfo.repo, {
+                cleanupPrs(fixEnv.repoInfo.owner, fixEnv.repoInfo.repo, {
                   newVersion,
                   purl: oldPurl,
                   workspace,
@@ -521,13 +509,13 @@ export async function agentFix(
               ])
               // eslint-disable-next-line no-await-in-loop
               const prResponse = await openPr(
-                ciEnv.repoInfo.owner,
-                ciEnv.repoInfo.repo,
+                fixEnv.repoInfo.owner,
+                fixEnv.repoInfo.repo,
                 branch,
                 oldPurl,
                 newVersion,
                 {
-                  baseBranch: ciEnv.baseBranch,
+                  baseBranch: fixEnv.baseBranch,
                   cwd,
                   workspace,
                 },
@@ -561,10 +549,10 @@ export async function agentFix(
             }
           }
 
-          if (ciEnv) {
+          if (fixEnv.isCi) {
             spinner?.start()
             // eslint-disable-next-line no-await-in-loop
-            await gitResetAndClean(ciEnv.baseBranch, cwd)
+            await gitResetAndClean(fixEnv.baseBranch, cwd)
             // eslint-disable-next-line no-await-in-loop
             const maybeActualTree = await installer(pkgEnvDetails, {
               cwd,
@@ -578,12 +566,12 @@ export async function agentFix(
             }
           }
           if (errored) {
-            if (!ciEnv) {
+            if (!fixEnv.isCi) {
               spinner?.start()
               // eslint-disable-next-line no-await-in-loop
               await revertInstall(
                 editablePkgJson,
-                name,
+                packument,
                 oldVersion,
                 newVersion,
                 vulnerableVersionRange,

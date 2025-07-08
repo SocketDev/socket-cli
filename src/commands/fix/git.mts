@@ -73,6 +73,8 @@ export function createSocketBranchParser(
   }
 }
 
+export const genericSocketBranchParser = createSocketBranchParser()
+
 export async function getBaseGitBranch(cwd = process.cwd()): Promise<string> {
   // Lazily access constants.ENV properties.
   const { GITHUB_BASE_REF, GITHUB_REF_NAME, GITHUB_REF_TYPE } = constants.ENV
@@ -109,10 +111,10 @@ export function getSocketBranchFullNameComponent(
       ? PackageURL.fromString(`pkg:unknown/${pkgName}`)
       : pkgName,
   )
-  const fmtMaybeNamespace = purlObj.namespace
+  const branchMaybeNamespace = purlObj.namespace
     ? `${formatBranchName(purlObj.namespace)}--`
     : ''
-  return `${fmtMaybeNamespace}${formatBranchName(purlObj.name)}`
+  return `${branchMaybeNamespace}${formatBranchName(purlObj.name)}`
 }
 
 export function getSocketBranchName(
@@ -121,12 +123,12 @@ export function getSocketBranchName(
   workspace?: string | undefined,
 ): string {
   const purlObj = getPurlObject(purl)
-  const fmtType = getSocketBranchPurlTypeComponent(purlObj)
-  const fmtWorkspace = getSocketBranchWorkspaceComponent(workspace)
-  const fmtFullName = getSocketBranchFullNameComponent(purlObj)
-  const fmtVersion = getSocketBranchPackageVersionComponent(purlObj.version!)
-  const fmtNewVersion = formatBranchName(newVersion)
-  return `socket/${fmtType}/${fmtWorkspace}/${fmtFullName}_${fmtVersion}_${fmtNewVersion}`
+  const branchType = getSocketBranchPurlTypeComponent(purlObj)
+  const branchWorkspace = getSocketBranchWorkspaceComponent(workspace)
+  const branchFullName = getSocketBranchFullNameComponent(purlObj)
+  const branchVersion = getSocketBranchPackageVersionComponent(purlObj.version!)
+  const branchNewVersion = formatBranchName(newVersion)
+  return `socket/${branchType}/${branchWorkspace}/${branchFullName}_${branchVersion}_${branchNewVersion}`
 }
 
 export function getSocketBranchPackageVersionComponent(
@@ -288,7 +290,7 @@ export async function gitRepoInfo(
     debugFn('error', 'git: unmatched git remote URL format')
     debugDir('inspect', { remoteUrl })
   } catch (e) {
-    debugFn('error', 'caught: git remote get-url origin failed')
+    debugFn('error', 'caught: `git remote get-url origin` failed')
     debugDir('inspect', { error: e })
   }
   return null
