@@ -338,27 +338,23 @@ export type CveInfoByPartialPurl = Map<string, CveInfoByAlertKey>
 
 export type GetCveInfoByPackageOptions = {
   exclude?: CveExcludeFilter | undefined
-  limit?: number | undefined
 }
 
 export function getCveInfoFromAlertsMap(
   alertsMap: AlertsByPurl,
-  options_?: GetCveInfoByPackageOptions | undefined,
+  options?: GetCveInfoByPackageOptions | undefined,
 ): CveInfoByPartialPurl | null {
-  const options = {
+  const { exclude: exclude_ } = {
     __proto__: null,
-    exclude: undefined,
-    limit: Infinity,
-    ...options_,
+    ...options,
   } as GetCveInfoByPackageOptions
-
-  options.exclude = {
+  const exclude = {
     __proto__: null,
-    ...options.exclude,
+    ...exclude_,
   } as CveExcludeFilter
 
-  let count = 0
   let infoByPartialPurl: CveInfoByPartialPurl | null = null
+  // eslint-disable-next-line no-unused-labels
   alertsMapLoop: for (const { 0: purl, 1: sockPkgAlerts } of alertsMap) {
     const purlObj = getPurlObject(purl)
     const partialPurl = new PackageURL(
@@ -371,7 +367,7 @@ export function getCveInfoFromAlertsMap(
       const alert = sockPkgAlert.raw
       if (
         alert.fix?.type !== ALERT_FIX_TYPE.cve ||
-        (options.exclude.upgradable &&
+        (exclude.upgradable &&
           getManifestData(sockPkgAlert.ecosystem as any, name))
       ) {
         continue sockPkgAlertsLoop
@@ -406,9 +402,6 @@ export function getCveInfoFromAlertsMap(
                   .replace(/; +/g, ' || '),
               ).format(),
             })
-            if (++count >= options.limit!) {
-              break alertsMapLoop
-            }
             continue sockPkgAlertsLoop
           } catch (e) {
             error = e
