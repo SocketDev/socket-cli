@@ -1,11 +1,13 @@
 import semver from 'semver'
 
+import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
 import { fetchPackagePackument } from '@socketsecurity/registry/lib/packages'
 
 import constants from '../../constants.mts'
+import { Edge } from './arborist/index.mts'
 import { DiffAction } from './arborist/types.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { type AliasResult, npa } from '../../utils/npm-package-arg.mts'
@@ -15,6 +17,7 @@ import { idToNpmPurl } from '../../utils/spec.mts'
 import type {
   ArboristInstance,
   Diff,
+  EdgeClass,
   LinkClass,
   NodeClass,
 } from './arborist/types.mts'
@@ -182,7 +185,6 @@ export async function getAlertsMapFromArborist(
     __proto__: null,
     consolidate: false,
     include: undefined,
-    limit: Infinity,
     nothrow: false,
     ...options_,
   } as GetAlertsMapFromArboristOptions
