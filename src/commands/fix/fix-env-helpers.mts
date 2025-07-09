@@ -7,9 +7,7 @@ import constants from '../../constants.mts'
 import type { RepoInfo } from './git.mts'
 import type { PrMatch } from './pull-request.mts'
 
-async function getEnvRepoInfo(
-  cwd?: string | undefined,
-): Promise<RepoInfo | null> {
+function ciRepoInfo(): RepoInfo | null {
   // Lazily access constants.ENV.GITHUB_REPOSITORY.
   const { GITHUB_REPOSITORY } = constants.ENV
   if (!GITHUB_REPOSITORY) {
@@ -17,14 +15,13 @@ async function getEnvRepoInfo(
   }
   const ownerSlashRepo = GITHUB_REPOSITORY
   const slashIndex = ownerSlashRepo.indexOf('/')
-  if (slashIndex !== -1) {
-    return {
-      owner: ownerSlashRepo.slice(0, slashIndex),
-      repo: ownerSlashRepo.slice(slashIndex + 1),
-    }
+  if (slashIndex === -1) {
+    return null
   }
-  debugFn('notice', 'falling back to `git remote get-url origin`')
-  return await gitRepoInfo(cwd)
+  return {
+    owner: ownerSlashRepo.slice(0, slashIndex),
+    repo: ownerSlashRepo.slice(slashIndex + 1),
+  }
 }
 
 export interface FixEnv {
@@ -43,7 +40,16 @@ export async function getFixEnv(): Promise<FixEnv> {
   const gitUser = constants.ENV.SOCKET_CLI_GIT_USER_NAME
   const githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
   const isCi = !!(constants.ENV.CI && gitEmail && gitUser && githubToken)
-  const repoInfo = await getEnvRepoInfo()
+  let repoInfo: RepoInfo | null = null
+  if (isCi) {
+    repoInfo = ciRepoInfo()
+  }
+  if (!repoInfo) {
+    if (isCi) {
+      debugFn('notice', 'falling back to `git remote get-url origin`')
+    }
+    repoInfo = await gitRepoInfo()
+  }
   const prs =
     isCi && repoInfo
       ? await getSocketPrs(repoInfo.owner, repoInfo.repo, {
