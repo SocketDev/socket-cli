@@ -42,7 +42,7 @@ const config: CliCommandConfig = {
       - Permissions: full-scans:delete
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
       $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0

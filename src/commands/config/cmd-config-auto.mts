@@ -27,7 +27,7 @@ const config: CliCommandConfig = {
       $ ${command} [options] KEY
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Attempt to automatically discover the correct value for given config KEY.
 

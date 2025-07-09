@@ -13,23 +13,28 @@ type ListDescription =
 
 export function getFlagListOutput(
   list: MeowFlags,
-  indent: number,
-  { keyPrefix = '--', padName } = {} as HelpListOptions,
+  options?: HelpListOptions | undefined,
 ): string {
+  const { keyPrefix = '--', padName } = {
+    __proto__: null,
+    ...options,
+  } as HelpListOptions
   return getHelpListOutput(
     {
       ...list,
     },
-    indent,
     { keyPrefix, padName },
   )
 }
 
 export function getHelpListOutput(
   list: Record<string, ListDescription>,
-  indent: number,
-  { keyPrefix = '', padName = 18 } = {} as HelpListOptions,
+  options?: HelpListOptions | undefined,
 ): string {
+  const { keyPrefix = '', padName = 18 } = {
+    __proto__: null,
+    ...options,
+  } as HelpListOptions
   let result = ''
   const names = Object.keys(list).sort(naturalCompare)
   for (const name of names) {
@@ -39,11 +44,7 @@ export function getHelpListOutput(
     }
     const description =
       (typeof entry === 'object' ? entry.description : entry) || ''
-    result +=
-      ''.padEnd(indent) +
-      (keyPrefix + name).padEnd(padName) +
-      description +
-      '\n'
+    result += (keyPrefix + name).padEnd(padName) + description
   }
   return result.trim() || '(none)'
 }

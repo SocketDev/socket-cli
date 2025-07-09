@@ -27,7 +27,7 @@ const config: CliCommandConfig = {
       $ ${command} [options] <KEY> <VALUE>
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     This is a crude way of updating the local configuration for this CLI tool.
 

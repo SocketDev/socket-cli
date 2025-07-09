@@ -32,7 +32,7 @@ const config: CliCommandConfig = {
       - Permissions: packages:list
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Show deep scoring details for one package. The score will reflect the package
     itself, any of its dependencies, and any of its transitive dependencies.

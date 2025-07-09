@@ -23,7 +23,7 @@ const config: CliCommandConfig = {
       $ ${command} [options] <LANGUAGE> <TARGET>
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Generates a declarative dependency manifest (like a package.json for Node.JS
     or requirements.txt for PyPi), but for certain supported ecosystems

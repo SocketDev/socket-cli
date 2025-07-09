@@ -30,7 +30,7 @@ const config: CliCommandConfig = {
     tab completion that is registered for it in bash.
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
 

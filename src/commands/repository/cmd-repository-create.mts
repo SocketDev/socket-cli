@@ -64,7 +64,7 @@ const config: CliCommandConfig = {
     The REPO name should be a "slug". Follows the same naming convention as GitHub.
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
       $ ${command} test-repo

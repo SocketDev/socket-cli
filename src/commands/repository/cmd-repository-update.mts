@@ -66,7 +66,7 @@ const config: CliCommandConfig = {
       - Permissions: repo:update
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
       $ ${command} test-repo

@@ -37,7 +37,7 @@ const config: CliCommandConfig = {
     different alias for socket on your system.
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
 

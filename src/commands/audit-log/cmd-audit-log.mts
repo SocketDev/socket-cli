@@ -66,7 +66,7 @@ const config: CliCommandConfig = {
     The page arg should be a positive integer, offset 1. Defaults to 1.
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
       $ ${command}

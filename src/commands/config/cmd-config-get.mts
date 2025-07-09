@@ -30,7 +30,7 @@ const config: CliCommandConfig = {
     config then the value will come from that override.
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     KEY is an enum. Valid keys:
 
