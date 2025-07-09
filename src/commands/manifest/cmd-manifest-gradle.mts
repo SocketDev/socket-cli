@@ -42,7 +42,7 @@ const config: CliCommandConfig = {
       $ ${command} [options] [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Uses gradle, preferably through your local project \`gradlew\`, to generate a
     \`pom.xml\` file for each task. If you have no \`gradlew\` you can try the

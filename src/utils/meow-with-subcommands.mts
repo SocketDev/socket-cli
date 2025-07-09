@@ -224,28 +224,25 @@ export async function meowWithSubcommands(
 
   function formatCommandsForHelp(isRootCommand: boolean) {
     if (!isRootCommand) {
-      return getHelpListOutput(
-        {
-          ...toSortedObject(
-            Object.fromEntries(
-              Object.entries(subcommands).filter(
-                ({ 1: subcommand }) => !subcommand.hidden,
-              ),
+      return getHelpListOutput({
+        ...toSortedObject(
+          Object.fromEntries(
+            Object.entries(subcommands).filter(
+              ({ 1: subcommand }) => !subcommand.hidden,
             ),
           ),
-          ...toSortedObject(
-            Object.fromEntries(
-              Object.entries(aliases).filter(({ 1: alias }) => {
-                const { hidden } = alias
-                const cmdName = hidden ? '' : alias.argv[0]
-                const subcommand = cmdName ? subcommands[cmdName] : undefined
-                return subcommand && !subcommand.hidden
-              }),
-            ),
+        ),
+        ...toSortedObject(
+          Object.fromEntries(
+            Object.entries(aliases).filter(({ 1: alias }) => {
+              const { hidden } = alias
+              const cmdName = hidden ? '' : alias.argv[0]
+              const subcommand = cmdName ? subcommands[cmdName] : undefined
+              return subcommand && !subcommand.hidden
+            }),
           ),
-        },
-        6,
-      )
+        ),
+      })
     }
 
     // "Bucket" some commands for easier usage.
@@ -380,7 +377,7 @@ ${isRootCommand ? '' : '\n    Commands'}
       ${formatCommandsForHelp(isRootCommand)}
 
 ${isRootCommand ? '    Options' : '    Options'}${isRootCommand ? '       (Note: all CLI commands have these flags even when not displayed in their help)\n' : ''}
-      ${getFlagListOutput(flags, 6, { padName: 25 })}
+      ${getFlagListOutput(flags, { padName: 25 })}
 
     Examples
       $ ${name} --help

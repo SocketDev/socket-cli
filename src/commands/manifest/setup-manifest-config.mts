@@ -196,15 +196,15 @@ async function setupConda(
     config.disabled = true
   }
 
-  const inf = await askForInputFile(config.infile || 'environment.yml')
-  if (inf === undefined) {
+  const infile = await askForInputFile(config.infile || 'environment.yml')
+  if (infile === undefined) {
     return canceledByUser()
-  } else if (inf.trim() === '-') {
+  } else if (infile === '-') {
     config.stdin = true
   } else {
     delete config.stdin
-    if (inf.trim()) {
-      config.infile = inf.trim()
+    if (infile) {
+      config.infile = infile
     } else {
       delete config.infile
     }
@@ -229,8 +229,8 @@ async function setupConda(
       config.stdout = true
     } else {
       delete config.stdout
-      if (out?.trim()) {
-        config.outfile = out.trim()
+      if (out) {
+        config.outfile = out
       } else {
         delete config.outfile
       }
@@ -257,8 +257,8 @@ async function setupGradle(
   const bin = await askForBin(config.bin || './gradlew')
   if (bin === undefined) {
     return canceledByUser()
-  } else if (bin.trim()) {
-    config.bin = bin.trim()
+  } else if (bin) {
+    config.bin = bin
   } else {
     delete config.bin
   }
@@ -271,8 +271,8 @@ async function setupGradle(
   })
   if (opts === undefined) {
     return canceledByUser()
-  } else if (opts.trim()) {
-    config.gradleOpts = opts.trim()
+  } else if (opts) {
+    config.gradleOpts = opts
   } else {
     delete config.gradleOpts
   }
@@ -297,8 +297,8 @@ async function setupSbt(
   const bin = await askForBin(config.bin || 'sbt')
   if (bin === undefined) {
     return canceledByUser()
-  } else if (bin.trim()) {
-    config.bin = bin.trim()
+  } else if (bin) {
+    config.bin = bin
   } else {
     delete config.bin
   }
@@ -311,8 +311,8 @@ async function setupSbt(
   })
   if (opts === undefined) {
     return canceledByUser()
-  } else if (opts.trim()) {
-    config.sbtOpts = opts.trim()
+  } else if (opts) {
+    config.sbtOpts = opts
   } else {
     delete config.sbtOpts
   }
@@ -336,8 +336,8 @@ async function setupSbt(
       config.stdout = true
     } else {
       delete config.stdout
-      if (out?.trim()) {
-        config.outfile = out.trim()
+      if (out) {
+        config.outfile = out
       } else {
         delete config.outfile
       }

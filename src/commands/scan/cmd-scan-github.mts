@@ -84,7 +84,7 @@ const config: CliCommandConfig = {
     You can use \`socket scan setup\` to configure certain repo flag defaults.
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
       $ ${command}

@@ -30,7 +30,7 @@ const config: CliCommandConfig = {
       $ ${command} [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     This command will try to detect all supported ecosystems in given CWD. Then
     it starts a configurator where you can setup default values for certain flags

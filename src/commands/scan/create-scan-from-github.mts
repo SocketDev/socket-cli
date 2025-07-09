@@ -71,7 +71,7 @@ export async function createScanFromGithub({
   let targetRepos: string[] = repos
     .trim()
     .split(',')
-    .map(repo => repo.trim())
+    .map(r => r.trim())
     .filter(Boolean)
   if (all || targetRepos.length === 0) {
     // Fetch from Socket API
@@ -86,7 +86,7 @@ export async function createScanFromGithub({
     targetRepos = result.data.results.map(obj => obj.slug || '')
   }
 
-  targetRepos = targetRepos.map(slug => slug.trim()).filter(Boolean)
+  targetRepos = targetRepos.map(s => s.trim()).filter(Boolean)
 
   logger.info(`Have ${targetRepos.length} repo names to Scan!`)
   logger.log('')

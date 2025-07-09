@@ -27,7 +27,7 @@ const config: CliCommandConfig = {
       $ ${command} [options] [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
       $ ${command}

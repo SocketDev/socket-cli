@@ -37,7 +37,7 @@ const config: CliCommandConfig = {
     Logs into the Socket API by prompting for an API key
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
       $ ${command}

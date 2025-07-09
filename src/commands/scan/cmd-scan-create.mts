@@ -123,7 +123,7 @@ const config: CliCommandConfig = {
       - Permissions: full-scans:create
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
     Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".

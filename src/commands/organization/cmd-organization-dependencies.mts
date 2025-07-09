@@ -41,7 +41,7 @@ const config: CliCommandConfig = {
       - Permissions: none (does need token with access to target org)
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
       ${command}

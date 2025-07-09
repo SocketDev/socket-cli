@@ -67,7 +67,7 @@ const config: CliCommandConfig = {
           added/removed list (similar to diffing two files with git).
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
       $ ${command} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1

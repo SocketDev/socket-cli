@@ -30,7 +30,7 @@ const config: CliCommandConfig = {
       $ ${command} [options] [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Interactive configurator to create a local json file in the target directory
     that helps to set flag defaults for \`socket scan create\`.

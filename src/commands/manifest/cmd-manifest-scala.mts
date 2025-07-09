@@ -50,7 +50,7 @@ const config: CliCommandConfig = {
       $ ${command} [options] [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Uses \`sbt makePom\` to generate a \`pom.xml\` from your \`build.sbt\` file.
     This xml file is the dependency manifest (like a package.json

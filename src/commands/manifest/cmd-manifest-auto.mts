@@ -34,7 +34,7 @@ const config: CliCommandConfig = {
       $ ${command} [options] [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Tries to figure out what language your target repo uses. If it finds a
     supported case then it will try to generate the manifest file for that

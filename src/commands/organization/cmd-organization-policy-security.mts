@@ -43,7 +43,7 @@ const config: CliCommandConfig = {
       - Permissions: security-policy:read
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Your API token will need the \`security-policy:read\` permission otherwise
     the request will fail with an authentication error.

@@ -66,7 +66,7 @@ const config: CliCommandConfig = {
       - Permissions: full-scans:list security-policy:read
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     When no output path is given the contents is sent to stdout.
 
