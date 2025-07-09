@@ -42,6 +42,8 @@ function getOctokit() {
     }
     _octokit = new Octokit({
       auth: SOCKET_CLI_GITHUB_TOKEN,
+      // Lazily access constants.ENV.GITHUB_API_URL.
+      baseUrl: constants.ENV.GITHUB_API_URL,
     })
   }
   return _octokit
@@ -267,7 +269,7 @@ export async function enablePrAutoMerge({
     Array.isArray(error.errors) &&
     error.errors.length
   ) {
-    const details = error.errors.map(({ message }) => message.trim())
+    const details = error.errors.map(({ message: m }) => m.trim())
     return { enabled: false, details }
   }
   return { enabled: false }
@@ -533,7 +535,8 @@ export async function setGitRemoteGithubRepoUrl(
   cwd = process.cwd(),
 ): Promise<void> {
   const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
-  const url = `https://x-access-token:${token}@github.com/${owner}/${repo}`
+  const { host } = new URL(constants.ENV.GITHUB_SERVER_URL)
+  const url = `https://x-access-token:${token}@${host}/${owner}/${repo}`
   try {
     await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
   } catch (e) {
