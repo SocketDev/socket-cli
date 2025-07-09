@@ -46,10 +46,12 @@ type ENV = Remap<
   RegistryEnv &
     Readonly<{
       DISABLE_GITHUB_CACHE: boolean
+      GITHUB_API_URL: string
       GITHUB_BASE_REF: string
       GITHUB_REF_NAME: string
       GITHUB_REF_TYPE: string
       GITHUB_REPOSITORY: string
+      GITHUB_SERVER_URL: string
       GITHUB_TOKEN: string
       INLINED_CYCLONEDX_CDXGEN_VERSION: string
       INLINED_SOCKET_CLI_HOMEPAGE: string
@@ -233,22 +235,30 @@ const LAZY_ENV = () => {
     // Flag to disable using GitHub's workflow actions/cache.
     // https://github.com/actions/cache
     DISABLE_GITHUB_CACHE: envAsBoolean(env['DISABLE_GITHUB_CACHE']),
+    // The API URL. For example, https://api.github.com.
+    // https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace#list-of-default-environment-variables
+    GITHUB_API_URL:
+      envAsString(env['GITHUB_API_URL']) || 'https://api.github.com',
     // The name of the base ref or target branch of the pull request in a workflow
     // run. This is only set when the event that triggers a workflow run is either
     // pull_request or pull_request_target. For example, main.
-    // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+    // https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace#list-of-default-environment-variables
     GITHUB_BASE_REF: envAsString(env['GITHUB_BASE_REF']),
     // The short ref name of the branch or tag that triggered the GitHub workflow
     // run. This value matches the branch or tag name shown on GitHub. For example,
     // feature-branch-1. For pull requests, the format is <pr_number>/merge.
-    // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+    // https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace#list-of-default-environment-variables
     GITHUB_REF_NAME: envAsString(env['GITHUB_REF_NAME']),
     // The type of ref that triggered the workflow run. Valid values are branch or tag.
-    // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+    // https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace#list-of-default-environment-variables
     GITHUB_REF_TYPE: envAsString(env['GITHUB_REF_TYPE']),
     // The owner and repository name. For example, octocat/Hello-World.
-    // https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#default-environment-variables
+    // https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace#list-of-default-environment-variables
     GITHUB_REPOSITORY: envAsString(env['GITHUB_REPOSITORY']),
+    // The URL of the GitHub server. For example, https://github.com.
+    // https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace#list-of-default-environment-variables
+    GITHUB_SERVER_URL:
+      envAsString(env['GITHUB_SERVER_URL']) || 'https://github.com',
     // The GITHUB_TOKEN secret is a GitHub App installation access token.
     // The token's permissions are limited to the repository that contains the
     // workflow.
