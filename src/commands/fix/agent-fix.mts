@@ -145,6 +145,7 @@ export async function agentFix(
   }
 
   if (isDebug('notice,inspect')) {
+    spinner?.stop()
     const partialPurls = Array.from(infoByPartialPurl.keys())
     const { length: purlsCount } = partialPurls
     debugFn(
@@ -152,6 +153,7 @@ export async function agentFix(
       `found: ${purlsCount} ${pluralize('PURL', purlsCount)} with CVEs`,
     )
     debugDir('inspect', { partialPurls })
+    spinner?.start()
   }
 
   // Lazily access constants.packumentCache.
