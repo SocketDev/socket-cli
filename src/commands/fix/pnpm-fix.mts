@@ -49,7 +49,7 @@ async function install(
         '--config.confirmModulesPurge=false',
       ],
       spinner,
-      stdio: isDebug() ? 'inherit' : 'ignore',
+      stdio: isDebug('stdio') ? 'inherit' : 'ignore',
     })
     return await getActualTree(cwd)
   } catch {}
