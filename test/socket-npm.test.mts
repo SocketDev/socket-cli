@@ -25,7 +25,7 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
   const npmBinPath = path.join(npmPath, 'node_modules/.bin')
 
   describe(`Socket npm wrapper for ${npmDir}`, () => {
-    const usDebug = isDebug()
+    const usDebug = isDebug('stdio')
     spawnSync('npm', ['install', ...(usDebug ? [] : ['--silent'])], {
       cwd: npmPath,
       stdio: usDebug ? 'inherit' : 'ignore',
