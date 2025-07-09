@@ -4,6 +4,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { input, select } from '@socketsecurity/registry/lib/prompts'
 
+import constants from '../../constants.mts'
 import {
   type SocketJson,
   readSocketJson,
@@ -139,10 +140,10 @@ async function configureScan(
   if (defaultRepoName === undefined) {
     return canceledByUser()
   }
-  if (defaultRepoName.trim()) {
+  if (defaultRepoName) {
     // Even if it's 'socket-default-repository' store it because if we change
     // this default then an existing user probably would not expect the change?
-    config.repo = defaultRepoName.trim()
+    config.repo = defaultRepoName
   } else {
     delete config.repo
   }
@@ -157,10 +158,10 @@ async function configureScan(
   if (defaultBranchName === undefined) {
     return canceledByUser()
   }
-  if (defaultBranchName.trim()) {
+  if (defaultBranchName) {
     // Even if it's 'socket-default-branch' store it because if we change
     // this default then an existing user probably would not expect the change?
-    config.branch = defaultBranchName.trim()
+    config.branch = defaultBranchName
   } else {
     delete config.branch
   }
@@ -292,8 +293,8 @@ async function configureGithub(
     if (defaultRepos === undefined) {
       return canceledByUser()
     }
-    if (defaultRepos.trim()) {
-      config.repos = defaultRepos.trim()
+    if (defaultRepos) {
+      config.repos = defaultRepos
     } else {
       delete config.repos
     }
@@ -301,7 +302,11 @@ async function configureGithub(
 
   const defaultGithubApiUrl = await input({
     message: '(--githubApiUrl) Do you want to override the default github url?',
-    default: config.githubApiUrl || 'https://api.github.com',
+
+    default:
+      config.githubApiUrl ||
+      // Lazily access constants.ENV.GITHUB_API_URL.
+      constants.ENV.GITHUB_API_URL,
     required: false,
     // validate: async string => bool
   })
@@ -309,10 +314,11 @@ async function configureGithub(
     return canceledByUser()
   }
   if (
-    defaultGithubApiUrl.trim() &&
-    defaultGithubApiUrl.trim() !== 'https://api.github.com'
+    defaultGithubApiUrl &&
+    // Lazily access constants.ENV.GITHUB_API_URL.
+    defaultGithubApiUrl !== constants.ENV.GITHUB_API_URL
   ) {
-    config.githubApiUrl = defaultGithubApiUrl.trim()
+    config.githubApiUrl = defaultGithubApiUrl
   } else {
     delete config.githubApiUrl
   }
@@ -327,8 +333,8 @@ async function configureGithub(
   if (defaultOrgGithub === undefined) {
     return canceledByUser()
   }
-  if (defaultOrgGithub.trim()) {
-    config.orgGithub = defaultOrgGithub.trim()
+  if (defaultOrgGithub) {
+    config.orgGithub = defaultOrgGithub
   } else {
     delete config.orgGithub
   }

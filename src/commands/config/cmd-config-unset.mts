@@ -27,7 +27,7 @@ const config: CliCommandConfig = {
       $ ${command} [options] <KEY> <VALUE>
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Removes a value from a config key, allowing the default value to be used
     for it instead.

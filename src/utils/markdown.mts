@@ -70,7 +70,7 @@ export function mdTable<T extends Array<Record<string, string>>>(
     body += '\n'
   }
 
-  return [div, header, div, body.trim(), div].filter(s => !!s.trim()).join('\n')
+  return [div, header, div, body.trim(), div].filter(s => s.trim()).join('\n')
 }
 
 export function mdTableOfPairs(
@@ -105,5 +105,5 @@ export function mdTableOfPairs(
     body += '\n'
   }
 
-  return [div, header, div, body.trim(), div].filter(s => !!s.trim()).join('\n')
+  return [div, header, div, body.trim(), div].filter(s => s.trim()).join('\n')
 }

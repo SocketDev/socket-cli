@@ -41,7 +41,7 @@ const config: CliCommandConfig = {
     The TIME argument must be number 7, 30, or 90 and defaults to 30.
 
     Options
-      ${getFlagListOutput(flags, 6)}
+      ${getFlagListOutput(flags)}
 
     Examples
       $ ${command} org 7

@@ -90,7 +90,7 @@ const config: CliCommandConfig = {
     \`--branch\` to filter by branch across all repos).
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
       $ ${command}

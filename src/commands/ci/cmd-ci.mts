@@ -29,7 +29,7 @@ const config: CliCommandConfig = {
       $ ${command} [options]
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     This command is intended to use in CI runs to allow automated systems to
     accept or reject a current build. When the scan does not pass your security

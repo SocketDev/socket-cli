@@ -71,7 +71,7 @@ const config: CliCommandConfig = {
       - Permissions: repo:list
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
       $ ${command}

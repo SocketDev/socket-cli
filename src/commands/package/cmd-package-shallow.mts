@@ -31,7 +31,7 @@ const config: CliCommandConfig = {
       - Permissions: packages:list
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Show scoring details for one or more packages purely based on their own package.
     This means that any dependency scores are not reflected by the score. You can

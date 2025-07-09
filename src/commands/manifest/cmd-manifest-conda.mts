@@ -60,7 +60,7 @@ const config: CliCommandConfig = {
           contents of a file to have it processed.
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Examples
 

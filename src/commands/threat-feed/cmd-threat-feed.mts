@@ -97,7 +97,7 @@ const config: CliCommandConfig = {
     sales@socket.dev if you are interested in purchasing this access.
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     Valid ecosystems:
 

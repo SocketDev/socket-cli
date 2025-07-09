@@ -29,7 +29,7 @@ const config: CliCommandConfig = {
       $ ${command} <"on" | "off">
 
     Options
-      ${getFlagListOutput(config.flags, 6)}
+      ${getFlagListOutput(config.flags)}
 
     While enabled, the wrapper makes it so that when you call npm/npx on your
     machine, it will automatically actually run \`socket npm\` / \`socket npx\`
