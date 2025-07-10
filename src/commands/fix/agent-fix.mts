@@ -385,11 +385,11 @@ export async function agentFix(
           )
 
           // eslint-disable-next-line no-await-in-loop
-          await editablePkgJson.save({ ignoreWhitespace: true })
+          const res = await editablePkgJson.save({ ignoreWhitespace: true })
 
           // eslint-disable-next-line no-await-in-loop
           const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
-          const moddedFilepaths = unstagedCResult.ok
+          const moddedFilepaths = res && unstagedCResult.ok
             ? unstagedCResult.data.filter(filepath => {
                 const basename = path.basename(filepath)
                 return (
