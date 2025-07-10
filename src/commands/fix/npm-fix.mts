@@ -84,7 +84,7 @@ export async function npmFix(
     alertsMap,
     install,
     {
-      async beforeInstall(editablePkgJson, packument, oldVersion, newVersion) {
+      async beforeInstall(editablePkgJson) {
         revertData = {
           ...(editablePkgJson.content.dependencies && {
             dependencies: { ...editablePkgJson.content.dependencies },
@@ -98,16 +98,21 @@ export async function npmFix(
             peerDependencies: { ...editablePkgJson.content.peerDependencies },
           }),
         } as PackageJson
-
-        const arb = new Arborist({
-          path: pkgEnvDetails.pkgPath,
-          ...flatConfig,
-        })
-        const idealTree = await arb.buildIdealTree()
-        const node = findPackageNode(idealTree, packument.name, oldVersion)
-        if (node) {
-          updateNode(node, newVersion, packument.versions[newVersion]!)
-          await arb.reify()
+      },
+      async afterUpdate(editablePkgJson, packument, oldVersion, newVersion) {
+        const isWorkspaceRoot =
+          editablePkgJson.filename === pkgEnvDetails.editablePkgJson.filename
+        if (isWorkspaceRoot) {
+          const arb = new Arborist({
+            path: pkgEnvDetails.pkgPath,
+            ...flatConfig,
+          })
+          const idealTree = await arb.buildIdealTree()
+          const node = findPackageNode(idealTree, packument.name, oldVersion)
+          if (node) {
+            updateNode(node, newVersion, packument.versions[newVersion]!)
+            await arb.reify()
+          }
         }
       },
       async revertInstall(editablePkgJson) {
