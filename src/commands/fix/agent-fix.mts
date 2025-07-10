@@ -466,7 +466,6 @@ export async function agentFix(
             const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
             const moddedFilepaths = unstagedCResult.ok
               ? unstagedCResult.data.filter(filepath => {
-                  logger.log('filepath', filepath)
                   const basename = path.basename(filepath)
                   return (
                     basename === 'package.json' ||
