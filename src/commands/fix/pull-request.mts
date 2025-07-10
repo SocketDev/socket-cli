@@ -172,7 +172,7 @@ export async function cleanupPrs(
             pull_number: prNum,
             state: 'closed',
           })
-          debugFn('notice', `close: ${prRef} for ${prToVersion}`)
+          debugFn('notice', `pr: closing ${prRef} for ${prToVersion}`)
           // Remove entry from parent object.
           context.parent.splice(context.index, 1)
           // Mark cache to be saved.
@@ -181,7 +181,7 @@ export async function cleanupPrs(
         } catch (e) {
           debugFn(
             'error',
-            `fail: close ${prRef} for ${prToVersion}\n`,
+            `pr: failed to close ${prRef} for ${prToVersion}\n`,
             (e as Error)?.message || 'unknown error',
           )
         }
@@ -196,7 +196,7 @@ export async function cleanupPrs(
             base: match.headRefName,
             head: match.baseRefName,
           })
-          debugFn('notice', 'update: stale', prRef)
+          debugFn('notice', `pr: updating stale ${prRef}`)
           // Update entry entry.
           if (context.apiType === 'graphql') {
             context.entry.mergeStateStatus = 'CLEAN'
@@ -207,7 +207,7 @@ export async function cleanupPrs(
           cachesToSave.set(context.cacheKey, context.data)
         } catch (e) {
           const message = (e as Error)?.message || 'Unknown error'
-          debugFn('error', `fail: update ${prRef} - ${message}`)
+          debugFn('error', `pr: failed to update ${prRef} - ${message}`)
         }
       }
       return match
