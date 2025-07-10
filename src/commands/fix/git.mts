@@ -377,6 +377,7 @@ export async function gitUnstagedModifiedFiles(
       await spawn('git', ['diff', '--name-only'], stdioPipeOptions)
     ).stdout
     const rawRelPaths = changedFilesDetails.split('\n') ?? []
+    console.log({ rawRelPaths })
     return {
       ok: true,
       data: rawRelPaths.map(p => normalizePath(p)),
