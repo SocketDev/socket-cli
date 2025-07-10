@@ -249,11 +249,12 @@ export async function gitCreateAndPushBranch(
     )
     return true
   } catch (e) {
-    debugFn(
-      'error',
-      `caught: git push --force --set-upstream origin ${branch} failed`,
-    )
-    debugDir('inspect', { error: e })
+    logger.dir({ error: e })
+    // debugFn(
+    //   'error',
+    //   `caught: git push --force --set-upstream origin ${branch} failed`,
+    // )
+    // debugDir('inspect', { error: e })
   }
   try {
     // Will throw with exit code 1 if branch does not exist.
