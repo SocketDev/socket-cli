@@ -236,6 +236,7 @@ export async function gitCreateAndPushBranch(
   } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions
   const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
   try {
+    debugFn('args', { branch, user, email, cwd, filepaths, commitMsg })
     await gitEnsureIdentity(user, email, cwd)
     await spawn('git', ['checkout', '-b', branch], stdioIgnoreOptions)
     await spawn('git', ['add', ...filepaths], stdioIgnoreOptions)
