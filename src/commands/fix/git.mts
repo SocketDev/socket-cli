@@ -379,7 +379,7 @@ export async function gitUnstagedModifiedFiles(
     const rawRelPaths = changedFilesDetails.split('\n') ?? []
     return {
       ok: true,
-      data: rawRelPaths.map(relPath => normalizePath(relPath)),
+      data: rawRelPaths.map(p => normalizePath(p)),
     }
   } catch (e) {
     debugFn('error', 'caught: git diff --name-only failed')
