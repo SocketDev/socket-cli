@@ -352,7 +352,10 @@ export async function agentFix(
             ? prs.find(p => p.headRefName === branch)
             : undefined
           if (pr) {
-            debugFn('notice', `skip: PR #${pr.number} for ${name} exists`)
+            debugFn(
+              'notice',
+              `skip: PR #${pr.number} for ${name}@${newVersion} exists`,
+            )
             seenBranches.add(branch)
             continue infosLoop
           }
@@ -361,7 +364,10 @@ export async function agentFix(
             // eslint-disable-next-line no-await-in-loop
             (await gitRemoteBranchExists(branch, cwd))
           ) {
-            debugFn('notice', `skip: remote branch "${branch}" exists`)
+            debugFn(
+              'notice',
+              `skip: remote branch "${branch}" for ${name}@${newVersion} exists`,
+            )
             seenBranches.add(branch)
             continue infosLoop
           }
@@ -410,7 +416,11 @@ export async function agentFix(
 
           // eslint-disable-next-line no-await-in-loop
           if (!(await hasModifiedFiles(cwd))) {
-            debugFn('notice', 'skip: nothing to commit, skipping PR creation')
+            debugFn(
+              'notice',
+              `skip: nothing to commit for ${name}@${newVersion} PR`,
+            )
+            seenVersions.add(newVersion)
             // Reset things just in case.
             if (fixEnv.isCi) {
               // eslint-disable-next-line no-await-in-loop
