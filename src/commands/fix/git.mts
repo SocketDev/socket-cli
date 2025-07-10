@@ -2,6 +2,7 @@ import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -235,7 +236,7 @@ export async function gitCreateAndPushBranch(
     user = constants.ENV.SOCKET_CLI_GIT_USER_NAME,
   } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions
   const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
-  debugFn('notice', { branch, user, email, cwd, filepaths, commitMsg })
+  logger.dir({ branch, user, email, cwd, filepaths, commitMsg })
   try {
     await gitEnsureIdentity(user, email, cwd)
     await spawn('git', ['checkout', '-b', branch], stdioIgnoreOptions)
