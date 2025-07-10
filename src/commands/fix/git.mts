@@ -224,12 +224,31 @@ export async function gitCleanFdx(cwd = process.cwd()): Promise<void> {
   await spawn('git', ['clean', '-fdx'], stdioIgnoreOptions)
 }
 
+export async function gitCheckoutBranch(
+  branch: string,
+  cwd = process.cwd(),
+): Promise<boolean> {
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+  }
+  try {
+    await spawn('git', ['checkout', branch], stdioIgnoreOptions)
+    return true
+  } catch {}
+  return false
+}
+
 export async function gitCreateAndPushBranch(
   branch: string,
   commitMsg: string,
   filepaths: string[],
   options?: GitCreateAndPushBranchOptions | undefined,
 ): Promise<boolean> {
+  if (!filepaths.length) {
+    debugFn('notice', `miss: no filepaths to add`)
+    return false
+  }
   const {
     cwd = process.cwd(),
     // Lazily access constants.ENV.SOCKET_CLI_GIT_USER_EMAIL.
@@ -259,9 +278,21 @@ export async function gitCreateAndPushBranch(
     )
     debugDir('inspect', { error: e })
   }
+  return false
+}
+
+export async function gitDeleteBranch(
+  branch: string,
+  cwd = process.cwd(),
+): Promise<boolean> {
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+  }
   try {
     // Will throw with exit code 1 if branch does not exist.
     await spawn('git', ['branch', '-D', branch], stdioIgnoreOptions)
+    return true
   } catch {}
   return false
 }

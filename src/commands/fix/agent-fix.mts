@@ -23,7 +23,9 @@ import { getActualTree } from './get-actual-tree.mts'
 import {
   getSocketBranchName,
   getSocketCommitMessage,
+  gitCheckoutBranch,
   gitCreateAndPushBranch,
+  gitDeleteBranch,
   gitRemoteBranchExists,
   gitResetAndClean,
   gitUnstagedModifiedFiles,
@@ -395,6 +397,8 @@ export async function agentFix(
             if (fixEnv.isCi) {
               // eslint-disable-next-line no-await-in-loop
               await gitResetAndClean(fixEnv.baseBranch, cwd)
+              // eslint-disable-next-line no-await-in-loop
+              await gitCheckoutBranch(fixEnv.baseBranch, cwd)
             }
             continue infosLoop
           }
@@ -480,6 +484,10 @@ export async function agentFix(
                 // eslint-disable-next-line no-await-in-loop
                 await gitResetAndClean(fixEnv.baseBranch, cwd)
                 // eslint-disable-next-line no-await-in-loop
+                await gitCheckoutBranch(fixEnv.baseBranch, cwd)
+                // eslint-disable-next-line no-await-in-loop
+                await gitDeleteBranch(branch, cwd)
+                // eslint-disable-next-line no-await-in-loop
                 const maybeActualTree = await installer(pkgEnvDetails, {
                   cwd,
                   spinner,
@@ -551,7 +559,9 @@ export async function agentFix(
           if (fixEnv.isCi) {
             spinner?.start()
             // eslint-disable-next-line no-await-in-loop
-            await gitResetAndClean(fixEnv.baseBranch, cwd)
+            await gitResetAndClean(branch, cwd)
+            // eslint-disable-next-line no-await-in-loop
+            await gitCheckoutBranch(fixEnv.baseBranch, cwd)
             // eslint-disable-next-line no-await-in-loop
             const maybeActualTree = await installer(pkgEnvDetails, {
               cwd,
