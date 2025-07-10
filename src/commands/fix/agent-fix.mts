@@ -462,6 +462,17 @@ export async function agentFix(
 
           // Check repoInfo to make TypeScript happy.
           if (!errored && fixEnv.isCi && fixEnv.repoInfo) {
+            // eslint-disable-next-line no-await-in-loop
+            const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
+            const moddedFilepaths = unstagedCResult.ok
+              ? unstagedCResult.data.filter(filepath => {
+                  const basename = path.basename(filepath)
+                  return (
+                    basename === 'package.json' ||
+                    basename === pkgEnvDetails.lockName
+                  )
+                })
+              : []
             try {
               if (
                 // eslint-disable-next-line no-await-in-loop
