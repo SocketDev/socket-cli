@@ -65,10 +65,10 @@ const config: CliCommandConfig = {
       description:
         'Constrain dependency updates to the minimum satisfying version',
     },
-    noPrCheck: {
+    prCheck: {
       type: 'boolean',
-      default: false,
-      description: 'Skip PR existence check',
+      default: true,
+      description: 'Check for an existing PR before attempting a fix',
       hidden: true,
     },
     purl: {
@@ -190,7 +190,7 @@ async function run(
       : Infinity) || Infinity
   const maxSatisfying = Boolean(cli.flags['maxSatisfying'])
   const minSatisfying = Boolean(cli.flags['minSatisfying']) || !maxSatisfying
-  const noPrCheck = Boolean(cli.flags['noPrCheck'])
+  const prCheck = Boolean(cli.flags['prCheck'])
   const purls = cmdFlagValueToArray(cli.flags['purl'])
   const testScript = String(cli.flags['testScript'] || 'test')
 
@@ -200,7 +200,7 @@ async function run(
     ghsas,
     limit,
     minSatisfying,
-    noPrCheck,
+    prCheck,
     outputKind,
     purls,
     rangeStyle,
