@@ -289,9 +289,6 @@ export function getDetailsFromDiff(
           ) {
             existing = oldNode
           }
-        } else {
-          // TODO: This debug log has too much information. We should narrow it down.
-          // debugFn('notice', 'skip: meta change diff\n', diff)
         }
       } else {
         keep = action !== DiffAction.remove
