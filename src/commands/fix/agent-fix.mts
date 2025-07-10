@@ -479,6 +479,7 @@ export async function agentFix(
 
           // Check repoInfo to make TypeScript happy.
           if (!errored && fixEnv.isCi && fixEnv.repoInfo) {
+            debugFn('notice', 'pr: creating')
             try {
               if (
                 // eslint-disable-next-line no-await-in-loop
@@ -572,6 +573,8 @@ export async function agentFix(
               error = e
               errored = true
             }
+          } else if (fixEnv.isCi) {
+            debugFn('notice', 'skip: PR creation')
           }
 
           if (fixEnv.isCi) {
