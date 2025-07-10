@@ -10,7 +10,7 @@ import { Octokit } from '@octokit/rest'
 import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { readJson, writeJson } from '@socketsecurity/registry/lib/fs'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -534,7 +534,10 @@ export async function setGitRemoteGithubRepoUrl(
   token: string,
   cwd = process.cwd(),
 ): Promise<void> {
-  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+  }
   const { host } = new URL(constants.ENV.GITHUB_SERVER_URL)
   const url = `https://x-access-token:${token}@${host}/${owner}/${repo}`
   try {

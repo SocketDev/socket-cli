@@ -1,8 +1,7 @@
 import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
@@ -217,7 +216,10 @@ export function getSocketPullRequestTitle(
 }
 
 export async function gitCleanFdx(cwd = process.cwd()): Promise<void> {
-  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+  }
   // TODO: propagate CResult?
   await spawn('git', ['clean', '-fdx'], stdioIgnoreOptions)
 }
@@ -235,8 +237,10 @@ export async function gitCreateAndPushBranch(
     // Lazily access constants.ENV.SOCKET_CLI_GIT_USER_NAME.
     user = constants.ENV.SOCKET_CLI_GIT_USER_NAME,
   } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions
-  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'inherit' }
-  logger.dir({ branch, user, email, cwd, filepaths, commitMsg })
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+  }
   try {
     await gitEnsureIdentity(user, email, cwd)
     await spawn('git', ['checkout', '-b', branch], stdioIgnoreOptions)
@@ -249,12 +253,11 @@ export async function gitCreateAndPushBranch(
     )
     return true
   } catch (e) {
-    logger.dir({ error: e })
-    // debugFn(
-    //   'error',
-    //   `caught: git push --force --set-upstream origin ${branch} failed`,
-    // )
-    // debugDir('inspect', { error: e })
+    debugFn(
+      'error',
+      `caught: git push --force --set-upstream origin ${branch} failed`,
+    )
+    debugDir('inspect', { error: e })
   }
   try {
     // Will throw with exit code 1 if branch does not exist.
@@ -304,7 +307,10 @@ export async function gitEnsureIdentity(
   email: string,
   cwd = process.cwd(),
 ): Promise<void> {
-  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+  }
   const stdioPipeOptions: SpawnOptions = { cwd }
   const identEntries: Array<[string, string]> = [
     ['user.email', name],
@@ -364,7 +370,10 @@ export async function gitResetHard(
   branch = 'HEAD',
   cwd = process.cwd(),
 ): Promise<void> {
-  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+  }
   await spawn('git', ['reset', '--hard', branch], stdioIgnoreOptions)
 }
 
@@ -376,11 +385,10 @@ export async function gitUnstagedModifiedFiles(
     const changedFilesDetails = (
       await spawn('git', ['diff', '--name-only'], stdioPipeOptions)
     ).stdout
-    const rawRelPaths = changedFilesDetails.split('\n') ?? []
-    console.log({ rawRelPaths })
+    const relPaths = changedFilesDetails.split('\n') ?? []
     return {
       ok: true,
-      data: rawRelPaths.map(p => normalizePath(p)),
+      data: relPaths.map(p => normalizePath(p)),
     }
   } catch (e) {
     debugFn('error', 'caught: git diff --name-only failed')
