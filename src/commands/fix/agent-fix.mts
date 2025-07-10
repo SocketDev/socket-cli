@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import semver from 'semver'
@@ -253,11 +253,7 @@ export async function agentFix(
               await getActualTree(cwd)
             : // eslint-disable-next-line no-await-in-loop
               await installer(pkgEnvDetails, { cwd, spinner })
-        const maybeLockSrc = maybeActualTree
-          ? // eslint-disable-next-line no-await-in-loop
-            await readLockfile(pkgEnvDetails.lockPath)
-          : null
-        if (maybeActualTree && maybeLockSrc) {
+        if (maybeActualTree && existsSync(pkgEnvDetails.lockPath)) {
           actualTree = maybeActualTree
         }
       }
@@ -385,19 +381,19 @@ export async function agentFix(
           )
 
           // eslint-disable-next-line no-await-in-loop
-          const res = await editablePkgJson.save({ ignoreWhitespace: true })
+          await editablePkgJson.save({ ignoreWhitespace: true })
 
           // eslint-disable-next-line no-await-in-loop
           const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
-          const moddedFilepaths = res && unstagedCResult.ok
-            ? unstagedCResult.data.filter(filepath => {
-                const basename = path.basename(filepath)
-                return (
-                  basename === 'package.json' ||
-                  basename === pkgEnvDetails.lockName
-                )
-              })
-            : []
+          const moddedFilepaths = unstagedCResult.ok
+              ? unstagedCResult.data.filter(filepath => {
+                  const basename = path.basename(filepath)
+                  return (
+                    basename === 'package.json' ||
+                    basename === pkgEnvDetails.lockName
+                  )
+                })
+              : []
           if (!moddedFilepaths.length) {
             logger.warn(
               'Unexpected condition: Nothing to commit, skipping PR creation.',
@@ -409,6 +405,9 @@ export async function agentFix(
             }
             continue infosLoop
           }
+
+          // eslint-disable-next-line no-await-in-loop
+          const lockSrc = await readLockfile(pkgEnvDetails.lockPath)
 
           if (!hasAnnouncedWorkspace) {
             hasAnnouncedWorkspace = true
@@ -428,14 +427,7 @@ export async function agentFix(
               cwd,
               spinner,
             })
-            // eslint-disable-next-line no-await-in-loop
-            const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
-            console.log('after installer', unstagedCResult)
-            const maybeLockSrc = maybeActualTree
-              ? // eslint-disable-next-line no-await-in-loop
-                await readLockfile(pkgEnvDetails.lockPath)
-              : null
-            if (maybeActualTree && maybeLockSrc) {
+            if (maybeActualTree && existsSync(pkgEnvDetails.lockPath)) {
               actualTree = maybeActualTree
               // eslint-disable-next-line no-await-in-loop
               await afterInstall(
@@ -446,9 +438,6 @@ export async function agentFix(
                 vulnerableVersionRange,
                 fixConfig,
               )
-              // eslint-disable-next-line no-await-in-loop
-              const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
-              console.log('after afterInstall', unstagedCResult)
               if (test) {
                 spinner?.info(`Testing ${newId} in ${workspace}.`)
                 // eslint-disable-next-line no-await-in-loop
@@ -468,17 +457,11 @@ export async function agentFix(
 
           // Check repoInfo to make TypeScript happy.
           if (!errored && fixEnv.isCi && fixEnv.repoInfo) {
+            // Rewrite files in case the install reverted them.
             // eslint-disable-next-line no-await-in-loop
-            const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
-            const moddedFilepaths = unstagedCResult.ok
-              ? unstagedCResult.data.filter(filepath => {
-                  const basename = path.basename(filepath)
-                  return (
-                    basename === 'package.json' ||
-                    basename === pkgEnvDetails.lockName
-                  )
-                })
-              : []
+            await editablePkgJson.save({ ignoreWhitespace: true })
+            // eslint-disable-next-line no-await-in-loop
+            await fs.writeFile(pkgEnvDetails.lockPath, lockSrc!, 'utf8')
             try {
               if (
                 // eslint-disable-next-line no-await-in-loop
@@ -503,11 +486,7 @@ export async function agentFix(
                   cwd,
                   spinner,
                 })
-                const maybeLockSrc = maybeActualTree
-                  ? // eslint-disable-next-line no-await-in-loop
-                    await readLockfile(pkgEnvDetails.lockPath)
-                  : null
-                if (maybeActualTree && maybeLockSrc) {
+                if (maybeActualTree && existsSync(pkgEnvDetails.lockPath)) {
                   actualTree = maybeActualTree
                   continue infosLoop
                 }
