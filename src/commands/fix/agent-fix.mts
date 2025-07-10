@@ -181,6 +181,18 @@ export async function agentFix(
     packumentCache.clear()
   }
 
+  const getModifiedFiles = async (cwd = process.cwd()) => {
+    const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
+    return unstagedCResult.ok
+      ? unstagedCResult.data.filter(filepath => {
+          const basename = path.basename(filepath)
+          return (
+            basename === 'package.json' || basename === pkgEnvDetails.lockName
+          )
+        })
+      : []
+  }
+
   const handleInstallFail = (): CResult<{ fixed: boolean }> => {
     cleanupInfoEntriesLoop()
     return {
@@ -188,6 +200,10 @@ export async function agentFix(
       message: 'Install failed',
       cause: `Unexpected condition: ${pkgEnvDetails.agent} install failed`,
     }
+  }
+
+  const hasModifiedFiles = async (cwd = process.cwd()) => {
+    return (await getModifiedFiles(cwd)).length > 0
   }
 
   spinner?.stop()
@@ -393,20 +409,8 @@ export async function agentFix(
           )
 
           // eslint-disable-next-line no-await-in-loop
-          const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
-          const moddedFilepaths = unstagedCResult.ok
-            ? unstagedCResult.data.filter(filepath => {
-                const basename = path.basename(filepath)
-                return (
-                  basename === 'package.json' ||
-                  basename === pkgEnvDetails.lockName
-                )
-              })
-            : []
-          if (!moddedFilepaths.length) {
-            logger.warn(
-              'Unexpected condition: Nothing to commit, skipping PR creation.',
-            )
+          if (!(await hasModifiedFiles(cwd))) {
+            debugFn('notice', 'skip: nothing to commit, skipping PR creation')
             // Reset things just in case.
             if (fixEnv.isCi) {
               // eslint-disable-next-line no-await-in-loop
@@ -471,7 +475,8 @@ export async function agentFix(
                 !(await gitCreateAndPushBranch(
                   branch,
                   getSocketCommitMessage(oldPurl, newVersion, workspace),
-                  moddedFilepaths,
+                  // eslint-disable-next-line no-await-in-loop
+                  await getModifiedFiles(cwd),
                   {
                     cwd,
                     email: fixEnv.gitEmail,
