@@ -329,7 +329,7 @@ export async function agentFix(
             continue infosLoop
           }
           const branch = getSocketBranchName(oldPurl, newVersion, workspace)
-          if (seenBranches.has(newVersion)) {
+          if (seenBranches.has(branch)) {
             continue infosLoop
           }
           const pr = noPrCheck
