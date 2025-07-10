@@ -235,8 +235,8 @@ export async function gitCreateAndPushBranch(
     user = constants.ENV.SOCKET_CLI_GIT_USER_NAME,
   } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions
   const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
+  debugFn('notice', { branch, user, email, cwd, filepaths, commitMsg })
   try {
-    debugFn('notice', { branch, user, email, cwd, filepaths, commitMsg })
     await gitEnsureIdentity(user, email, cwd)
     await spawn('git', ['checkout', '-b', branch], stdioIgnoreOptions)
     await spawn('git', ['add', ...filepaths], stdioIgnoreOptions)
@@ -250,9 +250,9 @@ export async function gitCreateAndPushBranch(
   } catch (e) {
     debugFn(
       'error',
-      `caught: git push --force --set-upstream origin ${branch} failed\n`,
-      e,
+      `caught: git push --force --set-upstream origin ${branch} failed`,
     )
+    debugDir('inspect', { error: e })
   }
   try {
     // Will throw with exit code 1 if branch does not exist.
