@@ -17,7 +17,7 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import {
   createSocketBranchParser,
-  genericSocketBranchParser,
+  getSocketBranchPattern,
   getSocketPullRequestBody,
   getSocketPullRequestTitle,
 } from './git.mts'
@@ -25,7 +25,6 @@ import constants from '../../constants.mts'
 import { safeStatsSync } from '../../utils/fs.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 
-import type { SocketBranchParseResult } from './git.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 import type { components } from '@octokit/openapi-types'
 import type { OctokitResponse } from '@octokit/types'
@@ -131,7 +130,6 @@ export type PrMatch = {
   headRefName: string
   mergeStateStatus: GQL_MERGE_STATE_STATUS
   number: number
-  parsedBranch: SocketBranchParseResult
   state: GQL_PR_STATE
   title: string
 }
@@ -312,6 +310,7 @@ async function getSocketPrsWithContext(
     __proto__: null,
     ...options,
   } as SocketPrsOptions
+  const branchPattern = getSocketBranchPattern(options)
   const checkAuthor = isNonEmptyString(author)
   const octokit = getOctokit()
   const octokitGraphql = getOctokitGraphql()
@@ -373,8 +372,8 @@ async function getSocketPrsWithContext(
       const node = nodes[i]!
       const login = node.author?.login
       const matchesAuthor = checkAuthor ? login === author : true
-      const parsedBranch = genericSocketBranchParser(node.headRefName)
-      if (matchesAuthor && parsedBranch) {
+      const matchesBranch = branchPattern.test(node.headRefName)
+      if (matchesAuthor && matchesBranch) {
         contextualMatches.push({
           context: {
             apiType: 'graphql',
@@ -387,7 +386,6 @@ async function getSocketPrsWithContext(
           match: {
             ...node,
             author: login ?? '<unknown>',
-            parsedBranch,
           },
         })
       }
@@ -423,8 +421,8 @@ async function getSocketPrsWithContext(
     const login = pr.user?.login
     const headRefName = pr.head.ref
     const matchesAuthor = checkAuthor ? login === author : true
-    const parsedBranch = genericSocketBranchParser(headRefName)
-    if (matchesAuthor && parsedBranch) {
+    const matchesBranch = branchPattern.test(headRefName)
+    if (matchesAuthor && matchesBranch) {
       // Upper cased mergeable_state is equivalent to mergeStateStatus.
       // https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
       const mergeStateStatus = (pr.mergeable_state?.toUpperCase?.() ??
@@ -450,7 +448,6 @@ async function getSocketPrsWithContext(
           headRefName,
           mergeStateStatus,
           number: pr.number,
-          parsedBranch,
           state,
           title: pr.title,
         },

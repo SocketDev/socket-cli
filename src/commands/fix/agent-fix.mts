@@ -22,7 +22,6 @@ import { getFixEnv } from './fix-env-helpers.mts'
 import { getActualTree } from './get-actual-tree.mts'
 import {
   getSocketBranchName,
-  getSocketBranchWorkspaceComponent,
   getSocketCommitMessage,
   gitCreateAndPushBranch,
   gitRemoteBranchExists,
@@ -238,9 +237,6 @@ export async function agentFix(
       const workspace = isWorkspaceRoot
         ? 'root'
         : path.relative(rootPath, pkgPath)
-      const branchWorkspace = fixEnv.isCi
-        ? getSocketBranchWorkspaceComponent(workspace)
-        : ''
       // actualTree may not be defined on the first iteration of pkgJsonPathsLoop.
       if (!actualTree) {
         if (!fixEnv.isCi) {
@@ -326,10 +322,7 @@ export async function agentFix(
             continue infosLoop
           }
           const branch = getSocketBranchName(oldPurl, newVersion, workspace)
-          const pr = prs.find(
-            ({ parsedBranch: b }) =>
-              b.workspace === branchWorkspace && b.newVersion === newVersion,
-          )
+          const pr = prs.find(p => p.headRefName === branch)
           if (pr) {
             debugFn('notice', `skip: PR #${pr.number} for ${name} exists`)
             if (++count >= limit) {
