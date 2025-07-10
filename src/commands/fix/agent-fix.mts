@@ -428,6 +428,9 @@ export async function agentFix(
               cwd,
               spinner,
             })
+            // eslint-disable-next-line no-await-in-loop
+            const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
+            console.log('after installer', unstagedCResult)
             const maybeLockSrc = maybeActualTree
               ? // eslint-disable-next-line no-await-in-loop
                 await readLockfile(pkgEnvDetails.lockPath)
@@ -443,6 +446,9 @@ export async function agentFix(
                 vulnerableVersionRange,
                 fixConfig,
               )
+              // eslint-disable-next-line no-await-in-loop
+              const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
+              console.log('after afterInstall', unstagedCResult)
               if (test) {
                 spinner?.info(`Testing ${newId} in ${workspace}.`)
                 // eslint-disable-next-line no-await-in-loop
