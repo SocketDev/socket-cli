@@ -218,6 +218,7 @@ export async function agentFix(
     if (!packument) {
       logger.warn(`Unexpected condition: No packument found for ${name}.\n`)
       cleanupInfoEntriesLoop()
+      // Skip to next package.
       continue infoEntriesLoop
     }
 
@@ -268,8 +269,8 @@ export async function agentFix(
 
       if (!oldVersions.length) {
         debugFn('notice', `skip: ${name} not found\n`)
-        // Skip to next package.
         cleanupInfoEntriesLoop()
+        // Skip to next package.
         continue infoEntriesLoop
       }
 
@@ -279,6 +280,8 @@ export async function agentFix(
       const editablePkgJson = await readPackageJson(pkgJsonPath, {
         editable: true,
       })
+
+      const seenBranches = new Set<string>()
       const seenVersions = new Set<string>()
 
       let hasAnnouncedWorkspace = false
@@ -324,13 +327,13 @@ export async function agentFix(
             continue infosLoop
           }
           const branch = getSocketBranchName(oldPurl, newVersion, workspace)
+          if (seenBranches.has(newVersion)) {
+            continue infosLoop
+          }
           const pr = prs.find(p => p.headRefName === branch)
           if (pr) {
             debugFn('notice', `skip: PR #${pr.number} for ${name} exists`)
-            if (++count >= limit) {
-              cleanupInfoEntriesLoop()
-              break infoEntriesLoop
-            }
+            seenBranches.add(branch)
             continue infosLoop
           }
           if (
@@ -339,10 +342,7 @@ export async function agentFix(
             (await gitRemoteBranchExists(branch, cwd))
           ) {
             debugFn('notice', `skip: remote branch "${branch}" exists`)
-            if (++count >= limit) {
-              cleanupInfoEntriesLoop()
-              break infoEntriesLoop
-            }
+            seenBranches.add(branch)
             continue infosLoop
           }
           const { overrides: oldOverrides } = getOverridesData(
@@ -500,6 +500,8 @@ export async function agentFix(
                 return handleInstallFail()
               }
 
+              seenBranches.add(branch)
+
               // eslint-disable-next-line no-await-in-loop
               await Promise.allSettled([
                 setGitRemoteGithubRepoUrl(
@@ -613,6 +615,7 @@ export async function agentFix(
           debugFn('notice', 'increment: count', count + 1)
           if (++count >= limit) {
             cleanupInfoEntriesLoop()
+            // Exit main loop.
             break infoEntriesLoop
           }
         }
