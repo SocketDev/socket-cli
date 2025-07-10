@@ -235,7 +235,7 @@ export async function gitCreateAndPushBranch(
     // Lazily access constants.ENV.SOCKET_CLI_GIT_USER_NAME.
     user = constants.ENV.SOCKET_CLI_GIT_USER_NAME,
   } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions
-  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'ignore' }
+  const stdioIgnoreOptions: SpawnOptions = { cwd, stdio: 'inherit' }
   logger.dir({ branch, user, email, cwd, filepaths, commitMsg })
   try {
     await gitEnsureIdentity(user, email, cwd)
