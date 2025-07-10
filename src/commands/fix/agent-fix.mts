@@ -407,6 +407,11 @@ export async function agentFix(
           }
 
           // eslint-disable-next-line no-await-in-loop
+          const pkgJsonSrc = await fs.readFile(
+            editablePkgJson.filename!,
+            'utf8',
+          )
+          // eslint-disable-next-line no-await-in-loop
           const lockSrc = await readLockfile(pkgEnvDetails.lockPath)
 
           if (!hasAnnouncedWorkspace) {
@@ -459,7 +464,7 @@ export async function agentFix(
           if (!errored && fixEnv.isCi && fixEnv.repoInfo) {
             // Rewrite files in case the install reverted them.
             // eslint-disable-next-line no-await-in-loop
-            await editablePkgJson.save({ ignoreWhitespace: true })
+            await fs.writeFile(editablePkgJson.filename!, pkgJsonSrc, 'utf8')
             // eslint-disable-next-line no-await-in-loop
             await fs.writeFile(pkgEnvDetails.lockPath, lockSrc!, 'utf8')
             try {

@@ -14,10 +14,7 @@ import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { getNpmConfig } from '../../utils/npm-config.mts'
 
 import type { FixConfig, InstallOptions } from './agent-fix.mts'
-import type {
-  ArboristInstance,
-  NodeClass,
-} from '../../shadow/npm/arborist/types.mts'
+import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
@@ -49,17 +46,17 @@ export async function npmFix(
 
   spinner?.start()
 
-  let arb: ArboristInstance
+  const flatConfig = await getNpmConfig({
+    npmVersion: pkgEnvDetails.agentVersion,
+  })
+
   let actualTree: NodeClass | undefined
   let alertsMap
   try {
     if (purls.length) {
       alertsMap = await getAlertsMapFromPurls(purls, getFixAlertsMapOptions())
     } else {
-      const flatConfig = await getNpmConfig({
-        npmVersion: pkgEnvDetails.agentVersion,
-      })
-      arb = new Arborist({
+      const arb = new Arborist({
         path: pkgEnvDetails.pkgPath,
         ...flatConfig,
       })
@@ -102,6 +99,10 @@ export async function npmFix(
           }),
         } as PackageJson
 
+        const arb = new Arborist({
+          path: pkgEnvDetails.pkgPath,
+          ...flatConfig,
+        })
         const idealTree = await arb.buildIdealTree()
         const node = findPackageNode(idealTree, packument.name, oldVersion)
         if (node) {
