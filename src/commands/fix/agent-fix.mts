@@ -68,6 +68,7 @@ export type FixConfig = {
   cwd: string
   limit: number
   minSatisfying: boolean
+  noPrCheck: boolean
   purls: string[]
   rangeStyle: RangeStyle
   spinner: Spinner | undefined
@@ -123,6 +124,7 @@ export async function agentFix(
     cwd,
     limit,
     minSatisfying,
+    noPrCheck,
     rangeStyle,
     spinner,
     test,
@@ -330,7 +332,9 @@ export async function agentFix(
           if (seenBranches.has(newVersion)) {
             continue infosLoop
           }
-          const pr = prs.find(p => p.headRefName === branch)
+          const pr = noPrCheck
+            ? undefined
+            : prs.find(p => p.headRefName === branch)
           if (pr) {
             debugFn('notice', `skip: PR #${pr.number} for ${name} exists`)
             seenBranches.add(branch)
