@@ -1,4 +1,4 @@
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import semver from 'semver'
@@ -45,7 +45,6 @@ import {
 } from '../../shadow/npm/arborist-helpers.mts'
 import { removeNodeModules } from '../../utils/fs.mts'
 import { globWorkspace } from '../../utils/glob.mts'
-import { readLockfile } from '../../utils/lockfile.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 import { applyRange } from '../../utils/semver.mts'
 import { getCveInfoFromAlertsMap } from '../../utils/socket-package-alert.mts'
@@ -104,12 +103,13 @@ export async function agentFix(
   alertsMap: AlertsByPurl,
   installer: Installer,
   {
-    beforeInstall = noopHandler,
-    // eslint-disable-next-line sort-destructure-keys/sort-destructure-keys
     afterInstall = noopHandler,
+    afterUpdate = noopHandler,
+    beforeInstall = noopHandler,
     revertInstall = noopHandler,
   }: {
     beforeInstall?: InstallPhaseHandler | undefined
+    afterUpdate?: InstallPhaseHandler | undefined
     afterInstall?: InstallPhaseHandler | undefined
     revertInstall?: InstallPhaseHandler | undefined
   },
@@ -383,6 +383,16 @@ export async function agentFix(
           await editablePkgJson.save({ ignoreWhitespace: true })
 
           // eslint-disable-next-line no-await-in-loop
+          await afterUpdate(
+            editablePkgJson,
+            packument,
+            oldVersion,
+            newVersion,
+            vulnerableVersionRange,
+            fixConfig,
+          )
+
+          // eslint-disable-next-line no-await-in-loop
           const unstagedCResult = await gitUnstagedModifiedFiles(cwd)
           const moddedFilepaths = unstagedCResult.ok
             ? unstagedCResult.data.filter(filepath => {
@@ -406,14 +416,6 @@ export async function agentFix(
             }
             continue infosLoop
           }
-
-          // eslint-disable-next-line no-await-in-loop
-          const pkgJsonSrc = await fs.readFile(
-            editablePkgJson.filename!,
-            'utf8',
-          )
-          // eslint-disable-next-line no-await-in-loop
-          const lockSrc = await readLockfile(pkgEnvDetails.lockPath)
 
           if (!hasAnnouncedWorkspace) {
             hasAnnouncedWorkspace = true
@@ -463,11 +465,6 @@ export async function agentFix(
 
           // Check repoInfo to make TypeScript happy.
           if (!errored && fixEnv.isCi && fixEnv.repoInfo) {
-            // Rewrite files in case the install reverted them.
-            // eslint-disable-next-line no-await-in-loop
-            await fs.writeFile(editablePkgJson.filename!, pkgJsonSrc, 'utf8')
-            // eslint-disable-next-line no-await-in-loop
-            await fs.writeFile(pkgEnvDetails.lockPath, lockSrc!, 'utf8')
             try {
               if (
                 // eslint-disable-next-line no-await-in-loop
