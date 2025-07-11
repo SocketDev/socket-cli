@@ -4,6 +4,7 @@ import { agentFix } from './agent-fix.mts'
 import { getActualTree } from './get-actual-tree.mts'
 import { getFixAlertsMapOptions } from './shared.mts'
 import { Arborist } from '../../shadow/npm/arborist/index.mts'
+import { SAFE_WITH_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES } from '../../shadow/npm/arborist/lib/arborist/index.mts'
 import {
   findPackageNode,
   getAlertsMapFromArborist,
@@ -67,6 +68,7 @@ export async function npmFix(
       const arb = new Arborist({
         path: pkgEnvDetails.pkgPath,
         ...flatConfig,
+        ...SAFE_WITH_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
       })
       actualTree = await arb.reify()
       // Calling arb.reify() creates the arb.diff object, nulls-out arb.idealTree,
@@ -114,6 +116,7 @@ export async function npmFix(
           const arb = new Arborist({
             path: pkgEnvDetails.pkgPath,
             ...flatConfig,
+            ...SAFE_WITH_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
           })
           const idealTree = await arb.buildIdealTree()
           const node = findPackageNode(idealTree, packument.name, oldVersion)

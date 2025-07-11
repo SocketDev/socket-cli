@@ -24,7 +24,7 @@ const {
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIpc },
 } = constants
 
-export const SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
+export const SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
   __proto__: null,
   audit: false,
   dryRun: true,
@@ -34,6 +34,14 @@ export const SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
   save: false,
   saveBundle: false,
   silent: true,
+}
+
+export const SAFE_WITH_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
+  // @ts-ignore
+  __proto__: null,
+  ...SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
+  dryRun: false,
+  save: true,
 }
 
 export const kCtorArgs = Symbol('ctorArgs')
@@ -51,7 +59,7 @@ export class SafeArborist extends Arborist {
         path:
           (ctorArgs.length ? ctorArgs[0]?.path : undefined) ?? process.cwd(),
         ...(ctorArgs.length ? ctorArgs[0] : undefined),
-        ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
+        ...SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
       },
       ...ctorArgs.slice(1),
     )
@@ -97,7 +105,7 @@ export class SafeArborist extends Arborist {
     await super.reify(
       {
         ...options,
-        ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
+        ...SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
         progress: false,
       },
       // @ts-ignore: TypeScript gets grumpy about rest parameters.

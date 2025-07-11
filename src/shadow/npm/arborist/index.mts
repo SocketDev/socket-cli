@@ -19,18 +19,6 @@ import type { EdgeClass, NodeClass, OverrideSetClass } from './types.mts'
 
 const require = createRequire(import.meta.url)
 
-export const SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES = {
-  __proto__: null,
-  audit: false,
-  dryRun: true,
-  fund: false,
-  ignoreScripts: true,
-  progress: false,
-  save: false,
-  saveBundle: false,
-  silent: true,
-}
-
 export { Arborist, SafeArborist }
 
 export const Edge: EdgeClass = UntypedEdge
