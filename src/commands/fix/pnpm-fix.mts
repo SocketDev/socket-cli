@@ -40,13 +40,13 @@ async function install(
   try {
     await runAgentInstall(pkgEnvDetails, {
       args: [
-        ...(args ?? []),
         // Enable pnpm updates to pnpm-lock.yaml in CI environments.
         // https://pnpm.io/cli/install#--frozen-lockfile
         '--no-frozen-lockfile',
         // Enable a non-interactive pnpm install
         // https://github.com/pnpm/pnpm/issues/6778
         '--config.confirmModulesPurge=false',
+        ...(args ?? []),
       ],
       spinner,
       stdio: isDebug('stdio') ? 'inherit' : 'ignore',

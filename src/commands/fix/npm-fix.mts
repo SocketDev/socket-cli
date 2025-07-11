@@ -29,7 +29,15 @@ async function install(
   } as InstallOptions
   try {
     await runAgentInstall(pkgEnvDetails, {
-      args,
+      args: [
+        '--ignore-scripts',
+        '--no-audit',
+        '--no-fund',
+        '--no-progress',
+        '--no-save',
+        '--silent',
+        ...(args ?? []),
+      ],
       spinner,
       stdio: isDebug('stdio') ? 'inherit' : 'ignore',
     })

@@ -49,9 +49,9 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
               entryPath,
               'npm',
               'install',
-              'bowserify',
               '--no-audit',
               '--no-fund',
+              'bowserify',
             ],
             {
               cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
