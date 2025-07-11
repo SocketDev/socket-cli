@@ -1,7 +1,5 @@
-import {
-  Arborist,
-  SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
-} from '../../shadow/npm/arborist/index.mts'
+import { Arborist } from '../../shadow/npm/arborist/index.mts'
+import { SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES } from '../../shadow/npm/arborist/lib/arborist/index.mts'
 
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 
@@ -14,7 +12,7 @@ export async function getActualTree(
   // of the node_modules folder.
   const arb = new Arborist({
     path: cwd,
-    ...SAFE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
+    ...SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
   })
   return await arb.loadActual()
 }
