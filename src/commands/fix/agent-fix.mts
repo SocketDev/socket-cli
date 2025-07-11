@@ -416,10 +416,7 @@ export async function agentFix(
 
           // eslint-disable-next-line no-await-in-loop
           if (!(await hasModifiedFiles(cwd))) {
-            debugFn(
-              'notice',
-              `skip: nothing to commit for ${name}@${newVersion} PR`,
-            )
+            debugFn('notice', `skip: no changes for ${name}@${newVersion}`)
             seenVersions.add(newVersion)
             // Reset things just in case.
             if (fixEnv.isCi) {
