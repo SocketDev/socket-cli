@@ -286,7 +286,7 @@ export async function agentFix(
       )
 
       if (!oldVersions.length) {
-        debugFn('notice', `skip: ${name} not found\n`)
+        debugFn('notice', `skip: ${name} not found`)
         cleanupInfoEntriesLoop()
         // Skip to next package.
         continue infoEntriesLoop
