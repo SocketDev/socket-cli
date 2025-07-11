@@ -1,11 +1,11 @@
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 
-import { getBaseGitBranch, gitRepoInfo } from './git.mts'
 import { getSocketPrs } from './pull-request.mts'
 import constants from '../../constants.mts'
+import { getBaseGitBranch, gitRepoInfo } from '../../utils/git.mts'
 
-import type { RepoInfo } from './git.mts'
 import type { PrMatch } from './pull-request.mts'
+import type { RepoInfo } from '../../utils/git.mts'
 
 function ciRepoInfo(): RepoInfo | null {
   // Lazily access constants.ENV.GITHUB_REPOSITORY.

@@ -5,7 +5,7 @@ import {
   genericSocketBranchParser,
   getSocketBranchFullNameComponent,
   getSocketBranchPurlTypeComponent,
-} from './git.mts'
+} from './socket-git.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 
 import type { FixEnv } from './fix-env-helpers.mts'

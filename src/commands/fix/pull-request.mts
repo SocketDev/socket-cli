@@ -20,7 +20,7 @@ import {
   getSocketBranchPattern,
   getSocketPullRequestBody,
   getSocketPullRequestTitle,
-} from './git.mts'
+} from './socket-git.mts'
 import constants from '../../constants.mts'
 import { safeStatsSync } from '../../utils/fs.mts'
 import { getPurlObject } from '../../utils/purl.mts'
