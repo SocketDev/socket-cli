@@ -21,21 +21,12 @@ import { getPrsForPurl } from './fix-branch-helpers.mts'
 import { getFixEnv } from './fix-env-helpers.mts'
 import { getActualTree } from './get-actual-tree.mts'
 import {
-  getSocketBranchName,
-  getSocketCommitMessage,
-  gitCheckoutBranch,
-  gitCreateAndPushBranch,
-  gitDeleteBranch,
-  gitRemoteBranchExists,
-  gitResetAndClean,
-  gitUnstagedModifiedFiles,
-} from './git.mts'
-import {
   cleanupPrs,
   enablePrAutoMerge,
   openPr,
   setGitRemoteGithubRepoUrl,
 } from './pull-request.mts'
+import { getSocketBranchName, getSocketCommitMessage } from './socket-git.mts'
 import constants from '../../constants.mts'
 import {
   findBestPatchVersion,
@@ -44,6 +35,16 @@ import {
   updatePackageJsonFromNode,
 } from '../../shadow/npm/arborist-helpers.mts'
 import { removeNodeModules } from '../../utils/fs.mts'
+import {
+  gitCheckoutBranch,
+  gitCommit,
+  gitCreateBranch,
+  gitDeleteBranch,
+  gitPushBranch,
+  gitRemoteBranchExists,
+  gitResetAndClean,
+  gitUnstagedModifiedFiles,
+} from '../../utils/git.mts'
 import { globWorkspace } from '../../utils/glob.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 import { applyRange } from '../../utils/semver.mts'
@@ -479,10 +480,11 @@ export async function agentFix(
           if (!errored && fixEnv.isCi && fixEnv.repoInfo) {
             debugFn('notice', 'pr: creating')
             try {
-              if (
+              const pushed =
                 // eslint-disable-next-line no-await-in-loop
-                !(await gitCreateAndPushBranch(
-                  branch,
+                (await gitCreateBranch(branch, cwd)) &&
+                // eslint-disable-next-line no-await-in-loop
+                (await gitCommit(
                   getSocketCommitMessage(oldPurl, newVersion, workspace),
                   // eslint-disable-next-line no-await-in-loop
                   await getModifiedFiles(cwd),
@@ -491,8 +493,10 @@ export async function agentFix(
                     email: fixEnv.gitEmail,
                     user: fixEnv.gitUser,
                   },
-                ))
-              ) {
+                )) &&
+                // eslint-disable-next-line no-await-in-loop
+                (await gitPushBranch(branch, cwd))
+              if (!pushed) {
                 logger.warn(
                   'Unexpected condition: Push failed, skipping PR creation.',
                 )

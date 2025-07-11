@@ -12,12 +12,11 @@ export async function handleCI(autoManifest: boolean): Promise<void> {
   const result = await getDefaultOrgSlug()
   if (!result.ok) {
     process.exitCode = result.code ?? 1
-    // Always assume json mode
+    // Always assume json mode.
     logger.log(serializeResultJson(result))
     return
   }
 
-  // TODO: does it make sense to discover the commit details from local git?
   // TODO: does it makes sense to use custom branch/repo names here? probably socket.yml, right
   await handleCreateNewScan({
     autoManifest,
