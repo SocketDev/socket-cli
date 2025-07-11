@@ -118,6 +118,7 @@ export async function agentFix(
   const { pkgPath: rootPath } = pkgEnvDetails
 
   const fixEnv = await getFixEnv()
+  debugDir('inspect', { fixEnv })
 
   const {
     autoMerge,
