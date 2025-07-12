@@ -1,4 +1,5 @@
 import { handleApiCall } from '../../utils/api.mts'
+import { getRepoName } from '../../utils/git.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
@@ -43,7 +44,9 @@ export async function fetchCreateOrgFullScan(
         ...(committers ? { committers } : {}),
         make_default_branch: String(defaultBranch),
         ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
-        repo: repoName || 'socket-default-repository', // mandatory, this is server default for repo
+        // The repo is mandatory, this is server default for repo.
+        repo:
+          repoName || (await getRepoName(cwd)) || 'socket-default-repository',
         set_as_pending_head: String(pendingHead),
         tmp: String(tmp),
       },
