@@ -2,7 +2,7 @@ import { debugFn } from '@socketsecurity/registry/lib/debug'
 
 import { getSocketPrs } from './pull-request.mts'
 import constants from '../../constants.mts'
-import { getBaseGitBranch, gitRepoInfo } from '../../utils/git.mts'
+import { getBaseBranch, getRepoInfo } from '../../utils/git.mts'
 
 import type { PrMatch } from './pull-request.mts'
 import type { RepoInfo } from '../../utils/git.mts'
@@ -35,7 +35,7 @@ export interface FixEnv {
 }
 
 export async function getFixEnv(): Promise<FixEnv> {
-  const baseBranch = await getBaseGitBranch()
+  const baseBranch = await getBaseBranch()
   const gitEmail = constants.ENV.SOCKET_CLI_GIT_USER_EMAIL
   const gitUser = constants.ENV.SOCKET_CLI_GIT_USER_NAME
   const githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
@@ -48,7 +48,7 @@ export async function getFixEnv(): Promise<FixEnv> {
     if (isCi) {
       debugFn('notice', 'falling back to `git remote get-url origin`')
     }
-    repoInfo = await gitRepoInfo()
+    repoInfo = await getRepoInfo()
   }
   const prs =
     isCi && repoInfo

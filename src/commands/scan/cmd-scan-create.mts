@@ -11,6 +11,7 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
+import { getRepoName, gitBranch } from '../../utils/git.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
@@ -255,7 +256,7 @@ async function run(
       branchName = sockJson.defaults.scan.create.branch
       logger.info('Using default --branch from socket.json:', branchName)
     } else {
-      branchName = 'socket-default-branch'
+      branchName = (await gitBranch(cwd)) || 'socket-default-branch'
     }
   }
   if (!repoName) {
@@ -263,7 +264,7 @@ async function run(
       repoName = sockJson.defaults.scan.create.repo
       logger.info('Using default --repo from socket.json:', repoName)
     } else {
-      repoName = 'socket-default-repository'
+      repoName = (await getRepoName(cwd)) || 'socket-default-repository'
     }
   }
   if (typeof report !== 'boolean') {
