@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { input, select } from '@socketsecurity/registry/lib/prompts'
 
 import constants from '../../constants.mts'
+import { getRepoName, gitBranch } from '../../utils/git.mts'
 import {
   type SocketJson,
   readSocketJson,
@@ -77,7 +78,7 @@ export async function setupScanConfig(
       if (!sockJson.defaults.scan.create) {
         sockJson.defaults.scan.create = {}
       }
-      const result = await configureScan(sockJson.defaults.scan.create)
+      const result = await configureScan(sockJson.defaults.scan.create, cwd)
       if (!result.ok || result.data.canceled) {
         return result
       }
@@ -129,11 +130,13 @@ async function configureScan(
   config: NonNullable<
     NonNullable<NonNullable<SocketJson['defaults']>['scan']>['create']
   >,
+  cwd = process.cwd(),
 ): Promise<CResult<{ canceled: boolean }>> {
   const defaultRepoName = await input({
     message:
       '(--repo) What repo name (slug) should be reported to Socket for this dir?',
-    default: config.repo || 'socket-default-repository',
+    default:
+      config.repo || (await getRepoName(cwd)) || 'socket-default-repository',
     required: false,
     // validate: async string => bool
   })
@@ -151,7 +154,7 @@ async function configureScan(
   const defaultBranchName = await input({
     message:
       '(--branch) What branch name (slug) should be reported to Socket for this dir?',
-    default: config.branch || 'socket-default-branch',
+    default: config.branch || (await gitBranch(cwd)) || 'socket-default-branch',
     required: false,
     // validate: async string => bool
   })
