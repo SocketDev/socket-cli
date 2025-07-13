@@ -1,9 +1,12 @@
+import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { getRepoName } from '../../utils/git.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+
+const { SOCKET_DEFAULT_REPOSITORY } = constants
 
 export async function fetchCreateOrgFullScan(
   packagePaths: string[],
@@ -33,7 +36,7 @@ export async function fetchCreateOrgFullScan(
     return sockSdkCResult
   }
   const sockSdk = sockSdkCResult.data
-  const repo = repoName || (await getRepoName(cwd)) || 'socket-default-repository'
+  const repo = repoName || (await getRepoName(cwd)) || SOCKET_DEFAULT_REPOSITORY
 
   return await handleApiCall(
     sockSdk.createOrgFullScan(

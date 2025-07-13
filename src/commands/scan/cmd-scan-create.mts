@@ -20,7 +20,11 @@ import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW } = constants
+const {
+  DRY_RUN_BAILING_NOW,
+  SOCKET_DEFAULT_BRANCH,
+  SOCKET_DEFAULT_REPOSITORY,
+} = constants
 
 const config: CliCommandConfig = {
   commandName: 'create',
@@ -256,7 +260,7 @@ async function run(
       branchName = sockJson.defaults.scan.create.branch
       logger.info('Using default --branch from socket.json:', branchName)
     } else {
-      branchName = (await gitBranch(cwd)) || 'socket-default-branch'
+      branchName = (await gitBranch(cwd)) || SOCKET_DEFAULT_BRANCH
     }
   }
   if (!repoName) {
@@ -264,7 +268,7 @@ async function run(
       repoName = sockJson.defaults.scan.create.repo
       logger.info('Using default --repo from socket.json:', repoName)
     } else {
-      repoName = (await getRepoName(cwd)) || 'socket-default-repository'
+      repoName = (await getRepoName(cwd)) || SOCKET_DEFAULT_REPOSITORY
     }
   }
   if (typeof report !== 'boolean') {
