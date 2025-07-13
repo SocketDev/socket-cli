@@ -11,11 +11,11 @@ export async function fetchDependencies({
   limit: number
   offset: number
 }): Promise<CResult<SocketSdkReturnType<'searchDependencies'>['data']>> {
-  const sockSdkResult = await setupSdk()
-  if (!sockSdkResult.ok) {
-    return sockSdkResult
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
+    return sockSdkCResult
   }
-  const sockSdk = sockSdkResult.data
+  const sockSdk = sockSdkCResult.data
 
   return await handleApiCall(
     sockSdk.searchDependencies({ limit, offset }),
