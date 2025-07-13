@@ -1,9 +1,12 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
+import constants from '../../constants.mts'
 import { getRepoName, gitBranch } from '../../utils/git.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
+
+const { SOCKET_DEFAULT_BRANCH, SOCKET_DEFAULT_REPOSITORY } = constants
 
 export async function handleCI(autoManifest: boolean): Promise<void> {
   // ci: {
@@ -23,7 +26,7 @@ export async function handleCI(autoManifest: boolean): Promise<void> {
   // TODO: does it makes sense to use custom branch/repo names here? probably socket.yml, right
   await handleCreateNewScan({
     autoManifest,
-    branchName: (await gitBranch(cwd)) || 'socket-default-branch',
+    branchName: (await gitBranch(cwd)) || SOCKET_DEFAULT_BRANCH,
     commitMessage: '',
     commitHash: '',
     committers: '',
@@ -35,7 +38,7 @@ export async function handleCI(autoManifest: boolean): Promise<void> {
     // When 'pendingHead' is true, it requires 'branchName' set and 'tmp' false.
     pendingHead: true,
     pullRequest: 0,
-    repoName: (await getRepoName(cwd)) || 'socket-default-repository',
+    repoName: (await getRepoName(cwd)) || SOCKET_DEFAULT_REPOSITORY,
     readOnly: false,
     report: true,
     targets: ['.'],

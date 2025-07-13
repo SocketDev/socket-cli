@@ -132,6 +132,8 @@ type Constants = Remap<
     readonly SOCKET_CLI_SENTRY_NPX_BIN_NAME: 'socket-npx-with-sentry'
     readonly SOCKET_CLI_SENTRY_PACKAGE_NAME: '@socketsecurity/cli-with-sentry'
     readonly SOCKET_CLI_VIEW_ALL_RISKS: 'SOCKET_CLI_VIEW_ALL_RISKS'
+    readonly SOCKET_DEFAULT_BRANCH: 'socket-default-branch'
+    readonly SOCKET_DEFAULT_REPOSITORY: 'socket-default-repository'
     readonly SOCKET_WEBSITE_URL: 'https://socket.dev'
     readonly VLT: 'vlt'
     readonly WITH_SENTRY: 'with-sentry'
@@ -209,6 +211,8 @@ const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = '@socketsecurity/cli-with-sentry'
 const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
+const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
+const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
 const SOCKET_WEBSITE_URL = 'https://socket.dev'
 const VLT = 'vlt'
 const WITH_SENTRY = 'with-sentry'
@@ -607,6 +611,8 @@ const constants: Constants = createConstantsObject(
     SOCKET_CLI_SENTRY_NPX_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
     SOCKET_CLI_VIEW_ALL_RISKS,
+    SOCKET_DEFAULT_BRANCH,
+    SOCKET_DEFAULT_REPOSITORY,
     SOCKET_WEBSITE_URL,
     VLT,
     WITH_SENTRY,
