@@ -13,11 +13,11 @@ export async function fetchPurlsShallowScore(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`,
   )
 
-  const sockSdkResult = await setupSdk()
-  if (!sockSdkResult.ok) {
-    return sockSdkResult
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
+    return sockSdkCResult
   }
-  const sockSdk = sockSdkResult.data
+  const sockSdk = sockSdkCResult.data
 
   const result = await handleApiCall(
     sockSdk.batchPackageFetch(

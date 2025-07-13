@@ -10,11 +10,11 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
   slug: string
   defaultBranch: string
 } | void> {
-  const sockSdkResult = await setupSdk()
-  if (!sockSdkResult.ok) {
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
     return
   }
-  const sockSdk = sockSdkResult.data
+  const sockSdk = sockSdkCResult.data
 
   // If there's a repo with the same name as cwd then
   // default the selection to that name.

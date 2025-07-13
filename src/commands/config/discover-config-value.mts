@@ -131,11 +131,11 @@ export async function discoverConfigValue(
 async function getDefaultOrgFromToken(): Promise<
   string[] | string | undefined
 > {
-  const sockSdkResult = await setupSdk()
-  if (!sockSdkResult.ok) {
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
     return undefined
   }
-  const sockSdk = sockSdkResult.data
+  const sockSdk = sockSdkCResult.data
 
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
@@ -159,11 +159,11 @@ async function getDefaultOrgFromToken(): Promise<
 }
 
 async function getEnforceableOrgsFromToken(): Promise<string[] | undefined> {
-  const sockSdkResult = await setupSdk()
-  if (!sockSdkResult.ok) {
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
     return undefined
   }
-  const sockSdk = sockSdkResult.data
+  const sockSdk = sockSdkCResult.data
 
   const result = await handleApiCall(
     sockSdk.getOrganizations(),

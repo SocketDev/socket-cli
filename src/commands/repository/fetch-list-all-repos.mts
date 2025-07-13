@@ -15,11 +15,11 @@ export async function fetchListAllRepos({
   orgSlug: string
   sort: string
 }): Promise<CResult<SocketSdkReturnType<'getOrgRepoList'>['data']>> {
-  const sockSdkResult = await setupSdk()
-  if (!sockSdkResult.ok) {
-    return sockSdkResult
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
+    return sockSdkCResult
   }
-  const sockSdk = sockSdkResult.data
+  const sockSdk = sockSdkCResult.data
 
   const rows: SocketSdkReturnType<'getOrgRepoList'>['data']['results'] = []
   let protection = 0
