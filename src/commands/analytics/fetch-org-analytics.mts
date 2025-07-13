@@ -7,11 +7,11 @@ import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 export async function fetchOrgAnalyticsData(
   time: number,
 ): Promise<CResult<SocketSdkReturnType<'getOrgAnalytics'>['data']>> {
-  const sockSdkResult = await setupSdk()
-  if (!sockSdkResult.ok) {
-    return sockSdkResult
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
+    return sockSdkCResult
   }
-  const sockSdk = sockSdkResult.data
+  const sockSdk = sockSdkCResult.data
 
   return await handleApiCall(
     sockSdk.getOrgAnalytics(time.toString()),

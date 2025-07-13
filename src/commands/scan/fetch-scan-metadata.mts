@@ -8,11 +8,11 @@ export async function fetchScanMetadata(
   orgSlug: string,
   scanId: string,
 ): Promise<CResult<SocketSdkReturnType<'getOrgFullScanMetadata'>['data']>> {
-  const sockSdkResult = await setupSdk()
-  if (!sockSdkResult.ok) {
-    return sockSdkResult
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
+    return sockSdkCResult
   }
-  const sockSdk = sockSdkResult.data
+  const sockSdk = sockSdkCResult.data
 
   return await handleApiCall(
     sockSdk.getOrgFullScanMetadata(orgSlug, scanId),

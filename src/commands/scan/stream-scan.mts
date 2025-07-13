@@ -8,11 +8,11 @@ export async function streamScan(
   scanId: string,
   file: string | undefined,
 ) {
-  const sockSdkResult = await setupSdk()
-  if (!sockSdkResult.ok) {
-    return sockSdkResult
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
+    return sockSdkCResult
   }
-  const sockSdk = sockSdkResult.data
+  const sockSdk = sockSdkCResult.data
 
   logger.info('Requesting data from API...')
 

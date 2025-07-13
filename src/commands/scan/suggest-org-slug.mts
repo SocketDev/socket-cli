@@ -5,11 +5,11 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 export async function suggestOrgSlug(): Promise<string | void> {
-  const sockSdkResult = await setupSdk()
-  if (!sockSdkResult.ok) {
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
     return
   }
-  const sockSdk = sockSdkResult.data
+  const sockSdk = sockSdkCResult.data
 
   const result = await handleApiCall(
     sockSdk.getOrganizations(),
