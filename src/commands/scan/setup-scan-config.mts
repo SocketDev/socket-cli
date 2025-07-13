@@ -14,6 +14,8 @@ import {
 
 import type { CResult } from '../../types.mts'
 
+const { SOCKET_DEFAULT_BRANCH, SOCKET_DEFAULT_REPOSITORY } = constants
+
 export async function setupScanConfig(
   cwd: string,
   defaultOnReadError = false,
@@ -136,7 +138,7 @@ async function configureScan(
     message:
       '(--repo) What repo name (slug) should be reported to Socket for this dir?',
     default:
-      config.repo || (await getRepoName(cwd)) || 'socket-default-repository',
+      config.repo || (await getRepoName(cwd)) || SOCKET_DEFAULT_REPOSITORY,
     required: false,
     // validate: async string => bool
   })
@@ -144,7 +146,7 @@ async function configureScan(
     return canceledByUser()
   }
   if (defaultRepoName) {
-    // Even if it's 'socket-default-repository' store it because if we change
+    // Even if it's SOCKET_DEFAULT_REPOSITORY store it because if we change
     // this default then an existing user probably would not expect the change?
     config.repo = defaultRepoName
   } else {
@@ -154,7 +156,7 @@ async function configureScan(
   const defaultBranchName = await input({
     message:
       '(--branch) What branch name (slug) should be reported to Socket for this dir?',
-    default: config.branch || (await gitBranch(cwd)) || 'socket-default-branch',
+    default: config.branch || (await gitBranch(cwd)) || SOCKET_DEFAULT_BRANCH,
     required: false,
     // validate: async string => bool
   })
@@ -162,7 +164,7 @@ async function configureScan(
     return canceledByUser()
   }
   if (defaultBranchName) {
-    // Even if it's 'socket-default-branch' store it because if we change
+    // Even if it's SOCKET_DEFAULT_BRANCH store it because if we change
     // this default then an existing user probably would not expect the change?
     config.branch = defaultBranchName
   } else {
