@@ -233,13 +233,13 @@ async function run(
     dryRun,
   )
 
-  // Accept zero or more paths. Default to cwd() if none given.
-  let targets = cli.input || [process.cwd()]
-
   const cwd =
     cwdOverride && cwdOverride !== 'process.cwd()'
       ? path.resolve(process.cwd(), String(cwdOverride))
       : process.cwd()
+
+  // Accept zero or more paths. Default to cwd() if none given.
+  let targets = cli.input || [cwd]
 
   const sockJson = await readOrDefaultSocketJson(cwd)
 
