@@ -16,7 +16,7 @@ import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { GlobOptions } from 'tinyglobby'
 
-const { NPM, PNPM } = constants
+const { PNPM } = constants
 
 const PNPM_WORKSPACE = `${PNPM}-workspace`
 
@@ -166,18 +166,13 @@ export async function filterGlobResultToSupportedFiles(
   entries: string[] | readonly string[],
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
 ): Promise<string[]> {
-  const patterns = ['golang', NPM, 'maven', 'pypi', 'gem', 'nuget'].reduce(
-    (r: string[], n: string) => {
-      const supported = supportedFiles[n]
-      r.push(
-        ...(supported
-          ? Object.values(supported).map(p => `**/${p.pattern}`)
-          : []),
-      )
-      return r
-    },
-    [],
-  )
+  const patterns: string[] = []
+  for (const key of Object.keys(supportedFiles)) {
+    const supported = supportedFiles[key]
+    if (supported) {
+      patterns.push(...Object.values(supported).map(p => `**/${p.pattern}`))
+    }
+  }
   return entries.filter(p => micromatch.some(p, patterns))
 }
 
@@ -225,6 +220,7 @@ export async function globWithGitIgnore(
   const globOptions = {
     absolute: true,
     cwd,
+    dot: true,
     expandDirectories: false,
     ignore: hasNegatedPattern ? [] : ignores,
     ...additionalOptions,
