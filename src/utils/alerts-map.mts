@@ -70,7 +70,7 @@ export async function getAlertsMapFromPurls(
   const { spinner } = options
 
   const uniqPurls = arrayUnique(purls)
-  debugDir('inspect', { purls: uniqPurls })
+  debugDir('silly', { purls: uniqPurls })
 
   let { length: remaining } = uniqPurls
   const alertsByPurl: AlertsByPurl = new Map()
