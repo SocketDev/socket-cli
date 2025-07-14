@@ -3,7 +3,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, select } from '@socketsecurity/registry/lib/prompts'
 
@@ -398,7 +398,7 @@ async function downloadManifestFile({
   debugFn('notice', 'request: download url from GitHub')
 
   const fileUrl = `${repoApiUrl}/contents/${file}?ref=${defaultBranch}`
-  debugFn('inspect', 'url: file', fileUrl)
+  debugDir('inspect', { fileUrl })
 
   const downloadUrlResponse = await fetch(fileUrl, {
     method: 'GET',
@@ -497,7 +497,7 @@ async function streamDownloadWithFetch(
       'An error was thrown while trying to download a manifest file... url:',
       downloadUrl,
     )
-    debugFn('inspect', { error })
+    debugDir('inspect', { error })
 
     // If an error occurs and fileStream was created, attempt to clean up.
     if (fs.existsSync(localPath)) {
@@ -654,7 +654,7 @@ async function getRepoDetails({
   CResult<{ defaultBranch: string; repoDetails: unknown; repoApiUrl: string }>
 > {
   const repoApiUrl = `${githubApiUrl}/repos/${orgGithub}/${repoSlug}`
-  debugFn('inspect', 'url: repo', repoApiUrl)
+  debugDir('inspect', { repoApiUrl })
 
   const repoDetailsResponse = await fetch(repoApiUrl, {
     method: 'GET',
@@ -754,7 +754,7 @@ async function getRepoBranchTree({
   }
 
   if (!treeDetails.tree || !Array.isArray(treeDetails.tree)) {
-    debugFn('inspect', 'treeDetails.tree:', treeDetails.tree)
+    debugDir('inspect', { treeDetails: { tree: treeDetails.tree } })
 
     return {
       ok: false,

@@ -39,11 +39,13 @@ function getOctokit() {
     if (!SOCKET_CLI_GITHUB_TOKEN) {
       debugFn('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
     }
-    _octokit = new Octokit({
+    const octokitOptions = {
       auth: SOCKET_CLI_GITHUB_TOKEN,
       // Lazily access constants.ENV.GITHUB_API_URL.
       baseUrl: constants.ENV.GITHUB_API_URL,
-    })
+    }
+    debugDir('inspect', { octokitOptions })
+    _octokit = new Octokit(octokitOptions)
   }
   return _octokit
 }
@@ -478,14 +480,16 @@ export async function openPr(
   const purlObj = getPurlObject(purl)
   const octokit = getOctokit()
   try {
-    return await octokit.pulls.create({
+    const octokitPullsCreateParams = {
       owner,
       repo,
       title: getSocketPullRequestTitle(purlObj, newVersion, workspace),
       head: branch,
       base: baseBranch,
       body: getSocketPullRequestBody(purlObj, newVersion, workspace),
-    })
+    }
+    debugDir('inspect', { octokitPullsCreateParams })
+    return await octokit.pulls.create(octokitPullsCreateParams)
   } catch (e) {
     let message = `Failed to open pull request`
     const errors =
