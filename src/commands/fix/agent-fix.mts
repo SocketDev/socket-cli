@@ -484,6 +484,8 @@ export async function agentFix(
                 // eslint-disable-next-line no-await-in-loop
                 (await gitCreateBranch(branch, cwd)) &&
                 // eslint-disable-next-line no-await-in-loop
+                (await gitCheckoutBranch(branch, cwd)) &&
+                // eslint-disable-next-line no-await-in-loop
                 (await gitCommit(
                   getSocketCommitMessage(oldPurl, newVersion, workspace),
                   // eslint-disable-next-line no-await-in-loop
