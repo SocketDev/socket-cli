@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import which from 'which'
 
-import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { resolveBinPathSync } from '@socketsecurity/registry/lib/npm'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -138,7 +138,7 @@ export async function getPackageFilesForScan(
     `Found ${packageFiles.length} local ${pluralize('file', packageFiles.length)}`,
   )
 
-  debugFn('inspect', 'paths: absolute', packageFiles)
+  debugDir('inspect', { packageFiles })
 
   return packageFiles
 }
