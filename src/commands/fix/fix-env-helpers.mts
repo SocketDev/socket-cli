@@ -1,4 +1,5 @@
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
+import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 
 import { getSocketPrs } from './pull-request.mts'
 import constants from '../../constants.mts'
@@ -40,6 +41,27 @@ export async function getFixEnv(): Promise<FixEnv> {
   const gitUser = constants.ENV.SOCKET_CLI_GIT_USER_NAME
   const githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN
   const isCi = !!(constants.ENV.CI && gitEmail && gitUser && githubToken)
+
+  if (
+    // If isCi is false,
+    !isCi &&
+    // but some CI checks are passing,
+    (constants.ENV.CI || gitEmail || gitUser || githubToken) &&
+    // then log about it when in debug mode.
+    isDebug('notice')
+  ) {
+    const envVars = [
+      ...(constants.ENV.CI ? [] : ['process.env.CI']),
+      ...(gitEmail ? [] : ['process.env.SOCKET_CLI_GIT_USER_EMAIL']),
+      ...(gitUser ? [] : ['process.env.SOCKET_CLI_GIT_USER_NAME']),
+      ...(githubToken ? [] : ['process.env.GITHUB_TOKEN']),
+    ]
+    debugFn(
+      'notice',
+      `miss: fixEnv.isCi is false, expected ${joinAnd(envVars)} to be set`,
+    )
+  }
+
   let repoInfo: RepoInfo | null = null
   if (isCi) {
     repoInfo = ciRepoInfo()
@@ -50,6 +72,7 @@ export async function getFixEnv(): Promise<FixEnv> {
     }
     repoInfo = await getRepoInfo()
   }
+
   const prs =
     isCi && repoInfo
       ? await getSocketPrs(repoInfo.owner, repoInfo.repo, {
@@ -57,6 +80,7 @@ export async function getFixEnv(): Promise<FixEnv> {
           states: 'all',
         })
       : []
+
   return {
     baseBranch,
     gitEmail,
