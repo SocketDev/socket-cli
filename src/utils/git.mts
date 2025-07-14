@@ -1,6 +1,6 @@
 import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { isSpawnError, spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../constants.mts'
 
@@ -159,6 +159,12 @@ export async function gitPushBranch(
       'error',
       `caught: git push --force --set-upstream origin ${branch} failed`,
     )
+    if (isSpawnError(e) && e.code === 128) {
+      debugFn(
+        'error',
+        'denied: token requires contents: write; pull-requests: write permissions',
+      )
+    }
     debugDir('inspect', { error: e })
   }
   return false
