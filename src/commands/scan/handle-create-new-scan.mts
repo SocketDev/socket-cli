@@ -62,16 +62,16 @@ export async function handleCreateNewScan({
     logger.info('Auto generation finished. Proceeding with Scan creation.')
   }
 
-  const supportedFileNames = await fetchSupportedScanFileNames()
-  if (!supportedFileNames.ok) {
-    await outputCreateNewScan(supportedFileNames, outputKind, interactive)
+  const fileNamesCResult = await fetchSupportedScanFileNames()
+  if (!fileNamesCResult.ok) {
+    await outputCreateNewScan(fileNamesCResult, outputKind, interactive)
     return
   }
 
   const packagePaths = await getPackageFilesForScan(
     cwd,
     targets,
-    supportedFileNames.data,
+    fileNamesCResult.data,
   )
 
   const wasValidInput = checkCommandInput(outputKind, {
