@@ -340,8 +340,7 @@ export function parseGitRemoteUrl(remoteUrl: string): RepoInfo | null {
   // 1. Handle SSH-style, e.g. git@github.com:owner/repo.git
   if (sshMatch) {
     result = { owner: sshMatch[1]!, repo: sshMatch[2]! }
-  }
-  if (result) {
+  } else {
     // 2. Handle HTTPS/URL-style, e.g. https://github.com/owner/repo.git
     try {
       const parsed = new URL(remoteUrl)
@@ -357,5 +356,5 @@ export function parseGitRemoteUrl(remoteUrl: string): RepoInfo | null {
     } catch {}
   }
   parsedGitRemoteUrlCache.set(remoteUrl, result)
-  return { ...result } as RepoInfo | null
+  return result ? { ...result } : result
 }
