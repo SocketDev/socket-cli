@@ -24,26 +24,42 @@ async function install(
   pkgEnvDetails: EnvDetails,
   options: InstallOptions,
 ): Promise<NodeClass | null> {
-  const { args, cwd, spinner } = {
+  const {
+    args: extraArgs,
+    cwd,
+    spinner,
+  } = {
     __proto__: null,
     ...options,
   } as InstallOptions
+  const args = [
+    '--ignore-scripts',
+    '--no-audit',
+    '--no-fund',
+    '--no-progress',
+    '--no-save',
+    '--silent',
+    ...(extraArgs ?? []),
+  ]
+  const quotedCmd = `\`${pkgEnvDetails.agent} install ${args.join(' ')}\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     await runAgentInstall(pkgEnvDetails, {
-      args: [
-        '--ignore-scripts',
-        '--no-audit',
-        '--no-fund',
-        '--no-progress',
-        '--no-save',
-        '--silent',
-        ...(args ?? []),
-      ],
+      args,
       spinner,
       stdio: isDebug('stdio') ? 'inherit' : 'ignore',
     })
+  } catch (e) {
+    debugFn('error', `caught: ${quotedCmd} failed`)
+    debugDir('inspect', { error: e })
+    return null
+  }
+  try {
     return await getActualTree(cwd)
-  } catch {}
+  } catch (e) {
+    debugFn('error', 'caught: Arborist error')
+    debugDir('inspect', { error: e })
+  }
   return null
 }
 
