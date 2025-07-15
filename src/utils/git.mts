@@ -97,13 +97,21 @@ export type GitCreateAndPushBranchOptions = {
   user?: string | undefined
 }
 
-export async function gitCleanFdx(cwd = process.cwd()): Promise<void> {
+export async function gitCleanFdx(cwd = process.cwd()): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
     stdio: isDebug('stdio') ? 'inherit' : 'ignore',
   }
-  // TODO: propagate CResult?
-  await spawn('git', ['clean', '-fdx'], stdioIgnoreOptions)
+  const quotedCmd = '`git clean -fdx`'
+  debugFn('stdio', `spawn: ${quotedCmd}`)
+  try {
+    await spawn('git', ['clean', '-fdx'], stdioIgnoreOptions)
+    return true
+  } catch (e) {
+    debugFn('error', `caught: ${quotedCmd} failed`)
+    debugDir('inspect', { error: e })
+  }
+  return false
 }
 
 export async function gitCheckoutBranch(
@@ -114,10 +122,15 @@ export async function gitCheckoutBranch(
     cwd,
     stdio: isDebug('stdio') ? 'inherit' : 'ignore',
   }
+  const quotedCmd = `\`git checkout ${branch}\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     await spawn('git', ['checkout', branch], stdioIgnoreOptions)
     return true
-  } catch {}
+  } catch (e) {
+    debugFn('error', `caught: ${quotedCmd} failed`)
+    debugDir('inspect', { error: e })
+  }
   return false
 }
 
@@ -132,10 +145,15 @@ export async function gitCreateBranch(
     cwd,
     stdio: isDebug('stdio') ? 'inherit' : 'ignore',
   }
+  const quotedCmd = `\`git branch ${branch}\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     await spawn('git', ['branch', branch], stdioIgnoreOptions)
     return true
-  } catch {}
+  } catch (e) {
+    debugFn('error', `caught: ${quotedCmd} failed`)
+    debugDir('inspect', { error: e })
+  }
   return false
 }
 
@@ -147,6 +165,8 @@ export async function gitPushBranch(
     cwd,
     stdio: isDebug('stdio') ? 'inherit' : 'ignore',
   }
+  const quotedCmd = `\`git push --force --set-upstream origin ${branch}\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     await spawn(
       'git',
@@ -155,14 +175,11 @@ export async function gitPushBranch(
     )
     return true
   } catch (e) {
-    debugFn(
-      'error',
-      `caught: git push --force --set-upstream origin ${branch} failed`,
-    )
+    debugFn('error', `caught: ${quotedCmd} failed`)
     if (isSpawnError(e) && e.code === 128) {
       debugFn(
         'error',
-        'denied: token requires contents: write; pull-requests: write permissions',
+        "denied: token requires write permissions for 'contents' and 'pull-requests'",
       )
     }
     debugDir('inspect', { error: e })
@@ -186,16 +203,31 @@ export async function gitCommit(
     // Lazily access constants.ENV.SOCKET_CLI_GIT_USER_NAME.
     user = constants.ENV.SOCKET_CLI_GIT_USER_NAME,
   } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions
+
+  await gitEnsureIdentity(user, email, cwd)
+
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
     stdio: isDebug('stdio') ? 'inherit' : 'ignore',
   }
+  const quotedAddCmd = `\`git add ${filepaths.join(' ')}\``
+  debugFn('stdio', `spawn: ${quotedAddCmd}`)
   try {
-    await gitEnsureIdentity(user, email, cwd)
     await spawn('git', ['add', ...filepaths], stdioIgnoreOptions)
+  } catch (e) {
+    debugFn('error', `caught: ${quotedAddCmd} failed`)
+    debugDir('inspect', { error: e })
+  }
+
+  const quotedCommitCmd = `\`git commit -m ${commitMsg}\``
+  debugFn('stdio', `spawn: ${quotedCommitCmd}`)
+  try {
     await spawn('git', ['commit', '-m', commitMsg], stdioIgnoreOptions)
     return true
-  } catch {}
+  } catch (e) {
+    debugFn('error', `caught: ${quotedCommitCmd} failed`)
+    debugDir('inspect', { error: e })
+  }
   return false
 }
 
@@ -207,11 +239,16 @@ export async function gitDeleteBranch(
     cwd,
     stdio: isDebug('stdio') ? 'inherit' : 'ignore',
   }
+  const quotedCmd = `\`git branch -D ${branch}\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     // Will throw with exit code 1 if branch does not exist.
     await spawn('git', ['branch', '-D', branch], stdioIgnoreOptions)
     return true
-  } catch {}
+  } catch (e) {
+    debugFn('error', `caught: ${quotedCmd} failed`)
+    debugDir('inspect', { error: e })
+  }
   return false
 }
 
@@ -220,10 +257,6 @@ export async function gitEnsureIdentity(
   email: string,
   cwd = process.cwd(),
 ): Promise<void> {
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
-  }
   const stdioPipeOptions: SpawnOptions = { cwd }
   const identEntries: Array<[string, string]> = [
     ['user.email', name],
@@ -239,10 +272,16 @@ export async function gitEnsureIdentity(
         ).stdout
       } catch {}
       if (configValue !== value) {
+        const stdioIgnoreOptions: SpawnOptions = {
+          cwd,
+          stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+        }
+        const quotedCmd = `\`git config ${prop} ${value}\``
+        debugFn('stdio', `spawn: ${quotedCmd}`)
         try {
           await spawn('git', ['config', prop, value], stdioIgnoreOptions)
         } catch (e) {
-          debugFn('error', `caught: git config ${prop} ${value} failed`)
+          debugFn('error', `caught: ${quotedCmd} failed`)
           debugDir('inspect', { error: e })
         }
       }
@@ -258,6 +297,8 @@ export async function gitLocalBranchExists(
     cwd,
     stdio: isDebug('stdio') ? 'inherit' : 'ignore',
   }
+  const quotedCmd = `\`git show-ref --quiet refs/heads/${branch}\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     // Will throw with exit code 1 if the branch does not exist.
     await spawn(
@@ -266,7 +307,10 @@ export async function gitLocalBranchExists(
       stdioIgnoreOptions,
     )
     return true
-  } catch {}
+  } catch (e) {
+    debugFn('error', `caught: ${quotedCmd} failed`)
+    debugDir('inspect', { error: e })
+  }
   return false
 }
 
@@ -302,29 +346,39 @@ export async function gitResetAndClean(
 export async function gitResetHard(
   branch = 'HEAD',
   cwd = process.cwd(),
-): Promise<void> {
+): Promise<boolean> {
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
     stdio: isDebug('stdio') ? 'inherit' : 'ignore',
   }
-  await spawn('git', ['reset', '--hard', branch], stdioIgnoreOptions)
+  const quotedCmd = `\`git reset --hard ${branch}\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
+  try {
+    await spawn('git', ['reset', '--hard', branch], stdioIgnoreOptions)
+    return true
+  } catch (e) {
+    debugFn('error', `caught: ${quotedCmd} failed`)
+    debugDir('inspect', { error: e })
+  }
+  return false
 }
 
 export async function gitUnstagedModifiedFiles(
   cwd = process.cwd(),
 ): Promise<CResult<string[]>> {
+  const stdioPipeOptions: SpawnOptions = { cwd }
+  const quotedCmd = `\`git diff --name-only\``
   try {
-    const stdioPipeOptions: SpawnOptions = { cwd }
     const changedFilesDetails = (
       await spawn('git', ['diff', '--name-only'], stdioPipeOptions)
     ).stdout
-    const relPaths = changedFilesDetails.split('\n') ?? []
+    const relPaths = changedFilesDetails.split('\n')
     return {
       ok: true,
       data: relPaths.map(p => normalizePath(p)),
     }
   } catch (e) {
-    debugFn('error', 'caught: git diff --name-only failed')
+    debugFn('error', `caught: ${quotedCmd} failed`)
     debugDir('inspect', { error: e })
     return {
       ok: false,

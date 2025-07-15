@@ -534,17 +534,21 @@ export async function setGitRemoteGithubRepoUrl(
   repo: string,
   token: string,
   cwd = process.cwd(),
-): Promise<void> {
+): Promise<boolean> {
+  const { host } = new URL(constants.ENV.GITHUB_SERVER_URL)
+  const url = `https://x-access-token:${token}@${host}/${owner}/${repo}`
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
     stdio: isDebug('stdio') ? 'inherit' : 'ignore',
   }
-  const { host } = new URL(constants.ENV.GITHUB_SERVER_URL)
-  const url = `https://x-access-token:${token}@${host}/${owner}/${repo}`
+  const quotedCmd = `\`git remote set-url origin ${url}\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
+    return true
   } catch (e) {
-    debugFn('error', 'caught: unexpected error')
+    debugFn('error', `caught: ${quotedCmd} failed`)
     debugDir('inspect', { error: e })
   }
+  return false
 }
