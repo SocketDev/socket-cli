@@ -197,6 +197,7 @@ export async function agentFix(
 
   const handleInstallFail = (): CResult<{ fixed: boolean }> => {
     cleanupInfoEntriesLoop()
+    spinner?.stop()
     return {
       ok: false,
       message: 'Install failed',

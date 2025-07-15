@@ -52,6 +52,11 @@ async function install(
   ]
   const quotedCmd = `\`${pkgEnvDetails.agent} install ${args.join(' ')}\``
   debugFn('stdio', `spawn: ${quotedCmd}`)
+
+  const isSpinning = spinner?.isSpinning
+  spinner?.stop()
+
+  let errored = false
   try {
     await runAgentInstall(pkgEnvDetails, {
       args,
@@ -61,15 +66,22 @@ async function install(
   } catch (e) {
     debugFn('error', `caught: ${quotedCmd} failed`)
     debugDir('inspect', { error: e })
-    return null
+    errored = true
   }
-  try {
-    return await getActualTree(cwd)
-  } catch (e) {
-    debugFn('error', 'caught: Arborist error')
-    debugDir('inspect', { error: e })
+
+  let actualTree: NodeClass | null = null
+  if (!errored) {
+    try {
+      actualTree = await getActualTree(cwd)
+    } catch (e) {
+      debugFn('error', 'caught: Arborist error')
+      debugDir('inspect', { error: e })
+    }
   }
-  return null
+  if (isSpinning) {
+    spinner.start()
+  }
+  return actualTree
 }
 
 export async function pnpmFix(
