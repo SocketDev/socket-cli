@@ -294,8 +294,7 @@ async function run(
   let updatedInput = false
 
   if (!targets.length && !dryRun && interactive) {
-    const received = await suggestTarget()
-    targets = received ?? []
+    targets = await suggestTarget()
     updatedInput = true
   }
 
