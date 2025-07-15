@@ -1,6 +1,6 @@
 import { select } from '@socketsecurity/registry/lib/prompts'
 
-export async function suggestTarget(): Promise<string[] | void> {
+export async function suggestTarget(): Promise<string[]> {
   // We could prefill this with sub-dirs of the current
   // dir ... but is that going to be useful?
   const proceed = await select<boolean>({
@@ -19,7 +19,5 @@ export async function suggestTarget(): Promise<string[] | void> {
       },
     ],
   })
-  if (proceed) {
-    return ['.']
-  }
+  return proceed ? ['.'] : []
 }
