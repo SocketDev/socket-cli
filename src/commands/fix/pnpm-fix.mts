@@ -33,26 +33,42 @@ async function install(
   pkgEnvDetails: EnvDetails,
   options: InstallOptions,
 ): Promise<NodeClass | null> {
-  const { args, cwd, spinner } = {
+  const {
+    args: extraArgs,
+    cwd,
+    spinner,
+  } = {
     __proto__: null,
     ...options,
   } as InstallOptions
+  const args = [
+    // Enable pnpm updates to pnpm-lock.yaml in CI environments.
+    // https://pnpm.io/cli/install#--frozen-lockfile
+    '--no-frozen-lockfile',
+    // Enable a non-interactive pnpm install
+    // https://github.com/pnpm/pnpm/issues/6778
+    '--config.confirmModulesPurge=false',
+    ...(extraArgs ?? []),
+  ]
+  const quotedCmd = `\`${pkgEnvDetails.agent} install ${args.join(' ')}\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     await runAgentInstall(pkgEnvDetails, {
-      args: [
-        // Enable pnpm updates to pnpm-lock.yaml in CI environments.
-        // https://pnpm.io/cli/install#--frozen-lockfile
-        '--no-frozen-lockfile',
-        // Enable a non-interactive pnpm install
-        // https://github.com/pnpm/pnpm/issues/6778
-        '--config.confirmModulesPurge=false',
-        ...(args ?? []),
-      ],
+      args,
       spinner,
       stdio: isDebug('stdio') ? 'inherit' : 'ignore',
     })
+  } catch (e) {
+    debugFn('error', `caught: ${quotedCmd} failed`)
+    debugDir('inspect', { error: e })
+    return null
+  }
+  try {
     return await getActualTree(cwd)
-  } catch {}
+  } catch (e) {
+    debugFn('error', 'caught: Arborist error')
+    debugDir('inspect', { error: e })
+  }
   return null
 }
 
