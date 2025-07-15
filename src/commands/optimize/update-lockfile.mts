@@ -29,7 +29,7 @@ export async function updateLockfile(
     __proto__: null,
     ...options,
   } as UpdateLockfileOptions
-  const isSpinning = !!spinner?.['isSpinning']
+  const isSpinning = !!spinner?.isSpinning
   if (!isSpinning) {
     spinner?.start()
   }
