@@ -47,14 +47,18 @@ export async function handleOptimize({
 
   const { agent, agentVersion } = pkgEnvDetails
   if (agent === VLT) {
-    return {
-      ok: false,
-      message: 'Unsupported',
-      cause: cmdPrefixMessage(
-        CMD_NAME,
-        `${agent} v${agentVersion} does not support overrides. Soon, though ⚡`,
-      ),
-    }
+    await outputOptimizeResult(
+      {
+        ok: false,
+        message: 'Unsupported',
+        cause: cmdPrefixMessage(
+          CMD_NAME,
+          `${agent} v${agentVersion} does not support overrides. Soon, though ⚡`,
+        ),
+      },
+      outputKind,
+    )
+    return
   }
 
   logger.info(`Optimizing packages for ${agent} v${agentVersion}.\n`)
