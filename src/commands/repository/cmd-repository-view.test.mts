@@ -72,8 +72,7 @@ describe('socket repository view', async () => {
 
           - Repository name as first argument (missing)
 
-          - You need to be logged in to use this command. See \`socket login\`. (missing API token)
-        "
+          - You need to be logged in to use this command. See \`socket login\`. (missing API token)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -136,8 +135,7 @@ describe('socket repository view', async () => {
 
           - Org name by default setting, --org, or auto-discovered (missing)
 
-          - Repository name as first argument (ok)
-        "
+          - Repository name as first argument (ok)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -165,8 +163,7 @@ describe('socket repository view', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - Repository name as first argument (missing)
-        "
+          - Repository name as first argument (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -196,8 +193,7 @@ describe('socket repository view', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - Repository name as first argument (missing)
-        "
+          - Repository name as first argument (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

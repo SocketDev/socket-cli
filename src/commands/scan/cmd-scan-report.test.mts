@@ -101,8 +101,7 @@ describe('socket scan report', async () => {
 
           - Scan ID to report on (missing)
 
-          - You need to be logged in to use this command. See \`socket login\`. (missing API token)
-        "
+          - You need to be logged in to use this command. See \`socket login\`. (missing API token)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
