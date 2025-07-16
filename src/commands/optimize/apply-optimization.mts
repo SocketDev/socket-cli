@@ -48,12 +48,12 @@ export async function applyOptimization(
       spinner,
     })
     if (!result.ok) {
+      spinner.stop()
       return result
     }
   }
 
   spinner.stop()
-
   return {
     ok: true,
     data: {
