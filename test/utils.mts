@@ -64,15 +64,23 @@ export async function invokeNpm(
     return {
       status: true,
       code: 0,
-      stdout: toAsciiSafeString(normalizeLogSymbols(stripAnsi(output.stdout.trim()))),
-      stderr: toAsciiSafeString(normalizeLogSymbols(stripAnsi(output.stderr.trim()))),
+      stdout: toAsciiSafeString(
+        normalizeLogSymbols(stripAnsi(output.stdout.trim())),
+      ),
+      stderr: toAsciiSafeString(
+        normalizeLogSymbols(stripAnsi(output.stderr.trim())),
+      ),
     }
   } catch (e: unknown) {
     return {
       status: false,
       code: e?.['code'],
-      stdout: toAsciiSafeString(normalizeLogSymbols(stripAnsi(e?.['stdout']?.trim() ?? ''))),
-      stderr: toAsciiSafeString(normalizeLogSymbols(stripAnsi(e?.['stderr']?.trim() ?? ''))),
+      stdout: toAsciiSafeString(
+        normalizeLogSymbols(stripAnsi(e?.['stdout']?.trim() ?? '')),
+      ),
+      stderr: toAsciiSafeString(
+        normalizeLogSymbols(stripAnsi(e?.['stderr']?.trim() ?? '')),
+      ),
     }
   }
 }
