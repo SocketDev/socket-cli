@@ -158,7 +158,7 @@ async function run(
       test: cli.input.length <= 1,
       message: 'Can only accept one DIR (make sure to escape spaces!)',
       pass: 'ok',
-      fail: 'received ' + cli.input.length,
+      fail: `received ${cli.input.length}`,
     },
     {
       nook: true,

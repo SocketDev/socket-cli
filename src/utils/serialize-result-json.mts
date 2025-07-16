@@ -14,7 +14,7 @@ export function serializeResultJson(data: CResult<unknown>): string {
       debugFn('inspect', 'data:\n', data)
     }
 
-    // We should not allow the json value to be "null", or a boolean/number/string,
+    // We should not allow the JSON value to be "null", or a boolean/number/string,
     // even if they are valid "json".
     const message =
       'There was a problem converting the data set to JSON. The JSON was not an object. Please try again without --json'
