@@ -107,11 +107,8 @@ export async function addOverrides(
     )
   }
 
-  spinner?.setText(`Adding overrides to ${workspace}...`)
-
   const depAliasMap = new Map<string, string>()
   const depEntries = getDependencyEntries(pkgEnvDetails)
-
   const manifestEntries = manifestNpmOverrides.filter(({ 1: data }) =>
     semver.satisfies(
       // Roughly check Node range as semver.coerce will strip leading
@@ -120,6 +117,8 @@ export async function addOverrides(
       pkgEnvDetails.pkgRequirements.node,
     ),
   )
+
+  let loggedAddingText = false
 
   // Chunk package names to process them in parallel 3 at a time.
   await pEach(manifestEntries, 3, async ({ 1: data }) => {
@@ -157,6 +156,10 @@ export async function addOverrides(
           state.added.add(sockRegPkgName)
           if (!isWorkspaceRoot) {
             state.addedInWorkspaces.add(workspace)
+          }
+          if (!loggedAddingText) {
+            spinner?.setText(`Adding overrides to ${workspace}...`)
+            loggedAddingText = true
           }
         }
         depAliasMap.set(origPkgName, thisSpec)
@@ -227,6 +230,10 @@ export async function addOverrides(
             overrides[origPkgName] = newSpec
             const addedOrUpdated = overrideExists ? 'updated' : 'added'
             state[addedOrUpdated].add(sockRegPkgName)
+            if (!loggedAddingText) {
+              spinner?.setText(`Adding overrides to ${workspace}...`)
+              loggedAddingText = true
+            }
           }
         }
       })
