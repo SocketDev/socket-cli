@@ -101,7 +101,8 @@ describe('socket manifest conda', async () => {
 
           \\xd7  Input error:  Please review the input requirements and try again
 
-            - Can only accept one DIR (make sure to escape spaces!) (received 2)"
+            - Can only accept one DIR (make sure to escape spaces!) (received 2)
+          "
         `)
       },
     )
@@ -123,7 +124,7 @@ describe('socket manifest conda', async () => {
           "{
             "ok": false,
             "message": "Input error",
-            "data": "Please review the input requirements and try again\\n\\n  - Can only accept one DIR (make sure to escape spaces!) (received 2)\\n"
+            "data": "Please review the input requirements and try again\\n\\n  - Can only accept one DIR (make sure to escape spaces!) (\\u001b[31mreceived 2\\u001b[39m)\\n"
           }"
         `)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -159,7 +160,8 @@ describe('socket manifest conda', async () => {
 
           \\xd7  Input error:  Please review the input requirements and try again
 
-            - Can only accept one DIR (make sure to escape spaces!) (received 2)"
+            - Can only accept one DIR (make sure to escape spaces!) (received 2)
+          "
         `)
       },
     )
