@@ -298,7 +298,9 @@ export async function detectPackageEnvironment({
   const { maintainedNodeVersions } = constants
   // Lazily access constants.minimumVersionByAgent.
   const minSupportedAgentVersion = constants.minimumVersionByAgent.get(agent)!
-  const minSupportedNodeVersion = maintainedNodeVersions.last
+  const minSupportedNodeMajor = semver.major(maintainedNodeVersions.last)
+  const minSupportedNodeVersion = `${minSupportedNodeMajor}.0.0`
+  const minSupportedNodeRange = `>=${minSupportedNodeMajor}`
   const nodeVersion = semver.coerce(process.version)!
   let lockSrc: string | undefined
   let pkgAgentRange: string | undefined
@@ -352,24 +354,23 @@ export async function detectPackageEnvironment({
     lockName = undefined
     lockPath = undefined
   }
+
   // Does the system agent version meet our minimum supported agent version?
   const agentSupported =
     !!agentVersion &&
     semver.satisfies(agentVersion, `>=${minSupportedAgentVersion}`)
-
   // Does the system Node version meet our minimum supported Node version?
-  const nodeSupported = semver.satisfies(
-    nodeVersion,
-    `>=${minSupportedNodeVersion}`,
-  )
+  const nodeSupported = semver.satisfies(nodeVersion, minSupportedNodeRange)
 
   const npmExecPath =
     agent === NPM ? agentExecPath : await getAgentExecPath(NPM)
-
   const npmBuggyOverrides =
     agent === NPM &&
     !!agentVersion &&
     semver.lt(agentVersion, NPM_BUGGY_OVERRIDES_PATCHED_VERSION)
+
+  const pkgMinAgentRange = `>=${pkgMinAgentVersion}`
+  const pkgMinNodeRange = `>=${semver.major(pkgMinNodeVersion)}`
 
   return {
     agent,
@@ -386,18 +387,15 @@ export async function detectPackageEnvironment({
     npmExecPath,
     pkgPath,
     pkgRequirements: {
-      agent: pkgAgentRange ?? `>=${pkgMinAgentVersion}`,
-      node: pkgNodeRange ?? `>=${pkgMinNodeVersion}`,
+      agent: pkgAgentRange ?? pkgMinAgentRange,
+      node: pkgNodeRange ?? pkgMinNodeRange,
     },
     pkgSupports: {
       // Does our minimum supported agent version meet the package's requirements?
-      agent: semver.satisfies(
-        minSupportedAgentVersion,
-        `>=${pkgMinAgentVersion}`,
-      ),
+      agent: semver.satisfies(minSupportedAgentVersion, pkgMinAgentRange),
       // Does our supported Node versions meet the package's requirements?
       node: maintainedNodeVersions.some(v =>
-        semver.satisfies(v, `>=${pkgMinNodeVersion}`),
+        semver.satisfies(v, pkgMinNodeRange),
       ),
     },
   }
