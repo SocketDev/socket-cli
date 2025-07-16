@@ -85,8 +85,7 @@ describe('socket audit-log', async () => {
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - Org name by default setting, --org, or auto-discovered (missing)
-        "
+          - Org name by default setting, --org, or auto-discovered (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -115,8 +114,7 @@ describe('socket audit-log', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - Legacy flags are no longer supported. See v1 migration guide. (received legacy flags)
-        "
+          - Legacy flags are no longer supported. See v1 migration guide. (received legacy flags)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

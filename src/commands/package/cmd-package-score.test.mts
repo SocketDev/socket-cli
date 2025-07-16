@@ -88,8 +88,7 @@ describe('socket package score', async () => {
 
           - Expecting at least one package (missing)
 
-          - You need to be logged in to use this command. See \`socket login\`. (missing API token)
-        "
+          - You need to be logged in to use this command. See \`socket login\`. (missing API token)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

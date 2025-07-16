@@ -80,8 +80,7 @@ describe('socket config get', async () => {
 
           - Config key should be the first arg (missing)
 
-          - Key value should be the remaining args (use \`unset\` to unset a value) (missing)
-        "
+          - Key value should be the remaining args (use \`unset\` to unset a value) (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
