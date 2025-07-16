@@ -52,7 +52,12 @@ export async function invokeNpm(
       [entryPath, ...args],
       {
         cwd: npmFixturesPath,
-        env: { ...process.env, ...env },
+        env: {
+          ...process.env,
+          // Lazily access constants.processEnv.
+          ...constants.processEnv,
+          ...env,
+        },
       },
     )
     return {

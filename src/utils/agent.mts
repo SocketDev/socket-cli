@@ -45,6 +45,8 @@ export function runAgentInstall(
     ...spawnOptions,
     env: {
       ...process.env,
+      // Lazily access constants.processEnv.
+      ...constants.processEnv,
       NODE_OPTIONS: cmdFlagsToString([
         ...(skipNodeHardenFlags
           ? []
