@@ -29,10 +29,10 @@ export async function spawnCoana(
         ...options,
         env: {
           ...process.env,
-          ...spawnEnv,
-          SOCKET_CLI_API_BASE_URL:
-            constants.ENV.SOCKET_CLI_API_BASE_URL || undefined,
+          // Lazily access constants.processEnv.
+          ...constants.processEnv,
           SOCKET_CLI_API_TOKEN: getDefaultToken(),
+          ...spawnEnv,
         },
       },
       extra,

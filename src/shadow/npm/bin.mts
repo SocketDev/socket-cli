@@ -20,8 +20,6 @@ export default async function shadowBin(
   args = process.argv.slice(2),
 ) {
   process.exitCode = 1
-  // Lazily access constants.ENV.NODE_COMPILE_CACHE
-  const { NODE_COMPILE_CACHE } = constants.ENV
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   const binArgs = rawBinArgs.filter(
@@ -101,7 +99,8 @@ export default async function shadowBin(
     {
       env: {
         ...process.env,
-        ...(NODE_COMPILE_CACHE ? { NODE_COMPILE_CACHE } : undefined),
+        // Lazily access constants.processEnv.
+        ...constants.processEnv,
       },
       // 'inherit' + 'ipc'
       stdio: [0, 1, 2, 'ipc'],

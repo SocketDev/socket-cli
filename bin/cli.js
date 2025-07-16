@@ -12,8 +12,6 @@ const { spawn } = require(
   path.join(rootPath, 'external/@socketsecurity/registry/lib/spawn.js'),
 )
 
-const { NODE_COMPILE_CACHE } = constants
-
 process.exitCode = 1
 
 spawn(
@@ -39,7 +37,8 @@ spawn(
   {
     env: {
       ...process.env,
-      ...(NODE_COMPILE_CACHE ? { NODE_COMPILE_CACHE } : undefined),
+      // Lazily access constants.processEnv.
+      ...constants.processEnv,
     },
     stdio: 'inherit',
   },

@@ -23,6 +23,8 @@ const spawnOpts: PromiseSpawnOptions = {
   cwd: npmFixturesPath,
   env: {
     ...process.env,
+    // Lazily access constants.processEnv.
+    ...constants.processEnv,
     SOCKET_CLI_DEBUG: '1',
   },
 }
