@@ -1,7 +1,7 @@
-import { PackageURL } from 'packageurl-js'
 import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
+import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { hasOwn } from '@socketsecurity/registry/lib/objects'
