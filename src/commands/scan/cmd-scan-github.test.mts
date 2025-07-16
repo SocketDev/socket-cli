@@ -87,8 +87,7 @@ describe('socket scan github', async () => {
 
           - This command requires an API token for access (missing (try \`socket login\`))
 
-          - This command requires a GitHub API token for access (missing)
-        "
+          - This command requires a GitHub API token for access (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
