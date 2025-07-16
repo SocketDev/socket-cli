@@ -41,8 +41,6 @@ export function safeNpmInstall(
     spinner,
     ...spawnOptions
   } = { __proto__: null, ...options } as SafeNpmInstallOptions
-  // Lazily access constants.ENV.NODE_COMPILE_CACHE
-  const { NODE_COMPILE_CACHE } = constants.ENV
   let stdio = spawnOptions.stdio
   const useIpc = isObject(ipc)
   // Include 'ipc' in the spawnOptions.stdio when an options.ipc object is provided.
@@ -101,7 +99,8 @@ export function safeNpmInstall(
       stdio,
       env: {
         ...process.env,
-        ...(NODE_COMPILE_CACHE ? { NODE_COMPILE_CACHE } : undefined),
+        // Lazily access constants.processEnv.
+        ...constants.processEnv,
         ...spawnOptions.env,
       },
     },

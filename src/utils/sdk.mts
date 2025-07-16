@@ -71,8 +71,9 @@ export function hasDefaultToken(): boolean {
 
 export function getPublicToken(): string {
   return (
+    getDefaultToken() ||
     // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN.
-    (constants.ENV.SOCKET_CLI_API_TOKEN || getDefaultToken()) ??
+    constants.ENV.SOCKET_CLI_API_TOKEN ||
     // Lazily access constants.SOCKET_PUBLIC_API_TOKEN.
     constants.SOCKET_PUBLIC_API_TOKEN
   )
