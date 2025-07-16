@@ -84,8 +84,7 @@ describe('socket package shallow', async () => {
 
           - First parameter should be an ecosystem or all args must be purls (bad)
 
-          - Expecting at least one package (missing)
-        "
+          - Expecting at least one package (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

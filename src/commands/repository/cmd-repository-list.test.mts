@@ -77,8 +77,7 @@ describe('socket repository list', async () => {
 
           - Org name by default setting, --org, or auto-discovered (missing)
 
-          - You need to be logged in to use this command. See \`socket login\`. (missing API token)
-        "
+          - You need to be logged in to use this command. See \`socket login\`. (missing API token)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -131,8 +130,7 @@ describe('socket repository list', async () => {
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - Org name by default setting, --org, or auto-discovered (missing)
-        "
+          - Org name by default setting, --org, or auto-discovered (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
