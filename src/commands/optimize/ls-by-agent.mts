@@ -2,7 +2,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
 
-import type { Agent, EnvDetails } from '../../utils/package-environment.mts'
+import type { EnvDetails } from '../../utils/package-environment.mts'
 
 const { BUN, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
 
@@ -58,7 +58,14 @@ async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
   return cleanupQueryStdout(stdout)
 }
 
-async function lsBun(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
+export async function lsBun(
+  pkgEnvDetails: EnvDetails,
+  options?: AgentListDepsOptions | undefined,
+): Promise<string> {
+  const { cwd = process.cwd() } = {
+    __proto__: null,
+    ...options,
+  } as AgentListDepsOptions
   try {
     // Bun does not support filtering by production packages yet.
     // https://github.com/oven-sh/bun/issues/8283
@@ -73,16 +80,25 @@ async function lsBun(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
   return ''
 }
 
-async function lsNpm(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
+export async function lsNpm(
+  pkgEnvDetails: EnvDetails,
+  options?: AgentListDepsOptions | undefined,
+): Promise<string> {
+  const { cwd = process.cwd() } = {
+    __proto__: null,
+    ...options,
+  } as AgentListDepsOptions
   return await npmQuery(pkgEnvDetails.agentExecPath, cwd)
 }
 
-async function lsPnpm(
+export async function lsPnpm(
   pkgEnvDetails: EnvDetails,
-  cwd: string,
   options?: AgentListDepsOptions | undefined,
 ): Promise<string> {
-  const npmExecPath = options?.npmExecPath
+  const { cwd = process.cwd(), npmExecPath } = {
+    __proto__: null,
+    ...options,
+  } as AgentListDepsOptions
   if (npmExecPath && npmExecPath !== NPM) {
     const result = await npmQuery(npmExecPath, cwd)
     if (result) {
@@ -108,7 +124,14 @@ async function lsPnpm(
   return parsableToQueryStdout(stdout)
 }
 
-async function lsVlt(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
+export async function lsVlt(
+  pkgEnvDetails: EnvDetails,
+  options?: AgentListDepsOptions | undefined,
+): Promise<string> {
+  const { cwd = process.cwd() } = {
+    __proto__: null,
+    ...options,
+  } as AgentListDepsOptions
   let stdout = ''
   try {
     // See https://docs.vlt.sh/cli/commands/list#options.
@@ -127,10 +150,14 @@ async function lsVlt(pkgEnvDetails: EnvDetails, cwd: string): Promise<string> {
   return cleanupQueryStdout(stdout)
 }
 
-async function lsYarnBerry(
+export async function lsYarnBerry(
   pkgEnvDetails: EnvDetails,
-  cwd: string,
+  options?: AgentListDepsOptions | undefined,
 ): Promise<string> {
+  const { cwd = process.cwd() } = {
+    __proto__: null,
+    ...options,
+  } as AgentListDepsOptions
   try {
     // Yarn Berry does not support filtering by production packages yet.
     // https://github.com/yarnpkg/berry/issues/5117
@@ -149,10 +176,14 @@ async function lsYarnBerry(
   return ''
 }
 
-async function lsYarnClassic(
+export async function lsYarnClassic(
   pkgEnvDetails: EnvDetails,
-  cwd: string,
+  options?: AgentListDepsOptions | undefined,
 ): Promise<string> {
+  const { cwd = process.cwd() } = {
+    __proto__: null,
+    ...options,
+  } as AgentListDepsOptions
   try {
     // However, Yarn Classic does support it.
     // https://github.com/yarnpkg/yarn/releases/tag/v1.0.0
@@ -169,19 +200,28 @@ async function lsYarnClassic(
   return ''
 }
 
-export type AgentListDepsOptions = { npmExecPath?: string }
+export type AgentListDepsOptions = {
+  cwd?: string | undefined
+  npmExecPath?: string | undefined
+}
 
-export type AgentListDepsFn = (
+export async function listPackages(
   pkgEnvDetails: EnvDetails,
-  cwd: string,
   options?: AgentListDepsOptions | undefined,
-) => Promise<string>
-
-export const lsByAgent = new Map<Agent, AgentListDepsFn>([
-  [BUN, lsBun],
-  [NPM, lsNpm],
-  [PNPM, lsPnpm],
-  [VLT, lsVlt],
-  [YARN_BERRY, lsYarnBerry],
-  [YARN_CLASSIC, lsYarnClassic],
-])
+): Promise<string> {
+  switch (pkgEnvDetails.agent) {
+    case BUN:
+      return await lsBun(pkgEnvDetails, options)
+    case PNPM:
+      return await lsPnpm(pkgEnvDetails, options)
+    case VLT:
+      return await lsVlt(pkgEnvDetails, options)
+    case YARN_BERRY:
+      return await lsYarnBerry(pkgEnvDetails, options)
+    case YARN_CLASSIC:
+      return await lsYarnClassic(pkgEnvDetails, options)
+    case NPM:
+    default:
+      return await lsNpm(pkgEnvDetails, options)
+  }
+}

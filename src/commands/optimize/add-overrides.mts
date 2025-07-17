@@ -8,17 +8,17 @@ import { fetchPackageManifest } from '@socketsecurity/registry/lib/packages'
 import { pEach } from '@socketsecurity/registry/lib/promises'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import { depsIncludesByAgent } from './deps-includes-by-agent.mts'
+import { lsStdoutIncludes } from './deps-includes-by-agent.mts'
 import { getDependencyEntries } from './get-dependency-entries.mts'
 import {
   getOverridesData,
   getOverridesDataNpm,
   getOverridesDataYarnClassic,
 } from './get-overrides-by-agent.mts'
-import { lockfileIncludesByAgent } from './lockfile-includes-by-agent.mts'
-import { lsByAgent } from './ls-by-agent.mts'
+import { lockSrcIncludes } from './lockfile-includes-by-agent.mts'
+import { listPackages } from './ls-by-agent.mts'
 import { CMD_NAME } from './shared.mts'
-import { updateManifestByAgent } from './update-manifest-by-agent.mts'
+import { updateManifest } from './update-manifest-by-agent.mts'
 import constants from '../../constants.mts'
 import { cmdPrefixMessage } from '../../utils/cmd.mts'
 import { globWorkspace } from '../../utils/glob.mts'
@@ -26,7 +26,6 @@ import { npa } from '../../utils/npm-package-arg.mts'
 import { getMajor } from '../../utils/semver.mts'
 
 import type { GetOverridesResult } from './get-overrides-by-agent.mts'
-import type { AgentLockIncludesFn } from './lockfile-includes-by-agent.mts'
 import type { AliasResult } from '../../utils/npm-package-arg.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { Logger } from '@socketsecurity/registry/lib/logger'
@@ -118,6 +117,7 @@ export async function addOverrides(
     ),
   )
 
+  const addingText = `Adding overrides to ${workspace}...`
   let loggedAddingText = false
 
   // Chunk package names to process them in parallel 3 at a time.
@@ -158,7 +158,7 @@ export async function addOverrides(
             state.addedInWorkspaces.add(workspace)
           }
           if (!loggedAddingText) {
-            spinner?.setText(`Adding overrides to ${workspace}...`)
+            spinner?.setText(addingText)
             loggedAddingText = true
           }
         }
@@ -166,24 +166,22 @@ export async function addOverrides(
       }
     }
     if (isWorkspaceRoot) {
-      // The AgentDepsIncludesFn and AgentLockIncludesFn types overlap in their
-      // first two parameters. AgentLockIncludesFn accepts an optional third
-      // parameter which AgentDepsIncludesFn will ignore so we cast thingScanner
-      // as an AgentLockIncludesFn type.
+      // The lockSrcIncludes and lsStdoutIncludes functions overlap in their
+      // first two parameters. lockSrcIncludes accepts an optional third parameter
+      // which lsStdoutIncludes will ignore.
       const thingScanner = (
-        isLockScanned
-          ? lockfileIncludesByAgent.get(agent)
-          : depsIncludesByAgent.get(agent)
-      ) as AgentLockIncludesFn
+        isLockScanned ? lockSrcIncludes : lsStdoutIncludes
+      ) as typeof lockSrcIncludes
+
       const thingToScan = isLockScanned
         ? lockSrc
-        : await lsByAgent.get(agent)!(pkgEnvDetails, pkgPath, { npmExecPath })
+        : await listPackages(pkgEnvDetails, { cwd: pkgPath, npmExecPath })
       // Chunk package names to process them in parallel 3 at a time.
       await pEach(overridesDataObjects, 3, async ({ overrides, type }) => {
         const overrideExists = hasOwn(overrides, origPkgName)
         if (
           overrideExists ||
-          thingScanner(thingToScan, origPkgName, lockName)
+          thingScanner(pkgEnvDetails, thingToScan, origPkgName, lockName)
         ) {
           const oldSpec = overrideExists ? overrides[origPkgName]! : undefined
           const origDepAlias = depAliasMap.get(origPkgName)
@@ -231,7 +229,7 @@ export async function addOverrides(
             const addedOrUpdated = overrideExists ? 'updated' : 'added'
             state[addedOrUpdated].add(sockRegPkgName)
             if (!loggedAddingText) {
-              spinner?.setText(`Adding overrides to ${workspace}...`)
+              spinner?.setText(addingText)
               loggedAddingText = true
             }
           }
@@ -280,8 +278,9 @@ export async function addOverrides(
     )
     if (isWorkspaceRoot) {
       for (const { overrides, type } of overridesDataObjects) {
-        updateManifestByAgent.get(type)!(
-          pkgEnvDetails,
+        updateManifest(
+          type,
+          pkgEnvDetails.editablePkgJson,
           toSortedObject(overrides),
         )
       }

@@ -3,7 +3,7 @@ import { hasKeys, isObject } from '@socketsecurity/registry/lib/objects'
 import constants from '../../constants.mts'
 
 import type { Overrides } from './types.mts'
-import type { Agent, EnvDetails } from '../../utils/package-environment.mts'
+import type { Agent } from '../../utils/package-environment.mts'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 
 const {
@@ -142,31 +142,51 @@ function updatePkgJsonField(
   )
 }
 
-function updateOverridesField(pkgEnvDetails: EnvDetails, overrides: Overrides) {
-  updatePkgJsonField(pkgEnvDetails.editablePkgJson, OVERRIDES, overrides)
-}
-
-function updateResolutionsField(
-  pkgEnvDetails: EnvDetails,
+export function updateOverridesField(
+  editablePkgJson: EditablePackageJson,
   overrides: Overrides,
 ) {
-  updatePkgJsonField(pkgEnvDetails.editablePkgJson, RESOLUTIONS, overrides)
+  updatePkgJsonField(editablePkgJson, OVERRIDES, overrides)
 }
 
-function updatePnpmField(pkgEnvDetails: EnvDetails, overrides: Overrides) {
-  updatePkgJsonField(pkgEnvDetails.editablePkgJson, PNPM, overrides)
-}
-
-export type AgentModifyManifestFn = (
-  pkgEnvDetails: EnvDetails,
+export function updateResolutionsField(
+  editablePkgJson: EditablePackageJson,
   overrides: Overrides,
-) => void
+) {
+  updatePkgJsonField(editablePkgJson, RESOLUTIONS, overrides)
+}
 
-export const updateManifestByAgent = new Map<Agent, AgentModifyManifestFn>([
-  [BUN, updateResolutionsField],
-  [NPM, updateOverridesField],
-  [PNPM, updatePnpmField],
-  [VLT, updateOverridesField],
-  [YARN_BERRY, updateResolutionsField],
-  [YARN_CLASSIC, updateResolutionsField],
-])
+export function updatePnpmField(
+  editablePkgJson: EditablePackageJson,
+  overrides: Overrides,
+) {
+  updatePkgJsonField(editablePkgJson, PNPM, overrides)
+}
+
+export function updateManifest(
+  agent: Agent,
+  editablePkgJson: EditablePackageJson,
+  overrides: Overrides,
+): void {
+  switch (agent) {
+    case BUN:
+      updateResolutionsField(editablePkgJson, overrides)
+      return
+    case PNPM:
+      updatePnpmField(editablePkgJson, overrides)
+      return
+    case VLT:
+      updateOverridesField(editablePkgJson, overrides)
+      return
+    case YARN_BERRY:
+      updateResolutionsField(editablePkgJson, overrides)
+      return
+    case YARN_CLASSIC:
+      updateResolutionsField(editablePkgJson, overrides)
+      return
+    case NPM:
+    default:
+      updateOverridesField(editablePkgJson, overrides)
+      return
+  }
+}

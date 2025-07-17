@@ -1,24 +1,31 @@
 import constants from '../../constants.mts'
 
-import type { Agent } from '../../utils/package-environment.mts'
-
-type AgentDepsIncludesFn = (stdout: string, name: string) => boolean
+import type { EnvDetails } from '../../utils/package-environment.mts'
 
 const { BUN, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
 
-function matchLsCmdViewHumanStdout(stdout: string, name: string) {
+export function matchLsCmdViewHumanStdout(stdout: string, name: string) {
   return stdout.includes(` ${name}@`)
 }
 
-function matchQueryCmdStdout(stdout: string, name: string) {
+export function matchQueryCmdStdout(stdout: string, name: string) {
   return stdout.includes(`"${name}"`)
 }
 
-export const depsIncludesByAgent = new Map<Agent, AgentDepsIncludesFn>([
-  [BUN, matchLsCmdViewHumanStdout],
-  [NPM, matchQueryCmdStdout],
-  [PNPM, matchQueryCmdStdout],
-  [VLT, matchQueryCmdStdout],
-  [YARN_BERRY, matchLsCmdViewHumanStdout],
-  [YARN_CLASSIC, matchLsCmdViewHumanStdout],
-])
+export function lsStdoutIncludes(
+  pkgEnvDetails: EnvDetails,
+  stdout: string,
+  name: string,
+): boolean {
+  switch (pkgEnvDetails.agent) {
+    case BUN:
+    case YARN_BERRY:
+    case YARN_CLASSIC:
+      return matchLsCmdViewHumanStdout(stdout, name)
+    case PNPM:
+    case VLT:
+    case NPM:
+    default:
+      return matchQueryCmdStdout(stdout, name)
+  }
+}
