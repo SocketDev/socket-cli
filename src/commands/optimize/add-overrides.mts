@@ -88,12 +88,14 @@ export async function addOverrides(
     !state.warnedPnpmWorkspaceRequiresNpm
   ) {
     state.warnedPnpmWorkspaceRequiresNpm = true
+    spinner?.stop()
     logger?.warn(
       cmdPrefixMessage(
         CMD_NAME,
         `${agent} workspace support requires \`npm ls\`, falling back to \`${agent} list\``,
       ),
     )
+    spinner?.start()
   }
 
   const overridesDataObjects = [] as GetOverridesResult[]
