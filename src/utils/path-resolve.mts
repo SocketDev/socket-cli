@@ -3,9 +3,7 @@ import path from 'node:path'
 
 import which from 'which'
 
-import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { resolveBinPathSync } from '@socketsecurity/registry/lib/npm'
-import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import constants from '../constants.mts'
 import { safeStatsSync } from './fs.mts'
@@ -93,52 +91,23 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
   }
 }
 
+export type PackageFilesForScanOptions = {
+  cwd?: string | undefined
+  config?: SocketYml | undefined
+}
+
 export async function getPackageFilesForScan(
-  cwd: string,
   inputPaths: string[],
   supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
-  config?: SocketYml | undefined,
+  options?: PackageFilesForScanOptions | undefined,
 ): Promise<string[]> {
-  debugFn('notice', `resolve: ${inputPaths.length} paths`, inputPaths)
-
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-
-  const patterns = pathsToGlobPatterns(inputPaths)
-
-  spinner.start('Searching for local files to include in scan...')
-
-  const entries = await globWithGitIgnore(patterns, {
+  const { config: socketConfig, cwd = process.cwd() } = {
+    __proto__: null,
+    ...options,
+  } as PackageFilesForScanOptions
+  const entries = await globWithGitIgnore(pathsToGlobPatterns(inputPaths), {
     cwd,
-    socketConfig: config,
+    socketConfig,
   })
-
-  if (isDebug('notice')) {
-    spinner.stop()
-
-    debugFn(
-      'notice',
-      `Resolved ${inputPaths.length} paths to ${entries.length} local paths:\n`,
-      entries,
-    )
-
-    spinner.start('Searching for files now...')
-  } else {
-    spinner.start(
-      `Resolved ${inputPaths.length} paths to ${entries.length} local paths, searching for files now...`,
-    )
-  }
-
-  const packageFiles = await filterGlobResultToSupportedFiles(
-    entries,
-    supportedFiles,
-  )
-
-  spinner.successAndStop(
-    `Found ${packageFiles.length} local ${pluralize('file', packageFiles.length)}`,
-  )
-
-  debugDir('inspect', { packageFiles })
-
-  return packageFiles
+  return await filterGlobResultToSupportedFiles(entries, supportedFiles)
 }
