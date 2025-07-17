@@ -67,8 +67,8 @@ export async function runCdxgen(yargvWithYes: any) {
       try {
         await shadowBin(NPX, [
           ...yesArgs,
-          // Lazily access constants.ENV.INLINED_SYNP_VERSION.
-          `synp@${constants.ENV.INLINED_SYNP_VERSION}`,
+          // Lazily access constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION.
+          `synp@${constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
           '--source-file',
           `./${YARN_LOCK}`,
         ])
@@ -79,8 +79,8 @@ export async function runCdxgen(yargvWithYes: any) {
   }
   await shadowBin(NPX, [
     ...yesArgs,
-    // Lazily access constants.ENV.INLINED_CYCLONEDX_CDXGEN_VERSION.
-    `@cyclonedx/cdxgen@${constants.ENV.INLINED_CYCLONEDX_CDXGEN_VERSION}`,
+    // Lazily access constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION.
+    `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
     ...argvToArray(yargv),
   ])
   if (cleanupPackageLock) {
