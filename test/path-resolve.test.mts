@@ -106,12 +106,9 @@ describe('Path Resolve', () => {
         [`${mockFixturePath}/package.json`]: '{}',
       })
 
-      const actual = await sortedGetPackageFilesFullScans(
-        mockFixturePath,
-        ['.'],
-        globPatterns,
-        undefined,
-      )
+      const actual = await sortedGetPackageFilesFullScans(['.'], globPatterns, {
+        cwd: mockFixturePath,
+      })
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/package.json`,
       ])
@@ -126,14 +123,16 @@ describe('Path Resolve', () => {
       })
 
       const actual = await sortedGetPackageFilesFullScans(
-        mockFixturePath,
         ['**/*'],
         globPatterns,
         {
-          version: 2,
-          projectIgnorePaths: ['bar/*', '!bar/package.json'],
-          issueRules: {},
-          githubApp: {},
+          cwd: mockFixturePath,
+          config: {
+            version: 2,
+            projectIgnorePaths: ['bar/*', '!bar/package.json'],
+            issueRules: {},
+            githubApp: {},
+          },
         },
       )
       expect(actual.map(normalizePath)).toEqual([
@@ -153,10 +152,9 @@ describe('Path Resolve', () => {
       })
 
       const actual = await sortedGetPackageFilesFullScans(
-        mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined,
+        { cwd: mockFixturePath },
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/bar/package.json`,
@@ -182,10 +180,9 @@ describe('Path Resolve', () => {
       })
 
       const actual = await sortedGetPackageFilesFullScans(
-        mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined,
+        { cwd: mockFixturePath },
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/foo/package-lock.json`,
@@ -202,10 +199,9 @@ describe('Path Resolve', () => {
       })
 
       const actual = await sortedGetPackageFilesFullScans(
-        mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined,
+        { cwd: mockFixturePath },
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/foo/package-lock.json`,
@@ -221,10 +217,9 @@ describe('Path Resolve', () => {
       })
 
       const actual = await sortedGetPackageFilesFullScans(
-        mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined,
+        { cwd: mockFixturePath },
       )
       expect(actual.map(normalizePath)).toEqual([])
     })
@@ -236,10 +231,9 @@ describe('Path Resolve', () => {
       })
 
       const actual = await sortedGetPackageFilesFullScans(
-        mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined,
+        { cwd: mockFixturePath },
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/package-lock.json`,
@@ -253,10 +247,9 @@ describe('Path Resolve', () => {
       })
 
       const actual = await sortedGetPackageFilesFullScans(
-        mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined,
+        { cwd: mockFixturePath },
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/package.json`,
@@ -270,10 +263,9 @@ describe('Path Resolve', () => {
       })
 
       const actual = await sortedGetPackageFilesFullScans(
-        mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined,
+        { cwd: mockFixturePath },
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/package.json`,
@@ -293,10 +285,9 @@ describe('Path Resolve', () => {
       })
 
       const actual = await sortedGetPackageFilesFullScans(
-        mockFixturePath,
         ['**/*'],
         globPatterns,
-        undefined,
+        { cwd: mockFixturePath },
       )
       expect(actual.map(normalizePath)).toEqual([
         `${mockFixturePath}/abc/package.json`,
