@@ -1,9 +1,12 @@
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
+import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
@@ -50,7 +53,7 @@ export async function handleCreateNewScan({
   tmp: boolean
 }): Promise<void> {
   if (autoManifest) {
-    logger.info('Auto generating manifest files ...')
+    logger.info('Auto-generating manifest files ...')
     const sockJson = await readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
     await generateAutoManifest({
@@ -59,20 +62,26 @@ export async function handleCreateNewScan({
       outputKind,
       verbose: false,
     })
-    logger.info('Auto generation finished. Proceeding with Scan creation.')
+    logger.info('Auto-generation finished. Proceeding with Scan creation.')
   }
 
-  const fileNamesCResult = await fetchSupportedScanFileNames()
-  if (!fileNamesCResult.ok) {
-    await outputCreateNewScan(fileNamesCResult, outputKind, interactive)
+  const supportedFilesCResult = await fetchSupportedScanFileNames()
+  if (!supportedFilesCResult.ok) {
+    await outputCreateNewScan(supportedFilesCResult, outputKind, interactive)
     return
   }
 
-  const packagePaths = await getPackageFilesForScan(
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  spinner.start('Searching for local files to include in scan...')
+
+  const supportedFiles = supportedFilesCResult.data
+  const packagePaths = await getPackageFilesForScan(targets, supportedFiles, {
     cwd,
-    targets,
-    fileNamesCResult.data,
-  )
+  })
+
+  spinner.stop()
 
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
@@ -86,12 +95,18 @@ export async function handleCreateNewScan({
     return
   }
 
+  debugFn(
+    'notice',
+    `found: ${packagePaths.length} local ${pluralize('file', packagePaths.length)}`,
+  )
+  debugDir('inspect', { packagePaths })
+
   if (readOnly) {
     logger.log('[ReadOnly] Bailing now')
     return
   }
 
-  const data = await fetchCreateOrgFullScan(
+  const fullScanCResult = await fetchCreateOrgFullScan(
     packagePaths,
     orgSlug,
     defaultBranch,
@@ -108,8 +123,8 @@ export async function handleCreateNewScan({
     },
   )
 
-  if (data.ok && report) {
-    if (data.data?.id) {
+  if (fullScanCResult.ok && report) {
+    if (fullScanCResult.data?.id) {
       await handleScanReport({
         filePath: '-',
         fold: 'version',
@@ -117,7 +132,7 @@ export async function handleCreateNewScan({
         orgSlug,
         outputKind,
         reportLevel: 'error',
-        scanId: data.data.id,
+        scanId: fullScanCResult.data.id,
         short: false,
       })
     } else {
@@ -126,13 +141,13 @@ export async function handleCreateNewScan({
           ok: false,
           message: 'Missing Scan ID',
           cause: 'Server did not respond with a scan ID',
-          data: data.data,
+          data: fullScanCResult.data,
         },
         outputKind,
         interactive,
       )
     }
   } else {
-    await outputCreateNewScan(data, outputKind, interactive)
+    await outputCreateNewScan(fullScanCResult, outputKind, interactive)
   }
 }
