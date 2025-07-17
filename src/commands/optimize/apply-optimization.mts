@@ -28,7 +28,7 @@ export async function applyOptimization(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  spinner.start('Socket optimizing...')
+  spinner.start()
 
   const state = await addOverrides(pkgEnvDetails, pkgEnvDetails.pkgPath, {
     logger,
