@@ -23,15 +23,15 @@ import {
 } from '../scripts/utils/packages.js'
 
 const {
-  INLINED_CYCLONEDX_CDXGEN_VERSION,
+  INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
   INLINED_SOCKET_CLI_HOMEPAGE,
   INLINED_SOCKET_CLI_LEGACY_BUILD,
   INLINED_SOCKET_CLI_NAME,
   INLINED_SOCKET_CLI_PUBLISHED_BUILD,
   INLINED_SOCKET_CLI_SENTRY_BUILD,
+  INLINED_SOCKET_CLI_SYNP_VERSION,
   INLINED_SOCKET_CLI_VERSION,
   INLINED_SOCKET_CLI_VERSION_HASH,
-  INLINED_SYNP_VERSION,
   NODE_MODULES,
   ROLLUP_EXTERNAL_SUFFIX,
   VITEST,
@@ -195,7 +195,7 @@ export default function baseConfig(extendConfig = {}) {
         preventAssignment: true,
         values: [
           [
-            INLINED_CYCLONEDX_CDXGEN_VERSION,
+            INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
             () =>
               JSON.stringify(
                 getRootPkgJsonSync().devDependencies['@cyclonedx/cdxgen'],
@@ -234,16 +234,16 @@ export default function baseConfig(extendConfig = {}) {
               ),
           ],
           [
+            INLINED_SOCKET_CLI_SYNP_VERSION,
+            () => JSON.stringify(getRootPkgJsonSync().devDependencies['synp']),
+          ],
+          [
             INLINED_SOCKET_CLI_VERSION,
             () => JSON.stringify(getRootPkgJsonSync().version),
           ],
           [
             INLINED_SOCKET_CLI_VERSION_HASH,
             () => JSON.stringify(getSocketCliVersionHash()),
-          ],
-          [
-            INLINED_SYNP_VERSION,
-            () => JSON.stringify(getRootPkgJsonSync().devDependencies['synp']),
           ],
           [
             VITEST,

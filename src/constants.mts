@@ -53,7 +53,7 @@ type ENV = Remap<
       GITHUB_REPOSITORY: string
       GITHUB_SERVER_URL: string
       GITHUB_TOKEN: string
-      INLINED_CYCLONEDX_CDXGEN_VERSION: string
+      INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: string
       INLINED_SOCKET_CLI_HOMEPAGE: string
       INLINED_SOCKET_CLI_LEGACY_BUILD: string
       INLINED_SOCKET_CLI_NAME: string
@@ -61,7 +61,7 @@ type ENV = Remap<
       INLINED_SOCKET_CLI_SENTRY_BUILD: string
       INLINED_SOCKET_CLI_VERSION: string
       INLINED_SOCKET_CLI_VERSION_HASH: string
-      INLINED_SYNP_VERSION: string
+      INLINED_SOCKET_CLI_SYNP_VERSION: string
       LOCALAPPDATA: string
       NODE_COMPILE_CACHE: string
       NODE_EXTRA_CA_CERTS: string
@@ -274,9 +274,9 @@ const LAZY_ENV = () => {
     // https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#about-the-github_token-secret
     GITHUB_TOKEN,
     // Comp-time inlined @cyclonedx/cdxgen package version.
-    // The '@rollup/plugin-replace' will replace "process.env['INLINED_CYCLONEDX_CDXGEN_VERSION']".
-    INLINED_CYCLONEDX_CDXGEN_VERSION: envAsString(
-      process.env['INLINED_CYCLONEDX_CDXGEN_VERSION'],
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']".
+    INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: envAsString(
+      process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION'],
     ),
     // Comp-time inlined Socket package homepage.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_HOMEPAGE']".
@@ -303,6 +303,11 @@ const LAZY_ENV = () => {
     INLINED_SOCKET_CLI_SENTRY_BUILD: envAsBoolean(
       process.env['INLINED_SOCKET_CLI_SENTRY_BUILD'],
     ),
+    // Comp-time inlined synp package version.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_SYNP_VERSION']".
+    INLINED_SOCKET_CLI_SYNP_VERSION: envAsString(
+      process.env['INLINED_SOCKET_CLI_SYNP_VERSION'],
+    ),
     // Comp-time inlined Socket package version.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_VERSION']".
     INLINED_SOCKET_CLI_VERSION: envAsString(
@@ -313,9 +318,6 @@ const LAZY_ENV = () => {
     INLINED_SOCKET_CLI_VERSION_HASH: envAsString(
       process.env['INLINED_SOCKET_CLI_VERSION_HASH'],
     ),
-    // Comp-time inlined synp package version.
-    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SYNP_VERSION']".
-    INLINED_SYNP_VERSION: envAsString(process.env['INLINED_SYNP_VERSION']),
     // The location of the %localappdata% folder on Windows used to store user-specific,
     // non-roaming application data, like temporary files, cached data, and program
     // settings, that are specific to the current machine and user.
@@ -520,12 +522,15 @@ const lazyProcessEnv = () =>
       Object.entries(constants.ENV).reduce(
         (entries, entry) => {
           const { 0: key, 1: value } = entry
+          if (key.startsWith('INLINED_SOCKET_CLI_')) {
+            return entries
+          }
           if (typeof value === 'string') {
             if (value) {
               entries.push(entry as [string, string])
             }
-          } else if (typeof value === 'boolean') {
-            entries.push([key, value ? '1' : '0'])
+          } else if (typeof value === 'boolean' && value) {
+            entries.push([key, '1'])
           }
           return entries
         },
