@@ -406,21 +406,6 @@ export default async () => {
                 return null
             }
           },
-          plugins: [
-            // Remove Rollup's browser interop for import.meta.url.
-            socketModifyPlugin({
-              find: /(?<=const +require[$\w]*\s*=)\s*Module\.createRequire[^;]+;/g,
-              replace(match) {
-                const pathToUrlCode =
-                  /require[$\w]*(?:\([^)]+\))?\.pathToFileURL\(__filename\)\.href/.exec(
-                    match,
-                  )?.[0]
-                return pathToUrlCode
-                  ? `Module.createRequire(${pathToUrlCode})`
-                  : match
-              },
-            }),
-          ],
           sourcemap: true,
           sourcemapDebugIds: true,
         },

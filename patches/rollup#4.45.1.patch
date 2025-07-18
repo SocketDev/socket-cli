@@ -1,0 +1,254 @@
+Index: /rollup/dist/es/shared/node-entry.js
+===================================================================
+--- /rollup/dist/es/shared/node-entry.js
++++ /rollup/dist/es/shared/node-entry.js
+@@ -5001,9 +5001,9 @@
+                 : [...path1, ...path2];
+ };
+ 
+ class LocalVariable extends Variable {
+-    constructor(name, declarator, init, 
++    constructor(name, declarator, init,
+     /** if this is non-empty, the actual init is this path of this.init */
+     initPath, context, kind) {
+         super(name);
+         this.init = init;
+@@ -6449,9 +6449,9 @@
+         super.initialise();
+         if (this.directive &&
+             this.directive !== 'use strict' &&
+             this.parent.type === Program$1) {
+-            this.scope.context.log(LOGLEVEL_WARN, 
++            this.scope.context.log(LOGLEVEL_WARN,
+             // This is necessary, because either way (deleting or not) can lead to errors.
+             logModuleLevelDirective(this.directive, this.scope.context.module.id), this.start);
+         }
+     }
+@@ -7751,20 +7751,20 @@
+             this.scope.addAccessedGlobals(accessedGlobals, accessedGlobalsByScope);
+         }
+     }
+ }
+-const formatsMaybeAccessDocumentCurrentScript = ['cjs', 'iife', 'umd'];
++const formatsMaybeAccessDocumentCurrentScript = ['iife', 'umd'];
+ const accessedMetaUrlGlobals = {
+     amd: ['document', 'module', 'URL'],
+-    cjs: ['document', 'require', 'URL', DOCUMENT_CURRENT_SCRIPT],
++    cjs: ['require', 'URL'],
+     es: [],
+     iife: ['document', 'URL', DOCUMENT_CURRENT_SCRIPT],
+     system: ['module'],
+     umd: ['document', 'require', 'URL', DOCUMENT_CURRENT_SCRIPT]
+ };
+ const accessedFileUrlGlobals = {
+     amd: ['document', 'require', 'URL'],
+-    cjs: ['document', 'require', 'URL'],
++    cjs: ['require', 'URL'],
+     es: [],
+     iife: ['document', 'URL'],
+     system: ['module', 'URL'],
+     umd: ['document', 'require', 'URL']
+@@ -7778,9 +7778,9 @@
+         : property === 'url'
+             ? urlMechanism
+             : 'undefined';
+ };
+-const getFileUrlFromFullPath = (path) => `require('u' + 'rl').pathToFileURL(${path}).href`;
++const getFileUrlFromFullPath = (path) => `require('node:url').pathToFileURL(${path}).href`;
+ const getFileUrlFromRelativePath = (path) => getFileUrlFromFullPath(`__dirname + '/${escapeId(path)}'`);
+ const getUrlFromDocument = (chunkId, umd = false) => `${umd ? `typeof document === 'undefined' ? location.href : ` : ''}(${DOCUMENT_CURRENT_SCRIPT} && ${DOCUMENT_CURRENT_SCRIPT}.tagName.toUpperCase() === 'SCRIPT' && ${DOCUMENT_CURRENT_SCRIPT}.src || new URL('${escapeId(chunkId)}', document.baseURI).href)`;
+ const relativeUrlMechanisms = {
+     amd: relativePath => {
+@@ -7795,9 +7795,9 @@
+     umd: relativePath => `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(relativePath)} : ${getRelativeUrlFromDocument(relativePath, true)})`
+ };
+ const importMetaMechanisms = {
+     amd: getGenericImportMetaMechanism(() => getResolveUrl(`module.uri, document.baseURI`)),
+-    cjs: getGenericImportMetaMechanism(chunkId => `(typeof document === 'undefined' ? ${getFileUrlFromFullPath('__filename')} : ${getUrlFromDocument(chunkId)})`),
++    cjs: getGenericImportMetaMechanism(() => `${getFileUrlFromFullPath('__filename')}`),
+     iife: getGenericImportMetaMechanism(chunkId => getUrlFromDocument(chunkId)),
+     system: (property, { snippets: { getPropertyAccess } }) => property === null ? `module.meta` : `module.meta${getPropertyAccess(property)}`,
+     umd: getGenericImportMetaMechanism(chunkId => `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromFullPath('__filename')} : ${getUrlFromDocument(chunkId, true)})`)
+ };
+@@ -9336,9 +9336,9 @@
+ 		    return segs[segs.length - 2];
+ 		  }
+ 
+ 		  return last;
+-		}; 
++		};
+ 	} (utils));
+ 	return utils;
+ }
+ 
+@@ -17493,9 +17493,9 @@
+             // Synthetic namespaces should not hide "regular" exports of the same name
+             if (module.info.syntheticNamedExports === name) {
+                 continue;
+             }
+-            const [variable, indirectExternal] = getVariableForExportNameRecursive(module, name, importerForSideEffects, true, 
++            const [variable, indirectExternal] = getVariableForExportNameRecursive(module, name, importerForSideEffects, true,
+             // We are creating a copy to handle the case where the same binding is
+             // imported through different namespace reexports gracefully
+             copyNameToModulesMap(searchedNamesAndModules));
+             if (module instanceof ExternalModule || indirectExternal) {
+@@ -18228,9 +18228,9 @@
+                     this.facadeChunkByModule.set(module, this);
+                     continue;
+                 }
+             }
+-            const requiredFacades = Array.from(new Set(module.chunkNames.filter(({ isUserDefined }) => isUserDefined).map(({ name }) => name)), 
++            const requiredFacades = Array.from(new Set(module.chunkNames.filter(({ isUserDefined }) => isUserDefined).map(({ name }) => name)),
+             // mapping must run after Set 'name' dedupe
+             name => ({
+                 name
+             }));
+@@ -19704,9 +19704,9 @@
+ }
+ function mergeChunks(chunkPartition, minChunkSize, sideEffectAtoms, sizeByAtom) {
+     const { small } = chunkPartition;
+     for (const mergedChunk of small) {
+-        const bestTargetChunk = findBestMergeTarget(mergedChunk, chunkPartition, sideEffectAtoms, sizeByAtom, 
++        const bestTargetChunk = findBestMergeTarget(mergedChunk, chunkPartition, sideEffectAtoms, sizeByAtom,
+         // In the default case, we do not accept size increases
+         minChunkSize <= 1 ? 1 : Infinity);
+         if (bestTargetChunk) {
+             const { containedAtoms, correlatedAtoms, modules, pure, size } = mergedChunk;
+@@ -19760,9 +19760,9 @@
+  * is returned.
+  * Merging will not produce cycles if none of the direct non-merged
+  * dependencies of a chunk have the other chunk as a transitive dependency.
+  */
+-function getAdditionalSizeAfterMerge(mergedChunk, targetChunk, 
++function getAdditionalSizeAfterMerge(mergedChunk, targetChunk,
+ // The maximum additional unused code size allowed to be added by the merge,
+ // taking dependencies into account, needs to be below this number
+ currentAdditionalSize, sideEffectAtoms, sizeByAtom) {
+     const firstSize = getAdditionalSizeIfNoTransitiveDependencyOrNonCorrelatedSideEffect(mergedChunk, targetChunk, currentAdditionalSize, sideEffectAtoms, sizeByAtom);
+Index: /rollup/dist/shared/rollup.js
+===================================================================
+--- /rollup/dist/shared/rollup.js
++++ /rollup/dist/shared/rollup.js
+@@ -1233,9 +1233,9 @@
+ 		    return segs[segs.length - 2];
+ 		  }
+ 
+ 		  return last;
+-		}; 
++		};
+ 	} (utils));
+ 	return utils;
+ }
+ 
+@@ -8788,9 +8788,9 @@
+                 : [...path1, ...path2];
+ };
+ 
+ class LocalVariable extends Variable {
+-    constructor(name, declarator, init, 
++    constructor(name, declarator, init,
+     /** if this is non-empty, the actual init is this path of this.init */
+     initPath, context, kind) {
+         super(name);
+         this.init = init;
+@@ -10224,9 +10224,9 @@
+         super.initialise();
+         if (this.directive &&
+             this.directive !== 'use strict' &&
+             this.parent.type === parseAst_js.Program) {
+-            this.scope.context.log(parseAst_js.LOGLEVEL_WARN, 
++            this.scope.context.log(parseAst_js.LOGLEVEL_WARN,
+             // This is necessary, because either way (deleting or not) can lead to errors.
+             parseAst_js.logModuleLevelDirective(this.directive, this.scope.context.module.id), this.start);
+         }
+     }
+@@ -11526,20 +11526,20 @@
+             this.scope.addAccessedGlobals(accessedGlobals, accessedGlobalsByScope);
+         }
+     }
+ }
+-const formatsMaybeAccessDocumentCurrentScript = ['cjs', 'iife', 'umd'];
++const formatsMaybeAccessDocumentCurrentScript = ['iife', 'umd'];
+ const accessedMetaUrlGlobals = {
+     amd: ['document', 'module', 'URL'],
+-    cjs: ['document', 'require', 'URL', DOCUMENT_CURRENT_SCRIPT],
++    cjs: ['require', 'URL'],
+     es: [],
+     iife: ['document', 'URL', DOCUMENT_CURRENT_SCRIPT],
+     system: ['module'],
+     umd: ['document', 'require', 'URL', DOCUMENT_CURRENT_SCRIPT]
+ };
+ const accessedFileUrlGlobals = {
+     amd: ['document', 'require', 'URL'],
+-    cjs: ['document', 'require', 'URL'],
++    cjs: ['require', 'URL'],
+     es: [],
+     iife: ['document', 'URL'],
+     system: ['module', 'URL'],
+     umd: ['document', 'require', 'URL']
+@@ -11553,9 +11553,9 @@
+         : property === 'url'
+             ? urlMechanism
+             : 'undefined';
+ };
+-const getFileUrlFromFullPath = (path) => `require('u' + 'rl').pathToFileURL(${path}).href`;
++const getFileUrlFromFullPath = (path) => `require('node:url').pathToFileURL(${path}).href`;
+ const getFileUrlFromRelativePath = (path) => getFileUrlFromFullPath(`__dirname + '/${escapeId(path)}'`);
+ const getUrlFromDocument = (chunkId, umd = false) => `${umd ? `typeof document === 'undefined' ? location.href : ` : ''}(${DOCUMENT_CURRENT_SCRIPT} && ${DOCUMENT_CURRENT_SCRIPT}.tagName.toUpperCase() === 'SCRIPT' && ${DOCUMENT_CURRENT_SCRIPT}.src || new URL('${escapeId(chunkId)}', document.baseURI).href)`;
+ const relativeUrlMechanisms = {
+     amd: relativePath => {
+@@ -11570,9 +11570,9 @@
+     umd: relativePath => `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(relativePath)} : ${getRelativeUrlFromDocument(relativePath, true)})`
+ };
+ const importMetaMechanisms = {
+     amd: getGenericImportMetaMechanism(() => getResolveUrl(`module.uri, document.baseURI`)),
+-    cjs: getGenericImportMetaMechanism(chunkId => `(typeof document === 'undefined' ? ${getFileUrlFromFullPath('__filename')} : ${getUrlFromDocument(chunkId)})`),
++    cjs: getGenericImportMetaMechanism(() => `${getFileUrlFromFullPath('__filename')}`),
+     iife: getGenericImportMetaMechanism(chunkId => getUrlFromDocument(chunkId)),
+     system: (property, { snippets: { getPropertyAccess } }) => property === null ? `module.meta` : `module.meta${getPropertyAccess(property)}`,
+     umd: getGenericImportMetaMechanism(chunkId => `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromFullPath('__filename')} : ${getUrlFromDocument(chunkId, true)})`)
+ };
+@@ -19095,9 +19095,9 @@
+             // Synthetic namespaces should not hide "regular" exports of the same name
+             if (module.info.syntheticNamedExports === name) {
+                 continue;
+             }
+-            const [variable, indirectExternal] = getVariableForExportNameRecursive(module, name, importerForSideEffects, true, 
++            const [variable, indirectExternal] = getVariableForExportNameRecursive(module, name, importerForSideEffects, true,
+             // We are creating a copy to handle the case where the same binding is
+             // imported through different namespace reexports gracefully
+             copyNameToModulesMap(searchedNamesAndModules));
+             if (module instanceof ExternalModule || indirectExternal) {
+@@ -19721,9 +19721,9 @@
+                     this.facadeChunkByModule.set(module, this);
+                     continue;
+                 }
+             }
+-            const requiredFacades = Array.from(new Set(module.chunkNames.filter(({ isUserDefined }) => isUserDefined).map(({ name }) => name)), 
++            const requiredFacades = Array.from(new Set(module.chunkNames.filter(({ isUserDefined }) => isUserDefined).map(({ name }) => name)),
+             // mapping must run after Set 'name' dedupe
+             name => ({
+                 name
+             }));
+@@ -21197,9 +21197,9 @@
+ }
+ function mergeChunks(chunkPartition, minChunkSize, sideEffectAtoms, sizeByAtom) {
+     const { small } = chunkPartition;
+     for (const mergedChunk of small) {
+-        const bestTargetChunk = findBestMergeTarget(mergedChunk, chunkPartition, sideEffectAtoms, sizeByAtom, 
++        const bestTargetChunk = findBestMergeTarget(mergedChunk, chunkPartition, sideEffectAtoms, sizeByAtom,
+         // In the default case, we do not accept size increases
+         minChunkSize <= 1 ? 1 : Infinity);
+         if (bestTargetChunk) {
+             const { containedAtoms, correlatedAtoms, modules, pure, size } = mergedChunk;
+@@ -21253,9 +21253,9 @@
+  * is returned.
+  * Merging will not produce cycles if none of the direct non-merged
+  * dependencies of a chunk have the other chunk as a transitive dependency.
+  */
+-function getAdditionalSizeAfterMerge(mergedChunk, targetChunk, 
++function getAdditionalSizeAfterMerge(mergedChunk, targetChunk,
+ // The maximum additional unused code size allowed to be added by the merge,
+ // taking dependencies into account, needs to be below this number
+ currentAdditionalSize, sideEffectAtoms, sizeByAtom) {
+     const firstSize = getAdditionalSizeIfNoTransitiveDependencyOrNonCorrelatedSideEffect(mergedChunk, targetChunk, currentAdditionalSize, sideEffectAtoms, sizeByAtom);
