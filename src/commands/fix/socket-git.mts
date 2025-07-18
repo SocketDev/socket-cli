@@ -80,7 +80,7 @@ export function getSocketBranchFullNameComponent(
   const branchMaybeNamespace = purlObj.namespace
     ? `${formatBranchName(purlObj.namespace)}--`
     : ''
-  return `${branchMaybeNamespace}${formatBranchName(purlObj.name)}`
+  return `${branchMaybeNamespace}${formatBranchName(purlObj.name!)}`
 }
 
 export function getSocketBranchName(

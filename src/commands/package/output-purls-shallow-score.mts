@@ -247,7 +247,7 @@ export function preProcess(
       rows.set(purl, {
         ecosystem: artifact.type,
         namespace: artifact.namespace || '',
-        name: artifact.name,
+        name: artifact.name!,
         version: artifact.version || '',
         score: {
           supplyChain: artifact.score?.supplyChain || 100,

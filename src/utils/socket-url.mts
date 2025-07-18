@@ -13,7 +13,7 @@ export function getPkgFullNameFromPurl(
   const { name, namespace } = purlObj
   return namespace
     ? `${namespace}${purlObj.type === 'maven' ? ':' : '/'}${name}`
-    : name
+    : name!
 }
 
 export function getSocketDevAlertUrl(alertType: string): string {
