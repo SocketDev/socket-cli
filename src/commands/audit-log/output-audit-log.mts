@@ -211,7 +211,7 @@ async function outputWithBlessed(
   ]
 
   // Note: this temporarily takes over the terminal (just like `man` does).
-  const ScreenWidget = require('blessed/lib/widgets/screen.js')
+  const ScreenWidget = /*@__PURE__*/ require('blessed/lib/widgets/screen.js')
   // Lazily access constants.blessedOptions.
   const screen: Widgets.Screen = new ScreenWidget({
     ...constants.blessedOptions,
@@ -222,7 +222,7 @@ async function outputWithBlessed(
   // eslint-disable-next-line n/no-process-exit
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 
-  const TableWidget = require('blessed-contrib/lib/widget/table.js')
+  const TableWidget = /*@__PURE__*/ require('blessed-contrib/lib/widget/table.js')
   const tipsBoxHeight = 1 // 1 row for tips box
   const detailsBoxHeight = 20 // bottom N rows for details box. 20 gives 4 lines for condensed payload before it scrolls out of view
 
@@ -253,7 +253,7 @@ async function outputWithBlessed(
     truncate: '_',
   })
 
-  const BoxWidget = require('blessed/lib/widgets/box.js')
+  const BoxWidget = /*@__PURE__*/ require('blessed/lib/widgets/box.js')
   const tipsBox: Widgets.BoxElement = new BoxWidget({
     bottom: detailsBoxHeight, // sits just above the details box
     height: tipsBoxHeight,

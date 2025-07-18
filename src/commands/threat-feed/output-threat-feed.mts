@@ -39,7 +39,7 @@ export async function outputThreatFeed(
   const descriptions = result.data.results.map(d => d.description)
 
   // Note: this temporarily takes over the terminal (just like `man` does).
-  const ScreenWidget = require('blessed/lib/widgets/screen.js')
+  const ScreenWidget = /*@__PURE__*/ require('blessed/lib/widgets/screen.js')
   // Lazily access constants.blessedOptions.
   const screen: Widgets.Screen = new ScreenWidget({
     ...constants.blessedOptions,
@@ -50,7 +50,7 @@ export async function outputThreatFeed(
   // eslint-disable-next-line n/no-process-exit
   screen.key(['escape', 'q', 'C-c'], () => process.exit(0))
 
-  const TableWidget = require('blessed-contrib/lib/widget/table.js')
+  const TableWidget = /*@__PURE__*/ require('blessed-contrib/lib/widget/table.js')
   const detailsBoxHeight = 20 // bottom N rows for details box
   const tipsBoxHeight = 1 // 1 row for tips box
 
@@ -75,7 +75,7 @@ export async function outputThreatFeed(
     truncate: '_',
   })
 
-  const BoxWidget = require('blessed/lib/widgets/box.js')
+  const BoxWidget = /*@__PURE__*/ require('blessed/lib/widgets/box.js')
   const tipsBox: Widgets.BoxElement = new BoxWidget({
     bottom: detailsBoxHeight, // sits just above the details box
     height: tipsBoxHeight,
