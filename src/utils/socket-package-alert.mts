@@ -165,7 +165,12 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
     ..._include,
   } as AlertIncludeFilter
 
-  const name = resolvePackageName(artifact)
+  const name = resolvePackageName(
+    artifact as {
+      name: string
+      namespace?: string | undefined
+    },
+  )
   const { type: ecosystem, version } = artifact
   const enabledState = {
     __proto__: null,
