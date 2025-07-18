@@ -23,33 +23,19 @@ describe('socket config auto', async () => {
             --json            Output result as json
             --markdown        Output result as markdown
 
-          Attempt to automatically discover the correct value for given config KEY.
-
-          Keys:
-
-           - apiBaseUrl -- Base URL of the API endpoint
-           - apiProxy -- A proxy through which to access the API
-           - apiToken -- The API token required to access most API endpoints
-           - defaultOrg -- The default org slug to use; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.
-           - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
-           - skipAskToPersistDefaultOrg -- This flag prevents the CLI from asking you to persist the org slug when you selected one interactively
-           - org -- Alias for defaultOrg
-
-          For certain keys it will request the value from server, for others it will
-          reset the value to the default. For some keys this has no effect.
-
-          Keys:
-
-           - apiBaseUrl -- Base URL of the API endpoint
-           - apiProxy -- A proxy through which to access the API
-           - apiToken -- The API token required to access most API endpoints
-           - defaultOrg -- The default org slug to use; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.
-           - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
-           - skipAskToPersistDefaultOrg -- This flag prevents the CLI from asking you to persist the org slug when you selected one interactively
-           - org -- Alias for defaultOrg
+          Attempt to automatically discover the correct value for a given config KEY.
 
           Examples
-            $ socket config auto defaultOrg"
+            $ socket config auto defaultOrg
+
+          Keys:
+           - apiBaseUrl -- Base URL of the API endpoint
+           - apiProxy -- A proxy through which to access the API
+           - apiToken -- The API token required to access most API endpoints
+           - defaultOrg -- The default org slug to use; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.
+           - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
+           - org -- Alias for defaultOrg
+           - skipAskToPersistDefaultOrg -- This flag prevents the CLI from asking you to persist the org slug when you selected one interactively"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
