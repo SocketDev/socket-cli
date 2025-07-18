@@ -38,10 +38,9 @@ export async function outputSecurityPolicy(
   const entries: Array<
     [string, { action: 'defer' | 'error' | 'warn' | 'monitor' | 'ignore' }]
   > = rules ? Object.entries(rules) : []
-  const mapped: Array<[string, string]> = entries.map(([key, value]) => [
-    key,
-    value.action,
-  ])
+  const mapped: Array<[string, string]> = entries.map(
+    ({ 0: key, 1: value }) => [key, value.action],
+  )
   mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
   logger.log(mdTableOfPairs(mapped, ['name', 'action']))
   logger.log('')
