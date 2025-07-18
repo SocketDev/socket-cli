@@ -29,7 +29,7 @@ export async function outputCreateNewScan(
   }
 
   if (!result.data.id) {
-    logger.fail('Did not receive a scan ID from the API...')
+    logger.fail('Did not receive a scan ID from the API.')
     process.exitCode = 1
   }
 

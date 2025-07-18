@@ -32,7 +32,7 @@ export async function outputLicensePolicy(
   const rules = result.data['license_policy']!
   const entries = rules ? Object.entries(rules) : []
   const mapped: Array<[string, string]> = entries.map(
-    ([key, value]) =>
+    ({ 0: key, 1: value }) =>
       [key, (value as any)?.['allowed'] ? ' yes' : ' no'] as const,
   )
   mapped.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
