@@ -5,16 +5,12 @@ import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-const require = createRequire(import.meta.url)
-
-// Require constants with require(relConstantsPath) instead of require('./constants')
-// so Rollup doesn't generate a constants2.js chunk.
-const relConstantsPath = './constants'
-const constants = require(relConstantsPath)
+import constants from './constants.mts'
 
 // Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
 if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
-  const Sentry = require('@sentry/node')
+  const require = createRequire(import.meta.url)
+  const Sentry = /*@__PURE__*/ require('@sentry/node')
   Sentry.init({
     onFatalError(error: Error) {
       // Defer module loads until after Sentry.init is called.
