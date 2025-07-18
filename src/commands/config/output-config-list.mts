@@ -2,9 +2,9 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import {
   getConfigValue,
+  getSupportedConfigKeys,
   isReadOnlyConfig,
-  sensitiveConfigKeys,
-  supportedConfigKeys,
+  isSensitiveConfigKey,
 } from '../../utils/config.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
@@ -18,16 +18,17 @@ export async function outputConfigList({
   outputKind: OutputKind
 }) {
   const readOnly = isReadOnlyConfig()
+  const supportedConfigKeys = getSupportedConfigKeys()
   if (outputKind === 'json') {
     let failed = false
     const obj: Record<string, unknown> = {}
-    for (const key of supportedConfigKeys.keys()) {
+    for (const key of supportedConfigKeys) {
       const result = getConfigValue(key)
       let value = result.data
       if (!result.ok) {
         value = `Failed to retrieve: ${result.message}`
         failed = true
-      } else if (!full && sensitiveConfigKeys.has(key)) {
+      } else if (!full && isSensitiveConfigKey(key)) {
         value = '********'
       }
       if (full || value !== undefined) {
@@ -60,7 +61,7 @@ export async function outputConfigList({
       ),
     )
   } else {
-    const maxWidth = Array.from(supportedConfigKeys.keys()).reduce(
+    const maxWidth = supportedConfigKeys.reduce(
       (a, b) => Math.max(a, b.length),
       0,
     )
@@ -69,13 +70,13 @@ export async function outputConfigList({
     logger.log('')
     logger.log(`This is the local CLI config (full=${!!full}):`)
     logger.log('')
-    for (const key of supportedConfigKeys.keys()) {
+    for (const key of supportedConfigKeys) {
       const result = getConfigValue(key)
       if (!result.ok) {
         logger.log(`- ${key}: failed to read: ${result.message}`)
       } else {
         let value = result.data
-        if (!full && sensitiveConfigKeys.has(key)) {
+        if (!full && isSensitiveConfigKey(key)) {
           value = '********'
         }
         if (full || value !== undefined) {

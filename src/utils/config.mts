@@ -1,9 +1,10 @@
-import fs from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import config from '@socketsecurity/config'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
 import constants from '../constants.mts'
 import { safeReadFileSync } from './fs.mts'
@@ -24,9 +25,9 @@ export interface LocalConfig {
   org?: string // convenience alias for defaultOrg
 }
 
-export const sensitiveConfigKeys: Set<keyof LocalConfig> = new Set(['apiToken'])
+const sensitiveConfigKeyLookup: Set<keyof LocalConfig> = new Set(['apiToken'])
 
-export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
+const supportedConfig: Map<keyof LocalConfig, string> = new Map([
   ['apiBaseUrl', 'Base URL of the API endpoint'],
   ['apiProxy', 'A proxy through which to access the API'],
   ['apiToken', 'The API token required to access most API endpoints'],
@@ -44,6 +45,11 @@ export const supportedConfigKeys: Map<keyof LocalConfig, string> = new Map([
   ],
   ['org', 'Alias for defaultOrg'],
 ])
+
+const supportedConfigEntries = [...supportedConfig.entries()].sort((a, b) =>
+  naturalCompare(a[0], b[0]),
+)
+const supportedConfigKeys = supportedConfigEntries.map(p => p[0])
 
 function getConfigValues(): LocalConfig {
   if (_cachedConfig === undefined) {
@@ -70,7 +76,7 @@ function getConfigValues(): LocalConfig {
           updateConfigValue('apiToken', token)
         }
       } else {
-        fs.mkdirSync(path.dirname(socketAppDataPath), { recursive: true })
+        mkdirSync(path.dirname(socketAppDataPath), { recursive: true })
       }
     }
   }
@@ -85,7 +91,7 @@ function normalizeConfigKey(
   // We added `org` as a convenience alias for `defaultOrg`
   const normalizedKey =
     key === 'apiKey' ? 'apiToken' : key === 'org' ? 'defaultOrg' : key
-  if (!supportedConfigKeys.has(normalizedKey)) {
+  if (!isSupportedConfigKey(normalizedKey)) {
     return {
       ok: false,
       message: `Invalid config key: ${normalizedKey}`,
@@ -144,8 +150,24 @@ export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
   return localConfig[keyResult.data as Key]
 }
 
+export function getSupportedConfigEntries() {
+  return [...supportedConfigEntries]
+}
+
+export function getSupportedConfigKeys() {
+  return [...supportedConfigKeys]
+}
+
 export function isReadOnlyConfig() {
   return _readOnlyConfig
+}
+
+export function isSensitiveConfigKey(key: string): key is keyof LocalConfig {
+  return sensitiveConfigKeyLookup.has(key as keyof LocalConfig)
+}
+
+export function isSupportedConfigKey(key: string): key is keyof LocalConfig {
+  return supportedConfig.has(key as keyof LocalConfig)
 }
 
 let _cachedConfig: LocalConfig | undefined
@@ -159,7 +181,8 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   try {
     config = JSON.parse(String(jsonConfig))
     if (!config || typeof config !== 'object') {
-      // `null` is valid json, so are primitive values. They're not valid config objects :)
+      // `null` is valid json, so are primitive values.
+      // They're not valid config objects :)
       return {
         ok: false,
         message: 'Could not parse Config as JSON',
@@ -168,7 +191,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
       }
     }
   } catch {
-    // Force set an empty config to prevent accidentally using system settings
+    // Force set an empty config to prevent accidentally using system settings.
     _cachedConfig = {} as LocalConfig
     _readOnlyConfig = true
 
@@ -184,7 +207,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   _cachedConfig = config as LocalConfig
   _readOnlyConfig = true
 
-  // Normalize apiKey to apiToken
+  // Normalize apiKey to apiToken.
   if (_cachedConfig['apiKey']) {
     if (_cachedConfig['apiToken']) {
       logger.warn(
@@ -200,8 +223,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
 
 export function overrideConfigApiToken(apiToken: unknown) {
   debugFn('notice', 'override: API token (not stored)')
-
-  // Set token to the local cached config and mark it read-only so it doesn't persist
+  // Set token to the local cached config and mark it read-only so it doesn't persist.
   _cachedConfig = {
     ...config,
     ...(apiToken === undefined ? {} : { apiToken: String(apiToken) }),
@@ -220,7 +242,8 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     return keyResult
   }
   const key: Key = keyResult.data as Key
-  let wasDeleted = value === undefined // implicitly when serializing
+  // Implicitly deleting when serializing.
+  let wasDeleted = value === undefined
   if (key === 'skipAskToPersistDefaultOrg') {
     if (value === 'true' || value === 'false') {
       localConfig['skipAskToPersistDefaultOrg'] = value === 'true'
@@ -251,7 +274,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
       // Lazily access constants.socketAppDataPath.
       const { socketAppDataPath } = constants
       if (socketAppDataPath) {
-        fs.writeFileSync(
+        writeFileSync(
           socketAppDataPath,
           Buffer.from(JSON.stringify(localConfig)).toString('base64'),
         )

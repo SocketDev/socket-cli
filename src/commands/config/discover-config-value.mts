@@ -1,9 +1,8 @@
 import { handleApiCall } from '../../utils/api.mts'
-import { supportedConfigKeys } from '../../utils/config.mts'
+import { isSupportedConfigKey } from '../../utils/config.mts'
 import { hasDefaultToken, setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { LocalConfig } from '../../utils/config.mts'
 
 export async function discoverConfigValue(
   key: string,
@@ -12,7 +11,7 @@ export async function discoverConfigValue(
   // keys should request information from particular API endpoints while
   // others should simply return their default value, like endpoint URL.
 
-  if (!supportedConfigKeys.has(key as keyof LocalConfig)) {
+  if (key !== 'test' && !isSupportedConfigKey(key)) {
     return {
       ok: false,
       message: 'Auto discover failed',

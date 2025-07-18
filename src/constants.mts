@@ -11,6 +11,9 @@ import type { Remap } from '@socketsecurity/registry/lib/objects'
 
 const require = createRequire(import.meta.url)
 const __filename = fileURLToPath(import.meta.url)
+// Using `path.dirname(__filename)` to resolve `__dirname` works for both 'dist'
+// AND 'src' directories because constants.js and constants.mts respectively are
+// in the root of each.
 const __dirname = path.dirname(__filename)
 
 const {
@@ -229,11 +232,15 @@ const YARN_LOCK = 'yarn.lock'
 let _Sentry: any
 
 const LAZY_ENV = () => {
+  const { env } = process
   const {
     envAsBoolean,
     envAsString,
-  } = require('@socketsecurity/registry/lib/env')
-  const { env } = process
+  } = /*@__PURE__*/ require('@socketsecurity/registry/lib/env')
+  const { getConfigValueOrUndef } = /*@__PURE__*/ require(
+    // Lazily access constants.rootPath.
+    path.join(constants.rootPath, 'dist/utils.js'),
+  )
   const GITHUB_TOKEN = envAsString(env['GITHUB_TOKEN'])
   // We inline some environment values so that they CANNOT be influenced by user
   // provided environment variables.
@@ -349,7 +356,9 @@ const LAZY_ENV = () => {
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_CLI_API_BASE_URL:
       envAsString(env['SOCKET_CLI_API_BASE_URL']) ||
-      envAsString(env['SOCKET_SECURITY_API_BASE_URL']),
+      envAsString(env['SOCKET_SECURITY_API_BASE_URL']) ||
+      getConfigValueOrUndef('apiBaseUrl') ||
+      'https://api.socket.dev/v0/',
     // Flag to set the proxy all requests are routed through.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_CLI_API_PROXY:
@@ -576,7 +585,7 @@ const lazySocketAppDataPath = (): string | undefined => {
       constants.ENV.XDG_DATA_HOME
   if (!dataHome) {
     if (WIN32) {
-      const logger = require('@socketsecurity/registry/lib/logger')
+      const logger = /*@__PURE__*/ require('@socketsecurity/registry/lib/logger')
       logger.warn(`Missing %${LOCALAPPDATA}%`)
     } else {
       dataHome = path.join(
