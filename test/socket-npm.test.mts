@@ -76,7 +76,9 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
             if (
               e?.['stderr'].includes('typosquat') ||
               // Sometimes our token quota is exceeded.
-              e?.['stderr'].includes('Too Many Requests')
+              e?.['stderr'].includes('Too Many Requests') ||
+              // Sometimes we're unauthorized.
+              e?.['stderr'].includes('Unauthorized')
             ) {
               resolve('OK')
             } else {
