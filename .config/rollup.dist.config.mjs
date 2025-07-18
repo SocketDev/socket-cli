@@ -21,6 +21,7 @@ import {
   fetchPackageManifest,
   readPackageJson,
 } from '@socketsecurity/registry/lib/packages'
+import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
@@ -356,13 +357,19 @@ function resetDependencies(deps) {
 export default async () => {
   // Lazily access constants path properties.
   const { configPath, distPath, rootPath, srcPath } = constants
-  const nmPath = path.join(rootPath, NODE_MODULES)
-  const constantsSrcPath = path.join(srcPath, 'constants.mts')
-  const externalSrcPath = path.join(srcPath, 'external')
-  const blessedContribSrcPath = path.join(externalSrcPath, BLESSED_CONTRIB)
-  const shadowNpmBinSrcPath = path.join(srcPath, 'shadow/npm/bin.mts')
-  const shadowNpmInjectSrcPath = path.join(srcPath, 'shadow/npm/inject.mts')
-  const utilsSrcPath = path.join(srcPath, UTILS)
+  const nmPath = normalizePath(path.join(rootPath, NODE_MODULES))
+  const constantsSrcPath = normalizePath(path.join(srcPath, 'constants.mts'))
+  const externalSrcPath = normalizePath(path.join(srcPath, 'external'))
+  const blessedContribSrcPath = normalizePath(
+    path.join(externalSrcPath, BLESSED_CONTRIB),
+  )
+  const shadowNpmBinSrcPath = normalizePath(
+    path.join(srcPath, 'shadow/npm/bin.mts'),
+  )
+  const shadowNpmInjectSrcPath = normalizePath(
+    path.join(srcPath, 'shadow/npm/inject.mts'),
+  )
+  const utilsSrcPath = normalizePath(path.join(srcPath, UTILS))
 
   return [
     // Bundle <root>/src/ entry point files and output to <root>/dist/.
@@ -397,7 +404,7 @@ export default async () => {
               case shadowNpmInjectSrcPath:
                 return SHADOW_NPM_INJECT
               default:
-                if (id.startsWith(utilsSrcPath)) {
+                if (id.startsWith(`${utilsSrcPath}/`)) {
                   return UTILS
                 }
                 if (id.includes(SLASH_NODE_MODULES_SLASH)) {

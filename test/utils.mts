@@ -41,8 +41,12 @@ export async function invokeNpm(
   args: string[],
   env = {},
 ): Promise<{
-  status: boolean
   code: number
+  error?: {
+    message: string
+    stack: string
+  }
+  status: boolean
   stdout: string
   stderr: string
 }> {
@@ -74,7 +78,11 @@ export async function invokeNpm(
   } catch (e: unknown) {
     return {
       status: false,
-      code: e?.['code'],
+      code: e?.['code'] || 1,
+      error: {
+        message: e?.['message'] || '',
+        stack: e?.['stack'] || '',
+      },
       stdout: toAsciiSafeString(
         normalizeLogSymbols(stripAnsi(e?.['stdout']?.trim() ?? '')),
       ),
