@@ -20,8 +20,6 @@ import type {
 } from 'node:fs'
 import type { FileHandle } from 'node:fs/promises'
 
-const { abortSignal } = constants
-
 export async function removeNodeModules(cwd = process.cwd()) {
   const nodeModulesPaths = await globNodeModules(cwd)
   await pEach(
@@ -39,7 +37,11 @@ export type FindUpOptions = {
 
 export async function findUp(
   name: string | string[],
-  { cwd = process.cwd(), signal = abortSignal }: FindUpOptions,
+  {
+    cwd = process.cwd(),
+    // Lazily access constants.abortSignal.
+    signal = constants.abortSignal,
+  }: FindUpOptions,
 ): Promise<string | undefined> {
   let dir = path.resolve(cwd)
   const { root } = path.parse(dir)
@@ -75,7 +77,8 @@ export async function readFileBinary(
   options?: ReadFileOptions | undefined,
 ): Promise<Buffer> {
   return (await fs.readFile(filepath, {
-    signal: abortSignal,
+    // Lazily access constants.abortSignal.
+    signal: constants.abortSignal,
     ...options,
     encoding: 'binary',
   } as ReadFileOptions)) as Buffer
@@ -86,7 +89,8 @@ export async function readFileUtf8(
   options?: ReadFileOptions | undefined,
 ): Promise<string> {
   return await fs.readFile(filepath, {
-    signal: abortSignal,
+    // Lazily access constants.abortSignal.
+    signal: constants.abortSignal,
     ...options,
     encoding: 'utf8',
   })
@@ -104,7 +108,8 @@ export async function safeReadFile(
   try {
     return await fs.readFile(filepath, {
       encoding: 'utf8',
-      signal: abortSignal,
+      // Lazily access constants.abortSignal.
+      signal: constants.abortSignal,
       ...(typeof options === 'string' ? { encoding: options } : options),
     })
   } catch {}
