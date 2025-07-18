@@ -4,7 +4,10 @@ import { handleConfigUnset } from './handle-config-unset.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { supportedConfigKeys } from '../../utils/config.mts'
+import {
+  getSupportedConfigEntries,
+  isSupportedConfigKey,
+} from '../../utils/config.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -14,15 +17,29 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'unset',
-  description: 'Clear the value of a local CLI config item',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-  },
-  help: (command, config) => `
+const description = 'Clear the value of a local CLI config item'
+const hidden = false
+
+export const cmdConfigUnset = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: 'unset',
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+    },
+    help: (command, config) => `
     Usage
       $ ${command} [options] <KEY> <VALUE>
 
@@ -34,26 +51,15 @@ const config: CliCommandConfig = {
 
     Keys:
 
-${Array.from(supportedConfigKeys.entries())
+${getSupportedConfigEntries()
   .map(([key, desc]) => `     - ${key} -- ${desc}`)
   .join('\n')}
 
     Examples
       $ ${command} defaultOrg
   `,
-}
+  }
 
-export const cmdConfigUnset = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
@@ -70,7 +76,7 @@ async function run(
   const wasValidInput = checkCommandInput(
     outputKind,
     {
-      test: key === 'test' || supportedConfigKeys.has(key as keyof LocalConfig),
+      test: key === 'test' || isSupportedConfigKey(key),
       message: 'Config key should be the first arg',
       pass: 'ok',
       fail: key ? 'invalid config key' : 'missing',

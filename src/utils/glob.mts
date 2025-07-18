@@ -8,17 +8,12 @@ import { parse as yamlParse } from 'yaml'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-import constants from '../constants.mts'
 import { safeReadFile } from './fs.mts'
 
 import type { Agent } from './package-environment.mts'
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkReturnType } from '@socketsecurity/sdk'
 import type { GlobOptions } from 'tinyglobby'
-
-const { PNPM } = constants
-
-const PNPM_WORKSPACE = `${PNPM}-workspace`
 
 const ignoredDirs = [
   // Taken from ignore-by-default:
@@ -43,10 +38,10 @@ async function getWorkspaceGlobs(
   cwd = process.cwd(),
 ): Promise<string[]> {
   let workspacePatterns
-  if (agent === PNPM) {
+  if (agent === 'pnpm') {
     for (const workspacePath of [
-      path.join(cwd, `${PNPM_WORKSPACE}.yaml`),
-      path.join(cwd, `${PNPM_WORKSPACE}.yml`),
+      path.join(cwd, 'pnpm-workspace.yaml'),
+      path.join(cwd, 'pnpm-workspace.yml'),
     ]) {
       // eslint-disable-next-line no-await-in-loop
       const yml = await safeReadFile(workspacePath)
