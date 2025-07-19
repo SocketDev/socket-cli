@@ -8,7 +8,7 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 
 export async function outputRequirements(
-  result: CResult<{ contents: string; pip: string }>,
+  result: CResult<{ content: string; pip: string }>,
   outputKind: OutputKind,
   out: string,
 ) {
