@@ -179,17 +179,17 @@ export type GetAlertsMapFromArboristOptions = {
 
 export async function getAlertsMapFromArborist(
   arb: ArboristInstance,
-  options_?: GetAlertsMapFromArboristOptions | undefined,
+  options?: GetAlertsMapFromArboristOptions | undefined,
 ): Promise<AlertsByPurl> {
-  const options = {
+  const opts = {
     __proto__: null,
     consolidate: false,
     include: undefined,
     nothrow: false,
-    ...options_,
+    ...options,
   } as GetAlertsMapFromArboristOptions
 
-  options.include = {
+  opts.include = {
     __proto__: null,
     // Leave 'actions' unassigned so it can be given a default value in
     // subsequent functions where `options` is passed.
@@ -200,12 +200,12 @@ export async function getAlertsMapFromArborist(
     existing: false,
     unfixable: true,
     upgradable: false,
-    ...options.include,
+    ...opts.include,
   } as AlertIncludeFilter
 
   const needInfoOn = getDetailsFromDiff(arb.diff, {
     include: {
-      unchanged: options.include.existing,
+      unchanged: opts.include.existing,
     },
   })
 

@@ -43,17 +43,17 @@ export type GetAlertsMapFromPurlsOptions = {
 
 export async function getAlertsMapFromPurls(
   purls: string[] | readonly string[],
-  options_?: GetAlertsMapFromPurlsOptions | undefined,
+  options?: GetAlertsMapFromPurlsOptions | undefined,
 ): Promise<AlertsByPurl> {
-  const options = {
+  const opts = {
     __proto__: null,
     consolidate: false,
     include: undefined,
     nothrow: false,
-    ...options_,
+    ...options,
   } as GetAlertsMapFromPurlsOptions
 
-  options.include = {
+  opts.include = {
     __proto__: null,
     // Leave 'actions' unassigned so it can be given a default value in
     // subsequent functions where `options` is passed.
@@ -64,10 +64,8 @@ export async function getAlertsMapFromPurls(
     existing: false,
     unfixable: true,
     upgradable: false,
-    ...options.include,
+    ...opts.include,
   } as AlertIncludeFilter
-
-  const { spinner } = options
 
   const uniqPurls = arrayUnique(purls)
   debugDir('silly', { purls: uniqPurls })
@@ -79,6 +77,7 @@ export async function getAlertsMapFromPurls(
     return alertsByPurl
   }
 
+  const { spinner } = opts
   const getText = () => `Looking up data for ${remaining} packages`
 
   spinner?.start(getText())
@@ -91,9 +90,9 @@ export async function getAlertsMapFromPurls(
   const sockSdk = sockSdkCResult.data
 
   const alertsMapOptions = {
-    overrides: options.overrides,
-    consolidate: options.consolidate,
-    include: options.include,
+    overrides: opts.overrides,
+    consolidate: opts.consolidate,
+    include: opts.include,
     spinner,
   }
 
@@ -101,10 +100,10 @@ export async function getAlertsMapFromPurls(
     {
       alerts: 'true',
       compact: 'true',
-      ...(options.include.actions
-        ? { actions: options.include.actions.join(',') }
+      ...(opts.include.actions
+        ? { actions: opts.include.actions.join(',') }
         : {}),
-      ...(options.include.unfixable ? {} : { fixable: 'true' }),
+      ...(opts.include.unfixable ? {} : { fixable: 'true' }),
     },
     {
       components: uniqPurls.map(purl => ({ purl })),
@@ -116,7 +115,7 @@ export async function getAlertsMapFromPurls(
         alertsByPurl,
         alertsMapOptions,
       )
-    } else if (!options.nothrow) {
+    } else if (!opts.nothrow) {
       const statusCode = batchResult.status ?? 'unknown'
       const statusMessage = batchResult.error ?? 'No status message'
       throw new Error(
