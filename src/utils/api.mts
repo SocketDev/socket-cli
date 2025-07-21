@@ -1,3 +1,5 @@
+import { messageWithCauses } from 'pony-cause'
+
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -9,12 +11,15 @@ import { failMsgWithBadge } from './fail-msg-with-badge.mts'
 import { getDefaultToken } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type {
   SocketSdkErrorResult,
   SocketSdkOperations,
   SocketSdkResult,
   SocketSdkSuccessResult,
 } from '@socketsecurity/sdk'
+
+const NO_ERROR_MESSAGE = 'No error message returned'
 
 // TODO: this function is removed after v1.0.0
 export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
@@ -23,7 +28,7 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   cause: string,
   status: number,
 ): never {
-  const message = `${error || 'No error message returned'}${cause ? ` (reason: ${cause})` : ''}`
+  const message = `${error || NO_ERROR_MESSAGE}${cause ? ` (reason: ${cause})` : ''}`
   if (status === 401 || status === 403) {
     // Lazily access constants.spinner.
     const { spinner } = constants
@@ -37,63 +42,82 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
   process.exit(1)
 }
 
+export type HandleApiCallOptions = {
+  desc?: string | undefined
+  spinner?: Spinner | undefined
+}
+
 export async function handleApiCall<T extends SocketSdkOperations>(
   value: Promise<SocketSdkResult<T>>,
-  fetchingDesc: string,
+  options?: HandleApiCallOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
-  // Lazily access constants.spinner.
-  const { spinner } = constants
+  const { desc, spinner } = {
+    __proto__: null,
+    ...options,
+  } as HandleApiCallOptions
 
-  spinner.start(`Requesting ${fetchingDesc} from API...`)
+  if (desc) {
+    spinner?.start(`Requesting ${desc} from API...`)
+  } else {
+    spinner?.start()
+  }
 
-  let result: SocketSdkResult<T>
+  let sdkResult: SocketSdkResult<T>
   try {
-    result = await value
-
-    // TODO: info, not success (looks weird when response is non-200)
-    spinner.successAndStop(
-      `Received API response (after requesting ${fetchingDesc}).`,
-    )
+    sdkResult = await value
+    if (desc) {
+      // TODO: info, not success (looks weird when response is non-200)
+      spinner?.successAndStop(
+        `Received API response (after requesting ${desc}).`,
+      )
+    } else {
+      spinner?.stop()
+    }
   } catch (e) {
-    spinner.failAndStop(`An error was thrown while requesting ${fetchingDesc}`)
-
-    const message = `${e || 'No error message returned'}`
-    const reason = `${e || 'No error message returned'}`
-
-    debugFn('error', `caught: ${fetchingDesc} error`)
+    if (desc) {
+      spinner?.failAndStop(`An error was thrown while requesting ${desc}`)
+      debugFn('error', `caught: ${desc} error`)
+    } else {
+      spinner?.stop()
+      debugFn('error', `caught: error`)
+    }
     debugDir('inspect', { error: e })
 
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${message}${reason ? ` ( Reason: ${reason} )` : ''}`,
+      cause: messageWithCauses(e as Error),
     }
   } finally {
-    spinner.stop()
+    spinner?.stop()
   }
 
-  // Note: TS can't narrow down the type of result due to generics
-  if (result.success === false) {
-    const error = result as SocketSdkErrorResult<T>
-    const message = `${error.error || 'No error message returned'}`
-    const { cause: reason } = error
+  // Note: TS can't narrow down the type of result due to generics.
+  if (sdkResult.success === false) {
+    const errorResult = sdkResult as SocketSdkErrorResult<T>
+    const message = `${errorResult.error || NO_ERROR_MESSAGE}`
+    const { cause: reason } = errorResult
 
-    debugFn('error', `fail: ${fetchingDesc} bad response`)
-    debugDir('inspect', { error })
+    if (desc) {
+      debugFn('error', `fail: ${desc} bad response`)
+    } else {
+      debugFn('error', 'fail: bad response')
+    }
+    debugDir('inspect', { sdkResult })
 
     return {
       ok: false,
       message: 'Socket API returned an error',
       cause: `${message}${reason ? ` ( Reason: ${reason} )` : ''}`,
       data: {
-        code: result.status,
+        code: sdkResult.status,
       },
     }
   } else {
-    const ok = result as SocketSdkSuccessResult<T>
+    const { data } = sdkResult as SocketSdkSuccessResult<T>
     return {
       ok: true,
-      data: ok.data,
+      data,
     }
   }
 }
@@ -106,8 +130,8 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   try {
     result = await value
   } catch (e) {
-    const message = `${e || 'No error message returned'}`
-    const reason = `${e || 'No error message returned'}`
+    const message = `${e || NO_ERROR_MESSAGE}`
+    const reason = `${e || NO_ERROR_MESSAGE}`
 
     debugFn('error', `caught: ${description} error`)
     debugDir('inspect', { error: e })
@@ -122,7 +146,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   // Note: TS can't narrow down the type of result due to generics
   if (result.success === false) {
     const error = result as SocketSdkErrorResult<T>
-    const message = `${error.error || 'No error message returned'}`
+    const message = `${error.error || NO_ERROR_MESSAGE}`
 
     debugFn('error', `fail: ${description} bad response`)
     debugDir('inspect', { error })
