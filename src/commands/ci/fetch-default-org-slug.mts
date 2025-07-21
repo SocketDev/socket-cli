@@ -30,10 +30,10 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return result
   }
 
-  const orgs = result.data.organizations
-  const keys = Object.keys(orgs)
+  const { organizations } = result.data
+  const keys = Object.keys(organizations)
 
-  if (!keys[0]) {
+  if (!keys.length) {
     return {
       ok: false,
       message: 'Failed to establish identity',
@@ -41,7 +41,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     }
   }
 
-  const slug = (keys[0] in orgs && orgs?.[keys[0]]?.name) ?? undefined
+  const slug = (organizations as any)[keys[0]!]?.name ?? undefined
 
   if (!slug) {
     return {
