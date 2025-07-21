@@ -4,9 +4,9 @@ import { generateReport } from './generate-report.mts'
 import { SocketArtifact } from '../../utils/alert/artifact.mts'
 
 import type { ScanReport } from './generate-report.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-type SecurityPolicyData = SocketSdkReturnType<'getOrgSecurityPolicy'>['data']
+type SecurityPolicyData = SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
 
 describe('generate-report', () => {
   it('should accept empty args', () => {

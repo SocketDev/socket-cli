@@ -10,7 +10,7 @@ import { msAtHome } from '../../utils/ms-at-home.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import type { Widgets } from 'blessed'
 
 const require = createRequire(import.meta.url)
@@ -18,7 +18,7 @@ const require = createRequire(import.meta.url)
 const { REDACTED } = constants
 
 export async function outputAuditLog(
-  result: CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
   {
     logType,
     orgSlug,
@@ -69,7 +69,7 @@ export async function outputAuditLog(
 }
 
 function formatResult(
-  selectedRow?: SocketSdkReturnType<'getAuditLogEvents'>['data']['results'][number],
+  selectedRow?: SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results'][number],
   keepQuotes = false,
 ): string {
   if (!selectedRow) {
@@ -89,7 +89,7 @@ function formatResult(
 }
 
 export async function outputAsJson(
-  auditLogs: CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>,
+  auditLogs: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
   {
     logType,
     orgSlug,
@@ -141,7 +141,7 @@ export async function outputAsJson(
 }
 
 export async function outputAsMarkdown(
-  auditLogs: SocketSdkReturnType<'getAuditLogEvents'>['data'],
+  auditLogs: SocketSdkSuccessResult<'getAuditLogEvents'>['data'],
   {
     logType,
     orgSlug,
@@ -189,7 +189,7 @@ ${table}
 }
 
 async function outputWithBlessed(
-  data: SocketSdkReturnType<'getAuditLogEvents'>['data'],
+  data: SocketSdkSuccessResult<'getAuditLogEvents'>['data'],
   orgSlug: string,
 ) {
   const filteredLogs = data.results

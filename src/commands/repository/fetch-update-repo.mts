@@ -2,7 +2,7 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function fetchUpdateRepo({
   default_branch,
@@ -18,7 +18,7 @@ export async function fetchUpdateRepo({
   homepage: string
   default_branch: string
   visibility: string
-}): Promise<CResult<SocketSdkReturnType<'updateOrgRepo'>['data']>> {
+}): Promise<CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']>> {
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
     return sockSdkCResult

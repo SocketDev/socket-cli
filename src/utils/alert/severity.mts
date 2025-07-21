@@ -1,7 +1,7 @@
 import { createEnum, pick } from '../objects.mts'
 import { stringJoinWithSeparateFinalSeparator } from '../strings.mts'
 
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export const ALERT_SEVERITY = createEnum({
   critical: 'critical',
@@ -11,7 +11,7 @@ export const ALERT_SEVERITY = createEnum({
 })
 
 export type SocketSdkAlertList =
-  SocketSdkReturnType<'getIssuesByNPMPackage'>['data']
+  SocketSdkSuccessResult<'getIssuesByNPMPackage'>['data']
 
 export type SocketSdkAlert = SocketSdkAlertList[number]['value'] extends
   | infer U

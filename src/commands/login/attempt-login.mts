@@ -16,7 +16,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 
 import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 type OrgChoice = Choice<string>
 type OrgChoices = Array<Separator | OrgChoice>
@@ -60,7 +60,7 @@ export async function attemptLogin(
     return
   }
 
-  const orgs: SocketSdkReturnType<'getOrganizations'>['data'] = result.data
+  const orgs: SocketSdkSuccessResult<'getOrganizations'>['data'] = result.data
   const orgSlugs = Object.values(orgs.organizations).map(obj => obj.slug)
 
   logger.success(`API key verified: ${orgSlugs}`)
