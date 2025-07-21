@@ -25,10 +25,10 @@ describe('output-audit-log', () => {
           "data": {
             "desc": "Audit logs for given query",
             "generated": "<redacted>",
-            "org": "noorgslug",
             "logType": "",
-            "page": 1,
             "nextPage": "2",
+            "org": "noorgslug",
+            "page": 1,
             "perPage": 10,
             "logs": [
               {

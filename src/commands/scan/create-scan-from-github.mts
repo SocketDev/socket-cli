@@ -86,7 +86,7 @@ export async function createScanFromGithub({
   let scansCreated = 0
   for (const repoSlug of targetRepos) {
     // eslint-disable-next-line no-await-in-loop
-    const result = await scanRepo(repoSlug, {
+    const scanCResult = await scanRepo(repoSlug, {
       githubApiUrl,
       githubToken,
       orgSlug,
@@ -94,8 +94,11 @@ export async function createScanFromGithub({
       outputKind,
       repos,
     })
-    if (result.ok && result.data.scanCreated) {
-      scansCreated += 1
+    if (scanCResult.ok) {
+      const { scanCreated } = scanCResult.data
+      if (scanCreated) {
+        scansCreated += 1
+      }
     }
   }
 

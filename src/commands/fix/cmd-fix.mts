@@ -14,6 +14,7 @@ import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { RangeStyles } from '../../utils/semver.mts'
+import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
@@ -47,6 +48,7 @@ const config: CliCommandConfig = {
         'https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids',
       )} to compute fixes for, as either a comma separated value or as multiple flags.\n                        Use '--ghsa auto' to automatically lookup GHSA IDs and compute fixes for them.`,
       isMultiple: true,
+      hidden: true,
     },
     limit: {
       type: 'number',
@@ -183,6 +185,16 @@ async function run(
     test = true
   }
 
+  const orgSlugCResult = await getDefaultOrgSlug()
+  if (!orgSlugCResult.ok) {
+    process.exitCode = orgSlugCResult.code ?? 1
+    // Always assume json mode.
+    // logger.log(serializeResultJson(orgSlugCResult))
+    return
+  }
+
+  const orgSlug = orgSlugCResult.data
+
   const ghsas = cmdFlagValueToArray(cli.flags['ghsa'])
   const limit =
     (cli.flags['limit']
@@ -201,6 +213,7 @@ async function run(
     limit,
     minSatisfying,
     prCheck,
+    orgSlug,
     outputKind,
     purls,
     rangeStyle,

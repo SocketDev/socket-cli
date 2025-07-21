@@ -10,18 +10,18 @@ export async function handleAuditLog({
   page,
   perPage,
 }: {
+  logType: string
   outputKind: OutputKind
   orgSlug: string
   page: number
   perPage: number
-  logType: string
 }): Promise<void> {
   const auditLogs = await fetchAuditLog({
+    logType,
     orgSlug,
     outputKind,
     page,
     perPage,
-    logType,
   })
 
   await outputAuditLog(auditLogs, {

@@ -26,11 +26,11 @@ export async function outputAuditLog(
     page,
     perPage,
   }: {
+    logType: string
     outputKind: OutputKind
     orgSlug: string
     page: number
     perPage: number
-    logType: string
   },
 ): Promise<void> {
   if (!result.ok) {
@@ -96,10 +96,10 @@ export async function outputAsJson(
     page,
     perPage,
   }: {
+    logType: string
     orgSlug: string
     page: number
     perPage: number
-    logType: string
   },
 ): Promise<string> {
   if (!auditLogs.ok) {
@@ -112,10 +112,10 @@ export async function outputAsJson(
       desc: 'Audit logs for given query',
       // Lazily access constants.ENV.VITEST.
       generated: constants.ENV.VITEST ? REDACTED : new Date().toISOString(),
-      org: orgSlug,
       logType,
-      page,
       nextPage: auditLogs.data.nextPage,
+      org: orgSlug,
+      page,
       perPage,
       logs: auditLogs.data.results.map(log => {
         // Note: The subset is pretty arbitrary

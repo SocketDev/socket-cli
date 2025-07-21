@@ -152,7 +152,7 @@ async function run(
       repoName: String(repoName),
       description: String(cli.flags['repoDescription'] || ''),
       homepage: String(cli.flags['homepage'] || ''),
-      default_branch: String(cli.flags['defaultBranch'] || ''),
+      defaultBranch: String(cli.flags['defaultBranch'] || ''),
       visibility: String(cli.flags['visibility'] || 'private'),
     },
     outputKind,
