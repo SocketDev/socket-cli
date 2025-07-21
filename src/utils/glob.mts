@@ -12,7 +12,7 @@ import { safeReadFile } from './fs.mts'
 
 import type { Agent } from './package-environment.mts'
 import type { SocketYml } from '@socketsecurity/config'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import type { GlobOptions } from 'tinyglobby'
 
 const ignoredDirs = [
@@ -157,10 +157,17 @@ function workspacePatternToGlobPattern(workspace: string): string {
   return `${workspace}/package.json`
 }
 
-export async function filterGlobResultToSupportedFiles(
-  entries: string[] | readonly string[],
-  supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
-): Promise<string[]> {
+export function filterReportSupportedFiles(
+  filepaths: string[] | readonly string[],
+  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+): string[] {
+  const patterns = getSupportedFilePatterns(supportedFiles)
+  return filepaths.filter(p => micromatch.some(p, patterns))
+}
+
+export function getSupportedFilePatterns(
+  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+): string[] {
   const patterns: string[] = []
   for (const key of Object.keys(supportedFiles)) {
     const supported = supportedFiles[key]
@@ -168,7 +175,7 @@ export async function filterGlobResultToSupportedFiles(
       patterns.push(...Object.values(supported).map(p => `**/${p.pattern}`))
     }
   }
-  return entries.filter(p => micromatch.some(p, patterns))
+  return patterns
 }
 
 type GlobWithGitIgnoreOptions = GlobOptions & {
@@ -255,6 +262,14 @@ export async function globWorkspace(
         ignore: ['**/node_modules/**', '**/bower_components/**'],
       })
     : []
+}
+
+export function isReportSupportedFile(
+  filepath: string,
+  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+) {
+  const patterns = getSupportedFilePatterns(supportedFiles)
+  return micromatch.some(filepath, patterns)
 }
 
 export function pathsToGlobPatterns(
