@@ -7,7 +7,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 /**
  * This fetches all the relevant pieces of data to generate a report, given a
@@ -20,7 +20,7 @@ export async function fetchReportData(
 ): Promise<
   CResult<{
     scan: SocketArtifact[]
-    securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>['data']
+    securityPolicy: SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
   }>
 > {
   const sockSdkCResult = await setupSdk()
@@ -102,7 +102,7 @@ export async function fetchReportData(
   }
 
   async function fetchSecurityPolicy(): Promise<
-    CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>
+    CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>
   > {
     const result = await handleApiCallNoSpinner(
       sockSdk.getOrgSecurityPolicy(orgSlug),
@@ -118,7 +118,7 @@ export async function fetchReportData(
 
   const [scan, securityPolicy]: [
     CResult<SocketArtifact[]>,
-    CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>,
+    CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>,
   ] = await Promise.all([
     fetchScanResult().catch(e => {
       updateScan('failure; unknown blocking problem occurred')

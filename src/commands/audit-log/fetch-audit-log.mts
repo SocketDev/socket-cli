@@ -2,7 +2,7 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function fetchAuditLog({
   logType,
@@ -16,7 +16,7 @@ export async function fetchAuditLog({
   page: number
   perPage: number
   logType: string
-}): Promise<CResult<SocketSdkReturnType<'getAuditLogEvents'>['data']>> {
+}): Promise<CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>> {
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
     return sockSdkCResult

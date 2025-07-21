@@ -8,10 +8,10 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function outputDependencies(
-  result: CResult<SocketSdkReturnType<'searchDependencies'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'searchDependencies'>['data']>,
   {
     limit,
     offset,
@@ -39,7 +39,7 @@ export async function outputDependencies(
 }
 
 function outputMarkdown(
-  result: SocketSdkReturnType<'searchDependencies'>['data'],
+  result: SocketSdkSuccessResult<'searchDependencies'>['data'],
   {
     limit,
     offset,

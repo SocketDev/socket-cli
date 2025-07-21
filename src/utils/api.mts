@@ -10,10 +10,10 @@ import { getDefaultToken } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
 import type {
-  SocketSdkErrorType,
+  SocketSdkErrorResult,
   SocketSdkOperations,
-  SocketSdkResultType,
-  SocketSdkReturnType,
+  SocketSdkResult,
+  SocketSdkSuccessResult,
 } from '@socketsecurity/sdk'
 
 // TODO: this function is removed after v1.0.0
@@ -38,15 +38,15 @@ export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
 }
 
 export async function handleApiCall<T extends SocketSdkOperations>(
-  value: Promise<SocketSdkResultType<T>>,
+  value: Promise<SocketSdkResult<T>>,
   fetchingDesc: string,
-): Promise<CResult<SocketSdkReturnType<T>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
   // Lazily access constants.spinner.
   const { spinner } = constants
 
   spinner.start(`Requesting ${fetchingDesc} from API...`)
 
-  let result: SocketSdkResultType<T>
+  let result: SocketSdkResult<T>
   try {
     result = await value
 
@@ -74,7 +74,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
 
   // Note: TS can't narrow down the type of result due to generics
   if (result.success === false) {
-    const error = result as SocketSdkErrorType<T>
+    const error = result as SocketSdkErrorResult<T>
     const message = `${error.error || 'No error message returned'}`
     const { cause: reason } = error
 
@@ -90,7 +90,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       },
     }
   } else {
-    const ok = result as SocketSdkReturnType<T>
+    const ok = result as SocketSdkSuccessResult<T>
     return {
       ok: true,
       data: ok.data,
@@ -99,10 +99,10 @@ export async function handleApiCall<T extends SocketSdkOperations>(
 }
 
 export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
-  value: Promise<SocketSdkResultType<T>>,
+  value: Promise<SocketSdkResult<T>>,
   description: string,
-): Promise<CResult<SocketSdkReturnType<T>['data']>> {
-  let result: SocketSdkResultType<T>
+): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
+  let result: SocketSdkResult<T>
   try {
     result = await value
   } catch (e) {
@@ -121,7 +121,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
 
   // Note: TS can't narrow down the type of result due to generics
   if (result.success === false) {
-    const error = result as SocketSdkErrorType<T>
+    const error = result as SocketSdkErrorResult<T>
     const message = `${error.error || 'No error message returned'}`
 
     debugFn('error', `fail: ${description} bad response`)
@@ -136,7 +136,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
       },
     }
   } else {
-    const ok = result as SocketSdkReturnType<T>
+    const ok = result as SocketSdkSuccessResult<T>
     return {
       ok: true,
       data: ok.data,

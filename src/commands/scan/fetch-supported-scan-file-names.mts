@@ -2,10 +2,10 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function fetchSupportedScanFileNames(): Promise<
-  CResult<SocketSdkReturnType<'getReportSupportedFiles'>['data']>
+  CResult<SocketSdkSuccessResult<'getReportSupportedFiles'>['data']>
 > {
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
@@ -14,7 +14,7 @@ export async function fetchSupportedScanFileNames(): Promise<
   const sockSdk = sockSdkCResult.data
 
   return await handleApiCall(
-    sockSdk.getReportSupportedFiles(),
+    sockSdk.getSupportedScanFiles(),
     'supported scan file types',
   )
 }

@@ -4,7 +4,7 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function fetchListAllRepos({
   direction,
@@ -14,14 +14,14 @@ export async function fetchListAllRepos({
   direction: string
   orgSlug: string
   sort: string
-}): Promise<CResult<SocketSdkReturnType<'getOrgRepoList'>['data']>> {
+}): Promise<CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']>> {
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }
   const sockSdk = sockSdkCResult.data
 
-  const rows: SocketSdkReturnType<'getOrgRepoList'>['data']['results'] = []
+  const rows: SocketSdkSuccessResult<'getOrgRepoList'>['data']['results'] = []
   let protection = 0
   let nextPage = 0
   while (nextPage >= 0) {

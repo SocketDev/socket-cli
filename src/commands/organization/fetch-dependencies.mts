@@ -2,7 +2,7 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function fetchDependencies({
   limit,
@@ -10,7 +10,7 @@ export async function fetchDependencies({
 }: {
   limit: number
   offset: number
-}): Promise<CResult<SocketSdkReturnType<'searchDependencies'>['data']>> {
+}): Promise<CResult<SocketSdkSuccessResult<'searchDependencies'>['data']>> {
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
