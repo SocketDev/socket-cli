@@ -109,10 +109,6 @@ export async function handleCreateNewScan({
   const fullScanCResult = await fetchCreateOrgFullScan(
     packagePaths,
     orgSlug,
-    defaultBranch,
-    pendingHead,
-    tmp,
-    cwd,
     {
       commitHash,
       commitMessage,
@@ -120,6 +116,12 @@ export async function handleCreateNewScan({
       pullRequest,
       repoName,
       branchName,
+    },
+    {
+      cwd,
+      defaultBranch,
+      pendingHead,
+      tmp,
     },
   )
 

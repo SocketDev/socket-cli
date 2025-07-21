@@ -1,4 +1,4 @@
-import { fetchListScans } from './fetch-list-scans.mts'
+import { fetchOrgFullScanList } from './fetch-list-scans.mts'
 import { outputListScans } from './output-list-scans.mts'
 
 import type { OutputKind } from '../../types.mts'
@@ -10,7 +10,7 @@ export async function handleListScans({
   orgSlug,
   outputKind,
   page,
-  per_page,
+  perPage,
   repo,
   sort,
 }: {
@@ -20,17 +20,17 @@ export async function handleListScans({
   orgSlug: string
   outputKind: OutputKind
   page: number
-  per_page: number
+  perPage: number
   repo: string
   sort: string
 }): Promise<void> {
-  const data = await fetchListScans({
+  const data = await fetchOrgFullScanList({
     branch,
     direction,
     from_time,
     orgSlug,
     page,
-    per_page,
+    perPage,
     repo,
     sort,
   })

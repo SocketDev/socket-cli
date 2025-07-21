@@ -11,14 +11,15 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
   //   description: 'Alias for "report create --view --strict"',
   //     argv: ['report', 'create', '--view', '--strict']
   // }
-  const result = await getDefaultOrgSlug()
-  if (!result.ok) {
-    process.exitCode = result.code ?? 1
+  const orgSlugCResult = await getDefaultOrgSlug()
+  if (!orgSlugCResult.ok) {
+    process.exitCode = orgSlugCResult.code ?? 1
     // Always assume json mode.
-    logger.log(serializeResultJson(result))
+    logger.log(serializeResultJson(orgSlugCResult))
     return
   }
 
+  const orgSlug = orgSlugCResult.data
   const cwd = process.cwd()
   // Lazily access constants.SOCKET_DEFAULT_BRANCH.
   const branchName = (await gitBranch(cwd)) || constants.SOCKET_DEFAULT_BRANCH
@@ -35,7 +36,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     cwd,
     defaultBranch: false,
     interactive: false,
-    orgSlug: result.data,
+    orgSlug,
     outputKind: 'json',
     // When 'pendingHead' is true, it requires 'branchName' set and 'tmp' false.
     pendingHead: true,

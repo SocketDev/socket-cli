@@ -15,11 +15,10 @@ import type { FixConfig } from './agent-fix.mts'
 import type { OutputKind } from '../../types.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 
-const { NPM, PNPM } = constants
-
 export type HandleFixConfig = Remap<
   FixConfig & {
     ghsas: string[]
+    orgSlug: string
     outputKind: OutputKind
     unknownFlags: string[]
   }
@@ -31,6 +30,7 @@ export async function handleFix({
   ghsas,
   limit,
   minSatisfying,
+  orgSlug,
   outputKind,
   prCheck,
   purls,
@@ -45,25 +45,24 @@ export async function handleFix({
     spinner?.start('Fetching GHSA IDs...')
 
     if (ghsasCount === 1 && ghsas[0] === 'auto') {
-      const autoCResult = await spawnCoana(
+      const ghsasCResult = await spawnCoana(
         ['compute-fixes-and-upgrade-purls', cwd],
         { cwd, spinner },
       )
 
       spinner?.stop()
 
-      if (autoCResult.ok) {
+      if (ghsasCResult.ok) {
+        const ghsasOutput = ghsasCResult.data as string
         ghsas = cmdFlagValueToArray(
-          /(?<=Vulnerabilities found: )[^\n]+/.exec(
-            autoCResult.data as string,
-          )?.[0],
+          /(?<=Vulnerabilities found: )[^\n]+/.exec(ghsasOutput)?.[0],
         )
         ghsasCount = ghsas.length
       } else {
         debugFn('error', 'fail: Coana CLI')
         debugDir('inspect', {
-          message: autoCResult.message,
-          cause: autoCResult.cause,
+          message: ghsasCResult.message,
+          cause: ghsasCResult.cause,
         })
         ghsas = []
         ghsasCount = 0
@@ -75,7 +74,7 @@ export async function handleFix({
     if (ghsasCount) {
       spinner?.info(`Found ${ghsasCount} GHSA ${pluralize('ID', ghsasCount)}.`)
 
-      const applyFixesCResult = await spawnCoana(
+      const ghsaFixesCResult = await spawnCoana(
         [
           'compute-fixes-and-upgrade-purls',
           cwd,
@@ -88,15 +87,15 @@ export async function handleFix({
 
       spinner?.stop()
 
-      if (!applyFixesCResult.ok) {
+      if (!ghsaFixesCResult.ok) {
         debugFn('error', 'fail: Coana CLI')
         debugDir('inspect', {
-          message: applyFixesCResult.message,
-          cause: applyFixesCResult.cause,
+          message: ghsaFixesCResult.message,
+          cause: ghsaFixesCResult.cause,
         })
       }
 
-      await outputFixResult(applyFixesCResult, outputKind)
+      await outputFixResult(ghsaFixesCResult, outputKind)
       return
     }
 
@@ -134,6 +133,8 @@ export async function handleFix({
     return
   }
 
+  // Lazily access constants.
+  const { NPM, PNPM } = constants
   const { agent, agentVersion } = pkgEnvDetails
   if (agent !== NPM && agent !== PNPM) {
     await outputFixResult(

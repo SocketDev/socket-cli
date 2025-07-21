@@ -3,12 +3,23 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
+import type { SetupSdkOptions } from '../../utils/sdk.mts'
+
+export type StreamScanOptions = {
+  file?: string | undefined
+  sdkOptions?: SetupSdkOptions | undefined
+}
+
 export async function streamScan(
   orgSlug: string,
   scanId: string,
-  file: string | undefined,
+  options?: StreamScanOptions | undefined,
 ) {
-  const sockSdkCResult = await setupSdk()
+  const { file, sdkOptions } = {
+    __proto__: null,
+    ...options,
+  } as StreamScanOptions
+  const sockSdkCResult = await setupSdk(sdkOptions)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }
@@ -19,6 +30,6 @@ export async function streamScan(
   // Note: this will write to stdout or target file. It's not a noop
   return await handleApiCall(
     sockSdk.getOrgFullScan(orgSlug, scanId, file === '-' ? undefined : file),
-    'a scan',
+    { desc: 'a scan' },
   )
 }

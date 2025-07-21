@@ -2,24 +2,41 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
+import type { SetupSdkOptions } from '../../utils/sdk.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-export async function fetchUpdateRepo({
-  default_branch,
-  description,
-  homepage,
-  orgSlug,
-  repoName,
-  visibility,
-}: {
-  orgSlug: string
-  repoName: string
+export type FetchUpdateRepoConfig = {
+  defaultBranch: string
   description: string
   homepage: string
-  default_branch: string
+  orgSlug: string
+  repoName: string
   visibility: string
-}): Promise<CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']>> {
-  const sockSdkCResult = await setupSdk()
+}
+
+export type FetchUpdateRepoOptions = {
+  sdkOptions?: SetupSdkOptions | undefined
+}
+
+export async function fetchUpdateRepo(
+  config: FetchUpdateRepoConfig,
+  options?: FetchUpdateRepoOptions | undefined,
+): Promise<CResult<SocketSdkSuccessResult<'updateOrgRepo'>['data']>> {
+  const {
+    defaultBranch,
+    description,
+    homepage,
+    orgSlug,
+    repoName,
+    visibility,
+  } = { __proto__: null, ...config } as FetchUpdateRepoConfig
+
+  const { sdkOptions } = {
+    __proto__: null,
+    ...options,
+  } as FetchUpdateRepoOptions
+
+  const sockSdkCResult = await setupSdk(sdkOptions)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }
@@ -27,13 +44,13 @@ export async function fetchUpdateRepo({
 
   return await handleApiCall(
     sockSdk.updateOrgRepo(orgSlug, repoName, {
-      orgSlug,
-      name: repoName,
+      default_branch: defaultBranch,
       description,
       homepage,
-      default_branch,
+      name: repoName,
+      orgSlug,
       visibility,
     }),
-    'to update a repository',
+    { desc: 'to update a repository' },
   )
 }
