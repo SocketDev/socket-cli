@@ -414,7 +414,7 @@ async function run(
     pendingHead: Boolean(pendingHead),
     pullRequest: Number(pullRequest),
     readOnly: Boolean(readOnly),
-    repoName: repoName,
+    repoName,
     report,
     targets,
     tmp: Boolean(tmp),

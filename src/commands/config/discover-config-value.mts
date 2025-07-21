@@ -1,6 +1,6 @@
-import { handleApiCall } from '../../utils/api.mts'
 import { isSupportedConfigKey } from '../../utils/config.mts'
-import { hasDefaultToken, setupSdk } from '../../utils/sdk.mts'
+import { hasDefaultToken } from '../../utils/sdk.mts'
+import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
 
@@ -130,54 +130,32 @@ export async function discoverConfigValue(
 async function getDefaultOrgFromToken(): Promise<
   string[] | string | undefined
 > {
-  const sockSdkCResult = await setupSdk()
-  if (!sockSdkCResult.ok) {
+  const orgsCResult = await fetchOrganization()
+  if (!orgsCResult.ok) {
     return undefined
   }
-  const sockSdk = sockSdkCResult.data
 
-  const result = await handleApiCall(
-    sockSdk.getOrganizations(),
-    'list of organizations',
-  )
-
-  if (result.ok) {
-    const arr = Array.from(Object.values(result.data.organizations)).map(
-      ({ slug }) => slug,
-    )
-    if (arr.length === 0) {
-      return undefined
-    }
-    if (arr.length === 1) {
-      return arr[0]
-    }
-    return arr
+  const { organizations } = orgsCResult.data
+  const slugs = Array.from(Object.values(organizations)).map(o => o.slug)
+  if (slugs.length === 0) {
+    return undefined
   }
-
-  return undefined
+  if (slugs.length === 1) {
+    return slugs[0]
+  }
+  return slugs
 }
 
 async function getEnforceableOrgsFromToken(): Promise<string[] | undefined> {
-  const sockSdkCResult = await setupSdk()
-  if (!sockSdkCResult.ok) {
+  const orgsCResult = await fetchOrganization()
+  if (!orgsCResult.ok) {
     return undefined
   }
-  const sockSdk = sockSdkCResult.data
 
-  const result = await handleApiCall(
-    sockSdk.getOrganizations(),
-    'list of organizations',
-  )
-
-  if (result.ok) {
-    const arr = Array.from(Object.values(result.data.organizations)).map(
-      ({ slug }) => slug,
-    )
-    if (arr.length === 0) {
-      return undefined
-    }
-    return arr
+  const { organizations } = orgsCResult.data
+  const slugs = Array.from(Object.values(organizations)).map(o => o.slug)
+  if (!slugs.length) {
+    return undefined
   }
-
-  return undefined
+  return slugs
 }

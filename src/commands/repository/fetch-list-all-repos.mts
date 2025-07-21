@@ -40,7 +40,7 @@ export async function fetchListAllRepos({
         per_page: String(100), // max
         page: String(nextPage),
       }),
-      'list of repositories',
+      { desc: 'list of repositories' },
     )
     if (!orgRepoListCResult.ok) {
       debugFn('error', 'fail: fetch repo')

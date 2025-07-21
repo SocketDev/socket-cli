@@ -1,4 +1,4 @@
-import { fetchReportData } from './fetch-report-data.mts'
+import { fetchScanData } from './fetch-report-data.mts'
 import { outputScanReport } from './output-scan-report.mts'
 
 import type { OutputKind } from '../../types.mts'
@@ -22,9 +22,11 @@ export async function handleScanReport({
   reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'
   short: boolean
 }): Promise<void> {
-  const result = await fetchReportData(orgSlug, scanId, includeLicensePolicy)
+  const scanDataCResult = await fetchScanData(orgSlug, scanId, {
+    includeLicensePolicy,
+  })
 
-  await outputScanReport(result, {
+  await outputScanReport(scanDataCResult, {
     filePath,
     fold,
     scanId: scanId,

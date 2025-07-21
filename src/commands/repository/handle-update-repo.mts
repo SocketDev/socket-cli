@@ -5,7 +5,7 @@ import type { OutputKind } from '../../types.mts'
 
 export async function handleUpdateRepo(
   {
-    default_branch,
+    defaultBranch,
     description,
     homepage,
     orgSlug,
@@ -16,13 +16,13 @@ export async function handleUpdateRepo(
     repoName: string
     description: string
     homepage: string
-    default_branch: string
+    defaultBranch: string
     visibility: string
   },
   outputKind: OutputKind,
 ): Promise<void> {
   const data = await fetchUpdateRepo({
-    default_branch,
+    defaultBranch,
     description,
     homepage,
     orgSlug,

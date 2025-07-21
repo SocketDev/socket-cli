@@ -16,7 +16,6 @@ import { setupSdk } from '../../utils/sdk.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 
 import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 type OrgChoice = Choice<string>
 type OrgChoices = Array<Separator | OrgChoice>
@@ -42,30 +41,31 @@ export async function attemptLogin(
 
   const apiToken = apiTokenInput || SOCKET_PUBLIC_API_TOKEN
 
-  const sdk = await setupSdk(apiToken, apiBaseUrl, apiProxy)
-  if (!sdk.ok) {
+  const sockSdkCResult = await setupSdk({ apiBaseUrl, apiProxy, apiToken })
+  if (!sockSdkCResult.ok) {
     process.exitCode = 1
-    logger.fail(failMsgWithBadge(sdk.message, sdk.cause))
+    logger.fail(failMsgWithBadge(sockSdkCResult.message, sockSdkCResult.cause))
     return
   }
 
-  const result = await handleApiCall(
-    sdk.data.getOrganizations(),
-    'token verification',
-  )
+  const sockSdk = sockSdkCResult.data
 
-  if (!result.ok) {
+  const orgsCResult = await handleApiCall(sockSdk.getOrganizations(), {
+    desc: 'token verification',
+  })
+
+  if (!orgsCResult.ok) {
     process.exitCode = 1
-    logger.fail(failMsgWithBadge(result.message, result.cause))
+    logger.fail(failMsgWithBadge(orgsCResult.message, orgsCResult.cause))
     return
   }
 
-  const orgs: SocketSdkSuccessResult<'getOrganizations'>['data'] = result.data
-  const orgSlugs = Object.values(orgs.organizations).map(obj => obj.slug)
+  const { organizations } = orgsCResult.data
+  const orgSlugs = Object.values(organizations).map(obj => obj.slug)
 
   logger.success(`API key verified: ${orgSlugs}`)
 
-  const enforcedChoices: OrgChoices = Object.values(orgs.organizations)
+  const enforcedChoices: OrgChoices = Object.values(organizations)
     .filter(org => org?.plan === 'enterprise')
     .map(org => ({
       name: org.name ?? 'undefined',
