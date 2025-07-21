@@ -6,7 +6,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 
-// Use the config defaultOrg when set, otherwise discover from remote
+// Use the config defaultOrg when set, otherwise discover from remote.
 export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   const defaultOrgResult = getConfigValueOrUndef('defaultOrg')
 
