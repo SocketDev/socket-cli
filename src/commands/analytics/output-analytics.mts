@@ -9,7 +9,7 @@ import { mdTableStringNumber } from '../../utils/markdown.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import type { Widgets } from 'blessed' // Note: Widgets does not seem to actually work as code :'(
 import type { grid as ContribGrid } from 'blessed-contrib'
 
@@ -48,8 +48,8 @@ const Months = [
 
 export async function outputAnalytics(
   result: CResult<
-    | SocketSdkReturnType<'getOrgAnalytics'>['data']
-    | SocketSdkReturnType<'getRepoAnalytics'>['data']
+    | SocketSdkSuccessResult<'getOrgAnalytics'>['data']
+    | SocketSdkSuccessResult<'getRepoAnalytics'>['data']
   >,
   {
     filePath,
@@ -290,7 +290,7 @@ function displayAnalyticsScreen(data: FormattedData): void {
 }
 
 export function formatDataRepo(
-  data: SocketSdkReturnType<'getRepoAnalytics'>['data'],
+  data: SocketSdkSuccessResult<'getRepoAnalytics'>['data'],
 ): FormattedData {
   const sortedTopFiveAlerts: Record<string, number> = {}
   const totalTopAlerts: Record<string, number> = {}
@@ -331,7 +331,7 @@ export function formatDataRepo(
 }
 
 export function formatDataOrg(
-  data: SocketSdkReturnType<'getOrgAnalytics'>['data'],
+  data: SocketSdkSuccessResult<'getOrgAnalytics'>['data'],
 ): FormattedData {
   const sortedTopFiveAlerts: Record<string, number> = {}
   const totalTopAlerts: Record<string, number> = {}

@@ -2,12 +2,12 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function fetchDeleteOrgFullScan(
   orgSlug: string,
   scanId: string,
-): Promise<CResult<SocketSdkReturnType<'deleteOrgFullScan'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'deleteOrgFullScan'>['data']>> {
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
     return sockSdkCResult

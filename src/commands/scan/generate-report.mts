@@ -3,7 +3,7 @@ import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket-url.m
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 type AlertAction = 'defer' | 'ignore' | 'monitor' | 'error' | 'warn'
 type AlertKey = string
@@ -36,7 +36,7 @@ export type ReportLeafNode = {
 //       failed. It won't reflect the healthy state.
 export function generateReport(
   scan: SocketArtifact[],
-  securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>['data'],
+  securityPolicy: SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data'],
   {
     fold,
     orgSlug,

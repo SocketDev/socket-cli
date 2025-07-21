@@ -2,7 +2,7 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function fetchListRepos({
   direction,
@@ -16,7 +16,7 @@ export async function fetchListRepos({
   page: number
   per_page: number
   sort: string
-}): Promise<CResult<SocketSdkReturnType<'getOrgRepoList'>['data']>> {
+}): Promise<CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']>> {
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
     return sockSdkCResult

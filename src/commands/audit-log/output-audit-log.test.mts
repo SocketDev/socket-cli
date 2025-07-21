@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest'
 import FIXTURE from './audit-fixture.json' with { type: 'json' }
 import { outputAsJson, outputAsMarkdown } from './output-audit-log.mts'
 
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-type AuditLogs = SocketSdkReturnType<'getAuditLogEvents'>['data']['results']
+type AuditLogs = SocketSdkSuccessResult<'getAuditLogEvents'>['data']['results']
 
 describe('output-audit-log', () => {
   describe('json', () => {

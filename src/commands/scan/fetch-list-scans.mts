@@ -2,7 +2,7 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function fetchListScans({
   branch,
@@ -22,7 +22,7 @@ export async function fetchListScans({
   per_page: number
   repo: string
   sort: string
-}): Promise<CResult<SocketSdkReturnType<'getOrgFullScanList'>['data']>> {
+}): Promise<CResult<SocketSdkSuccessResult<'getOrgFullScanList'>['data']>> {
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
     return sockSdkCResult

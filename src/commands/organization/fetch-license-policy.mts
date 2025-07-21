@@ -2,11 +2,11 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function fetchLicensePolicy(
   orgSlug: string,
-): Promise<CResult<SocketSdkReturnType<'getOrgLicensePolicy'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'getOrgLicensePolicy'>['data']>> {
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
     return sockSdkCResult

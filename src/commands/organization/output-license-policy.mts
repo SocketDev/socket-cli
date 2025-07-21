@@ -5,10 +5,10 @@ import { mdTableOfPairs } from '../../utils/markdown.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function outputLicensePolicy(
-  result: CResult<SocketSdkReturnType<'getOrgLicensePolicy'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'getOrgLicensePolicy'>['data']>,
   outputKind: OutputKind,
 ): Promise<void> {
   if (!result.ok) {

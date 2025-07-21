@@ -4,7 +4,7 @@ import { getRepoName } from '../../utils/git.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 const { SOCKET_DEFAULT_REPOSITORY } = constants
 
@@ -30,7 +30,7 @@ export async function fetchCreateOrgFullScan(
     pullRequest: number
     repoName: string
   },
-): Promise<CResult<SocketSdkReturnType<'CreateOrgFullScan'>['data']>> {
+): Promise<CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']>> {
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
