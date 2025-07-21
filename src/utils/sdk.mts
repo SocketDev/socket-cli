@@ -79,11 +79,18 @@ export function getPublicToken(): string {
   )
 }
 
+export type SetupSdkOptions = {
+  apiToken?: string | undefined
+  apiBaseUrl?: string | undefined
+  apiProxy?: string | undefined
+}
+
 export async function setupSdk(
-  apiToken: string | undefined = getDefaultToken(),
-  apiBaseUrl: string | undefined = getDefaultApiBaseUrl(),
-  proxy?: string | undefined,
+  options?: SetupSdkOptions | undefined,
 ): Promise<CResult<SocketSdk>> {
+  const opts = { __proto__: null, ...options } as SetupSdkOptions
+  let { apiToken = getDefaultToken() } = opts
+
   if (typeof apiToken !== 'string' && isInteractive()) {
     apiToken = await password({
       message:
@@ -91,6 +98,7 @@ export async function setupSdk(
     })
     _defaultToken = apiToken
   }
+
   if (!apiToken) {
     return {
       ok: false,
@@ -98,22 +106,21 @@ export async function setupSdk(
       cause: 'You need to provide an API Token. Run `socket login` first.',
     }
   }
-  if (!isUrl(proxy)) {
-    proxy = getDefaultProxyUrl()
+
+  let { apiProxy } = opts
+  if (!isUrl(apiProxy)) {
+    apiProxy = getDefaultProxyUrl()
   }
 
-  const ProxyAgent = proxy?.startsWith('http:')
+  const { apiBaseUrl = getDefaultApiBaseUrl() } = opts
+  const ProxyAgent = apiProxy?.startsWith('http:')
     ? HttpProxyAgent
     : HttpsProxyAgent
 
   return {
     ok: true,
     data: new SocketSdk(apiToken, {
-      agent: proxy
-        ? new ProxyAgent({
-            proxy,
-          })
-        : undefined,
+      agent: apiProxy ? new ProxyAgent({ proxy: apiProxy }) : undefined,
       baseUrl: apiBaseUrl,
       userAgent: createUserAgentFromPkgJson({
         // Lazily access constants.ENV.INLINED_SOCKET_CLI_NAME.
