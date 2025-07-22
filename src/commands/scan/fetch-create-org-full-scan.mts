@@ -52,22 +52,17 @@ export async function fetchCreateOrgFullScan(
   const sockSdk = sockSdkCResult.data
 
   return await handleApiCall(
-    sockSdk.createOrgFullScan(
-      orgSlug,
-      {
-        ...(branchName ? { branch: branchName } : {}),
-        ...(commitHash ? { commit_hash: commitHash } : {}),
-        ...(commitMessage ? { commit_message: commitMessage } : {}),
-        ...(committers ? { committers } : {}),
-        make_default_branch: String(defaultBranch),
-        ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
-        repo: repoName,
-        set_as_pending_head: String(pendingHead),
-        tmp: String(tmp),
-      },
-      packagePaths,
-      cwd,
-    ),
+    sockSdk.createOrgFullScan(orgSlug, packagePaths, cwd, {
+      ...(branchName ? { branch: branchName } : {}),
+      ...(commitHash ? { commit_hash: commitHash } : {}),
+      ...(commitMessage ? { commit_message: commitMessage } : {}),
+      ...(committers ? { committers } : {}),
+      make_default_branch: String(defaultBranch),
+      ...(pullRequest ? { pull_request: String(pullRequest) } : {}),
+      repo: repoName,
+      set_as_pending_head: String(pendingHead),
+      tmp: String(tmp),
+    }),
     { desc: 'to create a scan' },
   )
 }

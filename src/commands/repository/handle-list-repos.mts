@@ -22,7 +22,7 @@ export async function handleListRepos({
   sort: string
 }): Promise<void> {
   if (all) {
-    const data = await fetchListAllRepos({ direction, orgSlug, sort })
+    const data = await fetchListAllRepos(orgSlug, { direction, sort })
 
     await outputListRepos(data, outputKind, 0, 0, sort, Infinity, direction)
   } else {
