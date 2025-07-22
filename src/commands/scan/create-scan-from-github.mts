@@ -40,9 +40,8 @@ export async function createScanFromGithub({
     .filter(Boolean)
   if (all || targetRepos.length === 0) {
     // Fetch from Socket API
-    const result = await fetchListAllRepos({
+    const result = await fetchListAllRepos(orgSlug, {
       direction: 'asc',
-      orgSlug,
       sort: 'name',
     })
     if (!result.ok) {

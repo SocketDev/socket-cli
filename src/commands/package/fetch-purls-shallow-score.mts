@@ -32,10 +32,10 @@ export async function fetchPurlsShallowScore(
 
   const result = await handleApiCall(
     sockSdk.batchPackageFetch(
+      { components: purls.map(purl => ({ purl })) },
       {
         alerts: 'true',
       },
-      { components: purls.map(purl => ({ purl })) },
     ),
     { desc: 'looking up package' },
   )
