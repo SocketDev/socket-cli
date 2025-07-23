@@ -1,5 +1,6 @@
 import path from 'node:path'
 
+import { PackageURL } from 'packageurl-js'
 import terminalLink from 'terminal-link'
 
 import { joinOr } from '@socketsecurity/registry/lib/arrays'
@@ -196,6 +197,25 @@ async function run(
 
   const orgSlug = orgSlugCResult.data
 
+  const rawPurls = cmdFlagValueToArray(cli.flags['purl'])
+  const purls = []
+  for (const purl of rawPurls) {
+    let version
+    try {
+      version = PackageURL.fromString(purl)?.version
+    } catch {}
+    if (version) {
+      purls.push(purl)
+    } else {
+      logger.warn(`--purl ${purl} is missing a version and will be ignored.`)
+    }
+  }
+  if (rawPurls.length !== purls.length && !purls.length) {
+    process.exitCode = 1
+    logger.fail('No valid --purl values provided.')
+    return
+  }
+
   const ghsas = cmdFlagValueToArray(cli.flags['ghsa'])
   const limit =
     (cli.flags['limit']
@@ -204,7 +224,6 @@ async function run(
   const maxSatisfying = Boolean(cli.flags['maxSatisfying'])
   const minSatisfying = Boolean(cli.flags['minSatisfying']) || !maxSatisfying
   const prCheck = Boolean(cli.flags['prCheck'])
-  const purls = cmdFlagValueToArray(cli.flags['purl'])
   const testScript = String(cli.flags['testScript'] || 'test')
 
   await handleFix({
