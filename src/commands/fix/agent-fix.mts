@@ -227,7 +227,7 @@ export async function agentFix(
       continue infoEntriesLoop
     }
 
-    logger.log(`Processing vulns for ${name}`)
+    logger.log(`Processing '${name}'`)
     logger.indent()
     spinner?.indent()
 
@@ -245,6 +245,7 @@ export async function agentFix(
 
     const availableVersions = Object.keys(packument.versions)
     const prs = getPrsForPurl(fixEnv, infoEntry[0])
+    const vulnVersions = new Set<string>()
     const warningsForAfter = new Set<string>()
 
     // eslint-disable-next-line no-unused-labels
@@ -335,6 +336,7 @@ export async function agentFix(
             : undefined
 
           if (!(newVersion && newVersionPackument)) {
+            vulnVersions.add(oldVersion)
             warningsForAfter.add(
               `${oldId} not updated: requires >=${firstPatchedVersionIdentifier}`,
             )
@@ -435,6 +437,8 @@ export async function agentFix(
             hasAnnouncedWorkspace = true
             workspaceLogCallCount = logger.logCallCount
           }
+
+          vulnVersions.add(oldVersion)
 
           const newId = `${name}@${applyRange(refRange, newVersion, rangeStyle)}`
 
@@ -651,6 +655,9 @@ export async function agentFix(
 
     for (const warningText of warningsForAfter) {
       logger.warn(warningText)
+    }
+    if (!warningsForAfter.size && !vulnVersions.size) {
+      logger.info('No vulnerable versions found.')
     }
     if (!isLastInfoEntry) {
       logger.logNewline()
