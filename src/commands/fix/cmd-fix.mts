@@ -188,8 +188,9 @@ async function run(
   const orgSlugCResult = await getDefaultOrgSlug()
   if (!orgSlugCResult.ok) {
     process.exitCode = orgSlugCResult.code ?? 1
-    // Always assume json mode.
-    // logger.log(serializeResultJson(orgSlugCResult))
+    logger.fail(
+      'Unable to resolve a Socket account organization.\nEnsure a Socket API token is specified for the organization using the SOCKET_CLI_API_TOKEN environment variable.',
+    )
     return
   }
 
