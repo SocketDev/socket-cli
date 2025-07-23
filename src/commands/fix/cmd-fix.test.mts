@@ -25,8 +25,8 @@ describe('socket fix', async () => {
             --autopilot       Shorthand for --autoMerge --test
             --limit           The number of fixes to attempt at a time
             --minSatisfying   Constrain dependency updates to the minimum satisfying version
-            --purl            Provide a list of PURLs (\\u200bhttps://github.com/package-url/purl-spec?tab=readme-ov-file#purl\\u200b) to compute fixes for, as either a comma separated value or as multiple flags,
-                              instead of querying the Socket API
+            --purl            Provide a list of PURLs (\\u200bhttps://github.com/package-url/purl-spec?tab=readme-ov-file#purl\\u200b) to compute fixes for, as either a comma separated list or as multiple flags,
+                              instead of collecting PURLs from lock files
             --rangeStyle      Define how updated dependency versions should be written in package.json.
                               Available styles:
                                 * caret - Use ^ range for compatible updates (e.g. ^1.2.3)
