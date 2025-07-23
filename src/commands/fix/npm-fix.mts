@@ -32,13 +32,13 @@ async function install(
     __proto__: null,
     ...options,
   } as InstallOptions
+  const useDebug = isDebug('stdio')
   const args = [
     '--ignore-scripts',
     '--no-audit',
     '--no-fund',
     '--no-progress',
-    '--no-save',
-    '--silent',
+    ...(useDebug ? [] : ['--silent']),
     ...(extraArgs ?? []),
   ]
   const quotedCmd = `\`${pkgEnvDetails.agent} install ${args.join(' ')}\``
@@ -52,7 +52,7 @@ async function install(
     await runAgentInstall(pkgEnvDetails, {
       args,
       spinner,
-      stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+      stdio: useDebug ? 'inherit' : 'ignore',
     })
   } catch (e) {
     debugFn('error', `caught: ${quotedCmd} failed`)
