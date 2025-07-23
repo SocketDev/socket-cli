@@ -2,6 +2,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../constants.mts'
 import { getDefaultToken } from './sdk.mts'
+import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 
 import type { CResult } from '../types.mts'
 import type {
@@ -15,6 +16,9 @@ export async function spawnCoana(
   extra?: SpawnExtra | undefined,
 ): Promise<CResult<unknown>> {
   const { env: spawnEnv } = { __proto__: null, ...options } as SpawnOptions
+  const orgSlugCResult = await getDefaultOrgSlug()
+  const SOCKET_CLI_API_TOKEN = getDefaultToken()
+  const SOCKET_ORG_SLUG = orgSlugCResult.ok ? orgSlugCResult.data : undefined
   try {
     const output = await spawn(
       constants.execPath,
@@ -31,7 +35,9 @@ export async function spawnCoana(
           ...process.env,
           // Lazily access constants.processEnv.
           ...constants.processEnv,
-          SOCKET_CLI_API_TOKEN: getDefaultToken(),
+          RUN_WITHOUT_DOCKER: 'true',
+          SOCKET_CLI_API_TOKEN,
+          SOCKET_ORG_SLUG,
           ...spawnEnv,
         },
       },

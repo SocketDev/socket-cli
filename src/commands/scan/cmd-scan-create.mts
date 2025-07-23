@@ -330,7 +330,7 @@ async function run(
     )
   }
 
-  if (updatedInput && orgSlug && targets?.length) {
+  if (updatedInput && orgSlug && targets.length) {
     logger.info(
       'Note: You can invoke this command next time to skip the interactive questions:',
     )
