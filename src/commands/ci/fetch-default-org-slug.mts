@@ -1,5 +1,6 @@
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 
+import constants from '../../constants.mts'
 import { getConfigValueOrUndef } from '../../utils/config.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
@@ -11,6 +12,13 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   if (defaultOrgResult) {
     debugFn('notice', 'use: default org', defaultOrgResult)
     return { ok: true, data: defaultOrgResult }
+  }
+
+  // Lazily access constants.ENV.SOCKET_CLI_ORG_SLUG.
+  const envOrgSlug = constants.ENV.SOCKET_CLI_ORG_SLUG
+  if (envOrgSlug) {
+    debugFn('notice', 'use: org from environment variable', envOrgSlug)
+    return { ok: true, data: envOrgSlug }
   }
 
   const orgsCResult = await fetchOrganization()
