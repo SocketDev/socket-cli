@@ -8,7 +8,7 @@ import { resolveBinPathSync } from '@socketsecurity/registry/lib/npm'
 import constants from '../constants.mts'
 import { safeStatsSync } from './fs.mts'
 import {
-  filterReportSupportedFiles,
+  filterBySupportedScanFiles,
   globWithGitIgnore,
   pathsToGlobPatterns,
 } from './glob.mts'
@@ -105,9 +105,11 @@ export async function getPackageFilesForScan(
     __proto__: null,
     ...options,
   } as PackageFilesForScanOptions
+
   const filepaths = await globWithGitIgnore(pathsToGlobPatterns(inputPaths), {
     cwd,
     socketConfig,
   })
-  return filterReportSupportedFiles(filepaths, supportedFiles)
+
+  return filterBySupportedScanFiles(filepaths!, supportedFiles)
 }

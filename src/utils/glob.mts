@@ -157,7 +157,7 @@ function workspacePatternToGlobPattern(workspace: string): string {
   return `${workspace}/package.json`
 }
 
-export function filterReportSupportedFiles(
+export function filterBySupportedScanFiles(
   filepaths: string[] | readonly string[],
   supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
 ): string[] {
@@ -191,12 +191,13 @@ export async function globWithGitIgnore(
     socketConfig,
     ...additionalOptions
   } = { __proto__: null, ...options } as GlobWithGitIgnoreOptions
-  const projectIgnorePaths = socketConfig?.projectIgnorePaths
+
   const ignoreFiles = await tinyGlob(['**/.gitignore'], {
     absolute: true,
     cwd,
     expandDirectories: true,
   })
+  const projectIgnorePaths = socketConfig?.projectIgnorePaths
   const ignores = [
     ...ignoredDirPatterns,
     ...(Array.isArray(projectIgnorePaths)
@@ -220,6 +221,7 @@ export async function globWithGitIgnore(
   ]
   const hasNegatedPattern = ignores.some(p => p.charCodeAt(0) === 33 /*'!'*/)
   const globOptions = {
+    __proto__: null,
     absolute: true,
     cwd,
     dot: true,
@@ -227,18 +229,23 @@ export async function globWithGitIgnore(
     ignore: hasNegatedPattern ? [] : ignores,
     ...additionalOptions,
   }
+
   const result = await tinyGlob(patterns as string[], globOptions)
   if (!hasNegatedPattern) {
     return result
   }
-  const { absolute } = globOptions
 
   // Note: the input files must be INSIDE the cwd. If you get strange looking
   // relative path errors here, most likely your path is outside the given cwd.
   const filtered = ignore()
     .add(ignores)
-    .filter(absolute ? result.map(p => path.relative(cwd, p)) : result)
-  return absolute ? filtered.map(p => path.resolve(cwd, p)) : filtered
+    .filter(
+      globOptions.absolute ? result.map(p => path.relative(cwd, p)) : result,
+    )
+
+  return globOptions.absolute
+    ? filtered.map(p => path.resolve(cwd, p))
+    : filtered
 }
 
 export async function globNodeModules(cwd = process.cwd()): Promise<string[]> {
