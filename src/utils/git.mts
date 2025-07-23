@@ -246,8 +246,10 @@ export async function gitDeleteBranch(
     await spawn('git', ['branch', '-D', branch], stdioIgnoreOptions)
     return true
   } catch (e) {
-    debugFn('error', `caught: ${quotedCmd} failed`)
-    debugDir('inspect', { error: e })
+    if (isDebug('stdio')) {
+      debugFn('error', `caught: ${quotedCmd} failed`)
+      debugDir('inspect', { error: e })
+    }
   }
   return false
 }
@@ -265,12 +267,21 @@ export async function gitEnsureIdentity(
   await Promise.all(
     identEntries.map(async ({ 0: prop, 1: value }) => {
       let configValue
-      try {
-        // Will throw with exit code 1 if the config property is not set.
-        configValue = (
-          await spawn('git', ['config', '--get', prop], stdioPipeOptions)
-        ).stdout
-      } catch {}
+      {
+        const quotedCmd = `\`git config --get ${prop}\``
+        debugFn('stdio', `spawn: ${quotedCmd}`)
+        try {
+          // Will throw with exit code 1 if the config property is not set.
+          configValue = (
+            await spawn('git', ['config', '--get', prop], stdioPipeOptions)
+          ).stdout
+        } catch (e) {
+          if (isDebug('stdio')) {
+            debugFn('error', `caught: ${quotedCmd} failed`)
+            debugDir('inspect', { error: e })
+          }
+        }
+      }
       if (configValue !== value) {
         const stdioIgnoreOptions: SpawnOptions = {
           cwd,
@@ -281,8 +292,10 @@ export async function gitEnsureIdentity(
         try {
           await spawn('git', ['config', prop, value], stdioIgnoreOptions)
         } catch (e) {
-          debugFn('error', `caught: ${quotedCmd} failed`)
-          debugDir('inspect', { error: e })
+          if (isDebug('stdio')) {
+            debugFn('error', `caught: ${quotedCmd} failed`)
+            debugDir('inspect', { error: e })
+          }
         }
       }
     }),
@@ -308,8 +321,10 @@ export async function gitLocalBranchExists(
     )
     return true
   } catch (e) {
-    debugFn('error', `caught: ${quotedCmd} failed`)
-    debugDir('inspect', { error: e })
+    if (isDebug('stdio')) {
+      debugFn('error', `caught: ${quotedCmd} failed`)
+      debugDir('inspect', { error: e })
+    }
   }
   return false
 }
