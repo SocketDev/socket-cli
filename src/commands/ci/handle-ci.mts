@@ -6,39 +6,42 @@ import { getRepoName, gitBranch } from '../../utils/git.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 
-const { SOCKET_DEFAULT_BRANCH, SOCKET_DEFAULT_REPOSITORY } = constants
-
-export async function handleCI(autoManifest: boolean): Promise<void> {
+export async function handleCi(autoManifest: boolean): Promise<void> {
   // ci: {
   //   description: 'Alias for "report create --view --strict"',
   //     argv: ['report', 'create', '--view', '--strict']
   // }
-  const result = await getDefaultOrgSlug()
-  if (!result.ok) {
-    process.exitCode = result.code ?? 1
+  const orgSlugCResult = await getDefaultOrgSlug()
+  if (!orgSlugCResult.ok) {
+    process.exitCode = orgSlugCResult.code ?? 1
     // Always assume json mode.
-    logger.log(serializeResultJson(result))
+    logger.log(serializeResultJson(orgSlugCResult))
     return
   }
 
+  const orgSlug = orgSlugCResult.data
   const cwd = process.cwd()
+  // Lazily access constants.SOCKET_DEFAULT_BRANCH.
+  const branchName = (await gitBranch(cwd)) || constants.SOCKET_DEFAULT_BRANCH
+  // Lazily access constants.SOCKET_DEFAULT_REPOSITORY.
+  const repoName =
+    (await getRepoName(cwd)) || constants.SOCKET_DEFAULT_REPOSITORY
 
-  // TODO: does it makes sense to use custom branch/repo names here? probably socket.yml, right
   await handleCreateNewScan({
     autoManifest,
-    branchName: (await gitBranch(cwd)) || SOCKET_DEFAULT_BRANCH,
+    branchName,
     commitMessage: '',
     commitHash: '',
     committers: '',
-    cwd: process.cwd(),
+    cwd,
     defaultBranch: false,
     interactive: false,
-    orgSlug: result.data,
+    orgSlug,
     outputKind: 'json',
     // When 'pendingHead' is true, it requires 'branchName' set and 'tmp' false.
     pendingHead: true,
     pullRequest: 0,
-    repoName: (await getRepoName(cwd)) || SOCKET_DEFAULT_REPOSITORY,
+    repoName,
     readOnly: false,
     report: true,
     targets: ['.'],

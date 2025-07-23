@@ -197,7 +197,7 @@ async function run(
     orgSlug,
     outputKind,
     page: Number(cli.flags['page'] || 1),
-    per_page: Number(cli.flags['perPage'] || 30),
+    perPage: Number(cli.flags['perPage'] || 30),
     repo: repo ? String(repo) : '',
     sort: String(cli.flags['sort'] || ''),
   })

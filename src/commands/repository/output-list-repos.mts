@@ -8,10 +8,10 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function outputListRepos(
-  result: CResult<SocketSdkReturnType<'getOrgRepoList'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']>,
   outputKind: OutputKind,
   page: number,
   nextPage: number | null,

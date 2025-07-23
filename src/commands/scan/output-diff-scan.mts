@@ -10,14 +10,14 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 const { SOCKET_WEBSITE_URL } = constants
 
 const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
 
 export async function outputDiffScan(
-  result: CResult<SocketSdkReturnType<'GetOrgDiffScan'>['data']>,
+  result: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
   {
     depth,
     file,
@@ -78,7 +78,7 @@ export async function outputDiffScan(
 }
 
 async function handleJson(
-  data: CResult<SocketSdkReturnType<'GetOrgDiffScan'>['data']>,
+  data: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
   file: string,
   dashboardMessage: string,
 ) {
@@ -104,7 +104,7 @@ async function handleJson(
 }
 
 async function handleMarkdown(
-  data: SocketSdkReturnType<'GetOrgDiffScan'>['data'],
+  data: SocketSdkSuccessResult<'GetOrgDiffScan'>['data'],
 ) {
   logger.log('# Scan diff result')
   logger.log('')

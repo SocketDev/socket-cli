@@ -2,22 +2,36 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-export async function fetchListRepos({
-  direction,
-  orgSlug,
-  page,
-  per_page,
-  sort,
-}: {
+export type FetchListReposConfig = {
   direction: string
   orgSlug: string
   page: number
-  per_page: number
+  perPage: number
   sort: string
-}): Promise<CResult<SocketSdkReturnType<'getOrgRepoList'>['data']>> {
-  const sockSdkCResult = await setupSdk()
+}
+
+export type FetchListReposOptions = {
+  sdkOptions?: SetupSdkOptions | undefined
+}
+
+export async function fetchListRepos(
+  config: FetchListReposConfig,
+  options?: FetchListReposOptions | undefined,
+): Promise<CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']>> {
+  const { direction, orgSlug, page, perPage, sort } = {
+    __proto__: null,
+    ...config,
+  } as FetchListReposConfig
+
+  const { sdkOptions } = {
+    __proto__: null,
+    ...options,
+  } as FetchListReposOptions
+
+  const sockSdkCResult = await setupSdk(sdkOptions)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }
@@ -27,9 +41,9 @@ export async function fetchListRepos({
     sockSdk.getOrgRepoList(orgSlug, {
       sort,
       direction,
-      per_page: String(per_page),
+      per_page: String(perPage),
       page: String(page),
     }),
-    'list of repositories',
+    { desc: 'list of repositories' },
   )
 }

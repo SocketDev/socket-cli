@@ -13,12 +13,12 @@ import { walkNestedMap } from '../../utils/walk-nested-map.mts'
 import type { ReportLeafNode, ScanReport } from './generate-report.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function outputScanReport(
   result: CResult<{
     scan: SocketArtifact[]
-    securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>['data']
+    securityPolicy: SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
   }>,
   {
     filePath,

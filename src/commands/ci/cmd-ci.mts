@@ -1,6 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { handleCI } from './handle-ci.mts'
+import { handleCi } from './handle-ci.mts'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -71,5 +71,5 @@ async function run(
     return
   }
 
-  await handleCI(Boolean(cli.flags['autoManifest']))
+  await handleCi(Boolean(cli.flags['autoManifest']))
 }

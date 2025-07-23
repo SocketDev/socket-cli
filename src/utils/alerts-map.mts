@@ -82,7 +82,7 @@ export async function getAlertsMapFromPurls(
 
   spinner?.start(getText())
 
-  const sockSdkCResult = await setupSdk(getPublicToken())
+  const sockSdkCResult = await setupSdk({ apiToken: getPublicToken() })
   if (!sockSdkCResult.ok) {
     spinner?.stop()
     throw new Error('Auth error: Try to run `socket login` first')
@@ -98,15 +98,17 @@ export async function getAlertsMapFromPurls(
 
   for await (const batchResult of sockSdk.batchPackageStream(
     {
-      alerts: 'true',
-      compact: 'true',
-      ...(opts.include.actions
-        ? { actions: opts.include.actions.join(',') }
-        : {}),
-      ...(opts.include.unfixable ? {} : { fixable: 'true' }),
+      components: uniqPurls.map(purl => ({ purl })),
     },
     {
-      components: uniqPurls.map(purl => ({ purl })),
+      queryParams: {
+        alerts: 'true',
+        compact: 'true',
+        ...(opts.include.actions
+          ? { actions: opts.include.actions.join(',') }
+          : {}),
+        ...(opts.include.unfixable ? {} : { fixable: 'true' }),
+      },
     },
   )) {
     if (batchResult.success) {

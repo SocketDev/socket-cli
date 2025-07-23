@@ -7,47 +7,12 @@ import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, select } from '@socketsecurity/registry/lib/prompts'
 
+import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
+import { isReportSupportedFile } from '../../utils/glob.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-
-// Supported manifest file name patterns
-// Keep in mind that we have to request these files through the GitHub API; that cost is much heavier than local disk searches
-// TODO: get this list from API instead? Is that too much? Has to fetch through gh api...
-const SUPPORTED_FILE_PATTERNS = [
-  /.*[-.]spdx\.json/,
-  /bom\.json/,
-  /.*[-.]cyclonedx\.json/,
-  /.*[-.]cyclonedx\.xml/,
-  /package\.json/,
-  /package-lock\.json/,
-  /npm-shrinkwrap\.json/,
-  /yarn\.lock/,
-  /pnpm-lock\.yaml/,
-  /pnpm-lock\.yml/,
-  /pnpm-workspace\.yaml/,
-  /pnpm-workspace\.yml/,
-  /pipfile/,
-  /pyproject\.toml/,
-  /poetry\.lock/,
-  /requirements[\\/].*\.txt/,
-  /requirements-.*\.txt/,
-  /requirements_.*\.txt/,
-  /requirements\.frozen/,
-  /setup\.py/,
-  /pipfile\.lock/,
-  /go\.mod/,
-  /go\.sum/,
-  /pom\.xml/,
-  /.*\..*proj/,
-  /.*\.props/,
-  /.*\.targets/,
-  /.*\.nuspec/,
-  /nuget\.config/,
-  /packages\.config/,
-  /packages\.lock\.json/,
-]
 
 export async function createScanFromGithub({
   all,
@@ -75,9 +40,8 @@ export async function createScanFromGithub({
     .filter(Boolean)
   if (all || targetRepos.length === 0) {
     // Fetch from Socket API
-    const result = await fetchListAllRepos({
+    const result = await fetchListAllRepos(orgSlug, {
       direction: 'asc',
-      orgSlug,
       sort: 'name',
     })
     if (!result.ok) {
@@ -121,7 +85,7 @@ export async function createScanFromGithub({
   let scansCreated = 0
   for (const repoSlug of targetRepos) {
     // eslint-disable-next-line no-await-in-loop
-    const result = await scanRepo(repoSlug, {
+    const scanCResult = await scanRepo(repoSlug, {
       githubApiUrl,
       githubToken,
       orgSlug,
@@ -129,8 +93,11 @@ export async function createScanFromGithub({
       outputKind,
       repos,
     })
-    if (result.ok && result.data.scanCreated) {
-      scansCreated += 1
+    if (scanCResult.ok) {
+      const { scanCreated } = scanCResult.data
+      if (scanCreated) {
+        scansCreated += 1
+      }
     }
   }
 
@@ -359,7 +326,12 @@ async function testAndDownloadManifestFile({
 }): Promise<CResult<{ isManifest: boolean }>> {
   debugFn('notice', 'testing: file', file)
 
-  if (!SUPPORTED_FILE_PATTERNS.some(regex => regex.test(file))) {
+  const supportedFilesCResult = await fetchSupportedScanFileNames()
+  const supportedFiles = supportedFilesCResult.ok
+    ? supportedFilesCResult.data
+    : undefined
+
+  if (!supportedFiles || !isReportSupportedFile(file, supportedFiles)) {
     debugFn('notice', '  - skip: not a known pattern')
     // Not an error.
     return { ok: true, data: { isManifest: false } }

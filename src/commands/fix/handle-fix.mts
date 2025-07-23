@@ -1,25 +1,27 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { npmFix } from './npm-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
 import { pnpmFix } from './pnpm-fix.mts'
 import { CMD_NAME } from './shared.mts'
 import constants from '../../constants.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { spawnCoana } from '../../utils/coana.mts'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment.mts'
+import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
+import { setupSdk } from '../../utils/sdk.mts'
+import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
 import type { FixConfig } from './agent-fix.mts'
-import type { OutputKind } from '../../types.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
-
-const { NPM, PNPM } = constants
 
 export type HandleFixConfig = Remap<
   FixConfig & {
     ghsas: string[]
+    orgSlug: string
     outputKind: OutputKind
     unknownFlags: string[]
   }
@@ -31,6 +33,7 @@ export async function handleFix({
   ghsas,
   limit,
   minSatisfying,
+  orgSlug,
   outputKind,
   prCheck,
   purls,
@@ -40,67 +43,105 @@ export async function handleFix({
   testScript,
   unknownFlags,
 }: HandleFixConfig) {
-  let { length: ghsasCount } = ghsas
-  if (ghsasCount) {
-    spinner?.start('Fetching GHSA IDs...')
+  if (ghsas.length === 1 && ghsas[0] === 'auto') {
+    let lastCResult: CResult<any>
+    const sockSdkCResult = await setupSdk()
 
-    if (ghsasCount === 1 && ghsas[0] === 'auto') {
-      const autoCResult = await spawnCoana(
-        ['compute-fixes-and-upgrade-purls', cwd],
-        { cwd, spinner },
-      )
+    lastCResult = sockSdkCResult
+    const sockSdk = sockSdkCResult.ok ? sockSdkCResult.data : undefined
 
-      spinner?.stop()
+    const supportedFilesCResult = sockSdk
+      ? await fetchSupportedScanFileNames()
+      : undefined
 
-      if (autoCResult.ok) {
-        ghsas = cmdFlagValueToArray(
-          /(?<=Vulnerabilities found: )[^\n]+/.exec(
-            autoCResult.data as string,
-          )?.[0],
-        )
-        ghsasCount = ghsas.length
-      } else {
-        debugFn('error', 'fail: Coana CLI')
-        debugDir('inspect', {
-          message: autoCResult.message,
-          cause: autoCResult.cause,
-        })
-        ghsas = []
-        ghsasCount = 0
-      }
-
-      spinner?.start()
+    if (supportedFilesCResult) {
+      lastCResult = supportedFilesCResult
     }
 
-    if (ghsasCount) {
-      spinner?.info(`Found ${ghsasCount} GHSA ${pluralize('ID', ghsasCount)}.`)
+    const supportedFiles = supportedFilesCResult?.ok
+      ? supportedFilesCResult.data
+      : undefined
 
-      const applyFixesCResult = await spawnCoana(
-        [
-          'compute-fixes-and-upgrade-purls',
+    const packagePaths = supportedFiles
+      ? await getPackageFilesForScan(['.'], supportedFiles!, {
           cwd,
-          '--apply-fixes-to',
-          ...ghsas,
-          ...unknownFlags,
-        ],
-        { cwd, spinner },
-      )
-
-      spinner?.stop()
-
-      if (!applyFixesCResult.ok) {
-        debugFn('error', 'fail: Coana CLI')
-        debugDir('inspect', {
-          message: applyFixesCResult.message,
-          cause: applyFixesCResult.cause,
         })
-      }
+      : []
 
-      await outputFixResult(applyFixesCResult, outputKind)
+    const uploadCResult = sockSdk
+      ? await handleApiCall(
+          sockSdk?.uploadManifestFiles(orgSlug, packagePaths),
+          {
+            desc: 'upload manifests',
+          },
+        )
+      : undefined
+
+    if (uploadCResult) {
+      lastCResult = uploadCResult
+    }
+
+    const tarHash = uploadCResult?.ok ? (uploadCResult as any).data.tarHash : ''
+
+    const idsOutputCResult = tarHash
+      ? await spawnCoana(
+          [
+            'compute-fixes-and-upgrade-purls',
+            cwd,
+            '--manifests-tar-hash',
+            tarHash,
+          ],
+          { cwd, spinner, env: { SOCKET_ORG_SLUG: orgSlug } },
+        )
+      : undefined
+
+    if (idsOutputCResult) {
+      lastCResult = idsOutputCResult
+    }
+
+    const idsOutput = idsOutputCResult?.ok
+      ? (idsOutputCResult.data as string)
+      : ''
+
+    const ids = cmdFlagValueToArray(
+      /(?<=Vulnerabilities found: )[^\n]+/.exec(idsOutput)?.[0],
+    )
+
+    const fixCResult = ids.length
+      ? await spawnCoana(
+          [
+            'compute-fixes-and-upgrade-purls',
+            cwd,
+            '--manifests-tar-hash',
+            tarHash,
+            '--apply-fixes-to',
+            ...ids,
+            ...unknownFlags,
+          ],
+          { cwd, spinner, env: { SOCKET_ORG_SLUG: orgSlug } },
+        )
+      : undefined
+
+    if (fixCResult) {
+      lastCResult = fixCResult
+    }
+    // const fixCResult = await spawnCoana(
+    //   [
+    //     cwd,
+    //     '--socket-mode',
+    //     DOT_SOCKET_DOT_FACTS_JSON,
+    //     '--manifests-tar-hash',
+    //     tarHash,
+    //     ...unknownFlags,
+    //   ],
+    //   { cwd, spinner, env: { SOCKET_ORG_SLUG: orgSlug } },
+    // )
+    debugDir('inspect', { lastCResult })
+
+    if (!lastCResult.ok) {
+      await outputFixResult(lastCResult, outputKind)
       return
     }
-
-    spinner?.infoAndStop('No GHSA IDs found.')
 
     await outputFixResult(
       {
@@ -134,6 +175,8 @@ export async function handleFix({
     return
   }
 
+  // Lazily access constants.
+  const { NPM, PNPM } = constants
   const { agent, agentVersion } = pkgEnvDetails
   if (agent !== NPM && agent !== PNPM) {
     await outputFixResult(

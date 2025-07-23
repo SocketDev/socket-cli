@@ -12,7 +12,7 @@ import { safeReadFile } from './fs.mts'
 
 import type { Agent } from './package-environment.mts'
 import type { SocketYml } from '@socketsecurity/config'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import type { GlobOptions } from 'tinyglobby'
 
 const ignoredDirs = [
@@ -157,10 +157,17 @@ function workspacePatternToGlobPattern(workspace: string): string {
   return `${workspace}/package.json`
 }
 
-export async function filterGlobResultToSupportedFiles(
-  entries: string[] | readonly string[],
-  supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
-): Promise<string[]> {
+export function filterBySupportedScanFiles(
+  filepaths: string[] | readonly string[],
+  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+): string[] {
+  const patterns = getSupportedFilePatterns(supportedFiles)
+  return filepaths.filter(p => micromatch.some(p, patterns))
+}
+
+export function getSupportedFilePatterns(
+  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+): string[] {
   const patterns: string[] = []
   for (const key of Object.keys(supportedFiles)) {
     const supported = supportedFiles[key]
@@ -168,7 +175,7 @@ export async function filterGlobResultToSupportedFiles(
       patterns.push(...Object.values(supported).map(p => `**/${p.pattern}`))
     }
   }
-  return entries.filter(p => micromatch.some(p, patterns))
+  return patterns
 }
 
 type GlobWithGitIgnoreOptions = GlobOptions & {
@@ -184,12 +191,13 @@ export async function globWithGitIgnore(
     socketConfig,
     ...additionalOptions
   } = { __proto__: null, ...options } as GlobWithGitIgnoreOptions
-  const projectIgnorePaths = socketConfig?.projectIgnorePaths
+
   const ignoreFiles = await tinyGlob(['**/.gitignore'], {
     absolute: true,
     cwd,
     expandDirectories: true,
   })
+  const projectIgnorePaths = socketConfig?.projectIgnorePaths
   const ignores = [
     ...ignoredDirPatterns,
     ...(Array.isArray(projectIgnorePaths)
@@ -213,6 +221,7 @@ export async function globWithGitIgnore(
   ]
   const hasNegatedPattern = ignores.some(p => p.charCodeAt(0) === 33 /*'!'*/)
   const globOptions = {
+    __proto__: null,
     absolute: true,
     cwd,
     dot: true,
@@ -220,18 +229,23 @@ export async function globWithGitIgnore(
     ignore: hasNegatedPattern ? [] : ignores,
     ...additionalOptions,
   }
+
   const result = await tinyGlob(patterns as string[], globOptions)
   if (!hasNegatedPattern) {
     return result
   }
-  const { absolute } = globOptions
 
   // Note: the input files must be INSIDE the cwd. If you get strange looking
   // relative path errors here, most likely your path is outside the given cwd.
   const filtered = ignore()
     .add(ignores)
-    .filter(absolute ? result.map(p => path.relative(cwd, p)) : result)
-  return absolute ? filtered.map(p => path.resolve(cwd, p)) : filtered
+    .filter(
+      globOptions.absolute ? result.map(p => path.relative(cwd, p)) : result,
+    )
+
+  return globOptions.absolute
+    ? filtered.map(p => path.resolve(cwd, p))
+    : filtered
 }
 
 export async function globNodeModules(cwd = process.cwd()): Promise<string[]> {
@@ -255,6 +269,14 @@ export async function globWorkspace(
         ignore: ['**/node_modules/**', '**/bower_components/**'],
       })
     : []
+}
+
+export function isReportSupportedFile(
+  filepath: string,
+  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
+) {
+  const patterns = getSupportedFilePatterns(supportedFiles)
+  return micromatch.some(filepath, patterns)
 }
 
 export function pathsToGlobPatterns(

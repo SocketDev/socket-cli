@@ -4,24 +4,31 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-export async function fetchListAllRepos({
-  direction,
-  orgSlug,
-  sort,
-}: {
-  direction: string
-  orgSlug: string
-  sort: string
-}): Promise<CResult<SocketSdkReturnType<'getOrgRepoList'>['data']>> {
-  const sockSdkCResult = await setupSdk()
+export type FetchListAllReposOptions = {
+  direction?: string | undefined
+  sdkOptions?: SetupSdkOptions | undefined
+  sort?: string | undefined
+}
+
+export async function fetchListAllRepos(
+  orgSlug: string,
+  options?: FetchListAllReposOptions | undefined,
+): Promise<CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']>> {
+  const { direction, sdkOptions, sort } = {
+    __proto__: null,
+    ...options,
+  } as FetchListAllReposOptions
+
+  const sockSdkCResult = await setupSdk(sdkOptions)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }
   const sockSdk = sockSdkCResult.data
 
-  const rows: SocketSdkReturnType<'getOrgRepoList'>['data']['results'] = []
+  const rows: SocketSdkSuccessResult<'getOrgRepoList'>['data']['results'] = []
   let protection = 0
   let nextPage = 0
   while (nextPage >= 0) {
@@ -40,7 +47,7 @@ export async function fetchListAllRepos({
         per_page: String(100), // max
         page: String(nextPage),
       }),
-      'list of repositories',
+      { desc: 'list of repositories' },
     )
     if (!orgRepoListCResult.ok) {
       debugFn('error', 'fail: fetch repo')

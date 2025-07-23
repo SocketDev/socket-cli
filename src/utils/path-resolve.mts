@@ -8,15 +8,13 @@ import { resolveBinPathSync } from '@socketsecurity/registry/lib/npm'
 import constants from '../constants.mts'
 import { safeStatsSync } from './fs.mts'
 import {
-  filterGlobResultToSupportedFiles,
+  filterBySupportedScanFiles,
   globWithGitIgnore,
   pathsToGlobPatterns,
 } from './glob.mts'
 
 import type { SocketYml } from '@socketsecurity/config'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
-
-const { NODE_MODULES, NPM, shadowBinPath } = constants
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export function findBinPathDetailsSync(binName: string): {
   name: string
@@ -28,6 +26,8 @@ export function findBinPathDetailsSync(binName: string): {
       all: true,
       nothrow: true,
     }) ?? []
+  // Lazily access constants.shadowBinPath.
+  const { shadowBinPath } = constants
   let shadowIndex = -1
   let theBinPath: string | undefined
   for (let i = 0, { length } = binPaths; i < length; i += 1) {
@@ -48,7 +48,7 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
   const { WIN32 } = constants
   let thePath = npmBinPath
   while (true) {
-    const libNmNpmPath = path.join(thePath, 'lib', NODE_MODULES, NPM)
+    const libNmNpmPath = path.join(thePath, 'lib/node_modules/npm')
     // mise puts its npm bin in a path like:
     //   /Users/SomeUsername/.local/share/mise/installs/node/vX.X.X/bin/npm.
     // HOWEVER, the location of the npm install is:
@@ -60,9 +60,9 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
       existsSync(libNmNpmPath) &&
       safeStatsSync(libNmNpmPath)?.isDirectory()
     ) {
-      thePath = path.join(libNmNpmPath, NPM)
+      thePath = path.join(libNmNpmPath, 'npm')
     }
-    const nmPath = path.join(thePath, NODE_MODULES)
+    const nmPath = path.join(thePath, 'node_modules')
     if (
       // npm bin paths may look like:
       //   /usr/local/share/npm/bin/npm
@@ -77,9 +77,9 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
       existsSync(nmPath) &&
       safeStatsSync(nmPath)?.isDirectory() &&
       // Optimistically look for the default location.
-      (path.basename(thePath) === NPM ||
+      (path.basename(thePath) === 'npm' ||
         // Chocolatey installs npm bins in the same directory as node bins.
-        (WIN32 && existsSync(path.join(thePath, `${NPM}.cmd`))))
+        (WIN32 && existsSync(path.join(thePath, 'npm.cmd'))))
     ) {
       return thePath
     }
@@ -98,16 +98,18 @@ export type PackageFilesForScanOptions = {
 
 export async function getPackageFilesForScan(
   inputPaths: string[],
-  supportedFiles: SocketSdkReturnType<'getReportSupportedFiles'>['data'],
+  supportedFiles: SocketSdkSuccessResult<'getReportSupportedFiles'>['data'],
   options?: PackageFilesForScanOptions | undefined,
 ): Promise<string[]> {
   const { config: socketConfig, cwd = process.cwd() } = {
     __proto__: null,
     ...options,
   } as PackageFilesForScanOptions
-  const entries = await globWithGitIgnore(pathsToGlobPatterns(inputPaths), {
+
+  const filepaths = await globWithGitIgnore(pathsToGlobPatterns(inputPaths), {
     cwd,
     socketConfig,
   })
-  return await filterGlobResultToSupportedFiles(entries, supportedFiles)
+
+  return filterBySupportedScanFiles(filepaths!, supportedFiles)
 }

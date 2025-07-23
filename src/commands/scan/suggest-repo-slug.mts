@@ -6,11 +6,25 @@ import { select } from '@socketsecurity/registry/lib/prompts'
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
-export async function suggestRepoSlug(orgSlug: string): Promise<{
+import type { SetupSdkOptions } from '../../utils/sdk.mts'
+
+export type SuggestRepoSlugOptions = {
+  sdkOptions?: SetupSdkOptions | undefined
+}
+
+export async function suggestRepoSlug(
+  orgSlug: string,
+  options?: SuggestRepoSlugOptions | undefined,
+): Promise<{
   slug: string
   defaultBranch: string
 } | void> {
-  const sockSdkCResult = await setupSdk()
+  const { sdkOptions } = {
+    __proto__: null,
+    ...options,
+  } as SuggestRepoSlugOptions
+
+  const sockSdkCResult = await setupSdk(sdkOptions)
   if (!sockSdkCResult.ok) {
     return
   }
@@ -29,7 +43,7 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
       perPage: '10',
       page: '0',
     }),
-    'list of repositories',
+    { desc: 'list of repositories' },
   )
 
   // Ignore a failed request here. It was not the primary goal of
@@ -44,7 +58,7 @@ export async function suggestRepoSlug(orgSlug: string): Promise<{
       // Do an explicit request so we can assert that the cwd exists or not
       const result = await handleApiCall(
         sockSdk.getOrgRepo(orgSlug, currentDirName),
-        'check if current cwd is a known repo',
+        { desc: 'check if current cwd is a known repo' },
       )
       if (result.ok) {
         cwdIsKnown = true

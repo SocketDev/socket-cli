@@ -2,24 +2,41 @@ import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-export async function fetchCreateRepo({
-  default_branch,
-  description,
-  homepage,
-  orgSlug,
-  repoName,
-  visibility,
-}: {
-  orgSlug: string
-  repoName: string
+export type FetchCreateRepoConfig = {
+  defaultBranch: string
   description: string
   homepage: string
-  default_branch: string
+  orgSlug: string
+  repoName: string
   visibility: string
-}): Promise<CResult<SocketSdkReturnType<'createOrgRepo'>['data']>> {
-  const sockSdkCResult = await setupSdk()
+}
+
+export type FetchCreateRepoOptions = {
+  sdkOptions?: SetupSdkOptions | undefined
+}
+
+export async function fetchCreateRepo(
+  config: FetchCreateRepoConfig,
+  options?: FetchCreateRepoOptions | undefined,
+): Promise<CResult<SocketSdkSuccessResult<'createOrgRepo'>['data']>> {
+  const {
+    defaultBranch,
+    description,
+    homepage,
+    orgSlug,
+    repoName,
+    visibility,
+  } = config
+
+  const { sdkOptions } = {
+    __proto__: null,
+    ...options,
+  } as FetchCreateRepoOptions
+
+  const sockSdkCResult = await setupSdk(sdkOptions)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }
@@ -27,12 +44,12 @@ export async function fetchCreateRepo({
 
   return await handleApiCall(
     sockSdk.createOrgRepo(orgSlug, {
-      name: repoName,
+      default_branch: defaultBranch,
       description,
       homepage,
-      default_branch,
+      name: repoName,
       visibility,
     }),
-    'to create a repository',
+    { desc: 'to create a repository' },
   )
 }

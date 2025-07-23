@@ -3,7 +3,7 @@ import { fetchRepoAnalyticsData } from './fetch-repo-analytics.mts'
 import { outputAnalytics } from './output-analytics.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export async function handleAnalytics({
   filePath,
@@ -19,8 +19,8 @@ export async function handleAnalytics({
   filePath: string
 }) {
   let result: CResult<
-    | SocketSdkReturnType<'getOrgAnalytics'>['data']
-    | SocketSdkReturnType<'getRepoAnalytics'>['data']
+    | SocketSdkSuccessResult<'getOrgAnalytics'>['data']
+    | SocketSdkSuccessResult<'getRepoAnalytics'>['data']
   >
   if (scope === 'org') {
     result = await fetchOrgAnalyticsData(time)

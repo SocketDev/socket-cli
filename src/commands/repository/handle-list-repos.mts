@@ -10,7 +10,7 @@ export async function handleListRepos({
   orgSlug,
   outputKind,
   page,
-  per_page,
+  perPage,
   sort,
 }: {
   all: boolean
@@ -18,11 +18,11 @@ export async function handleListRepos({
   orgSlug: string
   outputKind: OutputKind
   page: number
-  per_page: number
+  perPage: number
   sort: string
 }): Promise<void> {
   if (all) {
-    const data = await fetchListAllRepos({ direction, orgSlug, sort })
+    const data = await fetchListAllRepos(orgSlug, { direction, sort })
 
     await outputListRepos(data, outputKind, 0, 0, sort, Infinity, direction)
   } else {
@@ -30,7 +30,7 @@ export async function handleListRepos({
       direction,
       orgSlug,
       page,
-      per_page,
+      perPage,
       sort,
     })
 
@@ -44,7 +44,7 @@ export async function handleListRepos({
         page,
         data.data.nextPage,
         sort,
-        per_page,
+        perPage,
         direction,
       )
     }

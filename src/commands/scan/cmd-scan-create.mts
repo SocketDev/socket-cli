@@ -330,7 +330,7 @@ async function run(
     )
   }
 
-  if (updatedInput && orgSlug && targets?.length) {
+  if (updatedInput && orgSlug && targets.length) {
     logger.info(
       'Note: You can invoke this command next time to skip the interactive questions:',
     )
@@ -414,7 +414,7 @@ async function run(
     pendingHead: Boolean(pendingHead),
     pullRequest: Number(pullRequest),
     readOnly: Boolean(readOnly),
-    repoName: repoName,
+    repoName,
     report,
     targets,
     tmp: Boolean(tmp),

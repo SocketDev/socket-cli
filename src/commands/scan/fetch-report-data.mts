@@ -7,23 +7,33 @@ import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { SocketSdkReturnType } from '@socketsecurity/sdk'
+import type { SetupSdkOptions } from '../../utils/sdk.mts'
+import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+
+export type FetchScanData = {
+  includeLicensePolicy?: boolean | undefined
+  sdkOptions?: SetupSdkOptions | undefined
+}
 
 /**
  * This fetches all the relevant pieces of data to generate a report, given a
  * full scan ID.
  */
-export async function fetchReportData(
+export async function fetchScanData(
   orgSlug: string,
   scanId: string,
-  includeLicensePolicy: boolean,
+  options?: FetchScanData | undefined,
 ): Promise<
   CResult<{
     scan: SocketArtifact[]
-    securityPolicy: SocketSdkReturnType<'getOrgSecurityPolicy'>['data']
+    securityPolicy: SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
   }>
 > {
-  const sockSdkCResult = await setupSdk()
+  const { includeLicensePolicy, sdkOptions } = {
+    __proto__: null,
+    ...options,
+  } as FetchScanData
+  const sockSdkCResult = await setupSdk(sdkOptions)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }
@@ -102,7 +112,7 @@ export async function fetchReportData(
   }
 
   async function fetchSecurityPolicy(): Promise<
-    CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>
+    CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>
   > {
     const result = await handleApiCallNoSpinner(
       sockSdk.getOrgSecurityPolicy(orgSlug),
@@ -118,7 +128,7 @@ export async function fetchReportData(
 
   const [scan, securityPolicy]: [
     CResult<SocketArtifact[]>,
-    CResult<SocketSdkReturnType<'getOrgSecurityPolicy'>['data']>,
+    CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>,
   ] = await Promise.all([
     fetchScanResult().catch(e => {
       updateScan('failure; unknown blocking problem occurred')
