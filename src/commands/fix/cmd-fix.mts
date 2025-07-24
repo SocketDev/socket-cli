@@ -135,23 +135,19 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string },
 ): Promise<void> {
-  const orgSlugCResult = await getDefaultOrgSlug()
-  if (!orgSlugCResult.ok) {
-    process.exitCode = orgSlugCResult.code ?? 1
-    logger.fail(
-      'Unable to resolve a Socket account organization.\nEnsure a Socket API token is specified for the organization using the SOCKET_CLI_API_TOKEN environment variable.',
-    )
-    return
-  }
-
-  const orgSlug = orgSlugCResult.data
-
   const cli = meowOrExit({
     argv,
     config,
     importMeta,
     parentName,
   })
+
+  const outputKind = getOutputKind(cli.flags['json'], cli.flags['markdown'])
+
+  let rangeStyle = cli.flags['rangeStyle'] as RangeStyle
+  if (!rangeStyle) {
+    rangeStyle = 'preserve'
+  }
 
   const rawPurls = cmdFlagValueToArray(cli.flags['purl'])
   const purls = []
@@ -172,13 +168,6 @@ async function run(
     return
   }
 
-  const outputKind = getOutputKind(cli.flags['json'], cli.flags['markdown'])
-
-  let rangeStyle = cli.flags['rangeStyle'] as RangeStyle
-  if (!rangeStyle) {
-    rangeStyle = 'preserve'
-  }
-
   const wasValidInput = checkCommandInput(outputKind, {
     test: RangeStyles.includes(rangeStyle),
     message: `Expecting range style of ${joinOr(RangeStyles)}`,
@@ -193,6 +182,17 @@ async function run(
     logger.log(DRY_RUN_NOT_SAVING)
     return
   }
+
+  const orgSlugCResult = await getDefaultOrgSlug()
+  if (!orgSlugCResult.ok) {
+    process.exitCode = orgSlugCResult.code ?? 1
+    logger.fail(
+      'Unable to resolve a Socket account organization.\nEnsure a Socket API token is specified for the organization using the SOCKET_CLI_API_TOKEN environment variable.',
+    )
+    return
+  }
+
+  const orgSlug = orgSlugCResult.data
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
