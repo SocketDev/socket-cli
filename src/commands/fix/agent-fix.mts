@@ -245,9 +245,9 @@ export async function agentFix(
 
     const availableVersions = Object.keys(packument.versions)
     const prs = getPrsForPurl(fixEnv, infoEntry[0])
-    const vulnVersions = new Set<string>()
     const warningsForAfter = new Set<string>()
 
+    let changed = false
     // eslint-disable-next-line no-unused-labels
     pkgJsonPathsLoop: for (
       let j = 0, { length: length_j } = pkgJsonPaths;
@@ -336,7 +336,6 @@ export async function agentFix(
             : undefined
 
           if (!(newVersion && newVersionPackument)) {
-            vulnVersions.add(oldVersion)
             warningsForAfter.add(
               `${oldId} not updated: requires >=${firstPatchedVersionIdentifier}`,
             )
@@ -437,8 +436,6 @@ export async function agentFix(
             hasAnnouncedWorkspace = true
             workspaceLogCallCount = logger.logCallCount
           }
-
-          vulnVersions.add(oldVersion)
 
           const newId = `${name}@${applyRange(refRange, newVersion, rangeStyle)}`
 
@@ -639,6 +636,8 @@ export async function agentFix(
               message: 'Update failed',
               cause: `Update failed for ${oldId} in ${workspace}${error ? '; ' + error : ''}`,
             }
+          } else {
+            changed = true
           }
           debugFn('notice', 'increment: count', count + 1)
           if (++count >= limit) {
@@ -656,7 +655,7 @@ export async function agentFix(
     for (const warningText of warningsForAfter) {
       logger.warn(warningText)
     }
-    if (!warningsForAfter.size && !vulnVersions.size) {
+    if (!changed && !warningsForAfter.size) {
       logger.info('No vulnerable versions found.')
     }
     if (!isLastInfoEntry) {
