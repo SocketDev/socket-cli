@@ -135,6 +135,17 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string },
 ): Promise<void> {
+  const orgSlugCResult = await getDefaultOrgSlug()
+  if (!orgSlugCResult.ok) {
+    process.exitCode = orgSlugCResult.code ?? 1
+    logger.fail(
+      'Unable to resolve a Socket account organization.\nEnsure a Socket API token is specified for the organization using the SOCKET_CLI_API_TOKEN environment variable.',
+    )
+    return
+  }
+
+  const orgSlug = orgSlugCResult.data
+
   const cli = meowOrExit({
     argv,
     config,
@@ -142,13 +153,26 @@ async function run(
     parentName,
   })
 
-  const { autopilot, json, markdown } = cli.flags as {
-    autopilot: boolean
-    json: boolean
-    markdown: boolean
+  const rawPurls = cmdFlagValueToArray(cli.flags['purl'])
+  const purls = []
+  for (const purl of rawPurls) {
+    let version
+    try {
+      version = PackageURL.fromString(purl)?.version
+    } catch {}
+    if (version) {
+      purls.push(purl)
+    } else {
+      logger.warn(`--purl ${purl} is missing a version and will be ignored.`)
+    }
+  }
+  if (rawPurls.length !== purls.length && !purls.length) {
+    process.exitCode = 1
+    logger.fail('No valid --purl values provided.')
+    return
   }
 
-  const outputKind = getOutputKind(json, markdown)
+  const outputKind = getOutputKind(cli.flags['json'], cli.flags['markdown'])
 
   let rangeStyle = cli.flags['rangeStyle'] as RangeStyle
   if (!rangeStyle) {
@@ -170,10 +194,6 @@ async function run(
     return
   }
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
-  const { unknownFlags } = cli
-
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
@@ -181,40 +201,16 @@ async function run(
 
   let autoMerge = Boolean(cli.flags['autoMerge'])
   let test = Boolean(cli.flags['test'])
-  if (autopilot) {
+  if (cli.flags['autopilot']) {
     autoMerge = true
     test = true
   }
 
-  const orgSlugCResult = await getDefaultOrgSlug()
-  if (!orgSlugCResult.ok) {
-    process.exitCode = orgSlugCResult.code ?? 1
-    logger.fail(
-      'Unable to resolve a Socket account organization.\nEnsure a Socket API token is specified for the organization using the SOCKET_CLI_API_TOKEN environment variable.',
-    )
-    return
-  }
-
-  const orgSlug = orgSlugCResult.data
-
-  const rawPurls = cmdFlagValueToArray(cli.flags['purl'])
-  const purls = []
-  for (const purl of rawPurls) {
-    let version
-    try {
-      version = PackageURL.fromString(purl)?.version
-    } catch {}
-    if (version) {
-      purls.push(purl)
-    } else {
-      logger.warn(`--purl ${purl} is missing a version and will be ignored.`)
-    }
-  }
-  if (rawPurls.length !== purls.length && !purls.length) {
-    process.exitCode = 1
-    logger.fail('No valid --purl values provided.')
-    return
-  }
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+  // We patched in this feature with `npx custompatch meow` at
+  // socket-cli/patches/meow#13.2.0.patch.
+  const unknownFlags = cli.unknownFlags ?? []
 
   const ghsas = cmdFlagValueToArray(cli.flags['ghsa'])
   const limit =
