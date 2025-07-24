@@ -246,6 +246,8 @@ export async function agentFix(
       continue infoEntriesLoop
     }
 
+    debugDir('inspect', { infos })
+
     const availableVersions = Object.keys(packument.versions)
     const prs = getPrsForPurl(fixEnv, infoEntry[0])
     const warningsForAfter = new Set<string>()
