@@ -1,4 +1,4 @@
-import { debugDir } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 
 import { handleApiCall } from '../../utils/api.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
@@ -68,6 +68,7 @@ export async function coanaFix(
 
   let ids = ghsas
   if (ids.length === 1 && ids[0] === 'auto') {
+    debugFn('notice', 'resolve: GitHub security alerts.')
     const foundIdsCResult = tarHash
       ? await spawnCoana(
           [
@@ -88,6 +89,7 @@ export async function coanaFix(
           foundIdsCResult.data as string,
         )?.[0],
       )
+      debugDir('inspect', { GitHubSecurityAlerts: ids })
     }
   }
 
