@@ -34,10 +34,31 @@ async function install(
   } as InstallOptions
   const useDebug = isDebug('stdio')
   const args = [
+    // If "true", npm does not run scripts specified in package.json files.
+    // Note that commands explicitly intended to run a particular script, such
+    // as `npm start`, `npm stop`, `npm restart`, `npm test`, and `npm run` will
+    // still run their intended script if `ignore-scripts` is set, but they will
+    // not run any pre- or post-scripts.
+    // https://docs.npmjs.com/cli/v11/commands/npm-install#ignore-scripts
     '--ignore-scripts',
+    // When "true" submit audit reports alongside the current npm command to the
+    // default registry and all registries configured for scopes. See the
+    // documentation for `npm audit` for details on what is submitted.
+    // https://docs.npmjs.com/cli/v11/commands/npm-install#audit
     '--no-audit',
+    // When "true" displays the message at the end of each `npm install` acknowledging
+    // the number of dependencies looking for funding. See `npm fund` for details.
+    // https://docs.npmjs.com/cli/v11/commands/npm-install#fund
     '--no-fund',
+    // When set to "true", npm will display a progress bar during time intensive
+    // operations, if `process.stderr` is a TTY. Set to "false" to suppress the
+    // progress bar.
+    // https://docs.npmjs.com/cli/v8/using-npm/config#progress
     '--no-progress',
+    // What level of logs to report. All logs are written to a debug log, with
+    // the path to that file printed if the execution of a command fails. The
+    // default is "notice".
+    // https://docs.npmjs.com/cli/v8/using-npm/config#loglevel
     ...(useDebug ? [] : ['--silent']),
     ...(extraArgs ?? []),
   ]
