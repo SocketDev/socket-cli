@@ -42,6 +42,9 @@ async function install(
     ...options,
   } as InstallOptions
   const args = [
+    // Do not execute any scripts defined in the project package.json and its dependencies.
+    // https://pnpm.io/9.x/cli/install#--ignore-scripts
+    '--ignore-scripts',
     // Enable pnpm updates to pnpm-lock.yaml in CI environments.
     // https://pnpm.io/cli/install#--frozen-lockfile
     '--no-frozen-lockfile',
