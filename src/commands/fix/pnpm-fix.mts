@@ -167,7 +167,7 @@ export async function pnpmFix(
         options,
       ) {
         const isWorkspaceRoot =
-          editablePkgJson.path === pkgEnvDetails.editablePkgJson.filename
+          editablePkgJson.filename === pkgEnvDetails.editablePkgJson.filename
         // Get current overrides for revert logic.
         const { overrides: oldOverrides } = getOverridesDataPnpm(
           pkgEnvDetails,
