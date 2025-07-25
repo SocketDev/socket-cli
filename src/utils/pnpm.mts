@@ -14,7 +14,8 @@ import type { SemVer } from 'semver'
 
 export function extractOverridesFromPnpmLockSrc(lockfileContent: any): string {
   return typeof lockfileContent === 'string'
-    ? (/^overrides:(\r?\n {2}.+)+(?:\r?\n)*/m.exec(lockfileContent)?.[0] ?? '')
+    ? (/^overrides:\r?\n(?: {2}.+(?:\r?\n)*)+/m.exec(lockfileContent)?.[0] ??
+        '')
     : ''
 }
 
