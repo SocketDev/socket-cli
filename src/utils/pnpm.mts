@@ -13,10 +13,11 @@ import type { LockfileObject, PackageSnapshot } from '@pnpm/lockfile.fs'
 import type { SemVer } from 'semver'
 
 export function extractOverridesFromPnpmLockSrc(lockfileContent: any): string {
-  return typeof lockfileContent === 'string'
-    ? (/^overrides:\r?\n(?: {2}.+(?:\r?\n)*)+/m.exec(lockfileContent)?.[0] ??
-        '')
-    : ''
+  let match
+  if (typeof lockfileContent === 'string') {
+    match = /^overrides:(?:\r?\n {2}.+)+(?:\r?\n)*/m.exec(lockfileContent)?.[0]
+  }
+  return match ?? ''
 }
 
 export async function extractPurlsFromPnpmLockfile(
