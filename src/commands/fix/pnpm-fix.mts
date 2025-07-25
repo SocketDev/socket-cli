@@ -96,7 +96,7 @@ export async function pnpmFix(
   spinner?.start()
 
   let actualTree: NodeClass | undefined
-  let { lockSrc } = pkgEnvDetails
+  let lockSrc: string | null = pkgEnvDetails.lockSrc
   let lockfile = parsePnpmLockfile(lockSrc)
   // Update pnpm-lock.yaml if its version is older than what the installed pnpm
   // produces.
@@ -109,12 +109,11 @@ export async function pnpmFix(
       cwd,
       spinner,
     })
-    const maybeLockSrc = maybeActualTree
+    lockSrc = maybeActualTree
       ? await readLockfile(pkgEnvDetails.lockPath)
       : null
-    if (maybeActualTree && maybeLockSrc) {
+    if (lockSrc && maybeActualTree) {
       actualTree = maybeActualTree
-      lockSrc = maybeLockSrc
       lockfile = parsePnpmLockfile(lockSrc)
     } else {
       lockfile = null
@@ -150,7 +149,7 @@ export async function pnpmFix(
 
   let revertData: PackageJson | undefined
   let revertOverrides: PackageJson | undefined
-  let revertOverridesSrc: string | undefined
+  let revertOverridesSrc = ''
 
   return await agentFix(
     pkgEnvDetails,
@@ -178,6 +177,7 @@ export async function pnpmFix(
           | undefined
         const overrideKey = `${packument.name}@${vulnerableVersionRange}`
 
+        lockSrc = await readLockfile(pkgEnvDetails.lockPath)
         revertOverrides = undefined
         revertOverridesSrc = extractOverridesFromPnpmLockSrc(lockSrc)
 
@@ -234,8 +234,10 @@ export async function pnpmFix(
           editablePkgJson.update(revertOverrides)
         }
         await editablePkgJson.save({ ignoreWhitespace: true })
+
+        lockSrc = await readLockfile(pkgEnvDetails.lockPath)
         const updatedOverridesContent = extractOverridesFromPnpmLockSrc(lockSrc)
-        if (updatedOverridesContent && revertOverridesSrc) {
+        if (updatedOverridesContent) {
           lockSrc = lockSrc!.replace(
             updatedOverridesContent,
             revertOverridesSrc,
