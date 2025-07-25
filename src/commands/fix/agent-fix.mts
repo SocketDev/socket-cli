@@ -437,14 +437,14 @@ export async function agentFix(
             continue infosLoop
           }
 
+          spinner?.start()
+
           if (!hasAnnouncedWorkspace) {
             hasAnnouncedWorkspace = true
             workspaceLogCallCount = logger.logCallCount
           }
 
           const newId = `${name}@${applyRange(refRange, newVersion, rangeStyle)}`
-
-          spinner?.start()
           spinner?.info(`Installing ${newId} in ${workspace}.`)
 
           let error
