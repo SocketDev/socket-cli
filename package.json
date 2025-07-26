@@ -126,7 +126,7 @@
     "@types/which": "3.0.4",
     "@types/yargs-parser": "21.0.3",
     "@typescript-eslint/parser": "8.38.0",
-    "@typescript/native-preview": "7.0.0-dev.20250725.1",
+    "@typescript/native-preview": "7.0.0-dev.20250725.3",
     "@vitest/coverage-v8": "3.2.4",
     "blessed": "0.1.81",
     "blessed-contrib": "4.11.0",
