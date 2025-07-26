@@ -96,7 +96,7 @@ export async function pnpmFix(
   spinner?.start()
 
   let actualTree: NodeClass | undefined
-  let lockSrc: string | null = pkgEnvDetails.lockSrc
+  let lockSrc: string = pkgEnvDetails.lockSrc
   let lockfile = parsePnpmLockfile(lockSrc)
   // Update pnpm-lock.yaml if its version is older than what the installed pnpm
   // produces.
@@ -109,11 +109,13 @@ export async function pnpmFix(
       cwd,
       spinner,
     })
-    lockSrc = maybeActualTree
-      ? await readLockfile(pkgEnvDetails.lockPath)
-      : null
-    if (lockSrc && maybeActualTree) {
-      actualTree = maybeActualTree
+    if (maybeActualTree) {
+      lockSrc = (await readLockfile(pkgEnvDetails.lockPath)) ?? ''
+    } else {
+      lockSrc = ''
+    }
+    if (lockSrc) {
+      actualTree = maybeActualTree!
       lockfile = parsePnpmLockfile(lockSrc)
     } else {
       lockfile = null
@@ -165,23 +167,23 @@ export async function pnpmFix(
         vulnerableVersionRange,
         options,
       ) {
-        const isWorkspaceRoot =
+        lockSrc = (await readLockfile(pkgEnvDetails.lockPath)) ?? ''
+
+        // Update overrides for the root workspace.
+        if (
           editablePkgJson.filename === pkgEnvDetails.editablePkgJson.filename
-        // Get current overrides for revert logic.
-        const { overrides: oldOverrides } = getOverridesDataPnpm(
-          pkgEnvDetails,
-          editablePkgJson.content,
-        )
-        const oldPnpmSection = editablePkgJson.content[PNPM] as
-          | StringKeyValueObject
-          | undefined
-        const overrideKey = `${packument.name}@${vulnerableVersionRange}`
+        ) {
+          const { overrides: oldOverrides } = getOverridesDataPnpm(
+            pkgEnvDetails,
+            editablePkgJson.content,
+          )
+          const oldPnpmSection = editablePkgJson.content[PNPM] as
+            | StringKeyValueObject
+            | undefined
+          const overrideKey = `${packument.name}@${vulnerableVersionRange}`
 
-        lockSrc = await readLockfile(pkgEnvDetails.lockPath)
-        revertOverrides = undefined
-        revertOverridesSrc = extractOverridesFromPnpmLockSrc(lockSrc)
-
-        if (isWorkspaceRoot) {
+          revertOverridesSrc = extractOverridesFromPnpmLockSrc(lockSrc)
+          // Track existing overrides in the root package.json to revert to later.
           revertOverrides = {
             [PNPM]: oldPnpmSection
               ? {
@@ -191,9 +193,11 @@ export async function pnpmFix(
                         ...oldOverrides,
                         [overrideKey]: undefined,
                       }
-                    : undefined,
+                    : // Properties with undefined values are deleted when saved as JSON.
+                      undefined,
                 }
-              : undefined,
+              : // Properties with undefined values are deleted when saved as JSON.
+                undefined,
           } as PackageJson
           // Update overrides in the root package.json so that when `pnpm install`
           // generates pnpm-lock.yaml it updates transitive dependencies too.
@@ -210,10 +214,15 @@ export async function pnpmFix(
               },
             },
           })
+        } else {
+          revertOverrides = undefined
+          revertOverridesSrc = ''
         }
-
         revertData = {
+          // If "pnpm" or "pnpm.overrides" fields are undefined they will be
+          // deleted when saved.
           ...revertOverrides,
+          // Track existing dependencies in the root package.json to revert to later.
           ...(editablePkgJson.content.dependencies && {
             dependencies: { ...editablePkgJson.content.dependencies },
           }),
@@ -232,22 +241,34 @@ export async function pnpmFix(
           // Revert overrides metadata in package.json now that pnpm-lock.yaml
           // has been updated.
           editablePkgJson.update(revertOverrides)
+          await editablePkgJson.save({ ignoreWhitespace: true })
         }
-        await editablePkgJson.save({ ignoreWhitespace: true })
-
-        lockSrc = await readLockfile(pkgEnvDetails.lockPath)
-        const updatedOverridesContent = extractOverridesFromPnpmLockSrc(lockSrc)
-        if (updatedOverridesContent) {
-          lockSrc = lockSrc!.replace(
-            updatedOverridesContent,
-            revertOverridesSrc,
-          )
-          await fs.writeFile(pkgEnvDetails.lockPath, lockSrc, 'utf8')
+        lockSrc = (await readLockfile(pkgEnvDetails.lockPath)) ?? ''
+        // Remove "overrides" block from pnpm-lock.yaml lockfile when processing
+        // the root workspace.
+        if (
+          editablePkgJson.filename === pkgEnvDetails.editablePkgJson.filename
+        ) {
+          const updatedOverridesContent =
+            extractOverridesFromPnpmLockSrc(lockSrc)
+          if (updatedOverridesContent) {
+            // Remove "overrides" block from pnpm-lock.yaml lockfile.
+            lockSrc = lockSrc!.replace(
+              updatedOverridesContent,
+              revertOverridesSrc,
+            )
+            // Save pnpm-lock.yaml lockfile.
+            await fs.writeFile(pkgEnvDetails.lockPath, lockSrc, 'utf8')
+          }
         }
       },
       async revertInstall(editablePkgJson) {
         if (revertData) {
+          // Revert package.json.
           editablePkgJson.update(revertData)
+          await editablePkgJson.save({ ignoreWhitespace: true })
+          // Revert pnpm-lock.yaml lockfile to be on the safe side.
+          await fs.writeFile(pkgEnvDetails.lockPath, lockSrc, 'utf8')
         }
       },
     },

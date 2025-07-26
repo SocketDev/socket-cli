@@ -145,6 +145,7 @@ export async function npmFix(
     {
       async beforeInstall(editablePkgJson) {
         revertData = {
+          // Track existing dependencies in the root package.json to revert to later.
           ...(editablePkgJson.content.dependencies && {
             dependencies: { ...editablePkgJson.content.dependencies },
           }),
@@ -159,25 +160,34 @@ export async function npmFix(
         } as PackageJson
       },
       async afterUpdate(editablePkgJson, packument, oldVersion, newVersion) {
-        const isWorkspaceRoot =
-          editablePkgJson.filename === pkgEnvDetails.editablePkgJson.filename
-        if (isWorkspaceRoot) {
-          const arb = new Arborist({
-            path: pkgEnvDetails.pkgPath,
-            ...flatConfig,
-            ...SAFE_WITH_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
-          })
-          const idealTree = await arb.buildIdealTree()
-          const node = findPackageNode(idealTree, packument.name, oldVersion)
-          if (node) {
-            updateNode(node, newVersion, packument.versions[newVersion]!)
-            await arb.reify()
-          }
+        // Exit early if not the root workspace.
+        if (
+          editablePkgJson.filename !== pkgEnvDetails.editablePkgJson.filename
+        ) {
+          return
+        }
+        // Update package-lock.json using @npmcli/arborist.
+        const arb = new Arborist({
+          path: pkgEnvDetails.pkgPath,
+          ...flatConfig,
+          ...SAFE_WITH_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
+        })
+        // Build the ideal tree of nodes that are used to generated the saved
+        // package-lock.json
+        const idealTree = await arb.buildIdealTree()
+        const node = findPackageNode(idealTree, packument.name, oldVersion)
+        if (node) {
+          // Update the ideal tree node.
+          updateNode(node, newVersion, packument.versions[newVersion]!)
+          // Save package-lock.json lockfile.
+          await arb.reify()
         }
       },
       async revertInstall(editablePkgJson) {
         if (revertData) {
+          // Revert package.json.
           editablePkgJson.update(revertData)
+          await editablePkgJson.save({ ignoreWhitespace: true })
         }
       },
     },

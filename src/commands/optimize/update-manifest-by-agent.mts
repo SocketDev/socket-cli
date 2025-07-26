@@ -71,7 +71,7 @@ function updatePkgJsonField(
           },
         })
       } else {
-        // Properties with undefined values are omitted when saved as JSON.
+        // Properties with undefined values are deleted when saved as JSON.
         editablePkgJson.update(
           (hasKeys(oldValue)
             ? {
@@ -84,7 +84,7 @@ function updatePkgJsonField(
         )
       }
     } else if (field === OVERRIDES || field === RESOLUTIONS) {
-      // Properties with undefined values are omitted when saved as JSON.
+      // Properties with undefined values are deleted when saved as JSON.
       editablePkgJson.update({
         [field]: hasKeys(value) ? value : undefined,
       } as typeof editablePkgJson.content)
