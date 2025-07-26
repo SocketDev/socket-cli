@@ -559,7 +559,7 @@ const lazyRootPath = () => path.join(realpathSync.native(__dirname), '..')
 
 const lazyShadowBinPath = () =>
   // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'shadow-bin')
+  path.join(constants.rootPath, 'shadow-npm-bin')
 
 const lazyShadowNpmBinPath = () =>
   // Lazily access constants.distPath.
