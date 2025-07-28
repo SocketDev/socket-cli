@@ -55,7 +55,7 @@ export default async function shadowBin(
           ]
         })()
       : []
-  const useDebug = isDebug()
+  const useDebug = isDebug('stdio')
   const useNodeOptions = nodeOptionsArg || permArgs.length
   const isSilent = !useDebug && !binArgs.some(isNpmLoglevelFlag)
   // The default value of loglevel is "notice". We default to "error" which is
