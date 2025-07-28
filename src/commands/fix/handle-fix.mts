@@ -1,3 +1,4 @@
+import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { coanaFix } from './coana-fix.mts'
@@ -80,6 +81,8 @@ export async function handleFix({
     )
     return
   }
+
+  debugDir('inspect', { pkgEnvDetails })
 
   // Lazily access constants.
   const { NPM, PNPM } = constants
