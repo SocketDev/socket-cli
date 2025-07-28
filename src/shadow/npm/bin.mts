@@ -10,11 +10,6 @@ import { installLinks } from './link.mts'
 import constants from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
 
-import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
-
-const { SOCKET_CLI_SAFE_BIN, SOCKET_CLI_SAFE_PROGRESS, SOCKET_IPC_HANDSHAKE } =
-  constants
-
 export default async function shadowBin(
   binName: 'npm' | 'npx',
   args = process.argv.slice(2),
@@ -32,28 +27,20 @@ export default async function shadowBin(
     binName === 'npm' &&
     // Lazily access constants.SUPPORTS_NODE_PERMISSION_FLAG.
     constants.SUPPORTS_NODE_PERMISSION_FLAG
-      ? await (async () => {
-          const cwd = process.cwd()
-          const stdioPipeOptions: SpawnOptions = { cwd }
-          const globalPrefix = (
-            await spawn('npm', ['prefix', '-g'], stdioPipeOptions)
-          ).stdout
-          const npmCachePath = (
-            await spawn('npm', ['config', 'get', 'cache'], stdioPipeOptions)
-          ).stdout
-          return [
-            '--permission',
-            '--allow-child-process',
-            // '--allow-addons',
-            // '--allow-wasi',
-            // Allow all reads because npm walks up directories looking for config
-            // and package.json files.
-            '--allow-fs-read=*',
-            `--allow-fs-write=${cwd}/*`,
-            `--allow-fs-write=${globalPrefix}/*`,
-            `--allow-fs-write=${npmCachePath}/*`,
-          ]
-        })()
+      ? [
+          '--permission',
+          '--allow-child-process',
+          // '--allow-addons',
+          // '--allow-wasi',
+          // Allow all reads because npm walks up directories looking for config
+          // and package.json files.
+          '--allow-fs-read=*',
+          `--allow-fs-write=${process.cwd()}/*`,
+          // Lazily access constants.npmGlobalPrefix.
+          `--allow-fs-write=${constants.npmGlobalPrefix}/*`,
+          // Lazily access constants.npmGlobalPrefix.
+          `--allow-fs-write=${constants.npmCachePath}/*`,
+        ]
       : []
   const useDebug = isDebug('stdio')
   const useNodeOptions = nodeOptionsArg || permArgs.length
@@ -115,10 +102,14 @@ export default async function shadowBin(
       process.exit(code)
     }
   })
+
   spawnPromise.process.send({
-    [SOCKET_IPC_HANDSHAKE]: {
-      [SOCKET_CLI_SAFE_BIN]: binName,
-      [SOCKET_CLI_SAFE_PROGRESS]: progressArg,
+    // Lazily access constants.SOCKET_IPC_HANDSHAKE.
+    [constants.SOCKET_IPC_HANDSHAKE]: {
+      // Lazily access constants.SOCKET_CLI_SAFE_BIN.
+      [constants.SOCKET_CLI_SAFE_BIN]: binName,
+      // Lazily access constants.SOCKET_CLI_SAFE_PROGRESS.
+      [constants.SOCKET_CLI_SAFE_PROGRESS]: progressArg,
     },
   })
   await spawnPromise
