@@ -236,12 +236,16 @@ const YARN_LOCK = 'yarn.lock'
 
 let _Sentry: any
 
-let _stdioPipeOptions: SpawnOptions | undefined
-function getStdioPipeOptions() {
-  if (_stdioPipeOptions === undefined) {
-    _stdioPipeOptions = { cwd: process.cwd() }
+let _npmStdioPipeOptions: SpawnOptions | undefined
+function getNpmStdioPipeOptions() {
+  if (_npmStdioPipeOptions === undefined) {
+    _npmStdioPipeOptions = {
+      cwd: process.cwd(),
+      // Lazily access constants.WIN32.
+      shell: constants.WIN32,
+    }
   }
-  return _stdioPipeOptions
+  return _npmStdioPipeOptions
 }
 
 const LAZY_ENV = () => {
@@ -539,11 +543,11 @@ const lazyNpmCachePath = () => {
   const {
     spawnSync,
   } = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
-  // Lazily access constants.npmRealExecPath.
+  // Lazily access constants.npmExecPath.
   return spawnSync(
-    constants.npmRealExecPath,
+    constants.npmExecPath,
     ['config', 'get', 'cache'],
-    getStdioPipeOptions(),
+    getNpmStdioPipeOptions(),
   ).stdout
 }
 
@@ -551,11 +555,11 @@ const lazyNpmGlobalPrefix = () => {
   const {
     spawnSync,
   } = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
-  // Lazily access constants.npmRealExecPath.
+  // Lazily access constants.npmExecPath.
   return spawnSync(
-    constants.npmRealExecPath,
+    constants.npmExecPath,
     ['prefix', '-g'],
-    getStdioPipeOptions(),
+    getNpmStdioPipeOptions(),
   ).stdout
 }
 
