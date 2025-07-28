@@ -8,6 +8,7 @@ import registryConstants from '@socketsecurity/registry/lib/constants'
 
 import type { Agent } from './utils/package-environment.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
+import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
 const require = createRequire(import.meta.url)
 const __filename = fileURLToPath(import.meta.url)
@@ -170,6 +171,9 @@ type Constants = Remap<
     readonly minimumVersionByAgent: Map<Agent, string>
     readonly nmBinPath: string
     readonly nodeHardenFlags: string[]
+    readonly npmCachePath: string
+    readonly npmGlobalPrefix: string
+    readonly npmNmNodeGypPath: string
     readonly processEnv: ProcessEnv
     readonly rootPath: string
     readonly shadowBinPath: string
@@ -231,6 +235,14 @@ const YARN_CLASSIC = 'yarn/classic'
 const YARN_LOCK = 'yarn.lock'
 
 let _Sentry: any
+
+let _stdioPipeOptions: SpawnOptions | undefined
+function getStdioPipeOptions() {
+  if (_stdioPipeOptions === undefined) {
+    _stdioPipeOptions = { cwd: process.cwd() }
+  }
+  return _stdioPipeOptions
+}
 
 const LAZY_ENV = () => {
   const { env } = process
@@ -523,9 +535,33 @@ const lazyNodeHardenFlags = () =>
         ],
   )
 
-const lazyNpmNmNodeGypPath = () =>
+const lazyNpmCachePath = () => {
+  const {
+    spawnSync,
+  } = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
   // Lazily access constants.npmRealExecPath.
+  return spawnSync(
+    constants.npmRealExecPath,
+    ['config', 'get', 'cache'],
+    getStdioPipeOptions(),
+  ).stdout
+}
+
+const lazyNpmGlobalPrefix = () => {
+  const {
+    spawnSync,
+  } = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
+  // Lazily access constants.npmRealExecPath.
+  return spawnSync(
+    constants.npmRealExecPath,
+    ['prefix', '-g'],
+    getStdioPipeOptions(),
+  ).stdout
+}
+
+const lazyNpmNmNodeGypPath = () =>
   path.join(
+    // Lazily access constants.npmRealExecPath.
     constants.npmRealExecPath,
     '../../node_modules/node-gyp/bin/node-gyp.js',
   )
@@ -684,6 +720,8 @@ const constants: Constants = createConstantsObject(
     minimumVersionByAgent: undefined,
     nmBinPath: undefined,
     nodeHardenFlags: undefined,
+    npmCachePath: undefined,
+    npmGlobalPrefix: undefined,
     npmNmNodeGypPath: undefined,
     processEnv: undefined,
     rootPath: undefined,
@@ -716,6 +754,8 @@ const constants: Constants = createConstantsObject(
       minimumVersionByAgent: lazyMinimumVersionByAgent,
       nmBinPath: lazyNmBinPath,
       nodeHardenFlags: lazyNodeHardenFlags,
+      npmCachePath: lazyNpmCachePath,
+      npmGlobalPrefix: lazyNpmGlobalPrefix,
       npmNmNodeGypPath: lazyNpmNmNodeGypPath,
       processEnv: lazyProcessEnv,
       rootPath: lazyRootPath,
