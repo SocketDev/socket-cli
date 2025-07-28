@@ -51,7 +51,7 @@ export function safeNpmInstall(
   } else if (useIpc && Array.isArray(stdio) && !stdio.includes('ipc')) {
     stdio = stdio.concat('ipc')
   }
-  const useDebug = isDebug()
+  const useDebug = isDebug('stdio')
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   const progressArg = rawBinArgs.findLast(isNpmProgressFlag) !== '--no-progress'
