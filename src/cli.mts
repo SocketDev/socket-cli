@@ -46,13 +46,12 @@ import { serializeResultJson } from './utils/serialize-result-json.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 
-const { SOCKET_CLI_BIN_NAME } = constants
-
 void (async () => {
   const registryUrl = lookupRegistryUrl()
   await updateNotifier({
     authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
-    name: SOCKET_CLI_BIN_NAME,
+    // Lazily access constants.SOCKET_CLI_BIN_NAME.
+    name: constants.SOCKET_CLI_BIN_NAME,
     registryUrl,
     ttl: 86_400_000 /* 24 hours in milliseconds */,
     // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
@@ -62,6 +61,8 @@ void (async () => {
   try {
     await meowWithSubcommands(
       {
+        analytics: cmdAnalytics,
+        'audit-log': cmdAuditLog,
         ci: cmdCI,
         config: cmdConfig,
         fix: cmdFix,
@@ -75,16 +76,14 @@ void (async () => {
         optimize: cmdOptimize,
         organization: cmdOrganization,
         package: cmdPackage,
+        manifest: cmdManifest,
+        scan: cmdScan,
         'raw-npm': cmdRawNpm,
         'raw-npx': cmdRawNpx,
-        wrapper: cmdWrapper,
-        scan: cmdScan,
-        'audit-log': cmdAuditLog,
         repos: cmdRepository,
-        analytics: cmdAnalytics,
         'threat-feed': cmdThreatFeed,
-        manifest: cmdManifest,
         uninstall: cmdUninstall,
+        wrapper: cmdWrapper,
       },
       {
         aliases: {
@@ -180,7 +179,8 @@ void (async () => {
           },
         },
         argv: process.argv.slice(2),
-        name: SOCKET_CLI_BIN_NAME,
+        // Lazily access constants.SOCKET_CLI_BIN_NAME.
+        name: constants.SOCKET_CLI_BIN_NAME,
         importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
       },
     )
