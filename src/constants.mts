@@ -543,8 +543,8 @@ const lazyNpmCachePath = () => {
   const {
     spawnSync,
   } = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
-  // Lazily access constants.npmExecPath.
   return spawnSync(
+    // Lazily access constants.npmExecPath.
     constants.npmExecPath,
     ['config', 'get', 'cache'],
     getNpmStdioPipeOptions(),
@@ -555,8 +555,8 @@ const lazyNpmGlobalPrefix = () => {
   const {
     spawnSync,
   } = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
-  // Lazily access constants.npmExecPath.
   return spawnSync(
+    // Lazily access constants.npmExecPath.
     constants.npmExecPath,
     ['prefix', '-g'],
     getNpmStdioPipeOptions(),
