@@ -34,7 +34,7 @@ Index: /rollup/dist/es/shared/node-entry.js
  const accessedMetaUrlGlobals = {
      amd: ['document', 'module', 'URL'],
 -    cjs: ['document', 'require', 'URL', DOCUMENT_CURRENT_SCRIPT],
-+    cjs: ['require', 'URL'],
++    cjs: ['require', 'URL', DOCUMENT_CURRENT_SCRIPT],
      es: [],
      iife: ['document', 'URL', DOCUMENT_CURRENT_SCRIPT],
      system: ['module'],
@@ -70,7 +70,7 @@ Index: /rollup/dist/es/shared/node-entry.js
      system: (property, { snippets: { getPropertyAccess } }) => property === null ? `module.meta` : `module.meta${getPropertyAccess(property)}`,
      umd: getGenericImportMetaMechanism(chunkId => `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromFullPath('__filename')} : ${getUrlFromDocument(chunkId, true)})`)
  };
-@@ -9336,9 +9336,9 @@
+@@ -9337,9 +9337,9 @@
  		    return segs[segs.length - 2];
  		  }
  
@@ -81,18 +81,18 @@ Index: /rollup/dist/es/shared/node-entry.js
  	return utils;
  }
  
-@@ -17493,9 +17493,9 @@
+@@ -17535,9 +17535,9 @@
              // Synthetic namespaces should not hide "regular" exports of the same name
              if (module.info.syntheticNamedExports === name) {
                  continue;
              }
--            const [variable, indirectExternal] = getVariableForExportNameRecursive(module, name, importerForSideEffects, true, 
-+            const [variable, indirectExternal] = getVariableForExportNameRecursive(module, name, importerForSideEffects, true,
+-            const [variable, options] = getVariableForExportNameRecursive(module, name, importerForSideEffects, true, 
++            const [variable, options] = getVariableForExportNameRecursive(module, name, importerForSideEffects, true,
              // We are creating a copy to handle the case where the same binding is
              // imported through different namespace reexports gracefully
              copyNameToModulesMap(searchedNamesAndModules));
-             if (module instanceof ExternalModule || indirectExternal) {
-@@ -18228,9 +18228,9 @@
+             if (module instanceof ExternalModule || options?.indirectExternal) {
+@@ -18270,9 +18270,9 @@
                      this.facadeChunkByModule.set(module, this);
                      continue;
                  }
@@ -103,7 +103,7 @@ Index: /rollup/dist/es/shared/node-entry.js
              name => ({
                  name
              }));
-@@ -19704,9 +19704,9 @@
+@@ -19746,9 +19746,9 @@
  }
  function mergeChunks(chunkPartition, minChunkSize, sideEffectAtoms, sizeByAtom) {
      const { small } = chunkPartition;
@@ -114,7 +114,7 @@ Index: /rollup/dist/es/shared/node-entry.js
          minChunkSize <= 1 ? 1 : Infinity);
          if (bestTargetChunk) {
              const { containedAtoms, correlatedAtoms, modules, pure, size } = mergedChunk;
-@@ -19760,9 +19760,9 @@
+@@ -19802,9 +19802,9 @@
   * is returned.
   * Merging will not produce cycles if none of the direct non-merged
   * dependencies of a chunk have the other chunk as a transitive dependency.
@@ -129,7 +129,7 @@ Index: /rollup/dist/shared/rollup.js
 ===================================================================
 --- /rollup/dist/shared/rollup.js
 +++ /rollup/dist/shared/rollup.js
-@@ -1233,9 +1233,9 @@
+@@ -1234,9 +1234,9 @@
  		    return segs[segs.length - 2];
  		  }
  
@@ -140,7 +140,7 @@ Index: /rollup/dist/shared/rollup.js
  	return utils;
  }
  
-@@ -8788,9 +8788,9 @@
+@@ -8789,9 +8789,9 @@
                  : [...path1, ...path2];
  };
  
@@ -151,7 +151,7 @@ Index: /rollup/dist/shared/rollup.js
      initPath, context, kind) {
          super(name);
          this.init = init;
-@@ -10224,9 +10224,9 @@
+@@ -10225,9 +10225,9 @@
          super.initialise();
          if (this.directive &&
              this.directive !== 'use strict' &&
@@ -162,7 +162,7 @@ Index: /rollup/dist/shared/rollup.js
              parseAst_js.logModuleLevelDirective(this.directive, this.scope.context.module.id), this.start);
          }
      }
-@@ -11526,20 +11526,20 @@
+@@ -11527,20 +11527,20 @@
              this.scope.addAccessedGlobals(accessedGlobals, accessedGlobalsByScope);
          }
      }
@@ -172,7 +172,7 @@ Index: /rollup/dist/shared/rollup.js
  const accessedMetaUrlGlobals = {
      amd: ['document', 'module', 'URL'],
 -    cjs: ['document', 'require', 'URL', DOCUMENT_CURRENT_SCRIPT],
-+    cjs: ['require', 'URL'],
++    cjs: ['require', 'URL', DOCUMENT_CURRENT_SCRIPT],
      es: [],
      iife: ['document', 'URL', DOCUMENT_CURRENT_SCRIPT],
      system: ['module'],
@@ -186,7 +186,7 @@ Index: /rollup/dist/shared/rollup.js
      iife: ['document', 'URL'],
      system: ['module', 'URL'],
      umd: ['document', 'require', 'URL']
-@@ -11553,9 +11553,9 @@
+@@ -11554,9 +11554,9 @@
          : property === 'url'
              ? urlMechanism
              : 'undefined';
@@ -197,7 +197,7 @@ Index: /rollup/dist/shared/rollup.js
  const getUrlFromDocument = (chunkId, umd = false) => `${umd ? `typeof document === 'undefined' ? location.href : ` : ''}(${DOCUMENT_CURRENT_SCRIPT} && ${DOCUMENT_CURRENT_SCRIPT}.tagName.toUpperCase() === 'SCRIPT' && ${DOCUMENT_CURRENT_SCRIPT}.src || new URL('${escapeId(chunkId)}', document.baseURI).href)`;
  const relativeUrlMechanisms = {
      amd: relativePath => {
-@@ -11570,9 +11570,9 @@
+@@ -11571,9 +11571,9 @@
      umd: relativePath => `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(relativePath)} : ${getRelativeUrlFromDocument(relativePath, true)})`
  };
  const importMetaMechanisms = {
@@ -208,18 +208,18 @@ Index: /rollup/dist/shared/rollup.js
      system: (property, { snippets: { getPropertyAccess } }) => property === null ? `module.meta` : `module.meta${getPropertyAccess(property)}`,
      umd: getGenericImportMetaMechanism(chunkId => `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromFullPath('__filename')} : ${getUrlFromDocument(chunkId, true)})`)
  };
-@@ -19095,9 +19095,9 @@
+@@ -19137,9 +19137,9 @@
              // Synthetic namespaces should not hide "regular" exports of the same name
              if (module.info.syntheticNamedExports === name) {
                  continue;
              }
--            const [variable, indirectExternal] = getVariableForExportNameRecursive(module, name, importerForSideEffects, true, 
-+            const [variable, indirectExternal] = getVariableForExportNameRecursive(module, name, importerForSideEffects, true,
+-            const [variable, options] = getVariableForExportNameRecursive(module, name, importerForSideEffects, true, 
++            const [variable, options] = getVariableForExportNameRecursive(module, name, importerForSideEffects, true,
              // We are creating a copy to handle the case where the same binding is
              // imported through different namespace reexports gracefully
              copyNameToModulesMap(searchedNamesAndModules));
-             if (module instanceof ExternalModule || indirectExternal) {
-@@ -19721,9 +19721,9 @@
+             if (module instanceof ExternalModule || options?.indirectExternal) {
+@@ -19763,9 +19763,9 @@
                      this.facadeChunkByModule.set(module, this);
                      continue;
                  }
@@ -230,7 +230,7 @@ Index: /rollup/dist/shared/rollup.js
              name => ({
                  name
              }));
-@@ -21197,9 +21197,9 @@
+@@ -21239,9 +21239,9 @@
  }
  function mergeChunks(chunkPartition, minChunkSize, sideEffectAtoms, sizeByAtom) {
      const { small } = chunkPartition;
@@ -241,7 +241,7 @@ Index: /rollup/dist/shared/rollup.js
          minChunkSize <= 1 ? 1 : Infinity);
          if (bestTargetChunk) {
              const { containedAtoms, correlatedAtoms, modules, pure, size } = mergedChunk;
-@@ -21253,9 +21253,9 @@
+@@ -21295,9 +21295,9 @@
   * is returned.
   * Merging will not produce cycles if none of the direct non-merged
   * dependencies of a chunk have the other chunk as a transitive dependency.
