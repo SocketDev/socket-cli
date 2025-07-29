@@ -1,4 +1,4 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
@@ -95,10 +95,10 @@ export async function handleCreateNewScan({
     return
   }
 
-  debugFn(
-    'notice',
-    `found: ${packagePaths.length} local ${pluralize('file', packagePaths.length)}`,
+  logger.success(
+    `Found ${packagePaths.length} local ${pluralize('file', packagePaths.length)}`,
   )
+
   debugDir('inspect', { packagePaths })
 
   if (readOnly) {
