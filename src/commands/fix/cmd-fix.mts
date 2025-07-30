@@ -136,6 +136,7 @@ async function run(
   { parentName }: { parentName: string },
 ): Promise<void> {
   const cli = meowOrExit({
+    allowUnknownFlags: false,
     argv,
     config,
     importMeta,
