@@ -65,10 +65,12 @@ export function safeNpmInstall(
     // Lazily access constants.execPath.
     constants.execPath,
     [
-      // Lazily access constants.nodeHardenFlags.
-      ...constants.nodeHardenFlags,
       // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
+      // Lazily access constants.nodeHardenFlags.
+      ...constants.nodeHardenFlags,
+      // Lazily access constants.nodeMemoryFlags.
+      ...constants.nodeMemoryFlags,
       // Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
       ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
         ? [

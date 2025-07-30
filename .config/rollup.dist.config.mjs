@@ -56,18 +56,19 @@ const {
   SOCKET_CLI_SENTRY_NPM_BIN_NAME,
   SOCKET_CLI_SENTRY_NPX_BIN_NAME,
   SOCKET_CLI_SENTRY_PACKAGE_NAME,
-  UTILS,
-  VENDOR,
 } = constants
 
 const BLESSED = 'blessed'
 const BLESSED_CONTRIB = 'blessed-contrib'
 const COANA_TECH_CLI = '@coana-tech/cli'
+const FLAGS = 'flags'
 const LICENSE_MD = `LICENSE.md`
 const SENTRY_NODE = '@sentry/node'
 const SOCKET_DESCRIPTION = 'CLI for Socket.dev'
 const SOCKET_DESCRIPTION_WITH_SENTRY = `${SOCKET_DESCRIPTION}, includes Sentry error handling, otherwise identical to the regular \`${SOCKET_CLI_BIN_NAME}\` package`
 const SOCKET_SECURITY_REGISTRY = '@socketsecurity/registry'
+const UTILS = 'utils'
+const VENDOR = 'vendor'
 
 async function copyInitGradle() {
   // Lazily access constants path properties.
@@ -363,6 +364,7 @@ export default async () => {
   const blessedContribSrcPath = normalizePath(
     path.join(externalSrcPath, BLESSED_CONTRIB),
   )
+  const flagsSrcPath = normalizePath(path.join(srcPath, 'flags.mts'))
   const shadowNpmBinSrcPath = normalizePath(
     path.join(srcPath, 'shadow/npm/bin.mts'),
   )
@@ -399,6 +401,8 @@ export default async () => {
             switch (id) {
               case constantsSrcPath:
                 return CONSTANTS
+              case flagsSrcPath:
+                return FLAGS
               case shadowNpmBinSrcPath:
                 return SHADOW_NPM_BIN
               case shadowNpmInjectSrcPath:

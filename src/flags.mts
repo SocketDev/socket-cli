@@ -1,10 +1,116 @@
+import os from 'node:os'
+import { pathToFileURL } from 'node:url'
+
+import meow from 'meow'
+
+import constants from './constants.mts'
+
 import type { Flag } from 'meow'
 
 // TODO: not sure if I'm missing something but meow doesn't seem to expose this?
-type StringFlag = Flag<'string', string> | Flag<'string', string[], true>
-type BooleanFlag = Flag<'boolean', boolean> | Flag<'boolean', boolean[], true>
-type NumberFlag = Flag<'number', number> | Flag<'number', number[], true>
-type AnyFlag = StringFlag | BooleanFlag | NumberFlag
+export type StringFlag = Flag<'string', string> | Flag<'string', string[], true>
+export type BooleanFlag =
+  | Flag<'boolean', boolean>
+  | Flag<'boolean', boolean[], true>
+export type NumberFlag = Flag<'number', number> | Flag<'number', number[], true>
+export type AnyFlag = StringFlag | BooleanFlag | NumberFlag
+
+type RawSpaceSizeFlags = {
+  maxOldSpaceSize: number
+  maxSemiSpaceSize: number
+}
+
+let _rawSpaceSizeFlags: RawSpaceSizeFlags | undefined
+function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
+  if (_rawSpaceSizeFlags === undefined) {
+    const cli = meow(``, {
+      argv: process.argv.slice(2),
+      autoHelp: false,
+      autoVersion: false,
+      flags: {
+        maxOldSpaceSize: {
+          type: 'number',
+          default: 0,
+        },
+        maxSemiSpaceSize: {
+          type: 'number',
+          default: 0,
+        },
+      },
+      importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
+    })
+    _rawSpaceSizeFlags = {
+      maxOldSpaceSize: cli.flags['maxOldSpaceSize'],
+      maxSemiSpaceSize: cli.flags['maxSemiSpaceSize'],
+    }
+  }
+  return _rawSpaceSizeFlags
+}
+
+let _maxOldSpaceSizeFlag: number | undefined
+export function getMaxOldSpaceSizeFlag(): number {
+  if (_maxOldSpaceSizeFlag === undefined) {
+    _maxOldSpaceSizeFlag = getRawSpaceSizeFlags().maxOldSpaceSize
+    if (!_maxOldSpaceSizeFlag) {
+      const match = /(?<=--max-old-space-size=)\d+/.exec(
+        // Lazily access constants.ENV.
+        constants.ENV.NODE_OPTIONS,
+      )?.[0]
+      _maxOldSpaceSizeFlag = match ? Number(match) : 0
+    }
+    if (!_maxOldSpaceSizeFlag) {
+      // Default value determined by available system memory.
+      _maxOldSpaceSizeFlag = Math.floor(
+        // Total system memory in MiB.
+        (os.totalmem() / 1024 / 1024) *
+          // Set 75% of total memory (safe buffer to avoid system pressure)
+          0.75,
+      )
+    }
+  }
+  return _maxOldSpaceSizeFlag
+}
+// Ensure export because dist/flags.js is required in src/constants.mts.
+// eslint-disable-next-line n/exports-style
+exports.getMaxOldSpaceSizeFlag = getMaxOldSpaceSizeFlag
+
+let _maxSemiSpaceSizeFlag: number | undefined
+export function getMaxSemiSpaceSizeFlag(): number {
+  if (_maxSemiSpaceSizeFlag === undefined) {
+    _maxSemiSpaceSizeFlag = getRawSpaceSizeFlags().maxSemiSpaceSize
+    if (!_maxSemiSpaceSizeFlag) {
+      const match = /(?<=--max-semi-space-size=)\d+/.exec(
+        // Lazily access constants.ENV.
+        constants.ENV.NODE_OPTIONS,
+      )?.[0]
+      _maxSemiSpaceSizeFlag = match ? Number(match) : 0
+    }
+    if (!_maxSemiSpaceSizeFlag) {
+      const maxOldSpaceSize = getMaxOldSpaceSizeFlag()
+      // Dynamically scale semi-space size based on max-old-space-size
+      // https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib
+      if (maxOldSpaceSize <= 512) {
+        _maxSemiSpaceSizeFlag = 4
+      } else if (maxOldSpaceSize <= 1024) {
+        _maxSemiSpaceSizeFlag = 8
+      } else if (maxOldSpaceSize <= 2048) {
+        _maxSemiSpaceSizeFlag = 16
+      } else if (maxOldSpaceSize <= 4096) {
+        _maxSemiSpaceSizeFlag = 32
+      } else if (maxOldSpaceSize <= 8192) {
+        _maxSemiSpaceSizeFlag = 64
+      } else if (maxOldSpaceSize <= 16384) {
+        _maxSemiSpaceSizeFlag = 128
+      } else {
+        _maxSemiSpaceSizeFlag = 256
+      }
+    }
+  }
+  return _maxSemiSpaceSizeFlag
+}
+// Ensure export because dist/flags.js is required in src/constants.mts.
+// eslint-disable-next-line n/exports-style
+exports.getMaxSemiSpaceSizeFlag = getMaxSemiSpaceSizeFlag
 
 // Note: we use this description in getFlagListOutput, meow doesn't care
 export type MeowFlags = Record<
@@ -33,6 +139,24 @@ export const commonFlags: MeowFlags = {
     hidden: true,
     description: 'Print this help',
   },
+  maxOldSpaceSize: {
+    type: 'number',
+    get default() {
+      return getMaxOldSpaceSizeFlag()
+    },
+    hidden: true,
+    description:
+      "Sets the max memory size of V8's old memory section in megabytes",
+  },
+  maxSemiSpaceSize: {
+    type: 'number',
+    get default() {
+      return getMaxSemiSpaceSizeFlag()
+    },
+    hidden: true,
+    description:
+      "Sets the maximum semi-space size for V8's scavenge garbage collector in megabytes",
+  },
   nobanner: {
     // I know this would be `--no-banner` but that doesn't work with cdxgen.
     // Mostly for internal usage anyways.
@@ -40,11 +164,6 @@ export const commonFlags: MeowFlags = {
     default: false,
     hidden: true,
     description: 'Hide the Socket banner',
-  },
-  version: {
-    type: 'boolean',
-    hidden: true,
-    description: 'Print the app version',
   },
 }
 

@@ -189,18 +189,6 @@ void (async () => {
     debugFn('error', 'Uncaught error (BAD!):')
     debugDir('inspect', { error: e })
 
-    // Try to parse the flags, find out if --json or --markdown is set.
-    let isJson = false
-    try {
-      const cli = meow(``, {
-        argv: process.argv.slice(2),
-        autoHelp: false,
-        flags: {},
-        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
-      })
-      isJson = !!cli.flags['json']
-    } catch {}
-
     let errorBody: string | undefined
     let errorTitle: string
     let errorMessage = ''
@@ -218,6 +206,18 @@ void (async () => {
     } else {
       errorTitle = 'Unexpected error with no details'
     }
+
+    // Try to parse the flags, find out if --json is set.
+    const isJson = (() => {
+      const cli = meow(``, {
+        argv: process.argv.slice(2),
+        autoHelp: false,
+        autoVersion: false,
+        flags: {},
+        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
+      })
+      return !!cli.flags['json']
+    })()
 
     if (isJson) {
       logger.log(

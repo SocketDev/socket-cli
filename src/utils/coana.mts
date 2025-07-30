@@ -25,6 +25,8 @@ export async function spawnCoana(
       [
         // Lazily access constants.nodeNoWarningsFlags.
         ...constants.nodeNoWarningsFlags,
+        // Lazily access constants.nodeMemoryFlags.
+        ...constants.nodeMemoryFlags,
         // Lazily access constants.coanaBinPath.
         constants.coanaBinPath,
         ...args,

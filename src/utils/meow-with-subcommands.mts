@@ -2,7 +2,7 @@ import meow from 'meow'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { toSortedObject } from '@socketsecurity/registry/lib/objects'
+import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
@@ -21,15 +21,15 @@ import { tildify } from './tildify.mts'
 import type { MeowFlags } from '../flags.mts'
 import type { Options, Result } from 'meow'
 
-interface CliAlias {
+export interface CliAlias {
   description: string
   argv: readonly string[]
   hidden?: boolean | undefined
 }
 
-type CliAliases = Record<string, CliAlias>
+export type CliAliases = Record<string, CliAlias>
 
-type CliSubcommandRun = (
+export type CliSubcommandRun = (
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   context: { parentName: string },
@@ -52,7 +52,7 @@ export interface CliCommandConfig {
   help: (command: string, config: CliCommandConfig) => string
 }
 
-interface MeowOptions extends Options<any> {
+export interface MeowOptions extends Options<any> {
   aliases?: CliAliases | undefined
   argv: readonly string[]
   name: string
@@ -88,6 +88,11 @@ export async function meowWithSubcommands(
 
   const flags: MeowFlags = {
     ...commonFlags,
+    version: {
+      type: 'boolean',
+      hidden: true,
+      description: 'Print the app version',
+    },
     ...additionalOptions.flags,
   }
 
@@ -162,6 +167,7 @@ export async function meowWithSubcommands(
     // We will emit help when we're ready
     // Plus, if we allow this then meow() can just exit here.
     autoHelp: false,
+    autoVersion: false,
   })
 
   const orgFlag = String(cli1.flags['org'] || '') || undefined
@@ -392,6 +398,7 @@ ${isRootCommand ? `      $ ${name} scan create --json` : ''}${isRootCommand ? `\
       // We will emit help when we're ready.
       // Plus, if we allow this then meow() can just exit here.
       autoHelp: false,
+      autoVersion: false,
       // We want to detect whether a bool flag is given at all.
       booleanDefault: undefined,
     },
@@ -417,6 +424,7 @@ ${isRootCommand ? `      $ ${name} scan create --json` : ''}${isRootCommand ? `\
  * Note: meow will exit immediately if it calls its .showHelp()
  */
 export function meowOrExit({
+  allowUnknownFlags = true,
   argv,
   config,
   importMeta,
@@ -435,6 +443,7 @@ export function meowOrExit({
   const cli = meow({
     argv,
     autoHelp: false, // meow will exit(0) before printing the banner.
+    autoVersion: false,
     booleanDefault: undefined, // We want to detect whether a bool flag is given at all.
     collectUnknownFlags: true,
     description: config.description,
@@ -458,6 +467,7 @@ export function meowOrExit({
   //     argv,
   //     allowUnknownFlags: false,
   //     autoHelp: false,
+  //     autoVersion: false,
   //     description: config.description,
   //     flags: config.flags,
   //     help: config.help(command, config),
@@ -468,20 +478,31 @@ export function meowOrExit({
   if (cli.flags['help']) {
     cli.showHelp(0)
   }
+
+  // meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
+  if (!hasOwn(config.flags, 'version') && cli.flags['version']) {
+    // Use `console.error` here instead of `logger.error` to match meow behavior.
+    console.error('Unknown flag\n--version')
+    // eslint-disable-next-line n/no-process-exit
+    process.exit(2)
+  }
+
   // Now test for help state. Run meow again. If it exits now, it must be due
   // to wanting to print the help screen. But it would exit(0) and we want a
-  // consistent exit(2) for that case (missing input). TODO: move away from meow
+  // consistent exit(2) for that case (missing input).
+  // TODO: Move away from meow.
   process.exitCode = 2
   meow({
     argv,
+    // As per https://github.com/sindresorhus/meow/issues/178
+    // Setting `allowUnknownFlags: false` makes it reject camel cased flags.
+    allowUnknownFlags: Boolean(allowUnknownFlags),
+    autoHelp: false,
+    autoVersion: false,
     description: config.description,
     help: config.help(command, config),
     importMeta,
     flags: config.flags,
-    // As per https://github.com/sindresorhus/meow/issues/178
-    // Setting `allowUnknownFlags: false` makes it reject camel cased flags.
-    // allowUnknownFlags: Boolean(allowUnknownFlags),
-    autoHelp: false,
   })
   // Ok, no help, reset to default.
   process.exitCode = 0
