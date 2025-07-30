@@ -145,7 +145,6 @@ type Constants = Remap<
     readonly SOCKET_DEFAULT_REPOSITORY: 'socket-default-repository'
     readonly SOCKET_WEBSITE_URL: 'https://socket.dev'
     readonly VLT: 'vlt'
-    readonly WITH_SENTRY: 'with-sentry'
     readonly YARN: 'yarn'
     readonly YARN_BERRY: 'yarn/berry'
     readonly YARN_CLASSIC: 'yarn/classic'
@@ -171,6 +170,7 @@ type Constants = Remap<
     readonly minimumVersionByAgent: Map<Agent, string>
     readonly nmBinPath: string
     readonly nodeHardenFlags: string[]
+    readonly nodeMemoryFlags: string[]
     readonly npmCachePath: string
     readonly npmGlobalPrefix: string
     readonly npmNmNodeGypPath: string
@@ -228,7 +228,6 @@ const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
 const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
 const SOCKET_WEBSITE_URL = 'https://socket.dev'
 const VLT = 'vlt'
-const WITH_SENTRY = 'with-sentry'
 const YARN = 'yarn'
 const YARN_BERRY = 'yarn/berry'
 const YARN_CLASSIC = 'yarn/classic'
@@ -539,6 +538,20 @@ const lazyNodeHardenFlags = () =>
         ],
   )
 
+const lazyNodeMemoryFlags = () => {
+  const {
+    getMaxOldSpaceSizeFlag,
+    getMaxSemiSpaceSizeFlag,
+  } = /*@__PURE__*/ require(
+    // Lazily access constants.rootPath.
+    path.join(constants.rootPath, 'dist/flags.js'),
+  )
+  return Object.freeze([
+    `--max-old-space-size=${getMaxOldSpaceSizeFlag()}`,
+    `--max-semi-space-size=${getMaxSemiSpaceSizeFlag()}`,
+  ])
+}
+
 const lazyNpmCachePath = () => {
   const {
     spawnSync,
@@ -702,7 +715,6 @@ const constants: Constants = createConstantsObject(
     SOCKET_DEFAULT_REPOSITORY,
     SOCKET_WEBSITE_URL,
     VLT,
-    WITH_SENTRY,
     YARN,
     YARN_BERRY,
     YARN_CLASSIC,
@@ -724,6 +736,7 @@ const constants: Constants = createConstantsObject(
     minimumVersionByAgent: undefined,
     nmBinPath: undefined,
     nodeHardenFlags: undefined,
+    nodeMemoryFlags: undefined,
     npmCachePath: undefined,
     npmGlobalPrefix: undefined,
     npmNmNodeGypPath: undefined,
@@ -758,6 +771,7 @@ const constants: Constants = createConstantsObject(
       minimumVersionByAgent: lazyMinimumVersionByAgent,
       nmBinPath: lazyNmBinPath,
       nodeHardenFlags: lazyNodeHardenFlags,
+      nodeMemoryFlags: lazyNodeMemoryFlags,
       npmCachePath: lazyNpmCachePath,
       npmGlobalPrefix: lazyNpmGlobalPrefix,
       npmNmNodeGypPath: lazyNpmNmNodeGypPath,

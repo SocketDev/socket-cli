@@ -40,9 +40,6 @@ const SOCKET_CLI_SENTRY_BIN_NAME = 'socket-with-sentry'
 const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = '@socketsecurity/cli-with-sentry'
-const UTILS = 'utils'
-const VENDOR = 'vendor'
-const WITH_SENTRY = 'with-sentry'
 
 const LAZY_ENV = () => {
   const { envAsBoolean } = require('@socketsecurity/registry/lib/env')
@@ -142,9 +139,6 @@ const constants = createConstantsObject(
     SOCKET_CLI_SENTRY_NPM_BIN_NAME,
     SOCKET_CLI_SENTRY_NPX_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
-    UTILS,
-    VENDOR,
-    WITH_SENTRY,
     blessedContribPath: undefined,
     blessedOptions: undefined,
     blessedPath: undefined,
