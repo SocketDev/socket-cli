@@ -63,7 +63,7 @@ export function getMaxOldSpaceSizeFlag(): number {
       _maxOldSpaceSizeFlag = Math.floor(
         // Total system memory in MiB.
         (os.totalmem() / 1024 / 1024) *
-          // Set 75% of total memory (safe buffer to avoid system pressure)
+          // Set 75% of total memory (safe buffer to avoid system pressure).
           0.75,
       )
     }
@@ -87,22 +87,42 @@ export function getMaxSemiSpaceSizeFlag(): number {
     }
     if (!_maxSemiSpaceSizeFlag) {
       const maxOldSpaceSize = getMaxOldSpaceSizeFlag()
-      // Dynamically scale semi-space size based on max-old-space-size
+      // Dynamically scale semi-space size based on max-old-space-size.
       // https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib
-      if (maxOldSpaceSize <= 512) {
-        _maxSemiSpaceSizeFlag = 4
-      } else if (maxOldSpaceSize <= 1024) {
-        _maxSemiSpaceSizeFlag = 8
-      } else if (maxOldSpaceSize <= 2048) {
-        _maxSemiSpaceSizeFlag = 16
-      } else if (maxOldSpaceSize <= 4096) {
-        _maxSemiSpaceSizeFlag = 32
-      } else if (maxOldSpaceSize <= 8192) {
-        _maxSemiSpaceSizeFlag = 64
-      } else if (maxOldSpaceSize <= 16384) {
-        _maxSemiSpaceSizeFlag = 128
+      if (maxOldSpaceSize <= 8192) {
+        // Use tiered values for smaller heaps to avoid excessive young
+        // generation size. This helps stay within safe memory limits on
+        // constrained systems or CI.
+        if (maxOldSpaceSize <= 512) {
+          _maxSemiSpaceSizeFlag = 4
+        } else if (maxOldSpaceSize <= 1024) {
+          _maxSemiSpaceSizeFlag = 8
+        } else if (maxOldSpaceSize <= 2048) {
+          _maxSemiSpaceSizeFlag = 16
+        } else if (maxOldSpaceSize <= 4096) {
+          _maxSemiSpaceSizeFlag = 32
+        } else {
+          _maxSemiSpaceSizeFlag = 64
+        }
       } else {
-        _maxSemiSpaceSizeFlag = 256
+        // For large heaps (> 8 GiB), compute semi-space size using a log-scaled
+        // function.
+        //
+        // The idea:
+        //   - log2(16384 MiB) = 14  → semi = 14 * 8 = 112
+        //   - log2(32768 MiB) = 15  → semi = 15 * 8 = 120
+        //   - Scales gradually as heap increases, avoiding overly large jumps
+        //
+        // Each 1 MiB of semi-space adds ~3 MiB to the total young generation
+        // (V8 uses 3 spaces). So this keeps semi-space proportional, without
+        // over committing.
+        //
+        // Also note: V8 won’t benefit much from >256 MiB semi-space unless
+        // you’re allocating large short-lived objects very frequently
+        // (e.g. large arrays, buffers).
+        const log2OldSpace = Math.log2(maxOldSpaceSize)
+        const scaledSemiSpace = Math.floor(log2OldSpace) * 8
+        _maxSemiSpaceSizeFlag = scaledSemiSpace
       }
     }
   }
