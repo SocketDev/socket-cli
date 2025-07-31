@@ -37,7 +37,6 @@ export async function spawnCoana(
           ...process.env,
           // Lazily access constants.processEnv.
           ...constants.processEnv,
-          RUN_WITHOUT_DOCKER: 'true',
           SOCKET_CLI_API_TOKEN,
           SOCKET_ORG_SLUG,
           ...spawnEnv,
