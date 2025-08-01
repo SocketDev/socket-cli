@@ -230,7 +230,7 @@ export async function globWithGitIgnore(
     absolute: true,
     cwd,
     dot: true,
-    ignore: hasNegatedPattern ? [] : ignores,
+    ignore: hasNegatedPattern ? ['**/.git', '**/node_modules'] : ignores,
     ...additionalOptions,
   } as GlobOptions
 
