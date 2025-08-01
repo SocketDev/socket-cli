@@ -6,7 +6,7 @@ import which from 'which'
 import { resolveBinPathSync } from '@socketsecurity/registry/lib/npm'
 
 import constants from '../constants.mts'
-import { isDirectorySync, safeStatsSync } from './fs.mts'
+import { isDirectorySync } from './fs.mts'
 import {
   filterBySupportedScanFiles,
   globWithGitIgnore,
