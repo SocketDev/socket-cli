@@ -8,7 +8,7 @@ import { babel as babelPlugin } from '@rollup/plugin-babel'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import jsonPlugin from '@rollup/plugin-json'
 import { nodeResolve } from '@rollup/plugin-node-resolve'
-import { glob as tinyGlob } from 'tinyglobby'
+import fastGlob from 'fast-glob'
 import trash from 'trash'
 
 import {
@@ -141,7 +141,7 @@ async function copyExternalPackages() {
   // Rewire 'blessed' inside 'blessed-contrib'.
   await Promise.all(
     (
-      await tinyGlob(['**/*.js'], {
+      await fastGlob.glob(['**/*.js'], {
         absolute: true,
         cwd: blessedContribPath,
         ignore: [NODE_MODULES_GLOB_RECURSIVE],
@@ -168,7 +168,7 @@ async function copyPackage(pkgName, options) {
   await fs.cp(pkgNmPath, pkgDestPath, { recursive: true })
   if (strict) {
     // Add 'use strict' directive to js files.
-    const jsFiles = await tinyGlob(['**/*.js'], {
+    const jsFiles = await fastGlob.glob(['**/*.js'], {
       absolute: true,
       cwd: pkgDestPath,
       ignore: [NODE_MODULES_GLOB_RECURSIVE],
@@ -292,7 +292,7 @@ async function updatePackageLockFile() {
 async function removeEmptyDirs(thePath) {
   await trash(
     (
-      await tinyGlob(['**/'], {
+      await fastGlob.glob(['**/'], {
         ignore: [NODE_MODULES_GLOB_RECURSIVE],
         absolute: true,
         cwd: thePath,
@@ -309,7 +309,7 @@ async function removeFiles(thePath, options) {
   const { exclude } = { __proto__: null, ...options }
   const ignore = Array.isArray(exclude) ? exclude : exclude ? [exclude] : []
   return await trash(
-    await tinyGlob(['**/*'], {
+    await fastGlob.glob(['**/*'], {
       absolute: true,
       onlyFiles: true,
       cwd: thePath,
@@ -465,7 +465,7 @@ export default async () => {
     // Bundle <root>/src/external/blessed-contrib/ files and output to
     // <root>/external/blessed-contrib/.
     ...(
-      await tinyGlob(['**/*.mjs'], {
+      await fastGlob.glob(['**/*.mjs'], {
         absolute: true,
         cwd: blessedContribSrcPath,
       })
