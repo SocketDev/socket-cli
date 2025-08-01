@@ -5,7 +5,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../constants.mts'
-import { findBinPathDetailsSync, findNpmPathSync } from './path-resolve.mts'
+import { findBinPathDetailsSync, findNpmDirPathSync } from './path-resolve.mts'
 
 const { NODE_MODULES, NPM, NPX, SOCKET_CLI_ISSUES_URL } = constants
 
@@ -38,12 +38,16 @@ function getNpmBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
   return _npmBinPathDetails
 }
 
-let _npmPath: string | undefined
-export function getNpmPath() {
-  if (_npmPath === undefined) {
+let _npmDirPath: string | undefined
+export function getNpmDirPath() {
+  if (_npmDirPath === undefined) {
     const npmBinPath = getNpmBinPath()
-    _npmPath = npmBinPath ? findNpmPathSync(npmBinPath) : undefined
-    if (!_npmPath) {
+    _npmDirPath = npmBinPath ? findNpmDirPathSync(npmBinPath) : undefined
+    if (!_npmDirPath) {
+      // Lazily access constants.ENV.SOCKET_CLI_NPM_PATH.
+      _npmDirPath = constants.ENV.SOCKET_CLI_NPM_PATH || undefined
+    }
+    if (!_npmDirPath) {
       let message = 'Unable to find npm CLI install directory.'
       if (npmBinPath) {
         message += `\nSearched parent directories of ${path.dirname(npmBinPath)}.`
@@ -56,17 +60,17 @@ export function getNpmPath() {
       process.exit(127)
     }
   }
-  return _npmPath
+  return _npmDirPath
 }
 
 let _npmRequire: NodeJS.Require | undefined
 export function getNpmRequire(): NodeJS.Require {
   if (_npmRequire === undefined) {
-    const npmPath = getNpmPath()
-    const npmNmPath = path.join(npmPath, NODE_MODULES, NPM)
+    const npmDirPath = getNpmDirPath()
+    const npmNmPath = path.join(npmDirPath, NODE_MODULES, NPM)
     _npmRequire = Module.createRequire(
       path.join(
-        existsSync(npmNmPath) ? npmNmPath : npmPath,
+        existsSync(npmNmPath) ? npmNmPath : npmDirPath,
         '<dummy-basename>',
       ),
     )

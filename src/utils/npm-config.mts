@@ -6,7 +6,7 @@ import {
   // @ts-ignore: TypeScript types unavailable.
 } from '@npmcli/config/lib/definitions'
 
-import { getNpmPath } from './npm-paths.mts'
+import { getNpmDirPath } from './npm-paths.mts'
 
 import type { ArboristOptions } from '../shadow/npm/arborist/types.mts'
 import type { SemVer } from 'semver'
@@ -31,7 +31,7 @@ export async function getNpmConfig(
     execPath = process.execPath,
     nodeVersion = process.version,
     npmCommand = 'install',
-    npmPath = getNpmPath(),
+    npmPath = getNpmDirPath(),
     npmVersion,
     platform = process.platform,
   } = { __proto__: null, ...options } as NpmConfigOptions
