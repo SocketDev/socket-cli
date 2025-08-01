@@ -1,4 +1,4 @@
-import { promises as fs, readFileSync, statSync } from 'node:fs'
+import { existsSync, promises as fs, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 
 import { remove } from '@socketsecurity/registry/lib/fs'
@@ -63,6 +63,10 @@ export async function findUp(
     dir = path.dirname(dir)
   }
   return undefined
+}
+
+export function isDirectorySync(filepath: string): boolean {
+  return existsSync(filepath) && !!safeStatsSync(filepath)?.isDirectory()
 }
 
 export type ReadFileOptions = Remap<

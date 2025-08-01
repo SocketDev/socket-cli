@@ -6,7 +6,7 @@ import which from 'which'
 import { resolveBinPathSync } from '@socketsecurity/registry/lib/npm'
 
 import constants from '../constants.mts'
-import { safeStatsSync } from './fs.mts'
+import { isDirectorySync, safeStatsSync } from './fs.mts'
 import {
   filterBySupportedScanFiles,
   globWithGitIgnore,
@@ -43,13 +43,13 @@ export function findBinPathDetailsSync(binName: string): {
   return { name: binName, path: theBinPath, shadowed: shadowIndex !== -1 }
 }
 
-export function findNpmPathSync(npmBinPath: string): string | undefined {
+export function findNpmDirPathSync(npmBinPath: string): string | undefined {
   // Lazily access constants.WIN32.
   const { WIN32 } = constants
   let thePath = npmBinPath
   while (true) {
     const libNmNpmPath = path.join(thePath, 'lib/node_modules/npm')
-    // mise puts its npm bin in a path like:
+    // mise, which uses opaque binaries, puts its npm bin in a path like:
     //   /Users/SomeUsername/.local/share/mise/installs/node/vX.X.X/bin/npm.
     // HOWEVER, the location of the npm install is:
     //   /Users/SomeUsername/.local/share/mise/installs/node/vX.X.X/lib/node_modules/npm.
@@ -57,12 +57,10 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
       // Use existsSync here because statsSync, even with { throwIfNoEntry: false },
       // will throw an ENOTDIR error for paths like ./a-file-that-exists/a-directory-that-does-not.
       // See https://github.com/nodejs/node/issues/56993.
-      existsSync(libNmNpmPath) &&
-      safeStatsSync(libNmNpmPath)?.isDirectory()
+      isDirectorySync(libNmNpmPath)
     ) {
-      thePath = path.join(libNmNpmPath, 'npm')
+      thePath = libNmNpmPath
     }
-    const nmPath = path.join(thePath, 'node_modules')
     if (
       // npm bin paths may look like:
       //   /usr/local/share/npm/bin/npm
@@ -74,8 +72,9 @@ export function findNpmPathSync(npmBinPath: string): string | undefined {
       // In practically all cases the npm path contains a node_modules folder:
       //   /usr/local/share/npm/bin/npm/node_modules
       //   C:\Program Files\nodejs\node_modules
-      existsSync(nmPath) &&
-      safeStatsSync(nmPath)?.isDirectory() &&
+      (isDirectorySync(path.join(thePath, 'node_modules')) ||
+        // In some bespoke cases the node_modules folder is one level back.
+        isDirectorySync(path.join(thePath, '../node_modules'))) &&
       // Optimistically look for the default location.
       (path.basename(thePath) === 'npm' ||
         // Chocolatey installs npm bins in the same directory as node bins.
