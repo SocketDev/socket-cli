@@ -80,6 +80,7 @@ type ENV = Remap<
       SOCKET_CLI_GIT_USER_NAME: string
       SOCKET_CLI_GITHUB_TOKEN: string
       SOCKET_CLI_NO_API_TOKEN: boolean
+      SOCKET_CLI_NPM_PATH: string
       SOCKET_CLI_ORG_SLUG: string
       SOCKET_CLI_VIEW_ALL_RISKS: boolean
       TERM: string
@@ -341,9 +342,9 @@ const LAZY_ENV = () => {
     INLINED_SOCKET_CLI_VERSION_HASH: envAsString(
       process.env['INLINED_SOCKET_CLI_VERSION_HASH'],
     ),
-    // The location of the %localappdata% folder on Windows used to store user-specific,
-    // non-roaming application data, like temporary files, cached data, and program
-    // settings, that are specific to the current machine and user.
+    // The absolute location of the %localappdata% folder on Windows used to store
+    // user-specific, non-roaming application data, like temporary files, cached
+    // data, and program settings, that are specific to the current machine and user.
     LOCALAPPDATA: envAsString(env[LOCALAPPDATA]),
     // Variable to enable the module compile cache for the Node.js instance.
     // https://nodejs.org/api/cli.html#node_compile_cachedir
@@ -416,6 +417,8 @@ const LAZY_ENV = () => {
       GITHUB_TOKEN,
     // Variable to make the default API token `undefined`.
     SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN']),
+    // The absolute location of the npm bin file.
+    SOCKET_CLI_NPM_PATH: envAsString(env['SOCKET_CLI_NPM_PATH']),
     // Variable to specify the Socket organization slug.
     SOCKET_CLI_ORG_SLUG:
       envAsString(env['SOCKET_CLI_ORG_SLUG']) ||
