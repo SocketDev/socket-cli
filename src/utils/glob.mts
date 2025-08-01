@@ -1,11 +1,12 @@
 import path from 'node:path'
 
+import { glob, globStream } from 'fast-glob'
 import ignore from 'ignore'
 import micromatch from 'micromatch'
-import { glob as tinyGlob } from 'tinyglobby'
 import { parse as yamlParse } from 'yaml'
 
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
+import { transform } from '@socketsecurity/registry/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { safeReadFile } from './fs.mts'
@@ -13,7 +14,7 @@ import { safeReadFile } from './fs.mts'
 import type { Agent } from './package-environment.mts'
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
-import type { GlobOptions } from 'tinyglobby'
+import type { Options as GlobOptions } from 'fast-glob'
 
 const ignoredDirs = [
   // Taken from ignore-by-default:
@@ -185,19 +186,15 @@ type GlobWithGitIgnoreOptions = GlobOptions & {
 export async function globWithGitIgnore(
   patterns: string[] | readonly string[],
   options: GlobWithGitIgnoreOptions,
-) {
+): Promise<string[]> {
   const {
     cwd = process.cwd(),
     socketConfig,
     ...additionalOptions
   } = { __proto__: null, ...options } as GlobWithGitIgnoreOptions
 
-  const ignoreFiles = await tinyGlob(['**/.gitignore'], {
-    absolute: true,
-    cwd,
-    expandDirectories: true,
-  })
   const projectIgnorePaths = socketConfig?.projectIgnorePaths
+
   const ignores = [
     ...ignoredDirPatterns,
     ...(Array.isArray(projectIgnorePaths)
@@ -207,30 +204,37 @@ export async function globWithGitIgnore(
           cwd,
         )
       : []),
-    ...(
-      await Promise.all(
-        ignoreFiles.map(async filepath =>
-          ignoreFileToGlobPatterns(
-            (await safeReadFile(filepath)) ?? '',
-            filepath,
-            cwd,
-          ),
-        ),
-      )
-    ).flat(),
   ]
+
+  const ignoreFilesStream = globStream(['**/.gitignore'], {
+    absolute: true,
+    cwd,
+  })
+
+  for await (const ignorePattern of transform(
+    8, // Concurrency level.
+    async (filepath: string) =>
+      ignoreFileToGlobPatterns(
+        (await safeReadFile(filepath)) ?? '',
+        filepath,
+        cwd,
+      ),
+    ignoreFilesStream,
+  )) {
+    ignores.push(...ignorePattern)
+  }
+
   const hasNegatedPattern = ignores.some(p => p.charCodeAt(0) === 33 /*'!'*/)
   const globOptions = {
     __proto__: null,
     absolute: true,
     cwd,
     dot: true,
-    expandDirectories: false,
     ignore: hasNegatedPattern ? [] : ignores,
     ...additionalOptions,
-  }
+  } as GlobOptions
 
-  const result = await tinyGlob(patterns as string[], globOptions)
+  const result: string[] = await glob(patterns as string[], globOptions)
   if (!hasNegatedPattern) {
     return result
   }
@@ -249,10 +253,9 @@ export async function globWithGitIgnore(
 }
 
 export async function globNodeModules(cwd = process.cwd()): Promise<string[]> {
-  return await tinyGlob('**/node_modules', {
+  return await glob('**/node_modules', {
     absolute: true,
     cwd,
-    expandDirectories: false,
     onlyDirectories: true,
   })
 }
@@ -263,7 +266,7 @@ export async function globWorkspace(
 ): Promise<string[]> {
   const workspaceGlobs = await getWorkspaceGlobs(agent, cwd)
   return workspaceGlobs.length
-    ? await tinyGlob(workspaceGlobs, {
+    ? await glob(workspaceGlobs, {
         absolute: true,
         cwd,
         ignore: ['**/node_modules/**', '**/bower_components/**'],
