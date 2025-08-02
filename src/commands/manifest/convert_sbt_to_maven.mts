@@ -1,8 +1,8 @@
+import { safeReadFile } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
-import { safeReadFile } from '../../utils/fs.mts'
 
 export async function convertSbtToMaven({
   bin,
