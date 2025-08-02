@@ -11,7 +11,11 @@ import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
-import { readJson, writeJson } from '@socketsecurity/registry/lib/fs'
+import {
+  readJson,
+  safeStatsSync,
+  writeJson,
+} from '@socketsecurity/registry/lib/fs'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
@@ -22,7 +26,6 @@ import {
   getSocketPullRequestTitle,
 } from './socket-git.mts'
 import constants from '../../constants.mts'
-import { safeStatsSync } from '../../utils/fs.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'

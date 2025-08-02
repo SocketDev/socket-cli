@@ -1,10 +1,13 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import {
+  safeReadFileSync,
+  safeStatsSync,
+} from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
-import { safeReadFileSync, safeStatsSync } from '../../utils/fs.mts'
 import { tildify } from '../../utils/tildify.mts'
 
 export async function outputCmdJson(cwd: string) {

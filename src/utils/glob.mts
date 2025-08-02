@@ -5,11 +5,10 @@ import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { parse as yamlParse } from 'yaml'
 
+import { safeReadFile } from '@socketsecurity/registry/lib/fs'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { transform } from '@socketsecurity/registry/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
-
-import { safeReadFile } from './fs.mts'
 
 import type { Agent } from './package-environment.mts'
 import type { SocketYml } from '@socketsecurity/config'
