@@ -7,6 +7,7 @@ import which from 'which'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { readFileBinary, readFileUtf8 } from '@socketsecurity/registry/lib/fs'
 import { Logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -14,7 +15,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { cmdPrefixMessage } from './cmd.mts'
-import { findUp, readFileBinary, readFileUtf8 } from './fs.mts'
+import { findUp } from './fs.mts'
 import constants from '../constants.mts'
 
 import type { CResult } from '../types.mts'

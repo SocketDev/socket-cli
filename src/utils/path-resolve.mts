@@ -3,10 +3,10 @@ import path from 'node:path'
 
 import which from 'which'
 
+import { isDirSync } from '@socketsecurity/registry/lib/fs'
 import { resolveBinPathSync } from '@socketsecurity/registry/lib/npm'
 
 import constants from '../constants.mts'
-import { isDirectorySync } from './fs.mts'
 import {
   filterBySupportedScanFiles,
   globWithGitIgnore,
@@ -57,16 +57,13 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
       // Use existsSync here because statsSync, even with { throwIfNoEntry: false },
       // will throw an ENOTDIR error for paths like ./a-file-that-exists/a-directory-that-does-not.
       // See https://github.com/nodejs/node/issues/56993.
-      isDirectorySync(libNmNpmPath)
+      isDirSync(libNmNpmPath)
     ) {
       thePath = libNmNpmPath
     }
-    const hasSameLevelNmPath = isDirectorySync(
-      path.join(thePath, 'node_modules'),
-    )
-    const hasOneBackNmPath =
-      !hasSameLevelNmPath &&
-      isDirectorySync(path.join(thePath, '../node_modules'))
+    const hasNmInCurrPath = isDirSync(path.join(thePath, 'node_modules'))
+    const hasNmInParentPath =
+      !hasNmInCurrPath && isDirSync(path.join(thePath, '../node_modules'))
     if (
       // npm bin paths may look like:
       //   /usr/local/share/npm/bin/npm
@@ -78,15 +75,15 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
       // In practically all cases the npm path contains a node_modules folder:
       //   /usr/local/share/npm/bin/npm/node_modules
       //   C:\Program Files\nodejs\node_modules
-      (hasSameLevelNmPath ||
-        // In some bespoke cases the node_modules folder is one level back.
-        hasOneBackNmPath) &&
+      (hasNmInCurrPath ||
+        // In some bespoke cases the node_modules folder is in the parent directory.
+        hasNmInParentPath) &&
       // Optimistically look for the default location.
       (path.basename(thePath) === 'npm' ||
         // Chocolatey installs npm bins in the same directory as node bins.
         (WIN32 && existsSync(path.join(thePath, 'npm.cmd'))))
     ) {
-      return hasOneBackNmPath ? path.dirname(thePath) : thePath
+      return hasNmInParentPath ? path.dirname(thePath) : thePath
     }
     const parent = path.dirname(thePath)
     if (parent === thePath) {

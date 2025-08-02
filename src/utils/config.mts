@@ -3,11 +3,11 @@ import path from 'node:path'
 
 import config from '@socketsecurity/config'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
 import constants from '../constants.mts'
-import { safeReadFileSync } from './fs.mts'
 
 import type { CResult } from '../types.mts'
 

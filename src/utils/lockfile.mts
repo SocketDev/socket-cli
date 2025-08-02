@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 
-import { readFileUtf8 } from './fs.mts'
+import { readFileUtf8 } from '@socketsecurity/registry/lib/fs'
 
 export async function readLockfile(
   lockfilePath: string,
