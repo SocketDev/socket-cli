@@ -6,6 +6,7 @@ import micromatch from 'micromatch'
 import { parse as yamlParse } from 'yaml'
 
 import { safeReadFile } from '@socketsecurity/registry/lib/fs'
+import { defaultIgnore } from '@socketsecurity/registry/lib/globs'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { transform } from '@socketsecurity/registry/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
@@ -268,7 +269,7 @@ export async function globWorkspace(
     ? await glob(workspaceGlobs, {
         absolute: true,
         cwd,
-        ignore: ['**/node_modules/**', '**/bower_components/**'],
+        ignore: defaultIgnore,
       })
     : []
 }
