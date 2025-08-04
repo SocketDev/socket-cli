@@ -233,7 +233,7 @@ export async function globWithGitIgnore(
 
   let hasNegatedPattern = false
   for (const p of ignores) {
-    if (p.charCodeAt(0) === 33) {
+    if (p.charCodeAt(0) === 33 /*'!'*/) {
       hasNegatedPattern = true
       break
     }
@@ -252,8 +252,10 @@ export async function globWithGitIgnore(
     return await glob(patterns as string[], globOptions)
   }
 
-  const ig = ignore().add([...ignores])
+  // Add support for negated "ignore" patterns which many globbing libraries,
+  // including 'fast-glob', 'globby', and 'tinyglobby', lack support for.
   const filtered: string[] = []
+  const ig = ignore().add([...ignores])
   const stream = globStream(
     patterns as string[],
     globOptions,
