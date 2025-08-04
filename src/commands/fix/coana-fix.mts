@@ -1,7 +1,6 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir } from '@socketsecurity/registry/lib/debug'
 
 import { handleApiCall } from '../../utils/api.mts'
-import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { spawnCoana } from '../../utils/coana.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
@@ -64,34 +63,10 @@ export async function coanaFix(
     return lastCResult as CResult<any>
   }
 
-  const spawnOptions = { cwd, spinner, env: { SOCKET_ORG_SLUG: orgSlug } }
+  const isAuto =
+    ghsas.length === 1 && (ghsas[0] === 'all' || ghsas[0] === 'auto')
 
-  let ids = ghsas
-  if (ids.length === 1 && ids[0] === 'auto') {
-    debugFn('notice', 'resolve: GitHub security alerts.')
-    const foundIdsCResult = tarHash
-      ? await spawnCoana(
-          [
-            'compute-fixes-and-upgrade-purls',
-            cwd,
-            '--manifests-tar-hash',
-            tarHash,
-          ],
-          spawnOptions,
-        )
-      : undefined
-    if (foundIdsCResult) {
-      lastCResult = foundIdsCResult
-    }
-    if (foundIdsCResult?.ok) {
-      ids = cmdFlagValueToArray(
-        /(?<=Vulnerabilities found: )[^\n]+/.exec(
-          foundIdsCResult.data as string,
-        )?.[0],
-      )
-      debugDir('inspect', { GitHubSecurityAlerts: ids })
-    }
-  }
+  const ids = isAuto ? ['all'] : ghsas
 
   const fixCResult = ids.length
     ? await spawnCoana(
@@ -104,7 +79,7 @@ export async function coanaFix(
           ...ids,
           ...fixConfig.unknownFlags,
         ],
-        spawnOptions,
+        { cwd, spinner, env: { SOCKET_ORG_SLUG: orgSlug } },
       )
     : undefined
 

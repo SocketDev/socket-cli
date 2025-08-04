@@ -47,7 +47,7 @@ const config: CliCommandConfig = {
       description: `Provide a list of ${terminalLink(
         'GHSA IDs',
         'https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids',
-      )} to compute fixes for, as either a comma separated value or as multiple flags.\n                        Use '--ghsa auto' to automatically lookup GHSA IDs and compute fixes for them.`,
+      )} to compute fixes for, as either a comma separated value or as multiple flags.\n                        Use '--ghsa all' to lookup all GHSA IDs and compute fixes for them.`,
       isMultiple: true,
       hidden: true,
     },
