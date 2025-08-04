@@ -2,19 +2,16 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { remove } from '@socketsecurity/registry/lib/fs'
-import { pEach } from '@socketsecurity/registry/lib/promises'
+import { parallelEach } from '@socketsecurity/registry/lib/streams'
 
 import constants from '../constants.mts'
-import { globNodeModules } from './glob.mts'
+import { globStreamNodeModules } from './glob.mts'
 
 export async function removeNodeModules(cwd = process.cwd()) {
-  const nodeModulesPaths = await globNodeModules(cwd)
-  await pEach(
-    nodeModulesPaths,
-    3,
-    p => remove(p, { force: true, recursive: true }),
-    { retries: 3 },
-  )
+  const stream = await globStreamNodeModules(cwd)
+  await parallelEach(stream, p => remove(p, { force: true, recursive: true }), {
+    concurrency: 8,
+  })
 }
 
 export type FindUpOptions = {
