@@ -16,7 +16,11 @@ import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 import type { Options as GlobOptions } from 'fast-glob'
 
-const ignoredDirs = [
+const DEFAULT_IGNORE_FOR_GIT_IGNORE = defaultIgnore.filter(
+  p => !p.endsWith('.gitignore'),
+)
+
+const IGNORED_DIRS = [
   // Taken from ignore-by-default:
   // https://github.com/novemberborn/ignore-by-default/blob/v2.1.0/index.js
   '.git', // Git repository files, see <https://git-scm.com/>
@@ -32,7 +36,7 @@ const ignoredDirs = [
   'flow-typed',
 ] as const
 
-const ignoredDirPatterns = ignoredDirs.map(i => `**/${i}`)
+const IGNORED_DIR_PATTERNS = IGNORED_DIRS.map(i => `**/${i}`)
 
 async function getWorkspaceGlobs(
   agent: Agent,
@@ -193,67 +197,82 @@ export async function globWithGitIgnore(
     ...additionalOptions
   } = { __proto__: null, ...options } as GlobWithGitIgnoreOptions
 
+  const ignores = new Set<string>(IGNORED_DIR_PATTERNS)
+
   const projectIgnorePaths = socketConfig?.projectIgnorePaths
+  if (Array.isArray(projectIgnorePaths)) {
+    const ignorePatterns = ignoreFileLinesToGlobPatterns(
+      projectIgnorePaths,
+      path.join(cwd, '.gitignore'),
+      cwd,
+    )
+    for (const pattern of ignorePatterns) {
+      ignores.add(pattern)
+    }
+  }
 
-  const ignores = [
-    ...ignoredDirPatterns,
-    ...(Array.isArray(projectIgnorePaths)
-      ? ignoreFileLinesToGlobPatterns(
-          projectIgnorePaths,
-          path.join(cwd, '.gitignore'),
-          cwd,
-        )
-      : []),
-  ]
-
-  const ignoreFilesStream = globStream(['**/.gitignore'], {
+  const gitIgnoreStream = globStream(['**/.gitignore'], {
     absolute: true,
     cwd,
+    ignore: DEFAULT_IGNORE_FOR_GIT_IGNORE,
   })
-
-  for await (const ignorePattern of transform(
-    8, // Concurrency level.
+  for await (const ignorePatterns of transform(
+    gitIgnoreStream,
     async (filepath: string) =>
       ignoreFileToGlobPatterns(
         (await safeReadFile(filepath)) ?? '',
         filepath,
         cwd,
       ),
-    ignoreFilesStream,
+    { concurrency: 8 },
   )) {
-    ignores.push(...ignorePattern)
+    for (const p of ignorePatterns) {
+      ignores.add(p)
+    }
   }
 
-  const hasNegatedPattern = ignores.some(p => p.charCodeAt(0) === 33 /*'!'*/)
+  let hasNegatedPattern = false
+  for (const p of ignores) {
+    if (p.charCodeAt(0) === 33) {
+      hasNegatedPattern = true
+      break
+    }
+  }
+
   const globOptions = {
     __proto__: null,
     absolute: true,
     cwd,
     dot: true,
-    ignore: hasNegatedPattern ? ['**/.git', '**/node_modules'] : ignores,
+    ignore: hasNegatedPattern ? defaultIgnore : [...ignores],
     ...additionalOptions,
   } as GlobOptions
 
-  const result: string[] = await glob(patterns as string[], globOptions)
   if (!hasNegatedPattern) {
-    return result
+    return await glob(patterns as string[], globOptions)
   }
 
-  // Note: the input files must be INSIDE the cwd. If you get strange looking
-  // relative path errors here, most likely your path is outside the given cwd.
-  const filtered = ignore()
-    .add(ignores)
-    .filter(
-      globOptions.absolute ? result.map(p => path.relative(cwd, p)) : result,
-    )
-
-  return globOptions.absolute
-    ? filtered.map(p => path.resolve(cwd, p))
-    : filtered
+  const ig = ignore().add([...ignores])
+  const filtered: string[] = []
+  const stream = globStream(
+    patterns as string[],
+    globOptions,
+  ) as AsyncIterable<string>
+  for await (const p of stream) {
+    // Note: the input files must be INSIDE the cwd. If you get strange looking
+    // relative path errors here, most likely your path is outside the given cwd.
+    const relPath = globOptions.absolute ? path.relative(cwd, p) : p
+    if (!ig.ignores(relPath)) {
+      filtered.push(p)
+    }
+  }
+  return filtered
 }
 
-export async function globNodeModules(cwd = process.cwd()): Promise<string[]> {
-  return await glob('**/node_modules', {
+export async function globStreamNodeModules(
+  cwd = process.cwd(),
+): Promise<NodeJS.ReadableStream> {
+  return globStream('**/node_modules', {
     absolute: true,
     cwd,
     onlyDirectories: true,
