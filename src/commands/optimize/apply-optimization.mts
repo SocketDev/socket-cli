@@ -58,10 +58,10 @@ export async function applyOptimization(
     ok: true,
     data: {
       addedCount,
-      updatedCount,
-      pkgJsonChanged,
-      updatedInWorkspaces: state.updatedInWorkspaces.size,
       addedInWorkspaces: state.addedInWorkspaces.size,
+      pkgJsonChanged,
+      updatedCount,
+      updatedInWorkspaces: state.updatedInWorkspaces.size,
     },
   }
 }
