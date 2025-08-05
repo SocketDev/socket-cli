@@ -22,6 +22,8 @@ import type { RangeStyle } from '../../utils/semver.mts'
 
 const { DRY_RUN_NOT_SAVING } = constants
 
+const DEFAULT_LIMIT = 10
+
 const config: CliCommandConfig = {
   commandName: 'fix',
   description: 'Update dependencies with "fixable" Socket alerts',
@@ -53,8 +55,8 @@ const config: CliCommandConfig = {
     },
     limit: {
       type: 'number',
-      default: Infinity,
-      description: 'The number of fixes to attempt at a time',
+      default: DEFAULT_LIMIT,
+      description: `The number of fixes to attempt at a time (default ${DEFAULT_LIMIT})`,
     },
     maxSatisfying: {
       type: 'boolean',
@@ -88,7 +90,7 @@ const config: CliCommandConfig = {
       type: 'string',
       default: 'preserve',
       description: `
-                        Define how updated dependency versions should be written in package.json.
+                        Define how dependency version ranges are updated in package.json (default 'preserve').
                         Available styles:
                           * caret - Use ^ range for compatible updates (e.g. ^1.2.3)
                           * gt - Use > to allow any newer version (e.g. >1.2.3)
@@ -108,7 +110,7 @@ const config: CliCommandConfig = {
     testScript: {
       type: 'string',
       default: 'test',
-      description: 'The test script to run for each fix attempt',
+      description: 'The test script to run for each fix attempt (default \'test\')',
     },
   },
   help: (command, config) => `
@@ -214,10 +216,7 @@ async function run(
   const unknownFlags = cli.unknownFlags ?? []
 
   const ghsas = cmdFlagValueToArray(cli.flags['ghsa'])
-  const limit =
-    (cli.flags['limit']
-      ? parseInt(String(cli.flags['limit'] || ''), 10)
-      : Infinity) || Infinity
+  const limit = Number(cli.flags['limit']) || DEFAULT_LIMIT
   const maxSatisfying = Boolean(cli.flags['maxSatisfying'])
   const minSatisfying = Boolean(cli.flags['minSatisfying']) || !maxSatisfying
   const prCheck = Boolean(cli.flags['prCheck'])
