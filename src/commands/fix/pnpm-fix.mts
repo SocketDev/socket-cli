@@ -21,7 +21,11 @@ import {
 import { applyRange } from '../../utils/semver.mts'
 import { getOverridesDataPnpm } from '../optimize/get-overrides-by-agent.mts'
 
-import type { FixConfig, InstallOptions } from './agent-fix.mts'
+import type {
+  FixConfig,
+  InstallOptions,
+  InstallerResult,
+} from './agent-fix.mts'
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { CResult, StringKeyValueObject } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
@@ -32,7 +36,7 @@ const { OVERRIDES, PNPM } = constants
 async function install(
   pkgEnvDetails: EnvDetails,
   options: InstallOptions,
-): Promise<NodeClass | null> {
+): Promise<InstallerResult> {
   const {
     args: extraArgs,
     cwd,
@@ -59,6 +63,7 @@ async function install(
   const isSpinning = spinner?.isSpinning
   spinner?.stop()
 
+  let error
   let errored = false
   try {
     await runAgentInstall(pkgEnvDetails, {
@@ -67,24 +72,30 @@ async function install(
       stdio: isDebug('stdio') ? 'inherit' : 'ignore',
     })
   } catch (e) {
-    debugFn('error', `caught: ${quotedCmd} failed`)
-    debugDir('inspect', { error: e })
     errored = true
+    error = e
+    debugFn('error', `caught: ${quotedCmd} failed`)
+    debugDir('inspect', { error })
   }
 
-  let actualTree: NodeClass | null = null
+  let actualTree: NodeClass | undefined = undefined
   if (!errored) {
     try {
       actualTree = await getActualTree(cwd)
     } catch (e) {
+      errored = true
+      error = e
       debugFn('error', 'caught: Arborist error')
-      debugDir('inspect', { error: e })
+      debugDir('inspect', { error })
     }
   }
   if (isSpinning) {
     spinner.start()
   }
-  return actualTree
+  return {
+    ...(actualTree ? { actualTree } : undefined),
+    ...(errored ? { error } : undefined),
+  }
 }
 
 export async function pnpmFix(
@@ -104,11 +115,12 @@ export async function pnpmFix(
     pkgEnvDetails.agentVersion.major >= 10 &&
     (parsePnpmLockfileVersion(lockfile?.lockfileVersion)?.major ?? 0) <= 6
   ) {
-    const maybeActualTree = await install(pkgEnvDetails, {
+    const installResult = await install(pkgEnvDetails, {
       args: ['--lockfile-only'],
       cwd,
       spinner,
     })
+    const maybeActualTree = installResult.actualTree
     if (maybeActualTree) {
       lockSrc = (await readLockfile(pkgEnvDetails.lockPath)) ?? ''
     } else {
