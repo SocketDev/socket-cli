@@ -23,7 +23,7 @@ describe('socket organization', async () => {
 
           Commands
             dependencies      Search for any dependency that is being used in your organization
-            list              List organizations associated with the API key used
+            list              List organizations associated with the Socket API token
             policy            Organization policy details
 
           Options
