@@ -212,10 +212,13 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
 }
 
 async function getAgentVersion(
+  agent: Agent,
   agentExecPath: string,
   cwd: string,
 ): Promise<SemVer | undefined> {
   let result
+  const quotedCmd = `\`${agent} --version\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     result =
       // Coerce version output into a valid semver version by passing it through
@@ -223,7 +226,6 @@ async function getAgentVersion(
       // and tildes (~).
       semver.coerce(
         // All package managers support the "--version" flag.
-
         (
           await spawn(agentExecPath, ['--version'], {
             cwd,
@@ -233,7 +235,7 @@ async function getAgentVersion(
         ).stdout,
       ) ?? undefined
   } catch (e) {
-    debugFn('error', 'caught: unexpected error')
+    debugFn('error', `caught: ${quotedCmd} failed`)
     debugDir('inspect', { error: e })
   }
   return result
@@ -291,7 +293,7 @@ export async function detectPackageEnvironment({
     onUnknown?.(pkgManager)
   }
   const agentExecPath = await getAgentExecPath(agent)
-  const agentVersion = await getAgentVersion(agentExecPath, cwd)
+  const agentVersion = await getAgentVersion(agent, agentExecPath, cwd)
   if (agent === YARN_CLASSIC && (agentVersion?.major ?? 0) > 1) {
     agent = YARN_BERRY
   }
