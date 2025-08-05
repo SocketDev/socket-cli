@@ -166,7 +166,7 @@ describe('socket config get', async () => {
       // Migrate this away...?
       cmdit(
         ['config', 'get', 'apiToken', '--config', '{"apiToken":null}'],
-        'should backwards compat support api key as well env var',
+        'should back compat support for API token as well env var',
         async cmd => {
           const { stderr, stdout } = await invokeNpm(binCliPath, cmd, {
             SOCKET_SECURITY_API_KEY: 'abc',
