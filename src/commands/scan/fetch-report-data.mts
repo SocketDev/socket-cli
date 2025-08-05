@@ -134,16 +134,16 @@ export async function fetchScanData(
       updateScan('failure; unknown blocking error occurred')
       return {
         ok: false as const,
-        message: 'Unexpected Socket API error',
-        cause: `We encountered an unexpected error while requesting the Scan from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`,
+        message: 'Socket API error',
+        cause: `Error requesting scan: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`,
       }
     }),
     fetchSecurityPolicy().catch(e => {
       updatePolicy('failure; unknown blocking error occurred')
       return {
         ok: false as const,
-        message: 'Unexpected Socket API error',
-        cause: `We encountered an unexpected error while requesting the policy from the Socket API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`,
+        message: 'Socket API error',
+        cause: `Error requesting policy: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`,
       }
     }),
   ]).finally(() => {
