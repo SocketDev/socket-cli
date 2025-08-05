@@ -433,7 +433,7 @@ export async function detectAndValidatePackageEnvironment(
     const minVersion = constants.minimumVersionByAgent.get(agent)!
     return {
       ok: false,
-      message: 'Version Mismatch',
+      message: 'Version mismatch',
       cause: cmdPrefixMessage(
         cmdName,
         `Requires ${agent} >=${minVersion}. Current version: ${agentVersion}.`,
@@ -444,7 +444,7 @@ export async function detectAndValidatePackageEnvironment(
     const minVersion = constants.maintainedNodeVersions.last
     return {
       ok: false,
-      message: 'Version Mismatch',
+      message: 'Version mismatch',
       cause: cmdPrefixMessage(
         cmdName,
         `Requires Node >=${minVersion}. Current version: ${nodeVersion}.`,
@@ -454,7 +454,7 @@ export async function detectAndValidatePackageEnvironment(
   if (!details.pkgSupports.agent) {
     return {
       ok: false,
-      message: 'Engine Mismatch',
+      message: 'Engine mismatch',
       cause: cmdPrefixMessage(
         cmdName,
         `Package engine "${agent}" requires ${pkgRequirements.agent}. Current version: ${agentVersion}`,
@@ -464,7 +464,7 @@ export async function detectAndValidatePackageEnvironment(
   if (!details.pkgSupports.node) {
     return {
       ok: false,
-      message: 'Version Mismatch',
+      message: 'Version mismatch',
       cause: cmdPrefixMessage(
         cmdName,
         `Package engine "node" requires ${pkgRequirements.node}. Current version: ${nodeVersion}`,
@@ -475,14 +475,14 @@ export async function detectAndValidatePackageEnvironment(
   if (details.lockName === undefined || details.lockSrc === undefined) {
     return {
       ok: false,
-      message: 'Missing Lock File',
+      message: 'Missing lockfile',
       cause: cmdPrefixMessage(cmdName, `No ${lockName} found`),
     }
   }
   if (details.lockSrc.trim() === '') {
     return {
       ok: false,
-      message: 'Empty Lock File',
+      message: 'Empty lockfile',
       cause: cmdPrefixMessage(cmdName, `${lockName} is empty`),
     }
   }

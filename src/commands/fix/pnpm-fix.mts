@@ -152,11 +152,11 @@ export async function pnpmFix(
       : await getAlertsMapFromPnpmLockfile(lockfile, getFixAlertsMapOptions())
   } catch (e) {
     spinner?.stop()
-    debugFn('error', 'caught: PURL API')
+    debugFn('error', 'caught: Socket batch PURL API error')
     debugDir('inspect', { error: e })
     return {
       ok: false,
-      message: 'API Error',
+      message: 'Socket API error',
       cause: (e as Error)?.message || 'Unknown Socket batch PURL API error.',
     }
   }
