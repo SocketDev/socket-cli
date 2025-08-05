@@ -639,7 +639,7 @@ export async function agentFix(
             return {
               ok: false,
               message: 'Update failed',
-              cause: `Update failed for ${oldId} in ${workspace}${error ? '; ' + error : ''}`,
+              cause: `Update failed for ${oldId} in ${workspace}${error ? `; ${error}` : ''}`,
             }
           } else {
             changed = true
