@@ -10,14 +10,22 @@ import type { CResult } from '../../types.mts'
 export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   const defaultOrgResult = getConfigValueOrUndef('defaultOrg')
   if (defaultOrgResult) {
-    debugFn('notice', 'use: default org', defaultOrgResult)
+    debugFn(
+      'notice',
+      'use: org from defaultOrg value of socket/settings local app data',
+      defaultOrgResult,
+    )
     return { ok: true, data: defaultOrgResult }
   }
 
   // Lazily access constants.ENV.SOCKET_CLI_ORG_SLUG.
   const envOrgSlug = constants.ENV.SOCKET_CLI_ORG_SLUG
   if (envOrgSlug) {
-    debugFn('notice', 'use: org from environment variable', envOrgSlug)
+    debugFn(
+      'notice',
+      'use: org from SOCKET_CLI_ORG_SLUG environment variable',
+      envOrgSlug,
+    )
     return { ok: true, data: envOrgSlug }
   }
 
@@ -32,7 +40,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return {
       ok: false,
       message: 'Failed to establish identity',
-      data: `API did not return any organization associated with the current API token. Unable to continue.`,
+      data: `No organization associated with the API token. Unable to continue.`,
     }
   }
 
@@ -41,11 +49,11 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return {
       ok: false,
       message: 'Failed to establish identity',
-      data: `Was unable to determine the default organization for the current API token. Unable to continue.`,
+      data: `Cannot determine the default organization for the API token. Unable to continue.`,
     }
   }
 
-  debugFn('notice', 'resolve: org', slug)
+  debugFn('notice', 'resolve: org from API', slug)
 
   return {
     ok: true,
