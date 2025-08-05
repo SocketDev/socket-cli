@@ -40,7 +40,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return {
       ok: false,
       message: 'Failed to establish identity',
-      data: `No organization associated with the API token. Unable to continue.`,
+      data: `No organization associated with the Socket API token. Unable to continue.`,
     }
   }
 

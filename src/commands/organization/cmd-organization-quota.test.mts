@@ -16,7 +16,7 @@ describe('socket organization quota', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "List organizations associated with the API key used
+        "List organizations associated with the Socket API token
 
           Usage
             $ socket organization quota [options]

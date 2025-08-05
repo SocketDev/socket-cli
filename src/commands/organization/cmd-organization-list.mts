@@ -15,7 +15,7 @@ const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
   commandName: 'list',
-  description: 'List organizations associated with the API key used',
+  description: 'List organizations associated with the Socket API token',
   hidden: false,
   flags: {
     ...commonFlags,

@@ -29,7 +29,7 @@ export async function attemptLogin(
   apiProxy ??= getConfigValueOrUndef('apiProxy') ?? undefined
   const apiTokenInput = await password({
     message: `Enter your ${terminalLink(
-      'Socket.dev API key',
+      'Socket.dev API token',
       'https://docs.socket.dev/docs/api-keys',
     )} (leave blank for a public key)`,
   })
@@ -63,7 +63,7 @@ export async function attemptLogin(
   const { organizations } = orgsCResult.data
   const orgSlugs = Object.values(organizations).map(obj => obj.slug)
 
-  logger.success(`API key verified: ${orgSlugs}`)
+  logger.success(`API token verified: ${orgSlugs}`)
 
   const enforcedChoices: OrgChoices = Object.values(organizations)
     .filter(org => org?.plan === 'enterprise')

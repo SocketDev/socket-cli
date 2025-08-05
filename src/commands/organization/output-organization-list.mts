@@ -45,7 +45,7 @@ export async function outputOrganizationList(
       }
       logger.log('# Organizations\n')
       logger.log(
-        `List of organizations associated with your API key, starting with: ${colors.italic(visibleTokenPrefix)}\n`,
+        `List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}\n`,
       )
       logger.log(
         `| Name${' '.repeat(mw1 - 4)} | ID${' '.repeat(mw2 - 2)} | Plan${' '.repeat(mw3 - 4)} |`,
@@ -65,7 +65,7 @@ export async function outputOrganizationList(
     }
     default: {
       logger.log(
-        `List of organizations associated with your API key, starting with: ${colors.italic(visibleTokenPrefix)}\n`,
+        `List of organizations associated with your API token, starting with: ${colors.italic(visibleTokenPrefix)}\n`,
       )
       // Just dump
       for (const o of organizations) {
