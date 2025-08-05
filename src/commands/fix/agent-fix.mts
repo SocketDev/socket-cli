@@ -97,7 +97,12 @@ export type InstallPhaseHandler = (
 export type Installer = (
   pkgEnvDetails: EnvDetails,
   options: InstallOptions,
-) => Promise<NodeClass | null>
+) => Promise<InstallerResult>
+
+export type InstallerResult = {
+  actualTree?: NodeClass | undefined
+  error?: unknown | undefined
+}
 
 const noopHandler = (() => {}) as unknown as InstallPhaseHandler
 
@@ -198,13 +203,15 @@ export async function agentFix(
       : []
   }
 
-  const handleInstallFail = (): CResult<{ fixed: boolean }> => {
+  const handleInstallFail = (
+    error?: unknown | undefined,
+  ): CResult<{ fixed: boolean }> => {
     cleanupInfoEntriesLoop()
     spinner?.stop()
     return {
       ok: false,
       message: 'Install failed',
-      cause: `Unexpected condition: ${pkgEnvDetails.agent} install failed`,
+      cause: `${pkgEnvDetails.agent} install failed${error ? `; ${error}` : ''}`,
     }
   }
 
@@ -273,19 +280,25 @@ export async function agentFix(
           // eslint-disable-next-line no-await-in-loop
           await removeNodeModules(cwd)
         }
-        const maybeActualTree =
-          fixEnv.isCi && existsSync(path.join(rootPath, 'node_modules'))
-            ? // eslint-disable-next-line no-await-in-loop
-              await getActualTree(cwd)
-            : // eslint-disable-next-line no-await-in-loop
-              await installer(pkgEnvDetails, { cwd, spinner })
-        if (maybeActualTree && existsSync(pkgEnvDetails.lockPath)) {
+        if (fixEnv.isCi && existsSync(path.join(rootPath, 'node_modules'))) {
+          // eslint-disable-next-line no-await-in-loop
+          actualTree = await getActualTree(cwd)
+        } else {
+          // eslint-disable-next-line no-await-in-loop
+          const installResult = await installer(pkgEnvDetails, { cwd, spinner })
+          const maybeActualTree = installResult.actualTree
+          if (!maybeActualTree) {
+            // Exit early if install fails.
+            return handleInstallFail(installResult.error)
+          }
           actualTree = maybeActualTree
         }
-      }
-      if (!actualTree) {
-        // Exit early if install fails.
-        return handleInstallFail()
+        if (!existsSync(pkgEnvDetails.lockPath)) {
+          // Exit early if lockfile is missing.
+          return handleInstallFail(
+            new Error(`Missing lockfile at ${pkgEnvDetails.lockPath}`),
+          )
+        }
       }
 
       const oldVersions = arrayUnique(
@@ -447,15 +460,22 @@ export async function agentFix(
           const newId = `${name}@${applyRange(refRange, newVersion, rangeStyle)}`
           spinner?.info(`Installing ${newId} in ${workspace}.`)
 
-          let error
+          let error: unknown | undefined
           let errored = false
           try {
             // eslint-disable-next-line no-await-in-loop
-            const maybeActualTree = await installer(pkgEnvDetails, {
+            const installResult = await installer(pkgEnvDetails, {
               cwd,
               spinner,
             })
-            if (maybeActualTree && existsSync(pkgEnvDetails.lockPath)) {
+            const maybeActualTree = installResult.actualTree
+            if (!maybeActualTree) {
+              errored = true
+              error = installResult.error
+            } else if (!existsSync(pkgEnvDetails.lockPath)) {
+              errored = true
+              error = new Error(`Missing lockfile at ${pkgEnvDetails.lockPath}`)
+            } else {
               actualTree = maybeActualTree
               // eslint-disable-next-line no-await-in-loop
               await afterInstall(
@@ -473,8 +493,6 @@ export async function agentFix(
               }
               spinner?.success(`Fixed ${name} in ${workspace}.`)
               seenVersions.add(newVersion)
-            } else {
-              errored = true
             }
           } catch (e) {
             error = e
@@ -516,16 +534,23 @@ export async function agentFix(
                 // eslint-disable-next-line no-await-in-loop
                 await gitDeleteBranch(branch, cwd)
                 // eslint-disable-next-line no-await-in-loop
-                const maybeActualTree = await installer(pkgEnvDetails, {
+                const installResult = await installer(pkgEnvDetails, {
                   cwd,
                   spinner,
                 })
-                if (maybeActualTree && existsSync(pkgEnvDetails.lockPath)) {
-                  actualTree = maybeActualTree
-                  continue infosLoop
+                const maybeActualTree = installResult.actualTree
+                if (!maybeActualTree) {
+                  // Exit early if install fails.
+                  return handleInstallFail(installResult.error)
                 }
-                // Exit early if install fails.
-                return handleInstallFail()
+                if (!existsSync(pkgEnvDetails.lockPath)) {
+                  // Exit early if lockfile is missing.
+                  return handleInstallFail(
+                    new Error(`Missing lockfile at ${pkgEnvDetails.lockPath}`),
+                  )
+                }
+                actualTree = maybeActualTree
+                continue infosLoop
               }
 
               seenBranches.add(branch)
@@ -595,15 +620,17 @@ export async function agentFix(
             // eslint-disable-next-line no-await-in-loop
             await gitCheckoutBranch(fixEnv.baseBranch, cwd)
             // eslint-disable-next-line no-await-in-loop
-            const maybeActualTree = await installer(pkgEnvDetails, {
+            const installResult = await installer(pkgEnvDetails, {
               cwd,
               spinner,
             })
             spinner?.stop()
+            const maybeActualTree = installResult.actualTree
             if (maybeActualTree) {
               actualTree = maybeActualTree
             } else {
               errored = true
+              error = installResult.error
             }
           }
           if (errored) {
@@ -624,17 +651,17 @@ export async function agentFix(
                 editablePkgJson.save({ ignoreWhitespace: true }),
               ])
               // eslint-disable-next-line no-await-in-loop
-              const maybeActualTree = await installer(pkgEnvDetails, {
+              const installResult = await installer(pkgEnvDetails, {
                 cwd,
                 spinner,
               })
               spinner?.stop()
-              if (maybeActualTree) {
-                actualTree = maybeActualTree
-              } else {
+              const maybeActualTree = installResult.actualTree
+              if (!maybeActualTree) {
                 // Exit early if install fails.
-                return handleInstallFail()
+                return handleInstallFail(installResult.error)
               }
+              actualTree = maybeActualTree
             }
             return {
               ok: false,
