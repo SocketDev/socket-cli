@@ -44,6 +44,8 @@ export async function getRepoInfo(
   cwd = process.cwd(),
 ): Promise<RepoInfo | null> {
   let info = null
+  const quotedCmd = 'git remote get-url origin`'
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     const remoteUrl = (
       await spawn('git', ['remote', 'get-url', 'origin'], { cwd })
@@ -54,7 +56,7 @@ export async function getRepoInfo(
       debugDir('inspect', { remoteUrl })
     }
   } catch (e) {
-    debugFn('error', 'caught: `git remote get-url origin` failed')
+    debugFn('error', `caught: ${quotedCmd} failed`)
     debugDir('inspect', { error: e })
   }
   return info

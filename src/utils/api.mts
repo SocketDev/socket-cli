@@ -251,7 +251,7 @@ export async function queryApiSafeText(
 
     const cause = (e as undefined | { message: string })?.message
 
-    debugFn('error', 'caught: queryApi() error')
+    debugFn('error', 'caught: await queryApi() error')
     debugDir('inspect', { error: e })
 
     return {
@@ -272,7 +272,6 @@ export async function queryApiSafeText(
 
   try {
     const data = await result.text()
-
     return {
       ok: true,
       data,
@@ -280,7 +279,6 @@ export async function queryApiSafeText(
   } catch (e) {
     debugFn('error', 'caught: await result.text() error')
     debugDir('inspect', { error: e })
-
     return {
       ok: false,
       message: 'API Request failed to complete',
