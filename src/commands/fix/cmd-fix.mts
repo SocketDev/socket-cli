@@ -82,7 +82,7 @@ const config: CliCommandConfig = {
       description: `Provide a list of ${terminalLink(
         'PURLs',
         'https://github.com/package-url/purl-spec?tab=readme-ov-file#purl',
-      )} to compute fixes for, as either a comma separated value or as multiple flags,\n                        instead of querying the Socket API`,
+      )} to compute fixes for, as either a comma separated value or as\n                        multiple flags, instead of querying the Socket API`,
       isMultiple: true,
       shortFlag: 'p',
     },
