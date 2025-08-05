@@ -306,7 +306,7 @@ export async function meowWithSubcommands(
     out.push('    Main commands')
     out.push('')
     out.push(
-      '      socket login              Setup the CLI with an API Token and defaults',
+      '      socket login              Setup the Socket CLI with an API token and defaults',
     )
     out.push('      socket scan create        Create a new Scan and report')
     out.push(

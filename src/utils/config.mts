@@ -28,12 +28,15 @@ export interface LocalConfig {
 const sensitiveConfigKeyLookup: Set<keyof LocalConfig> = new Set(['apiToken'])
 
 const supportedConfig: Map<keyof LocalConfig, string> = new Map([
-  ['apiBaseUrl', 'Base URL of the API endpoint'],
-  ['apiProxy', 'A proxy through which to access the API'],
-  ['apiToken', 'The API token required to access most API endpoints'],
+  ['apiBaseUrl', 'Base URL of the Socket API endpoint'],
+  ['apiProxy', 'A proxy through which to access the Socket API'],
+  [
+    'apiToken',
+    'The Socket API token required to access most Socket API endpoints',
+  ],
   [
     'defaultOrg',
-    'The default org slug to use; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.',
+    'The default org slug to use; usually the org your Socket API token has access to. When set, all orgSlug arguments are implied to be this value.',
   ],
   [
     'enforcedOrgs',
@@ -41,7 +44,7 @@ const supportedConfig: Map<keyof LocalConfig, string> = new Map([
   ],
   [
     'skipAskToPersistDefaultOrg',
-    'This flag prevents the CLI from asking you to persist the org slug when you selected one interactively',
+    'This flag prevents the Socket CLI from asking you to persist the org slug when you selected one interactively',
   ],
   ['org', 'Alias for defaultOrg'],
 ])
@@ -226,7 +229,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
 }
 
 export function overrideConfigApiToken(apiToken: unknown) {
-  debugFn('notice', 'override: API token (not stored)')
+  debugFn('notice', 'override: Socket API token (not stored)')
   // Set token to the local cached config and mark it read-only so it doesn't persist.
   _cachedConfig = {
     ...config,

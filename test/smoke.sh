@@ -373,7 +373,7 @@ if should_run_section "login"; then
     run_socket 1 login --api-base-url fail
     run_socket 1 login --api-proxy fail
 
-    echo "Restoring api token"
+    echo "Restoring Socket API token"
     eval "${COMMAND_PREFIX} config set apiToken $TOKEN_BAK"
     echo "Restoring default org to $DEFORG_BAK"
     eval "${COMMAND_PREFIX} config set defaultOrg $DEFORG_BAK"
@@ -387,7 +387,7 @@ if should_run_section "logout"; then
     run_socket 0 logout --dry-run
     #run_socket 0 logout --wat
 
-    echo "Restoring api token"
+    echo "Restoring Socket API token"
     eval "${COMMAND_PREFIX} config set apiToken $TOKEN_BAK"
     echo "Restoring default org to $DEFORG_BAK"
     eval "${COMMAND_PREFIX} config set defaultOrg $DEFORG_BAK"

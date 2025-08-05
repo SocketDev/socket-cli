@@ -190,7 +190,7 @@ export function generateReport(
             }
 
             default: {
-              // This value was not emitted from the api at the time of writing.
+              // This value was not emitted from the Socket API at the time of writing.
             }
           }
         },

@@ -14,7 +14,7 @@ export async function determineOrgSlug(
   if (!orgSlug) {
     if (!interactive) {
       logger.warn(
-        'Note: This command requires an org slug because the remote API endpoint does.',
+        'Note: This command requires an org slug because the remote Socket API endpoint does.',
       )
       logger.warn('')
       logger.warn(

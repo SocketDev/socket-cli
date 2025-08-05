@@ -26,7 +26,7 @@ describe('socket ci', async () => {
           accept or reject a current build. When the scan does not pass your security
           policy, the exit code will be non-zero.
 
-          It will use the default org for the set API token.
+          It will use the default org for the Socket API token.
 
           The --autoManifest flag does the same as the one from \`socket scan create\`
           but is not enabled by default since the CI is less likely to be set up with

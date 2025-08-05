@@ -105,9 +105,9 @@ export async function fetchScanData(
 
     return {
       ok: false,
-      message: 'Invalid API response',
+      message: 'Invalid Socket API response',
       cause:
-        'The API responded with at least one line that was not valid JSON. Please report if this persists.',
+        'The Socket API responded with at least one line that was not valid JSON. Please report if this persists.',
     }
   }
 
@@ -131,19 +131,19 @@ export async function fetchScanData(
     CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>,
   ] = await Promise.all([
     fetchScanResult().catch(e => {
-      updateScan('failure; unknown blocking problem occurred')
+      updateScan('failure; unknown blocking error occurred')
       return {
         ok: false as const,
-        message: 'Unexpected API problem',
-        cause: `We encountered an unexpected problem while requesting the Scan from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`,
+        message: 'Unexpected Socket API error',
+        cause: `We encountered an unexpected error while requesting the Scan from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`,
       }
     }),
     fetchSecurityPolicy().catch(e => {
-      updatePolicy('failure; unknown blocking problem occurred')
+      updatePolicy('failure; unknown blocking error occurred')
       return {
         ok: false as const,
-        message: 'Unexpected API problem',
-        cause: `We encountered an unexpected problem while requesting the policy from the API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`,
+        message: 'Unexpected Socket API error',
+        cause: `We encountered an unexpected error while requesting the policy from the Socket API: ${e?.message || '(no error message found)'}${e?.cause ? ` (cause: ${e.cause})` : ''}`,
       }
     }),
   ]).finally(() => {
