@@ -63,10 +63,10 @@ export async function coanaFix(
     return lastCResult as CResult<any>
   }
 
-  const isAuto =
+  const isAllOrAuto =
     ghsas.length === 1 && (ghsas[0] === 'all' || ghsas[0] === 'auto')
 
-  const ids = isAuto ? ['all'] : ghsas
+  const ids = isAllOrAuto ? ['all'] : ghsas
 
   const fixCResult = ids.length
     ? await spawnCoana(
