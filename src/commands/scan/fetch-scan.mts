@@ -40,8 +40,8 @@ export async function fetchScan(
 
   return {
     ok: false,
-    message: 'Invalid API response',
+    message: 'Invalid Socket API response',
     cause:
-      'The API responded with at least one line that was not valid JSON. Please report if this persists.',
+      'The Socket API responded with at least one line that was not valid JSON. Please report if this persists.',
   }
 }

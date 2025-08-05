@@ -14,7 +14,7 @@ const TOKEN_PREFIX = 'sktsec_'
 
 const { length: TOKEN_PREFIX_LENGTH } = TOKEN_PREFIX
 
-// The API server that should be used for operations.
+// The Socket API server that should be used for operations.
 function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
     // Lazily access constants.ENV.SOCKET_CLI_API_BASE_URL.
@@ -22,7 +22,7 @@ function getDefaultApiBaseUrl(): string | undefined {
   return isUrl(baseUrl) ? baseUrl : undefined
 }
 
-// The API server that should be used for operations.
+// The Socket API server that should be used for operations.
 function getDefaultProxyUrl(): string | undefined {
   const apiProxy =
     // Lazily access constants.ENV.SOCKET_CLI_API_PROXY.
@@ -41,7 +41,7 @@ function isUrl(value: any): value is string {
   return false
 }
 
-// This API key should be stored globally for the duration of the CLI execution.
+// This Socket API token should be stored globally for the duration of the CLI execution.
 let _defaultToken: string | undefined
 export function getDefaultToken(): string | undefined {
   // Lazily access constants.ENV.SOCKET_CLI_NO_API_TOKEN.
@@ -94,7 +94,7 @@ export async function setupSdk(
   if (typeof apiToken !== 'string' && isInteractive()) {
     apiToken = await password({
       message:
-        'Enter your Socket.dev API key (not saved, use socket login to persist)',
+        'Enter your Socket.dev API token (not saved, use socket login to persist)',
     })
     _defaultToken = apiToken
   }
@@ -103,7 +103,7 @@ export async function setupSdk(
     return {
       ok: false,
       message: 'Auth Error',
-      cause: 'You need to provide an API Token. Run `socket login` first.',
+      cause: 'You need to provide an API token. Run `socket login` first.',
     }
   }
 

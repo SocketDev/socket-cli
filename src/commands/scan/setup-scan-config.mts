@@ -252,7 +252,7 @@ async function configureGithub(
     NonNullable<NonNullable<SocketJson['defaults']>['scan']>['github']
   >,
 ): Promise<CResult<{ canceled: boolean }>> {
-  // Do not store the github API token. Just leads to a security rabbit hole.
+  // Do not store the GitHub API token. Just leads to a security rabbit hole.
 
   const all = await select({
     message:

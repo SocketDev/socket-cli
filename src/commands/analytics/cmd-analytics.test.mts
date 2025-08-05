@@ -79,7 +79,7 @@ describe('socket analytics', async () => {
 
           - The time filter must either be 7, 30 or 90 (ok)
 
-          - You need to be logged in to use this command. See \`socket login\`. (missing API token)"
+          - You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
