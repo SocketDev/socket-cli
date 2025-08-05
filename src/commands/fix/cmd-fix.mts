@@ -110,7 +110,7 @@ const config: CliCommandConfig = {
     testScript: {
       type: 'string',
       default: 'test',
-      description: 'The test script to run for each fix attempt (default \'test\')',
+      description: "The test script to run for fix attempts (default 'test')",
     },
   },
   help: (command, config) => `
