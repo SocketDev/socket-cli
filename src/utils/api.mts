@@ -65,31 +65,29 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   let sdkResult: SocketSdkResult<T>
   try {
     sdkResult = await value
+    spinner?.stop()
     if (desc) {
-      // TODO: info, not success (looks weird when response is non-200)
-      spinner?.successAndStop(
-        `Received API response (after requesting ${desc}).`,
-      )
-    } else {
-      spinner?.stop()
+      const message = `Received API response (after requesting ${desc}).`
+      if (sdkResult.success) {
+        logger.success(message)
+      } else {
+        logger.info(message)
+      }
     }
   } catch (e) {
+    spinner?.stop()
     if (desc) {
-      spinner?.failAndStop(`An error was thrown while requesting ${desc}`)
+      logger.fail(`An error was thrown while requesting ${desc}`)
       debugFn('error', `caught: ${desc} error`)
     } else {
-      spinner?.stop()
-      debugFn('error', `caught: error`)
+      debugFn('error', `caught: API request error`)
     }
     debugDir('inspect', { error: e })
-
     return {
       ok: false,
       message: 'Socket API returned an error',
       cause: messageWithCauses(e as Error),
     }
-  } finally {
-    spinner?.stop()
   }
 
   // Note: TS can't narrow down the type of result due to generics.
