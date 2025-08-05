@@ -53,7 +53,7 @@ export async function handleOptimize({
         message: 'Unsupported',
         cause: cmdPrefixMessage(
           CMD_NAME,
-          `${agent} v${agentVersion} does not support overrides. Soon, though ⚡`,
+          `${agent} v${agentVersion} does not support overrides.`,
         ),
       },
       outputKind,
