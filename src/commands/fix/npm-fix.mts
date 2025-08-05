@@ -19,9 +19,13 @@ import type {
   InstallOptions,
   InstallerResult,
 } from './agent-fix.mts'
-import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
+import type {
+  ArboristInstance,
+  NodeClass,
+} from '../../shadow/npm/arborist/types.mts'
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
+import type { AlertsByPurl } from '../../utils/socket-package-alert.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
 async function install(
@@ -120,28 +124,40 @@ export async function npmFix(
   })
 
   let actualTree: NodeClass | undefined
-  let alertsMap
+  let alertsMap: AlertsByPurl | undefined
   try {
     if (purls.length) {
       alertsMap = await getAlertsMapFromPurls(purls, getFixAlertsMapOptions())
     } else {
-      const arb = new Arborist({
-        path: pkgEnvDetails.pkgPath,
-        ...flatConfig,
-        ...SAFE_WITH_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
-      })
-      actualTree = await arb.reify()
-      // Calling arb.reify() creates the arb.diff object, nulls-out arb.idealTree,
-      // and populates arb.actualTree.
+      let arb: ArboristInstance | undefined
+      try {
+        arb = new Arborist({
+          path: pkgEnvDetails.pkgPath,
+          ...flatConfig,
+          ...SAFE_WITH_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES,
+        })
+        // Calling arb.reify() creates the arb.diff object, nulls-out arb.idealTree,
+        // and populates arb.actualTree.
+        actualTree = await arb.reify()
+      } catch (e) {
+        spinner?.stop()
+        debugFn('error', 'caught: await arb.reify() error')
+        debugDir('inspect', { error: e })
+        return {
+          ok: false,
+          message: 'Arborist error',
+          cause: (e as Error)?.message || 'Unknown Arborist error.',
+        }
+      }
       alertsMap = await getAlertsMapFromArborist(arb, getFixAlertsMapOptions())
     }
   } catch (e) {
     spinner?.stop()
-    debugFn('error', 'caught: PURL API')
+    debugFn('error', 'caught: Socket batch PURL API error')
     debugDir('inspect', { error: e })
     return {
       ok: false,
-      message: 'API Error',
+      message: 'Socket API error',
       cause: (e as Error)?.message || 'Unknown Socket batch PURL API error.',
     }
   }
