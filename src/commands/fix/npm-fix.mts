@@ -14,7 +14,11 @@ import { runAgentInstall } from '../../utils/agent.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
 import { getNpmConfig } from '../../utils/npm-config.mts'
 
-import type { FixConfig, InstallOptions } from './agent-fix.mts'
+import type {
+  FixConfig,
+  InstallOptions,
+  InstallerResult,
+} from './agent-fix.mts'
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
@@ -23,7 +27,7 @@ import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 async function install(
   pkgEnvDetails: EnvDetails,
   options: InstallOptions,
-): Promise<NodeClass | null> {
+): Promise<InstallerResult> {
   const {
     args: extraArgs,
     cwd,
@@ -68,6 +72,7 @@ async function install(
   const isSpinning = spinner?.isSpinning
   spinner?.stop()
 
+  let error
   let errored = false
   try {
     await runAgentInstall(pkgEnvDetails, {
@@ -76,24 +81,30 @@ async function install(
       stdio: useDebug ? 'inherit' : 'ignore',
     })
   } catch (e) {
-    debugFn('error', `caught: ${quotedCmd} failed`)
-    debugDir('inspect', { error: e })
     errored = true
+    error = e
+    debugFn('error', `caught: ${quotedCmd} failed`)
+    debugDir('inspect', { error })
   }
 
-  let actualTree: NodeClass | null = null
+  let actualTree: NodeClass | undefined = undefined
   if (!errored) {
     try {
       actualTree = await getActualTree(cwd)
     } catch (e) {
+      errored = true
+      error = e
       debugFn('error', 'caught: Arborist error')
-      debugDir('inspect', { error: e })
+      debugDir('inspect', { error })
     }
   }
   if (isSpinning) {
     spinner.start()
   }
-  return actualTree
+  return {
+    ...(actualTree ? { actualTree } : undefined),
+    ...(errored ? { error } : undefined),
+  }
 }
 
 export async function npmFix(
