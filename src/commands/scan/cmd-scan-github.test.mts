@@ -85,7 +85,7 @@ describe('socket scan github', async () => {
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - This command requires an API token for access (missing (try \`socket login\`))
+          - This command requires an Socket API token for access (missing (try \`socket login\`))
 
           - This command requires a GitHub API token for access (missing)"
       `)

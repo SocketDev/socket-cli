@@ -67,7 +67,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     sdkResult = await value
     spinner?.stop()
     if (desc) {
-      const message = `Received API response (after requesting ${desc}).`
+      const message = `Received Socket API response (after requesting ${desc}).`
       if (sdkResult.success) {
         logger.success(message)
       } else {
@@ -80,7 +80,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       logger.fail(`An error was thrown while requesting ${desc}`)
       debugFn('error', `caught: ${desc} error`)
     } else {
-      debugFn('error', `caught: API request error`)
+      debugFn('error', `caught: Socket API request error`)
     }
     debugDir('inspect', { error: e })
     return {
@@ -171,7 +171,7 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
     return 'One of the options passed might be incorrect'
   }
   if (code === 403 || code === 401) {
-    return 'Your API token may not have the required permissions for this command or you might be trying to access (data from) an organization that is not linked to the API key you are logged in with'
+    return 'Your Socket API token may not have the required permissions for this command or you might be trying to access (data from) an organization that is not linked to the API token you are logged in with'
   }
   if (code === 404) {
     return 'The requested Socket API endpoint was not found (404) or there was no result for the requested parameters. If unexpected, this could be a temporary problem caused by an incident or a bug in the CLI. If the problem persists please let us know.'
@@ -182,7 +182,7 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
   return `Server responded with status code ${code}`
 }
 
-// The API server that should be used for operations.
+// The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
     // Lazily access constants.ENV.SOCKET_CLI_API_BASE_URL.
@@ -221,7 +221,7 @@ export async function queryApiSafeText(
       ok: false,
       message: 'Authentication Error',
       cause:
-        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your API key.',
+        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your Socket API token.',
     }
   }
 
@@ -237,7 +237,7 @@ export async function queryApiSafeText(
     result = await queryApi(path, apiToken)
     if (fetchSpinnerDesc) {
       spinner.successAndStop(
-        `Received API response (after requesting ${fetchSpinnerDesc}).`,
+        `Received Socket API response (after requesting ${fetchSpinnerDesc}).`,
       )
     }
   } catch (e) {

@@ -168,7 +168,7 @@ async function run(
       message:
         'You need to be logged in to use this command. See `socket login`.',
       pass: 'ok',
-      fail: 'missing API token',
+      fail: 'missing Socket API token',
     },
   )
   if (!wasValidInput) {

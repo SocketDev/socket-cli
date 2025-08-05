@@ -20,7 +20,7 @@ describe('socket root command', async () => {
 
         Main commands
 
-          socket login              Setup the CLI with an API Token and defaults
+          socket login              Setup the Socket CLI with an API token and defaults
           socket scan create        Create a new Scan and report
           socket npm/eslint@1.0.0   Request the security score of a particular package
           socket ci                 Shorthand for CI; socket scan create --report --no-interactive

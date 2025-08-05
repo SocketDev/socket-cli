@@ -29,13 +29,13 @@ describe('socket config get', async () => {
 
           KEY is an enum. Valid keys:
 
-           - apiBaseUrl -- Base URL of the API endpoint
-           - apiProxy -- A proxy through which to access the API
-           - apiToken -- The API token required to access most API endpoints
-           - defaultOrg -- The default org slug to use; usually the org your API token has access to. When set, all orgSlug arguments are implied to be this value.
+           - apiBaseUrl -- Base URL of the Socket API endpoint
+           - apiProxy -- A proxy through which to access the Socket API
+           - apiToken -- The Socket API token required to access most Socket API endpoints
+           - defaultOrg -- The default org slug to use; usually the org your Socket API token has access to. When set, all orgSlug arguments are implied to be this value.
            - enforcedOrgs -- Orgs in this list have their security policies enforced on this machine
            - org -- Alias for defaultOrg
-           - skipAskToPersistDefaultOrg -- This flag prevents the CLI from asking you to persist the org slug when you selected one interactively
+           - skipAskToPersistDefaultOrg -- This flag prevents the Socket CLI from asking you to persist the org slug when you selected one interactively
 
           Examples
             $ socket config get defaultOrg"
