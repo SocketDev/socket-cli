@@ -28,7 +28,6 @@ const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
 const SHADOW_NPM_BIN = 'shadow-npm-bin'
 const SHADOW_NPM_INJECT = 'shadow-npm-inject'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
-const SOCKET = 'socket'
 const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
 const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
@@ -127,7 +126,6 @@ const constants = createConstantsObject(
     SHADOW_NPM_BIN,
     SHADOW_NPM_INJECT,
     SLASH_NODE_MODULES_SLASH,
-    SOCKET,
     SOCKET_CLI_BIN_NAME,
     SOCKET_CLI_BIN_NAME_ALIAS,
     SOCKET_CLI_LEGACY_PACKAGE_NAME,

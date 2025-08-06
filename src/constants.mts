@@ -119,27 +119,14 @@ type Constants = Remap<
     readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
     readonly PNPM: 'pnpm'
     readonly REDACTED: '<redacted>'
-    readonly SHADOW_NPM_BIN: 'shadow-npm-bin'
-    readonly SHADOW_NPM_INJECT: 'shadow-npm-inject'
-    readonly SOCKET: 'socket'
     readonly SOCKET_CLI_ACCEPT_RISKS: 'SOCKET_CLI_ACCEPT_RISKS'
     readonly SOCKET_CLI_BIN_NAME: 'socket'
-    readonly SOCKET_CLI_BIN_NAME_ALIAS: 'cli'
     readonly SOCKET_CLI_CONFIG: 'SOCKET_CLI_CONFIG'
     readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
     readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
-    readonly SOCKET_CLI_SENTRY_BIN_NAME_ALIAS: 'cli-with-sentry'
-    readonly SOCKET_CLI_LEGACY_PACKAGE_NAME: '@socketsecurity/cli'
-    readonly SOCKET_CLI_NPM_BIN_NAME: 'socket-npm'
-    readonly SOCKET_CLI_NPX_BIN_NAME: 'socket-npx'
     readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
-    readonly SOCKET_CLI_PACKAGE_NAME: 'socket'
     readonly SOCKET_CLI_SAFE_BIN: 'SOCKET_CLI_SAFE_BIN'
     readonly SOCKET_CLI_SAFE_PROGRESS: 'SOCKET_CLI_SAFE_PROGRESS'
-    readonly SOCKET_CLI_SENTRY_BIN_NAME: 'socket-with-sentry'
-    readonly SOCKET_CLI_SENTRY_NPM_BIN_NAME: 'socket-npm-with-sentry'
-    readonly SOCKET_CLI_SENTRY_NPX_BIN_NAME: 'socket-npx-with-sentry'
-    readonly SOCKET_CLI_SENTRY_PACKAGE_NAME: '@socketsecurity/cli-with-sentry'
     readonly SOCKET_CLI_VIEW_ALL_RISKS: 'SOCKET_CLI_VIEW_ALL_RISKS'
     readonly SOCKET_DEFAULT_BRANCH: 'socket-default-branch'
     readonly SOCKET_DEFAULT_REPOSITORY: 'socket-default-repository'
@@ -203,26 +190,13 @@ const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const PNPM = 'pnpm'
 const REDACTED = '<redacted>'
-const SHADOW_NPM_BIN = 'shadow-npm-bin'
-const SHADOW_NPM_INJECT = 'shadow-npm-inject'
-const SOCKET = 'socket'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 const SOCKET_CLI_BIN_NAME = 'socket'
-const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
 const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
-const SOCKET_CLI_LEGACY_PACKAGE_NAME = '@socketsecurity/cli'
 const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
-const SOCKET_CLI_NPM_BIN_NAME = 'socket-npm'
-const SOCKET_CLI_NPX_BIN_NAME = 'socket-npx'
-const SOCKET_CLI_PACKAGE_NAME = 'socket'
 const SOCKET_CLI_SAFE_BIN = 'SOCKET_CLI_SAFE_BIN'
 const SOCKET_CLI_SAFE_PROGRESS = 'SOCKET_CLI_SAFE_PROGRESS'
-const SOCKET_CLI_SENTRY_BIN_NAME = 'socket-with-sentry'
-const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
-const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
-const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
-const SOCKET_CLI_SENTRY_PACKAGE_NAME = '@socketsecurity/cli-with-sentry'
 const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
 const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
 const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
@@ -616,11 +590,11 @@ const lazyShadowBinPath = () =>
 
 const lazyShadowNpmBinPath = () =>
   // Lazily access constants.distPath.
-  path.join(constants.distPath, `${SHADOW_NPM_BIN}.js`)
+  path.join(constants.distPath, 'shadow-npm-bin.js')
 
 const lazyShadowNpmInjectPath = () =>
   // Lazily access constants.distPath.
-  path.join(constants.distPath, `${SHADOW_NPM_INJECT}.js`)
+  path.join(constants.distPath, 'shadow-npm-inject.js')
 
 const lazySocketAppDataPath = (): string | undefined => {
   // Get the OS app data directory:
@@ -690,26 +664,13 @@ const constants: Constants = createConstantsObject(
     NPM_REGISTRY_URL,
     PNPM,
     REDACTED,
-    SHADOW_NPM_BIN,
-    SHADOW_NPM_INJECT,
-    SOCKET,
     SOCKET_CLI_ACCEPT_RISKS,
     SOCKET_CLI_BIN_NAME,
-    SOCKET_CLI_BIN_NAME_ALIAS,
     SOCKET_CLI_FIX,
     SOCKET_CLI_ISSUES_URL,
-    SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
-    SOCKET_CLI_LEGACY_PACKAGE_NAME,
-    SOCKET_CLI_NPM_BIN_NAME,
-    SOCKET_CLI_NPX_BIN_NAME,
     SOCKET_CLI_OPTIMIZE,
-    SOCKET_CLI_PACKAGE_NAME,
     SOCKET_CLI_SAFE_BIN,
     SOCKET_CLI_SAFE_PROGRESS,
-    SOCKET_CLI_SENTRY_BIN_NAME,
-    SOCKET_CLI_SENTRY_NPM_BIN_NAME,
-    SOCKET_CLI_SENTRY_NPX_BIN_NAME,
-    SOCKET_CLI_SENTRY_PACKAGE_NAME,
     SOCKET_CLI_VIEW_ALL_RISKS,
     SOCKET_DEFAULT_BRANCH,
     SOCKET_DEFAULT_REPOSITORY,
