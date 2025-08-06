@@ -340,7 +340,7 @@ const LAZY_ENV = () => {
     // programs are located. When a command is run, the system searches these
     // directories to find the executable.
     PATH: envAsString(env['PATH']),
-    // Accept risks of safe-npm and safe-npx run.
+    // Accept risks of a safe-npm and safe-npx run.
     SOCKET_CLI_ACCEPT_RISKS: envAsBoolean(env[SOCKET_CLI_ACCEPT_RISKS]),
     // Change the base URL for all API-calls.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
@@ -349,7 +349,7 @@ const LAZY_ENV = () => {
       envAsString(env['SOCKET_SECURITY_API_BASE_URL']) ||
       getConfigValueOrUndef('apiBaseUrl') ||
       'https://api.socket.dev/v0/',
-    // Set the proxy all requests are routed through.
+    // Set the proxy that all requests are routed through.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_CLI_API_PROXY:
       envAsString(env['SOCKET_CLI_API_PROXY']) ||
@@ -388,14 +388,14 @@ const LAZY_ENV = () => {
       GITHUB_TOKEN,
     // Make the default API token `undefined`.
     SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN']),
-    // The absolute location of the npm bin file.
+    // The absolute location of the npm directory.
     SOCKET_CLI_NPM_PATH: envAsString(env['SOCKET_CLI_NPM_PATH']),
     // Specify the Socket organization slug.
     SOCKET_CLI_ORG_SLUG:
       envAsString(env['SOCKET_CLI_ORG_SLUG']) ||
       // Coana CLI accepts the SOCKET_ORG_SLUG environment variable.
       envAsString(env['SOCKET_ORG_SLUG']),
-    // View all risks of safe-npm and safe-npx run.
+    // View all risks of a safe-npm and safe-npx run.
     SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
     // Specifies the type of terminal or terminal emulator being used by the process.
     TERM: envAsString(env['TERM']),
