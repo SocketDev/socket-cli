@@ -75,7 +75,6 @@ type ENV = Remap<
       SOCKET_CLI_API_PROXY: string
       SOCKET_CLI_API_TOKEN: string
       SOCKET_CLI_CONFIG: string
-      SOCKET_CLI_DEBUG: boolean
       SOCKET_CLI_GIT_USER_EMAIL: string
       SOCKET_CLI_GIT_USER_NAME: string
       SOCKET_CLI_GITHUB_TOKEN: string
@@ -265,7 +264,7 @@ const LAZY_ENV = () => {
     __proto__: null,
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
-    // Variable to disable using GitHub's workflow actions/cache.
+    // Disable using GitHub's workflow actions/cache.
     // https://github.com/actions/cache
     DISABLE_GITHUB_CACHE: envAsBoolean(env['DISABLE_GITHUB_CACHE']),
     // The API URL. For example, https://api.github.com.
@@ -346,7 +345,7 @@ const LAZY_ENV = () => {
     // user-specific, non-roaming application data, like temporary files, cached
     // data, and program settings, that are specific to the current machine and user.
     LOCALAPPDATA: envAsString(env[LOCALAPPDATA]),
-    // Variable to enable the module compile cache for the Node.js instance.
+    // Enable the module compile cache for the Node.js instance.
     // https://nodejs.org/api/cli.html#node_compile_cachedir
     NODE_COMPILE_CACHE:
       // Lazily access constants.SUPPORTS_NODE_COMPILE_CACHE_ENV_VAR.
@@ -354,9 +353,9 @@ const LAZY_ENV = () => {
         ? // Lazily access constants.socketCachePath.
           constants.socketCachePath
         : '',
-    // When set, the well known "root" CAs (like VeriSign) will be extended with
-    // the extra certificates in file. The file should consist of one or more
-    // trusted certificates in PEM format.
+    // Well known "root" CAs (like VeriSign) will be extended with the extra
+    // certificates in file. The file should consist of one or more trusted
+    // certificates in PEM format.
     // https://nodejs.org/api/cli.html#node_extra_ca_certsfile
     NODE_EXTRA_CA_CERTS:
       envAsString(env['NODE_EXTRA_CA_CERTS']) ||
@@ -367,16 +366,16 @@ const LAZY_ENV = () => {
     // programs are located. When a command is run, the system searches these
     // directories to find the executable.
     PATH: envAsString(env['PATH']),
-    // Variable to accepts risks of safe-npm and safe-npx run.
+    // Accept risks of safe-npm and safe-npx run.
     SOCKET_CLI_ACCEPT_RISKS: envAsBoolean(env[SOCKET_CLI_ACCEPT_RISKS]),
-    // Variable to change the base URL for all API-calls.
+    // Change the base URL for all API-calls.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_CLI_API_BASE_URL:
       envAsString(env['SOCKET_CLI_API_BASE_URL']) ||
       envAsString(env['SOCKET_SECURITY_API_BASE_URL']) ||
       getConfigValueOrUndef('apiBaseUrl') ||
       'https://api.socket.dev/v0/',
-    // Variable to set the proxy all requests are routed through.
+    // Set the proxy all requests are routed through.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_CLI_API_PROXY:
       envAsString(env['SOCKET_CLI_API_PROXY']) ||
@@ -387,17 +386,15 @@ const LAZY_ENV = () => {
       envAsString(env['https_proxy']) ||
       envAsString(env['HTTP_PROXY']) ||
       envAsString(env['http_proxy']),
-    // Variable to set the Socket API token.
+    // Set the Socket API token.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
     SOCKET_CLI_API_TOKEN:
       envAsString(env['SOCKET_CLI_API_TOKEN']) ||
       envAsString(env['SOCKET_CLI_API_KEY']) ||
       envAsString(env['SOCKET_SECURITY_API_TOKEN']) ||
       envAsString(env['SOCKET_SECURITY_API_KEY']),
-    // Variable containing a JSON stringified Socket configuration object.
+    // A JSON stringified Socket configuration object.
     SOCKET_CLI_CONFIG: envAsString(env['SOCKET_CLI_CONFIG']),
-    // Variable to help debug Socket CLI.
-    SOCKET_CLI_DEBUG: envAsBoolean(env['SOCKET_CLI_DEBUG']),
     // The git config user.email used by Socket CLI.
     SOCKET_CLI_GIT_USER_EMAIL:
       envAsString(env['SOCKET_CLI_GIT_USER_EMAIL']) ||
@@ -415,16 +412,16 @@ const LAZY_ENV = () => {
       envAsString(env['SOCKET_CLI_GITHUB_TOKEN']) ||
       envAsString(env['SOCKET_SECURITY_GITHUB_PAT']) ||
       GITHUB_TOKEN,
-    // Variable to make the default API token `undefined`.
+    // Make the default API token `undefined`.
     SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN']),
     // The absolute location of the npm bin file.
     SOCKET_CLI_NPM_PATH: envAsString(env['SOCKET_CLI_NPM_PATH']),
-    // Variable to specify the Socket organization slug.
+    // Specify the Socket organization slug.
     SOCKET_CLI_ORG_SLUG:
       envAsString(env['SOCKET_CLI_ORG_SLUG']) ||
       // Coana CLI accepts the SOCKET_ORG_SLUG environment variable.
       envAsString(env['SOCKET_ORG_SLUG']),
-    // Variable to view all risks of safe-npm and safe-npx run.
+    // View all risks of safe-npm and safe-npx run.
     SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
     // Specifies the type of terminal or terminal emulator being used by the process.
     TERM: envAsString(env['TERM']),
@@ -626,7 +623,7 @@ const lazyShadowNpmInjectPath = () =>
   path.join(constants.distPath, `${SHADOW_NPM_INJECT}.js`)
 
 const lazySocketAppDataPath = (): string | undefined => {
-  // Get the OS app data folder:
+  // Get the OS app data directory:
   // - Win: %LOCALAPPDATA% or fail?
   // - Mac: %XDG_DATA_HOME% or fallback to "~/Library/Application Support/"
   // - Linux: %XDG_DATA_HOME% or fallback to "~/.local/share/"
