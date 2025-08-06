@@ -12,7 +12,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
   if (defaultOrgResult) {
     debugFn(
       'notice',
-      'use: org from defaultOrg value of socket/settings local app data',
+      'use: org from "defaultOrg" value of socket/settings local app data',
       defaultOrgResult,
     )
     return { ok: true, data: defaultOrgResult }
@@ -53,7 +53,7 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     }
   }
 
-  debugFn('notice', 'resolve: org from API', slug)
+  debugFn('notice', 'resolve: org from Socket API', slug)
 
   return {
     ok: true,
