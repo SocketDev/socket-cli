@@ -54,12 +54,14 @@ describe('socket root command', async () => {
           uninstall                 Remove Socket CLI tab completion from your system
           wrapper                   Enable or disable the Socket npm/npx wrapper
 
-        Options       (Note: all CLI commands have these flags even when not displayed in their help)
+        Options       (Note: All CLI commands have these flags even when not displayed in their help)
 
-          --config                 Allows you to temp overrides the internal CLI config
-          --dryRun                 Do input validation for a sub-command and then exit
-          --help                   Give you detailed help information about any sub-command
-          --version                Show version of CLI
+          --config                 Override the local config with this JSON
+          --dry-run                Do input validation for a command and exit 0 when input is ok
+          --help                   Print this help
+          --max-old-space-size     Set the max memory size of V8's old memory section in megabytes
+          --max-semi-space-size    Set the maximum semi-space size for V8's scavenge garbage collector in megabytes
+          --version                Print the app version
 
         Examples
           $ socket --help
