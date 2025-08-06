@@ -60,20 +60,17 @@ use of the `projectIgnorePaths` to excludes files when creating a report.
 ## Environment variables
 
 - `SOCKET_CLI_ACCEPT_RISKS` - Accept risks of a safe-npm and safe-npx run.
-- `SOCKET_CLI_API_TOKEN` - Set the Socket API token.<br>
-  *Aliases:* `SOCKET_CLI_API_KEY`, `SOCKET_SECURITY_API_TOKEN`, and `SOCKET_SECURITY_API_KEY`<br>
+- `SOCKET_CLI_API_TOKEN` - Set the Socket API token.
 - `SOCKET_CLI_CONFIG` - A JSON stringified Socket configuration object.
 - `SOCKET_CLI_GIT_USER_EMAIL` - The git config user.email used by Socket CLI.<br>
   *Defaults:* `github-actions[bot]@users.noreply.github.com`<br>
 - `SOCKET_CLI_GIT_USER_NAME` - The git config user.name used by Socket CLI.<br>
   *Defaults:* `github-actions[bot]`<br>
-  *Aliases:* `SOCKET_CLI_GIT_USERNAME`<br>
 - `SOCKET_CLI_GITHUB_TOKEN` - A classic [GitHub personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) with the "repo" scope or a fine-grained access token with at least read/write permissions set for "Contents" and "Pull Request".<br>
-  *Aliases:* `SOCKET_SECURITY_GITHUB_PAT` and `GITHUB_TOKEN`<br>
+  *Aliases:* `GITHUB_TOKEN`<br>
 - `SOCKET_CLI_NO_API_TOKEN` - Make the default API token `undefined`.
 - `SOCKET_CLI_NPM_PATH` - The absolute location of the npm directory.
-- `SOCKET_CLI_ORG_SLUG` - Specify the Socket organization slug.<br>
-  *Aliases:* `SOCKET_ORG_SLUG`<br>
+- `SOCKET_CLI_ORG_SLUG` - Specify the Socket organization slug.
 - `SOCKET_CLI_VIEW_ALL_RISKS` - View all risks of a safe-npm and safe-npx run.
 
 ## Contributing
@@ -93,7 +90,6 @@ npm exec socket
 - `DEBUG` - Enable debug logging based on the [`debug`](https://socket.dev/npm/package/debug) package.
 - `SOCKET_CLI_API_BASE_URL` - Change the base URL for all API-calls.<br>
   *Defaults:* The "apiBaseUrl" value of socket/settings local app data if present, else `https://api.socket.dev/v0/`.<br>
-  *Aliases:* `SOCKET_SECURITY_API_BASE_URL`<br>
 - `SOCKET_CLI_API_PROXY` - Set the proxy that all requests are routed through.<br>
   For example, if set to [`http://127.0.0.1:9090`](https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries), then all request are proxied through that proxy.<br>
   *Aliases:* `HTTPS_PROXY`, `https_proxy`, `HTTP_PROXY`, and `http_proxy`<br>
