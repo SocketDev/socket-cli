@@ -81,7 +81,7 @@ Index: /rollup/dist/es/shared/node-entry.js
  	return utils;
  }
  
-@@ -17535,9 +17535,9 @@
+@@ -17541,9 +17541,9 @@
              // Synthetic namespaces should not hide "regular" exports of the same name
              if (module.info.syntheticNamedExports === name) {
                  continue;
@@ -92,7 +92,7 @@ Index: /rollup/dist/es/shared/node-entry.js
              // imported through different namespace reexports gracefully
              copyNameToModulesMap(searchedNamesAndModules));
              if (module instanceof ExternalModule || options?.indirectExternal) {
-@@ -18270,9 +18270,9 @@
+@@ -18276,9 +18276,9 @@
                      this.facadeChunkByModule.set(module, this);
                      continue;
                  }
@@ -103,7 +103,7 @@ Index: /rollup/dist/es/shared/node-entry.js
              name => ({
                  name
              }));
-@@ -19746,9 +19746,9 @@
+@@ -19752,9 +19752,9 @@
  }
  function mergeChunks(chunkPartition, minChunkSize, sideEffectAtoms, sizeByAtom) {
      const { small } = chunkPartition;
@@ -114,7 +114,7 @@ Index: /rollup/dist/es/shared/node-entry.js
          minChunkSize <= 1 ? 1 : Infinity);
          if (bestTargetChunk) {
              const { containedAtoms, correlatedAtoms, modules, pure, size } = mergedChunk;
-@@ -19802,9 +19802,9 @@
+@@ -19808,9 +19808,9 @@
   * is returned.
   * Merging will not produce cycles if none of the direct non-merged
   * dependencies of a chunk have the other chunk as a transitive dependency.
@@ -208,7 +208,7 @@ Index: /rollup/dist/shared/rollup.js
      system: (property, { snippets: { getPropertyAccess } }) => property === null ? `module.meta` : `module.meta${getPropertyAccess(property)}`,
      umd: getGenericImportMetaMechanism(chunkId => `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromFullPath('__filename')} : ${getUrlFromDocument(chunkId, true)})`)
  };
-@@ -19137,9 +19137,9 @@
+@@ -19143,9 +19143,9 @@
              // Synthetic namespaces should not hide "regular" exports of the same name
              if (module.info.syntheticNamedExports === name) {
                  continue;
@@ -219,7 +219,7 @@ Index: /rollup/dist/shared/rollup.js
              // imported through different namespace reexports gracefully
              copyNameToModulesMap(searchedNamesAndModules));
              if (module instanceof ExternalModule || options?.indirectExternal) {
-@@ -19763,9 +19763,9 @@
+@@ -19769,9 +19769,9 @@
                      this.facadeChunkByModule.set(module, this);
                      continue;
                  }
@@ -230,7 +230,7 @@ Index: /rollup/dist/shared/rollup.js
              name => ({
                  name
              }));
-@@ -21239,9 +21239,9 @@
+@@ -21245,9 +21245,9 @@
  }
  function mergeChunks(chunkPartition, minChunkSize, sideEffectAtoms, sizeByAtom) {
      const { small } = chunkPartition;
@@ -241,7 +241,7 @@ Index: /rollup/dist/shared/rollup.js
          minChunkSize <= 1 ? 1 : Infinity);
          if (bestTargetChunk) {
              const { containedAtoms, correlatedAtoms, modules, pure, size } = mergedChunk;
-@@ -21295,9 +21295,9 @@
+@@ -21301,9 +21301,9 @@
   * is returned.
   * Merging will not produce cycles if none of the direct non-merged
   * dependencies of a chunk have the other chunk as a transitive dependency.
