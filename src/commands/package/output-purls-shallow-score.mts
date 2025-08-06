@@ -109,14 +109,14 @@ function getAlertString(
     return noColor ? `- Alerts: none!` : `- Alerts: ${colors.green('none')}!`
   }
 
-  const arr = Array.from(alerts.values())
-  const bad = arr
+  const o = Array.from(alerts.values())
+  const bad = o
     .filter(alert => alert.severity !== 'low' && alert.severity !== 'middle')
     .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
-  const mid = arr
+  const mid = o
     .filter(alert => alert.severity === 'middle')
     .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
-  const low = arr
+  const low = o
     .filter(alert => alert.severity === 'low')
     .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
 
@@ -175,7 +175,7 @@ export function preProcess(
   // API does not tell us which purls were not found.
   // Generate all purls to try so we can try to match search request.
   const purls: Set<string> = new Set()
-  artifacts.forEach(data => {
+  for (const data of artifacts) {
     purls.add(
       `pkg:${data.type}/${data.namespace ? `${data.namespace}/` : ''}${data.name}@${data.version}`,
     )
@@ -184,7 +184,7 @@ export function preProcess(
     purls.add(
       `pkg:${data.type}/${data.namespace ? `${data.namespace}/` : ''}${data.name}`,
     )
-  })
+  }
   // Try to match the searched purls against this list
   const missing = requestedPurls.filter(purl => {
     if (purls.has(purl)) {
@@ -196,7 +196,8 @@ export function preProcess(
     ) {
       return false
     }
-    return true // not found
+    // Not found.
+    return true
   })
 
   // Create a unique set of rows which represents each artifact that is returned
@@ -204,15 +205,14 @@ export function preProcess(
   // .release field (observed with python, at least).
   // Merge the alerts for duped packages. Use lowest score between all of them.
   const rows: Map<string, DedupedArtifact> = new Map()
-  artifacts.forEach(artifact => {
+  for (const artifact of artifacts) {
     const purl = `pkg:${artifact.type}/${artifact.namespace ? `${artifact.namespace}/` : ''}${artifact.name}${artifact.version ? `@${artifact.version}` : ''}`
     if (rows.has(purl)) {
       const row = rows.get(purl)
       if (!row) {
-        // unreachable; satisfy TS
-        return
+        // Unreachable; Satisfy TS.
+        continue
       }
-
       if ((artifact.score?.supplyChain || 100) < row.score.supplyChain) {
         row.score.supplyChain = artifact.score?.supplyChain || 100
       }
@@ -236,7 +236,7 @@ export function preProcess(
         })
       })
     } else {
-      const alerts = new Map()
+      const alerts = new Map<string, { type: string; severity: string }>()
       artifact.alerts?.forEach(({ severity, type }) => {
         alerts.set(`${type}:${severity}`, {
           type: (type as string) ?? 'unknown',
@@ -259,7 +259,7 @@ export function preProcess(
         alerts,
       })
     }
-  })
+  }
 
   return { rows, missing }
 }
@@ -270,15 +270,15 @@ export function generateMarkdownReport(
 ): string {
   const blocks: string[] = []
   const dupes: Set<string> = new Set()
-  artifacts.forEach(artifact => {
-    const block = '## ' + formatReportCard(artifact, false)
+  for (const artifact of artifacts.values()) {
+    const block = `## ${formatReportCard(artifact, false)}`
     if (dupes.has(block)) {
-      return
+      // Omit duplicate blocks.
+      continue
     }
     dupes.add(block)
     blocks.push(block)
-  })
-
+  }
   return `
 # Shallow Package Report
 
@@ -287,7 +287,7 @@ This report contains the response for requesting data on some package url(s).
 Please note: The listed scores are ONLY for the package itself. It does NOT
              reflect the scores of any dependencies, transitive or otherwise.
 
-${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => '- ' + purl + '\n').join('')}` : ''}
+${missing.length ? `\n## Missing response\n\nAt least one package had no response or the purl was not canonical:\n\n${missing.map(purl => `- ${purl}\n`).join('')}` : ''}
 
 ${blocks.join('\n\n\n')}
     `.trim()
@@ -297,31 +297,29 @@ export function generateTextReport(
   artifacts: Map<string, DedupedArtifact>,
   missing: string[],
 ): string {
-  const arr: string[] = []
-
-  arr.push('\n' + colors.bold('Shallow Package Score') + '\n')
-  arr.push(
+  const o: string[] = []
+  o.push(`\n${colors.bold('Shallow Package Score')}\n`)
+  o.push(
     'Please note: The listed scores are ONLY for the package itself. It does NOT\n' +
       '             reflect the scores of any dependencies, transitive or otherwise.',
   )
-
   if (missing.length) {
-    arr.push(
-      `\nAt least one package had no response or the purl was not canonical:\n${missing.map(purl => '\n- ' + colors.bold(purl)).join('')}`,
+    o.push(
+      `\nAt least one package had no response or the purl was not canonical:\n${missing.map(purl => `\n- ${colors.bold(purl)}`).join('')}`,
     )
   }
-
-  const dupes: Set<string> = new Set() // Omit dupes when output is identical
-  artifacts.forEach(artifact => {
+  const dupes: Set<string> = new Set()
+  for (const artifact of artifacts.values()) {
     const block = formatReportCard(artifact, true)
     if (dupes.has(block)) {
-      return
+      // Omit duplicate blocks.
+      continue
     }
     dupes.add(block)
-    arr.push('\n')
-    arr.push(block)
-  })
-  arr.push('')
+    o.push('\n')
+    o.push(block)
+  }
+  o.push('')
 
-  return arr.join('\n')
+  return o.join('\n')
 }

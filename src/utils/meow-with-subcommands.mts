@@ -111,7 +111,7 @@ export async function meowWithSubcommands(
       })
     }
     // Support `socket npm/babel` or whatever as a shorthand, too.
-    // Accept any ecosystem and let the remote sort it out.
+    // Accept any ecosystem and let the remote sort it o.
     if (/^[a-z]+\//.test(commandOrAliasName || '')) {
       logger.info('Note: Invoking `socket package score` now...')
       return await meowWithSubcommands(subcommands, {
@@ -155,7 +155,7 @@ export async function meowWithSubcommands(
   }
 
   // This is basically a dry-run parse of cli args and flags. We use this to
-  // determine config overrides and expected output mode.
+  // determine config overrides and expected o mode.
   const cli1 = meow(`(this should never be printed)`, {
     argv,
     importMeta,
@@ -211,7 +211,7 @@ export async function meowWithSubcommands(
     return
   }
 
-  // If we got at least some args, then lets find out if we can find a command.
+  // If we got at least some args, then lets find o if we can find a command.
   if (commandOrAliasName) {
     const alias = aliases[commandOrAliasName]
     // First: Resolve argv data from alias if its an alias that's been given.
@@ -228,7 +228,7 @@ export async function meowWithSubcommands(
     }
   }
 
-  function formatCommandsForHelp(isRootCommand: boolean) {
+  const formatCommandsForHelp = (isRootCommand: boolean) => {
     if (!isRootCommand) {
       return getHelpListOutput({
         ...toSortedObject(
@@ -300,76 +300,45 @@ export async function meowWithSubcommands(
       )
     }
 
-    const out = []
-    out.push('All commands have their own --help page')
-    out.push('')
-    out.push('    Main commands')
-    out.push('')
-    out.push(
-      '      socket login              Setup the Socket CLI with an API token and defaults',
-    )
-    out.push('      socket scan create        Create a new Scan and report')
-    out.push(
-      '      socket npm/eslint@1.0.0   Request the security score of a particular package',
-    )
-    out.push(
+    return [
+      'All commands have their own --help page',
+      '',
+      '    Main commands',
+      '',
+      '      socket login              Setup Socket CLI with an API token and defaults',
+      '      socket scan create        Create a new Socket scan and report',
+      '      socket npm/eslint@1.0.0   Request the Socket score of a package',
       '      socket ci                 Shorthand for CI; socket scan create --report --no-interactive',
-    )
-    out.push('')
-    out.push('    Socket API')
-    out.push('')
-    out.push('      analytics                 Look up analytics data')
-    out.push(
+      '',
+      '    Socket API',
+      '',
+      '      analytics                 Look up analytics data',
       '      audit-log                 Look up the audit log for an organization',
-    )
-    out.push(
-      '      organization              Manage organization account details',
-    )
-    out.push(
+      '      organization              Manage Socket organization account details',
       '      package                   Look up published package details',
-    )
-    out.push('      repository                Manage registered repositories')
-    out.push('      scan                      Manage Socket scans')
-    out.push('      threat-feed               [beta] View the threat feed')
-    out.push('')
-    out.push('    Local tools')
-    out.push('')
-    out.push(
+      '      repository                Manage registered repositories',
+      '      scan                      Manage Socket scans',
+      '      threat-feed               [beta] View the threat feed',
+      '',
+      '    Local tools',
+      '',
       '      fix                       Update dependencies with "fixable" Socket alerts',
-    )
-    out.push(
       '      manifest                  Generate a dependency manifest for certain languages',
-    )
-    out.push('      npm                       npm wrapper functionality')
-    out.push('      npx                       npx wrapper functionality')
-    out.push(
+      '      npm                       npm wrapper functionality',
+      '      npx                       npx wrapper functionality',
       '      optimize                  Optimize dependencies with @socketregistry overrides',
-    )
-    out.push(
-      '      raw-npm                   Temporarily disable the Socket npm wrapper',
-    )
-    out.push(
-      '      raw-npx                   Temporarily disable the Socket npx wrapper',
-    )
-    out.push('')
-    out.push('    CLI configuration')
-    out.push('')
-    out.push(
-      '      config                    Manage the CLI configuration directly',
-    )
-    out.push(
-      '      install                   Manually install CLI tab completion on your system',
-    )
-    out.push('      login                     Socket API login and CLI setup')
-    out.push('      logout                    Socket API logout')
-    out.push(
-      '      uninstall                 Remove the CLI tab completion from your system',
-    )
-    out.push(
+      '      raw-npm                   Run npm without the Socket npm wrapper',
+      '      raw-npx                   Run npx without the Socket npx wrapper',
+      '',
+      '    CLI configuration',
+      '',
+      '      config                    Manage Socket CLI configuration directly',
+      '      install                   Install Socket CLI tab completion on your system',
+      '      login                     Socket API login and CLI setup',
+      '      logout                    Socket API logout',
+      '      uninstall                 Remove Socket CLI tab completion from your system',
       '      wrapper                   Enable or disable the Socket npm/npx wrapper',
-    )
-
-    return out.join('\n')
+    ].join('\n')
   }
 
   // Parse it again. Config overrides should now be applied (may affect help).
