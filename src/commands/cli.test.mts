@@ -20,16 +20,16 @@ describe('socket root command', async () => {
 
         Main commands
 
-          socket login              Setup the Socket CLI with an API token and defaults
-          socket scan create        Create a new Scan and report
-          socket npm/eslint@1.0.0   Request the security score of a particular package
+          socket login              Setup Socket CLI with an API token and defaults
+          socket scan create        Create a new Socket scan and report
+          socket npm/eslint@1.0.0   Request the Socket score of a package
           socket ci                 Shorthand for CI; socket scan create --report --no-interactive
 
         Socket API
 
           analytics                 Look up analytics data
           audit-log                 Look up the audit log for an organization
-          organization              Manage organization account details
+          organization              Manage Socket organization account details
           package                   Look up published package details
           repository                Manage registered repositories
           scan                      Manage Socket scans
@@ -42,16 +42,16 @@ describe('socket root command', async () => {
           npm                       npm wrapper functionality
           npx                       npx wrapper functionality
           optimize                  Optimize dependencies with @socketregistry overrides
-          raw-npm                   Temporarily disable the Socket npm wrapper
-          raw-npx                   Temporarily disable the Socket npx wrapper
+          raw-npm                   Run npm without the Socket npm wrapper
+          raw-npx                   Run npx without the Socket npx wrapper
 
         CLI configuration
 
-          config                    Manage the CLI configuration directly
-          install                   Manually install CLI tab completion on your system
+          config                    Manage Socket CLI configuration directly
+          install                   Install Socket CLI tab completion on your system
           login                     Socket API login and CLI setup
           logout                    Socket API logout
-          uninstall                 Remove the CLI tab completion from your system
+          uninstall                 Remove Socket CLI tab completion from your system
           wrapper                   Enable or disable the Socket npm/npx wrapper
 
         Options       (Note: all CLI commands have these flags even when not displayed in their help)

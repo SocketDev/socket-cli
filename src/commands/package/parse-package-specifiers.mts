@@ -27,13 +27,13 @@ export function parsePackageSpecifiers(
       valid = false
     }
   } else {
-    // Assume ecosystem is a purl, too
+    // Assume ecosystem is a purl, too.
     pkgs.unshift(ecosystem)
 
     for (let i = 0; i < pkgs.length; ++i) {
       const pkg = pkgs[i] ?? ''
       if (!/^(?:pkg:)?[a-zA-Z]+\/./.test(pkg)) {
-        // At least one purl did not start with `pkg:eco/x` or `eco/x`
+        // At least one purl did not start with `pkg:eco/x` or `eco/x`.
         valid = false
         break
       } else if (pkg.startsWith('pkg:')) {
