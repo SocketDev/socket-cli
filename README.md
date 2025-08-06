@@ -34,43 +34,21 @@ socket --help
 
 All aliases support the flags and arguments of the commands they alias.
 
-- `socket ci` - alias for `socket report create --view --strict` which creates a
-  report for the current directory and quits with an exit code if the result is unhealthy.
+- `socket ci` - alias for `socket scan create --report` which creates a report for the current directory and quits with an exit code if the result is unhealthy.
 
 ## Flags
 
-### Command specific flags
-
-- `--view` - when set on `socket report create` the command will immediately do
-  a `socket report view` style view of the created report, waiting for the
-  server to complete it
-
 ### Output flags
 
-- `--json` - Outputs result as JSON which you can then pipe into
-  [`jq`](https://stedolan.github.io/jq/) and other tools.
-- `--markdown` - Outputs result as Markdown which you can then copy into an
-  issue, PR, or chat.
-
-## Strictness flags
-
-- `--all` - by default only `high` and `critical` issues are included, by
-  setting this flag all issues will be included
-- `--strict` - when set, exits with an error code if report result is deemed
-  unhealthy
+- `--json` - Outputs result as JSON which can be piped into [`jq`](https://stedolan.github.io/jq/) and other tools.
+- `--markdown` - Outputs result as Markdown which can be copied into issues, pull requests, or chats.
 
 ### Other flags
 
-- `--dry-run` - like all CLI tools that perform an action should have, we have a
-  dry run flag. Eg. `socket report create` supports running the command without
-  actually uploading anything
-- `--debug` - outputs additional debug output. Great for debugging, geeks and us
-  who develop. Hopefully you will never _need_ it, but it can still be fun,
-  right?
-- `--help` - prints the help for the current command. All CLI tools should have
-  this flag
-- `--version` - prints the version of the tool. All CLI tools should have this
-  flag
+- `--dry-run` - Run a command without uploading anything.
+- `--debug` - Output additional debug.
+- `--help` - Prints the help for a command.
+- `--version` - Prints the Socket CLI version.
 
 ## Configuration files
 
@@ -106,12 +84,9 @@ To run dev locally you can run these steps
 
 ```
 npm install
-npm run build:dist
+npm run build
 npm exec socket
 ```
-
-That should invoke it from local sources. If you make changes you run
-`build:dist` again.
 
 ### Environment variables for development
 
@@ -127,12 +102,12 @@ That should invoke it from local sources. If you make changes you run
 
 ## Similar projects
 
-- [`@socketsecurity/sdk`](https://github.com/SocketDev/socket-sdk-js) - The SDK used by Socket CLI
+- [`@socketsecurity/sdk`](https://github.com/SocketDev/socket-sdk-js) - The SDK used by Socket CLI.
 
 ## See also
 
 - [Announcement blog post](https://socket.dev/blog/announcing-socket-cli-preview)
-- [Socket API Reference](https://docs.socket.dev/reference) - The API used by Socket CLI
-- [Socket GitHub App](https://github.com/apps/socket-security) - The plug-and-play GitHub App
+- [Socket API Reference](https://docs.socket.dev/reference) - The API used by Socket CLI.
+- [Socket GitHub App](https://github.com/apps/socket-security) - The plug-and-play GitHub App.
 
 [Socket.dev]: https://socket.dev/
