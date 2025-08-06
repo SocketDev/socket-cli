@@ -166,7 +166,7 @@ export const commonFlags: MeowFlags = {
     },
     hidden: true,
     description:
-      "Sets the max memory size of V8's old memory section in megabytes",
+      "Set the max memory size of V8's old memory section in megabytes",
   },
   maxSemiSpaceSize: {
     type: 'number',
@@ -175,7 +175,7 @@ export const commonFlags: MeowFlags = {
     },
     hidden: true,
     description:
-      "Sets the maximum semi-space size for V8's scavenge garbage collector in megabytes",
+      "Set the maximum semi-space size for V8's scavenge garbage collector in megabytes",
   },
   nobanner: {
     // I know this would be `--no-banner` but that doesn't work with cdxgen.

@@ -30,7 +30,7 @@ describe('socket scan report', async () => {
             --license         Also report the license policy status. Default: false
             --markdown        Output result as markdown
             --org             Force override the organization slug, overrides the default org from config
-            --reportLevel     Which policy level alerts should be reported
+            --report-level    Which policy level alerts should be reported
             --short           Report only the healthy status
 
           When no output path is given the contents is sent to stdout.

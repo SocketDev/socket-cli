@@ -45,10 +45,10 @@ export interface CliSubcommand {
 // get ordered by alphabet while flags is near the bottom and the help text
 // at the bottom, because they tend ot occupy the most lines of code.
 export interface CliCommandConfig {
-  commandName: string // tmp optional while we migrate
+  commandName: string
   description: string
   hidden: boolean
-  flags: MeowFlags // tmp optional while we migrate
+  flags: MeowFlags
   help: (command: string, config: CliCommandConfig) => string
 }
 
@@ -56,7 +56,7 @@ export interface MeowOptions extends Options<any> {
   aliases?: CliAliases | undefined
   argv: readonly string[]
   name: string
-  // When no sub-command is given, default to this sub-command
+  // When no sub-command is given, default to this sub-command.
   defaultSub?: string
 }
 
@@ -111,7 +111,7 @@ export async function meowWithSubcommands(
       })
     }
     // Support `socket npm/babel` or whatever as a shorthand, too.
-    // Accept any ecosystem and let the remote sort it o.
+    // Accept any ecosystem and let the remote sort it out.
     if (/^[a-z]+\//.test(commandOrAliasName || '')) {
       logger.info('Note: Invoking `socket package score` now...')
       return await meowWithSubcommands(subcommands, {
@@ -128,25 +128,35 @@ export async function meowWithSubcommands(
 
   if (isRootCommand) {
     flags['help'] = {
-      type: 'boolean',
-      hidden: false, // Only show on root
-      description: 'Give you detailed help information about any sub-command',
-    }
+      ...flags['help'],
+      hidden: false,
+    } as (typeof flags)['help']
+
     flags['config'] = {
-      type: 'string',
-      hidden: false, // Only show on root
-      description: 'Allows you to temp overrides the internal CLI config',
-    }
+      ...flags['config'],
+      hidden: false,
+    } as (typeof flags)['config']
+
     flags['dryRun'] = {
-      type: 'boolean',
-      hidden: false, // Only show on root
-      description: 'Do input validation for a sub-command and then exit',
-    }
+      ...flags['dryRun'],
+      hidden: false,
+    } as (typeof flags)['dryRun']
+
+    flags['maxOldSpaceSize'] = {
+      ...flags['maxOldSpaceSize'],
+      hidden: false,
+    } as (typeof flags)['maxOldSpaceSize']
+
+    flags['maxSemiSpaceSize'] = {
+      ...flags['maxSemiSpaceSize'],
+      hidden: false,
+    } as (typeof flags)['maxSemiSpaceSize']
+
     flags['version'] = {
-      type: 'boolean',
-      hidden: false, // Only show on root
-      description: 'Show version of CLI',
-    }
+      ...flags['version'],
+      hidden: false,
+    } as (typeof flags)['version']
+
     delete flags['json']
     delete flags['markdown']
   } else {
@@ -351,7 +361,7 @@ export async function meowWithSubcommands(
 ${isRootCommand ? '' : '\n    Commands'}
       ${formatCommandsForHelp(isRootCommand)}
 
-${isRootCommand ? '    Options' : '    Options'}${isRootCommand ? '       (Note: all CLI commands have these flags even when not displayed in their help)\n' : ''}
+${isRootCommand ? '    Options' : '    Options'}${isRootCommand ? '       (Note: All CLI commands have these flags even when not displayed in their help)\n' : ''}
       ${getFlagListOutput(flags, { padName: 25 })}
 
     Examples

@@ -26,13 +26,13 @@ describe('socket repository create', async () => {
           The REPO name should be a "slug". Follows the same naming convention as GitHub.
 
           Options
-            --defaultBranch   Repository default branch. Defaults to "main"
+            --default-branch  Repository default branch. Defaults to "main"
             --homepage        Repository url
             --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown
             --org             Force override the organization slug, overrides the default org from config
-            --repoDescription Repository description
+            --repo-description Repository description
             --visibility      Repository visibility (Default Private)
 
           Examples

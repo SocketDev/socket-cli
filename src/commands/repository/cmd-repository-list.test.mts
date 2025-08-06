@@ -33,7 +33,7 @@ describe('socket repository list', async () => {
             --markdown        Output result as markdown
             --org             Force override the organization slug, overrides the default org from config
             --page            Page number
-            --perPage         Number of results per page
+            --per-page        Number of results per page
             --sort            Sorting option
 
           Examples

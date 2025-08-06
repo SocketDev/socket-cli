@@ -44,7 +44,7 @@ describe('socket audit-log', async () => {
             --markdown        Output result as markdown
             --org             Force override the organization slug, overrides the default org from config
             --page            Result page to fetch
-            --perPage         Results per page - default is 30
+            --per-page        Results per page - default is 30
 
           Examples
             $ socket audit-log

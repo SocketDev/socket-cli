@@ -31,7 +31,7 @@ export async function attemptLogin(
     message: `Enter your ${terminalLink(
       'Socket.dev API token',
       'https://docs.socket.dev/docs/api-keys',
-    )} (leave blank for a public key)`,
+    )} (leave blank to use a limited public token)`,
   })
 
   if (apiTokenInput === undefined) {
