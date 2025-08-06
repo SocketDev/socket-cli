@@ -23,22 +23,22 @@ describe('socket scan create', async () => {
             - Permissions: full-scans:create
 
           Options
-            --autoManifest    Run \`socket manifest auto\` before collecting manifest files? This would be necessary for languages like Scala, Gradle, and Kotlin, See \`socket manifest auto --help\`.
+            --auto-manifest   Run \`socket manifest auto\` before collecting manifest files? This would be necessary for languages like Scala, Gradle, and Kotlin, See \`socket manifest auto --help\`.
             --branch          Branch name
-            --commitHash      Commit hash
-            --commitMessage   Commit message
+            --commit-hash     Commit hash
+            --commit-message  Commit message
             --committers      Committers
             --cwd             working directory, defaults to process.cwd()
-            --defaultBranch   Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
+            --default-branch  Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.
             --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json            Output result as json
             --markdown        Output result as markdown
             --org             Force override the organization slug, overrides the default org from config
-            --pullRequest     Commit hash
-            --readOnly        Similar to --dry-run except it can read from remote, stops before it would create an actual report
+            --pull-request    Commit hash
+            --read-only       Similar to --dry-run except it can read from remote, stops before it would create an actual report
             --repo            Repository name
             --report          Wait for the scan creation to complete, then basically run \`socket scan report\` on it
-            --setAsAlertsPage When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
+            --set-as-alerts-page When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
             --tmp             Set the visibility (true/false) of the scan in your dashboard.
 
           Uploads the specified dependency manifest files for Go, Gradle, JavaScript,

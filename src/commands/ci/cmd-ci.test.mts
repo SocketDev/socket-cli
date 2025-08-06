@@ -20,13 +20,12 @@ describe('socket ci', async () => {
             $ socket ci [options]
 
           Options
-            --autoManifest    Auto generate manifest files where detected? See autoManifest flag in \`socket scan create\`
+            --auto-manifest   Auto generate manifest files where detected? See autoManifest flag in \`socket scan create\`
 
           This command is intended to use in CI runs to allow automated systems to
-          accept or reject a current build. When the scan does not pass your security
-          policy, the exit code will be non-zero.
-
-          It will use the default org for the Socket API token.
+          accept or reject a current build. It will use the default org of the
+          Socket API token. The exit code will be non-zero when the scan does not pass
+          your security policy.
 
           The --autoManifest flag does the same as the one from \`socket scan create\`
           but is not enabled by default since the CI is less likely to be set up with

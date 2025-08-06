@@ -25,8 +25,8 @@ describe('socket login', async () => {
           Logs into the Socket API by prompting for an API token
 
           Options
-            --apiBaseUrl      API server to connect to for login
-            --apiProxy        Proxy to use when making connection to API server
+            --api-base-url    API server to connect to for login
+            --api-proxy       Proxy to use when making connection to API server
 
           Examples
             $ socket login

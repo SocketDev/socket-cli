@@ -13,6 +13,10 @@ type ListDescription =
   | { description: string }
   | { description: string; hidden: boolean }
 
+function camelToKebab(string: string): string {
+  return string.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
+}
+
 export function getFlagListOutput(
   list: MeowFlags,
   options?: HelpListOptions | undefined,
@@ -49,9 +53,10 @@ export function getHelpListOutput(
       continue
     }
     const description = (isObject(entry) ? entry.description : entry) || ''
+    const printedName = keyPrefix + camelToKebab(name)
     result +=
       ''.padEnd(indent) +
-      (keyPrefix + name).padEnd(padName) +
+      printedName.padEnd(Math.max(printedName.length + 1, padName)) +
       description +
       '\n'
   }

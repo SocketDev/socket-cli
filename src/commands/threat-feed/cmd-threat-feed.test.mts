@@ -36,7 +36,7 @@ describe('socket threat-feed', async () => {
             --markdown        Output result as markdown
             --org             Force override the organization slug, overrides the default org from config
             --page            Page token
-            --perPage         Number of items per page
+            --per-page        Number of items per page
             --pkg             Filter by this package name
             --version         Filter by this package version
 
