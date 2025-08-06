@@ -47,7 +47,9 @@ All aliases support the flags and arguments of the commands they alias.
 
 - `--dry-run` - Run a command without uploading anything.
 - `--debug` - Output additional debug.
-- `--help` - Prints the help for a command.
+- `--help` - Prints help documentation for a command.
+- `--max-old-space-size` - Set Node's [`--max-old-space-size`](https://nodejs.org/api/cli.html#--max-old-space-sizesize-in-mib) value.
+- `--max-semi-space-size` - Set Node's [`--max-semi-space-size`](https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib) value.
 - `--version` - Prints the Socket CLI version.
 
 ## Configuration files
@@ -62,9 +64,9 @@ use of the `projectIgnorePaths` to excludes files when creating a report.
 - `SOCKET_CLI_ACCEPT_RISKS` - Accept risks of a safe-npm and safe-npx run.
 - `SOCKET_CLI_API_TOKEN` - Set the Socket API token.
 - `SOCKET_CLI_CONFIG` - A JSON stringified Socket configuration object.
-- `SOCKET_CLI_GIT_USER_EMAIL` - The git config user.email used by Socket CLI.<br>
+- `SOCKET_CLI_GIT_USER_EMAIL` - The git config `user.email` used by Socket CLI.<br>
   *Defaults:* `github-actions[bot]@users.noreply.github.com`<br>
-- `SOCKET_CLI_GIT_USER_NAME` - The git config user.name used by Socket CLI.<br>
+- `SOCKET_CLI_GIT_USER_NAME` - The git config `user.name` used by Socket CLI.<br>
   *Defaults:* `github-actions[bot]`<br>
 - `SOCKET_CLI_GITHUB_TOKEN` - A classic [GitHub personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) with the "repo" scope or a fine-grained access token with at least read/write permissions set for "Contents" and "Pull Request".<br>
   *Aliases:* `GITHUB_TOKEN`<br>
