@@ -94,15 +94,15 @@ export type InstallPhaseHandler = (
   fixConfig: FixConfig,
 ) => Promise<void>
 
-export type Installer = (
-  pkgEnvDetails: EnvDetails,
-  options: InstallOptions,
-) => Promise<InstallerResult>
-
-export type InstallerResult = {
+export type ActualTreeResult = {
   actualTree?: NodeClass | undefined
   error?: unknown | undefined
 }
+
+export type Installer = (
+  pkgEnvDetails: EnvDetails,
+  options: InstallOptions,
+) => Promise<ActualTreeResult>
 
 const noopHandler = (() => {}) as unknown as InstallPhaseHandler
 
@@ -282,7 +282,13 @@ export async function agentFix(
         }
         if (fixEnv.isCi && existsSync(path.join(rootPath, 'node_modules'))) {
           // eslint-disable-next-line no-await-in-loop
-          actualTree = await getActualTree(cwd)
+          const treeResult = await getActualTree(cwd)
+          const maybeActualTree = treeResult.actualTree
+          if (!maybeActualTree) {
+            // Exit early if install fails.
+            return handleInstallFail(treeResult.error)
+          }
+          actualTree = maybeActualTree
         } else {
           // eslint-disable-next-line no-await-in-loop
           const installResult = await installer(pkgEnvDetails, { cwd, spinner })

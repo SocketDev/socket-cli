@@ -22,9 +22,9 @@ import { applyRange } from '../../utils/semver.mts'
 import { getOverridesDataPnpm } from '../optimize/get-overrides-by-agent.mts'
 
 import type {
+  ActualTreeResult,
   FixConfig,
   InstallOptions,
-  InstallerResult,
 } from './agent-fix.mts'
 import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { CResult, StringKeyValueObject } from '../../types.mts'
@@ -36,7 +36,7 @@ const { OVERRIDES, PNPM } = constants
 async function install(
   pkgEnvDetails: EnvDetails,
   options: InstallOptions,
-): Promise<InstallerResult> {
+): Promise<ActualTreeResult> {
   const {
     args: extraArgs,
     cwd,
@@ -57,45 +57,38 @@ async function install(
     '--config.confirmModulesPurge=false',
     ...(extraArgs ?? []),
   ]
-  const quotedCmd = `\`${pkgEnvDetails.agent} install ${args.join(' ')}\``
-  debugFn('stdio', `spawn: ${quotedCmd}`)
 
   const isSpinning = spinner?.isSpinning
   spinner?.stop()
 
-  let error
-  let errored = false
+  const quotedCmd = `\`${pkgEnvDetails.agent} install ${args.join(' ')}\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     await runAgentInstall(pkgEnvDetails, {
       args,
       spinner,
       stdio: isDebug('stdio') ? 'inherit' : 'ignore',
     })
-  } catch (e) {
-    errored = true
-    error = e
+  } catch (error) {
+    const result = { error }
     debugFn('error', `caught: ${quotedCmd} failed`)
-    debugDir('inspect', { error })
+    debugDir('inspect', result)
+    return result
   }
 
-  let actualTree: NodeClass | undefined = undefined
-  if (!errored) {
-    try {
-      actualTree = await getActualTree(cwd)
-    } catch (e) {
-      errored = true
-      error = e
-      debugFn('error', 'caught: Arborist error')
-      debugDir('inspect', { error })
+  const treeResult = await getActualTree(cwd)
+  if (treeResult.actualTree) {
+    if (isSpinning) {
+      spinner.start()
     }
+    return treeResult
   }
+  debugFn('error', 'caught: await arb.loadActual() error')
+  debugDir('inspect', treeResult)
   if (isSpinning) {
     spinner.start()
   }
-  return {
-    ...(actualTree ? { actualTree } : undefined),
-    ...(errored ? { error } : undefined),
-  }
+  return treeResult
 }
 
 export async function pnpmFix(
