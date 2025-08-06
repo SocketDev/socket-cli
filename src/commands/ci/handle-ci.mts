@@ -7,10 +7,6 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 
 export async function handleCi(autoManifest: boolean): Promise<void> {
-  // ci: {
-  //   description: 'Alias for "report create --view --strict"',
-  //     argv: ['report', 'create', '--view', '--strict']
-  // }
   const orgSlugCResult = await getDefaultOrgSlug()
   if (!orgSlugCResult.ok) {
     process.exitCode = orgSlugCResult.code ?? 1
