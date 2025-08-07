@@ -2,6 +2,7 @@ import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { isPath } from '@socketsecurity/registry/lib/path'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { runCdxgen } from './run-cdxgen.mts'
@@ -252,15 +253,26 @@ async function run(
     ...yargsParse(argv as string[], yargsConfig),
   } as any
 
-  const unknown: string[] = yargv._
-  const { length: unknownLength } = unknown
-  if (unknownLength) {
+  const pathArgs: string[] = []
+  const unknowns: string[] = []
+  for (const a of yargv._) {
+    if (isPath(a)) {
+      pathArgs.push(a)
+    } else {
+      unknowns.push(a)
+    }
+  }
+
+  yargv._ = pathArgs
+
+  const { length: unknownsCount } = unknowns
+  if (unknownsCount) {
     // Use exit status of 2 to indicate incorrect usage, generally invalid
     // options or missing arguments.
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
     logger.fail(
-      `Unknown ${pluralize('argument', unknownLength)}: ${yargv._.join(', ')}`,
+      `Unknown ${pluralize('argument', unknownsCount)}: ${unknowns.join(', ')}`,
     )
     return
   }
