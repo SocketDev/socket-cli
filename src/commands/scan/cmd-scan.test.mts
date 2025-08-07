@@ -19,23 +19,23 @@ describe('socket scan', async () => {
         "Manage Socket scans
 
           Usage
+
             $ socket scan <command>
 
           Commands
-            create            Create a new Socket scan and report
-            del               Delete a scan
-            diff              See what changed between two Scans
-            list              List the scans for an organization
-            metadata          Get a scan's metadata
-            report            Check whether a scan result passes the organizational policies (security, license)
-            setup             Start interactive configurator to customize default flag values for \`socket scan\` in this dir
-            view              View the raw results of a scan
+
+            create              Create a new Socket scan and report
+            del                 Delete a scan
+            diff                See what changed between two Scans
+            list                List the scans for an organization
+            metadata            Get a scan's metadata
+            report              Check whether a scan result passes the organizational policies (security, license)
+            setup               Start interactive configurator to customize default flag values for \`socket scan\` in this dir
+            view                View the raw results of a scan
 
           Options
-            (none)
 
-          Examples
-            $ socket scan --help"
+            (none)"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

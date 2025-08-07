@@ -36,15 +36,15 @@ describe('socket scan github', async () => {
           You can use \`socket scan setup\` to configure certain repo flag defaults.
 
           Options
-            --all             Apply for all known repos reported by the Socket API. Supersedes \`repos\`.
-            --github-api-url  Base URL of the GitHub API (default: https://api.github.com)
-            --github-token    (required) GitHub token for authentication (or set GITHUB_TOKEN as an environment variable)
-            --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json            Output result as json
-            --markdown        Output result as markdown
-            --org             Force override the organization slug, overrides the default org from config
-            --org-github      Alternate GitHub Org if the name is different than the Socket Org
-            --repos           List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. Use --all to use them all.
+            --all               Apply for all known repos reported by the Socket API. Supersedes \`repos\`.
+            --github-api-url    Base URL of the GitHub API (default: https://api.github.com)
+            --github-token      (required) GitHub token for authentication (or set GITHUB_TOKEN as an environment variable)
+            --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
+            --json              Output result as json
+            --markdown          Output result as markdown
+            --org               Force override the organization slug, overrides the default org from config
+            --org-github        Alternate GitHub Org if the name is different than the Socket Org
+            --repos             List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. Use --all to use them all.
 
           Examples
             $ socket scan github

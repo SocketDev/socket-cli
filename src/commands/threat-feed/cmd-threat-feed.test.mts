@@ -28,17 +28,17 @@ describe('socket threat-feed', async () => {
           sales@socket.dev if you are interested in purchasing this access.
 
           Options
-            --direction       Order asc or desc by the createdAt attribute
-            --eco             Only show threats for a particular ecosystem
-            --filter          Filter what type of threats to return
-            --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json            Output result as json
-            --markdown        Output result as markdown
-            --org             Force override the organization slug, overrides the default org from config
-            --page            Page token
-            --per-page        Number of items per page
-            --pkg             Filter by this package name
-            --version         Filter by this package version
+            --direction         Order asc or desc by the createdAt attribute
+            --eco               Only show threats for a particular ecosystem
+            --filter            Filter what type of threats to return
+            --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
+            --json              Output result as json
+            --markdown          Output result as markdown
+            --org               Force override the organization slug, overrides the default org from config
+            --page              Page token
+            --per-page          Number of items per page
+            --pkg               Filter by this package name
+            --version           Filter by this package version
 
           Valid ecosystems:
 

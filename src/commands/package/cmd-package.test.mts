@@ -17,17 +17,17 @@ describe('socket package', async () => {
         "Look up published package details
 
           Usage
+
             $ socket package <command>
 
           Commands
-            score             Look up score for one package which reflects all of its transitive dependencies as well
-            shallow           Look up info regarding one or more packages but not their transitives
+
+            score               Look up score for one package which reflects all of its transitive dependencies as well
+            shallow             Look up info regarding one or more packages but not their transitives
 
           Options
-            (none)
 
-          Examples
-            $ socket package --help"
+            (none)"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

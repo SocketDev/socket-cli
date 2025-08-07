@@ -22,8 +22,8 @@ describe('socket config get', async () => {
             $ socket config set [options] <KEY> <VALUE>
 
           Options
-            --json            Output result as json
-            --markdown        Output result as markdown
+            --json              Output result as json
+            --markdown          Output result as markdown
 
           This is a crude way of updating the local configuration for this CLI tool.
 

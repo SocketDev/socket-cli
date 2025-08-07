@@ -17,20 +17,20 @@ describe('socket config', async () => {
         "Manage Socket CLI configuration
 
           Usage
+
             $ socket config <command>
 
           Commands
-            auto              Automatically discover and set the correct value config item
-            get               Get the value of a local CLI config item
-            list              Show all local CLI config items and their values
-            set               Update the value of a local CLI config item
-            unset             Clear the value of a local CLI config item
+
+            auto                Automatically discover and set the correct value config item
+            get                 Get the value of a local CLI config item
+            list                Show all local CLI config items and their values
+            set                 Update the value of a local CLI config item
+            unset               Clear the value of a local CLI config item
 
           Options
-            (none)
 
-          Examples
-            $ socket config --help"
+            (none)"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

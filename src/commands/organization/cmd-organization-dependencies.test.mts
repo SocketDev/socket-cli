@@ -24,10 +24,10 @@ describe('socket organization dependencies', async () => {
             - Permissions: none (does need token with access to target org)
 
           Options
-            --json            Output result as json
-            --limit           Maximum number of dependencies returned
-            --markdown        Output result as markdown
-            --offset          Page number
+            --json              Output result as json
+            --limit             Maximum number of dependencies returned
+            --markdown          Output result as markdown
+            --offset            Page number
 
           Examples
             socket organization dependencies

@@ -40,7 +40,7 @@ export function getHelpListOutput(
   const {
     indent = 6,
     keyPrefix = '',
-    padName = 18,
+    padName = 20,
   } = {
     __proto__: null,
     ...options,
@@ -56,7 +56,7 @@ export function getHelpListOutput(
     const printedName = keyPrefix + camelToKebab(name)
     result +=
       ''.padEnd(indent) +
-      printedName.padEnd(Math.max(printedName.length + 1, padName)) +
+      printedName.padEnd(Math.max(printedName.length + 2, padName)) +
       description +
       '\n'
   }

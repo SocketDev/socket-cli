@@ -24,10 +24,10 @@ describe('socket scan metadata', async () => {
             - Permissions: full-scans:list
 
           Options
-            --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json            Output result as json
-            --markdown        Output result as markdown
-            --org             Force override the organization slug, overrides the default org from config
+            --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
+            --json              Output result as json
+            --markdown          Output result as markdown
+            --org               Force override the organization slug, overrides the default org from config
 
           Examples
             $ socket scan metadata 000aaaa1-0000-0a0a-00a0-00a0000000a0

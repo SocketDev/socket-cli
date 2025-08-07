@@ -31,9 +31,9 @@ describe('socket analytics', async () => {
           The TIME argument must be number 7, 30, or 90 and defaults to 30.
 
           Options
-            --file            Path to store result, only valid with --json/--markdown
-            --json            Output result as json
-            --markdown        Output result as markdown
+            --file              Path to store result, only valid with --json/--markdown
+            --json              Output result as json
+            --markdown          Output result as markdown
 
           Examples
             $ socket analytics org 7

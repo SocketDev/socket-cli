@@ -39,12 +39,12 @@ describe('socket audit-log', async () => {
           The page arg should be a positive integer, offset 1. Defaults to 1.
 
           Options
-            --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json            Output result as json
-            --markdown        Output result as markdown
-            --org             Force override the organization slug, overrides the default org from config
-            --page            Result page to fetch
-            --per-page        Results per page - default is 30
+            --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
+            --json              Output result as json
+            --markdown          Output result as markdown
+            --org               Force override the organization slug, overrides the default org from config
+            --page              Result page to fetch
+            --per-page          Results per page - default is 30
 
           Examples
             $ socket audit-log
