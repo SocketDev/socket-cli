@@ -23,8 +23,9 @@ type RawSpaceSizeFlags = {
 let _rawSpaceSizeFlags: RawSpaceSizeFlags | undefined
 function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
   if (_rawSpaceSizeFlags === undefined) {
-    const cli = meow(``, {
+    const cli = meow({
       argv: process.argv.slice(2),
+      // Prevent meow from potentially exiting early.
       autoHelp: false,
       autoVersion: false,
       flags: {
