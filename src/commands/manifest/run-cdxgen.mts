@@ -44,8 +44,13 @@ function argvToArray(argv: {
       result.push(`--${key}`, ...value.map(String))
     }
   }
-  if (argv['--']) {
-    result.push('--', ...(argv as any)['--'])
+  const pathArgs = argv['_'] as string[]
+  if (Array.isArray(pathArgs)) {
+    result.push(...pathArgs)
+  }
+  const argsAfterDoubleHyphen = argv['--'] as string[]
+  if (Array.isArray(argsAfterDoubleHyphen)) {
+    result.push('--', ...argsAfterDoubleHyphen)
   }
   return result
 }
