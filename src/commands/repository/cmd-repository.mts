@@ -7,7 +7,7 @@ import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
 
-const description = 'Repository related commands'
+const description = 'Manage registered repositories'
 
 export const cmdRepository: CliSubcommand = {
   description,

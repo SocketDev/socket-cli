@@ -12,9 +12,8 @@ const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
   commandName: 'ci',
-  description:
-    'Create a new scan and report whether it passes your security policy',
-  hidden: true,
+  description: 'Shorthand for `socket scan create --report --no-interactive`',
+  hidden: false,
   flags: {
     ...commonFlags,
     autoManifest: {

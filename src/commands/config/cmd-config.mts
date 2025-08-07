@@ -7,7 +7,7 @@ import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
 
-const description = 'Commands related to the local CLI configuration'
+const description = 'Manage Socket CLI configuration'
 
 export const cmdConfig: CliSubcommand = {
   description,

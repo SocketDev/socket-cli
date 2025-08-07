@@ -14,7 +14,7 @@ describe('socket uninstall', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Teardown the Socket command from your environment
+        "Uninstall Socket CLI tab completion
 
           Usage
             $ socket uninstall <command>

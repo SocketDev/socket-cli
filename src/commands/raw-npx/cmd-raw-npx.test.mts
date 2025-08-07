@@ -14,7 +14,7 @@ describe('socket raw-npx', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Temporarily disable the Socket npx wrapper
+        "Run npx without the Socket wrapper
 
           Usage
             $ socket raw-npx ...

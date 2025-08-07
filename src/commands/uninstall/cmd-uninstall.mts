@@ -3,7 +3,7 @@ import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
 
-const description = 'Teardown the Socket command from your environment'
+const description = 'Uninstall Socket CLI tab completion'
 
 export const cmdUninstall: CliSubcommand = {
   description,

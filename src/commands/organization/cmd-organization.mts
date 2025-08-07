@@ -8,7 +8,7 @@ import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
 
-const description = 'Account details'
+const description = 'Manage Socket organization account details'
 
 export const cmdOrganization: CliSubcommand = {
   description,
@@ -42,7 +42,7 @@ export const cmdOrganization: CliSubcommand = {
         argv,
         description,
         importMeta,
-        name: parentName + ' organization',
+        name: `${parentName} organization`,
       },
     )
   },

@@ -14,12 +14,12 @@ const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
   commandName: 'npm',
-  description: `npm wrapper functionality`,
+  description: 'Run npm with the Socket wrapper',
   hidden: false,
   flags: {
     ...commonFlags,
   },
-  help: (command, _config) => `
+  help: command => `
     Usage
       $ ${command} ...
 

@@ -3,7 +3,7 @@ import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
 
-const description = 'Setup the Socket CLI command in your environment'
+const description = 'Install Socket CLI tab completion'
 
 export const cmdInstall: CliSubcommand = {
   description,

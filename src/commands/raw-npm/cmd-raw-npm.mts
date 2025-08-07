@@ -7,11 +7,11 @@ import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW, NPM } = constants
+const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
   commandName: 'raw-npm',
-  description: `Temporarily disable the Socket ${NPM} wrapper`,
+  description: 'Run npm without the Socket wrapper',
   hidden: false,
   flags: {
     ...commonFlags,

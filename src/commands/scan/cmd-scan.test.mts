@@ -16,13 +16,13 @@ describe('socket scan', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Scan related commands
+        "Manage Socket scans
 
           Usage
             $ socket scan <command>
 
           Commands
-            create            Create a scan
+            create            Create a new Socket scan and report
             del               Delete a scan
             diff              See what changed between two Scans
             list              List the scans for an organization
