@@ -74,6 +74,10 @@ function description(command: CliSubcommand | undefined): string {
   return indentString(str, HELP_PAD_NAME).trimStart()
 }
 
+function trimNewlines(str: string): string {
+  return str.replace(/^\n+|\n+$/g, '')
+}
+
 // For debugging. Whenever you call meowOrExit it will store the command here
 // This module exports a getter that returns the current value.
 let lastSeenCommand = ''
@@ -486,7 +490,7 @@ export function meowOrExit({
     collectUnknownFlags: true,
     description: config.description,
     flags: config.flags,
-    help: config.help(command, config),
+    help: trimNewlines(config.help(command, config)),
     importMeta,
   })
 
@@ -510,7 +514,7 @@ export function meowOrExit({
   //     autoVersion: false,
   //     description: config.description,
   //     flags: config.flags,
-  //     help: config.help(command, config),
+  //     help: trimNewlines(config.help(command, config)),
   //     importMeta,
   //   })
   // }
@@ -541,7 +545,7 @@ export function meowOrExit({
     autoHelp: false,
     autoVersion: false,
     description: config.description,
-    help: config.help(command, config),
+    help: trimNewlines(config.help(command, config)),
     importMeta,
     flags: config.flags,
   })
