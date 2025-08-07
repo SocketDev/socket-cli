@@ -9,7 +9,7 @@
     "composite": true,
     "declaration": true,
     "declarationMap": true,
-    "erasableSyntaxOnly": true,
+    //"erasableSyntaxOnly": true,
     "esModuleInterop": true,
     "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
