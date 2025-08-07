@@ -53,6 +53,26 @@ describe('socket root command', async () => {
           uninstall                 Uninstall Socket CLI tab completion
           wrapper                   Enable or disable the Socket npm/npx wrapper
 
+        Environment variables
+
+          SOCKET_CLI_ACCEPT_RISKS   Accept risks of a safe-npm or safe-npx run
+          SOCKET_CLI_API_TOKEN      Set the Socket API token
+          SOCKET_CLI_CONFIG.        A JSON stringified Socket configuration object
+          SOCKET_CLI_GIT_USER_EMAIL The git config \`user.email\` used by Socket CLI
+          SOCKET_CLI_GIT_USER_NAME  The git config user.name used by Socket CLI
+          SOCKET_CLI_GITHUB_TOKEN   A classic or fine-grained GitHub personal access token (\\u200bhttps://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens\\u200b)
+          SOCKET_CLI_NO_API_TOKEN   Make the default API token \`undefined\`
+          SOCKET_CLI_NPM_PATH       The absolute location of the npm directory
+          SOCKET_CLI_ORG_SLUG       Specify the Socket organization slug
+          SOCKET_CLI_VIEW_ALL_RISKS View all risks of a safe-npm or safe-npx run
+
+        Environment variables for development
+
+          SOCKET_CLI_API_BASE_URL   Change the base URL for all API-calls
+          SOCKET_CLI_API_PROXY      Set the proxy that all requests are routed through
+          SOCKET_CLI_DEBUG          Enable debug logging in Socket CLI
+          DEBUG                     Enable debug logging based on the debug (\\u200bhttps://socket.dev/npm/package/debug\\u200b) package
+
         Options       (Note: All CLI commands have these flags even when not displayed in their help)
 
           --config                 Override the local config with this JSON
