@@ -65,8 +65,9 @@ void (async () => {
 
     // Try to parse the flags, find out if --json is set.
     const isJson = (() => {
-      const cli = meow(``, {
+      const cli = meow({
         argv: process.argv.slice(2),
+        // Prevent meow from potentially exiting early.
         autoHelp: false,
         autoVersion: false,
         flags: {},
