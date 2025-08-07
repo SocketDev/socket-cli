@@ -1,5 +1,6 @@
 import { isObject } from '@socketsecurity/registry/lib/objects'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
+import { indentString } from '@socketsecurity/registry/lib/strings'
 
 import type { MeowFlags } from '../flags.mts'
 
@@ -49,16 +50,20 @@ export function getHelpListOutput(
   const names = Object.keys(list).sort(naturalCompare)
   for (const name of names) {
     const entry = list[name]
-    if (entry && 'hidden' in entry && entry?.hidden) {
+    const entryIsObj = isObject(entry)
+    if (entryIsObj && 'hidden' in entry && entry?.hidden) {
       continue
     }
-    const description = (isObject(entry) ? entry.description : entry) || ''
     const printedName = keyPrefix + camelToKebab(name)
-    result +=
-      ''.padEnd(indent) +
-      printedName.padEnd(Math.max(printedName.length + 2, padName)) +
-      description +
-      '\n'
+    const preDescription = `${''.padEnd(indent)}${printedName.padEnd(Math.max(printedName.length + 2, padName))}`
+
+    result += preDescription
+
+    const description = entryIsObj ? entry.description : String(entry)
+    if (description) {
+      result += indentString(description, preDescription.length).trimStart()
+    }
+    result += '\n'
   }
   return result.trim() || '(none)'
 }

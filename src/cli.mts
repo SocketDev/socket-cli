@@ -85,7 +85,7 @@ void (async () => {
         }),
       )
     } else {
-      // Bump below any spinner.
+      // Add 2 newlines in stderr to bump below any spinner.
       logger.error('\n')
       logger.fail(failMsgWithBadge(errorTitle, errorMessage))
       if (errorBody) {

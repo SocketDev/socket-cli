@@ -19,14 +19,12 @@ describe('socket organization', async () => {
         "Manage Socket organization account details
 
           Usage
-
             $ socket organization <command>
 
           Commands
-
-            dependencies        Search for any dependency that is being used in your organization
-            list                List organizations associated with the Socket API token
-            policy              Organization policy details
+            dependencies                Search for any dependency that is being used in your organization
+            list                        List organizations associated with the Socket API token
+            policy                      Organization policy details
 
           Options
 
