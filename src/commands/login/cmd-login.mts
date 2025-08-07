@@ -14,7 +14,7 @@ const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
   commandName: 'login',
-  description: 'Socket API login',
+  description: 'Setup Socket CLI with an API token and defaults',
   hidden: false,
   flags: {
     ...commonFlags,

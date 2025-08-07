@@ -15,7 +15,7 @@ const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
   commandName: 'analytics',
-  description: `Look up analytics data`,
+  description: 'Look up analytics data',
   hidden: false,
   flags: {
     ...commonFlags,

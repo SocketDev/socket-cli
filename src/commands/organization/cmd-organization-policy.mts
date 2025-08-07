@@ -24,7 +24,7 @@ export const cmdOrganizationPolicy: CliSubcommand = {
         description,
         defaultSub: 'list', // Backwards compat
         importMeta,
-        name: parentName + ' policy',
+        name: `${parentName} policy`,
       },
     )
   },

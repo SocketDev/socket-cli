@@ -14,7 +14,7 @@ describe('socket login', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Socket API login
+        "Setup Socket CLI with an API token and defaults
 
           Usage
             $ socket login [options]

@@ -14,7 +14,7 @@ describe('socket manifest', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Generate a dependency manifest for given file or dir
+        "Generate a dependency manifest for certain ecosystems
 
           Usage
             $ socket manifest <command>

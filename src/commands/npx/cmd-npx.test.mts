@@ -14,7 +14,7 @@ describe('socket npx', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "npx wrapper functionality
+        "Run npx with the Socket wrapper
 
           Usage
             $ socket npx ...

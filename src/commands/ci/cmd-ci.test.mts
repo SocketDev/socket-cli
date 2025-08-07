@@ -14,7 +14,7 @@ describe('socket ci', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Create a new scan and report whether it passes your security policy
+        "Shorthand for \`socket scan create --report --no-interactive\`
 
           Usage
             $ socket ci [options]

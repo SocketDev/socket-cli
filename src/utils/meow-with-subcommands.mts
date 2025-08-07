@@ -104,16 +104,16 @@ export async function meowWithSubcommands(
   // Try to support `socket <purl>` as a shorthand for `socket package score <purl>`
   if (!isRootCommand) {
     if (commandOrAliasName?.startsWith('pkg:')) {
-      logger.info('Note: Invoking `socket package score` now...')
+      logger.info('Invoking `socket package score`.')
       return await meowWithSubcommands(subcommands, {
         ...options,
         argv: ['package', 'deep', ...argv],
       })
     }
-    // Support `socket npm/babel` or whatever as a shorthand, too.
+    // Support `socket npm/lodash` or whatever as a shorthand, too.
     // Accept any ecosystem and let the remote sort it out.
     if (/^[a-z]+\//.test(commandOrAliasName || '')) {
-      logger.info('Note: Invoking `socket package score` now...')
+      logger.info('Invoking `socket package score`.')
       return await meowWithSubcommands(subcommands, {
         ...options,
         argv: [
@@ -166,7 +166,7 @@ export async function meowWithSubcommands(
 
   // This is basically a dry-run parse of cli args and flags. We use this to
   // determine config overrides and expected o mode.
-  const cli1 = meow(`(this should never be printed)`, {
+  const cli1 = meow(``, {
     argv,
     importMeta,
     ...additionalOptions,
@@ -265,9 +265,14 @@ export async function meowWithSubcommands(
     const commands = new Set([
       'analytics',
       'audit-log',
+      'ci',
+      'cdxgen',
       'config',
+      'deps',
       'fix',
       'install',
+      //'json',
+      'license',
       'login',
       'logout',
       'manifest',
@@ -278,8 +283,9 @@ export async function meowWithSubcommands(
       'package',
       'raw-npm',
       'raw-npx',
-      'repos',
+      'repository',
       'scan',
+      //'security',
       'threat-feed',
       'uninstall',
       'wrapper',
@@ -314,40 +320,40 @@ export async function meowWithSubcommands(
       'All commands have their own --help page',
       '',
       '    Main commands',
-      '',
-      '      socket login              Setup Socket CLI with an API token and defaults',
-      '      socket scan create        Create a new Socket scan and report',
-      '      socket npm/eslint@1.0.0   Request the Socket score of a package',
-      '      socket ci                 Shorthand for CI; socket scan create --report --no-interactive',
-      '',
+      ``,
+      `      socket login              ${subcommands['login']?.description}`,
+      `      socket scan create        Create a new Socket scan and report`,
+      `      socket npm/lodash@4.17.21 Request the Socket score of a package`,
+      `      socket ci                 ${subcommands['ci']?.description}`,
+      ``,
       '    Socket API',
       '',
-      '      analytics                 Look up analytics data',
-      '      audit-log                 Look up the audit log for an organization',
-      '      organization              Manage Socket organization account details',
-      '      package                   Look up published package details',
-      '      repository                Manage registered repositories',
-      '      scan                      Manage Socket scans',
-      '      threat-feed               [beta] View the threat feed',
-      '',
+      `      analytics                 ${subcommands['analytics']?.description}`,
+      `      audit-log                 ${subcommands['audit-log']?.description}`,
+      `      organization              ${subcommands['organization']?.description}`,
+      `      package                   ${subcommands['package']?.description}`,
+      `      repository                ${subcommands['repository']?.description}`,
+      `      scan                      ${subcommands['scan']?.description}`,
+      `      threat-feed               ${subcommands['threat-feed']?.description}`,
+      ``,
       '    Local tools',
       '',
-      '      fix                       Update dependencies with "fixable" Socket alerts',
-      '      manifest                  Generate a dependency manifest for certain languages',
-      '      npm                       npm wrapper functionality',
-      '      npx                       npx wrapper functionality',
-      '      optimize                  Optimize dependencies with @socketregistry overrides',
-      '      raw-npm                   Run npm without the Socket npm wrapper',
-      '      raw-npx                   Run npx without the Socket npx wrapper',
+      `      fix                       ${subcommands['fix']?.description}`,
+      `      manifest                  ${subcommands['manifest']?.description}`,
+      `      npm                       ${subcommands['npm']?.description}`,
+      `      npx                       ${subcommands['npx']?.description}`,
+      `      optimize                  ${subcommands['optimize']?.description}`,
+      `      raw-npm                   ${subcommands['raw-npm']?.description}`,
+      `      raw-npx                   ${subcommands['raw-npx']?.description}`,
       '',
       '    CLI configuration',
       '',
-      '      config                    Manage Socket CLI configuration directly',
-      '      install                   Install Socket CLI tab completion on your system',
-      '      login                     Socket API login and CLI setup',
-      '      logout                    Socket API logout',
-      '      uninstall                 Remove Socket CLI tab completion from your system',
-      '      wrapper                   Enable or disable the Socket npm/npx wrapper',
+      `      config                    ${subcommands['config']?.description}`,
+      `      install                   ${subcommands['install']?.description}`,
+      `      login                     Socket API login and CLI setup`,
+      `      logout                    ${subcommands['logout']?.description}`,
+      `      uninstall                 ${subcommands['uninstall']?.description}`,
+      `      wrapper                   ${subcommands['wrapper']?.description}`,
     ].join('\n')
   }
 
@@ -534,6 +540,6 @@ function getAsciiHeader(command: string, orgFlag: string | undefined) {
   |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token: ${shownToken}, ${orgPart}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}
   `.trim()
-
-  return `   ${body}` // Note: logger will auto-append a newline
+  // Note: logger will auto-append a newline.
+  return `   ${body}`
 }

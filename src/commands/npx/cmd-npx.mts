@@ -14,7 +14,7 @@ const { DRY_RUN_BAILING_NOW } = constants
 
 const config: CliCommandConfig = {
   commandName: 'npx',
-  description: `npx wrapper functionality`,
+  description: 'Run npx with the Socket wrapper',
   hidden: false,
   flags: {
     ...commonFlags,

@@ -14,7 +14,7 @@ describe('socket repository', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Repository related commands
+        "Manage registered repositories
 
           Usage
             $ socket repository <command>

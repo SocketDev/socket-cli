@@ -13,7 +13,7 @@ describe('socket scan create', async () => {
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
-        "Create a scan
+        "Create a new Socket scan and report
 
           Usage
             $ socket scan create [options] [TARGET...]
@@ -23,7 +23,7 @@ describe('socket scan create', async () => {
             - Permissions: full-scans:create
 
           Options
-            --auto-manifest   Run \`socket manifest auto\` before collecting manifest files? This would be necessary for languages like Scala, Gradle, and Kotlin, See \`socket manifest auto --help\`.
+            --auto-manifest   Run \`socket manifest auto\` before collecting manifest files. This is necessary for languages like Scala, Gradle, and Kotlin, See \`socket manifest auto --help\`.
             --branch          Branch name
             --commit-hash     Commit hash
             --commit-message  Commit message
