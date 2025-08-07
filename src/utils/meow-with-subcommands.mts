@@ -1,4 +1,5 @@
 import meow from 'meow'
+import terminalLink from 'terminal-link'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -354,6 +355,26 @@ export async function meowWithSubcommands(
       `      logout                    ${subcommands['logout']?.description}`,
       `      uninstall                 ${subcommands['uninstall']?.description}`,
       `      wrapper                   ${subcommands['wrapper']?.description}`,
+      '',
+      '    Environment variables',
+      '',
+      '      SOCKET_CLI_ACCEPT_RISKS   Accept risks of a safe-npm or safe-npx run',
+      '      SOCKET_CLI_API_TOKEN      Set the Socket API token',
+      '      SOCKET_CLI_CONFIG.        A JSON stringified Socket configuration object',
+      '      SOCKET_CLI_GIT_USER_EMAIL The git config `user.email` used by Socket CLI',
+      '      SOCKET_CLI_GIT_USER_NAME  The git config `user.name` used by Socket CLI',
+      `      SOCKET_CLI_GITHUB_TOKEN   A classic or fine-grained ${terminalLink('GitHub personal access token', 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens')}`,
+      '      SOCKET_CLI_NO_API_TOKEN   Make the default API token `undefined`',
+      '      SOCKET_CLI_NPM_PATH       The absolute location of the npm directory',
+      '      SOCKET_CLI_ORG_SLUG       Specify the Socket organization slug',
+      '      SOCKET_CLI_VIEW_ALL_RISKS View all risks of a safe-npm or safe-npx run',
+      '',
+      '    Environment variables for development',
+      '',
+      '      SOCKET_CLI_API_BASE_URL   Change the base URL for all API-calls',
+      '      SOCKET_CLI_API_PROXY      Set the proxy that all requests are routed through',
+      '      SOCKET_CLI_DEBUG          Enable debug logging in Socket CLI',
+      `      DEBUG                     Enable debug logging based on the ${terminalLink('debug', 'https://socket.dev/npm/package/debug')} package`,
     ].join('\n')
   }
 
