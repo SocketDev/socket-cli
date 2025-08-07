@@ -29,13 +29,13 @@ describe('socket manifest conda', async () => {
                 contents of a file to have it processed.
 
           Options
-            --file            Input file name (by default for Conda this is "environment.yml"), relative to cwd
-            --json            Output result as json
-            --markdown        Output result as markdown
-            --out             Output path (relative to cwd)
-            --stdin           Read the input from stdin (supersedes --file)
-            --stdout          Print resulting requirements.txt to stdout (supersedes --out)
-            --verbose         Print debug messages
+            --file              Input file name (by default for Conda this is "environment.yml"), relative to cwd
+            --json              Output result as json
+            --markdown          Output result as markdown
+            --out               Output path (relative to cwd)
+            --stdin             Read the input from stdin (supersedes --file)
+            --stdout            Print resulting requirements.txt to stdout (supersedes --out)
+            --verbose           Print debug messages
 
           Examples
 

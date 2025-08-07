@@ -2,6 +2,7 @@ import os from 'node:os'
 import { pathToFileURL } from 'node:url'
 
 import meow from 'meow'
+import terminalLink from 'terminal-link'
 
 import constants from './constants.mts'
 
@@ -166,8 +167,7 @@ export const commonFlags: MeowFlags = {
       return getMaxOldSpaceSizeFlag()
     },
     hidden: true,
-    description:
-      "Set the max memory size of V8's old memory section in megabytes",
+    description: `Set Node's V8 ${terminalLink('--max-old-space-size', 'https://nodejs.org/api/cli.html#--max-old-space-sizesize-in-mib')} option`,
   },
   maxSemiSpaceSize: {
     type: 'number',
@@ -175,8 +175,7 @@ export const commonFlags: MeowFlags = {
       return getMaxSemiSpaceSizeFlag()
     },
     hidden: true,
-    description:
-      "Set the maximum semi-space size for V8's scavenge garbage collector in megabytes",
+    description: `Set Node's V8 ${terminalLink('--max-semi-space-size', 'https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib')} option`,
   },
   nobanner: {
     // I know this would be `--no-banner` but that doesn't work with cdxgen.

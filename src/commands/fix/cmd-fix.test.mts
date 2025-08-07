@@ -20,25 +20,25 @@ describe('socket fix', async () => {
             $ socket fix [options] [CWD=.]
 
           Options
-            --auto-merge      Enable auto-merge for pull requests that Socket opens.
-                              See GitHub documentation (\\u200bhttps://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository\\u200b) for managing auto-merge for pull requests in your repository.
-            --autopilot       Shorthand for --autoMerge --test
-            --limit           The number of fixes to attempt at a time (default 10)
-            --min-satisfying  Constrain dependency updates to the minimum satisfying version
-            --purl            Provide a list of PURLs (\\u200bhttps://github.com/package-url/purl-spec?tab=readme-ov-file#purl\\u200b) to compute fixes for, as either a comma separated value or as
-                              multiple flags, instead of querying the Socket API
-            --range-style     Define how dependency version ranges are updated in package.json (default 'preserve').
-                              Available styles:
-                                * caret - Use ^ range for compatible updates (e.g. ^1.2.3)
-                                * gt - Use > to allow any newer version (e.g. >1.2.3)
-                                * gte - Use >= to allow any newer version (e.g. >=1.2.3)
-                                * lt - Use < to allow only lower versions (e.g. <1.2.3)
-                                * lte - Use <= to allow only lower versions (e.g. <=1.2.3)
-                                * pin - Use the exact version (e.g. 1.2.3)
-                                * preserve - Retain the existing version range style as-is
-                                * tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
-            --test            Verify the fix by running unit tests
-            --test-script     The test script to run for fix attempts (default 'test')
+            --auto-merge        Enable auto-merge for pull requests that Socket opens.
+                                See GitHub documentation (\\u200bhttps://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository\\u200b) for managing auto-merge for pull requests in your repository.
+            --autopilot         Shorthand for --autoMerge --test
+            --limit             The number of fixes to attempt at a time (default 10)
+            --min-satisfying    Constrain dependency updates to the minimum satisfying version
+            --purl              Provide a list of PURLs (\\u200bhttps://github.com/package-url/purl-spec?tab=readme-ov-file#purl\\u200b) to compute fixes for, as either a comma separated value or as
+                                multiple flags, instead of querying the Socket API
+            --range-style       Define how dependency version ranges are updated in package.json (default 'preserve').
+                                Available styles:
+                                  * caret - Use ^ range for compatible updates (e.g. ^1.2.3)
+                                  * gt - Use > to allow any newer version (e.g. >1.2.3)
+                                  * gte - Use >= to allow any newer version (e.g. >=1.2.3)
+                                  * lt - Use < to allow only lower versions (e.g. <1.2.3)
+                                  * lte - Use <= to allow only lower versions (e.g. <=1.2.3)
+                                  * pin - Use the exact version (e.g. 1.2.3)
+                                  * preserve - Retain the existing version range style as-is
+                                  * tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
+            --test              Verify the fix by running unit tests
+            --test-script       The test script to run for fix attempts (default 'test')
 
           Examples
             $ socket fix

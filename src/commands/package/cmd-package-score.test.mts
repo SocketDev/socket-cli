@@ -24,8 +24,8 @@ describe('socket package score', async () => {
             - Permissions: packages:list
 
           Options
-            --json            Output result as json
-            --markdown        Output result as markdown
+            --json              Output result as json
+            --markdown          Output result as markdown
 
           Show deep scoring details for one package. The score will reflect the package
           itself, any of its dependencies, and any of its transitive dependencies.

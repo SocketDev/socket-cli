@@ -20,7 +20,7 @@ describe('socket manifest setup', async () => {
             $ socket manifest setup [CWD=.]
 
           Options
-            --default-on-read-error If reading the socket.json fails, just use a default config? Warning: This might override the existing json file!
+            --default-on-read-error  If reading the socket.json fails, just use a default config? Warning: This might override the existing json file!
 
           This command will try to detect all supported ecosystems in given CWD. Then
           it starts a configurator where you can setup default values for certain flags

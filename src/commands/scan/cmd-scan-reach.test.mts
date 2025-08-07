@@ -20,8 +20,8 @@ describe('socket scan reach', async () => {
             $ socket scan reach [options] [CWD=.]
 
           Options
-            --json            Output result as json
-            --markdown        Output result as markdown
+            --json              Output result as json
+            --markdown          Output result as markdown
 
           Examples
             $ socket scan reach

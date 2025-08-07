@@ -20,11 +20,11 @@ describe('socket manifest scala', async () => {
             $ socket manifest scala [options] [CWD=.]
 
           Options
-            --bin             Location of sbt binary to use
-            --out             Path of output file; where to store the resulting manifest, see also --stdout
-            --sbt-opts        Additional options to pass on to sbt, as per \`sbt --help\`
-            --stdout          Print resulting pom.xml to stdout (supersedes --out)
-            --verbose         Print debug messages
+            --bin               Location of sbt binary to use
+            --out               Path of output file; where to store the resulting manifest, see also --stdout
+            --sbt-opts          Additional options to pass on to sbt, as per \`sbt --help\`
+            --stdout            Print resulting pom.xml to stdout (supersedes --out)
+            --verbose           Print debug messages
 
           Uses \`sbt makePom\` to generate a \`pom.xml\` from your \`build.sbt\` file.
           This xml file is the dependency manifest (like a package.json

@@ -20,9 +20,9 @@ describe('socket manifest kotlin', async () => {
             $ socket manifest kotlin [options] [CWD=.]
 
           Options
-            --bin             Location of gradlew binary to use, default: CWD/gradlew
-            --gradle-opts     Additional options to pass on to ./gradlew, see \`./gradlew --help\`
-            --verbose         Print debug messages
+            --bin               Location of gradlew binary to use, default: CWD/gradlew
+            --gradle-opts       Additional options to pass on to ./gradlew, see \`./gradlew --help\`
+            --verbose           Print debug messages
 
           Uses gradle, preferably through your local project \`gradlew\`, to generate a
           \`pom.xml\` file for each task. If you have no \`gradlew\` you can try the
