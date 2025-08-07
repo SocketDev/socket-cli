@@ -19,12 +19,10 @@ describe('socket organization list', async () => {
         "Organization policy details
 
           Usage
-
             $ socket organization policy <command>
 
           Commands
-
-            license             Retrieve the license policy of an organization
+            license                     Retrieve the license policy of an organization
 
           Options
 

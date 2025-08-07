@@ -7,6 +7,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
+import { indentString } from '@socketsecurity/registry/lib/strings'
 
 import {
   getConfigValueOrUndef,
@@ -60,6 +61,17 @@ export interface MeowOptions extends Options<any> {
   name: string
   // When no sub-command is given, default to this sub-command.
   defaultSub?: string
+}
+
+const HELP_INDENT = 2
+
+const HELP_PAD_NAME = 28
+
+function description(command: CliSubcommand | undefined): string {
+  const description = command?.description
+  const str =
+    typeof description === 'string' ? description : String(description)
+  return indentString(str, HELP_PAD_NAME).trimStart()
 }
 
 // For debugging. Whenever you call meowOrExit it will store the command here
@@ -217,7 +229,8 @@ export async function meowWithSubcommands(
 
   if (configOverrideResult?.ok === false) {
     emitBanner(name, orgFlag)
-    logger.error('') // spacing in stderr
+    // Add newline in stderr.
+    logger.error('')
     logger.fail(configOverrideResult.message)
     process.exitCode = 2
     return
@@ -240,29 +253,15 @@ export async function meowWithSubcommands(
     }
   }
 
-  const formatCommandsForHelp = (isRootCommand: boolean) => {
-    if (!isRootCommand) {
-      return getHelpListOutput({
-        ...toSortedObject(
-          Object.fromEntries(
-            Object.entries(subcommands).filter(
-              ({ 1: subcommand }) => !subcommand.hidden,
-            ),
-          ),
-        ),
-        ...toSortedObject(
-          Object.fromEntries(
-            Object.entries(aliases).filter(({ 1: alias }) => {
-              const { hidden } = alias
-              const cmdName = hidden ? '' : alias.argv[0]
-              const subcommand = cmdName ? subcommands[cmdName] : undefined
-              return subcommand && !subcommand.hidden
-            }),
-          ),
-        ),
-      })
-    }
-
+  const lines = ['', 'Usage', `  $ ${name} <command>`]
+  if (isRootCommand) {
+    lines.push(
+      `  $ ${name} scan create --json`,
+      `  $ ${name} package score npm lodash --markdown`,
+    )
+  }
+  lines.push('')
+  if (isRootCommand) {
     // "Bucket" some commands for easier usage.
     const commands = new Set([
       'analytics',
@@ -317,98 +316,108 @@ export async function meowWithSubcommands(
         ),
       )
     }
-
-    return [
-      '(Note: All commands have their own --help)',
-      '',
-      '    Main commands',
-      ``,
-      `      socket login                ${subcommands['login']?.description}`,
-      `      socket scan create          Create a new Socket scan and report`,
-      `      socket npm/lodash@4.17.21   Request the Socket score of a package`,
-      `      socket ci                   ${subcommands['ci']?.description}`,
-      ``,
-      '    Socket API',
-      '',
-      `      analytics                   ${subcommands['analytics']?.description}`,
-      `      audit-log                   ${subcommands['audit-log']?.description}`,
-      `      organization                ${subcommands['organization']?.description}`,
-      `      package                     ${subcommands['package']?.description}`,
-      `      repository                  ${subcommands['repository']?.description}`,
-      `      scan                        ${subcommands['scan']?.description}`,
-      `      threat-feed                 ${subcommands['threat-feed']?.description}`,
-      ``,
-      '    Local tools',
-      '',
-      `      fix                         ${subcommands['fix']?.description}`,
-      `      manifest                    ${subcommands['manifest']?.description}`,
-      `      npm                         ${subcommands['npm']?.description}`,
-      `      npx                         ${subcommands['npx']?.description}`,
-      `      optimize                    ${subcommands['optimize']?.description}`,
-      `      raw-npm                     ${subcommands['raw-npm']?.description}`,
-      `      raw-npx                     ${subcommands['raw-npx']?.description}`,
-      '',
-      '    CLI configuration',
-      '',
-      `      config                      ${subcommands['config']?.description}`,
-      `      install                     ${subcommands['install']?.description}`,
-      `      login                       Socket API login and CLI setup`,
-      `      logout                      ${subcommands['logout']?.description}`,
-      `      uninstall                   ${subcommands['uninstall']?.description}`,
-      `      wrapper                     ${subcommands['wrapper']?.description}`,
-    ].join('\n')
-  }
-
-  const lines = ['', '    Usage', '', `      $ ${name} <command>`]
-  if (isRootCommand) {
     lines.push(
-      `      $ ${name} scan create --json`,
-      `      $ ${name} package score npm lodash --markdown`,
+      'Note: All commands have their own --help',
+      '',
+      'Main commands',
+      `  socket login                ${description(subcommands['login'])}`,
+      `  socket scan create          Create a new Socket scan and report`,
+      `  socket npm/lodash@4.17.21   Request the Socket score of a package`,
+      `  socket ci                   ${description(subcommands['ci'])}`,
+      ``,
+      'Socket API',
+      `  analytics                   ${description(subcommands['analytics'])}`,
+      `  audit-log                   ${description(subcommands['audit-log'])}`,
+      `  organization                ${description(subcommands['organization'])}`,
+      `  package                     ${description(subcommands['package'])}`,
+      `  repository                  ${description(subcommands['repository'])}`,
+      `  scan                        ${description(subcommands['scan'])}`,
+      `  threat-feed                 ${description(subcommands['threat-feed'])}`,
+      ``,
+      'Local tools',
+      `  fix                         ${description(subcommands['fix'])}`,
+      `  manifest                    ${description(subcommands['manifest'])}`,
+      `  npm                         ${description(subcommands['npm'])}`,
+      `  npx                         ${description(subcommands['npx'])}`,
+      `  optimize                    ${description(subcommands['optimize'])}`,
+      `  raw-npm                     ${description(subcommands['raw-npm'])}`,
+      `  raw-npx                     ${description(subcommands['raw-npx'])}`,
+      '',
+      'CLI configuration',
+      `  config                      ${description(subcommands['config'])}`,
+      `  install                     ${description(subcommands['install'])}`,
+      `  login                       Socket API login and CLI setup`,
+      `  logout                      ${description(subcommands['logout'])}`,
+      `  uninstall                   ${description(subcommands['uninstall'])}`,
+      `  wrapper                     ${description(subcommands['wrapper'])}`,
+    )
+  } else {
+    lines.push('Commands')
+    lines.push(
+      `  ${getHelpListOutput(
+        {
+          ...toSortedObject(
+            Object.fromEntries(
+              Object.entries(subcommands).filter(
+                ({ 1: subcommand }) => !subcommand.hidden,
+              ),
+            ),
+          ),
+          ...toSortedObject(
+            Object.fromEntries(
+              Object.entries(aliases).filter(({ 1: alias }) => {
+                const { hidden } = alias
+                const cmdName = hidden ? '' : alias.argv[0]
+                const subcommand = cmdName ? subcommands[cmdName] : undefined
+                return subcommand && !subcommand.hidden
+              }),
+            ),
+          ),
+        },
+        { indent: HELP_INDENT, padName: HELP_PAD_NAME },
+      )}`,
     )
   }
-  lines.push('')
-  if (!isRootCommand) {
-    lines.push('    Commands', '')
-  }
-  lines.push(`      ${formatCommandsForHelp(isRootCommand)}`, '', '    Options')
+
+  lines.push('', 'Options')
   if (isRootCommand) {
     lines.push(
-      '       (Note: All commands have these flags even when not displayed in their help)',
+      '  Note: All commands have these flags even when not displayed in their help',
       '',
     )
   } else {
     lines.push('')
   }
-  lines.push(`      ${getFlagListOutput(flags, { padName: 28 })}`)
+  lines.push(
+    `  ${getFlagListOutput(flags, { indent: HELP_INDENT, padName: HELP_PAD_NAME })}`,
+  )
   if (isRootCommand) {
     lines.push(
       '',
-      '    Environment variables',
+      'Environment variables',
+      '  SOCKET_CLI_ACCEPT_RISKS     Accept risks of a safe-npm or safe-npx run',
+      '  SOCKET_CLI_API_TOKEN        Set the Socket API token',
+      '  SOCKET_CLI_CONFIG           A JSON stringified Socket configuration object',
+      '  SOCKET_CLI_GIT_USER_EMAIL   The git config `user.email` used by Socket CLI',
+      `                              ${colors.italic('Defaults:')} github-actions[bot]@users.noreply.github.com`,
+      '  SOCKET_CLI_GIT_USER_NAME    The git config `user.name` used by Socket CLI',
+      `                              ${colors.italic('Defaults:')} github-actions[bot]`,
+      `  SOCKET_CLI_GITHUB_TOKEN     A classic or fine-grained ${terminalLink('GitHub personal access token', 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens')}`,
+      `                              ${colors.italic('Aliases:')} GITHUB_TOKEN`,
+      '  SOCKET_CLI_NO_API_TOKEN     Make the default API token `undefined`',
+      '  SOCKET_CLI_NPM_PATH         The absolute location of the npm directory',
+      '  SOCKET_CLI_ORG_SLUG         Specify the Socket organization slug',
+      '  SOCKET_CLI_VIEW_ALL_RISKS   View all risks of a safe-npm or safe-npx run',
       '',
-      '      SOCKET_CLI_ACCEPT_RISKS     Accept risks of a safe-npm or safe-npx run',
-      '      SOCKET_CLI_API_TOKEN        Set the Socket API token',
-      '      SOCKET_CLI_CONFIG           A JSON stringified Socket configuration object',
-      '      SOCKET_CLI_GIT_USER_EMAIL   The git config `user.email` used by Socket CLI',
-      `                                  ${colors.italic('Defaults:')} github-actions[bot]@users.noreply.github.com`,
-      '      SOCKET_CLI_GIT_USER_NAME    The git config `user.name` used by Socket CLI',
-      `                                  ${colors.italic('Defaults:')} github-actions[bot]`,
-      `      SOCKET_CLI_GITHUB_TOKEN     A classic or fine-grained ${terminalLink('GitHub personal access token', 'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens')}`,
-      `                                  ${colors.italic('Aliases:')} GITHUB_TOKEN`,
-      '      SOCKET_CLI_NO_API_TOKEN     Make the default API token `undefined`',
-      '      SOCKET_CLI_NPM_PATH         The absolute location of the npm directory',
-      '      SOCKET_CLI_ORG_SLUG         Specify the Socket organization slug',
-      '      SOCKET_CLI_VIEW_ALL_RISKS   View all risks of a safe-npm or safe-npx run',
-      '',
-      '    Environment variables for development',
-      '',
-      '      SOCKET_CLI_API_BASE_URL     Change the base URL for all API-calls',
-      `                                  ${colors.italic('Defaults:')} The "apiBaseUrl" value of socket/settings local app data`,
-      '                                  if present, else https://api.socket.dev/v0/',
-      '      SOCKET_CLI_API_PROXY        Set the proxy all requests are routed through, e.g. if set to',
-      `                                  ${terminalLink('http://127.0.0.1:9090', 'https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries')} then all request are passed through that proxy`,
-      `                                  ${colors.italic('Aliases:')} HTTPS_PROXY, https_proxy, HTTP_PROXY, and http_proxy`,
-      '      SOCKET_CLI_DEBUG            Enable debug logging in Socket CLI',
-      `      DEBUG                       Enable debug logging based on the ${terminalLink('debug', 'https://socket.dev/npm/package/debug')} package`,
+      'Environment variables for development',
+      '  SOCKET_CLI_API_BASE_URL     Change the base URL for all API-calls',
+      `                              ${colors.italic('Defaults:')} The "apiBaseUrl" value of socket/settings local app data`,
+      '                              if present, else https://api.socket.dev/v0/',
+      '  SOCKET_CLI_API_PROXY        Set the proxy all requests are routed through, e.g. if set to',
+      `                              ${terminalLink('http://127.0.0.1:9090', 'https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries')} then all request are passed through that proxy`,
+      `                              ${colors.italic('Aliases:')} HTTPS_PROXY, https_proxy, HTTP_PROXY, and http_proxy`,
+      '  SOCKET_CLI_DEBUG            Enable debug logging in Socket CLI',
+      `  DEBUG                       Enable debug logging based on the ${terminalLink('debug', 'https://socket.dev/npm/package/debug')} package`,
     )
   }
 
@@ -428,7 +437,7 @@ export async function meowWithSubcommands(
     autoVersion: false,
     // We want to detect whether a bool flag is given at all.
     booleanDefault: undefined,
-    help: lines.join('\n'),
+    help: lines.map(l => indentString(l, HELP_INDENT)).join('\n'),
   })
 
   // ...else we provide basic instructions and help.
@@ -483,7 +492,8 @@ export function meowOrExit({
 
   if (!cli.flags['nobanner']) {
     emitBanner(command, String(cli.flags['org'] || '') || undefined)
-    // Add spacing in stderr. meow.help adds a newline too so we do it here
+    // Add newline in stderr.
+    // Meow help adds a newline too so we do it here.
     logger.error('')
   }
 

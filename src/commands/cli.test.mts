@@ -13,22 +13,19 @@ describe('socket root command', async () => {
       "CLI for Socket.dev
 
         Usage
-
           $ socket <command>
           $ socket scan create --json
           $ socket package score npm lodash --markdown
 
-          (Note: All commands have their own --help)
+        Note: All commands have their own --help
 
         Main commands
-
           socket login                Setup Socket CLI with an API token and defaults
           socket scan create          Create a new Socket scan and report
           socket npm/lodash@4.17.21   Request the Socket score of a package
           socket ci                   Shorthand for \`socket scan create --report --no-interactive\`
 
         Socket API
-
           analytics                   Look up analytics data
           audit-log                   Look up the audit log for an organization
           organization                Manage Socket organization account details
@@ -38,7 +35,6 @@ describe('socket root command', async () => {
           threat-feed                 [Beta] View the threat feed
 
         Local tools
-
           fix                         Update dependencies with "fixable" Socket alerts
           manifest                    Generate a dependency manifest for certain ecosystems
           npm                         Run npm with the Socket wrapper
@@ -48,7 +44,6 @@ describe('socket root command', async () => {
           raw-npx                     Run npx without the Socket wrapper
 
         CLI configuration
-
           config                      Manage Socket CLI configuration
           install                     Install Socket CLI tab completion
           login                       Socket API login and CLI setup
@@ -57,7 +52,7 @@ describe('socket root command', async () => {
           wrapper                     Enable or disable the Socket npm/npx wrapper
 
         Options
-           (Note: All commands have these flags even when not displayed in their help)
+          Note: All commands have these flags even when not displayed in their help
 
           --config                    Override the local config with this JSON
           --dry-run                   Do input validation for a command and exit 0 when input is ok
@@ -67,7 +62,6 @@ describe('socket root command', async () => {
           --version                   Print the app version
 
         Environment variables
-
           SOCKET_CLI_ACCEPT_RISKS     Accept risks of a safe-npm or safe-npx run
           SOCKET_CLI_API_TOKEN        Set the Socket API token
           SOCKET_CLI_CONFIG           A JSON stringified Socket configuration object
@@ -83,7 +77,6 @@ describe('socket root command', async () => {
           SOCKET_CLI_VIEW_ALL_RISKS   View all risks of a safe-npm or safe-npx run
 
         Environment variables for development
-
           SOCKET_CLI_API_BASE_URL     Change the base URL for all API-calls
                                       Defaults: The "apiBaseUrl" value of socket/settings local app data
                                       if present, else https://api.socket.dev/v0/
