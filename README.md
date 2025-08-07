@@ -68,7 +68,7 @@ use of the `projectIgnorePaths` to excludes files when creating a report.
   *Defaults:* `github-actions[bot]@users.noreply.github.com`<br>
 - `SOCKET_CLI_GIT_USER_NAME` - The git config `user.name` used by Socket CLI<br>
   *Defaults:* `github-actions[bot]`<br>
-- `SOCKET_CLI_GITHUB_TOKEN` - A classic or fine-grained [GitHub personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) with the "repo" scope or at least read/write permissions set for "Contents" and "Pull Request"<br>
+- `SOCKET_CLI_GITHUB_TOKEN` - A classic or fine-grained [GitHub personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) with the "repo" scope or read/write permissions set for "Contents" and "Pull Request"<br>
   *Aliases:* `GITHUB_TOKEN`<br>
 - `SOCKET_CLI_NO_API_TOKEN` - Make the default API token `undefined`
 - `SOCKET_CLI_NPM_PATH` - The absolute location of the npm directory
