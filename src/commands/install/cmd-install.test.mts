@@ -17,12 +17,10 @@ describe('socket install', async () => {
         "Install Socket CLI tab completion
 
           Usage
-
             $ socket install <command>
 
           Commands
-
-            completion          Install bash completion for Socket CLI
+            completion                  Install bash completion for Socket CLI
 
           Options
 
