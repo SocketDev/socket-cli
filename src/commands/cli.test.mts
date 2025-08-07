@@ -62,7 +62,6 @@ describe('socket root command', async () => {
           --version                   Print the app version
 
         Environment variables
-          SOCKET_CLI_ACCEPT_RISKS     Accept risks of a safe-npm or safe-npx run
           SOCKET_CLI_API_TOKEN        Set the Socket API token
           SOCKET_CLI_CONFIG           A JSON stringified Socket configuration object
           SOCKET_CLI_GIT_USER_EMAIL   The git config \`user.email\` used by Socket CLI
@@ -74,7 +73,9 @@ describe('socket root command', async () => {
           SOCKET_CLI_NO_API_TOKEN     Make the default API token \`undefined\`
           SOCKET_CLI_NPM_PATH         The absolute location of the npm directory
           SOCKET_CLI_ORG_SLUG         Specify the Socket organization slug
-          SOCKET_CLI_VIEW_ALL_RISKS   View all risks of a safe-npm or safe-npx run
+
+          SOCKET_CLI_ACCEPT_RISKS     Accept risks of a Socket wrapped npm/npx run
+          SOCKET_CLI_VIEW_ALL_RISKS   View all risks of a Socket wrapped npm/npx run
 
         Environment variables for development
           SOCKET_CLI_API_BASE_URL     Change the base URL for all API-calls
