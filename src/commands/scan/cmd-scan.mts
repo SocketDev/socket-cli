@@ -12,7 +12,7 @@ import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
 
-const description = 'Scan related commands'
+const description = 'Manage Socket scans'
 
 export const cmdScan: CliSubcommand = {
   description,
@@ -46,7 +46,7 @@ export const cmdScan: CliSubcommand = {
         argv,
         description,
         importMeta,
-        name: parentName + ' scan',
+        name: `${parentName} scan`,
       },
     )
   },

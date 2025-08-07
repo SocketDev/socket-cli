@@ -14,7 +14,7 @@ describe('socket install', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Setup the Socket CLI command in your environment
+        "Install Socket CLI tab completion
 
           Usage
             $ socket install <command>

@@ -14,7 +14,7 @@ describe('socket threat-feed', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "[beta] View the threat feed
+        "[Beta] View the threat feed
 
           Usage
             $ socket threat-feed [options] [ECOSYSTEM] [TYPE_FILTER]

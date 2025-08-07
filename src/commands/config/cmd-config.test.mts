@@ -14,7 +14,7 @@ describe('socket config', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Commands related to the local CLI configuration
+        "Manage Socket CLI configuration
 
           Usage
             $ socket config <command>

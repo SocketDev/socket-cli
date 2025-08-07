@@ -31,7 +31,7 @@ const TYPE_FILTERS = new Set([
 
 const config: CliCommandConfig = {
   commandName: 'threat-feed',
-  description: '[beta] View the threat feed',
+  description: '[Beta] View the threat feed',
   hidden: false,
   flags: {
     ...commonFlags,

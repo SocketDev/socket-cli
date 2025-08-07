@@ -11,33 +11,7 @@ import updateNotifier from 'tiny-updater'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { cmdAnalytics } from './commands/analytics/cmd-analytics.mts'
-import { cmdAuditLog } from './commands/audit-log/cmd-audit-log.mts'
-import { cmdCI } from './commands/ci/cmd-ci.mts'
-import { cmdConfig } from './commands/config/cmd-config.mts'
-import { cmdFix } from './commands/fix/cmd-fix.mts'
-import { cmdInstall } from './commands/install/cmd-install.mts'
-import { cmdJson } from './commands/json/cmd-json.mts'
-import { cmdLogin } from './commands/login/cmd-login.mts'
-import { cmdLogout } from './commands/logout/cmd-logout.mts'
-import { cmdManifestCdxgen } from './commands/manifest/cmd-manifest-cdxgen.mts'
-import { cmdManifest } from './commands/manifest/cmd-manifest.mts'
-import { cmdNpm } from './commands/npm/cmd-npm.mts'
-import { cmdNpx } from './commands/npx/cmd-npx.mts'
-import { cmdOops } from './commands/oops/cmd-oops.mts'
-import { cmdOptimize } from './commands/optimize/cmd-optimize.mts'
-import { cmdOrganizationDependencies } from './commands/organization/cmd-organization-dependencies.mts'
-import { cmdOrganizationPolicyLicense } from './commands/organization/cmd-organization-policy-license.mts'
-import { cmdOrganizationPolicySecurity } from './commands/organization/cmd-organization-policy-security.mts'
-import { cmdOrganization } from './commands/organization/cmd-organization.mts'
-import { cmdPackage } from './commands/package/cmd-package.mts'
-import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm.mts'
-import { cmdRawNpx } from './commands/raw-npx/cmd-raw-npx.mts'
-import { cmdRepository } from './commands/repository/cmd-repository.mts'
-import { cmdScan } from './commands/scan/cmd-scan.mts'
-import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed.mts'
-import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
-import { cmdWrapper } from './commands/wrapper/cmd-wrapper.mts'
+import { rootAliases, rootCommands } from './commands.mts'
 import constants from './constants.mts'
 import { AuthError, InputError, captureException } from './utils/errors.mts'
 import { failMsgWithBadge } from './utils/fail-msg-with-badge.mts'
@@ -59,131 +33,13 @@ void (async () => {
   })
 
   try {
-    await meowWithSubcommands(
-      {
-        analytics: cmdAnalytics,
-        'audit-log': cmdAuditLog,
-        ci: cmdCI,
-        config: cmdConfig,
-        fix: cmdFix,
-        install: cmdInstall,
-        json: cmdJson,
-        login: cmdLogin,
-        logout: cmdLogout,
-        npm: cmdNpm,
-        npx: cmdNpx,
-        oops: cmdOops,
-        optimize: cmdOptimize,
-        organization: cmdOrganization,
-        package: cmdPackage,
-        manifest: cmdManifest,
-        scan: cmdScan,
-        'raw-npm': cmdRawNpm,
-        'raw-npx': cmdRawNpx,
-        repos: cmdRepository,
-        'threat-feed': cmdThreatFeed,
-        uninstall: cmdUninstall,
-        wrapper: cmdWrapper,
-      },
-      {
-        aliases: {
-          audit: {
-            description: cmdAuditLog.description,
-            hidden: true,
-            argv: ['audit-log'],
-          },
-          auditLog: {
-            description: cmdAuditLog.description,
-            hidden: true,
-            argv: ['audit-log'],
-          },
-          auditLogs: {
-            description: cmdAuditLog.description,
-            hidden: true,
-            argv: ['audit-log'],
-          },
-          ['audit-logs']: {
-            description: cmdAuditLog.description,
-            hidden: true,
-            argv: ['audit-log'],
-          },
-          cdxgen: {
-            description: cmdManifestCdxgen.description,
-            hidden: true,
-            argv: ['manifest', 'cdxgen'],
-          },
-          deps: {
-            description: cmdOrganizationDependencies.description,
-            hidden: true,
-            argv: ['dependencies'],
-          },
-          feed: {
-            description: cmdThreatFeed.description,
-            hidden: true,
-            argv: ['threat-feed'],
-          },
-          license: {
-            description: cmdOrganizationPolicyLicense.description,
-            hidden: true,
-            argv: ['organization', 'policy', 'license'],
-          },
-          org: {
-            description: cmdOrganization.description,
-            hidden: true,
-            argv: ['organization'],
-          },
-          orgs: {
-            description: cmdOrganization.description,
-            hidden: true,
-            argv: ['organization'],
-          },
-          organizations: {
-            description: cmdOrganization.description,
-            hidden: true,
-            argv: ['organization'],
-          },
-          organisation: {
-            description: cmdOrganization.description,
-            hidden: true,
-            argv: ['organization'],
-          },
-          organisations: {
-            description: cmdOrganization.description,
-            hidden: true,
-            argv: ['organization'],
-          },
-          pkg: {
-            description: cmdPackage.description,
-            hidden: true,
-            argv: ['package'],
-          },
-          repo: {
-            description: cmdRepository.description,
-            hidden: true,
-            argv: ['repos'],
-          },
-          repository: {
-            description: cmdRepository.description,
-            hidden: true,
-            argv: ['repos'],
-          },
-          repositories: {
-            description: cmdRepository.description,
-            hidden: true,
-            argv: ['repos'],
-          },
-          security: {
-            description: cmdOrganizationPolicySecurity.description,
-            hidden: true,
-            argv: ['organization', 'policy', 'security'],
-          },
-        },
-        argv: process.argv.slice(2),
-        // Lazily access constants.SOCKET_CLI_BIN_NAME.
-        name: constants.SOCKET_CLI_BIN_NAME,
-        importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
-      },
-    )
+    await meowWithSubcommands(rootCommands, {
+      aliases: rootAliases,
+      argv: process.argv.slice(2),
+      // Lazily access constants.SOCKET_CLI_BIN_NAME.
+      name: constants.SOCKET_CLI_BIN_NAME,
+      importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
+    })
   } catch (e) {
     process.exitCode = 1
     debugFn('error', 'Uncaught error (BAD!):')
@@ -228,7 +84,8 @@ void (async () => {
         }),
       )
     } else {
-      logger.error('\n') // Any-spinner-newline
+      // Bump below any spinner.
+      logger.error('\n')
       logger.fail(failMsgWithBadge(errorTitle, errorMessage))
       if (errorBody) {
         debugDir('inspect', { errorBody })

@@ -4,7 +4,7 @@ import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliSubcommand } from '../../utils/meow-with-subcommands.mts'
 
-const description = 'Commands relating to looking up published packages'
+const description = 'Look up published package details'
 
 export const cmdPackage: CliSubcommand = {
   description,
@@ -26,7 +26,7 @@ export const cmdPackage: CliSubcommand = {
         argv,
         description,
         importMeta,
-        name: parentName + ' package',
+        name: `${parentName} package`,
       },
     )
   },

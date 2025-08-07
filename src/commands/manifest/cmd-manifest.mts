@@ -13,7 +13,7 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const config: CliCommandConfig = {
   commandName: 'manifest',
-  description: 'Generate a dependency manifest for given file or dir',
+  description: 'Generate a dependency manifest for certain ecosystems',
   hidden: false,
   flags: {
     ...commonFlags,

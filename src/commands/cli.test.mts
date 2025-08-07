@@ -9,8 +9,7 @@ describe('socket root command', async () => {
 
   cmdit(['--help', '--config', '{}'], 'should support --help', async cmd => {
     const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(
-      `
+    expect(stdout).toMatchInlineSnapshot(`
       "CLI for Socket.dev
 
         Usage
@@ -22,8 +21,8 @@ describe('socket root command', async () => {
 
           socket login              Setup Socket CLI with an API token and defaults
           socket scan create        Create a new Socket scan and report
-          socket npm/eslint@1.0.0   Request the Socket score of a package
-          socket ci                 Shorthand for CI; socket scan create --report --no-interactive
+          socket npm/lodash@4.17.21 Request the Socket score of a package
+          socket ci                 Shorthand for \`socket scan create --report --no-interactive\`
 
         Socket API
 
@@ -33,25 +32,25 @@ describe('socket root command', async () => {
           package                   Look up published package details
           repository                Manage registered repositories
           scan                      Manage Socket scans
-          threat-feed               [beta] View the threat feed
+          threat-feed               [Beta] View the threat feed
 
         Local tools
 
           fix                       Update dependencies with "fixable" Socket alerts
-          manifest                  Generate a dependency manifest for certain languages
-          npm                       npm wrapper functionality
-          npx                       npx wrapper functionality
+          manifest                  Generate a dependency manifest for certain ecosystems
+          npm                       Run npm with the Socket wrapper
+          npx                       Run npx with the Socket wrapper
           optimize                  Optimize dependencies with @socketregistry overrides
-          raw-npm                   Run npm without the Socket npm wrapper
-          raw-npx                   Run npx without the Socket npx wrapper
+          raw-npm                   Run npm without the Socket wrapper
+          raw-npx                   Run npx without the Socket wrapper
 
         CLI configuration
 
-          config                    Manage Socket CLI configuration directly
-          install                   Install Socket CLI tab completion on your system
+          config                    Manage Socket CLI configuration
+          install                   Install Socket CLI tab completion
           login                     Socket API login and CLI setup
           logout                    Socket API logout
-          uninstall                 Remove Socket CLI tab completion from your system
+          uninstall                 Uninstall Socket CLI tab completion
           wrapper                   Enable or disable the Socket npm/npx wrapper
 
         Options       (Note: All CLI commands have these flags even when not displayed in their help)
@@ -67,8 +66,7 @@ describe('socket root command', async () => {
           $ socket --help
           $ socket scan create --json
           $ socket package score npm left-pad --markdown"
-    `,
-    )
+    `)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------

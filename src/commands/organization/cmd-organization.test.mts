@@ -16,7 +16,7 @@ describe('socket organization', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Account details
+        "Manage Socket organization account details
 
           Usage
             $ socket organization <command>

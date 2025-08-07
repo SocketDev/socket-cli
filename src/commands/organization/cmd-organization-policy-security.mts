@@ -14,7 +14,6 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-// TODO: secret toplevel alias `socket security policy`?
 const config: CliCommandConfig = {
   commandName: 'security',
   description: 'Retrieve the security policy of an organization',

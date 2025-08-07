@@ -28,7 +28,7 @@ const {
 
 const config: CliCommandConfig = {
   commandName: 'create',
-  description: 'Create a scan',
+  description: 'Create a new Socket scan and report',
   hidden: false,
   flags: {
     ...commonFlags,
@@ -36,7 +36,7 @@ const config: CliCommandConfig = {
     autoManifest: {
       type: 'boolean',
       description:
-        'Run `socket manifest auto` before collecting manifest files? This would be necessary for languages like Scala, Gradle, and Kotlin, See `socket manifest auto --help`.',
+        'Run `socket manifest auto` before collecting manifest files. This is necessary for languages like Scala, Gradle, and Kotlin, See `socket manifest auto --help`.',
     },
     branch: {
       type: 'string',

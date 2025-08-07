@@ -14,7 +14,7 @@ describe('socket package', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
-        "Commands relating to looking up published packages
+        "Look up published package details
 
           Usage
             $ socket package <command>
