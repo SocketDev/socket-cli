@@ -167,18 +167,18 @@ export async function meowWithSubcommands(
 
   // This is basically a dry-run parse of cli args and flags. We use this to
   // determine config overrides and expected o mode.
-  const cli1 = meow(``, {
+  const cli1 = meow({
     argv,
     importMeta,
     ...additionalOptions,
     flags,
-    // Do not strictly check for flags here.
+    // Ensure we don't check unknown flags.
     allowUnknownFlags: true,
-    booleanDefault: undefined, // We want to detect whether a bool flag is given at all.
-    // We will emit help when we're ready
-    // Plus, if we allow this then meow() can just exit here.
+    // Prevent meow from potentially exiting early.
     autoHelp: false,
     autoVersion: false,
+    // We want to detect whether a bool flag is given at all.
+    booleanDefault: undefined,
   })
 
   const orgFlag = String(cli1.flags['org'] || '') || undefined
@@ -402,7 +402,7 @@ ${isRootCommand ? `      $ ${name} scan create --json` : ''}${isRootCommand ? `\
       // Do not strictly check for flags here.
       allowUnknownFlags: true,
       // We will emit help when we're ready.
-      // Plus, if we allow this then meow() can just exit here.
+      // Plus, if we allow this then meow may exit here.
       autoHelp: false,
       autoVersion: false,
       // We want to detect whether a bool flag is given at all.
@@ -448,9 +448,11 @@ export function meowOrExit({
   // This exits if .printHelp() is called either by meow itself or by us.
   const cli = meow({
     argv,
-    autoHelp: false, // meow will exit(0) before printing the banner.
+    // Prevent meow from potentially exiting early.
+    autoHelp: false,
     autoVersion: false,
-    booleanDefault: undefined, // We want to detect whether a bool flag is given at all.
+    // We want to detect whether a bool flag is given at all.
+    booleanDefault: undefined,
     collectUnknownFlags: true,
     description: config.description,
     flags: config.flags,
@@ -472,6 +474,7 @@ export function meowOrExit({
   //   meow({
   //     argv,
   //     allowUnknownFlags: false,
+  //     // Prevent meow from potentially exiting early.
   //     autoHelp: false,
   //     autoVersion: false,
   //     description: config.description,
@@ -503,6 +506,7 @@ export function meowOrExit({
     // As per https://github.com/sindresorhus/meow/issues/178
     // Setting `allowUnknownFlags: false` makes it reject camel cased flags.
     allowUnknownFlags: Boolean(allowUnknownFlags),
+    // Prevent meow from potentially exiting early.
     autoHelp: false,
     autoVersion: false,
     description: config.description,
