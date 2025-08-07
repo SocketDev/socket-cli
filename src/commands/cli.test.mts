@@ -59,7 +59,7 @@ describe('socket root command', async () => {
           SOCKET_CLI_API_TOKEN      Set the Socket API token
           SOCKET_CLI_CONFIG.        A JSON stringified Socket configuration object
           SOCKET_CLI_GIT_USER_EMAIL The git config \`user.email\` used by Socket CLI
-          SOCKET_CLI_GIT_USER_NAME  The git config user.name used by Socket CLI
+          SOCKET_CLI_GIT_USER_NAME  The git config \`user.name\` used by Socket CLI
           SOCKET_CLI_GITHUB_TOKEN   A classic or fine-grained GitHub personal access token (\\u200bhttps://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens\\u200b)
           SOCKET_CLI_NO_API_TOKEN   Make the default API token \`undefined\`
           SOCKET_CLI_NPM_PATH       The absolute location of the npm directory
