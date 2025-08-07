@@ -340,7 +340,7 @@ const LAZY_ENV = () => {
     // programs are located. When a command is run, the system searches these
     // directories to find the executable.
     PATH: envAsString(env['PATH']),
-    // Accept risks of a safe-npm and safe-npx run.
+    // Accept risks of a Socket wrapped npm/npx run.
     SOCKET_CLI_ACCEPT_RISKS: envAsBoolean(env[SOCKET_CLI_ACCEPT_RISKS]),
     // Change the base URL for all API-calls.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
@@ -395,7 +395,7 @@ const LAZY_ENV = () => {
       envAsString(env['SOCKET_CLI_ORG_SLUG']) ||
       // Coana CLI accepts the SOCKET_ORG_SLUG environment variable.
       envAsString(env['SOCKET_ORG_SLUG']),
-    // View all risks of a safe-npm and safe-npx run.
+    // View all risks of a Socket wrapped npm/npx run.
     SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
     // Specifies the type of terminal or terminal emulator being used by the process.
     TERM: envAsString(env['TERM']),
