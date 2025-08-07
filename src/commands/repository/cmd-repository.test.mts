@@ -17,20 +17,20 @@ describe('socket repository', async () => {
         "Manage registered repositories
 
           Usage
+
             $ socket repository <command>
 
           Commands
-            create            Create a repository in an organization
-            del               Delete a repository in an organization
-            list              List repositories in an organization
-            update            Update a repository in an organization
-            view              View repositories in an organization
+
+            create              Create a repository in an organization
+            del                 Delete a repository in an organization
+            list                List repositories in an organization
+            update              Update a repository in an organization
+            view                View repositories in an organization
 
           Options
-            (none)
 
-          Examples
-            $ socket repository --help"
+            (none)"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

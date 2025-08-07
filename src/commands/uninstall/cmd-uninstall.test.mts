@@ -17,16 +17,16 @@ describe('socket uninstall', async () => {
         "Uninstall Socket CLI tab completion
 
           Usage
+
             $ socket uninstall <command>
 
           Commands
-            completion        Uninstall bash completion for Socket CLI
+
+            completion          Uninstall bash completion for Socket CLI
 
           Options
-            (none)
 
-          Examples
-            $ socket uninstall --help"
+            (none)"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

@@ -32,12 +32,12 @@ describe('socket scan diff', async () => {
                 added/removed list (similar to diffing two files with git).
 
           Options
-            --depth           Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)
-            --file            Path to a local file where the output should be saved. Use \`-\` to force stdout.
-            --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json            Output result as json
-            --markdown        Output result as markdown
-            --org             Force override the organization slug, overrides the default org from config
+            --depth             Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)
+            --file              Path to a local file where the output should be saved. Use \`-\` to force stdout.
+            --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
+            --json              Output result as json
+            --markdown          Output result as markdown
+            --org               Force override the organization slug, overrides the default org from config
 
           Examples
             $ socket scan diff aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1

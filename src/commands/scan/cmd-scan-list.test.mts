@@ -28,17 +28,17 @@ describe('socket scan list', async () => {
           \`--branch\` to filter by branch across all repos).
 
           Options
-            --branch          Filter to show only scans with this branch name
-            --direction       Direction option (\`desc\` or \`asc\`) - Default is \`desc\`
-            --from-time       From time - as a unix timestamp
-            --interactive     Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
-            --json            Output result as json
-            --markdown        Output result as markdown
-            --org             Force override the organization slug, overrides the default org from config
-            --page            Page number - Default is 1
-            --per-page        Results per page - Default is 30
-            --sort            Sorting option (\`name\` or \`created_at\`) - default is \`created_at\`
-            --until-time      Until time - as a unix timestamp
+            --branch            Filter to show only scans with this branch name
+            --direction         Direction option (\`desc\` or \`asc\`) - Default is \`desc\`
+            --from-time         From time - as a unix timestamp
+            --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
+            --json              Output result as json
+            --markdown          Output result as markdown
+            --org               Force override the organization slug, overrides the default org from config
+            --page              Page number - Default is 1
+            --per-page          Results per page - Default is 30
+            --sort              Sorting option (\`name\` or \`created_at\`) - default is \`created_at\`
+            --until-time        Until time - as a unix timestamp
 
           Examples
             $ socket scan list

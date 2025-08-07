@@ -20,8 +20,8 @@ describe('socket optimize', async () => {
             $ socket optimize [options] [CWD=.]
 
           Options
-            --pin             Pin overrides to their latest version
-            --prod            Only add overrides for production dependencies
+            --pin               Pin overrides to their latest version
+            --prod              Only add overrides for production dependencies
 
           Examples
             $ socket optimize
