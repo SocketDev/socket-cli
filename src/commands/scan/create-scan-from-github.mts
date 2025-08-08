@@ -239,6 +239,7 @@ async function scanOneRepo(
     outputKind,
     pendingHead: true,
     pullRequest: 0,
+    reach: false,
     readOnly: false,
     repoName: repoSlug,
     report: false,

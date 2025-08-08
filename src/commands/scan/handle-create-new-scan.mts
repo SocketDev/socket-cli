@@ -7,8 +7,11 @@ import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.m
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import constants from '../../constants.mts'
+import { handleApiCall } from '../../utils/api.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { spawnCoana } from '../../utils/coana.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
+import { setupSdk } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
@@ -28,6 +31,7 @@ export async function handleCreateNewScan({
   outputKind,
   pendingHead,
   pullRequest,
+  reach,
   readOnly,
   repoName,
   report,
@@ -46,6 +50,7 @@ export async function handleCreateNewScan({
   pendingHead: boolean
   pullRequest: number
   outputKind: OutputKind
+  reach: boolean
   readOnly: boolean
   repoName: string
   report: boolean
@@ -106,8 +111,27 @@ export async function handleCreateNewScan({
     return
   }
 
+  let scanPaths: string[] = packagePaths
+
+  // If reachability is enabled, perform reachability analysis
+  if (reach) {
+    const reachResult = await performReachabilityAnalysis({
+      packagePaths,
+      orgSlug,
+      cwd,
+      outputKind,
+      interactive,
+    })
+
+    if (!reachResult.ok || !reachResult.scanPaths) {
+      return
+    }
+
+    scanPaths = reachResult.scanPaths
+  }
+
   const fullScanCResult = await fetchCreateOrgFullScan(
-    packagePaths,
+    scanPaths,
     orgSlug,
     {
       commitHash,
@@ -151,5 +175,98 @@ export async function handleCreateNewScan({
     }
   } else {
     await outputCreateNewScan(fullScanCResult, outputKind, interactive)
+  }
+}
+
+async function performReachabilityAnalysis({
+  cwd,
+  interactive,
+  orgSlug,
+  outputKind,
+  packagePaths,
+}: {
+  packagePaths: string[]
+  orgSlug: string
+  cwd: string
+  outputKind: OutputKind
+  interactive: boolean
+}): Promise<{ ok: boolean; scanPaths?: string[] }> {
+  logger.info('Starting reachability analysis...')
+
+  packagePaths = packagePaths.filter(
+    p =>
+      /* Exclude DOT_SOCKET_DOT_FACTS_JSON from previous runs */ !p.includes(
+        constants.DOT_SOCKET_DOT_FACTS_JSON,
+      ),
+  )
+
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  // Setup SDK for uploading manifests
+  const sockSdkCResult = await setupSdk()
+  if (!sockSdkCResult.ok) {
+    await outputCreateNewScan(sockSdkCResult, outputKind, interactive)
+    return { ok: false }
+  }
+  const sockSdk = sockSdkCResult.data
+
+  // Upload manifests to get tar hash
+  spinner.start('Uploading manifests for reachability analysis...')
+  const uploadCResult = await handleApiCall(
+    sockSdk.uploadManifestFiles(orgSlug, packagePaths),
+    { desc: 'upload manifests' },
+  )
+  spinner.stop()
+
+  if (!uploadCResult.ok) {
+    await outputCreateNewScan(uploadCResult, outputKind, interactive)
+    return { ok: false }
+  }
+
+  const tarHash = (uploadCResult.data as { tarHash?: string })?.tarHash
+  if (!tarHash) {
+    await outputCreateNewScan(
+      {
+        ok: false,
+        message: 'Failed to get manifest tar hash',
+        cause: 'Server did not return a tar hash for the uploaded manifests',
+      },
+      outputKind,
+      interactive,
+    )
+    return { ok: false }
+  }
+
+  logger.success(`Manifests uploaded successfully. Tar hash: ${tarHash}`)
+
+  // Run Coana with the manifests tar hash
+  logger.info('Running reachability analysis with Coana...')
+  const coanaResult = await spawnCoana(
+    [
+      'run',
+      cwd,
+      '--output-dir',
+      cwd,
+      '--socket-mode',
+      constants.DOT_SOCKET_DOT_FACTS_JSON,
+      '--disable-report-submission',
+      '--manifests-tar-hash',
+      tarHash,
+    ],
+    { cwd, stdio: 'inherit' },
+  )
+
+  if (!coanaResult.ok) {
+    await outputCreateNewScan(coanaResult, outputKind, interactive)
+    return { ok: false }
+  }
+
+  logger.success('Reachability analysis completed successfully')
+
+  // Use the DOT_SOCKET_DOT_FACTS_JSON file for the scan
+  return {
+    ok: true,
+    scanPaths: [constants.DOT_SOCKET_DOT_FACTS_JSON],
   }
 }
