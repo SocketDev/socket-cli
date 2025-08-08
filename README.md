@@ -79,7 +79,7 @@ use of the `projectIgnorePaths` to excludes files when creating a report.
 
 ### Setup
 
-To run dev locally you can run these steps
+To run locally execute the following commands:
 
 ```
 npm install
