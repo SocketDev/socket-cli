@@ -49,7 +49,7 @@ describe('Socket manifest cdxgen command', async () => {
           spawnOpts,
         )
         expect(
-          output.stdout.includes('cdxgen'),
+          output.stdout.includes('CycloneDX Generator'),
           'forwards commands to cdxgen',
         ).toBe(true)
       }
