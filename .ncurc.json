@@ -1,5 +1,9 @@
 {
   "loglevel": "minimal",
-  "reject": ["@typescript/native-preview", "eslint-plugin-unicorn", "terminal-link"],
+  "reject": [
+    "@typescript/native-preview",
+    "eslint-plugin-unicorn",
+    "terminal-link"
+  ],
   "upgrade": true
 }
