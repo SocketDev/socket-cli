@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import semver from 'semver'
 
-import { getManifestData } from '@socketsecurity/registry'
+import { getManifestData, type EcosystemString } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -241,7 +241,7 @@ export async function agentFix(
     logger.indent()
     spinner?.indent()
 
-    if (getManifestData(partialPurlObj.type, name)) {
+    if (getManifestData(partialPurlObj.type as EcosystemString, name)) {
       debugFn('notice', `found: Socket Optimize variant for ${name}`)
     }
     // eslint-disable-next-line no-await-in-loop
