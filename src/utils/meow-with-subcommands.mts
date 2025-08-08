@@ -7,7 +7,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
-import { indentString, trimNewlines } from '@socketsecurity/registry/lib/strings'
+import {
+  indentString,
+  trimNewlines,
+} from '@socketsecurity/registry/lib/strings'
 
 import {
   getConfigValueOrUndef,

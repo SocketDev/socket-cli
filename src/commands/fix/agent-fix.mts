@@ -3,7 +3,7 @@ import path from 'node:path'
 
 import semver from 'semver'
 
-import { getManifestData, type EcosystemString } from '@socketsecurity/registry'
+import { getManifestData } from '@socketsecurity/registry'
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -57,6 +57,7 @@ import type { CResult } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 import type { AlertsByPurl } from '../../utils/socket-package-alert.mts'
+import type { EcosystemString } from '@socketsecurity/registry'
 import type {
   EditablePackageJson,
   Packument,
