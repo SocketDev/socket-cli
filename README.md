@@ -47,14 +47,14 @@ All aliases support the flags and arguments of the commands they alias.
 
 - `--dry-run` - Run a command without uploading anything
 - `--debug` - Output additional debug
-- `--help` - Prints help documentation for a command
+- `--help` - Prints help documentation
 - `--max-old-space-size` - Set Node's V8 [`--max-old-space-size`](https://nodejs.org/api/cli.html#--max-old-space-sizesize-in-mib) option
 - `--max-semi-space-size` - Set Node's V8 [`--max-semi-space-size`](https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib) option
 - `--version` - Prints the Socket CLI version
 
 ## Configuration files
 
-The CLI reads and uses data from a
+Socket CLI reads and uses data from a
 [`socket.yml` file](https://docs.socket.dev/docs/socket-yml) in the folder you
 run it in. It supports the version 2 of the `socket.yml` file format and makes
 use of the `projectIgnorePaths` to excludes files when creating a report.
@@ -97,14 +97,11 @@ npm exec socket
 - `SOCKET_CLI_DEBUG` - Enable debug logging in Socket CLI
 - `DEBUG` - Enable debug logging based on the [`debug`](https://socket.dev/npm/package/debug) package
 
-## Similar projects
-
-- [`@socketsecurity/sdk`](https://github.com/SocketDev/socket-sdk-js) - The SDK used by Socket CLI
-
 ## See also
 
 - [Announcement blog post](https://socket.dev/blog/announcing-socket-cli-preview)
 - [Socket API Reference](https://docs.socket.dev/reference) - The API used by Socket CLI
 - [Socket GitHub App](https://github.com/apps/socket-security) - The plug-and-play GitHub App
+- [`@socketsecurity/sdk`](https://github.com/SocketDev/socket-sdk-js) - The SDK used by Socket CLI
 
 [Socket.dev]: https://socket.dev/
