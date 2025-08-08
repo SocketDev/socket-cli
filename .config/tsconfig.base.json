@@ -4,12 +4,12 @@
     // They are either ignored or throw an unknown option error:
     //"importsNotUsedAsValues": "remove",
     //"incremental": true,
+    //"erasableSyntaxOnly": true,
     "allowImportingTsExtensions": true,
     "allowJs": false,
     "composite": true,
     "declaration": true,
     "declarationMap": true,
-    //"erasableSyntaxOnly": true,
     "esModuleInterop": true,
     "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
