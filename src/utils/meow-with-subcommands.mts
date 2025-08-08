@@ -7,7 +7,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
-import { indentString } from '@socketsecurity/registry/lib/strings'
+import { indentString, trimNewlines } from '@socketsecurity/registry/lib/strings'
 
 import {
   getConfigValueOrUndef,
@@ -72,10 +72,6 @@ function description(command: CliSubcommand | undefined): string {
   const str =
     typeof description === 'string' ? description : String(description)
   return indentString(str, HELP_PAD_NAME).trimStart()
-}
-
-function trimNewlines(str: string): string {
-  return str.replace(/^\n+|\n+$/g, '')
 }
 
 // For debugging. Whenever you call meowOrExit it will store the command here
@@ -183,7 +179,7 @@ export async function meowWithSubcommands(
   }
 
   // This is basically a dry-run parse of cli args and flags. We use this to
-  // determine config overrides and expected o mode.
+  // determine config overrides and expected output mode.
   const cli1 = meow({
     argv,
     importMeta,
@@ -240,7 +236,7 @@ export async function meowWithSubcommands(
     return
   }
 
-  // If we got at least some args, then lets find o if we can find a command.
+  // If we have got some args, then lets find out if we can find a command.
   if (commandOrAliasName) {
     const alias = aliases[commandOrAliasName]
     // First: Resolve argv data from alias if its an alias that's been given.
