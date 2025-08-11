@@ -21,27 +21,6 @@ import type {
 
 const NO_ERROR_MESSAGE = 'No error message returned'
 
-// TODO: this function is removed after v1.0.0
-export function handleUnsuccessfulApiResponse<T extends SocketSdkOperations>(
-  _name: T,
-  error: string,
-  cause: string,
-  status: number,
-): never {
-  const message = `${error || NO_ERROR_MESSAGE}${cause ? ` (reason: ${cause})` : ''}`
-  if (status === 401 || status === 403) {
-    // Lazily access constants.spinner.
-    const { spinner } = constants
-
-    spinner.stop()
-
-    throw new AuthError(message)
-  }
-  logger.fail(failMsgWithBadge('Socket API returned an error', message))
-  // eslint-disable-next-line n/no-process-exit
-  process.exit(1)
-}
-
 export type HandleApiCallOptions = {
   desc?: string | undefined
   spinner?: Spinner | undefined
