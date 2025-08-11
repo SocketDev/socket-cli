@@ -17,7 +17,7 @@ export async function convertSbtToMaven({
   sbtOpts: string[]
   verbose: boolean
 }) {
-  // TODO: impl json/md
+  // TODO: Implement json/md.
 
   // Lazily access constants.spinner.
   const { spinner } = constants
@@ -68,8 +68,8 @@ export async function convertSbtToMaven({
       return
     }
     // Move the pom file to ...? initial cwd? loc will be an absolute path, or dump to stdout
-    // TODO: what to do with multiple output files? Do we want to dump them to stdout? Raw or with separators or ?
-    // TODO: maybe we can add an option to target a specific file to dump to stdout
+    // TODO: What do we do with multiple output files? Do we want to dump them to stdout? Raw or with separators or ?
+    // TODO: Maybe we can add an option to target a specific file to dump to stdout.
     if (out === '-' && poms.length === 1) {
       logger.log('Result:\n```')
       logger.log(await safeReadFile(poms[0]!))
@@ -100,7 +100,7 @@ export async function convertSbtToMaven({
       // } else {
       //   logger.log('Moving output pom file')
       // }
-      // TODO: do we prefer fs-extra? renaming can be gnarly on windows and fs-extra's version is better
+      // TODO: Do we prefer fs-extra? Renaming can be gnarly on windows and fs-extra's version is better.
       // await renamep(loc, out)
       logger.success(`Generated ${poms.length} pom files`)
       poms.forEach(fn => logger.log('-', fn))

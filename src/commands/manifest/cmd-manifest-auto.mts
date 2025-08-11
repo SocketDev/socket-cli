@@ -67,8 +67,9 @@ async function run(
     importMeta,
     parentName,
   })
+  // TODO: Implement json/md further.
   const { json, markdown, verbose: verboseFlag } = cli.flags
-  const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
+  const outputKind = getOutputKind(json, markdown)
   const verbose = !!verboseFlag
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:

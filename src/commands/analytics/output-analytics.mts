@@ -108,7 +108,7 @@ export async function outputAnalytics(
   if (outputKind === 'markdown') {
     const serialized = renderMarkdown(fdata, time, repo)
 
-    // TODO: do we want to write to file even if there was an error...?
+    // TODO: Do we want to write to file even if there was an error...?
     if (filePath) {
       try {
         await fs.writeFile(filePath, serialized, 'utf8')
