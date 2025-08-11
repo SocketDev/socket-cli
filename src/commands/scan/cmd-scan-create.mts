@@ -93,6 +93,13 @@ const config: CliCommandConfig = {
       description:
         'Similar to --dry-run except it can read from remote, stops before it would create an actual report',
     },
+    reach: {
+      type: 'boolean',
+      default: false,
+      hidden: true,
+      description:
+        'Run tier 1 full application reachability analysis during the scanning process',
+    },
     repo: {
       type: 'string',
       shortFlag: 'r',
@@ -197,6 +204,7 @@ async function run(
     markdown,
     org: orgFlag,
     pullRequest,
+    reach,
     readOnly,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
@@ -213,6 +221,7 @@ async function run(
     org: string
     pullRequest: number
     readOnly: boolean
+    reach: boolean
     setAsAlertsPage: boolean
     tmp: boolean
   }
@@ -413,6 +422,7 @@ async function run(
     outputKind,
     pendingHead: Boolean(pendingHead),
     pullRequest: Number(pullRequest),
+    reach: Boolean(reach),
     readOnly: Boolean(readOnly),
     repoName,
     report,
