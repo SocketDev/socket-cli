@@ -5,9 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { getConfigValueOrUndef } from './config.mts'
-import { AuthError } from './errors.mts'
 import constants from '../constants.mts'
-import { failMsgWithBadge } from './fail-msg-with-badge.mts'
 import { getDefaultToken } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
