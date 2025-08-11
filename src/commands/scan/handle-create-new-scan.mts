@@ -119,6 +119,8 @@ export async function handleCreateNewScan({
       packagePaths,
       orgSlug,
       cwd,
+      repoName,
+      branchName,
       outputKind,
       interactive,
     })
@@ -179,15 +181,19 @@ export async function handleCreateNewScan({
 }
 
 async function performReachabilityAnalysis({
+  branchName,
   cwd,
   interactive,
   orgSlug,
   outputKind,
   packagePaths,
+  repoName,
 }: {
   packagePaths: string[]
   orgSlug: string
   cwd: string
+  repoName: string
+  branchName: string
   outputKind: OutputKind
   interactive: boolean
 }): Promise<{ ok: boolean; scanPaths?: string[] }> {
@@ -254,7 +260,16 @@ async function performReachabilityAnalysis({
       '--manifests-tar-hash',
       tarHash,
     ],
-    { cwd, stdio: 'inherit' },
+    {
+      cwd,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        SOCKET_REPO_NAME: repoName,
+        SOCKET_BRANCH_NAME: branchName,
+        SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+      },
+    },
   )
 
   if (!coanaResult.ok) {
