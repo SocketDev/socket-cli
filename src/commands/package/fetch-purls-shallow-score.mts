@@ -44,7 +44,8 @@ export async function fetchPurlsShallowScore(
     return result
   }
 
-  // TODO: seems like there's a bug in the typing since we absolutely have to return the .data here
+  // TODO: Seems like there's a bug in the typing since we absolutely have to
+  // return the .data here.
   return {
     ok: true,
     data: result.data as SocketSdkSuccessResult<'batchPackageFetch'>,

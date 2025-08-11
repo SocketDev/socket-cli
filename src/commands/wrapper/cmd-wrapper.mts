@@ -65,8 +65,9 @@ async function run(
     parentName,
   })
 
+  // TODO: Implement json/md further.
   const { json, markdown } = cli.flags
-  const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
+  const outputKind = getOutputKind(json, markdown)
 
   let enable = false
   let disable = false

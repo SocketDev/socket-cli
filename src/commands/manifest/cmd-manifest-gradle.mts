@@ -139,7 +139,7 @@ async function run(
     logger.groupEnd()
   }
 
-  // TODO: I'm not sure it's feasible to parse source file from stdin. We could
+  // TODO: We're not sure it's feasible to parse source file from stdin. We could
   //       try, store contents in a file in some folder, target that folder... what
   //       would the file name be?
 

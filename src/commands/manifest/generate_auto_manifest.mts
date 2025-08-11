@@ -48,9 +48,9 @@ export async function generateAutoManifest({
       'Detected a gradle build (Gradle, Kotlin, Scala), running default gradle generator...',
     )
     await convertGradleToMaven({
-      // Note: `gradlew` is more likely to be resolved against cwd
-      // Note: .resolve() wont butcher an absolute path
-      // TODO: `gradlew` (or anything else given) may want to resolve against PATH
+      // Note: `gradlew` is more likely to be resolved against cwd.
+      // Note: .resolve() won't butcher an absolute path.
+      // TODO: `gradlew` (or anything else given) may want to resolve against PATH.
       bin: sockJson.defaults?.manifest?.gradle?.bin
         ? path.resolve(cwd, sockJson.defaults.manifest.gradle.bin)
         : path.join(cwd, 'gradlew'),

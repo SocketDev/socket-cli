@@ -8,7 +8,7 @@ import constants from './constants.mts'
 
 import type { Flag } from 'meow'
 
-// TODO: not sure if I'm missing something but meow doesn't seem to expose this?
+// TODO: Not sure if we're missing something but meow doesn't seem to expose this?
 export type StringFlag = Flag<'string', string> | Flag<'string', string[], true>
 export type BooleanFlag =
   | Flag<'boolean', boolean>
