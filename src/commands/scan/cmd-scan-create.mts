@@ -204,6 +204,7 @@ async function run(
     markdown,
     org: orgFlag,
     pullRequest,
+    reach,
     readOnly,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
@@ -220,6 +221,7 @@ async function run(
     org: string
     pullRequest: number
     readOnly: boolean
+    reach: boolean
     setAsAlertsPage: boolean
     tmp: boolean
   }
@@ -233,9 +235,6 @@ async function run(
     branch: string
     repo: string
     report?: boolean
-  }
-  const { reach } = cli.flags as {
-    reach?: boolean
   }
   let [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),

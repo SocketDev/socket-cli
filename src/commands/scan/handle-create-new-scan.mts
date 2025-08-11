@@ -16,7 +16,7 @@ import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 
-import type { OutputKind } from '../../types.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 
 export async function handleCreateNewScan({
   autoManifest,
@@ -125,11 +125,12 @@ export async function handleCreateNewScan({
       interactive,
     })
 
-    if (!reachResult.ok || !reachResult.scanPaths) {
+    if (!reachResult.ok) {
+      await outputCreateNewScan(reachResult, outputKind, interactive)
       return
     }
 
-    scanPaths = reachResult.scanPaths
+    scanPaths = reachResult.data?.scanPaths || []
   }
 
   const fullScanCResult = await fetchCreateOrgFullScan(
@@ -183,9 +184,7 @@ export async function handleCreateNewScan({
 async function performReachabilityAnalysis({
   branchName,
   cwd,
-  interactive,
   orgSlug,
-  outputKind,
   packagePaths,
   repoName,
 }: {
@@ -196,7 +195,7 @@ async function performReachabilityAnalysis({
   branchName: string
   outputKind: OutputKind
   interactive: boolean
-}): Promise<{ ok: boolean; scanPaths?: string[] }> {
+}): Promise<CResult<{ scanPaths?: string[] }>> {
   logger.info('Starting reachability analysis...')
 
   packagePaths = packagePaths.filter(
@@ -212,8 +211,7 @@ async function performReachabilityAnalysis({
   // Setup SDK for uploading manifests
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
-    await outputCreateNewScan(sockSdkCResult, outputKind, interactive)
-    return { ok: false }
+    return sockSdkCResult
   }
   const sockSdk = sockSdkCResult.data
 
@@ -226,22 +224,16 @@ async function performReachabilityAnalysis({
   spinner.stop()
 
   if (!uploadCResult.ok) {
-    await outputCreateNewScan(uploadCResult, outputKind, interactive)
-    return { ok: false }
+    return uploadCResult
   }
 
   const tarHash = (uploadCResult.data as { tarHash?: string })?.tarHash
   if (!tarHash) {
-    await outputCreateNewScan(
-      {
-        ok: false,
-        message: 'Failed to get manifest tar hash',
-        cause: 'Server did not return a tar hash for the uploaded manifests',
-      },
-      outputKind,
-      interactive,
-    )
-    return { ok: false }
+    return {
+      ok: false,
+      message: 'Failed to get manifest tar hash',
+      cause: 'Server did not return a tar hash for the uploaded manifests',
+    }
   }
 
   logger.success(`Manifests uploaded successfully. Tar hash: ${tarHash}`)
@@ -273,8 +265,7 @@ async function performReachabilityAnalysis({
   )
 
   if (!coanaResult.ok) {
-    await outputCreateNewScan(coanaResult, outputKind, interactive)
-    return { ok: false }
+    return coanaResult
   }
 
   logger.success('Reachability analysis completed successfully')
@@ -282,6 +273,8 @@ async function performReachabilityAnalysis({
   // Use the DOT_SOCKET_DOT_FACTS_JSON file for the scan
   return {
     ok: true,
-    scanPaths: [constants.DOT_SOCKET_DOT_FACTS_JSON],
+    data: {
+      scanPaths: [constants.DOT_SOCKET_DOT_FACTS_JSON],
+    },
   }
 }
