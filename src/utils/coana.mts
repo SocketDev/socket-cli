@@ -15,20 +15,10 @@ export async function spawnCoana(
   options?: SpawnOptions | undefined,
   extra?: SpawnExtra | undefined,
 ): Promise<CResult<unknown>> {
-  const {
-    env: spawnEnv,
-    spinner,
-    stdio,
-  } = { __proto__: null, ...options } as SpawnOptions
+  const { env: spawnEnv } = { __proto__: null, ...options } as SpawnOptions
   const orgSlugCResult = await getDefaultOrgSlug()
-  const SOCKET_CLI_API_TOKEN = getDefaultToken()
   const SOCKET_ORG_SLUG = orgSlugCResult.ok ? orgSlugCResult.data : undefined
-
-  // Stop spinner before streaming output if stdio is 'inherit'
-  if (stdio === 'inherit' && spinner) {
-    spinner.stop()
-  }
-
+  const SOCKET_CLI_API_TOKEN = getDefaultToken()
   try {
     const output = await spawn(
       constants.execPath,
