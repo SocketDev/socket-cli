@@ -221,8 +221,8 @@ async function run(
     markdown: boolean
     org: string
     pullRequest: number
-    readOnly: boolean
     reach: boolean
+    readOnly: boolean
     setAsAlertsPage: boolean
     tmp: boolean
   }
