@@ -5,7 +5,7 @@
     //"importsNotUsedAsValues": "remove",
     //"incremental": true,
     //"erasableSyntaxOnly": true,
-    "allowImportingTsExtensions": true,
+    "allowImportingTsExtensions": false,
     "allowJs": false,
     "composite": true,
     "declaration": true,
