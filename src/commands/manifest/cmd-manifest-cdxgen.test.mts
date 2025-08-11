@@ -15,8 +15,16 @@ describe('socket manifest cdxgen', async () => {
         // Need to pass it on as env because --config will break cdxgen
         SOCKET_CLI_CONFIG: '{}',
       })
-      expect(stdout).toMatch(
-        /^CycloneDX Generator 11\.5\.0\nRuntime: Node\.js, Version: \d+\.\d+\.\d+$/m,
+
+      const redactedStdout = stdout
+        .replace(/(?<=CycloneDX\s+Generator\s+)[\d.]+/, '<redacted>')
+        .replace(/(?<=Node\.js,\s+Version:\s+)[\d.]+/, '<redacted>')
+
+      expect(redactedStdout).toMatchInlineSnapshot(
+        `
+        "CycloneDX Generator <redacted>
+        Runtime: Node.js, Version: <redacted>"
+      `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

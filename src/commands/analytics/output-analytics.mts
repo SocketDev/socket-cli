@@ -277,7 +277,8 @@ function displayAnalyticsScreen(data: FormattedData): void {
     barBgColor: 'magenta',
   })
 
-  screen.append(bar) //must append before setting data
+  // Must append before setting data.
+  screen.append(bar)
 
   bar.setData({
     titles: Object.keys(data.top_five_alert_types),
