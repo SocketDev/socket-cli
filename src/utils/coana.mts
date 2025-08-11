@@ -1,8 +1,8 @@
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
+import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 import constants from '../constants.mts'
 import { getDefaultToken } from './sdk.mts'
-import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 
 import type { CResult } from '../types.mts'
 import type {
@@ -15,10 +15,20 @@ export async function spawnCoana(
   options?: SpawnOptions | undefined,
   extra?: SpawnExtra | undefined,
 ): Promise<CResult<unknown>> {
-  const { env: spawnEnv } = { __proto__: null, ...options } as SpawnOptions
+  const {
+    env: spawnEnv,
+    spinner,
+    stdio,
+  } = { __proto__: null, ...options } as SpawnOptions
   const orgSlugCResult = await getDefaultOrgSlug()
   const SOCKET_CLI_API_TOKEN = getDefaultToken()
   const SOCKET_ORG_SLUG = orgSlugCResult.ok ? orgSlugCResult.data : undefined
+
+  // Stop spinner before streaming output if stdio is 'inherit'
+  if (stdio === 'inherit' && spinner) {
+    spinner.stop()
+  }
+
   try {
     const output = await spawn(
       constants.execPath,
