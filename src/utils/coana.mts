@@ -16,9 +16,18 @@ export async function spawnCoana(
   extra?: SpawnExtra | undefined,
 ): Promise<CResult<unknown>> {
   const { env: spawnEnv } = { __proto__: null, ...options } as SpawnOptions
+  const mixinsEnv: Record<string, string> = {
+    // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
+    SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+  }
+  const defaultApiToken = getDefaultToken()
+  if (defaultApiToken) {
+    mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
+  }
   const orgSlugCResult = await getDefaultOrgSlug()
-  const SOCKET_ORG_SLUG = orgSlugCResult.ok ? orgSlugCResult.data : undefined
-  const SOCKET_CLI_API_TOKEN = getDefaultToken()
+  if (orgSlugCResult.ok) {
+    mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
+  }
   try {
     const output = await spawn(
       constants.execPath,
@@ -37,8 +46,7 @@ export async function spawnCoana(
           ...process.env,
           // Lazily access constants.processEnv.
           ...constants.processEnv,
-          SOCKET_CLI_API_TOKEN,
-          SOCKET_ORG_SLUG,
+          ...mixinsEnv,
           ...spawnEnv,
         },
       },
