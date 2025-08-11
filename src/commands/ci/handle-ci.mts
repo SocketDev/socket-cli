@@ -37,6 +37,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     // When 'pendingHead' is true, it requires 'branchName' set and 'tmp' false.
     pendingHead: true,
     pullRequest: 0,
+    reach: false,
     repoName,
     readOnly: false,
     report: true,
