@@ -11,7 +11,7 @@
 initscript {
     repositories {
         // We need these repositories for Gradle's plugin resolution system
-        // TODO: it's not clear if we actually need them.
+        // TODO: It's not clear if we actually need them.
         gradlePluginPortal()
         mavenCentral()
         google()
@@ -95,7 +95,7 @@ gradle.allprojects { project ->
 
             // Find all relevant dependency configurations
             // We care about implementation, api, compile, and runtime configurations
-            // TODO: anything we're missing here? tests maybe?
+            // TODO: Anything we're missing here? Tests maybe?
             def relevantConfigs = p.configurations.findAll { config ->
                 !config.name.toLowerCase().contains('test') &&
                 (config.name.endsWith('Implementation') ||

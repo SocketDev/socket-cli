@@ -16,7 +16,7 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-// TODO: we may want to dedupe some pieces for all gradle languages. I think it
+// TODO: We may want to dedupe some pieces for all gradle languages. I think it
 //       makes sense to have separate commands for them and I think it makes
 //       sense for the help panels to note the requested language, rather than
 //       `socket manifest kotlin` to print help screens with `gradle` as the
@@ -144,7 +144,7 @@ async function run(
     logger.groupEnd()
   }
 
-  // TODO: I'm not sure it's feasible to parse source file from stdin. We could
+  // TODO: We're not sure it's feasible to parse source file from stdin. We could
   //       try, store contents in a file in some folder, target that folder... what
   //       would the file name be?
 

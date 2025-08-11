@@ -96,6 +96,7 @@ const config: CliCommandConfig = {
     reach: {
       type: 'boolean',
       default: false,
+      // TODO: Temporarily hide option until Coana side is ironed out.
       hidden: true,
       description:
         'Run tier 1 full application reachability analysis during the scanning process',
@@ -125,7 +126,7 @@ const config: CliCommandConfig = {
         'Set the visibility (true/false) of the scan in your dashboard.',
     },
   },
-  // TODO: your project's "socket.yml" file's "projectIgnorePaths"
+  // TODO: Your project's "socket.yml" file's "projectIgnorePaths".
   help: (command, config) => `
     Usage
       $ ${command} [options] [TARGET...]

@@ -17,7 +17,7 @@ export async function convertGradleToMaven({
   verbose: boolean
   gradleOpts: string[]
 }) {
-  // TODO: impl json/md
+  // TODO: Implement json/md.
 
   // Note: use resolve because the bin could be an absolute path, away from cwd
   // TODO: what about $PATH resolved commands? (`gradlew` without dir prefix)

@@ -69,8 +69,8 @@ export async function outputThreatFeed(
       fg: 'cyan',
     },
     columnWidth: [10, 30, 20, 18, 15, 200],
-    // TODO: the truncation doesn't seem to work too well yet but when we add
-    //       `pad` alignment fails, when we extend columnSpacing alignment fails
+    // TODO: The truncation doesn't seem to work too well yet but when we add
+    //       `pad` alignment fails, when we extend columnSpacing alignment fails.
     columnSpacing: 1,
     truncate: '_',
   })
