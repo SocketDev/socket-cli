@@ -86,14 +86,12 @@ ${getSupportedConfigEntries()
     {
       test: key === 'test' || isSupportedConfigKey(key),
       message: 'Config key should be the first arg',
-      pass: 'ok',
       fail: key ? 'invalid config key' : 'missing',
     },
     {
       test: !!value, // This is a string, empty string is not ok
       message:
         'Key value should be the remaining args (use `unset` to unset a value)',
-      pass: 'ok',
       fail: 'missing',
     },
     {
@@ -101,7 +99,6 @@ ${getSupportedConfigEntries()
       test: !json || !markdown,
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
-      pass: 'ok',
       fail: 'bad',
     },
   )

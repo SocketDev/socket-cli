@@ -217,20 +217,17 @@ async function run(
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
-      pass: 'ok',
       fail: 'omit one',
     },
     {
       nook: true,
       test: hasSocketApiToken,
-      message: 'This command requires an Socket API token for access',
-      pass: 'ok',
-      fail: 'missing (try `socket login`)',
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
     },
     {
       test: hasGithubApiToken,
       message: 'This command requires a GitHub API token for access',
-      pass: 'ok',
       fail: 'missing',
     },
   )

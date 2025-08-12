@@ -88,13 +88,11 @@ async function run(
       nook: !!defaultOrgSlug,
       test: !!orgSlug,
       message: 'Org name by default setting, --org, or auto-discovered',
-      pass: 'ok',
       fail: 'missing',
     },
     {
       test: !!scanId,
       message: 'Scan ID to delete',
-      pass: 'ok',
       fail: 'missing',
     },
     {
@@ -102,7 +100,6 @@ async function run(
       test: hasApiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
-      pass: 'ok',
       fail: 'missing Socket API token',
     },
   )
