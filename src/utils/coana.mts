@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
@@ -14,7 +16,7 @@ export async function spawnCoana(
   args: string[] | readonly string[],
   options?: SpawnOptions | undefined,
   extra?: SpawnExtra | undefined,
-): Promise<CResult<unknown>> {
+): Promise<CResult<string>> {
   const { env: spawnEnv } = { __proto__: null, ...options } as SpawnOptions
   const mixinsEnv: Record<string, string> = {
     // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
@@ -57,5 +59,17 @@ export async function spawnCoana(
     const stderr = (e as any)?.stderr
     const message = stderr ? stderr : (e as Error)?.message
     return { ok: false, data: e, message }
+  }
+}
+
+export function extractTier1ReachabilityScanId(
+  socketFactsFile: string,
+): string | undefined {
+  try {
+    const content = readFileSync(socketFactsFile, 'utf8')
+    const json = JSON.parse(content)
+    return json.tier1ReachabilityScanId
+  } catch {
+    return undefined
   }
 }
