@@ -50,7 +50,12 @@ export async function handleCreateNewScan({
   pendingHead: boolean
   pullRequest: number
   outputKind: OutputKind
-  reach: boolean
+  reach: {
+    runReachabilityAnalysis: boolean
+    disableReachAnalytics: boolean
+    reachAnalysisTimeout: number
+    reachAnalysisMemoryLimit: number
+  }
   readOnly: boolean
   repoName: string
   report: boolean
@@ -114,15 +119,14 @@ export async function handleCreateNewScan({
   let scanPaths: string[] = packagePaths
 
   // If reachability is enabled, perform reachability analysis
-  if (reach) {
+  if (reach.runReachabilityAnalysis) {
     const reachResult = await performReachabilityAnalysis({
       packagePaths,
       orgSlug,
       cwd,
       repoName,
       branchName,
-      outputKind,
-      interactive,
+      reachabilityOptions: reach,
     })
 
     if (!reachResult.ok) {
@@ -186,15 +190,19 @@ async function performReachabilityAnalysis({
   cwd,
   orgSlug,
   packagePaths,
+  reachabilityOptions,
   repoName,
 }: {
-  packagePaths: string[]
-  orgSlug: string
-  cwd: string
-  repoName: string
   branchName: string
-  outputKind: OutputKind
-  interactive: boolean
+  cwd: string
+  orgSlug: string
+  packagePaths: string[]
+  reachabilityOptions: {
+    disableReachAnalytics: boolean
+    reachAnalysisTimeout: number
+    reachAnalysisMemoryLimit: number
+  }
+  repoName: string
 }): Promise<CResult<{ scanPaths?: string[] }>> {
   logger.info('Starting reachability analysis...')
 
@@ -249,6 +257,21 @@ async function performReachabilityAnalysis({
       '--socket-mode',
       constants.DOT_SOCKET_DOT_FACTS_JSON,
       '--disable-report-submission',
+      ...(reachabilityOptions.reachAnalysisTimeout
+        ? [
+            '--analysis-timeout',
+            reachabilityOptions.reachAnalysisTimeout.toString(),
+          ]
+        : []),
+      ...(reachabilityOptions.reachAnalysisMemoryLimit
+        ? [
+            '--memory-limit',
+            reachabilityOptions.reachAnalysisMemoryLimit.toString(),
+          ]
+        : []),
+      ...(reachabilityOptions.disableReachAnalytics
+        ? ['--disable-analytics-sharing']
+        : []),
       '--manifests-tar-hash',
       tarHash,
     ],

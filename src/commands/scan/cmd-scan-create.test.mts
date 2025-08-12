@@ -35,11 +35,17 @@ describe('socket scan create', async () => {
             --markdown          Output result as markdown
             --org               Force override the organization slug, overrides the default org from config
             --pull-request      Commit hash
+            --reach             Run tier 1 full application reachability analysis
             --read-only         Similar to --dry-run except it can read from remote, stops before it would create an actual report
             --repo              Repository name
             --report            Wait for the scan creation to complete, then basically run \`socket scan report\` on it
             --set-as-alerts-page  When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
             --tmp               Set the visibility (true/false) of the scan in your dashboard.
+
+          Reachability Options (when --reach is used)
+            --disable-reach-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
+            --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
+            --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
 
           Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
           Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".

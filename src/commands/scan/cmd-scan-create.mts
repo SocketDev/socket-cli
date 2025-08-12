@@ -7,7 +7,7 @@ import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import constants from '../../constants.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
+import { type MeowFlags, commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
@@ -25,6 +25,25 @@ const {
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
 } = constants
+
+const reachabilityFlags: MeowFlags = {
+  disableReachAnalytics: {
+    type: 'boolean',
+    description:
+      'Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.',
+  },
+  reachAnalysisMemoryLimit: {
+    type: 'number',
+    description:
+      'The maximum memory in MB to use for the reachability analysis. The default is 8192MB.',
+    default: 8192,
+  },
+  reachAnalysisTimeout: {
+    type: 'number',
+    description:
+      'Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.',
+  },
+}
 
 const config: CliCommandConfig = {
   commandName: 'create',
@@ -87,19 +106,16 @@ const config: CliCommandConfig = {
       description:
         'Force override the organization slug, overrides the default org from config',
     },
+    reach: {
+      type: 'boolean',
+      default: false,
+      description: 'Run tier 1 full application reachability analysis',
+    },
     readOnly: {
       type: 'boolean',
       default: false,
       description:
         'Similar to --dry-run except it can read from remote, stops before it would create an actual report',
-    },
-    reach: {
-      type: 'boolean',
-      default: false,
-      // TODO: Temporarily hide option until Coana side is ironed out.
-      hidden: true,
-      description:
-        'Run tier 1 full application reachability analysis during the scanning process',
     },
     repo: {
       type: 'string',
@@ -125,9 +141,23 @@ const config: CliCommandConfig = {
       description:
         'Set the visibility (true/false) of the scan in your dashboard.',
     },
+
+    // Reachability scan flags
+    ...reachabilityFlags,
   },
   // TODO: Your project's "socket.yml" file's "projectIgnorePaths".
-  help: (command, config) => `
+  help: (command, config) => {
+    const allFlags = config.flags || {}
+    const generalFlags: MeowFlags = {}
+
+    // Separate general flags from reachability flags
+    for (const [key, value] of Object.entries(allFlags)) {
+      if (!reachabilityFlags[key]) {
+        generalFlags[key] = value
+      }
+    }
+
+    return `
     Usage
       $ ${command} [options] [TARGET...]
 
@@ -136,7 +166,10 @@ const config: CliCommandConfig = {
       - Permissions: full-scans:create
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(generalFlags)}
+
+    Reachability Options (when --reach is used)
+      ${getFlagListOutput(reachabilityFlags)}
 
     Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
     Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".
@@ -172,7 +205,8 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} ./proj --json
       $ ${command} --repo=test-repo --branch=main ./package.json
-  `,
+  `
+  },
 }
 
 export const cmdScanCreate = {
@@ -199,6 +233,7 @@ async function run(
     committers,
     cwd: cwdOverride,
     defaultBranch,
+    disableReachAnalytics,
     dryRun = false,
     interactive = true,
     json,
@@ -206,6 +241,8 @@ async function run(
     org: orgFlag,
     pullRequest,
     reach,
+    reachAnalysisMemoryLimit,
+    reachAnalysisTimeout,
     readOnly,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
@@ -221,10 +258,15 @@ async function run(
     markdown: boolean
     org: string
     pullRequest: number
-    reach: boolean
     readOnly: boolean
     setAsAlertsPage: boolean
     tmp: boolean
+
+    // reachability flags
+    reach: boolean
+    disableReachAnalytics: boolean
+    reachAnalysisTimeout?: number
+    reachAnalysisMemoryLimit?: number
   }
   let {
     autoManifest,
@@ -423,7 +465,12 @@ async function run(
     outputKind,
     pendingHead: Boolean(pendingHead),
     pullRequest: Number(pullRequest),
-    reach: Boolean(reach),
+    reach: {
+      runReachabilityAnalysis: Boolean(reach),
+      disableReachAnalytics: Boolean(disableReachAnalytics),
+      reachAnalysisTimeout: Number(reachAnalysisTimeout),
+      reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
+    },
     readOnly: Boolean(readOnly),
     repoName,
     report,
