@@ -29,12 +29,12 @@ const config: CliCommandConfig = {
     all: {
       type: 'boolean',
       description:
-        'Apply for all known repos reported by the Socket API. Supersedes `repos`.',
+        'Apply for all known repositories reported by the Socket API. Supersedes `repos`.',
     },
     githubToken: {
       type: 'string',
       description:
-        '(required) GitHub token for authentication (or set GITHUB_TOKEN as an environment variable)',
+        'Required GitHub token for authentication.\nMay set environment variable GITHUB_TOKEN or SOCKET_CLI_GITHUB_TOKEN instead.',
     },
     githubApiUrl: {
       type: 'string',
@@ -139,16 +139,11 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  let [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+  let [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
     interactive,
     dryRun,
   )
-  if (!defaultOrgSlug) {
-    // Tmp. just for TS. will drop this later.
-    defaultOrgSlug = ''
-  }
-
   const sockJson = await readOrDefaultSocketJson(cwd)
 
   if (all === undefined) {
