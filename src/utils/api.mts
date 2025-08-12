@@ -320,16 +320,18 @@ export async function sendApiRequest<T>(
 
   let result
   try {
+    const fetchOptions = {
+      method: options.method,
+      headers: {
+        Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+        'Content-Type': 'application/json',
+      },
+      ...(options.body ? { body: JSON.stringify(options.body) } : {}),
+    }
+
     result = await fetch(
       `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
-      {
-        method: options.method,
-        headers: {
-          Authorization: `Basic ${btoa(`${apiToken}:`)}`,
-          'Content-Type': 'application/json',
-        },
-        body: options.body ? JSON.stringify(options.body) : undefined,
-      },
+      fetchOptions,
     )
     if (options.fetchSpinnerDesc) {
       spinner.successAndStop(
