@@ -344,11 +344,11 @@ async function run(
     logger.info(
       'Note: You can invoke this command next time to skip the interactive questions:',
     )
-    logger.info('```')
-    logger.info(
+    logger.error('```')
+    logger.error(
       `    socket scan create [other flags...] ${orgSlug} ${targets.join(' ')}`,
     )
-    logger.info('```')
+    logger.error('```')
     logger.error('')
     logger.info(
       'You can also run `socket scan setup` to persist these flag defaults to a socket.json file.',
