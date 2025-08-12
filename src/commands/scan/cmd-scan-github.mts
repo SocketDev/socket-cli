@@ -13,7 +13,7 @@ import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
-import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
+import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
