@@ -53,7 +53,6 @@ export async function attemptLogin(
   const orgsCResult = await handleApiCall(sockSdk.getOrganizations(), {
     desc: 'token verification',
   })
-
   if (!orgsCResult.ok) {
     process.exitCode = 1
     logger.fail(failMsgWithBadge(orgsCResult.message, orgsCResult.cause))

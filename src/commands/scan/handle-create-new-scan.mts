@@ -16,7 +16,7 @@ import {
 } from '../../utils/coana.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
-import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
+import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 
