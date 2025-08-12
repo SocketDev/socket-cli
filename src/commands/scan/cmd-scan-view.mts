@@ -107,13 +107,11 @@ async function run(
       nook: true,
       test: !!orgSlug,
       message: 'Org name by default setting, --org, or auto-discovered',
-      pass: 'ok',
       fail: 'dot is an invalid org, most likely you forgot the org name here?',
     },
     {
       test: !!scanId,
       message: 'Scan ID to view',
-      pass: 'ok',
       fail: 'missing',
     },
     {
@@ -121,7 +119,6 @@ async function run(
       test: !json || !markdown,
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
-      pass: 'ok',
       fail: 'bad',
     },
     {
@@ -129,14 +126,12 @@ async function run(
       test: hasApiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
-      pass: 'ok',
       fail: 'missing Socket API token',
     },
     {
       nook: true,
       test: !stream || !!json,
       message: 'You can only use --stream when using --json',
-      pass: 'ok',
       fail: 'Either remove --stream or add --json',
     },
   )

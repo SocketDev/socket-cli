@@ -147,21 +147,18 @@ async function run(
       nook: true,
       test: noLegacy,
       message: 'Legacy flags are no longer supported. See v1 migration guide.',
-      pass: 'ok',
       fail: `received legacy flags`,
     },
     {
       nook: true,
       test: !!orgSlug,
       message: 'Org name by default setting, --org, or auto-discovered',
-      pass: 'ok',
       fail: 'dot is an invalid org, most likely you forgot the org name here?',
     },
     {
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
-      pass: 'ok',
       fail: 'omit one',
     },
     {
@@ -169,7 +166,6 @@ async function run(
       test: hasApiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
-      pass: 'ok',
       fail: 'missing Socket API token',
     },
     {
@@ -177,7 +173,6 @@ async function run(
       test: !branchFlag || !branchArg,
       message:
         'You should not set --branch and also give a second arg for branch name',
-      pass: 'ok',
       fail: 'received flag and second arg',
     },
   )

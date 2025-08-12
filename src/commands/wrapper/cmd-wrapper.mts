@@ -85,14 +85,12 @@ async function run(
     {
       test: enable || disable,
       message: 'Must specify "on" or "off" argument',
-      pass: 'ok',
       fail: 'missing',
     },
     {
       nook: true,
       test: cli.input.length <= 1,
       message: 'expecting exactly one argument',
-      pass: 'ok',
       fail: `got multiple`,
     },
   )

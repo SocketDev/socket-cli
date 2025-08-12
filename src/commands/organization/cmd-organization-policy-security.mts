@@ -89,7 +89,6 @@ async function run(
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
-      pass: 'ok',
       fail: 'omit one',
     },
     {
@@ -97,7 +96,6 @@ async function run(
       test: hasApiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
-      pass: 'ok',
       fail: 'missing Socket API token',
     },
   )
