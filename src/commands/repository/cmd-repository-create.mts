@@ -112,20 +112,17 @@ async function run(
       nook: true,
       test: !!orgSlug,
       message: 'Org name by default setting, --org, or auto-discovered',
-      pass: 'ok',
       fail: 'missing',
     },
     {
       nook: true,
       test: noLegacy,
       message: 'Legacy flags are no longer supported. See v1 migration guide.',
-      pass: 'ok',
       fail: `received legacy flags`,
     },
     {
       test: !!repoName,
       message: 'Repository name as first argument',
-      pass: 'ok',
       fail: 'missing',
     },
     {
@@ -133,7 +130,6 @@ async function run(
       test: hasApiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
-      pass: 'ok',
       fail: 'missing Socket API token',
     },
   )

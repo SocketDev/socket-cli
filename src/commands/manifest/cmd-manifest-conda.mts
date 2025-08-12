@@ -157,7 +157,6 @@ async function run(
       nook: true,
       test: cli.input.length <= 1,
       message: 'Can only accept one DIR (make sure to escape spaces!)',
-      pass: 'ok',
       fail: `received ${cli.input.length}`,
     },
     {
@@ -165,7 +164,6 @@ async function run(
       test: !json || !markdown,
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
-      pass: 'ok',
       fail: 'bad',
     },
   )

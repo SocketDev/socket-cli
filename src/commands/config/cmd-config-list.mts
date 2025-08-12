@@ -64,7 +64,6 @@ async function run(
     test: !json || !markdown,
     message:
       'The `--json` and `--markdown` flags can not be used at the same time',
-    pass: 'ok',
     fail: 'bad',
   })
   if (!wasValidInput) {

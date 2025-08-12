@@ -111,14 +111,12 @@ async function run(
       nook: true,
       test: noLegacy,
       message: 'Legacy flags are no longer supported. See v1 migration guide.',
-      pass: 'ok',
       fail: `received legacy flags`,
     },
     {
       nook: true,
       test: scope === 'org' || !!repoName,
       message: 'When scope=repo, repo name should be the second argument',
-      pass: 'ok',
       fail: 'missing',
     },
     {
@@ -127,13 +125,11 @@ async function run(
         scope === 'org' ||
         (repoName !== '7' && repoName !== '30' && repoName !== '90'),
       message: 'When scope is repo, the second arg should be repo, not time',
-      pass: 'ok',
       fail: 'missing',
     },
     {
       test: time === '7' || time === '30' || time === '90',
       message: 'The time filter must either be 7, 30 or 90',
-      pass: 'ok',
       fail: 'invalid range set, see --help for command arg details.',
     },
     {
@@ -141,7 +137,6 @@ async function run(
       test: !file || !!json || !!markdown,
       message:
         'The `--file` flag is only valid when using `--json` or `--markdown`',
-      pass: 'ok',
       fail: 'bad',
     },
     {
@@ -149,7 +144,6 @@ async function run(
       test: !json || !markdown,
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
-      pass: 'ok',
       fail: 'bad',
     },
     {
@@ -157,7 +151,6 @@ async function run(
       test: hasApiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
-      pass: 'ok',
       fail: 'missing Socket API token',
     },
   )

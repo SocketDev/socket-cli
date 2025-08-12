@@ -1,6 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
-import { logger } from '@socketsecurity/registry/lib/logger'
+import { LOG_SYMBOLS, logger } from '@socketsecurity/registry/lib/logger'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import { failMsgWithBadge } from './fail-msg-with-badge.mts'
@@ -13,9 +13,9 @@ export function checkCommandInput(
   ...checks: Array<{
     fail: string
     message: string
-    pass: string
     test: boolean
     nook?: boolean | undefined
+    pass?: string | undefined
   }>
 ): boolean {
   if (checks.every(d => d.test)) {
@@ -35,13 +35,17 @@ export function checkCommandInput(
     }
     // If the message has newlines then format the first line with the input
     // expectation and the rest indented below it.
-    msg.push(
-      `  - ${lines[0]} (${d.test ? colors.green(d.pass) : colors.red(d.fail)})`,
-    )
+    const logSymbol = d.test ? LOG_SYMBOLS.success : LOG_SYMBOLS.fail
+    const reason = d.test ? d.pass : d.fail
+    let listItem = `  ${logSymbol} ${lines[0]}`
+    if (reason) {
+      const styledReason = d.test ? colors.green(reason) : colors.red(reason)
+      listItem += ` (${styledReason})`
+    }
+    msg.push(listItem)
     if (lineCount > 1) {
       msg.push(...lines.slice(1).map(str => `    ${str}`))
     }
-    msg.push('')
   }
 
   // Use exit status of 2 to indicate incorrect usage, generally invalid

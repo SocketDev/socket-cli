@@ -128,7 +128,6 @@ async function run(
       test: !!(id1 && id2),
       message:
         'Specify two Scan IDs.\nA Scan ID looks like `aaa0aa0a-aaaa-0000-0a0a-0000000a00a0`.',
-      pass: 'ok',
       fail:
         !id1 && !id2
           ? 'missing both Scan IDs'
@@ -140,7 +139,6 @@ async function run(
       test: !!orgSlug,
       nook: true,
       message: 'Org name by default setting, --org, or auto-discovered',
-      pass: 'ok',
       fail: 'missing',
     },
     {
@@ -148,7 +146,6 @@ async function run(
       test: !json || !markdown,
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
-      pass: 'ok',
       fail: 'bad',
     },
     {
@@ -156,7 +153,6 @@ async function run(
       test: hasApiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
-      pass: 'ok',
       fail: 'missing Socket API token',
     },
   )

@@ -94,20 +94,17 @@ async function run(
     {
       test: valid,
       message: 'First parameter must be an ecosystem or the whole purl',
-      pass: 'ok',
       fail: 'bad',
     },
     {
       test: purls.length === 1,
       message: 'Expecting at least one package',
-      pass: 'ok',
       fail: purls.length === 0 ? 'missing' : 'too many',
     },
     {
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
-      pass: 'ok',
       fail: 'omit one',
     },
     {
@@ -115,7 +112,6 @@ async function run(
       test: hasApiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
-      pass: 'ok',
       fail: 'missing Socket API token',
     },
   )

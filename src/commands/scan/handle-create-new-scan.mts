@@ -95,7 +95,6 @@ export async function handleCreateNewScan({
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
     test: packagePaths.length > 0,
-    pass: 'ok',
     fail: 'found no eligible files to scan',
     message:
       'TARGET (file/dir) must contain matching / supported file types for a scan',
