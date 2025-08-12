@@ -66,11 +66,8 @@ export function extractTier1ReachabilityScanId(
   socketFactsFile: string,
 ): string | undefined {
   try {
-    console.log('socketFactsFile', socketFactsFile)
     const content = readFileSync(socketFactsFile, 'utf8')
-    console.log('content', content)
     const json = JSON.parse(content)
-    console.log('json', json)
     return json.tier1ReachabilityScanId
   } catch {
     return undefined
