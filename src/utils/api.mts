@@ -285,3 +285,103 @@ export async function queryApiSafeJson<T>(
     }
   }
 }
+
+export async function sendApiRequest<T>(
+  path: string,
+  options: {
+    method: 'POST' | 'PUT'
+    body?: unknown
+    fetchSpinnerDesc?: string
+  },
+): Promise<CResult<T>> {
+  const apiToken = getDefaultToken()
+  if (!apiToken) {
+    return {
+      ok: false,
+      message: 'Authentication Error',
+      cause:
+        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your Socket API token.',
+    }
+  }
+
+  const baseUrl = getDefaultApiBaseUrl() || ''
+  if (!baseUrl) {
+    logger.warn(
+      'API endpoint is not set and default was empty. Request is likely to fail.',
+    )
+  }
+
+  // Lazily access constants.spinner.
+  const { spinner } = constants
+
+  if (options.fetchSpinnerDesc) {
+    spinner.start(`Requesting ${options.fetchSpinnerDesc} from API...`)
+  }
+
+  let result
+  try {
+    const fetchOptions = {
+      method: options.method,
+      headers: {
+        Authorization: `Basic ${btoa(`${apiToken}:`)}`,
+        'Content-Type': 'application/json',
+      },
+      ...(options.body ? { body: JSON.stringify(options.body) } : {}),
+    }
+
+    result = await fetch(
+      `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
+      fetchOptions,
+    )
+    if (options.fetchSpinnerDesc) {
+      spinner.successAndStop(
+        `Received Socket API response (after requesting ${options.fetchSpinnerDesc}).`,
+      )
+    }
+  } catch (e) {
+    if (options.fetchSpinnerDesc) {
+      spinner.failAndStop(
+        `An error was thrown while requesting ${options.fetchSpinnerDesc}.`,
+      )
+    }
+
+    const cause = (e as undefined | { message: string })?.message
+
+    debugFn('error', `caught: await fetch() ${options.method} error`)
+    debugDir('inspect', { error: e })
+
+    return {
+      ok: false,
+      message: 'API Request failed to complete',
+      ...(cause ? { cause } : {}),
+    }
+  }
+
+  if (!result.ok) {
+    const cause = await getErrorMessageForHttpStatusCode(result.status)
+    return {
+      ok: false,
+      message: 'Socket API returned an error',
+      cause: `${result.statusText}${cause ? ` (cause: ${cause})` : ''}`,
+      data: {
+        code: result.status,
+      },
+    }
+  }
+
+  try {
+    const data = await result.json()
+    return {
+      ok: true,
+      data: data as T,
+    }
+  } catch (e) {
+    debugFn('error', 'caught: await result.json() error')
+    debugDir('inspect', { error: e })
+    return {
+      ok: false,
+      message: 'API Request failed to complete',
+      cause: 'There was an unexpected error trying to parse the response JSON',
+    }
+  }
+}
