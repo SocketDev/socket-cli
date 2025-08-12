@@ -412,13 +412,8 @@ export function getCveInfoFromAlertsMap(
             error = e
           }
         }
-
         debugFn('error', 'fail: invalid SocketPackageAlert')
-        debugDir('inspect', { alert })
-
-        if (error) {
-          debugDir('inspect', { error: (error as Error).message ?? error })
-        }
+        debugDir('inspect', { alert, error })
       }
     }
   }

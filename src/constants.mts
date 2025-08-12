@@ -346,6 +346,7 @@ const LAZY_ENV = () => {
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_CLI_API_BASE_URL:
       envAsString(env['SOCKET_CLI_API_BASE_URL']) ||
+      // TODO: Remove legacy environment variable name.
       envAsString(env['SOCKET_SECURITY_API_BASE_URL']) ||
       getConfigValueOrUndef('apiBaseUrl') ||
       'https://api.socket.dev/v0/',
@@ -353,6 +354,7 @@ const LAZY_ENV = () => {
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_CLI_API_PROXY:
       envAsString(env['SOCKET_CLI_API_PROXY']) ||
+      // TODO: Remove legacy environment variable name.
       envAsString(env['SOCKET_SECURITY_API_PROXY']) ||
       // Commonly used environment variables to specify routing requests through
       // a proxy server.
@@ -364,6 +366,7 @@ const LAZY_ENV = () => {
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
     SOCKET_CLI_API_TOKEN:
       envAsString(env['SOCKET_CLI_API_TOKEN']) ||
+      // TODO: Remove legacy environment variable names.
       envAsString(env['SOCKET_CLI_API_KEY']) ||
       envAsString(env['SOCKET_SECURITY_API_TOKEN']) ||
       envAsString(env['SOCKET_SECURITY_API_KEY']),
@@ -384,6 +387,7 @@ const LAZY_ENV = () => {
     // https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
     SOCKET_CLI_GITHUB_TOKEN:
       envAsString(env['SOCKET_CLI_GITHUB_TOKEN']) ||
+      // TODO: Remove undocumented legacy environment variable name.
       envAsString(env['SOCKET_SECURITY_GITHUB_PAT']) ||
       GITHUB_TOKEN,
     // Make the default API token `undefined`.

@@ -48,7 +48,7 @@ Do you want to install "safe npm" (this will create an alias to the socket-npm c
       }
     }
   } catch (e) {
-    debugFn('error', 'fail: setup tab completion')
+    debugFn('error', 'caught: tab completion setup error')
     debugDir('inspect', { error: e })
     // Ignore. Skip tab completion setup.
   }

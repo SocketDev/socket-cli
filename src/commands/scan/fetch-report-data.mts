@@ -88,10 +88,10 @@ export async function fetchScanData(
     const data = lines.map(line => {
       try {
         return JSON.parse(line)
-      } catch {
+      } catch (e) {
         ok = false
-        debugFn('error', 'fail: parse NDJSON')
-        debugDir('inspect', { line })
+        debugFn('error', 'caught: JSON.parse error')
+        debugDir('inspect', { error: e, line })
         return
       }
     }) as unknown as SocketArtifact[]

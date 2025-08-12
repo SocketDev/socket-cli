@@ -63,7 +63,7 @@ export async function readOrDefaultSocketJson(cwd: string) {
   if (result.ok) {
     return result.data
   }
-  // This should be unreachable but it makes TS happy
+  // This should be unreachable but it makes TS happy.
   return getDefaultSocketJson()
 }
 
@@ -87,40 +87,37 @@ export async function readSocketJson(
 ): Promise<CResult<SocketJson>> {
   const sockJsonPath = path.join(cwd, 'socket.json')
   if (!fs.existsSync(sockJsonPath)) {
-    debugFn('notice', `miss: file not found ${sockJsonPath}`)
+    debugFn('notice', `miss: socket.json not found at ${cwd}`)
     return { ok: true, data: getDefaultSocketJson() }
   }
-
   let json = null
   try {
     json = await fs.promises.readFile(sockJsonPath, 'utf8')
   } catch (e) {
-    debugDir('inspect', { error: e })
-
     if (defaultOnError) {
-      logger.warn('Warning: failed to read file, using default')
+      logger.warn('Failed to read socket.json, using default')
+      debugDir('inspect', { error: e })
       return { ok: true, data: getDefaultSocketJson() }
     }
-    const msg = (e as { message: string })?.message || '(none)'
+    const msg = (e as Error)?.message
+    debugDir('inspect', { error: e })
     return {
       ok: false,
-      message: 'Failed to read file',
-      cause: `An error was thrown while trying to read your socket.json: ${msg}`,
+      message: 'Failed to read socket.json',
+      cause: `An error occurred while trying to read socket.json${msg ? `: ${msg}` : ''}`,
     }
   }
 
   let obj
   try {
     obj = JSON.parse(json)
-  } catch {
-    debugFn('error', 'fail: parse JSON')
-    debugDir('inspect', { json })
-
+  } catch (e) {
+    debugFn('error', 'caught: JSON.parse error')
+    debugDir('inspect', { error: e, json })
     if (defaultOnError) {
-      logger.warn('Warning: failed to parse file, using default')
+      logger.warn('Failed to parse socket.json, using default')
       return { ok: true, data: getDefaultSocketJson() }
     }
-
     return {
       ok: false,
       message: 'Failed to parse socket.json',
@@ -135,7 +132,6 @@ export async function readSocketJson(
 
   // Do we really care to validate? All properties are optional so code will have
   // to check every step of the way regardless. Who cares about validation here...?
-
   return { ok: true, data: obj }
 }
 
@@ -147,9 +143,8 @@ export async function writeSocketJson(
   try {
     json = JSON.stringify(sockJson, null, 2)
   } catch (e) {
-    debugFn('error', 'fail: stringify JSON')
-    debugDir('inspect', { error: e })
-    debugDir('inspect', { sockJson })
+    debugFn('error', 'caught: JSON.stringify error')
+    debugDir('inspect', { error: e, sockJson })
     return {
       ok: false,
       message: 'Failed to serialize to JSON',
