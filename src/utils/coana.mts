@@ -39,8 +39,7 @@ export async function spawnCoana(
         // Lazily access constants.nodeMemoryFlags.
         ...constants.nodeMemoryFlags,
         // Lazily access constants.coanaBinPath.
-        // constants.coanaBinPath,
-        '/Users/martintorp/coana/coana-package-manager/packages/cli/dist/index.js',
+        constants.coanaBinPath,
         ...args,
       ],
       {
@@ -55,7 +54,6 @@ export async function spawnCoana(
       },
       extra,
     )
-    console.log('SPAWNED COANA', output.stdout)
     return { ok: true, data: output.stdout }
   } catch (e) {
     const stderr = (e as any)?.stderr
