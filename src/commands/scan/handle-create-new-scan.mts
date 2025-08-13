@@ -60,6 +60,7 @@ export async function handleCreateNewScan({
   outputKind: OutputKind
   reach: {
     runReachabilityAnalysis: boolean
+    reachContinueOnFailingProjects: boolean
     reachDisableAnalytics: boolean
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
@@ -218,6 +219,7 @@ async function performReachabilityAnalysis({
   orgSlug: string
   packagePaths: string[]
   reachabilityOptions: {
+    reachContinueOnFailingProjects: boolean
     reachDisableAnalytics: boolean
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
@@ -294,6 +296,9 @@ async function performReachabilityAnalysis({
         : []),
       ...(reachabilityOptions.reachDisableAnalytics
         ? ['--disable-analytics-sharing']
+        : []),
+      ...(reachabilityOptions.reachContinueOnFailingProjects
+        ? ['--ignore-failing-workspaces']
         : []),
       // empty reachEcosystems implies scan all ecosystems
       ...(reachabilityOptions.reachEcosystems.length

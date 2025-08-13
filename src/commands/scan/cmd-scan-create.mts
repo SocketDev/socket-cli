@@ -54,6 +54,11 @@ const reachabilityFlags: MeowFlags = {
     description:
       'List of ecosystems to conduct reachability analysis on. Defaults to all ecosystems.',
   },
+  reachContinueOnFailingProjects: {
+    type: 'boolean',
+    description:
+      'Continue reachability analysis even when some projects/workspaces fail. Default is to crash the CLI at the first failing project/workspace.',
+  },
 }
 
 const config: CliCommandConfig = {
@@ -253,6 +258,7 @@ async function run(
     reach,
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
+    reachContinueOnFailingProjects,
     reachDisableAnalytics,
     reachEcosystems,
     readOnly,
@@ -278,6 +284,7 @@ async function run(
     reach: boolean
     reachAnalysisTimeout?: number
     reachAnalysisMemoryLimit?: number
+    reachContinueOnFailingProjects: boolean
     reachEcosystems: EcosystemString[]
     reachDisableAnalytics: boolean
   }
@@ -485,6 +492,14 @@ async function run(
       pass: 'ok',
       fail: 'missing --reach flag',
     },
+    {
+      nook: true,
+      test: reach || !reachContinueOnFailingProjects,
+      message:
+        'The --reachContinueOnFailingProjects flag requires --reach to be set',
+      pass: 'ok',
+      fail: 'missing --reach flag',
+    },
   )
   if (!wasValidInput) {
     return
@@ -511,6 +526,7 @@ async function run(
     pullRequest: Number(pullRequest),
     reach: {
       runReachabilityAnalysis: Boolean(reach),
+      reachContinueOnFailingProjects: Boolean(reachContinueOnFailingProjects),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
