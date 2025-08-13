@@ -36,9 +36,10 @@ describe('socket scan github', async () => {
           You can use \`socket scan setup\` to configure certain repo flag defaults.
 
           Options
-            --all               Apply for all known repos reported by the Socket API. Supersedes \`repos\`.
+            --all               Apply for all known repositories reported by the Socket API. Supersedes \`repos\`.
             --github-api-url    Base URL of the GitHub API (default: https://api.github.com)
-            --github-token      (required) GitHub token for authentication (or set GITHUB_TOKEN as an environment variable)
+            --github-token      Required GitHub token for authentication.
+                                May set environment variable GITHUB_TOKEN or SOCKET_CLI_GITHUB_TOKEN instead.
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json              Output result as json
             --markdown          Output result as markdown
@@ -85,9 +86,8 @@ describe('socket scan github', async () => {
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - This command requires a Socket API token for access (missing (try \`socket login\`))
-
-          - This command requires a GitHub API token for access (missing)"
+          \\xd7 This command requires a Socket API token for access (try \`socket login\`)
+          \\xd7 This command requires a GitHub API token for access (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
