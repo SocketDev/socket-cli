@@ -11,6 +11,16 @@ import type {
   SpawnOptions,
 } from '@socketsecurity/registry/lib/spawn'
 
+export function extractTier1ReachabilityScanId(
+  socketFactsFile: string,
+): string | undefined {
+  const json = readJsonSync(socketFactsFile, { throws: false })
+  const tier1ReachabilityScanId = String(json?.['tier1ReachabilityScanId'] ?? '').trim()
+  return tier1ReachabilityScanId.length > 0
+    ? tier1ReachabilityScanId
+    : undefined
+}
+
 export async function spawnCoana(
   args: string[] | readonly string[],
   options?: SpawnOptions | undefined,
@@ -59,15 +69,4 @@ export async function spawnCoana(
     const message = stderr ? stderr : (e as Error)?.message
     return { ok: false, data: e, message }
   }
-}
-
-export function extractTier1ReachabilityScanId(
-  socketFactsFile: string,
-): string | undefined {
-  const json = readJsonSync(socketFactsFile, { throws: false })
-  const tier1ReachabilityScanId = json?.['tier1ReachabilityScanId']
-  return typeof tier1ReachabilityScanId === 'string' &&
-    tier1ReachabilityScanId.length > 0
-    ? tier1ReachabilityScanId
-    : undefined
 }
