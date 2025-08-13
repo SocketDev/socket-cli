@@ -14,6 +14,10 @@ import {
   extractTier1ReachabilityScanId,
   spawnCoana,
 } from '../../utils/coana.mts'
+import {
+  type EcosystemString,
+  convertToCoanaEcosystems,
+} from '../../utils/ecosystem.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
@@ -56,9 +60,10 @@ export async function handleCreateNewScan({
   outputKind: OutputKind
   reach: {
     runReachabilityAnalysis: boolean
-    disableReachAnalytics: boolean
+    reachDisableAnalytics: boolean
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
+    reachEcosystems: EcosystemString[]
   }
   readOnly: boolean
   repoName: string
@@ -213,9 +218,10 @@ async function performReachabilityAnalysis({
   orgSlug: string
   packagePaths: string[]
   reachabilityOptions: {
-    disableReachAnalytics: boolean
+    reachDisableAnalytics: boolean
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
+    reachEcosystems: EcosystemString[]
   }
   repoName: string
 }): Promise<
@@ -286,8 +292,17 @@ async function performReachabilityAnalysis({
             reachabilityOptions.reachAnalysisMemoryLimit.toString(),
           ]
         : []),
-      ...(reachabilityOptions.disableReachAnalytics
+      ...(reachabilityOptions.reachDisableAnalytics
         ? ['--disable-analytics-sharing']
+        : []),
+      // empty reachEcosystems implies scan all ecosystems
+      ...(reachabilityOptions.reachEcosystems.length
+        ? [
+            '--ecosystems',
+            convertToCoanaEcosystems(reachabilityOptions.reachEcosystems).join(
+              ' ',
+            ),
+          ]
         : []),
       '--manifests-tar-hash',
       tarHash,

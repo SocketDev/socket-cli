@@ -43,9 +43,10 @@ describe('socket scan create', async () => {
             --tmp               Set the visibility (true/false) of the scan in your dashboard.
 
           Reachability Options (when --reach is used)
-            --disable-reach-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
             --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
             --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
+            --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
+            --reach-ecosystems  List of ecosystems to conduct reachability analysis on. Defaults to all ecosystems.
 
           Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
           Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".

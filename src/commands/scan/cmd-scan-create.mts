@@ -10,6 +10,10 @@ import constants from '../../constants.mts'
 import { type MeowFlags, commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
+import {
+  type EcosystemString,
+  getEcosystemChoicesForMeow,
+} from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { getRepoName, gitBranch } from '../../utils/git.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -27,7 +31,7 @@ const {
 } = constants
 
 const reachabilityFlags: MeowFlags = {
-  disableReachAnalytics: {
+  reachDisableAnalytics: {
     type: 'boolean',
     description:
       'Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.',
@@ -42,6 +46,13 @@ const reachabilityFlags: MeowFlags = {
     type: 'number',
     description:
       'Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.',
+  },
+  reachEcosystems: {
+    type: 'string',
+    isMultiple: true,
+    choices: getEcosystemChoicesForMeow(),
+    description:
+      'List of ecosystems to conduct reachability analysis on. Defaults to all ecosystems.',
   },
 }
 
@@ -233,7 +244,6 @@ async function run(
     committers,
     cwd: cwdOverride,
     defaultBranch,
-    disableReachAnalytics,
     dryRun = false,
     interactive = true,
     json,
@@ -243,6 +253,8 @@ async function run(
     reach,
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
+    reachDisableAnalytics,
+    reachEcosystems,
     readOnly,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
@@ -264,9 +276,10 @@ async function run(
 
     // reachability flags
     reach: boolean
-    disableReachAnalytics: boolean
     reachAnalysisTimeout?: number
     reachAnalysisMemoryLimit?: number
+    reachEcosystems: EcosystemString[]
+    reachDisableAnalytics: boolean
   }
   let {
     autoManifest,
@@ -467,9 +480,10 @@ async function run(
     pullRequest: Number(pullRequest),
     reach: {
       runReachabilityAnalysis: Boolean(reach),
-      disableReachAnalytics: Boolean(disableReachAnalytics),
+      reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
+      reachEcosystems,
     },
     readOnly: Boolean(readOnly),
     repoName,

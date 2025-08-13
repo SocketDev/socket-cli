@@ -39,9 +39,10 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
     pullRequest: 0,
     reach: {
       runReachabilityAnalysis: false,
-      disableReachAnalytics: false,
+      reachDisableAnalytics: false,
       reachAnalysisTimeout: 0,
       reachAnalysisMemoryLimit: 0,
+      reachEcosystems: [],
     },
     repoName,
     readOnly: false,
