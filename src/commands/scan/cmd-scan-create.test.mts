@@ -128,4 +128,189 @@ describe('socket scan create', async () => {
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
     },
   )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reachDisableAnalytics',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reachDisableAnalytics is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachDisableAnalytics flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reachAnalysisMemoryLimit',
+      '8192',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should succeed when --reachAnalysisMemoryLimit is used with default value without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0 when using default value').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reachAnalysisMemoryLimit',
+      '4096',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reachAnalysisMemoryLimit is used with non-default value without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachAnalysisMemoryLimit flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reachAnalysisTimeout',
+      '3600',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reachAnalysisTimeout is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachAnalysisTimeout flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reachEcosystems',
+      'npm',
+      '--reachEcosystems',
+      'pypi',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reachEcosystems is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachEcosystems flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reachDisableAnalytics',
+      '--reachAnalysisMemoryLimit',
+      '4096',
+      '--reachAnalysisTimeout',
+      '3600',
+      '--reachEcosystems',
+      'npm',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should succeed when reachability options are used with --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
+    },
+  )
 })

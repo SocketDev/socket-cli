@@ -454,6 +454,37 @@ async function run(
       pass: 'ok',
       fail: 'missing branch name',
     },
+    {
+      nook: true,
+      test: reach || !reachDisableAnalytics,
+      message: 'The --reachDisableAnalytics flag requires --reach to be set',
+      pass: 'ok',
+      fail: 'missing --reach flag',
+    },
+    {
+      nook: true,
+      test:
+        reach ||
+        reachAnalysisMemoryLimit === undefined ||
+        reachAnalysisMemoryLimit === 8192,
+      message: 'The --reachAnalysisMemoryLimit flag requires --reach to be set',
+      pass: 'ok',
+      fail: 'missing --reach flag',
+    },
+    {
+      nook: true,
+      test: reach || !reachAnalysisTimeout,
+      message: 'The --reachAnalysisTimeout flag requires --reach to be set',
+      pass: 'ok',
+      fail: 'missing --reach flag',
+    },
+    {
+      nook: true,
+      test: reach || !reachEcosystems?.length,
+      message: 'The --reachEcosystems flag requires --reach to be set',
+      pass: 'ok',
+      fail: 'missing --reach flag',
+    },
   )
   if (!wasValidInput) {
     return
