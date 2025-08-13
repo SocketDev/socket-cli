@@ -228,7 +228,6 @@ export async function handleCreateNewScan({
 }
 
 type ReachabilityAnalysisConfig = {
-  packagePaths: string[]
   branchName: string
   cwd: string
   orgSlug: string
