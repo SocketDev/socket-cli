@@ -47,8 +47,8 @@ describe('socket scan create', async () => {
             --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
             --reach-continue-on-failing-projects  Continue reachability analysis even when some projects/workspaces fail. Default is to crash the CLI at the first failing project/workspace.
             --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
-            --reach-ecosystems  List of ecosystems to conduct reachability analysis on. Defaults to all ecosystems.
-            --reach-exclude-paths  List of paths to exclude from reachability analysis.
+            --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
+            --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
 
           Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
           Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".
@@ -446,6 +446,158 @@ describe('socket scan create', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-ecosystems',
+      'npm,pypi,cargo',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should succeed when --reach-ecosystems is used with comma-separated values',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(
+        code,
+        'should exit with code 0 when comma-separated values are used',
+      ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-exclude-paths',
+      'node_modules,dist,build',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should succeed when --reach-exclude-paths is used with comma-separated values',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(
+        code,
+        'should exit with code 0 when comma-separated values are used',
+      ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach-ecosystems',
+      'npm,pypi',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reach-ecosystems with comma-separated values is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachEcosystems flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach-exclude-paths',
+      'node_modules,dist',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reach-exclude-paths with comma-separated values is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachExcludePaths flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-ecosystems',
+      'npm,invalid-ecosystem',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reach-ecosystems contains invalid values',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain('Invalid ecosystem: "invalid-ecosystem"')
+      expect(
+        code,
+        'should exit with non-zero code when invalid ecosystem is provided',
+      ).not.toBe(0)
     },
   )
 })

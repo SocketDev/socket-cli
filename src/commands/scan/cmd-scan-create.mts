@@ -9,6 +9,7 @@ import { suggestTarget } from './suggest_target.mts'
 import constants from '../../constants.mts'
 import { type MeowFlags, commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import {
   type EcosystemString,
@@ -50,9 +51,8 @@ const reachabilityFlags: MeowFlags = {
   reachEcosystems: {
     type: 'string',
     isMultiple: true,
-    choices: getEcosystemChoicesForMeow(),
     description:
-      'List of ecosystems to conduct reachability analysis on. Defaults to all ecosystems.',
+      'List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.',
   },
   reachContinueOnFailingProjects: {
     type: 'boolean',
@@ -62,7 +62,8 @@ const reachabilityFlags: MeowFlags = {
   reachExcludePaths: {
     type: 'string',
     isMultiple: true,
-    description: 'List of paths to exclude from reachability analysis.',
+    description:
+      'List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.',
   },
 }
 
@@ -265,8 +266,6 @@ async function run(
     reachAnalysisTimeout,
     reachContinueOnFailingProjects,
     reachDisableAnalytics,
-    reachEcosystems,
-    reachExcludePaths,
     readOnly,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
@@ -291,10 +290,25 @@ async function run(
     reachAnalysisTimeout?: number
     reachAnalysisMemoryLimit?: number
     reachContinueOnFailingProjects: boolean
-    reachEcosystems: EcosystemString[]
-    reachExcludePaths: string[]
     reachDisableAnalytics: boolean
   }
+
+  // Process comma-separated values for isMultiple flags
+  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
+  const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
+
+  // Validate ecosystem values
+  const validEcosystems = getEcosystemChoicesForMeow()
+  const reachEcosystems: EcosystemString[] = []
+  for (const ecosystem of reachEcosystemsRaw) {
+    if (!validEcosystems.includes(ecosystem)) {
+      throw new Error(
+        `Invalid ecosystem: "${ecosystem}". Valid values are: ${validEcosystems.join(', ')}`,
+      )
+    }
+    reachEcosystems.push(ecosystem as EcosystemString)
+  }
+
   let {
     autoManifest,
     branch: branchName,
@@ -494,7 +508,7 @@ async function run(
     },
     {
       nook: true,
-      test: reach || !reachEcosystems?.length,
+      test: reach || !reachEcosystems.length,
       message: 'The --reachEcosystems flag requires --reach to be set',
       pass: 'ok',
       fail: 'missing --reach flag',
@@ -509,7 +523,7 @@ async function run(
     },
     {
       nook: true,
-      test: reach || !reachExcludePaths?.length,
+      test: reach || !reachExcludePaths.length,
       message: 'The --reachExcludePaths flag requires --reach to be set',
       pass: 'ok',
       fail: 'missing --reach flag',
@@ -545,7 +559,7 @@ async function run(
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
       reachEcosystems,
-      reachExcludePaths: reachExcludePaths || [],
+      reachExcludePaths,
     },
     readOnly: Boolean(readOnly),
     repoName,
