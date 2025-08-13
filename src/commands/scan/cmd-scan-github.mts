@@ -13,7 +13,7 @@ import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
-import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
+import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -29,12 +29,12 @@ const config: CliCommandConfig = {
     all: {
       type: 'boolean',
       description:
-        'Apply for all known repos reported by the Socket API. Supersedes `repos`.',
+        'Apply for all known repositories reported by the Socket API. Supersedes `repos`.',
     },
     githubToken: {
       type: 'string',
       description:
-        '(required) GitHub token for authentication (or set GITHUB_TOKEN as an environment variable)',
+        'Required GitHub token for authentication.\nMay set environment variable GITHUB_TOKEN or SOCKET_CLI_GITHUB_TOKEN instead.',
     },
     githubApiUrl: {
       type: 'string',
@@ -139,17 +139,12 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  let [orgSlug, defaultOrgSlug] = await determineOrgSlug(
+  let [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
     interactive,
     dryRun,
   )
-  if (!defaultOrgSlug) {
-    // Tmp. just for TS. will drop this later.
-    defaultOrgSlug = ''
-  }
-
-  const sockJson = await readOrDefaultSocketJson(cwd)
+  const sockJson = readOrDefaultSocketJson(cwd)
 
   if (all === undefined) {
     if (sockJson.defaults?.scan?.github?.all !== undefined) {
@@ -217,20 +212,17 @@ async function run(
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
-      pass: 'ok',
       fail: 'omit one',
     },
     {
       nook: true,
       test: hasSocketApiToken,
-      message: 'This command requires an Socket API token for access',
-      pass: 'ok',
-      fail: 'missing (try `socket login`)',
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
     },
     {
       test: hasGithubApiToken,
       message: 'This command requires a GitHub API token for access',
-      pass: 'ok',
       fail: 'missing',
     },
   )

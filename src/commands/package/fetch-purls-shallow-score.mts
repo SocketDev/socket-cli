@@ -30,7 +30,7 @@ export async function fetchPurlsShallowScore(
     `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`,
   )
 
-  const result = await handleApiCall(
+  const batchPackageCResult = await handleApiCall(
     sockSdk.batchPackageFetch(
       { components: purls.map(purl => ({ purl })) },
       {
@@ -39,15 +39,14 @@ export async function fetchPurlsShallowScore(
     ),
     { desc: 'looking up package' },
   )
-
-  if (!result.ok) {
-    return result
+  if (!batchPackageCResult.ok) {
+    return batchPackageCResult
   }
 
   // TODO: Seems like there's a bug in the typing since we absolutely have to
   // return the .data here.
   return {
     ok: true,
-    data: result.data as SocketSdkSuccessResult<'batchPackageFetch'>,
+    data: batchPackageCResult.data as SocketSdkSuccessResult<'batchPackageFetch'>,
   }
 }

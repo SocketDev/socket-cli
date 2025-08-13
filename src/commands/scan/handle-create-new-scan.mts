@@ -20,11 +20,12 @@ import {
 } from '../../utils/ecosystem.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
-import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
+import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 
 import type { CResult, OutputKind } from '../../types.mts'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export async function handleCreateNewScan({
   autoManifest,
@@ -75,7 +76,7 @@ export async function handleCreateNewScan({
 }): Promise<void> {
   if (autoManifest) {
     logger.info('Auto-generating manifest files ...')
-    const sockJson = await readOrDefaultSocketJson(cwd)
+    const sockJson = readOrDefaultSocketJson(cwd)
     const detected = await detectManifestActions(sockJson, cwd)
     await generateAutoManifest({
       detected,
@@ -88,7 +89,10 @@ export async function handleCreateNewScan({
 
   const supportedFilesCResult = await fetchSupportedScanFileNames()
   if (!supportedFilesCResult.ok) {
-    await outputCreateNewScan(supportedFilesCResult, outputKind, interactive)
+    await outputCreateNewScan(supportedFilesCResult, {
+      interactive,
+      outputKind,
+    })
     return
   }
 
@@ -107,7 +111,6 @@ export async function handleCreateNewScan({
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
     test: packagePaths.length > 0,
-    pass: 'ok',
     fail: 'found no eligible files to scan',
     message:
       'TARGET (file/dir) must contain matching / supported file types for a scan',
@@ -130,21 +133,33 @@ export async function handleCreateNewScan({
   let scanPaths: string[] = packagePaths
   let tier1ReachabilityScanId: string | undefined
 
-  // If reachability is enabled, perform reachability analysis
+  // If reachability is enabled, perform reachability analysis.
   if (reach.runReachabilityAnalysis) {
-    const reachResult = await performReachabilityAnalysis({
-      packagePaths,
-      orgSlug,
-      cwd,
-      repoName,
-      branchName,
-      reachabilityOptions: reach,
-    })
+    logger.error('')
+    logger.info('Starting reachability analysis...')
+
+    spinner.start()
+
+    const reachResult = await performReachabilityAnalysis(
+      {
+        packagePaths,
+        orgSlug,
+        cwd,
+        repoName,
+        branchName,
+        reachabilityOptions: reach,
+      },
+      { spinner },
+    )
+
+    spinner.stop()
 
     if (!reachResult.ok) {
-      await outputCreateNewScan(reachResult, outputKind, interactive)
+      await outputCreateNewScan(reachResult, { interactive, outputKind })
       return
     }
+
+    logger.success('Reachability analysis completed successfully')
 
     scanPaths = reachResult.data?.scanPaths || []
     tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
@@ -170,15 +185,15 @@ export async function handleCreateNewScan({
   )
 
   if (
-    fullScanCResult.ok &&
     reach &&
     tier1ReachabilityScanId &&
+    fullScanCResult.ok &&
     fullScanCResult.data?.id
   ) {
-    await finalizeTier1Scan(tier1ReachabilityScanId, fullScanCResult.data?.id)
+    await finalizeTier1Scan(tier1ReachabilityScanId, fullScanCResult.data.id)
   }
 
-  if (fullScanCResult.ok && report) {
+  if (report && fullScanCResult.ok) {
     if (fullScanCResult.data?.id) {
       await handleScanReport({
         filePath: '-',
@@ -198,23 +213,22 @@ export async function handleCreateNewScan({
           cause: 'Server did not respond with a scan ID',
           data: fullScanCResult.data,
         },
-        outputKind,
-        interactive,
+        {
+          interactive,
+          outputKind,
+        },
       )
     }
   } else {
-    await outputCreateNewScan(fullScanCResult, outputKind, interactive)
+    spinner.stop()
+    spinner.clear()
+
+    await outputCreateNewScan(fullScanCResult, { interactive, outputKind })
   }
 }
 
-async function performReachabilityAnalysis({
-  branchName,
-  cwd,
-  orgSlug,
-  packagePaths,
-  reachabilityOptions,
-  repoName,
-}: {
+type ReachabilityAnalysisConfig = {
+  packagePaths: string[]
   branchName: string
   cwd: string
   orgSlug: string
@@ -228,42 +242,72 @@ async function performReachabilityAnalysis({
     reachExcludePaths: string[]
   }
   repoName: string
-}): Promise<
-  CResult<{ scanPaths?: string[]; tier1ReachabilityScanId: string | undefined }>
-> {
-  logger.info('Starting reachability analysis...')
+}
 
-  packagePaths = packagePaths.filter(
-    p =>
-      /* Exclude DOT_SOCKET_DOT_FACTS_JSON from previous runs */ !p.includes(
-        constants.DOT_SOCKET_DOT_FACTS_JSON,
-      ),
-  )
+type ReachabilityAnalysisOptions = {
+  spinner?: Spinner | undefined
+}
 
-  // Lazily access constants.spinner.
-  const { spinner } = constants
+type ReachabilityAnalysisResult = {
+  scanPaths: string[]
+  tier1ReachabilityScanId: string | undefined
+}
+
+async function performReachabilityAnalysis(
+  {
+    branchName,
+    cwd,
+    orgSlug,
+    packagePaths,
+    reachabilityOptions,
+    repoName,
+  }: ReachabilityAnalysisConfig,
+  options?: ReachabilityAnalysisOptions | undefined,
+): Promise<CResult<ReachabilityAnalysisResult>> {
+  const { spinner } = {
+    __proto__: null,
+    ...options,
+  } as ReachabilityAnalysisOptions
 
   // Setup SDK for uploading manifests
   const sockSdkCResult = await setupSdk()
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }
+
   const sockSdk = sockSdkCResult.data
 
+  const wasSpinning = !!spinner?.isSpinning
+
   // Upload manifests to get tar hash
-  spinner.start('Uploading manifests for reachability analysis...')
-  const uploadCResult = await handleApiCall(
-    sockSdk.uploadManifestFiles(orgSlug, packagePaths),
-    { desc: 'upload manifests' },
+  spinner?.start('Uploading manifests for reachability analysis...')
+
+  // Exclude DOT_SOCKET_DOT_FACTS_JSON from previous runs.
+  const filteredPackagePaths = packagePaths.filter(
+    p => !p.endsWith(constants.DOT_SOCKET_DOT_FACTS_JSON),
   )
-  spinner.stop()
+  const uploadCResult = await handleApiCall(
+    sockSdk.uploadManifestFiles(orgSlug, filteredPackagePaths),
+    {
+      desc: 'upload manifests',
+      spinner,
+    },
+  )
+
+  spinner?.stop()
 
   if (!uploadCResult.ok) {
+    if (wasSpinning) {
+      spinner.start()
+    }
     return uploadCResult
   }
 
   const tarHash = (uploadCResult.data as { tarHash?: string })?.tarHash
   if (!tarHash) {
+    if (wasSpinning) {
+      spinner.start()
+    }
     return {
       ok: false,
       message: 'Failed to get manifest tar hash',
@@ -271,10 +315,11 @@ async function performReachabilityAnalysis({
     }
   }
 
-  logger.success(`Manifests uploaded successfully. Tar hash: ${tarHash}`)
+  spinner?.start()
+  spinner?.success(`Manifests uploaded successfully. Tar hash: ${tarHash}`)
+  spinner?.infoAndStop('Running reachability analysis with Coana...')
 
-  // Run Coana with the manifests tar hash
-  logger.info('Running reachability analysis with Coana...')
+  // Run Coana with the manifests tar hash.
   const coanaResult = await spawnCoana(
     [
       'run',
@@ -319,30 +364,29 @@ async function performReachabilityAnalysis({
     ],
     {
       cwd,
-      stdio: 'inherit',
       env: {
         ...process.env,
         SOCKET_REPO_NAME: repoName,
         SOCKET_BRANCH_NAME: branchName,
-        SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
       },
+      spinner,
+      stdio: 'inherit',
     },
   )
 
-  if (!coanaResult.ok) {
-    return coanaResult
+  if (wasSpinning) {
+    spinner.start()
   }
-
-  logger.success('Reachability analysis completed successfully')
-
-  // Use the DOT_SOCKET_DOT_FACTS_JSON file for the scan
-  return {
-    ok: true,
-    data: {
-      scanPaths: [constants.DOT_SOCKET_DOT_FACTS_JSON],
-      tier1ReachabilityScanId: extractTier1ReachabilityScanId(
-        constants.DOT_SOCKET_DOT_FACTS_JSON,
-      ),
-    },
-  }
+  return coanaResult.ok
+    ? {
+        ok: true,
+        data: {
+          // Use the DOT_SOCKET_DOT_FACTS_JSON file for the scan.
+          scanPaths: [constants.DOT_SOCKET_DOT_FACTS_JSON],
+          tier1ReachabilityScanId: extractTier1ReachabilityScanId(
+            constants.DOT_SOCKET_DOT_FACTS_JSON,
+          ),
+        },
+      }
+    : coanaResult
 }

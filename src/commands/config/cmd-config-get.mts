@@ -75,7 +75,6 @@ async function run(
     {
       test: key === 'test' || isSupportedConfigKey(key),
       message: 'Config key should be the first arg',
-      pass: 'ok',
       fail: key ? 'invalid config key' : 'missing',
     },
     {
@@ -83,7 +82,6 @@ async function run(
       test: !json || !markdown,
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
-      pass: 'ok',
       fail: 'bad',
     },
   )

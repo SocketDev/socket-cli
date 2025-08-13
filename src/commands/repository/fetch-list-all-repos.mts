@@ -1,5 +1,3 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
@@ -50,12 +48,10 @@ export async function fetchListAllRepos(
       { desc: 'list of repositories' },
     )
     if (!orgRepoListCResult.ok) {
-      debugFn('error', 'fail: fetch repo')
-      debugDir('inspect', { orgRepoListCResult })
       return orgRepoListCResult
     }
 
-    orgRepoListCResult.data.results.forEach(row => rows.push(row))
+    rows.push(...orgRepoListCResult.data.results)
     nextPage = orgRepoListCResult.data.nextPage ?? -1
   }
 

@@ -46,9 +46,9 @@ export async function fetchOrgFullScanList(
       ...(repo ? { repo } : {}),
       sort,
       direction,
-      per_page: String(perPage),
-      page: String(page),
       from: from_time,
+      page: String(page),
+      per_page: String(perPage),
     }),
     { desc: 'list of scans' },
   )

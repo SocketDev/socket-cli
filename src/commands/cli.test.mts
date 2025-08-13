@@ -64,6 +64,7 @@ describe('socket root command', async () => {
         Environment variables
           SOCKET_CLI_API_TOKEN        Set the Socket API token
           SOCKET_CLI_CONFIG           A JSON stringified Socket configuration object
+          SOCKET_CLI_GITHUB_API_URL   Change the base URL for GitHub REST API calls
           SOCKET_CLI_GIT_USER_EMAIL   The git config \`user.email\` used by Socket CLI
                                       Defaults: github-actions[bot]@users.noreply.github.com
           SOCKET_CLI_GIT_USER_NAME    The git config \`user.name\` used by Socket CLI
@@ -78,7 +79,7 @@ describe('socket root command', async () => {
           SOCKET_CLI_VIEW_ALL_RISKS   View all risks of a Socket wrapped npm/npx run
 
         Environment variables for development
-          SOCKET_CLI_API_BASE_URL     Change the base URL for all API-calls
+          SOCKET_CLI_API_BASE_URL     Change the base URL for Socket API calls
                                       Defaults: The "apiBaseUrl" value of socket/settings local app data
                                       if present, else https://api.socket.dev/v0/
           SOCKET_CLI_API_PROXY        Set the proxy all requests are routed through, e.g. if set to

@@ -20,7 +20,7 @@ import { getRepoName, gitBranch } from '../../utils/git.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
-import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
+import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
@@ -334,7 +334,7 @@ async function run(
   // Accept zero or more paths. Default to cwd() if none given.
   let targets = cli.input || [cwd]
 
-  const sockJson = await readOrDefaultSocketJson(cwd)
+  const sockJson = readOrDefaultSocketJson(cwd)
 
   // Note: This needs meow booleanDefault=undefined
   if (typeof autoManifest !== 'boolean') {
@@ -404,8 +404,10 @@ async function run(
             message: 'Canceled by user',
             cause: 'Org selector was canceled by user',
           },
-          outputKind,
-          false,
+          {
+            interactive: false,
+            outputKind,
+          },
         )
         return
       }
@@ -427,11 +429,11 @@ async function run(
     logger.info(
       'Note: You can invoke this command next time to skip the interactive questions:',
     )
-    logger.info('```')
-    logger.info(
+    logger.error('```')
+    logger.error(
       `    socket scan create [other flags...] ${orgSlug} ${targets.join(' ')}`,
     )
-    logger.info('```')
+    logger.error('```')
     logger.error('')
     logger.info(
       'You can also run `socket scan setup` to persist these flag defaults to a socket.json file.',
@@ -445,41 +447,35 @@ async function run(
       nook: true,
       test: !!orgSlug,
       message: 'Org name by default setting, --org, or auto-discovered',
-      pass: 'ok',
       fail: 'missing',
     },
     {
       test: !!targets.length,
       message: 'At least one TARGET (e.g. `.` or `./package.json`)',
-      pass: 'ok',
       fail: 'missing',
     },
     {
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
-      pass: 'ok',
       fail: 'omit one',
     },
     {
       nook: true,
       test: hasApiToken,
       message: 'This command requires an API token for access',
-      pass: 'ok',
       fail: 'missing (try `socket login`)',
     },
     {
       nook: true,
       test: !pendingHead || !!branchName,
       message: 'When --pendingHead is set, --branch is mandatory',
-      pass: 'ok',
       fail: 'missing branch name',
     },
     {
       nook: true,
       test: !defaultBranch || !!branchName,
       message: 'When --defaultBranch is set, --branch is mandatory',
-      pass: 'ok',
       fail: 'missing branch name',
     },
     {

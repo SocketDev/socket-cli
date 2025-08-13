@@ -53,7 +53,6 @@ export async function attemptLogin(
   const orgsCResult = await handleApiCall(sockSdk.getOrganizations(), {
     desc: 'token verification',
   })
-
   if (!orgsCResult.ok) {
     process.exitCode = 1
     logger.fail(failMsgWithBadge(orgsCResult.message, orgsCResult.cause))
@@ -129,9 +128,10 @@ export async function attemptLogin(
     return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
   }
   if (wantToComplete) {
+    logger.log('')
     logger.log('Setting up tab completion...')
-    const result = await setupTabCompletion('socket')
-    if (result.ok) {
+    const setupCResult = await setupTabCompletion('socket')
+    if (setupCResult.ok) {
       logger.success(
         'Tab completion will be enabled after restarting your terminal',
       )

@@ -82,9 +82,8 @@ describe('socket package shallow', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - First parameter should be an ecosystem or all args must be purls (bad)
-
-          - Expecting at least one package (missing)"
+          \\xd7 First parameter should be an ecosystem or all args must be purls (bad)
+          \\xd7 Expecting at least one package (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

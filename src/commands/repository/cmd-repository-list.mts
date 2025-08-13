@@ -123,7 +123,6 @@ async function run(
       nook: true,
       test: !!orgSlug,
       message: 'Org name by default setting, --org, or auto-discovered',
-      pass: 'ok',
       fail: 'missing',
     },
     {
@@ -131,7 +130,6 @@ async function run(
       test: !json || !markdown,
       message:
         'The `--json` and `--markdown` flags can not be used at the same time',
-      pass: 'ok',
       fail: 'bad',
     },
     {
@@ -139,14 +137,12 @@ async function run(
       test: hasApiToken,
       message:
         'You need to be logged in to use this command. See `socket login`.',
-      pass: 'ok',
       fail: 'missing Socket API token',
     },
     {
       nook: true,
       test: direction === 'asc' || direction === 'desc',
       message: 'The --direction value must be "asc" or "desc"',
-      pass: 'ok',
       fail: 'unexpected value',
     },
   )

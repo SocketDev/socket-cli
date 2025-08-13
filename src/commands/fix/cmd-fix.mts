@@ -174,7 +174,6 @@ async function run(
   const wasValidInput = checkCommandInput(outputKind, {
     test: RangeStyles.includes(rangeStyle),
     message: `Expecting range style of ${joinOr(RangeStyles)}`,
-    pass: 'ok',
     fail: 'invalid',
   })
   if (!wasValidInput) {

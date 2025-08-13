@@ -29,11 +29,11 @@ export async function updateLockfile(
     __proto__: null,
     ...options,
   } as UpdateLockfileOptions
-  const isSpinning = !!spinner?.isSpinning
-  if (!isSpinning) {
-    spinner?.start()
-  }
-  spinner?.setText(`Updating ${pkgEnvDetails.lockName}...`)
+
+  const wasSpinning = !!spinner?.isSpinning
+
+  spinner?.start(`Updating ${pkgEnvDetails.lockName}...`)
+
   try {
     await runAgentInstall(pkgEnvDetails, { spinner })
     if (pkgEnvDetails.features.npmBuggyOverrides) {
@@ -48,6 +48,10 @@ export async function updateLockfile(
     debugFn('error', 'fail: update')
     debugDir('inspect', { error: e })
 
+    if (wasSpinning) {
+      spinner.start()
+    }
+
     return {
       ok: false,
       message: 'Update failed',
@@ -57,10 +61,11 @@ export async function updateLockfile(
       ),
     }
   }
-  if (isSpinning) {
-    spinner?.start()
-  } else {
-    spinner?.stop()
+
+  spinner?.stop()
+
+  if (wasSpinning) {
+    spinner.start()
   }
 
   return { ok: true, data: undefined }

@@ -1,5 +1,4 @@
-import { readFileSync } from 'node:fs'
-
+import { readJsonSync } from '@socketsecurity/registry/lib/fs'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
@@ -11,6 +10,18 @@ import type {
   SpawnExtra,
   SpawnOptions,
 } from '@socketsecurity/registry/lib/spawn'
+
+export function extractTier1ReachabilityScanId(
+  socketFactsFile: string,
+): string | undefined {
+  const json = readJsonSync(socketFactsFile, { throws: false })
+  const tier1ReachabilityScanId = String(
+    json?.['tier1ReachabilityScanId'] ?? '',
+  ).trim()
+  return tier1ReachabilityScanId.length > 0
+    ? tier1ReachabilityScanId
+    : undefined
+}
 
 export async function spawnCoana(
   args: string[] | readonly string[],
@@ -59,17 +70,5 @@ export async function spawnCoana(
     const stderr = (e as any)?.stderr
     const message = stderr ? stderr : (e as Error)?.message
     return { ok: false, data: e, message }
-  }
-}
-
-export function extractTier1ReachabilityScanId(
-  socketFactsFile: string,
-): string | undefined {
-  try {
-    const content = readFileSync(socketFactsFile, 'utf8')
-    const json = JSON.parse(content)
-    return json.tier1ReachabilityScanId
-  } catch {
-    return undefined
   }
 }

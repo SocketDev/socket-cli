@@ -97,20 +97,17 @@ async function run(
       test: valid,
       message:
         'First parameter should be an ecosystem or all args must be purls',
-      pass: 'ok',
       fail: 'bad',
     },
     {
       test: purls.length > 0,
       message: 'Expecting at least one package',
-      pass: 'ok',
       fail: 'missing',
     },
     {
       nook: true,
       test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
-      pass: 'ok',
       fail: 'omit one',
     },
   )

@@ -77,9 +77,8 @@ describe('socket analytics', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - The time filter must either be 7, 30 or 90 (ok)
-
-          - You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
+          \\u221a The time filter must either be 7, 30 or 90
+          \\xd7 You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -110,9 +109,8 @@ describe('socket analytics', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - Legacy flags are no longer supported. See v1 migration guide. (received legacy flags)
-
-          - The time filter must either be 7, 30 or 90 (ok)"
+          \\xd7 Legacy flags are no longer supported. See v1 migration guide. (received legacy flags)
+          \\u221a The time filter must either be 7, 30 or 90"
       `)
 
       expect(code, 'dry-run should reject legacy flags with code 2').toBe(2)
@@ -170,9 +168,8 @@ describe('socket analytics', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - When scope=repo, repo name should be the second argument (missing)
-
-          - The time filter must either be 7, 30 or 90 (ok)"
+          \\xd7 When scope=repo, repo name should be the second argument (missing)
+          \\u221a The time filter must either be 7, 30 or 90"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -281,9 +278,8 @@ describe('socket analytics', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - Legacy flags are no longer supported. See v1 migration guide. (received legacy flags)
-
-          - The time filter must either be 7, 30 or 90 (ok)"
+          \\xd7 Legacy flags are no longer supported. See v1 migration guide. (received legacy flags)
+          \\u221a The time filter must either be 7, 30 or 90"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
