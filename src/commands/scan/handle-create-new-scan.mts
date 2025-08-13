@@ -123,6 +123,8 @@ export async function handleCreateNewScan({
     logger.error('')
     logger.info('Starting reachability analysis...')
 
+    spinner.start()
+
     const reachResult = await performReachabilityAnalysis(
       {
         packagePaths,
@@ -135,6 +137,8 @@ export async function handleCreateNewScan({
       },
       { spinner },
     )
+
+    spinner.stop()
 
     if (!reachResult.ok) {
       await outputCreateNewScan(reachResult, outputKind, interactive)
