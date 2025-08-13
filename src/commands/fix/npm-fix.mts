@@ -71,7 +71,8 @@ async function install(
     ...(extraArgs ?? []),
   ]
 
-  const isSpinning = spinner?.isSpinning
+  const wasSpinning = !!spinner?.isSpinning
+
   spinner?.stop()
 
   const quotedCmd = `\`${pkgEnvDetails.agent} install ${args.join(' ')}\``
@@ -91,14 +92,16 @@ async function install(
 
   const treeResult = await getActualTree(cwd)
   if (treeResult.actualTree) {
-    if (isSpinning) {
+    if (wasSpinning) {
       spinner.start()
     }
     return treeResult
   }
+
   debugFn('error', 'caught: await arb.loadActual() error')
   debugDir('inspect', treeResult)
-  if (isSpinning) {
+
+  if (wasSpinning) {
     spinner.start()
   }
   return treeResult
