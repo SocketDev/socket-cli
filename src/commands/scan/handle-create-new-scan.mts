@@ -14,6 +14,10 @@ import {
   extractTier1ReachabilityScanId,
   spawnCoana,
 } from '../../utils/coana.mts'
+import {
+  type EcosystemString,
+  convertToCoanaEcosystems,
+} from '../../utils/ecosystem.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
@@ -55,7 +59,15 @@ export async function handleCreateNewScan({
   pendingHead: boolean
   pullRequest: number
   outputKind: OutputKind
-  reach: boolean
+  reach: {
+    runReachabilityAnalysis: boolean
+    reachContinueOnFailingProjects: boolean
+    reachDisableAnalytics: boolean
+    reachAnalysisTimeout: number
+    reachAnalysisMemoryLimit: number
+    reachEcosystems: EcosystemString[]
+    reachExcludePaths: string[]
+  }
   readOnly: boolean
   repoName: string
   report: boolean
@@ -122,7 +134,7 @@ export async function handleCreateNewScan({
   let tier1ReachabilityScanId: string | undefined
 
   // If reachability is enabled, perform reachability analysis.
-  if (reach) {
+  if (reach.runReachabilityAnalysis) {
     logger.error('')
     logger.info('Starting reachability analysis...')
 
@@ -135,8 +147,7 @@ export async function handleCreateNewScan({
         cwd,
         repoName,
         branchName,
-        outputKind,
-        interactive,
+        reachabilityOptions: reach,
       },
       { spinner },
     )
@@ -217,13 +228,19 @@ export async function handleCreateNewScan({
 }
 
 type ReachabilityAnalysisConfig = {
-  packagePaths: string[]
-  orgSlug: string
-  cwd: string
-  repoName: string
   branchName: string
-  outputKind: OutputKind
-  interactive: boolean
+  cwd: string
+  orgSlug: string
+  packagePaths: string[]
+  reachabilityOptions: {
+    reachContinueOnFailingProjects: boolean
+    reachDisableAnalytics: boolean
+    reachAnalysisTimeout: number
+    reachAnalysisMemoryLimit: number
+    reachEcosystems: EcosystemString[]
+    reachExcludePaths: string[]
+  }
+  repoName: string
 }
 
 type ReachabilityAnalysisOptions = {
@@ -241,6 +258,7 @@ async function performReachabilityAnalysis(
     cwd,
     orgSlug,
     packagePaths,
+    reachabilityOptions,
     repoName,
   }: ReachabilityAnalysisConfig,
   options?: ReachabilityAnalysisOptions | undefined,
@@ -310,6 +328,36 @@ async function performReachabilityAnalysis(
       '--socket-mode',
       constants.DOT_SOCKET_DOT_FACTS_JSON,
       '--disable-report-submission',
+      ...(reachabilityOptions.reachAnalysisTimeout
+        ? [
+            '--analysis-timeout',
+            reachabilityOptions.reachAnalysisTimeout.toString(),
+          ]
+        : []),
+      ...(reachabilityOptions.reachAnalysisMemoryLimit
+        ? [
+            '--memory-limit',
+            reachabilityOptions.reachAnalysisMemoryLimit.toString(),
+          ]
+        : []),
+      ...(reachabilityOptions.reachDisableAnalytics
+        ? ['--disable-analytics-sharing']
+        : []),
+      ...(reachabilityOptions.reachContinueOnFailingProjects
+        ? ['--ignore-failing-workspaces']
+        : []),
+      // empty reachEcosystems implies scan all ecosystems
+      ...(reachabilityOptions.reachEcosystems.length
+        ? [
+            '--ecosystems',
+            convertToCoanaEcosystems(reachabilityOptions.reachEcosystems).join(
+              ' ',
+            ),
+          ]
+        : []),
+      ...(reachabilityOptions.reachExcludePaths.length
+        ? ['--exclude-dirs', reachabilityOptions.reachExcludePaths.join(' ')]
+        : []),
       '--manifests-tar-hash',
       tarHash,
     ],
