@@ -321,8 +321,10 @@ async function run(
             message: 'Canceled by user',
             cause: 'Org selector was canceled by user',
           },
-          outputKind,
-          false,
+          {
+            interactive: false,
+            outputKind,
+          },
         )
         return
       }
