@@ -59,6 +59,11 @@ const reachabilityFlags: MeowFlags = {
     description:
       'Continue reachability analysis even when some projects/workspaces fail. Default is to crash the CLI at the first failing project/workspace.',
   },
+  reachExcludePaths: {
+    type: 'string',
+    isMultiple: true,
+    description: 'List of paths to exclude from reachability analysis.',
+  },
 }
 
 const config: CliCommandConfig = {
@@ -261,6 +266,7 @@ async function run(
     reachContinueOnFailingProjects,
     reachDisableAnalytics,
     reachEcosystems,
+    reachExcludePaths,
     readOnly,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
@@ -286,6 +292,7 @@ async function run(
     reachAnalysisMemoryLimit?: number
     reachContinueOnFailingProjects: boolean
     reachEcosystems: EcosystemString[]
+    reachExcludePaths: string[]
     reachDisableAnalytics: boolean
   }
   let {
@@ -500,6 +507,13 @@ async function run(
       pass: 'ok',
       fail: 'missing --reach flag',
     },
+    {
+      nook: true,
+      test: reach || !reachExcludePaths?.length,
+      message: 'The --reachExcludePaths flag requires --reach to be set',
+      pass: 'ok',
+      fail: 'missing --reach flag',
+    },
   )
   if (!wasValidInput) {
     return
@@ -531,6 +545,7 @@ async function run(
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
       reachEcosystems,
+      reachExcludePaths: reachExcludePaths || [],
     },
     readOnly: Boolean(readOnly),
     repoName,

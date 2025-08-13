@@ -65,6 +65,7 @@ export async function handleCreateNewScan({
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
     reachEcosystems: EcosystemString[]
+    reachExcludePaths: string[]
   }
   readOnly: boolean
   repoName: string
@@ -224,6 +225,7 @@ async function performReachabilityAnalysis({
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
     reachEcosystems: EcosystemString[]
+    reachExcludePaths: string[]
   }
   repoName: string
 }): Promise<
@@ -308,6 +310,9 @@ async function performReachabilityAnalysis({
               ' ',
             ),
           ]
+        : []),
+      ...(reachabilityOptions.reachExcludePaths.length
+        ? ['--exclude-dirs', reachabilityOptions.reachExcludePaths.join(' ')]
         : []),
       '--manifests-tar-hash',
       tarHash,

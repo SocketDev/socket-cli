@@ -44,6 +44,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
       reachAnalysisTimeout: 0,
       reachAnalysisMemoryLimit: 0,
       reachEcosystems: [],
+      reachExcludePaths: [],
     },
     repoName,
     readOnly: false,

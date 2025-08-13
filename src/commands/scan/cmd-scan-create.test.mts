@@ -48,6 +48,7 @@ describe('socket scan create', async () => {
             --reach-continue-on-failing-projects  Continue reachability analysis even when some projects/workspaces fail. Default is to crash the CLI at the first failing project/workspace.
             --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on. Defaults to all ecosystems.
+            --reach-exclude-paths  List of paths to exclude from reachability analysis.
 
           Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
           Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".
@@ -358,6 +359,40 @@ describe('socket scan create', async () => {
       'xyz',
       '--branch',
       'abc',
+      '--reach-exclude-paths',
+      'node_modules',
+      '--reach-exclude-paths',
+      'dist',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reach-exclude-paths is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachExcludePaths flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
       '--reach',
       '--reach-continue-on-failing-projects',
       '--reach-disable-analytics',
@@ -371,6 +406,42 @@ describe('socket scan create', async () => {
       '{"apiToken": "abc"}',
     ],
     'should succeed when all reachability options including reachContinueOnFailingProjects are used with --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-continue-on-failing-projects',
+      '--reach-disable-analytics',
+      '--reach-analysis-memory-limit',
+      '4096',
+      '--reach-analysis-timeout',
+      '3600',
+      '--reach-ecosystems',
+      'npm',
+      '--reach-exclude-paths',
+      'node_modules',
+      '--reach-exclude-paths',
+      'dist',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should succeed when all reachability options including reachExcludePaths are used with --reach',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
