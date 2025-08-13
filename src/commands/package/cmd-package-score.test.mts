@@ -84,11 +84,9 @@ describe('socket package score', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - First parameter must be an ecosystem or the whole purl (bad)
-
-          - Expecting at least one package (missing)
-
-          - You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
+          \\xd7 First parameter must be an ecosystem or the whole purl (bad)
+          \\xd7 Expecting at least one package (missing)
+          \\xd7 You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
