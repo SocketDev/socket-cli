@@ -24,10 +24,14 @@ export type HandleApiCallOptions = {
   spinner?: Spinner | undefined
 }
 
+export type ApiCallResult<T extends SocketSdkOperations> = CResult<
+  SocketSdkSuccessResult<T>['data']
+>
+
 export async function handleApiCall<T extends SocketSdkOperations>(
   value: Promise<SocketSdkResult<T>>,
   options?: HandleApiCallOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
+): Promise<ApiCallResult<T>> {
   const { desc, spinner } = {
     __proto__: null,
     ...options,
@@ -53,18 +57,19 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     }
   } catch (e) {
     spinner?.stop()
+    const socketSdkErrorResult: ApiCallResult<T> = {
+      ok: false,
+      message: 'Socket API returned an error',
+      cause: messageWithCauses(e as Error),
+    }
     if (desc) {
       logger.fail(`An error was thrown while requesting ${desc}`)
       debugFn('error', `caught: ${desc} error`)
     } else {
       debugFn('error', `caught: Socket API request error`)
     }
-    debugDir('inspect', { error: e })
-    return {
-      ok: false,
-      message: 'Socket API returned an error',
-      cause: messageWithCauses(e as Error),
-    }
+    debugDir('inspect', { error: e, socketSdkErrorResult })
+    return socketSdkErrorResult
   }
 
   // Note: TS can't narrow down the type of result due to generics.
@@ -72,15 +77,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     const errorResult = sdkResult as SocketSdkErrorResult<T>
     const message = `${errorResult.error || NO_ERROR_MESSAGE}`
     const { cause: reason } = errorResult
-
-    if (desc) {
-      debugFn('error', `fail: ${desc} bad response`)
-    } else {
-      debugFn('error', 'fail: bad response')
-    }
-    debugDir('inspect', { sdkResult })
-
-    return {
+    const socketSdkErrorResult: ApiCallResult<T> = {
       ok: false,
       message: 'Socket API returned an error',
       cause: `${message}${reason ? ` ( Reason: ${reason} )` : ''}`,
@@ -88,13 +85,15 @@ export async function handleApiCall<T extends SocketSdkOperations>(
         code: sdkResult.status,
       },
     }
-  } else {
-    const { data } = sdkResult as SocketSdkSuccessResult<T>
-    return {
-      ok: true,
-      data,
-    }
+    debugFn('error', `fail:${desc ? ` ${desc}` : ''} bad response`)
+    debugDir('inspect', { sdkResult })
+    return socketSdkErrorResult
   }
+  const socketSdkSuccessResult: ApiCallResult<T> = {
+    ok: true,
+    data: (sdkResult as SocketSdkSuccessResult<T>).data,
+  }
+  return socketSdkSuccessResult
 }
 
 export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
