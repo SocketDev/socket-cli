@@ -63,6 +63,7 @@ use of the `projectIgnorePaths` to excludes files when creating a report.
 
 - `SOCKET_CLI_API_TOKEN` - Set the Socket API token
 - `SOCKET_CLI_CONFIG` - A JSON stringified Socket configuration object
+- `SOCKET_CLI_GITHUB_API_URL` - Change the base URL for GitHub REST API calls
 - `SOCKET_CLI_GIT_USER_EMAIL` - The git config `user.email` used by Socket CLI<br>
   *Defaults:* `github-actions[bot]@users.noreply.github.com`<br>
 - `SOCKET_CLI_GIT_USER_NAME` - The git config `user.name` used by Socket CLI<br>
@@ -89,7 +90,7 @@ npm exec socket
 
 ### Environment variables for development
 
-- `SOCKET_CLI_API_BASE_URL` - Change the base URL for all API-calls<br>
+- `SOCKET_CLI_API_BASE_URL` - Change the base URL for Socket API calls<br>
   *Defaults:* The "apiBaseUrl" value of socket/settings local app data if present, else `https://api.socket.dev/v0/`<br>
 - `SOCKET_CLI_API_PROXY` - Set the proxy all requests are routed through, e.g. if set to<br>
   [`http://127.0.0.1:9090`](https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries), then all request are passed through that proxy<br>

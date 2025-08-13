@@ -144,7 +144,7 @@ async function run(
     interactive,
     dryRun,
   )
-  const sockJson = await readOrDefaultSocketJson(cwd)
+  const sockJson = readOrDefaultSocketJson(cwd)
 
   if (all === undefined) {
     if (sockJson.defaults?.scan?.github?.all !== undefined) {

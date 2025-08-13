@@ -10,7 +10,7 @@ import { commonFlags } from '../../flags.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
-import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
+import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -85,7 +85,7 @@ async function run(
     logger.groupEnd()
   }
 
-  const sockJson = await readOrDefaultSocketJson(cwd)
+  const sockJson = readOrDefaultSocketJson(cwd)
 
   const detected = await detectManifestActions(sockJson, cwd)
   debugDir('inspect', { detected })
