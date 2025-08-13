@@ -72,7 +72,7 @@ describe('socket config unset', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - Config key should be the first arg (missing)"
+          \\xd7 Config key should be the first arg (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

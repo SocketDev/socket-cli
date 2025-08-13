@@ -78,12 +78,10 @@ describe('socket scan diff', async () => {
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - Specify two Scan IDs. (missing both Scan IDs)
+          \\xd7 Specify two Scan IDs. (missing both Scan IDs)
             A Scan ID looks like \`aaa0aa0a-aaaa-0000-0a0a-0000000a00a0\`.
-
-          - Org name by default setting, --org, or auto-discovered (missing)
-
-          - You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
+          \\xd7 Org name by default setting, --org, or auto-discovered (missing)
+          \\xd7 You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)

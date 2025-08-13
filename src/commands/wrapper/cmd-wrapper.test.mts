@@ -61,7 +61,7 @@ describe('socket wrapper', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          - Must specify "on" or "off" argument (missing)"
+          \\xd7 Must specify "on" or "off" argument (missing)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
