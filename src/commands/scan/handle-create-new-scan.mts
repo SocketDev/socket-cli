@@ -77,7 +77,10 @@ export async function handleCreateNewScan({
 
   const supportedFilesCResult = await fetchSupportedScanFileNames()
   if (!supportedFilesCResult.ok) {
-    await outputCreateNewScan(supportedFilesCResult, outputKind, interactive)
+    await outputCreateNewScan(supportedFilesCResult, {
+      interactive,
+      outputKind,
+    })
     return
   }
 
@@ -141,7 +144,7 @@ export async function handleCreateNewScan({
     spinner.stop()
 
     if (!reachResult.ok) {
-      await outputCreateNewScan(reachResult, outputKind, interactive)
+      await outputCreateNewScan(reachResult, { interactive, outputKind })
       return
     }
 
@@ -199,12 +202,17 @@ export async function handleCreateNewScan({
           cause: 'Server did not respond with a scan ID',
           data: fullScanCResult.data,
         },
-        outputKind,
-        interactive,
+        {
+          interactive,
+          outputKind,
+        },
       )
     }
   } else {
-    await outputCreateNewScan(fullScanCResult, outputKind, interactive)
+    spinner.stop()
+    spinner.clear()
+
+    await outputCreateNewScan(fullScanCResult, { interactive, outputKind })
   }
 }
 
@@ -250,7 +258,7 @@ async function performReachabilityAnalysis(
 
   const sockSdk = sockSdkCResult.data
 
-  const wasSpinning = spinner?.isSpinning ?? false
+  const wasSpinning = !!spinner?.isSpinning
 
   // Upload manifests to get tar hash
   spinner?.start('Uploading manifests for reachability analysis...')
@@ -266,17 +274,20 @@ async function performReachabilityAnalysis(
       spinner,
     },
   )
+
+  spinner?.stop()
+
   if (!uploadCResult.ok) {
-    if (!wasSpinning) {
-      spinner?.stop()
+    if (wasSpinning) {
+      spinner.start()
     }
     return uploadCResult
   }
 
   const tarHash = (uploadCResult.data as { tarHash?: string })?.tarHash
   if (!tarHash) {
-    if (!wasSpinning) {
-      spinner?.stop()
+    if (wasSpinning) {
+      spinner.start()
     }
     return {
       ok: false,
@@ -285,11 +296,11 @@ async function performReachabilityAnalysis(
     }
   }
 
+  spinner?.start()
   spinner?.success(`Manifests uploaded successfully. Tar hash: ${tarHash}`)
+  spinner?.infoAndStop('Running reachability analysis with Coana...')
 
   // Run Coana with the manifests tar hash.
-  spinner?.info('Running reachability analysis with Coana...')
-
   const coanaResult = await spawnCoana(
     [
       'run',
@@ -304,29 +315,29 @@ async function performReachabilityAnalysis(
     ],
     {
       cwd,
-      stdio: 'inherit',
       env: {
         ...process.env,
         SOCKET_REPO_NAME: repoName,
         SOCKET_BRANCH_NAME: branchName,
       },
+      spinner,
+      stdio: 'inherit',
     },
   )
 
-  if (!wasSpinning) {
-    spinner?.stop()
+  if (wasSpinning) {
+    spinner.start()
   }
-  if (!coanaResult.ok) {
-    return coanaResult
-  }
-  // Use the DOT_SOCKET_DOT_FACTS_JSON file for the scan.
-  return {
-    ok: true,
-    data: {
-      scanPaths: [constants.DOT_SOCKET_DOT_FACTS_JSON],
-      tier1ReachabilityScanId: extractTier1ReachabilityScanId(
-        constants.DOT_SOCKET_DOT_FACTS_JSON,
-      ),
-    },
-  }
+  return coanaResult.ok
+    ? {
+        ok: true,
+        data: {
+          // Use the DOT_SOCKET_DOT_FACTS_JSON file for the scan.
+          scanPaths: [constants.DOT_SOCKET_DOT_FACTS_JSON],
+          tier1ReachabilityScanId: extractTier1ReachabilityScanId(
+            constants.DOT_SOCKET_DOT_FACTS_JSON,
+          ),
+        },
+      }
+    : coanaResult
 }
