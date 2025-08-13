@@ -6,10 +6,13 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { input, select } from '@socketsecurity/registry/lib/prompts'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
-import { readSocketJson, writeSocketJson } from '../../utils/socketjson.mts'
+import {
+  readSocketJsonSync,
+  writeSocketJson,
+} from '../../utils/socket-json.mts'
 
 import type { CResult } from '../../types.mts'
-import type { SocketJson } from '../../utils/socketjson.mts'
+import type { SocketJson } from '../../utils/socket-json.mts'
 
 export async function setupManifestConfig(
   cwd: string,
@@ -106,11 +109,11 @@ export async function setupManifestConfig(
 
   // TODO: Use detected to list those first.
   const targetEco = (await select({
-    message: 'Select eco system manifest generator to configure',
+    message: 'Select ecosystem manifest generator to configure',
     choices,
   })) as string | null
 
-  const sockJsonCResult = await readSocketJson(cwd, defaultOnReadError)
+  const sockJsonCResult = readSocketJsonSync(cwd, defaultOnReadError)
   if (!sockJsonCResult.ok) {
     return sockJsonCResult
   }

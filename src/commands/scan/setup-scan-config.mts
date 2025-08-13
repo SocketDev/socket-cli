@@ -7,12 +7,12 @@ import { input, select } from '@socketsecurity/registry/lib/prompts'
 import constants from '../../constants.mts'
 import { getRepoName, gitBranch } from '../../utils/git.mts'
 import {
-  type SocketJson,
-  readSocketJson,
+  readSocketJsonSync,
   writeSocketJson,
-} from '../../utils/socketjson.mts'
+} from '../../utils/socket-json.mts'
 
 import type { CResult } from '../../types.mts'
+import type { SocketJson } from '../../utils/socket-json.mts'
 
 const { SOCKET_DEFAULT_BRANCH, SOCKET_DEFAULT_REPOSITORY } = constants
 
@@ -44,7 +44,7 @@ export async function setupScanConfig(
   logger.log('Note: For details on a flag you can run `socket <cmd> --help`')
   logger.log('')
 
-  const sockJsonCResult = await readSocketJson(cwd, defaultOnReadError)
+  const sockJsonCResult = readSocketJsonSync(cwd, defaultOnReadError)
   if (!sockJsonCResult.ok) {
     return sockJsonCResult
   }

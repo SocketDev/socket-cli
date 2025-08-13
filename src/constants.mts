@@ -222,16 +222,17 @@ function getNpmStdioPipeOptions() {
 }
 
 const LAZY_ENV = () => {
-  const { env } = process
-  const {
-    envAsBoolean,
-    envAsString,
-  } = /*@__PURE__*/ require('@socketsecurity/registry/lib/env')
-  const { getConfigValueOrUndef } = /*@__PURE__*/ require(
+  const { env: processEnv } = process
+  const envHelpers = /*@__PURE__*/ require('@socketsecurity/registry/lib/env')
+  const utils = /*@__PURE__*/ require(
     // Lazily access constants.rootPath.
     path.join(constants.rootPath, 'dist/utils.js'),
   )
-  const GITHUB_TOKEN = envAsString(env['GITHUB_TOKEN'])
+  const envAsBoolean = envHelpers.envAsBoolean
+  const envAsString = envHelpers.envAsString
+  const getConfigValueOrUndef = utils.getConfigValueOrUndef
+  const readOrDefaultSocketJson = utils.readOrDefaultSocketJson
+  const GITHUB_TOKEN = envAsString(processEnv['GITHUB_TOKEN'])
   // We inline some environment values so that they CANNOT be influenced by user
   // provided environment variables.
   return Object.freeze({
@@ -240,31 +241,31 @@ const LAZY_ENV = () => {
     ...registryConstants.ENV,
     // Disable using GitHub's workflow actions/cache.
     // https://github.com/actions/cache
-    DISABLE_GITHUB_CACHE: envAsBoolean(env['DISABLE_GITHUB_CACHE']),
+    DISABLE_GITHUB_CACHE: envAsBoolean(processEnv['DISABLE_GITHUB_CACHE']),
     // The API URL. For example, https://api.github.com.
     // https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace#list-of-default-environment-variables
     GITHUB_API_URL:
-      envAsString(env['GITHUB_API_URL']) || 'https://api.github.com',
+      envAsString(processEnv['GITHUB_API_URL']) || 'https://api.github.com',
     // The name of the base ref or target branch of the pull request in a workflow
     // run. This is only set when the event that triggers a workflow run is either
     // pull_request or pull_request_target. For example, main.
     // https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace#list-of-default-environment-variables
-    GITHUB_BASE_REF: envAsString(env['GITHUB_BASE_REF']),
+    GITHUB_BASE_REF: envAsString(processEnv['GITHUB_BASE_REF']),
     // The short ref name of the branch or tag that triggered the GitHub workflow
     // run. This value matches the branch or tag name shown on GitHub. For example,
     // feature-branch-1. For pull requests, the format is <pr_number>/merge.
     // https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace#list-of-default-environment-variables
-    GITHUB_REF_NAME: envAsString(env['GITHUB_REF_NAME']),
+    GITHUB_REF_NAME: envAsString(processEnv['GITHUB_REF_NAME']),
     // The type of ref that triggered the workflow run. Valid values are branch or tag.
     // https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace#list-of-default-environment-variables
-    GITHUB_REF_TYPE: envAsString(env['GITHUB_REF_TYPE']),
+    GITHUB_REF_TYPE: envAsString(processEnv['GITHUB_REF_TYPE']),
     // The owner and repository name. For example, octocat/Hello-World.
     // https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace#list-of-default-environment-variables
-    GITHUB_REPOSITORY: envAsString(env['GITHUB_REPOSITORY']),
+    GITHUB_REPOSITORY: envAsString(processEnv['GITHUB_REPOSITORY']),
     // The URL of the GitHub server. For example, https://github.com.
     // https://docs.github.com/en/codespaces/developing-in-a-codespace/default-environment-variables-for-your-codespace#list-of-default-environment-variables
     GITHUB_SERVER_URL:
-      envAsString(env['GITHUB_SERVER_URL']) || 'https://github.com',
+      envAsString(processEnv['GITHUB_SERVER_URL']) || 'https://github.com',
     // The GITHUB_TOKEN secret is a GitHub App installation access token.
     // The token's permissions are limited to the repository that contains the
     // workflow.
@@ -318,7 +319,7 @@ const LAZY_ENV = () => {
     // The absolute location of the %localappdata% folder on Windows used to store
     // user-specific, non-roaming application data, like temporary files, cached
     // data, and program settings, that are specific to the current machine and user.
-    LOCALAPPDATA: envAsString(env[LOCALAPPDATA]),
+    LOCALAPPDATA: envAsString(processEnv[LOCALAPPDATA]),
     // Enable the module compile cache for the Node.js instance.
     // https://nodejs.org/api/cli.html#node_compile_cachedir
     NODE_COMPILE_CACHE:
@@ -332,80 +333,91 @@ const LAZY_ENV = () => {
     // certificates in PEM format.
     // https://nodejs.org/api/cli.html#node_extra_ca_certsfile
     NODE_EXTRA_CA_CERTS:
-      envAsString(env['NODE_EXTRA_CA_CERTS']) ||
+      envAsString(processEnv['NODE_EXTRA_CA_CERTS']) ||
       // Commonly used environment variable to specify the path to a single
       // PEM-encoded certificate file.
-      envAsString(env['SSL_CERT_FILE']),
+      envAsString(processEnv['SSL_CERT_FILE']),
     // PATH is an environment variable that lists directories where executable
     // programs are located. When a command is run, the system searches these
     // directories to find the executable.
-    PATH: envAsString(env['PATH']),
+    PATH: envAsString(processEnv['PATH']),
     // Accept risks of a Socket wrapped npm/npx run.
-    SOCKET_CLI_ACCEPT_RISKS: envAsBoolean(env[SOCKET_CLI_ACCEPT_RISKS]),
-    // Change the base URL for all API-calls.
+    SOCKET_CLI_ACCEPT_RISKS: envAsBoolean(processEnv[SOCKET_CLI_ACCEPT_RISKS]),
+    // Change the base URL for Socket API calls.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_CLI_API_BASE_URL:
-      envAsString(env['SOCKET_CLI_API_BASE_URL']) ||
+      envAsString(processEnv['SOCKET_CLI_API_BASE_URL']) ||
       // TODO: Remove legacy environment variable name.
-      envAsString(env['SOCKET_SECURITY_API_BASE_URL']) ||
+      envAsString(processEnv['SOCKET_SECURITY_API_BASE_URL']) ||
       getConfigValueOrUndef('apiBaseUrl') ||
       'https://api.socket.dev/v0/',
     // Set the proxy that all requests are routed through.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_CLI_API_PROXY:
-      envAsString(env['SOCKET_CLI_API_PROXY']) ||
+      envAsString(processEnv['SOCKET_CLI_API_PROXY']) ||
       // TODO: Remove legacy environment variable name.
-      envAsString(env['SOCKET_SECURITY_API_PROXY']) ||
+      envAsString(processEnv['SOCKET_SECURITY_API_PROXY']) ||
       // Commonly used environment variables to specify routing requests through
       // a proxy server.
-      envAsString(env['HTTPS_PROXY']) ||
-      envAsString(env['https_proxy']) ||
-      envAsString(env['HTTP_PROXY']) ||
-      envAsString(env['http_proxy']),
+      envAsString(processEnv['HTTPS_PROXY']) ||
+      envAsString(processEnv['https_proxy']) ||
+      envAsString(processEnv['HTTP_PROXY']) ||
+      envAsString(processEnv['http_proxy']),
     // Set the Socket API token.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
     SOCKET_CLI_API_TOKEN:
-      envAsString(env['SOCKET_CLI_API_TOKEN']) ||
+      envAsString(processEnv['SOCKET_CLI_API_TOKEN']) ||
       // TODO: Remove legacy environment variable names.
-      envAsString(env['SOCKET_CLI_API_KEY']) ||
-      envAsString(env['SOCKET_SECURITY_API_TOKEN']) ||
-      envAsString(env['SOCKET_SECURITY_API_KEY']),
+      envAsString(processEnv['SOCKET_CLI_API_KEY']) ||
+      envAsString(processEnv['SOCKET_SECURITY_API_TOKEN']) ||
+      envAsString(processEnv['SOCKET_SECURITY_API_KEY']),
     // A JSON stringified Socket configuration object.
-    SOCKET_CLI_CONFIG: envAsString(env['SOCKET_CLI_CONFIG']),
+    SOCKET_CLI_CONFIG: envAsString(processEnv['SOCKET_CLI_CONFIG']),
     // The git config user.email used by Socket CLI.
     SOCKET_CLI_GIT_USER_EMAIL:
-      envAsString(env['SOCKET_CLI_GIT_USER_EMAIL']) ||
+      envAsString(processEnv['SOCKET_CLI_GIT_USER_EMAIL']) ||
       'github-actions[bot]@users.noreply.github.com',
     // The git config user.name used by Socket CLI.
     SOCKET_CLI_GIT_USER_NAME:
-      envAsString(env['SOCKET_CLI_GIT_USER_NAME']) ||
-      envAsString(env['SOCKET_CLI_GIT_USERNAME']) ||
+      envAsString(processEnv['SOCKET_CLI_GIT_USER_NAME']) ||
+      envAsString(processEnv['SOCKET_CLI_GIT_USERNAME']) ||
       'github-actions[bot]',
+    // Change the base URL for GitHub REST API calls.
+    // https://docs.github.com/en/rest
+    SOCKET_CLI_GITHUB_API_URL:
+      envAsString(processEnv['SOCKET_CLI_GITHUB_API_URL']) ||
+      readOrDefaultSocketJson(process.cwd())?.defaults?.scan?.github
+        ?.githubApiUrl ||
+      'https://api.github.com',
     // A classic GitHub personal access token with the "repo" scope or a
     // fine-grained access token with at least read/write permissions set for
     // "Contents" and "Pull Request".
     // https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
     SOCKET_CLI_GITHUB_TOKEN:
-      envAsString(env['SOCKET_CLI_GITHUB_TOKEN']) ||
+      envAsString(processEnv['SOCKET_CLI_GITHUB_TOKEN']) ||
       // TODO: Remove undocumented legacy environment variable name.
-      envAsString(env['SOCKET_SECURITY_GITHUB_PAT']) ||
+      envAsString(processEnv['SOCKET_SECURITY_GITHUB_PAT']) ||
       GITHUB_TOKEN,
     // Make the default API token `undefined`.
-    SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN']),
+    SOCKET_CLI_NO_API_TOKEN: envAsBoolean(
+      processEnv['SOCKET_CLI_NO_API_TOKEN'],
+    ),
     // The absolute location of the npm directory.
-    SOCKET_CLI_NPM_PATH: envAsString(env['SOCKET_CLI_NPM_PATH']),
+    SOCKET_CLI_NPM_PATH: envAsString(processEnv['SOCKET_CLI_NPM_PATH']),
     // Specify the Socket organization slug.
     SOCKET_CLI_ORG_SLUG:
-      envAsString(env['SOCKET_CLI_ORG_SLUG']) ||
+      envAsString(processEnv['SOCKET_CLI_ORG_SLUG']) ||
       // Coana CLI accepts the SOCKET_ORG_SLUG environment variable.
-      envAsString(env['SOCKET_ORG_SLUG']),
+      envAsString(processEnv['SOCKET_ORG_SLUG']),
     // View all risks of a Socket wrapped npm/npx run.
-    SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
+    SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(
+      processEnv[SOCKET_CLI_VIEW_ALL_RISKS],
+    ),
     // Specifies the type of terminal or terminal emulator being used by the process.
-    TERM: envAsString(env['TERM']),
+    TERM: envAsString(processEnv['TERM']),
     // The location of the base directory on Linux and MacOS used to store
     // user-specific data files, defaulting to $HOME/.local/share if not set or empty.
-    XDG_DATA_HOME: envAsString(env['XDG_DATA_HOME']),
+    XDG_DATA_HOME: envAsString(processEnv['XDG_DATA_HOME']),
   })
 }
 
@@ -517,13 +529,12 @@ const lazyNodeHardenFlags = () =>
   )
 
 const lazyNodeMemoryFlags = () => {
-  const {
-    getMaxOldSpaceSizeFlag,
-    getMaxSemiSpaceSizeFlag,
-  } = /*@__PURE__*/ require(
+  const flags = /*@__PURE__*/ require(
     // Lazily access constants.rootPath.
     path.join(constants.rootPath, 'dist/flags.js'),
   )
+  const getMaxOldSpaceSizeFlag = flags.getMaxOldSpaceSizeFlag
+  const getMaxSemiSpaceSizeFlag = flags.getMaxSemiSpaceSizeFlag
   return Object.freeze([
     `--max-old-space-size=${getMaxOldSpaceSizeFlag()}`,
     `--max-semi-space-size=${getMaxSemiSpaceSizeFlag()}`,
@@ -531,9 +542,8 @@ const lazyNodeMemoryFlags = () => {
 }
 
 const lazyNpmCachePath = () => {
-  const {
-    spawnSync,
-  } = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
+  const spawnHelpers = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
+  const spawnSync = spawnHelpers.spawnSync
   return spawnSync(
     // Lazily access constants.npmExecPath.
     constants.npmExecPath,
@@ -543,9 +553,8 @@ const lazyNpmCachePath = () => {
 }
 
 const lazyNpmGlobalPrefix = () => {
-  const {
-    spawnSync,
-  } = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
+  const spawnHelpers = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
+  const spawnSync = spawnHelpers.spawnSync
   return spawnSync(
     // Lazily access constants.npmExecPath.
     constants.npmExecPath,

@@ -1,5 +1,3 @@
-import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-
 import { handleApiCall } from '../../utils/api.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 

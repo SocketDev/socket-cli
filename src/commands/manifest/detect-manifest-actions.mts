@@ -6,7 +6,7 @@ import path from 'node:path'
 
 import { debugLog } from '@socketsecurity/registry/lib/debug'
 
-import type { SocketJson } from '../../utils/socketjson.mts'
+import type { SocketJson } from '../../utils/socket-json.mts'
 
 export interface GeneratableManifests {
   cdxgen: boolean

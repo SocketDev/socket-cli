@@ -58,13 +58,12 @@ export interface SocketJson {
   }
 }
 
-export async function readOrDefaultSocketJson(cwd: string) {
-  const result = await readSocketJson(cwd, true)
-  if (result.ok) {
-    return result.data
-  }
-  // This should be unreachable but it makes TS happy.
-  return getDefaultSocketJson()
+export function readOrDefaultSocketJson(cwd: string): SocketJson {
+  const jsonCResult = readSocketJsonSync(cwd, true)
+  return jsonCResult.ok
+    ? jsonCResult.data
+    : // This should be unreachable but it makes TS happy.
+      getDefaultSocketJson()
 }
 
 export function getDefaultSocketJson(): SocketJson {
@@ -81,10 +80,10 @@ export function getDefaultSocketJson(): SocketJson {
   }
 }
 
-export async function readSocketJson(
+export function readSocketJsonSync(
   cwd: string,
   defaultOnError = false,
-): Promise<CResult<SocketJson>> {
+): CResult<SocketJson> {
   const sockJsonPath = path.join(cwd, 'socket.json')
   if (!fs.existsSync(sockJsonPath)) {
     debugFn('notice', `miss: socket.json not found at ${cwd}`)
@@ -92,7 +91,7 @@ export async function readSocketJson(
   }
   let json = null
   try {
-    json = await fs.promises.readFile(sockJsonPath, 'utf8')
+    json = fs.readFileSync(sockJsonPath, 'utf8')
   } catch (e) {
     if (defaultOnError) {
       logger.warn('Failed to read socket.json, using default')
