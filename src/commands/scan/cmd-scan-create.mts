@@ -7,9 +7,14 @@ import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import constants from '../../constants.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
+import { type MeowFlags, commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
+import {
+  type EcosystemString,
+  getEcosystemChoicesForMeow,
+} from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { getRepoName, gitBranch } from '../../utils/git.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -25,6 +30,42 @@ const {
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
 } = constants
+
+const reachabilityFlags: MeowFlags = {
+  reachDisableAnalytics: {
+    type: 'boolean',
+    description:
+      'Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.',
+  },
+  reachAnalysisMemoryLimit: {
+    type: 'number',
+    description:
+      'The maximum memory in MB to use for the reachability analysis. The default is 8192MB.',
+    default: 8192,
+  },
+  reachAnalysisTimeout: {
+    type: 'number',
+    description:
+      'Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.',
+  },
+  reachEcosystems: {
+    type: 'string',
+    isMultiple: true,
+    description:
+      'List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.',
+  },
+  reachContinueOnFailingProjects: {
+    type: 'boolean',
+    description:
+      'Continue reachability analysis even when some projects/workspaces fail. Default is to crash the CLI at the first failing project/workspace.',
+  },
+  reachExcludePaths: {
+    type: 'string',
+    isMultiple: true,
+    description:
+      'List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.',
+  },
+}
 
 const config: CliCommandConfig = {
   commandName: 'create',
@@ -87,19 +128,16 @@ const config: CliCommandConfig = {
       description:
         'Force override the organization slug, overrides the default org from config',
     },
+    reach: {
+      type: 'boolean',
+      default: false,
+      description: 'Run tier 1 full application reachability analysis',
+    },
     readOnly: {
       type: 'boolean',
       default: false,
       description:
         'Similar to --dry-run except it can read from remote, stops before it would create an actual report',
-    },
-    reach: {
-      type: 'boolean',
-      default: false,
-      // TODO: Temporarily hide option until Coana side is ironed out.
-      hidden: true,
-      description:
-        'Run tier 1 full application reachability analysis during the scanning process',
     },
     repo: {
       type: 'string',
@@ -125,9 +163,23 @@ const config: CliCommandConfig = {
       description:
         'Set the visibility (true/false) of the scan in your dashboard.',
     },
+
+    // Reachability scan flags
+    ...reachabilityFlags,
   },
   // TODO: Your project's "socket.yml" file's "projectIgnorePaths".
-  help: (command, config) => `
+  help: (command, config) => {
+    const allFlags = config.flags || {}
+    const generalFlags: MeowFlags = {}
+
+    // Separate general flags from reachability flags
+    for (const [key, value] of Object.entries(allFlags)) {
+      if (!reachabilityFlags[key]) {
+        generalFlags[key] = value
+      }
+    }
+
+    return `
     Usage
       $ ${command} [options] [TARGET...]
 
@@ -136,7 +188,10 @@ const config: CliCommandConfig = {
       - Permissions: full-scans:create
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(generalFlags)}
+
+    Reachability Options (when --reach is used)
+      ${getFlagListOutput(reachabilityFlags)}
 
     Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
     Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".
@@ -172,7 +227,8 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} ./proj --json
       $ ${command} --repo=test-repo --branch=main ./package.json
-  `,
+  `
+  },
 }
 
 export const cmdScanCreate = {
@@ -206,6 +262,10 @@ async function run(
     org: orgFlag,
     pullRequest,
     reach,
+    reachAnalysisMemoryLimit,
+    reachAnalysisTimeout,
+    reachContinueOnFailingProjects,
+    reachDisableAnalytics,
     readOnly,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
@@ -221,11 +281,34 @@ async function run(
     markdown: boolean
     org: string
     pullRequest: number
-    reach: boolean
     readOnly: boolean
     setAsAlertsPage: boolean
     tmp: boolean
+
+    // reachability flags
+    reach: boolean
+    reachAnalysisTimeout?: number
+    reachAnalysisMemoryLimit?: number
+    reachContinueOnFailingProjects: boolean
+    reachDisableAnalytics: boolean
   }
+
+  // Process comma-separated values for isMultiple flags
+  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
+  const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
+
+  // Validate ecosystem values
+  const validEcosystems = getEcosystemChoicesForMeow()
+  const reachEcosystems: EcosystemString[] = []
+  for (const ecosystem of reachEcosystemsRaw) {
+    if (!validEcosystems.includes(ecosystem)) {
+      throw new Error(
+        `Invalid ecosystem: "${ecosystem}". Valid values are: ${validEcosystems.join(', ')}`,
+      )
+    }
+    reachEcosystems.push(ecosystem as EcosystemString)
+  }
+
   let {
     autoManifest,
     branch: branchName,
@@ -395,6 +478,52 @@ async function run(
       message: 'When --defaultBranch is set, --branch is mandatory',
       fail: 'missing branch name',
     },
+    {
+      nook: true,
+      test: reach || !reachDisableAnalytics,
+      message: 'The --reachDisableAnalytics flag requires --reach to be set',
+      pass: 'ok',
+      fail: 'missing --reach flag',
+    },
+    {
+      nook: true,
+      test:
+        reach ||
+        reachAnalysisMemoryLimit === undefined ||
+        reachAnalysisMemoryLimit === 8192,
+      message: 'The --reachAnalysisMemoryLimit flag requires --reach to be set',
+      pass: 'ok',
+      fail: 'missing --reach flag',
+    },
+    {
+      nook: true,
+      test: reach || !reachAnalysisTimeout,
+      message: 'The --reachAnalysisTimeout flag requires --reach to be set',
+      pass: 'ok',
+      fail: 'missing --reach flag',
+    },
+    {
+      nook: true,
+      test: reach || !reachEcosystems.length,
+      message: 'The --reachEcosystems flag requires --reach to be set',
+      pass: 'ok',
+      fail: 'missing --reach flag',
+    },
+    {
+      nook: true,
+      test: reach || !reachContinueOnFailingProjects,
+      message:
+        'The --reachContinueOnFailingProjects flag requires --reach to be set',
+      pass: 'ok',
+      fail: 'missing --reach flag',
+    },
+    {
+      nook: true,
+      test: reach || !reachExcludePaths.length,
+      message: 'The --reachExcludePaths flag requires --reach to be set',
+      pass: 'ok',
+      fail: 'missing --reach flag',
+    },
   )
   if (!wasValidInput) {
     return
@@ -419,7 +548,15 @@ async function run(
     outputKind,
     pendingHead: Boolean(pendingHead),
     pullRequest: Number(pullRequest),
-    reach: Boolean(reach),
+    reach: {
+      runReachabilityAnalysis: Boolean(reach),
+      reachContinueOnFailingProjects: Boolean(reachContinueOnFailingProjects),
+      reachDisableAnalytics: Boolean(reachDisableAnalytics),
+      reachAnalysisTimeout: Number(reachAnalysisTimeout),
+      reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
+      reachEcosystems,
+      reachExcludePaths,
+    },
     readOnly: Boolean(readOnly),
     repoName,
     report,
