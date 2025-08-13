@@ -35,11 +35,20 @@ describe('socket scan create', async () => {
             --markdown          Output result as markdown
             --org               Force override the organization slug, overrides the default org from config
             --pull-request      Commit hash
+            --reach             Run tier 1 full application reachability analysis
             --read-only         Similar to --dry-run except it can read from remote, stops before it would create an actual report
             --repo              Repository name
             --report            Wait for the scan creation to complete, then basically run \`socket scan report\` on it
             --set-as-alerts-page  When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
             --tmp               Set the visibility (true/false) of the scan in your dashboard.
+
+          Reachability Options (when --reach is used)
+            --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
+            --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
+            --reach-continue-on-failing-projects  Continue reachability analysis even when some projects/workspaces fail. Default is to crash the CLI at the first failing project/workspace.
+            --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
+            --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
+            --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
 
           Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
           Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".
@@ -119,6 +128,476 @@ describe('socket scan create', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reachDisableAnalytics',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reachDisableAnalytics is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachDisableAnalytics flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reachAnalysisMemoryLimit',
+      '8192',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should succeed when --reachAnalysisMemoryLimit is used with default value without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0 when using default value').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reachAnalysisMemoryLimit',
+      '4096',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reachAnalysisMemoryLimit is used with non-default value without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachAnalysisMemoryLimit flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reachAnalysisTimeout',
+      '3600',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reachAnalysisTimeout is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachAnalysisTimeout flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reachEcosystems',
+      'npm',
+      '--reachEcosystems',
+      'pypi',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reachEcosystems is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachEcosystems flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach-continue-on-failing-projects',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reach-continue-on-failing-projects is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachContinueOnFailingProjects flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reachDisableAnalytics',
+      '--reachAnalysisMemoryLimit',
+      '4096',
+      '--reachAnalysisTimeout',
+      '3600',
+      '--reachEcosystems',
+      'npm',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should succeed when reachability options are used with --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach-exclude-paths',
+      'node_modules',
+      '--reach-exclude-paths',
+      'dist',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reach-exclude-paths is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachExcludePaths flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-continue-on-failing-projects',
+      '--reach-disable-analytics',
+      '--reach-analysis-memory-limit',
+      '4096',
+      '--reach-analysis-timeout',
+      '3600',
+      '--reach-ecosystems',
+      'npm',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should succeed when all reachability options including reachContinueOnFailingProjects are used with --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-continue-on-failing-projects',
+      '--reach-disable-analytics',
+      '--reach-analysis-memory-limit',
+      '4096',
+      '--reach-analysis-timeout',
+      '3600',
+      '--reach-ecosystems',
+      'npm',
+      '--reach-exclude-paths',
+      'node_modules',
+      '--reach-exclude-paths',
+      'dist',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should succeed when all reachability options including reachExcludePaths are used with --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-ecosystems',
+      'npm,pypi,cargo',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should succeed when --reach-ecosystems is used with comma-separated values',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(
+        code,
+        'should exit with code 0 when comma-separated values are used',
+      ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-exclude-paths',
+      'node_modules,dist,build',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should succeed when --reach-exclude-paths is used with comma-separated values',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(
+        code,
+        'should exit with code 0 when comma-separated values are used',
+      ).toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach-ecosystems',
+      'npm,pypi',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reach-ecosystems with comma-separated values is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachEcosystems flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach-exclude-paths',
+      'node_modules,dist',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reach-exclude-paths with comma-separated values is used without --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'The --reachExcludePaths flag requires --reach to be set',
+      )
+      expect(output).toContain('missing --reach flag')
+      expect(
+        code,
+        'should exit with non-zero code when validation fails',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeorg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-ecosystems',
+      'npm,invalid-ecosystem',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
+    'should fail when --reach-ecosystems contains invalid values',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain('Invalid ecosystem: "invalid-ecosystem"')
+      expect(
+        code,
+        'should exit with non-zero code when invalid ecosystem is provided',
+      ).not.toBe(0)
     },
   )
 })
