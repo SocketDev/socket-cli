@@ -15,7 +15,7 @@ import { getRepoName, gitBranch } from '../../utils/git.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
-import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
+import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
@@ -251,7 +251,7 @@ async function run(
   // Accept zero or more paths. Default to cwd() if none given.
   let targets = cli.input || [cwd]
 
-  const sockJson = await readOrDefaultSocketJson(cwd)
+  const sockJson = readOrDefaultSocketJson(cwd)
 
   // Note: This needs meow booleanDefault=undefined
   if (typeof autoManifest !== 'boolean') {
