@@ -4,12 +4,16 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { fetchCreateOrgFullScan } from './fetch-create-org-full-scan.mts'
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
+import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
 import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
-import { spawnCoana } from '../../utils/coana.mts'
+import {
+  extractTier1ReachabilityScanId,
+  spawnCoana,
+} from '../../utils/coana.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJson } from '../../utils/socketjson.mts'
@@ -117,6 +121,7 @@ export async function handleCreateNewScan({
   }
 
   let scanPaths: string[] = packagePaths
+  let tier1ReachabilityScanId: string | undefined
 
   // If reachability is enabled, perform reachability analysis
   if (reach.runReachabilityAnalysis) {
@@ -135,6 +140,7 @@ export async function handleCreateNewScan({
     }
 
     scanPaths = reachResult.data?.scanPaths || []
+    tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
   }
 
   const fullScanCResult = await fetchCreateOrgFullScan(
@@ -155,6 +161,15 @@ export async function handleCreateNewScan({
       tmp,
     },
   )
+
+  if (
+    fullScanCResult.ok &&
+    reach &&
+    tier1ReachabilityScanId &&
+    fullScanCResult.data?.id
+  ) {
+    await finalizeTier1Scan(tier1ReachabilityScanId, fullScanCResult.data?.id)
+  }
 
   if (fullScanCResult.ok && report) {
     if (fullScanCResult.data?.id) {
@@ -203,7 +218,9 @@ async function performReachabilityAnalysis({
     reachAnalysisMemoryLimit: number
   }
   repoName: string
-}): Promise<CResult<{ scanPaths?: string[] }>> {
+}): Promise<
+  CResult<{ scanPaths?: string[]; tier1ReachabilityScanId: string | undefined }>
+> {
   logger.info('Starting reachability analysis...')
 
   packagePaths = packagePaths.filter(
@@ -298,6 +315,9 @@ async function performReachabilityAnalysis({
     ok: true,
     data: {
       scanPaths: [constants.DOT_SOCKET_DOT_FACTS_JSON],
+      tier1ReachabilityScanId: extractTier1ReachabilityScanId(
+        constants.DOT_SOCKET_DOT_FACTS_JSON,
+      ),
     },
   }
 }
