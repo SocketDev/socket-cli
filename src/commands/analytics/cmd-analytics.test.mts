@@ -78,7 +78,7 @@ describe('socket analytics', async () => {
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\u221a The time filter must either be 7, 30 or 90
-          \\xd7 You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
+          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -94,7 +94,7 @@ describe('socket analytics', async () => {
       'bar',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should reject legacy flags',
     async cmd => {
@@ -118,7 +118,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['analytics', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should run to dryrun without args',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
@@ -136,7 +136,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', 'org', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['analytics', 'org', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should accept org arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
@@ -154,7 +154,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', 'repo', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['analytics', 'repo', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should ask for repo name with repo arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
@@ -183,7 +183,7 @@ describe('socket analytics', async () => {
       'daname',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept repo with arg',
     async cmd => {
@@ -202,7 +202,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '7', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['analytics', '7', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should accept time 7 arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
@@ -220,7 +220,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '30', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['analytics', '30', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should accept time 30 arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
@@ -238,7 +238,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '90', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['analytics', '90', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should accept time 90 arg',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
@@ -263,7 +263,7 @@ describe('socket analytics', async () => {
       '7',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should report legacy flag',
     async cmd => {
@@ -293,7 +293,7 @@ describe('socket analytics', async () => {
       '7',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept org and time arg',
     async cmd => {
@@ -319,7 +319,7 @@ describe('socket analytics', async () => {
       '30',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept repo and time arg',
     async cmd => {

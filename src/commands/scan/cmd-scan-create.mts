@@ -210,7 +210,6 @@ async function run(
     committers,
     cwd: cwdOverride,
     defaultBranch,
-    dryRun = false,
     interactive = true,
     json,
     markdown,
@@ -230,7 +229,6 @@ async function run(
     commitMessage: string
     committers: string
     defaultBranch: boolean
-    dryRun: boolean
     interactive: boolean
     json: boolean
     markdown: boolean
@@ -246,6 +244,8 @@ async function run(
     reachContinueOnFailingProjects: boolean
     reachDisableAnalytics: boolean
   }
+
+  const dryRun = !!cli.flags['dryRun']
 
   // Process comma-separated values for isMultiple flags.
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
@@ -269,10 +269,10 @@ async function run(
     repo: repoName,
     report,
   } = cli.flags as {
-    autoManifest?: boolean
+    autoManifest?: boolean | undefined
     branch: string
     repo: string
-    report?: boolean
+    report?: boolean | undefined
   }
 
   let [orgSlug] = await determineOrgSlug(
@@ -286,9 +286,6 @@ async function run(
     cwdOverride && cwdOverride !== processCwd
       ? path.resolve(processCwd, String(cwdOverride))
       : processCwd
-
-  // Accept zero or more paths. Default to cwd() if none given.
-  let targets = cli.input || [cwd]
 
   const sockJson = readOrDefaultSocketJson(cwd)
 
@@ -329,6 +326,18 @@ async function run(
     }
   }
 
+  // If we updated any inputs then we should print the command line to repeat
+  // the command without requiring user input, as a suggestion.
+  let updatedInput = false
+
+  // Accept zero or more paths. Default to cwd() if none given.
+  let targets = cli.input || [cwd]
+
+  if (!targets.length && !dryRun && interactive) {
+    targets = await suggestTarget()
+    updatedInput = true
+  }
+
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
   // If the api-token is not set, ignore it for the sake of suggestions.
@@ -337,15 +346,6 @@ async function run(
   const outputKind = getOutputKind(json, markdown)
 
   const pendingHead = tmp ? false : pendingHeadFlag
-
-  // If we updated any inputs then we should print the command line to repeat
-  // the command without requiring user input, as a suggestion.
-  let updatedInput = false
-
-  if (!targets.length && !dryRun && interactive) {
-    targets = await suggestTarget()
-    updatedInput = true
-  }
 
   // If the current cwd is unknown and is used as a repo slug anyways, we will
   // first need to register the slug before we can use it.
@@ -419,7 +419,7 @@ async function run(
     {
       nook: true,
       test: hasApiToken,
-      message: 'This command requires an API token for access',
+      message: 'This command requires a Socket API token for access',
       fail: 'try `socket login`',
     },
     {
@@ -485,7 +485,6 @@ async function run(
     return
   }
 
-  // Note: Exiting earlier to skirt a hidden auth requirement.
   if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return

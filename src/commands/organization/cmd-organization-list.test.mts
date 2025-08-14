@@ -55,7 +55,7 @@ describe('socket organization list', async () => {
       'list',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should be ok with org name and id',
     async cmd => {

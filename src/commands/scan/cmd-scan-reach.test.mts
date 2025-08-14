@@ -65,9 +65,9 @@ describe('socket scan reach', async () => {
       'reach',
       '--dry-run',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -77,7 +77,7 @@ describe('socket scan reach', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, --org: fakeorg
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, --org: fakeOrg
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan reach\`, cwd: <redacted>"
       `)
 
@@ -91,12 +91,14 @@ describe('socket scan reach', async () => {
       'reach',
       '--dry-run',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       '--reach-disable-analytics',
+      '--config',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept --reach-disable-analytics flag',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -110,11 +112,13 @@ describe('socket scan reach', async () => {
       '--reach-analysis-memory-limit',
       '4096',
       '--org',
-      'fakeorg',
+      'fakeOrg',
+      '--config',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept --reach-analysis-memory-limit flag',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -128,11 +132,13 @@ describe('socket scan reach', async () => {
       '--reach-analysis-timeout',
       '3600',
       '--org',
-      'fakeorg',
+      'fakeOrg',
+      '--config',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept --reach-analysis-timeout flag',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -146,11 +152,13 @@ describe('socket scan reach', async () => {
       '--reach-ecosystems',
       'npm,pypi',
       '--org',
-      'fakeorg',
+      'fakeOrg',
+      '--config',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept --reach-ecosystems with comma-separated values',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -166,13 +174,15 @@ describe('socket scan reach', async () => {
       '--reach-ecosystems',
       'pypi',
       '--org',
-      'fakeorg',
+      'fakeOrg',
+      '--config',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept multiple --reach-ecosystems flags',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(code, 'should exit with code 0').toBe(0)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     },
   )
 
@@ -183,7 +193,9 @@ describe('socket scan reach', async () => {
       '--reach-ecosystems',
       'invalid-ecosystem',
       '--org',
-      'fakeorg',
+      'fakeOrg',
+      '--config',
+      '{"apiToken":"fakeToken"}',
     ],
     'should fail with invalid ecosystem',
     async cmd => {
@@ -201,11 +213,13 @@ describe('socket scan reach', async () => {
       '--dry-run',
       '--reach-continue-on-failing-projects',
       '--org',
-      'fakeorg',
+      'fakeOrg',
+      '--config',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept --reach-continue-on-failing-projects flag',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -219,11 +233,13 @@ describe('socket scan reach', async () => {
       '--reach-exclude-paths',
       'node_modules,dist',
       '--org',
-      'fakeorg',
+      'fakeOrg',
+      '--config',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept --reach-exclude-paths with comma-separated values',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -239,11 +255,13 @@ describe('socket scan reach', async () => {
       '--reach-exclude-paths',
       'dist',
       '--org',
-      'fakeorg',
+      'fakeOrg',
+      '--config',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept multiple --reach-exclude-paths flags',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -265,11 +283,13 @@ describe('socket scan reach', async () => {
       '--reach-exclude-paths',
       'node_modules,dist',
       '--org',
-      'fakeorg',
+      'fakeOrg',
+      '--config',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept all reachability flags together',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },

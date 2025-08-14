@@ -58,11 +58,11 @@ describe('socket scan setup', async () => {
     [
       'scan',
       'setup',
-      'fakeorg',
+      'fakeOrg',
       'scanidee',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
     async cmd => {

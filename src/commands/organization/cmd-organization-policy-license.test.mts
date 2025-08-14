@@ -68,12 +68,13 @@ describe('socket organization policy license', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
 
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
-          \\xd7 You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
+          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if input bad').toBe(2)
@@ -85,10 +86,10 @@ describe('socket organization policy license', async () => {
       'organization',
       'policy',
       'license',
-      'fakeorg',
+      'fakeOrg',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should be ok with org name and id',
     async cmd => {
@@ -102,7 +103,8 @@ describe('socket organization policy license', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket organization policy license\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
 
         \\xd7 Skipping auto-discovery of org in dry-run mode"
       `)
@@ -118,7 +120,7 @@ describe('socket organization policy license', async () => {
       'license',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything", "defaultOrg": "fakeorg"}',
+      '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should accept default org',
     async cmd => {
@@ -145,7 +147,7 @@ describe('socket organization policy license', async () => {
       'forcedorg',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept --org flag',
     async cmd => {

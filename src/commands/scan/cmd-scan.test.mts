@@ -50,7 +50,7 @@ describe('socket scan', async () => {
   )
 
   cmdit(
-    ['scan', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['scan', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)

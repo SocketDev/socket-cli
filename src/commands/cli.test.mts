@@ -101,7 +101,7 @@ describe('socket root command', async () => {
   })
 
   cmdit(
-    ['mootools', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['mootools', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)

@@ -98,10 +98,12 @@ async function run(
 
   const { file, json, markdown } = cli.flags
 
-  const hasApiToken = hasDefaultToken()
+  const dryRun = !!cli.flags['dryRun']
 
   const noLegacy =
     !cli.flags['scope'] && !cli.flags['repo'] && !cli.flags['time']
+
+  const hasApiToken = hasDefaultToken()
 
   const outputKind = getOutputKind(json, markdown)
 
@@ -149,16 +151,15 @@ async function run(
     {
       nook: true,
       test: hasApiToken,
-      message:
-        'You need to be logged in to use this command. See `socket login`.',
-      fail: 'missing Socket API token',
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
     },
   )
   if (!wasValidInput) {
     return
   }
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

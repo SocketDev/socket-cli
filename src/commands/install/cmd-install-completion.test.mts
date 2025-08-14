@@ -65,7 +65,7 @@ describe('socket install completion', async () => {
       'completion',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
     async cmd => {

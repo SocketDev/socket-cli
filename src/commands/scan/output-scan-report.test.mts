@@ -17,7 +17,7 @@ describe('output-scan-report', () => {
               "fold": "none",
               "reportLevel": "warn"
             },
-            "orgSlug": "fakeorg",
+            "orgSlug": "fakeOrg",
             "scanId": "scan-ai-dee"
           }
         }
@@ -61,7 +61,7 @@ describe('output-scan-report', () => {
               "fold": "none",
               "reportLevel": "warn"
             },
-            "orgSlug": "fakeorg",
+            "orgSlug": "fakeOrg",
             "scanId": "scan-ai-dee"
           }
         }
@@ -86,7 +86,7 @@ describe('output-scan-report', () => {
 
         Configuration used to generate this report:
 
-        - Organization: fakeorg
+        - Organization: fakeOrg
         - Scan ID: scan-ai-dee
         - Alert folding: none
         - Minimal policy level for alert to be included in report: warn
@@ -114,7 +114,7 @@ describe('output-scan-report', () => {
 
         Configuration used to generate this report:
 
-        - Organization: fakeorg
+        - Organization: fakeOrg
         - Scan ID: scan-ai-dee
         - Alert folding: none
         - Minimal policy level for alert to be included in report: warn
@@ -144,7 +144,7 @@ function getHealthyReport(): ScanReport {
       fold: 'none',
       reportLevel: 'warn',
     },
-    orgSlug: 'fakeorg',
+    orgSlug: 'fakeOrg',
     scanId: 'scan-ai-dee',
   }
 }
@@ -196,7 +196,7 @@ function getUnhealthyReport(): ScanReport {
       fold: 'none',
       reportLevel: 'warn',
     },
-    orgSlug: 'fakeorg',
+    orgSlug: 'fakeOrg',
     scanId: 'scan-ai-dee',
   }
 }

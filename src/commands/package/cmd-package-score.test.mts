@@ -86,7 +86,7 @@ describe('socket package score', async () => {
 
           \\xd7 First parameter must be an ecosystem or the whole purl (bad)
           \\xd7 Expecting at least one package (missing)
-          \\xd7 You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
+          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -101,7 +101,7 @@ describe('socket package score', async () => {
       'babel',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
     async cmd => {

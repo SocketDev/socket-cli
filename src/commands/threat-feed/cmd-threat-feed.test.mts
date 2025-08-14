@@ -113,13 +113,14 @@ describe('socket threat-feed', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
 
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\xd7 Org name by default setting, --org, or auto-discovered (missing)
-          \\xd7 You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
+          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -133,7 +134,7 @@ describe('socket threat-feed', async () => {
       'boo',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -152,7 +153,7 @@ describe('socket threat-feed', async () => {
   )
 
   cmdit(
-    ['threat-feed', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['threat-feed', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should report missing org name',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
@@ -165,7 +166,8 @@ describe('socket threat-feed', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket threat-feed\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
 
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
@@ -182,7 +184,7 @@ describe('socket threat-feed', async () => {
       'threat-feed',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything", "defaultOrg": "fakeorg"}',
+      '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should accept default org',
     async cmd => {
@@ -207,7 +209,7 @@ describe('socket threat-feed', async () => {
       'forcedorg',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept --org flag',
     async cmd => {

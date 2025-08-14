@@ -81,7 +81,8 @@ describe('socket scan github', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan github\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
 
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
@@ -98,12 +99,12 @@ describe('socket scan github', async () => {
     [
       'scan',
       'github',
-      'fakeorg',
+      'fakeOrg',
       '--dry-run',
       '--github-token',
       'fake',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
       'x',
       'y',
     ],
@@ -119,7 +120,8 @@ describe('socket scan github', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan github\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
 
         \\xd7 Skipping auto-discovery of org in dry-run mode"
       `)

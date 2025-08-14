@@ -145,7 +145,7 @@ async function run(
     parentName,
   })
 
-  const outputKind = getOutputKind(cli.flags['json'], cli.flags['markdown'])
+  const dryRun = !!cli.flags['dryRun']
 
   let rangeStyle = cli.flags['rangeStyle'] as RangeStyle
   if (!rangeStyle) {
@@ -171,6 +171,8 @@ async function run(
     return
   }
 
+  const outputKind = getOutputKind(cli.flags['json'], cli.flags['markdown'])
+
   const wasValidInput = checkCommandInput(outputKind, {
     test: RangeStyles.includes(rangeStyle),
     message: `Expecting range style of ${joinOr(RangeStyles)}`,
@@ -180,7 +182,7 @@ async function run(
     return
   }
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_NOT_SAVING)
     return
   }

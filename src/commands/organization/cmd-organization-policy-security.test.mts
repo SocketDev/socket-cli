@@ -88,7 +88,7 @@ describe('socket organization policy security', async () => {
       'security',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything", "defaultOrg": "fakeorg"}',
+      '{"isTestingV1": true, "apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should accept default org in v1',
     async cmd => {
@@ -115,7 +115,7 @@ describe('socket organization policy security', async () => {
       'forcedorg',
       '--dry-run',
       '--config',
-      '{"isTestingV1": true, "apiToken":"anything"}',
+      '{"isTestingV1": true, "apiToken":"fakeToken"}',
     ],
     'should accept --org flag in v1',
     async cmd => {

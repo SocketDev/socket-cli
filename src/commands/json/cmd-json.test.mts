@@ -40,7 +40,7 @@ describe('socket json', async () => {
   )
 
   cmdit(
-    ['json', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['json', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
@@ -61,7 +61,7 @@ describe('socket json', async () => {
   )
 
   cmdit(
-    ['json', '.', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['json', '.', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should print error when file does not exist in folder',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
@@ -87,7 +87,7 @@ describe('socket json', async () => {
       './doesnotexist',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should print an error when the path to file does not exist',
     async cmd => {
@@ -109,7 +109,7 @@ describe('socket json', async () => {
   )
 
   cmdit(
-    ['json', './sjtest', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['json', './sjtest', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should print a socket.json when found',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
