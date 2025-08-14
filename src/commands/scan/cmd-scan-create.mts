@@ -4,6 +4,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
+import { reachabilityFlags } from './reachability-flags.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import constants from '../../constants.mts'
@@ -30,42 +31,6 @@ const {
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
 } = constants
-
-const reachabilityFlags: MeowFlags = {
-  reachDisableAnalytics: {
-    type: 'boolean',
-    description:
-      'Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.',
-  },
-  reachAnalysisMemoryLimit: {
-    type: 'number',
-    description:
-      'The maximum memory in MB to use for the reachability analysis. The default is 8192MB.',
-    default: 8192,
-  },
-  reachAnalysisTimeout: {
-    type: 'number',
-    description:
-      'Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.',
-  },
-  reachEcosystems: {
-    type: 'string',
-    isMultiple: true,
-    description:
-      'List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.',
-  },
-  reachContinueOnFailingProjects: {
-    type: 'boolean',
-    description:
-      'Continue reachability analysis even when some projects/workspaces fail. Default is to crash the CLI at the first failing project/workspace.',
-  },
-  reachExcludePaths: {
-    type: 'string',
-    isMultiple: true,
-    description:
-      'List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.',
-  },
-}
 
 const config: CliCommandConfig = {
   commandName: 'create',
