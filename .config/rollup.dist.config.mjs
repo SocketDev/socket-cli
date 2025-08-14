@@ -121,7 +121,7 @@ async function copyExternalPackages() {
     [
       [blessedPath, ['lib/**/*.js', 'usr/**/**', 'vendor/**/*.js', 'LICENSE*']],
       [blessedContribPath, ['lib/**/*.js', 'index.js', 'LICENSE*']],
-      [coanaPath, ['**/*.mjs']],
+      [coanaPath, ['**/*.mjs', 'coana-repos/**/*']],
       [
         socketRegistryPath,
         [
