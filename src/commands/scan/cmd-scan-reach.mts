@@ -62,9 +62,17 @@ const config: CliCommandConfig = {
     Reachability Options
       ${getFlagListOutput(reachabilityFlags)}
 
+    Runs the Socket reachability analysis without creating a scan in Socket.
+    The output is written to .socket.facts.json in the current working directory.
+
+    Note: Manifest files are uploaded to Socket's backend services because the
+    reachability analysis requires creating a Software Bill of Materials (SBOM)
+    from these files before the analysis can run.
+
     Examples
       $ ${command}
       $ ${command} ./proj
+      $ ${command} ./proj --reach-ecosystems npm,pypi
   `
   },
 }

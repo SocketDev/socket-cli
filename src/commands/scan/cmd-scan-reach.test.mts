@@ -32,9 +32,17 @@ describe('socket scan reach', async () => {
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
             --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
 
+          Runs the Socket reachability analysis without creating a scan in Socket.
+          The output is written to .socket.facts.json in the current working directory.
+
+          Note: Manifest files are uploaded to Socket's backend services because the
+          reachability analysis requires creating a Software Bill of Materials (SBOM)
+          from these files before the analysis can run.
+
           Examples
             $ socket scan reach
-            $ socket scan reach ./proj"
+            $ socket scan reach ./proj
+            $ socket scan reach ./proj --reach-ecosystems npm,pypi"
       `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
