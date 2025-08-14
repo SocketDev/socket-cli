@@ -74,13 +74,17 @@ async function run(
     importMeta,
     parentName,
   })
+
   const { defaultOnReadError = false } = cli.flags
+
+  const dryRun = !!cli.flags['dryRun']
+
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

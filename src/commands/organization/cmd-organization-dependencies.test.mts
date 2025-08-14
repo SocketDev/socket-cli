@@ -55,7 +55,7 @@ describe('socket organization dependencies', async () => {
       'dependencies',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
     async cmd => {

@@ -45,7 +45,9 @@ async function run(
     parentName,
   })
 
-  if (cli.flags['dryRun']) {
+  const dryRun = !!cli.flags['dryRun']
+
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

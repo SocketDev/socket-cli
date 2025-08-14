@@ -57,6 +57,8 @@ async function run(
 
   const { full, json, markdown } = cli.flags
 
+  const dryRun = !!cli.flags['dryRun']
+
   const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(outputKind, {
@@ -70,7 +72,7 @@ async function run(
     return
   }
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

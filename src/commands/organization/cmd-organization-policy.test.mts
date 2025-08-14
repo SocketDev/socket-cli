@@ -50,7 +50,7 @@ describe('socket organization list', async () => {
       'policy',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should support --dry-run',
     async cmd => {

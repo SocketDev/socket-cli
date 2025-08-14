@@ -51,7 +51,7 @@ describe('socket ci', async () => {
   )
 
   cmdit(
-    ['ci', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['ci', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)

@@ -51,7 +51,7 @@ describe('socket manifest auto', async () => {
   )
 
   cmdit(
-    ['manifest', 'auto', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['manifest', 'auto', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)

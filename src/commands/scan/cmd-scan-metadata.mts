@@ -71,7 +71,9 @@ async function run(
     parentName,
   })
 
-  const { dryRun, interactive, json, markdown, org: orgFlag } = cli.flags
+  const { interactive, json, markdown, org: orgFlag } = cli.flags
+
+  const dryRun = !!cli.flags['dryRun']
 
   const [scanId = ''] = cli.input
 
@@ -80,7 +82,7 @@ async function run(
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
     !!interactive,
-    !!dryRun,
+    dryRun,
   )
 
   const outputKind = getOutputKind(json, markdown)
@@ -110,16 +112,15 @@ async function run(
     {
       nook: true,
       test: hasApiToken,
-      message:
-        'You need to be logged in to use this command. See `socket login`.',
-      fail: 'missing Socket API token',
+      message: 'This command requires a Socket API token for access',
+      fail: 'try `socket login`',
     },
   )
   if (!wasValidInput) {
     return
   }
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

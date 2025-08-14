@@ -105,7 +105,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -113,7 +113,7 @@ describe('socket scan create', async () => {
       '--branch',
       'abc',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -123,7 +123,7 @@ describe('socket scan create', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, --org: fakeorg
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, --org: fakeOrg
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan create\`, cwd: <redacted>"
       `)
 
@@ -136,7 +136,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -145,7 +145,7 @@ describe('socket scan create', async () => {
       'abc',
       '--reachDisableAnalytics',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should fail when --reachDisableAnalytics is used without --reach',
     async cmd => {
@@ -167,7 +167,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -177,7 +177,7 @@ describe('socket scan create', async () => {
       '--reachAnalysisMemoryLimit',
       '8192',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should succeed when --reachAnalysisMemoryLimit is used with default value without --reach',
     async cmd => {
@@ -192,7 +192,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -202,7 +202,7 @@ describe('socket scan create', async () => {
       '--reachAnalysisMemoryLimit',
       '4096',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should fail when --reachAnalysisMemoryLimit is used with non-default value without --reach',
     async cmd => {
@@ -224,7 +224,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -234,7 +234,7 @@ describe('socket scan create', async () => {
       '--reachAnalysisTimeout',
       '3600',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should fail when --reachAnalysisTimeout is used without --reach',
     async cmd => {
@@ -256,7 +256,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -268,7 +268,7 @@ describe('socket scan create', async () => {
       '--reachEcosystems',
       'pypi',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should fail when --reachEcosystems is used without --reach',
     async cmd => {
@@ -290,7 +290,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -299,7 +299,7 @@ describe('socket scan create', async () => {
       'abc',
       '--reach-continue-on-failing-projects',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should fail when --reach-continue-on-failing-projects is used without --reach',
     async cmd => {
@@ -321,7 +321,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -337,11 +337,11 @@ describe('socket scan create', async () => {
       '--reachEcosystems',
       'npm',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should succeed when reachability options are used with --reach',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
@@ -352,7 +352,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -364,7 +364,7 @@ describe('socket scan create', async () => {
       '--reach-exclude-paths',
       'dist',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should fail when --reach-exclude-paths is used without --reach',
     async cmd => {
@@ -386,7 +386,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -403,11 +403,11 @@ describe('socket scan create', async () => {
       '--reach-ecosystems',
       'npm',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should succeed when all reachability options including reachContinueOnFailingProjects are used with --reach',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
@@ -418,7 +418,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -439,11 +439,11 @@ describe('socket scan create', async () => {
       '--reach-exclude-paths',
       'dist',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should succeed when all reachability options including reachExcludePaths are used with --reach',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
@@ -454,7 +454,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -465,11 +465,11 @@ describe('socket scan create', async () => {
       '--reach-ecosystems',
       'npm,pypi,cargo',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should succeed when --reach-ecosystems is used with comma-separated values',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
@@ -483,7 +483,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -494,11 +494,11 @@ describe('socket scan create', async () => {
       '--reach-exclude-paths',
       'node_modules,dist,build',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should succeed when --reach-exclude-paths is used with comma-separated values',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
@@ -512,7 +512,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -522,7 +522,7 @@ describe('socket scan create', async () => {
       '--reach-ecosystems',
       'npm,pypi',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should fail when --reach-ecosystems with comma-separated values is used without --reach',
     async cmd => {
@@ -544,7 +544,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -554,7 +554,7 @@ describe('socket scan create', async () => {
       '--reach-exclude-paths',
       'node_modules,dist',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should fail when --reach-exclude-paths with comma-separated values is used without --reach',
     async cmd => {
@@ -576,7 +576,7 @@ describe('socket scan create', async () => {
       'scan',
       'create',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'target',
       '--dry-run',
       '--repo',
@@ -587,7 +587,7 @@ describe('socket scan create', async () => {
       '--reach-ecosystems',
       'npm,invalid-ecosystem',
       '--config',
-      '{"apiToken": "abc"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should fail when --reach-ecosystems contains invalid values',
     async cmd => {

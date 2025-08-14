@@ -248,6 +248,8 @@ async function run(
     parentName,
   })
 
+  const dryRun = !!cli.flags['dryRun']
+
   // TODO: Convert yargs to meow.
   const yargv = {
     ...yargsParse(argv as string[], yargsConfig),
@@ -277,7 +279,7 @@ async function run(
     return
   }
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

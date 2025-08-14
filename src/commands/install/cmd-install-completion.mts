@@ -65,12 +65,14 @@ async function run(
     parentName,
   })
 
-  const targetName = cli.input[0] || 'socket'
+  const dryRun = !!cli.flags['dryRun']
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }
+
+  const targetName = cli.input[0] || 'socket'
 
   await handleInstallCompletion(String(targetName))
 }

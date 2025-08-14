@@ -75,6 +75,8 @@ ${getSupportedConfigEntries()
 
   const { json, markdown } = cli.flags
 
+  const dryRun = !!cli.flags['dryRun']
+
   const [key = '', ...rest] = cli.input
 
   const value = rest.join(' ')
@@ -106,7 +108,7 @@ ${getSupportedConfigEntries()
     return
   }
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

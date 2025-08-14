@@ -62,14 +62,15 @@ describe('socket repository del', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
 
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\xd7 Org name by default setting, --org, or auto-discovered (missing)
           \\xd7 Repository name as first argument (missing)
-          \\xd7 You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
+          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -86,7 +87,7 @@ describe('socket repository del', async () => {
       'xyz',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -111,7 +112,7 @@ describe('socket repository del', async () => {
       'reponame',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should report missing org name',
     async cmd => {
@@ -125,7 +126,8 @@ describe('socket repository del', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket repository del\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
 
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
@@ -144,7 +146,7 @@ describe('socket repository del', async () => {
       'del',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything", "defaultOrg": "fakeorg"}',
+      '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should only report missing repo name with default org',
     async cmd => {
@@ -174,7 +176,7 @@ describe('socket repository del', async () => {
       'forcedorg',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should only report missing repo name with --org flag',
     async cmd => {
@@ -203,7 +205,7 @@ describe('socket repository del', async () => {
       'fakerepo',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything", "defaultOrg": "fakeorg"}',
+      '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should run to dryrun',
     async cmd => {

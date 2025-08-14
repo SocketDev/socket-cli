@@ -103,12 +103,16 @@ async function run(
   })
 
   const { json = false, markdown = false } = cli.flags
-  let { bin, out, sbtOpts, stdout, verbose } = cli.flags
-  const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
+
+  const dryRun = !!cli.flags['dryRun']
+
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
+
+  // TODO: Implement json/md further.
+  const outputKind = getOutputKind(json, markdown)
 
   const sockJson = readOrDefaultSocketJson(cwd)
 
@@ -117,6 +121,8 @@ async function run(
     'override: socket.json sbt',
     sockJson?.defaults?.manifest?.sbt,
   )
+
+  let { bin, out, sbtOpts, stdout, verbose } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
@@ -192,7 +198,7 @@ async function run(
     logger.groupEnd()
   }
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

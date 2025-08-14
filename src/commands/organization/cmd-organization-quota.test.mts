@@ -51,7 +51,7 @@ describe('socket organization quota', async () => {
       'quota',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should be ok with org name and id',
     async cmd => {

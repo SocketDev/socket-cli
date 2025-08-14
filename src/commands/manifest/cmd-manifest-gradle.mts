@@ -90,8 +90,12 @@ async function run(
   })
 
   const { json = false, markdown = false } = cli.flags
-  let { bin, gradleOpts, verbose } = cli.flags
-  const outputKind = getOutputKind(json, markdown) // TODO: impl json/md further
+
+  const dryRun = !!cli.flags['dryRun']
+
+  // TODO: Implement json/md further.
+  const outputKind = getOutputKind(json, markdown)
+
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
@@ -104,6 +108,8 @@ async function run(
     'override: socket.json gradle',
     sockJson?.defaults?.manifest?.gradle,
   )
+
+  let { bin, gradleOpts, verbose } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (!bin) {
@@ -160,7 +166,7 @@ async function run(
     logger.groupEnd()
   }
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

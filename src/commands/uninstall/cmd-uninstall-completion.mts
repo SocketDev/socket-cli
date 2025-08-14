@@ -56,13 +56,14 @@ export async function run(
     importMeta,
     parentName,
   })
+  const dryRun = !!cli.flags['dryRun']
 
-  const targetName = cli.input[0] || 'socket'
-
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }
+
+  const targetName = cli.input[0] || 'socket'
 
   await handleUninstallCompletion(String(targetName))
 }

@@ -98,7 +98,7 @@ describe('socket package shallow', async () => {
       'babel',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
     async cmd => {

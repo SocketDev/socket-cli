@@ -90,7 +90,6 @@ async function run(
 
   const {
     cwd: cwdOverride,
-    dryRun = false,
     interactive = true,
     json,
     markdown,
@@ -101,16 +100,17 @@ async function run(
     reachDisableAnalytics,
   } = cli.flags as {
     cwd: string
-    dryRun: boolean
     interactive: boolean
     json: boolean
     markdown: boolean
     org: string
-    reachAnalysisTimeout?: number
-    reachAnalysisMemoryLimit?: number
+    reachAnalysisTimeout: number
+    reachAnalysisMemoryLimit: number
     reachContinueOnFailingProjects: boolean
     reachDisableAnalytics: boolean
   }
+
+  const dryRun = !!cli.flags['dryRun']
 
   // Process comma-separated values for isMultiple flags.
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
@@ -142,7 +142,6 @@ async function run(
     targets = await suggestTarget()
   }
 
-  // Determine org slug
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
     interactive,

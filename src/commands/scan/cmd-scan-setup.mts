@@ -67,16 +67,20 @@ async function run(
     importMeta,
     parentName,
   })
+
+  const dryRun = !!cli.flags['dryRun']
+
+  if (dryRun) {
+    logger.log(DRY_RUN_BAILING_NOW)
+    return
+  }
+
   const { defaultOnReadError = false } = cli.flags
+
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
-
-  if (cli.flags['dryRun']) {
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
 
   await handleScanConfig(cwd, Boolean(defaultOnReadError))
 }
