@@ -88,14 +88,17 @@ async function run(
   })
 
   const { json = false, markdown = false } = cli.flags
-  let { file: filename, out, stdin, stdout, verbose } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
+
+  const dryRun = !!cli.flags['dryRun']
+
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
   const sockJson = readOrDefaultSocketJson(cwd)
+
+  let { file: filename, out, stdin, stdout, verbose } = cli.flags
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (
@@ -151,6 +154,8 @@ async function run(
     logger.groupEnd()
   }
 
+  const outputKind = getOutputKind(json, markdown)
+
   const wasValidInput = checkCommandInput(
     outputKind,
     {
@@ -175,7 +180,7 @@ async function run(
     'Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk.',
   )
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

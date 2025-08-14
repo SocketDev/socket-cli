@@ -43,7 +43,7 @@ describe('socket uninstall', async () => {
   )
 
   cmdit(
-    ['uninstall', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['uninstall', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)

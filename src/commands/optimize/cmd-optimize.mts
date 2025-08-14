@@ -61,18 +61,21 @@ async function run(
     parentName,
   })
 
-  const { json, markdown } = cli.flags
-  const { pin, prod } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
+  const dryRun = !!cli.flags['dryRun']
+
+  if (dryRun) {
+    logger.log(DRY_RUN_BAILING_NOW)
+    return
+  }
+
+  const { json, markdown, pin, prod } = cli.flags
+
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  if (cli.flags['dryRun']) {
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
+  const outputKind = getOutputKind(json, markdown)
 
   await handleOptimize({
     cwd,

@@ -85,9 +85,12 @@ async function run(
   })
 
   const { json, markdown } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
+
+  const dryRun = !!cli.flags['dryRun']
 
   const [ecosystem = '', ...pkgs] = cli.input
+
+  const outputKind = getOutputKind(json, markdown)
 
   const { purls, valid } = parsePackageSpecifiers(ecosystem, pkgs)
 
@@ -115,7 +118,7 @@ async function run(
     return
   }
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

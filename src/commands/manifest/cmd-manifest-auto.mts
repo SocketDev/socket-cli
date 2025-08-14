@@ -69,12 +69,17 @@ async function run(
   })
   // TODO: Implement json/md further.
   const { json, markdown, verbose: verboseFlag } = cli.flags
-  const outputKind = getOutputKind(json, markdown)
+
+  const dryRun = !!cli.flags['dryRun']
+
   const verbose = !!verboseFlag
+
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
+
+  const outputKind = getOutputKind(json, markdown)
 
   if (verbose) {
     logger.group('- ', parentName, config.commandName, ':')
@@ -90,7 +95,7 @@ async function run(
   const detected = await detectManifestActions(sockJson, cwd)
   debugDir('inspect', { detected })
 
-  if (cli.flags['dryRun']) {
+  if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return
   }

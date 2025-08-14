@@ -66,14 +66,15 @@ describe('socket scan view', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan view\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
 
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
 
           \\xd7 Org name by default setting, --org, or auto-discovered (dot is an invalid org, most likely you forgot the org name here?)
           \\xd7 Scan ID to view (missing)
-          \\xd7 You need to be logged in to use this command. See \`socket login\`. (missing Socket API token)"
+          \\xd7 This command requires a Socket API token for access (try \`socket login\`)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
@@ -85,11 +86,11 @@ describe('socket scan view', async () => {
       'scan',
       'view',
       '--org',
-      'fakeorg',
+      'fakeOrg',
       'scanidee',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
     async cmd => {
@@ -99,7 +100,7 @@ describe('socket scan view', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, --org: fakeorg
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, --org: fakeOrg
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan view\`, cwd: <redacted>"
       `)
 

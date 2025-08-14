@@ -67,7 +67,7 @@ describe('socket audit-log', async () => {
   )
 
   cmdit(
-    ['audit-log', '--dry-run', '--config', '{"apiToken":"anything"}'],
+    ['audit-log', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should report missing org name',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
@@ -80,7 +80,8 @@ describe('socket audit-log', async () => {
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket audit-log\`, cwd: <redacted>
 
         \\u203c Unable to determine the target org. Trying to auto-discover it now...
-        i Note: you can run \`socket login\` to set a default org. You can also override it with the --org flag.
+        i Note: Run \`socket login\` to set a default org.
+              Use the --org flag to override the default org.
 
         \\xd7 Skipping auto-discovery of org in dry-run mode
         \\xd7  Input error:  Please review the input requirements and try again
@@ -99,7 +100,7 @@ describe('socket audit-log', async () => {
       'xyz',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything", "defaultOrg": "fakeorg"}',
+      '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should report legacy flag',
     async cmd => {
@@ -126,7 +127,7 @@ describe('socket audit-log', async () => {
       'audit-log',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything", "defaultOrg": "fakeorg"}',
+      '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should accept default org',
     async cmd => {
@@ -151,7 +152,7 @@ describe('socket audit-log', async () => {
       'forcedorg',
       '--dry-run',
       '--config',
-      '{"apiToken":"anything"}',
+      '{"apiToken":"fakeToken"}',
     ],
     'should accept --org flag in v1',
     async cmd => {

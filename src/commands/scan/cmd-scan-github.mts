@@ -111,7 +111,6 @@ async function run(
   })
 
   const {
-    dryRun = false,
     // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
     githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
     interactive = true,
@@ -119,7 +118,6 @@ async function run(
     markdown,
     org: orgFlag,
   } = cli.flags as {
-    dryRun: boolean
     githubToken: string
     interactive: boolean
     json: boolean
@@ -127,13 +125,16 @@ async function run(
     org: string
     orgGithub: string
   }
+
+  const dryRun = !!cli.flags['dryRun']
+
   let { all, githubApiUrl, orgGithub, repos } = cli.flags as {
     all: boolean
     githubApiUrl: string
     orgGithub: string
     repos: string
   }
-  const outputKind = getOutputKind(json, markdown)
+
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
@@ -176,12 +177,15 @@ async function run(
     }
   }
 
+  // We will also be needing that GitHub token.
+  const hasGithubApiToken = !!githubToken
+
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
   // If the api-token is not set, ignore it for the sake of suggestions.
   const hasSocketApiToken = hasDefaultToken()
-  // We will also be needing that GitHub token.
-  const hasGithubApiToken = !!githubToken
+
+  const outputKind = getOutputKind(json, markdown)
 
   // If the current cwd is unknown and is used as a repo slug anyways, we will
   // first need to register the slug before we can use it.

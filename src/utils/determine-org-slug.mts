@@ -14,7 +14,7 @@ export async function determineOrgSlug(
   if (!orgSlug) {
     if (!interactive) {
       logger.warn(
-        'Note: This command requires an org slug because the remote Socket API endpoint does.',
+        'Note: This command requires an org slug because the Socket API endpoint does.',
       )
       logger.warn('')
       logger.warn(
@@ -44,20 +44,16 @@ export async function determineOrgSlug(
       return ['', undefined]
     }
 
-    // ask from server
     logger.warn(
       'Unable to determine the target org. Trying to auto-discover it now...',
     )
-    logger.info(
-      'Note: you can run `socket login` to set a default org. You can also override it with the --org flag.',
-    )
-    // Add newline in stderr.
+    logger.info('Note: Run `socket login` to set a default org.')
+    logger.error('      Use the --org flag to override the default org.')
     logger.error('')
     if (dryRun) {
       logger.fail('Skipping auto-discovery of org in dry-run mode')
     } else {
       orgSlug = (await suggestOrgSlug()) || ''
-
       if (orgSlug) {
         await suggestToPersistOrgSlug(orgSlug)
       }
