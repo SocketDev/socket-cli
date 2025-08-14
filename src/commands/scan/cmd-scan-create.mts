@@ -1,5 +1,6 @@
 import path from 'node:path'
 
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
@@ -256,7 +257,7 @@ async function run(
   for (const ecosystem of reachEcosystemsRaw) {
     if (!validEcosystems.includes(ecosystem)) {
       throw new Error(
-        `Invalid ecosystem: "${ecosystem}". Valid values are: ${validEcosystems.join(', ')}`,
+        `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(validEcosystems)}`,
       )
     }
     reachEcosystems.push(ecosystem as PURL_Type)
@@ -418,7 +419,7 @@ async function run(
       nook: true,
       test: hasApiToken,
       message: 'This command requires an API token for access',
-      fail: 'missing (try `socket login`)',
+      fail: 'try `socket login`',
     },
     {
       nook: true,
@@ -439,7 +440,6 @@ async function run(
         reachDisableAnalytics ===
           reachabilityFlags['reachDisableAnalytics']?.default,
       message: 'The --reachDisableAnalytics flag requires --reach to be set',
-      pass: 'ok',
       fail: 'missing --reach flag',
     },
     {
@@ -449,7 +449,6 @@ async function run(
         reachAnalysisMemoryLimit ===
           reachabilityFlags['reachAnalysisMemoryLimit']?.default,
       message: 'The --reachAnalysisMemoryLimit flag requires --reach to be set',
-      pass: 'ok',
       fail: 'missing --reach flag',
     },
     {
@@ -459,14 +458,12 @@ async function run(
         reachAnalysisTimeout ===
           reachabilityFlags['reachAnalysisTimeout']?.default,
       message: 'The --reachAnalysisTimeout flag requires --reach to be set',
-      pass: 'ok',
       fail: 'missing --reach flag',
     },
     {
       nook: true,
       test: reach || !reachEcosystems.length,
       message: 'The --reachEcosystems flag requires --reach to be set',
-      pass: 'ok',
       fail: 'missing --reach flag',
     },
     {
@@ -474,14 +471,12 @@ async function run(
       test: reach || !reachContinueOnFailingProjects,
       message:
         'The --reachContinueOnFailingProjects flag requires --reach to be set',
-      pass: 'ok',
       fail: 'missing --reach flag',
     },
     {
       nook: true,
       test: reach || !reachExcludePaths.length,
       message: 'The --reachExcludePaths flag requires --reach to be set',
-      pass: 'ok',
       fail: 'missing --reach flag',
     },
   )
