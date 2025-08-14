@@ -281,10 +281,11 @@ async function run(
     dryRun,
   )
 
+  const processCwd = process.cwd()
   const cwd =
-    cwdOverride && cwdOverride !== 'process.cwd()'
-      ? path.resolve(process.cwd(), String(cwdOverride))
-      : process.cwd()
+    cwdOverride && cwdOverride !== processCwd
+      ? path.resolve(processCwd, String(cwdOverride))
+      : processCwd
 
   // Accept zero or more paths. Default to cwd() if none given.
   let targets = cli.input || [cwd]
