@@ -451,7 +451,7 @@ const lazyBlessedPath = () =>
 
 const lazyCoanaBinPath = () =>
   // Lazily access constants.coanaPath.
-  path.join(constants.coanaPath, 'cli.mjs')
+  path.join(constants.coanaPath, 'cli-wrapper.mjs')
 
 const lazyCoanaPath = () =>
   // Lazily access constants.externalPath.
