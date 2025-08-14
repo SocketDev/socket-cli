@@ -1,11 +1,19 @@
+import type { EcosystemString } from '@socketsecurity/registry'
 import type { components } from '@socketsecurity/sdk/types/api'
 
-// Use the SDK type which matches what the API actually accepts
-export type EcosystemString = components['schemas']['SocketPURL_Type']
+export type PURL_Type = components['schemas']['SocketPURL_Type']
 
-// This array must contain ALL ecosystem values
-// These match the SocketPURL_Type from the SDK
-const ALL_ECOSYSTEMS = [
+type ExpectNever<T extends never> = T
+
+type MissingInEcosystemString = Exclude<PURL_Type, EcosystemString>
+type ExtraInEcosystemString = Exclude<EcosystemString, PURL_Type>
+
+export type _Check_EcosystemString_has_all_purl_types =
+  ExpectNever<MissingInEcosystemString>
+export type _Check_EcosystemString_has_no_extras =
+  ExpectNever<ExtraInEcosystemString>
+
+export const ALL_ECOSYSTEMS = [
   'apk',
   'bitbucket',
   'cargo',
@@ -36,9 +44,18 @@ const ALL_ECOSYSTEMS = [
   'swift',
   'swid',
   'unknown',
-] as const
+] as const satisfies readonly PURL_Type[]
 
-const COANA_SUPPORTED_ECOSYSTEMS: Set<EcosystemString> = new Set([
+type AllEcosystemsUnion = (typeof ALL_ECOSYSTEMS)[number]
+type MissingInAllEcosystems = Exclude<PURL_Type, AllEcosystemsUnion>
+type ExtraInAllEcosystems = Exclude<AllEcosystemsUnion, PURL_Type>
+
+export type _Check_ALL_ECOSYSTEMS_has_all_purl_types =
+  ExpectNever<MissingInAllEcosystems>
+export type _Check_ALL_ECOSYSTEMS_has_no_extras =
+  ExpectNever<ExtraInAllEcosystems>
+
+const COANA_SUPPORTED_LIST = [
   'composer',
   'hex',
   'github',
@@ -51,70 +68,58 @@ const COANA_SUPPORTED_ECOSYSTEMS: Set<EcosystemString> = new Set([
   'gem',
   'cargo',
   'swift',
-])
+] as const satisfies readonly PURL_Type[]
 
-// Helper type to check if our array contains all possible EcosystemString values
-type CheckExhaustive<T extends readonly EcosystemString[]> =
-  EcosystemString extends T[number] ? T : never
+export const ALL_SUPPORTED_ECOSYSTEMS = new Set<string>(ALL_ECOSYSTEMS)
 
-// This will cause a TypeScript error if ALL_ECOSYSTEMS doesn't contain all EcosystemString values
-export const ecosystemChoices: CheckExhaustive<typeof ALL_ECOSYSTEMS> =
-  ALL_ECOSYSTEMS
+export const COANA_SUPPORTED_ECOSYSTEMS = new Set<string>(COANA_SUPPORTED_LIST)
 
-// Type guard to check if a string is a valid ecosystem
-export function isValidEcosystem(value: string): value is EcosystemString {
-  return (ecosystemChoices as readonly string[]).includes(value)
-}
-
-// Parse and validate ecosystem values from string or array
-export function parseEcosystems(
-  value: string | string[] | undefined,
-): EcosystemString[] {
-  if (!value) {
-    return []
-  }
-
-  const values =
-    typeof value === 'string'
-      ? value.split(',').map(v => v.trim().toLowerCase())
-      : value.map(v => v.toLowerCase())
-
-  return values.filter(isValidEcosystem)
-}
-
-// Get string array for use with meow choices
 /**
- * Ecosystems/Purl types are slightly different in Coana.
- * This function converts the EcosystemString[] to a string of Coana compatible ecosystem names.
- * Ecosystems that are not supported by Coana are ignored.
+ * Ecosystems/Purl types are slightly different in Coana.  This function converts
+ * the PURL_Type[] to a string of Coana compatible ecosystem names. Ecosystems that
+ * are not supported by Coana are ignored.
  */
-export function getEcosystemChoicesForMeow(): string[] {
-  return ecosystemChoices as unknown as string[]
-}
-
-export function convertToCoanaEcosystems(
-  ecosystems: EcosystemString[],
-): string[] {
+export function convertToCoanaEcosystems(ecosystems: PURL_Type[]): string[] {
   return ecosystems
-    .filter(ecosystem =>
-      COANA_SUPPORTED_ECOSYSTEMS.has(ecosystem as EcosystemString),
-    )
+    .filter(ecosystem => COANA_SUPPORTED_ECOSYSTEMS.has(ecosystem as PURL_Type))
     .map(ecosystem => {
       switch (ecosystem) {
-        case 'hex':
-          return 'ERLANG'
+        case 'cargo':
+          return 'RUST'
+        case 'gem':
+          return 'RUBYGEMS'
         case 'github':
           return 'ACTIONS'
         case 'golang':
           return 'GO'
+        case 'hex':
+          return 'ERLANG'
         case 'pypi':
           return 'PIP'
-        case 'gem':
-          return 'RUBYGEMS'
-        case 'cargo':
-          return 'RUST'
         default:
           return ecosystem.toUpperCase()
       }
     })
+}
+
+export function getEcosystemChoicesForMeow(): string[] {
+  return [...ALL_ECOSYSTEMS]
+}
+
+export function isValidEcosystem(value: string): value is PURL_Type {
+  return ALL_SUPPORTED_ECOSYSTEMS.has(value)
+}
+
+export function parseEcosystems(
+  value: string | string[] | undefined,
+): PURL_Type[] {
+  if (!value) {
+    return []
+  }
+  const values =
+    typeof value === 'string'
+      ? value.split(',').map(v => v.trim().toLowerCase())
+      : value.map(v => String(v).toLowerCase())
+
+  return values.filter(isValidEcosystem)
 }

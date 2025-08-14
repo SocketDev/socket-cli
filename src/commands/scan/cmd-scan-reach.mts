@@ -10,49 +10,41 @@ import { type MeowFlags, commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import {
-  type EcosystemString,
-  getEcosystemChoicesForMeow,
-} from '../../utils/ecosystem.mts'
+import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
+
+const generalFlags: MeowFlags = {
+  ...commonFlags,
+  ...outputFlags,
+  cwd: {
+    type: 'string',
+    description: 'working directory, defaults to process.cwd()',
+  },
+  org: {
+    type: 'string',
+    description:
+      'Force override the organization slug, overrides the default org from config',
+  },
+}
 
 const config: CliCommandConfig = {
   commandName: 'reach',
   description: 'Compute tier 1 reachability',
   hidden: true,
   flags: {
-    ...commonFlags,
-    ...outputFlags,
-    cwd: {
-      type: 'string',
-      description: 'working directory, defaults to process.cwd()',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
+    ...generalFlags,
     ...reachabilityFlags,
   },
-  help: (command, config) => {
-    const allFlags = config.flags || {}
-    const generalFlags: MeowFlags = {}
-
-    // Separate general flags from reachability flags
-    for (const [key, value] of Object.entries(allFlags)) {
-      if (!reachabilityFlags[key]) {
-        generalFlags[key] = value
-      }
-    }
-
-    return `
+  help: command =>
+    `
     Usage
       $ ${command} [options] [CWD=.]
 
@@ -73,8 +65,7 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} ./proj
       $ ${command} ./proj --reach-ecosystems npm,pypi
-  `
-  },
+  `,
 }
 
 export const cmdScanReach = {
@@ -119,20 +110,20 @@ async function run(
     reachDisableAnalytics: boolean
   }
 
-  // Process comma-separated values for isMultiple flags
+  // Process comma-separated values for isMultiple flags.
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
 
-  // Validate ecosystem values
+  // Validate ecosystem values.
+  const reachEcosystems: PURL_Type[] = []
   const validEcosystems = getEcosystemChoicesForMeow()
-  const reachEcosystems: EcosystemString[] = []
   for (const ecosystem of reachEcosystemsRaw) {
     if (!validEcosystems.includes(ecosystem)) {
       throw new Error(
         `Invalid ecosystem: "${ecosystem}". Valid values are: ${validEcosystems.join(', ')}`,
       )
     }
-    reachEcosystems.push(ecosystem as EcosystemString)
+    reachEcosystems.push(ecosystem as PURL_Type)
   }
 
   const outputKind = getOutputKind(json, markdown)

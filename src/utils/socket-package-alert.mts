@@ -25,8 +25,8 @@ import type {
   CompactSocketArtifact,
   CompactSocketArtifactAlert,
   CveProps,
-  PURL_Type,
 } from './alert/artifact.mts'
+import type { PURL_Type } from './ecosystem.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export const ALERT_SEVERITY_COLOR = createEnum({
