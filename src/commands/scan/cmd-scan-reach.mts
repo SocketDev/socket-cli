@@ -1,12 +1,13 @@
 import path from 'node:path'
 
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleScanReach } from './handle-scan-reach.mts'
 import { reachabilityFlags } from './reachability-flags.mts'
 import { suggestTarget } from './suggest_target.mts'
 import constants from '../../constants.mts'
-import { type MeowFlags, commonFlags, outputFlags } from '../../flags.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
@@ -16,6 +17,7 @@ import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
+import type { MeowFlags } from '../../flags.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -120,13 +122,11 @@ async function run(
   for (const ecosystem of reachEcosystemsRaw) {
     if (!validEcosystems.includes(ecosystem)) {
       throw new Error(
-        `Invalid ecosystem: "${ecosystem}". Valid values are: ${validEcosystems.join(', ')}`,
+        `Invalid ecosystem: "${ecosystem}". Valid values are: ${joinAnd(validEcosystems)}`,
       )
     }
     reachEcosystems.push(ecosystem as PURL_Type)
   }
-
-  const outputKind = getOutputKind(json, markdown)
 
   const cwd =
     cwdOverride && cwdOverride !== 'process.cwd()'
@@ -150,6 +150,8 @@ async function run(
 
   const hasApiToken = hasDefaultToken()
 
+  const outputKind = getOutputKind(json, markdown)
+
   const wasValidInput = checkCommandInput(
     outputKind,
     {
@@ -162,7 +164,7 @@ async function run(
       nook: true,
       test: hasApiToken,
       message: 'This command requires an API token for access',
-      fail: 'missing (try `socket login`)',
+      fail: 'try `socket login`',
     },
   )
   if (!wasValidInput) {
