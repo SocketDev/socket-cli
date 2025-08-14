@@ -145,12 +145,6 @@ async function run(
   // Accept zero or more paths. Default to cwd() if none given.
   let targets = cli.input || [cwd]
 
-  // Check if we're in dry-run mode first
-  if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
-    return
-  }
-
   // Use suggestTarget if no targets specified and in interactive mode
   if (!targets.length && !dryRun && interactive) {
     targets = await suggestTarget()
@@ -181,6 +175,11 @@ async function run(
     },
   )
   if (!wasValidInput) {
+    return
+  }
+
+  if (dryRun) {
+    logger.log(DRY_RUN_BAILING_NOW)
     return
   }
 

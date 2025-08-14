@@ -60,7 +60,15 @@ describe('socket scan reach', async () => {
   )
 
   cmdit(
-    ['scan', 'reach', '--dry-run', '--config', '{}'],
+    [
+      'scan',
+      'reach',
+      '--dry-run',
+      '--org',
+      'fakeorg',
+      '--config',
+      '{"apiToken": "abc"}',
+    ],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
@@ -69,7 +77,7 @@ describe('socket scan reach', async () => {
         "
            _____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
+          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, --org: fakeorg
           |_____|___|___|_,_|___|_|.dev   | Command: \`socket scan reach\`, cwd: <redacted>"
       `)
 
@@ -82,9 +90,9 @@ describe('socket scan reach', async () => {
       'scan',
       'reach',
       '--dry-run',
+      '--org',
+      'fakeorg',
       '--reach-disable-analytics',
-      '--config',
-      '{}',
     ],
     'should accept --reach-disable-analytics flag',
     async cmd => {
@@ -101,8 +109,8 @@ describe('socket scan reach', async () => {
       '--dry-run',
       '--reach-analysis-memory-limit',
       '4096',
-      '--config',
-      '{}',
+      '--org',
+      'fakeorg',
     ],
     'should accept --reach-analysis-memory-limit flag',
     async cmd => {
@@ -119,8 +127,8 @@ describe('socket scan reach', async () => {
       '--dry-run',
       '--reach-analysis-timeout',
       '3600',
-      '--config',
-      '{}',
+      '--org',
+      'fakeorg',
     ],
     'should accept --reach-analysis-timeout flag',
     async cmd => {
@@ -137,8 +145,8 @@ describe('socket scan reach', async () => {
       '--dry-run',
       '--reach-ecosystems',
       'npm,pypi',
-      '--config',
-      '{}',
+      '--org',
+      'fakeorg',
     ],
     'should accept --reach-ecosystems with comma-separated values',
     async cmd => {
@@ -157,8 +165,8 @@ describe('socket scan reach', async () => {
       'npm',
       '--reach-ecosystems',
       'pypi',
-      '--config',
-      '{}',
+      '--org',
+      'fakeorg',
     ],
     'should accept multiple --reach-ecosystems flags',
     async cmd => {
@@ -174,8 +182,8 @@ describe('socket scan reach', async () => {
       'reach',
       '--reach-ecosystems',
       'invalid-ecosystem',
-      '--config',
-      '{}',
+      '--org',
+      'fakeorg',
     ],
     'should fail with invalid ecosystem',
     async cmd => {
@@ -192,8 +200,8 @@ describe('socket scan reach', async () => {
       'reach',
       '--dry-run',
       '--reach-continue-on-failing-projects',
-      '--config',
-      '{}',
+      '--org',
+      'fakeorg',
     ],
     'should accept --reach-continue-on-failing-projects flag',
     async cmd => {
@@ -210,8 +218,8 @@ describe('socket scan reach', async () => {
       '--dry-run',
       '--reach-exclude-paths',
       'node_modules,dist',
-      '--config',
-      '{}',
+      '--org',
+      'fakeorg',
     ],
     'should accept --reach-exclude-paths with comma-separated values',
     async cmd => {
@@ -230,8 +238,8 @@ describe('socket scan reach', async () => {
       'node_modules',
       '--reach-exclude-paths',
       'dist',
-      '--config',
-      '{}',
+      '--org',
+      'fakeorg',
     ],
     'should accept multiple --reach-exclude-paths flags',
     async cmd => {
@@ -256,8 +264,8 @@ describe('socket scan reach', async () => {
       '--reach-continue-on-failing-projects',
       '--reach-exclude-paths',
       'node_modules,dist',
-      '--config',
-      '{}',
+      '--org',
+      'fakeorg',
     ],
     'should accept all reachability flags together',
     async cmd => {
