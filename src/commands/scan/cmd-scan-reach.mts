@@ -3,12 +3,21 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleScanReach } from './handle-scan-reach.mts'
+import { reachabilityFlags } from './reachability-flags.mts'
+import { suggestTarget } from './suggest_target.mts'
 import constants from '../../constants.mts'
-import { commonFlags, outputFlags } from '../../flags.mts'
+import { type MeowFlags, commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { cmdFlagValueToArray } from '../../utils/cmd.mts'
+import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
+import {
+  type EcosystemString,
+  getEcosystemChoicesForMeow,
+} from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -21,18 +30,51 @@ const config: CliCommandConfig = {
   flags: {
     ...commonFlags,
     ...outputFlags,
+    cwd: {
+      type: 'string',
+      description: 'working directory, defaults to process.cwd()',
+    },
+    org: {
+      type: 'string',
+      description:
+        'Force override the organization slug, overrides the default org from config',
+    },
+    ...reachabilityFlags,
   },
-  help: (command, config) => `
+  help: (command, config) => {
+    const allFlags = config.flags || {}
+    const generalFlags: MeowFlags = {}
+
+    // Separate general flags from reachability flags
+    for (const [key, value] of Object.entries(allFlags)) {
+      if (!reachabilityFlags[key]) {
+        generalFlags[key] = value
+      }
+    }
+
+    return `
     Usage
       $ ${command} [options] [CWD=.]
 
     Options
-      ${getFlagListOutput(config.flags)}
+      ${getFlagListOutput(generalFlags)}
+
+    Reachability Options
+      ${getFlagListOutput(reachabilityFlags)}
+
+    Runs the Socket reachability analysis without creating a scan in Socket.
+    The output is written to .socket.facts.json in the current working directory.
+
+    Note: Manifest files are uploaded to Socket's backend services because the
+    reachability analysis requires creating a Software Bill of Materials (SBOM)
+    from these files before the analysis can run.
 
     Examples
       $ ${command}
       $ ${command} ./proj
-  `,
+      $ ${command} ./proj --reach-ecosystems npm,pypi
+  `
+  },
 }
 
 export const cmdScanReach = {
@@ -53,11 +95,85 @@ async function run(
     parentName,
   })
 
-  const { dryRun, json, markdown } = cli.flags
+  const {
+    cwd: cwdOverride,
+    dryRun = false,
+    interactive = true,
+    json,
+    markdown,
+    org: orgFlag,
+    reachAnalysisMemoryLimit,
+    reachAnalysisTimeout,
+    reachContinueOnFailingProjects,
+    reachDisableAnalytics,
+  } = cli.flags as {
+    cwd: string
+    dryRun: boolean
+    interactive: boolean
+    json: boolean
+    markdown: boolean
+    org: string
+    reachAnalysisTimeout?: number
+    reachAnalysisMemoryLimit?: number
+    reachContinueOnFailingProjects: boolean
+    reachDisableAnalytics: boolean
+  }
+
+  // Process comma-separated values for isMultiple flags
+  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
+  const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
+
+  // Validate ecosystem values
+  const validEcosystems = getEcosystemChoicesForMeow()
+  const reachEcosystems: EcosystemString[] = []
+  for (const ecosystem of reachEcosystemsRaw) {
+    if (!validEcosystems.includes(ecosystem)) {
+      throw new Error(
+        `Invalid ecosystem: "${ecosystem}". Valid values are: ${validEcosystems.join(', ')}`,
+      )
+    }
+    reachEcosystems.push(ecosystem as EcosystemString)
+  }
 
   const outputKind = getOutputKind(json, markdown)
 
-  const wasValidInput = checkCommandInput(outputKind)
+  const cwd =
+    cwdOverride && cwdOverride !== 'process.cwd()'
+      ? path.resolve(process.cwd(), String(cwdOverride))
+      : process.cwd()
+
+  // Accept zero or more paths. Default to cwd() if none given.
+  let targets = cli.input || [cwd]
+
+  // Use suggestTarget if no targets specified and in interactive mode
+  if (!targets.length && !dryRun && interactive) {
+    targets = await suggestTarget()
+  }
+
+  // Determine org slug
+  const [orgSlug] = await determineOrgSlug(
+    String(orgFlag || ''),
+    interactive,
+    dryRun,
+  )
+
+  const hasApiToken = hasDefaultToken()
+
+  const wasValidInput = checkCommandInput(
+    outputKind,
+    {
+      nook: true,
+      test: !!orgSlug,
+      message: 'Org name by default setting, --org, or auto-discovered',
+      fail: 'missing',
+    },
+    {
+      nook: true,
+      test: hasApiToken,
+      message: 'This command requires an API token for access',
+      fail: 'missing (try `socket login`)',
+    },
+  )
   if (!wasValidInput) {
     return
   }
@@ -67,16 +183,19 @@ async function run(
     return
   }
 
-  const { unknownFlags } = cli
-
-  let [cwd = '.'] = cli.input
-  // Note: path.resolve vs .join:
-  // If given path is absolute then cwd should not affect it.
-  cwd = path.resolve(process.cwd(), cwd)
-
   await handleScanReach({
     cwd,
+    orgSlug,
     outputKind,
-    unknownFlags,
+    targets,
+    interactive,
+    reachabilityOptions: {
+      reachContinueOnFailingProjects: Boolean(reachContinueOnFailingProjects),
+      reachDisableAnalytics: Boolean(reachDisableAnalytics),
+      reachAnalysisTimeout: Number(reachAnalysisTimeout),
+      reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
+      reachEcosystems,
+      reachExcludePaths,
+    },
   })
 }
