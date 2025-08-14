@@ -8,14 +8,11 @@ import { reachabilityFlags } from './reachability-flags.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
 import constants from '../../constants.mts'
-import { type MeowFlags, commonFlags, outputFlags } from '../../flags.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
-import {
-  type EcosystemString,
-  getEcosystemChoicesForMeow,
-} from '../../utils/ecosystem.mts'
+import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { getRepoName, gitBranch } from '../../utils/git.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -24,6 +21,8 @@ import { hasDefaultToken } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
+import type { MeowFlags } from '../../flags.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const {
@@ -32,119 +31,110 @@ const {
   SOCKET_DEFAULT_REPOSITORY,
 } = constants
 
+const generalFlags: MeowFlags = {
+  ...commonFlags,
+  ...outputFlags,
+  autoManifest: {
+    type: 'boolean',
+    description:
+      'Run `socket manifest auto` before collecting manifest files. This is necessary for languages like Scala, Gradle, and Kotlin, See `socket manifest auto --help`.',
+  },
+  branch: {
+    type: 'string',
+    shortFlag: 'b',
+    description: 'Branch name',
+  },
+  commitHash: {
+    type: 'string',
+    shortFlag: 'ch',
+    default: '',
+    description: 'Commit hash',
+  },
+  commitMessage: {
+    type: 'string',
+    shortFlag: 'm',
+    default: '',
+    description: 'Commit message',
+  },
+  committers: {
+    type: 'string',
+    shortFlag: 'c',
+    default: '',
+    description: 'Committers',
+  },
+  cwd: {
+    type: 'string',
+    description: 'working directory, defaults to process.cwd()',
+  },
+  defaultBranch: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.',
+  },
+  interactive: {
+    type: 'boolean',
+    default: true,
+    description:
+      'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+  },
+  pullRequest: {
+    type: 'number',
+    shortFlag: 'pr',
+    description: 'Commit hash',
+  },
+  org: {
+    type: 'string',
+    description:
+      'Force override the organization slug, overrides the default org from config',
+  },
+  reach: {
+    type: 'boolean',
+    default: false,
+    description: 'Run tier 1 full application reachability analysis',
+  },
+  readOnly: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Similar to --dry-run except it can read from remote, stops before it would create an actual report',
+  },
+  repo: {
+    type: 'string',
+    shortFlag: 'r',
+    description: 'Repository name',
+  },
+  report: {
+    type: 'boolean',
+    description:
+      'Wait for the scan creation to complete, then basically run `socket scan report` on it',
+  },
+  setAsAlertsPage: {
+    type: 'boolean',
+    default: true,
+    aliases: ['pendingHead'],
+    description:
+      'When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.',
+  },
+  tmp: {
+    type: 'boolean',
+    shortFlag: 't',
+    default: false,
+    description:
+      'Set the visibility (true/false) of the scan in your dashboard.',
+  },
+}
+
 const config: CliCommandConfig = {
   commandName: 'create',
   description: 'Create a new Socket scan and report',
   hidden: false,
   flags: {
-    ...commonFlags,
-    ...outputFlags,
-    autoManifest: {
-      type: 'boolean',
-      description:
-        'Run `socket manifest auto` before collecting manifest files. This is necessary for languages like Scala, Gradle, and Kotlin, See `socket manifest auto --help`.',
-    },
-    branch: {
-      type: 'string',
-      shortFlag: 'b',
-      description: 'Branch name',
-    },
-    commitMessage: {
-      type: 'string',
-      shortFlag: 'm',
-      default: '',
-      description: 'Commit message',
-    },
-    commitHash: {
-      type: 'string',
-      shortFlag: 'ch',
-      default: '',
-      description: 'Commit hash',
-    },
-    committers: {
-      type: 'string',
-      shortFlag: 'c',
-      default: '',
-      description: 'Committers',
-    },
-    cwd: {
-      type: 'string',
-      description: 'working directory, defaults to process.cwd()',
-    },
-    defaultBranch: {
-      type: 'boolean',
-      default: false,
-      description:
-        'Set the default branch of the repository to the branch of this full-scan. Should only need to be done once, for example for the "main" or "master" branch.',
-    },
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    pullRequest: {
-      type: 'number',
-      shortFlag: 'pr',
-      description: 'Commit hash',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-    reach: {
-      type: 'boolean',
-      default: false,
-      description: 'Run tier 1 full application reachability analysis',
-    },
-    readOnly: {
-      type: 'boolean',
-      default: false,
-      description:
-        'Similar to --dry-run except it can read from remote, stops before it would create an actual report',
-    },
-    repo: {
-      type: 'string',
-      shortFlag: 'r',
-      description: 'Repository name',
-    },
-    report: {
-      type: 'boolean',
-      description:
-        'Wait for the scan creation to complete, then basically run `socket scan report` on it',
-    },
-    setAsAlertsPage: {
-      type: 'boolean',
-      default: true,
-      aliases: ['pendingHead'],
-      description:
-        'When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.',
-    },
-    tmp: {
-      type: 'boolean',
-      shortFlag: 't',
-      default: false,
-      description:
-        'Set the visibility (true/false) of the scan in your dashboard.',
-    },
-
-    // Reachability scan flags
+    ...generalFlags,
     ...reachabilityFlags,
   },
   // TODO: Your project's "socket.yml" file's "projectIgnorePaths".
-  help: (command, config) => {
-    const allFlags = config.flags || {}
-    const generalFlags: MeowFlags = {}
-
-    // Separate general flags from reachability flags
-    for (const [key, value] of Object.entries(allFlags)) {
-      if (!reachabilityFlags[key]) {
-        generalFlags[key] = value
-      }
-    }
-
-    return `
+  help: command => `
     Usage
       $ ${command} [options] [TARGET...]
 
@@ -192,8 +182,7 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} ./proj --json
       $ ${command} --repo=test-repo --branch=main ./package.json
-  `
-  },
+  `,
 }
 
 export const cmdScanCreate = {
@@ -249,29 +238,28 @@ async function run(
     readOnly: boolean
     setAsAlertsPage: boolean
     tmp: boolean
-
-    // reachability flags
+    // Reachability flags.
     reach: boolean
-    reachAnalysisTimeout?: number
-    reachAnalysisMemoryLimit?: number
+    reachAnalysisTimeout: number
+    reachAnalysisMemoryLimit: number
     reachContinueOnFailingProjects: boolean
     reachDisableAnalytics: boolean
   }
 
-  // Process comma-separated values for isMultiple flags
+  // Process comma-separated values for isMultiple flags.
   const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
   const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
 
-  // Validate ecosystem values
+  // Validate ecosystem values.
+  const reachEcosystems: PURL_Type[] = []
   const validEcosystems = getEcosystemChoicesForMeow()
-  const reachEcosystems: EcosystemString[] = []
   for (const ecosystem of reachEcosystemsRaw) {
     if (!validEcosystems.includes(ecosystem)) {
       throw new Error(
         `Invalid ecosystem: "${ecosystem}". Valid values are: ${validEcosystems.join(', ')}`,
       )
     }
-    reachEcosystems.push(ecosystem as EcosystemString)
+    reachEcosystems.push(ecosystem as PURL_Type)
   }
 
   let {
@@ -285,6 +273,7 @@ async function run(
     repo: string
     report?: boolean
   }
+
   let [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
     interactive,
@@ -301,7 +290,7 @@ async function run(
 
   const sockJson = readOrDefaultSocketJson(cwd)
 
-  // Note: This needs meow booleanDefault=undefined
+  // Note: This needs meow booleanDefault=undefined.
   if (typeof autoManifest !== 'boolean') {
     if (sockJson.defaults?.scan?.create?.autoManifest !== undefined) {
       autoManifest = sockJson.defaults.scan.create.autoManifest
@@ -445,7 +434,10 @@ async function run(
     },
     {
       nook: true,
-      test: reach || !reachDisableAnalytics,
+      test:
+        reach ||
+        reachDisableAnalytics ===
+          reachabilityFlags['reachDisableAnalytics']?.default,
       message: 'The --reachDisableAnalytics flag requires --reach to be set',
       pass: 'ok',
       fail: 'missing --reach flag',
@@ -454,15 +446,18 @@ async function run(
       nook: true,
       test:
         reach ||
-        reachAnalysisMemoryLimit === undefined ||
-        reachAnalysisMemoryLimit === 8192,
+        reachAnalysisMemoryLimit ===
+          reachabilityFlags['reachAnalysisMemoryLimit']?.default,
       message: 'The --reachAnalysisMemoryLimit flag requires --reach to be set',
       pass: 'ok',
       fail: 'missing --reach flag',
     },
     {
       nook: true,
-      test: reach || !reachAnalysisTimeout,
+      test:
+        reach ||
+        reachAnalysisTimeout ===
+          reachabilityFlags['reachAnalysisTimeout']?.default,
       message: 'The --reachAnalysisTimeout flag requires --reach to be set',
       pass: 'ok',
       fail: 'missing --reach flag',
@@ -494,7 +489,7 @@ async function run(
     return
   }
 
-  // Note exiting earlier to skirt a hidden auth requirement
+  // Note: Exiting earlier to skirt a hidden auth requirement.
   if (dryRun) {
     logger.log(DRY_RUN_BAILING_NOW)
     return

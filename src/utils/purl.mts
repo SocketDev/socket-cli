@@ -1,6 +1,7 @@
 import { PackageURL } from '@socketregistry/packageurl-js'
 
-import type { PURL_Type, SocketArtifact } from './alert/artifact.mts'
+import type { SocketArtifact } from './alert/artifact.mts'
+import type { PURL_Type } from './ecosystem.mts'
 
 export function getPurlObject(purl: string): PackageURL & { type: PURL_Type }
 export function getPurlObject(

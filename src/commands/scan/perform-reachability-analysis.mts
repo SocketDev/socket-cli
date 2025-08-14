@@ -4,13 +4,11 @@ import {
   extractTier1ReachabilityScanId,
   spawnCoana,
 } from '../../utils/coana.mts'
-import {
-  type EcosystemString,
-  convertToCoanaEcosystems,
-} from '../../utils/ecosystem.mts'
+import { convertToCoanaEcosystems } from '../../utils/ecosystem.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type ReachabilityOptions = {
@@ -18,7 +16,7 @@ export type ReachabilityOptions = {
   reachDisableAnalytics: boolean
   reachAnalysisTimeout: number
   reachAnalysisMemoryLimit: number
-  reachEcosystems: EcosystemString[]
+  reachEcosystems: PURL_Type[]
   reachExcludePaths: string[]
 }
 
