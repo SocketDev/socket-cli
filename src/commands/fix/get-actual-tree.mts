@@ -4,7 +4,7 @@ import { SAFE_NO_SAVE_ARBORIST_REIFY_OPTIONS_OVERRIDES } from '../../shadow/npm/
 import type { ActualTreeResult } from './agent-fix.mts'
 
 export async function getActualTree(
-  cwd: string = process.cwd(),
+  cwd = process.cwd(),
 ): Promise<ActualTreeResult> {
   try {
     // @npmcli/arborist DOES have partial support for pnpm structured node_modules
