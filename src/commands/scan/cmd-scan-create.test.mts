@@ -181,7 +181,7 @@ describe('socket scan create', async () => {
     ],
     'should succeed when --reachAnalysisMemoryLimit is used with default value without --reach',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when using default value').toBe(0)
     },

@@ -1,7 +1,8 @@
 import constants from '../constants.mts'
 import { getPurlObject } from './purl.mts'
 
-import type { PURL_Type, SocketArtifact } from './alert/artifact.mts'
+import type { SocketArtifact } from './alert/artifact.mts'
+import type { PURL_Type } from './ecosystem.mts'
 import type { PackageURL } from '@socketregistry/packageurl-js'
 
 const { SOCKET_WEBSITE_URL } = constants
