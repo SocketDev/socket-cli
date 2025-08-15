@@ -169,7 +169,7 @@
       "emoji": "🎈"
     },
     "gitDependency": {
-      "description": "Contains a dependency which resolves to a remote git URL. Dependencies fetched from git URLs are not immutable can be used to inject untrusted code or reduce the likelihood of a reproducible install.",
+      "description": "Contains a dependency which resolves to a remote git URL. Dependencies fetched from git URLs are not immutable and can be used to inject untrusted code or reduce the likelihood of a reproducible install.",
       "suggestion": "Publish the git dependency to npm or a private package repository and consume it from there.",
       "title": "Git dependency",
       "emoji": "🍣"
@@ -212,7 +212,7 @@
     },
     "highEntropyStrings": {
       "description": "Contains high entropy strings. This could be a sign of encrypted data, leaked secrets or obfuscated code.",
-      "suggestion": "Please inspect these strings to check if these strings are benign. Maintainers should clarify the purpose and existence of high entropy strings if there is a legitimate purpose.",
+      "suggestion": "Please inspect these strings to check if they are benign. Maintainers should clarify the purpose and existence of high entropy strings if there is a legitimate purpose.",
       "title": "High entropy strings",
       "emoji": "⚠️"
     },
@@ -277,7 +277,7 @@
       "emoji": "⚠️"
     },
     "malware": {
-      "description": "This package is malware. We have asked the package registry to remove it.",
+      "description": "This package is identified as malware. It has been flagged either by Socket's AI scanner and confirmed by our threat research team, or is listed as malicious in security databases and other sources.",
       "title": "Known malware",
       "suggestion": "It is strongly recommended that malware is removed from your codebase.",
       "emoji": "☠️"
@@ -391,7 +391,7 @@
       "emoji": "⚠️"
     },
     "noV1": {
-      "description": "Package is not semver >=1. This means it is not stable and does not support ^ ranges.",
+      "description": "Package is not semver \u003E=1. This means it is not stable and does not support ^ ranges.",
       "suggestion": "If the package sees any general use, it should begin releasing at version 1.0.0 or later to benefit from semver.",
       "title": "No v1",
       "emoji": "⚠️"
@@ -488,7 +488,7 @@
     },
     "suspiciousString": {
       "description": "This package contains suspicious text patterns which are commonly associated with bad behavior.",
-      "suggestion": "The package code should be reviewed before installing",
+      "suggestion": "The package code should be reviewed before installing.",
       "title": "Suspicious strings",
       "emoji": "⚠️"
     },
@@ -560,7 +560,7 @@
     },
     "unstableOwnership": {
       "description": "A new collaborator has begun publishing package versions. Package stability and security risk may be elevated.",
-      "suggestion": "Try to reduce the amount of authors you depend on to reduce the risk to malicious actors gaining access to your supply chain. Packages should remove inactive collaborators with publishing rights from packages on npm.",
+      "suggestion": "Try to reduce the number of authors you depend on to reduce the risk to malicious actors gaining access to your supply chain. Packages should remove inactive collaborators with publishing rights from packages on npm.",
       "title": "Unstable ownership",
       "emoji": "⚠️"
     },
@@ -571,8 +571,8 @@
       "emoji": "⚠️"
     },
     "urlStrings": {
-      "description": "Package contains fragments of external URLs or IP addresses, which may indicate that it covertly exfiltrates data.",
-      "suggestion": "Avoid using packages that make connections to the network, since this helps to leak data.",
+      "description": "Package contains fragments of external URLs or IP addresses, which the package may be accessing at runtime.",
+      "suggestion": "Review all remote URLs to ensure they are intentional, pointing to trusted sources, and not being used for data exfiltration or loading untrusted code at runtime.",
       "title": "URL strings",
       "emoji": "⚠️"
     },
@@ -586,6 +586,30 @@
       "description": "Package files contain zero width unicode characters. This could indicate a supply chain attack.",
       "suggestion": "Packages should remove unnecessary zero width unicode characters and use their visible counterparts.",
       "title": "Zero width unicode chars",
+      "emoji": "⚠️"
+    },
+    "chromePermission": {
+      "description": "This Chrome extension uses the '{permission}' permission.",
+      "suggestion": "Does this extensions need these permissions? Read more about what they mean at https://developer.chrome.com/docs/extensions/reference/permissions-list",
+      "title": "Chrome Extension Permission",
+      "emoji": "⚠️"
+    },
+    "chromeHostPermission": {
+      "description": "This Chrome extension requests access to '{host}'.",
+      "suggestion": "Review the host permission request and ensure it's necessary for the extension's functionality. Consider if the extension could work with more restrictive host permissions.",
+      "title": "Chrome Extension Host Permission",
+      "emoji": "⚠️"
+    },
+    "chromeWildcardHostPermission": {
+      "description": "This Chrome extension requests broad access to websites with the pattern '{host}'.",
+      "suggestion": "Wildcard host permissions like '*://*/*' give the extension access to all websites. This is a significant security risk and should be carefully reviewed. Consider if the extension could work with more restrictive host permissions.",
+      "title": "Chrome Extension Wildcard Host Permission",
+      "emoji": "⚠️"
+    },
+    "chromeContentScript": {
+      "description": "This Chrome extension includes a content script '{scriptFile}' that runs on websites matching '{matches}'.",
+      "suggestion": "Content scripts can modify web pages and access page content. Review the content script code to understand what it does on the websites it targets.",
+      "title": "Chrome Extension Content Script",
       "emoji": "⚠️"
     }
   }

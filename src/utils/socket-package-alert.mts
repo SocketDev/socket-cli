@@ -536,7 +536,7 @@ export function logAlertsMap(
         ? ` ${colors.italic(`(${attributes.join('; ')})`)}`
         : ''
       // Based data from { pageProps: { alertTypes } } of:
-      // https://socket.dev/_next/data/94666139314b6437ee4491a0864e72b264547585/en-US.json
+      // https://socket.dev/_next/data/9a6db8224b68b6da0eb9f7dbb17aff7e51568ac2/en-US.json
       const info = (translations.alerts as any)[type]
       const title = info?.title ?? type
       const maybeDesc = info?.description ? ` - ${info.description}` : ''
