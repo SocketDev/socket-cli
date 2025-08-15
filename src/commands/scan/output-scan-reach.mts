@@ -6,8 +6,8 @@ import constants from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
-import type { CResult, OutputKind } from '../../types.mts'
 import type { ReachabilityAnalysisResult } from './perform-reachability-analysis.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 
 const { DOT_SOCKET_DOT_FACTS_JSON } = constants
 

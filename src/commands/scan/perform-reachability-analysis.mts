@@ -12,7 +12,6 @@ import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type ReachabilityOptions = {
-  reachContinueOnFailingProjects: boolean
   reachDisableAnalytics: boolean
   reachAnalysisTimeout: number
   reachAnalysisMemoryLimit: number
@@ -139,9 +138,6 @@ export async function performReachabilityAnalysis(
       : []),
     ...(reachabilityOptions.reachDisableAnalytics
       ? ['--disable-analytics-sharing']
-      : []),
-    ...(reachabilityOptions.reachContinueOnFailingProjects
-      ? ['--ignore-failing-workspaces']
       : []),
     // empty reachEcosystems implies scan all ecosystems
     ...(reachabilityOptions.reachEcosystems.length

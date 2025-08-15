@@ -45,7 +45,6 @@ describe('socket scan create', async () => {
           Reachability Options (when --reach is used)
             --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
             --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
-            --reach-continue-on-failing-projects  Continue reachability analysis even when some projects/workspaces fail. Default is to crash the CLI at the first failing project/workspace.
             --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
             --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
@@ -297,37 +296,6 @@ describe('socket scan create', async () => {
       'xyz',
       '--branch',
       'abc',
-      '--reach-continue-on-failing-projects',
-      '--config',
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should fail when --reach-continue-on-failing-projects is used without --reach',
-    async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
-      const output = stdout + stderr
-      expect(output).toContain(
-        'The --reachContinueOnFailingProjects flag requires --reach to be set',
-      )
-      expect(output).toContain('missing --reach flag')
-      expect(
-        code,
-        'should exit with non-zero code when validation fails',
-      ).not.toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'create',
-      '--org',
-      'fakeOrg',
-      'target',
-      '--dry-run',
-      '--repo',
-      'xyz',
-      '--branch',
-      'abc',
       '--reach',
       '--reachDisableAnalytics',
       '--reachAnalysisMemoryLimit',
@@ -394,39 +362,6 @@ describe('socket scan create', async () => {
       '--branch',
       'abc',
       '--reach',
-      '--reach-continue-on-failing-projects',
-      '--reach-disable-analytics',
-      '--reach-analysis-memory-limit',
-      '4096',
-      '--reach-analysis-timeout',
-      '3600',
-      '--reach-ecosystems',
-      'npm',
-      '--config',
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should succeed when all reachability options including reachContinueOnFailingProjects are used with --reach',
-    async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'create',
-      '--org',
-      'fakeOrg',
-      'target',
-      '--dry-run',
-      '--repo',
-      'xyz',
-      '--branch',
-      'abc',
-      '--reach',
-      '--reach-continue-on-failing-projects',
       '--reach-disable-analytics',
       '--reach-analysis-memory-limit',
       '4096',

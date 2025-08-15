@@ -100,7 +100,6 @@ async function run(
     org: orgFlag,
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
-    reachContinueOnFailingProjects,
     reachDisableAnalytics,
   } = cli.flags as {
     cwd: string
@@ -110,7 +109,6 @@ async function run(
     org: string
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
-    reachContinueOnFailingProjects: boolean
     reachDisableAnalytics: boolean
   }
 
@@ -187,7 +185,6 @@ async function run(
     targets,
     interactive,
     reachabilityOptions: {
-      reachContinueOnFailingProjects: Boolean(reachContinueOnFailingProjects),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
