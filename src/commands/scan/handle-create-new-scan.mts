@@ -152,7 +152,9 @@ export async function handleCreateNewScan({
 
     logger.success('Reachability analysis completed successfully')
 
-    scanPaths = reachResult.data?.scanPaths || []
+    scanPaths = reachResult.data?.reachabilityReport
+      ? [reachResult.data.reachabilityReport]
+      : []
     tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
   }
 

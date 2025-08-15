@@ -35,7 +35,7 @@ export type ReachabilityAnalysisOptions = {
 }
 
 export type ReachabilityAnalysisResult = {
-  scanPaths: string[]
+  reachabilityReport: string
   tier1ReachabilityScanId: string | undefined
 }
 
@@ -187,7 +187,7 @@ export async function performReachabilityAnalysis(
         ok: true,
         data: {
           // Use the DOT_SOCKET_DOT_FACTS_JSON file for the scan.
-          scanPaths: [constants.DOT_SOCKET_DOT_FACTS_JSON],
+          reachabilityReport: constants.DOT_SOCKET_DOT_FACTS_JSON,
           tier1ReachabilityScanId: extractTier1ReachabilityScanId(
             constants.DOT_SOCKET_DOT_FACTS_JSON,
           ),
