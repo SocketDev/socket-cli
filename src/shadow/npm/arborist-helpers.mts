@@ -10,7 +10,7 @@ import constants from '../../constants.mts'
 import { Edge } from './arborist/index.mts'
 import { DiffAction } from './arborist/types.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
-import { type AliasResult, npa } from '../../utils/npm-package-arg.mts'
+import { npa } from '../../utils/npm-package-arg.mts'
 import { applyRange, getMajor, getMinVersion } from '../../utils/semver.mts'
 import { idToNpmPurl } from '../../utils/spec.mts'
 
@@ -21,6 +21,7 @@ import type {
   LinkClass,
   NodeClass,
 } from './arborist/types.mts'
+import type { AliasResult } from '../../utils/npm-package-arg.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 import type {
   AlertIncludeFilter,
