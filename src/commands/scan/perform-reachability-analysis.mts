@@ -7,8 +7,8 @@ import {
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type ReachabilityOptions = {
   reachDisableAnalytics: boolean

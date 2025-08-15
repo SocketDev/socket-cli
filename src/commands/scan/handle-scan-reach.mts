@@ -3,14 +3,12 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { outputScanReach } from './output-scan-reach.mts'
-import {
-  type ReachabilityOptions,
-  performReachabilityAnalysis,
-} from './perform-reachability-analysis.mts'
+import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
 import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 
+import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { OutputKind } from '../../types.mts'
 
 export type HandleScanReachConfig = {
