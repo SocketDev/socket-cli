@@ -19,6 +19,35 @@ import type {
 
 const NO_ERROR_MESSAGE = 'No error message returned'
 
+// The Socket API server that should be used for operations.
+export function getDefaultApiBaseUrl(): string | undefined {
+  const baseUrl =
+    // Lazily access constants.ENV.SOCKET_CLI_API_BASE_URL.
+    constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
+  if (isNonEmptyString(baseUrl)) {
+    return baseUrl
+  }
+  // Lazily access constants.API_V0_URL.
+  const API_V0_URL = constants.API_V0_URL
+  return API_V0_URL
+}
+
+export async function getErrorMessageForHttpStatusCode(code: number) {
+  if (code === 400) {
+    return 'One of the options passed might be incorrect'
+  }
+  if (code === 403 || code === 401) {
+    return 'Your Socket API token may not have the required permissions for this command or you might be trying to access (data from) an organization that is not linked to the API token you are logged in with'
+  }
+  if (code === 404) {
+    return 'The requested Socket API endpoint was not found (404) or there was no result for the requested parameters. If unexpected, this could be a temporary problem caused by an incident or a bug in the CLI. If the problem persists please let us know.'
+  }
+  if (code === 500) {
+    return 'There was an unknown server side problem with your request. This ought to be temporary. Please let us know if this problem persists.'
+  }
+  return `Server responded with status code ${code}`
+}
+
 export type HandleApiCallOptions = {
   desc?: string | undefined
   spinner?: Spinner | undefined
@@ -142,35 +171,6 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   }
 }
 
-export async function getErrorMessageForHttpStatusCode(code: number) {
-  if (code === 400) {
-    return 'One of the options passed might be incorrect'
-  }
-  if (code === 403 || code === 401) {
-    return 'Your Socket API token may not have the required permissions for this command or you might be trying to access (data from) an organization that is not linked to the API token you are logged in with'
-  }
-  if (code === 404) {
-    return 'The requested Socket API endpoint was not found (404) or there was no result for the requested parameters. If unexpected, this could be a temporary problem caused by an incident or a bug in the CLI. If the problem persists please let us know.'
-  }
-  if (code === 500) {
-    return 'There was an unknown server side problem with your request. This ought to be temporary. Please let us know if this problem persists.'
-  }
-  return `Server responded with status code ${code}`
-}
-
-// The Socket API server that should be used for operations.
-export function getDefaultApiBaseUrl(): string | undefined {
-  const baseUrl =
-    // Lazily access constants.ENV.SOCKET_CLI_API_BASE_URL.
-    constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
-  if (isNonEmptyString(baseUrl)) {
-    return baseUrl
-  }
-  // Lazily access constants.API_V0_URL.
-  const API_V0_URL = constants.API_V0_URL
-  return API_V0_URL
-}
-
 export async function queryApi(path: string, apiToken: string) {
   const baseUrl = getDefaultApiBaseUrl() || ''
   if (!baseUrl) {
@@ -197,7 +197,7 @@ export async function queryApiSafeText(
       ok: false,
       message: 'Authentication Error',
       cause:
-        'User must be authenticated to run this command. To log in, run the command `socket login` and enter your Socket API token.',
+        'User must be authenticated to run this command. Run `socket login` and enter your Socket API token.',
     }
   }
 
