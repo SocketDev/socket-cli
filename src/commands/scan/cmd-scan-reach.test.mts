@@ -18,6 +18,10 @@ describe('socket scan reach', async () => {
           Usage
             $ socket scan reach [options] [CWD=.]
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: full-scans:create
+
           Options
             --cwd               working directory, defaults to process.cwd()
             --json              Output result as json
@@ -27,7 +31,6 @@ describe('socket scan reach', async () => {
           Reachability Options
             --reach-analysis-memory-limit  The maximum memory in MB to use for the reachability analysis. The default is 8192MB.
             --reach-analysis-timeout  Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.
-            --reach-continue-on-failing-projects  Continue reachability analysis even when some projects/workspaces fail. Default is to crash the CLI at the first failing project/workspace.
             --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
             --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
@@ -211,25 +214,6 @@ describe('socket scan reach', async () => {
       'scan',
       'reach',
       '--dry-run',
-      '--reach-continue-on-failing-projects',
-      '--org',
-      'fakeOrg',
-      '--config',
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept --reach-continue-on-failing-projects flag',
-    async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'scan',
-      'reach',
-      '--dry-run',
       '--reach-exclude-paths',
       'node_modules,dist',
       '--org',
@@ -279,7 +263,6 @@ describe('socket scan reach', async () => {
       '3600',
       '--reach-ecosystems',
       'npm,pypi',
-      '--reach-continue-on-failing-projects',
       '--reach-exclude-paths',
       'node_modules,dist',
       '--org',

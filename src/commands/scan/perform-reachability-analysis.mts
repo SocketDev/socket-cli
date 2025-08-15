@@ -4,15 +4,13 @@ import {
   extractTier1ReachabilityScanId,
   spawnCoana,
 } from '../../utils/coana.mts'
-import { convertToCoanaEcosystems } from '../../utils/ecosystem.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 
 export type ReachabilityOptions = {
-  reachContinueOnFailingProjects: boolean
   reachDisableAnalytics: boolean
   reachAnalysisTimeout: number
   reachAnalysisMemoryLimit: number
@@ -35,7 +33,7 @@ export type ReachabilityAnalysisOptions = {
 }
 
 export type ReachabilityAnalysisResult = {
-  scanPaths: string[]
+  reachabilityReport: string
   tier1ReachabilityScanId: string | undefined
 }
 
@@ -140,15 +138,9 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachDisableAnalytics
       ? ['--disable-analytics-sharing']
       : []),
-    ...(reachabilityOptions.reachContinueOnFailingProjects
-      ? ['--ignore-failing-workspaces']
-      : []),
     // empty reachEcosystems implies scan all ecosystems
     ...(reachabilityOptions.reachEcosystems.length
-      ? [
-          '--ecosystems',
-          ...convertToCoanaEcosystems(reachabilityOptions.reachEcosystems),
-        ]
+      ? ['--purl-types', ...reachabilityOptions.reachEcosystems]
       : []),
     ...(reachabilityOptions.reachExcludePaths.length
       ? ['--exclude-dirs', reachabilityOptions.reachExcludePaths.join(' ')]
@@ -187,7 +179,7 @@ export async function performReachabilityAnalysis(
         ok: true,
         data: {
           // Use the DOT_SOCKET_DOT_FACTS_JSON file for the scan.
-          scanPaths: [constants.DOT_SOCKET_DOT_FACTS_JSON],
+          reachabilityReport: constants.DOT_SOCKET_DOT_FACTS_JSON,
           tier1ReachabilityScanId: extractTier1ReachabilityScanId(
             constants.DOT_SOCKET_DOT_FACTS_JSON,
           ),
