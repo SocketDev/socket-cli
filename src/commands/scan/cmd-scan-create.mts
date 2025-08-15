@@ -218,7 +218,6 @@ async function run(
     reach,
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
-    reachContinueOnFailingProjects,
     reachDisableAnalytics,
     readOnly,
     setAsAlertsPage: pendingHeadFlag,
@@ -241,7 +240,6 @@ async function run(
     reach: boolean
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
-    reachContinueOnFailingProjects: boolean
     reachDisableAnalytics: boolean
   }
 
@@ -469,13 +467,6 @@ async function run(
     },
     {
       nook: true,
-      test: reach || !reachContinueOnFailingProjects,
-      message:
-        'The --reachContinueOnFailingProjects flag requires --reach to be set',
-      fail: 'missing --reach flag',
-    },
-    {
-      nook: true,
       test: reach || !reachExcludePaths.length,
       message: 'The --reachExcludePaths flag requires --reach to be set',
       fail: 'missing --reach flag',
@@ -505,7 +496,6 @@ async function run(
     pullRequest: Number(pullRequest),
     reach: {
       runReachabilityAnalysis: Boolean(reach),
-      reachContinueOnFailingProjects: Boolean(reachContinueOnFailingProjects),
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
