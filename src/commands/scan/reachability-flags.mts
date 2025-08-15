@@ -13,11 +13,6 @@ export const reachabilityFlags: MeowFlags = {
     description:
       'Set timeout for the reachability analysis. Split analysis runs may cause the total scan time to exceed this timeout significantly.',
   },
-  reachContinueOnFailingProjects: {
-    type: 'boolean',
-    description:
-      'Continue reachability analysis even when some projects/workspaces fail. Default is to crash the CLI at the first failing project/workspace.',
-  },
   reachDisableAnalytics: {
     type: 'boolean',
     default: false,
