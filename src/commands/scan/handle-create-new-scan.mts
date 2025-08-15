@@ -7,6 +7,7 @@ import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.m
 import { finalizeTier1Scan } from './finalize-tier1-scan.mts'
 import { handleScanReport } from './handle-scan-report.mts'
 import { outputCreateNewScan } from './output-create-new-scan.mts'
+import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
 import constants from '../../constants.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
@@ -16,7 +17,6 @@ import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 
 import type { OutputKind } from '../../types.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
-import { performReachabilityAnalysis } from './perform-reachability-analysis.mts'
 
 export async function handleCreateNewScan({
   autoManifest,

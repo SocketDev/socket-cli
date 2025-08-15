@@ -18,6 +18,10 @@ describe('socket scan reach', async () => {
           Usage
             $ socket scan reach [options] [CWD=.]
 
+          API Token Requirements
+            - Quota: 1 unit
+            - Permissions: full-scans:create
+
           Options
             --cwd               working directory, defaults to process.cwd()
             --json              Output result as json

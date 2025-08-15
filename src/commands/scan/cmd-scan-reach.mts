@@ -50,6 +50,10 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} [options] [CWD=.]
 
+    API Token Requirements
+      - Quota: 1 unit
+      - Permissions: full-scans:create
+
     Options
       ${getFlagListOutput(generalFlags)}
 
