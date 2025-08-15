@@ -4,12 +4,11 @@ import {
   extractTier1ReachabilityScanId,
   spawnCoana,
 } from '../../utils/coana.mts'
-import { convertToCoanaEcosystems } from '../../utils/ecosystem.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
-import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
+import type { PURL_Type } from '../../utils/ecosystem.mts'
 
 export type ReachabilityOptions = {
   reachDisableAnalytics: boolean
@@ -141,10 +140,7 @@ export async function performReachabilityAnalysis(
       : []),
     // empty reachEcosystems implies scan all ecosystems
     ...(reachabilityOptions.reachEcosystems.length
-      ? [
-          '--ecosystems',
-          ...convertToCoanaEcosystems(reachabilityOptions.reachEcosystems),
-        ]
+      ? ['--purl-types', ...reachabilityOptions.reachEcosystems]
       : []),
     ...(reachabilityOptions.reachExcludePaths.length
       ? ['--exclude-dirs', reachabilityOptions.reachExcludePaths.join(' ')]
