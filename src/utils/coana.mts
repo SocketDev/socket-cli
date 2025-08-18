@@ -25,6 +25,7 @@ export function extractTier1ReachabilityScanId(
 
 export async function spawnCoana(
   args: string[] | readonly string[],
+  orgSlug?: string,
   options?: SpawnOptions | undefined,
   extra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
@@ -37,9 +38,14 @@ export async function spawnCoana(
   if (defaultApiToken) {
     mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
   }
-  const orgSlugCResult = await getDefaultOrgSlug()
-  if (orgSlugCResult.ok) {
-    mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
+
+  if (orgSlug) {
+    mixinsEnv['SOCKET_ORG_SLUG'] = orgSlug
+  } else {
+    const orgSlugCResult = await getDefaultOrgSlug()
+    if (orgSlugCResult.ok) {
+      mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
+    }
   }
   try {
     const output = await spawn(

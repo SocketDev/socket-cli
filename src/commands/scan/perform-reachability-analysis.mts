@@ -144,7 +144,8 @@ export async function performReachabilityAnalysis(
     env['SOCKET_BRANCH_NAME'] = branchName
   }
 
-  const coanaResult = await spawnCoana(coanaArgs, {
+  // Run Coana with the manifests tar hash.
+  const coanaResult = await spawnCoana(coanaArgs, orgSlug, {
     cwd,
     env,
     spinner,
