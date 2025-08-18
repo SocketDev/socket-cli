@@ -162,7 +162,7 @@ export async function performReachabilityAnalysis(
   }
 
   // Run Coana with the manifests tar hash.
-  const coanaResult = await spawnCoana(coanaArgs, {
+  const coanaResult = await spawnCoana(coanaArgs, orgSlug, {
     cwd,
     env,
     spinner,
