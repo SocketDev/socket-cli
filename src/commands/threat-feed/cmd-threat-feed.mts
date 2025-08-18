@@ -164,7 +164,6 @@ async function run(
 
   const {
     eco,
-    interactive,
     json,
     markdown,
     org: orgFlag,
@@ -172,6 +171,10 @@ async function run(
     type: typef,
     version,
   } = cli.flags
+
+  const dryRun = !!cli.flags['dryRun']
+
+  const interactive = !!cli.flags['interactive']
 
   let ecoFilter = String(eco || '')
   let versionFilter = String(version || '')
@@ -218,13 +221,11 @@ async function run(
     )
   }
 
-  const dryRun = !!cli.flags['dryRun']
-
   const hasApiToken = hasDefaultToken()
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    !!interactive,
+    interactive,
     dryRun,
   )
 

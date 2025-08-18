@@ -92,9 +92,11 @@ async function run(
     parentName,
   })
 
-  const { interactive, json, markdown, org: orgFlag } = cli.flags
+  const { json, markdown, org: orgFlag } = cli.flags
 
   const dryRun = !!cli.flags['dryRun']
+
+  const interactive = !!cli.flags['interactive']
 
   const noLegacy = !cli.flags['repoName']
 
@@ -104,7 +106,7 @@ async function run(
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    !!interactive,
+    interactive,
     dryRun,
   )
 
