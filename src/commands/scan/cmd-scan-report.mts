@@ -119,7 +119,6 @@ async function run(
 
   const {
     fold = 'none',
-    interactive,
     json,
     license,
     markdown,
@@ -129,13 +128,15 @@ async function run(
 
   const dryRun = !!cli.flags['dryRun']
 
+  const interactive = !!cli.flags['interactive']
+
   const [scanId = '', file = ''] = cli.input
 
   const hasApiToken = hasDefaultToken()
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    !!interactive,
+    interactive,
     dryRun,
   )
 

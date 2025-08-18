@@ -13,16 +13,16 @@ export type FinalizeTier1ScanOptions = {
  *  - Sets the tier1 reachability scan to "finalized" state.
  */
 export async function finalizeTier1Scan(
-  tier1_reachability_scan_id: string,
-  report_run_id: string,
+  tier1ReachabilityScanId: string,
+  scanId: string,
 ): Promise<CResult<unknown>> {
   // we do not use the SDK here because the tier1-reachability-scan/finalize is a hidden
   // endpoint that is not part of the OpenAPI specification.
   return await sendApiRequest('tier1-reachability-scan/finalize', {
     method: 'POST',
     body: {
-      tier1_reachability_scan_id,
-      report_run_id,
+      tier1_reachability_scan_id: tier1ReachabilityScanId,
+      report_run_id: scanId,
     },
   })
 }

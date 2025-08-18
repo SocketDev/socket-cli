@@ -17,6 +17,7 @@ import { generateAutoManifest } from '../manifest/generate_auto_manifest.mts'
 
 import type { ReachabilityOptions } from './perform-reachability-analysis.mts'
 import type { OutputKind } from '../../types.mts'
+import type { Remap } from '@socketsecurity/registry/lib/objects'
 
 export async function handleCreateNewScan({
   autoManifest,
@@ -50,9 +51,11 @@ export async function handleCreateNewScan({
   pendingHead: boolean
   pullRequest: number
   outputKind: OutputKind
-  reach: {
-    runReachabilityAnalysis: boolean
-  } & ReachabilityOptions
+  reach: Remap<
+    ReachabilityOptions & {
+      runReachabilityAnalysis: boolean
+    }
+  >
   readOnly: boolean
   repoName: string
   report: boolean
@@ -125,17 +128,15 @@ export async function handleCreateNewScan({
 
     spinner.start()
 
-    const reachResult = await performReachabilityAnalysis(
-      {
-        packagePaths,
-        orgSlug,
-        cwd,
-        repoName,
-        branchName,
-        reachabilityOptions: reach,
-      },
-      { spinner },
-    )
+    const reachResult = await performReachabilityAnalysis({
+      branchName,
+      cwd,
+      orgSlug,
+      packagePaths,
+      reachabilityOptions: reach,
+      repoName,
+      spinner,
+    })
 
     spinner.stop()
 
@@ -171,17 +172,14 @@ export async function handleCreateNewScan({
     },
   )
 
-  if (
-    reach &&
-    tier1ReachabilityScanId &&
-    fullScanCResult.ok &&
-    fullScanCResult.data?.id
-  ) {
-    await finalizeTier1Scan(tier1ReachabilityScanId, fullScanCResult.data.id)
+  const scanId = fullScanCResult.ok ? fullScanCResult.data?.id : undefined
+
+  if (reach && scanId && tier1ReachabilityScanId) {
+    await finalizeTier1Scan(tier1ReachabilityScanId, scanId)
   }
 
   if (report && fullScanCResult.ok) {
-    if (fullScanCResult.data?.id) {
+    if (scanId) {
       await handleScanReport({
         filePath: '-',
         fold: 'version',
@@ -189,7 +187,7 @@ export async function handleCreateNewScan({
         orgSlug,
         outputKind,
         reportLevel: 'error',
-        scanId: fullScanCResult.data.id,
+        scanId,
         short: false,
       })
     } else {
@@ -208,7 +206,6 @@ export async function handleCreateNewScan({
     }
   } else {
     spinner.stop()
-    spinner.clear()
 
     await outputCreateNewScan(fullScanCResult, { interactive, outputKind })
   }

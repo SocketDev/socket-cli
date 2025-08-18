@@ -93,9 +93,11 @@ async function run(
     parentName,
   })
 
-  const { depth, file, interactive, json, markdown, org: orgFlag } = cli.flags
+  const { depth, file, json, markdown, org: orgFlag } = cli.flags
 
   const dryRun = !!cli.flags['dryRun']
+
+  const interactive = !!cli.flags['interactive']
 
   let [id1 = '', id2 = ''] = cli.input
   // Support dropping in full socket urls to an sbom.
@@ -110,7 +112,7 @@ async function run(
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    !!interactive,
+    interactive,
     dryRun,
   )
 
