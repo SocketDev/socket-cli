@@ -11,25 +11,22 @@ import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type ReachabilityOptions = {
-  reachDisableAnalytics: boolean
   reachAnalysisTimeout: number
   reachAnalysisMemoryLimit: number
+  reachDisableAnalytics: boolean
   reachEcosystems: PURL_Type[]
   reachExcludePaths: string[]
 }
 
-export type ReachabilityAnalysisConfig = {
-  branchName?: string
-  cwd: string
-  orgSlug?: string
-  packagePaths?: string[]
-  reachabilityOptions: ReachabilityOptions
-  repoName?: string
-  uploadManifests?: boolean
-}
-
 export type ReachabilityAnalysisOptions = {
+  branchName?: string | undefined
+  cwd?: string | undefined
+  orgSlug?: string | undefined
+  packagePaths?: string[] | undefined
+  reachabilityOptions: ReachabilityOptions
+  repoName?: string | undefined
   spinner?: Spinner | undefined
+  uploadManifests?: boolean | undefined
 }
 
 export type ReachabilityAnalysisResult = {
@@ -38,22 +35,18 @@ export type ReachabilityAnalysisResult = {
 }
 
 export async function performReachabilityAnalysis(
-  {
+  options?: ReachabilityAnalysisOptions | undefined,
+): Promise<CResult<ReachabilityAnalysisResult>> {
+  const {
     branchName,
-    cwd,
+    cwd = process.cwd(),
     orgSlug,
     packagePaths,
     reachabilityOptions,
     repoName,
+    spinner,
     uploadManifests = true,
-  }: ReachabilityAnalysisConfig,
-  options?: ReachabilityAnalysisOptions | undefined,
-): Promise<CResult<ReachabilityAnalysisResult>> {
-  const { spinner } = {
-    __proto__: null,
-    ...options,
-  } as ReachabilityAnalysisOptions
-
+  } = { __proto__: null, ...options } as ReachabilityAnalysisOptions
   let tarHash: string | undefined
 
   if (uploadManifests && orgSlug && packagePaths) {
@@ -67,15 +60,15 @@ export async function performReachabilityAnalysis(
 
     const wasSpinning = !!spinner?.isSpinning
 
-    // Upload manifests to get tar hash
-    spinner?.start('Uploading manifests for reachability analysis...')
-
-    // Exclude DOT_SOCKET_DOT_FACTS_JSON if it was created in previous runs.
-    const filteredPackagePaths = packagePaths.filter(
+    // Exclude .socket.facts.json from upload.
+    const filepathsToUpload = packagePaths.filter(
       p => !p.endsWith(constants.DOT_SOCKET_DOT_FACTS_JSON),
     )
+
+    spinner?.start('Uploading manifests for reachability analysis...')
+
     const uploadCResult = await handleApiCall(
-      sockSdk.uploadManifestFiles(orgSlug, filteredPackagePaths),
+      sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload),
       {
         desc: 'upload manifests',
         spinner,
@@ -105,16 +98,12 @@ export async function performReachabilityAnalysis(
 
     spinner?.start()
     spinner?.success(`Manifests uploaded successfully. Tar hash: ${tarHash}`)
-    spinner?.infoAndStop('Running reachability analysis with Coana...')
-  } else {
-    const wasSpinning = !!spinner?.isSpinning
-    spinner?.start('Running reachability analysis with Coana...')
-    if (!wasSpinning) {
-      spinner?.stop()
-    }
   }
 
-  // Build Coana arguments
+  spinner?.start()
+  spinner?.infoAndStop('Running reachability analysis with Coana...')
+
+  // Build Coana arguments.
   const coanaArgs = [
     'run',
     cwd,
@@ -124,33 +113,27 @@ export async function performReachabilityAnalysis(
     constants.DOT_SOCKET_DOT_FACTS_JSON,
     '--disable-report-submission',
     ...(reachabilityOptions.reachAnalysisTimeout
-      ? [
-          '--analysis-timeout',
-          reachabilityOptions.reachAnalysisTimeout.toString(),
-        ]
+      ? ['--analysis-timeout', `${reachabilityOptions.reachAnalysisTimeout}`]
       : []),
     ...(reachabilityOptions.reachAnalysisMemoryLimit
-      ? [
-          '--memory-limit',
-          reachabilityOptions.reachAnalysisMemoryLimit.toString(),
-        ]
+      ? ['--memory-limit', `${reachabilityOptions.reachAnalysisMemoryLimit}`]
       : []),
     ...(reachabilityOptions.reachDisableAnalytics
       ? ['--disable-analytics-sharing']
       : []),
-    // empty reachEcosystems implies scan all ecosystems
+    ...(tarHash
+      ? ['--run-without-docker', '--manifests-tar-hash', tarHash]
+      : []),
+    // Empty reachEcosystems implies scan all ecosystems.
     ...(reachabilityOptions.reachEcosystems.length
       ? ['--purl-types', ...reachabilityOptions.reachEcosystems]
       : []),
     ...(reachabilityOptions.reachExcludePaths.length
-      ? ['--exclude-dirs', reachabilityOptions.reachExcludePaths.join(' ')]
-      : []),
-    ...(tarHash
-      ? ['--manifests-tar-hash', tarHash, '--run-without-docker']
+      ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
       : []),
   ]
 
-  // Build environment variables
+  // Build environment variables.
   const env: NodeJS.ProcessEnv = {
     ...process.env,
   }
@@ -161,7 +144,6 @@ export async function performReachabilityAnalysis(
     env['SOCKET_BRANCH_NAME'] = branchName
   }
 
-  // Run Coana with the manifests tar hash.
   const coanaResult = await spawnCoana(coanaArgs, {
     cwd,
     env,

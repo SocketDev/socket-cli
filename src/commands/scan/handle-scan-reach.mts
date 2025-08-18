@@ -66,16 +66,14 @@ export async function handleScanReach({
 
   spinner.start('Running reachability analysis...')
 
-  const result = await performReachabilityAnalysis(
-    {
-      cwd,
-      orgSlug,
-      packagePaths,
-      reachabilityOptions,
-      uploadManifests: true,
-    },
-    { spinner },
-  )
+  const result = await performReachabilityAnalysis({
+    cwd,
+    orgSlug,
+    packagePaths,
+    reachabilityOptions,
+    spinner,
+    uploadManifests: true,
+  })
 
   spinner.stop()
 
