@@ -79,7 +79,8 @@ export async function coanaFix(
           ...ids,
           ...fixConfig.unknownFlags,
         ],
-        { cwd, spinner, env: { SOCKET_ORG_SLUG: orgSlug } },
+        fixConfig.orgSlug,
+        { cwd, spinner },
       )
     : undefined
 
