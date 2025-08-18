@@ -80,9 +80,11 @@ async function run(
     parentName,
   })
 
-  const { interactive, json, markdown, org: orgFlag, stream } = cli.flags
+  const { json, markdown, org: orgFlag, stream } = cli.flags
 
   const dryRun = !!cli.flags['dryRun']
+
+  const interactive = !!cli.flags['interactive']
 
   const [scanId = '', file = ''] = cli.input
 
@@ -90,7 +92,7 @@ async function run(
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    !!interactive,
+    interactive,
     dryRun,
   )
 
