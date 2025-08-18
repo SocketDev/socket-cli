@@ -97,22 +97,17 @@ async function run(
     parentName,
   })
 
-  const {
-    all,
-    direction = 'desc',
-    interactive,
-    json,
-    markdown,
-    org: orgFlag,
-  } = cli.flags
+  const { all, direction = 'desc', json, markdown, org: orgFlag } = cli.flags
 
   const dryRun = !!cli.flags['dryRun']
+
+  const interactive = !!cli.flags['interactive']
 
   const hasApiToken = hasDefaultToken()
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
-    !!interactive,
+    interactive,
     dryRun,
   )
 
