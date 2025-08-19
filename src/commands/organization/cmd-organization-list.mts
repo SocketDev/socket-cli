@@ -6,41 +6,25 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'list',
-  description: 'List organizations associated with the Socket API token',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-  },
-  help: (command, _config) => `
-    Usage
-      $ ${command} [options]
+export const CMD_NAME = 'list'
 
-    API Token Requirements
-      - Quota: 1 unit
-      - Permissions: none (does need a token)
+const description = 'List organizations associated with the Socket API token'
 
-    Options
-      ${getFlagListOutput(config.flags)}
-
-    Examples
-      $ ${command}
-      $ ${command} --json
-  `,
-}
+const hidden = false
 
 export const cmdOrganizationList = {
-  description: config.description,
-  hidden: config.hidden,
+  description,
+  hidden,
   run,
 }
 
@@ -49,6 +33,30 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string },
 ): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+    },
+    help: (command, _config) => `
+    Usage
+      $ ${command} [options]
+
+    API Token Requirements
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
+
+    Options
+      ${getFlagListOutput(config.flags)}
+
+    Examples
+      $ ${command}
+      $ ${command} --json
+  `,
+  }
+
   const cli = meowOrExit({
     argv,
     config,

@@ -7,7 +7,10 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type {
@@ -17,53 +20,69 @@ import type {
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'report',
-  description:
-    'Check whether a scan result passes the organizational policies (security, license)',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    fold: {
-      type: 'string',
-      default: 'none',
-      description: 'Fold reported alerts to some degree',
+const CMD_NAME = 'report'
+
+const description =
+  'Check whether a scan result passes the organizational policies (security, license)'
+
+const hidden = false
+
+export const cmdScanReport: CliSubcommand = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      fold: {
+        type: 'string',
+        default: 'none',
+        description: 'Fold reported alerts to some degree',
+      },
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
+      reportLevel: {
+        type: 'string',
+        default: 'warn',
+        description: 'Which policy level alerts should be reported',
+      },
+      short: {
+        type: 'boolean',
+        default: false,
+        description: 'Report only the healthy status',
+      },
+      license: {
+        type: 'boolean',
+        default: false,
+        description: 'Also report the license policy status. Default: false',
+      },
     },
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-    reportLevel: {
-      type: 'string',
-      default: 'warn',
-      description: 'Which policy level alerts should be reported',
-    },
-    short: {
-      type: 'boolean',
-      default: false,
-      description: 'Report only the healthy status',
-    },
-    license: {
-      type: 'boolean',
-      default: false,
-      description: 'Also report the license policy status. Default: false',
-    },
-  },
-  help: (command, config) => `
+    help: (command, config) => `
     Usage
       $ ${command} [options] <SCAN_ID> [OUTPUT_PATH]
 
     API Token Requirements
-      - Quota: 2 units
-      - Permissions: full-scans:list security-policy:read
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
       ${getFlagListOutput(config.flags)}
@@ -97,19 +116,8 @@ const config: CliCommandConfig = {
       $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json --fold=version
       $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --license --markdown --short
   `,
-}
+  }
 
-export const cmdScanReport: CliSubcommand = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

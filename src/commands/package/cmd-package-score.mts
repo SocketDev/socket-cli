@@ -7,29 +7,48 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'score',
-  description:
-    'Look up score for one package which reflects all of its transitive dependencies as well',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-  },
-  help: (command, config) => `
+export const CMD_NAME = 'score'
+
+const description =
+  'Look up score for one package which reflects all of its transitive dependencies as well'
+
+const hidden = false
+
+export const cmdPackageScore = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: 'score',
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+    },
+    help: (command, config) => `
     Usage
       $ ${command} [options] <<ECOSYSTEM> <NAME> | <PURL>>
 
     API Token Requirements
-      - Quota: 100 units
-      - Permissions: packages:list
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
       ${getFlagListOutput(config.flags)}
@@ -59,19 +78,8 @@ const config: CliCommandConfig = {
       $ ${command} pkg:golang/github.com/steelpoor/tlsproxy@v0.0.0-20250304082521-29051ed19c60
       $ ${command} nuget/needpluscommonlibrary@1.0.0 --markdown
   `,
-}
+  }
 
-export const cmdPackageScore = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

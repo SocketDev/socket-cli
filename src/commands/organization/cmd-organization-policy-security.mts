@@ -7,39 +7,58 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'security',
-  description: 'Retrieve the security policy of an organization',
-  hidden: true,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+export const CMD_NAME = 'security'
+
+const description = 'Retrieve the security policy of an organization'
+
+const hidden = true
+
+export const cmdOrganizationPolicySecurity = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
     },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-  },
-  help: (command, _config) => `
+    help: (command, _config) => `
     Usage
       $ ${command} [options]
 
     API Token Requirements
-      - Quota: 1 unit
-      - Permissions: security-policy:read
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
       ${getFlagListOutput(config.flags)}
@@ -51,19 +70,8 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} --json
   `,
-}
+  }
 
-export const cmdOrganizationPolicySecurity = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

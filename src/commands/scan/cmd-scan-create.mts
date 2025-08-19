@@ -17,7 +17,10 @@ import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { getRepoName, gitBranch } from '../../utils/git.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
@@ -31,6 +34,12 @@ const {
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
 } = constants
+
+const CMD_NAME = 'create'
+
+const description = 'Create a new Socket scan and report'
+
+const hidden = false
 
 const generalFlags: MeowFlags = {
   ...commonFlags,
@@ -126,22 +135,32 @@ const generalFlags: MeowFlags = {
   },
 }
 
-const config: CliCommandConfig = {
-  commandName: 'create',
-  description: 'Create a new Socket scan and report',
-  hidden: false,
-  flags: {
-    ...generalFlags,
-    ...reachabilityFlags,
-  },
-  // TODO: Your project's "socket.yml" file's "projectIgnorePaths".
-  help: command => `
+export const cmdScanCreate = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...generalFlags,
+      ...reachabilityFlags,
+    },
+    // TODO: Your project's "socket.yml" file's "projectIgnorePaths".
+    help: command => `
     Usage
       $ ${command} [options] [TARGET...]
 
     API Token Requirements
-      - Quota: 1 unit
-      - Permissions: full-scans:create
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
       ${getFlagListOutput(generalFlags)}
@@ -184,19 +203,8 @@ const config: CliCommandConfig = {
       $ ${command} ./proj --json
       $ ${command} --repo=test-repo --branch=main ./package.json
   `,
-}
+  }
 
-export const cmdScanCreate = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

@@ -23,7 +23,6 @@ describe('socket organization list', async () => {
 
           API Token Requirements
             - Quota: 1 unit
-            - Permissions: none (does need a token)
 
           Options
             --json              Output result as json

@@ -7,81 +7,25 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'list',
-  description: 'List repositories in an organization',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    all: {
-      type: 'boolean',
-      default: false,
-      description:
-        'By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --perPage.',
-    },
-    direction: {
-      type: 'string',
-      default: 'desc',
-      description: 'Direction option',
-    },
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-    perPage: {
-      type: 'number',
-      shortFlag: 'pp',
-      default: 30,
-      description: 'Number of results per page',
-    },
-    page: {
-      type: 'number',
-      shortFlag: 'p',
-      default: 1,
-      description: 'Page number',
-    },
-    sort: {
-      type: 'string',
-      shortFlag: 's',
-      default: 'created_at',
-      description: 'Sorting option',
-    },
-  },
-  help: (command, config) => `
-    Usage
-      $ ${command} [options]
+const CMD_NAME = 'list'
 
-    API Token Requirements
-      - Quota: 1 unit
-      - Permissions: repo:list
+const description = 'List repositories in an organization'
 
-    Options
-      ${getFlagListOutput(config.flags)}
-
-    Examples
-      $ ${command}
-      $ ${command} --json
-  `,
-}
+const hidden = false
 
 export const cmdRepositoryList = {
-  description: config.description,
-  hidden: config.hidden,
+  description,
+  hidden,
   run,
 }
 
@@ -90,6 +34,70 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string },
 ): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      all: {
+        type: 'boolean',
+        default: false,
+        description:
+          'By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --perPage.',
+      },
+      direction: {
+        type: 'string',
+        default: 'desc',
+        description: 'Direction option',
+      },
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
+      perPage: {
+        type: 'number',
+        shortFlag: 'pp',
+        default: 30,
+        description: 'Number of results per page',
+      },
+      page: {
+        type: 'number',
+        shortFlag: 'p',
+        default: 1,
+        description: 'Page number',
+      },
+      sort: {
+        type: 'string',
+        shortFlag: 's',
+        default: 'created_at',
+        description: 'Sorting option',
+      },
+    },
+    help: (command, config) => `
+    Usage
+      $ ${command} [options]
+
+    API Token Requirements
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
+
+    Options
+      ${getFlagListOutput(config.flags)}
+
+    Examples
+      $ ${command}
+      $ ${command} --json
+  `,
+  }
+
   const cli = meowOrExit({
     argv,
     config,

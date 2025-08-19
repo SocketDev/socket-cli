@@ -6,33 +6,52 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'analytics',
-  description: 'Look up analytics data',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    file: {
-      type: 'string',
-      description: 'Path to store result, only valid with --json/--markdown',
+export const CMD_NAME = 'analytics'
+
+const description = 'Look up analytics data'
+
+const hidden = false
+
+export const cmdAnalytics = {
+  description,
+  hidden,
+  run: run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      file: {
+        type: 'string',
+        description: 'Path to store result, only valid with --json/--markdown',
+      },
     },
-  },
-  help: (command, { flags }) =>
-    `
+    help: (command, { flags }) =>
+      `
     Usage
       $ ${command} [options] [ "org" | "repo" <reponame>] [TIME]
 
     API Token Requirements
-      - Quota: 1 unit
-      - Permissions: report:write
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     The scope is either org or repo level, defaults to org.
 
@@ -48,19 +67,8 @@ const config: CliCommandConfig = {
       $ ${command} repo test-repo 30
       $ ${command} 90
   `,
-}
+  }
 
-export const cmdAnalytics = {
-  description: config.description,
-  hidden: config.hidden,
-  run: run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

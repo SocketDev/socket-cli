@@ -32,7 +32,7 @@ describe('socket root command', async () => {
           package                     Look up published package details
           repository                  Manage registered repositories
           scan                        Manage Socket scans
-          threat-feed                 [Beta] View the threat feed
+          threat-feed                 [Beta] View the threat-feed
 
         Local tools
           fix                         Update dependencies with "fixable" Socket alerts

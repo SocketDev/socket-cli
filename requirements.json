@@ -1,0 +1,116 @@
+{
+  "api": {
+    "analytics": {
+      "quota": 1,
+      "permissions": ["report:write"]
+    },
+    "audit-log": {
+      "quota": 1,
+      "permissions": ["audit-log:list"]
+    },
+    "fix": {
+      "quota": 100,
+      "permissions": ["packages:list"]
+    },
+    "login": {
+      "quota": 1,
+      "permissions": []
+    },
+    "npm": {
+      "quota": 100,
+      "permissions": ["packages:list"]
+    },
+    "npx": {
+      "quota": 100,
+      "permissions": ["packages:list"]
+    },
+    "organization:dependencies": {
+      "quota": 1,
+      "permissions": []
+    },
+    "organization:list": {
+      "quota": 1,
+      "permissions": []
+    },
+    "organization:policy:license": {
+      "quota": 1,
+      "permissions": ["license-policy:read"]
+    },
+    "organization:policy:security": {
+      "quota": 1,
+      "permissions": ["security-policy:read"]
+    },
+    "package:score": {
+      "quota": 100,
+      "permissions": ["packages:list"]
+    },
+    "package:shallow": {
+      "quota": 100,
+      "permissions": ["packages:list"]
+    },
+    "repository:create": {
+      "quota": 1,
+      "permissions": ["repo:create"]
+    },
+    "repository:del": {
+      "quota": 1,
+      "permissions": ["repo:delete"]
+    },
+    "repository:list": {
+      "quota": 1,
+      "permissions": ["repo:list"]
+    },
+    "repository:update": {
+      "quota": 1,
+      "permissions": ["repo:update"]
+    },
+    "repository:view": {
+      "quota": 1,
+      "permissions": ["repo:list"]
+    },
+    "scan:create": {
+      "quota": 1,
+      "permissions": ["full-scans:create"]
+    },
+    "scan:delete": {
+      "quota": 1,
+      "permissions": ["full-scans:delete"]
+    },
+    "scan:diff": {
+      "quota": 1,
+      "permissions": ["full-scans:list"]
+    },
+    "scan:list": {
+      "quota": 1,
+      "permissions": ["full-scans:list"]
+    },
+    "scan:github": {
+      "quota": 1,
+      "permissions": ["full-scans:create"]
+    },
+    "scan:metadata": {
+      "quota": 1,
+      "permissions": ["full-scans:list"]
+    },
+    "scan:reach": {
+      "quota": 1,
+      "permissions": ["full-scans:create"]
+    },
+    "scan:report": {
+      "quota": 2,
+      "permissions": ["full-scans:list", "security-policy:read"]
+    },
+    "scan:view": {
+      "quota": 1,
+      "permissions": ["full-scans:list"]
+    },
+    "shallow": {
+      "quota": 100,
+      "permissions": ["packages:list"]
+    },
+    "threat-feed": {
+      "quota": 1,
+      "permissions": ["threat-feed:list"]
+    }
+  }
+}
