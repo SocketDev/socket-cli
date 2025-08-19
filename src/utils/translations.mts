@@ -5,7 +5,9 @@ import constants from '../constants.mts'
 
 const require = createRequire(import.meta.url)
 
-let _translations: typeof import('../../translations.json') | undefined
+let _translations:
+  | Readonly<typeof import('../../translations.json')>
+  | undefined
 
 export function getTranslations() {
   if (_translations === undefined) {

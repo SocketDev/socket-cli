@@ -19,6 +19,7 @@ const { DRY_RUN_BAILING_NOW } = constants
 
 const description =
   'Automatically discover and set the correct value config item'
+
 const hidden = false
 
 export const cmdConfigAuto = {

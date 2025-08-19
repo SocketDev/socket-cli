@@ -7,59 +7,78 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'create',
-  description: 'Create a repository in an organization',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    defaultBranch: {
-      type: 'string',
-      default: 'main',
-      description: 'Repository default branch. Defaults to "main"',
+const CMD_NAME = 'create'
+
+const description = 'Create a repository in an organization'
+
+const hidden = false
+
+export const cmdRepositoryCreate = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      defaultBranch: {
+        type: 'string',
+        default: 'main',
+        description: 'Repository default branch. Defaults to "main"',
+      },
+      homepage: {
+        type: 'string',
+        default: '',
+        description: 'Repository url',
+      },
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
+      repoDescription: {
+        type: 'string',
+        default: '',
+        description: 'Repository description',
+      },
+      visibility: {
+        type: 'string',
+        default: 'private',
+        description: 'Repository visibility (Default Private)',
+      },
     },
-    homepage: {
-      type: 'string',
-      default: '',
-      description: 'Repository url',
-    },
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-    repoDescription: {
-      type: 'string',
-      default: '',
-      description: 'Repository description',
-    },
-    visibility: {
-      type: 'string',
-      default: 'private',
-      description: 'Repository visibility (Default Private)',
-    },
-  },
-  help: (command, config) => `
+    help: (command, config) => `
     Usage
       $ ${command} [options] <REPO>
 
     API Token Requirements
-      - Quota: 1 unit
-      - Permissions: repo:create
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     The REPO name should be a "slug". Follows the same naming convention as GitHub.
 
@@ -70,19 +89,8 @@ const config: CliCommandConfig = {
       $ ${command} test-repo
       $ ${command} our-repo --homepage=socket.dev --default-branch=trunk
   `,
-}
+  }
 
-export const cmdRepositoryCreate = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

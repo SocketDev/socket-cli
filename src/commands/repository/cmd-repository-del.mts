@@ -7,51 +7,25 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'del',
-  description: 'Delete a repository in an organization',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-  },
-  help: (command, config) => `
-    Usage
-      $ ${command} [options] <REPO>
+const CMD_NAME = 'del'
 
-    API Token Requirements
-      - Quota: 1 unit
-      - Permissions: repo:delete
+const description = 'Delete a repository in an organization'
 
-    Options
-      ${getFlagListOutput(config.flags)}
-
-    Examples
-      $ ${command} test-repo
-  `,
-}
+const hidden = false
 
 export const cmdRepositoryDel = {
-  description: config.description,
-  hidden: config.hidden,
+  description,
+  hidden,
   run,
 }
 
@@ -60,6 +34,40 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string },
 ): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
+    },
+    help: (command, config) => `
+    Usage
+      $ ${command} [options] <REPO>
+
+    API Token Requirements
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
+
+    Options
+      ${getFlagListOutput(config.flags)}
+
+    Examples
+      $ ${command} test-repo
+  `,
+  }
+
   const cli = meowOrExit({
     argv,
     config,

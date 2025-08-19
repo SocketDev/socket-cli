@@ -7,14 +7,20 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
+export const CMD_NAME = 'threat-feed'
+
 const ECOSYSTEMS = new Set(['gem', 'golang', 'maven', 'npm', 'nuget', 'pypi'])
+
 const TYPE_FILTERS = new Set([
   'anom',
   'c',
@@ -29,68 +35,82 @@ const TYPE_FILTERS = new Set([
   'vuln',
 ])
 
-const config: CliCommandConfig = {
-  commandName: 'threat-feed',
-  description: '[Beta] View the threat feed',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    direction: {
-      type: 'string',
-      default: 'desc',
-      description: 'Order asc or desc by the createdAt attribute',
+const description = '[Beta] View the threat-feed'
+
+const hidden = false
+
+export const cmdThreatFeed = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      direction: {
+        type: 'string',
+        default: 'desc',
+        description: 'Order asc or desc by the createdAt attribute',
+      },
+      eco: {
+        type: 'string',
+        default: '',
+        description: 'Only show threats for a particular ecosystem',
+      },
+      filter: {
+        type: 'string',
+        default: 'mal',
+        description: 'Filter what type of threats to return',
+      },
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
+      page: {
+        type: 'string',
+        default: '1',
+        description: 'Page token',
+      },
+      perPage: {
+        type: 'number',
+        shortFlag: 'pp',
+        default: 30,
+        description: 'Number of items per page',
+      },
+      pkg: {
+        type: 'string',
+        default: '',
+        description: 'Filter by this package name',
+      },
+      version: {
+        type: 'string',
+        default: '',
+        description: 'Filter by this package version',
+      },
     },
-    eco: {
-      type: 'string',
-      default: '',
-      description: 'Only show threats for a particular ecosystem',
-    },
-    filter: {
-      type: 'string',
-      default: 'mal',
-      description: 'Filter what type of threats to return',
-    },
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-    page: {
-      type: 'string',
-      default: '1',
-      description: 'Page token',
-    },
-    perPage: {
-      type: 'number',
-      shortFlag: 'pp',
-      default: 30,
-      description: 'Number of items per page',
-    },
-    pkg: {
-      type: 'string',
-      default: '',
-      description: 'Filter by this package name',
-    },
-    version: {
-      type: 'string',
-      default: '',
-      description: 'Filter by this package version',
-    },
-  },
-  help: (command, config) => `
+    help: (command, config) => `
     Usage
       $ ${command} [options] [ECOSYSTEM] [TYPE_FILTER]
 
     API Token Requirements
-      - Quota: 1 unit
-      - Permissions: threat-feed:list
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
       - Special access
 
     This feature requires a Threat Feed license. Please contact
@@ -142,19 +162,8 @@ const config: CliCommandConfig = {
       $ ${command} typo
       $ ${command} npm joke 1.0.0 --perPage=5 --page=2 --direction=asc
   `,
-}
+  }
 
-export const cmdThreatFeed = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

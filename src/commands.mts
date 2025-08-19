@@ -34,7 +34,7 @@ export const rootCommands = {
   ci: cmdCI,
   cdxgen: cmdManifestCdxgen,
   config: cmdConfig,
-  deps: cmdOrganizationDependencies,
+  dependencies: cmdOrganizationDependencies,
   fix: cmdFix,
   install: cmdInstall,
   json: cmdJson,
@@ -78,6 +78,11 @@ export const rootAliases = {
     description: cmdAuditLog.description,
     hidden: true,
     argv: ['audit-log'],
+  },
+  deps: {
+    description: cmdOrganizationDependencies.description,
+    hidden: true,
+    argv: ['dependencies'],
   },
   feed: {
     description: cmdThreatFeed.description,

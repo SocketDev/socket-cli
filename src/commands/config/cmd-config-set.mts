@@ -18,6 +18,7 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 const { DRY_RUN_BAILING_NOW } = constants
 
 const description = 'Update the value of a local CLI config item'
+
 const hidden = false
 
 export const cmdConfigSet = {

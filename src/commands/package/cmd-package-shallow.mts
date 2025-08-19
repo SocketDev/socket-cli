@@ -7,28 +7,54 @@ import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'shallow',
-  description:
-    'Look up info regarding one or more packages but not their transitives',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
+export const CMD_NAME = 'shallow'
+
+const description =
+  'Look up info regarding one or more packages but not their transitives'
+
+const hidden = false
+
+export const cmdPackageShallow = {
+  description,
+  hidden,
+  alias: {
+    shallowScore: {
+      description,
+      hidden: true,
+      argv: [],
+    },
   },
-  help: (command, config) => `
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+    },
+    help: (command, config) => `
     Usage
       $ ${command} [options] <<ECOSYSTEM> <PKGNAME> [<PKGNAME> ...] | <PURL> [<PURL> ...]>
 
     API Token Requirements
-      - Quota: 100 units
-      - Permissions: packages:list
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
       ${getFlagListOutput(config.flags)}
@@ -57,26 +83,8 @@ const config: CliCommandConfig = {
       $ ${command} npm/webtorrent golang/babel
       $ ${command} npm npm/webtorrent@1.0.1 babel
   `,
-}
+  }
 
-export const cmdPackageShallow = {
-  description: config.description,
-  hidden: config.hidden,
-  alias: {
-    shallowScore: {
-      description: config.description,
-      hidden: true,
-      argv: [],
-    },
-  },
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

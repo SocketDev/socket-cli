@@ -7,48 +7,67 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW, SOCKET_WEBSITE_URL } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'audit-log',
-  description: 'Look up the audit log for an organization',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+const CMD_NAME = 'audit-log'
+
+const description = 'Look up the audit log for an organization'
+
+const hidden = false
+
+export const cmdAuditLog = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input.\nUse --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
+      page: {
+        type: 'number',
+        description: 'Result page to fetch',
+      },
+      perPage: {
+        type: 'number',
+        default: 30,
+        description: 'Results per page - default is 30',
+      },
     },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-    page: {
-      type: 'number',
-      description: 'Result page to fetch',
-    },
-    perPage: {
-      type: 'number',
-      default: 30,
-      description: 'Results per page - default is 30',
-    },
-  },
-  help: (command, config) => `
+    help: (command, config) => `
     Usage
       $ ${command} [options] [FILTER]
 
     API Token Requirements
-      - Quota: 1 unit
-      - Permissions: audit-log:list
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     This feature requires an Enterprise Plan. To learn more about getting access
     to this feature and many more, please visit ${SOCKET_WEBSITE_URL}/pricing
@@ -72,19 +91,8 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} deleteReport --page 2 --perPage 10
   `,
-}
+  }
 
-export const cmdAuditLog = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

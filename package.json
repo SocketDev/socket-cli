@@ -24,6 +24,7 @@
     "./bin/npm-cli.js": "./dist/npm-cli.js",
     "./bin/npx-cli.js": "./dist/npx-cli.js",
     "./package.json": "./package.json",
+    "./requirements.json": "./requirements.json",
     "./translations.json": "./translations.json"
   },
   "scripts": {
@@ -218,6 +219,7 @@
     "dist/**",
     "external/**",
     "shadow-bin/**",
+    "requirements.json",
     "translations.json"
   ],
   "lint-staged": {
