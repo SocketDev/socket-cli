@@ -7,76 +7,25 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'update',
-  description: 'Update a repository in an organization',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    defaultBranch: {
-      type: 'string',
-      shortFlag: 'b',
-      default: 'main',
-      description: 'Repository default branch',
-    },
-    homepage: {
-      type: 'string',
-      shortFlag: 'h',
-      default: '',
-      description: 'Repository url',
-    },
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-    repoDescription: {
-      type: 'string',
-      shortFlag: 'd',
-      default: '',
-      description: 'Repository description',
-    },
-    visibility: {
-      type: 'string',
-      shortFlag: 'v',
-      default: 'private',
-      description: 'Repository visibility (Default Private)',
-    },
-  },
-  help: (command, config) => `
-    Usage
-      $ ${command} [options] <REPO>
+const CMD_NAME = 'update'
 
-    API Token Requirements
-      - Quota: 1 unit
-      - Permissions: repo:update
+const description = 'Update a repository in an organization'
 
-    Options
-      ${getFlagListOutput(config.flags)}
-
-    Examples
-      $ ${command} test-repo
-      $ ${command} test-repo --homepage https://example.com
-  `,
-}
+const hidden = false
 
 export const cmdRepositoryUpdate = {
-  description: config.description,
-  hidden: config.hidden,
+  description,
+  hidden,
   run,
 }
 
@@ -85,6 +34,65 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string },
 ): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      defaultBranch: {
+        type: 'string',
+        shortFlag: 'b',
+        default: 'main',
+        description: 'Repository default branch',
+      },
+      homepage: {
+        type: 'string',
+        shortFlag: 'h',
+        default: '',
+        description: 'Repository url',
+      },
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
+      repoDescription: {
+        type: 'string',
+        shortFlag: 'd',
+        default: '',
+        description: 'Repository description',
+      },
+      visibility: {
+        type: 'string',
+        shortFlag: 'v',
+        default: 'private',
+        description: 'Repository visibility (Default Private)',
+      },
+    },
+    help: (command, config) => `
+    Usage
+      $ ${command} [options] <REPO>
+
+    API Token Requirements
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
+
+    Options
+      ${getFlagListOutput(config.flags)}
+
+    Examples
+      $ ${command} test-repo
+      $ ${command} test-repo --homepage https://example.com
+  `,
+  }
+
   const cli = meowOrExit({
     argv,
     config,

@@ -21,7 +21,6 @@ describe('socket organization dependencies', async () => {
 
           API Token Requirements
             - Quota: 1 unit
-            - Permissions: none (does need token with access to target org)
 
           Options
             --json              Output result as json

@@ -272,7 +272,7 @@ export async function meowWithSubcommands(
       'ci',
       'cdxgen',
       'config',
-      'deps',
+      'dependencies',
       'fix',
       'install',
       //'json',

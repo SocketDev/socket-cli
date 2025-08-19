@@ -7,7 +7,10 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type {
@@ -17,73 +20,89 @@ import type {
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'list',
-  description: 'List the scans for an organization',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    branch: {
-      type: 'string',
-      description: 'Filter to show only scans with this branch name',
+const CMD_NAME = 'list'
+
+const description = 'List the scans for an organization'
+
+const hidden = false
+
+export const cmdScanList: CliSubcommand = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+) {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      branch: {
+        type: 'string',
+        description: 'Filter to show only scans with this branch name',
+      },
+      direction: {
+        type: 'string',
+        shortFlag: 'd',
+        default: 'desc',
+        description: 'Direction option (`desc` or `asc`) - Default is `desc`',
+      },
+      fromTime: {
+        type: 'string',
+        shortFlag: 'f',
+        default: '',
+        description: 'From time - as a unix timestamp',
+      },
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      page: {
+        type: 'number',
+        shortFlag: 'p',
+        default: 1,
+        description: 'Page number - Default is 1',
+      },
+      perPage: {
+        type: 'number',
+        shortFlag: 'pp',
+        default: 30,
+        description: 'Results per page - Default is 30',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
+      sort: {
+        type: 'string',
+        shortFlag: 's',
+        default: 'created_at',
+        description:
+          'Sorting option (`name` or `created_at`) - default is `created_at`',
+      },
+      untilTime: {
+        type: 'string',
+        shortFlag: 'u',
+        default: '',
+        description: 'Until time - as a unix timestamp',
+      },
     },
-    direction: {
-      type: 'string',
-      shortFlag: 'd',
-      default: 'desc',
-      description: 'Direction option (`desc` or `asc`) - Default is `desc`',
-    },
-    fromTime: {
-      type: 'string',
-      shortFlag: 'f',
-      default: '',
-      description: 'From time - as a unix timestamp',
-    },
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    page: {
-      type: 'number',
-      shortFlag: 'p',
-      default: 1,
-      description: 'Page number - Default is 1',
-    },
-    perPage: {
-      type: 'number',
-      shortFlag: 'pp',
-      default: 30,
-      description: 'Results per page - Default is 30',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-    sort: {
-      type: 'string',
-      shortFlag: 's',
-      default: 'created_at',
-      description:
-        'Sorting option (`name` or `created_at`) - default is `created_at`',
-    },
-    untilTime: {
-      type: 'string',
-      shortFlag: 'u',
-      default: '',
-      description: 'Until time - as a unix timestamp',
-    },
-  },
-  help: (command, config) => `
+    help: (command, config) => `
     Usage
       $ ${command} [options] [REPO [BRANCH]]
 
     API Token Requirements
-      - Quota: 1 unit
-      - Permissions: full-scans:list
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Optionally filter by REPO. If you specify a repo, you can also specify a
     branch to filter by. (Note: If you don't specify a repo then you must use
@@ -96,19 +115,8 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} webtools badbranch --markdown
   `,
-}
+  }
 
-export const cmdScanList: CliSubcommand = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-) {
   const cli = meowOrExit({
     argv,
     config,
