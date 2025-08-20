@@ -44,17 +44,14 @@ async function run(
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    Run npm with packages installs gated through the Socket API.
-    See docs for more details.
-
-    Note: Everything after "npm" is sent straight to the npm command.
-          Only the \`--dryRun\` and \`--help\` flags are caught here.
+    Note: Everything after "npm" is passed to the npm command.
+          Only the \`--dry-run\` and \`--help\` flags are caught here.
 
     Use \`socket wrapper on\` to alias this command as \`npm\`.
 
     Examples
       $ ${command}
-      $ ${command} install -g socket
+      $ ${command} install -g cowsay
     `,
   }
 

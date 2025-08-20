@@ -20,15 +20,15 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} ...
 
-    This does the opposite of \`socket npx\`: it will execute the real \`npx\`
-    command without Socket. This can be useful when you have the wrapper on
-    and want to run a certain package anyways. Use at your own risk.
+    Execute \`npx\` without gating installs through the Socket API.
+    Useful when  \`socket wrapper on\` is enabled and you want to bypass
+    the Socket wrapper. Use at your own risk.
 
-    Note: Everything after "raw-npx" is sent straight to the npx command.
-          Only the \`--dryRun\` and \`--help\` flags are caught here.
+    Note: Everything after "raw-npx" is passed to the npx command.
+          Only the \`--dry-run\` and \`--help\` flags are caught here.
 
     Examples
-      $ ${command} prettier
+      $ ${command} cowsay
   `,
 }
 

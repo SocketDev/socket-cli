@@ -20,15 +20,15 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} ...
 
-    This does the opposite of \`socket npm\`: it will execute the real \`npm\`
-    command without Socket. This can be useful when you have the wrapper on
-    and want to install a certain package anyways. Use at your own risk.
+    Execute \`npm\` without gating installs through the Socket API.
+    Useful when  \`socket wrapper on\` is enabled and you want to bypass
+    the Socket wrapper. Use at your own risk.
 
-    Note: Everything after "raw-npm" is sent straight to the npm command.
-          Only the \`--dryRun\` and \`--help\` flags are caught here.
+    Note: Everything after "raw-npm" is passed to the npm command.
+          Only the \`--dry-run\` and \`--help\` flags are caught here.
 
     Examples
-      $ ${command} install -g socket
+      $ ${command} install -g cowsay
   `,
 }
 

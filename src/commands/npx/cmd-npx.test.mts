@@ -23,17 +23,13 @@ describe('socket npx', async () => {
             - Quota: 100 units
             - Permissions: packages:list
 
-          Run npx with packages installs gated through the Socket API.
-          See docs for more details.
-
-          Note: Everything after "npx" is sent straight to the npx command.
-                Only the \`--dryRun\` and \`--help\` flags are caught here.
+          Note: Everything after "npx" is passed to the npx command.
+                Only the \`--dry-run\` and \`--help\` flags are caught here.
 
           Use \`socket wrapper on\` to alias this command as \`npx\`.
 
           Examples
-            $ socket npx
-            $ socket npx prettier"
+            $ socket npx cowsay"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
