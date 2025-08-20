@@ -20,7 +20,7 @@ import type {
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const CMD_NAME = 'list'
+export const CMD_NAME = 'list'
 
 const description = 'List the scans for an organization'
 

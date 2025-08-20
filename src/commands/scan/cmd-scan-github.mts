@@ -11,7 +11,10 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
@@ -19,57 +22,73 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'github',
-  description: 'Create a scan for given GitHub repo',
-  hidden: true, // wip
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    all: {
-      type: 'boolean',
-      description:
-        'Apply for all known repositories reported by the Socket API. Supersedes `repos`.',
+export const CMD_NAME = 'github'
+
+const description = 'Create a scan for given GitHub repo'
+
+const hidden = true
+
+export const cmdScanGithub = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      all: {
+        type: 'boolean',
+        description:
+          'Apply for all known repositories reported by the Socket API. Supersedes `repos`.',
+      },
+      githubToken: {
+        type: 'string',
+        description:
+          'Required GitHub token for authentication.\nMay set environment variable GITHUB_TOKEN or SOCKET_CLI_GITHUB_TOKEN instead.',
+      },
+      githubApiUrl: {
+        type: 'string',
+        description:
+          'Base URL of the GitHub API (default: https://api.github.com)',
+      },
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
+      orgGithub: {
+        type: 'string',
+        description:
+          'Alternate GitHub Org if the name is different than the Socket Org',
+      },
+      repos: {
+        type: 'string',
+        description:
+          'List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. Use --all to use them all.',
+      },
     },
-    githubToken: {
-      type: 'string',
-      description:
-        'Required GitHub token for authentication.\nMay set environment variable GITHUB_TOKEN or SOCKET_CLI_GITHUB_TOKEN instead.',
-    },
-    githubApiUrl: {
-      type: 'string',
-      description:
-        'Base URL of the GitHub API (default: https://api.github.com)',
-    },
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-    orgGithub: {
-      type: 'string',
-      description:
-        'Alternate GitHub Org if the name is different than the Socket Org',
-    },
-    repos: {
-      type: 'string',
-      description:
-        'List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. Use --all to use them all.',
-    },
-  },
-  help: (command, config) => `
+    help: (command, config) => `
     Usage
       $ ${command} [options] [CWD=.]
 
     API Token Requirements
-      - Quota: 1 unit
-      - Permissions: full-scans:create
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     This is similar to the \`socket scan create\` command except it pulls the files
     from GitHub. See the help for that command for more details.
@@ -90,19 +109,8 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} ./proj
   `,
-}
+  }
 
-export const cmdScanGithub = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

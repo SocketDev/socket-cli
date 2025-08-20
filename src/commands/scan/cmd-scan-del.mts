@@ -7,52 +7,25 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'del',
-  description: 'Delete a scan',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-  },
-  help: (command, config) => `
-    Usage
-      $ ${command} [options] <SCAN_ID>
+export const CMD_NAME = 'del'
 
-    API Token Requirements
-      - Quota: 1 unit
-      - Permissions: full-scans:delete
+const description = 'Delete a scan'
 
-    Options
-      ${getFlagListOutput(config.flags)}
-
-    Examples
-      $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0
-      $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json
-  `,
-}
+const hidden = false
 
 export const cmdScanDel = {
-  description: config.description,
-  hidden: config.hidden,
+  description,
+  hidden,
   run,
 }
 
@@ -61,6 +34,41 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string },
 ): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
+    },
+    help: (command, config) => `
+    Usage
+      $ ${command} [options] <SCAN_ID>
+
+    API Token Requirements
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
+
+    Options
+      ${getFlagListOutput(config.flags)}
+
+    Examples
+      $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0
+      $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0 --json
+  `,
+  }
+
   const cli = meowOrExit({
     argv,
     config,

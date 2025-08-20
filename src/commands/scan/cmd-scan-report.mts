@@ -20,7 +20,7 @@ import type {
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const CMD_NAME = 'report'
+export const CMD_NAME = 'report'
 
 const description =
   'Check whether a scan result passes the organizational policies (security, license)'

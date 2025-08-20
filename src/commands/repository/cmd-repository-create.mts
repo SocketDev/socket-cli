@@ -17,7 +17,7 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const CMD_NAME = 'create'
+export const CMD_NAME = 'create'
 
 const description = 'Create a repository in an organization'
 

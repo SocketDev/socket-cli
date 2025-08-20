@@ -7,56 +7,75 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW, SOCKET_WEBSITE_URL } = constants
 
+export const CMD_NAME = 'diff'
+
 const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
 
 const { length: SOCKET_SBOM_URL_PREFIX_LENGTH } = SOCKET_SBOM_URL_PREFIX
 
-const config: CliCommandConfig = {
-  commandName: 'diff',
-  description: 'See what changed between two Scans',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    depth: {
-      type: 'number',
-      default: 2,
-      description:
-        'Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)',
+const description = 'See what changed between two Scans'
+
+const hidden = false
+
+export const cmdScanDiff = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      depth: {
+        type: 'number',
+        default: 2,
+        description:
+          'Max depth of JSON to display before truncating, use zero for no limit (without --json/--file)',
+      },
+      file: {
+        type: 'string',
+        shortFlag: 'f',
+        default: '',
+        description:
+          'Path to a local file where the output should be saved. Use `-` to force stdout.',
+      },
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
     },
-    file: {
-      type: 'string',
-      shortFlag: 'f',
-      default: '',
-      description:
-        'Path to a local file where the output should be saved. Use `-` to force stdout.',
-    },
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-  },
-  help: (command, config) => `
+    help: (command, config) => `
     Usage
       $ ${command} [options] <SCAN_ID1> <SCAN_ID2>
 
     API Token Requirements
-      - Quota: 1 unit
-      - Permissions: full-scans:list
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     This command displays the package changes between two scans. The full output
     can be pretty large depending on the size of your repo and time range. It is
@@ -73,19 +92,8 @@ const config: CliCommandConfig = {
       $ ${command} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1
       $ ${command} aaa0aa0a-aaaa-0000-0a0a-0000000a00a0 aaa1aa1a-aaaa-1111-1a1a-1111111a11a1 --json
   `,
-}
+  }
 
-export const cmdScanDiff = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

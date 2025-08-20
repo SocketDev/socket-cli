@@ -8,7 +8,10 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type {
@@ -18,38 +21,54 @@ import type {
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'view',
-  description: 'View the raw results of a scan',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    ...outputFlags,
-    stream: {
-      type: 'boolean',
-      default: false,
-      description:
-        'Only valid with --json. Streams the response as "ndjson" (chunks of valid json blobs).',
+export const CMD_NAME = 'view'
+
+const description = 'View the raw results of a scan'
+
+const hidden = false
+
+export const cmdScanView: CliSubcommand = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      ...outputFlags,
+      stream: {
+        type: 'boolean',
+        default: false,
+        description:
+          'Only valid with --json. Streams the response as "ndjson" (chunks of valid json blobs).',
+      },
+      interactive: {
+        type: 'boolean',
+        default: true,
+        description:
+          'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
+      },
+      org: {
+        type: 'string',
+        description:
+          'Force override the organization slug, overrides the default org from config',
+      },
     },
-    interactive: {
-      type: 'boolean',
-      default: true,
-      description:
-        'Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.',
-    },
-    org: {
-      type: 'string',
-      description:
-        'Force override the organization slug, overrides the default org from config',
-    },
-  },
-  help: (command, config) => `
+    help: (command, config) => `
     Usage
       $ ${command} [options] <SCAN_ID> [OUTPUT_FILE]
 
     API Token Requirements
-      - Quota: 1 unit
-      - Permissions: full-scans:list
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     When no output path is given the contents is sent to stdout.
 
@@ -60,19 +79,8 @@ const config: CliCommandConfig = {
       $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0
       $ ${command} 000aaaa1-0000-0a0a-00a0-00a0000000a0 ./stream.txt
   `,
-}
+  }
 
-export const cmdScanView: CliSubcommand = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,
