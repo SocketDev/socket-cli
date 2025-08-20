@@ -25,7 +25,7 @@ const hidden = false
 export const cmdAnalytics = {
   description,
   hidden,
-  run: run,
+  run,
 }
 
 async function run(

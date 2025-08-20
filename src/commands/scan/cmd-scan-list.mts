@@ -36,7 +36,7 @@ async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
   { parentName }: { parentName: string },
-) {
+): Promise<void> {
   const config: CliCommandConfig = {
     commandName: CMD_NAME,
     description,
