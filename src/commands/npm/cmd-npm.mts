@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { getFlagApiRequirementsOutput } from '../../utils/output-formatting.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -12,16 +13,36 @@ const require = createRequire(import.meta.url)
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'npm',
-  description: 'Run npm with the Socket wrapper',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-  },
-  help: command => `
+export const CMD_NAME = 'npm'
+
+const description = 'Run npm with the Socket wrapper'
+
+const hidden = false
+
+export const cmdNpm = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+    },
+    help: command => `
     Usage
       $ ${command} ...
+
+    API Token Requirements
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     This runs npm but checks packages through Socket before installing anything.
     See docs for more details.
@@ -35,20 +56,9 @@ const config: CliCommandConfig = {
     Examples
       $ ${command}
       $ ${command} install -g socket
-  `,
-}
+    `,
+  }
 
-export const cmdNpm = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

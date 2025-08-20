@@ -17,6 +17,8 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
+export const CMD_NAME = 'auto'
+
 const description =
   'Automatically discover and set the correct value config item'
 
@@ -34,7 +36,7 @@ async function run(
   { parentName }: { parentName: string },
 ): Promise<void> {
   const config: CliCommandConfig = {
-    commandName: 'auto',
+    commandName: CMD_NAME,
     description,
     hidden,
     flags: {

@@ -36,7 +36,7 @@ async function run(
   { parentName }: { parentName: string },
 ): Promise<void> {
   const config: CliCommandConfig = {
-    commandName: 'score',
+    commandName: CMD_NAME,
     description,
     hidden,
     flags: {

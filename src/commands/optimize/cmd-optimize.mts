@@ -7,45 +7,24 @@ import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'optimize',
-  description: 'Optimize dependencies with @socketregistry overrides',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-    pin: {
-      type: 'boolean',
-      default: false,
-      description: 'Pin overrides to their latest version',
-    },
-    prod: {
-      type: 'boolean',
-      default: false,
-      description: 'Only add overrides for production dependencies',
-    },
-  },
-  help: (command, config) => `
-    Usage
-      $ ${command} [options] [CWD=.]
+export const CMD_NAME = 'optimize'
 
-    Options
-      ${getFlagListOutput(config.flags)}
+const description = 'Optimize dependencies with @socketregistry overrides'
 
-    Examples
-      $ ${command}
-      $ ${command} ./proj/tree --pin
-  `,
-}
+const hidden = false
 
 export const cmdOptimize = {
-  description: config.description,
-  hidden: config.hidden,
+  description,
+  hidden,
   run,
 }
 
@@ -54,6 +33,39 @@ async function run(
   importMeta: ImportMeta,
   { parentName }: { parentName: string },
 ): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+      pin: {
+        type: 'boolean',
+        default: false,
+        description: 'Pin overrides to their latest version',
+      },
+      prod: {
+        type: 'boolean',
+        default: false,
+        description: 'Only add overrides for production dependencies',
+      },
+    },
+    help: (command, config) => `
+    Usage
+      $ ${command} [options] [CWD=.]
+
+    API Token Requirements
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
+
+    Options
+      ${getFlagListOutput(config.flags)}
+
+    Examples
+      $ ${command}
+      $ ${command} ./proj/tree --pin
+  `,
+  }
+
   const cli = meowOrExit({
     argv,
     config,

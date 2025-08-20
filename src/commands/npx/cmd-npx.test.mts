@@ -19,6 +19,10 @@ describe('socket npx', async () => {
           Usage
             $ socket npx ...
 
+          API Token Requirements
+            - Quota: 100 units
+            - Permissions: packages:list
+
           This runs npx but checks packages through Socket before running them.
           See docs for more details.
 
