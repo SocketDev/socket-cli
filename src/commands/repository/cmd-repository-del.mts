@@ -17,7 +17,7 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const CMD_NAME = 'del'
+export const CMD_NAME = 'del'
 
 const description = 'Delete a repository in an organization'
 

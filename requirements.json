@@ -72,7 +72,7 @@
       "quota": 1,
       "permissions": ["full-scans:create"]
     },
-    "scan:delete": {
+    "scan:del": {
       "quota": 1,
       "permissions": ["full-scans:delete"]
     },

@@ -14,7 +14,10 @@ import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
-import { getFlagListOutput } from '../../utils/output-formatting.mts'
+import {
+  getFlagApiRequirementsOutput,
+  getFlagListOutput,
+} from '../../utils/output-formatting.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 
 import type { MeowFlags } from '../../flags.mts'
@@ -22,6 +25,12 @@ import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
+
+export const CMD_NAME = 'reach'
+
+const description = 'Compute tier 1 reachability'
+
+const hidden = true
 
 const generalFlags: MeowFlags = {
   ...commonFlags,
@@ -37,22 +46,32 @@ const generalFlags: MeowFlags = {
   },
 }
 
-const config: CliCommandConfig = {
-  commandName: 'reach',
-  description: 'Compute tier 1 reachability',
-  hidden: true,
-  flags: {
-    ...generalFlags,
-    ...reachabilityFlags,
-  },
-  help: command =>
-    `
+export const cmdScanReach = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...generalFlags,
+      ...reachabilityFlags,
+    },
+    help: command =>
+      `
     Usage
       $ ${command} [options] [CWD=.]
 
     API Token Requirements
-      - Quota: 1 unit
-      - Permissions: full-scans:create
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     Options
       ${getFlagListOutput(generalFlags)}
@@ -72,19 +91,8 @@ const config: CliCommandConfig = {
       $ ${command} ./proj
       $ ${command} ./proj --reach-ecosystems npm,pypi
   `,
-}
+  }
 
-export const cmdScanReach = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

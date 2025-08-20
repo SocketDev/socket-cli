@@ -35,7 +35,7 @@ const {
   SOCKET_DEFAULT_REPOSITORY,
 } = constants
 
-const CMD_NAME = 'create'
+export const CMD_NAME = 'create'
 
 const description = 'Create a new Socket scan and report'
 

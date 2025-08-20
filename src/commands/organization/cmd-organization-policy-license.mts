@@ -17,7 +17,7 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const CMD_NAME = 'license'
+export const CMD_NAME = 'license'
 
 const description = 'Retrieve the license policy of an organization'
 

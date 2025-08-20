@@ -16,7 +16,7 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const CMD_NAME = 'dependencies'
+export const CMD_NAME = 'dependencies'
 
 const description =
   'Search for any dependency that is being used in your organization'
