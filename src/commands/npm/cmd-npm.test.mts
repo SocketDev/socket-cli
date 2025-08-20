@@ -23,17 +23,14 @@ describe('socket npm', async () => {
             - Quota: 100 units
             - Permissions: packages:list
 
-          Run npm with packages installs gated through the Socket API.
-          See docs for more details.
-
-          Note: Everything after "npm" is sent straight to the npm command.
-                Only the \`--dryRun\` and \`--help\` flags are caught here.
+          Note: Everything after "npm" is passed to the npm command.
+                Only the \`--dry-run\` and \`--help\` flags are caught here.
 
           Use \`socket wrapper on\` to alias this command as \`npm\`.
 
           Examples
             $ socket npm
-            $ socket npm install -g socket"
+            $ socket npm install -g cowsay"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
