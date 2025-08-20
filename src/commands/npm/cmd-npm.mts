@@ -44,14 +44,13 @@ async function run(
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    This runs npm but checks packages through Socket before installing anything.
+    Run npm with packages installs gated through the Socket API.
     See docs for more details.
 
     Note: Everything after "npm" is sent straight to the npm command.
           Only the \`--dryRun\` and \`--help\` flags are caught here.
 
-    Use \`socket wrapper on\` to automatically enable this such that you don't
-    have to write \`socket npm\` for that purpose.
+    Use \`socket wrapper on\` to alias this command as \`npm\`.
 
     Examples
       $ ${command}
