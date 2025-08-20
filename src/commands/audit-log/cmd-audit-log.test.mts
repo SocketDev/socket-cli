@@ -49,7 +49,7 @@ describe('socket audit-log', async () => {
 
           Examples
             $ socket audit-log
-            $ socket audit-log deleteReport --page 2 --perPage 10"
+            $ socket audit-log deleteReport --page 2 --per-page 10"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

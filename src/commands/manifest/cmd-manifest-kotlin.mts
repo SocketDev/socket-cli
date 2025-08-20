@@ -128,7 +128,7 @@ async function run(
   if (!gradleOpts) {
     if (sockJson.defaults?.manifest?.gradle?.gradleOpts) {
       gradleOpts = sockJson.defaults?.manifest?.gradle?.gradleOpts
-      logger.info('Using default --gradleOpts from socket.json:', gradleOpts)
+      logger.info('Using default --gradle-opts from socket.json:', gradleOpts)
     } else {
       gradleOpts = ''
     }

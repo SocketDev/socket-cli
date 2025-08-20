@@ -81,7 +81,7 @@ describe('socket threat-feed', async () => {
             $ socket threat-feed
             $ socket threat-feed maven --json
             $ socket threat-feed typo
-            $ socket threat-feed npm joke 1.0.0 --perPage=5 --page=2 --direction=asc"
+            $ socket threat-feed npm joke 1.0.0 --per-page=5 --page=2 --direction=asc"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

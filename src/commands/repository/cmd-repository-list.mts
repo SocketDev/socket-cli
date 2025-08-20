@@ -45,7 +45,7 @@ async function run(
         type: 'boolean',
         default: false,
         description:
-          'By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --perPage.',
+          'By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --per-page.',
       },
       direction: {
         type: 'string',

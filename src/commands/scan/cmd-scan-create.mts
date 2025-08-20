@@ -186,14 +186,14 @@ async function run(
     The --repo and --branch flags tell Socket to associate this Scan with that
     repo/branch. The names will show up on your dashboard on the Socket website.
 
-    Note: for a first run you probably want to set --defaultBranch to indicate
+    Note: for a first run you probably want to set --default-branch to indicate
           the default branch name, like "main" or "master".
 
     The "alerts page" (https://socket.dev/dashboard/org/YOURORG/alerts) will show
     the results from the last scan designated as the "pending head" on the branch
     configured on Socket to be the "default branch". When creating a scan the
-    --setAsAlertsPage flag will default to true to update this. You can prevent
-    this by using --no-setAsAlertsPage. This flag is ignored for any branch that
+    --set-as-alerts-page flag will default to true to update this. You can prevent
+    this by using --no-set-as-alerts-page. This flag is ignored for any branch that
     is not designated as the "default branch". It is disabled when using --tmp.
 
     You can use \`socket scan setup\` to configure certain repo flag defaults.
@@ -300,7 +300,7 @@ async function run(
     if (sockJson.defaults?.scan?.create?.autoManifest !== undefined) {
       autoManifest = sockJson.defaults.scan.create.autoManifest
       logger.info(
-        'Using default --autoManifest from socket.json:',
+        'Using default --auto-manifest from socket.json:',
         autoManifest,
       )
     } else {
@@ -383,7 +383,7 @@ async function run(
   const detected = await detectManifestActions(sockJson, cwd)
   if (detected.count > 0 && !autoManifest) {
     logger.info(
-      `Detected ${detected.count} manifest targets we could try to generate. Please set the --autoManifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
+      `Detected ${detected.count} manifest targets we could try to generate. Please set the --auto-manifest flag if you want to include languages covered by \`socket manifest auto\` in the Scan.`,
     )
   }
 
@@ -430,24 +430,15 @@ async function run(
     },
     {
       nook: true,
-      test: !pendingHead || !!branchName,
-      message: 'When --pendingHead is set, --branch is mandatory',
-      fail: 'missing branch name',
-    },
-    {
-      nook: true,
       test: !defaultBranch || !!branchName,
-      message: 'When --defaultBranch is set, --branch is mandatory',
+      message: 'When --default-branch is set, --branch is mandatory',
       fail: 'missing branch name',
     },
     {
       nook: true,
-      test:
-        reach ||
-        reachDisableAnalytics ===
-          reachabilityFlags['reachDisableAnalytics']?.default,
-      message: 'The --reachDisableAnalytics flag requires --reach to be set',
-      fail: 'missing --reach flag',
+      test: !pendingHead || !!branchName,
+      message: 'When --pending-head is set, --branch is mandatory',
+      fail: 'missing branch name',
     },
     {
       nook: true,
@@ -455,7 +446,8 @@ async function run(
         reach ||
         reachAnalysisMemoryLimit ===
           reachabilityFlags['reachAnalysisMemoryLimit']?.default,
-      message: 'The --reachAnalysisMemoryLimit flag requires --reach to be set',
+      message:
+        'The --reach-analysis-memory-limit flag requires --reach to be set',
       fail: 'missing --reach flag',
     },
     {
@@ -464,19 +456,28 @@ async function run(
         reach ||
         reachAnalysisTimeout ===
           reachabilityFlags['reachAnalysisTimeout']?.default,
-      message: 'The --reachAnalysisTimeout flag requires --reach to be set',
+      message: 'The --reach-analysis-timeout flag requires --reach to be set',
+      fail: 'missing --reach flag',
+    },
+    {
+      nook: true,
+      test:
+        reach ||
+        reachDisableAnalytics ===
+          reachabilityFlags['reachDisableAnalytics']?.default,
+      message: 'The --reach-disable-analytics flag requires --reach to be set',
       fail: 'missing --reach flag',
     },
     {
       nook: true,
       test: reach || !reachEcosystems.length,
-      message: 'The --reachEcosystems flag requires --reach to be set',
+      message: 'The --reach-ecosystems flag requires --reach to be set',
       fail: 'missing --reach flag',
     },
     {
       nook: true,
       test: reach || !reachExcludePaths.length,
-      message: 'The --reachExcludePaths flag requires --reach to be set',
+      message: 'The --reach-exclude-paths flag requires --reach to be set',
       fail: 'missing --reach flag',
     },
   )
