@@ -17,7 +17,7 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const { DRY_RUN_BAILING_NOW, SOCKET_WEBSITE_URL } = constants
 
-const CMD_NAME = 'audit-log'
+export const CMD_NAME = 'audit-log'
 
 const description = 'Look up the audit log for an organization'
 
