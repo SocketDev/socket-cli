@@ -26,7 +26,7 @@ describe('socket repository list', async () => {
             - Permissions: repo:list
 
           Options
-            --all               By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --perPage.
+            --all               By default view shows the last n repos. This flag allows you to fetch the entire list. Will ignore --page and --per-page.
             --direction         Direction option
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json              Output result as json

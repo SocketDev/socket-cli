@@ -67,14 +67,14 @@ describe('socket scan create', async () => {
           The --repo and --branch flags tell Socket to associate this Scan with that
           repo/branch. The names will show up on your dashboard on the Socket website.
 
-          Note: for a first run you probably want to set --defaultBranch to indicate
+          Note: for a first run you probably want to set --default-branch to indicate
                 the default branch name, like "main" or "master".
 
           The "alerts page" (https://socket.dev/dashboard/org/YOURORG/alerts) will show
           the results from the last scan designated as the "pending head" on the branch
           configured on Socket to be the "default branch". When creating a scan the
-          --setAsAlertsPage flag will default to true to update this. You can prevent
-          this by using --no-setAsAlertsPage. This flag is ignored for any branch that
+          --set-as-alerts-page flag will default to true to update this. You can prevent
+          this by using --no-set-as-alerts-page. This flag is ignored for any branch that
           is not designated as the "default branch". It is disabled when using --tmp.
 
           You can use \`socket scan setup\` to configure certain repo flag defaults.
@@ -142,16 +142,16 @@ describe('socket scan create', async () => {
       'xyz',
       '--branch',
       'abc',
-      '--reachDisableAnalytics',
+      '--reach-disable-analytics',
       '--config',
       '{"apiToken":"fakeToken"}',
     ],
-    'should fail when --reachDisableAnalytics is used without --reach',
+    'should fail when --reach-disable-analytics is used without --reach',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reachDisableAnalytics flag requires --reach to be set',
+        'The --reach-disable-analytics flag requires --reach to be set',
       )
       expect(output).toContain('missing --reach flag')
       expect(
@@ -173,12 +173,12 @@ describe('socket scan create', async () => {
       'xyz',
       '--branch',
       'abc',
-      '--reachAnalysisMemoryLimit',
+      '--reach-analysis-memory-limit',
       '8192',
       '--config',
       '{"apiToken":"fakeToken"}',
     ],
-    'should succeed when --reachAnalysisMemoryLimit is used with default value without --reach',
+    'should succeed when --reach-analysis-memory-limit is used with default value without --reach',
     async cmd => {
       const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
@@ -198,17 +198,17 @@ describe('socket scan create', async () => {
       'xyz',
       '--branch',
       'abc',
-      '--reachAnalysisMemoryLimit',
+      '--reach-analysis-memory-limit',
       '4096',
       '--config',
       '{"apiToken":"fakeToken"}',
     ],
-    'should fail when --reachAnalysisMemoryLimit is used with non-default value without --reach',
+    'should fail when --reach-analysis-memory-limit is used with non-default value without --reach',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reachAnalysisMemoryLimit flag requires --reach to be set',
+        'The --reach-analysis-memory-limit flag requires --reach to be set',
       )
       expect(output).toContain('missing --reach flag')
       expect(
@@ -230,17 +230,17 @@ describe('socket scan create', async () => {
       'xyz',
       '--branch',
       'abc',
-      '--reachAnalysisTimeout',
+      '--reach-analysis-timeout',
       '3600',
       '--config',
       '{"apiToken":"fakeToken"}',
     ],
-    'should fail when --reachAnalysisTimeout is used without --reach',
+    'should fail when --reach-analysis-timeout is used without --reach',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reachAnalysisTimeout flag requires --reach to be set',
+        'The --reach-analysis-timeout flag requires --reach to be set',
       )
       expect(output).toContain('missing --reach flag')
       expect(
@@ -262,19 +262,19 @@ describe('socket scan create', async () => {
       'xyz',
       '--branch',
       'abc',
-      '--reachEcosystems',
+      '--reach-ecosystems',
       'npm',
-      '--reachEcosystems',
+      '--reach-ecosystems',
       'pypi',
       '--config',
       '{"apiToken":"fakeToken"}',
     ],
-    'should fail when --reachEcosystems is used without --reach',
+    'should fail when --reach-ecosystems is used without --reach',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reachEcosystems flag requires --reach to be set',
+        'The --reach-ecosystems flag requires --reach to be set',
       )
       expect(output).toContain('missing --reach flag')
       expect(
@@ -297,12 +297,12 @@ describe('socket scan create', async () => {
       '--branch',
       'abc',
       '--reach',
-      '--reachDisableAnalytics',
-      '--reachAnalysisMemoryLimit',
+      '--reach-disable-analytics',
+      '--reach-analysis-memory-limit',
       '4096',
-      '--reachAnalysisTimeout',
+      '--reach-analysis-timeout',
       '3600',
-      '--reachEcosystems',
+      '--reach-ecosystems',
       'npm',
       '--config',
       '{"apiToken":"fakeToken"}',
@@ -339,7 +339,7 @@ describe('socket scan create', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reachExcludePaths flag requires --reach to be set',
+        'The --reach-exclude-paths flag requires --reach to be set',
       )
       expect(output).toContain('missing --reach flag')
       expect(
@@ -464,7 +464,7 @@ describe('socket scan create', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reachEcosystems flag requires --reach to be set',
+        'The --reach-ecosystems flag requires --reach to be set',
       )
       expect(output).toContain('missing --reach flag')
       expect(
@@ -496,7 +496,7 @@ describe('socket scan create', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reachExcludePaths flag requires --reach to be set',
+        'The --reach-exclude-paths flag requires --reach to be set',
       )
       expect(output).toContain('missing --reach flag')
       expect(

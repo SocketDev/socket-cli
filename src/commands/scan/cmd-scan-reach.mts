@@ -193,9 +193,9 @@ async function run(
     targets,
     interactive,
     reachabilityOptions: {
-      reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachAnalysisTimeout: Number(reachAnalysisTimeout),
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
+      reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachEcosystems,
       reachExcludePaths,
     },

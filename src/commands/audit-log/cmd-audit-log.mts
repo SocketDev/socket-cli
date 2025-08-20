@@ -89,7 +89,7 @@ async function run(
 
     Examples
       $ ${command}
-      $ ${command} deleteReport --page 2 --perPage 10
+      $ ${command} deleteReport --page 2 --per-page 10
   `,
   }
 

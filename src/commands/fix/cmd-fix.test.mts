@@ -26,7 +26,7 @@ describe('socket fix', async () => {
           Options
             --auto-merge        Enable auto-merge for pull requests that Socket opens.
                                 See GitHub documentation (\\u200bhttps://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository\\u200b) for managing auto-merge for pull requests in your repository.
-            --autopilot         Shorthand for --autoMerge --test
+            --autopilot         Shorthand for --auto-merge --test
             --limit             The number of fixes to attempt at a time (default 10)
             --min-satisfying    Constrain dependency updates to the minimum satisfying version
             --purl              Provide a list of PURLs (\\u200bhttps://github.com/package-url/purl-spec?tab=readme-ov-file#purl\\u200b) to compute fixes for, as either a comma separated value or as
@@ -46,7 +46,7 @@ describe('socket fix', async () => {
 
           Examples
             $ socket fix
-            $ socket fix ./proj/tree --autoMerge"
+            $ socket fix ./proj/tree --auto-merge"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`

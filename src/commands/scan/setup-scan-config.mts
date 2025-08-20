@@ -173,7 +173,7 @@ async function configureScan(
 
   const autoManifest = await select({
     message:
-      '(--autoManifest) Do you want to run `socket manifest auto` before creating a scan? You would need this for sbt, gradle, etc.',
+      '(--auto-manifest) Do you want to run `socket manifest auto` before creating a scan? You would need this for sbt, gradle, etc.',
     choices: [
       {
         name: 'no',
@@ -306,7 +306,8 @@ async function configureGithub(
   }
 
   const defaultGithubApiUrl = await input({
-    message: '(--githubApiUrl) Do you want to override the default github url?',
+    message:
+      '(--github-api-url) Do you want to override the default github url?',
 
     default:
       config.githubApiUrl ||
@@ -330,7 +331,7 @@ async function configureGithub(
 
   const defaultOrgGithub = await input({
     message:
-      '(--orgGithub) Do you want to change the org slug that is used when talking to the GitHub API? Defaults to your Socket org slug.',
+      '(--org-github) Do you want to change the org slug that is used when talking to the GitHub API? Defaults to your Socket org slug.',
     default: config.orgGithub || '',
     required: false,
     // validate: async string => bool
