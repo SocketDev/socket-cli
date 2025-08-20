@@ -24,6 +24,10 @@
       "quota": 100,
       "permissions": ["packages:list"]
     },
+    "optimize": {
+      "quota": 100,
+      "permissions": ["packages:list"]
+    },
     "organization:dependencies": {
       "quota": 1,
       "permissions": []

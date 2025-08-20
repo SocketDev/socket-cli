@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
+import { getFlagApiRequirementsOutput } from '../../utils/output-formatting.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -12,16 +13,36 @@ const require = createRequire(import.meta.url)
 
 const { DRY_RUN_BAILING_NOW } = constants
 
-const config: CliCommandConfig = {
-  commandName: 'npx',
-  description: 'Run npx with the Socket wrapper',
-  hidden: false,
-  flags: {
-    ...commonFlags,
-  },
-  help: (command, _config) => `
+const CMD_NAME = 'npx'
+
+const description = 'Run npx with the Socket wrapper'
+
+const hidden = false
+
+export const cmdNpx = {
+  description,
+  hidden,
+  run,
+}
+
+async function run(
+  argv: string[] | readonly string[],
+  importMeta: ImportMeta,
+  { parentName }: { parentName: string },
+): Promise<void> {
+  const config: CliCommandConfig = {
+    commandName: CMD_NAME,
+    description,
+    hidden,
+    flags: {
+      ...commonFlags,
+    },
+    help: (command, _config) => `
     Usage
       $ ${command} ...
+
+    API Token Requirements
+      ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     This runs npx but checks packages through Socket before running them.
     See docs for more details.
@@ -36,19 +57,8 @@ const config: CliCommandConfig = {
       $ ${command}
       $ ${command} prettier
   `,
-}
+  }
 
-export const cmdNpx = {
-  description: config.description,
-  hidden: config.hidden,
-  run,
-}
-
-async function run(
-  argv: string[] | readonly string[],
-  importMeta: ImportMeta,
-  { parentName }: { parentName: string },
-): Promise<void> {
   const cli = meowOrExit({
     argv,
     config,

@@ -19,6 +19,10 @@ describe('socket optimize', async () => {
           Usage
             $ socket optimize [options] [CWD=.]
 
+          API Token Requirements
+            - Quota: 100 units
+            - Permissions: packages:list
+
           Options
             --pin               Pin overrides to their latest version
             --prod              Only add overrides for production dependencies

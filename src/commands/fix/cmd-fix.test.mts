@@ -19,6 +19,10 @@ describe('socket fix', async () => {
           Usage
             $ socket fix [options] [CWD=.]
 
+          API Token Requirements
+            - Quota: 100 units
+            - Permissions: packages:list
+
           Options
             --auto-merge        Enable auto-merge for pull requests that Socket opens.
                                 See GitHub documentation (\\u200bhttps://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository\\u200b) for managing auto-merge for pull requests in your repository.

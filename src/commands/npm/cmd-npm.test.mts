@@ -19,6 +19,10 @@ describe('socket npm', async () => {
           Usage
             $ socket npm ...
 
+          API Token Requirements
+            - Quota: 100 units
+            - Permissions: packages:list
+
           This runs npm but checks packages through Socket before installing anything.
           See docs for more details.
 
