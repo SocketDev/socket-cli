@@ -61,7 +61,7 @@ async function run(
       autopilot: {
         type: 'boolean',
         default: false,
-        description: `Shorthand for --autoMerge --test`,
+        description: `Shorthand for --auto-merge --test`,
       },
       ghsa: {
         type: 'string',
@@ -146,7 +146,7 @@ Available styles:
 
     Examples
       $ ${command}
-      $ ${command} ./proj/tree --autoMerge
+      $ ${command} ./proj/tree --auto-merge
     `,
   }
 

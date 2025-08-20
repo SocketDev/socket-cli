@@ -267,7 +267,7 @@ async function setupGradle(
   }
 
   const opts = await input({
-    message: '(--gradleOpts) Enter gradle options to pass through',
+    message: '(--gradle-opts) Enter gradle options to pass through',
     default: config.gradleOpts || '',
     required: false,
     // validate: async string => bool
@@ -307,7 +307,7 @@ async function setupSbt(
   }
 
   const opts = await input({
-    message: '(--sbtOpts) Enter sbt options to pass through',
+    message: '(--sbt-opts) Enter sbt options to pass through',
     default: config.sbtOpts || '',
     required: false,
     // validate: async string => bool

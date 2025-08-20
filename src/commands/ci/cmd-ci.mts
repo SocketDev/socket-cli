@@ -36,14 +36,14 @@ const config: CliCommandConfig = {
     Socket API token. The exit code will be non-zero when the scan does not pass
     your security policy.
 
-    The --autoManifest flag does the same as the one from \`socket scan create\`
+    The --auto-manifest flag does the same as the one from \`socket scan create\`
     but is not enabled by default since the CI is less likely to be set up with
     all the necessary dev tooling. Enable it if you want the scan to include
     locally generated manifests like for gradle and sbt.
 
     Examples
       $ ${command}
-      $ ${command} --autoManifest
+      $ ${command} --auto-manifest
   `,
 }
 

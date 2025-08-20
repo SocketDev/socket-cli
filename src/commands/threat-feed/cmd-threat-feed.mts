@@ -160,7 +160,7 @@ async function run(
       $ ${command}
       $ ${command} maven --json
       $ ${command} typo
-      $ ${command} npm joke 1.0.0 --perPage=5 --page=2 --direction=asc
+      $ ${command} npm joke 1.0.0 --per-page=5 --page=2 --direction=asc
   `,
   }
 

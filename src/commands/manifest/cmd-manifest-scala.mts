@@ -153,7 +153,7 @@ async function run(
   if (!sbtOpts) {
     if (sockJson.defaults?.manifest?.sbt?.sbtOpts) {
       sbtOpts = sockJson.defaults?.manifest?.sbt?.sbtOpts
-      logger.info('Using default --sbtOpts from socket.json:', sbtOpts)
+      logger.info('Using default --sbt-opts from socket.json:', sbtOpts)
     } else {
       sbtOpts = ''
     }
