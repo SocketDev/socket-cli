@@ -23,14 +23,13 @@ describe('socket npx', async () => {
             - Quota: 100 units
             - Permissions: packages:list
 
-          This runs npx but checks packages through Socket before running them.
+          Run npx with packages installs gated through the Socket API.
           See docs for more details.
 
           Note: Everything after "npx" is sent straight to the npx command.
                 Only the \`--dryRun\` and \`--help\` flags are caught here.
 
-          Use \`socket wrapper on\` to automatically enable this such that you don't
-          have to write \`socket npx\` for that purpose.
+          Use \`socket wrapper on\` to alias this command as \`npx\`.
 
           Examples
             $ socket npx
