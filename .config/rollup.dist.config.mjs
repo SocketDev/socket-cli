@@ -104,8 +104,7 @@ async function copyExternalPackages() {
       .map(n =>
         copyPackage(n, {
           strict:
-            // Skip adding 'use strict' directives to Coana and
-            // Socket packages.
+            // Skip adding 'use strict' directives to Coana and Socket packages.
             n !== COANA_TECH_CLI && n !== SOCKET_SECURITY_REGISTRY,
         }),
       ),
@@ -121,7 +120,7 @@ async function copyExternalPackages() {
     [
       [blessedPath, ['lib/**/*.js', 'usr/**/**', 'vendor/**/*.js', 'LICENSE*']],
       [blessedContribPath, ['lib/**/*.js', 'index.js', 'LICENSE*']],
-      [coanaPath, ['**/*.mjs', 'coana-repos/**/*']],
+      [coanaPath, ['**/*.mjs', 'repos/**/*']],
       [
         socketRegistryPath,
         [
