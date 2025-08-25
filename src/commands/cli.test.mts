@@ -82,9 +82,10 @@ describe('socket root command', async () => {
           SOCKET_CLI_API_BASE_URL     Change the base URL for Socket API calls
                                       Defaults: The "apiBaseUrl" value of socket/settings local app data
                                       if present, else https://api.socket.dev/v0/
-          SOCKET_CLI_API_PROXY        Set the proxy all requests are routed through, e.g. if set to
+          SOCKET_CLI_API_PROXY        Set the proxy Socket API requests are routed through, e.g. if set to
                                       http://127.0.0.1:9090 (\\u200bhttps://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries\\u200b) then all request are passed through that proxy
                                       Aliases: HTTPS_PROXY, https_proxy, HTTP_PROXY, and http_proxy
+          SOCKET_CLI_API_TIMEOUT      Set the timeout in milliseconds for Socket API requests
           SOCKET_CLI_DEBUG            Enable debug logging in Socket CLI
           DEBUG                       Enable debug logging based on the debug (\\u200bhttps://socket.dev/npm/package/debug\\u200b) package"
     `)
