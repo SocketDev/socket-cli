@@ -1,7 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
-import constants from '../../constants.mts'
 import {
   detectDefaultBranch,
   getRepoName,
