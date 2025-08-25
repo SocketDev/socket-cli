@@ -84,7 +84,7 @@
     "@babel/plugin-transform-runtime": "7.28.3",
     "@babel/preset-typescript": "7.27.1",
     "@babel/runtime": "7.28.3",
-    "@biomejs/biome": "2.2.0",
+    "@biomejs/biome": "2.2.2",
     "@coana-tech/cli": "14.11.14",
     "@cyclonedx/cdxgen": "11.6.0",
     "@dotenvx/dotenvx": "1.49.0",
