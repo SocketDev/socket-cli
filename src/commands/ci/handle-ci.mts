@@ -21,11 +21,8 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
 
   const orgSlug = orgSlugCResult.data
   const cwd = process.cwd()
-  // Lazily access constants.SOCKET_DEFAULT_BRANCH.
   const branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
-  // Lazily access constants.SOCKET_DEFAULT_REPOSITORY.
-  const repoName =
-    (await getRepoName(cwd)) || constants.SOCKET_DEFAULT_REPOSITORY
+  const repoName = await getRepoName(cwd)
 
   await handleCreateNewScan({
     autoManifest,
