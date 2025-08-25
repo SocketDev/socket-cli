@@ -73,6 +73,7 @@ type ENV = Remap<
       SOCKET_CLI_ACCEPT_RISKS: boolean
       SOCKET_CLI_API_BASE_URL: string
       SOCKET_CLI_API_PROXY: string
+      SOCKET_CLI_API_TIMEOUT: number
       SOCKET_CLI_API_TOKEN: string
       SOCKET_CLI_CONFIG: string
       SOCKET_CLI_GIT_USER_EMAIL: string
@@ -229,6 +230,7 @@ const LAZY_ENV = () => {
     path.join(constants.rootPath, 'dist/utils.js'),
   )
   const envAsBoolean = envHelpers.envAsBoolean
+  const envAsNumber = envHelpers.envAsNumber
   const envAsString = envHelpers.envAsString
   const getConfigValueOrUndef = utils.getConfigValueOrUndef
   const readOrDefaultSocketJson = utils.readOrDefaultSocketJson
@@ -363,6 +365,9 @@ const LAZY_ENV = () => {
       envAsString(processEnv['https_proxy']) ||
       envAsString(processEnv['HTTP_PROXY']) ||
       envAsString(processEnv['http_proxy']),
+    // Set the timeout in milliseconds for Socket API requests.
+    // https://nodejs.org/api/http.html#httprequesturl-options-callback
+    SOCKET_CLI_API_TIMEOUT: envAsNumber(processEnv['SOCKET_CLI_API_TOKEN']),
     // Set the Socket API token.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
     SOCKET_CLI_API_TOKEN:

@@ -92,9 +92,10 @@ npm exec socket
 
 - `SOCKET_CLI_API_BASE_URL` - Change the base URL for Socket API calls<br>
   *Defaults:* The "apiBaseUrl" value of socket/settings local app data if present, else `https://api.socket.dev/v0/`<br>
-- `SOCKET_CLI_API_PROXY` - Set the proxy all requests are routed through, e.g. if set to<br>
+- `SOCKET_CLI_API_PROXY` - Set the proxy Socket API requests are routed through, e.g. if set to<br>
   [`http://127.0.0.1:9090`](https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries), then all request are passed through that proxy<br>
   *Aliases:* `HTTPS_PROXY`, `https_proxy`, `HTTP_PROXY`, and `http_proxy`<br>
+- `SOCKET_CLI_API_TIMEOUT` - Set the timeout in milliseconds for Socket API requests
 - `SOCKET_CLI_DEBUG` - Enable debug logging in Socket CLI
 - `DEBUG` - Enable debug logging based on the [`debug`](https://socket.dev/npm/package/debug) package
 
