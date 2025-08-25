@@ -2,7 +2,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getDefaultOrgSlug } from './fetch-default-org-slug.mts'
 import constants from '../../constants.mts'
-import { getRepoName, gitBranch } from '../../utils/git.mts'
+import {
+  detectDefaultBranch,
+  getRepoName,
+  gitBranch,
+} from '../../utils/git.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import { handleCreateNewScan } from '../scan/handle-create-new-scan.mts'
 
@@ -18,7 +22,7 @@ export async function handleCi(autoManifest: boolean): Promise<void> {
   const orgSlug = orgSlugCResult.data
   const cwd = process.cwd()
   // Lazily access constants.SOCKET_DEFAULT_BRANCH.
-  const branchName = (await gitBranch(cwd)) || constants.SOCKET_DEFAULT_BRANCH
+  const branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
   // Lazily access constants.SOCKET_DEFAULT_REPOSITORY.
   const repoName =
     (await getRepoName(cwd)) || constants.SOCKET_DEFAULT_REPOSITORY

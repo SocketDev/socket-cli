@@ -34,7 +34,7 @@ describe('socket scan create', async () => {
             --json              Output result as json
             --markdown          Output result as markdown
             --org               Force override the organization slug, overrides the default org from config
-            --pull-request      Commit hash
+            --pull-request      Pull request number
             --reach             Run tier 1 full application reachability analysis
             --read-only         Similar to --dry-run except it can read from remote, stops before it would create an actual report
             --repo              Repository name
@@ -151,9 +151,9 @@ describe('socket scan create', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reach-disable-analytics flag requires --reach to be set',
+        'Reachability analysis flags require --reach to be enabled',
       )
-      expect(output).toContain('missing --reach flag')
+      expect(output).toContain('add --reach flag to use --reach-* options')
       expect(
         code,
         'should exit with non-zero code when validation fails',
@@ -208,9 +208,9 @@ describe('socket scan create', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reach-analysis-memory-limit flag requires --reach to be set',
+        'Reachability analysis flags require --reach to be enabled',
       )
-      expect(output).toContain('missing --reach flag')
+      expect(output).toContain('add --reach flag to use --reach-* options')
       expect(
         code,
         'should exit with non-zero code when validation fails',
@@ -240,9 +240,9 @@ describe('socket scan create', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reach-analysis-timeout flag requires --reach to be set',
+        'Reachability analysis flags require --reach to be enabled',
       )
-      expect(output).toContain('missing --reach flag')
+      expect(output).toContain('add --reach flag to use --reach-* options')
       expect(
         code,
         'should exit with non-zero code when validation fails',
@@ -274,9 +274,9 @@ describe('socket scan create', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reach-ecosystems flag requires --reach to be set',
+        'Reachability analysis flags require --reach to be enabled',
       )
-      expect(output).toContain('missing --reach flag')
+      expect(output).toContain('add --reach flag to use --reach-* options')
       expect(
         code,
         'should exit with non-zero code when validation fails',
@@ -339,9 +339,9 @@ describe('socket scan create', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reach-exclude-paths flag requires --reach to be set',
+        'Reachability analysis flags require --reach to be enabled',
       )
-      expect(output).toContain('missing --reach flag')
+      expect(output).toContain('add --reach flag to use --reach-* options')
       expect(
         code,
         'should exit with non-zero code when validation fails',
@@ -464,9 +464,9 @@ describe('socket scan create', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reach-ecosystems flag requires --reach to be set',
+        'Reachability analysis flags require --reach to be enabled',
       )
-      expect(output).toContain('missing --reach flag')
+      expect(output).toContain('add --reach flag to use --reach-* options')
       expect(
         code,
         'should exit with non-zero code when validation fails',
@@ -496,9 +496,9 @@ describe('socket scan create', async () => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
-        'The --reach-exclude-paths flag requires --reach to be set',
+        'Reachability analysis flags require --reach to be enabled',
       )
-      expect(output).toContain('missing --reach flag')
+      expect(output).toContain('add --reach flag to use --reach-* options')
       expect(
         code,
         'should exit with non-zero code when validation fails',
@@ -532,6 +532,44 @@ describe('socket scan create', async () => {
       expect(
         code,
         'should exit with non-zero code when invalid ecosystem is provided',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    ['scann', 'create', '--help'],
+    'should suggest similar command for typos',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain('Unknown command "scann". Did you mean "scan"?')
+      expect(
+        code,
+        'should exit with non-zero code when command is not found',
+      ).toBe(2)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '/tmp',
+      '--org',
+      'test-org',
+      '--config',
+      '{"apiToken":"fake-token"}',
+    ],
+    'should show helpful error message for directories with no manifest files',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain('found no eligible files to scan')
+      expect(output).toContain('docs.socket.dev')
+      expect(output).toContain('manifest-file-detection-in-socket')
+      expect(
+        code,
+        'should exit with non-zero code when no files found',
       ).not.toBe(0)
     },
   )

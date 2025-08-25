@@ -61,7 +61,10 @@ export function outputPurlsShallowScore(
   logger.log(txt)
 }
 
-function formatReportCard(artifact: DedupedArtifact, color: boolean): string {
+function formatReportCard(
+  artifact: DedupedArtifact,
+  colorize: boolean,
+): string {
   const scoreResult = {
     'Supply Chain Risk': Math.floor((artifact.score?.supplyChain ?? 0) * 100),
     Maintenance: Math.floor((artifact.score?.maintenance ?? 0) * 100),
@@ -69,27 +72,45 @@ function formatReportCard(artifact: DedupedArtifact, color: boolean): string {
     Vulnerabilities: Math.floor((artifact.score?.vulnerability ?? 0) * 100),
     License: Math.floor((artifact.score?.license ?? 0) * 100),
   }
-  const alertString = getAlertString(artifact.alerts, !color)
+  const alertString = getAlertString(artifact.alerts, { colorize })
   if (!artifact.ecosystem) {
     debugFn('notice', 'miss: artifact ecosystem', artifact)
   }
   const purl = `pkg:${artifact.ecosystem}/${artifact.name}${artifact.version ? '@' + artifact.version : ''}`
 
+  // Calculate proper padding based on longest label.
+  const maxLabelLength = Math.max(
+    ...Object.keys(scoreResult).map(label => label.length),
+  )
+  const labelPadding = maxLabelLength + 2 // +2 for ": "
+
   return [
-    'Package: ' + (color ? colors.bold(purl) : purl),
+    'Package: ' + (colorize ? colors.bold(purl) : purl),
     '',
     ...Object.entries(scoreResult).map(
       score =>
-        `- ${score[0]}:`.padEnd(20, ' ') +
-        `  ${formatScore(score[1], !color, true)}`,
+        `- ${score[0]}:`.padEnd(labelPadding, ' ') +
+        `  ${formatScore(score[1], { colorize })}`,
     ),
     alertString,
   ].join('\n')
 }
 
-function formatScore(score: number, noColor = false, pad = false): string {
-  const padded = String(score).padStart(pad ? 3 : 0, ' ')
-  if (noColor) {
+type FormatScoreOptions = {
+  colorize?: boolean | undefined
+  padding?: number | undefined
+}
+
+function formatScore(
+  score: number,
+  options?: FormatScoreOptions | undefined,
+): string {
+  const { colorize, padding = 3 } = {
+    __proto__: null,
+    ...options,
+  } as FormatScoreOptions
+  const padded = String(score).padStart(padding, ' ')
+  if (!colorize) {
     return padded
   }
   if (score >= 80) {
@@ -101,21 +122,30 @@ function formatScore(score: number, noColor = false, pad = false): string {
   return colors.red(padded)
 }
 
+type AlertStringOptions = {
+  colorize?: boolean | undefined
+}
+
 function getAlertString(
   alerts: DedupedArtifact['alerts'],
-  noColor = false,
+  options?: AlertStringOptions | undefined,
 ): string {
+  const { colorize } = { __proto__: null, ...options } as AlertStringOptions
+
   if (!alerts.size) {
-    return noColor ? `- Alerts: none!` : `- Alerts: ${colors.green('none')}!`
+    return `- Alerts: ${colorize ? colors.green('none') : 'none'}!`
   }
 
   const o = Array.from(alerts.values())
+
   const bad = o
     .filter(alert => alert.severity !== 'low' && alert.severity !== 'middle')
     .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+
   const mid = o
     .filter(alert => alert.severity === 'middle')
     .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
+
   const low = o
     .filter(alert => alert.severity === 'low')
     .sort((a, b) => (a.type < b.type ? -1 : a.type > b.type ? 1 : 0))
@@ -123,39 +153,32 @@ function getAlertString(
   // We need to create the no-color string regardless because the actual string
   // contains a bunch of invisible ANSI chars which would screw up length checks.
   const colorless = `- Alerts (${bad.length}/${mid.length.toString()}/${low.length}):`
+  const padding = `  ${' '.repeat(Math.max(0, 20 - colorless.length))}`
 
-  if (noColor) {
+  if (colorize) {
     return (
-      colorless +
-      ' '.repeat(Math.max(0, 20 - colorless.length)) +
-      '  ' +
+      `- Alerts (${colors.red(bad.length.toString())}/${colors.yellow(mid.length.toString())}/${low.length}):` +
+      padding +
       [
-        bad.map(alert => `[${alert.severity}] ` + alert.type).join(', '),
-        mid.map(alert => `[${alert.severity}] ` + alert.type).join(', '),
-        low.map(alert => `[${alert.severity}] ` + alert.type).join(', '),
+        bad
+          .map(a => colors.red(`${colors.dim(`[${a.severity}] `)}${a.type}`))
+          .join(', '),
+        mid
+          .map(a => colors.yellow(`${colors.dim(`[${a.severity}] `)}${a.type}`))
+          .join(', '),
+        low.map(a => `${colors.dim(`[${a.severity}] `)}${a.type}`).join(', '),
       ]
         .filter(Boolean)
         .join(', ')
     )
   }
   return (
-    `- Alerts (${colors.red(bad.length.toString())}/${colors.yellow(mid.length.toString())}/${low.length}):` +
-    ' '.repeat(Math.max(0, 20 - colorless.length)) +
-    '  ' +
+    colorless +
+    padding +
     [
-      bad
-        .map(alert =>
-          colors.red(colors.dim(`[${alert.severity}] `) + alert.type),
-        )
-        .join(', '),
-      mid
-        .map(alert =>
-          colors.yellow(colors.dim(`[${alert.severity}] `) + alert.type),
-        )
-        .join(', '),
-      low
-        .map(alert => colors.dim(`[${alert.severity}] `) + alert.type)
-        .join(', '),
+      bad.map(a => `[${a.severity}] ${a.type}`).join(', '),
+      mid.map(a => `[${a.severity}] ${a.type}`).join(', '),
+      low.map(a => `[${a.severity}] ${a.type}`).join(', '),
     ]
       .filter(Boolean)
       .join(', ')

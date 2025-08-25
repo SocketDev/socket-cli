@@ -29,10 +29,10 @@ describe('package score output', async () => {
         Package: [1mpkg:npm/bowserify@10.2.1[22m
 
         - Supply Chain Risk:  [31m 36[39m
-        - Maintenance:        [33m 75[39m
-        - Quality:            [32m 99[39m
-        - Vulnerabilities:    [32m100[39m
-        - License:            [32m100[39m
+        - Maintenance:       [33m 75[39m
+        - Quality:           [32m 99[39m
+        - Vulnerabilities:   [32m100[39m
+        - License:           [32m100[39m
         - Alerts ([31m2[39m/[33m2[39m/4):     [31m[2m[critical] [22mdidYouMean[39m, [31m[2m[high] [22mtroll[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [2m[low] [22mdebugAccess, [2m[low] [22mdynamicRequire, [2m[low] [22mfilesystemAccess, [2m[low] [22munmaintained
         "
       `)
@@ -54,10 +54,10 @@ describe('package score output', async () => {
         ## Package: pkg:npm/bowserify@10.2.1
 
         - Supply Chain Risk:   36
-        - Maintenance:         75
-        - Quality:             99
-        - Vulnerabilities:    100
-        - License:            100
+        - Maintenance:        75
+        - Quality:            99
+        - Vulnerabilities:   100
+        - License:           100
         - Alerts (2/2/4):     [critical] didYouMean, [high] troll, [middle] networkAccess, [middle] unpopularPackage, [low] debugAccess, [low] dynamicRequire, [low] filesystemAccess, [low] unmaintained"
       `)
     })
@@ -78,10 +78,10 @@ describe('package score output', async () => {
         Package: [1mpkg:golang/tlsproxy@v0.0.0-20250304082521-29051ed19c60[22m
 
         - Supply Chain Risk:  [31m 39[39m
-        - Maintenance:        [32m100[39m
-        - Quality:            [32m100[39m
-        - Vulnerabilities:    [32m100[39m
-        - License:            [32m100[39m
+        - Maintenance:       [32m100[39m
+        - Quality:           [32m100[39m
+        - Vulnerabilities:   [32m100[39m
+        - License:           [32m100[39m
         - Alerts ([31m1[39m/[33m3[39m/2):     [31m[2m[critical] [22mmalware[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22menvVars, [2m[low] [22mfilesystemAccess
         "
       `)
@@ -103,10 +103,10 @@ describe('package score output', async () => {
         ## Package: pkg:golang/tlsproxy@v0.0.0-20250304082521-29051ed19c60
 
         - Supply Chain Risk:   39
-        - Maintenance:        100
-        - Quality:            100
-        - Vulnerabilities:    100
-        - License:            100
+        - Maintenance:       100
+        - Quality:           100
+        - Vulnerabilities:   100
+        - License:           100
         - Alerts (1/3/2):     [critical] malware, [middle] networkAccess, [middle] shellAccess, [middle] usesEval, [low] envVars, [low] filesystemAccess"
       `)
     })
@@ -127,10 +127,10 @@ describe('package score output', async () => {
         Package: [1mpkg:gem/plaid@14.11.0[22m
 
         - Supply Chain Risk:  [32m 86[39m
-        - Maintenance:        [32m100[39m
-        - Quality:            [32m100[39m
-        - Vulnerabilities:    [32m100[39m
-        - License:            [32m100[39m
+        - Maintenance:       [32m100[39m
+        - Quality:           [32m100[39m
+        - Vulnerabilities:   [32m100[39m
+        - License:           [32m100[39m
         - Alerts ([31m2[39m/[33m3[39m/2):     [31m[2m[high] [22mgptMalware[39m, [31m[2m[high] [22mobfuscatedFile[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22menvVars, [2m[low] [22mfilesystemAccess
         "
       `)
@@ -152,10 +152,10 @@ describe('package score output', async () => {
         ## Package: pkg:gem/plaid@14.11.0
 
         - Supply Chain Risk:   86
-        - Maintenance:        100
-        - Quality:            100
-        - Vulnerabilities:    100
-        - License:            100
+        - Maintenance:       100
+        - Quality:           100
+        - Vulnerabilities:   100
+        - License:           100
         - Alerts (2/3/2):     [high] gptMalware, [high] obfuscatedFile, [middle] networkAccess, [middle] shellAccess, [middle] usesEval, [low] envVars, [low] filesystemAccess"
       `)
     })
@@ -176,10 +176,10 @@ describe('package score output', async () => {
         Package: [1mpkg:nuget/needpluscommonlibrary@1.0.0[22m
 
         - Supply Chain Risk:  [32m 91[39m
-        - Maintenance:        [32m100[39m
-        - Quality:            [32m 86[39m
-        - Vulnerabilities:    [32m100[39m
-        - License:            [32m100[39m
+        - Maintenance:       [32m100[39m
+        - Quality:           [32m 86[39m
+        - Vulnerabilities:   [32m100[39m
+        - License:           [32m100[39m
         - Alerts ([31m0[39m/[33m4[39m/2):     [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22mfilesystemAccess, [2m[low] [22munidentifiedLicense
         "
       `)
@@ -201,10 +201,10 @@ describe('package score output', async () => {
         ## Package: pkg:nuget/needpluscommonlibrary@1.0.0
 
         - Supply Chain Risk:   91
-        - Maintenance:        100
-        - Quality:             86
-        - Vulnerabilities:    100
-        - License:            100
+        - Maintenance:       100
+        - Quality:            86
+        - Vulnerabilities:   100
+        - License:           100
         - Alerts (0/4/2):     [middle] networkAccess, [middle] shellAccess, [middle] unpopularPackage, [middle] usesEval, [low] filesystemAccess, [low] unidentifiedLicense"
       `)
     })
@@ -225,10 +225,10 @@ describe('package score output', async () => {
         Package: [1mpkg:maven/beam-runners-flink-1.15-job-server@2.58.0[22m
 
         - Supply Chain Risk:  [33m 67[39m
-        - Maintenance:        [32m100[39m
-        - Quality:            [32m100[39m
-        - Vulnerabilities:    [32m100[39m
-        - License:            [33m 60[39m
+        - Maintenance:       [32m100[39m
+        - Quality:           [32m100[39m
+        - Vulnerabilities:   [32m100[39m
+        - License:           [33m 60[39m
         - Alerts ([31m0[39m/[33m3[39m/0):     [33m[2m[middle] [22mhasNativeCode[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22musesEval[39m
         "
       `)
@@ -250,10 +250,10 @@ describe('package score output', async () => {
         ## Package: pkg:maven/beam-runners-flink-1.15-job-server@2.58.0
 
         - Supply Chain Risk:   67
-        - Maintenance:        100
-        - Quality:            100
-        - Vulnerabilities:    100
-        - License:             60
+        - Maintenance:       100
+        - Quality:           100
+        - Vulnerabilities:   100
+        - License:            60
         - Alerts (0/3/0):     [middle] hasNativeCode, [middle] networkAccess, [middle] usesEval"
       `)
     })
@@ -274,10 +274,10 @@ describe('package score output', async () => {
         Package: [1mpkg:pypi/discordpydebug@0.0.4[22m
 
         - Supply Chain Risk:  [31m 22[39m
-        - Maintenance:        [32m100[39m
-        - Quality:            [32m 99[39m
-        - Vulnerabilities:    [32m100[39m
-        - License:            [32m100[39m
+        - Maintenance:       [32m100[39m
+        - Quality:           [32m 99[39m
+        - Vulnerabilities:   [32m100[39m
+        - License:           [32m100[39m
         - Alerts ([31m1[39m/[33m3[39m/2):     [31m[2m[critical] [22mmalware[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [2m[low] [22mfilesystemAccess, [2m[low] [22munidentifiedLicense
         "
       `)
@@ -299,10 +299,10 @@ describe('package score output', async () => {
         ## Package: pkg:pypi/discordpydebug@0.0.4
 
         - Supply Chain Risk:   22
-        - Maintenance:        100
-        - Quality:             99
-        - Vulnerabilities:    100
-        - License:            100
+        - Maintenance:       100
+        - Quality:            99
+        - Vulnerabilities:   100
+        - License:           100
         - Alerts (1/3/2):     [critical] malware, [middle] networkAccess, [middle] shellAccess, [middle] unpopularPackage, [low] filesystemAccess, [low] unidentifiedLicense"
       `)
     })
@@ -322,10 +322,10 @@ describe('package score output', async () => {
           Package: [1mpkg:pypi/charset-normalizer@3.4.0[22m
 
           - Supply Chain Risk:  [32m 99[39m
-          - Maintenance:        [32m100[39m
-          - Quality:            [32m100[39m
-          - Vulnerabilities:    [32m100[39m
-          - License:            [32m100[39m
+          - Maintenance:       [32m100[39m
+          - Quality:           [32m100[39m
+          - Vulnerabilities:   [32m100[39m
+          - License:           [32m100[39m
           - Alerts ([31m0[39m/[33m2[39m/1):     [33m[2m[middle] [22mhasNativeCode[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22mfilesystemAccess
           "
         `)
@@ -349,10 +349,10 @@ describe('package score output', async () => {
           ## Package: pkg:pypi/charset-normalizer@3.4.0
 
           - Supply Chain Risk:   99
-          - Maintenance:        100
-          - Quality:            100
-          - Vulnerabilities:    100
-          - License:            100
+          - Maintenance:       100
+          - Quality:           100
+          - Vulnerabilities:   100
+          - License:           100
           - Alerts (0/2/1):     [middle] hasNativeCode, [middle] usesEval, [low] filesystemAccess"
         `)
 
