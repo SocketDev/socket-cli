@@ -91,20 +91,42 @@ export async function getRepoOwner(
 
 export async function gitBranch(cwd = process.cwd()): Promise<string | null> {
   const stdioPipeOptions: SpawnOptions = { cwd }
+  let quotedCmd = '`git symbolic-ref --short HEAD`'
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   // Try symbolic-ref first which returns the branch name or fails in a
   // detached HEAD state.
   try {
-    return (
-      await spawn('git', ['symbolic-ref', '--short', 'HEAD'], stdioPipeOptions)
-    ).stdout
-  } catch {}
+    const gitSymbolicRefResult = await spawn(
+      'git',
+      ['symbolic-ref', '--short', 'HEAD'],
+      stdioPipeOptions,
+    )
+    debugDir('stdio', { gitSymbolicRefResult })
+    return gitSymbolicRefResult.stdout
+  } catch (e) {
+    if (isDebug('stdio')) {
+      debugFn('error', `caught: ${quotedCmd} failed`)
+      debugDir('inspect', { error: e })
+    }
+  }
   // Fallback to using rev-parse to get the short commit hash in a
   // detached HEAD state.
+  quotedCmd = '`git rev-parse --short HEAD`'
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
-    return (
-      await spawn('git', ['rev-parse', '--short', 'HEAD'], stdioPipeOptions)
-    ).stdout
-  } catch {}
+    const gitRevParseResult = await spawn(
+      'git',
+      ['rev-parse', '--short', 'HEAD'],
+      stdioPipeOptions,
+    )
+    debugDir('stdio', { gitRevParseResult })
+    return gitRevParseResult.stdout
+  } catch (e) {
+    if (isDebug('stdio')) {
+      debugFn('error', `caught: ${quotedCmd} failed`)
+      debugDir('inspect', { error: e })
+    }
+  }
   return null
 }
 
@@ -115,32 +137,19 @@ export async function gitBranch(cwd = process.cwd()): Promise<string | null> {
 export async function detectDefaultBranch(
   cwd = process.cwd(),
 ): Promise<string> {
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
-  }
-
+  // First pass: check all local branches
   for (const branch of COMMON_DEFAULT_BRANCH_NAMES) {
-    // Try to check if local branch exists locally.
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      await spawn(
-        'git',
-        ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`],
-        stdioIgnoreOptions,
-      )
+    // eslint-disable-next-line no-await-in-loop
+    if (await gitLocalBranchExists(branch, cwd)) {
       return branch
-    } catch {}
-    // Try for the origin branch if the local branch doesn't exist.
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      await spawn(
-        'git',
-        ['show-ref', '--verify', '--quiet', `refs/remotes/origin/${branch}`],
-        stdioIgnoreOptions,
-      )
+    }
+  }
+  // Second pass: check remote branches only if no local branch found
+  for (const branch of COMMON_DEFAULT_BRANCH_NAMES) {
+    // eslint-disable-next-line no-await-in-loop
+    if (await gitRemoteBranchExists(branch, cwd)) {
       return branch
-    } catch {}
+    }
   }
   // Lazily access constants.SOCKET_DEFAULT_BRANCH.
   return constants.SOCKET_DEFAULT_BRANCH
@@ -327,9 +336,13 @@ export async function gitEnsureIdentity(
         debugFn('stdio', `spawn: ${quotedCmd}`)
         try {
           // Will throw with exit code 1 if the config property is not set.
-          configValue = (
-            await spawn('git', ['config', '--get', prop], stdioPipeOptions)
-          ).stdout
+          const gitConfigResult = await spawn(
+            'git',
+            ['config', '--get', prop],
+            stdioPipeOptions,
+          )
+          debugDir('stdio', { gitConfigResult })
+          configValue = gitConfigResult.stdout
         } catch (e) {
           if (isDebug('stdio')) {
             debugFn('error', `caught: ${quotedCmd} failed`)
@@ -389,17 +402,22 @@ export async function gitRemoteBranchExists(
   cwd = process.cwd(),
 ): Promise<boolean> {
   const stdioPipeOptions: SpawnOptions = { cwd }
+  const quotedCmd = `\`git ls-remote --heads origin ${branch}\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
-    return (
-      (
-        await spawn(
-          'git',
-          ['ls-remote', '--heads', 'origin', branch],
-          stdioPipeOptions,
-        )
-      ).stdout.length > 0
+    const lsRemoteResult = await spawn(
+      'git',
+      ['ls-remote', '--heads', 'origin', branch],
+      stdioPipeOptions,
     )
-  } catch {}
+    debugDir('stdio', { lsRemoteResult })
+    return lsRemoteResult.stdout.length > 0
+  } catch (e) {
+    if (isDebug('stdio')) {
+      debugFn('error', `caught: ${quotedCmd} failed`)
+      debugDir('inspect', { error: e })
+    }
+  }
   return false
 }
 
@@ -438,10 +456,15 @@ export async function gitUnstagedModifiedFiles(
 ): Promise<CResult<string[]>> {
   const stdioPipeOptions: SpawnOptions = { cwd }
   const quotedCmd = `\`git diff --name-only\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
-    const changedFilesDetails = (
-      await spawn('git', ['diff', '--name-only'], stdioPipeOptions)
-    ).stdout
+    const gitDiffResult = await spawn(
+      'git',
+      ['diff', '--name-only'],
+      stdioPipeOptions,
+    )
+    debugDir('stdio', { gitDiffResult })
+    const changedFilesDetails = gitDiffResult.stdout
     const relPaths = changedFilesDetails.split('\n')
     return {
       ok: true,
