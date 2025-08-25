@@ -122,6 +122,8 @@ export async function setupSdk(
     data: new SocketSdk(apiToken, {
       agent: apiProxy ? new ProxyAgent({ proxy: apiProxy }) : undefined,
       baseUrl: apiBaseUrl,
+      // Lazily access constants.ENV.SOCKET_CLI_API_TIMEOUT.
+      timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
       userAgent: createUserAgentFromPkgJson({
         // Lazily access constants.ENV.INLINED_SOCKET_CLI_NAME.
         name: constants.ENV.INLINED_SOCKET_CLI_NAME,
