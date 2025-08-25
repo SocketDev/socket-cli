@@ -147,8 +147,8 @@ async function configureScan(
     return canceledByUser()
   }
   if (defaultRepoName) {
-    // Even if it's SOCKET_DEFAULT_REPOSITORY store it because if we change
-    // this default then an existing user probably would not expect the change?
+    // Store it even if it's constants.SOCKET_DEFAULT_REPOSITORY because if we
+    // change this default then an existing user probably would not expect the change.
     config.repo = defaultRepoName
   } else {
     delete config.repo
@@ -168,8 +168,8 @@ async function configureScan(
     return canceledByUser()
   }
   if (defaultBranchName) {
-    // Even if it's SOCKET_DEFAULT_BRANCH store it because if we change
-    // this default then an existing user probably would not expect the change?
+    // Store it even if it's constants.SOCKET_DEFAULT_BRANCH because if we change
+    // this default then an existing user probably would not expect the change.
     config.branch = defaultBranchName
   } else {
     delete config.branch
