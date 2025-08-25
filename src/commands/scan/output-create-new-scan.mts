@@ -1,5 +1,5 @@
 import open from 'open'
-import colors from 'yoctocolors-cjs'
+import terminalLink from 'terminal-link'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm } from '@socketsecurity/registry/lib/prompts'
@@ -78,10 +78,15 @@ export async function outputCreateNewScan(
     return
   }
 
-  const link = colors.underline(colors.cyan(`${result.data.html_report_url}`))
-
   logger.log('')
-  logger.log(`Available at: ${link}`)
+  logger.success('Scan completed successfully!')
+
+  const htmlReportUrl = result.data.html_report_url
+  if (htmlReportUrl) {
+    logger.log(`View report at: ${terminalLink(htmlReportUrl, htmlReportUrl)}`)
+  } else {
+    logger.log('No report available.')
+  }
 
   if (
     interactive &&

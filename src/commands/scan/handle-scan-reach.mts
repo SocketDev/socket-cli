@@ -47,7 +47,9 @@ export async function handleScanReach({
     cwd,
   })
 
-  spinner.stop()
+  spinner.successAndStop(
+    `Found ${packagePaths.length} ${pluralize('manifest file', packagePaths.length)} for reachability analysis.`,
+  )
 
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,

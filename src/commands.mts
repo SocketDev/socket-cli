@@ -60,8 +60,8 @@ export const rootCommands = {
 
 export const rootAliases = {
   audit: {
-    description: cmdAuditLog.description,
-    hidden: true,
+    description: `${cmdAuditLog.description} (alias)`,
+    hidden: false,
     argv: ['audit-log'],
   },
   auditLog: {
@@ -80,18 +80,18 @@ export const rootAliases = {
     argv: ['audit-log'],
   },
   deps: {
-    description: cmdOrganizationDependencies.description,
-    hidden: true,
+    description: `${cmdOrganizationDependencies.description} (alias)`,
+    hidden: false,
     argv: ['dependencies'],
   },
   feed: {
-    description: cmdThreatFeed.description,
-    hidden: true,
+    description: `${cmdThreatFeed.description} (alias)`,
+    hidden: false,
     argv: ['threat-feed'],
   },
   org: {
-    description: cmdOrganization.description,
-    hidden: true,
+    description: `${cmdOrganization.description} (alias)`,
+    hidden: false,
     argv: ['organization'],
   },
   orgs: {
@@ -115,13 +115,13 @@ export const rootAliases = {
     argv: ['organization'],
   },
   pkg: {
-    description: cmdPackage.description,
-    hidden: true,
+    description: `${cmdPackage.description} (alias)`,
+    hidden: false,
     argv: ['package'],
   },
   repo: {
-    description: cmdRepository.description,
-    hidden: true,
+    description: `${cmdRepository.description} (alias)`,
+    hidden: false,
     argv: ['repos'],
   },
   repos: {
