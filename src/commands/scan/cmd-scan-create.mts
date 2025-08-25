@@ -15,7 +15,11 @@ import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
 import { getEcosystemChoicesForMeow } from '../../utils/ecosystem.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
-import { getRepoName, gitBranch } from '../../utils/git.mts'
+import {
+  detectDefaultBranch,
+  getRepoName,
+  gitBranch,
+} from '../../utils/git.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
   getFlagApiRequirementsOutput,
@@ -29,11 +33,7 @@ import type { MeowFlags } from '../../flags.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const {
-  DRY_RUN_BAILING_NOW,
-  SOCKET_DEFAULT_BRANCH,
-  SOCKET_DEFAULT_REPOSITORY,
-} = constants
+const { DRY_RUN_BAILING_NOW } = constants
 
 export const CMD_NAME = 'create'
 
@@ -91,7 +91,7 @@ const generalFlags: MeowFlags = {
   pullRequest: {
     type: 'number',
     shortFlag: 'pr',
-    description: 'Commit hash',
+    description: 'Pull request number',
   },
   org: {
     type: 'string',
@@ -312,7 +312,7 @@ async function run(
       branchName = sockJson.defaults.scan.create.branch
       logger.info('Using default --branch from socket.json:', branchName)
     } else {
-      branchName = (await gitBranch(cwd)) || SOCKET_DEFAULT_BRANCH
+      branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
     }
   }
   if (!repoName) {
@@ -320,7 +320,7 @@ async function run(
       repoName = sockJson.defaults.scan.create.repo
       logger.info('Using default --repo from socket.json:', repoName)
     } else {
-      repoName = (await getRepoName(cwd)) || SOCKET_DEFAULT_REPOSITORY
+      repoName = await getRepoName(cwd)
     }
   }
   if (typeof report !== 'boolean') {
@@ -403,6 +403,29 @@ async function run(
     logger.error('')
   }
 
+  // Validation helpers for better readability.
+  const hasReachEcosystems = reachEcosystems.length > 0
+
+  const hasReachExcludePaths = reachExcludePaths.length > 0
+
+  const isUsingNonDefaultMemoryLimit =
+    reachAnalysisMemoryLimit !==
+    reachabilityFlags['reachAnalysisMemoryLimit']?.default
+
+  const isUsingNonDefaultTimeout =
+    reachAnalysisTimeout !== reachabilityFlags['reachAnalysisTimeout']?.default
+
+  const isUsingNonDefaultAnalytics =
+    reachDisableAnalytics !==
+    reachabilityFlags['reachDisableAnalytics']?.default
+
+  const isUsingAnyReachabilityFlags =
+    isUsingNonDefaultMemoryLimit ||
+    isUsingNonDefaultTimeout ||
+    isUsingNonDefaultAnalytics ||
+    hasReachEcosystems ||
+    hasReachExcludePaths
+
   const wasValidInput = checkCommandInput(
     outputKind,
     {
@@ -442,43 +465,9 @@ async function run(
     },
     {
       nook: true,
-      test:
-        reach ||
-        reachAnalysisMemoryLimit ===
-          reachabilityFlags['reachAnalysisMemoryLimit']?.default,
-      message:
-        'The --reach-analysis-memory-limit flag requires --reach to be set',
-      fail: 'missing --reach flag',
-    },
-    {
-      nook: true,
-      test:
-        reach ||
-        reachAnalysisTimeout ===
-          reachabilityFlags['reachAnalysisTimeout']?.default,
-      message: 'The --reach-analysis-timeout flag requires --reach to be set',
-      fail: 'missing --reach flag',
-    },
-    {
-      nook: true,
-      test:
-        reach ||
-        reachDisableAnalytics ===
-          reachabilityFlags['reachDisableAnalytics']?.default,
-      message: 'The --reach-disable-analytics flag requires --reach to be set',
-      fail: 'missing --reach flag',
-    },
-    {
-      nook: true,
-      test: reach || !reachEcosystems.length,
-      message: 'The --reach-ecosystems flag requires --reach to be set',
-      fail: 'missing --reach flag',
-    },
-    {
-      nook: true,
-      test: reach || !reachExcludePaths.length,
-      message: 'The --reach-exclude-paths flag requires --reach to be set',
-      fail: 'missing --reach flag',
+      test: reach || !isUsingAnyReachabilityFlags,
+      message: 'Reachability analysis flags require --reach to be enabled',
+      fail: 'add --reach flag to use --reach-* options',
     },
   )
   if (!wasValidInput) {

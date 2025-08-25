@@ -77,6 +77,62 @@ function description(command: CliSubcommand | undefined): string {
   return indentString(str, HELP_PAD_NAME).trimStart()
 }
 
+/**
+ * Find the best matching command name for a typo.
+ */
+function findBestCommandMatch(
+  input: string,
+  subcommands: Record<string, unknown>,
+  aliases: Record<string, unknown>,
+): string | null {
+  let bestMatch = null
+  let bestScore = Infinity
+  const allCommands = [...Object.keys(subcommands), ...Object.keys(aliases)]
+  for (const command of allCommands) {
+    const distance = levenshteinDistance(
+      input.toLowerCase(),
+      command.toLowerCase(),
+    )
+    const maxLength = Math.max(input.length, command.length)
+    // Only suggest if the similarity is reasonable (more than 50% similar).
+    if (distance < maxLength * 0.5 && distance < bestScore) {
+      bestScore = distance
+      bestMatch = command
+    }
+  }
+  return bestMatch
+}
+
+/**
+ * Calculate Levenshtein distance between two strings for fuzzy matching.
+ */
+function levenshteinDistance(a: string, b: string): number {
+  const matrix = Array.from({ length: a.length + 1 }, () =>
+    Array(b.length + 1).fill(0),
+  )
+  for (let i = 0; i <= a.length; i++) {
+    matrix[i]![0] = i
+  }
+  for (let j = 0; j <= b.length; j++) {
+    matrix[0]![j] = j
+  }
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      matrix[i]![j] = Math.min(
+        matrix[i - 1]![j]! + 1, // Deletion.
+        matrix[i]![j - 1]! + 1, // Insertion.
+        matrix[i - 1]![j - 1]! + cost, // Substitution.
+      )
+    }
+  }
+  return matrix[a.length]![b.length]!
+}
+
+function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
+  return Boolean(flags['json'] || flags['markdown'] || flags['nobanner'])
+}
+
 // For debugging. Whenever you call meowOrExit it will store the command here
 // This module exports a getter that returns the current value.
 let lastSeenCommand = ''
@@ -231,9 +287,11 @@ export async function meowWithSubcommands(
   }
 
   if (configOverrideResult?.ok === false) {
-    emitBanner(name, orgFlag)
-    // Add newline in stderr.
-    logger.error('')
+    if (!shouldSuppressBanner(cli1.flags)) {
+      emitBanner(name, orgFlag)
+      // Add newline in stderr.
+      logger.error('')
+    }
     logger.fail(configOverrideResult.message)
     process.exitCode = 2
     return
@@ -253,6 +311,18 @@ export async function meowWithSubcommands(
       return await commandDefinition.run(commandArgv, importMeta, {
         parentName: name,
       })
+    }
+
+    // Suggest similar commands for typos.
+    if (commandName && !commandDefinition) {
+      const suggestion = findBestCommandMatch(commandName, subcommands, aliases)
+      if (suggestion) {
+        process.exitCode = 2
+        logger.fail(
+          `Unknown command "${commandName}". Did you mean "${suggestion}"?`,
+        )
+        return
+      }
     }
   }
 
@@ -446,7 +516,7 @@ export async function meowWithSubcommands(
   })
 
   // ...else we provide basic instructions and help.
-  if (!cli2.flags['nobanner']) {
+  if (!shouldSuppressBanner(cli2.flags)) {
     emitBanner(name, orgFlag)
     // meow will add newline so don't add stderr spacing here
   }
@@ -495,7 +565,7 @@ export function meowOrExit({
     importMeta,
   })
 
-  if (!cli.flags['nobanner']) {
+  if (!shouldSuppressBanner(cli.flags)) {
     emitBanner(command, String(cli.flags['org'] || '') || undefined)
     // Add newline in stderr.
     // Meow help adds a newline too so we do it here.

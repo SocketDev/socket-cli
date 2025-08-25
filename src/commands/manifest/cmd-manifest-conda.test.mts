@@ -128,10 +128,7 @@ describe('socket manifest conda', async () => {
         `)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
-             _____         _       _        /---------------
-            |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-            |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>"
+             "
         `)
       },
     )
@@ -152,12 +149,7 @@ describe('socket manifest conda', async () => {
         expect(stdout).toMatchInlineSnapshot(`""`)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
-             _____         _       _        /---------------
-            |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-            |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
-            |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
-
-          \\xd7  Input error:  Please review the input requirements and try again
+             \\xd7  Input error:  Please review the input requirements and try again
 
             \\xd7 Can only accept one DIR (make sure to escape spaces!) (received 2)"
         `)

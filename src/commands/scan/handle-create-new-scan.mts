@@ -1,3 +1,5 @@
+import terminalLink from 'terminal-link'
+
 import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
@@ -94,12 +96,14 @@ export async function handleCreateNewScan({
     cwd,
   })
 
-  spinner.stop()
+  spinner.successAndStop(
+    `Found ${packagePaths.length} ${pluralize('file', packagePaths.length)} to include in scan.`,
+  )
 
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
     test: packagePaths.length > 0,
-    fail: 'found no eligible files to scan',
+    fail: `found no eligible files to scan. See supported manifest files at ${terminalLink('docs.socket.dev', 'https://docs.socket.dev/docs/manifest-file-detection-in-socket')}`,
     message:
       'TARGET (file/dir) must contain matching / supported file types for a scan',
   })

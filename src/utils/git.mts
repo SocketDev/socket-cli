@@ -7,6 +7,20 @@ import constants from '../constants.mts'
 import type { CResult } from '../types.mts'
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
+// Listed in order of check preference.
+const COMMON_DEFAULT_BRANCH_NAMES = [
+  // Modern default (GitHub, GitLab, Bitbucket have switched to this).
+  'main',
+  // Historic default in Git (pre-2020, still used in many repos).
+  'master',
+  // Common in Git Flow workflows (main for stable, develop for ongoing work).
+  'develop',
+  // Used by teams adopting trunk-based development practices.
+  'trunk',
+  // Used in some older enterprise setups and tools.
+  'default',
+]
+
 export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
   // Lazily access constants.ENV properties.
   const { GITHUB_BASE_REF, GITHUB_REF_NAME, GITHUB_REF_TYPE } = constants.ENV
@@ -44,7 +58,7 @@ export async function getRepoInfo(
   cwd = process.cwd(),
 ): Promise<RepoInfo | null> {
   let info = null
-  const quotedCmd = 'git remote get-url origin`'
+  const quotedCmd = '`git remote get-url origin`'
   debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     const remoteUrl = (
@@ -62,9 +76,10 @@ export async function getRepoInfo(
   return info
 }
 
-export async function getRepoName(cwd = process.cwd()): Promise<string | null> {
+export async function getRepoName(cwd = process.cwd()): Promise<string> {
   const repoInfo = await getRepoInfo(cwd)
-  return repoInfo?.repo ?? null
+  // Lazily access constants.SOCKET_DEFAULT_REPOSITORY.
+  return repoInfo?.repo ?? constants.SOCKET_DEFAULT_REPOSITORY
 }
 
 export async function getRepoOwner(
@@ -91,6 +106,44 @@ export async function gitBranch(cwd = process.cwd()): Promise<string | null> {
     ).stdout
   } catch {}
   return null
+}
+
+/**
+ * Try to detect the default branch name by checking common patterns.
+ * Returns the first branch that exists in the repository.
+ */
+export async function detectDefaultBranch(
+  cwd = process.cwd(),
+): Promise<string> {
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+  }
+
+  for (const branch of COMMON_DEFAULT_BRANCH_NAMES) {
+    // Try to check if local branch exists locally.
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await spawn(
+        'git',
+        ['show-ref', '--verify', '--quiet', `refs/heads/${branch}`],
+        stdioIgnoreOptions,
+      )
+      return branch
+    } catch {}
+    // Try for the origin branch if the local branch doesn't exist.
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await spawn(
+        'git',
+        ['show-ref', '--verify', '--quiet', `refs/remotes/origin/${branch}`],
+        stdioIgnoreOptions,
+      )
+      return branch
+    } catch {}
+  }
+  // Lazily access constants.SOCKET_DEFAULT_BRANCH.
+  return constants.SOCKET_DEFAULT_BRANCH
 }
 
 export type GitCreateAndPushBranchOptions = {
@@ -263,8 +316,8 @@ export async function gitEnsureIdentity(
 ): Promise<void> {
   const stdioPipeOptions: SpawnOptions = { cwd }
   const identEntries: Array<[string, string]> = [
-    ['user.email', name],
-    ['user.name', email],
+    ['user.email', email],
+    ['user.name', name],
   ]
   await Promise.all(
     identEntries.map(async ({ 0: prop, 1: value }) => {

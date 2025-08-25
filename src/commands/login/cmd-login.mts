@@ -81,7 +81,7 @@ async function run(
 
   if (!isInteractive()) {
     throw new InputError(
-      'Cannot prompt for credentials in a non-interactive shell',
+      'Cannot prompt for credentials in a non-interactive shell. Use SOCKET_CLI_API_TOKEN environment variable instead',
     )
   }
 
