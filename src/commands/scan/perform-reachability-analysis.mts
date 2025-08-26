@@ -1,10 +1,12 @@
+import terminalLink from 'terminal-link'
+
 import constants from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import {
   extractTier1ReachabilityScanId,
   spawnCoana,
 } from '../../utils/coana.mts'
-import { hasOrgEnterprisePlan } from '../../utils/organization.mts'
+import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
@@ -63,12 +65,11 @@ export async function performReachabilityAnalysis(
 
   const { organizations } = orgsCResult.data
 
-  if (!hasOrgEnterprisePlan(organizations)) {
+  if (!hasEnterpriseOrgPlan(organizations)) {
     return {
       ok: false,
       message: 'Tier 1 Reachability analysis requires an enterprise plan',
-      cause:
-        'This feature is only available for organizations with an enterprise plan. Please visit https://socket.dev/pricing to upgrade your plan.',
+      cause: `This feature is only available for organizations with an enterprise plan. Please ${terminalLink('upgrade your plan', 'https://socket.dev/pricing')}.`,
     }
   }
 
