@@ -115,11 +115,14 @@ async function copyExternalPackages() {
       `${blessedContribPath}/${LICENSE_MD}`,
     ),
   ])
+
+  const alwaysIgnoredPatterns = ['LICENSE*', 'README*']
+
   // Cleanup package files.
   await Promise.all(
     [
-      [blessedPath, ['lib/**/*.js', 'usr/**/**', 'vendor/**/*.js', 'LICENSE*']],
-      [blessedContribPath, ['lib/**/*.js', 'index.js', 'LICENSE*']],
+      [blessedPath, ['lib/**/*.js', 'usr/**/**', 'vendor/**/*.js']],
+      [blessedContribPath, ['lib/**/*.js', 'index.js']],
       [coanaPath, ['**/*.mjs', 'repos/**/*']],
       [
         socketRegistryPath,
@@ -129,11 +132,12 @@ async function copyExternalPackages() {
           'index.js',
           'extensions.json',
           'manifest.json',
-          'LICENSE*',
         ],
       ],
     ].map(async ({ 0: thePath, 1: ignorePatterns }) => {
-      await removeFiles(thePath, { exclude: ignorePatterns })
+      await removeFiles(thePath, {
+        exclude: [...alwaysIgnoredPatterns, ...ignorePatterns],
+      })
       await removeEmptyDirs(thePath)
     }),
   )
