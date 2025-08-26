@@ -9,7 +9,7 @@ import { setupSdk } from '../../utils/sdk.mts'
 import type { SetupSdkOptions } from '../../utils/sdk.mts'
 
 export type SuggestRepoSlugOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function suggestRepoSlug(
@@ -19,12 +19,12 @@ export async function suggestRepoSlug(
   slug: string
   defaultBranch: string
 } | void> {
-  const { sdkOptions } = {
+  const { sdkOpts } = {
     __proto__: null,
     ...options,
   } as SuggestRepoSlugOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return
   }

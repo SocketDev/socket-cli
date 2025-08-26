@@ -6,7 +6,7 @@ import type { SetupSdkOptions } from '../../utils/sdk.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchDeleteOrgFullScanOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function fetchDeleteOrgFullScan(
@@ -14,12 +14,12 @@ export async function fetchDeleteOrgFullScan(
   scanId: string,
   options?: FetchDeleteOrgFullScanOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'deleteOrgFullScan'>['data']>> {
-  const { sdkOptions } = {
+  const { sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchDeleteOrgFullScanOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

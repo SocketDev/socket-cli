@@ -12,7 +12,7 @@ import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchScanData = {
   includeLicensePolicy?: boolean | undefined
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 /**
@@ -29,11 +29,11 @@ export async function fetchScanData(
     securityPolicy: SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']
   }>
 > {
-  const { includeLicensePolicy, sdkOptions } = {
+  const { includeLicensePolicy, sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchScanData
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

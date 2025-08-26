@@ -7,7 +7,7 @@ import type { SetupSdkOptions } from '../../utils/sdk.mts'
 
 export type StreamScanOptions = {
   file?: string | undefined
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function streamScan(
@@ -15,11 +15,11 @@ export async function streamScan(
   scanId: string,
   options?: StreamScanOptions | undefined,
 ) {
-  const { file, sdkOptions } = {
+  const { file, sdkOpts } = {
     __proto__: null,
     ...options,
   } as StreamScanOptions
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

@@ -6,7 +6,7 @@ import type { SetupSdkOptions } from '../../utils/sdk.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchViewRepoOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function fetchViewRepo(
@@ -14,9 +14,9 @@ export async function fetchViewRepo(
   repoName: string,
   options?: FetchViewRepoOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getOrgRepo'>['data']>> {
-  const { sdkOptions } = { __proto__: null, ...options } as FetchViewRepoOptions
+  const { sdkOpts } = { __proto__: null, ...options } as FetchViewRepoOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

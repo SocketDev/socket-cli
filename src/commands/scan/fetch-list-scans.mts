@@ -17,19 +17,19 @@ export type FetchOrgFullScanListConfig = {
 }
 
 export type FetchOrgFullScanListOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function fetchOrgFullScanList(
   config: FetchOrgFullScanListConfig,
   options?: FetchOrgFullScanListOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getOrgFullScanList'>['data']>> {
-  const { sdkOptions } = {
+  const { sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchOrgFullScanListOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

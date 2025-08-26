@@ -3,27 +3,59 @@ import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'
 import type { SetupSdkOptions } from '../../utils/sdk.mts'
-import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
+import type { SocketSdk, SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchOrganizationOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  desc?: string | undefined
+  sdk?: SocketSdk | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
+
+export type EnterpriseOrganization = Omit<Organization, 'plan'> & {
+  plan: 'enterprise'
+}
+
+export type EnterpriseOrganizations = EnterpriseOrganization[]
+
+export type Organization =
+  SocketSdkSuccessResult<'getOrganizations'>['data']['organizations'][string]
+
+export type Organizations = Organization[]
+
+export type OrganizationsData = { organizations: Organizations }
+
+export type OrganizationsCResult = CResult<OrganizationsData>
 
 export async function fetchOrganization(
   options?: FetchOrganizationOptions | undefined,
-): Promise<CResult<SocketSdkSuccessResult<'getOrganizations'>['data']>> {
-  const { sdkOptions } = {
+): Promise<OrganizationsCResult> {
+  const {
+    desc = 'organization list',
+    sdk,
+    sdkOpts,
+  } = {
     __proto__: null,
     ...options,
   } as FetchOrganizationOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
-  if (!sockSdkCResult.ok) {
-    return sockSdkCResult
+  let sockSdk = sdk
+  if (!sockSdk) {
+    const sockSdkCResult = await setupSdk(sdkOpts)
+    if (!sockSdkCResult.ok) {
+      return sockSdkCResult
+    }
+    sockSdk = sockSdkCResult.data
   }
-  const sockSdk = sockSdkCResult.data
 
-  return await handleApiCall(sockSdk.getOrganizations(), {
-    desc: 'organization list',
-  })
+  const orgsCResult = await handleApiCall(sockSdk.getOrganizations(), { desc })
+  if (!orgsCResult.ok) {
+    return orgsCResult
+  }
+
+  return {
+    ...orgsCResult,
+    data: {
+      organizations: Object.values(orgsCResult.data.organizations),
+    },
+  }
 }

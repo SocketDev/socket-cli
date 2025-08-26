@@ -11,19 +11,19 @@ export type FetchDependenciesConfig = {
 }
 
 export type FetchDependenciesOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function fetchDependencies(
   config: FetchDependenciesConfig,
   options?: FetchDependenciesOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'searchDependencies'>['data']>> {
-  const { sdkOptions } = {
+  const { sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchDependenciesOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

@@ -14,16 +14,16 @@ export type FetchAuditLogsConfig = {
 }
 
 export type FetchAuditLogOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function fetchAuditLog(
   config: FetchAuditLogsConfig,
   options?: FetchAuditLogOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>> {
-  const { sdkOptions } = { __proto__: null, ...options } as FetchAuditLogOptions
+  const { sdkOpts } = { __proto__: null, ...options } as FetchAuditLogOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }
