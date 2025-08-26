@@ -13,6 +13,6 @@ export function getOrgSlugs(orgs: Organizations): string[] {
   return orgs.map(o => o.slug)
 }
 
-export function hasOrgEnterprisePlan(orgs: Organizations): boolean {
+export function hasEnterpriseOrgPlan(orgs: Organizations): boolean {
   return orgs.some(o => o.plan === 'enterprise')
 }
