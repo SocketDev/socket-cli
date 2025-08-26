@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import terminalLink from 'terminal-link'
 
 import { debugDir } from '@socketsecurity/registry/lib/debug'
@@ -151,14 +153,19 @@ export async function handleCreateNewScan({
 
     logger.success('Reachability analysis completed successfully')
 
+    const reachabilityReport = reachResult.data?.reachabilityReport
+
     scanPaths = [
       ...packagePaths.filter(
         // Ensure the .socket.facts.json isn't duplicated in case it happened
         // to be in the scan folder before the analysis was run.
-        p => !p.endsWith(constants.DOT_SOCKET_DOT_FACTS_JSON),
+        p =>
+          path.basename(p).toLowerCase() !==
+          constants.DOT_SOCKET_DOT_FACTS_JSON,
       ),
-      reachResult.data?.reachabilityReport,
+      ...(reachabilityReport ? [reachabilityReport] : []),
     ]
+
     tier1ReachabilityScanId = reachResult.data?.tier1ReachabilityScanId
   }
 

@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import terminalLink from 'terminal-link'
 
 import constants from '../../constants.mts'
@@ -86,10 +88,11 @@ export async function performReachabilityAnalysis(
 
     const wasSpinning = !!spinner?.isSpinning
 
-    // Exclude any .socket.facts.json files that happen to be
-    // in the scan folder before the analysis was run.
+    // Exclude any .socket.facts.json files that happen to be in the scan
+    // folder before the analysis was run.
     const filepathsToUpload = packagePaths.filter(
-      p => !p.endsWith(constants.DOT_SOCKET_DOT_FACTS_JSON),
+      p =>
+        path.basename(p).toLowerCase() !== constants.DOT_SOCKET_DOT_FACTS_JSON,
     )
 
     spinner?.start('Uploading manifests for reachability analysis...')
@@ -151,7 +154,7 @@ export async function performReachabilityAnalysis(
     ...(tarHash
       ? ['--run-without-docker', '--manifests-tar-hash', tarHash]
       : []),
-    // Empty reachEcosystems implies scan all ecosystems.
+    // Empty reachEcosystems implies scanning all ecosystems.
     ...(reachabilityOptions.reachEcosystems.length
       ? ['--purl-types', ...reachabilityOptions.reachEcosystems]
       : []),
