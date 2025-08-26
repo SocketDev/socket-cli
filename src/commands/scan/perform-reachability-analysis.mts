@@ -60,7 +60,8 @@ export async function performReachabilityAnalysis(
 
     const wasSpinning = !!spinner?.isSpinning
 
-    // Exclude .socket.facts.json from upload.
+    // Exclude any .socket.facts.json files that happen to be
+    // in the scan folder before the analysis was run.
     const filepathsToUpload = packagePaths.filter(
       p => !p.endsWith(constants.DOT_SOCKET_DOT_FACTS_JSON),
     )
