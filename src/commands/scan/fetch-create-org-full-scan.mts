@@ -18,7 +18,7 @@ export type FetchCreateOrgFullScanOptions = {
   cwd?: string | undefined
   defaultBranch?: boolean | undefined
   pendingHead?: boolean | undefined
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
   tmp?: boolean | undefined
 }
 
@@ -41,11 +41,11 @@ export async function fetchCreateOrgFullScan(
     cwd = process.cwd(),
     defaultBranch,
     pendingHead,
-    sdkOptions,
+    sdkOpts,
     tmp,
   } = { __proto__: null, ...options } as FetchCreateOrgFullScanOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

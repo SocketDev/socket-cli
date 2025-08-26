@@ -15,7 +15,7 @@ export type FetchCreateRepoConfig = {
 }
 
 export type FetchCreateRepoOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function fetchCreateRepo(
@@ -31,12 +31,12 @@ export async function fetchCreateRepo(
     visibility,
   } = config
 
-  const { sdkOptions } = {
+  const { sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchCreateRepoOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

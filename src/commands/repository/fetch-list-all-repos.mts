@@ -7,7 +7,7 @@ import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchListAllReposOptions = {
   direction?: string | undefined
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
   sort?: string | undefined
 }
 
@@ -15,12 +15,12 @@ export async function fetchListAllRepos(
   orgSlug: string,
   options?: FetchListAllReposOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getOrgRepoList'>['data']>> {
-  const { direction, sdkOptions, sort } = {
+  const { direction, sdkOpts, sort } = {
     __proto__: null,
     ...options,
   } as FetchListAllReposOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

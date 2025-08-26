@@ -4,6 +4,7 @@ import {
   extractTier1ReachabilityScanId,
   spawnCoana,
 } from '../../utils/coana.mts'
+import { hasOrgEnterprisePlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
@@ -60,10 +61,9 @@ export async function performReachabilityAnalysis(
     }
   }
 
-  const organizations = Object.values(orgsCResult.data.organizations)
-  const hasEnterprisePlan = organizations.some(org => org.plan === 'enterprise')
+  const { organizations } = orgsCResult.data
 
-  if (!hasEnterprisePlan) {
+  if (!hasOrgEnterprisePlan(organizations)) {
     return {
       ok: false,
       message: 'Tier 1 Reachability analysis requires an enterprise plan',

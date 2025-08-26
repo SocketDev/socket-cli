@@ -6,19 +6,19 @@ import type { SetupSdkOptions } from '../../utils/sdk.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchSecurityPolicyOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function fetchSecurityPolicy(
   orgSlug: string,
   options?: FetchSecurityPolicyOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getOrgSecurityPolicy'>['data']>> {
-  const { sdkOptions } = {
+  const { sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchSecurityPolicyOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

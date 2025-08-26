@@ -6,7 +6,7 @@ import type { SetupSdkOptions } from '../../utils/sdk.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchScanMetadataOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function fetchScanMetadata(
@@ -14,12 +14,12 @@ export async function fetchScanMetadata(
   scanId: string,
   options?: FetchScanMetadataOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getOrgFullScanMetadata'>['data']>> {
-  const { sdkOptions } = {
+  const { sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchScanMetadataOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

@@ -6,18 +6,18 @@ import type { SetupSdkOptions } from '../../utils/sdk.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchSupportedScanFileNamesOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function fetchSupportedScanFileNames(
   options?: FetchSupportedScanFileNamesOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getReportSupportedFiles'>['data']>> {
-  const { sdkOptions } = {
+  const { sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchSupportedScanFileNamesOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

@@ -6,7 +6,7 @@ import type { SetupSdkOptions } from '../../utils/sdk.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type RepoAnalyticsDataOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function fetchRepoAnalyticsData(
@@ -14,12 +14,12 @@ export async function fetchRepoAnalyticsData(
   time: number,
   options?: RepoAnalyticsDataOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'getRepoAnalytics'>['data']>> {
-  const { sdkOptions } = {
+  const { sdkOpts } = {
     __proto__: null,
     ...options,
   } as RepoAnalyticsDataOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }
