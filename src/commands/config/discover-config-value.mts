@@ -1,4 +1,5 @@
 import { isSupportedConfigKey } from '../../utils/config.mts'
+import { getOrgSlugs } from '../../utils/organization.mts'
 import { hasDefaultToken } from '../../utils/sdk.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
@@ -136,10 +137,10 @@ async function getDefaultOrgFromToken(): Promise<
   }
 
   const { organizations } = orgsCResult.data
-  const slugs = Array.from(Object.values(organizations)).map(o => o.slug)
-  if (slugs.length === 0) {
+  if (organizations.length === 0) {
     return undefined
   }
+  const slugs = getOrgSlugs(organizations)
   if (slugs.length === 1) {
     return slugs[0]
   }
@@ -153,9 +154,5 @@ async function getEnforceableOrgsFromToken(): Promise<string[] | undefined> {
   }
 
   const { organizations } = orgsCResult.data
-  const slugs = Array.from(Object.values(organizations)).map(o => o.slug)
-  if (!slugs.length) {
-    return undefined
-  }
-  return slugs
+  return organizations.length ? getOrgSlugs(organizations) : undefined
 }

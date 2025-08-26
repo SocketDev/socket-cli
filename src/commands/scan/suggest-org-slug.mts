@@ -19,7 +19,7 @@ export async function suggestOrgSlug(): Promise<string | void> {
     message:
       'Missing org name; do you want to use any of these orgs for this scan?',
     choices: [
-      ...Object.values(organizations).map(o => {
+      ...organizations.map(o => {
         const name = o.name ?? o.slug
         return {
           name: `Yes [${name}]`,

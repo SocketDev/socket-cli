@@ -14,7 +14,7 @@ export type FetchListReposConfig = {
 }
 
 export type FetchListReposOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function fetchListRepos(
@@ -26,12 +26,12 @@ export async function fetchListRepos(
     ...config,
   } as FetchListReposConfig
 
-  const { sdkOptions } = {
+  const { sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchListReposOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }

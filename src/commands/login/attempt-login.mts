@@ -1,19 +1,21 @@
 import terminalLink from 'terminal-link'
 
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 
 import { applyLogin } from './apply-login.mts'
 import constants from '../../constants.mts'
-import { handleApiCall } from '../../utils/api.mts'
 import {
   getConfigValueOrUndef,
   isReadOnlyConfig,
   updateConfigValue,
 } from '../../utils/config.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
+import { getEnterpriseOrgs, getOrgSlugs } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
+import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
 
@@ -50,8 +52,9 @@ export async function attemptLogin(
 
   const sockSdk = sockSdkCResult.data
 
-  const orgsCResult = await handleApiCall(sockSdk.getOrganizations(), {
+  const orgsCResult = await fetchOrganization({
     desc: 'token verification',
+    sdk: sockSdk,
   })
   if (!orgsCResult.ok) {
     process.exitCode = 1
@@ -60,27 +63,31 @@ export async function attemptLogin(
   }
 
   const { organizations } = orgsCResult.data
-  const orgSlugs = Object.values(organizations).map(obj => obj.slug)
 
-  logger.success(`API token verified: ${orgSlugs}`)
+  const orgSlugs = getOrgSlugs(organizations)
 
-  const enforcedChoices: OrgChoices = Object.values(organizations)
-    .filter(org => org?.plan === 'enterprise')
-    .map(org => ({
-      name: org.name ?? 'undefined',
-      value: org.id,
-    }))
+  logger.success(`API token verified: ${joinAnd(orgSlugs)}`)
+
+  const enterpriseOrgs = getEnterpriseOrgs(organizations)
+
+  const enforcedChoices: OrgChoices = enterpriseOrgs.map(org => ({
+    name: org.name ?? 'undefined',
+    value: org.id,
+  }))
 
   let enforcedOrgs: string[] = []
   if (enforcedChoices.length > 1) {
     const id = await select({
       message:
         "Which organization's policies should Socket enforce system-wide?",
-      choices: enforcedChoices.concat({
-        name: 'None',
-        value: '',
-        description: 'Pick "None" if this is a personal device',
-      }),
+      choices: [
+        ...enforcedChoices,
+        {
+          name: 'None',
+          value: '',
+          description: 'Pick "None" if this is a personal device',
+        },
+      ],
     })
     if (id === undefined) {
       logger.fail('Canceled by user')

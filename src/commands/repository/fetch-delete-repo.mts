@@ -6,7 +6,7 @@ import type { SetupSdkOptions } from '../../utils/sdk.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchDeleteRepoOptions = {
-  sdkOptions?: SetupSdkOptions | undefined
+  sdkOpts?: SetupSdkOptions | undefined
 }
 
 export async function fetchDeleteRepo(
@@ -14,12 +14,12 @@ export async function fetchDeleteRepo(
   repoName: string,
   options?: FetchDeleteRepoOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'deleteOrgRepo'>['data']>> {
-  const { sdkOptions } = {
+  const { sdkOpts } = {
     __proto__: null,
     ...options,
   } as FetchDeleteRepoOptions
 
-  const sockSdkCResult = await setupSdk(sdkOptions)
+  const sockSdkCResult = await setupSdk(sdkOpts)
   if (!sockSdkCResult.ok) {
     return sockSdkCResult
   }
