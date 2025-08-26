@@ -176,6 +176,12 @@ async function run(
       message: 'This command requires an API token for access',
       fail: 'try `socket login`',
     },
+    {
+      nook: true,
+      test: !json || !markdown,
+      message: 'The json and markdown flags cannot be both set, pick one',
+      fail: 'omit one',
+    },
   )
   if (!wasValidInput) {
     return

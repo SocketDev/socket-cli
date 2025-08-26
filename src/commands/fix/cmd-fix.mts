@@ -8,7 +8,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleFix } from './handle-fix.mts'
 import constants from '../../constants.mts'
-import { commonFlags } from '../../flags.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
@@ -50,6 +50,7 @@ async function run(
     hidden,
     flags: {
       ...commonFlags,
+      ...outputFlags,
       autoMerge: {
         type: 'boolean',
         default: false,
@@ -186,11 +187,20 @@ Available styles:
 
   const outputKind = getOutputKind(cli.flags['json'], cli.flags['markdown'])
 
-  const wasValidInput = checkCommandInput(outputKind, {
-    test: RangeStyles.includes(rangeStyle),
-    message: `Expecting range style of ${joinOr(RangeStyles)}`,
-    fail: 'invalid',
-  })
+  const wasValidInput = checkCommandInput(
+    outputKind,
+    {
+      test: RangeStyles.includes(rangeStyle),
+      message: `Expecting range style of ${joinOr(RangeStyles)}`,
+      fail: 'invalid',
+    },
+    {
+      nook: true,
+      test: !cli.flags['json'] || !cli.flags['markdown'],
+      message: 'The json and markdown flags cannot be both set, pick one',
+      fail: 'omit one',
+    },
+  )
   if (!wasValidInput) {
     return
   }

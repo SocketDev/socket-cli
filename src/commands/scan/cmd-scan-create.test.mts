@@ -573,4 +573,224 @@ describe('socket scan create', async () => {
       ).not.toBe(0)
     },
   )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeOrg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-analysis-memory-limit',
+      '1',
+      '--config',
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed with minimal positive reachability memory limit',
+    async cmd => {
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeOrg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-analysis-timeout',
+      '0',
+      '--config',
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed with zero timeout (unlimited)',
+    async cmd => {
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeOrg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-ecosystems',
+      'npm,invalid,pypi',
+      '--config',
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should fail when invalid ecosystem mixed with valid ones in --reach mode',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain('Invalid ecosystem: "invalid"')
+      expect(
+        code,
+        'should exit with non-zero code when invalid ecosystem provided',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeOrg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--reach-ecosystems',
+      'npm',
+      '--reach-exclude-paths',
+      'vendor,build,dist,target',
+      '--reach-analysis-memory-limit',
+      '16384',
+      '--reach-analysis-timeout',
+      '7200',
+      '--reach-disable-analytics',
+      '--config',
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed with comprehensive reachability configuration',
+    async cmd => {
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeOrg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--json',
+      '--config',
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed with --reach and --json output format',
+    async cmd => {
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeOrg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--markdown',
+      '--config',
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed with --reach and --markdown output format',
+    async cmd => {
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeOrg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--json',
+      '--markdown',
+      '--config',
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should fail when both --json and --markdown are used with --reach',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain('The json and markdown flags cannot be both set')
+      expect(
+        code,
+        'should exit with non-zero code when conflicting flags are used',
+      ).not.toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'scan',
+      'create',
+      '--org',
+      'fakeOrg',
+      'target',
+      '--dry-run',
+      '--repo',
+      'xyz',
+      '--branch',
+      'abc',
+      '--reach',
+      '--read-only',
+      '--config',
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should succeed when combining --reach with --read-only',
+    async cmd => {
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
 })
