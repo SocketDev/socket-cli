@@ -5,6 +5,7 @@ import {
   spawnCoana,
 } from '../../utils/coana.mts'
 import { setupSdk } from '../../utils/sdk.mts'
+import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
@@ -47,6 +48,30 @@ export async function performReachabilityAnalysis(
     spinner,
     uploadManifests = true,
   } = { __proto__: null, ...options } as ReachabilityAnalysisOptions
+
+  // Check if user has enterprise plan for reachability analysis
+  const orgsCResult = await fetchOrganization()
+  if (!orgsCResult.ok) {
+    return {
+      ok: false,
+      message: 'Unable to verify plan permissions',
+      cause:
+        'Failed to fetch organization information to verify enterprise plan access',
+    }
+  }
+
+  const organizations = Object.values(orgsCResult.data.organizations)
+  const hasEnterprisePlan = organizations.some(org => org.plan === 'enterprise')
+
+  if (!hasEnterprisePlan) {
+    return {
+      ok: false,
+      message: 'Tier 1 Reachability analysis requires an enterprise plan',
+      cause:
+        'This feature is only available for organizations with an enterprise plan. Please visit https://socket.dev/pricing to upgrade your plan.',
+    }
+  }
+
   let tarHash: string | undefined
 
   if (uploadManifests && orgSlug && packagePaths) {
