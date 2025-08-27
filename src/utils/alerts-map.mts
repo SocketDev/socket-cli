@@ -2,6 +2,7 @@ import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
+import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { toFilterConfig } from './filter-config.mts'
 import { extractPurlsFromPnpmLockfile } from './pnpm.mts'
@@ -102,10 +103,13 @@ export async function getAlertsMapFromPurls(
         alertsMapOptions,
       )
     } else if (!opts.nothrow) {
+      spinner?.stop()
+      if (isNonEmptyString(batchResult.error)) {
+        throw new Error(batchResult.error)
+      }
       const statusCode = batchResult.status ?? 'unknown'
-      const statusMessage = batchResult.error ?? 'No status message'
       throw new Error(
-        `Socket API server error (${statusCode}): ${statusMessage}`,
+        `Socket API server error (${statusCode}): No status message`,
       )
     } else {
       spinner?.stop()
