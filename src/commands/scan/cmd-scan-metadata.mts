@@ -11,7 +11,7 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
-import { hasDefaultToken } from '../../utils/sdk.mts'
+import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
 import type {
   CliCommandConfig,
@@ -87,7 +87,7 @@ async function run(
 
   const [scanId = ''] = cli.input
 
-  const hasApiToken = hasDefaultToken()
+  const hasApiToken = hasDefaultApiToken()
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),

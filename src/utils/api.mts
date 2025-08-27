@@ -6,7 +6,7 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { getConfigValueOrUndef } from './config.mts'
 import constants from '../constants.mts'
-import { getDefaultToken } from './sdk.mts'
+import { getDefaultApiToken } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -191,7 +191,7 @@ export async function queryApiSafeText(
   path: string,
   fetchSpinnerDesc?: string,
 ): Promise<CResult<string>> {
-  const apiToken = getDefaultToken()
+  const apiToken = getDefaultApiToken()
   if (!apiToken) {
     return {
       ok: false,
@@ -293,7 +293,7 @@ export async function sendApiRequest<T>(
     fetchSpinnerDesc?: string
   },
 ): Promise<CResult<T>> {
-  const apiToken = getDefaultToken()
+  const apiToken = getDefaultApiToken()
   if (!apiToken) {
     return {
       ok: false,
