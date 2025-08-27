@@ -3,13 +3,14 @@ import semver from 'semver'
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
-import { hasOwn } from '@socketsecurity/registry/lib/objects'
+import { getOwn, hasOwn } from '@socketsecurity/registry/lib/objects'
 import { fetchPackagePackument } from '@socketsecurity/registry/lib/packages'
 
 import constants from '../../constants.mts'
 import { Edge } from './arborist/index.mts'
 import { DiffAction } from './arborist/types.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
+import { toFilterConfig } from '../../utils/filter-config.mts'
 import { npa } from '../../utils/npm-package-arg.mts'
 import { applyRange, getMajor, getMinVersion } from '../../utils/semver.mts'
 import { idToNpmPurl } from '../../utils/spec.mts'
@@ -24,7 +25,7 @@ import type {
 import type { AliasResult } from '../../utils/npm-package-arg.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 import type {
-  AlertIncludeFilter,
+  AlertFilter,
   AlertsByPurl,
 } from '../../utils/socket-package-alert.mts'
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
@@ -173,7 +174,7 @@ export function findPackageNodes(
 
 export type GetAlertsMapFromArboristOptions = {
   consolidate?: boolean | undefined
-  include?: AlertIncludeFilter | undefined
+  filter?: AlertFilter | undefined
   nothrow?: boolean | undefined
   spinner?: Spinner | undefined
 }
@@ -185,28 +186,25 @@ export async function getAlertsMapFromArborist(
   const opts = {
     __proto__: null,
     consolidate: false,
-    include: undefined,
     nothrow: false,
     ...options,
-  } as GetAlertsMapFromArboristOptions
-
-  opts.include = {
-    __proto__: null,
-    // Leave 'actions' unassigned so it can be given a default value in
-    // subsequent functions where `options` is passed.
-    // actions: undefined,
-    blocked: true,
-    critical: true,
-    cve: true,
-    existing: false,
-    unfixable: true,
-    upgradable: false,
-    ...opts.include,
-  } as AlertIncludeFilter
+    filter: toFilterConfig({
+      // Leave 'actions' unassigned so it can be given a default value in
+      // subsequent functions where `options` is passed.
+      // actions: undefined,
+      blocked: true,
+      critical: true,
+      cve: true,
+      existing: false,
+      fixable: false,
+      upgradable: false,
+      ...getOwn(options, 'filter'),
+    }),
+  } as GetAlertsMapFromArboristOptions & { filter: AlertFilter }
 
   const needInfoOn = getDetailsFromDiff(arb.diff, {
-    include: {
-      unchanged: opts.include.existing,
+    filter: {
+      existing: opts.filter.existing,
     },
   })
 
@@ -228,17 +226,17 @@ export async function getAlertsMapFromArborist(
 
   return await getAlertsMapFromPurls(purls, {
     overrides,
-    ...options,
+    ...opts,
   })
 }
 
-export type DiffQueryIncludeFilter = {
-  unchanged?: boolean | undefined
+export type DiffQueryFilter = {
+  existing?: boolean | undefined
   unknownOrigin?: boolean | undefined
 }
 
 export type DiffQueryOptions = {
-  include?: DiffQueryIncludeFilter | undefined
+  filter?: DiffQueryFilter | undefined
 }
 
 export type PackageDetail = {
@@ -257,12 +255,11 @@ export function getDetailsFromDiff(
     return details
   }
 
-  const include = {
-    __proto__: null,
-    unchanged: false,
+  const filterConfig = toFilterConfig({
+    existing: false,
     unknownOrigin: true,
-    ...({ __proto__: null, ...options } as DiffQueryOptions).include,
-  } as DiffQueryIncludeFilter
+    ...getOwn(options, 'filter'),
+  }) as DiffQueryFilter
 
   const queue: Diff[] = [...diff.children]
   let pos = 0
@@ -296,7 +293,7 @@ export function getDetailsFromDiff(
       }
       if (keep && pkgNode?.resolved && (!oldNode || oldNode.resolved)) {
         if (
-          include.unknownOrigin ||
+          filterConfig.unknownOrigin ||
           getUrlOrigin(pkgNode.resolved) === NPM_REGISTRY_URL
         ) {
           details.push({
@@ -310,12 +307,12 @@ export function getDetailsFromDiff(
       queue[queueLength++] = child
     }
   }
-  if (include.unchanged) {
+  if (filterConfig.existing) {
     const { unchanged } = diff
     for (let i = 0, { length } = unchanged; i < length; i += 1) {
       const pkgNode = unchanged[i]!
       if (
-        include.unknownOrigin ||
+        filterConfig.unknownOrigin ||
         getUrlOrigin(pkgNode.resolved!) === NPM_REGISTRY_URL
       ) {
         details.push({

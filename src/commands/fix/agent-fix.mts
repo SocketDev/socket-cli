@@ -145,7 +145,7 @@ export async function agentFix(
   let count = 0
 
   const infoByPartialPurl = getCveInfoFromAlertsMap(alertsMap, {
-    exclude: { upgradable: true },
+    filter: { upgradable: false },
   })
   if (!infoByPartialPurl) {
     spinner?.stop()

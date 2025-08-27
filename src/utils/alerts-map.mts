@@ -1,22 +1,21 @@
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { getOwn } from '@socketsecurity/registry/lib/objects'
 
+import { toFilterConfig } from './filter-config.mts'
 import { extractPurlsFromPnpmLockfile } from './pnpm.mts'
-import { getPublicToken, setupSdk } from './sdk.mts'
+import { getPublicApiToken, setupSdk } from './sdk.mts'
 import { addArtifactToAlertsMap } from './socket-package-alert.mts'
 
 import type { CompactSocketArtifact } from './alert/artifact.mts'
-import type {
-  AlertIncludeFilter,
-  AlertsByPurl,
-} from './socket-package-alert.mts'
+import type { AlertFilter, AlertsByPurl } from './socket-package-alert.mts'
 import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type GetAlertsMapFromPnpmLockfileOptions = {
   consolidate?: boolean | undefined
-  include?: AlertIncludeFilter | undefined
+  include?: AlertFilter | undefined
   overrides?: { [key: string]: string } | undefined
   nothrow?: boolean | undefined
   spinner?: Spinner | undefined
@@ -35,7 +34,7 @@ export async function getAlertsMapFromPnpmLockfile(
 
 export type GetAlertsMapFromPurlsOptions = {
   consolidate?: boolean | undefined
-  include?: AlertIncludeFilter | undefined
+  filter?: AlertFilter | undefined
   overrides?: { [key: string]: string } | undefined
   nothrow?: boolean | undefined
   spinner?: Spinner | undefined
@@ -48,24 +47,21 @@ export async function getAlertsMapFromPurls(
   const opts = {
     __proto__: null,
     consolidate: false,
-    include: undefined,
     nothrow: false,
     ...options,
-  } as GetAlertsMapFromPurlsOptions
-
-  opts.include = {
-    __proto__: null,
-    // Leave 'actions' unassigned so it can be given a default value in
-    // subsequent functions where `options` is passed.
-    // actions: undefined,
-    blocked: true,
-    critical: true,
-    cve: true,
-    existing: false,
-    unfixable: true,
-    upgradable: false,
-    ...opts.include,
-  } as AlertIncludeFilter
+    filter: toFilterConfig({
+      // Leave 'actions' unassigned so it can be given a default value in
+      // subsequent functions where `options` is passed.
+      // actions: undefined,
+      blocked: true,
+      critical: true,
+      cve: true,
+      existing: false,
+      fixable: false,
+      upgradable: false,
+      ...getOwn(options, 'filter'),
+    }),
+  } as GetAlertsMapFromPurlsOptions & { filter: AlertFilter }
 
   const uniqPurls = arrayUnique(purls)
   debugDir('silly', { purls: uniqPurls })
@@ -82,7 +78,7 @@ export async function getAlertsMapFromPurls(
 
   spinner?.start(getText())
 
-  const sockSdkCResult = await setupSdk({ apiToken: getPublicToken() })
+  const sockSdkCResult = await setupSdk({ apiToken: getPublicApiToken() })
   if (!sockSdkCResult.ok) {
     spinner?.stop()
     throw new Error('Auth error: Try to run `socket login` first')
@@ -92,7 +88,7 @@ export async function getAlertsMapFromPurls(
   const alertsMapOptions = {
     overrides: opts.overrides,
     consolidate: opts.consolidate,
-    include: opts.include,
+    filter: opts.filter,
     spinner,
   }
 
@@ -104,10 +100,10 @@ export async function getAlertsMapFromPurls(
       queryParams: {
         alerts: 'true',
         compact: 'true',
-        ...(opts.include.actions
-          ? { actions: opts.include.actions.join(',') }
+        //...(opts.filter.fixable ? { fixable: 'true' } : {}),
+        ...(Array.isArray(opts.filter.actions)
+          ? { actions: opts.filter.actions.join(',') }
           : {}),
-        ...(opts.include.unfixable ? {} : { fixable: 'true' }),
       },
     },
   )) {
