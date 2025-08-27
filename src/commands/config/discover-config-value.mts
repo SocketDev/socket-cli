@@ -1,6 +1,6 @@
 import { isSupportedConfigKey } from '../../utils/config.mts'
 import { getOrgSlugs } from '../../utils/organization.mts'
-import { hasDefaultToken } from '../../utils/sdk.mts'
+import { hasDefaultApiToken } from '../../utils/sdk.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
 import type { CResult } from '../../types.mts'
@@ -50,7 +50,7 @@ export async function discoverConfigValue(
   }
 
   if (key === 'defaultOrg') {
-    const hasApiToken = hasDefaultToken()
+    const hasApiToken = hasDefaultApiToken()
     if (!hasApiToken) {
       return {
         ok: false,
@@ -85,7 +85,7 @@ export async function discoverConfigValue(
   }
 
   if (key === 'enforcedOrgs') {
-    const hasApiToken = hasDefaultToken()
+    const hasApiToken = hasDefaultApiToken()
     if (!hasApiToken) {
       return {
         ok: false,

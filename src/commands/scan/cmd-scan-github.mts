@@ -15,7 +15,7 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
-import { hasDefaultToken } from '../../utils/sdk.mts'
+import { hasDefaultApiToken } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
@@ -191,7 +191,7 @@ async function run(
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
   // If the api-token is not set, ignore it for the sake of suggestions.
-  const hasSocketApiToken = hasDefaultToken()
+  const hasSocketApiToken = hasDefaultApiToken()
 
   const outputKind = getOutputKind(json, markdown)
 

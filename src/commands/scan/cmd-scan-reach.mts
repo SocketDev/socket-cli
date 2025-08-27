@@ -18,7 +18,7 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
-import { hasDefaultToken } from '../../utils/sdk.mts'
+import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
@@ -158,7 +158,7 @@ async function run(
     dryRun,
   )
 
-  const hasApiToken = hasDefaultToken()
+  const hasApiToken = hasDefaultApiToken()
 
   const outputKind = getOutputKind(json, markdown)
 

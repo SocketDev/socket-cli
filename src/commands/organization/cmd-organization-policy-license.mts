@@ -11,7 +11,7 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
-import { hasDefaultToken } from '../../utils/sdk.mts'
+import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -85,7 +85,7 @@ async function run(
 
   const interactive = !!cli.flags['interactive']
 
-  const hasApiToken = hasDefaultToken()
+  const hasApiToken = hasDefaultApiToken()
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),

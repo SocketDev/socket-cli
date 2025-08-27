@@ -11,7 +11,7 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
-import { hasDefaultToken } from '../../utils/sdk.mts'
+import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -116,7 +116,7 @@ async function run(
     id2 = id2.slice(SOCKET_SBOM_URL_PREFIX_LENGTH)
   }
 
-  const hasApiToken = hasDefaultToken()
+  const hasApiToken = hasDefaultApiToken()
 
   const [orgSlug] = await determineOrgSlug(
     String(orgFlag || ''),
