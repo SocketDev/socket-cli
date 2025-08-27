@@ -188,18 +188,7 @@ export async function getAlertsMapFromArborist(
     consolidate: false,
     nothrow: false,
     ...options,
-    filter: toFilterConfig({
-      // Leave 'actions' unassigned so it can be given a default value in
-      // subsequent functions where `options` is passed.
-      // actions: undefined,
-      blocked: true,
-      critical: true,
-      cve: true,
-      existing: false,
-      fixable: false,
-      upgradable: false,
-      ...getOwn(options, 'filter'),
-    }),
+    filter: toFilterConfig(getOwn(options, 'filter')),
   } as GetAlertsMapFromArboristOptions & { filter: AlertFilter }
 
   const needInfoOn = getDetailsFromDiff(arb.diff, {

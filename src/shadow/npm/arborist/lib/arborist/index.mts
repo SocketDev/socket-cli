@@ -14,7 +14,6 @@ import type {
 } from '../../types.mts'
 
 const {
-  NPM,
   NPX,
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_SAFE_BIN,
@@ -119,7 +118,6 @@ export class SafeArborist extends Arborist {
         ? undefined
         : // Lazily access constants.spinner.
           constants.spinner
-    const isSafeNpm = binName === NPM
     const isSafeNpx = binName === NPX
     const alertsMap = await getAlertsMapFromArborist(this, {
       spinner,
@@ -128,14 +126,10 @@ export class SafeArborist extends Arborist {
           ? {
               actions: ['error'],
               blocked: true,
-              critical: false,
-              cve: false,
               existing: true,
-              fixable: false,
             }
           : {
               existing: isSafeNpx,
-              fixable: !isSafeNpm,
             },
     })
     if (alertsMap.size) {

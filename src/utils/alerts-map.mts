@@ -49,18 +49,7 @@ export async function getAlertsMapFromPurls(
     consolidate: false,
     nothrow: false,
     ...options,
-    filter: toFilterConfig({
-      // Leave 'actions' unassigned so it can be given a default value in
-      // subsequent functions where `options` is passed.
-      // actions: undefined,
-      blocked: true,
-      critical: true,
-      cve: true,
-      existing: false,
-      fixable: false,
-      upgradable: false,
-      ...getOwn(options, 'filter'),
-    }),
+    filter: toFilterConfig(getOwn(options, 'filter')),
   } as GetAlertsMapFromPurlsOptions & { filter: AlertFilter }
 
   const uniqPurls = arrayUnique(purls)
@@ -100,7 +89,6 @@ export async function getAlertsMapFromPurls(
       queryParams: {
         alerts: 'true',
         compact: 'true',
-        //...(opts.filter.fixable ? { fixable: 'true' } : {}),
         ...(Array.isArray(opts.filter.actions)
           ? { actions: opts.filter.actions.join(',') }
           : {}),
