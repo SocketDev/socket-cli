@@ -4,7 +4,7 @@ import colors from 'yoctocolors-cjs'
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
-import { hasOwn } from '@socketsecurity/registry/lib/objects'
+import { getOwn, hasOwn } from '@socketsecurity/registry/lib/objects'
 import { resolvePackageName } from '@socketsecurity/registry/lib/packages'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
@@ -13,6 +13,7 @@ import { ALERT_FIX_TYPE } from './alert/fix.mts'
 import { ALERT_SEVERITY } from './alert/severity.mts'
 import { ColorOrMarkdown } from './color-or-markdown.mts'
 import { findSocketYmlSync } from './config.mts'
+import { toFilterConfig } from './filter-config.mts'
 import { createEnum } from './objects.mts'
 import { getPurlObject } from './purl.mts'
 import { getMajor } from './semver.mts'
@@ -115,19 +116,19 @@ function getHiddenRisksDescription(riskCounts: RiskCounts): string {
   return `(${descriptions.join('; ')})`
 }
 
-export type AlertIncludeFilter = {
+export type AlertFilter = {
   actions?: ALERT_ACTION[] | undefined
   blocked?: boolean | undefined
   critical?: boolean | undefined
   cve?: boolean | undefined
   existing?: boolean | undefined
-  unfixable?: boolean | undefined
+  fixable?: boolean | undefined
   upgradable?: boolean | undefined
 }
 
 export type AddArtifactToAlertsMapOptions = {
   consolidate?: boolean | undefined
-  include?: AlertIncludeFilter | undefined
+  filter?: AlertFilter | undefined
   overrides?: { [key: string]: string } | undefined
   spinner?: Spinner | undefined
 }
@@ -141,29 +142,13 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
   if (!artifact.name || !artifact.version || !artifact.alerts?.length) {
     return alertsByPurl
   }
-  const {
-    consolidate = false,
-    include: _include,
-    overrides,
-  } = {
+
+  const { type: ecosystem, version } = artifact
+
+  const { consolidate = false, overrides } = {
     __proto__: null,
     ...options,
   } as AddArtifactToAlertsMapOptions
-
-  const socketYml = findSocketYmlSync()
-  const localRules = socketYml?.parsed.issueRules
-
-  const include = {
-    __proto__: null,
-    actions: localRules ? undefined : 'error,monitor,warn',
-    blocked: true,
-    critical: true,
-    cve: true,
-    existing: false,
-    unfixable: true,
-    upgradable: false,
-    ..._include,
-  } as AlertIncludeFilter
 
   const name = resolvePackageName(
     artifact as {
@@ -171,11 +156,21 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
       namespace?: string | undefined
     },
   )
-  const { type: ecosystem, version } = artifact
+
+  const filterConfig = toFilterConfig({
+    blocked: true,
+    critical: true,
+    cve: true,
+    ...getOwn(options, 'filter'),
+  }) as AlertFilter
+
+  const socketYml = findSocketYmlSync()
+
   const enabledState = {
     __proto__: null,
-    ...localRules,
+    ...socketYml?.parsed.issueRules,
   } as Partial<Record<ALERT_TYPE, boolean>>
+
   let sockPkgAlerts: SocketPackageAlert[] = []
   for (const alert of artifact.alerts) {
     const action = alert.action ?? ''
@@ -195,11 +190,11 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
     const fixable = fixableCve || fixableUpgrade
     const upgradable = fixableUpgrade && !hasOwn(overrides, name)
     if (
-      (include.blocked && blocked) ||
-      (include.critical && critical) ||
-      (include.cve && cve) ||
-      (include.unfixable && !fixable) ||
-      (include.upgradable && upgradable)
+      (filterConfig.blocked && blocked) ||
+      (filterConfig.critical && critical) ||
+      (filterConfig.cve && cve) ||
+      (filterConfig.fixable && fixable) ||
+      (filterConfig.upgradable && upgradable)
     ) {
       sockPkgAlerts.push({
         name,
@@ -327,7 +322,7 @@ export function getAlertsSeverityOrder(alerts: SocketPackageAlert[]): number {
           : 4
 }
 
-export type CveExcludeFilter = {
+export type CveFilter = {
   upgradable?: boolean | undefined
 }
 
@@ -342,21 +337,14 @@ export type CveInfoByAlertKey = Map<
 export type CveInfoByPartialPurl = Map<string, CveInfoByAlertKey>
 
 export type GetCveInfoByPackageOptions = {
-  exclude?: CveExcludeFilter | undefined
+  filter?: CveFilter | undefined
 }
 
 export function getCveInfoFromAlertsMap(
   alertsMap: AlertsByPurl,
   options?: GetCveInfoByPackageOptions | undefined,
 ): CveInfoByPartialPurl | null {
-  const { exclude: exclude_ } = {
-    __proto__: null,
-    ...options,
-  } as GetCveInfoByPackageOptions
-  const exclude = {
-    __proto__: null,
-    ...exclude_,
-  } as CveExcludeFilter
+  const filterConfig = toFilterConfig(getOwn(options, 'filter')) as CveFilter
 
   let infoByPartialPurl: CveInfoByPartialPurl | null = null
   // eslint-disable-next-line no-unused-labels
@@ -372,7 +360,7 @@ export function getCveInfoFromAlertsMap(
       const alert = sockPkgAlert.raw
       if (
         alert.fix?.type !== ALERT_FIX_TYPE.cve ||
-        (exclude.upgradable &&
+        (filterConfig.upgradable === false &&
           getManifestData(sockPkgAlert.ecosystem as any, name))
       ) {
         continue sockPkgAlertsLoop

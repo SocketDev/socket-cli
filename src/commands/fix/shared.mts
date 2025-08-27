@@ -1,3 +1,7 @@
+import { getOwn } from '@socketsecurity/registry/lib/objects'
+
+import { toFilterConfig } from '../../utils/filter-config.mts'
+
 import type { GetAlertsMapFromPurlsOptions } from '../../utils/alerts-map.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
 
@@ -11,16 +15,15 @@ export function getFixAlertsMapOptions(
     consolidate: true,
     nothrow: true,
     ...options,
-    include: {
-      __proto__: null,
+    filter: toFilterConfig({
       existing: true,
-      unfixable: false,
+      fixable: true,
       upgradable: false,
-      ...options?.include,
-    },
+      ...getOwn(options, 'filter'),
+    }),
   } as Remap<
     Omit<GetAlertsMapFromPurlsOptions, 'include' | 'overrides' | 'spinner'> & {
-      include: Exclude<GetAlertsMapFromPurlsOptions['include'], undefined>
+      filter: Exclude<GetAlertsMapFromPurlsOptions['filter'], undefined>
     }
   >
 }

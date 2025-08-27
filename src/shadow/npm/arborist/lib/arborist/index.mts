@@ -123,7 +123,7 @@ export class SafeArborist extends Arborist {
     const isSafeNpx = binName === NPX
     const alertsMap = await getAlertsMapFromArborist(this, {
       spinner,
-      include:
+      filter:
         acceptRisks || options.dryRun || options['yes']
           ? {
               actions: ['error'],
@@ -131,11 +131,11 @@ export class SafeArborist extends Arborist {
               critical: false,
               cve: false,
               existing: true,
-              unfixable: false,
+              fixable: false,
             }
           : {
               existing: isSafeNpx,
-              unfixable: isSafeNpm,
+              fixable: !isSafeNpm,
             },
     })
     if (alertsMap.size) {
