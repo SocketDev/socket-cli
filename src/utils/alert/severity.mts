@@ -1,5 +1,6 @@
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
+
 import { createEnum, pick } from '../objects.mts'
-import { stringJoinWithSeparateFinalSeparator } from '../strings.mts'
 
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
@@ -46,7 +47,7 @@ export function formatSeverityCount(
       summary.push(`${severityCount[severity]} ${severity}`)
     }
   }
-  return stringJoinWithSeparateFinalSeparator(summary)
+  return joinAnd(summary)
 }
 
 export function getSeverityCount(
