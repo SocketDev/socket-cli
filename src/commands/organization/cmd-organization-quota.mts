@@ -7,7 +7,7 @@ import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
-import { hasDefaultToken } from '../../utils/sdk.mts'
+import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
@@ -58,7 +58,7 @@ async function run(
 
   const markdown = Boolean(cli.flags['markdown'])
 
-  const hasApiToken = hasDefaultToken()
+  const hasApiToken = hasDefaultApiToken()
 
   const outputKind = getOutputKind(json, markdown)
 

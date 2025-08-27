@@ -25,7 +25,7 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
-import { hasDefaultToken } from '../../utils/sdk.mts'
+import { hasDefaultApiToken } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
@@ -347,7 +347,7 @@ async function run(
   // We're going to need an api token to suggest data because those suggestions
   // must come from data we already know. Don't error on missing api token yet.
   // If the api-token is not set, ignore it for the sake of suggestions.
-  const hasApiToken = hasDefaultToken()
+  const hasApiToken = hasDefaultApiToken()
 
   const outputKind = getOutputKind(json, markdown)
 

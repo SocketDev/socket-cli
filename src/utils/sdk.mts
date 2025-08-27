@@ -45,23 +45,35 @@ function isUrl(value: any): value is string {
 
 // This Socket API token should be stored globally for the duration of the CLI execution.
 let _defaultToken: string | undefined
-export function getDefaultToken(): string | undefined {
+export function getDefaultApiToken(): string | undefined {
   // Lazily access constants.ENV.SOCKET_CLI_NO_API_TOKEN.
   if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
     _defaultToken = undefined
-  } else {
-    const key =
-      // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN.
-      constants.ENV.SOCKET_CLI_API_TOKEN ||
-      getConfigValueOrUndef('apiToken') ||
-      _defaultToken
-    _defaultToken = isNonEmptyString(key) ? key : undefined
+    return _defaultToken
   }
+
+  const key =
+    // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN.
+    constants.ENV.SOCKET_CLI_API_TOKEN ||
+    getConfigValueOrUndef('apiToken') ||
+    _defaultToken
+
+  _defaultToken = isNonEmptyString(key) ? key : undefined
   return _defaultToken
 }
 
+export function getPublicApiToken(): string {
+  return (
+    getDefaultApiToken() ||
+    // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN.
+    constants.ENV.SOCKET_CLI_API_TOKEN ||
+    // Lazily access constants.SOCKET_PUBLIC_API_TOKEN.
+    constants.SOCKET_PUBLIC_API_TOKEN
+  )
+}
+
 export function getVisibleTokenPrefix(): string {
-  const apiToken = getDefaultToken()
+  const apiToken = getDefaultApiToken()
   return apiToken
     ? apiToken.slice(
         TOKEN_PREFIX_LENGTH,
@@ -70,18 +82,8 @@ export function getVisibleTokenPrefix(): string {
     : ''
 }
 
-export function hasDefaultToken(): boolean {
-  return !!getDefaultToken()
-}
-
-export function getPublicToken(): string {
-  return (
-    getDefaultToken() ||
-    // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN.
-    constants.ENV.SOCKET_CLI_API_TOKEN ||
-    // Lazily access constants.SOCKET_PUBLIC_API_TOKEN.
-    constants.SOCKET_PUBLIC_API_TOKEN
-  )
+export function hasDefaultApiToken(): boolean {
+  return !!getDefaultApiToken()
 }
 
 export type SetupSdkOptions = {
@@ -94,7 +96,7 @@ export async function setupSdk(
   options?: SetupSdkOptions | undefined,
 ): Promise<CResult<SocketSdk>> {
   const opts = { __proto__: null, ...options } as SetupSdkOptions
-  let { apiToken = getDefaultToken() } = opts
+  let { apiToken = getDefaultApiToken() } = opts
 
   if (typeof apiToken !== 'string' && isInteractive()) {
     apiToken = await password({

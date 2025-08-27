@@ -3,7 +3,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 import constants from '../constants.mts'
-import { getDefaultToken } from './sdk.mts'
+import { getDefaultApiToken } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
 import type {
@@ -34,7 +34,7 @@ export async function spawnCoana(
     // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
     SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
   }
-  const defaultApiToken = getDefaultToken()
+  const defaultApiToken = getDefaultApiToken()
   if (defaultApiToken) {
     mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
   }
