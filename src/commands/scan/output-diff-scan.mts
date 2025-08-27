@@ -122,6 +122,7 @@ async function handleMarkdown(
   logger.log('')
   logger.log(`- directDependenciesChanged: ${data.directDependenciesChanged}`)
   logger.log(`- Added packages: ${data.artifacts.added.length}`)
+
   if (data.artifacts.added.length > 0) {
     data.artifacts.added.slice(0, 10).forEach(artifact => {
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
@@ -130,6 +131,7 @@ async function handleMarkdown(
       logger.log(`  ... and ${data.artifacts.added.length - 10} more`)
     }
   }
+
   logger.log(`- Removed packages: ${data.artifacts.removed.length}`)
   if (data.artifacts.removed.length > 0) {
     data.artifacts.removed.slice(0, 10).forEach(artifact => {
@@ -139,6 +141,7 @@ async function handleMarkdown(
       logger.log(`  ... and ${data.artifacts.removed.length - 10} more`)
     }
   }
+
   logger.log(`- Replaced packages: ${data.artifacts.replaced.length}`)
   if (data.artifacts.replaced.length > 0) {
     data.artifacts.replaced.slice(0, 10).forEach(artifact => {
@@ -148,6 +151,7 @@ async function handleMarkdown(
       logger.log(`  ... and ${data.artifacts.replaced.length - 10} more`)
     }
   }
+
   logger.log(`- Updated packages: ${data.artifacts.updated.length}`)
   if (data.artifacts.updated.length > 0) {
     data.artifacts.updated.slice(0, 10).forEach(artifact => {
@@ -157,15 +161,19 @@ async function handleMarkdown(
       logger.log(`  ... and ${data.artifacts.updated.length - 10} more`)
     }
   }
-  logger.log(`- Unchanged packages: ${data.artifacts.unchanged.length}`)
-  if (data.artifacts.unchanged.length > 0) {
-    data.artifacts.unchanged.slice(0, 10).forEach(artifact => {
+
+  const unchanged = data.artifacts.unchanged ?? []
+  logger.log(`- Unchanged packages: ${unchanged.length}`)
+  if (unchanged.length > 0) {
+    const firstUpToTen = unchanged.slice(0, 10)
+    for (const artifact of firstUpToTen) {
       logger.log(`  - ${artifact.type} ${artifact.name}@${artifact.version}`)
-    })
-    if (data.artifacts.unchanged.length > 10) {
-      logger.log(`  ... and ${data.artifacts.unchanged.length - 10} more`)
+    }
+    if (unchanged.length > 10) {
+      logger.log(`  ... and ${unchanged.length - 10} more`)
     }
   }
+
   logger.log('')
   logger.log(`## Scan ${data.before.id}`)
   logger.log('')
@@ -184,6 +192,7 @@ async function handleMarkdown(
       logger.groupEnd()
     }
   }
+
   logger.log('')
   logger.log(`## Scan ${data.after.id}`)
   logger.log('')
@@ -200,5 +209,6 @@ async function handleMarkdown(
       logger.groupEnd()
     }
   }
+
   logger.log('')
 }
