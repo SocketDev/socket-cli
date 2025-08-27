@@ -6,9 +6,9 @@ export function* walkNestedMap<T>(
 ): Generator<{ keys: string[]; value: T }> {
   for (const [key, value] of map.entries()) {
     if (value instanceof Map) {
-      yield* walkNestedMap(value as NestedMap<T>, keys.concat(key))
+      yield* walkNestedMap(value as NestedMap<T>, [...keys, key])
     } else {
-      yield { keys: keys.concat(key), value: value }
+      yield { keys: [...keys, key], value: value }
     }
   }
 }
