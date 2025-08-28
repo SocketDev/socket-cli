@@ -355,7 +355,7 @@ export async function meowWithSubcommands(
       'optimize',
       'organization',
       'package',
-      'patch',
+      //'patch',
       'raw-npm',
       'raw-npx',
       'repository',
