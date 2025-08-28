@@ -340,7 +340,7 @@ async function testAndDownloadManifestFile({
     : undefined
 
   if (!supportedFiles || !isReportSupportedFile(file, supportedFiles)) {
-    debugFn('notice', '  - skip: not a known pattern')
+    debugFn('notice', 'skip: not a known pattern')
     // Not an error.
     return { ok: true, data: { isManifest: false } }
   }
