@@ -14,11 +14,10 @@ export function getFixAlertsMapOptions(
     __proto__: null,
     consolidate: true,
     nothrow: true,
+    onlyFixable: true,
     ...options,
     filter: toFilterConfig({
       existing: true,
-      fixable: true,
-      upgradable: false,
       ...getOwn(options, 'filter'),
     }),
   } as Remap<

@@ -129,6 +129,7 @@ export class SafeArborist extends Arborist {
               existing: true,
             }
           : {
+              // actions: ['error', 'monitor', 'warn'],
               existing: isSafeNpx,
             },
     })
