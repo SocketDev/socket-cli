@@ -355,6 +355,7 @@ export async function meowWithSubcommands(
       'optimize',
       'organization',
       'package',
+      'patch',
       'raw-npm',
       'raw-npx',
       'repository',
@@ -371,10 +372,7 @@ export async function meowWithSubcommands(
         if (commands.has(name)) {
           commands.delete(name)
         } else {
-          logger.fail(
-            'Received a visible command that was not added to the list here:',
-            name,
-          )
+          logger.fail('Received an unknown command:', name)
         }
       })
     if (commands.size) {
