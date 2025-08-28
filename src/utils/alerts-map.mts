@@ -4,6 +4,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
+import { findSocketYmlSync } from './config.mts'
 import { toFilterConfig } from './filter-config.mts'
 import { extractPurlsFromPnpmLockfile } from './pnpm.mts'
 import { getPublicApiToken, setupSdk } from './sdk.mts'
@@ -36,6 +37,7 @@ export async function getAlertsMapFromPnpmLockfile(
 export type GetAlertsMapFromPurlsOptions = {
   consolidate?: boolean | undefined
   filter?: AlertFilter | undefined
+  onlyFixable?: boolean | undefined
   overrides?: { [key: string]: string } | undefined
   nothrow?: boolean | undefined
   spinner?: Spinner | undefined
@@ -45,14 +47,6 @@ export async function getAlertsMapFromPurls(
   purls: string[] | readonly string[],
   options?: GetAlertsMapFromPurlsOptions | undefined,
 ): Promise<AlertsByPurl> {
-  const opts = {
-    __proto__: null,
-    consolidate: false,
-    nothrow: false,
-    ...options,
-    filter: toFilterConfig(getOwn(options, 'filter')),
-  } as GetAlertsMapFromPurlsOptions & { filter: AlertFilter }
-
   const uniqPurls = arrayUnique(purls)
   debugDir('silly', { purls: uniqPurls })
 
@@ -63,6 +57,18 @@ export async function getAlertsMapFromPurls(
     return alertsByPurl
   }
 
+  const opts = {
+    __proto__: null,
+    consolidate: false,
+    nothrow: false,
+    ...options,
+    filter: toFilterConfig(getOwn(options, 'filter')),
+  } as GetAlertsMapFromPurlsOptions & { filter: AlertFilter }
+
+  if (opts.onlyFixable) {
+    opts.filter.fixable = true
+  }
+
   const { spinner } = opts
   const getText = () => `Looking up data for ${remaining} packages`
 
@@ -71,14 +77,16 @@ export async function getAlertsMapFromPurls(
   const sockSdkCResult = await setupSdk({ apiToken: getPublicApiToken() })
   if (!sockSdkCResult.ok) {
     spinner?.stop()
-    throw new Error('Auth error: Try to run `socket login` first')
+    throw new Error('Auth error: Run `socket login` first')
   }
   const sockSdk = sockSdkCResult.data
+  const socketYml = findSocketYmlSync()?.parsed
 
   const alertsMapOptions = {
     overrides: opts.overrides,
     consolidate: opts.consolidate,
     filter: opts.filter,
+    socketYml,
     spinner,
   }
 
@@ -90,6 +98,7 @@ export async function getAlertsMapFromPurls(
       queryParams: {
         alerts: 'true',
         compact: 'true',
+        ...(opts.onlyFixable ? { fixable: 'true ' } : {}),
         ...(Array.isArray(opts.filter.actions)
           ? { actions: opts.filter.actions.join(',') }
           : {}),
@@ -97,11 +106,8 @@ export async function getAlertsMapFromPurls(
     },
   )) {
     if (batchResult.success) {
-      await addArtifactToAlertsMap(
-        batchResult.data as CompactSocketArtifact,
-        alertsByPurl,
-        alertsMapOptions,
-      )
+      const artifact = batchResult.data as CompactSocketArtifact
+      await addArtifactToAlertsMap(artifact, alertsByPurl, alertsMapOptions)
     } else if (!opts.nothrow) {
       spinner?.stop()
       if (isNonEmptyString(batchResult.error)) {

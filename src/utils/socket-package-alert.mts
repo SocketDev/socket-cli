@@ -12,7 +12,6 @@ import { isArtifactAlertCve } from './alert/artifact.mts'
 import { ALERT_FIX_TYPE } from './alert/fix.mts'
 import { ALERT_SEVERITY } from './alert/severity.mts'
 import { ColorOrMarkdown } from './color-or-markdown.mts'
-import { findSocketYmlSync } from './config.mts'
 import { toFilterConfig } from './filter-config.mts'
 import { createEnum } from './objects.mts'
 import { getPurlObject } from './purl.mts'
@@ -28,6 +27,7 @@ import type {
   CveProps,
 } from './alert/artifact.mts'
 import type { PURL_Type } from './ecosystem.mts'
+import type { SocketYml } from '@socketsecurity/config'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export const ALERT_SEVERITY_COLOR = createEnum({
@@ -130,6 +130,7 @@ export type AddArtifactToAlertsMapOptions = {
   consolidate?: boolean | undefined
   filter?: AlertFilter | undefined
   overrides?: { [key: string]: string } | undefined
+  socketYml?: SocketYml | undefined
   spinner?: Spinner | undefined
 }
 
@@ -145,7 +146,11 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
 
   const { type: ecosystem, version } = artifact
 
-  const { consolidate = false, overrides } = {
+  const {
+    consolidate = false,
+    overrides,
+    socketYml,
+  } = {
     __proto__: null,
     ...options,
   } as AddArtifactToAlertsMapOptions
@@ -164,11 +169,9 @@ export async function addArtifactToAlertsMap<T extends AlertsByPurl>(
     ...getOwn(options, 'filter'),
   }) as AlertFilter
 
-  const socketYml = findSocketYmlSync()
-
   const enabledState = {
     __proto__: null,
-    ...socketYml?.parsed.issueRules,
+    ...socketYml?.issueRules,
   } as Partial<Record<ALERT_TYPE, boolean>>
 
   let sockPkgAlerts: SocketPackageAlert[] = []

@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import config from '@socketsecurity/config'
-import { debugFn } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
@@ -10,6 +10,7 @@ import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import constants from '../constants.mts'
 
 import type { CResult } from '../types.mts'
+import type { SocketYml } from '@socketsecurity/config'
 
 export interface LocalConfig {
   apiBaseUrl?: string | null | undefined
@@ -104,7 +105,14 @@ function normalizeConfigKey(
   return { ok: true, data: normalizedKey }
 }
 
-export function findSocketYmlSync(dir = process.cwd()) {
+export type FoundSocketYml = {
+  path: string
+  parsed: SocketYml
+}
+
+export function findSocketYmlSync(
+  dir = process.cwd(),
+): FoundSocketYml | undefined {
   let prevDir = null
   while (dir !== prevDir) {
     let ymlPath = path.join(dir, 'socket.yml')
@@ -119,14 +127,15 @@ export function findSocketYmlSync(dir = process.cwd()) {
           path: ymlPath,
           parsed: config.parseSocketConfig(yml),
         }
-      } catch {
+      } catch (e) {
+        debugDir('inspect', { error: e })
         throw new Error(`Found file but was unable to parse ${ymlPath}`)
       }
     }
     prevDir = dir
     dir = path.join(dir, '..')
   }
-  return null
+  return undefined
 }
 
 export function getConfigValue<Key extends keyof LocalConfig>(
