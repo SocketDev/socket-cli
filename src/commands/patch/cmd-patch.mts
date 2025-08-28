@@ -19,9 +19,9 @@ const { DRY_RUN_NOT_SAVING } = constants
 
 export const CMD_NAME = 'patch'
 
-const description = 'Apply security patches to dependencies'
+const description = 'Apply CVE patches to dependencies'
 
-const hidden = false
+const hidden = true
 
 export const cmdPatch = {
   description,
