@@ -70,24 +70,6 @@ export function getOctokitGraphql(): typeof OctokitGraphql {
   return _octokitGraphql
 }
 
-export async function cacheFetch<T>(
-  key: string,
-  fetcher: () => Promise<T>,
-  ttlMs?: number | undefined,
-): Promise<T> {
-  // Optionally disable cache.
-  // Lazily access constants.ENV.DISABLE_GITHUB_CACHE.
-  if (constants.ENV.DISABLE_GITHUB_CACHE) {
-    return await fetcher()
-  }
-  let data = (await readCache(key, ttlMs)) as T
-  if (!data) {
-    data = await fetcher()
-    await writeCache(key, data as JsonContent)
-  }
-  return data
-}
-
 async function readCache(
   key: string,
   // 5 minute in milliseconds time to live (TTL).
@@ -137,6 +119,24 @@ export type PrMatch = {
   number: number
   state: GQL_PR_STATE
   title: string
+}
+
+export async function cacheFetch<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  ttlMs?: number | undefined,
+): Promise<T> {
+  // Optionally disable cache.
+  // Lazily access constants.ENV.DISABLE_GITHUB_CACHE.
+  if (constants.ENV.DISABLE_GITHUB_CACHE) {
+    return await fetcher()
+  }
+  let data = (await readCache(key, ttlMs)) as T
+  if (!data) {
+    data = await fetcher()
+    await writeCache(key, data as JsonContent)
+  }
+  return data
 }
 
 export type CleanupPrsOptions = {
@@ -490,6 +490,67 @@ export async function openPr(
       head: branch,
       base: baseBranch,
       body: getSocketPullRequestBody(purlObj, newVersion, workspace),
+    }
+    debugDir('inspect', { octokitPullsCreateParams })
+    return await octokit.pulls.create(octokitPullsCreateParams)
+  } catch (e) {
+    let message = `Failed to open pull request`
+    const errors =
+      e instanceof RequestError
+        ? (e.response?.data as any)?.['errors']
+        : undefined
+    if (Array.isArray(errors) && errors.length) {
+      const details = errors
+        .map(
+          d =>
+            `- ${d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`}`,
+        )
+        .join('\n')
+      message += `:\n${details}`
+    }
+    debugFn('error', message)
+  }
+  return null
+}
+
+export type OpenCoanaPrOptions = {
+  baseBranch?: string | undefined
+  cwd?: string | undefined
+}
+
+export async function openCoanaPr(
+  owner: string,
+  repo: string,
+  branch: string,
+  ghsaIds: string[],
+  options?: OpenCoanaPrOptions | undefined,
+): Promise<OctokitResponse<Pr> | null> {
+  const { baseBranch = 'main' } = {
+    __proto__: null,
+    ...options,
+  } as OpenCoanaPrOptions
+
+  const octokit = getOctokit()
+  const vulnCount = ghsaIds.length
+
+  const prTitle =
+    vulnCount === 1 ? `Fix for ${ghsaIds[0]}` : `Fixes for ${vulnCount} GHSAs`
+
+  let prBody = ''
+  if (vulnCount === 1) {
+    prBody = `[Socket](https://socket.dev/) fix for [${ghsaIds[0]}](https://github.com/advisories/${ghsaIds[0]}).`
+  } else {
+    prBody = `[Socket](https://socket.dev/) fixes for ${vulnCount} GHSAs.\n\n**Fixed GHSAs:**\n${ghsaIds.map(id => `- [${id}](https://github.com/advisories/${id})`).join('\n')}`
+  }
+
+  try {
+    const octokitPullsCreateParams = {
+      owner,
+      repo,
+      title: prTitle,
+      head: branch,
+      base: baseBranch,
+      body: prBody,
     }
     debugDir('inspect', { octokitPullsCreateParams })
     return await octokit.pulls.create(octokitPullsCreateParams)
