@@ -187,7 +187,7 @@ export async function cleanupPrs(
           debugFn(
             'error',
             `pr: failed to close ${prRef} for ${prToVersion}\n`,
-            (e as Error)?.message || 'unknown error',
+            (e as Error)?.message || 'Unknown error',
           )
         }
       }
