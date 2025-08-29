@@ -1,5 +1,6 @@
 import path from 'node:path'
 
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
@@ -142,7 +143,9 @@ export async function coanaFix(
     return { ok: true, data: { fixed: false } }
   }
 
+  debugFn('notice', `fetch: ${ids.length} GHSA details for ${joinAnd(ids)}`)
   const ghsaDetails = await fetchGhsaDetails(ids)
+  debugFn('notice', `found: ${ghsaDetails.size} GHSA details`)
   const scanBaseNames = new Set(scanFilepaths.map(p => path.basename(p)))
 
   let count = 0
@@ -204,7 +207,9 @@ export async function coanaFix(
 
       debugFn('notice', `pr: creating for ${id}`)
 
-      const summary = ghsaDetails.get(id)?.summary
+      const details = ghsaDetails.get(id)
+      const summary = details?.summary
+      debugFn('notice', `ghsa: ${id} details ${details ? 'found' : 'missing'}`)
 
       const pushed =
         // eslint-disable-next-line no-await-in-loop
