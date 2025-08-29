@@ -6,6 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { getFixEnv } from './fix-env-helpers.mts'
 import {
   enablePrAutoMerge,
+  fetchGhsaDetails,
   openCoanaPr,
   setGitRemoteGithubRepoUrl,
 } from './pull-request.mts'
@@ -141,6 +142,7 @@ export async function coanaFix(
     return { ok: true, data: { fixed: false } }
   }
 
+  const ghsaDetails = await fetchGhsaDetails(ids)
   const scanBaseNames = new Set(scanFilepaths.map(p => path.basename(p)))
 
   let count = 0
@@ -149,7 +151,7 @@ export async function coanaFix(
   // Process each GHSA ID individually, similar to npm-fix/pnpm-fix.
   ghsaLoop: for (let i = 0, { length } = ids; i < length; i += 1) {
     const id = ids[i]!
-    debugFn('notice', `Processing GHSA ID: ${id}`)
+    debugFn('notice', `check: ${id}`)
 
     // Apply fix for single GHSA ID.
     // eslint-disable-next-line no-await-in-loop
@@ -190,11 +192,10 @@ export async function coanaFix(
 
     overallFixed = true
 
-    // Create PR if in CI environment
-    try {
-      const branch = `socket/coana-fix/${id}`
+    const branch = `socket/fix/${id}`
 
-      // Check if branch already exists
+    try {
+      // Check if branch already exists.
       // eslint-disable-next-line no-await-in-loop
       if (await gitRemoteBranchExists(branch, cwd)) {
         debugFn('notice', `skip: remote branch "${branch}" exists`)
@@ -203,6 +204,8 @@ export async function coanaFix(
 
       debugFn('notice', `pr: creating for ${id}`)
 
+      const summary = ghsaDetails.get(id)?.summary
+
       const pushed =
         // eslint-disable-next-line no-await-in-loop
         (await gitCreateBranch(branch, cwd)) &&
@@ -210,7 +213,7 @@ export async function coanaFix(
         (await gitCheckoutBranch(branch, cwd)) &&
         // eslint-disable-next-line no-await-in-loop
         (await gitCommit(
-          `fix: Apply Coana security fix for ${id}`,
+          `fix: ${id}${summary ? ` - ${summary}` : ''}`,
           modifiedFiles,
           {
             cwd,
@@ -251,6 +254,7 @@ export async function coanaFix(
         {
           baseBranch: fixEnv.baseBranch,
           cwd,
+          ghsaDetails,
         },
       )
 
@@ -294,7 +298,10 @@ export async function coanaFix(
     }
 
     count += 1
-    debugFn('notice', `Processed ${count}/${Math.min(limit, ids.length)} fixes`)
+    debugFn(
+      'notice',
+      `increment: count ${count}/${Math.min(limit, ids.length)}`,
+    )
     if (count >= limit) {
       break ghsaLoop
     }
