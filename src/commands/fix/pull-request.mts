@@ -10,6 +10,7 @@ import { Octokit } from '@octokit/rest'
 import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import {
   readJson,
@@ -139,6 +140,96 @@ export async function cacheFetch<T>(
   return data
 }
 
+export type GhsaDetails = {
+  ghsaId: string
+  cveId?: string
+  summary: string
+  severity: string
+  publishedAt: string
+  withdrawnAt?: string
+  references: Array<{
+    url: string
+  }>
+  vulnerabilities: {
+    nodes: Array<{
+      package: {
+        ecosystem: string
+        name: string
+      }
+      vulnerableVersionRange: string
+    }>
+  }
+}
+
+export async function fetchGhsaDetails(
+  ids: string[],
+): Promise<Map<string, GhsaDetails>> {
+  const results = new Map<string, GhsaDetails>()
+  if (!ids.length) {
+    return results
+  }
+  const octokitGraphql = getOctokitGraphql()
+  try {
+    const gqlCacheKey = `${ids.join('-')}-graphql-snapshot`
+    const gqlResp = await cacheFetch(gqlCacheKey, () =>
+      octokitGraphql(
+        `
+        query($identifiers: [SecurityAdvisoryIdentifierFilter!]!) {
+          securityAdvisories(first: ${ids.length}, identifiers: $identifiers) {
+            nodes {
+              ghsaId
+              cveId
+              summary
+              severity
+              publishedAt
+              withdrawnAt
+              references {
+                url
+              }
+              vulnerabilities(first: 10) {
+                nodes {
+                  package {
+                    ecosystem
+                    name
+                  }
+                  vulnerableVersionRange
+                }
+              }
+            }
+          }
+        }`,
+        {
+          identifiers: ids.map(id => ({
+            type: 'GHSA',
+            value: id,
+          })),
+        },
+      ),
+    )
+
+    const advisories: GhsaDetails[] =
+      (gqlResp as any)?.securityAdvisories?.nodes || []
+    for (const advisory of advisories) {
+      if (advisory.ghsaId) {
+        results.set(advisory.ghsaId, advisory)
+      }
+    }
+
+    // Log any missing advisories
+    for (const id of ids) {
+      if (!results.has(id)) {
+        debugFn('notice', `No advisory found for ${id}`)
+      }
+    }
+  } catch (e) {
+    debugFn(
+      'error',
+      `Failed to fetch GHSA details: ${(e as Error)?.message || 'Unknown error'}`,
+    )
+  }
+  return results
+}
+
 export type CleanupPrsOptions = {
   newVersion?: string | undefined
   purl?: string | undefined
@@ -243,9 +334,8 @@ export async function enablePrAutoMerge({
   node_id: prId,
 }: Pr): Promise<PrAutoMergeState> {
   const octokitGraphql = getOctokitGraphql()
-  let error: unknown
   try {
-    const response = await octokitGraphql(
+    const gqlResp = await octokitGraphql(
       `
       mutation EnableAutoMerge($pullRequestId: ID!) {
         enablePullRequestAutoMerge(input: {
@@ -259,21 +349,20 @@ export async function enablePrAutoMerge({
       }`,
       { pullRequestId: prId },
     )
-    const respPrNumber = (response as any)?.enablePullRequestAutoMerge
+    const respPrNumber = (gqlResp as any)?.enablePullRequestAutoMerge
       ?.pullRequest?.number
     if (respPrNumber) {
       return { enabled: true }
     }
   } catch (e) {
-    error = e
-  }
-  if (
-    error instanceof GraphqlResponseError &&
-    Array.isArray(error.errors) &&
-    error.errors.length
-  ) {
-    const details = error.errors.map(({ message: m }) => m.trim())
-    return { enabled: false, details }
+    if (
+      e instanceof GraphqlResponseError &&
+      Array.isArray(e.errors) &&
+      e.errors.length
+    ) {
+      const details = e.errors.map(({ message: m }) => m.trim())
+      return { enabled: false, details }
+    }
   }
   return { enabled: false }
 }
@@ -371,6 +460,7 @@ async function getSocketPrsWithContext(
       state: GQL_PR_STATE
       title: string
     }
+
     const nodes: GqlPrNode[] =
       (gqlResp as any)?.repository?.pullRequests?.nodes ?? []
     for (let i = 0, { length } = nodes; i < length; i += 1) {
@@ -516,6 +606,7 @@ export async function openPr(
 export type OpenCoanaPrOptions = {
   baseBranch?: string | undefined
   cwd?: string | undefined
+  ghsaDetails?: Map<string, GhsaDetails> | undefined
 }
 
 export async function openCoanaPr(
@@ -525,7 +616,7 @@ export async function openCoanaPr(
   ghsaIds: string[],
   options?: OpenCoanaPrOptions | undefined,
 ): Promise<OctokitResponse<Pr> | null> {
-  const { baseBranch = 'main' } = {
+  const { baseBranch = 'main', ghsaDetails } = {
     __proto__: null,
     ...options,
   } as OpenCoanaPrOptions
@@ -538,9 +629,42 @@ export async function openCoanaPr(
 
   let prBody = ''
   if (vulnCount === 1) {
-    prBody = `[Socket](https://socket.dev/) fix for [${ghsaIds[0]}](https://github.com/advisories/${ghsaIds[0]}).`
+    const ghsaId = ghsaIds[0]!
+    const details = ghsaDetails?.get(ghsaId)
+
+    prBody = `[Socket](https://socket.dev/) fix for [${ghsaId}](https://github.com/advisories/${ghsaId}).`
+    if (details) {
+      const packages = details.vulnerabilities.nodes.map(
+        v => `${v.package.name} (${v.package.ecosystem})`,
+      )
+
+      prBody += [
+        '',
+        '',
+        `**Vulnerability Summary:** ${details.summary}`,
+        '',
+        `**Severity:** ${details.severity}`,
+        '',
+        `**Affected Packages:** ${joinAnd(packages)}`,
+      ].join('\n')
+    }
   } else {
-    prBody = `[Socket](https://socket.dev/) fixes for ${vulnCount} GHSAs.\n\n**Fixed GHSAs:**\n${ghsaIds.map(id => `- [${id}](https://github.com/advisories/${id})`).join('\n')}`
+    prBody = [
+      `[Socket](https://socket.dev/) fixes for ${vulnCount} GHSAs.`,
+      '',
+      '**Fixed Vulnerabilities:**',
+      ...ghsaIds.map(id => {
+        const details = ghsaDetails?.get(id)
+        const item = `- [${id}](https://github.com/advisories/${id})`
+        if (details) {
+          const packages = details.vulnerabilities.nodes.map(
+            v => `${v.package.name}`,
+          )
+          return `${item} - ${details.summary} (${joinAnd(packages)})`
+        }
+        return item
+      }),
+    ].join('\n')
   }
 
   try {
