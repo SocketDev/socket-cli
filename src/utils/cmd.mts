@@ -21,7 +21,7 @@ export function cmdFlagValueToArray(flagValue: any): string[] {
     return flagValue.trim().split(/, */)
   }
   if (Array.isArray(flagValue)) {
-    return flagValue.flatMap(v => v.split(/, */))
+    return flagValue.flatMap(cmdFlagValueToArray)
   }
   return []
 }
