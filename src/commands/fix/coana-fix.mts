@@ -144,9 +144,11 @@ export async function coanaFix(
   }
 
   debugFn('notice', `fetch: ${ids.length} GHSA details for ${joinAnd(ids)}`)
+
   const ghsaDetails = await fetchGhsaDetails(ids)
-  debugFn('notice', `found: ${ghsaDetails.size} GHSA details`)
   const scanBaseNames = new Set(scanFilepaths.map(p => path.basename(p)))
+
+  debugFn('notice', `found: ${ghsaDetails.size} GHSA details`)
 
   let count = 0
   let overallFixed = false
