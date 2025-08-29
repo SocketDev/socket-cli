@@ -113,7 +113,7 @@
     "@socketregistry/packageurl-js": "1.0.9",
     "@socketsecurity/config": "3.0.1",
     "@socketsecurity/registry": "1.0.275",
-    "@socketsecurity/sdk": "1.4.79",
+    "@socketsecurity/sdk": "1.4.80",
     "@types/blessed": "0.1.25",
     "@types/cmd-shim": "5.0.2",
     "@types/js-yaml": "4.0.9",
