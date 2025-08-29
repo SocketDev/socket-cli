@@ -168,57 +168,49 @@ export async function fetchGhsaDetails(
   if (!ids.length) {
     return results
   }
+
   const octokitGraphql = getOctokitGraphql()
   try {
     const gqlCacheKey = `${ids.join('-')}-graphql-snapshot`
-    const gqlResp = await cacheFetch(gqlCacheKey, () =>
-      octokitGraphql(
-        `
-        query($identifiers: [SecurityAdvisoryIdentifierFilter!]!) {
-          securityAdvisories(first: ${ids.length}, identifiers: $identifiers) {
-            nodes {
-              ghsaId
-              cveId
-              summary
-              severity
-              publishedAt
-              withdrawnAt
-              references {
-                url
-              }
-              vulnerabilities(first: 10) {
-                nodes {
-                  package {
-                    ecosystem
-                    name
-                  }
-                  vulnerableVersionRange
-                }
-              }
+
+    const aliases = ids
+      .map(
+        (id, index) =>
+          `advisory${index}: securityAdvisory(ghsaId: "${id}") {
+        ghsaId
+        summary
+        severity
+        publishedAt
+        withdrawnAt
+        vulnerabilities(first: 10) {
+          nodes {
+            package {
+              ecosystem
+              name
             }
+            vulnerableVersionRange
           }
-        }`,
-        {
-          identifiers: ids.map(id => ({
-            type: 'GHSA',
-            value: id,
-          })),
-        },
-      ),
+        }
+      }`,
+      )
+      .join('\n')
+
+    const gqlResp = await cacheFetch(gqlCacheKey, () =>
+      octokitGraphql(`
+        query {
+          ${aliases}
+        }
+      `),
     )
 
-    const advisories: GhsaDetails[] =
-      (gqlResp as any)?.securityAdvisories?.nodes || []
-    for (const advisory of advisories) {
-      if (advisory.ghsaId) {
-        results.set(advisory.ghsaId, advisory)
-      }
-    }
-
-    // Log any missing advisories
-    for (const id of ids) {
-      if (!results.has(id)) {
-        debugFn('notice', `No advisory found for ${id}`)
+    for (let i = 0, { length } = ids; i < length; i += 1) {
+      const id = ids[i]!
+      const advisoryKey = `advisory${i}`
+      const advisory = (gqlResp as any)?.[advisoryKey]
+      if (advisory && advisory.ghsaId) {
+        results.set(id, advisory as GhsaDetails)
+      } else {
+        debugFn('notice', `miss: no advisory found for ${id}`)
       }
     }
   } catch (e) {
@@ -227,6 +219,7 @@ export async function fetchGhsaDetails(
       `Failed to fetch GHSA details: ${(e as Error)?.message || 'Unknown error'}`,
     )
   }
+
   return results
 }
 
