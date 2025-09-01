@@ -167,10 +167,12 @@ export async function performReachabilityAnalysis(
   const env: NodeJS.ProcessEnv = {
     ...process.env,
   }
-  if (repoName) {
+  // do not pass default repo and branch name to coana to avoid mixing
+  // buckets (cached configuration) from projects that are likely very different.
+  if (repoName && repoName !== constants.SOCKET_DEFAULT_REPOSITORY) {
     env['SOCKET_REPO_NAME'] = repoName
   }
-  if (branchName) {
+  if (branchName && branchName !== constants.SOCKET_DEFAULT_BRANCH) {
     env['SOCKET_BRANCH_NAME'] = branchName
   }
 
