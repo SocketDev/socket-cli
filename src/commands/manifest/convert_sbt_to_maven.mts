@@ -19,7 +19,6 @@ export async function convertSbtToMaven({
 }) {
   // TODO: Implement json/md.
 
-  // Lazily access constants.spinner.
   const { spinner } = constants
 
   logger.group('sbt2maven:')

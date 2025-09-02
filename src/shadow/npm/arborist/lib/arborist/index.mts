@@ -110,14 +110,10 @@ export class SafeArborist extends Arborist {
       // @ts-ignore: TypeScript gets grumpy about rest parameters.
       ...args.slice(1),
     )
-    // Lazily access constants.ENV.SOCKET_CLI_ACCEPT_RISKS.
     const acceptRisks = constants.ENV.SOCKET_CLI_ACCEPT_RISKS
     const progress = ipc[SOCKET_CLI_SHADOW_PROGRESS]
     const spinner =
-      options['silent'] || !progress
-        ? undefined
-        : // Lazily access constants.spinner.
-          constants.spinner
+      options['silent'] || !progress ? undefined : constants.spinner
     const isShadowNpx = binName === 'npx'
     const alertsMap = await getAlertsMapFromArborist(this, {
       apiToken: ipc[SOCKET_CLI_SHADOW_API_TOKEN],
@@ -136,7 +132,6 @@ export class SafeArborist extends Arborist {
     })
     if (alertsMap.size) {
       process.exitCode = 1
-      // Lazily access constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS.
       const viewAllRisks = constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
       logAlertsMap(alertsMap, {
         hideAt: viewAllRisks ? 'none' : 'middle',

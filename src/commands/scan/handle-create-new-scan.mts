@@ -88,7 +88,6 @@ export async function handleCreateNewScan({
     return
   }
 
-  // Lazily access constants.spinner.
   const { spinner } = constants
 
   spinner.start('Searching for local files to include in scan...')

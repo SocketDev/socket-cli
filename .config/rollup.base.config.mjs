@@ -54,7 +54,6 @@ const builtinAliases = builtinModules.reduce((o, n) => {
 let _rootPkgJson
 function getRootPkgJsonSync() {
   if (_rootPkgJson === undefined) {
-    // Lazily access constants.rootPath.
     _rootPkgJson = readPackageJsonSync(constants.rootPath, { normalize: true })
   }
   return _rootPkgJson
@@ -77,7 +76,6 @@ function getSocketCliVersionHash() {
     // Mostly for development: confirms the build refreshed. For prod builds
     // the git hash should suffice to identify the build.
     _socketVersionHash = `${version}:${gitHash}:${randUuidSegment}${
-      // Lazily access constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD].
       constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD] ? ':pub' : ':dev'
     }`
   }
@@ -102,7 +100,6 @@ function getVarNameForRequireId(filename, id, lookbehindContent) {
 }
 
 export default function baseConfig(extendConfig = {}) {
-  // Lazily access constants path properties.
   const { configPath, rootPath } = constants
 
   const nmPath = path.join(rootPath, NODE_MODULES)
@@ -215,10 +212,7 @@ export default function baseConfig(extendConfig = {}) {
           [
             INLINED_SOCKET_CLI_LEGACY_BUILD,
             () =>
-              JSON.stringify(
-                // Lazily access constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD].
-                !!constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD],
-              ),
+              JSON.stringify(!!constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]),
           ],
           [
             INLINED_SOCKET_CLI_NAME,
@@ -228,17 +222,13 @@ export default function baseConfig(extendConfig = {}) {
             INLINED_SOCKET_CLI_PUBLISHED_BUILD,
             () =>
               JSON.stringify(
-                // Lazily access constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD].
                 !!constants.ENV[INLINED_SOCKET_CLI_PUBLISHED_BUILD],
               ),
           ],
           [
             INLINED_SOCKET_CLI_SENTRY_BUILD,
             () =>
-              JSON.stringify(
-                // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
-                !!constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD],
-              ),
+              JSON.stringify(!!constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]),
           ],
           [
             INLINED_SOCKET_CLI_SYNP_VERSION,
@@ -252,12 +242,7 @@ export default function baseConfig(extendConfig = {}) {
             INLINED_SOCKET_CLI_VERSION_HASH,
             () => JSON.stringify(getSocketCliVersionHash()),
           ],
-          [
-            VITEST,
-            () =>
-              // Lazily access constants.ENV[VITEST].
-              !!constants.ENV[VITEST],
-          ],
+          [VITEST, () => !!constants.ENV[VITEST]],
         ].reduce((obj, { 0: name, 1: value }) => {
           obj[`process.env.${name}`] = value
           obj[`process.env['${name}']`] = value

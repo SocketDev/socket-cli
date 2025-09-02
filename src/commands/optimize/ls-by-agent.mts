@@ -50,7 +50,6 @@ async function npmQuery(npmExecPath: string, cwd: string): Promise<string> {
     stdout = (
       await spawn(npmExecPath, ['query', ':not(.dev)'], {
         cwd,
-        // Lazily access constants.WIN32.
         shell: constants.WIN32,
       })
     ).stdout
@@ -72,7 +71,6 @@ export async function lsBun(
     return (
       await spawn(pkgEnvDetails.agentExecPath, ['pm', 'ls', '--all'], {
         cwd,
-        // Lazily access constants.WIN32.
         shell: constants.WIN32,
       })
     ).stdout
@@ -115,7 +113,6 @@ export async function lsPnpm(
         ['ls', '--parseable', '--prod', '--depth', 'Infinity'],
         {
           cwd,
-          // Lazily access constants.WIN32.
           shell: constants.WIN32,
         },
       )
@@ -141,7 +138,6 @@ export async function lsVlt(
         ['ls', '--view', 'human', ':not(.dev)'],
         {
           cwd,
-          // Lazily access constants.WIN32.
           shell: constants.WIN32,
         },
       )
@@ -167,7 +163,6 @@ export async function lsYarnBerry(
         ['info', '--recursive', '--name-only'],
         {
           cwd,
-          // Lazily access constants.WIN32.
           shell: constants.WIN32,
         },
       )
@@ -192,7 +187,6 @@ export async function lsYarnClassic(
     return (
       await spawn(pkgEnvDetails.agentExecPath, ['list', '--prod'], {
         cwd,
-        // Lazily access constants.WIN32.
         shell: constants.WIN32,
       })
     ).stdout

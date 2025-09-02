@@ -35,7 +35,6 @@ export async function handleScanReach({
     return
   }
 
-  // Lazily access constants.spinner.
   const { spinner } = constants
 
   spinner.start(

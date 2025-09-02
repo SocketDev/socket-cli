@@ -38,14 +38,12 @@ import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 let _octokit: Octokit | undefined
 function getOctokit() {
   if (_octokit === undefined) {
-    // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
     const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
     if (!SOCKET_CLI_GITHUB_TOKEN) {
       debugFn('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
     }
     const octokitOptions = {
       auth: SOCKET_CLI_GITHUB_TOKEN,
-      // Lazily access constants.ENV.GITHUB_API_URL.
       baseUrl: constants.ENV.GITHUB_API_URL,
     }
     debugDir('inspect', { octokitOptions })
@@ -57,7 +55,6 @@ function getOctokit() {
 let _octokitGraphql: typeof OctokitGraphql | undefined
 export function getOctokitGraphql(): typeof OctokitGraphql {
   if (!_octokitGraphql) {
-    // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
     const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
     if (!SOCKET_CLI_GITHUB_TOKEN) {
       debugFn('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
@@ -76,7 +73,6 @@ async function readCache(
   // 5 minute in milliseconds time to live (TTL).
   ttlMs = 5 * 60 * 1000,
 ): Promise<JsonContent | null> {
-  // Lazily access constants.githubCachePath.
   const cacheJsonPath = path.join(constants.githubCachePath, `${key}.json`)
   const stat = safeStatsSync(cacheJsonPath)
   if (stat) {
@@ -89,7 +85,6 @@ async function readCache(
 }
 
 async function writeCache(key: string, data: JsonContent): Promise<void> {
-  // Lazily access constants.githubCachePath.
   const { githubCachePath } = constants
   const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
   if (!existsSync(githubCachePath)) {
@@ -128,7 +123,6 @@ export async function cacheFetch<T>(
   ttlMs?: number | undefined,
 ): Promise<T> {
   // Optionally disable cache.
-  // Lazily access constants.ENV.DISABLE_GITHUB_CACHE.
   if (constants.ENV.DISABLE_GITHUB_CACHE) {
     return await fetcher()
   }

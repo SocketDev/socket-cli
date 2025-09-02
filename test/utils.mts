@@ -51,20 +51,14 @@ export async function invokeNpm(
   stderr: string
 }> {
   try {
-    const output = await spawn(
-      // Lazily access constants.execPath.
-      constants.execPath,
-      [entryPath, ...args],
-      {
-        cwd: npmFixturesPath,
-        env: {
-          ...process.env,
-          // Lazily access constants.processEnv.
-          ...constants.processEnv,
-          ...env,
-        },
+    const output = await spawn(constants.execPath, [entryPath, ...args], {
+      cwd: npmFixturesPath,
+      env: {
+        ...process.env,
+        ...constants.processEnv,
+        ...env,
       },
-    )
+    })
     return {
       status: true,
       code: 0,

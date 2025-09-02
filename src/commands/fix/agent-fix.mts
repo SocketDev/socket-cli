@@ -170,7 +170,6 @@ export async function agentFix(
     spinner?.start()
   }
 
-  // Lazily access constants.packumentCache.
   const { packumentCache } = constants
 
   const workspacePkgJsonPaths = await globWorkspace(

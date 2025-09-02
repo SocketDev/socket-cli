@@ -31,7 +31,6 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
       stdio: usDebug ? 'inherit' : 'ignore',
     })
 
-    // Lazily access constants.binPath.
     const entryPath = path.join(constants.binPath, 'cli.js')
 
     it(
@@ -43,7 +42,6 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
       async () => {
         const result = await new Promise<string>((resolve, reject) => {
           const spawnPromise = spawn(
-            // Lazily access constants.execPath.
             constants.execPath,
             [
               entryPath,
@@ -57,9 +55,7 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
               cwd: path.join(npmFixturesPath, 'lacking-typosquat'),
               env: {
                 ...process.env,
-                // Lazily access constants.processEnv.
                 ...constants.processEnv,
-                // Lazily access constants.ENV.PATH.
                 PATH: `${npmBinPath}:${constants.ENV.PATH}`,
               },
             },

@@ -22,12 +22,10 @@ const NO_ERROR_MESSAGE = 'No error message returned'
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    // Lazily access constants.ENV.SOCKET_CLI_API_BASE_URL.
     constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
   if (isNonEmptyString(baseUrl)) {
     return baseUrl
   }
-  // Lazily access constants.API_V0_URL.
   const API_V0_URL = constants.API_V0_URL
   return API_V0_URL
 }
@@ -201,7 +199,6 @@ export async function queryApiSafeText(
     }
   }
 
-  // Lazily access constants.spinner.
   const { spinner } = constants
 
   if (desc) {
@@ -308,7 +305,6 @@ export async function sendApiRequest<T>(
     )
   }
 
-  // Lazily access constants.spinner.
   const { spinner } = constants
 
   if (options.desc) {

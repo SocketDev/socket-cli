@@ -110,7 +110,6 @@ export async function outputAsJson(
     ok: true,
     data: {
       desc: 'Audit logs for given query',
-      // Lazily access constants.ENV.VITEST.
       generated: constants.ENV.VITEST ? REDACTED : new Date().toISOString(),
       logType,
       nextPage: auditLogs.data.nextPage,
@@ -212,7 +211,6 @@ async function outputWithBlessed(
 
   // Note: this temporarily takes over the terminal (just like `man` does).
   const ScreenWidget = /*@__PURE__*/ require('blessed/lib/widgets/screen.js')
-  // Lazily access constants.blessedOptions.
   const screen: Widgets.Screen = new ScreenWidget({
     ...constants.blessedOptions,
   })

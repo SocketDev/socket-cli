@@ -70,14 +70,12 @@ const UTILS = 'utils'
 const VENDOR = 'vendor'
 
 async function copyInitGradle() {
-  // Lazily access constants path properties.
   const filepath = path.join(constants.srcPath, 'commands/manifest/init.gradle')
   const destPath = path.join(constants.distPath, 'init.gradle')
   await fs.copyFile(filepath, destPath)
 }
 
 async function copyBashCompletion() {
-  // Lazily access constants path properties.
   const filepath = path.join(
     constants.srcPath,
     'commands/install/socket-completion.bash',
@@ -87,7 +85,6 @@ async function copyBashCompletion() {
 }
 
 async function copyExternalPackages() {
-  // Lazily access constants path properties.
   const { blessedContribPath, blessedPath, socketRegistryPath } = constants
   const nmPath = path.join(constants.rootPath, NODE_MODULES)
   const blessedContribNmPath = path.join(nmPath, BLESSED_CONTRIB)
@@ -160,7 +157,6 @@ async function copyExternalPackages() {
 
 async function copyPackage(pkgName, options) {
   const { strict = true } = { __proto__: null, ...options }
-  // Lazily access constants path properties.
   const nmPath = path.join(constants.rootPath, NODE_MODULES)
   const pkgDestPath = path.join(constants.externalPath, pkgName)
   const pkgNmPath = path.join(nmPath, pkgName)
@@ -200,7 +196,6 @@ async function getSentryManifest() {
 }
 
 async function updatePackageJson() {
-  // Lazily access constants.rootPath.
   const editablePkgJson = await readPackageJson(constants.rootPath, {
     editable: true,
     normalize: true,
@@ -213,7 +208,6 @@ async function updatePackageJson() {
     bin,
     dependencies: hasKeys(dependencies) ? dependencies : undefined,
   })
-  // Lazily access constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD].
   if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
     editablePkgJson.update({
       name: SOCKET_CLI_LEGACY_PACKAGE_NAME,
@@ -222,9 +216,7 @@ async function updatePackageJson() {
         ...bin,
       },
     })
-  }
-  // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
-  else if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
+  } else if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
     editablePkgJson.update({
       name: SOCKET_CLI_SENTRY_PACKAGE_NAME,
       description: SOCKET_DESCRIPTION_WITH_SENTRY,
@@ -244,7 +236,6 @@ async function updatePackageJson() {
 }
 
 async function updatePackageLockFile() {
-  // Lazily access constants.rootPackageLockPath.
   const { rootPackageLockPath } = constants
   if (!existsSync(rootPackageLockPath)) {
     return
@@ -262,7 +253,6 @@ async function updatePackageLockFile() {
   } else {
     delete rootPkg.dependencies
   }
-  // Lazily access constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD].
   if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
     lockJson.name = SOCKET_CLI_LEGACY_PACKAGE_NAME
     rootPkg.name = SOCKET_CLI_LEGACY_PACKAGE_NAME
@@ -270,9 +260,7 @@ async function updatePackageLockFile() {
       [SOCKET_CLI_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
       ...bin,
     })
-  }
-  // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
-  else if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
+  } else if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
     lockJson.name = SOCKET_CLI_SENTRY_PACKAGE_NAME
     rootPkg.name = SOCKET_CLI_SENTRY_PACKAGE_NAME
     rootPkg.bin = {
@@ -356,7 +344,6 @@ function resetDependencies(deps) {
 }
 
 export default async () => {
-  // Lazily access constants path properties.
   const { configPath, distPath, rootPath, srcPath } = constants
   const nmPath = normalizePath(path.join(rootPath, NODE_MODULES))
   const constantsSrcPath = normalizePath(path.join(srcPath, 'constants.mts'))
@@ -381,7 +368,6 @@ export default async () => {
         [CONSTANTS]: `${srcPath}/constants.mts`,
         [SHADOW_NPM_BIN]: `${srcPath}/shadow/npm/bin.mts`,
         [SHADOW_NPM_INJECT]: `${srcPath}/shadow/npm/inject.mts`,
-        // Lazily access constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD].
         ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
           ? {
               [INSTRUMENT_WITH_SENTRY]: `${srcPath}/${INSTRUMENT_WITH_SENTRY}.mts`,

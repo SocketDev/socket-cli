@@ -4,7 +4,6 @@ import { cmdit, invokeNpm } from '../../test/utils.mts'
 import constants from '../constants.mts'
 
 describe('socket root command', async () => {
-  // Lazily access constants.binCliPath.
   const { binCliPath } = constants
 
   cmdit(['--help', '--config', '{}'], 'should support --help', async cmd => {

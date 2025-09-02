@@ -40,7 +40,6 @@ export async function outputThreatFeed(
 
   // Note: this temporarily takes over the terminal (just like `man` does).
   const ScreenWidget = /*@__PURE__*/ require('blessed/lib/widgets/screen.js')
-  // Lazily access constants.blessedOptions.
   const screen: Widgets.Screen = new ScreenWidget({
     ...constants.blessedOptions,
   })

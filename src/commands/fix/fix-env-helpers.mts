@@ -9,7 +9,6 @@ import type { PrMatch } from './pull-request.mts'
 import type { RepoInfo } from '../../utils/git.mts'
 
 function ciRepoInfo(): RepoInfo | null {
-  // Lazily access constants.ENV.GITHUB_REPOSITORY.
   const { GITHUB_REPOSITORY } = constants.ENV
   if (!GITHUB_REPOSITORY) {
     debugFn('notice', 'miss: GITHUB_REPOSITORY env var')

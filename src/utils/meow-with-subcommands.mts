@@ -259,25 +259,19 @@ export async function meowWithSubcommands(
   // The env var overrides the --flag, which overrides the persisted config
   // Also, when either of these are used, config updates won't persist.
   let configOverrideResult
-  // Lazily access constants.ENV.SOCKET_CLI_CONFIG.
   if (constants.ENV.SOCKET_CLI_CONFIG) {
-    configOverrideResult = overrideCachedConfig(
-      // Lazily access constants.ENV.SOCKET_CLI_CONFIG.
-      constants.ENV.SOCKET_CLI_CONFIG,
-    )
+    configOverrideResult = overrideCachedConfig(constants.ENV.SOCKET_CLI_CONFIG)
   } else if (cli1.flags['config']) {
     configOverrideResult = overrideCachedConfig(
       String(cli1.flags['config'] || ''),
     )
   }
 
-  // Lazily access constants.ENV.SOCKET_CLI_NO_API_TOKEN.
   if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
     // This overrides the config override and even the explicit token env var.
     // The config will be marked as readOnly to prevent persisting it.
     overrideConfigApiToken(undefined)
   } else {
-    // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN.
     const tokenOverride = constants.ENV.SOCKET_CLI_API_TOKEN
     if (tokenOverride) {
       // This will set the token (even if there was a config override) and
@@ -521,7 +515,6 @@ export async function meowWithSubcommands(
   }
   if (!cli2.flags['help'] && cli2.flags['dryRun']) {
     process.exitCode = 0
-    // Lazily access constants.DRY_RUN_LABEL.
     logger.log(`${constants.DRY_RUN_LABEL}: No-op, call a sub-command; ok`)
   } else {
     // When you explicitly request --help, the command should be successful
@@ -640,12 +633,10 @@ export function emitBanner(name: string, orgFlag: string | undefined) {
 function getAsciiHeader(command: string, orgFlag: string | undefined) {
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
   const { REDACTED } = constants
-  // Lazily access constants.ENV.VITEST.
   const redacting = constants.ENV.VITEST
   const cliVersion = redacting
     ? REDACTED
-    : // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH.
-      constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
+    : constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
   const nodeVersion = redacting ? REDACTED : process.version
   const defaultOrg = getConfigValueOrUndef('defaultOrg')
   const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'

@@ -43,7 +43,6 @@ export async function setupTabCompletion(targetName: string): Promise<
   let bashrcUpdated = false
 
   // Add to ~/.bashrc if not already there
-  // Lazily access constants.homePath
   const bashrcPath = constants.homePath
     ? path.join(constants.homePath, '.bashrc')
     : ''
@@ -109,7 +108,6 @@ export function updateInstalledTabCompletionScript(
     targetPath,
     content.data.replaceAll(
       '%SOCKET_VERSION_TOKEN%',
-      // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH.
       constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH,
     ),
     'utf8',
