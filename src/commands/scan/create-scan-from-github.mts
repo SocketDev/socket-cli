@@ -246,6 +246,7 @@ async function scanOneRepo(
       reachAnalysisMemoryLimit: 0,
       reachEcosystems: [],
       reachExcludePaths: [],
+      reachSkipCache: false,
     },
     readOnly: false,
     repoName: repoSlug,
