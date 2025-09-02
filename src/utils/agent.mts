@@ -34,14 +34,14 @@ export function runAgentInstall(
   const {
     args = [],
     spinner,
-    ...spawnOptions
+    ...spawnOpts
   } = { __proto__: null, ...options } as AgentInstallOptions
   const skipNodeHardenFlags = isPnpm && pkgEnvDetails.agentVersion.major < 11
   return spawn(agentExecPath, ['install', ...args], {
     shell: constants.WIN32,
     spinner,
     stdio: 'inherit',
-    ...spawnOptions,
+    ...spawnOpts,
     env: {
       ...process.env,
       ...constants.processEnv,
@@ -49,7 +49,7 @@ export function runAgentInstall(
         ...(skipNodeHardenFlags ? [] : constants.nodeHardenFlags),
         ...constants.nodeNoWarningsFlags,
       ]),
-      ...getOwn(spawnOptions, 'env'),
+      ...getOwn(spawnOpts, 'env'),
     },
   })
 }

@@ -32,7 +32,7 @@ export function shadowNpmInstall(
     args = [],
     ipc,
     spinner,
-    ...spawnOptions
+    ...spawnOpts
   } = { __proto__: null, ...options } as ShadowNpmInstallOptions
   const useDebug = isDebug('stdio')
   const terminatorPos = args.indexOf('--')
@@ -46,10 +46,10 @@ export function shadowNpmInstall(
   const logLevelArgs = isSilent ? ['--loglevel', 'silent'] : []
   const useIpc = isObject(ipc)
 
-  // Include 'ipc' in the spawnOptions.stdio when an options.ipc object is provided.
+  // Include 'ipc' in the spawnOpts.stdio when an options.ipc object is provided.
   // See https://github.com/nodejs/node/blob/v23.6.0/lib/child_process.js#L161-L166
   // and https://github.com/nodejs/node/blob/v23.6.0/lib/internal/child_process.js#L238.
-  let stdio = getOwn(spawnOptions, 'stdio')
+  let stdio = getOwn(spawnOpts, 'stdio')
   if (typeof stdio === 'string') {
     stdio = useIpc ? [stdio, stdio, stdio, 'ipc'] : [stdio, stdio, stdio]
   } else if (Array.isArray(stdio)) {
@@ -85,11 +85,11 @@ export function shadowNpmInstall(
       ...otherArgs,
     ],
     {
-      ...spawnOptions,
+      ...spawnOpts,
       env: {
         ...process.env,
         ...constants.processEnv,
-        ...getOwn(spawnOptions, 'env'),
+        ...getOwn(spawnOpts, 'env'),
       },
       spinner,
       stdio,
