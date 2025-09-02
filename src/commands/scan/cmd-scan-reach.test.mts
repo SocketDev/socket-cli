@@ -34,6 +34,7 @@ describe('socket scan reach', async () => {
             --reach-disable-analytics  Disable reachability analytics sharing with Socket. Also disables caching-based optimizations.
             --reach-ecosystems  List of ecosystems to conduct reachability analysis on, as either a comma separated value or as multiple flags. Defaults to all ecosystems.
             --reach-exclude-paths  List of paths to exclude from reachability analysis, as either a comma separated value or as multiple flags.
+            --reach-skip-cache  Skip caching-based optimizations. By default, the reachability analysis will use cached configurations from previous runs to speed up the analysis.
 
           Runs the Socket reachability analysis without creating a scan in Socket.
           The output is written to .socket.facts.json in the current working directory.
