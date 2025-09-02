@@ -61,6 +61,7 @@ export async function coanaFix(
     sockSdk.uploadManifestFiles(orgSlug, scanFilepaths),
     {
       desc: 'upload manifests',
+      spinner,
     },
   )
 

@@ -21,7 +21,6 @@ import type { Choice, Separator } from '@socketsecurity/registry/lib/prompts'
 
 type OrgChoice = Choice<string>
 type OrgChoices = Array<Separator | OrgChoice>
-const { SOCKET_PUBLIC_API_TOKEN } = constants
 
 export async function attemptLogin(
   apiBaseUrl: string | undefined,
@@ -41,7 +40,7 @@ export async function attemptLogin(
     return { ok: false, message: 'Canceled', cause: 'Canceled by user' }
   }
 
-  const apiToken = apiTokenInput || SOCKET_PUBLIC_API_TOKEN
+  const apiToken = apiTokenInput || constants.SOCKET_PUBLIC_API_TOKEN
 
   const sockSdkCResult = await setupSdk({ apiBaseUrl, apiProxy, apiToken })
   if (!sockSdkCResult.ok) {

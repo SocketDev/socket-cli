@@ -13,6 +13,8 @@ const {
 } = registryConstants
 
 const CONSTANTS = 'constants'
+const INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION =
+  'INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION'
 const INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION =
   'INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION'
 const INLINED_SOCKET_CLI_HOMEPAGE = 'INLINED_SOCKET_CLI_HOMEPAGE'
@@ -69,14 +71,6 @@ const lazyBlessedPath = () =>
   // Lazily access constants.externalPath.
   path.join(constants.externalPath, 'blessed')
 
-const lazyCoanaBinPath = () =>
-  // Lazily access constants.coanaPath.
-  path.join(constants.coanaPath, 'cli.mjs')
-
-const lazyCoanaPath = () =>
-  // Lazily access constants.externalPath.
-  path.join(constants.externalPath, '@coana-tech/cli')
-
 const lazyConfigPath = () =>
   // Lazily access constants.rootPath.
   path.join(constants.rootPath, '.config')
@@ -112,6 +106,7 @@ const constants = createConstantsObject(
     ...registryConstantsAttribs.props,
     CONSTANTS,
     ENV: undefined,
+    INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION,
     INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
     INLINED_SOCKET_CLI_HOMEPAGE,
     INLINED_SOCKET_CLI_LEGACY_BUILD,
@@ -140,8 +135,6 @@ const constants = createConstantsObject(
     blessedContribPath: undefined,
     blessedOptions: undefined,
     blessedPath: undefined,
-    coanaBinPath: undefined,
-    coanaPath: undefined,
     configPath: undefined,
     distPath: undefined,
     externalPath: undefined,
@@ -156,8 +149,6 @@ const constants = createConstantsObject(
       ENV: LAZY_ENV,
       blessedContribPath: lazyBlessedContribPath,
       blessedPath: lazyBlessedPath,
-      coanaBinPath: lazyCoanaBinPath,
-      coanaPath: lazyCoanaPath,
       configPath: lazyConfigPath,
       distPath: lazyDistPath,
       externalPath: lazyExternalPath,

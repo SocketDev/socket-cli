@@ -16,6 +16,7 @@ import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type GetAlertsMapFromPnpmLockfileOptions = {
+  apiToken?: string | undefined
   consolidate?: boolean | undefined
   include?: AlertFilter | undefined
   overrides?: { [key: string]: string } | undefined
@@ -35,6 +36,7 @@ export async function getAlertsMapFromPnpmLockfile(
 }
 
 export type GetAlertsMapFromPurlsOptions = {
+  apiToken?: string | undefined
   consolidate?: boolean | undefined
   filter?: AlertFilter | undefined
   onlyFixable?: boolean | undefined
@@ -69,12 +71,13 @@ export async function getAlertsMapFromPurls(
     opts.filter.fixable = true
   }
 
-  const { spinner } = opts
+  const { apiToken = getPublicApiToken(), spinner } = opts
+
   const getText = () => `Looking up data for ${remaining} packages`
 
   spinner?.start(getText())
 
-  const sockSdkCResult = await setupSdk({ apiToken: getPublicApiToken() })
+  const sockSdkCResult = await setupSdk({ apiToken })
   if (!sockSdkCResult.ok) {
     spinner?.stop()
     throw new Error('Auth error: Run `socket login` first')
