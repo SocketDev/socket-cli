@@ -219,7 +219,6 @@ function getNpmStdioPipeOptions() {
   if (_npmStdioPipeOptions === undefined) {
     _npmStdioPipeOptions = {
       cwd: process.cwd(),
-      // Lazily access constants.WIN32.
       shell: constants.WIN32,
     }
   }
@@ -230,7 +229,6 @@ const LAZY_ENV = () => {
   const { env: processEnv } = process
   const envHelpers = /*@__PURE__*/ require('@socketsecurity/registry/lib/env')
   const utils = /*@__PURE__*/ require(
-    // Lazily access constants.rootPath.
     path.join(constants.rootPath, 'dist/utils.js'),
   )
   const envAsBoolean = envHelpers.envAsBoolean
@@ -333,12 +331,9 @@ const LAZY_ENV = () => {
     LOCALAPPDATA: envAsString(processEnv[LOCALAPPDATA]),
     // Enable the module compile cache for the Node.js instance.
     // https://nodejs.org/api/cli.html#node_compile_cachedir
-    NODE_COMPILE_CACHE:
-      // Lazily access constants.SUPPORTS_NODE_COMPILE_CACHE_ENV_VAR.
-      constants.SUPPORTS_NODE_COMPILE_CACHE_ENV_VAR
-        ? // Lazily access constants.socketCachePath.
-          constants.socketCachePath
-        : '',
+    NODE_COMPILE_CACHE: constants.SUPPORTS_NODE_COMPILE_CACHE_ENV_VAR
+      ? constants.socketCachePath
+      : '',
     // Well known "root" CAs (like VeriSign) will be extended with the extra
     // certificates in file. The file should consist of one or more trusted
     // certificates in PEM format.
@@ -435,54 +430,35 @@ const LAZY_ENV = () => {
   })
 }
 
-const lazyBashRcPath = () =>
-  // Lazily access constants.homePath.
-  path.join(constants.homePath, '.bashrc')
+const lazyBashRcPath = () => path.join(constants.homePath, '.bashrc')
 
-const lazyBinPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'bin')
+const lazyBinPath = () => path.join(constants.rootPath, 'bin')
 
-const lazyBinCliPath = () =>
-  // Lazily access constants.binPath.
-  path.join(constants.binPath, 'cli.js')
+const lazyBinCliPath = () => path.join(constants.binPath, 'cli.js')
 
 const lazyBlessedContribPath = () =>
-  // Lazily access constants.externalPath.
   path.join(constants.externalPath, 'blessed-contrib')
 
 const lazyBlessedOptions = () =>
   Object.freeze({
     smartCSR: true,
-    // Lazily access constants.WIN32.
     term: constants.WIN32 ? 'windows-ansi' : 'xterm',
     useBCE: true,
   })
 
-const lazyBlessedPath = () =>
-  // Lazily access constants.externalPath.
-  path.join(constants.externalPath, 'blessed')
+const lazyBlessedPath = () => path.join(constants.externalPath, 'blessed')
 
-const lazyDistCliPath = () =>
-  // Lazily access constants.distPath.
-  path.join(constants.distPath, 'cli.js')
+const lazyDistCliPath = () => path.join(constants.distPath, 'cli.js')
 
-const lazyDistPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'dist')
+const lazyDistPath = () => path.join(constants.rootPath, 'dist')
 
-const lazyExternalPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'external')
+const lazyExternalPath = () => path.join(constants.rootPath, 'external')
 
-const lazyGithubCachePath = () =>
-  // Lazily access constants.socketCachePath.
-  path.join(constants.socketCachePath, 'github')
+const lazyGithubCachePath = () => path.join(constants.socketCachePath, 'github')
 
 const lazyHomePath = () => os.homedir()
 
 const lazyInstrumentWithSentryPath = () =>
-  // Lazily access constants.distPath.
   path.join(constants.distPath, 'instrument-with-sentry.js')
 
 const lazyMinimumVersionByAgent = () =>
@@ -507,18 +483,13 @@ const lazyMinimumVersionByAgent = () =>
     [VLT, '*'],
   ])
 
-const lazyNmBinPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'node_modules/.bin')
+const lazyNmBinPath = () => path.join(constants.rootPath, 'node_modules/.bin')
 
 // Redefine registryConstants.nodeHardenFlags to account for the
 // INLINED_SOCKET_CLI_SENTRY_BUILD environment variable.
 const lazyNodeHardenFlags = () =>
   Object.freeze(
-    // Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
-    constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD ||
-      // Lazily access constants.WIN32.
-      constants.WIN32
+    constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD || constants.WIN32
       ? []
       : // Harden Node security.
         // https://nodejs.org/en/learn/getting-started/security-best-practices
@@ -536,7 +507,6 @@ const lazyNodeHardenFlags = () =>
 
 const lazyNodeMemoryFlags = () => {
   const flags = /*@__PURE__*/ require(
-    // Lazily access constants.rootPath.
     path.join(constants.rootPath, 'dist/flags.js'),
   )
   const getMaxOldSpaceSizeFlag = flags.getMaxOldSpaceSizeFlag
@@ -551,7 +521,6 @@ const lazyNpmCachePath = () => {
   const spawnHelpers = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
   const spawnSync = spawnHelpers.spawnSync
   return spawnSync(
-    // Lazily access constants.npmExecPath.
     constants.npmExecPath,
     ['config', 'get', 'cache'],
     getNpmStdioPipeOptions(),
@@ -562,7 +531,6 @@ const lazyNpmGlobalPrefix = () => {
   const spawnHelpers = /*@__PURE__*/ require('@socketsecurity/registry/lib/spawn')
   const spawnSync = spawnHelpers.spawnSync
   return spawnSync(
-    // Lazily access constants.npmExecPath.
     constants.npmExecPath,
     ['prefix', '-g'],
     getNpmStdioPipeOptions(),
@@ -571,13 +539,11 @@ const lazyNpmGlobalPrefix = () => {
 
 const lazyNpmNmNodeGypPath = () =>
   path.join(
-    // Lazily access constants.npmRealExecPath.
     constants.npmRealExecPath,
     '../../node_modules/node-gyp/bin/node-gyp.js',
   )
 
 const lazyProcessEnv = () =>
-  // Lazily access constants.ENV.
   Object.setPrototypeOf(
     Object.fromEntries(
       Object.entries(constants.ENV).reduce(
@@ -603,16 +569,12 @@ const lazyProcessEnv = () =>
 
 const lazyRootPath = () => path.join(realpathSync.native(__dirname), '..')
 
-const lazyShadowBinPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'shadow-npm-bin')
+const lazyShadowBinPath = () => path.join(constants.rootPath, 'shadow-npm-bin')
 
 const lazyShadowNpmBinPath = () =>
-  // Lazily access constants.distPath.
   path.join(constants.distPath, 'shadow-npm-bin.js')
 
 const lazyShadowNpmInjectPath = () =>
-  // Lazily access constants.distPath.
   path.join(constants.distPath, 'shadow-npm-inject.js')
 
 const lazySocketAppDataPath = (): string | undefined => {
@@ -628,22 +590,17 @@ const lazySocketAppDataPath = (): string | undefined => {
   // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
   // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
 
-  // Lazily access constants.WIN32.
   const { WIN32 } = constants
   let dataHome: string | undefined = WIN32
-    ? // Lazily access constants.ENV.LOCALAPPDATA
-      constants.ENV.LOCALAPPDATA
-    : // Lazily access constants.ENV.XDG_DATA_HOME
-      constants.ENV.XDG_DATA_HOME
+    ? constants.ENV.LOCALAPPDATA
+    : constants.ENV.XDG_DATA_HOME
   if (!dataHome) {
     if (WIN32) {
       const logger = /*@__PURE__*/ require('@socketsecurity/registry/lib/logger')
       logger.warn(`Missing %${LOCALAPPDATA}%`)
     } else {
       dataHome = path.join(
-        // Lazily access constants.homePath.
         constants.homePath,
-        // Lazily access constants.DARWIN.
         constants.DARWIN ? 'Library/Application Support' : '.local/share',
       )
     }
@@ -651,17 +608,12 @@ const lazySocketAppDataPath = (): string | undefined => {
   return dataHome ? path.join(dataHome, 'socket/settings') : undefined
 }
 
-const lazySocketCachePath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, '.cache')
+const lazySocketCachePath = () => path.join(constants.rootPath, '.cache')
 
 const lazySocketRegistryPath = () =>
-  // Lazily access constants.externalPath.
   path.join(constants.externalPath, '@socketsecurity/registry')
 
-const lazyZshRcPath = () =>
-  // Lazily access constants.homePath.
-  path.join(constants.homePath, '.zshrc')
+const lazyZshRcPath = () => path.join(constants.homePath, '.zshrc')
 
 const constants: Constants = createConstantsObject(
   {

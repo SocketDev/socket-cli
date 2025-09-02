@@ -142,7 +142,6 @@ const sharedRulesForNode = {
         'test',
         'test.describe',
       ],
-      // Lazily access constants.maintainedNodeVersions.
       version: constants.maintainedNodeVersions.current,
     },
   ],

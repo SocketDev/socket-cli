@@ -24,11 +24,9 @@ void (async () => {
   const registryUrl = lookupRegistryUrl()
   await updateNotifier({
     authInfo: lookupRegistryAuthToken(registryUrl, { recursive: true }),
-    // Lazily access constants.SOCKET_CLI_BIN_NAME.
     name: constants.SOCKET_CLI_BIN_NAME,
     registryUrl,
     ttl: 86_400_000 /* 24 hours in milliseconds */,
-    // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
     version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
   })
 
@@ -36,7 +34,6 @@ void (async () => {
     await meowWithSubcommands(rootCommands, {
       aliases: rootAliases,
       argv: process.argv.slice(2),
-      // Lazily access constants.SOCKET_CLI_BIN_NAME.
       name: constants.SOCKET_CLI_BIN_NAME,
       importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
     })

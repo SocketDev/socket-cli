@@ -12,7 +12,6 @@ let _requirements:
 export function getRequirements() {
   if (_requirements === undefined) {
     _requirements = /*@__PURE__*/ require(
-      // Lazily access constants.rootPath.
       path.join(constants.rootPath, 'requirements.json'),
     )
   }

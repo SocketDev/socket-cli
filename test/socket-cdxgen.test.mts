@@ -23,14 +23,12 @@ const spawnOpts: PromiseSpawnOptions = {
   cwd: npmFixturesPath,
   env: {
     ...process.env,
-    // Lazily access constants.processEnv.
     ...constants.processEnv,
     SOCKET_CLI_DEBUG: '1',
   },
 }
 
 describe('Socket manifest cdxgen command', async () => {
-  // Lazily access constants.binCliPath.
   const { binCliPath } = constants
 
   it(
@@ -43,7 +41,6 @@ describe('Socket manifest cdxgen command', async () => {
       for (const command of ['-h', '--help']) {
         // eslint-disable-next-line no-await-in-loop
         const output = await spawn(
-          // Lazily access constants.execPath.
           constants.execPath,
           [binCliPath, 'manifest', 'cdxgen', '--yes', command],
           spawnOpts,
@@ -76,7 +73,6 @@ describe('Socket manifest cdxgen command', async () => {
       await expect(
         () =>
           spawn(
-            // Lazily access constants.execPath.
             constants.execPath,
             [binCliPath, 'manifest', 'cdxgen', '-y', command],
             spawnOpts,
@@ -92,7 +88,6 @@ describe('Socket manifest cdxgen command', async () => {
       await expect(
         () =>
           spawn(
-            // Lazily access constants.execPath.
             constants.execPath,
             [binCliPath, 'manifest', 'cdxgen', '--yes', command],
             spawnOpts,
@@ -107,7 +102,6 @@ describe('Socket manifest cdxgen command', async () => {
       await expect(
         () =>
           spawn(
-            // Lazily access constants.execPath.
             constants.execPath,
             [binCliPath, 'manifest', 'cdxgen', '-y', '-u', '-h', '--unknown'],
             spawnOpts,

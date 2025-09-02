@@ -84,7 +84,6 @@ export async function handleFix({
 
   debugDir('inspect', { pkgEnvDetails })
 
-  // Lazily access constants.
   const { NPM, PNPM } = constants
   const { agent, agentVersion } = pkgEnvDetails
 

@@ -10,7 +10,6 @@ export const COMPLETION_CMD_PREFIX = 'complete -F _socket_completion'
 export function getCompletionSourcingCommand(): CResult<string> {
   // Note: this is exported to distPath in .config/rollup.dist.config.mjs
   const completionScriptExportPath = path.join(
-    // Lazily access constants.distPath.
     constants.distPath,
     'socket-completion.bash',
   )
@@ -38,7 +37,6 @@ export function getBashrcDetails(targetCommandName: string): CResult<{
     return sourcingCommand
   }
 
-  // Lazily access constants.socketAppDataPath.
   const { socketAppDataPath } = constants
   if (!socketAppDataPath) {
     return {

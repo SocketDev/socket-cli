@@ -4,7 +4,6 @@ import { cmdit, invokeNpm } from '../../../test/utils.mts'
 import constants from '../../constants.mts'
 
 describe('socket manifest cdxgen', async () => {
-  // Lazily access constants.binCliPath.
   const { binCliPath } = constants
 
   cmdit(

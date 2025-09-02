@@ -98,7 +98,6 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  // Lazily access constants.spinner.
   const { spinner } = constants
 
   const packages = Array.isArray(cli.flags['package'])

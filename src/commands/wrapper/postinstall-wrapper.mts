@@ -11,7 +11,6 @@ import { getBashrcDetails } from '../../utils/completion.mts'
 import { updateInstalledTabCompletionScript } from '../install/setup-tab-completion.mts'
 
 export async function postinstallWrapper() {
-  // Lazily access constants.bashRcPath and constants.zshRcPath.
   const { bashRcPath, zshRcPath } = constants
   const socketWrapperEnabled =
     (existsSync(bashRcPath) && checkSocketWrapperSetup(bashRcPath)) ||
@@ -73,7 +72,6 @@ async function setupShadowNpm(query: string): Promise<void> {
       default: true,
     })
   ) {
-    // Lazily access constants.bashRcPath and constants.zshRcPath.
     const { bashRcPath, zshRcPath } = constants
     try {
       if (existsSync(bashRcPath)) {

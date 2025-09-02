@@ -25,7 +25,6 @@ export async function applyOptimization(
     addedInWorkspaces: number
   }>
 > {
-  // Lazily access constants.spinner.
   const { spinner } = constants
 
   spinner.start()

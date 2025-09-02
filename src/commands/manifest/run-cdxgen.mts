@@ -74,7 +74,6 @@ export async function runCdxgen(yargvWithYes: any) {
           'npx',
           [
             ...yesArgs,
-            // Lazily access constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION.
             `synp@${constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
             '--source-file',
             `./${YARN_LOCK}`,
@@ -92,7 +91,6 @@ export async function runCdxgen(yargvWithYes: any) {
     'npx',
     [
       ...yesArgs,
-      // Lazily access constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION.
       `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
       ...argvToArray(yargv),
     ],

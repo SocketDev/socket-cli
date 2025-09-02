@@ -21,11 +21,7 @@ export type FindUpOptions = {
 
 export async function findUp(
   name: string | string[],
-  {
-    cwd = process.cwd(),
-    // Lazily access constants.abortSignal.
-    signal = constants.abortSignal,
-  }: FindUpOptions,
+  { cwd = process.cwd(), signal = constants.abortSignal }: FindUpOptions,
 ): Promise<string | undefined> {
   let dir = path.resolve(cwd)
   const { root } = path.parse(dir)

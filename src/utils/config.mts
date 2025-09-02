@@ -59,7 +59,6 @@ function getConfigValues(): LocalConfig {
   if (_cachedConfig === undefined) {
     // Order: env var > --config flag > file
     _cachedConfig = {} as LocalConfig
-    // Lazily access constants.socketAppDataPath.
     const { socketAppDataPath } = constants
     if (socketAppDataPath) {
       const raw = safeReadFileSync(socketAppDataPath)
@@ -287,7 +286,6 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     _pendingSave = true
     process.nextTick(() => {
       _pendingSave = false
-      // Lazily access constants.socketAppDataPath.
       const { socketAppDataPath } = constants
       if (socketAppDataPath) {
         writeFileSync(

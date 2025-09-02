@@ -62,7 +62,6 @@ export async function outputScanReport(
       fold,
       reportLevel,
       short,
-      // Lazily access constants.spinner.
       spinner: constants.spinner,
     },
   )

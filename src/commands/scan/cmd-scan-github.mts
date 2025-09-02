@@ -119,7 +119,6 @@ async function run(
   })
 
   const {
-    // Lazily access constants.ENV.SOCKET_CLI_GITHUB_TOKEN.
     githubToken = constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
     interactive = true,
     json,

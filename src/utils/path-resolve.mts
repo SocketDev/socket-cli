@@ -26,7 +26,6 @@ export function findBinPathDetailsSync(binName: string): {
       all: true,
       nothrow: true,
     }) ?? []
-  // Lazily access constants.shadowBinPath.
   const { shadowBinPath } = constants
   let shadowIndex = -1
   let theBinPath: string | undefined
@@ -44,7 +43,6 @@ export function findBinPathDetailsSync(binName: string): {
 }
 
 export function findNpmDirPathSync(npmBinPath: string): string | undefined {
-  // Lazily access constants.WIN32.
   const { WIN32 } = constants
   let thePath = npmBinPath
   while (true) {

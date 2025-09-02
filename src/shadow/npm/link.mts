@@ -17,7 +17,6 @@ export async function installLinks(
   const isNpx = binName === 'npx'
   // Find package manager being shadowed by this process.
   const binPath = isNpx ? getNpxBinPath() : getNpmBinPath()
-  // Lazily access constants.WIN32.
   const { WIN32 } = constants
   // TODO: Is this early exit needed?
   if (WIN32 && binPath) {
@@ -28,7 +27,6 @@ export async function installLinks(
   if (!shadowed) {
     if (WIN32) {
       await cmdShim(
-        // Lazily access constants.distPath.
         path.join(constants.distPath, `${binName}-cli.js`),
         path.join(realBinPath, binName),
       )

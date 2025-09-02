@@ -22,7 +22,6 @@ const COMMON_DEFAULT_BRANCH_NAMES = [
 ]
 
 export async function getBaseBranch(cwd = process.cwd()): Promise<string> {
-  // Lazily access constants.ENV properties.
   const { GITHUB_BASE_REF, GITHUB_REF_NAME, GITHUB_REF_TYPE } = constants.ENV
   // 1. In a pull request, this is always the base branch.
   if (GITHUB_BASE_REF) {
@@ -78,7 +77,6 @@ export async function getRepoInfo(
 
 export async function getRepoName(cwd = process.cwd()): Promise<string> {
   const repoInfo = await getRepoInfo(cwd)
-  // Lazily access constants.SOCKET_DEFAULT_REPOSITORY.
   return repoInfo?.repo ?? constants.SOCKET_DEFAULT_REPOSITORY
 }
 
@@ -151,7 +149,6 @@ export async function detectDefaultBranch(
       return branch
     }
   }
-  // Lazily access constants.SOCKET_DEFAULT_BRANCH.
   return constants.SOCKET_DEFAULT_BRANCH
 }
 
@@ -262,9 +259,7 @@ export async function gitCommit(
   }
   const {
     cwd = process.cwd(),
-    // Lazily access constants.ENV.SOCKET_CLI_GIT_USER_EMAIL.
     email = constants.ENV.SOCKET_CLI_GIT_USER_EMAIL,
-    // Lazily access constants.ENV.SOCKET_CLI_GIT_USER_NAME.
     user = constants.ENV.SOCKET_CLI_GIT_USER_NAME,
   } = { __proto__: null, ...options } as GitCreateAndPushBranchOptions
 

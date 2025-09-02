@@ -102,7 +102,6 @@ async function execGradleWithSpinner(
   commandArgs: string[],
   cwd: string,
 ): Promise<{ code: number; stdout: string; stderr: string }> {
-  // Lazily access constants.spinner.
   const { spinner } = constants
 
   let pass = false
