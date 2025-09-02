@@ -21,14 +21,16 @@ const nodejsPlatformTypes = new Set([
   'typescript',
 ])
 
-function argvToArray(argv: {
+export type ArgvObject = {
   [key: string]: boolean | null | number | string | Array<string | number>
-}): string[] {
-  if (argv['help']) {
+}
+
+function argvToArray(argvObj: ArgvObject): string[] {
+  if (argvObj['help']) {
     return ['--help']
   }
   const result = []
-  for (const { 0: key, 1: value } of Object.entries(argv)) {
+  for (const { 0: key, 1: value } of Object.entries(argvObj)) {
     if (key === '_' || key === '--') {
       continue
     }
@@ -44,28 +46,27 @@ function argvToArray(argv: {
       result.push(`--${key}`, ...value.map(String))
     }
   }
-  const pathArgs = argv['_'] as string[]
+  const pathArgs = argvObj['_'] as string[]
   if (Array.isArray(pathArgs)) {
     result.push(...pathArgs)
   }
-  const argsAfterDoubleHyphen = argv['--'] as string[]
+  const argsAfterDoubleHyphen = argvObj['--'] as string[]
   if (Array.isArray(argsAfterDoubleHyphen)) {
     result.push('--', ...argsAfterDoubleHyphen)
   }
   return result
 }
 
-export async function runCdxgen(yargvWithYes: any) {
+export async function runCdxgen(argvObj: ArgvObject) {
   let cleanupPackageLock = false
-  const { yes, ...yargv } = { __proto__: null, ...yargvWithYes } as any
-  const yesArgs = yes ? ['--yes'] : []
+  const argvMutable = { __proto__: null, ...argvObj } as ArgvObject
   if (
-    yargv.type !== YARN &&
-    nodejsPlatformTypes.has(yargv.type) &&
+    argvMutable['type'] !== YARN &&
+    nodejsPlatformTypes.has(argvMutable['type'] as string) &&
     existsSync(`./${YARN_LOCK}`)
   ) {
     if (existsSync(`./${PACKAGE_LOCK_JSON}`)) {
-      yargv.type = 'npm'
+      argvMutable['type'] = 'npm'
     } else {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
@@ -73,16 +74,17 @@ export async function runCdxgen(yargvWithYes: any) {
         await shadowBin(
           'npx',
           [
-            ...yesArgs,
+            '--yes',
             `synp@${constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
             '--source-file',
             `./${YARN_LOCK}`,
           ],
           {
+            apiToken: constants.SOCKET_PUBLIC_API_TOKEN,
             stdio: 'inherit',
           },
         )
-        yargv.type = 'npm'
+        argvMutable['type'] = 'npm'
         cleanupPackageLock = true
       } catch {}
     }
@@ -90,11 +92,12 @@ export async function runCdxgen(yargvWithYes: any) {
   await shadowBin(
     'npx',
     [
-      ...yesArgs,
+      '--yes',
       `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
-      ...argvToArray(yargv),
+      ...argvToArray(argvMutable),
     ],
     {
+      apiToken: constants.SOCKET_PUBLIC_API_TOKEN,
       stdio: 'inherit',
     },
   )
@@ -103,8 +106,11 @@ export async function runCdxgen(yargvWithYes: any) {
       await fs.rm(`./${PACKAGE_LOCK_JSON}`)
     } catch {}
   }
-  const fullOutputPath = path.join(process.cwd(), yargv.output)
+  const fullOutputPath = path.join(
+    process.cwd(),
+    argvMutable['output'] as string,
+  )
   if (existsSync(fullOutputPath)) {
-    logger.log(colors.cyanBright(`${yargv.output} created!`))
+    logger.log(colors.cyanBright(`${argvMutable['output']} created!`))
   }
 }
