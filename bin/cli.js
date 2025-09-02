@@ -38,7 +38,7 @@ spawn(
   .process.on('exit', (code, signalName) => {
     if (signalName) {
       process.kill(process.pid, signalName)
-    } else if (code !== null) {
+    } else if (code) {
       // eslint-disable-next-line n/no-process-exit
       process.exit(code)
     }

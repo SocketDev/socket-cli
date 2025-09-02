@@ -59,7 +59,7 @@ export async function convertGradleToMaven({
       logger.log(output)
       logger.groupEnd()
     }
-    if (output.code !== 0) {
+    if (output.code) {
       process.exitCode = 1
       logger.fail(`Gradle exited with exit code ${output.code}`)
       // (In verbose mode, stderr was printed above, no need to repeat it)
