@@ -1,4 +1,4 @@
-import { existsSync, promises as fs } from 'node:fs'
+import { existsSync, rmSync } from 'node:fs'
 import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
@@ -7,6 +7,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
 import shadowBin from '../../shadow/npm/bin.mts'
+
+import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
 
 const { PACKAGE_LOCK_JSON, YARN, YARN_LOCK } = constants
 
@@ -57,7 +59,7 @@ function argvToArray(argvObj: ArgvObject): string[] {
   return result
 }
 
-export async function runCdxgen(argvObj: ArgvObject) {
+export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   let cleanupPackageLock = false
   const argvMutable = { __proto__: null, ...argvObj } as ArgvObject
   if (
@@ -71,7 +73,7 @@ export async function runCdxgen(argvObj: ArgvObject) {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
       try {
-        await shadowBin(
+        const { spawnPromise: synpPromise } = await shadowBin(
           'npx',
           [
             '--yes',
@@ -84,12 +86,14 @@ export async function runCdxgen(argvObj: ArgvObject) {
             stdio: 'inherit',
           },
         )
+        await synpPromise
         argvMutable['type'] = 'npm'
         cleanupPackageLock = true
       } catch {}
     }
   }
-  await shadowBin(
+
+  const shadowResult = await shadowBin(
     'npx',
     [
       '--yes',
@@ -102,17 +106,21 @@ export async function runCdxgen(argvObj: ArgvObject) {
     },
   )
 
-  if (cleanupPackageLock) {
-    try {
-      await fs.rm(`./${PACKAGE_LOCK_JSON}`)
-    } catch {}
-  }
-
-  const outputPath = argvMutable['output'] as string
-  if (outputPath) {
-    const fullOutputPath = path.join(process.cwd(), outputPath)
-    if (existsSync(fullOutputPath)) {
-      logger.log(colors.cyanBright(`${outputPath} created!`))
+  shadowResult.spawnPromise.process.on('exit', () => {
+    if (cleanupPackageLock) {
+      try {
+        rmSync(`./${PACKAGE_LOCK_JSON}`)
+      } catch {}
     }
-  }
+
+    const outputPath = argvMutable['output'] as string
+    if (outputPath) {
+      const fullOutputPath = path.join(process.cwd(), outputPath)
+      if (existsSync(fullOutputPath)) {
+        logger.log(colors.cyanBright(`${outputPath} created!`))
+      }
+    }
+  })
+
+  return shadowResult
 }
