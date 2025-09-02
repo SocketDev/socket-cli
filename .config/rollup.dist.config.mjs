@@ -60,7 +60,6 @@ const {
 
 const BLESSED = 'blessed'
 const BLESSED_CONTRIB = 'blessed-contrib'
-const COANA_TECH_CLI = '@coana-tech/cli'
 const FLAGS = 'flags'
 const LICENSE_MD = `LICENSE.md`
 const SENTRY_NODE = '@sentry/node'
@@ -89,8 +88,7 @@ async function copyBashCompletion() {
 
 async function copyExternalPackages() {
   // Lazily access constants path properties.
-  const { blessedContribPath, blessedPath, coanaPath, socketRegistryPath } =
-    constants
+  const { blessedContribPath, blessedPath, socketRegistryPath } = constants
   const nmPath = path.join(constants.rootPath, NODE_MODULES)
   const blessedContribNmPath = path.join(nmPath, BLESSED_CONTRIB)
 
@@ -104,8 +102,8 @@ async function copyExternalPackages() {
       .map(n =>
         copyPackage(n, {
           strict:
-            // Skip adding 'use strict' directives to Coana and Socket packages.
-            n !== COANA_TECH_CLI && n !== SOCKET_SECURITY_REGISTRY,
+            // Skip adding 'use strict' directives to Socket packages.
+            n !== SOCKET_SECURITY_REGISTRY,
         }),
       ),
     // Copy 'blessed-contrib' license over to
@@ -123,7 +121,6 @@ async function copyExternalPackages() {
     [
       [blessedPath, ['lib/**/*.js', 'usr/**/**', 'vendor/**/*.js']],
       [blessedContribPath, ['lib/**/*.js', 'index.js']],
-      [coanaPath, ['**/*.mjs', 'repos/**/*']],
       [
         socketRegistryPath,
         [

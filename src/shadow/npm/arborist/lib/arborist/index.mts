@@ -14,10 +14,10 @@ import type {
 } from '../../types.mts'
 
 const {
-  NPX,
   SOCKET_CLI_ACCEPT_RISKS,
-  SOCKET_CLI_SAFE_BIN,
-  SOCKET_CLI_SAFE_PROGRESS,
+  SOCKET_CLI_SHADOW_API_TOKEN,
+  SOCKET_CLI_SHADOW_BIN,
+  SOCKET_CLI_SHADOW_PROGRESS,
   SOCKET_CLI_VIEW_ALL_RISKS,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIpc },
@@ -97,7 +97,7 @@ export class SafeArborist extends Arborist {
       ...(args.length ? args[0] : undefined),
     } as ArboristReifyOptions
     const ipc = await getIpc()
-    const binName = ipc[SOCKET_CLI_SAFE_BIN]
+    const binName = ipc[SOCKET_CLI_SHADOW_BIN]
     if (!binName) {
       return await this[kRiskyReify](...args)
     }
@@ -112,14 +112,15 @@ export class SafeArborist extends Arborist {
     )
     // Lazily access constants.ENV.SOCKET_CLI_ACCEPT_RISKS.
     const acceptRisks = constants.ENV.SOCKET_CLI_ACCEPT_RISKS
-    const progress = ipc[SOCKET_CLI_SAFE_PROGRESS]
+    const progress = ipc[SOCKET_CLI_SHADOW_PROGRESS]
     const spinner =
       options['silent'] || !progress
         ? undefined
         : // Lazily access constants.spinner.
           constants.spinner
-    const isSafeNpx = binName === NPX
+    const isShadowNpx = binName === 'npx'
     const alertsMap = await getAlertsMapFromArborist(this, {
+      apiToken: ipc[SOCKET_CLI_SHADOW_API_TOKEN],
       spinner,
       filter:
         acceptRisks || options.dryRun || options['yes']
@@ -130,7 +131,7 @@ export class SafeArborist extends Arborist {
             }
           : {
               actions: ['error', 'monitor', 'warn'],
-              existing: isSafeNpx,
+              existing: isShadowNpx,
             },
     })
     if (alertsMap.size) {
@@ -158,7 +159,7 @@ export class SafeArborist extends Arborist {
       logger.success(
         `Socket ${binName} ${acceptRisks ? 'accepted' : 'found no'} risks`,
       )
-      if (binName === NPX) {
+      if (isShadowNpx) {
         logger.log(`Running ${options.add![0]}`)
       }
     }

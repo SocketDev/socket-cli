@@ -189,7 +189,7 @@ export async function queryApi(path: string, apiToken: string) {
 
 export async function queryApiSafeText(
   path: string,
-  fetchSpinnerDesc?: string,
+  desc?: string | undefined,
 ): Promise<CResult<string>> {
   const apiToken = getDefaultApiToken()
   if (!apiToken) {
@@ -204,23 +204,21 @@ export async function queryApiSafeText(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  if (fetchSpinnerDesc) {
-    spinner.start(`Requesting ${fetchSpinnerDesc} from API...`)
+  if (desc) {
+    spinner.start(`Requesting ${desc} from API...`)
   }
 
   let result
   try {
     result = await queryApi(path, apiToken)
-    if (fetchSpinnerDesc) {
+    if (desc) {
       spinner.successAndStop(
-        `Received Socket API response (after requesting ${fetchSpinnerDesc}).`,
+        `Received Socket API response (after requesting ${desc}).`,
       )
     }
   } catch (e) {
-    if (fetchSpinnerDesc) {
-      spinner.failAndStop(
-        `An error was thrown while requesting ${fetchSpinnerDesc}.`,
-      )
+    if (desc) {
+      spinner.failAndStop(`An error was thrown while requesting ${desc}.`)
     }
 
     const cause = (e as undefined | { message: string })?.message
@@ -263,9 +261,9 @@ export async function queryApiSafeText(
 
 export async function queryApiSafeJson<T>(
   path: string,
-  fetchSpinnerDesc = '',
+  desc = '',
 ): Promise<CResult<T>> {
-  const result = await queryApiSafeText(path, fetchSpinnerDesc)
+  const result = await queryApiSafeText(path, desc)
 
   if (!result.ok) {
     return result
@@ -290,7 +288,7 @@ export async function sendApiRequest<T>(
   options: {
     method: 'POST' | 'PUT'
     body?: unknown
-    fetchSpinnerDesc?: string
+    desc?: string
   },
 ): Promise<CResult<T>> {
   const apiToken = getDefaultApiToken()
@@ -313,8 +311,8 @@ export async function sendApiRequest<T>(
   // Lazily access constants.spinner.
   const { spinner } = constants
 
-  if (options.fetchSpinnerDesc) {
-    spinner.start(`Requesting ${options.fetchSpinnerDesc} from API...`)
+  if (options.desc) {
+    spinner.start(`Requesting ${options.desc} from API...`)
   }
 
   let result
@@ -332,15 +330,15 @@ export async function sendApiRequest<T>(
       `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
       fetchOptions,
     )
-    if (options.fetchSpinnerDesc) {
+    if (options.desc) {
       spinner.successAndStop(
-        `Received Socket API response (after requesting ${options.fetchSpinnerDesc}).`,
+        `Received Socket API response (after requesting ${options.desc}).`,
       )
     }
   } catch (e) {
-    if (options.fetchSpinnerDesc) {
+    if (options.desc) {
       spinner.failAndStop(
-        `An error was thrown while requesting ${options.fetchSpinnerDesc}.`,
+        `An error was thrown while requesting ${options.desc}.`,
       )
     }
 

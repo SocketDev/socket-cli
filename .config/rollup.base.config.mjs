@@ -23,6 +23,7 @@ import {
 } from '../scripts/utils/packages.js'
 
 const {
+  INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION,
   INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
   INLINED_SOCKET_CLI_HOMEPAGE,
   INLINED_SOCKET_CLI_LEGACY_BUILD,
@@ -38,7 +39,6 @@ const {
 } = constants
 
 export const EXTERNAL_PACKAGES = [
-  '@coana-tech/cli',
   '@socketsecurity/registry',
   'blessed',
   'blessed-contrib',
@@ -194,6 +194,13 @@ export default function baseConfig(extendConfig = {}) {
         delimiters: ['(?<![\'"])\\b', '(?![\'"])'],
         preventAssignment: true,
         values: [
+          [
+            INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION,
+            () =>
+              JSON.stringify(
+                getRootPkgJsonSync().devDependencies['@coana-tech/cli'],
+              ),
+          ],
           [
             INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION,
             () =>

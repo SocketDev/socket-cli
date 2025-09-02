@@ -7,8 +7,6 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../constants.mts'
 import { findBinPathDetailsSync, findNpmDirPathSync } from './path-resolve.mts'
 
-const { NODE_MODULES, NPM, NPX, SOCKET_CLI_ISSUES_URL } = constants
-
 function exitWithBinPathError(binName: string): never {
   logger.fail(
     `Socket unable to locate ${binName}; ensure it is available in the PATH environment variable`,
@@ -24,7 +22,7 @@ export function getNpmBinPath(): string {
   if (_npmBinPath === undefined) {
     _npmBinPath = getNpmBinPathDetails().path
     if (!_npmBinPath) {
-      exitWithBinPathError(NPM)
+      exitWithBinPathError('npm')
     }
   }
   return _npmBinPath
@@ -33,7 +31,7 @@ export function getNpmBinPath(): string {
 let _npmBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
 function getNpmBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
   if (_npmBinPathDetails === undefined) {
-    _npmBinPathDetails = findBinPathDetailsSync(NPM)
+    _npmBinPathDetails = findBinPathDetailsSync('npm')
   }
   return _npmBinPathDetails
 }
@@ -44,7 +42,6 @@ export function getNpmDirPath() {
     const npmBinPath = getNpmBinPath()
     _npmDirPath = npmBinPath ? findNpmDirPathSync(npmBinPath) : undefined
     if (!_npmDirPath) {
-      // Lazily access constants.ENV.SOCKET_CLI_NPM_PATH.
       _npmDirPath = constants.ENV.SOCKET_CLI_NPM_PATH || undefined
     }
     if (!_npmDirPath) {
@@ -52,7 +49,9 @@ export function getNpmDirPath() {
       if (npmBinPath) {
         message += `\nSearched parent directories of ${path.dirname(npmBinPath)}.`
       }
-      message += `\n\nThis is may be a bug with socket-npm related to changes to the npm CLI.\nPlease report to ${SOCKET_CLI_ISSUES_URL}.`
+      message +=
+        '\n\nThis is may be a bug with socket-npm related to changes to the npm CLI.'
+      message += `\nPlease report to ${constants.SOCKET_CLI_ISSUES_URL}.`
       logger.fail(message)
       // The exit code 127 indicates that the command or binary being executed
       // could not be found.
@@ -67,7 +66,7 @@ let _npmRequire: NodeJS.Require | undefined
 export function getNpmRequire(): NodeJS.Require {
   if (_npmRequire === undefined) {
     const npmDirPath = getNpmDirPath()
-    const npmNmPath = path.join(npmDirPath, NODE_MODULES, NPM)
+    const npmNmPath = path.join(npmDirPath, 'node_modules/npm')
     _npmRequire = Module.createRequire(
       path.join(
         existsSync(npmNmPath) ? npmNmPath : npmDirPath,
@@ -83,7 +82,7 @@ export function getNpxBinPath(): string {
   if (_npxBinPath === undefined) {
     _npxBinPath = getNpxBinPathDetails().path
     if (!_npxBinPath) {
-      exitWithBinPathError(NPX)
+      exitWithBinPathError('npx')
     }
   }
   return _npxBinPath
@@ -92,7 +91,7 @@ export function getNpxBinPath(): string {
 let _npxBinPathDetails: ReturnType<typeof findBinPathDetailsSync> | undefined
 function getNpxBinPathDetails(): ReturnType<typeof findBinPathDetailsSync> {
   if (_npxBinPathDetails === undefined) {
-    _npxBinPathDetails = findBinPathDetailsSync(NPX)
+    _npxBinPathDetails = findBinPathDetailsSync('npx')
   }
   return _npxBinPathDetails
 }

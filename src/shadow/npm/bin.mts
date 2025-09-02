@@ -4,17 +4,37 @@ import {
   isNpmNodeOptionsFlag,
   isNpmProgressFlag,
 } from '@socketsecurity/registry/lib/npm'
+import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { installLinks } from './link.mts'
 import constants from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
+import { getPublicApiToken } from '../../utils/sdk.mts'
+
+import type {
+  SpawnExtra,
+  SpawnOptions,
+  SpawnResult,
+} from '@socketsecurity/registry/lib/spawn'
+
+export type ShadowBinOptions = SpawnOptions & {
+  apiToken?: string | undefined
+}
 
 export default async function shadowBin(
   binName: 'npm' | 'npx',
-  args = process.argv.slice(2),
-) {
+  args: string[] | readonly string[] = process.argv.slice(2),
+  options?: ShadowBinOptions | undefined,
+  extra?: SpawnExtra | undefined,
+): Promise<SpawnResult<string, SpawnExtra | undefined>> {
   process.exitCode = 1
+  const {
+    apiToken = getPublicApiToken(),
+    env: spawnEnv,
+    ...spawnOptions
+  } = { __proto__: null, ...options } as ShadowBinOptions
+  const isShadowNpm = binName === 'npm'
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   const binArgs = rawBinArgs.filter(
@@ -24,7 +44,7 @@ export default async function shadowBin(
   const progressArg = rawBinArgs.findLast(isNpmProgressFlag) !== '--no-progress'
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const permArgs =
-    binName === 'npm' &&
+    isShadowNpm &&
     // Lazily access constants.SUPPORTS_NODE_PERMISSION_FLAG.
     constants.SUPPORTS_NODE_PERMISSION_FLAG
       ? [
@@ -48,6 +68,18 @@ export default async function shadowBin(
   // The default value of loglevel is "notice". We default to "error" which is
   // two levels quieter.
   const logLevelArgs = isSilent ? ['--loglevel', 'error'] : []
+
+  let stdio = getOwn(spawnOptions, 'stdio')
+  if (typeof stdio === 'string') {
+    stdio = [stdio, stdio, stdio, 'ipc']
+  } else if (Array.isArray(stdio)) {
+    if (!stdio.includes('ipc')) {
+      stdio = stdio.concat('ipc')
+    }
+  } else {
+    stdio = ['pipe', 'pipe', 'pipe', 'ipc']
+  }
+
   const spawnPromise = spawn(
     // Lazily access constants.execPath.
     constants.execPath,
@@ -86,15 +118,18 @@ export default async function shadowBin(
       ...otherArgs,
     ],
     {
+      ...spawnOptions,
       env: {
         ...process.env,
         // Lazily access constants.processEnv.
         ...constants.processEnv,
+        ...spawnEnv,
       },
-      // 'inherit' + 'ipc'
-      stdio: [0, 1, 2, 'ipc'],
+      stdio,
     },
+    extra,
   )
+
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on('exit', (code, signalName) => {
     if (signalName) {
@@ -108,11 +143,15 @@ export default async function shadowBin(
   spawnPromise.process.send({
     // Lazily access constants.SOCKET_IPC_HANDSHAKE.
     [constants.SOCKET_IPC_HANDSHAKE]: {
-      // Lazily access constants.SOCKET_CLI_SAFE_BIN.
-      [constants.SOCKET_CLI_SAFE_BIN]: binName,
-      // Lazily access constants.SOCKET_CLI_SAFE_PROGRESS.
-      [constants.SOCKET_CLI_SAFE_PROGRESS]: progressArg,
+      // Lazily access constants.SOCKET_CLI_SHADOW_API_TOKEN.
+      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: apiToken,
+      // Lazily access constants.SOCKET_CLI_SHADOW_BIN.
+      [constants.SOCKET_CLI_SHADOW_BIN]: binName,
+      // Lazily access constants.SOCKET_CLI_SHADOW_PROGRESS.
+      [constants.SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
     },
   })
-  await spawnPromise
+
+  // eslint-disable-next-line @typescript-eslint/return-await
+  return spawnPromise
 }

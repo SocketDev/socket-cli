@@ -6,7 +6,7 @@ import {
   isNpmProgressFlag,
   resolveBinPathSync,
 } from '@socketsecurity/registry/lib/npm'
-import { isObject } from '@socketsecurity/registry/lib/objects'
+import { getOwn, isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../constants.mts'
@@ -17,22 +17,22 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 const {
   NPM,
-  SOCKET_CLI_SAFE_BIN,
-  SOCKET_CLI_SAFE_PROGRESS,
+  SOCKET_CLI_SHADOW_BIN,
+  SOCKET_CLI_SHADOW_PROGRESS,
   SOCKET_IPC_HANDSHAKE,
 } = constants
 
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
-export type SafeNpmInstallOptions = SpawnOption & {
+export type ShadowNpmInstallOptions = SpawnOption & {
   agentExecPath?: string | undefined
   args?: string[] | readonly string[] | undefined
   ipc?: object | undefined
   spinner?: Spinner | undefined
 }
 
-export function safeNpmInstall(
-  options?: SafeNpmInstallOptions,
+export function shadowNpmInstall(
+  options?: ShadowNpmInstallOptions,
 ): SpawnResult<string, Record<any, any> | undefined> {
   const {
     agentExecPath = getNpmBinPath(),
@@ -40,27 +40,33 @@ export function safeNpmInstall(
     ipc,
     spinner,
     ...spawnOptions
-  } = { __proto__: null, ...options } as SafeNpmInstallOptions
-  let stdio = spawnOptions.stdio
-  const useIpc = isObject(ipc)
-  // Include 'ipc' in the spawnOptions.stdio when an options.ipc object is provided.
-  // See https://github.com/nodejs/node/blob/v23.6.0/lib/child_process.js#L161-L166
-  // and https://github.com/nodejs/node/blob/v23.6.0/lib/internal/child_process.js#L238.
-  if (typeof stdio === 'string') {
-    stdio = useIpc ? [stdio, stdio, stdio, 'ipc'] : [stdio, stdio, stdio]
-  } else if (useIpc && Array.isArray(stdio) && !stdio.includes('ipc')) {
-    stdio = stdio.concat('ipc')
-  }
+  } = { __proto__: null, ...options } as ShadowNpmInstallOptions
   const useDebug = isDebug('stdio')
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
-  const progressArg = rawBinArgs.findLast(isNpmProgressFlag) !== '--no-progress'
   const binArgs = rawBinArgs.filter(
     a => !isNpmAuditFlag(a) && !isNpmFundFlag(a) && !isNpmProgressFlag(a),
   )
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
+  const progressArg = rawBinArgs.findLast(isNpmProgressFlag) !== '--no-progress'
   const isSilent = !useDebug && !binArgs.some(isNpmLoglevelFlag)
   const logLevelArgs = isSilent ? ['--loglevel', 'silent'] : []
+  const useIpc = isObject(ipc)
+
+  // Include 'ipc' in the spawnOptions.stdio when an options.ipc object is provided.
+  // See https://github.com/nodejs/node/blob/v23.6.0/lib/child_process.js#L161-L166
+  // and https://github.com/nodejs/node/blob/v23.6.0/lib/internal/child_process.js#L238.
+  let stdio = getOwn(spawnOptions, 'stdio')
+  if (typeof stdio === 'string') {
+    stdio = useIpc ? [stdio, stdio, stdio, 'ipc'] : [stdio, stdio, stdio]
+  } else if (Array.isArray(stdio)) {
+    if (useIpc && !stdio.includes('ipc')) {
+      stdio = stdio.concat('ipc')
+    }
+  } else {
+    stdio = useIpc ? ['pipe', 'pipe', 'pipe', 'ipc'] : 'pipe'
+  }
+
   const spawnPromise = spawn(
     // Lazily access constants.execPath.
     constants.execPath,
@@ -96,25 +102,27 @@ export function safeNpmInstall(
       ...otherArgs,
     ],
     {
-      spinner,
       ...spawnOptions,
-      stdio,
       env: {
         ...process.env,
         // Lazily access constants.processEnv.
         ...constants.processEnv,
-        ...spawnOptions.env,
+        ...getOwn(spawnOptions, 'env'),
       },
+      spinner,
+      stdio,
     },
   )
+
   if (useIpc) {
     spawnPromise.process.send({
       [SOCKET_IPC_HANDSHAKE]: {
-        [SOCKET_CLI_SAFE_BIN]: NPM,
-        [SOCKET_CLI_SAFE_PROGRESS]: progressArg,
+        [SOCKET_CLI_SHADOW_BIN]: NPM,
+        [SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
         ...ipc,
       },
     })
   }
+
   return spawnPromise
 }

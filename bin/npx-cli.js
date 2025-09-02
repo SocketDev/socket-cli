@@ -7,4 +7,4 @@ const rootPath = path.join(__dirname, '..')
 Module.enableCompileCache?.(path.join(rootPath, '.cache'))
 
 const shadowBin = require(path.join(rootPath, 'dist/shadow-npm-bin.js'))
-shadowBin('npx')
+shadowBin('npx', process.argv.slice(2), { stdio: 'inherit' })
