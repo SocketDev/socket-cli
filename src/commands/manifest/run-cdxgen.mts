@@ -101,16 +101,18 @@ export async function runCdxgen(argvObj: ArgvObject) {
       stdio: 'inherit',
     },
   )
+
   if (cleanupPackageLock) {
     try {
       await fs.rm(`./${PACKAGE_LOCK_JSON}`)
     } catch {}
   }
-  const fullOutputPath = path.join(
-    process.cwd(),
-    argvMutable['output'] as string,
-  )
-  if (existsSync(fullOutputPath)) {
-    logger.log(colors.cyanBright(`${argvMutable['output']} created!`))
+
+  const outputPath = argvMutable['output'] as string
+  if (outputPath) {
+    const fullOutputPath = path.join(process.cwd(), outputPath)
+    if (existsSync(fullOutputPath)) {
+      logger.log(colors.cyanBright(`${outputPath} created!`))
+    }
   }
 }
