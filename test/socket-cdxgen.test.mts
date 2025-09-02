@@ -42,7 +42,7 @@ describe('Socket manifest cdxgen command', async () => {
         // eslint-disable-next-line no-await-in-loop
         const output = await spawn(
           constants.execPath,
-          [binCliPath, 'manifest', 'cdxgen', '--yes', command],
+          [binCliPath, 'manifest', 'cdxgen', command],
           spawnOpts,
         )
         expect(
@@ -74,7 +74,7 @@ describe('Socket manifest cdxgen command', async () => {
         () =>
           spawn(
             constants.execPath,
-            [binCliPath, 'manifest', 'cdxgen', '-y', command],
+            [binCliPath, 'manifest', 'cdxgen', command],
             spawnOpts,
           ),
         // @ts-ignore toHaveStderrInclude is defined above
@@ -89,7 +89,7 @@ describe('Socket manifest cdxgen command', async () => {
         () =>
           spawn(
             constants.execPath,
-            [binCliPath, 'manifest', 'cdxgen', '--yes', command],
+            [binCliPath, 'manifest', 'cdxgen', command],
             spawnOpts,
           ),
         // @ts-ignore toHaveStderrInclude is defined above
@@ -103,7 +103,7 @@ describe('Socket manifest cdxgen command', async () => {
         () =>
           spawn(
             constants.execPath,
-            [binCliPath, 'manifest', 'cdxgen', '-y', '-u', '-h', '--unknown'],
+            [binCliPath, 'manifest', 'cdxgen', '-u', '-h', '--unknown'],
             spawnOpts,
           ),
         // @ts-ignore toHaveStderrInclude is defined above
