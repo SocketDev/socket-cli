@@ -10,8 +10,6 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketArtifact } from '../../utils/alert/artifact.mts'
 
-const { SOCKET_WEBSITE_URL } = constants
-
 export async function outputScanView(
   result: CResult<SocketArtifact[]>,
   orgSlug: string,
@@ -93,7 +91,7 @@ Scan ID: ${scanId}
 
 ${md}
 
-View this report at: ${SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sbom/${scanId}
+View this report at: ${constants.SOCKET_WEBSITE_URL}/dashboard/org/${orgSlug}/sbom/${scanId}
   `.trim() + '\n'
 
   if (filePath && filePath !== '-') {

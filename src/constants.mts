@@ -589,7 +589,6 @@ const lazySocketAppDataPath = (): string | undefined => {
   // - Win: %LOCALAPPDATA%\socket\settings or return undefined
   // - Mac: %XDG_DATA_HOME%/socket/settings or "~/Library/Application Support/socket/settings"
   // - Linux: %XDG_DATA_HOME%/socket/settings or "~/.local/share/socket/settings"
-
   const { WIN32 } = constants
   let dataHome: string | undefined = WIN32
     ? constants.ENV.LOCALAPPDATA

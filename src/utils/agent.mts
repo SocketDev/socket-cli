@@ -8,8 +8,6 @@ import { shadowNpmInstall } from '../shadow/npm/install.mts'
 
 import type { EnvDetails } from './package-environment.mts'
 
-const { NPM, PNPM } = constants
-
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
 export type AgentInstallOptions = SpawnOption & {
@@ -24,8 +22,10 @@ export function runAgentInstall(
   options?: AgentInstallOptions | undefined,
 ): AgentSpawnResult {
   const { agent, agentExecPath } = pkgEnvDetails
+  const isNpm = agent === 'npm'
+  const isPnpm = agent === 'pnpm'
   // All package managers support the "install" command.
-  if (agent === NPM) {
+  if (isNpm) {
     return shadowNpmInstall({
       agentExecPath,
       ...options,
@@ -36,8 +36,7 @@ export function runAgentInstall(
     spinner,
     ...spawnOptions
   } = { __proto__: null, ...options } as AgentInstallOptions
-  const skipNodeHardenFlags =
-    agent === PNPM && pkgEnvDetails.agentVersion.major < 11
+  const skipNodeHardenFlags = isPnpm && pkgEnvDetails.agentVersion.major < 11
   return spawn(agentExecPath, ['install', ...args], {
     shell: constants.WIN32,
     spinner,

@@ -6,7 +6,6 @@ import { hasKeys } from '@socketsecurity/registry/lib/objects'
 import { agentFix } from './agent-fix.mts'
 import { getActualTree } from './get-actual-tree.mts'
 import { getFixAlertsMapOptions } from './shared.mts'
-import constants from '../../constants.mts'
 import { runAgentInstall } from '../../utils/agent.mts'
 import {
   getAlertsMapFromPnpmLockfile,
@@ -30,8 +29,6 @@ import type { NodeClass } from '../../shadow/npm/arborist/types.mts'
 import type { CResult, StringKeyValueObject } from '../../types.mts'
 import type { EnvDetails } from '../../utils/package-environment.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
-
-const { OVERRIDES, PNPM } = constants
 
 async function install(
   pkgEnvDetails: EnvDetails,
@@ -185,7 +182,7 @@ export async function pnpmFix(
             pkgEnvDetails,
             editablePkgJson.content,
           )
-          const oldPnpmSection = editablePkgJson.content[PNPM] as
+          const oldPnpmSection = editablePkgJson.content['pnpm'] as
             | StringKeyValueObject
             | undefined
           const overrideKey = `${packument.name}@${vulnerableVersionRange}`
@@ -193,10 +190,10 @@ export async function pnpmFix(
           revertOverridesSrc = extractOverridesFromPnpmLockSrc(lockSrc)
           // Track existing overrides in the root package.json to revert to later.
           revertOverrides = {
-            [PNPM]: oldPnpmSection
+            pnpm: oldPnpmSection
               ? {
                   ...oldPnpmSection,
-                  [OVERRIDES]: hasKeys(oldOverrides)
+                  overrides: hasKeys(oldOverrides)
                     ? {
                         ...oldOverrides,
                         [overrideKey]: undefined,
@@ -210,9 +207,9 @@ export async function pnpmFix(
           // Update overrides in the root package.json so that when `pnpm install`
           // generates pnpm-lock.yaml it updates transitive dependencies too.
           editablePkgJson.update({
-            [PNPM]: {
+            pnpm: {
               ...oldPnpmSection,
-              [OVERRIDES]: {
+              overrides: {
                 ...oldOverrides,
                 [overrideKey]: applyRange(
                   oldOverrides?.[overrideKey] ?? oldVersion,

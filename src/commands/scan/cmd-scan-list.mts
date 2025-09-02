@@ -18,8 +18,6 @@ import type {
   CliSubcommand,
 } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW } = constants
-
 export const CMD_NAME = 'list'
 
 const description = 'List the scans for an organization'
@@ -185,7 +183,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 

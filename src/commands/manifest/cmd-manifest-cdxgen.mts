@@ -12,8 +12,6 @@ import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW } = constants
-
 // TODO: Convert yargs to meow.
 const toLower = (arg: string) => arg.toLowerCase()
 const arrayToLower = (arg: string[]) => arg.map(toLower)
@@ -280,7 +278,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 

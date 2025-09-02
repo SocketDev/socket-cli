@@ -6,7 +6,6 @@ import { npmFix } from './npm-fix.mts'
 import { outputFixResult } from './output-fix-result.mts'
 import { pnpmFix } from './pnpm-fix.mts'
 import { CMD_NAME } from './shared.mts'
-import constants from '../../constants.mts'
 import { detectAndValidatePackageEnvironment } from '../../utils/package-environment.mts'
 
 import type { FixConfig } from './agent-fix.mts'
@@ -84,10 +83,11 @@ export async function handleFix({
 
   debugDir('inspect', { pkgEnvDetails })
 
-  const { NPM, PNPM } = constants
   const { agent, agentVersion } = pkgEnvDetails
+  const isNpm = agent === 'npm'
+  const isPnpm = agent === 'pnpm'
 
-  if (agent !== NPM && agent !== PNPM) {
+  if (!isNpm && !isPnpm) {
     await outputFixResult(
       {
         ok: false,
@@ -101,7 +101,7 @@ export async function handleFix({
 
   logger.info(`Fixing packages for ${agent} v${agentVersion}.\n`)
 
-  const fixer = agent === NPM ? npmFix : pnpmFix
+  const fixer = isNpm ? npmFix : pnpmFix
   await outputFixResult(
     await fixer(pkgEnvDetails, {
       autoMerge,

@@ -15,13 +15,6 @@ import { getNpmBinPath } from '../../utils/npm-paths.mts'
 import type { SpawnResult } from '@socketsecurity/registry/lib/spawn'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-const {
-  NPM,
-  SOCKET_CLI_SHADOW_BIN,
-  SOCKET_CLI_SHADOW_PROGRESS,
-  SOCKET_IPC_HANDSHAKE,
-} = constants
-
 type SpawnOption = Exclude<Parameters<typeof spawn>[2], undefined>
 
 export type ShadowNpmInstallOptions = SpawnOption & {
@@ -105,9 +98,9 @@ export function shadowNpmInstall(
 
   if (useIpc) {
     spawnPromise.process.send({
-      [SOCKET_IPC_HANDSHAKE]: {
-        [SOCKET_CLI_SHADOW_BIN]: NPM,
-        [SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
+      [constants.SOCKET_IPC_HANDSHAKE]: {
+        [constants.SOCKET_CLI_SHADOW_BIN]: 'npm',
+        [constants.SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
         ...ipc,
       },
     })

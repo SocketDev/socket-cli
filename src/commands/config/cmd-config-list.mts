@@ -10,8 +10,6 @@ import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW } = constants
-
 const config: CliCommandConfig = {
   commandName: 'list',
   description: 'Show all local CLI config items and their values',
@@ -73,7 +71,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 

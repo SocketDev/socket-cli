@@ -31,8 +31,6 @@ import type {
 import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-const { LOOP_SENTINEL, NPM, NPM_REGISTRY_URL } = constants
-
 function getUrlOrigin(input: string): string {
   try {
     // TODO: URL.parse is available in Node 22.1.0. We can use it when we drop Node 18.
@@ -57,7 +55,7 @@ export function findBestPatchVersion(
     __proto__: null,
     ...options,
   } as BestPatchVersionOptions
-  const manifestData = getManifestData(NPM, node.name)
+  const manifestData = getManifestData('npm', node.name)
   let eligibleVersions
   if (manifestData && manifestData.name === manifestData.package) {
     const major = getMajor(manifestData.version)
@@ -97,7 +95,7 @@ export function findPackageNode(
   const visited = new Set<NodeClass>()
   let sentinel = 0
   while (queue.length) {
-    if (sentinel++ === LOOP_SENTINEL) {
+    if (sentinel++ === constants.LOOP_SENTINEL) {
       throw new Error('Detected infinite loop in findPackageNode')
     }
     const nodeOrLink = queue.pop()!
@@ -135,7 +133,7 @@ export function findPackageNodes(
   const visited = new Set<NodeClass>()
   let sentinel = 0
   while (queue.length) {
-    if (sentinel++ === LOOP_SENTINEL) {
+    if (sentinel++ === constants.LOOP_SENTINEL) {
       throw new Error('Detected infinite loop in findPackageNodes')
     }
     const nodeOrLink = queue.pop()!
@@ -245,6 +243,8 @@ export function getDetailsFromDiff(
     return details
   }
 
+  const { NPM_REGISTRY_URL } = constants
+
   const filterConfig = toFilterConfig({
     existing: false,
     unknownOrigin: true,
@@ -255,7 +255,7 @@ export function getDetailsFromDiff(
   let pos = 0
   let { length: queueLength } = queue
   while (pos < queueLength) {
-    if (pos === LOOP_SENTINEL) {
+    if (pos === constants.LOOP_SENTINEL) {
       throw new Error('Detected infinite loop while walking Arborist diff')
     }
     const currDiff = queue[pos++]!
@@ -346,7 +346,7 @@ export function updateNode(
   node.package.version = newVersion
   // Update node.resolved.
   const purlObj = PackageURL.fromString(idToNpmPurl(node.name))
-  node.resolved = `${NPM_REGISTRY_URL}/${node.name}/-/${purlObj.name}-${newVersion}.tgz`
+  node.resolved = `${constants.NPM_REGISTRY_URL}/${node.name}/-/${purlObj.name}-${newVersion}.tgz`
   // Update node.integrity with the targetPackument.dist.integrity value if available
   // else delete node.integrity so a new value is resolved for the target version.
   const { integrity } = newVersionPackument.dist

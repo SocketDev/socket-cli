@@ -13,8 +13,6 @@ import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW } = constants
-
 const config: CliCommandConfig = {
   commandName: 'conda',
   description:
@@ -181,7 +179,7 @@ async function run(
   )
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 

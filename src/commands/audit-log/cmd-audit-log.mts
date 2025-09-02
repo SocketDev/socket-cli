@@ -15,8 +15,6 @@ import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW, SOCKET_WEBSITE_URL } = constants
-
 export const CMD_NAME = 'audit-log'
 
 const description = 'Look up the audit log for an organization'
@@ -70,7 +68,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     This feature requires an Enterprise Plan. To learn more about getting access
-    to this feature and many more, please visit ${SOCKET_WEBSITE_URL}/pricing
+    to this feature and many more, please visit ${constants.SOCKET_WEBSITE_URL}/pricing
 
     The type FILTER arg is an enum. Defaults to any. It should be one of these:
       associateLabel, cancelInvitation, changeMemberRole, changePlanSubscriptionSeats,
@@ -161,7 +159,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 
