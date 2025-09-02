@@ -32,7 +32,7 @@ export default async function shadowBin(
   const {
     apiToken = getPublicApiToken(),
     env: spawnEnv,
-    ...spawnOptions
+    ...spawnOpts
   } = { __proto__: null, ...options } as ShadowBinOptions
   const isShadowNpm = binName === 'npm'
   const terminatorPos = args.indexOf('--')
@@ -65,7 +65,7 @@ export default async function shadowBin(
   // two levels quieter.
   const logLevelArgs = isSilent ? ['--loglevel', 'error'] : []
 
-  let stdio = getOwn(spawnOptions, 'stdio')
+  let stdio = getOwn(spawnOpts, 'stdio')
   if (typeof stdio === 'string') {
     stdio = [stdio, stdio, stdio, 'ipc']
   } else if (Array.isArray(stdio)) {
@@ -103,7 +103,7 @@ export default async function shadowBin(
       ...otherArgs,
     ],
     {
-      ...spawnOptions,
+      ...spawnOpts,
       env: {
         ...process.env,
         ...constants.processEnv,
