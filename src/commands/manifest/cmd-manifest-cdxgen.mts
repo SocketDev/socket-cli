@@ -152,7 +152,6 @@ const yargsConfig = {
     'resolve-class': ['c'],
     type: ['t'],
     version: ['v'],
-    yes: ['y'],
   },
   array: [
     { key: 'author', type: 'string' },
@@ -187,9 +186,6 @@ const yargsConfig = {
     'server',
     'validate',
     'version',
-    // The --yes flag and -y alias map to the corresponding flag and alias of npx.
-    // https://docs.npmjs.com/cli/v7/commands/npx#compatibility-with-older-npx-versions
-    'yes',
   ],
   string: [
     'api-key',
