@@ -98,6 +98,9 @@ export async function coanaFix(
         tarHash,
         '--apply-fixes-to',
         ...(isAll ? ['all'] : ghsas),
+        ...(fixConfig.rangeStyle
+          ? ['--range-style', fixConfig.rangeStyle]
+          : []),
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
@@ -115,6 +118,9 @@ export async function coanaFix(
         cwd,
         '--manifests-tar-hash',
         tarHash,
+        ...(fixConfig.rangeStyle
+          ? ['--range-style', fixConfig.rangeStyle]
+          : []),
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
