@@ -109,6 +109,7 @@ async function run(
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
     reachDisableAnalytics,
+    reachSkipCache,
   } = cli.flags as {
     cwd: string
     interactive: boolean
@@ -118,6 +119,7 @@ async function run(
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
     reachDisableAnalytics: boolean
+    reachSkipCache: boolean
   }
 
   const dryRun = !!cli.flags['dryRun']
@@ -204,6 +206,7 @@ async function run(
       reachDisableAnalytics: Boolean(reachDisableAnalytics),
       reachEcosystems,
       reachExcludePaths,
+      reachSkipCache: Boolean(reachSkipCache),
     },
   })
 }

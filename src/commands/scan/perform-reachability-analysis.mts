@@ -22,6 +22,7 @@ export type ReachabilityOptions = {
   reachDisableAnalytics: boolean
   reachEcosystems: PURL_Type[]
   reachExcludePaths: string[]
+  reachSkipCache: boolean
 }
 
 export type ReachabilityAnalysisOptions = {
@@ -161,6 +162,7 @@ export async function performReachabilityAnalysis(
     ...(reachabilityOptions.reachExcludePaths.length
       ? ['--exclude-dirs', ...reachabilityOptions.reachExcludePaths]
       : []),
+    ...(reachabilityOptions.reachSkipCache ? ['--skip-cache-usage'] : []),
   ]
 
   // Build environment variables.

@@ -227,6 +227,7 @@ async function run(
     reachAnalysisMemoryLimit,
     reachAnalysisTimeout,
     reachDisableAnalytics,
+    reachSkipCache,
     readOnly,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
@@ -249,6 +250,7 @@ async function run(
     reachAnalysisTimeout: number
     reachAnalysisMemoryLimit: number
     reachDisableAnalytics: boolean
+    reachSkipCache: boolean
   }
 
   const dryRun = !!cli.flags['dryRun']
@@ -424,7 +426,8 @@ async function run(
     isUsingNonDefaultTimeout ||
     isUsingNonDefaultAnalytics ||
     hasReachEcosystems ||
-    hasReachExcludePaths
+    hasReachExcludePaths ||
+    reachSkipCache
 
   const wasValidInput = checkCommandInput(
     outputKind,
@@ -499,6 +502,7 @@ async function run(
       reachAnalysisMemoryLimit: Number(reachAnalysisMemoryLimit),
       reachEcosystems,
       reachExcludePaths,
+      reachSkipCache: Boolean(reachSkipCache),
     },
     readOnly: Boolean(readOnly),
     repoName,
