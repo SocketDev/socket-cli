@@ -19,7 +19,6 @@ import { lockSrcIncludes } from './lockfile-includes-by-agent.mts'
 import { listPackages } from './ls-by-agent.mts'
 import { CMD_NAME } from './shared.mts'
 import { updateManifest } from './update-manifest-by-agent.mts'
-import constants from '../../constants.mts'
 import { cmdPrefixMessage } from '../../utils/cmd.mts'
 import { globWorkspace } from '../../utils/glob.mts'
 import { npa } from '../../utils/npm-package-arg.mts'
@@ -46,9 +45,7 @@ type AddOverridesState = {
   warnedPnpmWorkspaceRequiresNpm: boolean
 }
 
-const { NPM, PNPM } = constants
-
-const manifestNpmOverrides = getManifestData(NPM)
+const manifestNpmOverrides = getManifestData('npm')
 
 export async function addOverrides(
   pkgEnvDetails: EnvDetails,
@@ -76,15 +73,16 @@ export async function addOverrides(
     },
   } = { __proto__: null, ...options } as AddOverridesOptions
   const workspacePkgJsonPaths = await globWorkspace(agent, pkgPath)
+  const isPnpm = agent === 'pnpm'
   const isWorkspace = workspacePkgJsonPaths.length > 0
   const isWorkspaceRoot = pkgPath === rootPath
   const isLockScanned = isWorkspaceRoot && !prod
   const workspace = isWorkspaceRoot ? 'root' : path.relative(rootPath, pkgPath)
   if (
     isWorkspace &&
-    agent === PNPM &&
+    isPnpm &&
     // npmExecPath will === the agent name IF it CANNOT be resolved.
-    npmExecPath === NPM &&
+    npmExecPath === 'npm' &&
     !state.warnedPnpmWorkspaceRequiresNpm
   ) {
     state.warnedPnpmWorkspaceRequiresNpm = true
@@ -128,7 +126,7 @@ export async function addOverrides(
     async ({ 1: data }) => {
       const { name: sockRegPkgName, package: origPkgName, version } = data
       const major = getMajor(version)!
-      const sockOverridePrefix = `${NPM}:${sockRegPkgName}@`
+      const sockOverridePrefix = `npm:${sockRegPkgName}@`
       const sockOverrideSpec = `${sockOverridePrefix}${pin ? version : `^${major}`}`
       for (const { 1: depObj } of depEntries) {
         const sockSpec = hasOwn(depObj, sockRegPkgName)
@@ -196,7 +194,7 @@ export async function addOverrides(
               const sockRegDepAlias = depAliasMap.get(sockRegPkgName)
               const depAlias = sockRegDepAlias ?? origDepAlias
               let newSpec = sockOverrideSpec
-              if (type === NPM && depAlias) {
+              if (type === 'npm' && depAlias) {
                 // With npm one may not set an override for a package that one directly
                 // depends on unless both the dependency and the override itself share
                 // the exact same spec. To make this limitation easier to deal with,

@@ -9,8 +9,6 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import type { ReachabilityAnalysisResult } from './perform-reachability-analysis.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 
-const { DOT_SOCKET_DOT_FACTS_JSON } = constants
-
 export async function outputScanReach(
   result: CResult<ReachabilityAnalysisResult>,
   { cwd, outputKind }: { cwd: string; outputKind: OutputKind },
@@ -31,6 +29,6 @@ export async function outputScanReach(
   logger.log('')
   logger.success('Reachability analysis completed successfully!')
   logger.info(
-    `Reachability report has been written to: ${path.join(cwd, DOT_SOCKET_DOT_FACTS_JSON)}`,
+    `Reachability report has been written to: ${path.join(cwd, constants.DOT_SOCKET_DOT_FACTS_JSON)}`,
   )
 }

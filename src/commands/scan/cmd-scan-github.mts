@@ -20,8 +20,6 @@ import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW } = constants
-
 export const CMD_NAME = 'github'
 
 const description = 'Create a scan for given GitHub repo'
@@ -243,7 +241,7 @@ async function run(
 
   // Note exiting earlier to skirt a hidden auth requirement
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 

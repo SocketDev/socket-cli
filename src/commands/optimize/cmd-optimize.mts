@@ -14,8 +14,6 @@ import {
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW } = constants
-
 export const CMD_NAME = 'optimize'
 
 const description = 'Optimize dependencies with @socketregistry overrides'
@@ -76,7 +74,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 

@@ -12,10 +12,6 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
-const { SOCKET_WEBSITE_URL } = constants
-
-const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
-
 export async function outputDiffScan(
   result: CResult<SocketSdkSuccessResult<'GetOrgDiffScan'>['data']>,
   {
@@ -106,6 +102,8 @@ async function handleJson(
 async function handleMarkdown(
   data: SocketSdkSuccessResult<'GetOrgDiffScan'>['data'],
 ) {
+  const SOCKET_SBOM_URL_PREFIX = `${constants.SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
+
   logger.log('# Scan diff result')
   logger.log('')
   logger.log('This Socket.dev report shows the changes between two scans:')

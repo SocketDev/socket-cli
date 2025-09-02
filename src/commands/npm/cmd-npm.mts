@@ -11,8 +11,6 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const require = createRequire(import.meta.url)
 
-const { DRY_RUN_BAILING_NOW } = constants
-
 export const CMD_NAME = 'npm'
 
 const description = 'Run npm with the Socket wrapper'
@@ -65,7 +63,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 

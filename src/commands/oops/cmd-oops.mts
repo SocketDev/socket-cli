@@ -8,8 +8,6 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW } = constants
-
 const config: CliCommandConfig = {
   commandName: 'oops',
   description: 'Trigger an intentional error (for development)',
@@ -55,7 +53,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 
