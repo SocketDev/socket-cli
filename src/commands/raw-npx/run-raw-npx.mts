@@ -6,6 +6,8 @@ import { getNpxBinPath } from '../../utils/npm-paths.mts'
 export async function runRawNpx(
   argv: string[] | readonly string[],
 ): Promise<void> {
+  process.exitCode = 1
+
   const spawnPromise = spawn(getNpxBinPath(), argv as string[], {
     shell: constants.WIN32,
     stdio: 'inherit',
@@ -15,7 +17,7 @@ export async function runRawNpx(
   spawnPromise.process.on('exit', (code, signalName) => {
     if (signalName) {
       process.kill(process.pid, signalName)
-    } else if (code) {
+    } else if (typeof code === 'number') {
       // eslint-disable-next-line n/no-process-exit
       process.exit(code)
     }

@@ -67,5 +67,23 @@ async function run(
   }
 
   const shadowBin = /*@__PURE__*/ require(constants.shadowNpmBinPath)
-  await shadowBin('npx', argv, { stdio: 'inherit' })
+
+  process.exitCode = 1
+
+  const { spawnPromise } = await shadowBin('npx', argv, { stdio: 'inherit' })
+
+  // See https://nodejs.org/api/child_process.html#event-exit.
+  spawnPromise.process.on(
+    'exit',
+    (code: string | null, signalName: NodeJS.Signals | null) => {
+      if (signalName) {
+        process.kill(process.pid, signalName)
+      } else if (typeof code === 'number') {
+        // eslint-disable-next-line n/no-process-exit
+        process.exit(code)
+      }
+    },
+  )
+
+  await spawnPromise
 }
