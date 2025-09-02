@@ -57,6 +57,7 @@ type ENV = Remap<
       GITHUB_REPOSITORY: string
       GITHUB_SERVER_URL: string
       GITHUB_TOKEN: string
+      INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION: string
       INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: string
       INLINED_SOCKET_CLI_HOMEPAGE: string
       INLINED_SOCKET_CLI_LEGACY_BUILD: string
@@ -95,8 +96,9 @@ type ProcessEnv = {
 type IPC = Readonly<{
   SOCKET_CLI_FIX?: string | undefined
   SOCKET_CLI_OPTIMIZE?: boolean | undefined
-  SOCKET_CLI_SAFE_BIN?: string | undefined
-  SOCKET_CLI_SAFE_PROGRESS?: boolean | undefined
+  SOCKET_CLI_SHADOW_API_TOKEN?: string | undefined
+  SOCKET_CLI_SHADOW_BIN?: string | undefined
+  SOCKET_CLI_SHADOW_PROGRESS?: boolean | undefined
 }>
 
 type Constants = Remap<
@@ -126,8 +128,9 @@ type Constants = Remap<
     readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
     readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
     readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
-    readonly SOCKET_CLI_SAFE_BIN: 'SOCKET_CLI_SAFE_BIN'
-    readonly SOCKET_CLI_SAFE_PROGRESS: 'SOCKET_CLI_SAFE_PROGRESS'
+    readonly SOCKET_CLI_SHADOW_API_TOKEN: 'SOCKET_CLI_SHADOW_API_TOKEN'
+    readonly SOCKET_CLI_SHADOW_BIN: 'SOCKET_CLI_SHADOW_BIN'
+    readonly SOCKET_CLI_SHADOW_PROGRESS: 'SOCKET_CLI_SHADOW_PROGRESS'
     readonly SOCKET_CLI_VIEW_ALL_RISKS: 'SOCKET_CLI_VIEW_ALL_RISKS'
     readonly SOCKET_DEFAULT_BRANCH: 'socket-default-branch'
     readonly SOCKET_DEFAULT_REPOSITORY: 'socket-default-repository'
@@ -196,8 +199,9 @@ const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
-const SOCKET_CLI_SAFE_BIN = 'SOCKET_CLI_SAFE_BIN'
-const SOCKET_CLI_SAFE_PROGRESS = 'SOCKET_CLI_SAFE_PROGRESS'
+const SOCKET_CLI_SHADOW_API_TOKEN = 'SOCKET_CLI_SHADOW_API_TOKEN'
+const SOCKET_CLI_SHADOW_BIN = 'SOCKET_CLI_SHADOW_BIN'
+const SOCKET_CLI_SHADOW_PROGRESS = 'SOCKET_CLI_SHADOW_PROGRESS'
 const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
 const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
 const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
@@ -273,6 +277,11 @@ const LAZY_ENV = () => {
     // workflow.
     // https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication#about-the-github_token-secret
     GITHUB_TOKEN,
+    // Comp-time inlined @coana-tech/cli package version.
+    // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION']".
+    INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION: envAsString(
+      process.env['INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION'],
+    ),
     // Comp-time inlined @cyclonedx/cdxgen package version.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION']".
     INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION: envAsString(
@@ -453,14 +462,6 @@ const lazyBlessedOptions = () =>
 const lazyBlessedPath = () =>
   // Lazily access constants.externalPath.
   path.join(constants.externalPath, 'blessed')
-
-const lazyCoanaBinPath = () =>
-  // Lazily access constants.coanaPath.
-  path.join(constants.coanaPath, 'cli-wrapper.mjs')
-
-const lazyCoanaPath = () =>
-  // Lazily access constants.externalPath.
-  path.join(constants.externalPath, '@coana-tech/cli')
 
 const lazyDistCliPath = () =>
   // Lazily access constants.distPath.
@@ -687,8 +688,9 @@ const constants: Constants = createConstantsObject(
     SOCKET_CLI_FIX,
     SOCKET_CLI_ISSUES_URL,
     SOCKET_CLI_OPTIMIZE,
-    SOCKET_CLI_SAFE_BIN,
-    SOCKET_CLI_SAFE_PROGRESS,
+    SOCKET_CLI_SHADOW_API_TOKEN,
+    SOCKET_CLI_SHADOW_BIN,
+    SOCKET_CLI_SHADOW_PROGRESS,
     SOCKET_CLI_VIEW_ALL_RISKS,
     SOCKET_DEFAULT_BRANCH,
     SOCKET_DEFAULT_REPOSITORY,
@@ -739,8 +741,6 @@ const constants: Constants = createConstantsObject(
       blessedContribPath: lazyBlessedContribPath,
       blessedOptions: lazyBlessedOptions,
       blessedPath: lazyBlessedPath,
-      coanaBinPath: lazyCoanaBinPath,
-      coanaPath: lazyCoanaPath,
       distCliPath: lazyDistCliPath,
       distPath: lazyDistPath,
       externalPath: lazyExternalPath,

@@ -18,13 +18,13 @@ export async function postinstallWrapper() {
     (existsSync(zshRcPath) && checkSocketWrapperSetup(zshRcPath))
 
   if (!socketWrapperEnabled) {
-    await installSafeNpm(
+    await setupShadowNpm(
       `
 The Socket CLI is now successfully installed! 🎉
 
-To better protect yourself against supply-chain attacks, our "safe npm" wrapper can warn you about malicious packages whenever you run 'npm install'.
+To better protect yourself against supply-chain attacks, our Socket npm wrapper can warn you about malicious packages whenever you run 'npm install'.
 
-Do you want to install "safe npm" (this will create an alias to the socket-npm command)?
+Do you want to install the Socket npm wrapper (this will create an alias to the \`socket npm\` command)?
     `.trim(),
     )
   }
@@ -59,7 +59,7 @@ Do you want to install "safe npm" (this will create an alias to the socket-npm c
   }
 }
 
-async function installSafeNpm(query: string): Promise<void> {
+async function setupShadowNpm(query: string): Promise<void> {
   logger.log(`
  _____         _       _
 |   __|___ ___| |_ ___| |_

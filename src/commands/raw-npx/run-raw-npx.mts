@@ -11,6 +11,7 @@ export async function runRawNpx(
     shell: constants.WIN32,
     stdio: 'inherit',
   })
+
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on('exit', (code, signalName) => {
     if (signalName) {
@@ -20,5 +21,6 @@ export async function runRawNpx(
       process.exit(code)
     }
   })
+
   await spawnPromise
 }

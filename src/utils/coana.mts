@@ -1,9 +1,9 @@
 import { readJsonSync } from '@socketsecurity/registry/lib/fs'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 import constants from '../constants.mts'
 import { getDefaultApiToken } from './sdk.mts'
+import shadowBin from '../shadow/npm/bin.mts'
 
 import type { CResult } from '../types.mts'
 import type {
@@ -29,7 +29,10 @@ export async function spawnCoana(
   options?: SpawnOptions | undefined,
   extra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
-  const { env: spawnEnv } = { __proto__: null, ...options } as SpawnOptions
+  const { env: spawnEnv, ...spawnOpts } = {
+    __proto__: null,
+    ...options,
+  } as SpawnOptions
   const mixinsEnv: Record<string, string> = {
     // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
     SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
@@ -47,20 +50,19 @@ export async function spawnCoana(
       mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
     }
   }
+
   try {
-    const output = await spawn(
-      constants.execPath,
+    const output = await shadowBin(
+      'npx',
       [
-        // Lazily access constants.nodeNoWarningsFlags.
-        ...constants.nodeNoWarningsFlags,
-        // Lazily access constants.nodeMemoryFlags.
-        ...constants.nodeMemoryFlags,
-        // Lazily access constants.coanaBinPath.
-        constants.coanaBinPath,
+        '--yes',
+        // Lazily access constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION.
+        `@coana-tech/cli@~${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}`,
         ...args,
       ],
       {
-        ...options,
+        ...spawnOpts,
+        apiToken: constants.SOCKET_PUBLIC_API_TOKEN,
         env: {
           ...process.env,
           // Lazily access constants.processEnv.

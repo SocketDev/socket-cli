@@ -1,9 +1,10 @@
+import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 import constants from '../constants.mts'
 import { cmdFlagsToString } from './cmd.mts'
-import { safeNpmInstall } from '../shadow/npm/install.mts'
+import { shadowNpmInstall } from '../shadow/npm/install.mts'
 
 import type { EnvDetails } from './package-environment.mts'
 
@@ -25,7 +26,7 @@ export function runAgentInstall(
   const { agent, agentExecPath } = pkgEnvDetails
   // All package managers support the "install" command.
   if (agent === NPM) {
-    return safeNpmInstall({
+    return shadowNpmInstall({
       agentExecPath,
       ...options,
     })
@@ -55,7 +56,7 @@ export function runAgentInstall(
         // Lazily access constants.nodeNoWarningsFlags.
         ...constants.nodeNoWarningsFlags,
       ]),
-      ...spawnOptions.env,
+      ...getOwn(spawnOptions, 'env'),
     },
   })
 }

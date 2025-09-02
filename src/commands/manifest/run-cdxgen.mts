@@ -8,13 +8,13 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../../constants.mts'
 import shadowBin from '../../shadow/npm/bin.mts'
 
-const { NPM, NPX, PACKAGE_LOCK_JSON, PNPM, YARN, YARN_LOCK } = constants
+const { PACKAGE_LOCK_JSON, PNPM, YARN, YARN_LOCK } = constants
 
 const nodejsPlatformTypes = new Set([
   'javascript',
   'js',
   'nodejs',
-  NPM,
+  'npm',
   PNPM,
   'ts',
   'tsx',
@@ -65,29 +65,41 @@ export async function runCdxgen(yargvWithYes: any) {
     existsSync(`./${YARN_LOCK}`)
   ) {
     if (existsSync(`./${PACKAGE_LOCK_JSON}`)) {
-      yargv.type = NPM
+      yargv.type = 'npm'
     } else {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
       try {
-        await shadowBin(NPX, [
-          ...yesArgs,
-          // Lazily access constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION.
-          `synp@${constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
-          '--source-file',
-          `./${YARN_LOCK}`,
-        ])
-        yargv.type = NPM
+        await shadowBin(
+          'npx',
+          [
+            ...yesArgs,
+            // Lazily access constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION.
+            `synp@${constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
+            '--source-file',
+            `./${YARN_LOCK}`,
+          ],
+          {
+            stdio: 'inherit',
+          },
+        )
+        yargv.type = 'npm'
         cleanupPackageLock = true
       } catch {}
     }
   }
-  await shadowBin(NPX, [
-    ...yesArgs,
-    // Lazily access constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION.
-    `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
-    ...argvToArray(yargv),
-  ])
+  await shadowBin(
+    'npx',
+    [
+      ...yesArgs,
+      // Lazily access constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION.
+      `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
+      ...argvToArray(yargv),
+    ],
+    {
+      stdio: 'inherit',
+    },
+  )
   if (cleanupPackageLock) {
     try {
       await fs.rm(`./${PACKAGE_LOCK_JSON}`)

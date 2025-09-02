@@ -173,6 +173,7 @@ export function findPackageNodes(
 }
 
 export type GetAlertsMapFromArboristOptions = {
+  apiToken?: string | undefined
   consolidate?: boolean | undefined
   filter?: AlertFilter | undefined
   nothrow?: boolean | undefined
