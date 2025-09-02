@@ -51,7 +51,7 @@ export async function spawnCoana(
   }
 
   try {
-    const output = await shadowBin(
+    const { spawnPromise } = await shadowBin(
       'npx',
       [
         '--yes',
@@ -70,6 +70,7 @@ export async function spawnCoana(
       },
       extra,
     )
+    const output = await spawnPromise
     return { ok: true, data: output.stdout }
   } catch (e) {
     const stderr = (e as any)?.stderr

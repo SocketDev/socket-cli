@@ -22,13 +22,16 @@ export type ShadowBinOptions = SpawnOptions & {
   apiToken?: string | undefined
 }
 
+export type ShadowBinResult = {
+  spawnPromise: SpawnResult<string, SpawnExtra | undefined>
+}
+
 export default async function shadowBin(
   binName: 'npm' | 'npx',
   args: string[] | readonly string[] = process.argv.slice(2),
   options?: ShadowBinOptions | undefined,
   extra?: SpawnExtra | undefined,
-): Promise<SpawnResult<string, SpawnExtra | undefined>> {
-  process.exitCode = 1
+): Promise<ShadowBinResult> {
   const {
     apiToken = getPublicApiToken(),
     env: spawnEnv,
@@ -114,16 +117,6 @@ export default async function shadowBin(
     extra,
   )
 
-  // See https://nodejs.org/api/child_process.html#event-exit.
-  spawnPromise.process.on('exit', (code, signalName) => {
-    if (signalName) {
-      process.kill(process.pid, signalName)
-    } else if (code) {
-      // eslint-disable-next-line n/no-process-exit
-      process.exit(code)
-    }
-  })
-
   spawnPromise.process.send({
     [constants.SOCKET_IPC_HANDSHAKE]: {
       [constants.SOCKET_CLI_SHADOW_API_TOKEN]: apiToken,
@@ -132,6 +125,5 @@ export default async function shadowBin(
     },
   })
 
-  // eslint-disable-next-line @typescript-eslint/return-await
-  return spawnPromise
+  return { spawnPromise }
 }

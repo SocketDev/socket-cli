@@ -298,5 +298,19 @@ async function run(
     }
   }
 
-  await runCdxgen(yargv)
+  process.exitCode = 1
+
+  const { spawnPromise } = await runCdxgen(yargv)
+
+  // See https://nodejs.org/api/child_process.html#event-exit.
+  spawnPromise.process.on('exit', (code, signalName) => {
+    if (signalName) {
+      process.kill(process.pid, signalName)
+    } else if (typeof code === 'number') {
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(code)
+    }
+  })
+
+  await spawnPromise
 }
