@@ -68,25 +68,15 @@ export function shadowNpmInstall(
   }
 
   const spawnPromise = spawn(
-    // Lazily access constants.execPath.
     constants.execPath,
     [
-      // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
-      // Lazily access constants.nodeHardenFlags.
       ...constants.nodeHardenFlags,
-      // Lazily access constants.nodeMemoryFlags.
       ...constants.nodeMemoryFlags,
-      // Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
       ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
-        ? [
-            '--require',
-            // Lazily access constants.instrumentWithSentryPath.
-            constants.instrumentWithSentryPath,
-          ]
+        ? ['--require', constants.instrumentWithSentryPath]
         : []),
       '--require',
-      // Lazily access constants.shadowNpmInjectPath.
       constants.shadowNpmInjectPath,
       resolveBinPathSync(agentExecPath),
       'install',
@@ -105,7 +95,6 @@ export function shadowNpmInstall(
       ...spawnOptions,
       env: {
         ...process.env,
-        // Lazily access constants.processEnv.
         ...constants.processEnv,
         ...getOwn(spawnOptions, 'env'),
       },

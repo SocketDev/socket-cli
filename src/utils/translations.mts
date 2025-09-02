@@ -12,7 +12,6 @@ let _translations:
 export function getTranslations() {
   if (_translations === undefined) {
     _translations = /*@__PURE__*/ require(
-      // Lazily access constants.rootPath.
       path.join(constants.rootPath, 'translations.json'),
     )
   }

@@ -69,7 +69,6 @@ async function run(
     return
   }
 
-  // Lazily access constants.shadowNpmBinPath.
   const shadowBin = /*@__PURE__*/ require(constants.shadowNpmBinPath)
   await shadowBin('npm', argv, { stdio: 'inherit' })
 }

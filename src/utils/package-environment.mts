@@ -163,7 +163,6 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
             return (
               await spawn(agentExecPath, [lockPath], {
                 cwd,
-                // Lazily access constants.WIN32.
                 shell: constants.WIN32,
               })
             ).stdout
@@ -205,7 +204,6 @@ const LOCKS: Record<string, Agent> = {
 async function getAgentExecPath(agent: Agent): Promise<string> {
   const binName = binByAgent.get(agent)!
   if (binName === NPM) {
-    // Lazily access constants.npmExecPath.
     return constants.npmExecPath
   }
   return (await which(binName, { nothrow: true })) ?? binName
@@ -229,7 +227,6 @@ async function getAgentVersion(
         (
           await spawn(agentExecPath, ['--version'], {
             cwd,
-            // Lazily access constants.WIN32.
             shell: constants.WIN32,
           })
         ).stdout,
@@ -297,9 +294,7 @@ export async function detectPackageEnvironment({
   if (agent === YARN_CLASSIC && (agentVersion?.major ?? 0) > 1) {
     agent = YARN_BERRY
   }
-  // Lazily access constants.maintainedNodeVersions.
   const { maintainedNodeVersions } = constants
-  // Lazily access constants.minimumVersionByAgent.
   const minSupportedAgentVersion = constants.minimumVersionByAgent.get(agent)!
   const minSupportedNodeMajor = semver.major(maintainedNodeVersions.last)
   const minSupportedNodeVersion = `${minSupportedNodeMajor}.0.0`
@@ -509,7 +504,6 @@ export async function detectAndValidatePackageEnvironment(
   ) {
     // Note: In tests we return <redacted> because otherwise snapshots will fail.
     const { REDACTED } = constants
-    // Lazily access constants.ENV.VITEST.
     const redacting = constants.ENV.VITEST
     logger?.warn(
       cmdPrefixMessage(

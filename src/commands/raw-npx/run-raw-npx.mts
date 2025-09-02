@@ -7,7 +7,6 @@ export async function runRawNpx(
   argv: string[] | readonly string[],
 ): Promise<void> {
   const spawnPromise = spawn(getNpxBinPath(), argv as string[], {
-    // Lazily access constants.WIN32.
     shell: constants.WIN32,
     stdio: 'inherit',
   })

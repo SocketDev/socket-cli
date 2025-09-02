@@ -25,7 +25,6 @@ export async function outputCreateNewScan(
   const {
     interactive = false,
     outputKind = 'text',
-    // Lazily access constants.spinner.
     spinner = constants.spinner,
   } = { __proto__: null, ...options } as CreateNewScanOptions
 

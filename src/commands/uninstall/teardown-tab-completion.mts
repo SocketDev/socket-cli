@@ -20,7 +20,6 @@ export async function teardownTabCompletion(
   const { completionCommand, sourcingCommand, toAddToBashrc } = result.data
 
   // Remove from ~/.bashrc if found
-  // Lazily access constants.homePath
   const bashrc = constants.homePath
     ? path.join(constants.homePath, '.bashrc')
     : ''

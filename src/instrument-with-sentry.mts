@@ -7,7 +7,6 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from './constants.mts'
 
-// Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
 if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
   const require = createRequire(import.meta.url)
   const Sentry = /*@__PURE__*/ require('@sentry/node')
@@ -24,18 +23,11 @@ if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
   })
   Sentry.setTag(
     'environment',
-    // Lazily access constants.ENV.INLINED_SOCKET_CLI_PUBLISHED_BUILD.
     constants.ENV.INLINED_SOCKET_CLI_PUBLISHED_BUILD
       ? 'pub'
-      : // Lazily access constants.ENV.NODE_ENV.
-        constants.ENV.NODE_ENV,
+      : constants.ENV.NODE_ENV,
   )
-  Sentry.setTag(
-    'version',
-    // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH.
-    constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH,
-  )
-  // Lazily access constants.ENV.SOCKET_CLI_DEBUG.
+  Sentry.setTag('version', constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH)
   if (constants.ENV.SOCKET_CLI_DEBUG) {
     Sentry.setTag('debugging', true)
     logger.info('[DEBUG] Set up Sentry.')
@@ -47,8 +39,6 @@ if (constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD) {
     [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { setSentry },
   } = constants
   setSentry(Sentry)
-}
-// Lazily access constants.ENV.SOCKET_CLI_DEBUG.
-else if (constants.ENV.SOCKET_CLI_DEBUG) {
+} else if (constants.ENV.SOCKET_CLI_DEBUG) {
   logger.info('[DEBUG] Sentry disabled explicitly.')
 }

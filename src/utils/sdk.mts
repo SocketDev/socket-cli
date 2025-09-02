@@ -19,7 +19,6 @@ const TOKEN_VISIBLE_LENGTH = 5
 // The Socket API server that should be used for operations.
 function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    // Lazily access constants.ENV.SOCKET_CLI_API_BASE_URL.
     constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
   return isUrl(baseUrl) ? baseUrl : undefined
 }
@@ -27,7 +26,6 @@ function getDefaultApiBaseUrl(): string | undefined {
 // The Socket API server that should be used for operations.
 function getDefaultProxyUrl(): string | undefined {
   const apiProxy =
-    // Lazily access constants.ENV.SOCKET_CLI_API_PROXY.
     constants.ENV.SOCKET_CLI_API_PROXY || getConfigValueOrUndef('apiProxy')
   return isUrl(apiProxy) ? apiProxy : undefined
 }
@@ -46,14 +44,12 @@ function isUrl(value: any): value is string {
 // This Socket API token should be stored globally for the duration of the CLI execution.
 let _defaultToken: string | undefined
 export function getDefaultApiToken(): string | undefined {
-  // Lazily access constants.ENV.SOCKET_CLI_NO_API_TOKEN.
   if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
     _defaultToken = undefined
     return _defaultToken
   }
 
   const key =
-    // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN.
     constants.ENV.SOCKET_CLI_API_TOKEN ||
     getConfigValueOrUndef('apiToken') ||
     _defaultToken
@@ -65,9 +61,7 @@ export function getDefaultApiToken(): string | undefined {
 export function getPublicApiToken(): string {
   return (
     getDefaultApiToken() ||
-    // Lazily access constants.ENV.SOCKET_CLI_API_TOKEN.
     constants.ENV.SOCKET_CLI_API_TOKEN ||
-    // Lazily access constants.SOCKET_PUBLIC_API_TOKEN.
     constants.SOCKET_PUBLIC_API_TOKEN
   )
 }
@@ -129,14 +123,10 @@ export async function setupSdk(
     data: new SocketSdk(apiToken, {
       agent: apiProxy ? new ProxyAgent({ proxy: apiProxy }) : undefined,
       baseUrl: apiBaseUrl,
-      // Lazily access constants.ENV.SOCKET_CLI_API_TIMEOUT.
       timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
       userAgent: createUserAgentFromPkgJson({
-        // Lazily access constants.ENV.INLINED_SOCKET_CLI_NAME.
         name: constants.ENV.INLINED_SOCKET_CLI_NAME,
-        // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
         version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
-        // Lazily access constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE.
         homepage: constants.ENV.INLINED_SOCKET_CLI_HOMEPAGE,
       }),
     }),

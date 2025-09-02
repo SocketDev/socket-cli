@@ -15,31 +15,20 @@ const { spawn } = require(
 process.exitCode = 1
 
 spawn(
-  // Lazily access constants.execPath.
   constants.execPath,
   [
-    // Lazily access constants.nodeNoWarningsFlags.
     ...constants.nodeNoWarningsFlags,
-    // Lazily access constants.nodeHardenFlags.
     ...constants.nodeHardenFlags,
-    // Lazily access constants.nodeMemoryFlags.
     ...constants.nodeMemoryFlags,
-    // Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
     ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
-      ? [
-          '--require',
-          // Lazily access constants.instrumentWithSentryPath.
-          constants.instrumentWithSentryPath,
-        ]
+      ? ['--require', constants.instrumentWithSentryPath]
       : []),
-    // Lazily access constants.distCliPath.
     constants.distCliPath,
     ...process.argv.slice(2),
   ],
   {
     env: {
       ...process.env,
-      // Lazily access constants.processEnv.
       ...constants.processEnv,
     },
     stdio: 'inherit',

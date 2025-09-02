@@ -44,9 +44,7 @@ export default async function shadowBin(
   const progressArg = rawBinArgs.findLast(isNpmProgressFlag) !== '--no-progress'
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
   const permArgs =
-    isShadowNpm &&
-    // Lazily access constants.SUPPORTS_NODE_PERMISSION_FLAG.
-    constants.SUPPORTS_NODE_PERMISSION_FLAG
+    isShadowNpm && constants.SUPPORTS_NODE_PERMISSION_FLAG
       ? [
           '--permission',
           '--allow-child-process',
@@ -56,9 +54,7 @@ export default async function shadowBin(
           // and package.json files.
           '--allow-fs-read=*',
           `--allow-fs-write=${process.cwd()}/*`,
-          // Lazily access constants.npmGlobalPrefix.
           `--allow-fs-write=${constants.npmGlobalPrefix}/*`,
-          // Lazily access constants.npmGlobalPrefix.
           `--allow-fs-write=${constants.npmCachePath}/*`,
         ]
       : []
@@ -81,27 +77,16 @@ export default async function shadowBin(
   }
 
   const spawnPromise = spawn(
-    // Lazily access constants.execPath.
     constants.execPath,
     [
-      // Lazily access constants.nodeNoWarningsFlags.
       ...constants.nodeNoWarningsFlags,
-      // Lazily access constants.nodeHardenFlags.
       ...constants.nodeHardenFlags,
-      // Lazily access constants.nodeMemoryFlags.
       ...constants.nodeMemoryFlags,
-      // Lazily access constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD.
       ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
-        ? [
-            '--require',
-            // Lazily access constants.instrumentWithSentryPath.
-            constants.instrumentWithSentryPath,
-          ]
+        ? ['--require', constants.instrumentWithSentryPath]
         : []),
       '--require',
-      // Lazily access constants.shadowNpmInjectPath.
       constants.shadowNpmInjectPath,
-      // Lazily access constants.shadowBinPath.
       await installLinks(constants.shadowBinPath, binName),
       ...(useDebug ? ['--trace-uncaught', '--trace-warnings'] : []),
       ...(useNodeOptions
@@ -121,7 +106,6 @@ export default async function shadowBin(
       ...spawnOptions,
       env: {
         ...process.env,
-        // Lazily access constants.processEnv.
         ...constants.processEnv,
         ...spawnEnv,
       },
@@ -141,13 +125,9 @@ export default async function shadowBin(
   })
 
   spawnPromise.process.send({
-    // Lazily access constants.SOCKET_IPC_HANDSHAKE.
     [constants.SOCKET_IPC_HANDSHAKE]: {
-      // Lazily access constants.SOCKET_CLI_SHADOW_API_TOKEN.
       [constants.SOCKET_CLI_SHADOW_API_TOKEN]: apiToken,
-      // Lazily access constants.SOCKET_CLI_SHADOW_BIN.
       [constants.SOCKET_CLI_SHADOW_BIN]: binName,
-      // Lazily access constants.SOCKET_CLI_SHADOW_PROGRESS.
       [constants.SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
     },
   })

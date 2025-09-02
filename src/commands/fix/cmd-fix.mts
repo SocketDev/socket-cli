@@ -233,7 +233,6 @@ Available styles:
     test = true
   }
 
-  // Lazily access constants.spinner.
   const { spinner } = constants
   // We patched in this feature with `npx custompatch meow` at
   // socket-cli/patches/meow#13.2.0.patch.

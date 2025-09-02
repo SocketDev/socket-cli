@@ -203,7 +203,6 @@ ${mdTableStringNumber('Name', 'Counts', data['top_five_alert_types'])}
 
 function displayAnalyticsScreen(data: FormattedData): void {
   const ScreenWidget = /*@__PURE__*/ require('blessed/lib/widgets/screen.js')
-  // Lazily access constants.blessedOptions.
   const screen: Widgets.Screen = new ScreenWidget({
     ...constants.blessedOptions,
   })

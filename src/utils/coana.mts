@@ -34,7 +34,6 @@ export async function spawnCoana(
     ...options,
   } as SpawnOptions
   const mixinsEnv: Record<string, string> = {
-    // Lazily access constants.ENV.INLINED_SOCKET_CLI_VERSION.
     SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
   }
   const defaultApiToken = getDefaultApiToken()
@@ -56,7 +55,6 @@ export async function spawnCoana(
       'npx',
       [
         '--yes',
-        // Lazily access constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION.
         `@coana-tech/cli@~${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}`,
         ...args,
       ],
@@ -65,7 +63,6 @@ export async function spawnCoana(
         apiToken: constants.SOCKET_PUBLIC_API_TOKEN,
         env: {
           ...process.env,
-          // Lazily access constants.processEnv.
           ...constants.processEnv,
           ...mixinsEnv,
           ...spawnEnv,

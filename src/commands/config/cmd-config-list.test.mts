@@ -6,7 +6,6 @@ import constants from '../../../src/constants.mts'
 import { cmdit, invokeNpm } from '../../../test/utils.mts'
 
 describe('socket config get', async () => {
-  // Lazily access constants.binCliPath.
   const { binCliPath } = constants
 
   cmdit(

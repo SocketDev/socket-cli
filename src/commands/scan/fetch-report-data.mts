@@ -43,7 +43,6 @@ export async function fetchScanData(
   let scanStatus = 'requested...'
   let finishedFetching = false
 
-  // Lazily access constants.spinner.
   const { spinner } = constants
 
   function updateScan(desc: string) {

@@ -64,42 +64,28 @@ const LAZY_ENV = () => {
 }
 
 const lazyBlessedContribPath = () =>
-  // Lazily access constants.externalPath.
   path.join(constants.externalPath, 'blessed-contrib')
 
-const lazyBlessedPath = () =>
-  // Lazily access constants.externalPath.
-  path.join(constants.externalPath, 'blessed')
+const lazyBlessedPath = () => path.join(constants.externalPath, 'blessed')
 
-const lazyConfigPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, '.config')
+const lazyConfigPath = () => path.join(constants.rootPath, '.config')
 
-const lazyDistPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'dist')
+const lazyDistPath = () => path.join(constants.rootPath, 'dist')
 
-const lazyExternalPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'external')
+const lazyExternalPath = () => path.join(constants.rootPath, 'external')
 
 const lazyRootPackageJsonPath = () =>
-  // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'package.json')
 
 const lazyRootPackageLockPath = () =>
-  // Lazily access constants.rootPath.
   path.join(constants.rootPath, 'package-lock.json')
 
 const lazyRootPath = () => path.resolve(__dirname, '..')
 
 const lazySocketRegistryPath = () =>
-  // Lazily access constants.externalPath.
   path.join(constants.externalPath, '@socketsecurity/registry')
 
-const lazySrcPath = () =>
-  // Lazily access constants.rootPath.
-  path.join(constants.rootPath, 'src')
+const lazySrcPath = () => path.join(constants.rootPath, 'src')
 
 const constants = createConstantsObject(
   {

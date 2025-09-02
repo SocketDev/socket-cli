@@ -16,7 +16,6 @@ export function getArboristPackagePath() {
       0,
       mainPathWithForwardSlashes.lastIndexOf(pkgName) + pkgName.length,
     )
-    // Lazily access constants.WIN32.
     _arboristPkgPath = constants.WIN32
       ? path.normalize(arboristPkgPathWithForwardSlashes)
       : arboristPkgPathWithForwardSlashes

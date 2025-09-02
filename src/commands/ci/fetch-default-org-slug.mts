@@ -18,7 +18,6 @@ export async function getDefaultOrgSlug(): Promise<CResult<string>> {
     return { ok: true, data: defaultOrgResult }
   }
 
-  // Lazily access constants.ENV.SOCKET_CLI_ORG_SLUG.
   const envOrgSlug = constants.ENV.SOCKET_CLI_ORG_SLUG
   if (envOrgSlug) {
     debugFn(

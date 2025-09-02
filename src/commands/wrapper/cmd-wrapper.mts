@@ -106,7 +106,6 @@ async function run(
     return
   }
 
-  // Lazily access constants.bashRcPath and constants.zshRcPath.
   const { bashRcPath, zshRcPath } = constants
   if (enable) {
     if (existsSync(bashRcPath) && !checkSocketWrapperSetup(bashRcPath)) {
