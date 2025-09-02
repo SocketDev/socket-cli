@@ -72,7 +72,7 @@ export async function performReachabilityAnalysis(
     return {
       ok: false,
       message: 'Tier 1 Reachability analysis requires an enterprise plan',
-      cause: `This feature is only available for organizations with an enterprise plan. Please ${terminalLink('upgrade your plan', 'https://socket.dev/pricing')}.`,
+      cause: `Please ${terminalLink('upgrade your plan', 'https://socket.dev/pricing')}. This feature is only available for organizations with an enterprise plan.`,
     }
   }
 
