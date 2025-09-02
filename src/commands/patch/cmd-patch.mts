@@ -15,8 +15,6 @@ import {
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_NOT_SAVING } = constants
-
 export const CMD_NAME = 'patch'
 
 const description = 'Apply CVE patches to dependencies'
@@ -89,7 +87,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_NOT_SAVING)
+    logger.log(constants.DRY_RUN_NOT_SAVING)
     return
   }
 

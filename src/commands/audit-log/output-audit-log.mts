@@ -15,8 +15,6 @@ import type { Widgets } from 'blessed'
 
 const require = createRequire(import.meta.url)
 
-const { REDACTED } = constants
-
 export async function outputAuditLog(
   result: CResult<SocketSdkSuccessResult<'getAuditLogEvents'>['data']>,
   {
@@ -110,7 +108,9 @@ export async function outputAsJson(
     ok: true,
     data: {
       desc: 'Audit logs for given query',
-      generated: constants.ENV.VITEST ? REDACTED : new Date().toISOString(),
+      generated: constants.ENV.VITEST
+        ? constants.REDACTED
+        : new Date().toISOString(),
       logType,
       nextPage: auditLogs.data.nextPage,
       org: orgSlug,
@@ -172,7 +172,7 @@ These are the Socket.dev audit logs as per requested query.
 - page: ${page}
 - next page: ${auditLogs.nextPage}
 - per page: ${perPage}
-- generated: ${constants.ENV.VITEST ? REDACTED : new Date().toISOString()}
+- generated: ${constants.ENV.VITEST ? constants.REDACTED : new Date().toISOString()}
 
 ${table}
 `

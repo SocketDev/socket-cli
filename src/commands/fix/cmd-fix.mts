@@ -23,8 +23,6 @@ import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 
-const { DRY_RUN_NOT_SAVING } = constants
-
 export const CMD_NAME = 'fix'
 
 const DEFAULT_LIMIT = 10
@@ -206,7 +204,7 @@ Available styles:
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_NOT_SAVING)
+    logger.log(constants.DRY_RUN_NOT_SAVING)
     return
   }
 

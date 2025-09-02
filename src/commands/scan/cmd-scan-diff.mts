@@ -15,13 +15,7 @@ import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW, SOCKET_WEBSITE_URL } = constants
-
 export const CMD_NAME = 'diff'
-
-const SOCKET_SBOM_URL_PREFIX = `${SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
-
-const { length: SOCKET_SBOM_URL_PREFIX_LENGTH } = SOCKET_SBOM_URL_PREFIX
 
 const description = 'See what changed between two Scans'
 
@@ -101,6 +95,10 @@ async function run(
     parentName,
   })
 
+  const SOCKET_SBOM_URL_PREFIX = `${constants.SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
+
+  const SOCKET_SBOM_URL_PREFIX_LENGTH = SOCKET_SBOM_URL_PREFIX.length
+
   const { depth, file, json, markdown, org: orgFlag } = cli.flags
 
   const dryRun = !!cli.flags['dryRun']
@@ -164,7 +162,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 

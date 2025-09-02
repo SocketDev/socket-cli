@@ -15,8 +15,6 @@ import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import type { LocalConfig } from '../../utils/config.mts'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW } = constants
-
 export const CMD_NAME = 'auto'
 
 const description =
@@ -97,7 +95,7 @@ ${getSupportedConfigEntries()
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 

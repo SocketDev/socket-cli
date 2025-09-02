@@ -14,8 +14,6 @@ import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
-const { DRY_RUN_BAILING_NOW } = constants
-
 // TODO: We may want to dedupe some pieces for all gradle languages. I think it
 //       makes sense to have separate commands for them and I think it makes
 //       sense for the help panels to note the requested language, rather than
@@ -172,7 +170,7 @@ async function run(
   }
 
   if (dryRun) {
-    logger.log(DRY_RUN_BAILING_NOW)
+    logger.log(constants.DRY_RUN_BAILING_NOW)
     return
   }
 

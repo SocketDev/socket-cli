@@ -8,14 +8,14 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../../constants.mts'
 import shadowBin from '../../shadow/npm/bin.mts'
 
-const { PACKAGE_LOCK_JSON, PNPM, YARN, YARN_LOCK } = constants
+const { PACKAGE_LOCK_JSON, YARN, YARN_LOCK } = constants
 
 const nodejsPlatformTypes = new Set([
   'javascript',
   'js',
   'nodejs',
   'npm',
-  PNPM,
+  'pnpm',
   'ts',
   'tsx',
   'typescript',

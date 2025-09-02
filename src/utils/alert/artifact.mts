@@ -60,21 +60,14 @@ export type SocketArtifactAlert = Remap<
   }
 >
 
-const {
-  ALERT_TYPE_CRITICAL_CVE,
-  ALERT_TYPE_CVE,
-  ALERT_TYPE_MEDIUM_CVE,
-  ALERT_TYPE_MILD_CVE,
-} = constants
-
 export function isArtifactAlertCve(
   alert: CompactSocketArtifactAlert,
 ): alert is ArtifactAlertCve {
   const { type } = alert
   return (
-    type === ALERT_TYPE_CVE ||
-    type === ALERT_TYPE_MEDIUM_CVE ||
-    type === ALERT_TYPE_MILD_CVE ||
-    type === ALERT_TYPE_CRITICAL_CVE
+    type === constants.ALERT_TYPE_CVE ||
+    type === constants.ALERT_TYPE_MEDIUM_CVE ||
+    type === constants.ALERT_TYPE_MILD_CVE ||
+    type === constants.ALERT_TYPE_CRITICAL_CVE
   )
 }
