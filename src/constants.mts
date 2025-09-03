@@ -18,6 +18,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const {
+  NPM,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
     attributes: registryConstantsAttribs,
@@ -481,7 +482,7 @@ const lazyMinimumVersionByAgent = () =>
     [BUN, '1.1.39'],
     // The npm version bundled with Node 18.
     // https://nodejs.org/en/about/previous-releases#looking-for-the-latest-release-of-a-version-branch
-    ['npm', '10.8.2'],
+    [NPM, '10.8.2'],
     // 8.x is the earliest version to support Node 18.
     // https://pnpm.io/installation#compatibility
     // https://www.npmjs.com/package/pnpm?activeTab=versions
