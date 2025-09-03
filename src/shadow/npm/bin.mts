@@ -84,6 +84,7 @@ export default async function shadowBin(
     constants.execPath,
     [
       ...constants.nodeNoWarningsFlags,
+      ...constants.nodeDebugFlags,
       ...constants.nodeHardenFlags,
       ...constants.nodeMemoryFlags,
       ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
@@ -92,7 +93,6 @@ export default async function shadowBin(
       '--require',
       constants.shadowNpmInjectPath,
       await installLinks(constants.shadowBinPath, binName),
-      ...(useDebug ? ['--trace-uncaught', '--trace-warnings'] : []),
       ...(useNodeOptions
         ? [
             `--node-options='${nodeOptionsArg ? nodeOptionsArg.slice(15) : ''}${cmdFlagsToString(permArgs)}'`,
