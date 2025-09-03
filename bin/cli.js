@@ -17,6 +17,7 @@
     constants.execPath,
     [
       ...constants.nodeNoWarningsFlags,
+      ...constants.nodeDebugFlags,
       ...constants.nodeHardenFlags,
       ...constants.nodeMemoryFlags,
       ...(constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD
