@@ -81,9 +81,9 @@ export function hasDefaultApiToken(): boolean {
 }
 
 export type SetupSdkOptions = {
-  apiToken?: string | undefined
   apiBaseUrl?: string | undefined
   apiProxy?: string | undefined
+  apiToken?: string | undefined
 }
 
 export async function setupSdk(
