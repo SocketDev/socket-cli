@@ -3,7 +3,16 @@
 const { statSync } = require('node:fs')
 const path = require('node:path')
 
-function findUpSync(name, { cwd = process.cwd() }) {
+function findUpSync(name, options) {
+  const opts = { __proto__: null, ...options }
+  const { cwd = process.cwd() } = opts
+  let { onlyDirectories = false, onlyFiles = true } = opts
+  if (onlyFiles) {
+    onlyDirectories = false
+  }
+  if (onlyDirectories) {
+    onlyFiles = false
+  }
   let dir = path.resolve(cwd)
   const { root } = path.parse(dir)
   const names = [name].flat()
@@ -12,7 +21,10 @@ function findUpSync(name, { cwd = process.cwd() }) {
       const filePath = path.join(dir, name)
       try {
         const stats = statSync(filePath, { throwIfNoEntry: false })
-        if (stats?.isFile()) {
+        if (!onlyDirectories && (stats?.isFile() || stats?.isSymbolicLink())) {
+          return filePath
+        }
+        if (!onlyFiles && stats?.isDirectory()) {
           return filePath
         }
       } catch {}

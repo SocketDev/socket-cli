@@ -16,13 +16,24 @@ export async function removeNodeModules(cwd = process.cwd()) {
 
 export type FindUpOptions = {
   cwd?: string | undefined
+  onlyDirectories?: boolean | undefined
+  onlyFiles?: boolean | undefined
   signal?: AbortSignal | undefined
 }
 
 export async function findUp(
   name: string | string[],
-  { cwd = process.cwd(), signal = constants.abortSignal }: FindUpOptions,
+  options?: FindUpOptions | undefined,
 ): Promise<string | undefined> {
+  const opts = { __proto__: null, ...options }
+  const { cwd = process.cwd(), signal = constants.abortSignal } = opts
+  let { onlyDirectories = false, onlyFiles = true } = opts
+  if (onlyFiles) {
+    onlyDirectories = false
+  }
+  if (onlyDirectories) {
+    onlyFiles = false
+  }
   let dir = path.resolve(cwd)
   const { root } = path.parse(dir)
   const names = [name].flat()
@@ -35,7 +46,10 @@ export async function findUp(
       try {
         // eslint-disable-next-line no-await-in-loop
         const stats = await fs.stat(filePath)
-        if (stats.isFile()) {
+        if (!onlyDirectories && (stats.isFile() || stats.isSymbolicLink())) {
+          return filePath
+        }
+        if (!onlyFiles && stats.isDirectory()) {
           return filePath
         }
       } catch {}
