@@ -91,6 +91,7 @@ export async function coanaFix(
       spinner?.stop()
       return { ok: true, data: { fixed: false } }
     }
+
     const fixCResult = await spawnCoana(
       [
         'compute-fixes-and-upgrade-purls',
@@ -107,7 +108,9 @@ export async function coanaFix(
       fixConfig.orgSlug,
       { cwd, spinner, stdio: 'inherit' },
     )
+
     spinner?.stop()
+
     return fixCResult.ok ? { ok: true, data: { fixed: true } } : fixCResult
   }
 
@@ -125,7 +128,7 @@ export async function coanaFix(
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
-      { cwd, spinner, stdio: 'inherit' },
+      { cwd, spinner },
     )
     if (foundCResult.ok) {
       const foundIds = cmdFlagValueToArray(
