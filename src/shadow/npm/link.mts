@@ -11,7 +11,7 @@ import {
 } from '../../utils/npm-paths.mts'
 
 export async function installLinks(
-  realBinPath: string,
+  shadowBinPath: string,
   binName: 'npm' | 'npx',
 ): Promise<string> {
   const isNpx = binName === 'npx'
@@ -28,11 +28,11 @@ export async function installLinks(
     if (WIN32) {
       await cmdShim(
         path.join(constants.distPath, `${binName}-cli.js`),
-        path.join(realBinPath, binName),
+        path.join(shadowBinPath, binName),
       )
     }
     const { env } = process
-    env['PATH'] = `${realBinPath}${path.delimiter}${env['PATH']}`
+    env['PATH'] = `${shadowBinPath}${path.delimiter}${env['PATH']}`
   }
   return binPath
 }
