@@ -116,9 +116,9 @@ export class SafeArborist extends Arborist {
 
     const isShadowNpx = binName === 'npx'
 
-    const shadowAcceptRisks = ipc[constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]
-    const shadowProgress = ipc[constants.SOCKET_CLI_SHADOW_PROGRESS]
-    const shadowSilent = ipc[constants.SOCKET_CLI_SHADOW_SILENT]
+    const shadowAcceptRisks = !!ipc[constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]
+    const shadowProgress = !!ipc[constants.SOCKET_CLI_SHADOW_PROGRESS]
+    const shadowSilent = !!ipc[constants.SOCKET_CLI_SHADOW_SILENT]
 
     const acceptRisks =
       shadowAcceptRisks || constants.ENV.SOCKET_CLI_ACCEPT_RISKS
