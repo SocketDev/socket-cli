@@ -26,13 +26,14 @@ const {
   },
 } = registryConstants
 
-type RegistryEnv = typeof registryConstants.ENV
+export type RegistryEnv = typeof registryConstants.ENV
 
-type RegistryInternals = (typeof registryConstants)['Symbol(kInternalsSymbol)']
+export type RegistryInternals =
+  (typeof registryConstants)['Symbol(kInternalsSymbol)']
 
-type Sentry = any
+export type Sentry = any
 
-type Internals = Remap<
+export type Internals = Remap<
   Omit<RegistryInternals, 'getIpc'> &
     Readonly<{
       getIpc: {
@@ -46,7 +47,7 @@ type Internals = Remap<
     }>
 >
 
-type ENV = Remap<
+export type ENV = Remap<
   RegistryEnv &
     Readonly<{
       DISABLE_GITHUB_CACHE: boolean
@@ -89,19 +90,21 @@ type ENV = Remap<
     }>
 >
 
-type ProcessEnv = {
+export type ProcessEnv = {
   [K in keyof ENV]?: string
 }
 
-type IPC = Readonly<{
+export type IPC = Readonly<{
   SOCKET_CLI_FIX?: string | undefined
   SOCKET_CLI_OPTIMIZE?: boolean | undefined
+  SOCKET_CLI_SHADOW_ACCEPT_RISKS?: boolean | undefined
   SOCKET_CLI_SHADOW_API_TOKEN?: string | undefined
   SOCKET_CLI_SHADOW_BIN?: string | undefined
   SOCKET_CLI_SHADOW_PROGRESS?: boolean | undefined
+  SOCKET_CLI_SHADOW_SILENT?: boolean | undefined
 }>
 
-type Constants = Remap<
+export type Constants = Remap<
   Omit<typeof registryConstants, 'Symbol(kInternalsSymbol)' | 'ENV' | 'IPC'> & {
     readonly 'Symbol(kInternalsSymbol)': Internals
     readonly ALERT_TYPE_CRITICAL_CVE: 'criticalCVE'
@@ -128,9 +131,11 @@ type Constants = Remap<
     readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
     readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
     readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
+    readonly SOCKET_CLI_SHADOW_ACCEPT_RISKS: 'SOCKET_CLI_SHADOW_ACCEPT_RISKS'
     readonly SOCKET_CLI_SHADOW_API_TOKEN: 'SOCKET_CLI_SHADOW_API_TOKEN'
     readonly SOCKET_CLI_SHADOW_BIN: 'SOCKET_CLI_SHADOW_BIN'
     readonly SOCKET_CLI_SHADOW_PROGRESS: 'SOCKET_CLI_SHADOW_PROGRESS'
+    readonly SOCKET_CLI_SHADOW_SILENT: 'SOCKET_CLI_SHADOW_SILENT'
     readonly SOCKET_CLI_VIEW_ALL_RISKS: 'SOCKET_CLI_VIEW_ALL_RISKS'
     readonly SOCKET_DEFAULT_BRANCH: 'socket-default-branch'
     readonly SOCKET_DEFAULT_REPOSITORY: 'socket-default-repository'
@@ -199,9 +204,11 @@ const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
 const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
+const SOCKET_CLI_SHADOW_ACCEPT_RISKS = 'SOCKET_CLI_SHADOW_ACCEPT_RISKS'
 const SOCKET_CLI_SHADOW_API_TOKEN = 'SOCKET_CLI_SHADOW_API_TOKEN'
 const SOCKET_CLI_SHADOW_BIN = 'SOCKET_CLI_SHADOW_BIN'
 const SOCKET_CLI_SHADOW_PROGRESS = 'SOCKET_CLI_SHADOW_PROGRESS'
+const SOCKET_CLI_SHADOW_SILENT = 'SOCKET_CLI_SHADOW_SILENT'
 const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
 const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
 const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
@@ -639,9 +646,11 @@ const constants: Constants = createConstantsObject(
     SOCKET_CLI_FIX,
     SOCKET_CLI_ISSUES_URL,
     SOCKET_CLI_OPTIMIZE,
+    SOCKET_CLI_SHADOW_ACCEPT_RISKS,
     SOCKET_CLI_SHADOW_API_TOKEN,
     SOCKET_CLI_SHADOW_BIN,
     SOCKET_CLI_SHADOW_PROGRESS,
+    SOCKET_CLI_SHADOW_SILENT,
     SOCKET_CLI_VIEW_ALL_RISKS,
     SOCKET_DEFAULT_BRANCH,
     SOCKET_DEFAULT_REPOSITORY,

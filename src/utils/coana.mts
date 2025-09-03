@@ -5,11 +5,9 @@ import constants from '../constants.mts'
 import { getDefaultApiToken } from './sdk.mts'
 import shadowBin from '../shadow/npm/bin.mts'
 
+import type { ShadowBinOptions } from '../shadow/npm/bin.mts'
 import type { CResult } from '../types.mts'
-import type {
-  SpawnExtra,
-  SpawnOptions,
-} from '@socketsecurity/registry/lib/spawn'
+import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
 export function extractTier1ReachabilityScanId(
   socketFactsFile: string,
@@ -26,13 +24,17 @@ export function extractTier1ReachabilityScanId(
 export async function spawnCoana(
   args: string[] | readonly string[],
   orgSlug?: string,
-  options?: SpawnOptions | undefined,
+  options?: ShadowBinOptions | undefined,
   extra?: SpawnExtra | undefined,
 ): Promise<CResult<string>> {
-  const { env: spawnEnv, ...spawnOpts } = {
+  const {
+    env: spawnEnv,
+    ipc,
+    ...spawnOpts
+  } = {
     __proto__: null,
     ...options,
-  } as SpawnOptions
+  } as ShadowBinOptions
   const mixinsEnv: Record<string, string> = {
     SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
   }
@@ -60,11 +62,16 @@ export async function spawnCoana(
       ],
       {
         ...spawnOpts,
-        apiToken: constants.SOCKET_PUBLIC_API_TOKEN,
         env: {
           ...mixinsEnv,
           ...spawnEnv,
-          [constants.SOCKET_CLI_ACCEPT_RISKS]: '1',
+        },
+        ipc: {
+          [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
+          [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
+            constants.SOCKET_PUBLIC_API_TOKEN,
+          [constants.SOCKET_CLI_SHADOW_SILENT]: true,
+          ...ipc,
         },
       },
       extra,
