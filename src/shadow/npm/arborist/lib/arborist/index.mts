@@ -1,6 +1,7 @@
 // @ts-ignore
 import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
+import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../../../../constants.mts'
@@ -14,11 +15,6 @@ import type {
 } from '../../types.mts'
 
 const {
-  SOCKET_CLI_ACCEPT_RISKS,
-  SOCKET_CLI_SHADOW_API_TOKEN,
-  SOCKET_CLI_SHADOW_BIN,
-  SOCKET_CLI_SHADOW_PROGRESS,
-  SOCKET_CLI_VIEW_ALL_RISKS,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: { getIpc },
 } = constants
@@ -96,11 +92,15 @@ export class SafeArborist extends Arborist {
       __proto__: null,
       ...(args.length ? args[0] : undefined),
     } as ArboristReifyOptions
+
     const ipc = await getIpc()
-    const binName = ipc[SOCKET_CLI_SHADOW_BIN]
+    debugDir('inspect', { ipc })
+
+    const binName = ipc[constants.SOCKET_CLI_SHADOW_BIN]
     if (!binName) {
       return await this[kRiskyReify](...args)
     }
+
     await super.reify(
       {
         ...options,
@@ -110,13 +110,19 @@ export class SafeArborist extends Arborist {
       // @ts-ignore: TypeScript gets grumpy about rest parameters.
       ...args.slice(1),
     )
-    const acceptRisks = constants.ENV.SOCKET_CLI_ACCEPT_RISKS
-    const progress = ipc[SOCKET_CLI_SHADOW_PROGRESS]
-    const spinner =
-      options['silent'] || !progress ? undefined : constants.spinner
+
+    const shadowAcceptRisks = ipc[constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]
+    const shadowProgress = ipc[constants.SOCKET_CLI_SHADOW_PROGRESS]
+    const shadowSilent = ipc[constants.SOCKET_CLI_SHADOW_SILENT]
+
+    const acceptRisks =
+      shadowAcceptRisks || constants.ENV.SOCKET_CLI_ACCEPT_RISKS
+    const silent = !!options['silent']
+    const spinner = silent || !shadowProgress ? undefined : constants.spinner
     const isShadowNpx = binName === 'npx'
+
     const alertsMap = await getAlertsMapFromArborist(this, {
-      apiToken: ipc[SOCKET_CLI_SHADOW_API_TOKEN],
+      apiToken: ipc[constants.SOCKET_CLI_SHADOW_API_TOKEN],
       spinner,
       filter:
         acceptRisks || options.dryRun || options['yes']
@@ -130,6 +136,7 @@ export class SafeArborist extends Arborist {
               existing: isShadowNpx,
             },
     })
+
     if (alertsMap.size) {
       process.exitCode = 1
       const viewAllRisks = constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
@@ -142,15 +149,15 @@ export class SafeArborist extends Arborist {
           Socket ${binName} exiting due to risks.${
             viewAllRisks
               ? ''
-              : `\nView all risks - Rerun with environment variable ${SOCKET_CLI_VIEW_ALL_RISKS}=1.`
+              : `\nView all risks - Rerun with environment variable ${constants.SOCKET_CLI_VIEW_ALL_RISKS}=1.`
           }${
             acceptRisks
               ? ''
-              : `\nAccept risks - Rerun with environment variable ${SOCKET_CLI_ACCEPT_RISKS}=1.`
+              : `\nAccept risks - Rerun with environment variable ${constants.SOCKET_CLI_ACCEPT_RISKS}=1.`
           }
         `.trim(),
       )
-    } else if (!options['silent']) {
+    } else if (!silent && !shadowSilent) {
       logger.success(
         `Socket ${binName} ${acceptRisks ? 'accepted' : 'found no'} risks`,
       )
@@ -158,6 +165,7 @@ export class SafeArborist extends Arborist {
         logger.log(`Running ${options.add![0]}`)
       }
     }
+
     return await this[kRiskyReify](...args)
   }
 }

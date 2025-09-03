@@ -8,7 +8,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import constants from '../../constants.mts'
 import shadowBin from '../../shadow/npm/bin.mts'
 
-import type { ShadowBinResult } from '../../shadow/npm/bin.mts'
+import type {
+  ShadowBinOptions,
+  ShadowBinResult,
+} from '../../shadow/npm/bin.mts'
 
 const { PACKAGE_LOCK_JSON, YARN, YARN_LOCK } = constants
 
@@ -62,6 +65,15 @@ function argvToArray(argvObj: ArgvObject): string[] {
 export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   let cleanupPackageLock = false
   const argvMutable = { __proto__: null, ...argvObj } as ArgvObject
+  const shadowOpts: ShadowBinOptions = {
+    ipc: {
+      [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
+      [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
+        constants.SOCKET_PUBLIC_API_TOKEN,
+      [constants.SOCKET_CLI_SHADOW_SILENT]: true,
+    },
+    stdio: 'inherit',
+  }
   if (
     argvMutable['type'] !== YARN &&
     nodejsPlatformTypes.has(argvMutable['type'] as string) &&
@@ -81,10 +93,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
             '--source-file',
             `./${YARN_LOCK}`,
           ],
-          {
-            apiToken: constants.SOCKET_PUBLIC_API_TOKEN,
-            stdio: 'inherit',
-          },
+          shadowOpts,
         )
         await synpPromise
         argvMutable['type'] = 'npm'
@@ -100,13 +109,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
       `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
       ...argvToArray(argvMutable),
     ],
-    {
-      apiToken: constants.SOCKET_PUBLIC_API_TOKEN,
-      env: {
-        [constants.SOCKET_CLI_ACCEPT_RISKS]: '1',
-      },
-      stdio: 'inherit',
-    },
+    shadowOpts,
   )
 
   shadowResult.spawnPromise.process.on('exit', () => {
