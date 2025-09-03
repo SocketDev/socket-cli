@@ -16,6 +16,7 @@ import type {
   ArboristReifyOptions,
   NodeClass,
 } from '../../types.mts'
+import { findUp } from '../../../../../utils/fs.mts'
 
 const {
   kInternalsSymbol,
@@ -114,18 +115,21 @@ export class SafeArborist extends Arborist {
       ...args.slice(1),
     )
 
-    const isShadowNpx = binName === 'npx'
-
     const shadowAcceptRisks = !!ipc[constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]
     const shadowProgress = !!ipc[constants.SOCKET_CLI_SHADOW_PROGRESS]
     const shadowSilent = !!ipc[constants.SOCKET_CLI_SHADOW_SILENT]
 
     const acceptRisks =
       shadowAcceptRisks || constants.ENV.SOCKET_CLI_ACCEPT_RISKS
+    const reportOnlyBlocking = acceptRisks || options.dryRun || options['yes']
     const silent = !!options['silent']
     const spinner = silent || !shadowProgress ? undefined : constants.spinner
 
-    const reportOnlyBlocking = acceptRisks || options.dryRun || options['yes']
+    const isShadowNpx = binName === 'npx'
+    const hasExisting = await findUp('node_modules', {
+      cwd: process.cwd(),
+      onlyDirectories: true
+    })
     const shouldCheckExisting = reportOnlyBlocking ? true : isShadowNpx
 
     const needInfoOn = getDetailsFromDiff(this.diff, {
@@ -149,9 +153,6 @@ export class SafeArborist extends Arborist {
           },
     })
 
-    const checkedExisting =
-      shouldCheckExisting && needInfoOn.some(d => d.existing)
-
     if (alertsMap.size) {
       process.exitCode = 1
       const viewAllRisks = constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
@@ -161,7 +162,7 @@ export class SafeArborist extends Arborist {
       })
       throw new Error(
         `
-          Socket ${binName} exiting due to${checkedExisting ? ' new' : ''} risks.${
+          Socket ${binName} exiting due to risks.${
             viewAllRisks
               ? ''
               : `\nView all risks - Rerun with environment variable ${constants.SOCKET_CLI_VIEW_ALL_RISKS}=1.`
@@ -174,7 +175,7 @@ export class SafeArborist extends Arborist {
       )
     } else if (!silent && !shadowSilent) {
       logger.success(
-        `Socket ${binName} ${acceptRisks ? 'accepted' : 'found no'} ${checkedExisting ? ' new' : ''} risks`,
+        `Socket ${binName} ${acceptRisks ? 'accepted' : 'found no'}${hasExisting ? ' new' : ''} risks`,
       )
       if (isShadowNpx) {
         logger.log(`Running ${options.add![0]}`)
