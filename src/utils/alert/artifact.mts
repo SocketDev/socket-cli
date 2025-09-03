@@ -31,7 +31,7 @@ export type ArtifactAlertUpgrade = Remap<
 >
 
 export type CompactSocketArtifactAlert = Remap<
-  Omit<SocketArtifactAlert, 'category' | 'end' | 'file' | 'start'>
+  Omit<SocketArtifactAlert, 'category' | 'end' | 'file' | 'severity' | 'start'>
 >
 
 export type CompactSocketArtifact = Remap<
@@ -55,7 +55,7 @@ export type SocketArtifact = Remap<
 export type SocketArtifactAlert = Remap<
   Omit<components['schemas']['SocketAlert'], 'action' | 'props' | 'type'> & {
     type: ALERT_TYPE
-    action?: 'error' | 'monitor' | 'warn' | 'ignore'
+    action?: ALERT_ACTION
     props?: any | undefined
   }
 >
