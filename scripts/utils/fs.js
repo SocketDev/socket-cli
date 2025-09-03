@@ -7,11 +7,11 @@ function findUpSync(name, options) {
   const opts = { __proto__: null, ...options }
   const { cwd = process.cwd() } = opts
   let { onlyDirectories = false, onlyFiles = true } = opts
-  if (onlyFiles) {
-    onlyDirectories = false
-  }
   if (onlyDirectories) {
     onlyFiles = false
+  }
+  if (onlyFiles) {
+    onlyDirectories = false
   }
   let dir = path.resolve(cwd)
   const { root } = path.parse(dir)
