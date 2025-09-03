@@ -28,11 +28,11 @@ export async function findUp(
   const opts = { __proto__: null, ...options }
   const { cwd = process.cwd(), signal = constants.abortSignal } = opts
   let { onlyDirectories = false, onlyFiles = true } = opts
-  if (onlyFiles) {
-    onlyDirectories = false
-  }
   if (onlyDirectories) {
     onlyFiles = false
+  }
+  if (onlyFiles) {
+    onlyDirectories = false
   }
   let dir = path.resolve(cwd)
   const { root } = path.parse(dir)
@@ -42,15 +42,15 @@ export async function findUp(
       if (signal?.aborted) {
         return undefined
       }
-      const filePath = path.join(dir, name)
+      const thePath = path.join(dir, name)
       try {
         // eslint-disable-next-line no-await-in-loop
-        const stats = await fs.stat(filePath)
+        const stats = await fs.stat(thePath)
         if (!onlyDirectories && (stats.isFile() || stats.isSymbolicLink())) {
-          return filePath
+          return thePath
         }
         if (!onlyFiles && stats.isDirectory()) {
-          return filePath
+          return thePath
         }
       } catch {}
     }
