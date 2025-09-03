@@ -180,6 +180,7 @@ export type GetAlertsMapFromArboristOptions = {
 
 export async function getAlertsMapFromArborist(
   arb: ArboristInstance,
+  needInfoOn: PackageDetail[],
   options?: GetAlertsMapFromArboristOptions | undefined,
 ): Promise<AlertsByPurl> {
   const opts = {
@@ -189,12 +190,6 @@ export async function getAlertsMapFromArborist(
     ...options,
     filter: toFilterConfig(getOwn(options, 'filter')),
   } as GetAlertsMapFromArboristOptions & { filter: AlertFilter }
-
-  const needInfoOn = getDetailsFromDiff(arb.diff, {
-    filter: {
-      existing: opts.filter.existing,
-    },
-  })
 
   const purls = needInfoOn.map(d => idToNpmPurl(d.node.pkgid))
 

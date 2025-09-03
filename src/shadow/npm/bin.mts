@@ -11,6 +11,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { installLinks } from './link.mts'
 import constants from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
+import { findUp } from '../../utils/fs.mts'
 import { getPublicApiToken } from '../../utils/sdk.mts'
 
 import type { IPC } from '../../constants.mts'
@@ -39,6 +40,7 @@ export default async function shadowBin(
     ipc,
     ...spawnOpts
   } = { __proto__: null, ...options } as ShadowBinOptions
+  const cwd = getOwn(spawnOpts, 'cwd') ?? process.cwd()
   const isShadowNpm = binName === 'npm'
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
@@ -55,11 +57,12 @@ export default async function shadowBin(
           // Allow all reads because npm walks up directories looking for config
           // and package.json files.
           '--allow-fs-read=*',
-          `--allow-fs-write=${process.cwd()}/*`,
+          `--allow-fs-write=${cwd}/*`,
           `--allow-fs-write=${constants.npmGlobalPrefix}/*`,
           `--allow-fs-write=${constants.npmCachePath}/*`,
         ]
       : []
+
   const useAudit = rawBinArgs.includes('--audit')
   const useDebug = isDebug('stdio')
   const useNodeOptions = nodeOptionsArg || permArgs.length
@@ -70,6 +73,10 @@ export default async function shadowBin(
   // The default value of loglevel is "notice". We default to "error" which is
   // two levels quieter.
   const logLevelArgs = isSilent ? ['--loglevel', 'error'] : []
+  const noAuditArgs =
+    useAudit || !(await findUp('node_modules', { cwd, onlyDirectories: true }))
+      ? []
+      : ['--no-audit']
 
   let stdio = getOwn(spawnOpts, 'stdio')
   if (typeof stdio === 'string') {
@@ -97,13 +104,12 @@ export default async function shadowBin(
       '--require',
       constants.shadowNpmInjectPath,
       realBinPath,
+      ...noAuditArgs,
       ...(useNodeOptions
         ? [
             `--node-options='${nodeOptionsArg ? nodeOptionsArg.slice(15) : ''}${cmdFlagsToString(permArgs)}'`,
           ]
         : []),
-      // Default to --no-audit.
-      ...(useAudit ? [] : ['--no-audit']),
       '--no-fund',
       // Add '--no-progress' to fix input being swallowed by the npm spinner.
       '--no-progress',
