@@ -425,9 +425,7 @@ const LAZY_ENV = () => {
       envAsString(env['SOCKET_SECURITY_GITHUB_PAT']) ||
       GITHUB_TOKEN,
     // Make the default API token `undefined`.
-    SOCKET_CLI_NO_API_TOKEN: envAsBoolean(
-      env['SOCKET_CLI_NO_API_TOKEN'],
-    ),
+    SOCKET_CLI_NO_API_TOKEN: envAsBoolean(env['SOCKET_CLI_NO_API_TOKEN']),
     // The absolute location of the npm directory.
     SOCKET_CLI_NPM_PATH: envAsString(env['SOCKET_CLI_NPM_PATH']),
     // Specify the Socket organization slug.
@@ -436,9 +434,7 @@ const LAZY_ENV = () => {
       // Coana CLI accepts the SOCKET_ORG_SLUG environment variable.
       envAsString(env['SOCKET_ORG_SLUG']),
     // View all risks of a Socket wrapped npm/npx run.
-    SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(
-      env[SOCKET_CLI_VIEW_ALL_RISKS],
-    ),
+    SOCKET_CLI_VIEW_ALL_RISKS: envAsBoolean(env[SOCKET_CLI_VIEW_ALL_RISKS]),
     // Specifies the type of terminal or terminal emulator being used by the process.
     TERM: envAsString(env['TERM']),
     // The location of the base directory on Linux and MacOS used to store
