@@ -1,5 +1,6 @@
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import {
+  isNpmAuditFlag,
   isNpmLoglevelFlag,
   isNpmNodeOptionsFlag,
   isNpmProgressFlag,
@@ -41,9 +42,6 @@ export default async function shadowBin(
   const isShadowNpm = binName === 'npm'
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
-  const binArgs = rawBinArgs.filter(
-    a => !isNpmProgressFlag(a) && !isNpmNodeOptionsFlag(a),
-  )
   const nodeOptionsArg = rawBinArgs.findLast(isNpmNodeOptionsFlag)
   const progressArg = rawBinArgs.findLast(isNpmProgressFlag) !== '--no-progress'
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
@@ -62,8 +60,12 @@ export default async function shadowBin(
           `--allow-fs-write=${constants.npmCachePath}/*`,
         ]
       : []
+  const useAudit = rawBinArgs.includes('--audit')
   const useDebug = isDebug('stdio')
   const useNodeOptions = nodeOptionsArg || permArgs.length
+  const binArgs = rawBinArgs.filter(
+    a => !isNpmAuditFlag(a) && !isNpmProgressFlag(a),
+  )
   const isSilent = !useDebug && !binArgs.some(isNpmLoglevelFlag)
   // The default value of loglevel is "notice". We default to "error" which is
   // two levels quieter.
@@ -100,6 +102,9 @@ export default async function shadowBin(
             `--node-options='${nodeOptionsArg ? nodeOptionsArg.slice(15) : ''}${cmdFlagsToString(permArgs)}'`,
           ]
         : []),
+      // Default to --no-audit.
+      ...(useAudit ? [] : ['--no-audit']),
+      '--no-fund',
       // Add '--no-progress' to fix input being swallowed by the npm spinner.
       '--no-progress',
       // Add '--loglevel=error' if a loglevel flag is not provided and the
