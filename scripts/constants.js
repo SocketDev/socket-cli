@@ -43,8 +43,8 @@ const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = '@socketsecurity/cli-with-sentry'
 
 const LAZY_ENV = () => {
-  const { envAsBoolean } = require('@socketsecurity/registry/lib/env')
   const { env } = process
+  const { envAsBoolean } = require('@socketsecurity/registry/lib/env')
   return Object.freeze({
     // Lazily access registryConstants.ENV.
     ...registryConstants.ENV,
