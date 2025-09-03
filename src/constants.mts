@@ -245,6 +245,9 @@ const LAZY_ENV = () => {
   const getConfigValueOrUndef = utils.getConfigValueOrUndef
   const readOrDefaultSocketJson = utils.readOrDefaultSocketJson
   const GITHUB_TOKEN = envAsString(processEnv['GITHUB_TOKEN'])
+  const INLINED_SOCKET_CLI_PUBLISHED_BUILD = envAsBoolean(
+    process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'],
+  )
   // We inline some environment values so that they CANNOT be influenced by user
   // provided environment variables.
   return Object.freeze({
@@ -310,9 +313,7 @@ const LAZY_ENV = () => {
     ),
     // Comp-time inlined flag to determine if this is a published build.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD']".
-    INLINED_SOCKET_CLI_PUBLISHED_BUILD: envAsBoolean(
-      process.env['INLINED_SOCKET_CLI_PUBLISHED_BUILD'],
-    ),
+    INLINED_SOCKET_CLI_PUBLISHED_BUILD,
     // Comp-time inlined flag to determine if this is the Sentry build.
     // The '@rollup/plugin-replace' will replace "process.env['INLINED_SOCKET_CLI_SENTRY_BUILD']".
     INLINED_SOCKET_CLI_SENTRY_BUILD: envAsBoolean(
@@ -342,6 +343,12 @@ const LAZY_ENV = () => {
     NODE_COMPILE_CACHE: constants.SUPPORTS_NODE_COMPILE_CACHE_ENV_VAR
       ? constants.socketCachePath
       : '',
+    // Redefine registryConstants.ENV.NODE_ENV to account for the
+    // INLINED_SOCKET_CLI_PUBLISHED_BUILD environment variable.
+    NODE_ENV:
+      envAsString(processEnv['NODE_ENV']).toLowerCase() === 'production'
+        ? 'production'
+        : (INLINED_SOCKET_CLI_PUBLISHED_BUILD ? '' : 'development'),
     // Well known "root" CAs (like VeriSign) will be extended with the extra
     // certificates in file. The file should consist of one or more trusted
     // certificates in PEM format.
