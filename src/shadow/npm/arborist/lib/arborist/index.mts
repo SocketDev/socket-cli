@@ -6,7 +6,10 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../../../../constants.mts'
 import { logAlertsMap } from '../../../../../utils/socket-package-alert.mts'
-import { getAlertsMapFromArborist } from '../../../arborist-helpers.mts'
+import {
+  getAlertsMapFromArborist,
+  getDetailsFromDiff,
+} from '../../../arborist-helpers.mts'
 
 import type {
   ArboristClass,
@@ -111,6 +114,8 @@ export class SafeArborist extends Arborist {
       ...args.slice(1),
     )
 
+    const isShadowNpx = binName === 'npx'
+
     const shadowAcceptRisks = ipc[constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]
     const shadowProgress = ipc[constants.SOCKET_CLI_SHADOW_PROGRESS]
     const shadowSilent = ipc[constants.SOCKET_CLI_SHADOW_SILENT]
@@ -119,23 +124,33 @@ export class SafeArborist extends Arborist {
       shadowAcceptRisks || constants.ENV.SOCKET_CLI_ACCEPT_RISKS
     const silent = !!options['silent']
     const spinner = silent || !shadowProgress ? undefined : constants.spinner
-    const isShadowNpx = binName === 'npx'
 
-    const alertsMap = await getAlertsMapFromArborist(this, {
+    const reportOnlyBlocking = acceptRisks || options.dryRun || options['yes']
+    const shouldCheckExisting = reportOnlyBlocking ? true : isShadowNpx
+
+    const needInfoOn = getDetailsFromDiff(this.diff, {
+      filter: {
+        existing: shouldCheckExisting,
+      },
+    })
+
+    const alertsMap = await getAlertsMapFromArborist(this, needInfoOn, {
       apiToken: ipc[constants.SOCKET_CLI_SHADOW_API_TOKEN],
       spinner,
-      filter:
-        acceptRisks || options.dryRun || options['yes']
-          ? {
-              actions: ['error'],
-              blocked: true,
-              existing: true,
-            }
-          : {
-              actions: ['error', 'monitor', 'warn'],
-              existing: isShadowNpx,
-            },
+      filter: reportOnlyBlocking
+        ? {
+            actions: ['error'],
+            blocked: true,
+            existing: shouldCheckExisting,
+          }
+        : {
+            actions: ['error', 'monitor', 'warn'],
+            existing: shouldCheckExisting,
+          },
     })
+
+    const checkedExisting =
+      shouldCheckExisting && needInfoOn.some(d => d.existing)
 
     if (alertsMap.size) {
       process.exitCode = 1
@@ -146,7 +161,7 @@ export class SafeArborist extends Arborist {
       })
       throw new Error(
         `
-          Socket ${binName} exiting due to risks.${
+          Socket ${binName} exiting due to${checkedExisting ? ' new' : ''} risks.${
             viewAllRisks
               ? ''
               : `\nView all risks - Rerun with environment variable ${constants.SOCKET_CLI_VIEW_ALL_RISKS}=1.`
@@ -159,7 +174,7 @@ export class SafeArborist extends Arborist {
       )
     } else if (!silent && !shadowSilent) {
       logger.success(
-        `Socket ${binName} ${acceptRisks ? 'accepted' : 'found no'} risks`,
+        `Socket ${binName} ${acceptRisks ? 'accepted' : 'found no'} ${checkedExisting ? ' new' : ''} risks`,
       )
       if (isShadowNpx) {
         logger.log(`Running ${options.add![0]}`)
