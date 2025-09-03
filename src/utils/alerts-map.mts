@@ -18,7 +18,7 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 export type GetAlertsMapFromPnpmLockfileOptions = {
   apiToken?: string | undefined
   consolidate?: boolean | undefined
-  include?: AlertFilter | undefined
+  filter?: AlertFilter | undefined
   overrides?: { [key: string]: string } | undefined
   nothrow?: boolean | undefined
   spinner?: Spinner | undefined
