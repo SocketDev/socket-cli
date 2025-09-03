@@ -80,6 +80,8 @@ export default async function shadowBin(
     stdio = ['pipe', 'pipe', 'pipe', 'ipc']
   }
 
+  const realBinPath = await installLinks(constants.shadowBinPath, binName)
+
   const spawnPromise = spawn(
     constants.execPath,
     [
@@ -92,7 +94,7 @@ export default async function shadowBin(
         : []),
       '--require',
       constants.shadowNpmInjectPath,
-      await installLinks(constants.shadowBinPath, binName),
+      realBinPath,
       ...(useNodeOptions
         ? [
             `--node-options='${nodeOptionsArg ? nodeOptionsArg.slice(15) : ''}${cmdFlagsToString(permArgs)}'`,
