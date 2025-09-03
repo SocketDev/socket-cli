@@ -12,6 +12,7 @@ import constants from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
 import { getPublicApiToken } from '../../utils/sdk.mts'
 
+import type { IPC } from '../../constants.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
@@ -19,7 +20,7 @@ import type {
 } from '@socketsecurity/registry/lib/spawn'
 
 export type ShadowBinOptions = SpawnOptions & {
-  apiToken?: string | undefined
+  ipc?: IPC | undefined
 }
 
 export type ShadowBinResult = {
@@ -33,8 +34,8 @@ export default async function shadowBin(
   extra?: SpawnExtra | undefined,
 ): Promise<ShadowBinResult> {
   const {
-    apiToken = getPublicApiToken(),
     env: spawnEnv,
+    ipc,
     ...spawnOpts
   } = { __proto__: null, ...options } as ShadowBinOptions
   const isShadowNpm = binName === 'npm'
@@ -119,9 +120,10 @@ export default async function shadowBin(
 
   spawnPromise.process.send({
     [constants.SOCKET_IPC_HANDSHAKE]: {
-      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: apiToken,
+      [constants.SOCKET_CLI_SHADOW_API_TOKEN]: getPublicApiToken(),
       [constants.SOCKET_CLI_SHADOW_BIN]: binName,
       [constants.SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
+      ...ipc,
     },
   })
 

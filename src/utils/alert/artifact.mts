@@ -7,7 +7,7 @@ import type {
   CompactSocketArtifact,
   CompactSocketArtifactAlert,
   SocketArtifact,
-  SocketArtifactAlert
+  SocketArtifactAlert,
 } from '@socketsecurity/sdk'
 
 export type {
@@ -16,7 +16,7 @@ export type {
   CompactSocketArtifact,
   CompactSocketArtifactAlert,
   SocketArtifact,
-  SocketArtifactAlert
+  SocketArtifactAlert,
 }
 
 export type CVE_ALERT_TYPE = 'cve' | 'mediumCVE' | 'mildCVE' | 'criticalCVE'
