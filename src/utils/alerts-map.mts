@@ -86,54 +86,59 @@ export async function getAlertsMapFromPurls(
   const socketYml = findSocketYmlSync()?.parsed
 
   const alertsMapOptions = {
-    overrides: opts.overrides,
     consolidate: opts.consolidate,
     filter: opts.filter,
+    overrides: opts.overrides,
     socketYml,
     spinner,
   }
 
-  for await (const batchResult of sockSdk.batchPackageStream(
-    {
-      components: uniqPurls.map(purl => ({ purl })),
-    },
-    {
-      queryParams: {
-        alerts: 'true',
-        compact: 'true',
-        ...(opts.onlyFixable ? { fixable: 'true ' } : {}),
-        ...(Array.isArray(opts.filter.actions)
-          ? { actions: opts.filter.actions.join(',') }
-          : {}),
+  try {
+    for await (const batchResult of sockSdk.batchPackageStream(
+      {
+        components: uniqPurls.map(purl => ({ purl })),
       },
-    },
-  )) {
-    if (batchResult.success) {
-      const artifact = batchResult.data as CompactSocketArtifact
-      await addArtifactToAlertsMap(artifact, alertsByPurl, alertsMapOptions)
-    } else if (!opts.nothrow) {
-      spinner?.stop()
-      if (isNonEmptyString(batchResult.error)) {
-        throw new Error(batchResult.error)
+      {
+        queryParams: {
+          alerts: 'true',
+          compact: 'true',
+          ...(opts.onlyFixable ? { fixable: 'true ' } : {}),
+          ...(Array.isArray(opts.filter.actions)
+            ? { actions: opts.filter.actions.join(',') }
+            : {}),
+        },
+      },
+      )) {
+      if (batchResult.success) {
+        const artifact = batchResult.data as CompactSocketArtifact
+        await addArtifactToAlertsMap(artifact, alertsByPurl, alertsMapOptions)
+      } else if (!opts.nothrow) {
+        spinner?.stop()
+        if (isNonEmptyString(batchResult.error)) {
+          throw new Error(batchResult.error)
+        }
+        const statusCode = batchResult.status ?? 'unknown'
+        throw new Error(
+          `Socket API server error (${statusCode}): No status message`,
+        )
+      } else {
+        spinner?.stop()
+        logger.fail(
+          `Received a ${batchResult.status} response from Socket API which we consider a permanent failure:`,
+          batchResult.error,
+          batchResult.cause ? `( ${batchResult.cause} )` : '',
+        )
+        debugDir('inspect', { batchResult })
+        break
       }
-      const statusCode = batchResult.status ?? 'unknown'
-      throw new Error(
-        `Socket API server error (${statusCode}): No status message`,
-      )
-    } else {
-      spinner?.stop()
-      logger.fail(
-        `Received a ${batchResult.status} response from Socket API which we consider a permanent failure:`,
-        batchResult.error,
-        batchResult.cause ? `( ${batchResult.cause} )` : '',
-      )
-      debugDir('inspect', { batchResult })
-      break
+      remaining -= 1
+      if (remaining > 0) {
+        spinner?.start(getText())
+      }
     }
-    remaining -= 1
-    if (remaining > 0) {
-      spinner?.start(getText())
-    }
+  } catch (e) {
+    spinner?.stop()
+    throw e
   }
 
   spinner?.stop()
