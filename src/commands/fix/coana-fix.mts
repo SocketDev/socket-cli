@@ -178,6 +178,9 @@ export async function coanaFix(
         tarHash,
         '--apply-fixes-to',
         id,
+        ...(fixConfig.rangeStyle
+          ? ['--range-style', fixConfig.rangeStyle]
+          : []),
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
