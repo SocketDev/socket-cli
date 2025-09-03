@@ -61,6 +61,7 @@ async function run(
         type: 'boolean',
         default: false,
         description: `Shorthand for --auto-merge --test`,
+        hidden: true,
       },
       ghsa: {
         type: 'string',
@@ -89,6 +90,7 @@ async function run(
         default: false,
         description:
           'Constrain dependency updates to the minimum satisfying version',
+        hidden: true,
       },
       prCheck: {
         type: 'boolean',
@@ -105,6 +107,7 @@ async function run(
         )} to compute fixes for, as either a comma separated value or as\nmultiple flags, instead of querying the Socket API`,
         isMultiple: true,
         shortFlag: 'p',
+        hidden: true,
       },
       rangeStyle: {
         type: 'string',

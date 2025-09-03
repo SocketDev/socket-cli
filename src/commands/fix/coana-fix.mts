@@ -28,7 +28,7 @@ import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
 
-import type { FixConfig } from './agent-fix.mts'
+import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
 
 export async function coanaFix(
@@ -81,7 +81,8 @@ export async function coanaFix(
   }
 
   const isAll =
-    ghsas.length === 1 && (ghsas[0] === 'all' || ghsas[0] === 'auto')
+    !ghsas.length ||
+    (ghsas.length === 1 && (ghsas[0] === 'all' || ghsas[0] === 'auto'))
 
   const shouldOpenPrs = fixEnv.isCi && fixEnv.repoInfo
 
