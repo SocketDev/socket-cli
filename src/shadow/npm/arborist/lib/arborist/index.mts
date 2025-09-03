@@ -5,6 +5,7 @@ import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../../../../constants.mts'
+import { findUp } from '../../../../../utils/fs.mts'
 import { logAlertsMap } from '../../../../../utils/socket-package-alert.mts'
 import {
   getAlertsMapFromArborist,
@@ -16,7 +17,6 @@ import type {
   ArboristReifyOptions,
   NodeClass,
 } from '../../types.mts'
-import { findUp } from '../../../../../utils/fs.mts'
 
 const {
   kInternalsSymbol,
@@ -128,7 +128,7 @@ export class SafeArborist extends Arborist {
     const isShadowNpx = binName === 'npx'
     const hasExisting = await findUp('node_modules', {
       cwd: process.cwd(),
-      onlyDirectories: true
+      onlyDirectories: true,
     })
     const shouldCheckExisting = reportOnlyBlocking ? true : isShadowNpx
 

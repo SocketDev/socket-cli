@@ -108,7 +108,7 @@ export async function getAlertsMapFromPurls(
             : {}),
         },
       },
-      )) {
+    )) {
       if (batchResult.success) {
         const artifact = batchResult.data as CompactSocketArtifact
         await addArtifactToAlertsMap(artifact, alertsByPurl, alertsMapOptions)
