@@ -165,6 +165,7 @@ export type Constants = Remap<
     readonly instrumentWithSentryPath: string
     readonly minimumVersionByAgent: Map<Agent, string>
     readonly nmBinPath: string
+    readonly nodeDebugFlags: string[]
     readonly nodeHardenFlags: string[]
     readonly nodeMemoryFlags: string[]
     readonly npmCachePath: string
@@ -492,23 +493,33 @@ const lazyMinimumVersionByAgent = () =>
 
 const lazyNmBinPath = () => path.join(constants.rootPath, 'node_modules/.bin')
 
+const lazyNodeDebugFlags = () =>
+  constants.ENV.SOCKET_CLI_DEBUG ? ['--trace-uncaught', '--trace-warnings'] : []
+
 // Redefine registryConstants.nodeHardenFlags to account for the
 // INLINED_SOCKET_CLI_SENTRY_BUILD environment variable.
 const lazyNodeHardenFlags = () =>
   Object.freeze(
+    // Harden Node security.
+    // https://nodejs.org/en/learn/getting-started/security-best-practices
     constants.ENV.INLINED_SOCKET_CLI_SENTRY_BUILD || constants.WIN32
-      ? []
-      : // Harden Node security.
-        // https://nodejs.org/en/learn/getting-started/security-best-practices
-        [
-          '--disable-proto',
-          'throw',
+      ? [
+          // https://nodejs.org/api/cli.html#--disallow-code-generation-from-strings
+          // '--disallow-code-generation-from-strings'
+        ]
+      : [
+          // '--disallow-code-generation-from-strings',
+          // https://nodejs.org/api/cli.html#--disable-protomode
+          // '--disable-proto',
+          // 'throw',
+          // https://nodejs.org/api/cli.html#--frozen-intrinsics
           // We have contributed the following patches to our dependencies to make
           // Node's --frozen-intrinsics workable.
           // √ https://github.com/SBoudrias/Inquirer.js/pull/1683
           // √ https://github.com/pnpm/components/pull/23
-          '--frozen-intrinsics',
-          '--no-deprecation',
+          // '--frozen-intrinsics',
+          // https://nodejs.org/api/cli.html#--no-deprecation
+          // '--no-deprecation',
         ],
   )
 
@@ -677,6 +688,7 @@ const constants: Constants = createConstantsObject(
     minimumVersionByAgent: undefined,
     nmBinPath: undefined,
     nodeHardenFlags: undefined,
+    nodeDebugFlags: undefined,
     nodeMemoryFlags: undefined,
     npmCachePath: undefined,
     npmGlobalPrefix: undefined,
@@ -709,6 +721,7 @@ const constants: Constants = createConstantsObject(
       instrumentWithSentryPath: lazyInstrumentWithSentryPath,
       minimumVersionByAgent: lazyMinimumVersionByAgent,
       nmBinPath: lazyNmBinPath,
+      nodeDebugFlags: lazyNodeDebugFlags,
       nodeHardenFlags: lazyNodeHardenFlags,
       nodeMemoryFlags: lazyNodeMemoryFlags,
       npmCachePath: lazyNpmCachePath,
