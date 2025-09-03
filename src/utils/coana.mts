@@ -62,10 +62,9 @@ export async function spawnCoana(
         ...spawnOpts,
         apiToken: constants.SOCKET_PUBLIC_API_TOKEN,
         env: {
-          ...process.env,
-          ...constants.processEnv,
           ...mixinsEnv,
           ...spawnEnv,
+          [constants.SOCKET_CLI_ACCEPT_RISKS]: '1',
         },
       },
       extra,

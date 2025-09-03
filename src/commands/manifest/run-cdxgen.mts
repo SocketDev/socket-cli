@@ -102,6 +102,9 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     ],
     {
       apiToken: constants.SOCKET_PUBLIC_API_TOKEN,
+      env: {
+        [constants.SOCKET_CLI_ACCEPT_RISKS]: '1',
+      },
       stdio: 'inherit',
     },
   )

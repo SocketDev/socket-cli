@@ -16,12 +16,12 @@ export function cmdFlagsToString(args: string[]) {
   return result.join(' ')
 }
 
-export function cmdFlagValueToArray(flagValue: any): string[] {
-  if (typeof flagValue === 'string') {
-    return flagValue.trim().split(/, */)
+export function cmdFlagValueToArray(value: any): string[] {
+  if (typeof value === 'string') {
+    return value.trim().split(/, */).filter(Boolean)
   }
-  if (Array.isArray(flagValue)) {
-    return flagValue.flatMap(cmdFlagValueToArray)
+  if (Array.isArray(value)) {
+    return value.flatMap(cmdFlagValueToArray)
   }
   return []
 }
