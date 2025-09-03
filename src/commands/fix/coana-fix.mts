@@ -105,7 +105,7 @@ export async function coanaFix(
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
-      { cwd, spinner },
+      { cwd, spinner, stdio: 'inherit' },
     )
     spinner?.stop()
     return fixCResult.ok ? { ok: true, data: { fixed: true } } : fixCResult
@@ -125,7 +125,7 @@ export async function coanaFix(
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
-      { cwd, spinner },
+      { cwd, spinner, stdio: 'inherit' },
     )
     if (foundCResult.ok) {
       const foundIds = cmdFlagValueToArray(
@@ -178,7 +178,7 @@ export async function coanaFix(
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
-      { cwd, spinner },
+      { cwd, spinner, stdio: 'inherit' },
     )
 
     if (!fixCResult.ok) {
