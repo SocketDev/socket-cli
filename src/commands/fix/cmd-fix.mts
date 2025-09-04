@@ -63,15 +63,14 @@ async function run(
         description: `Shorthand for --auto-merge --test`,
         hidden: true,
       },
-      ghsa: {
+      id: {
         type: 'string',
         default: [],
         description: `Provide a list of ${terminalLink(
           'GHSA IDs',
           'https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids',
-        )} to compute fixes for, as either a comma separated value or as multiple flags.\nUse '--ghsa all' to lookup all GHSA IDs and compute fixes for them.`,
+        )} to compute fixes for, as either a comma separated value or as multiple flags`,
         isMultiple: true,
-        hidden: true,
       },
       limit: {
         type: 'number',
