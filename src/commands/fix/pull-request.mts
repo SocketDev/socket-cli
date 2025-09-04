@@ -1,99 +1,75 @@
-import { existsSync, promises as fs } from 'node:fs'
-import path from 'node:path'
-
-import {
-  GraphqlResponseError,
-  graphql as OctokitGraphql,
-} from '@octokit/graphql'
 import { RequestError } from '@octokit/request-error'
-import { Octokit } from '@octokit/rest'
-import semver from 'semver'
 
-import { PackageURL } from '@socketregistry/packageurl-js'
-import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
-import {
-  readJson,
-  safeStatsSync,
-  writeJson,
-} from '@socketsecurity/registry/lib/fs'
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import {
-  createSocketBranchParser,
-  getSocketBranchPattern,
-  getSocketPullRequestBody,
-  getSocketPullRequestTitle,
-} from './socket-git.mts'
-import constants from '../../constants.mts'
-import { getPurlObject } from '../../utils/purl.mts'
+  getSocketFixBranchPattern,
+  getSocketFixPullRequestBody,
+  getSocketFixPullRequestTitle,
+} from './git.mts'
+import {
+  type GhsaDetails,
+  type Pr,
+  cacheFetch,
+  getOctokit,
+  getOctokitGraphql,
+  writeCache,
+} from '../../utils/github.mts'
 
-import type { SocketArtifact } from '../../utils/alert/artifact.mts'
-import type { components } from '@octokit/openapi-types'
 import type { OctokitResponse } from '@octokit/types'
 import type { JsonContent } from '@socketsecurity/registry/lib/fs'
-import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
 
-let _octokit: Octokit | undefined
-function getOctokit() {
-  if (_octokit === undefined) {
-    const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
-    if (!SOCKET_CLI_GITHUB_TOKEN) {
-      debugFn('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
-    }
-    const octokitOptions = {
-      auth: SOCKET_CLI_GITHUB_TOKEN,
-      baseUrl: constants.ENV.GITHUB_API_URL,
-    }
-    debugDir('inspect', { octokitOptions })
-    _octokit = new Octokit(octokitOptions)
-  }
-  return _octokit
+export type OpenSocketFixPrOptions = {
+  baseBranch?: string | undefined
+  cwd?: string | undefined
+  ghsaDetails?: Map<string, GhsaDetails> | undefined
 }
 
-let _octokitGraphql: typeof OctokitGraphql | undefined
-export function getOctokitGraphql(): typeof OctokitGraphql {
-  if (!_octokitGraphql) {
-    const { SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
-    if (!SOCKET_CLI_GITHUB_TOKEN) {
-      debugFn('notice', 'miss: SOCKET_CLI_GITHUB_TOKEN env var')
-    }
-    _octokitGraphql = OctokitGraphql.defaults({
-      headers: {
-        authorization: `token ${SOCKET_CLI_GITHUB_TOKEN}`,
-      },
-    })
-  }
-  return _octokitGraphql
-}
+export async function openSocketFixPr(
+  owner: string,
+  repo: string,
+  branch: string,
+  ghsaIds: string[],
+  options?: OpenSocketFixPrOptions | undefined,
+): Promise<OctokitResponse<Pr> | null> {
+  const { baseBranch = 'main', ghsaDetails } = {
+    __proto__: null,
+    ...options,
+  } as OpenSocketFixPrOptions
 
-async function readCache(
-  key: string,
-  // 5 minute in milliseconds time to live (TTL).
-  ttlMs = 5 * 60 * 1000,
-): Promise<JsonContent | null> {
-  const cacheJsonPath = path.join(constants.githubCachePath, `${key}.json`)
-  const stat = safeStatsSync(cacheJsonPath)
-  if (stat) {
-    const isExpired = Date.now() - stat.mtimeMs > ttlMs
-    if (!isExpired) {
-      return await readJson(cacheJsonPath)
+  const octokit = getOctokit()
+
+  try {
+    const octokitPullsCreateParams = {
+      owner,
+      repo,
+      title: getSocketFixPullRequestTitle(ghsaIds),
+      head: branch,
+      base: baseBranch,
+      body: getSocketFixPullRequestBody(ghsaIds, ghsaDetails),
     }
+    debugDir('inspect', { octokitPullsCreateParams })
+    return await octokit.pulls.create(octokitPullsCreateParams)
+  } catch (e) {
+    let message = `Failed to open pull request`
+    const errors =
+      e instanceof RequestError
+        ? (e.response?.data as any)?.['errors']
+        : undefined
+    if (Array.isArray(errors) && errors.length) {
+      const details = errors
+        .map(
+          d =>
+            `- ${d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`}`,
+        )
+        .join('\n')
+      message += `:\n${details}`
+    }
+    debugFn('error', message)
   }
   return null
 }
-
-async function writeCache(key: string, data: JsonContent): Promise<void> {
-  const { githubCachePath } = constants
-  const cacheJsonPath = path.join(githubCachePath, `${key}.json`)
-  if (!existsSync(githubCachePath)) {
-    await fs.mkdir(githubCachePath, { recursive: true })
-  }
-  await writeJson(cacheJsonPath, data as JsonContent)
-}
-
-export type Pr = components['schemas']['pull-request']
 
 export type GQL_MERGE_STATE_STATUS =
   | 'BEHIND'
@@ -117,161 +93,29 @@ export type PrMatch = {
   title: string
 }
 
-export async function cacheFetch<T>(
-  key: string,
-  fetcher: () => Promise<T>,
-  ttlMs?: number | undefined,
-): Promise<T> {
-  // Optionally disable cache.
-  if (constants.ENV.DISABLE_GITHUB_CACHE) {
-    return await fetcher()
-  }
-  let data = (await readCache(key, ttlMs)) as T
-  if (!data) {
-    data = await fetcher()
-    await writeCache(key, data as JsonContent)
-  }
-  return data
-}
-
-export type GhsaDetails = {
-  ghsaId: string
-  cveId?: string
-  summary: string
-  severity: string
-  publishedAt: string
-  withdrawnAt?: string
-  references: Array<{
-    url: string
-  }>
-  vulnerabilities: {
-    nodes: Array<{
-      package: {
-        ecosystem: string
-        name: string
-      }
-      vulnerableVersionRange: string
-    }>
-  }
-}
-
-export async function fetchGhsaDetails(
-  ids: string[],
-): Promise<Map<string, GhsaDetails>> {
-  const results = new Map<string, GhsaDetails>()
-  if (!ids.length) {
-    return results
-  }
-
-  const octokitGraphql = getOctokitGraphql()
-  try {
-    const gqlCacheKey = `${ids.join('-')}-graphql-snapshot`
-
-    const aliases = ids
-      .map(
-        (id, index) =>
-          `advisory${index}: securityAdvisory(ghsaId: "${id}") {
-        ghsaId
-        summary
-        severity
-        publishedAt
-        withdrawnAt
-        vulnerabilities(first: 10) {
-          nodes {
-            package {
-              ecosystem
-              name
-            }
-            vulnerableVersionRange
-          }
-        }
-      }`,
-      )
-      .join('\n')
-
-    const gqlResp = await cacheFetch(gqlCacheKey, () =>
-      octokitGraphql(`
-        query {
-          ${aliases}
-        }
-      `),
-    )
-
-    for (let i = 0, { length } = ids; i < length; i += 1) {
-      const id = ids[i]!
-      const advisoryKey = `advisory${i}`
-      const advisory = (gqlResp as any)?.[advisoryKey]
-      if (advisory && advisory.ghsaId) {
-        results.set(id, advisory as GhsaDetails)
-      } else {
-        debugFn('notice', `miss: no advisory found for ${id}`)
-      }
-    }
-  } catch (e) {
-    debugFn(
-      'error',
-      `Failed to fetch GHSA details: ${(e as Error)?.message || 'Unknown error'}`,
-    )
-  }
-
-  return results
-}
-
-export type CleanupPrsOptions = {
-  newVersion?: string | undefined
-  purl?: string | undefined
-  workspace?: string | undefined
-}
-
 export async function cleanupPrs(
   owner: string,
   repo: string,
-  options?: CleanupPrsOptions | undefined,
+  ghsaId: string,
 ): Promise<PrMatch[]> {
-  const contextualMatches = await getSocketPrsWithContext(owner, repo, options)
+  const contextualMatches = await getSocketPrsWithContext(owner, repo, {
+    ghsaId,
+  })
 
   if (!contextualMatches.length) {
     return []
   }
 
   const cachesToSave = new Map<string, JsonContent>()
-  const { newVersion } = { __proto__: null, ...options } as CleanupPrsOptions
-  const branchParser = createSocketBranchParser(options)
   const octokit = getOctokit()
 
   const settledMatches = await Promise.allSettled(
     contextualMatches.map(async ({ context, match }) => {
-      const { number: prNum } = match
-      const prRef = `PR #${prNum}`
-      const parsedBranch = branchParser(match.headRefName)
-      const prToVersion = parsedBranch?.newVersion
-
-      // Close older PRs.
-      if (prToVersion && newVersion && semver.lt(prToVersion, newVersion)) {
-        try {
-          await octokit.pulls.update({
-            owner,
-            repo,
-            pull_number: prNum,
-            state: 'closed',
-          })
-          debugFn('notice', `pr: closing ${prRef} for ${prToVersion}`)
-          // Remove entry from parent object.
-          context.parent.splice(context.index, 1)
-          // Mark cache to be saved.
-          cachesToSave.set(context.cacheKey, context.data)
-          return null
-        } catch (e) {
-          debugFn(
-            'error',
-            `pr: failed to close ${prRef} for ${prToVersion}\n`,
-            (e as Error)?.message || 'Unknown error',
-          )
-        }
-      }
       // Update stale PRs.
       // https://docs.github.com/en/graphql/reference/enums#mergestatestatus
       if (match.mergeStateStatus === 'BEHIND') {
+        const { number: prNum } = match
+        const prRef = `PR #${prNum}`
         try {
           await octokit.repos.merge({
             owner,
@@ -317,49 +161,10 @@ export type PrAutoMergeState = {
   details?: string[]
 }
 
-export async function enablePrAutoMerge({
-  node_id: prId,
-}: Pr): Promise<PrAutoMergeState> {
-  const octokitGraphql = getOctokitGraphql()
-  try {
-    const gqlResp = await octokitGraphql(
-      `
-      mutation EnableAutoMerge($pullRequestId: ID!) {
-        enablePullRequestAutoMerge(input: {
-          pullRequestId: $pullRequestId,
-          mergeMethod: SQUASH
-        }) {
-          pullRequest {
-            number
-          }
-        }
-      }`,
-      { pullRequestId: prId },
-    )
-    const respPrNumber = (gqlResp as any)?.enablePullRequestAutoMerge
-      ?.pullRequest?.number
-    if (respPrNumber) {
-      return { enabled: true }
-    }
-  } catch (e) {
-    if (
-      e instanceof GraphqlResponseError &&
-      Array.isArray(e.errors) &&
-      e.errors.length
-    ) {
-      const details = e.errors.map(({ message: m }) => m.trim())
-      return { enabled: false, details }
-    }
-  }
-  return { enabled: false }
-}
-
 export type SocketPrsOptions = {
   author?: string | undefined
-  newVersion?: string | undefined
-  purl?: string | undefined
-  states?: string[] | string | undefined
-  workspace?: string | undefined
+  ghsaId?: string | undefined
+  states?: 'all' | GQL_PR_STATE | GQL_PR_STATE[]
 }
 
 export async function getSocketPrs(
@@ -387,11 +192,15 @@ async function getSocketPrsWithContext(
   repo: string,
   options?: SocketPrsOptions | undefined,
 ): Promise<ContextualPrMatch[]> {
-  const { author, states: statesValue = 'all' } = {
+  const {
+    author,
+    ghsaId,
+    states: statesValue = 'all',
+  } = {
     __proto__: null,
     ...options,
   } as SocketPrsOptions
-  const branchPattern = getSocketBranchPattern(options)
+  const branchPattern = getSocketFixBranchPattern(ghsaId)
   const checkAuthor = isNonEmptyString(author)
   const octokit = getOctokit()
   const octokitGraphql = getOctokitGraphql()
@@ -537,193 +346,4 @@ async function getSocketPrsWithContext(
     }
   }
   return contextualMatches
-}
-
-export type OpenPrOptions = {
-  baseBranch?: string | undefined
-  cwd?: string | undefined
-  workspace?: string | undefined
-}
-
-export async function openPr(
-  owner: string,
-  repo: string,
-  branch: string,
-  purl: string | PackageURL | SocketArtifact,
-  newVersion: string,
-  options?: OpenPrOptions | undefined,
-): Promise<OctokitResponse<Pr> | null> {
-  const { baseBranch = 'main', workspace } = {
-    __proto__: null,
-    ...options,
-  } as OpenPrOptions
-  const purlObj = getPurlObject(purl)
-  const octokit = getOctokit()
-  try {
-    const octokitPullsCreateParams = {
-      owner,
-      repo,
-      title: getSocketPullRequestTitle(purlObj, newVersion, workspace),
-      head: branch,
-      base: baseBranch,
-      body: getSocketPullRequestBody(purlObj, newVersion, workspace),
-    }
-    debugDir('inspect', { octokitPullsCreateParams })
-    return await octokit.pulls.create(octokitPullsCreateParams)
-  } catch (e) {
-    let message = `Failed to open pull request`
-    const errors =
-      e instanceof RequestError
-        ? (e.response?.data as any)?.['errors']
-        : undefined
-    if (Array.isArray(errors) && errors.length) {
-      const details = errors
-        .map(
-          d =>
-            `- ${d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`}`,
-        )
-        .join('\n')
-      message += `:\n${details}`
-    }
-    debugFn('error', message)
-  }
-  return null
-}
-
-export type OpenCoanaPrOptions = {
-  baseBranch?: string | undefined
-  cwd?: string | undefined
-  ghsaDetails?: Map<string, GhsaDetails> | undefined
-}
-
-export async function openCoanaPr(
-  owner: string,
-  repo: string,
-  branch: string,
-  ghsaIds: string[],
-  options?: OpenCoanaPrOptions | undefined,
-): Promise<OctokitResponse<Pr> | null> {
-  const { baseBranch = 'main', ghsaDetails } = {
-    __proto__: null,
-    ...options,
-  } as OpenCoanaPrOptions
-
-  const octokit = getOctokit()
-  const vulnCount = ghsaIds.length
-
-  const prTitle =
-    vulnCount === 1 ? `Fix for ${ghsaIds[0]}` : `Fixes for ${vulnCount} GHSAs`
-
-  let prBody = ''
-  if (vulnCount === 1) {
-    const ghsaId = ghsaIds[0]!
-    const details = ghsaDetails?.get(ghsaId)
-
-    prBody = `[Socket](https://socket.dev/) fix for [${ghsaId}](https://github.com/advisories/${ghsaId}).`
-    if (details) {
-      const packages = details.vulnerabilities.nodes.map(
-        v => `${v.package.name} (${v.package.ecosystem})`,
-      )
-
-      prBody += [
-        '',
-        '',
-        `**Vulnerability Summary:** ${details.summary}`,
-        '',
-        `**Severity:** ${details.severity}`,
-        '',
-        `**Affected Packages:** ${joinAnd(packages)}`,
-      ].join('\n')
-    }
-  } else {
-    prBody = [
-      `[Socket](https://socket.dev/) fixes for ${vulnCount} GHSAs.`,
-      '',
-      '**Fixed Vulnerabilities:**',
-      ...ghsaIds.map(id => {
-        const details = ghsaDetails?.get(id)
-        const item = `- [${id}](https://github.com/advisories/${id})`
-        if (details) {
-          const packages = details.vulnerabilities.nodes.map(
-            v => `${v.package.name}`,
-          )
-          return `${item} - ${details.summary} (${joinAnd(packages)})`
-        }
-        return item
-      }),
-    ].join('\n')
-  }
-
-  try {
-    const octokitPullsCreateParams = {
-      owner,
-      repo,
-      title: prTitle,
-      head: branch,
-      base: baseBranch,
-      body: prBody,
-    }
-    debugDir('inspect', { octokitPullsCreateParams })
-    return await octokit.pulls.create(octokitPullsCreateParams)
-  } catch (e) {
-    let message = `Failed to open pull request`
-    const errors =
-      e instanceof RequestError
-        ? (e.response?.data as any)?.['errors']
-        : undefined
-    if (Array.isArray(errors) && errors.length) {
-      const details = errors
-        .map(
-          d =>
-            `- ${d.message?.trim() ?? `${d.resource}.${d.field} (${d.code})`}`,
-        )
-        .join('\n')
-      message += `:\n${details}`
-    }
-    debugFn('error', message)
-  }
-  return null
-}
-
-export async function prExistForBranch(
-  owner: string,
-  repo: string,
-  branch: string,
-): Promise<boolean> {
-  const octokit = getOctokit()
-  try {
-    const { data: prs } = await octokit.pulls.list({
-      owner,
-      repo,
-      head: `${owner}:${branch}`,
-      state: 'all',
-      per_page: 1,
-    })
-    return prs.length > 0
-  } catch {}
-  return false
-}
-
-export async function setGitRemoteGithubRepoUrl(
-  owner: string,
-  repo: string,
-  token: string,
-  cwd = process.cwd(),
-): Promise<boolean> {
-  const { host } = new URL(constants.ENV.GITHUB_SERVER_URL)
-  const url = `https://x-access-token:${token}@${host}/${owner}/${repo}`
-  const stdioIgnoreOptions: SpawnOptions = {
-    cwd,
-    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
-  }
-  const quotedCmd = `\`git remote set-url origin ${url}\``
-  debugFn('stdio', `spawn: ${quotedCmd}`)
-  try {
-    await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
-    return true
-  } catch (e) {
-    debugFn('error', `caught: ${quotedCmd} failed`)
-    debugDir('inspect', { error: e })
-  }
-  return false
 }
