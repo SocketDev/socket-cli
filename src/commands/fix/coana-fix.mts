@@ -4,13 +4,9 @@ import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import { getFixEnv } from './fix-env-helpers.mts'
-import {
-  enablePrAutoMerge,
-  fetchGhsaDetails,
-  openCoanaPr,
-  setGitRemoteGithubRepoUrl,
-} from './pull-request.mts'
+import { getFixEnv } from './env-helpers.mts'
+import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
+import { openSocketFixPr } from './pull-request.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { spawnCoana } from '../../utils/coana.mts'
@@ -24,6 +20,11 @@ import {
   gitResetAndClean,
   gitUnstagedModifiedFiles,
 } from '../../utils/git.mts'
+import {
+  enablePrAutoMerge,
+  fetchGhsaDetails,
+  setGitRemoteGithubRepoUrl,
+} from '../../utils/github.mts'
 import { getPackageFilesForScan } from '../../utils/path-resolve.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-names.mts'
@@ -166,8 +167,8 @@ export async function coanaFix(
 
   // Process each GHSA ID individually, similar to npm-fix/pnpm-fix.
   ghsaLoop: for (let i = 0, { length } = ids; i < length; i += 1) {
-    const id = ids[i]!
-    debugFn('notice', `check: ${id}`)
+    const ghsaId = ids[i]!
+    debugFn('notice', `check: ${ghsaId}`)
 
     // Apply fix for single GHSA ID.
     // eslint-disable-next-line no-await-in-loop
@@ -178,7 +179,7 @@ export async function coanaFix(
         '--manifests-tar-hash',
         tarHash,
         '--apply-fixes-to',
-        id,
+        ghsaId,
         ...(fixConfig.rangeStyle
           ? ['--range-style', fixConfig.rangeStyle]
           : []),
@@ -190,7 +191,7 @@ export async function coanaFix(
 
     if (!fixCResult.ok) {
       logger.error(
-        `Update failed for ${id}: ${fixCResult.message || 'Unknown error'}`,
+        `Update failed for ${ghsaId}: ${fixCResult.message || 'Unknown error'}`,
       )
       continue ghsaLoop
     }
@@ -205,13 +206,13 @@ export async function coanaFix(
       : []
 
     if (!modifiedFiles.length) {
-      debugFn('notice', `skip: no changes for ${id}`)
+      debugFn('notice', `skip: no changes for ${ghsaId}`)
       continue ghsaLoop
     }
 
     overallFixed = true
 
-    const branch = `socket/fix/${id}`
+    const branch = getSocketFixBranchName(ghsaId)
 
     try {
       // Check if branch already exists.
@@ -221,11 +222,13 @@ export async function coanaFix(
         continue ghsaLoop
       }
 
-      debugFn('notice', `pr: creating for ${id}`)
+      debugFn('notice', `pr: creating for ${ghsaId}`)
 
-      const details = ghsaDetails.get(id)
-      const summary = details?.summary
-      debugFn('notice', `ghsa: ${id} details ${details ? 'found' : 'missing'}`)
+      const details = ghsaDetails.get(ghsaId)
+      debugFn(
+        'notice',
+        `ghsa: ${ghsaId} details ${details ? 'found' : 'missing'}`,
+      )
 
       const pushed =
         // eslint-disable-next-line no-await-in-loop
@@ -234,7 +237,7 @@ export async function coanaFix(
         (await gitCheckoutBranch(branch, cwd)) &&
         // eslint-disable-next-line no-await-in-loop
         (await gitCommit(
-          `fix: ${id}${summary ? ` - ${summary}` : ''}`,
+          getSocketFixCommitMessage(ghsaId, details),
           modifiedFiles,
           {
             cwd,
@@ -246,7 +249,7 @@ export async function coanaFix(
         (await gitPushBranch(branch, cwd))
 
       if (!pushed) {
-        logger.warn(`Push failed for ${id}, skipping PR creation.`)
+        logger.warn(`Push failed for ${ghsaId}, skipping PR creation.`)
         // eslint-disable-next-line no-await-in-loop
         await gitResetAndClean(fixEnv.baseBranch, cwd)
         // eslint-disable-next-line no-await-in-loop
@@ -266,12 +269,12 @@ export async function coanaFix(
       )
 
       // eslint-disable-next-line no-await-in-loop
-      const prResponse = await openCoanaPr(
+      const prResponse = await openSocketFixPr(
         fixEnv.repoInfo.owner,
         fixEnv.repoInfo.repo,
         branch,
         // Single GHSA ID.
-        [id],
+        [ghsaId],
         {
           baseBranch: fixEnv.baseBranch,
           cwd,
@@ -282,7 +285,7 @@ export async function coanaFix(
       if (prResponse) {
         const { data } = prResponse
         const prRef = `PR #${data.number}`
-        logger.success(`Opened ${prRef} for ${id}.`)
+        logger.success(`Opened ${prRef} for ${ghsaId}.`)
 
         if (autoMerge) {
           logger.indent()
@@ -309,7 +312,7 @@ export async function coanaFix(
       await gitCheckoutBranch(fixEnv.baseBranch, cwd)
     } catch (e) {
       logger.warn(
-        `Unexpected condition: Push failed for ${id}, skipping PR creation.`,
+        `Unexpected condition: Push failed for ${ghsaId}, skipping PR creation.`,
       )
       debugDir('inspect', { error: e })
       // eslint-disable-next-line no-await-in-loop
