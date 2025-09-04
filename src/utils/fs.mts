@@ -35,7 +35,7 @@ export async function findUp(
       try {
         // eslint-disable-next-line no-await-in-loop
         const stats = await fs.stat(thePath)
-        if (!onlyDirectories && (stats.isFile() || stats.isSymbolicLink())) {
+        if (!onlyDirectories && stats.isFile()) {
           return thePath
         }
         if (!onlyFiles && stats.isDirectory()) {
