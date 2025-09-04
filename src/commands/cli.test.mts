@@ -56,8 +56,8 @@ describe('socket root command', async () => {
           --config                    Override the local config with this JSON
           --dry-run                   Do input validation for a command and exit 0 when input is ok
           --help                      Print this help
-          --max-old-space-size        Set Node's V8 --max-old-space-size (\\u200bhttps://nodejs.org/api/cli.html#--max-old-space-sizesize-in-mib\\u200b) option
-          --max-semi-space-size       Set Node's V8 --max-semi-space-size (\\u200bhttps://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib\\u200b) option
+          --max-old-space-size        Set Node's V8 --max-old-space-size (https://nodejs.org/api/cli.html#--max-old-space-sizesize-in-mib) option
+          --max-semi-space-size       Set Node's V8 --max-semi-space-size (https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib) option
           --version                   Print the app version
 
         Environment variables
@@ -68,7 +68,7 @@ describe('socket root command', async () => {
                                       Defaults: github-actions[bot]@users.noreply.github.com
           SOCKET_CLI_GIT_USER_NAME    The git config \`user.name\` used by Socket CLI
                                       Defaults: github-actions[bot]
-          SOCKET_CLI_GITHUB_TOKEN     A classic or fine-grained GitHub personal access token (\\u200bhttps://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens\\u200b)
+          SOCKET_CLI_GITHUB_TOKEN     A classic or fine-grained GitHub personal access token (https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
                                       Aliases: GITHUB_TOKEN
           SOCKET_CLI_NO_API_TOKEN     Make the default API token \`undefined\`
           SOCKET_CLI_NPM_PATH         The absolute location of the npm directory
@@ -82,11 +82,11 @@ describe('socket root command', async () => {
                                       Defaults: The "apiBaseUrl" value of socket/settings local app data
                                       if present, else https://api.socket.dev/v0/
           SOCKET_CLI_API_PROXY        Set the proxy Socket API requests are routed through, e.g. if set to
-                                      http://127.0.0.1:9090 (\\u200bhttps://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries\\u200b) then all request are passed through that proxy
+                                      http://127.0.0.1:9090 (https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries) then all request are passed through that proxy
                                       Aliases: HTTPS_PROXY, https_proxy, HTTP_PROXY, and http_proxy
           SOCKET_CLI_API_TIMEOUT      Set the timeout in milliseconds for Socket API requests
           SOCKET_CLI_DEBUG            Enable debug logging in Socket CLI
-          DEBUG                       Enable debug logging based on the debug (\\u200bhttps://socket.dev/npm/package/debug\\u200b) package"
+          DEBUG                       Enable debug logging based on the debug (https://socket.dev/npm/package/debug) package"
     `)
     expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
