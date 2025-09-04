@@ -285,6 +285,7 @@ export async function coanaFix(
       if (prResponse) {
         const { data } = prResponse
         const prRef = `PR #${data.number}`
+
         logger.success(`Opened ${prRef} for ${ghsaId}.`)
 
         if (autoMerge) {
