@@ -49,7 +49,7 @@ export async function coanaFix(
 
   const sockSdk = sockSdkCResult.data
 
-  const supportedFilesCResult = await fetchSupportedScanFileNames()
+  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
     return supportedFilesCResult
   }
