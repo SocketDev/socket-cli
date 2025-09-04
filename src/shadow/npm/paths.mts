@@ -34,17 +34,6 @@ export function getArboristClassPath() {
   return _arboristClassPath
 }
 
-let _arboristDepValidPath: string | undefined
-export function getArboristDepValidPath() {
-  if (_arboristDepValidPath === undefined) {
-    _arboristDepValidPath = path.join(
-      getArboristPackagePath(),
-      'lib/dep-valid.js',
-    )
-  }
-  return _arboristDepValidPath
-}
-
 let _arboristEdgeClassPath: string | undefined
 export function getArboristEdgeClassPath() {
   if (_arboristEdgeClassPath === undefined) {
