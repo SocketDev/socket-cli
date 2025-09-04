@@ -28,14 +28,14 @@ export async function handleScanReach({
   reachabilityOptions,
   targets,
 }: HandleScanReachConfig) {
+  const { spinner } = constants
+
   // Get supported file names
-  const supportedFilesCResult = await fetchSupportedScanFileNames()
+  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
     await outputScanReach(supportedFilesCResult, { cwd, outputKind })
     return
   }
-
-  const { spinner } = constants
 
   spinner.start(
     'Searching for local manifest files to include in reachability analysis...',

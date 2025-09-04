@@ -79,7 +79,9 @@ export async function handleCreateNewScan({
     logger.info('Auto-generation finished. Proceeding with Scan creation.')
   }
 
-  const supportedFilesCResult = await fetchSupportedScanFileNames()
+  const { spinner } = constants
+
+  const supportedFilesCResult = await fetchSupportedScanFileNames({ spinner })
   if (!supportedFilesCResult.ok) {
     await outputCreateNewScan(supportedFilesCResult, {
       interactive,
@@ -87,8 +89,6 @@ export async function handleCreateNewScan({
     })
     return
   }
-
-  const { spinner } = constants
 
   spinner.start('Searching for local files to include in scan...')
 
