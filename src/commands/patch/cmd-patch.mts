@@ -1,3 +1,4 @@
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -6,6 +7,7 @@ import { handlePatch } from './handle-patch.mts'
 import constants from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
+import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
@@ -96,13 +98,20 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
+  const dotSocketDirPath = path.join(cwd, '.socket')
+  if (!existsSync(dotSocketDirPath)) {
+    logger.error('Error: No .socket directory found in current directory')
+    return
+  }
+
+  const manifestPath = path.join(dotSocketDirPath, 'manifest.json')
+  if (!existsSync(manifestPath)) {
+    logger.error('Error: No manifest.json found in .socket directory')
+  }
+
   const { spinner } = constants
 
-  const packages = Array.isArray(cli.flags['package'])
-    ? cli.flags['package'].flatMap(p => String(p).split(','))
-    : String(cli.flags['package'] || '')
-        .split(',')
-        .filter(Boolean)
+  const packages = cmdFlagValueToArray(cli.flags['package'])
 
   await handlePatch({
     cwd,
