@@ -24,7 +24,8 @@ describe('socket fix', async () => {
 
           Options
             --auto-merge        Enable auto-merge for pull requests that Socket opens.
-                                See GitHub documentation (\\u200bhttps://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository\\u200b) for managing auto-merge for pull requests in your repository.
+                                See GitHub documentation (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository) for managing auto-merge for pull requests in your repository.
+            --id                Provide a list of GHSA IDs (https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids) to compute fixes for, as either a comma separated value or as multiple flags
             --json              Output result as json
             --limit             The number of fixes to attempt at a time (default 10)
             --markdown          Output result as markdown
@@ -38,8 +39,6 @@ describe('socket fix', async () => {
                                   * pin - Use the exact version (e.g. 1.2.3)
                                   * preserve - Retain the existing version range style as-is
                                   * tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
-            --test              Verify the fix by running unit tests
-            --test-script       The test script to run for fix attempts (default 'test')
 
           Examples
             $ socket fix
