@@ -1,7 +1,6 @@
 // @ts-ignore
 import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
-import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../../../../constants.mts'
@@ -98,7 +97,6 @@ export class SafeArborist extends Arborist {
     } as ArboristReifyOptions
 
     const ipc = await getIpc()
-    debugDir('inspect', { ipc })
 
     const binName = ipc[constants.SOCKET_CLI_SHADOW_BIN]
     if (!binName) {
