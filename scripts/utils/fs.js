@@ -21,7 +21,7 @@ function findUpSync(name, options) {
       const filePath = path.join(dir, name)
       try {
         const stats = statSync(filePath, { throwIfNoEntry: false })
-        if (!onlyDirectories && (stats?.isFile() || stats?.isSymbolicLink())) {
+        if (!onlyDirectories && stats?.isFile()) {
           return filePath
         }
         if (!onlyFiles && stats?.isDirectory()) {
