@@ -128,11 +128,13 @@ Available styles:
         type: 'boolean',
         default: false,
         description: 'Verify the fix by running unit tests',
+        hidden: true,
       },
       testScript: {
         type: 'string',
         default: 'test',
         description: "The test script to run for fix attempts (default 'test')",
+        hidden: true,
       },
     },
     help: (command, config) => `
