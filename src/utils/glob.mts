@@ -271,16 +271,6 @@ export async function globWithGitIgnore(
   return filtered
 }
 
-export async function globStreamNodeModules(
-  cwd = process.cwd(),
-): Promise<NodeJS.ReadableStream> {
-  return globStream('**/node_modules', {
-    absolute: true,
-    cwd,
-    onlyDirectories: true,
-  })
-}
-
 export async function globWorkspace(
   agent: Agent,
   cwd = process.cwd(),
