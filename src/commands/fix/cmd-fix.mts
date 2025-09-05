@@ -115,7 +115,7 @@ const hiddenFlags: MeowFlags = {
     description: `Provide a list of ${terminalLink(
       'PURLs',
       'https://github.com/package-url/purl-spec?tab=readme-ov-file#purl',
-    )} to compute fixes for, as either a comma separated value or as\nmultiple flags, instead of querying the Socket API`,
+    )} to compute fixes for, as either a comma separated value or as\nmultiple flags`,
     isMultiple: true,
     shortFlag: 'p',
     hidden: true,
