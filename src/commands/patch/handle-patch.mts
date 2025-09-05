@@ -21,13 +21,6 @@ interface PURL {
   subpath?: string
 }
 
-export interface HandlePatchConfig {
-  cwd: string
-  outputKind: OutputKind
-  packages: string[]
-  spinner: typeof constants.spinner
-}
-
 async function applyNPMPatches(
   patches: Array<{ key: string; purl: PURL; patch: PatchRecord }>,
   dryRun: boolean,
@@ -280,26 +273,33 @@ async function readPackageJson(
   return null
 }
 
+export interface HandlePatchConfig {
+  cwd: string
+  dryRun: boolean
+  outputKind: OutputKind
+  packages: string[]
+  spinner: typeof constants.spinner
+}
+
 export async function handlePatch({
   cwd,
+  dryRun,
   outputKind,
   packages,
   spinner,
 }: HandlePatchConfig): Promise<void> {
-  const dryRun = false // TODO: Add dryRun support via config
-
   try {
     const dotSocketDirPath = path.join(cwd, '.socket')
     const manifestPath = path.join(dotSocketDirPath, 'manifest.json')
 
-    // Read the manifest file
+    // Read the manifest file.
     const manifestContent = await fs.readFile(manifestPath, 'utf-8')
     const manifestData = JSON.parse(manifestContent)
 
-    // Validate the schema
+    // Validate the schema.
     const validated = PatchManifestSchema.parse(manifestData)
 
-    // Parse PURLs and group by ecosystem
+    // Parse PURLs and group by ecosystem.
     const patchesByEcosystem: Record<
       string,
       Array<{ key: string; purl: PURL; patch: PatchRecord }>

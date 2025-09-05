@@ -88,11 +88,6 @@ async function run(
     return
   }
 
-  if (dryRun) {
-    logger.log(constants.DRY_RUN_NOT_SAVING)
-    return
-  }
-
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
   // If given path is absolute then cwd should not affect it.
@@ -115,6 +110,7 @@ async function run(
 
   await handlePatch({
     cwd,
+    dryRun,
     outputKind,
     packages,
     spinner,
