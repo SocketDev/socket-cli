@@ -8,13 +8,21 @@ import constants from './constants.mts'
 
 import type { Flag } from 'meow'
 
-// TODO: Not sure if we're missing something but meow doesn't seem to expose this?
-export type StringFlag = Flag<'string', string> | Flag<'string', string[], true>
+// Meow doesn't expose this.
+export type AnyFlag = StringFlag | BooleanFlag | NumberFlag
+
 export type BooleanFlag =
   | Flag<'boolean', boolean>
   | Flag<'boolean', boolean[], true>
+
 export type NumberFlag = Flag<'number', number> | Flag<'number', number[], true>
-export type AnyFlag = StringFlag | BooleanFlag | NumberFlag
+
+export type StringFlag = Flag<'string', string> | Flag<'string', string[], true>
+
+export type MeowFlag = AnyFlag & { description: string; hidden?: boolean }
+
+// We use this description in getFlagListOutput, meow doesn't care.
+export type MeowFlags = Record<string, MeowFlag>
 
 type RawSpaceSizeFlags = {
   maxOldSpaceSize: number
@@ -132,12 +140,6 @@ export function getMaxSemiSpaceSizeFlag(): number {
 // eslint-disable-next-line n/exports-style
 exports.getMaxSemiSpaceSizeFlag = getMaxSemiSpaceSizeFlag
 
-// Note: we use this description in getFlagListOutput, meow doesn't care
-export type MeowFlags = Record<
-  string,
-  AnyFlag & { description: string; hidden?: boolean }
->
-
 export const commonFlags: MeowFlags = {
   config: {
     type: 'string',
@@ -148,7 +150,8 @@ export const commonFlags: MeowFlags = {
   dryRun: {
     type: 'boolean',
     default: false,
-    hidden: true, // Only show in root command
+    // Only show in root command.
+    hidden: true,
     description:
       'Do input validation for a command and exit 0 when input is ok',
   },
