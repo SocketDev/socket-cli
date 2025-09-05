@@ -19,12 +19,10 @@ describe('socket manifest cdxgen', async () => {
         .replace(/(?<=CycloneDX\s+Generator\s+)[\d.]+/, '<redacted>')
         .replace(/(?<=Node\.js,\s+Version:\s+)[\d.]+/, '<redacted>')
 
-      expect(redactedStdout).toMatchInlineSnapshot(
-        `
+      expect(redactedStdout).toMatchInlineSnapshot(`
         "CycloneDX Generator <redacted>
         Runtime: Node.js, Version: <redacted>"
-      `,
-      )
+      `)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
