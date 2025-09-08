@@ -76,7 +76,7 @@ export function cmdit(
 export async function invokeNpm(
   entryPath: string,
   args: string[],
-  env = {},
+  spawnEnv = {},
 ): Promise<{
   code: number
   error?: {
@@ -93,7 +93,7 @@ export async function invokeNpm(
       env: {
         ...process.env,
         ...constants.processEnv,
-        ...env,
+        ...spawnEnv,
       },
     })
     return {
