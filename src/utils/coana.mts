@@ -35,7 +35,7 @@ export async function spawnCoana(
     __proto__: null,
     ...options,
   } as ShadowBinOptions
-  const mixinsEnv: Record<string, string> = {
+  const mixinsEnv: NodeJS.ProcessEnv = {
     SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
   }
   const defaultApiToken = getDefaultApiToken()
@@ -63,6 +63,8 @@ export async function spawnCoana(
       {
         ...spawnOpts,
         env: {
+          ...process.env,
+          ...constants.processEnv,
           ...mixinsEnv,
           ...spawnEnv,
         },

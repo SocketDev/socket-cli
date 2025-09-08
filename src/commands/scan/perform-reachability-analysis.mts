@@ -166,22 +166,20 @@ export async function performReachabilityAnalysis(
   ]
 
   // Build environment variables.
-  const env: NodeJS.ProcessEnv = {
-    ...process.env,
-  }
+  const coanaEnv: NodeJS.ProcessEnv = {}
   // do not pass default repo and branch name to coana to avoid mixing
   // buckets (cached configuration) from projects that are likely very different.
   if (repoName && repoName !== constants.SOCKET_DEFAULT_REPOSITORY) {
-    env['SOCKET_REPO_NAME'] = repoName
+    coanaEnv['SOCKET_REPO_NAME'] = repoName
   }
   if (branchName && branchName !== constants.SOCKET_DEFAULT_BRANCH) {
-    env['SOCKET_BRANCH_NAME'] = branchName
+    coanaEnv['SOCKET_BRANCH_NAME'] = branchName
   }
 
   // Run Coana with the manifests tar hash.
   const coanaResult = await spawnCoana(coanaArgs, orgSlug, {
     cwd,
-    env,
+    env: coanaEnv,
     spinner,
     stdio: 'inherit',
   })
