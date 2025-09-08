@@ -6,7 +6,9 @@
   const rootPath = path.join(__dirname, '..')
   Module.enableCompileCache?.(path.join(rootPath, '.cache'))
 
-  const constants = require(path.join(rootPath, 'dist/constants.js'))
+  const { default: constants } = require(
+    path.join(rootPath, 'dist/constants.js'),
+  )
   const { spawn } = require(
     path.join(rootPath, 'external/@socketsecurity/registry/lib/spawn.js'),
   )
