@@ -25,13 +25,14 @@ export async function outputPatchResult(
 
   const { patchedPackages } = result.data
 
-  if (patchedPackages.length > 0) {
-    logger.success(
+  if (patchedPackages.length) {
+    logger.group(
       `Successfully processed patches for ${patchedPackages.length} package(s):`,
     )
     for (const pkg of patchedPackages) {
       logger.success(pkg)
     }
+    logger.groupEnd()
   } else {
     logger.info('No packages found requiring patches')
   }
