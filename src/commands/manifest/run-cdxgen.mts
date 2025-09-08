@@ -5,7 +5,7 @@ import colors from 'yoctocolors-cjs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants.mts'
+import constants, { NPM, PNPM } from '../../constants.mts'
 import shadowBin from '../../shadow/npm/bin.mts'
 
 import type {
@@ -19,8 +19,8 @@ const nodejsPlatformTypes = new Set([
   'javascript',
   'js',
   'nodejs',
-  'npm',
-  'pnpm',
+  NPM,
+  PNPM,
   'ts',
   'tsx',
   'typescript',
@@ -80,7 +80,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     existsSync(`./${YARN_LOCK}`)
   ) {
     if (existsSync(`./${PACKAGE_LOCK_JSON}`)) {
-      argvMutable['type'] = 'npm'
+      argvMutable['type'] = NPM
     } else {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
@@ -96,7 +96,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
           shadowOpts,
         )
         await synpPromise
-        argvMutable['type'] = 'npm'
+        argvMutable['type'] = NPM
         cleanupPackageLock = true
       } catch {}
     }

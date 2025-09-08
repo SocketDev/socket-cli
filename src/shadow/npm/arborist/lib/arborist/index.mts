@@ -3,7 +3,7 @@ import UntypedArborist from '@npmcli/arborist/lib/arborist/index.js'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../../../../constants.mts'
+import constants, { NODE_MODULES, NPX } from '../../../../../constants.mts'
 import { findUp } from '../../../../../utils/fs.mts'
 import { logAlertsMap } from '../../../../../utils/socket-package-alert.mts'
 import {
@@ -123,8 +123,8 @@ export class SafeArborist extends Arborist {
     const silent = !!options['silent']
     const spinner = silent || !shadowProgress ? undefined : constants.spinner
 
-    const isShadowNpx = binName === 'npx'
-    const hasExisting = await findUp('node_modules', {
+    const isShadowNpx = binName === NPX
+    const hasExisting = await findUp(NODE_MODULES, {
       cwd: process.cwd(),
       onlyDirectories: true,
     })

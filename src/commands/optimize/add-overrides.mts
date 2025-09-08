@@ -23,6 +23,7 @@ import { cmdPrefixMessage } from '../../utils/cmd.mts'
 import { globWorkspace } from '../../utils/glob.mts'
 import { npa } from '../../utils/npm-package-arg.mts'
 import { getMajor } from '../../utils/semver.mts'
+import { NPM, PNPM } from '../../constants.mts'
 
 import type { GetOverridesResult } from './get-overrides-by-agent.mts'
 import type { AliasResult } from '../../utils/npm-package-arg.mts'
@@ -45,7 +46,7 @@ type AddOverridesState = {
   warnedPnpmWorkspaceRequiresNpm: boolean
 }
 
-const manifestNpmOverrides = getManifestData('npm')
+const manifestNpmOverrides = getManifestData(NPM)
 
 export async function addOverrides(
   pkgEnvDetails: EnvDetails,
@@ -73,7 +74,7 @@ export async function addOverrides(
     },
   } = { __proto__: null, ...options } as AddOverridesOptions
   const workspacePkgJsonPaths = await globWorkspace(agent, pkgPath)
-  const isPnpm = agent === 'pnpm'
+  const isPnpm = agent === PNPM
   const isWorkspace = workspacePkgJsonPaths.length > 0
   const isWorkspaceRoot = pkgPath === rootPath
   const isLockScanned = isWorkspaceRoot && !prod
@@ -82,7 +83,7 @@ export async function addOverrides(
     isWorkspace &&
     isPnpm &&
     // npmExecPath will === the agent name IF it CANNOT be resolved.
-    npmExecPath === 'npm' &&
+    npmExecPath === NPM &&
     !state.warnedPnpmWorkspaceRequiresNpm
   ) {
     state.warnedPnpmWorkspaceRequiresNpm = true
@@ -194,7 +195,7 @@ export async function addOverrides(
               const sockRegDepAlias = depAliasMap.get(sockRegPkgName)
               const depAlias = sockRegDepAlias ?? origDepAlias
               let newSpec = sockOverrideSpec
-              if (type === 'npm' && depAlias) {
+              if (type === NPM && depAlias) {
                 // With npm one may not set an override for a package that one directly
                 // depends on unless both the dependency and the override itself share
                 // the exact same spec. To make this limitation easier to deal with,

@@ -1,7 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleThreatFeed } from './handle-threat-feed.mts'
-import constants from '../../constants.mts'
+import constants, { NPM } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
@@ -17,7 +17,7 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 export const CMD_NAME = 'threat-feed'
 
-const ECOSYSTEMS = new Set(['gem', 'golang', 'maven', 'npm', 'nuget', 'pypi'])
+const ECOSYSTEMS = new Set(['gem', 'golang', 'maven', NPM, 'nuget', 'pypi'])
 
 const TYPE_FILTERS = new Set([
   'anom',

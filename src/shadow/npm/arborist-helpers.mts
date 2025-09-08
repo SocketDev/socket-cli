@@ -6,7 +6,7 @@ import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { getOwn, hasOwn } from '@socketsecurity/registry/lib/objects'
 import { fetchPackagePackument } from '@socketsecurity/registry/lib/packages'
 
-import constants from '../../constants.mts'
+import constants, { NPM } from '../../constants.mts'
 import { Edge } from './arborist/index.mts'
 import { DiffAction } from './arborist/types.mts'
 import { getAlertsMapFromPurls } from '../../utils/alerts-map.mts'
@@ -55,7 +55,7 @@ export function findBestPatchVersion(
     __proto__: null,
     ...options,
   } as BestPatchVersionOptions
-  const manifestData = getManifestData('npm', node.name)
+  const manifestData = getManifestData(NPM, node.name)
   let eligibleVersions
   if (manifestData && manifestData.name === manifestData.package) {
     const major = getMajor(manifestData.version)
