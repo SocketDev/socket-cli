@@ -1,3 +1,5 @@
+import { NPM } from '../constants.mts'
+
 import type { EcosystemString } from '@socketsecurity/registry'
 import type { components } from '@socketsecurity/sdk/types/api'
 
@@ -34,7 +36,7 @@ export const ALL_ECOSYSTEMS = [
   'huggingface',
   'maven',
   'mlflow',
-  'npm',
+  NPM,
   'nuget',
   'oci',
   'pub',

@@ -28,6 +28,7 @@ const {
   BUN,
   HIDDEN_PACKAGE_LOCK_JSON,
   LOCK_EXT,
+  NODE_MODULES,
   NPM,
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
   PACKAGE_JSON,
@@ -198,7 +199,7 @@ const LOCKS: Record<string, Agent> = {
   //
   // Unlike the other LOCKS keys this key contains a directory AND filename so
   // it has to be handled differently.
-  'node_modules/.package-lock.json': NPM,
+  [`${NODE_MODULES}/.package-lock.json`]: NPM,
 }
 
 async function getAgentExecPath(agent: Agent): Promise<string> {
