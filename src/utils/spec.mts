@@ -2,10 +2,11 @@ import semver from 'semver'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 
+import { NPM } from '../constants.mts'
 import { stripPnpmPeerSuffix } from './pnpm.mts'
 
 export function idToNpmPurl(id: string): string {
-  return `pkg:npm/${id}`
+  return `pkg:${NPM}/${id}`
 }
 
 export function idToPurl(id: string, type: string): string {
@@ -19,7 +20,7 @@ export function resolvePackageVersion(purlObj: PackageURL): string {
   }
   const { type } = purlObj
   return (
-    semver.coerce(type === 'npm' ? stripPnpmPeerSuffix(version) : version)
+    semver.coerce(type === NPM ? stripPnpmPeerSuffix(version) : version)
       ?.version ?? ''
   )
 }

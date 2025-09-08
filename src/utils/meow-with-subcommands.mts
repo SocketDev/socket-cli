@@ -19,7 +19,7 @@ import {
   overrideConfigApiToken,
 } from './config.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
-import constants from '../constants.mts'
+import constants, { NPM, NPX } from '../constants.mts'
 import { commonFlags } from '../flags.mts'
 import { getVisibleTokenPrefix } from './sdk.mts'
 import { tildify } from './tildify.mts'
@@ -344,8 +344,8 @@ export async function meowWithSubcommands(
       'login',
       'logout',
       'manifest',
-      'npm',
-      'npx',
+      NPM,
+      NPX,
       'optimize',
       'organization',
       'package',
@@ -402,8 +402,8 @@ export async function meowWithSubcommands(
       'Local tools',
       `  fix                         ${description(subcommands['fix'])}`,
       `  manifest                    ${description(subcommands['manifest'])}`,
-      `  npm                         ${description(subcommands['npm'])}`,
-      `  npx                         ${description(subcommands['npx'])}`,
+      `  npm                         ${description(subcommands[NPM])}`,
+      `  npx                         ${description(subcommands[NPX])}`,
       `  optimize                    ${description(subcommands['optimize'])}`,
       `  raw-npm                     ${description(subcommands['raw-npm'])}`,
       `  raw-npx                     ${description(subcommands['raw-npx'])}`,

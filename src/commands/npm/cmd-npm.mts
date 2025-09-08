@@ -2,7 +2,7 @@ import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants.mts'
+import constants, { NPM } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagApiRequirementsOutput } from '../../utils/output-formatting.mts'
@@ -11,7 +11,7 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 const require = createRequire(import.meta.url)
 
-export const CMD_NAME = 'npm'
+export const CMD_NAME = NPM
 
 const description = 'Run npm with the Socket wrapper'
 
@@ -71,7 +71,7 @@ async function run(
 
   process.exitCode = 1
 
-  const { spawnPromise } = await shadowBin('npm', argv, { stdio: 'inherit' })
+  const { spawnPromise } = await shadowBin(NPM, argv, { stdio: 'inherit' })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on(

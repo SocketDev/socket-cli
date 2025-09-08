@@ -2,7 +2,7 @@ import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import constants from '../constants.mts'
+import constants, { NPM, PNPM } from '../constants.mts'
 import { cmdFlagsToString } from './cmd.mts'
 import { shadowNpmInstall } from '../shadow/npm/install.mts'
 
@@ -22,8 +22,8 @@ export function runAgentInstall(
   options?: AgentInstallOptions | undefined,
 ): AgentSpawnResult {
   const { agent, agentExecPath } = pkgEnvDetails
-  const isNpm = agent === 'npm'
-  const isPnpm = agent === 'pnpm'
+  const isNpm = agent === NPM
+  const isPnpm = agent === PNPM
   // All package managers support the "install" command.
   if (isNpm) {
     return shadowNpmInstall({

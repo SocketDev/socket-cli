@@ -11,6 +11,7 @@ import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { transform } from '@socketsecurity/registry/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
+import { NODE_MODULES, PNPM } from '../constants.mts'
 import type { Agent } from './package-environment.mts'
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
@@ -30,7 +31,7 @@ const IGNORED_DIRS = [
   '.yarn', // Where node modules are installed when using Yarn, see <https://yarnpkg.com/>
   'bower_components', // Where Bower packages are installed, see <http://bower.io/>
   'coverage', // Standard output directory for code coverage reports, see <https://github.com/gotwarlost/istanbul>
-  'node_modules', // Where Node modules are installed, see <https://nodejs.org/>
+  NODE_MODULES, // Where Node modules are installed, see <https://nodejs.org/>
   // Taken from globby:
   // https://github.com/sindresorhus/globby/blob/v14.0.2/ignore.js#L11-L16
   'flow-typed',
@@ -43,7 +44,7 @@ async function getWorkspaceGlobs(
   cwd = process.cwd(),
 ): Promise<string[]> {
   let workspacePatterns
-  if (agent === 'pnpm') {
+  if (agent === PNPM) {
     for (const workspacePath of [
       path.join(cwd, 'pnpm-workspace.yaml'),
       path.join(cwd, 'pnpm-workspace.yml'),

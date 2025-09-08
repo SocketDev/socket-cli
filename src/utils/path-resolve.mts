@@ -6,7 +6,7 @@ import which from 'which'
 import { isDirSync } from '@socketsecurity/registry/lib/fs'
 import { resolveBinPathSync } from '@socketsecurity/registry/lib/npm'
 
-import constants from '../constants.mts'
+import constants, { NODE_MODULES, NPM } from '../constants.mts'
 import {
   filterBySupportedScanFiles,
   globWithGitIgnore,
@@ -46,7 +46,7 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
   const { WIN32 } = constants
   let thePath = npmBinPath
   while (true) {
-    const libNmNpmPath = path.join(thePath, 'lib/node_modules/npm')
+    const libNmNpmPath = path.join(thePath, `lib/${NODE_MODULES}/${NPM}`)
     // mise, which uses opaque binaries, puts its npm bin in a path like:
     //   /Users/SomeUsername/.local/share/mise/installs/node/vX.X.X/bin/npm.
     // HOWEVER, the location of the npm install is:
@@ -59,9 +59,9 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
     ) {
       thePath = libNmNpmPath
     }
-    const hasNmInCurrPath = isDirSync(path.join(thePath, 'node_modules'))
+    const hasNmInCurrPath = isDirSync(path.join(thePath, NODE_MODULES))
     const hasNmInParentPath =
-      !hasNmInCurrPath && isDirSync(path.join(thePath, '../node_modules'))
+      !hasNmInCurrPath && isDirSync(path.join(thePath, `../${NODE_MODULES}`))
     if (
       // npm bin paths may look like:
       //   /usr/local/share/npm/bin/npm
@@ -77,9 +77,9 @@ export function findNpmDirPathSync(npmBinPath: string): string | undefined {
         // In some bespoke cases the node_modules folder is in the parent directory.
         hasNmInParentPath) &&
       // Optimistically look for the default location.
-      (path.basename(thePath) === 'npm' ||
+      (path.basename(thePath) === NPM ||
         // Chocolatey installs npm bins in the same directory as node bins.
-        (WIN32 && existsSync(path.join(thePath, 'npm.cmd'))))
+        (WIN32 && existsSync(path.join(thePath, `${NPM}.cmd`))))
     ) {
       return hasNmInParentPath ? path.dirname(thePath) : thePath
     }

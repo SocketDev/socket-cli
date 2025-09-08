@@ -9,7 +9,7 @@ import {
 import { getOwn, isObject } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../../constants.mts'
+import constants, { NPM } from '../../constants.mts'
 import { getNpmBinPath } from '../../utils/npm-paths.mts'
 
 import type { SpawnResult } from '@socketsecurity/registry/lib/spawn'
@@ -100,7 +100,7 @@ export function shadowNpmInstall(
   if (useIpc) {
     spawnPromise.process.send({
       [constants.SOCKET_IPC_HANDSHAKE]: {
-        [constants.SOCKET_CLI_SHADOW_BIN]: 'npm',
+        [constants.SOCKET_CLI_SHADOW_BIN]: NPM,
         [constants.SOCKET_CLI_SHADOW_PROGRESS]: progressArg,
         ...ipc,
       },

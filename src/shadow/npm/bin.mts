@@ -9,7 +9,7 @@ import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { installLinks } from './link.mts'
-import constants from '../../constants.mts'
+import constants, { NODE_MODULES, NPM, NPX } from '../../constants.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
 import { findUp } from '../../utils/fs.mts'
 import { getPublicApiToken } from '../../utils/sdk.mts'
@@ -30,7 +30,7 @@ export type ShadowBinResult = {
 }
 
 export default async function shadowBin(
-  binName: 'npm' | 'npx',
+  binName: typeof NPM | typeof NPX,
   args: string[] | readonly string[] = process.argv.slice(2),
   options?: ShadowBinOptions | undefined,
   extra?: SpawnExtra | undefined,
@@ -41,7 +41,7 @@ export default async function shadowBin(
     ...spawnOpts
   } = { __proto__: null, ...options } as ShadowBinOptions
   const cwd = getOwn(spawnOpts, 'cwd') ?? process.cwd()
-  const isShadowNpm = binName === 'npm'
+  const isShadowNpm = binName === NPM
   const terminatorPos = args.indexOf('--')
   const rawBinArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   const nodeOptionsArg = rawBinArgs.findLast(isNpmNodeOptionsFlag)
@@ -74,7 +74,7 @@ export default async function shadowBin(
   // two levels quieter.
   const logLevelArgs = isSilent ? ['--loglevel', 'error'] : []
   const noAuditArgs =
-    useAudit || !(await findUp('node_modules', { cwd, onlyDirectories: true }))
+    useAudit || !(await findUp(NODE_MODULES, { cwd, onlyDirectories: true }))
       ? []
       : ['--no-audit']
 
