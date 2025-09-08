@@ -12,6 +12,7 @@ import { transform } from '@socketsecurity/registry/lib/streams'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { NODE_MODULES, PNPM } from '../constants.mts'
+
 import type { Agent } from './package-environment.mts'
 import type { SocketYml } from '@socketsecurity/config'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'

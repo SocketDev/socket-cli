@@ -26,8 +26,8 @@ import type { SemVer } from 'semver'
 const {
   BINARY_LOCK_EXT,
   BUN,
+  EXT_LOCK,
   HIDDEN_PACKAGE_LOCK_JSON,
-  LOCK_EXT,
   NODE_MODULES,
   NPM,
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
@@ -148,7 +148,7 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
           cwd = process.cwd(),
         ) => {
           const ext = path.extname(lockPath)
-          if (ext === LOCK_EXT) {
+          if (ext === EXT_LOCK) {
             return await defaultReader(lockPath)
           }
           if (ext === BINARY_LOCK_EXT) {
@@ -182,7 +182,7 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
 
 // The order of LOCKS properties IS significant as it affects iteration order.
 const LOCKS: Record<string, Agent> = {
-  [`bun${LOCK_EXT}`]: BUN,
+  [`bun${EXT_LOCK}`]: BUN,
   [`bun${BINARY_LOCK_EXT}`]: BUN,
   // If both package-lock.json and npm-shrinkwrap.json are present in the root
   // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
@@ -192,7 +192,7 @@ const LOCKS: Record<string, Agent> = {
   'package-lock.json': NPM,
   'pnpm-lock.yaml': PNPM,
   'pnpm-lock.yml': PNPM,
-  [`yarn${LOCK_EXT}`]: YARN_CLASSIC,
+  [`yarn${EXT_LOCK}`]: YARN_CLASSIC,
   'vlt-lock.json': VLT,
   // Lastly, look for a hidden lock file which is present if .npmrc has package-lock=false:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
