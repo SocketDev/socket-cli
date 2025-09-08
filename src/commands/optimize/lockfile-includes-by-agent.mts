@@ -4,7 +4,7 @@ import constants from '../../constants.mts'
 
 import type { EnvDetails } from '../../utils/package-environment.mts'
 
-const { BUN, LOCK_EXT, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
+const { BUN, EXT_LOCK, NPM, PNPM, VLT, YARN_BERRY, YARN_CLASSIC } = constants
 
 export function npmLockSrcIncludes(lockSrc: string, name: string) {
   // Detects the package name in the following cases:
@@ -21,7 +21,7 @@ export function bunLockSrcIncludes(
   // we treat it as a yarn.lock. When lockName ends with a .lock we
   // treat it as a package-lock.json. The bun.lock format is not identical
   // package-lock.json, however it close enough for npmLockIncludes to work.
-  const lockfileScanner = lockName?.endsWith(LOCK_EXT)
+  const lockfileScanner = lockName?.endsWith(EXT_LOCK)
     ? npmLockSrcIncludes
     : yarnLockSrcIncludes
   return lockfileScanner(lockSrc, name)

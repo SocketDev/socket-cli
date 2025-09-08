@@ -19,6 +19,8 @@ const __dirname = path.dirname(__filename)
 
 const {
   NPM,
+  PNPM,
+  YARN_LOCK,
   kInternalsSymbol,
   [kInternalsSymbol as unknown as 'Symbol(kInternalsSymbol)']: {
     attributes: registryConstantsAttribs,
@@ -38,10 +40,10 @@ export type Internals = Remap<
   Omit<RegistryInternals, 'getIpc'> &
     Readonly<{
       getIpc: {
-        (): Promise<IPC>
-        <K extends keyof IPC | undefined>(
+        (): Promise<IpcObject>
+        <K extends keyof IpcObject | undefined>(
           key?: K | undefined,
-        ): Promise<K extends keyof IPC ? IPC[K] : IPC>
+        ): Promise<K extends keyof IpcObject ? IpcObject[K] : IpcObject>
       }
       getSentry: () => Sentry
       setSentry(Sentry: Sentry): boolean
@@ -91,11 +93,7 @@ export type ENV = Remap<
     }>
 >
 
-export type ProcessEnv = {
-  [K in keyof ENV]?: string
-}
-
-export type IPC = Readonly<{
+export type IpcObject = Readonly<{
   SOCKET_CLI_FIX?: string | undefined
   SOCKET_CLI_OPTIMIZE?: boolean | undefined
   SOCKET_CLI_SHADOW_ACCEPT_RISKS?: boolean | undefined
@@ -105,47 +103,92 @@ export type IPC = Readonly<{
   SOCKET_CLI_SHADOW_SILENT?: boolean | undefined
 }>
 
+export type ProcessEnv = {
+  [K in keyof ENV]?: string
+}
+
+const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
+const ALERT_TYPE_CVE = 'cve'
+const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
+const ALERT_TYPE_MILD_CVE = 'mildCVE'
+const API_V0_URL = 'https://api.socket.dev/v0/'
+const BINARY_LOCK_EXT = '.lockb'
+const BUN = 'bun'
+const DOT_SOCKET_DOT_FACTS_JSON = '.socket.facts.json'
+const DRY_RUN_LABEL = '[DryRun]'
+const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
+const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
+const LOCALAPPDATA = 'LOCALAPPDATA'
+const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
+const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
+const NODE_MODULES = 'node_modules'
+const NPX = 'npx'
+const JSON = 'json'
+const MARKDOWN = 'markdown'
+const TEXT = 'text'
+const PACKAGE_JSON = 'package.json'
+const REDACTED = '<redacted>'
+const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
+const SOCKET_CLI_BIN_NAME = 'socket'
+const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
+const SOCKET_CLI_SHADOW_ACCEPT_RISKS = 'SOCKET_CLI_SHADOW_ACCEPT_RISKS'
+const SOCKET_CLI_SHADOW_API_TOKEN = 'SOCKET_CLI_SHADOW_API_TOKEN'
+const SOCKET_CLI_SHADOW_BIN = 'SOCKET_CLI_SHADOW_BIN'
+const SOCKET_CLI_SHADOW_PROGRESS = 'SOCKET_CLI_SHADOW_PROGRESS'
+const SOCKET_CLI_SHADOW_SILENT = 'SOCKET_CLI_SHADOW_SILENT'
+const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
+const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
+const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
+const SOCKET_WEBSITE_URL = 'https://socket.dev'
+const VLT = 'vlt'
+const YARN = 'yarn'
+const YARN_BERRY = 'yarn/berry'
+const YARN_CLASSIC = 'yarn/classic'
+
 export type Constants = Remap<
-  Omit<typeof registryConstants, 'Symbol(kInternalsSymbol)' | 'ENV' | 'IPC'> & {
+  Omit<
+    typeof registryConstants,
+    'Symbol(kInternalsSymbol)' | 'ENV' | 'ipcObject'
+  > & {
     readonly 'Symbol(kInternalsSymbol)': Internals
-    readonly ALERT_TYPE_CRITICAL_CVE: 'criticalCVE'
-    readonly ALERT_TYPE_CVE: 'cve'
-    readonly ALERT_TYPE_MEDIUM_CVE: 'mediumCVE'
-    readonly ALERT_TYPE_MILD_CVE: 'mildCVE'
-    readonly API_V0_URL: 'https://api.socket.dev/v0/'
-    readonly BINARY_LOCK_EXT: '.lockb'
-    readonly BUN: 'bun'
+    readonly ALERT_TYPE_CRITICAL_CVE: typeof ALERT_TYPE_CRITICAL_CVE
+    readonly ALERT_TYPE_CVE: typeof ALERT_TYPE_CVE
+    readonly ALERT_TYPE_MEDIUM_CVE: typeof ALERT_TYPE_MEDIUM_CVE
+    readonly ALERT_TYPE_MILD_CVE: typeof ALERT_TYPE_MILD_CVE
+    readonly API_V0_URL: typeof API_V0_URL
+    readonly BINARY_LOCK_EXT: typeof BINARY_LOCK_EXT
+    readonly BUN: typeof BUN
     readonly ENV: ENV
-    readonly DOT_SOCKET_DOT_FACTS_JSON: '.socket.facts.json'
-    readonly DRY_RUN_LABEL: '[DryRun]'
-    readonly DRY_RUN_BAILING_NOW: '[DryRun] Bailing now'
-    readonly DRY_RUN_NOT_SAVING: '[DryRun] Not saving'
-    readonly IPC: IPC
-    readonly LOCK_EXT: '.lock'
-    readonly NPM_BUGGY_OVERRIDES_PATCHED_VERSION: '11.2.0'
-    readonly NPM_REGISTRY_URL: 'https://registry.npmjs.org'
-    readonly PNPM: 'pnpm'
-    readonly REDACTED: '<redacted>'
-    readonly SOCKET_CLI_ACCEPT_RISKS: 'SOCKET_CLI_ACCEPT_RISKS'
-    readonly SOCKET_CLI_BIN_NAME: 'socket'
-    readonly SOCKET_CLI_CONFIG: 'SOCKET_CLI_CONFIG'
-    readonly SOCKET_CLI_FIX: 'SOCKET_CLI_FIX'
-    readonly SOCKET_CLI_ISSUES_URL: 'https://github.com/SocketDev/socket-cli/issues'
-    readonly SOCKET_CLI_OPTIMIZE: 'SOCKET_CLI_OPTIMIZE'
-    readonly SOCKET_CLI_SHADOW_ACCEPT_RISKS: 'SOCKET_CLI_SHADOW_ACCEPT_RISKS'
-    readonly SOCKET_CLI_SHADOW_API_TOKEN: 'SOCKET_CLI_SHADOW_API_TOKEN'
-    readonly SOCKET_CLI_SHADOW_BIN: 'SOCKET_CLI_SHADOW_BIN'
-    readonly SOCKET_CLI_SHADOW_PROGRESS: 'SOCKET_CLI_SHADOW_PROGRESS'
-    readonly SOCKET_CLI_SHADOW_SILENT: 'SOCKET_CLI_SHADOW_SILENT'
-    readonly SOCKET_CLI_VIEW_ALL_RISKS: 'SOCKET_CLI_VIEW_ALL_RISKS'
-    readonly SOCKET_DEFAULT_BRANCH: 'socket-default-branch'
-    readonly SOCKET_DEFAULT_REPOSITORY: 'socket-default-repository'
-    readonly SOCKET_WEBSITE_URL: 'https://socket.dev'
-    readonly VLT: 'vlt'
-    readonly YARN: 'yarn'
-    readonly YARN_BERRY: 'yarn/berry'
-    readonly YARN_CLASSIC: 'yarn/classic'
-    readonly YARN_LOCK: 'yarn.lock'
+    readonly DOT_SOCKET_DOT_FACTS_JSON: typeof DOT_SOCKET_DOT_FACTS_JSON
+    readonly DRY_RUN_LABEL: typeof DRY_RUN_LABEL
+    readonly DRY_RUN_BAILING_NOW: typeof DRY_RUN_BAILING_NOW
+    readonly DRY_RUN_NOT_SAVING: typeof DRY_RUN_NOT_SAVING
+    readonly NODE_MODULES: typeof NODE_MODULES
+    readonly NPM_BUGGY_OVERRIDES_PATCHED_VERSION: typeof NPM_BUGGY_OVERRIDES_PATCHED_VERSION
+    readonly NPM_REGISTRY_URL: typeof NPM_REGISTRY_URL
+    readonly NPM: typeof NPM
+    readonly NPX: typeof NPX
+    readonly JSON: typeof JSON
+    readonly MARKDOWN: typeof MARKDOWN
+    readonly TEXT: typeof TEXT
+    readonly PACKAGE_JSON: typeof PACKAGE_JSON
+    readonly REDACTED: typeof REDACTED
+    readonly SOCKET_CLI_ACCEPT_RISKS: typeof SOCKET_CLI_ACCEPT_RISKS
+    readonly SOCKET_CLI_BIN_NAME: typeof SOCKET_CLI_BIN_NAME
+    readonly SOCKET_CLI_ISSUES_URL: typeof SOCKET_CLI_ISSUES_URL
+    readonly SOCKET_CLI_SHADOW_ACCEPT_RISKS: typeof SOCKET_CLI_SHADOW_ACCEPT_RISKS
+    readonly SOCKET_CLI_SHADOW_API_TOKEN: typeof SOCKET_CLI_SHADOW_API_TOKEN
+    readonly SOCKET_CLI_SHADOW_BIN: typeof SOCKET_CLI_SHADOW_BIN
+    readonly SOCKET_CLI_SHADOW_PROGRESS: typeof SOCKET_CLI_SHADOW_PROGRESS
+    readonly SOCKET_CLI_SHADOW_SILENT: typeof SOCKET_CLI_SHADOW_SILENT
+    readonly SOCKET_CLI_VIEW_ALL_RISKS: typeof SOCKET_CLI_VIEW_ALL_RISKS
+    readonly SOCKET_DEFAULT_BRANCH: typeof SOCKET_DEFAULT_BRANCH
+    readonly SOCKET_DEFAULT_REPOSITORY: typeof SOCKET_DEFAULT_REPOSITORY
+    readonly SOCKET_WEBSITE_URL: typeof SOCKET_WEBSITE_URL
+    readonly VLT: typeof VLT
+    readonly YARN: typeof YARN
+    readonly YARN_BERRY: typeof YARN_BERRY
+    readonly YARN_CLASSIC: typeof YARN_CLASSIC
     readonly bashRcPath: string
     readonly binCliPath: string
     readonly binPath: string
@@ -164,6 +207,7 @@ export type Constants = Remap<
     readonly githubCachePath: string
     readonly homePath: string
     readonly instrumentWithSentryPath: string
+    readonly ipcObject: IpcObject
     readonly minimumVersionByAgent: Map<Agent, string>
     readonly nmBinPath: string
     readonly nodeDebugFlags: string[]
@@ -183,43 +227,6 @@ export type Constants = Remap<
     readonly zshRcPath: string
   }
 >
-
-const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'
-const ALERT_TYPE_CVE = 'cve'
-const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
-const ALERT_TYPE_MILD_CVE = 'mildCVE'
-const API_V0_URL = 'https://api.socket.dev/v0/'
-const BINARY_LOCK_EXT = '.lockb'
-const BUN = 'bun'
-const DOT_SOCKET_DOT_FACTS_JSON = '.socket.facts.json'
-const DRY_RUN_LABEL = '[DryRun]'
-const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
-const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
-const LOCALAPPDATA = 'LOCALAPPDATA'
-const LOCK_EXT = '.lock'
-const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
-const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
-const PNPM = 'pnpm'
-const REDACTED = '<redacted>'
-const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
-const SOCKET_CLI_BIN_NAME = 'socket'
-const SOCKET_CLI_FIX = 'SOCKET_CLI_FIX'
-const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
-const SOCKET_CLI_OPTIMIZE = 'SOCKET_CLI_OPTIMIZE'
-const SOCKET_CLI_SHADOW_ACCEPT_RISKS = 'SOCKET_CLI_SHADOW_ACCEPT_RISKS'
-const SOCKET_CLI_SHADOW_API_TOKEN = 'SOCKET_CLI_SHADOW_API_TOKEN'
-const SOCKET_CLI_SHADOW_BIN = 'SOCKET_CLI_SHADOW_BIN'
-const SOCKET_CLI_SHADOW_PROGRESS = 'SOCKET_CLI_SHADOW_PROGRESS'
-const SOCKET_CLI_SHADOW_SILENT = 'SOCKET_CLI_SHADOW_SILENT'
-const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
-const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
-const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
-const SOCKET_WEBSITE_URL = 'https://socket.dev'
-const VLT = 'vlt'
-const YARN = 'yarn'
-const YARN_BERRY = 'yarn/berry'
-const YARN_CLASSIC = 'yarn/classic'
-const YARN_LOCK = 'yarn.lock'
 
 let _Sentry: any
 
@@ -653,16 +660,18 @@ const constants: Constants = createConstantsObject(
     DRY_RUN_BAILING_NOW,
     DRY_RUN_NOT_SAVING,
     ENV: undefined,
-    LOCK_EXT,
+    JSON,
+    MARKDOWN,
+    NODE_MODULES,
     NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
     NPM_REGISTRY_URL,
+    NPX,
+    PACKAGE_JSON,
     PNPM,
     REDACTED,
     SOCKET_CLI_ACCEPT_RISKS,
     SOCKET_CLI_BIN_NAME,
-    SOCKET_CLI_FIX,
     SOCKET_CLI_ISSUES_URL,
-    SOCKET_CLI_OPTIMIZE,
     SOCKET_CLI_SHADOW_ACCEPT_RISKS,
     SOCKET_CLI_SHADOW_API_TOKEN,
     SOCKET_CLI_SHADOW_BIN,
@@ -672,11 +681,11 @@ const constants: Constants = createConstantsObject(
     SOCKET_DEFAULT_BRANCH,
     SOCKET_DEFAULT_REPOSITORY,
     SOCKET_WEBSITE_URL,
+    TEXT,
     VLT,
     YARN,
     YARN_BERRY,
     YARN_CLASSIC,
-    YARN_LOCK,
     bashRcPath: undefined,
     binPath: undefined,
     binCliPath: undefined,
@@ -759,5 +768,48 @@ const constants: Constants = createConstantsObject(
     },
   },
 ) as Constants
+
+export {
+  ALERT_TYPE_CRITICAL_CVE,
+  ALERT_TYPE_CVE,
+  ALERT_TYPE_MEDIUM_CVE,
+  ALERT_TYPE_MILD_CVE,
+  API_V0_URL,
+  BINARY_LOCK_EXT,
+  BUN,
+  DOT_SOCKET_DOT_FACTS_JSON,
+  DRY_RUN_LABEL,
+  DRY_RUN_BAILING_NOW,
+  DRY_RUN_NOT_SAVING,
+  LOCALAPPDATA,
+  NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
+  NPM_REGISTRY_URL,
+  NODE_MODULES,
+  NPM,
+  NPX,
+  JSON,
+  MARKDOWN,
+  TEXT,
+  PACKAGE_JSON,
+  PNPM,
+  REDACTED,
+  SOCKET_CLI_ACCEPT_RISKS,
+  SOCKET_CLI_BIN_NAME,
+  SOCKET_CLI_ISSUES_URL,
+  SOCKET_CLI_SHADOW_ACCEPT_RISKS,
+  SOCKET_CLI_SHADOW_API_TOKEN,
+  SOCKET_CLI_SHADOW_BIN,
+  SOCKET_CLI_SHADOW_PROGRESS,
+  SOCKET_CLI_SHADOW_SILENT,
+  SOCKET_CLI_VIEW_ALL_RISKS,
+  SOCKET_DEFAULT_BRANCH,
+  SOCKET_DEFAULT_REPOSITORY,
+  SOCKET_WEBSITE_URL,
+  VLT,
+  YARN,
+  YARN_BERRY,
+  YARN_CLASSIC,
+  YARN_LOCK,
+}
 
 export default constants

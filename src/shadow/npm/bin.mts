@@ -14,7 +14,7 @@ import { cmdFlagsToString } from '../../utils/cmd.mts'
 import { findUp } from '../../utils/fs.mts'
 import { getPublicApiToken } from '../../utils/sdk.mts'
 
-import type { IPC } from '../../constants.mts'
+import type { IpcObject } from '../../constants.mts'
 import type {
   SpawnExtra,
   SpawnOptions,
@@ -22,7 +22,7 @@ import type {
 } from '@socketsecurity/registry/lib/spawn'
 
 export type ShadowBinOptions = SpawnOptions & {
-  ipc?: IPC | undefined
+  ipc?: IpcObject | undefined
 }
 
 export type ShadowBinResult = {
