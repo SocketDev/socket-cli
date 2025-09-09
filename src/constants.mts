@@ -27,6 +27,7 @@ const {
   ESNEXT,
   EXT_CMD,
   EXT_LOCK,
+  EXT_LOCKB,
   EXT_PS1,
   EXTENSIONS,
   EXTENSIONS_JSON,
@@ -166,18 +167,17 @@ const ALERT_TYPE_CVE = 'cve'
 const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
 const ALERT_TYPE_MILD_CVE = 'mildCVE'
 const API_V0_URL = 'https://api.socket.dev/v0/'
-const BINARY_LOCK_EXT = '.lockb'
 const BUN = 'bun'
-const DOT_SOCKET_DOT_FACTS_JSON = '.socket.facts.json'
+const DOT_SOCKET = '.socket'
+const DOT_SOCKET_DOT_FACTS_JSON = `${DOT_SOCKET}.facts.json`
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
 const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
+const JSON = 'json'
 const LOCALAPPDATA = 'LOCALAPPDATA'
+const MARKDOWN = 'markdown'
 const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
-const JSON = 'json'
-const MARKDOWN = 'markdown'
-const TEXT = 'text'
 const REDACTED = '<redacted>'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 const SOCKET_CLI_BIN_NAME = 'socket'
@@ -191,6 +191,7 @@ const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
 const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
 const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
 const SOCKET_WEBSITE_URL = 'https://socket.dev'
+const TEXT = 'text'
 const VLT = 'vlt'
 const YARN = 'yarn'
 const YARN_BERRY = 'yarn/berry'
@@ -207,21 +208,20 @@ export type Constants = Remap<
     readonly ALERT_TYPE_MEDIUM_CVE: typeof ALERT_TYPE_MEDIUM_CVE
     readonly ALERT_TYPE_MILD_CVE: typeof ALERT_TYPE_MILD_CVE
     readonly API_V0_URL: typeof API_V0_URL
-    readonly BINARY_LOCK_EXT: typeof BINARY_LOCK_EXT
     readonly BUN: typeof BUN
     readonly ENV: ENV
+    readonly DOT_SOCKET: typeof DOT_SOCKET
     readonly DOT_SOCKET_DOT_FACTS_JSON: typeof DOT_SOCKET_DOT_FACTS_JSON
     readonly DRY_RUN_LABEL: typeof DRY_RUN_LABEL
     readonly DRY_RUN_BAILING_NOW: typeof DRY_RUN_BAILING_NOW
     readonly DRY_RUN_NOT_SAVING: typeof DRY_RUN_NOT_SAVING
+    readonly JSON: typeof JSON
+    readonly MARKDOWN: typeof MARKDOWN
     readonly NODE_MODULES: typeof NODE_MODULES
     readonly NPM_BUGGY_OVERRIDES_PATCHED_VERSION: typeof NPM_BUGGY_OVERRIDES_PATCHED_VERSION
     readonly NPM_REGISTRY_URL: typeof NPM_REGISTRY_URL
     readonly NPM: typeof NPM
     readonly NPX: typeof NPX
-    readonly JSON: typeof JSON
-    readonly MARKDOWN: typeof MARKDOWN
-    readonly TEXT: typeof TEXT
     readonly PACKAGE_JSON: typeof PACKAGE_JSON
     readonly REDACTED: typeof REDACTED
     readonly SOCKET_CLI_ACCEPT_RISKS: typeof SOCKET_CLI_ACCEPT_RISKS
@@ -236,6 +236,7 @@ export type Constants = Remap<
     readonly SOCKET_DEFAULT_BRANCH: typeof SOCKET_DEFAULT_BRANCH
     readonly SOCKET_DEFAULT_REPOSITORY: typeof SOCKET_DEFAULT_REPOSITORY
     readonly SOCKET_WEBSITE_URL: typeof SOCKET_WEBSITE_URL
+    readonly TEXT: typeof TEXT
     readonly VLT: typeof VLT
     readonly YARN: typeof YARN
     readonly YARN_BERRY: typeof YARN_BERRY
@@ -702,13 +703,14 @@ const constants: Constants = createConstantsObject(
     ALERT_TYPE_MEDIUM_CVE,
     ALERT_TYPE_MILD_CVE,
     API_V0_URL,
-    BINARY_LOCK_EXT,
     BUN,
+    DOT_SOCKET,
     DOT_SOCKET_DOT_FACTS_JSON,
     DRY_RUN_LABEL,
     DRY_RUN_BAILING_NOW,
     DRY_RUN_NOT_SAVING,
     ENV: undefined,
+    EXT_LOCKB,
     JSON,
     MARKDOWN,
     NODE_MODULES,
@@ -823,11 +825,12 @@ export {
   ALERT_TYPE_MILD_CVE,
   API_V0_URL,
   AT_LATEST,
-  BINARY_LOCK_EXT,
+  EXT_LOCKB,
   BIOME_JSON,
   BUN,
   CI,
   COLUMN_LIMIT,
+  DOT_SOCKET,
   DOT_SOCKET_DOT_FACTS_JSON,
   DRY_RUN_BAILING_NOW,
   DRY_RUN_LABEL,
