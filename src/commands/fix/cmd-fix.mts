@@ -1,6 +1,5 @@
 import path from 'node:path'
 
-import { PackageURL } from 'packageurl-js'
 import terminalLink from 'terminal-link'
 
 import { arrayUnique, joinOr } from '@socketsecurity/registry/lib/arrays'
@@ -17,6 +16,7 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
+import { getPurlObject } from '../../utils/purl.mts'
 import { RangeStyles } from '../../utils/semver.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
@@ -183,10 +183,7 @@ async function run(
   const rawPurls = cmdFlagValueToArray(cli.flags['purl'])
   const purls = []
   for (const purl of rawPurls) {
-    let version
-    try {
-      version = PackageURL.fromString(purl)?.version
-    } catch {}
+    const version = getPurlObject(purl, { throws: false })?.version
     if (version) {
       purls.push(purl)
     } else {
