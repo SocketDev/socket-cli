@@ -24,9 +24,9 @@ import type { EditablePackageJson } from '@socketsecurity/registry/lib/packages'
 import type { SemVer } from 'semver'
 
 const {
-  BINARY_LOCK_EXT,
   BUN,
   EXT_LOCK,
+  EXT_LOCKB,
   HIDDEN_PACKAGE_LOCK_JSON,
   NODE_MODULES,
   NPM,
@@ -151,7 +151,7 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
           if (ext === EXT_LOCK) {
             return await defaultReader(lockPath)
           }
-          if (ext === BINARY_LOCK_EXT) {
+          if (ext === EXT_LOCKB) {
             const lockBuffer = await binaryReader(lockPath)
             if (lockBuffer) {
               try {
@@ -183,7 +183,7 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
 // The order of LOCKS properties IS significant as it affects iteration order.
 const LOCKS: Record<string, Agent> = {
   [`bun${EXT_LOCK}`]: BUN,
-  [`bun${BINARY_LOCK_EXT}`]: BUN,
+  [`bun${EXT_LOCKB}`]: BUN,
   // If both package-lock.json and npm-shrinkwrap.json are present in the root
   // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
   // will be ignored.
