@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
+import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handlePatch } from './handle-patch.mts'
@@ -14,8 +15,11 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
+import { getPurlObject } from '../../utils/purl.mts'
 
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type { PurlObject } from '../../utils/purl.mts'
+import type { PackageURL } from '@socketregistry/packageurl-js'
 
 export const CMD_NAME = 'patch'
 
@@ -41,11 +45,11 @@ async function run(
     flags: {
       ...commonFlags,
       ...outputFlags,
-      package: {
+      purl: {
         type: 'string',
         default: [],
         description:
-          'Specify packages to patch, as either a comma separated value or as multiple flags',
+          'Specify purls to patch, as either a comma separated value or as multiple flags',
         isMultiple: true,
         shortFlag: 'p',
       },
@@ -106,13 +110,15 @@ async function run(
 
   const { spinner } = constants
 
-  const packages = cmdFlagValueToArray(cli.flags['package'])
+  const purlObjs = arrayUnique(cmdFlagValueToArray(cli.flags['purl']))
+    .map(p => getPurlObject(p, { throws: false }))
+    .filter(Boolean) as Array<PurlObject<PackageURL>>
 
   await handlePatch({
     cwd,
     dryRun,
     outputKind,
-    packages,
+    purlObjs,
     spinner,
   })
 }
