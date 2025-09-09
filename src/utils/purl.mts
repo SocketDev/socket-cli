@@ -3,7 +3,7 @@ import { PackageURL } from '@socketregistry/packageurl-js'
 import type { SocketArtifact } from './alert/artifact.mts'
 import type { PURL_Type } from './ecosystem.mts'
 
-type PurlObject<T> = T & { type: PURL_Type }
+export type PurlObject<T> = T & { type: PURL_Type }
 
 export type PurlLike = string | PackageURL | SocketArtifact
 
