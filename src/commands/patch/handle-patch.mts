@@ -2,225 +2,160 @@ import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { readJson } from '@socketsecurity/registry/lib/fs'
+import { glob } from 'fast-glob'
+
+import { PackageURL } from '@socketregistry/packageurl-js'
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
+import { readDirNames } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { readPackageJson } from '@socketsecurity/registry/lib/packages'
+import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
+import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchResult } from './output-patch-result.mts'
-import constants from '../../constants.mts'
+import constants, { NODE_MODULES, NPM } from '../../constants.mts'
+import { findUp } from '../../utils/fs.mts'
+import { getPurlObject } from '../../utils/purl.mts'
 
 import type { PatchRecord } from './manifest-schema.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 
-interface PURL {
-  type: string
-  namespace?: string
-  name: string
-  version: string
-  qualifiers?: Record<string, string>
-  subpath?: string
+export type PatchEntry = {
+  key: string
+  patch: PatchRecord
+  purlObj: PackageURL
 }
 
 async function applyNPMPatches(
-  patches: Array<{ key: string; purl: PURL; patch: PatchRecord }>,
-  dryRun: boolean,
+  patches: PatchEntry[],
+  purlObjs: PackageURL[],
   socketDir: string,
-  packages: string[],
+  dryRun: boolean,
 ) {
-  const patchLookup = new Map<
-    string,
-    { key: string; purl: PURL; patch: PatchRecord }
-  >()
-
+  const patchLookup = new Map<string, PatchEntry>()
   for (const patchInfo of patches) {
-    const { purl } = patchInfo
-    const fullName = purl.namespace
-      ? `@${purl.namespace}/${purl.name}`
-      : purl.name
-    const lookupKey = `${fullName}@${purl.version}`
-    patchLookup.set(lookupKey, patchInfo)
+    const key = getLookupKey(patchInfo.purlObj)
+    patchLookup.set(key, patchInfo)
   }
 
-  const nodeModulesFolders = await findNodeModulesFolders(process.cwd())
-  logger.log(`Found ${nodeModulesFolders.length} node_modules folders`)
+  const nmPaths = await findNodeModulesPaths(process.cwd())
+  logger.log(
+    `Found ${nmPaths.length} node_modules ${pluralize('folder', nmPaths.length)}`,
+  )
 
-  for (const nodeModulesPath of nodeModulesFolders) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      const entries = await fs.readdir(nodeModulesPath)
+  for (const nmPath of nmPaths) {
+    // eslint-disable-next-line no-await-in-loop
+    const dirNames = await readDirNames(nmPath)
+    for (const dirName of dirNames) {
+      const isScoped = dirName.startsWith('@')
+      const pkgPath = path.join(nmPath, dirName)
+      const pkgSubNames = isScoped
+        ? // eslint-disable-next-line no-await-in-loop
+          await readDirNames(pkgPath)
+        : [dirName]
 
-      for (const entry of entries) {
-        const entryPath = path.join(nodeModulesPath, entry)
-
-        if (entry.startsWith('@')) {
-          try {
-            // eslint-disable-next-line no-await-in-loop
-            const scopedEntries = await fs.readdir(entryPath)
-            for (const scopedEntry of scopedEntries) {
-              const packagePath = path.join(entryPath, scopedEntry)
-              // eslint-disable-next-line no-await-in-loop
-              const pkg = await readPackageJson(packagePath)
-
-              if (pkg) {
-                // Skip if specific packages requested and this isn't one of them
-                if (packages.length > 0 && !packages.includes(pkg.name)) {
-                  continue
-                }
-
-                const lookupKey = `${pkg.name}@${pkg.version}`
-                const patchInfo = patchLookup.get(lookupKey)
-
-                if (patchInfo) {
-                  logger.log(
-                    `Found match: ${pkg.name}@${pkg.version} at ${packagePath}`,
-                  )
-                  logger.log(`  Patch key: ${patchInfo.key}`)
-                  logger.log(`  Processing files:`)
-
-                  for (const [fileName, fileInfo] of Object.entries(
-                    patchInfo.patch.files,
-                  )) {
-                    // eslint-disable-next-line no-await-in-loop
-                    await processFilePatch(
-                      packagePath,
-                      fileName,
-                      fileInfo,
-                      dryRun,
-                      socketDir,
-                    )
-                  }
-                }
-              }
-            }
-          } catch {
-            // Ignore errors reading scoped packages
-          }
-        } else {
+      try {
+        for (const pkgSubName of pkgSubNames) {
+          const dirFullName = isScoped ? `${dirName}/${pkgSubName}` : pkgSubName
+          const pkgPath = path.join(nmPath, dirFullName)
           // eslint-disable-next-line no-await-in-loop
-          const pkg = await readPackageJson(entryPath)
-
-          if (pkg) {
-            // Skip if specific packages requested and this isn't one of them
-            if (packages.length > 0 && !packages.includes(pkg.name)) {
-              continue
-            }
-
-            const lookupKey = `${pkg.name}@${pkg.version}`
-            const patchInfo = patchLookup.get(lookupKey)
-
-            if (patchInfo) {
-              logger.log(
-                `Found match: ${pkg.name}@${pkg.version} at ${entryPath}`,
-              )
-              logger.log(`  Patch key: ${patchInfo.key}`)
-              logger.log(`  Processing files:`)
-
-              for (const [fileName, fileInfo] of Object.entries(
-                patchInfo.patch.files,
-              )) {
-                // eslint-disable-next-line no-await-in-loop
-                await processFilePatch(
-                  entryPath,
-                  fileName,
-                  fileInfo,
-                  dryRun,
-                  socketDir,
-                )
-              }
-            }
+          const pkgJson = await readPackageJson(pkgPath, { throws: false })
+          if (
+            !isNonEmptyString(pkgJson?.name) ||
+            !isNonEmptyString(pkgJson?.version)
+          ) {
+            continue
           }
+          const pkgFullName = pkgJson.name
+          const purlObj = getPurlObject(`pkg:npm/${pkgFullName}`)
+          // Skip if specific packages requested and this isn't one of them
+          if (
+            purlObjs.findIndex(
+              p =>
+                p.type === 'npm' &&
+                p.namespace === purlObj.namespace &&
+                p.name === purlObj.name,
+            ) === -1
+          ) {
+            continue
+          }
+
+          const patchInfo = patchLookup.get(getLookupKey(purlObj))
+          if (!patchInfo) {
+            continue
+          }
+
+          logger.log(
+            `Found match: ${pkgFullName}@${pkgJson.version} at ${pkgPath}`,
+          )
+          logger.log(`Patch key: ${patchInfo.key}`)
+          logger.group(`Processing files:`)
+
+          for (const { 0: fileName, 1: fileInfo } of Object.entries(
+            patchInfo.patch.files,
+          )) {
+            // eslint-disable-next-line no-await-in-loop
+            await processFilePatch(
+              pkgPath,
+              fileName,
+              fileInfo,
+              dryRun,
+              socketDir,
+            )
+          }
+          logger.groupEnd()
         }
+      } catch (error) {
+        logger.error(`Error processing ${nmPath}:`, error)
       }
-    } catch (error) {
-      logger.error(`Error processing ${nodeModulesPath}:`, error)
     }
   }
 }
 
-async function computeSHA256(filePath: string): Promise<string | null> {
+async function computeSHA256(filepath: string): Promise<string | null> {
   try {
-    const content = await fs.readFile(filePath)
+    const content = await fs.readFile(filepath)
     const hash = crypto.createHash('sha256')
     hash.update(content)
     return hash.digest('hex')
-  } catch {
-    return null
-  }
+  } catch {}
+  return null
 }
 
-async function findNodeModulesFolders(rootDir: string): Promise<string[]> {
-  const nodeModulesPaths: string[] = []
-
-  async function searchDir(dir: string) {
-    try {
-      const entries = await fs.readdir(dir)
-
-      for (const entry of entries) {
-        if (entry.startsWith('.') || entry === 'dist' || entry === 'build') {
-          continue
-        }
-
-        const fullPath = path.join(dir, entry)
-        // eslint-disable-next-line no-await-in-loop
-        const stats = await fs.stat(fullPath)
-
-        if (stats.isDirectory()) {
-          if (entry === 'node_modules') {
-            nodeModulesPaths.push(fullPath)
-          } else {
-            // eslint-disable-next-line no-await-in-loop
-            await searchDir(fullPath)
-          }
-        }
-      }
-    } catch (error) {
-      // Ignore permission errors or missing directories
-    }
+async function findNodeModulesPaths(cwd: string): Promise<string[]> {
+  const rootNmPath = await findUp(NODE_MODULES, { cwd, onlyDirectories: true })
+  if (!rootNmPath) {
+    return []
   }
-
-  await searchDir(rootDir)
-  return nodeModulesPaths
+  return await glob([`**/${NODE_MODULES}`], {
+    absolute: true,
+    cwd: path.dirname(rootNmPath),
+    onlyDirectories: true,
+  })
 }
 
-function parsePURL(purlString: string): PURL {
-  const [ecosystem, rest] = purlString.split(':', 2)
-  const [nameAndNamespace, version] = (rest ?? '').split('@', 2)
-
-  let namespace: string | undefined
-  let name: string
-
-  if (ecosystem === 'npm' && nameAndNamespace?.startsWith('@')) {
-    const parts = nameAndNamespace.split('/')
-    namespace = parts[0]?.substring(1)
-    name = parts.slice(1).join('/')
-  } else {
-    name = nameAndNamespace ?? ''
-  }
-
-  return {
-    type: ecosystem ?? 'unknown',
-    namespace: namespace ?? '',
-    name: name ?? '',
-    version: version ?? '0.0.0',
-  }
+function getLookupKey(purlObj: PackageURL): string {
+  const fullName = purlObj.namespace
+    ? `${purlObj.namespace}/${purlObj.name}`
+    : purlObj.name
+  return `${fullName}@${purlObj.version}`
 }
 
 async function processFilePatch(
-  packagePath: string,
+  pkgPath: string,
   fileName: string,
   fileInfo: { beforeHash: string; afterHash: string },
   dryRun: boolean,
   socketDir: string,
 ): Promise<void> {
-  const filePath = path.join(packagePath, fileName)
-
-  if (!existsSync(filePath)) {
+  const filepath = path.join(pkgPath, fileName)
+  if (!existsSync(filepath)) {
     logger.log(`File not found: ${fileName}`)
     return
   }
 
-  const currentHash = await computeSHA256(filePath)
-
+  const currentHash = await computeSHA256(filepath)
   if (!currentHash) {
     logger.log(`Failed to compute hash for: ${fileName}`)
     return
@@ -231,22 +166,20 @@ async function processFilePatch(
     logger.log(`Current hash: ${currentHash}`)
     logger.log(`Ready to patch to: ${fileInfo.afterHash}`)
 
-    if (!dryRun) {
+    if (dryRun) {
+      logger.log(`(dry run - no changes made)`)
+    } else {
       const blobPath = path.join(socketDir, 'blobs', fileInfo.afterHash)
-
       if (!existsSync(blobPath)) {
         logger.fail(`Error: Patch file not found at ${blobPath}`)
         return
       }
-
       try {
-        await fs.copyFile(blobPath, filePath)
+        await fs.copyFile(blobPath, filepath)
         logger.success(`Patch applied successfully`)
       } catch (error) {
-        logger.log(`Error applying patch: ${error}`)
+        logger.error('Error applying patch:', error)
       }
-    } else {
-      logger.log(`(dry run - no changes made)`)
     }
   } else if (currentHash === fileInfo.afterHash) {
     logger.success(`File already patched: ${fileName}`)
@@ -259,25 +192,11 @@ async function processFilePatch(
   }
 }
 
-async function readPackageJson(
-  packagePath: string,
-): Promise<{ name: string; version: string } | null> {
-  const pkgJsonPath = path.join(packagePath, 'package.json')
-  const pkg = await readJson(pkgJsonPath, { throws: false })
-  if (pkg) {
-    return {
-      name: pkg.name || '',
-      version: pkg.version || '',
-    }
-  }
-  return null
-}
-
 export interface HandlePatchConfig {
   cwd: string
   dryRun: boolean
   outputKind: OutputKind
-  packages: string[]
+  purlObjs: PackageURL[]
   spinner: typeof constants.spinner
 }
 
@@ -285,61 +204,54 @@ export async function handlePatch({
   cwd,
   dryRun,
   outputKind,
-  packages,
+  purlObjs,
   spinner,
 }: HandlePatchConfig): Promise<void> {
   try {
     const dotSocketDirPath = path.join(cwd, '.socket')
     const manifestPath = path.join(dotSocketDirPath, 'manifest.json')
-
-    // Read the manifest file.
     const manifestContent = await fs.readFile(manifestPath, 'utf-8')
     const manifestData = JSON.parse(manifestContent)
-
-    // Validate the schema.
+    const purls = purlObjs.map(String)
     const validated = PatchManifestSchema.parse(manifestData)
 
     // Parse PURLs and group by ecosystem.
-    const patchesByEcosystem: Record<
-      string,
-      Array<{ key: string; purl: PURL; patch: PatchRecord }>
-    > = {}
-    for (const [key, patch] of Object.entries(validated.patches)) {
-      const purl = parsePURL(key)
-      if (!patchesByEcosystem[purl.type]) {
-        patchesByEcosystem[purl.type] = []
+    const patchesByEcosystem = new Map<string, PatchEntry[]>()
+    for (const { 0: key, 1: patch } of Object.entries(validated.patches)) {
+      const purlObj = getPurlObject(key, { throws: false })
+      if (!purlObj) {
+        continue
       }
-      patchesByEcosystem[purl.type]?.push({
+      let patches = patchesByEcosystem.get(purlObj.type)
+      if (!Array.isArray(patches)) {
+        patches = []
+        patchesByEcosystem.set(purlObj.type, patches)
+      }
+      patches.push({
         key,
-        purl,
         patch,
+        purlObj,
       })
     }
 
     spinner.stop()
 
     logger.log('')
-    if (packages.length > 0) {
-      logger.info(`Checking patches for: ${packages.join(', ')}`)
+    if (purlObjs.length) {
+      logger.info(`Checking patches for: ${joinAnd(purls)}`)
     } else {
       logger.info('Scanning all dependencies for available patches')
     }
     logger.log('')
 
-    if (patchesByEcosystem['npm']) {
-      await applyNPMPatches(
-        patchesByEcosystem['npm'],
-        dryRun,
-        dotSocketDirPath,
-        packages,
-      )
+    const npmPatches = patchesByEcosystem.get(NPM)
+    if (npmPatches) {
+      await applyNPMPatches(npmPatches, purlObjs, dotSocketDirPath, dryRun)
     }
-
-    const result: CResult<{ patchedPackages: string[] }> = {
+    const result: CResult<{ patched: string[] }> = {
       ok: true,
       data: {
-        patchedPackages:
-          packages.length > 0 ? packages : ['patched successfully'],
+        patched: purls.length ? purls : ['patched successfully'],
       },
     }
 

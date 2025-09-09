@@ -6,7 +6,7 @@ import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 
 export async function outputPatchResult(
-  result: CResult<{ patchedPackages: string[] }>,
+  result: CResult<{ patched: string[] }>,
   outputKind: OutputKind,
 ) {
   if (!result.ok) {
@@ -23,13 +23,13 @@ export async function outputPatchResult(
     return
   }
 
-  const { patchedPackages } = result.data
+  const { patched } = result.data
 
-  if (patchedPackages.length) {
+  if (patched.length) {
     logger.group(
-      `Successfully processed patches for ${patchedPackages.length} package(s):`,
+      `Successfully processed patches for ${patched.length} package(s):`,
     )
-    for (const pkg of patchedPackages) {
+    for (const pkg of patched) {
       logger.success(pkg)
     }
     logger.groupEnd()
