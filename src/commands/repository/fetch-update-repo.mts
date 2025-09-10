@@ -51,6 +51,6 @@ export async function fetchUpdateRepo(
       orgSlug,
       visibility,
     }),
-    { desc: 'to update a repository' },
+    { description: 'to update a repository' },
   )
 }

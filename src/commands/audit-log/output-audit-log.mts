@@ -3,7 +3,7 @@ import { createRequire } from 'node:module'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants.mts'
+import constants, { OUTPUT_JSON, OUTPUT_MARKDOWN } from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mdTable } from '../../utils/markdown.mts'
 import { msAtHome } from '../../utils/ms-at-home.mts'
@@ -35,7 +35,7 @@ export async function outputAuditLog(
     process.exitCode = result.code ?? 1
   }
 
-  if (outputKind === 'json') {
+  if (outputKind === OUTPUT_JSON) {
     logger.log(
       await outputAsJson(result, {
         logType,
@@ -51,7 +51,7 @@ export async function outputAuditLog(
     return
   }
 
-  if (outputKind === 'markdown') {
+  if (outputKind === OUTPUT_MARKDOWN) {
     logger.log(
       await outputAsMarkdown(result.data, {
         logType,

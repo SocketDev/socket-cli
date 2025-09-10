@@ -6,7 +6,7 @@ import type { SetupSdkOptions } from '../../utils/sdk.mts'
 import type { SocketSdk, SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
 export type FetchOrganizationOptions = {
-  desc?: string | undefined
+  description?: string | undefined
   sdk?: SocketSdk | undefined
   sdkOpts?: SetupSdkOptions | undefined
 }
@@ -30,7 +30,7 @@ export async function fetchOrganization(
   options?: FetchOrganizationOptions | undefined,
 ): Promise<OrganizationsCResult> {
   const {
-    desc = 'organization list',
+    description = 'organization list',
     sdk,
     sdkOpts,
   } = {
@@ -47,7 +47,9 @@ export async function fetchOrganization(
     sockSdk = sockSdkCResult.data
   }
 
-  const orgsCResult = await handleApiCall(sockSdk.getOrganizations(), { desc })
+  const orgsCResult = await handleApiCall(sockSdk.getOrganizations(), {
+    description,
+  })
   if (!orgsCResult.ok) {
     return orgsCResult
   }

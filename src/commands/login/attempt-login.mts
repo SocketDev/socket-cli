@@ -52,7 +52,7 @@ export async function attemptLogin(
   const sockSdk = sockSdkCResult.data
 
   const orgsCResult = await fetchOrganization({
-    desc: 'token verification',
+    description: 'token verification',
     sdk: sockSdk,
   })
   if (!orgsCResult.ok) {

@@ -63,6 +63,6 @@ export async function fetchCreateOrgFullScan(
       set_as_pending_head: String(pendingHead),
       tmp: String(tmp),
     }),
-    { desc: 'to create a scan' },
+    { description: 'to create a scan' },
   )
 }

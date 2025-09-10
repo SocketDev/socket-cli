@@ -50,6 +50,6 @@ export async function fetchOrgFullScanList(
       page: String(page),
       per_page: String(perPage),
     }),
-    { desc: 'list of scans' },
+    { description: 'list of scans' },
   )
 }

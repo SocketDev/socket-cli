@@ -23,6 +23,6 @@ export async function fetchViewRepo(
   const sockSdk = sockSdkCResult.data
 
   return await handleApiCall(sockSdk.getOrgRepo(orgSlug, repoName), {
-    desc: 'repository data',
+    description: 'repository data',
   })
 }

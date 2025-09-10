@@ -44,6 +44,6 @@ export async function fetchListRepos(
       per_page: String(perPage),
       page: String(page),
     }),
-    { desc: 'list of repositories' },
+    { description: 'list of repositories' },
   )
 }
