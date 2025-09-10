@@ -320,7 +320,7 @@ export function formatDataRepo(
   const topFiveAlertEntries = Object.entries(totalTopAlerts)
     .sort(([_keya, a], [_keyb, b]) => b - a)
     .slice(0, 5)
-  for (const [key, value] of topFiveAlertEntries) {
+  for (const { 0: key, 1: value } of topFiveAlertEntries) {
     sortedTopFiveAlerts[key] = value
   }
 
@@ -368,7 +368,7 @@ export function formatDataOrg(
   const topFiveAlertEntries = Object.entries(totalTopAlerts)
     .sort(([_keya, a], [_keyb, b]) => b - a)
     .slice(0, 5)
-  for (const [key, value] of topFiveAlertEntries) {
+  for (const { 0: key, 1: value } of topFiveAlertEntries) {
     sortedTopFiveAlerts[key] = value
   }
 
