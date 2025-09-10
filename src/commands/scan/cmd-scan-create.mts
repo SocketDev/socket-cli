@@ -29,6 +29,7 @@ import { hasDefaultApiToken } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
+import type { REPORT_LEVEL } from './types.mts'
 import type { MeowFlags } from '../../flags.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
@@ -116,6 +117,11 @@ const generalFlags: MeowFlags = {
     type: 'boolean',
     description:
       'Wait for the scan creation to complete, then basically run `socket scan report` on it',
+  },
+  reportLevel: {
+    type: 'string',
+    default: constants.REPORT_LEVEL_ERROR,
+    description: `Which policy level alerts should be reported (default '${constants.REPORT_LEVEL_ERROR}')`,
   },
   setAsAlertsPage: {
     type: 'boolean',
@@ -227,6 +233,7 @@ async function run(
     reachDisableAnalytics,
     reachSkipCache,
     readOnly,
+    reportLevel,
     setAsAlertsPage: pendingHeadFlag,
     tmp,
   } = cli.flags as {
@@ -241,6 +248,7 @@ async function run(
     org: string
     pullRequest: number
     readOnly: boolean
+    reportLevel: REPORT_LEVEL
     setAsAlertsPage: boolean
     tmp: boolean
     // Reachability flags.
@@ -251,14 +259,9 @@ async function run(
     reachSkipCache: boolean
   }
 
-  const dryRun = !!cli.flags['dryRun']
-
-  // Process comma-separated values for isMultiple flags.
-  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
-  const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
-
   // Validate ecosystem values.
   const reachEcosystems: PURL_Type[] = []
+  const reachEcosystemsRaw = cmdFlagValueToArray(cli.flags['reachEcosystems'])
   const validEcosystems = getEcosystemChoicesForMeow()
   for (const ecosystem of reachEcosystemsRaw) {
     if (!validEcosystems.includes(ecosystem)) {
@@ -268,6 +271,8 @@ async function run(
     }
     reachEcosystems.push(ecosystem as PURL_Type)
   }
+
+  const dryRun = !!cli.flags['dryRun']
 
   let {
     autoManifest,
@@ -403,6 +408,8 @@ async function run(
     logger.error('')
   }
 
+  const reachExcludePaths = cmdFlagValueToArray(cli.flags['reachExcludePaths'])
+
   // Validation helpers for better readability.
   const hasReachEcosystems = reachEcosystems.length > 0
 
@@ -505,6 +512,7 @@ async function run(
     readOnly: Boolean(readOnly),
     repoName,
     report,
+    reportLevel,
     targets,
     tmp: Boolean(tmp),
   })
