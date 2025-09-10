@@ -4,7 +4,11 @@ import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { generateReport } from './generate-report.mts'
-import constants, { EXT_JSON, JSON, TEXT } from '../../constants.mts'
+import constants, {
+  EXT_JSON,
+  OUTPUT_JSON,
+  OUTPUT_TEXT,
+} from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mapToObject } from '../../utils/map-to-object.mts'
 import { mdTable } from '../../utils/markdown.mts'
@@ -49,7 +53,7 @@ export async function outputScanReport(
   }
 
   if (!result.ok) {
-    if (outputKind === JSON) {
+    if (outputKind === OUTPUT_JSON) {
       logger.log(serializeResultJson(result))
       return
     }
@@ -71,11 +75,11 @@ export async function outputScanReport(
   )
 
   if (!scanReport.ok) {
-    // Note: this means generation failed, it does not reflect the healthy state
+    // Note: This means generation failed, it does not reflect the healthy state.
     process.exitCode = scanReport.code ?? 1
 
     // If report generation somehow failed then .data should not be set.
-    if (outputKind === JSON) {
+    if (outputKind === OUTPUT_JSON) {
       logger.log(serializeResultJson(scanReport))
       return
     }
@@ -83,15 +87,15 @@ export async function outputScanReport(
     return
   }
 
-  // I don't think we emit the default error message with banner for an unhealhty report, do we?
-  // if (!scanReport.data.healhty) {
+  // I don't think we emit the default error message with banner for an unhealthy report, do we?
+  // if (!scanReport.data.healthy) {
   //   logger.fail(failMsgWithBadge(scanReport.message, scanReport.cause))
   //   return
   // }
 
   if (
-    outputKind === JSON ||
-    (outputKind === TEXT && filepath && filepath.endsWith(EXT_JSON))
+    outputKind === OUTPUT_JSON ||
+    (outputKind === OUTPUT_TEXT && filepath && filepath.endsWith(EXT_JSON))
   ) {
     const json = short
       ? serializeResultJson(scanReport)
@@ -110,7 +114,8 @@ export async function outputScanReport(
     const md = short
       ? `healthy = ${scanReport.data.healthy}`
       : toMarkdownReport(
-          scanReport.data as ScanReport, // not short so must be regular report
+          // Not short so must be a regular report.
+          scanReport.data as ScanReport,
           includeLicensePolicy,
         )
 
