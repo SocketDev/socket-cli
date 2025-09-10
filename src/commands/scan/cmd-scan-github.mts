@@ -151,7 +151,7 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  let{ 0: orgSlug } = await determineOrgSlug(
+  let { 0: orgSlug } = await determineOrgSlug(
     String(orgFlag || ''),
     interactive,
     dryRun,
