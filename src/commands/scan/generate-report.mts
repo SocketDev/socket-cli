@@ -1,4 +1,4 @@
-import constants from '../../constants.mts'
+import constants, { UNKNOWN_VALUE } from '../../constants.mts'
 import { getSocketDevPackageOverviewUrlFromPurl } from '../../utils/socket-url.mts'
 
 import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
@@ -35,8 +35,6 @@ export type ReportLeafNode = {
   url: string
   manifest: string[]
 }
-
-const UNKNOWN_VALUE = '<unknown>'
 
 // Note: The returned cResult will only be ok:false when the generation
 //       failed. It won't reflect the healthy state.
