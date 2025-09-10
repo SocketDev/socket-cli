@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.4](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.4) - 2025-09-09
+
+### Added
+- Added CHANGELOG.md to track user-facing changes
+- Added CLAUDE.md for development guidance
+- Added `--report-level` flag to `socket scan create`
+
 ## [1.1.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.1) - 2025-09-04
 
 ### Changed
@@ -34,7 +41,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.0.111](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.111) - 2025-09-03
 
 ### Added
-- Reimplemented `--range-style` flag support for `socket fix`
+- Reimplemented `--range-style` flag for `socket fix`
 
 ### Fixed
 - Fixed reachability analysis and `socket fix` in CI environments
