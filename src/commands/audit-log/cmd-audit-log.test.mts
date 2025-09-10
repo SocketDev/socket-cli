@@ -115,7 +115,7 @@ describe('socket audit-log', async () => {
 
         \\xd7  Input error:  Please review the input requirements and try again
 
-          \\xd7 Legacy flags are no longer supported. See v1 migration guide. (received legacy flags)"
+          \\xd7 Legacy flags are no longer supported. See v1 migration guide (https://docs.socket.dev/docs/v1-migration-guide). (received legacy flags)"
       `)
 
       expect(code, 'dry-run should exit with code 2 if missing input').toBe(2)
