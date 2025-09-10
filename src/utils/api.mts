@@ -47,7 +47,7 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
 }
 
 export type HandleApiCallOptions = {
-  desc?: string | undefined
+  description?: string | undefined
   spinner?: Spinner | undefined
 }
 
@@ -59,13 +59,13 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   value: Promise<SocketSdkResult<T>>,
   options?: HandleApiCallOptions | undefined,
 ): Promise<ApiCallResult<T>> {
-  const { desc, spinner } = {
+  const { description, spinner } = {
     __proto__: null,
     ...options,
   } as HandleApiCallOptions
 
-  if (desc) {
-    spinner?.start(`Requesting ${desc} from API...`)
+  if (description) {
+    spinner?.start(`Requesting ${description} from API...`)
   } else {
     spinner?.start()
   }
@@ -74,8 +74,8 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   try {
     sdkResult = await value
     spinner?.stop()
-    if (desc) {
-      const message = `Received Socket API response (after requesting ${desc}).`
+    if (description) {
+      const message = `Received Socket API response (after requesting ${description}).`
       if (sdkResult.success) {
         logger.success(message)
       } else {
@@ -89,9 +89,9 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       message: 'Socket API returned an error',
       cause: messageWithCauses(e as Error),
     }
-    if (desc) {
-      logger.fail(`An error was thrown while requesting ${desc}`)
-      debugFn('error', `caught: ${desc} error`)
+    if (description) {
+      logger.fail(`An error was thrown while requesting ${description}`)
+      debugFn('error', `caught: ${description} error`)
     } else {
       debugFn('error', `caught: Socket API request error`)
     }
@@ -187,7 +187,7 @@ export async function queryApi(path: string, apiToken: string) {
 
 export async function queryApiSafeText(
   path: string,
-  desc?: string | undefined,
+  description?: string | undefined,
 ): Promise<CResult<string>> {
   const apiToken = getDefaultApiToken()
   if (!apiToken) {
@@ -201,21 +201,23 @@ export async function queryApiSafeText(
 
   const { spinner } = constants
 
-  if (desc) {
-    spinner.start(`Requesting ${desc} from API...`)
+  if (description) {
+    spinner.start(`Requesting ${description} from API...`)
   }
 
   let result
   try {
     result = await queryApi(path, apiToken)
-    if (desc) {
+    if (description) {
       spinner.successAndStop(
-        `Received Socket API response (after requesting ${desc}).`,
+        `Received Socket API response (after requesting ${description}).`,
       )
     }
   } catch (e) {
-    if (desc) {
-      spinner.failAndStop(`An error was thrown while requesting ${desc}.`)
+    if (description) {
+      spinner.failAndStop(
+        `An error was thrown while requesting ${description}.`,
+      )
     }
 
     const cause = (e as undefined | { message: string })?.message
@@ -258,9 +260,9 @@ export async function queryApiSafeText(
 
 export async function queryApiSafeJson<T>(
   path: string,
-  desc = '',
+  description = '',
 ): Promise<CResult<T>> {
-  const result = await queryApiSafeText(path, desc)
+  const result = await queryApiSafeText(path, description)
 
   if (!result.ok) {
     return result
@@ -280,13 +282,15 @@ export async function queryApiSafeJson<T>(
   }
 }
 
+export type SendApiRequestOptions = {
+  method: 'POST' | 'PUT'
+  body?: unknown | undefined
+  description?: string | undefined
+}
+
 export async function sendApiRequest<T>(
   path: string,
-  options: {
-    method: 'POST' | 'PUT'
-    body?: unknown
-    desc?: string
-  },
+  options?: SendApiRequestOptions | undefined,
 ): Promise<CResult<T>> {
   const apiToken = getDefaultApiToken()
   if (!apiToken) {
@@ -305,36 +309,40 @@ export async function sendApiRequest<T>(
     )
   }
 
+  const { body, description, method } = {
+    __proto__: null,
+    ...options,
+  } as SendApiRequestOptions
   const { spinner } = constants
 
-  if (options.desc) {
-    spinner.start(`Requesting ${options.desc} from API...`)
+  if (description) {
+    spinner.start(`Requesting ${description} from API...`)
   }
 
   let result
   try {
     const fetchOptions = {
-      method: options.method,
+      method,
       headers: {
         Authorization: `Basic ${btoa(`${apiToken}:`)}`,
         'Content-Type': 'application/json',
       },
-      ...(options.body ? { body: JSON.stringify(options.body) } : {}),
+      ...(body ? { body: JSON.stringify(body) } : {}),
     }
 
     result = await fetch(
       `${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`,
       fetchOptions,
     )
-    if (options.desc) {
+    if (description) {
       spinner.successAndStop(
-        `Received Socket API response (after requesting ${options.desc}).`,
+        `Received Socket API response (after requesting ${description}).`,
       )
     }
   } catch (e) {
-    if (options.desc) {
+    if (description) {
       spinner.failAndStop(
-        `An error was thrown while requesting ${options.desc}.`,
+        `An error was thrown while requesting ${description}.`,
       )
     }
 
