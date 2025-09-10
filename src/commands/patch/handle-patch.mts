@@ -5,6 +5,7 @@ import path from 'node:path'
 import fastGlob from 'fast-glob'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
+import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { readDirNames } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
@@ -28,22 +29,49 @@ export type PatchEntry = {
   purlObj: PackageURL
 }
 
-async function applyNPMPatches(
-  patches: PatchEntry[],
-  purlObjs: PackageURL[],
+export type PatchFileInfo = {
+  beforeHash: string
+  afterHash: string
+}
+
+export type ApplyNpmPatchesOptions = {
+  cwd?: string | undefined
+  dryRun?: boolean | undefined
+  purlObjs?: PackageURL[] | undefined
+  spinner?: Spinner | undefined
+}
+
+async function applyNpmPatches(
   socketDir: string,
-  dryRun: boolean,
+  patches: PatchEntry[],
+  options?: ApplyNpmPatchesOptions | undefined,
 ) {
+  const {
+    cwd = process.cwd(),
+    dryRun = false,
+    purlObjs,
+    spinner,
+  } = { __proto__: null, ...options } as ApplyNpmPatchesOptions
+
+  const wasSpinning = !!spinner?.isSpinning
+
+  spinner?.start()
+
   const patchLookup = new Map<string, PatchEntry>()
   for (const patchInfo of patches) {
     const key = getLookupKey(patchInfo.purlObj)
     patchLookup.set(key, patchInfo)
   }
 
-  const nmPaths = await findNodeModulesPaths(process.cwd())
+  const nmPaths = await findNodeModulesPaths(cwd)
+
+  spinner?.stop()
+
   logger.log(
-    `Found ${nmPaths.length} node_modules ${pluralize('folder', nmPaths.length)}`,
+    `Found ${nmPaths.length} ${NODE_MODULES} ${pluralize('folder', nmPaths.length)}`,
   )
+
+  spinner?.start()
 
   for (const nmPath of nmPaths) {
     // eslint-disable-next-line no-await-in-loop
@@ -72,6 +100,7 @@ async function applyNPMPatches(
           const purlObj = getPurlObject(`pkg:npm/${pkgFullName}`)
           // Skip if specific packages requested and this isn't one of them
           if (
+            purlObjs?.length &&
             purlObjs.findIndex(
               p =>
                 p.type === 'npm' &&
@@ -101,16 +130,23 @@ async function applyNPMPatches(
               pkgPath,
               fileName,
               fileInfo,
-              dryRun,
               socketDir,
+              dryRun,
             )
           }
           logger.groupEnd()
         }
-      } catch (error) {
-        logger.error(`Error processing ${nmPath}:`, error)
+      } catch (e) {
+        logger.error(`Error processing ${nmPath}`)
+        debugDir('inspect', { error: e })
       }
     }
+  }
+
+  spinner?.stop()
+
+  if (wasSpinning) {
+    spinner.start()
   }
 }
 
@@ -146,9 +182,9 @@ function getLookupKey(purlObj: PackageURL): string {
 async function processFilePatch(
   pkgPath: string,
   fileName: string,
-  fileInfo: { beforeHash: string; afterHash: string },
-  dryRun: boolean,
+  fileInfo: PatchFileInfo,
   socketDir: string,
+  dryRun = false,
 ): Promise<void> {
   const filepath = path.join(pkgPath, fileName)
   if (!existsSync(filepath)) {
@@ -247,7 +283,11 @@ export async function handlePatch({
 
     const npmPatches = patchesByEcosystem.get(NPM)
     if (npmPatches) {
-      await applyNPMPatches(npmPatches, purlObjs, dotSocketDirPath, dryRun)
+      await applyNpmPatches(dotSocketDirPath, npmPatches, {
+        cwd,
+        dryRun,
+        purlObjs,
+      })
     }
 
     await outputPatchResult(
