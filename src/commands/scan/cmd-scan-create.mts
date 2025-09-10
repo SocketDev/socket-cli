@@ -289,7 +289,7 @@ async function run(
     report?: boolean | undefined
   }
 
-  let [orgSlug] = await determineOrgSlug(
+  let{ 0: orgSlug } = await determineOrgSlug(
     String(orgFlag || ''),
     interactive,
     dryRun,
