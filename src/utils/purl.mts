@@ -138,7 +138,7 @@ export function getPurlObject(
   const shouldThrow = throws === undefined || !!throws
   try {
     return typeof purl === 'string'
-      ? (PackageURL.fromString(purl) as PurlObject<PackageURL>)
+      ? (PackageURL.fromString(normalizePurl(purl)) as PurlObject<PackageURL>)
       : (purl as PurlObject<PackageURL | SocketArtifact>)
   } catch (e) {
     if (shouldThrow) {
@@ -146,4 +146,8 @@ export function getPurlObject(
     }
     return null
   }
+}
+
+export function normalizePurl(rawPurl: string): string {
+  return rawPurl.startsWith('pkg:') ? rawPurl : `pkg:${rawPurl}`
 }

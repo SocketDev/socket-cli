@@ -219,8 +219,7 @@ export async function handlePatch({
     // Parse PURLs and group by ecosystem.
     const patchesByEcosystem = new Map<string, PatchEntry[]>()
     for (const { 0: key, 1: patch } of Object.entries(validated.patches)) {
-      const purl = key.startsWith('pkg:') ? key : `pkg:${key}`
-      const purlObj = getPurlObject(purl, { throws: false })
+      const purlObj = getPurlObject(key, { throws: false })
       if (!purlObj) {
         continue
       }
