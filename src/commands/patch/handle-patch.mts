@@ -4,7 +4,6 @@ import path from 'node:path'
 
 import fastGlob from 'fast-glob'
 
-import { PackageURL } from '@socketregistry/packageurl-js'
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { readDirNames } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -20,6 +19,7 @@ import { getPurlObject } from '../../utils/purl.mts'
 
 import type { PatchRecord } from './manifest-schema.mts'
 import type { CResult, OutputKind } from '../../types.mts'
+import type { PackageURL } from '@socketregistry/packageurl-js'
 
 export type PatchEntry = {
   key: string
