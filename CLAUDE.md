@@ -126,3 +126,11 @@ Focus on **user-facing changes** only. Include:
 - Developer tooling changes
 - Minor nits and formatting tweaks
 - GitHub workflow and CI/CD changes
+- Third-party integration updates (unless they add user-visible features)
+
+### Third-Party Integrations
+
+Socket CLI integrates with various third-party tools and services:
+- **@coana-tech/cli**: Static analysis tool for reachability analysis and vulnerability detection
+- **cdxgen**: CycloneDX BOM generator for creating software bill of materials
+- **synp**: Tool for converting between yarn.lock and package-lock.json formats
