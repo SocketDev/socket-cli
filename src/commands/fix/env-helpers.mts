@@ -1,7 +1,7 @@
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 
-import { getSocketPrs } from './pull-request.mts'
+import { getSocketFixPrs } from './pull-request.mts'
 import constants from '../../constants.mts'
 import { getBaseBranch, getRepoInfo } from '../../utils/git.mts'
 
@@ -74,7 +74,7 @@ export async function getFixEnv(): Promise<FixEnv> {
 
   const prs =
     isCi && repoInfo
-      ? await getSocketPrs(repoInfo.owner, repoInfo.repo, {
+      ? await getSocketFixPrs(repoInfo.owner, repoInfo.repo, {
           author: gitUser,
           states: 'all',
         })

@@ -8,6 +8,15 @@ import {
   getSocketFixPullRequestBody,
   getSocketFixPullRequestTitle,
 } from './git.mts'
+import { gitDeleteRemoteBranch } from '../../utils/git.mts'
+import {
+  GQL_PR_STATE_CLOSED,
+  GQL_PR_STATE_MERGED,
+  GQL_PR_STATE_OPEN,
+  GRAPHQL_PAGE_SENTINEL,
+  UNKNOWN_ERROR,
+  UNKNOWN_VALUE,
+} from '../../constants.mts'
 import {
   type GhsaDetails,
   type Pr,
@@ -93,12 +102,12 @@ export type PrMatch = {
   title: string
 }
 
-export async function cleanupPrs(
+export async function cleanupSocketFixPrs(
   owner: string,
   repo: string,
   ghsaId: string,
 ): Promise<PrMatch[]> {
-  const contextualMatches = await getSocketPrsWithContext(owner, repo, {
+  const contextualMatches = await getSocketFixPrsWithContext(owner, repo, {
     ghsaId,
   })
 
@@ -117,26 +126,44 @@ export async function cleanupPrs(
         const { number: prNum } = match
         const prRef = `PR #${prNum}`
         try {
+          // Merge the base branch into the head branch to update the PR.
           await octokit.repos.merge({
             owner,
             repo,
+            // The PR branch (destination).
             base: match.headRefName,
+            // The target branch (source).
             head: match.baseRefName,
           })
           debugFn('notice', `pr: updating stale ${prRef}`)
-          // Update entry entry.
-          if (context.apiType === 'graphql') {
-            context.entry.mergeStateStatus = 'CLEAN'
-          } else if (context.apiType === 'rest') {
-            context.entry.mergeable_state = 'clean'
-          }
+          // Update cache entry - only GraphQL is used now.
+          context.entry.mergeStateStatus = 'CLEAN'
           // Mark cache to be saved.
           cachesToSave.set(context.cacheKey, context.data)
         } catch (e) {
-          const message = (e as Error)?.message || 'Unknown error'
+          const message = (e as Error)?.message || UNKNOWN_ERROR
           debugFn('error', `pr: failed to update ${prRef} - ${message}`)
         }
       }
+
+      // Clean up merged PR branches.
+      if (match.state === GQL_PR_STATE_MERGED) {
+        const { number: prNum } = match
+        const prRef = `PR #${prNum}`
+        try {
+          const success = await gitDeleteRemoteBranch(match.headRefName)
+          if (success) {
+            debugFn('notice', `pr: deleted merged branch ${match.headRefName} for ${prRef}`)
+          } else {
+            debugFn('warn', `pr: failed to delete branch ${match.headRefName} for ${prRef}`)
+          }
+        } catch (e) {
+          const message = (e as Error)?.message || UNKNOWN_ERROR
+          // Don't treat this as a hard error - branch might already be deleted.
+          debugFn('warn', `pr: failed to delete branch ${match.headRefName} for ${prRef} - ${message}`)
+        }
+      }
+
       return match
     }),
   )
@@ -150,10 +177,10 @@ export async function cleanupPrs(
   }
 
   const fulfilledMatches = settledMatches.filter(
-    r => r.status === 'fulfilled' && r.value,
-  ) as unknown as Array<PromiseFulfilledResult<ContextualPrMatch>>
+    (r): r is PromiseFulfilledResult<PrMatch> => r.status === 'fulfilled'
+  )
 
-  return fulfilledMatches.map(r => r.value.match)
+  return fulfilledMatches.map(r => r.value)
 }
 
 export type PrAutoMergeState = {
@@ -167,12 +194,38 @@ export type SocketPrsOptions = {
   states?: 'all' | GQL_PR_STATE | GQL_PR_STATE[]
 }
 
-export async function getSocketPrs(
+export async function getSocketFixPrs(
   owner: string,
   repo: string,
   options?: SocketPrsOptions | undefined,
 ): Promise<PrMatch[]> {
-  return (await getSocketPrsWithContext(owner, repo, options)).map(d => d.match)
+  return (await getSocketFixPrsWithContext(owner, repo, options)).map(
+    d => d.match,
+  )
+}
+
+type GqlPrNode = {
+  author?: {
+    login: string
+  }
+  baseRefName: string
+  headRefName: string
+  mergeStateStatus: GQL_MERGE_STATE_STATUS
+  number: number
+  state: GQL_PR_STATE
+  title: string
+}
+
+type GqlPullRequestsResponse = {
+  repository: {
+    pullRequests: {
+      pageInfo: {
+        hasNextPage: boolean
+        endCursor: string | null
+      }
+      nodes: GqlPrNode[]
+    }
+  }
 }
 
 type ContextualPrMatch = {
@@ -187,7 +240,7 @@ type ContextualPrMatch = {
   match: PrMatch
 }
 
-async function getSocketPrsWithContext(
+async function getSocketFixPrsWithContext(
   owner: string,
   repo: string,
   options?: SocketPrsOptions | undefined,
@@ -202,148 +255,110 @@ async function getSocketPrsWithContext(
   } as SocketPrsOptions
   const branchPattern = getSocketFixBranchPattern(ghsaId)
   const checkAuthor = isNonEmptyString(author)
-  const octokit = getOctokit()
   const octokitGraphql = getOctokitGraphql()
   const contextualMatches: ContextualPrMatch[] = []
   const states = (
     typeof statesValue === 'string'
       ? statesValue.toLowerCase() === 'all'
-        ? ['OPEN', 'CLOSED', 'MERGED']
+        ? [GQL_PR_STATE_OPEN, GQL_PR_STATE_CLOSED, GQL_PR_STATE_MERGED]
         : [statesValue]
       : statesValue
   ).map(s => s.toUpperCase())
+
   try {
-    // Optimistically fetch only the first 50 open PRs using GraphQL to minimize
-    // API quota usage. Fallback to REST if no matching PRs are found.
+    let hasNextPage = true
+    let cursor: string | null = null
+    let pageIndex = 0
     const gqlCacheKey = `${repo}-pr-graphql-snapshot`
-    const gqlResp = await cacheFetch(gqlCacheKey, () =>
-      octokitGraphql(
-        `
-          query($owner: String!, $repo: String!, $states: [PullRequestState!]) {
-            repository(owner: $owner, name: $repo) {
-              pullRequests(first: 50, states: $states, orderBy: {field: CREATED_AT, direction: DESC}) {
-                nodes {
-                  author {
-                    login
+    while (hasNextPage) {
+      // eslint-disable-next-line no-await-in-loop
+      const gqlResp = (await cacheFetch(
+        `${gqlCacheKey}-page-${pageIndex}`,
+        () =>
+          octokitGraphql(
+            `
+              query($owner: String!, $repo: String!, $states: [PullRequestState!], $after: String) {
+                repository(owner: $owner, name: $repo) {
+                  pullRequests(first: 100, states: $states, after: $after, orderBy: {field: CREATED_AT, direction: DESC}) {
+                    pageInfo {
+                      hasNextPage
+                      endCursor
+                    }
+                    nodes {
+                      author {
+                        login
+                      }
+                      baseRefName
+                      headRefName
+                      mergeStateStatus
+                      number
+                      state
+                      title
+                    }
                   }
-                  baseRefName
-                  headRefName
-                  mergeStateStatus
-                  number
-                  state
-                  title
                 }
               }
-            }
-          }
-          `,
-        {
-          owner,
-          repo,
-          states,
-        },
-      ),
-    )
+              `,
+            {
+              owner,
+              repo,
+              states,
+              after: cursor,
+            },
+          ),
+      )) as GqlPullRequestsResponse
 
-    type GqlPrNode = {
-      author?: {
-        login: string
+      const { nodes, pageInfo } = gqlResp?.repository?.pullRequests ?? {
+        nodes: [],
+        pageInfo: { hasNextPage: false, endCursor: null },
       }
-      baseRefName: string
-      headRefName: string
-      mergeStateStatus: GQL_MERGE_STATE_STATUS
-      number: number
-      state: GQL_PR_STATE
-      title: string
-    }
 
-    const nodes: GqlPrNode[] =
-      (gqlResp as any)?.repository?.pullRequests?.nodes ?? []
-    for (let i = 0, { length } = nodes; i < length; i += 1) {
-      const node = nodes[i]!
-      const login = node.author?.login
-      const matchesAuthor = checkAuthor ? login === author : true
-      const matchesBranch = branchPattern.test(node.headRefName)
-      if (matchesAuthor && matchesBranch) {
-        contextualMatches.push({
-          context: {
-            apiType: 'graphql',
-            cacheKey: gqlCacheKey,
-            data: gqlResp,
-            entry: node,
-            index: i,
-            parent: nodes,
-          },
-          match: {
-            ...node,
-            author: login ?? '<unknown>',
-          },
-        })
+      for (let i = 0, { length } = nodes; i < length; i += 1) {
+        const node = nodes[i]!
+        const login = node.author?.login
+        const matchesAuthor = checkAuthor ? login === author : true
+        const matchesBranch = branchPattern.test(node.headRefName)
+        if (matchesAuthor && matchesBranch) {
+          contextualMatches.push({
+            context: {
+              apiType: 'graphql',
+              cacheKey: `${gqlCacheKey}-page-${pageIndex}`,
+              data: gqlResp,
+              entry: node,
+              index: i,
+              parent: nodes,
+            },
+            match: {
+              ...node,
+              author: login ?? UNKNOWN_VALUE,
+            },
+          })
+        }
+      }
+
+      // Continue to next page.
+      hasNextPage = pageInfo.hasNextPage
+      cursor = pageInfo.endCursor
+      pageIndex += 1
+
+      // Safety limit to prevent infinite loops.
+      if (pageIndex === GRAPHQL_PAGE_SENTINEL) {
+        debugFn(
+          'warn',
+          `GraphQL pagination reached safety limit (${GRAPHQL_PAGE_SENTINEL} pages) for ${owner}/${repo}`,
+        )
+        break
+      }
+
+      // Early exit optimization: if we found matches and only looking for specific GHSA,
+      // we can stop pagination since we likely found what we need.
+      if (contextualMatches.length > 0 && ghsaId) {
+        break
       }
     }
-  } catch {}
-
-  if (contextualMatches.length) {
-    return contextualMatches
+  } catch (e) {
+    debugFn('error', `GraphQL pagination failed for ${owner}/${repo}:`, e)
   }
 
-  // Fallback to REST if GraphQL found no matching PRs.
-  let allPrs: Pr[] | undefined
-  const cacheKey = `${repo}-pull-requests`
-  try {
-    allPrs = await cacheFetch(
-      cacheKey,
-      async () =>
-        (await octokit.paginate(octokit.pulls.list, {
-          owner,
-          repo,
-          state: 'all',
-          per_page: 100,
-        })) as Pr[],
-    )
-  } catch {}
-
-  if (!allPrs) {
-    return contextualMatches
-  }
-
-  for (let i = 0, { length } = allPrs; i < length; i += 1) {
-    const pr = allPrs[i]!
-    const login = pr.user?.login
-    const headRefName = pr.head.ref
-    const matchesAuthor = checkAuthor ? login === author : true
-    const matchesBranch = branchPattern.test(headRefName)
-    if (matchesAuthor && matchesBranch) {
-      // Upper cased mergeable_state is equivalent to mergeStateStatus.
-      // https://docs.github.com/en/rest/pulls/pulls?apiVersion=2022-11-28#get-a-pull-request
-      const mergeStateStatus = (pr.mergeable_state?.toUpperCase?.() ??
-        'UNKNOWN') as GQL_MERGE_STATE_STATUS
-      // The REST API does not have a distinct merged state for pull requests.
-      // Instead, a merged pull request is represented as a closed pull request
-      // with a non-null merged_at timestamp.
-      const state = (
-        pr.merged_at ? 'MERGED' : pr.state.toUpperCase()
-      ) as GQL_PR_STATE
-      contextualMatches.push({
-        context: {
-          apiType: 'rest',
-          cacheKey,
-          data: allPrs,
-          entry: pr,
-          index: i,
-          parent: allPrs,
-        },
-        match: {
-          author: login ?? '<unknown>',
-          baseRefName: pr.base.ref,
-          headRefName,
-          mergeStateStatus,
-          number: pr.number,
-          state,
-          title: pr.title,
-        },
-      })
-    }
-  }
   return contextualMatches
 }
