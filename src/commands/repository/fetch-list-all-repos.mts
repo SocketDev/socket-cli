@@ -45,7 +45,7 @@ export async function fetchListAllRepos(
         per_page: String(100), // max
         page: String(nextPage),
       }),
-      { desc: 'list of repositories' },
+      { description: 'list of repositories' },
     )
     if (!orgRepoListCResult.ok) {
       return orgRepoListCResult

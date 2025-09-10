@@ -37,7 +37,7 @@ export async function fetchPurlsShallowScore(
         alerts: 'true',
       },
     ),
-    { desc: 'looking up package' },
+    { description: 'looking up package' },
   )
   if (!batchPackageCResult.ok) {
     return batchPackageCResult

@@ -45,6 +45,6 @@ export async function fetchAuditLog(
       page: String(page),
       per_page: String(perPage),
     }),
-    { desc: `audit log for ${orgSlug}` },
+    { description: `audit log for ${orgSlug}` },
   )
 }

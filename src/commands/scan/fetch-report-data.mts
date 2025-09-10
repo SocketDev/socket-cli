@@ -45,13 +45,13 @@ export async function fetchScanData(
 
   const { spinner } = constants
 
-  function updateScan(desc: string) {
-    scanStatus = desc
+  function updateScan(status: string) {
+    scanStatus = status
     updateProgress()
   }
 
-  function updatePolicy(desc: string) {
-    policyStatus = desc
+  function updatePolicy(status: string) {
+    policyStatus = status
     updateProgress()
   }
 

@@ -25,6 +25,6 @@ export async function fetchLicensePolicy(
   const sockSdk = sockSdkCResult.data
 
   return await handleApiCall(sockSdk.getOrgLicensePolicy(orgSlug), {
-    desc: 'organization license policy',
+    description: 'organization license policy',
   })
 }

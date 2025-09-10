@@ -101,7 +101,7 @@ export async function performReachabilityAnalysis(
     const uploadCResult = await handleApiCall(
       sockSdk.uploadManifestFiles(orgSlug, filepathsToUpload),
       {
-        desc: 'upload manifests',
+        description: 'upload manifests',
         spinner,
       },
     )

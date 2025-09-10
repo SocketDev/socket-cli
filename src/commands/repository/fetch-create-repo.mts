@@ -50,6 +50,6 @@ export async function fetchCreateRepo(
       name: repoName,
       visibility,
     }),
-    { desc: 'to create a repository' },
+    { description: 'to create a repository' },
   )
 }

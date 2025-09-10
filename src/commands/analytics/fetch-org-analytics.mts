@@ -25,6 +25,6 @@ export async function fetchOrgAnalyticsData(
   const sockSdk = sockSdkCResult.data
 
   return await handleApiCall(sockSdk.getOrgAnalytics(time.toString()), {
-    desc: 'analytics data',
+    description: 'analytics data',
   })
 }
