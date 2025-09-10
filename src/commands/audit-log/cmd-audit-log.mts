@@ -1,7 +1,9 @@
+import terminalLink from 'terminal-link'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleAuditLog } from './handle-audit-log.mts'
-import constants from '../../constants.mts'
+import constants, { V1_MIGRATION_GUIDE_URL } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
@@ -98,11 +100,23 @@ async function run(
     parentName,
   })
 
-  const { json, markdown, org: orgFlag, page, perPage } = cli.flags
+  const {
+    interactive,
+    json,
+    markdown,
+    org: orgFlag,
+    page,
+    perPage,
+  } = cli.flags as {
+    interactive: boolean
+    json: boolean
+    markdown: boolean
+    org: string
+    page: number
+    perPage: number
+  }
 
   const dryRun = !!cli.flags['dryRun']
-
-  const interactive = !!cli.flags['interactive']
 
   const noLegacy = !cli.flags['type']
 
@@ -125,7 +139,7 @@ async function run(
     {
       nook: true,
       test: noLegacy,
-      message: 'Legacy flags are no longer supported. See v1 migration guide.',
+      message: `Legacy flags are no longer supported. See ${terminalLink('v1 migration guide', V1_MIGRATION_GUIDE_URL)}.`,
       fail: `received legacy flags`,
     },
     {

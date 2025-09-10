@@ -215,6 +215,7 @@ const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
 const SOCKET_WEBSITE_URL = 'https://socket.dev'
 const UNKNOWN_ERROR = 'Unknown error'
 const UNKNOWN_VALUE = '<unknown>'
+const V1_MIGRATION_GUIDE_URL = 'https://docs.socket.dev/docs/v1-migration-guide'
 const VLT = 'vlt'
 const YARN = 'yarn'
 const YARN_BERRY = 'yarn/berry'
@@ -275,6 +276,7 @@ export type Constants = Remap<
     readonly SOCKET_WEBSITE_URL: typeof SOCKET_WEBSITE_URL
     readonly UNKNOWN_ERROR: typeof UNKNOWN_ERROR
     readonly UNKNOWN_VALUE: typeof UNKNOWN_VALUE
+    readonly V1_MIGRATION_GUIDE_URL: typeof V1_MIGRATION_GUIDE_URL
     readonly VLT: typeof VLT
     readonly YARN: typeof YARN
     readonly YARN_BERRY: typeof YARN_BERRY
@@ -785,6 +787,7 @@ const constants: Constants = createConstantsObject(
     SOCKET_WEBSITE_URL,
     UNKNOWN_ERROR,
     UNKNOWN_VALUE,
+    V1_MIGRATION_GUIDE_URL,
     VLT,
     YARN,
     YARN_BERRY,
@@ -980,6 +983,7 @@ export {
   UNLICENCED,
   UNLICENSED,
   UTF8,
+  V1_MIGRATION_GUIDE_URL,
   VITEST,
   VLT,
   YARN,

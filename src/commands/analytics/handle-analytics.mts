@@ -5,19 +5,21 @@ import { outputAnalytics } from './output-analytics.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
+export type HandleAnalyticsConfig = {
+  filepath: string
+  outputKind: OutputKind
+  repo: string
+  scope: string
+  time: number
+}
+
 export async function handleAnalytics({
-  filePath,
+  filepath,
   outputKind,
   repo,
   scope,
   time,
-}: {
-  scope: string
-  time: number
-  repo: string
-  outputKind: OutputKind
-  filePath: string
-}) {
+}: HandleAnalyticsConfig) {
   let result: CResult<
     | SocketSdkSuccessResult<'getOrgAnalytics'>['data']
     | SocketSdkSuccessResult<'getRepoAnalytics'>['data']
@@ -41,7 +43,7 @@ export async function handleAnalytics({
   }
 
   await outputAnalytics(result, {
-    filePath,
+    filepath,
     outputKind,
     repo,
     scope,
