@@ -28,7 +28,7 @@ export async function outputScanMetadata(
     logger.log('# Scan meta data\n')
   }
   logger.log(`Scan ID: ${scanId}\n`)
-  for (const [key, value] of Object.entries(result.data)) {
+  for (const { 0: key, 1: value } of Object.entries(result.data)) {
     if (
       [
         'id',

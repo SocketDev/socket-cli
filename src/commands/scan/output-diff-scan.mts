@@ -179,7 +179,7 @@ async function handleMarkdown(
     'This Scan was considered to be the "base" / "from" / "before" Scan.',
   )
   logger.log('')
-  for (const [key, value] of Object.entries(data.before)) {
+  for (const { 0: key, 1: value } of Object.entries(data.before)) {
     if (key === 'pull_request' && !value) {
       continue
     }
@@ -196,7 +196,7 @@ async function handleMarkdown(
   logger.log('')
   logger.log('This Scan was considered to be the "head" / "to" / "after" Scan.')
   logger.log('')
-  for (const [key, value] of Object.entries(data.after)) {
+  for (const { 0: key, 1: value } of Object.entries(data.after)) {
     if (key === 'pull_request' && !value) {
       continue
     }
