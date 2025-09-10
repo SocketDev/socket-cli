@@ -6,7 +6,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { getFixEnv } from './env-helpers.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
-import { openSocketFixPr } from './pull-request.mts'
+import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
+import { GQL_PR_STATE_OPEN, UNKNOWN_ERROR } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { spawnCoana } from '../../utils/coana.mts'
@@ -31,7 +32,6 @@ import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-n
 
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
-import { UNKNOWN_ERROR } from '../../constants.mts'
 
 export async function coanaFix(
   fixConfig: FixConfig,
@@ -117,8 +117,35 @@ export async function coanaFix(
     return fixCResult.ok ? { ok: true, data: { fixed: true } } : fixCResult
   }
 
+  // Adjust limit based on open Socket Fix PRs.
+  let adjustedLimit = limit
+  if (shouldOpenPrs && fixEnv.repoInfo) {
+    try {
+      const openPrs = await getSocketFixPrs(
+        fixEnv.repoInfo.owner,
+        fixEnv.repoInfo.repo,
+        { states: GQL_PR_STATE_OPEN },
+      )
+      const openPrCount = openPrs.length
+      // Reduce limit by number of open PRs to avoid creating too many.
+      adjustedLimit = Math.max(0, limit - openPrCount)
+      if (openPrCount > 0) {
+        debugFn(
+          'notice',
+          `limit: adjusted from ${limit} to ${adjustedLimit} (${openPrCount} open Socket Fix PRs)`,
+        )
+      }
+    } catch (e) {
+      debugFn('warn', 'Failed to count open PRs, using original limit')
+      debugDir('inspect', { error: e })
+    }
+  }
+
+  const shouldSpawnCoana = adjustedLimit > 0
+
   let ids: string[] | undefined
-  if (isAll) {
+
+  if (shouldSpawnCoana && isAll) {
     const foundCResult = await spawnCoana(
       [
         'compute-fixes-and-upgrade-purls',
@@ -137,10 +164,10 @@ export async function coanaFix(
       const foundIds = cmdFlagValueToArray(
         /(?<=Vulnerabilities found:).*/.exec(foundCResult.data),
       )
-      ids = foundIds.slice(0, limit)
+      ids = foundIds.slice(0, adjustedLimit)
     }
-  } else {
-    ids = ghsas.slice(0, limit)
+  } else if (shouldSpawnCoana) {
+    ids = ghsas.slice(0, adjustedLimit)
   }
 
   if (!ids?.length) {
@@ -326,9 +353,9 @@ export async function coanaFix(
     count += 1
     debugFn(
       'notice',
-      `increment: count ${count}/${Math.min(limit, ids.length)}`,
+      `increment: count ${count}/${Math.min(adjustedLimit, ids.length)}`,
     )
-    if (count >= limit) {
+    if (count >= adjustedLimit) {
       break ghsaLoop
     }
   }
