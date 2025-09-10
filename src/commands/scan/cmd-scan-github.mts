@@ -22,6 +22,8 @@ import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 export const CMD_NAME = 'github'
 
+const DEFAULT_GITHUB_URL = 'https://api.github.com'
+
 const description = 'Create a scan for given GitHub repo'
 
 const hidden = true
@@ -56,8 +58,7 @@ async function run(
       },
       githubApiUrl: {
         type: 'string',
-        description:
-          'Base URL of the GitHub API (default: https://api.github.com)',
+        description: `Base URL of the GitHub API (default: ${DEFAULT_GITHUB_URL})`,
       },
       interactive: {
         type: 'boolean',
@@ -163,7 +164,7 @@ async function run(
     if (sockJson.defaults?.scan?.github?.githubApiUrl !== undefined) {
       githubApiUrl = sockJson.defaults.scan.github.githubApiUrl
     } else {
-      githubApiUrl = 'https://api.github.com'
+      githubApiUrl = DEFAULT_GITHUB_URL
     }
   }
   if (!orgGithub) {
