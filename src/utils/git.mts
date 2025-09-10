@@ -313,6 +313,29 @@ export async function gitDeleteBranch(
   return false
 }
 
+export async function gitDeleteRemoteBranch(
+  branch: string,
+  cwd = process.cwd(),
+): Promise<boolean> {
+  const stdioIgnoreOptions: SpawnOptions = {
+    cwd,
+    stdio: isDebug('stdio') ? 'inherit' : 'ignore',
+  }
+  const quotedCmd = `\`git push origin --delete ${branch}\``
+  debugFn('stdio', `spawn: ${quotedCmd}`)
+  try {
+    // Will throw with exit code 1 if branch does not exist.
+    await spawn('git', ['push', 'origin', '--delete', branch], stdioIgnoreOptions)
+    return true
+  } catch (e) {
+    if (isDebug('stdio')) {
+      debugFn('error', `caught: ${quotedCmd} failed`)
+      debugDir('inspect', { error: e })
+    }
+  }
+  return false
+}
+
 export async function gitEnsureIdentity(
   name: string,
   email: string,
