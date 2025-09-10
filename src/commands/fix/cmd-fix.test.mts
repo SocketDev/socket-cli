@@ -23,7 +23,7 @@ describe('socket fix', async () => {
             - Permissions: packages:list
 
           Options
-            --auto-merge        Enable auto-merge for pull requests that Socket opens.
+            --autopilot         Enable auto-merge for pull requests that Socket opens.
                                 See GitHub documentation (https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository) for managing auto-merge for pull requests in your repository.
             --id                Provide a list of GHSA IDs (https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids) to compute fixes for, as either a comma separated value or as multiple flags
             --json              Output result as json

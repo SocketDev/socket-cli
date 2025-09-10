@@ -39,7 +39,7 @@ export const cmdFix = {
 }
 
 const generalFlags: MeowFlags = {
-  autoMerge: {
+  autopilot: {
     type: 'boolean',
     default: false,
     description: `Enable auto-merge for pull requests that Socket opens.\nSee ${terminalLink(
@@ -80,12 +80,10 @@ Available styles:
 }
 
 const hiddenFlags: MeowFlags = {
-  autopilot: {
-    type: 'boolean',
-    default: false,
-    description: `Shorthand for --auto-merge --test`,
+  autoMerge: {
+    ...generalFlags['autopilot'],
     hidden: true,
-  },
+  } as MeowFlag,
   ghsa: {
     ...generalFlags['id'],
     hidden: true,
