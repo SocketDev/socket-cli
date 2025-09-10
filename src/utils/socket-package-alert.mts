@@ -1,7 +1,6 @@
 import semver from 'semver'
 import colors from 'yoctocolors-cjs'
 
-import { PackageURL } from '@socketregistry/packageurl-js'
 import { getManifestData } from '@socketsecurity/registry'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { getOwn, hasOwn } from '@socketsecurity/registry/lib/objects'
@@ -14,7 +13,7 @@ import { ALERT_SEVERITY } from './alert/severity.mts'
 import { ColorOrMarkdown } from './color-or-markdown.mts'
 import { toFilterConfig } from './filter-config.mts'
 import { createEnum } from './objects.mts'
-import { getPurlObject } from './purl.mts'
+import { createPurlObject, getPurlObject } from './purl.mts'
 import { getMajor } from './semver.mts'
 import { getSocketDevPackageOverviewUrl } from './socket-url.mts'
 import { getTranslations } from './translations.mts'
@@ -350,14 +349,18 @@ export function getCveInfoFromAlertsMap(
   const filterConfig = toFilterConfig(getOwn(options, 'filter')) as CveFilter
 
   let infoByPartialPurl: CveInfoByPartialPurl | null = null
-  // eslint-disable-next-line no-unused-labels
   alertsMapLoop: for (const { 0: purl, 1: sockPkgAlerts } of alertsMap) {
-    const purlObj = getPurlObject(purl)
-    const partialPurl = new PackageURL(
-      purlObj.type,
-      purlObj.namespace,
-      purlObj.name,
-    ).toString()
+    const purlObj = getPurlObject(purl, { throws: false })
+    if (!purlObj) {
+      debugFn('error', 'invalid PURL')
+      debugDir('inspect', { purl })
+      continue alertsMapLoop
+    }
+    const partialPurl = createPurlObject({
+      type: purlObj.type,
+      namespace: purlObj.namespace,
+      name: purlObj.name,
+    }).toString()
     const name = resolvePackageName(purlObj)
     sockPkgAlertsLoop: for (const sockPkgAlert of sockPkgAlerts) {
       const alert = sockPkgAlert.raw
