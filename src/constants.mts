@@ -25,9 +25,17 @@ const {
   EMPTY_FILE,
   ESLINT_CONFIG_JS,
   ESNEXT,
+  EXT_CJS,
   EXT_CMD,
+  EXT_CTS,
+  EXT_DTS,
+  EXT_JS,
+  EXT_JSON,
   EXT_LOCK,
   EXT_LOCKB,
+  EXT_MD,
+  EXT_MJS,
+  EXT_MTS,
   EXT_PS1,
   EXTENSIONS,
   EXTENSIONS_JSON,
@@ -173,12 +181,21 @@ const DOT_SOCKET_DOT_FACTS_JSON = `${DOT_SOCKET}.facts.json`
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
 const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
+const FOLD_SETTING_FILE = 'file'
+const FOLD_SETTING_NONE = 'none'
+const FOLD_SETTING_PKG = 'pkg'
+const FOLD_SETTING_VERSION = 'version'
 const JSON = 'json'
 const LOCALAPPDATA = 'LOCALAPPDATA'
 const MARKDOWN = 'markdown'
 const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const REDACTED = '<redacted>'
+const REPORT_LEVEL_DEFER = 'defer'
+const REPORT_LEVEL_ERROR = 'error'
+const REPORT_LEVEL_IGNORE = 'ignore'
+const REPORT_LEVEL_MONITOR = 'monitor'
+const REPORT_LEVEL_WARN = 'warn'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
@@ -215,6 +232,10 @@ export type Constants = Remap<
     readonly DRY_RUN_LABEL: typeof DRY_RUN_LABEL
     readonly DRY_RUN_BAILING_NOW: typeof DRY_RUN_BAILING_NOW
     readonly DRY_RUN_NOT_SAVING: typeof DRY_RUN_NOT_SAVING
+    readonly FOLD_SETTING_FILE: typeof FOLD_SETTING_FILE
+    readonly FOLD_SETTING_NONE: typeof FOLD_SETTING_NONE
+    readonly FOLD_SETTING_PKG: typeof FOLD_SETTING_PKG
+    readonly FOLD_SETTING_VERSION: typeof FOLD_SETTING_VERSION
     readonly JSON: typeof JSON
     readonly MARKDOWN: typeof MARKDOWN
     readonly NODE_MODULES: typeof NODE_MODULES
@@ -224,6 +245,11 @@ export type Constants = Remap<
     readonly NPX: typeof NPX
     readonly PACKAGE_JSON: typeof PACKAGE_JSON
     readonly REDACTED: typeof REDACTED
+    readonly REPORT_LEVEL_DEFER: typeof REPORT_LEVEL_DEFER
+    readonly REPORT_LEVEL_ERROR: typeof REPORT_LEVEL_ERROR
+    readonly REPORT_LEVEL_IGNORE: typeof REPORT_LEVEL_IGNORE
+    readonly REPORT_LEVEL_MONITOR: typeof REPORT_LEVEL_MONITOR
+    readonly REPORT_LEVEL_WARN: typeof REPORT_LEVEL_WARN
     readonly SOCKET_CLI_ACCEPT_RISKS: typeof SOCKET_CLI_ACCEPT_RISKS
     readonly SOCKET_CLI_BIN_NAME: typeof SOCKET_CLI_BIN_NAME
     readonly SOCKET_CLI_ISSUES_URL: typeof SOCKET_CLI_ISSUES_URL
@@ -710,7 +736,10 @@ const constants: Constants = createConstantsObject(
     DRY_RUN_BAILING_NOW,
     DRY_RUN_NOT_SAVING,
     ENV: undefined,
-    EXT_LOCKB,
+    FOLD_SETTING_FILE,
+    FOLD_SETTING_NONE,
+    FOLD_SETTING_PKG,
+    FOLD_SETTING_VERSION,
     JSON,
     MARKDOWN,
     NODE_MODULES,
@@ -720,6 +749,11 @@ const constants: Constants = createConstantsObject(
     PACKAGE_JSON,
     PNPM,
     REDACTED,
+    REPORT_LEVEL_DEFER,
+    REPORT_LEVEL_ERROR,
+    REPORT_LEVEL_IGNORE,
+    REPORT_LEVEL_MONITOR,
+    REPORT_LEVEL_WARN,
     SOCKET_CLI_ACCEPT_RISKS,
     SOCKET_CLI_BIN_NAME,
     SOCKET_CLI_ISSUES_URL,
@@ -825,7 +859,6 @@ export {
   ALERT_TYPE_MILD_CVE,
   API_V0_URL,
   AT_LATEST,
-  EXT_LOCKB,
   BIOME_JSON,
   BUN,
   CI,
@@ -840,9 +873,22 @@ export {
   ESNEXT,
   EXTENSIONS,
   EXTENSIONS_JSON,
+  EXT_CJS,
   EXT_CMD,
+  EXT_CTS,
+  EXT_DTS,
+  EXT_JS,
+  EXT_JSON,
   EXT_LOCK,
+  EXT_LOCKB,
+  EXT_MD,
+  EXT_MJS,
+  EXT_MTS,
   EXT_PS1,
+  FOLD_SETTING_FILE,
+  FOLD_SETTING_NONE,
+  FOLD_SETTING_PKG,
+  FOLD_SETTING_VERSION,
   GITIGNORE,
   HIDDEN_PACKAGE_LOCK_JSON,
   JSON,
@@ -879,6 +925,11 @@ export {
   REDACTED,
   REGISTRY,
   REGISTRY_SCOPE_DELIMITER,
+  REPORT_LEVEL_DEFER,
+  REPORT_LEVEL_ERROR,
+  REPORT_LEVEL_IGNORE,
+  REPORT_LEVEL_MONITOR,
+  REPORT_LEVEL_WARN,
   RESOLUTIONS,
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_BIN_NAME,
