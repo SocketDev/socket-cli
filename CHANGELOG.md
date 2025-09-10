@@ -7,36 +7,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [1.1.4](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.4) - 2025-09-09
 
 ### Added
-- Added CHANGELOG.md to track user-facing changes
-- Added CLAUDE.md for development guidance
-- Added `--report-level` flag to `socket scan create`
+- Track release changes with CHANGELOG.md
+- Enhanced development workflow with contributor guidance
+- Control scan output detail with `--report-level` flag
 
 ## [1.1.1](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.1) - 2025-09-04
 
 ### Changed
-- Updated tab completion functionality
-- Improved spinner integration
+- Faster command completion with improved tab functionality
+- Smoother user experience with better loading indicators
 
 ### Removed
-- Removed `--test` and `--test-script` flags from user interface
-- Removed dead legacy `socket fix` code
+- Removed legacy `--test` and `--test-script` flags from `socket fix`
+- Continued cleanup of legacy `socket fix` code
 
 ## [1.1.0](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.0) - 2025-09-03
 
 ### Added
-- Added package version information to `socket npm` reports
+- See package versions directly in `socket npm` security reports
 
 ### Changed
-- Improved messaging for repeat `socket npm` installs
-- Enhanced timeout handling with try-catch for batch purl timeouts
-- Hide audit functionality on repeat `socket npm` installs
+- Clearer feedback for repeat `socket npm` installations
+- More reliable handling of scan timeouts
+- Streamlined repeat installs by hiding redundant audit info
 
 ### Fixed
-- Fixed file system method implementations
-- Fixed boolean value coercion in configurations
+- More reliable file system operations
+- Better configuration value handling
 
 ### Removed
-- Removed legacy `socket fix` code
+- Cleaned up legacy `socket fix` code
 
 ## [1.0.111](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.111) - 2025-09-03
 

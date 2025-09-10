@@ -95,7 +95,7 @@ Each command follows a consistent pattern:
 - **Binary entries**: `socket`, `socket-npm`, `socket-npx` (in `bin/` directory)
 - **Distribution**: Built files go to `dist/` directory
 - **External dependencies**: Bundled in `external/` directory
-- **Test fixtures**: Located in `test/socket-npm-fixtures/`
+- **Test fixtures**: Located in `test/socket-npm-fixtures/` and `test/fixtures/`
 
 ### Dependency Management
 - Uses Socket registry overrides for enhanced alternatives
@@ -110,12 +110,13 @@ When updating the changelog (`CHANGELOG.md`):
 - Example: `## [1.0.80](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.80) - 2025-07-29`
 - This allows users to click version numbers to view the corresponding GitHub release
 
-### Content Guidelines
-Focus on **user-facing changes** only. Include:
-- **Added**: New features, commands, flags, or capabilities users can access
-- **Changed**: Modifications to existing behavior that users will notice
-- **Fixed**: Bug fixes that resolve user-reported issues or improve functionality
-- **Removed**: Features, flags, or commands that are no longer available
+### Keep a Changelog Compliance
+Follow the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format:
+- Use standard sections: Added, Changed, Fixed, Removed (Security if applicable)
+- Maintain chronological order with latest version first
+- Include release dates in YYYY-MM-DD format
+- Make entries human-readable, not machine diffs
+- Focus on notable changes that impact users
 
 **Exclude** internal changes like:
 - Dependency updates (unless they fix security issues or add user features)
@@ -128,9 +129,48 @@ Focus on **user-facing changes** only. Include:
 - GitHub workflow and CI/CD changes
 - Third-party integration updates (unless they add user-visible features)
 
+
+### Content Guidelines
+Focus on **user-facing changes** only. Include:
+- **Added**: New features, commands, flags, or capabilities users can access
+- **Changed**: Modifications to existing behavior that users will notice
+- **Fixed**: Bug fixes that resolve user-reported issues or improve functionality
+- **Removed**: Features, flags, or commands that are no longer available
+
+### Writing Style
+Use a **marketing voice** that emphasizes user benefits while staying **concise**:
+- Focus on what users can accomplish rather than technical implementation
+- Highlight improvements in user experience and productivity
+- Use active, positive language that showcases value
+- Keep entries brief - users need to find information quickly
+- Example: Instead of "Added flag X", write "Enhanced security scanning with new X option"
+
 ### Third-Party Integrations
 
 Socket CLI integrates with various third-party tools and services:
 - **@coana-tech/cli**: Static analysis tool for reachability analysis and vulnerability detection
 - **cdxgen**: CycloneDX BOM generator for creating software bill of materials
 - **synp**: Tool for converting between yarn.lock and package-lock.json formats
+
+## Code Style
+
+### File Organization
+- **File extensions**: Use `.mts` for TypeScript module files
+- **Import order**: Node.js built-ins first, then third-party packages, then local imports
+- **Import grouping**: Group imports by source (Node.js, external packages, local modules)
+
+### Naming Conventions
+- **Constants**: Use `UPPER_SNAKE_CASE` for constants (e.g., `CMD_NAME`, `REPORT_LEVEL`)
+- **Files**: Use kebab-case for filenames (e.g., `cmd-scan-create.mts`, `handle-create-new-scan.mts`)
+- **Variables**: Use camelCase for variables and functions
+
+### Code Structure
+- **Command pattern**: Each command has `cmd-*.mts`, `handle-*.mts`, and `output-*.mts` files
+- **Type definitions**: Import types with `import type` for better tree-shaking
+- **Flags**: Define command flags using the `MeowFlags` type with descriptive help text
+- **Error handling**: Use custom error types like `AuthError` and `InputError`
+
+### Formatting
+- **Linting**: Uses ESLint with TypeScript support and import/export rules
+- **Formatting**: Uses Biome for code formatting with 2-space indentation
+- **Line length**: Target 80 character line width where practical
