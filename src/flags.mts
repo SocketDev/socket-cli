@@ -1,5 +1,4 @@
 import os from 'node:os'
-import { pathToFileURL } from 'node:url'
 
 import meow from 'meow'
 import terminalLink from 'terminal-link'
@@ -47,7 +46,7 @@ function getRawSpaceSizeFlags(): RawSpaceSizeFlags {
           default: 0,
         },
       },
-      importMeta: { url: `${pathToFileURL(__filename)}` } as ImportMeta,
+      importMeta: { url: import.meta.url } as ImportMeta,
     })
     _rawSpaceSizeFlags = {
       maxOldSpaceSize: cli.flags['maxOldSpaceSize'],
@@ -81,7 +80,10 @@ export function getMaxOldSpaceSizeFlag(): number {
 }
 // Ensure export because dist/flags.js is required in src/constants.mts.
 // eslint-disable-next-line n/exports-style
-exports.getMaxOldSpaceSizeFlag = getMaxOldSpaceSizeFlag
+if (typeof exports === 'object' && exports !== null) {
+  // eslint-disable-next-line n/exports-style
+  exports.getMaxOldSpaceSizeFlag = getMaxOldSpaceSizeFlag
+}
 
 let _maxSemiSpaceSizeFlag: number | undefined
 export function getMaxSemiSpaceSizeFlag(): number {
@@ -138,7 +140,10 @@ export function getMaxSemiSpaceSizeFlag(): number {
 }
 // Ensure export because dist/flags.js is required in src/constants.mts.
 // eslint-disable-next-line n/exports-style
-exports.getMaxSemiSpaceSizeFlag = getMaxSemiSpaceSizeFlag
+if (typeof exports === 'object' && exports !== null) {
+  // eslint-disable-next-line n/exports-style
+  exports.getMaxSemiSpaceSizeFlag = getMaxSemiSpaceSizeFlag
+}
 
 export const commonFlags: MeowFlags = {
   config: {
