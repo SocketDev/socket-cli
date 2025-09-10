@@ -13,7 +13,11 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchResult } from './output-patch-result.mts'
-import constants, { NODE_MODULES, NPM, UNKNOWN_ERROR } from '../../constants.mts'
+import constants, {
+  NODE_MODULES,
+  NPM,
+  UNKNOWN_ERROR,
+} from '../../constants.mts'
 import { findUp } from '../../utils/fs.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 

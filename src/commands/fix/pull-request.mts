@@ -8,7 +8,6 @@ import {
   getSocketFixPullRequestBody,
   getSocketFixPullRequestTitle,
 } from './git.mts'
-import { gitDeleteRemoteBranch } from '../../utils/git.mts'
 import {
   GQL_PR_STATE_CLOSED,
   GQL_PR_STATE_MERGED,
@@ -17,6 +16,7 @@ import {
   UNKNOWN_ERROR,
   UNKNOWN_VALUE,
 } from '../../constants.mts'
+import { gitDeleteRemoteBranch } from '../../utils/git.mts'
 import {
   type GhsaDetails,
   type Pr,
@@ -153,14 +153,23 @@ export async function cleanupSocketFixPrs(
         try {
           const success = await gitDeleteRemoteBranch(match.headRefName)
           if (success) {
-            debugFn('notice', `pr: deleted merged branch ${match.headRefName} for ${prRef}`)
+            debugFn(
+              'notice',
+              `pr: deleted merged branch ${match.headRefName} for ${prRef}`,
+            )
           } else {
-            debugFn('warn', `pr: failed to delete branch ${match.headRefName} for ${prRef}`)
+            debugFn(
+              'warn',
+              `pr: failed to delete branch ${match.headRefName} for ${prRef}`,
+            )
           }
         } catch (e) {
           const message = (e as Error)?.message || UNKNOWN_ERROR
           // Don't treat this as a hard error - branch might already be deleted.
-          debugFn('warn', `pr: failed to delete branch ${match.headRefName} for ${prRef} - ${message}`)
+          debugFn(
+            'warn',
+            `pr: failed to delete branch ${match.headRefName} for ${prRef} - ${message}`,
+          )
         }
       }
 
@@ -177,7 +186,7 @@ export async function cleanupSocketFixPrs(
   }
 
   const fulfilledMatches = settledMatches.filter(
-    (r): r is PromiseFulfilledResult<PrMatch> => r.status === 'fulfilled'
+    (r): r is PromiseFulfilledResult<PrMatch> => r.status === 'fulfilled',
   )
 
   return fulfilledMatches.map(r => r.value)
