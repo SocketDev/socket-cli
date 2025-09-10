@@ -39,6 +39,7 @@ const generalFlags: MeowFlags = {
   },
   org: {
     type: 'string',
+    default: '',
     description:
       'Force override the organization slug, overrides the default org from config',
   },
@@ -153,7 +154,7 @@ async function run(
   }
 
   const [orgSlug] = await determineOrgSlug(
-    String(orgFlag || ''),
+    orgFlag,
     interactive,
     dryRun,
   )
