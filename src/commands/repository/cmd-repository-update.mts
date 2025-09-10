@@ -1,7 +1,9 @@
+import terminalLink from 'terminal-link'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleUpdateRepo } from './handle-update-repo.mts'
-import constants from '../../constants.mts'
+import constants, { V1_MIGRATION_GUIDE_URL } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
@@ -123,7 +125,7 @@ async function run(
     {
       nook: true,
       test: noLegacy,
-      message: 'Legacy flags are no longer supported. See v1 migration guide.',
+      message: `Legacy flags are no longer supported. See ${terminalLink('v1 migration guide', V1_MIGRATION_GUIDE_URL)}.`,
       fail: `received legacy flags`,
     },
     {
