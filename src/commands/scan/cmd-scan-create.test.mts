@@ -38,6 +38,7 @@ describe('socket scan create', async () => {
             --read-only         Similar to --dry-run except it can read from remote, stops before it would create an actual report
             --repo              Repository name
             --report            Wait for the scan creation to complete, then basically run \`socket scan report\` on it
+            --report-level      Which policy level alerts should be reported (default 'error')
             --set-as-alerts-page  When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.
             --tmp               Set the visibility (true/false) of the scan in your dashboard.
 
