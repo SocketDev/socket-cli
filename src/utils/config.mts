@@ -163,7 +163,10 @@ export function getConfigValueOrUndef<Key extends keyof LocalConfig>(
 
 // Ensure export because dist/utils.js is required in src/constants.mts.
 // eslint-disable-next-line n/exports-style
-exports.getConfigValueOrUndef = getConfigValueOrUndef
+if (typeof exports === 'object' && exports !== null) {
+  // eslint-disable-next-line n/exports-style
+  exports.getConfigValueOrUndef = getConfigValueOrUndef
+}
 
 export function getSupportedConfigEntries() {
   return [...supportedConfigEntries]

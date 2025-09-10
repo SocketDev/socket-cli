@@ -2,7 +2,7 @@ import crypto from 'node:crypto'
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { glob } from 'fast-glob'
+import fastGlob from 'fast-glob'
 
 import { PackageURL } from '@socketregistry/packageurl-js'
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
@@ -128,7 +128,7 @@ async function findNodeModulesPaths(cwd: string): Promise<string[]> {
   if (!rootNmPath) {
     return []
   }
-  return await glob([`**/${NODE_MODULES}`], {
+  return await fastGlob.glob([`**/${NODE_MODULES}`], {
     absolute: true,
     cwd: path.dirname(rootNmPath),
     onlyDirectories: true,
