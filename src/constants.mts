@@ -213,6 +213,8 @@ const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
 const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
 const SOCKET_WEBSITE_URL = 'https://socket.dev'
 const TEXT = 'text'
+const UNKNOWN_ERROR = 'Unknown error'
+const UNKNOWN_VALUE = '<unknown>'
 const VLT = 'vlt'
 const YARN = 'yarn'
 const YARN_BERRY = 'yarn/berry'
@@ -271,6 +273,8 @@ export type Constants = Remap<
     readonly SOCKET_DEFAULT_REPOSITORY: typeof SOCKET_DEFAULT_REPOSITORY
     readonly SOCKET_WEBSITE_URL: typeof SOCKET_WEBSITE_URL
     readonly TEXT: typeof TEXT
+    readonly UNKNOWN_ERROR: typeof UNKNOWN_ERROR
+    readonly UNKNOWN_VALUE: typeof UNKNOWN_VALUE
     readonly VLT: typeof VLT
     readonly YARN: typeof YARN
     readonly YARN_BERRY: typeof YARN_BERRY
@@ -779,6 +783,8 @@ const constants: Constants = createConstantsObject(
     SOCKET_DEFAULT_REPOSITORY,
     SOCKET_WEBSITE_URL,
     TEXT,
+    UNKNOWN_ERROR,
+    UNKNOWN_VALUE,
     VLT,
     YARN,
     YARN_BERRY,
@@ -969,6 +975,8 @@ export {
   SOCKET_SECURITY_SCOPE,
   SOCKET_WEBSITE_URL,
   TEXT,
+  UNKNOWN_ERROR,
+  UNKNOWN_VALUE,
   UNLICENCED,
   UNLICENSED,
   UTF8,

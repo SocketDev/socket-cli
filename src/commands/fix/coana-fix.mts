@@ -31,6 +31,7 @@ import { fetchSupportedScanFileNames } from '../scan/fetch-supported-scan-file-n
 
 import type { FixConfig } from './types.mts'
 import type { CResult } from '../../types.mts'
+import { UNKNOWN_ERROR } from '../../constants.mts'
 
 export async function coanaFix(
   fixConfig: FixConfig,
@@ -191,7 +192,7 @@ export async function coanaFix(
 
     if (!fixCResult.ok) {
       logger.error(
-        `Update failed for ${ghsaId}: ${fixCResult.message || 'Unknown error'}`,
+        `Update failed for ${ghsaId}: ${fixCResult.message || UNKNOWN_ERROR}`,
       )
       continue ghsaLoop
     }
