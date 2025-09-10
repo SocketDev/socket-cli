@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { glob, globStream } from 'fast-glob'
+import fastGlob from 'fast-glob'
 import ignore from 'ignore'
 import micromatch from 'micromatch'
 import { parse as yamlParse } from 'yaml'
@@ -213,7 +213,7 @@ export async function globWithGitIgnore(
     }
   }
 
-  const gitIgnoreStream = globStream(['**/.gitignore'], {
+  const gitIgnoreStream = fastGlob.globStream(['**/.gitignore'], {
     absolute: true,
     cwd,
     ignore: DEFAULT_IGNORE_FOR_GIT_IGNORE,
@@ -251,14 +251,14 @@ export async function globWithGitIgnore(
   } as GlobOptions
 
   if (!hasNegatedPattern) {
-    return await glob(patterns as string[], globOptions)
+    return await fastGlob.glob(patterns as string[], globOptions)
   }
 
   // Add support for negated "ignore" patterns which many globbing libraries,
   // including 'fast-glob', 'globby', and 'tinyglobby', lack support for.
   const filtered: string[] = []
   const ig = ignore().add([...ignores])
-  const stream = globStream(
+  const stream = fastGlob.globStream(
     patterns as string[],
     globOptions,
   ) as AsyncIterable<string>
@@ -279,7 +279,7 @@ export async function globWorkspace(
 ): Promise<string[]> {
   const workspaceGlobs = await getWorkspaceGlobs(agent, cwd)
   return workspaceGlobs.length
-    ? await glob(workspaceGlobs, {
+    ? await fastGlob.glob(workspaceGlobs, {
         absolute: true,
         cwd,
         ignore: defaultIgnore,
