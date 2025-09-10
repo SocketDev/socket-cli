@@ -165,7 +165,7 @@ export async function coanaFix(
   let count = 0
   let overallFixed = false
 
-  // Process each GHSA ID individually, similar to npm-fix/pnpm-fix.
+  // Process each GHSA ID individually.
   ghsaLoop: for (let i = 0, { length } = ids; i < length; i += 1) {
     const ghsaId = ids[i]!
     debugFn('notice', `check: ${ghsaId}`)
