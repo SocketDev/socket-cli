@@ -53,11 +53,13 @@ async function run(
       },
       githubToken: {
         type: 'string',
+        default: constants.ENV.SOCKET_CLI_GITHUB_TOKEN,
         description:
           'Required GitHub token for authentication.\nMay set environment variable GITHUB_TOKEN or SOCKET_CLI_GITHUB_TOKEN instead.',
       },
       githubApiUrl: {
         type: 'string',
+        default: DEFAULT_GITHUB_URL,
         description: `Base URL of the GitHub API (default: ${DEFAULT_GITHUB_URL})`,
       },
       interactive: {
@@ -68,16 +70,19 @@ async function run(
       },
       org: {
         type: 'string',
+        default: '',
         description:
           'Force override the organization slug, overrides the default org from config',
       },
       orgGithub: {
         type: 'string',
+        default: '',
         description:
           'Alternate GitHub Org if the name is different than the Socket Org',
       },
       repos: {
         type: 'string',
+        default: '',
         description:
           'List of repos to target in a comma-separated format (e.g., repo1,repo2). If not specified, the script will pull the list from Socket and ask you to pick one. Use --all to use them all.',
       },
