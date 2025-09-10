@@ -55,7 +55,7 @@ export async function performReachabilityAnalysis(
     uploadManifests = true,
   } = { __proto__: null, ...options } as ReachabilityAnalysisOptions
 
-  // Check if user has enterprise plan for reachability analysis
+  // Check if user has enterprise plan for reachability analysis.
   const orgsCResult = await fetchOrganization()
   if (!orgsCResult.ok) {
     return {
@@ -76,6 +76,8 @@ export async function performReachabilityAnalysis(
     }
   }
 
+  const wasSpinning = !!spinner?.isSpinning
+
   let tarHash: string | undefined
 
   if (uploadManifests && orgSlug && packagePaths) {
@@ -86,8 +88,6 @@ export async function performReachabilityAnalysis(
     }
 
     const sockSdk = sockSdkCResult.data
-
-    const wasSpinning = !!spinner?.isSpinning
 
     // Exclude any .socket.facts.json files that happen to be in the scan
     // folder before the analysis was run.
@@ -184,7 +184,6 @@ export async function performReachabilityAnalysis(
     stdio: 'inherit',
   })
 
-  const wasSpinning = !!spinner?.isSpinning
   if (wasSpinning) {
     spinner.start()
   }
