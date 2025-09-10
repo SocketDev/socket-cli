@@ -13,6 +13,7 @@ import {
 } from '../../utils/output-formatting.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
+import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type {
   CliCommandConfig,
   CliSubcommand,
@@ -45,8 +46,8 @@ async function run(
       ...outputFlags,
       fold: {
         type: 'string',
-        default: 'none',
-        description: 'Fold reported alerts to some degree',
+        default: constants.FOLD_SETTING_NONE,
+        description: `Fold reported alerts to some degree (default '${constants.FOLD_SETTING_NONE}')`,
       },
       interactive: {
         type: 'boolean',
@@ -61,8 +62,8 @@ async function run(
       },
       reportLevel: {
         type: 'string',
-        default: 'warn',
-        description: 'Which policy level alerts should be reported',
+        default: constants.REPORT_LEVEL_WARN,
+        description: `Which policy level alerts should be reported (default '${constants.REPORT_LEVEL_WARN}')`,
       },
       short: {
         type: 'boolean',
@@ -99,7 +100,7 @@ async function run(
 
     You can --fold these up to given level: 'pkg', 'version', 'file', and 'none'.
     For example: \`socket scan report --fold=version\` will dedupe alerts to only
-    show one alert of a particular kind, no matter how often it was foud in a
+    show one alert of a particular kind, no matter how often it was found in a
     file or in how many files it was found. At most one per version that has it.
 
     By default only the warn and error policy level alerts are reported. You can
@@ -123,20 +124,21 @@ async function run(
     parentName,
   })
 
-  const {
-    fold = 'none',
-    json,
-    license,
-    markdown,
-    org: orgFlag,
-    reportLevel = 'warn',
-  } = cli.flags
+  const { json, markdown, org: orgFlag } = cli.flags
 
   const dryRun = !!cli.flags['dryRun']
 
+  const fold = cli.flags['fold'] as FOLD_SETTING
+
   const interactive = !!cli.flags['interactive']
 
-  const [scanId = '', file = ''] = cli.input
+  const includeLicensePolicy = !!cli.flags['license']
+
+  const reportLevel = cli.flags['reportLevel'] as REPORT_LEVEL
+
+  const short = !!cli.flags['short']
+
+  const [scanId = '', filepath = ''] = cli.input
 
   const hasApiToken = hasDefaultApiToken()
 
@@ -186,16 +188,11 @@ async function run(
   await handleScanReport({
     orgSlug,
     scanId,
-    includeLicensePolicy: !!license,
+    includeLicensePolicy,
     outputKind,
-    filePath: file,
-    fold: fold as 'none' | 'file' | 'pkg' | 'version',
-    short: !!cli.flags['short'],
-    reportLevel: reportLevel as
-      | 'warn'
-      | 'error'
-      | 'defer'
-      | 'ignore'
-      | 'monitor',
+    filepath,
+    fold,
+    short,
+    reportLevel,
   })
 }

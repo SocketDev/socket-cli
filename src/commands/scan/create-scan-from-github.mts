@@ -9,6 +9,7 @@ import { confirm, select } from '@socketsecurity/registry/lib/prompts'
 
 import { fetchSupportedScanFileNames } from './fetch-supported-scan-file-names.mts'
 import { handleCreateNewScan } from './handle-create-new-scan.mts'
+import constants from '../../constants.mts'
 import { isReportSupportedFile } from '../../utils/glob.mts'
 import { fetchListAllRepos } from '../repository/fetch-list-all-repos.mts'
 
@@ -251,6 +252,7 @@ async function scanOneRepo(
     readOnly: false,
     repoName: repoSlug,
     report: false,
+    reportLevel: constants.REPORT_LEVEL_ERROR,
     targets: ['.'],
     tmp: false,
   })
