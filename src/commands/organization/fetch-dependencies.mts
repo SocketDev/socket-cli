@@ -35,6 +35,6 @@ export async function fetchDependencies(
   } as FetchDependenciesConfig
 
   return await handleApiCall(sockSdk.searchDependencies({ limit, offset }), {
-    desc: 'organization dependencies',
+    description: 'organization dependencies',
   })
 }
