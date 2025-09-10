@@ -36,7 +36,7 @@ const config: CliCommandConfig = {
     KEY is an enum. Valid keys:
 
 ${getSupportedConfigEntries()
-  .map(([key, desc]) => `     - ${key} -- ${desc}`)
+  .map(({ 0: key, 1: description }) => `     - ${key} -- ${description}`)
   .join('\n')}
 
     Examples

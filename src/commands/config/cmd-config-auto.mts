@@ -55,7 +55,7 @@ async function run(
 
     Keys:
 ${getSupportedConfigEntries()
-  .map(([key, desc]) => `     - ${key} -- ${desc}`)
+  .map(({ 0: key, 1: description }) => `     - ${key} -- ${description}`)
   .join('\n')}
   `,
   }
