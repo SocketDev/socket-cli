@@ -15,7 +15,7 @@ import {
 } from '@socketsecurity/registry/lib/fs'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../constants.mts'
+import constants, { UNKNOWN_ERROR } from '../constants.mts'
 
 import type { components } from '@octokit/openapi-types'
 import type { JsonContent } from '@socketsecurity/registry/lib/fs'
@@ -144,7 +144,7 @@ export async function fetchGhsaDetails(
   } catch (e) {
     debugFn(
       'error',
-      `Failed to fetch GHSA details: ${(e as Error)?.message || 'Unknown error'}`,
+      `Failed to fetch GHSA details: ${(e as Error)?.message || UNKNOWN_ERROR}`,
     )
   }
 
