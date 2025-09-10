@@ -74,6 +74,7 @@ const generalFlags: MeowFlags = {
   },
   cwd: {
     type: 'string',
+    default: '',
     description: 'working directory, defaults to process.cwd()',
   },
   defaultBranch: {
@@ -297,8 +298,8 @@ async function run(
 
   const processCwd = process.cwd()
   const cwd =
-    cwdOverride && cwdOverride !== processCwd
-      ? path.resolve(processCwd, String(cwdOverride))
+    cwdOverride && cwdOverride !== '.' && cwdOverride !== processCwd
+      ? path.resolve(processCwd, cwdOverride)
       : processCwd
 
   const sockJson = readOrDefaultSocketJson(cwd)
