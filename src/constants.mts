@@ -189,11 +189,12 @@ const GQL_PAGE_SENTINEL = 100
 const GQL_PR_STATE_CLOSED = 'CLOSED'
 const GQL_PR_STATE_MERGED = 'MERGED'
 const GQL_PR_STATE_OPEN = 'OPEN'
-const JSON = 'json'
 const LOCALAPPDATA = 'LOCALAPPDATA'
-const MARKDOWN = 'markdown'
 const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
+const OUTPUT_JSON = 'json'
+const OUTPUT_MARKDOWN = 'markdown'
+const OUTPUT_TEXT = 'text'
 const REDACTED = '<redacted>'
 const REPORT_LEVEL_DEFER = 'defer'
 const REPORT_LEVEL_ERROR = 'error'
@@ -212,7 +213,6 @@ const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
 const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
 const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
 const SOCKET_WEBSITE_URL = 'https://socket.dev'
-const TEXT = 'text'
 const UNKNOWN_ERROR = 'Unknown error'
 const UNKNOWN_VALUE = '<unknown>'
 const VLT = 'vlt'
@@ -246,13 +246,14 @@ export type Constants = Remap<
     readonly GQL_PR_STATE_CLOSED: typeof GQL_PR_STATE_CLOSED
     readonly GQL_PR_STATE_MERGED: typeof GQL_PR_STATE_MERGED
     readonly GQL_PR_STATE_OPEN: typeof GQL_PR_STATE_OPEN
-    readonly JSON: typeof JSON
-    readonly MARKDOWN: typeof MARKDOWN
     readonly NODE_MODULES: typeof NODE_MODULES
     readonly NPM_BUGGY_OVERRIDES_PATCHED_VERSION: typeof NPM_BUGGY_OVERRIDES_PATCHED_VERSION
     readonly NPM_REGISTRY_URL: typeof NPM_REGISTRY_URL
     readonly NPM: typeof NPM
     readonly NPX: typeof NPX
+    readonly OUTPUT_JSON: typeof OUTPUT_JSON
+    readonly OUTPUT_MARKDOWN: typeof OUTPUT_MARKDOWN
+    readonly OUTPUT_TEXT: typeof OUTPUT_TEXT
     readonly PACKAGE_JSON: typeof PACKAGE_JSON
     readonly REDACTED: typeof REDACTED
     readonly REPORT_LEVEL_DEFER: typeof REPORT_LEVEL_DEFER
@@ -272,7 +273,6 @@ export type Constants = Remap<
     readonly SOCKET_DEFAULT_BRANCH: typeof SOCKET_DEFAULT_BRANCH
     readonly SOCKET_DEFAULT_REPOSITORY: typeof SOCKET_DEFAULT_REPOSITORY
     readonly SOCKET_WEBSITE_URL: typeof SOCKET_WEBSITE_URL
-    readonly TEXT: typeof TEXT
     readonly UNKNOWN_ERROR: typeof UNKNOWN_ERROR
     readonly UNKNOWN_VALUE: typeof UNKNOWN_VALUE
     readonly VLT: typeof VLT
@@ -756,12 +756,13 @@ const constants: Constants = createConstantsObject(
     GQL_PR_STATE_CLOSED,
     GQL_PR_STATE_MERGED,
     GQL_PR_STATE_OPEN,
-    JSON,
-    MARKDOWN,
     NODE_MODULES,
     NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
     NPM_REGISTRY_URL,
     NPX,
+    OUTPUT_JSON,
+    OUTPUT_MARKDOWN,
+    OUTPUT_TEXT,
     PACKAGE_JSON,
     PNPM,
     REDACTED,
@@ -782,7 +783,6 @@ const constants: Constants = createConstantsObject(
     SOCKET_DEFAULT_BRANCH,
     SOCKET_DEFAULT_REPOSITORY,
     SOCKET_WEBSITE_URL,
-    TEXT,
     UNKNOWN_ERROR,
     UNKNOWN_VALUE,
     VLT,
@@ -913,7 +913,6 @@ export {
   GQL_PR_STATE_MERGED,
   GQL_PR_STATE_OPEN,
   HIDDEN_PACKAGE_LOCK_JSON,
-  JSON,
   LATEST,
   LICENSE,
   LICENSE_GLOB,
@@ -924,7 +923,6 @@ export {
   LOCALAPPDATA,
   LOOP_SENTINEL,
   MANIFEST_JSON,
-  MARKDOWN,
   MIT,
   NODE_AUTH_TOKEN,
   NODE_ENV,
@@ -935,6 +933,9 @@ export {
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
   NPM_REGISTRY_URL,
   NPX,
+  OUTPUT_JSON,
+  OUTPUT_MARKDOWN,
+  OUTPUT_TEXT,
   OVERRIDES,
   PACKAGE_DEFAULT_VERSION,
   PACKAGE_JSON,
@@ -974,7 +975,6 @@ export {
   SOCKET_REGISTRY_SCOPE,
   SOCKET_SECURITY_SCOPE,
   SOCKET_WEBSITE_URL,
-  TEXT,
   UNKNOWN_ERROR,
   UNKNOWN_VALUE,
   UNLICENCED,
