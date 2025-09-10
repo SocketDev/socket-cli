@@ -9,10 +9,10 @@ import {
   getSocketFixPullRequestTitle,
 } from './git.mts'
 import {
+  GQL_PAGE_SENTINEL,
   GQL_PR_STATE_CLOSED,
   GQL_PR_STATE_MERGED,
   GQL_PR_STATE_OPEN,
-  GRAPHQL_PAGE_SENTINEL,
   UNKNOWN_ERROR,
   UNKNOWN_VALUE,
 } from '../../constants.mts'
@@ -351,10 +351,10 @@ async function getSocketFixPrsWithContext(
       pageIndex += 1
 
       // Safety limit to prevent infinite loops.
-      if (pageIndex === GRAPHQL_PAGE_SENTINEL) {
+      if (pageIndex === GQL_PAGE_SENTINEL) {
         debugFn(
           'warn',
-          `GraphQL pagination reached safety limit (${GRAPHQL_PAGE_SENTINEL} pages) for ${owner}/${repo}`,
+          `GraphQL pagination reached safety limit (${GQL_PAGE_SENTINEL} pages) for ${owner}/${repo}`,
         )
         break
       }
@@ -366,7 +366,8 @@ async function getSocketFixPrsWithContext(
       }
     }
   } catch (e) {
-    debugFn('error', `GraphQL pagination failed for ${owner}/${repo}:`, e)
+    debugFn('error', `GraphQL pagination failed for ${owner}/${repo}`)
+    debugDir('inspect', { error: e })
   }
 
   return contextualMatches
