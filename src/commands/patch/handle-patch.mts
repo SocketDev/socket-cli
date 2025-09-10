@@ -13,17 +13,14 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { PatchManifestSchema } from './manifest-schema.mts'
 import { outputPatchResult } from './output-patch-result.mts'
-import constants, {
-  NODE_MODULES,
-  NPM,
-  UNKNOWN_ERROR,
-} from '../../constants.mts'
+import { NODE_MODULES, NPM, UNKNOWN_ERROR } from '../../constants.mts'
 import { findUp } from '../../utils/fs.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 
 import type { PatchRecord } from './manifest-schema.mts'
-import type { CResult, OutputKind } from '../../types.mts'
+import type { OutputKind } from '../../types.mts'
 import type { PackageURL } from '@socketregistry/packageurl-js'
+import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type PatchEntry = {
   key: string
@@ -201,7 +198,7 @@ export interface HandlePatchConfig {
   dryRun: boolean
   outputKind: OutputKind
   purlObjs: PackageURL[]
-  spinner: typeof constants.spinner
+  spinner: Spinner
 }
 
 export async function handlePatch({
@@ -222,7 +219,8 @@ export async function handlePatch({
     // Parse PURLs and group by ecosystem.
     const patchesByEcosystem = new Map<string, PatchEntry[]>()
     for (const { 0: key, 1: patch } of Object.entries(validated.patches)) {
-      const purlObj = getPurlObject(key, { throws: false })
+      const purl = key.startsWith('pkg:') ? key : `pkg:${key}`
+      const purlObj = getPurlObject(purl, { throws: false })
       if (!purlObj) {
         continue
       }
@@ -252,14 +250,16 @@ export async function handlePatch({
     if (npmPatches) {
       await applyNPMPatches(npmPatches, purlObjs, dotSocketDirPath, dryRun)
     }
-    const result: CResult<{ patched: string[] }> = {
-      ok: true,
-      data: {
-        patched: purls.length ? purls : ['patched successfully'],
-      },
-    }
 
-    await outputPatchResult(result, outputKind)
+    await outputPatchResult(
+      {
+        ok: true,
+        data: {
+          patched: purls.length ? purls : ['patched successfully'],
+        },
+      },
+      outputKind,
+    )
   } catch (e) {
     spinner.stop()
 
@@ -274,13 +274,14 @@ export async function handlePatch({
       cause = String(e)
     }
 
-    const result: CResult<never> = {
-      ok: false,
-      code: 1,
-      message,
-      cause,
-    }
-
-    await outputPatchResult(result, outputKind)
+    await outputPatchResult(
+      {
+        ok: false,
+        code: 1,
+        message,
+        cause,
+      },
+      outputKind,
+    )
   }
 }
