@@ -23,13 +23,13 @@ describe('socket scan report', async () => {
             - Permissions: full-scans:list security-policy:read
 
           Options
-            --fold              Fold reported alerts to some degree
+            --fold              Fold reported alerts to some degree (default 'none')
             --interactive       Allow for interactive elements, asking for input. Use --no-interactive to prevent any input questions, defaulting them to cancel/no.
             --json              Output result as json
             --license           Also report the license policy status. Default: false
             --markdown          Output result as markdown
             --org               Force override the organization slug, overrides the default org from config
-            --report-level      Which policy level alerts should be reported
+            --report-level      Which policy level alerts should be reported (default 'warn')
             --short             Report only the healthy status
 
           When no output path is given the contents is sent to stdout.
@@ -46,7 +46,7 @@ describe('socket scan report', async () => {
 
           You can --fold these up to given level: 'pkg', 'version', 'file', and 'none'.
           For example: \`socket scan report --fold=version\` will dedupe alerts to only
-          show one alert of a particular kind, no matter how often it was foud in a
+          show one alert of a particular kind, no matter how often it was found in a
           file or in how many files it was found. At most one per version that has it.
 
           By default only the warn and error policy level alerts are reported. You can
