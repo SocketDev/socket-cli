@@ -36,7 +36,7 @@ import type { CResult } from '../../types.mts'
 export async function coanaFix(
   fixConfig: FixConfig,
 ): Promise<CResult<{ fixed: boolean }>> {
-  const { autoMerge, cwd, ghsas, limit, orgSlug, spinner } = fixConfig
+  const { autopilot, cwd, ghsas, limit, orgSlug, spinner } = fixConfig
 
   const fixEnv = await getFixEnv()
   debugDir('inspect', { fixEnv })
@@ -316,7 +316,7 @@ export async function coanaFix(
 
         logger.success(`Opened ${prRef} for ${ghsaId}.`)
 
-        if (autoMerge) {
+        if (autopilot) {
           logger.indent()
           spinner?.indent()
           // eslint-disable-next-line no-await-in-loop
