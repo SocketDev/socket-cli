@@ -169,6 +169,8 @@ Socket CLI integrates with various third-party tools and services:
 - **Type definitions**: Import types with `import type` for better tree-shaking
 - **Flags**: Define command flags using the `MeowFlags` type with descriptive help text
 - **Error handling**: Use custom error types like `AuthError` and `InputError`
+- **Array destructuring**: Use object notation `{ 0: key, 1: data }` instead of array destructuring `[key, data]`
+- **Comments**: End comments with periods; place comments on their own line, not to the right of code. Use fewer hyphens/dashes and prefer commas, colons, or semicolons for better readability
 
 ### Formatting
 - **Linting**: Uses ESLint with TypeScript support and import/export rules
