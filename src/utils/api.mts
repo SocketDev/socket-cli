@@ -101,19 +101,27 @@ export async function handleApiCall<T extends SocketSdkOperations>(
 
   // Note: TS can't narrow down the type of result due to generics.
   if (sdkResult.success === false) {
-    const errorResult = sdkResult as SocketSdkErrorResult<T>
-    const message = `${errorResult.error || NO_ERROR_MESSAGE}`
-    const { cause: reason } = errorResult
+    debugFn(
+      'error',
+      `fail:${description ? ` ${description}` : ''} bad response`,
+    )
+    debugDir('inspect', { sdkResult })
+
+    const errCResult = sdkResult as SocketSdkErrorResult<T>
+    const errStr = errCResult.error ? String(errCResult.error).trim() : ''
+    const message = errStr || NO_ERROR_MESSAGE
+    const reason = errCResult.cause || NO_ERROR_MESSAGE
+    const cause =
+      reason && message !== reason ? `${message} (reason: ${reason})` : message
     const socketSdkErrorResult: ApiCallResult<T> = {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${message}${reason ? ` ( Reason: ${reason} )` : ''}`,
+      cause,
       data: {
         code: sdkResult.status,
       },
     }
-    debugFn('error', `fail:${desc ? ` ${desc}` : ''} bad response`)
-    debugDir('inspect', { sdkResult })
+
     return socketSdkErrorResult
   }
   const socketSdkSuccessResult: ApiCallResult<T> = {
@@ -127,44 +135,50 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   value: Promise<SocketSdkResult<T>>,
   description: string,
 ): Promise<CResult<SocketSdkSuccessResult<T>['data']>> {
-  let result: SocketSdkResult<T>
+  let sdkResult: SocketSdkResult<T>
   try {
-    result = await value
+    sdkResult = await value
   } catch (e) {
-    const message = `${e || NO_ERROR_MESSAGE}`
-    const reason = `${e || NO_ERROR_MESSAGE}`
-
     debugFn('error', `caught: ${description} error`)
     debugDir('inspect', { error: e })
+
+    const errStr = e ? String(e).trim() : ''
+    const cause = errStr || NO_ERROR_MESSAGE
 
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${message}${reason ? ` ( Reason: ${reason} )` : ''}`,
+      cause,
     }
   }
 
   // Note: TS can't narrow down the type of result due to generics
-  if (result.success === false) {
-    const error = result as SocketSdkErrorResult<T>
-    const message = `${error.error || NO_ERROR_MESSAGE}`
-
+  if (sdkResult.success === false) {
     debugFn('error', `fail: ${description} bad response`)
-    debugDir('inspect', { error })
+    debugDir('inspect', { sdkResult })
+
+    const sdkErrorResult = sdkResult as SocketSdkErrorResult<T>
+    const errStr = sdkErrorResult.error
+      ? String(sdkErrorResult.error).trim()
+      : ''
+    const message = errStr || NO_ERROR_MESSAGE
+    const reason = sdkErrorResult.cause || NO_ERROR_MESSAGE
+    const cause =
+      reason && message !== reason ? `${message} (reason: ${reason})` : message
 
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${message}${error.cause ? ` ( Reason: ${error.cause} )` : ''}`,
+      cause,
       data: {
-        code: result.status,
+        code: sdkResult.status,
       },
     }
   } else {
-    const ok = result as SocketSdkSuccessResult<T>
+    const sdkSuccessResult = sdkResult as SocketSdkSuccessResult<T>
     return {
       ok: true,
-      data: ok.data,
+      data: sdkSuccessResult.data,
     }
   }
 }
@@ -348,7 +362,7 @@ export async function sendApiRequest<T>(
 
     const cause = (e as undefined | { message: string })?.message
 
-    debugFn('error', `caught: await fetch() ${options.method} error`)
+    debugFn('error', `caught: await fetch() ${method} error`)
     debugDir('inspect', { error: e })
 
     return {
