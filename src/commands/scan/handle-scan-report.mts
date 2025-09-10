@@ -1,10 +1,22 @@
 import { fetchScanData } from './fetch-report-data.mts'
 import { outputScanReport } from './output-scan-report.mts'
 
+import type { FOLD_SETTING, REPORT_LEVEL } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 
+export type HandleScanReportConfig = {
+  orgSlug: string
+  scanId: string
+  includeLicensePolicy: boolean
+  outputKind: OutputKind
+  filepath: string
+  fold: FOLD_SETTING
+  reportLevel: REPORT_LEVEL
+  short: boolean
+}
+
 export async function handleScanReport({
-  filePath,
+  filepath,
   fold,
   includeLicensePolicy,
   orgSlug,
@@ -12,22 +24,13 @@ export async function handleScanReport({
   reportLevel,
   scanId,
   short,
-}: {
-  orgSlug: string
-  scanId: string
-  includeLicensePolicy: boolean
-  outputKind: OutputKind
-  filePath: string
-  fold: 'pkg' | 'version' | 'file' | 'none'
-  reportLevel: 'defer' | 'ignore' | 'monitor' | 'warn' | 'error'
-  short: boolean
-}): Promise<void> {
+}: HandleScanReportConfig): Promise<void> {
   const scanDataCResult = await fetchScanData(orgSlug, scanId, {
     includeLicensePolicy,
   })
 
   await outputScanReport(scanDataCResult, {
-    filePath,
+    filepath,
     fold,
     scanId: scanId,
     includeLicensePolicy,

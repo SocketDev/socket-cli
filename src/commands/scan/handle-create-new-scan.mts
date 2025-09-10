@@ -201,8 +201,8 @@ export async function handleCreateNewScan({
   if (report && fullScanCResult.ok) {
     if (scanId) {
       await handleScanReport({
-        filePath: '-',
-        fold: 'version',
+        filepath: '-',
+        fold: constants.FOLD_SETTING_VERSION,
         includeLicensePolicy: true,
         orgSlug,
         outputKind,
