@@ -153,11 +153,7 @@ async function run(
     targets = await suggestTarget()
   }
 
-  const { 0: orgSlug } = await determineOrgSlug(
-    orgFlag,
-    interactive,
-    dryRun,
-  )
+  const { 0: orgSlug } = await determineOrgSlug(orgFlag, interactive, dryRun)
 
   const hasApiToken = hasDefaultApiToken()
 
