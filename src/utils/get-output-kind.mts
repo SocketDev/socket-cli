@@ -1,13 +1,13 @@
-import { JSON, MARKDOWN, TEXT } from '../constants.mts'
+import { OUTPUT_JSON, OUTPUT_MARKDOWN, OUTPUT_TEXT } from '../constants.mts'
 
 import type { OutputKind } from '../types.mts'
 
 export function getOutputKind(json: unknown, markdown: unknown): OutputKind {
   if (json) {
-    return JSON
+    return OUTPUT_JSON
   }
   if (markdown) {
-    return MARKDOWN
+    return OUTPUT_MARKDOWN
   }
-  return TEXT
+  return OUTPUT_TEXT
 }
