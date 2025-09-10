@@ -21,6 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Build and run**: `npm run build && npm exec socket`
 - **Quick build + run**: `npm run bs` (builds source only, then runs socket)
 - **Run without build**: `npm run s` (runs socket directly)
+- **Native TypeScript**: `./sd` (runs the CLI without building using Node.js native TypeScript support on Node 22+)
 
 ## Architecture
 
@@ -108,3 +109,20 @@ When updating the changelog (`CHANGELOG.md`):
 - Use the format: `## [version](https://github.com/SocketDev/socket-cli/releases/tag/vversion) - date`
 - Example: `## [1.0.80](https://github.com/SocketDev/socket-cli/releases/tag/v1.0.80) - 2025-07-29`
 - This allows users to click version numbers to view the corresponding GitHub release
+
+### Content Guidelines
+Focus on **user-facing changes** only. Include:
+- **Added**: New features, commands, flags, or capabilities users can access
+- **Changed**: Modifications to existing behavior that users will notice
+- **Fixed**: Bug fixes that resolve user-reported issues or improve functionality
+- **Removed**: Features, flags, or commands that are no longer available
+
+**Exclude** internal changes like:
+- Dependency updates (unless they fix security issues or add user features)
+- Code refactoring and cleanup
+- Internal constant reorganization
+- Test snapshot updates
+- Build system improvements
+- Developer tooling changes
+- Minor nits and formatting tweaks
+- GitHub workflow and CI/CD changes
