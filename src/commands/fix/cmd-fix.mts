@@ -171,12 +171,33 @@ async function run(
     parentName,
   })
 
+  const {
+    autopilot,
+    json,
+    limit,
+    markdown,
+    maxSatisfying,
+    prCheck,
+    rangeStyle,
+    // We patched in this feature with `npx custompatch meow` at
+    // socket-cli/patches/meow#13.2.0.patch.
+    unknownFlags = [],
+  } = cli.flags as {
+    autopilot: boolean
+    limit: number
+    json: boolean
+    markdown: boolean
+    maxSatisfying: boolean
+    minSatisfying: boolean
+    prCheck: boolean
+    rangeStyle: RangeStyle
+    unknownFlags?: string[]
+  }
+
   const dryRun = !!cli.flags['dryRun']
 
-  let rangeStyle = cli.flags['rangeStyle'] as RangeStyle
-  if (!rangeStyle) {
-    rangeStyle = 'preserve'
-  }
+  const minSatisfying =
+    (cli.flags['minSatisfying'] as boolean) || !maxSatisfying
 
   const rawPurls = cmdFlagValueToArray(cli.flags['purl'])
   const purls = []
@@ -194,7 +215,7 @@ async function run(
     return
   }
 
-  const outputKind = getOutputKind(cli.flags['json'], cli.flags['markdown'])
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
     outputKind,
@@ -205,7 +226,7 @@ async function run(
     },
     {
       nook: true,
-      test: !cli.flags['json'] || !cli.flags['markdown'],
+      test: !json || !markdown,
       message: 'The json and markdown flags cannot be both set, pick one',
       fail: 'omit one',
     },
@@ -235,29 +256,15 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  let autoMerge = Boolean(cli.flags['autoMerge'])
-  let test = Boolean(cli.flags['test'])
-  if (cli.flags['autopilot']) {
-    autoMerge = true
-    test = true
-  }
-
   const { spinner } = constants
-  // We patched in this feature with `npx custompatch meow` at
-  // socket-cli/patches/meow#13.2.0.patch.
-  const unknownFlags = cli.unknownFlags ?? []
+
   const ghsas = arrayUnique([
     ...cmdFlagValueToArray(cli.flags['id']),
     ...cmdFlagValueToArray(cli.flags['ghsa']),
   ])
-  const limit = Number(cli.flags['limit']) || DEFAULT_LIMIT
-  const maxSatisfying = Boolean(cli.flags['maxSatisfying'])
-  const minSatisfying = Boolean(cli.flags['minSatisfying']) || !maxSatisfying
-  const prCheck = Boolean(cli.flags['prCheck'])
-  const testScript = String(cli.flags['testScript'] || 'test')
 
   await handleFix({
-    autoMerge,
+    autopilot,
     cwd,
     ghsas,
     limit,
@@ -265,11 +272,8 @@ async function run(
     prCheck,
     orgSlug,
     outputKind,
-    purls,
     rangeStyle,
     spinner,
-    test,
-    testScript,
     unknownFlags,
   })
 }

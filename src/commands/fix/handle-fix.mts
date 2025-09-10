@@ -15,7 +15,7 @@ export type HandleFixConfig = Remap<
 >
 
 export async function handleFix({
-  autoMerge,
+  autopilot,
   cwd,
   ghsas,
   limit,
@@ -23,27 +23,21 @@ export async function handleFix({
   orgSlug,
   outputKind,
   prCheck,
-  purls,
   rangeStyle,
   spinner,
-  test,
-  testScript,
   unknownFlags,
 }: HandleFixConfig) {
   await outputFixResult(
     await coanaFix({
-      autoMerge,
+      autopilot,
       cwd,
       ghsas,
       limit,
       minSatisfying,
       orgSlug,
       prCheck,
-      purls,
       rangeStyle,
       spinner,
-      test,
-      testScript,
       unknownFlags,
     }),
     outputKind,

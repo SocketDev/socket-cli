@@ -76,6 +76,15 @@ describe('socket fix', async () => {
   )
 
   cmdit(
+    ['fix', '--dry-run', '--autopilot', '--config', '{"apiToken":"fakeToken"}'],
+    'should accept --autopilot flag',
+    async cmd => {
+      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
+      expect(code, 'should exit with code 0').toBe(0)
+    },
+  )
+  cmdit(
     [
       'fix',
       '--dry-run',
@@ -83,17 +92,7 @@ describe('socket fix', async () => {
       '--config',
       '{"apiToken":"fakeToken"}',
     ],
-    'should accept --auto-merge flag',
-    async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    ['fix', '--dry-run', '--autopilot', '--config', '{"apiToken":"fakeToken"}'],
-    'should accept --autopilot flag',
+    'should accept --auto-merge alias',
     async cmd => {
       const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
@@ -103,7 +102,7 @@ describe('socket fix', async () => {
 
   cmdit(
     ['fix', '--dry-run', '--test', '--config', '{"apiToken":"fakeToken"}'],
-    'should accept --test flag',
+    'should ignore --test flag',
     async cmd => {
       const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
@@ -120,7 +119,7 @@ describe('socket fix', async () => {
       '--config',
       '{"apiToken":"fakeToken"}',
     ],
-    'should accept --test-script flag',
+    'should ignore --test-script flag',
     async cmd => {
       const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
