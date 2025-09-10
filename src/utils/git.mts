@@ -325,7 +325,11 @@ export async function gitDeleteRemoteBranch(
   debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     // Will throw with exit code 1 if branch does not exist.
-    await spawn('git', ['push', 'origin', '--delete', branch], stdioIgnoreOptions)
+    await spawn(
+      'git',
+      ['push', 'origin', '--delete', branch],
+      stdioIgnoreOptions,
+    )
     return true
   } catch (e) {
     if (isDebug('stdio')) {
