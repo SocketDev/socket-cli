@@ -142,7 +142,7 @@ async function run(
 
   const hasApiToken = hasDefaultApiToken()
 
-  const [orgSlug] = await determineOrgSlug(
+  const { 0: orgSlug } = await determineOrgSlug(
     String(orgFlag || ''),
     interactive,
     dryRun,

@@ -153,7 +153,7 @@ async function run(
     targets = await suggestTarget()
   }
 
-  const [orgSlug] = await determineOrgSlug(
+  const { 0: orgSlug } = await determineOrgSlug(
     orgFlag,
     interactive,
     dryRun,
