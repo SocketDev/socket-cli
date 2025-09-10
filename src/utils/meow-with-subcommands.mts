@@ -558,7 +558,8 @@ export function meowOrExit({
   })
 
   if (!shouldSuppressBanner(cli.flags)) {
-    emitBanner(command, String(cli.flags['org'] || '') || undefined)
+    const orgFlag = String(cli.flags['org'] || '').trim() || undefined
+    emitBanner(command, orgFlag)
     // Add newline in stderr.
     // Meow help adds a newline too so we do it here.
     logger.error('')
@@ -586,15 +587,15 @@ export function meowOrExit({
     cli.showHelp(0)
   }
 
-  // meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
+  // Meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
   if (!hasOwn(config.flags, 'version') && cli.flags['version']) {
-    // Use `console.error` here instead of `logger.error` to match meow behavior.
+    // Use `console.error` here instead of `logger.error` to match Meow behavior.
     console.error('Unknown flag\n--version')
     // eslint-disable-next-line n/no-process-exit
     process.exit(2)
   }
 
-  // Now test for help state. Run meow again. If it exits now, it must be due
+  // Now test for help state. Run Meow again. If it exits now, it must be due
   // to wanting to print the help screen. But it would exit(0) and we want a
   // consistent exit(2) for that case (missing input).
   // TODO: Move away from meow.

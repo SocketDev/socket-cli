@@ -67,7 +67,7 @@ ${getSupportedConfigEntries()
     parentName,
   })
 
-  const { json, markdown } = cli.flags
+  const { json, markdown } = cli.flags as { json: boolean; markdown: boolean }
 
   const dryRun = !!cli.flags['dryRun']
 

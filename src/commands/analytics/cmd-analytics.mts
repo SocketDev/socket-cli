@@ -42,6 +42,7 @@ async function run(
       ...outputFlags,
       file: {
         type: 'string',
+        default: '',
         description: 'Path to store result, only valid with --json/--markdown',
       },
     },

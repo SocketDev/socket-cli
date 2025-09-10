@@ -50,26 +50,27 @@ const generalFlags: MeowFlags = {
   },
   branch: {
     type: 'string',
-    shortFlag: 'b',
+    default: '',
     description: 'Branch name',
+    shortFlag: 'b',
   },
   commitHash: {
     type: 'string',
-    shortFlag: 'ch',
     default: '',
     description: 'Commit hash',
+    shortFlag: 'ch',
   },
   commitMessage: {
     type: 'string',
-    shortFlag: 'm',
     default: '',
     description: 'Commit message',
+    shortFlag: 'm',
   },
   committers: {
     type: 'string',
-    shortFlag: 'c',
     default: '',
     description: 'Committers',
+    shortFlag: 'c',
   },
   cwd: {
     type: 'string',
@@ -89,11 +90,13 @@ const generalFlags: MeowFlags = {
   },
   pullRequest: {
     type: 'number',
-    shortFlag: 'pr',
+    default: 0,
     description: 'Pull request number',
+    shortFlag: 'pr',
   },
   org: {
     type: 'string',
+    default: '',
     description:
       'Force override the organization slug, overrides the default org from config',
   },
@@ -126,16 +129,16 @@ const generalFlags: MeowFlags = {
   setAsAlertsPage: {
     type: 'boolean',
     default: true,
-    aliases: ['pendingHead'],
     description:
       'When true and if this is the "default branch" then this Scan will be the one reflected on your alerts page. See help for details. Defaults to true.',
+    aliases: ['pendingHead'],
   },
   tmp: {
     type: 'boolean',
-    shortFlag: 't',
     default: false,
     description:
       'Set the visibility (true/false) of the scan in your dashboard.',
+    shortFlag: 't',
   },
 }
 

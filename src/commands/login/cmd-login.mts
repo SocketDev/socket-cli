@@ -38,10 +38,12 @@ async function run(
       ...commonFlags,
       apiBaseUrl: {
         type: 'string',
+        default: '',
         description: 'API server to connect to for login',
       },
       apiProxy: {
         type: 'string',
+        default: '',
         description: 'Proxy to use when making connection to API server',
       },
     },
@@ -83,9 +85,10 @@ async function run(
     )
   }
 
-  const apiBaseUrl = cli.flags['apiBaseUrl'] as string | undefined
-
-  const apiProxy = cli.flags['apiProxy'] as string | undefined
+  const { apiBaseUrl, apiProxy } = cli.flags as {
+    apiBaseUrl?: string
+    apiProxy?: string
+  }
 
   await attemptLogin(apiBaseUrl, apiProxy)
 }

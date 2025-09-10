@@ -196,15 +196,15 @@ export const commonFlags: MeowFlags = {
 export const outputFlags: MeowFlags = {
   json: {
     type: 'boolean',
-    shortFlag: 'j',
     default: false,
     description: 'Output result as json',
+    shortFlag: 'j',
   },
   markdown: {
     type: 'boolean',
-    shortFlag: 'm',
     default: false,
     description: 'Output result as markdown',
+    shortFlag: 'm',
   },
 }
 
