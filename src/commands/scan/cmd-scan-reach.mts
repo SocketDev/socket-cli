@@ -35,6 +35,7 @@ const generalFlags: MeowFlags = {
   ...outputFlags,
   cwd: {
     type: 'string',
+    default: '',
     description: 'working directory, defaults to process.cwd()',
   },
   org: {
@@ -141,8 +142,8 @@ async function run(
 
   const processCwd = process.cwd()
   const cwd =
-    cwdOverride && cwdOverride !== processCwd
-      ? path.resolve(processCwd, String(cwdOverride))
+    cwdOverride && cwdOverride !== '.' && cwdOverride !== processCwd
+      ? path.resolve(processCwd, cwdOverride)
       : processCwd
 
   // Accept zero or more paths. Default to cwd() if none given.
