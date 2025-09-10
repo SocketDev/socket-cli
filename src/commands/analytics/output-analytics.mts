@@ -46,24 +46,20 @@ const Months = [
   'Dec',
 ] as const
 
+export type OutputAnalyticsConfig = {
+  filepath: string
+  outputKind: OutputKind
+  repo: string
+  scope: string
+  time: number
+}
+
 export async function outputAnalytics(
   result: CResult<
     | SocketSdkSuccessResult<'getOrgAnalytics'>['data']
     | SocketSdkSuccessResult<'getRepoAnalytics'>['data']
   >,
-  {
-    filePath,
-    outputKind,
-    repo,
-    scope,
-    time,
-  }: {
-    scope: string
-    time: number
-    repo: string
-    outputKind: OutputKind
-    filePath: string
-  },
+  { filepath, outputKind, repo, scope, time }: OutputAnalyticsConfig,
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
@@ -81,10 +77,10 @@ export async function outputAnalytics(
   if (outputKind === 'json') {
     const serialized = serializeResultJson(result)
 
-    if (filePath) {
+    if (filepath) {
       try {
-        await fs.writeFile(filePath, serialized, 'utf8')
-        logger.success(`Data successfully written to ${filePath}`)
+        await fs.writeFile(filepath, serialized, 'utf8')
+        logger.success(`Data successfully written to ${filepath}`)
       } catch (e) {
         process.exitCode = 1
         logger.log(
@@ -109,10 +105,10 @@ export async function outputAnalytics(
     const serialized = renderMarkdown(fdata, time, repo)
 
     // TODO: Do we want to write to file even if there was an error...?
-    if (filePath) {
+    if (filepath) {
       try {
-        await fs.writeFile(filePath, serialized, 'utf8')
-        logger.success(`Data successfully written to ${filePath}`)
+        await fs.writeFile(filepath, serialized, 'utf8')
+        logger.success(`Data successfully written to ${filepath}`)
       } catch (e) {
         logger.error(e)
       }

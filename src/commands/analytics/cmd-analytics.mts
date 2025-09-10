@@ -1,7 +1,9 @@
+import terminalLink from 'terminal-link'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleAnalytics } from './handle-analytics.mts'
-import constants from '../../constants.mts'
+import constants, { V1_MIGRATION_GUIDE_URL } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
@@ -102,7 +104,11 @@ async function run(
     time = cli.input[0]
   }
 
-  const { file, json, markdown } = cli.flags
+  const {
+    file: filepath,
+    json,
+    markdown,
+  } = cli.flags as { file: string; json: boolean; markdown: boolean }
 
   const dryRun = !!cli.flags['dryRun']
 
@@ -118,7 +124,7 @@ async function run(
     {
       nook: true,
       test: noLegacy,
-      message: 'Legacy flags are no longer supported. See v1 migration guide.',
+      message: `Legacy flags are no longer supported. See ${terminalLink('v1 migration guide', V1_MIGRATION_GUIDE_URL)}.`,
       fail: `received legacy flags`,
     },
     {
@@ -142,7 +148,7 @@ async function run(
     },
     {
       nook: true,
-      test: !file || !!json || !!markdown,
+      test: !filepath || !!json || !!markdown,
       message:
         'The `--file` flag is only valid when using `--json` or `--markdown`',
       fail: 'bad',
@@ -171,10 +177,10 @@ async function run(
   }
 
   return await handleAnalytics({
+    filepath,
+    outputKind,
+    repo: repoName,
     scope,
     time: time === '90' ? 90 : time === '30' ? 30 : 7,
-    repo: repoName,
-    outputKind,
-    filePath: String(file || ''),
   })
 }
