@@ -50,10 +50,20 @@ const generalFlags: MeowFlags = {
   id: {
     type: 'string',
     default: [],
-    description: `Provide a list of ${terminalLink(
+    description: `Provide a list of vulnerability identifiers to compute fixes for:
+    - ${terminalLink(
       'GHSA IDs',
       'https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database#about-ghsa-ids',
-    )} to compute fixes for, as either a comma separated value or as multiple flags`,
+    )} (e.g., GHSA-xxxx-xxxx-xxxx)
+    - ${terminalLink(
+      'CVE IDs',
+      'https://cve.mitre.org/cve/identifiers/',
+    )} (e.g., CVE-${new Date().getFullYear()}-1234) - automatically converted to GHSA
+    - ${terminalLink(
+      'PURLs',
+      'https://github.com/package-url/purl-spec',
+    )} (e.g., pkg:npm/package@1.0.0) - automatically converted to GHSA
+    Can be provided as comma separated values or as multiple flags`,
     isMultiple: true,
   },
   limit: {
