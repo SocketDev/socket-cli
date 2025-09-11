@@ -22,6 +22,5 @@ export function getRequirements() {
  * Convert command path to requirements key.
  */
 export function getRequirementsKey(cmdPath: string): string {
-  const colonIndex = cmdPath.lastIndexOf(':')
-  return colonIndex === -1 ? cmdPath : cmdPath.slice(colonIndex + 1)
+  return cmdPath.replace(/^socket[: ]/, '').replace(/ +/g, ':')
 }
