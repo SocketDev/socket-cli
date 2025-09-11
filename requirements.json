@@ -9,8 +9,8 @@
       "permissions": ["audit-log:list"]
     },
     "fix": {
-      "quota": 100,
-      "permissions": ["packages:list"]
+      "quota": 101,
+      "permissions": ["full-scans:create", "packages:list"]
     },
     "login": {
       "quota": 1,
