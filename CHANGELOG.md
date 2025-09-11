@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.7](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.7) - 2025-09-11
+
+### Added
+- Control spinner display with new `--no-spinner` flag
+
+### Fixed
+- Configurable proxy handling for requests
+
 ## [1.1.6](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.6) - 2025-09-10
 
 ### Fixed
