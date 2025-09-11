@@ -24,7 +24,7 @@ function getDefaultApiBaseUrl(): string | undefined {
 }
 
 // The Socket API server that should be used for operations.
-function getDefaultProxyUrl(): string | undefined {
+export function getDefaultProxyUrl(): string | undefined {
   const apiProxy =
     constants.ENV.SOCKET_CLI_API_PROXY || getConfigValueOrUndef('apiProxy')
   return isUrl(apiProxy) ? apiProxy : undefined
