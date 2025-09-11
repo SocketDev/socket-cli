@@ -278,7 +278,7 @@ export async function queryApiSafeText(
     return {
       ok: false,
       message: 'API request failed',
-      cause: 'Unexpected error reading response text'
+      cause: 'Unexpected error reading response text',
     }
   }
 }
