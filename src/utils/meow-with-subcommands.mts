@@ -7,7 +7,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
-import { Spinner } from '@socketsecurity/registry/lib/spinner'
+import { getCliSpinners } from '@socketsecurity/registry/lib/spinner'
 import {
   indentString,
   trimNewlines,
@@ -306,7 +306,7 @@ export async function meowWithSubcommands(
 
   // Use CI spinner style when --no-spinner is passed.
   if (noSpinner) {
-    constants.spinner.spinner = Spinner.spinners['ci']!
+    constants.spinner.spinner = getCliSpinners('ci')!
   }
 
   // Hard override the config if instructed to do so.
@@ -625,7 +625,7 @@ export function meowOrExit({
 
   // Use CI spinner style when --no-spinner is passed.
   if (noSpinner) {
-    constants.spinner.spinner = Spinner.spinners['ci']!
+    constants.spinner.spinner = getCliSpinners('ci')!
   }
 
   if (!shouldSuppressBanner(cli.flags)) {
