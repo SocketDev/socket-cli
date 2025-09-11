@@ -3,6 +3,7 @@ import path from 'node:path'
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { getFixEnv } from './env-helpers.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
@@ -132,7 +133,7 @@ export async function coanaFix(
       if (openPrCount > 0) {
         debugFn(
           'notice',
-          `limit: adjusted from ${limit} to ${adjustedLimit} (${openPrCount} open Socket Fix PRs)`,
+          `limit: adjusted from ${limit} to ${adjustedLimit} (${openPrCount} open Socket Fix ${pluralize('PR', openPrCount)}`,
         )
       }
     } catch (e) {
