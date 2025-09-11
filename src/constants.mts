@@ -181,6 +181,7 @@ const DOT_SOCKET_DOT_FACTS_JSON = `${DOT_SOCKET}.facts.json`
 const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
 const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
+const EMPTY_VALUE = '<empty>'
 const FOLD_SETTING_FILE = 'file'
 const FOLD_SETTING_NONE = 'none'
 const FOLD_SETTING_PKG = 'pkg'
@@ -233,6 +234,7 @@ export type Constants = Remap<
     readonly ALERT_TYPE_MILD_CVE: typeof ALERT_TYPE_MILD_CVE
     readonly API_V0_URL: typeof API_V0_URL
     readonly BUN: typeof BUN
+    readonly EMPTY_VALUE: typeof EMPTY_VALUE
     readonly ENV: ENV
     readonly DOT_SOCKET: typeof DOT_SOCKET
     readonly DOT_SOCKET_DOT_FACTS_JSON: typeof DOT_SOCKET_DOT_FACTS_JSON
@@ -749,6 +751,7 @@ const constants: Constants = createConstantsObject(
     DRY_RUN_LABEL,
     DRY_RUN_BAILING_NOW,
     DRY_RUN_NOT_SAVING,
+    EMPTY_VALUE,
     ENV: undefined,
     FOLD_SETTING_FILE,
     FOLD_SETTING_NONE,
@@ -890,6 +893,7 @@ export {
   DRY_RUN_LABEL,
   DRY_RUN_NOT_SAVING,
   EMPTY_FILE,
+  EMPTY_VALUE,
   ESLINT_CONFIG_JS,
   ESNEXT,
   EXTENSIONS,

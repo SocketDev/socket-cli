@@ -25,7 +25,7 @@ import { findUp } from '../../utils/fs.mts'
 import { getPurlObject, normalizePurl } from '../../utils/purl.mts'
 
 import type { PatchRecord } from './manifest-schema.mts'
-import type { OutputKind } from '../../types.mts'
+import type { CResult, OutputKind } from '../../types.mts'
 import type { PackageURL } from '@socketregistry/packageurl-js'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
@@ -190,14 +190,25 @@ async function applyNpmPatches(
   return result
 }
 
-async function computeSHA256(filepath: string): Promise<string | null> {
+/**
+ * Compute SHA256 hash of file contents.
+ */
+async function computeSHA256(filepath: string): Promise<CResult<string>> {
   try {
     const content = await fs.readFile(filepath)
     const hash = crypto.createHash('sha256')
     hash.update(content)
-    return hash.digest('hex')
-  } catch {}
-  return null
+    return {
+      ok: true,
+      data: hash.digest('hex'),
+    }
+  } catch (e) {
+    return {
+      ok: false,
+      message: 'Failed to compute file hash',
+      cause: `Unable to read file ${filepath}: ${e instanceof Error ? e.message : 'Unknown error'}`,
+    }
+  }
 }
 
 async function findNodeModulesPaths(cwd: string): Promise<string[]> {
@@ -244,19 +255,21 @@ async function processFilePatch(
     return false
   }
 
-  const currentHash = await computeSHA256(filepath)
-  if (!currentHash) {
-    logger.log(`Failed to compute hash for: ${fileName}`)
+  const currentHashResult = await computeSHA256(filepath)
+  if (!currentHashResult.ok) {
+    logger.log(
+      `Failed to compute hash for: ${fileName}: ${currentHashResult.cause || currentHashResult.message}`,
+    )
     if (wasSpinning) {
       spinner?.start()
     }
     return false
   }
 
-  if (currentHash === fileInfo.afterHash) {
+  if (currentHashResult.data === fileInfo.afterHash) {
     logger.success(`File already patched: ${fileName}`)
     logger.group()
-    logger.log(`Current hash: ${currentHash}`)
+    logger.log(`Current hash: ${currentHashResult.data}`)
     logger.groupEnd()
     if (wasSpinning) {
       spinner?.start()
@@ -264,11 +277,11 @@ async function processFilePatch(
     return true
   }
 
-  if (currentHash !== fileInfo.beforeHash) {
+  if (currentHashResult.data !== fileInfo.beforeHash) {
     logger.fail(`File hash mismatch: ${fileName}`)
     logger.group()
     logger.log(`Expected: ${fileInfo.beforeHash}`)
-    logger.log(`Current:  ${currentHash}`)
+    logger.log(`Current:  ${currentHashResult.data}`)
     logger.log(`Target:   ${fileInfo.afterHash}`)
     logger.groupEnd()
     if (wasSpinning) {
@@ -279,7 +292,7 @@ async function processFilePatch(
 
   logger.success(`File matches expected hash: ${fileName}`)
   logger.group()
-  logger.log(`Current hash: ${currentHash}`)
+  logger.log(`Current hash: ${currentHashResult.data}`)
   logger.log(`Ready to patch to: ${fileInfo.afterHash}`)
   logger.group()
 

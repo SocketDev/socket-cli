@@ -17,3 +17,10 @@ export function getRequirements() {
   }
   return _requirements!
 }
+
+/**
+ * Convert command path to requirements key.
+ */
+export function getRequirementsKey(cmdPath: string): string {
+  return cmdPath.replace(/^socket[: ]/, '').replace(/ +/g, ':')
+}

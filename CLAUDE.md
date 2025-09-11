@@ -170,7 +170,29 @@ Socket CLI integrates with various third-party tools and services:
 - **Flags**: Define command flags using the `MeowFlags` type with descriptive help text
 - **Error handling**: Use custom error types like `AuthError` and `InputError`
 - **Array destructuring**: Use object notation `{ 0: key, 1: data }` instead of array destructuring `[key, data]`
-- **Comments**: End comments with periods; place comments on their own line, not to the right of code. Use fewer hyphens/dashes and prefer commas, colons, or semicolons for better readability
+- **Comment periods**: End comments with periods
+- **Comment placement**: Place comments on their own line, not to the right of code
+- **Comment formatting**: Use fewer hyphens/dashes and prefer commas, colons, or semicolons for better readability
+- **Await in loops**: When using `await` inside for-loops, add `// eslint-disable-next-line no-await-in-loop` to suppress the ESLint warning when sequential processing is intentional
+- **If statement returns**: Never use single-line return if statements; always use proper block syntax with braces
+- **List formatting**: Use `-` for bullet points in text output, not `•` or other Unicode characters, for better terminal compatibility
+- **Existence checks**: Perform simple existence checks first before complex operations
+- **Destructuring order**: Sort destructured properties alphabetically in const declarations
+- **Function ordering**: Place functions in alphabetical order, with private functions first, then exported functions
+- **GitHub API calls**: Use Octokit instances from `src/utils/github.mts` (`getOctokit()`, `getOctokitGraphql()`) instead of raw fetch calls for GitHub API interactions
+- **Object mappings**: Use objects with `__proto__: null` (not `undefined`) for static string-to-string mappings and lookup tables to prevent prototype pollution; use `Map` for dynamic collections that will be mutated
+- **Mapping constants**: Move static mapping objects outside functions as module-level constants with descriptive UPPER_SNAKE_CASE names
+- **Array length checks**: Use `!array.length` instead of `array.length === 0`. For `array.length > 0`, use `!!array.length` when function must return boolean, or `array.length` when used in conditional contexts
+- **Catch parameter naming**: Use `catch (e)` instead of `catch (error)` for consistency across the codebase
+
+### Safe File Operations
+- **File deletion**: NEVER use `rm -rf` for deleting files or directories. Always use `npx trash-cli` instead for safer deletion with recovery options
+- **Examples**:
+  - ❌ `rm -rf directory` (dangerous, permanent deletion)
+  - ❌ `rm -rf "$(pwd)"` (catastrophic - can delete entire repository)
+  - ✅ `npx trash-cli directory` (safe - moves to trash/recycle bin)
+- **Rationale**: The trash-cli utility moves files to the system trash/recycle bin instead of permanent deletion, allowing recovery from accidental deletions
+- **Recovery**: Files deleted with trash-cli can be recovered from the system trash (Trash on macOS, Recycle Bin on Windows, Trash on Linux)
 
 ### Formatting
 - **Linting**: Uses ESLint with TypeScript support and import/export rules
