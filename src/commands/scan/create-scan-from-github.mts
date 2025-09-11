@@ -39,7 +39,7 @@ export async function createScanFromGithub({
     .split(',')
     .map(r => r.trim())
     .filter(Boolean)
-  if (all || targetRepos.length === 0) {
+  if (all || !targetRepos.length) {
     // Fetch from Socket API
     const result = await fetchListAllRepos(orgSlug, {
       direction: 'asc',
@@ -475,12 +475,12 @@ async function streamDownloadWithFetch(
     // 'pipeline' will automatically handle closing streams and propagating errors.
     // It resolves when the piping is fully complete and fileStream is closed.
     return { ok: true, data: localPath }
-  } catch (error) {
+  } catch (e) {
     logger.fail(
       'An error was thrown while trying to download a manifest file... url:',
       downloadUrl,
     )
-    debugDir('inspect', { error })
+    debugDir('inspect', { error: e })
 
     // If an error occurs and fileStream was created, attempt to clean up.
     if (fs.existsSync(localPath)) {
@@ -495,10 +495,10 @@ async function streamDownloadWithFetch(
       })
     }
     // Construct a more informative error message
-    let detailedError = `Error during download of ${downloadUrl}: ${(error as { message: string }).message}`
-    if ((error as { cause: string }).cause) {
+    let detailedError = `Error during download of ${downloadUrl}: ${(e as { message: string }).message}`
+    if ((e as { cause: string }).cause) {
       // Include cause if available (e.g., from network errors)
-      detailedError += `\nCause: ${(error as { cause: string }).cause}`
+      detailedError += `\nCause: ${(e as { cause: string }).cause}`
     }
     if (response && !response.ok) {
       // If error was due to bad HTTP status
