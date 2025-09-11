@@ -114,7 +114,7 @@ export async function setupSdk(
   }
 
   const { apiBaseUrl = getDefaultApiBaseUrl() } = opts
-  const ProxyAgent = apiProxy?.startsWith('http:')
+  const ProxyAgent = apiBaseUrl?.startsWith('http:')
     ? HttpProxyAgent
     : HttpsProxyAgent
 
