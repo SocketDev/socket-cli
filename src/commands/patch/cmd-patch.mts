@@ -7,6 +7,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { handlePatch } from './handle-patch.mts'
 import constants, { DOT_SOCKET, MANIFEST_JSON } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
+import { InputError } from '../../utils/errors.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
@@ -104,14 +105,12 @@ async function run(
 
   const dotSocketDirPath = path.join(cwd, DOT_SOCKET)
   if (!existsSync(dotSocketDirPath)) {
-    logger.error(`Error: No ${DOT_SOCKET} directory found in current directory`)
-    return
+    throw new InputError(`No ${DOT_SOCKET} directory found in current directory`)
   }
 
   const manifestPath = path.join(dotSocketDirPath, MANIFEST_JSON)
   if (!existsSync(manifestPath)) {
-    logger.error(`Error: No ${MANIFEST_JSON} found in ${DOT_SOCKET} directory`)
-    return
+    throw new InputError(`No ${MANIFEST_JSON} found in ${DOT_SOCKET} directory`)
   }
 
   const { spinner } = constants
