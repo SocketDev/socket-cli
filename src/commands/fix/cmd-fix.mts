@@ -16,7 +16,6 @@ import {
   getFlagApiRequirementsOutput,
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
-import { getPurlObject } from '../../utils/purl.mts'
 import { RangeStyles } from '../../utils/semver.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
@@ -77,14 +76,8 @@ const generalFlags: MeowFlags = {
     description: `
 Define how dependency version ranges are updated in package.json (default 'preserve').
 Available styles:
-  * caret - Use ^ range for compatible updates (e.g. ^1.2.3)
-  * gt - Use > to allow any newer version (e.g. >1.2.3)
-  * gte - Use >= to allow any newer version (e.g. >=1.2.3)
-  * lt - Use < to allow only lower versions (e.g. <1.2.3)
-  * lte - Use <= to allow only lower versions (e.g. <=1.2.3)
   * pin - Use the exact version (e.g. 1.2.3)
   * preserve - Retain the existing version range style as-is
-  * tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
       `.trim(),
   },
 }
@@ -209,22 +202,6 @@ async function run(
   const minSatisfying =
     (cli.flags['minSatisfying'] as boolean) || !maxSatisfying
 
-  const rawPurls = cmdFlagValueToArray(cli.flags['purl'])
-  const purls = []
-  for (const purl of rawPurls) {
-    const version = getPurlObject(purl, { throws: false })?.version
-    if (version) {
-      purls.push(purl)
-    } else {
-      logger.warn(`--purl ${purl} is missing a version and will be ignored.`)
-    }
-  }
-  if (rawPurls.length !== purls.length && !purls.length) {
-    process.exitCode = 1
-    logger.fail('No valid --purl values provided.')
-    return
-  }
-
   const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(
@@ -271,6 +248,7 @@ async function run(
   const ghsas = arrayUnique([
     ...cmdFlagValueToArray(cli.flags['id']),
     ...cmdFlagValueToArray(cli.flags['ghsa']),
+    ...cmdFlagValueToArray(cli.flags['purl']),
   ])
 
   await handleFix({
