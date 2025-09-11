@@ -103,6 +103,41 @@ function findBestCommandMatch(
   return bestMatch
 }
 
+function getAsciiHeader(command: string, orgFlag: string | undefined) {
+  // Note: In tests we return <redacted> because otherwise snapshots will fail.
+  const { REDACTED } = constants
+  const redacting = constants.ENV.VITEST
+  const cliVersion = redacting
+    ? REDACTED
+    : constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
+  const nodeVersion = redacting ? REDACTED : process.version
+  const defaultOrg = getConfigValueOrUndef('defaultOrg')
+  const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
+  const shownToken = redacting
+    ? REDACTED
+    : getVisibleTokenPrefix() || '(not set)'
+  const relCwd = redacting ? REDACTED : normalizePath(tildify(process.cwd()))
+  // Note: we must redact org when creating snapshots because dev machine probably
+  //       has a default org set but CI won't. Showing --org is fine either way.
+  const orgPart = orgFlag
+    ? `--org: ${orgFlag}`
+    : redacting
+      ? 'org: <redacted>'
+      : defaultOrg
+        ? `default org: ${defaultOrg}`
+        : '(org not set)'
+  // Note: We could draw these with ascii box art instead but I worry about
+  //       portability and paste-ability. "simple" ascii chars just work.
+  const body = `
+   _____         _       _        /---------------
+  |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
+  |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token: ${shownToken}, ${orgPart}
+  |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}
+  `.trim()
+  // Note: logger will auto-append a newline.
+  return `   ${body}`
+}
+
 /**
  * Calculate Levenshtein distance between two strings for fuzzy matching.
  */
@@ -131,6 +166,18 @@ function levenshteinDistance(a: string, b: string): number {
 
 function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
   return Boolean(flags['json'] || flags['markdown'] || flags['nobanner'])
+}
+
+export function emitBanner(name: string, orgFlag: string | undefined) {
+  // Print a banner at the top of each command.
+  // This helps with brand recognition and marketing.
+  // It also helps with debugging since it contains version and command details.
+  // Note: print over stderr to preserve stdout for flags like --json and
+  //       --markdown. If we don't do this, you can't use --json in particular
+  //       and pipe the result to other tools. By emitting the banner over stderr
+  //       you can do something like `socket scan view xyz | jq | process`.
+  //       The spinner also emits over stderr for example.
+  logger.error(getAsciiHeader(name, orgFlag))
 }
 
 // For debugging. Whenever you call meowOrExit it will store the command here
@@ -617,51 +664,4 @@ export function meowOrExit({
   process.exitCode = 0
 
   return cli
-}
-
-export function emitBanner(name: string, orgFlag: string | undefined) {
-  // Print a banner at the top of each command.
-  // This helps with brand recognition and marketing.
-  // It also helps with debugging since it contains version and command details.
-  // Note: print over stderr to preserve stdout for flags like --json and
-  //       --markdown. If we don't do this, you can't use --json in particular
-  //       and pipe the result to other tools. By emitting the banner over stderr
-  //       you can do something like `socket scan view xyz | jq | process`.
-  //       The spinner also emits over stderr for example.
-  logger.error(getAsciiHeader(name, orgFlag))
-}
-
-function getAsciiHeader(command: string, orgFlag: string | undefined) {
-  // Note: In tests we return <redacted> because otherwise snapshots will fail.
-  const { REDACTED } = constants
-  const redacting = constants.ENV.VITEST
-  const cliVersion = redacting
-    ? REDACTED
-    : constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
-  const nodeVersion = redacting ? REDACTED : process.version
-  const defaultOrg = getConfigValueOrUndef('defaultOrg')
-  const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
-  const shownToken = redacting
-    ? REDACTED
-    : getVisibleTokenPrefix() || '(not set)'
-  const relCwd = redacting ? REDACTED : normalizePath(tildify(process.cwd()))
-  // Note: we must redact org when creating snapshots because dev machine probably
-  //       has a default org set but CI won't. Showing --org is fine either way.
-  const orgPart = orgFlag
-    ? `--org: ${orgFlag}`
-    : redacting
-      ? 'org: <redacted>'
-      : defaultOrg
-        ? `default org: ${defaultOrg}`
-        : '(org not set)'
-  // Note: We could draw these with ascii box art instead but I worry about
-  //       portability and paste-ability. "simple" ascii chars just work.
-  const body = `
-   _____         _       _        /---------------
-  |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
-  |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token: ${shownToken}, ${orgPart}
-  |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}
-  `.trim()
-  // Note: logger will auto-append a newline.
-  return `   ${body}`
 }
