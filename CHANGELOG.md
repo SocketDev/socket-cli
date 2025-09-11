@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.5](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.5) - 2025-09-10
+
+### Fixed
+- Fixed reachability analysis spinner behavior in certain scenarios
+- Improved `--cwd` current working directory override handling
+
 ## [1.1.4](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.4) - 2025-09-09
 
 ### Added
