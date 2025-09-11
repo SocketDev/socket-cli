@@ -111,8 +111,8 @@ npm exec socket
 <br/>
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="logo-white.png">
-    <source media="(prefers-color-scheme: light)" srcset="logo-black.png">
-    <img width="324" height="108" alt="Socket Logo" src="logo-black.png">
+    <source media="(prefers-color-scheme: dark)" srcset="logo-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="logo-light.png">
+    <img width="324" height="108" alt="Socket Logo" src="logo-light.png">
   </picture>
 </div>
