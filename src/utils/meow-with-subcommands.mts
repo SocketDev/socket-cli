@@ -7,6 +7,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
+import { Spinner } from '@socketsecurity/registry/lib/spinner'
 import {
   indentString,
   trimNewlines,
@@ -24,7 +25,7 @@ import { commonFlags } from '../flags.mts'
 import { getVisibleTokenPrefix } from './sdk.mts'
 import { tildify } from './tildify.mts'
 
-import type { MeowFlags } from '../flags.mts'
+import type { MeowFlag, MeowFlags } from '../flags.mts'
 import type { Options, Result } from 'meow'
 
 export interface CliAlias {
@@ -300,7 +301,13 @@ export async function meowWithSubcommands(
     booleanDefault: undefined,
   })
 
+  const noSpinner = cli1.flags['spinner'] === false
   const orgFlag = String(cli1.flags['org'] || '') || undefined
+
+  // Use CI spinner style when --no-spinner is passed.
+  if (noSpinner) {
+    constants.spinner.spinner = Spinner.spinners['ci']!
+  }
 
   // Hard override the config if instructed to do so.
   // The env var overrides the --flag, which overrides the persisted config
@@ -501,7 +508,17 @@ export async function meowWithSubcommands(
     lines.push('')
   }
   lines.push(
-    `  ${getFlagListOutput(flags, { indent: HELP_INDENT, padName: HELP_PAD_NAME })}`,
+    `  ${getFlagListOutput(
+      {
+        ...flags,
+        // Explicitly document the negated --no-spinner variant.
+        noSpinner: {
+          ...flags['spinner'],
+          hidden: false,
+        } as MeowFlag,
+      },
+      { indent: HELP_INDENT, padName: HELP_PAD_NAME },
+    )}`,
   )
   if (isRootCommand) {
     lines.push(
@@ -603,6 +620,13 @@ export function meowOrExit({
     help: trimNewlines(config.help(command, config)),
     importMeta,
   })
+
+  const noSpinner = cli.flags['spinner'] === false
+
+  // Use CI spinner style when --no-spinner is passed.
+  if (noSpinner) {
+    constants.spinner.spinner = Spinner.spinners['ci']!
+  }
 
   if (!shouldSuppressBanner(cli.flags)) {
     const orgFlag = String(cli.flags['org'] || '').trim() || undefined
