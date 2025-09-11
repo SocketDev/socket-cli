@@ -32,7 +32,7 @@ describe('socket scan', async () => {
 
           Options
 
-            (none)"
+            --no-spinner                Hide the console spinner"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
