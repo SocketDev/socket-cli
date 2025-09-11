@@ -149,47 +149,55 @@ export const commonFlags: MeowFlags = {
   config: {
     type: 'string',
     default: '',
-    hidden: true,
     description: 'Override the local config with this JSON',
+    hidden: true,
   },
   dryRun: {
     type: 'boolean',
     default: false,
-    // Only show in root command.
-    hidden: true,
     description:
       'Do input validation for a command and exit 0 when input is ok',
+    // Only show in root command.
+    hidden: true,
   },
   help: {
     type: 'boolean',
     default: false,
     shortFlag: 'h',
-    hidden: true,
     description: 'Print this help',
+    hidden: true,
   },
   maxOldSpaceSize: {
     type: 'number',
     get default() {
       return getMaxOldSpaceSizeFlag()
     },
-    hidden: true,
     description: `Set Node's V8 ${terminalLink('--max-old-space-size', 'https://nodejs.org/api/cli.html#--max-old-space-sizesize-in-mib')} option`,
+    hidden: true,
   },
   maxSemiSpaceSize: {
     type: 'number',
     get default() {
       return getMaxSemiSpaceSizeFlag()
     },
-    hidden: true,
     description: `Set Node's V8 ${terminalLink('--max-semi-space-size', 'https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib')} option`,
+    hidden: true,
   },
+
+  // I know this would be `--no-banner` but that doesn't work with cdxgen.
+  // Mostly for internal usage anyways.
   nobanner: {
-    // I know this would be `--no-banner` but that doesn't work with cdxgen.
-    // Mostly for internal usage anyways.
     type: 'boolean',
     default: false,
-    hidden: true,
     description: 'Hide the Socket banner',
+    hidden: true,
+  },
+  // Hidden to allow custom documenting of the negated `--no-spinner` variant.
+  spinner: {
+    type: 'boolean',
+    default: true,
+    description: 'Hide the console spinner',
+    hidden: true,
   },
 }
 
