@@ -196,8 +196,8 @@ describe('Socket fix --id functionality', () => {
     it('should handle mixed valid and invalid IDs', async () => {
       const mixedIds = [
         'GHSA-1234-5678-9abc', // valid
-        'invalid-id',          // invalid
-        'CVE-123',            // invalid CVE format
+        'invalid-id', // invalid
+        'CVE-123', // invalid CVE format
         'pkg:npm/lodash@4.17.20', // valid
       ]
 
