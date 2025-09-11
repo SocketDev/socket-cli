@@ -33,7 +33,7 @@ describe('package score output', async () => {
         - Quality:           [32m 99[39m
         - Vulnerabilities:   [32m100[39m
         - License:           [32m100[39m
-        - Alerts ([31m2[39m/[33m2[39m/4):     [31m[2m[critical] [22mdidYouMean[39m, [31m[2m[high] [22mtroll[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [2m[low] [22mdebugAccess, [2m[low] [22mdynamicRequire, [2m[low] [22mfilesystemAccess, [2m[low] [22munmaintained
+        - Alerts ([31m2[39m/[33m2[39m/4):     [31m[2m[critical] [22mdidYouMean[39m, [31m[2m[high] [22mtroll[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [2m[low] [22mdebugAccess, [2m[low] [22mdynamicRequire, [2m[low] [22mfilesystemAccess, and [2m[low] [22munmaintained
         "
       `)
     })
@@ -58,7 +58,7 @@ describe('package score output', async () => {
         - Quality:            99
         - Vulnerabilities:   100
         - License:           100
-        - Alerts (2/2/4):     [critical] didYouMean, [high] troll, [middle] networkAccess, [middle] unpopularPackage, [low] debugAccess, [low] dynamicRequire, [low] filesystemAccess, [low] unmaintained"
+        - Alerts (2/2/4):     [critical] didYouMean, [high] troll, [middle] networkAccess, [middle] unpopularPackage, [low] debugAccess, [low] dynamicRequire, [low] filesystemAccess, and [low] unmaintained"
       `)
     })
   })
@@ -82,7 +82,7 @@ describe('package score output', async () => {
         - Quality:           [32m100[39m
         - Vulnerabilities:   [32m100[39m
         - License:           [32m100[39m
-        - Alerts ([31m1[39m/[33m3[39m/2):     [31m[2m[critical] [22mmalware[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22menvVars, [2m[low] [22mfilesystemAccess
+        - Alerts ([31m1[39m/[33m3[39m/2):     [31m[2m[critical] [22mmalware[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22menvVars, and [2m[low] [22mfilesystemAccess
         "
       `)
     })
@@ -107,7 +107,7 @@ describe('package score output', async () => {
         - Quality:           100
         - Vulnerabilities:   100
         - License:           100
-        - Alerts (1/3/2):     [critical] malware, [middle] networkAccess, [middle] shellAccess, [middle] usesEval, [low] envVars, [low] filesystemAccess"
+        - Alerts (1/3/2):     [critical] malware, [middle] networkAccess, [middle] shellAccess, [middle] usesEval, [low] envVars, and [low] filesystemAccess"
       `)
     })
   })
@@ -131,7 +131,7 @@ describe('package score output', async () => {
         - Quality:           [32m100[39m
         - Vulnerabilities:   [32m100[39m
         - License:           [32m100[39m
-        - Alerts ([31m2[39m/[33m3[39m/2):     [31m[2m[high] [22mgptMalware[39m, [31m[2m[high] [22mobfuscatedFile[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22menvVars, [2m[low] [22mfilesystemAccess
+        - Alerts ([31m2[39m/[33m3[39m/2):     [31m[2m[high] [22mgptMalware[39m, [31m[2m[high] [22mobfuscatedFile[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22menvVars, and [2m[low] [22mfilesystemAccess
         "
       `)
     })
@@ -156,7 +156,7 @@ describe('package score output', async () => {
         - Quality:           100
         - Vulnerabilities:   100
         - License:           100
-        - Alerts (2/3/2):     [high] gptMalware, [high] obfuscatedFile, [middle] networkAccess, [middle] shellAccess, [middle] usesEval, [low] envVars, [low] filesystemAccess"
+        - Alerts (2/3/2):     [high] gptMalware, [high] obfuscatedFile, [middle] networkAccess, [middle] shellAccess, [middle] usesEval, [low] envVars, and [low] filesystemAccess"
       `)
     })
   })
@@ -180,7 +180,7 @@ describe('package score output', async () => {
         - Quality:           [32m 86[39m
         - Vulnerabilities:   [32m100[39m
         - License:           [32m100[39m
-        - Alerts ([31m0[39m/[33m4[39m/2):     [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22mfilesystemAccess, [2m[low] [22munidentifiedLicense
+        - Alerts ([31m0[39m/[33m4[39m/2):     [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22mfilesystemAccess, and [2m[low] [22munidentifiedLicense
         "
       `)
     })
@@ -205,7 +205,7 @@ describe('package score output', async () => {
         - Quality:            86
         - Vulnerabilities:   100
         - License:           100
-        - Alerts (0/4/2):     [middle] networkAccess, [middle] shellAccess, [middle] unpopularPackage, [middle] usesEval, [low] filesystemAccess, [low] unidentifiedLicense"
+        - Alerts (0/4/2):     [middle] networkAccess, [middle] shellAccess, [middle] unpopularPackage, [middle] usesEval, [low] filesystemAccess, and [low] unidentifiedLicense"
       `)
     })
   })
@@ -229,7 +229,7 @@ describe('package score output', async () => {
         - Quality:           [32m100[39m
         - Vulnerabilities:   [32m100[39m
         - License:           [33m 60[39m
-        - Alerts ([31m0[39m/[33m3[39m/0):     [33m[2m[middle] [22mhasNativeCode[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22musesEval[39m
+        - Alerts ([31m0[39m/[33m3[39m/0):     [33m[2m[middle] [22mhasNativeCode[39m, [33m[2m[middle] [22mnetworkAccess[39m, and [33m[2m[middle] [22musesEval[39m
         "
       `)
     })
@@ -254,7 +254,7 @@ describe('package score output', async () => {
         - Quality:           100
         - Vulnerabilities:   100
         - License:            60
-        - Alerts (0/3/0):     [middle] hasNativeCode, [middle] networkAccess, [middle] usesEval"
+        - Alerts (0/3/0):     [middle] hasNativeCode, [middle] networkAccess, and [middle] usesEval"
       `)
     })
   })
@@ -278,7 +278,7 @@ describe('package score output', async () => {
         - Quality:           [32m 99[39m
         - Vulnerabilities:   [32m100[39m
         - License:           [32m100[39m
-        - Alerts ([31m1[39m/[33m3[39m/2):     [31m[2m[critical] [22mmalware[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [2m[low] [22mfilesystemAccess, [2m[low] [22munidentifiedLicense
+        - Alerts ([31m1[39m/[33m3[39m/2):     [31m[2m[critical] [22mmalware[39m, [33m[2m[middle] [22mnetworkAccess[39m, [33m[2m[middle] [22mshellAccess[39m, [33m[2m[middle] [22munpopularPackage[39m, [2m[low] [22mfilesystemAccess, and [2m[low] [22munidentifiedLicense
         "
       `)
     })
@@ -303,7 +303,7 @@ describe('package score output', async () => {
         - Quality:            99
         - Vulnerabilities:   100
         - License:           100
-        - Alerts (1/3/2):     [critical] malware, [middle] networkAccess, [middle] shellAccess, [middle] unpopularPackage, [low] filesystemAccess, [low] unidentifiedLicense"
+        - Alerts (1/3/2):     [critical] malware, [middle] networkAccess, [middle] shellAccess, [middle] unpopularPackage, [low] filesystemAccess, and [low] unidentifiedLicense"
       `)
     })
 
@@ -326,7 +326,7 @@ describe('package score output', async () => {
           - Quality:           [32m100[39m
           - Vulnerabilities:   [32m100[39m
           - License:           [32m100[39m
-          - Alerts ([31m0[39m/[33m2[39m/1):     [33m[2m[middle] [22mhasNativeCode[39m, [33m[2m[middle] [22musesEval[39m, [2m[low] [22mfilesystemAccess
+          - Alerts ([31m0[39m/[33m2[39m/1):     [33m[2m[middle] [22mhasNativeCode[39m, [33m[2m[middle] [22musesEval[39m, and [2m[low] [22mfilesystemAccess
           "
         `)
 
@@ -353,7 +353,7 @@ describe('package score output', async () => {
           - Quality:           100
           - Vulnerabilities:   100
           - License:           100
-          - Alerts (0/2/1):     [middle] hasNativeCode, [middle] usesEval, [low] filesystemAccess"
+          - Alerts (0/2/1):     [middle] hasNativeCode, [middle] usesEval, and [low] filesystemAccess"
         `)
 
         expect(txt.split('Supply Chain Risk:').length).toBe(2) // Should find it once so when you split that you get 2 parts
