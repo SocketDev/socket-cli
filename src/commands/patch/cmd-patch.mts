@@ -79,12 +79,17 @@ async function run(
     parentName,
   })
 
-  const dryRun = !!cli.flags['dryRun']
-  const outputKind = getOutputKind(cli.flags['json'], cli.flags['markdown'])
+  const { dryRun, json, markdown } = cli.flags as {
+    dryRun: boolean
+    json: boolean
+    markdown: boolean
+  }
+
+  const outputKind = getOutputKind(json, markdown)
 
   const wasValidInput = checkCommandInput(outputKind, {
     nook: true,
-    test: !cli.flags['json'] || !cli.flags['markdown'],
+    test: !json || !markdown,
     message: 'The json and markdown flags cannot be both set, pick one',
     fail: 'omit one',
   })
