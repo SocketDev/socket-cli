@@ -278,7 +278,7 @@ async function getSocketFixPrsWithContext(
     let hasNextPage = true
     let cursor: string | null = null
     let pageIndex = 0
-    const gqlCacheKey = `${repo}-pr-graphql-snapshot`
+    const gqlCacheKey = `${repo}-pr-graphql-snapshot-${states.join('-').toLowerCase()}`
     while (hasNextPage) {
       // eslint-disable-next-line no-await-in-loop
       const gqlResp = (await cacheFetch(
