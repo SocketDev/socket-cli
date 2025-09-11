@@ -3,6 +3,7 @@ import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 import isInteractive from '@socketregistry/is-interactive/index.cjs'
 import { password } from '@socketsecurity/registry/lib/prompts'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
+import { isUrl } from '@socketsecurity/registry/lib/url'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
 import { getConfigValueOrUndef } from './config.mts'
@@ -28,17 +29,6 @@ export function getDefaultProxyUrl(): string | undefined {
   const apiProxy =
     constants.ENV.SOCKET_CLI_API_PROXY || getConfigValueOrUndef('apiProxy')
   return isUrl(apiProxy) ? apiProxy : undefined
-}
-
-function isUrl(value: any): value is string {
-  if (isNonEmptyString(value)) {
-    try {
-      // eslint-disable-next-line no-new
-      new URL(value)
-      return true
-    } catch {}
-  }
-  return false
 }
 
 // This Socket API token should be stored globally for the duration of the CLI execution.
