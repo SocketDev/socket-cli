@@ -95,7 +95,8 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     } else {
       debugFn('error', `caught: Socket API request error`)
     }
-    debugDir('inspect', { error: e, socketSdkErrorResult })
+    debugDir('inspect', { error: e })
+    debugDir('inspect', { socketSdkErrorResult })
     return socketSdkErrorResult
   }
 
@@ -143,12 +144,14 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
     debugDir('inspect', { error: e })
 
     const errStr = e ? String(e).trim() : ''
-    const cause = errStr || NO_ERROR_MESSAGE
+    const message = 'Socket API returned an error'
+    const rawCause = errStr || NO_ERROR_MESSAGE
+    const cause = message !== rawCause ? rawCause : ''
 
     return {
       ok: false,
-      message: 'Socket API returned an error',
-      cause,
+      message,
+      ...(cause ? { cause } : {}),
     }
   }
 
@@ -234,24 +237,31 @@ export async function queryApiSafeText(
       )
     }
 
-    const cause = (e as undefined | { message: string })?.message
-
     debugFn('error', 'caught: await queryApi() error')
     debugDir('inspect', { error: e })
 
+    const errStr = e ? String(e).trim() : ''
+    const message = 'API request failed'
+    const rawCause = errStr || NO_ERROR_MESSAGE
+    const cause = message !== rawCause ? rawCause : ''
+
     return {
       ok: false,
-      message: 'API Request failed to complete',
+      message,
       ...(cause ? { cause } : {}),
     }
   }
 
   if (!result.ok) {
-    const cause = await getErrorMessageForHttpStatusCode(result.status)
+    const { status } = result
+    const reason = await getErrorMessageForHttpStatusCode(status)
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${result.statusText}${cause ? ` (cause: ${cause})` : ''}`,
+      cause: `${result.statusText} (reason: ${reason})`,
+      data: {
+        code: status,
+      },
     }
   }
 
@@ -264,10 +274,11 @@ export async function queryApiSafeText(
   } catch (e) {
     debugFn('error', 'caught: await result.text() error')
     debugDir('inspect', { error: e })
+
     return {
       ok: false,
-      message: 'API Request failed to complete',
-      cause: 'There was an unexpected error trying to read the response text',
+      message: 'API request failed',
+      cause: 'Unexpected error reading response text'
     }
   }
 }
@@ -360,26 +371,30 @@ export async function sendApiRequest<T>(
       )
     }
 
-    const cause = (e as undefined | { message: string })?.message
-
     debugFn('error', `caught: await fetch() ${method} error`)
     debugDir('inspect', { error: e })
 
+    const errStr = e ? String(e).trim() : ''
+    const message = 'API request failed'
+    const rawCause = errStr || NO_ERROR_MESSAGE
+    const cause = message !== rawCause ? rawCause : ''
+
     return {
       ok: false,
-      message: 'API Request failed to complete',
+      message,
       ...(cause ? { cause } : {}),
     }
   }
 
   if (!result.ok) {
-    const cause = await getErrorMessageForHttpStatusCode(result.status)
+    const { status } = result
+    const reason = await getErrorMessageForHttpStatusCode(status)
     return {
       ok: false,
       message: 'Socket API returned an error',
-      cause: `${result.statusText}${cause ? ` (cause: ${cause})` : ''}`,
+      cause: `${result.statusText} (reason: ${reason})`,
       data: {
-        code: result.status,
+        code: status,
       },
     }
   }
@@ -395,8 +410,8 @@ export async function sendApiRequest<T>(
     debugDir('inspect', { error: e })
     return {
       ok: false,
-      message: 'API Request failed to complete',
-      cause: 'There was an unexpected error trying to parse the response JSON',
+      message: 'API request failed',
+      cause: 'Unexpected error parsing response JSON',
     }
   }
 }
