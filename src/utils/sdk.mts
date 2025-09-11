@@ -18,7 +18,7 @@ const TOKEN_PREFIX_LENGTH = TOKEN_PREFIX.length
 const TOKEN_VISIBLE_LENGTH = 5
 
 // The Socket API server that should be used for operations.
-function getDefaultApiBaseUrl(): string | undefined {
+export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
     constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
   return isUrl(baseUrl) ? baseUrl : undefined
