@@ -5,7 +5,8 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { getConfigValueOrUndef } from './config.mts'
-import constants from '../constants.mts'
+import constants, { EMPTY_VALUE } from '../constants.mts'
+import { getRequirements, getRequirementsKey } from './requirements.mts'
 import { getDefaultApiToken } from './sdk.mts'
 
 import type { CResult } from '../types.mts'
@@ -19,6 +20,42 @@ import type {
 
 const NO_ERROR_MESSAGE = 'No error message returned'
 
+export type CommandRequirements = {
+  permissions?: string[]
+  quota?: number
+}
+
+/**
+ * Get command requirements from requirements.json based on command path.
+ */
+function getCommandRequirements(
+  cmdPath?: string,
+): CommandRequirements | undefined {
+  if (!cmdPath) {
+    return undefined
+  }
+
+  const requirements = getRequirements()
+  const key = getRequirementsKey(cmdPath)
+  return (requirements.api as any)[key] || undefined
+}
+
+/**
+ * Log required permissions for a command when encountering 403 errors.
+ */
+function logPermissionsFor403(cmdPath?: string): void {
+  const requirements = getCommandRequirements(cmdPath)
+  if (!requirements?.permissions?.length) {
+    return
+  }
+
+  logger.error('This command requires the following API permissions:')
+  for (const permission of requirements.permissions) {
+    logger.error(`  - ${permission}`)
+  }
+  logger.error('Please ensure your API token has the required permissions.')
+}
+
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
@@ -30,6 +67,9 @@ export function getDefaultApiBaseUrl(): string | undefined {
   return API_V0_URL
 }
 
+/**
+ * Get user-friendly error message for HTTP status codes.
+ */
 export async function getErrorMessageForHttpStatusCode(code: number) {
   if (code === 400) {
     return 'One of the options passed might be incorrect'
@@ -49,17 +89,21 @@ export async function getErrorMessageForHttpStatusCode(code: number) {
 export type HandleApiCallOptions = {
   description?: string | undefined
   spinner?: Spinner | undefined
+  commandPath?: string | undefined
 }
 
 export type ApiCallResult<T extends SocketSdkOperations> = CResult<
   SocketSdkSuccessResult<T>['data']
 >
 
+/**
+ * Handle Socket SDK API calls with error handling and permission logging.
+ */
 export async function handleApiCall<T extends SocketSdkOperations>(
   value: Promise<SocketSdkResult<T>>,
   options?: HandleApiCallOptions | undefined,
 ): Promise<ApiCallResult<T>> {
-  const { description, spinner } = {
+  const { commandPath, description, spinner } = {
     __proto__: null,
     ...options,
   } as HandleApiCallOptions
@@ -121,6 +165,11 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       data: {
         code: sdkResult.status,
       },
+    }
+
+    // Log required permissions for 403 errors when in a command context.
+    if (commandPath && sdkResult.status === 403) {
+      logPermissionsFor403(commandPath)
     }
 
     return socketSdkErrorResult
@@ -187,11 +236,9 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
 }
 
 export async function queryApi(path: string, apiToken: string) {
-  const baseUrl = getDefaultApiBaseUrl() || ''
+  const baseUrl = getDefaultApiBaseUrl()
   if (!baseUrl) {
-    logger.warn(
-      'API endpoint is not set and default was empty. Request is likely to fail.',
-    )
+    throw new Error('Socket API endpoint is not configured')
   }
 
   return await fetch(`${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`, {
@@ -202,9 +249,13 @@ export async function queryApi(path: string, apiToken: string) {
   })
 }
 
+/**
+ * Query Socket API endpoint and return text response with error handling.
+ */
 export async function queryApiSafeText(
   path: string,
   description?: string | undefined,
+  commandPath?: string | undefined,
 ): Promise<CResult<string>> {
   const apiToken = getDefaultApiToken()
   if (!apiToken) {
@@ -254,11 +305,14 @@ export async function queryApiSafeText(
 
   if (!result.ok) {
     const { status } = result
-    const reason = await getErrorMessageForHttpStatusCode(status)
+    // Log required permissions for 403 errors when in a command context.
+    if (commandPath && status === 403) {
+      logPermissionsFor403(commandPath)
+    }
     return {
       ok: false,
       message: 'Socket API error',
-      cause: `${result.statusText} (reason: ${reason})`,
+      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)})`,
       data: {
         code: status,
       },
@@ -283,6 +337,9 @@ export async function queryApiSafeText(
   }
 }
 
+/**
+ * Query Socket API endpoint and return parsed JSON response.
+ */
 export async function queryApiSafeJson<T>(
   path: string,
   description = '',
@@ -302,7 +359,7 @@ export async function queryApiSafeJson<T>(
     return {
       ok: false,
       message: 'Server returned invalid JSON',
-      cause: `Please report this. JSON.parse threw an error over the following response: \`${(result.data?.slice?.(0, 100) || '<empty>').trim() + (result.data?.length > 100 ? '...' : '')}\``,
+      cause: `Please report this. JSON.parse threw an error over the following response: \`${(result.data?.slice?.(0, 100) || EMPTY_VALUE).trim() + (result.data?.length > 100 ? '...' : '')}\``,
     }
   }
 }
@@ -311,8 +368,12 @@ export type SendApiRequestOptions = {
   method: 'POST' | 'PUT'
   body?: unknown | undefined
   description?: string | undefined
+  commandPath?: string | undefined
 }
 
+/**
+ * Send POST/PUT request to Socket API with JSON response handling.
+ */
 export async function sendApiRequest<T>(
   path: string,
   options?: SendApiRequestOptions | undefined,
@@ -327,14 +388,17 @@ export async function sendApiRequest<T>(
     }
   }
 
-  const baseUrl = getDefaultApiBaseUrl() || ''
+  const baseUrl = getDefaultApiBaseUrl()
   if (!baseUrl) {
-    logger.warn(
-      'API endpoint is not set and default was empty. Request is likely to fail.',
-    )
+    return {
+      ok: false,
+      message: 'Configuration Error',
+      cause:
+        'Socket API endpoint is not configured. Please check your environment configuration.',
+    }
   }
 
-  const { body, description, method } = {
+  const { body, commandPath, description, method } = {
     __proto__: null,
     ...options,
   } as SendApiRequestOptions
@@ -388,11 +452,14 @@ export async function sendApiRequest<T>(
 
   if (!result.ok) {
     const { status } = result
-    const reason = await getErrorMessageForHttpStatusCode(status)
+    // Log required permissions for 403 errors when in a command context.
+    if (commandPath && status === 403) {
+      logPermissionsFor403(commandPath)
+    }
     return {
       ok: false,
       message: 'Socket API error',
-      cause: `${result.statusText} (reason: ${reason})`,
+      cause: `${result.statusText} (reason: ${await getErrorMessageForHttpStatusCode(status)})`,
       data: {
         code: status,
       },
