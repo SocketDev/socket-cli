@@ -110,5 +110,9 @@ npm exec socket
 
 <br/>
 <div align="center">
-  <img width="324" height="108" alt="socket-logo-smallest2" src="https://github.com/user-attachments/assets/490ff7fb-015e-48c6-9ba2-56139c851719" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="logo-white.png">
+    <source media="(prefers-color-scheme: light)" srcset="logo-black.png">
+    <img width="324" height="108" alt="Socket Logo" src="logo-black.png">
+  </picture>
 </div>
