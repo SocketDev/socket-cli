@@ -7,12 +7,12 @@ import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { spawn, spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../src/constants.mts'
+import { npmFixturesPath } from './utils.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const testPath = __dirname
-const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 // These aliases are defined in package.json.
 for (const npmDir of ['npm9', 'npm10', 'npm11']) {

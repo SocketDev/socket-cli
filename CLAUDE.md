@@ -60,7 +60,7 @@ Each command follows a consistent pattern:
 ### Testing
 - Vitest for unit testing
 - Test files use `.test.mts` extension
-- Fixtures in `test/socket-npm-fixtures/`
+- Fixtures in `test/fixtures/`
 - Coverage reporting available
 
 ### External Dependencies
@@ -95,7 +95,7 @@ Each command follows a consistent pattern:
 - **Binary entries**: `socket`, `socket-npm`, `socket-npx` (in `bin/` directory)
 - **Distribution**: Built files go to `dist/` directory
 - **External dependencies**: Bundled in `external/` directory
-- **Test fixtures**: Located in `test/socket-npm-fixtures/` and `test/fixtures/`
+- **Test fixtures**: Located in `test/fixtures/`
 
 ### Dependency Management
 - Uses Socket registry overrides for enhanced alternatives

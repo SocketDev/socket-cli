@@ -22,7 +22,7 @@ const __dirname = path.dirname(__filename)
 const asciiUnsafeRegexp = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
 
 // Note: The fixture directory is in the same directory as this utils file.
-const npmFixturesPath = path.join(__dirname, 'socket-npm-fixtures')
+export const npmFixturesPath = path.join(__dirname, 'fixtures/commands/npm')
 
 function cleanOutput(output: string): string {
   return toAsciiSafeString(
