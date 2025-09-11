@@ -209,6 +209,7 @@ async function findNodeModulesPaths(cwd: string): Promise<string[]> {
     absolute: true,
     cwd: path.dirname(rootNmPath),
     dot: true,
+    followSymbolicLinks: false,
     onlyDirectories: true,
   })
 }
