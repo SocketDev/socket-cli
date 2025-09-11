@@ -1,7 +1,6 @@
 .DS_Store
 ._.DS_Store
 Thumbs.db
-/.cache
 /.env
 /.nvm
 /.rollup.cache
@@ -10,6 +9,7 @@ Thumbs.db
 /coverage
 /external
 /npm-debug.log
+**/.cache
 **/dist
 **/node_modules
 *.d.ts

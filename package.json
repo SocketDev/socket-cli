@@ -40,7 +40,7 @@
     "coverage:test": "run-s test:prepare test:unit:coverage",
     "coverage:type": "dotenvx -q run -f .env.local -- type-coverage --detail",
     "clean": "run-p -c --aggregate-output clean:*",
-    "clean:cache": "del-cli '.cache'",
+    "clean:cache": "del-cli '**/.cache'",
     "clean:dist": "del-cli 'dist'",
     "clean:dist:types": "del-cli 'dist/types'",
     "clean:external": "del-cli 'external'",
