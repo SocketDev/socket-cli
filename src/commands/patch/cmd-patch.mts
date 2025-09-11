@@ -5,7 +5,7 @@ import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handlePatch } from './handle-patch.mts'
-import constants from '../../constants.mts'
+import constants, { DOT_SOCKET, MANIFEST_JSON } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
@@ -97,15 +97,16 @@ async function run(
   // If given path is absolute then cwd should not affect it.
   cwd = path.resolve(process.cwd(), cwd)
 
-  const dotSocketDirPath = path.join(cwd, '.socket')
+  const dotSocketDirPath = path.join(cwd, DOT_SOCKET)
   if (!existsSync(dotSocketDirPath)) {
-    logger.error('Error: No .socket directory found in current directory')
+    logger.error(`Error: No ${DOT_SOCKET} directory found in current directory`)
     return
   }
 
-  const manifestPath = path.join(dotSocketDirPath, 'manifest.json')
+  const manifestPath = path.join(dotSocketDirPath, MANIFEST_JSON)
   if (!existsSync(manifestPath)) {
-    logger.error('Error: No manifest.json found in .socket directory')
+    logger.error(`Error: No ${MANIFEST_JSON} found in ${DOT_SOCKET} directory`)
+    return
   }
 
   const { spinner } = constants

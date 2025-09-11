@@ -1,5 +1,7 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
+import { pluralize } from '@socketsecurity/registry/lib/words'
 
+import { OUTPUT_JSON } from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
@@ -13,7 +15,7 @@ export async function outputPatchResult(
     process.exitCode = result.code ?? 1
   }
 
-  if (outputKind === 'json') {
+  if (outputKind === OUTPUT_JSON) {
     logger.log(serializeResultJson(result))
     return
   }
@@ -25,16 +27,18 @@ export async function outputPatchResult(
 
   const { patched } = result.data
 
+  logger.log('')
+
   if (patched.length) {
     logger.group(
-      `Successfully processed patches for ${patched.length} package(s):`,
+      `Successfully processed patches for ${patched.length} ${pluralize('package', patched.length)}:`,
     )
     for (const pkg of patched) {
       logger.success(pkg)
     }
     logger.groupEnd()
   } else {
-    logger.info('No packages found requiring patches')
+    logger.warn('No packages found requiring patches')
   }
 
   logger.log('')
