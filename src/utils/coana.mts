@@ -2,7 +2,7 @@ import { readJsonSync } from '@socketsecurity/registry/lib/fs'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 import constants from '../constants.mts'
-import { getDefaultApiToken } from './sdk.mts'
+import { getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
 import shadowBin from '../shadow/npm/bin.mts'
 
 import type { ShadowBinOptions } from '../shadow/npm/bin.mts'
@@ -50,6 +50,11 @@ export async function spawnCoana(
     if (orgSlugCResult.ok) {
       mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
     }
+  }
+
+  const proxyUrl = getDefaultProxyUrl()
+  if (proxyUrl) {
+    mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
   }
 
   try {
