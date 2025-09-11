@@ -1,5 +1,6 @@
 import colors from 'yoctocolors-cjs'
 
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
@@ -152,37 +153,25 @@ function getAlertString(
 
   // We need to create the no-color string regardless because the actual string
   // contains a bunch of invisible ANSI chars which would screw up length checks.
-  const colorless = `- Alerts (${bad.length}/${mid.length.toString()}/${low.length}):`
+  const colorless = `- Alerts (${bad.length}/${mid.length}/${low.length}):`
   const padding = `  ${' '.repeat(Math.max(0, 20 - colorless.length))}`
 
   if (colorize) {
-    return (
-      `- Alerts (${colors.red(bad.length.toString())}/${colors.yellow(mid.length.toString())}/${low.length}):` +
-      padding +
-      [
-        bad
-          .map(a => colors.red(`${colors.dim(`[${a.severity}] `)}${a.type}`))
-          .join(', '),
-        mid
-          .map(a => colors.yellow(`${colors.dim(`[${a.severity}] `)}${a.type}`))
-          .join(', '),
-        low.map(a => `${colors.dim(`[${a.severity}] `)}${a.type}`).join(', '),
-      ]
-        .filter(Boolean)
-        .join(', ')
-    )
+    return `- Alerts (${colors.red(bad.length as any)}/${colors.yellow(mid.length as any)}/${low.length}):${
+      padding
+    }${joinAnd([
+      ...bad.map(a => colors.red(`${colors.dim(`[${a.severity}] `)}${a.type}`)),
+      ...mid.map(a =>
+        colors.yellow(`${colors.dim(`[${a.severity}] `)}${a.type}`),
+      ),
+      ...low.map(a => `${colors.dim(`[${a.severity}] `)}${a.type}`),
+    ])}`
   }
-  return (
-    colorless +
-    padding +
-    [
-      bad.map(a => `[${a.severity}] ${a.type}`).join(', '),
-      mid.map(a => `[${a.severity}] ${a.type}`).join(', '),
-      low.map(a => `[${a.severity}] ${a.type}`).join(', '),
-    ]
-      .filter(Boolean)
-      .join(', ')
-  )
+  return `${colorless}${padding}${joinAnd([
+    ...bad.map(a => `[${a.severity}] ${a.type}`),
+    ...mid.map(a => `[${a.severity}] ${a.type}`),
+    ...low.map(a => `[${a.severity}] ${a.type}`),
+  ])}`
 }
 
 export function preProcess(
