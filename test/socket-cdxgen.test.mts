@@ -7,8 +7,8 @@ import { LOG_SYMBOLS } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
-import constants from '../src/constants.mts'
 import { npmFixturesPath } from './utils.mts'
+import constants from '../src/constants.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

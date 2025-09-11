@@ -2,14 +2,13 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
-import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handlePatch } from './handle-patch.mts'
 import constants, { DOT_SOCKET, MANIFEST_JSON } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
-import { InputError } from '../../utils/errors.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
+import { InputError } from '../../utils/errors.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import {
@@ -105,7 +104,9 @@ async function run(
 
   const dotSocketDirPath = path.join(cwd, DOT_SOCKET)
   if (!existsSync(dotSocketDirPath)) {
-    throw new InputError(`No ${DOT_SOCKET} directory found in current directory`)
+    throw new InputError(
+      `No ${DOT_SOCKET} directory found in current directory`,
+    )
   }
 
   const manifestPath = path.join(dotSocketDirPath, MANIFEST_JSON)
