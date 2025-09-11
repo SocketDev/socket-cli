@@ -4,7 +4,7 @@ import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { indentString } from '@socketsecurity/registry/lib/strings'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import { getRequirements } from './requirements.mts'
+import { getRequirements, getRequirementsKey } from './requirements.mts'
 
 import type { MeowFlags } from '../flags.mts'
 
@@ -34,7 +34,7 @@ export function getFlagApiRequirementsOutput(
     __proto__: null,
     ...options,
   } as ApiRequirementsOptions
-  const key = cmdPath.replace(/^socket[: ]/, '').replace(/ +/g, ':')
+  const key = getRequirementsKey(cmdPath)
   const requirements = getRequirements()
   const data = (requirements.api as any)[key]
   let result = ''
