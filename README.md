@@ -107,3 +107,12 @@ npm exec socket
 - [`@socketsecurity/sdk`](https://github.com/SocketDev/socket-sdk-js) - The SDK used by Socket CLI
 
 [Socket.dev]: https://socket.dev/
+
+<br/>
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="logo-white.png">
+    <source media="(prefers-color-scheme: light)" srcset="logo-black.png">
+    <img width="324" height="108" alt="Socket Logo" src="logo-black.png">
+  </picture>
+</div>
