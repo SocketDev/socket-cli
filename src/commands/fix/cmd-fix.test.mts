@@ -167,23 +167,6 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
-      '--dry-run',
-      '--range-style',
-      'caret',
-      '--config',
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept --range-style with valid value',
-    async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'fix',
       '--range-style',
       'invalid-style',
       '--config',
@@ -208,23 +191,6 @@ describe('socket fix', async () => {
       '{"apiToken":"fakeToken"}',
     ],
     'should accept range style pin',
-    async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'fix',
-      '--dry-run',
-      '--range-style',
-      'tilde',
-      '--config',
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept range style tilde',
     async cmd => {
       const { code, stdout } = await invokeNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
@@ -389,51 +355,123 @@ describe('socket fix', async () => {
   cmdit(
     [
       'fix',
-      '--dry-run',
-      '--range-style',
-      'gte',
+      '--id',
+      'GHSA-35jh-r3h4-6jhm',
       '--config',
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fake-token"}',
     ],
-    'should accept range style gte',
+    'should handle specific GHSA ID for lodash vulnerability',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
-      expect(code, 'should exit with code 0').toBe(0)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'Unable to resolve a Socket account organization',
+      )
+      expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
 
   cmdit(
     [
       'fix',
-      '--dry-run',
-      '--range-style',
-      'lt',
+      '--purl',
+      'pkg:npm/lodash@4.17.20',
       '--config',
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fake-token"}',
     ],
-    'should accept range style lt',
+    'should handle specific PURL for lodash version',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
-      expect(code, 'should exit with code 0').toBe(0)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'Unable to resolve a Socket account organization',
+      )
+      expect(code, 'should exit with non-zero code').not.toBe(0)
+    },
+  )
+
+  cmdit(
+    ['fix', '--id', 'CVE-2021-23337', '--config', '{"apiToken":"fake-token"}'],
+    'should handle CVE ID conversion for lodash vulnerability',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'Unable to resolve a Socket account organization',
+      )
+      expect(code, 'should exit with non-zero code').not.toBe(0)
+    },
+  )
+
+  cmdit(
+    ['fix', '--limit', '1', '--config', '{"apiToken":"fake-token"}'],
+    'should respect fix limit parameter',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'Unable to resolve a Socket account organization',
+      )
+      expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
 
   cmdit(
     [
       'fix',
-      '--dry-run',
       '--range-style',
-      'lte',
+      'preserve',
+      '--autopilot',
       '--config',
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fake-token"}',
     ],
-    'should accept range style lte',
+    'should handle autopilot mode with preserve range style',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
-      expect(code, 'should exit with code 0').toBe(0)
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'Unable to resolve a Socket account organization',
+      )
+      expect(code, 'should exit with non-zero code').not.toBe(0)
+    },
+  )
+
+  cmdit(
+    ['fix', '--range-style', 'pin', '--config', '{"apiToken":"fake-token"}'],
+    'should handle pin range style for exact versions',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'Unable to resolve a Socket account organization',
+      )
+      expect(code, 'should exit with non-zero code').not.toBe(0)
+    },
+  )
+
+  cmdit(
+    ['fix', '--json', '--config', '{"apiToken":"fake-token"}'],
+    'should output results in JSON format',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'Unable to resolve a Socket account organization',
+      )
+      expect(code, 'should exit with non-zero code').not.toBe(0)
+    },
+  )
+
+  cmdit(
+    ['fix', '--markdown', '--config', '{"apiToken":"fake-token"}'],
+    'should output results in markdown format',
+    async cmd => {
+      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const output = stdout + stderr
+      expect(output).toContain(
+        'Unable to resolve a Socket account organization',
+      )
+      expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
 })

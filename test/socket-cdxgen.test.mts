@@ -8,12 +8,12 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../src/constants.mts'
+import { npmFixturesPath } from './utils.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const testPath = __dirname
-const npmFixturesPath = path.join(testPath, 'socket-npm-fixtures')
 
 type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
   encoding?: BufferEncoding | undefined
