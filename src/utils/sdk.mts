@@ -104,6 +104,9 @@ export async function setupSdk(
   }
 
   const { apiBaseUrl = getDefaultApiBaseUrl() } = opts
+
+  // Usage of HttpProxyAgent vs. HttpsProxyAgent based on the chart at:
+  // https://github.com/delvedor/hpagent?tab=readme-ov-file#usage
   const ProxyAgent = apiBaseUrl?.startsWith('http:')
     ? HttpProxyAgent
     : HttpsProxyAgent
