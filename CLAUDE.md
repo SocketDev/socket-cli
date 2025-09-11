@@ -185,6 +185,18 @@ Socket CLI integrates with various third-party tools and services:
 - **Array length checks**: Use `!array.length` instead of `array.length === 0`. For `array.length > 0`, use `!!array.length` when function must return boolean, or `array.length` when used in conditional contexts
 - **Catch parameter naming**: Use `catch (e)` instead of `catch (error)` for consistency across the codebase
 
+### Error Handling
+- **Input validation errors**: Use `InputError` from `src/utils/errors.mts` for user input validation failures (missing files, invalid arguments, etc.)
+- **Authentication errors**: Use `AuthError` from `src/utils/errors.mts` for API authentication issues
+- **CResult pattern**: Use `CResult<T>` type for functions that can fail, following the Result/Either pattern with `ok: true/false`
+- **Process exit**: Avoid `process.exit(1)` unless absolutely necessary; prefer throwing appropriate error types that the CLI framework handles
+- **Error messages**: Write clear, actionable error messages that help users understand what went wrong and how to fix it
+- **Examples**:
+  - ✅ `throw new InputError('No .socket directory found in current directory')`
+  - ✅ `throw new AuthError('Invalid API token')`
+  - ❌ `logger.error('Error occurred'); return` (doesn't set proper exit code)
+  - ❌ `process.exit(1)` (bypasses error handling framework)
+
 ### Safe File Operations
 - **File deletion**: NEVER use `rm -rf` for deleting files or directories. Always use `npx trash-cli` instead for safer deletion with recovery options
 - **Examples**:
