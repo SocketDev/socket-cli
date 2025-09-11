@@ -19,8 +19,8 @@ describe('socket fix', async () => {
             $ socket fix [options] [CWD=.]
 
           API Token Requirements
-            - Quota: 100 units
-            - Permissions: packages:list
+            - Quota: 101 units
+            - Permissions: full-scans:create and packages:list
 
           Options
             --autopilot         Enable auto-merge for pull requests that Socket opens.
