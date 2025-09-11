@@ -1,0 +1,49 @@
+name: Socket Fix
+
+on:
+  schedule:
+    - cron: '0 0 * * *'   # Run daily at midnight UTC
+    - cron: '0 12 * * *'  # Run daily at noon UTC
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Enable debug output'
+        required: false
+        default: '0'
+        type: string
+        options:
+          - '0'
+          - '1'
+
+permissions:
+  contents: write         # Required to push branches
+  pull-requests: write    # Required to open PRs
+
+jobs:
+  socket-fix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+          scope: '@socketsecurity'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Socket Fix CLI
+        env:
+          DEBUG: ${{ inputs.debug == '1' && 'notice,error,inspect' || '' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
+          SOCKET_CLI_DEBUG: ${{ inputs.debug }}
+        run: npx -y -p @socketsecurity/cli -c "socket fix --autopilot"
