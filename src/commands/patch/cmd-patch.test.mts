@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
-import constants from '../../constants.mts'
 import { cmdit, invokeNpm } from '../../../test/utils.mts'
+import constants from '../../constants.mts'
 
 describe('socket patch', async () => {
   const { binCliPath } = constants
@@ -29,7 +29,12 @@ describe('socket patch', async () => {
   )
 
   cmdit(
-    ['patch', 'test/fixtures/commands/patch', '--config', '{"apiToken":"fake-token"}'],
+    [
+      'patch',
+      'test/fixtures/commands/patch',
+      '--config',
+      '{"apiToken":"fake-token"}',
+    ],
     'should handle patch fixture with on-headers vulnerability',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)

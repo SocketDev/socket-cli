@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest'
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { spawn, spawnSync } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../src/constants.mts'
 import { npmFixturesPath } from './utils.mts'
+import constants from '../src/constants.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
