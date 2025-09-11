@@ -86,7 +86,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     spinner?.stop()
     const socketSdkErrorResult: ApiCallResult<T> = {
       ok: false,
-      message: 'Socket API returned an error',
+      message: 'Socket API error',
       cause: messageWithCauses(e as Error),
     }
     if (description) {
@@ -116,7 +116,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
       reason && message !== reason ? `${message} (reason: ${reason})` : message
     const socketSdkErrorResult: ApiCallResult<T> = {
       ok: false,
-      message: 'Socket API returned an error',
+      message: 'Socket API error',
       cause,
       data: {
         code: sdkResult.status,
@@ -144,7 +144,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
     debugDir('inspect', { error: e })
 
     const errStr = e ? String(e).trim() : ''
-    const message = 'Socket API returned an error'
+    const message = 'Socket API error'
     const rawCause = errStr || NO_ERROR_MESSAGE
     const cause = message !== rawCause ? rawCause : ''
 
@@ -171,7 +171,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
 
     return {
       ok: false,
-      message: 'Socket API returned an error',
+      message: 'Socket API error',
       cause,
       data: {
         code: sdkResult.status,
@@ -257,7 +257,7 @@ export async function queryApiSafeText(
     const reason = await getErrorMessageForHttpStatusCode(status)
     return {
       ok: false,
-      message: 'Socket API returned an error',
+      message: 'Socket API error',
       cause: `${result.statusText} (reason: ${reason})`,
       data: {
         code: status,
@@ -391,7 +391,7 @@ export async function sendApiRequest<T>(
     const reason = await getErrorMessageForHttpStatusCode(status)
     return {
       ok: false,
-      message: 'Socket API returned an error',
+      message: 'Socket API error',
       cause: `${result.statusText} (reason: ${reason})`,
       data: {
         code: status,
