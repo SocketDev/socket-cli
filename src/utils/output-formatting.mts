@@ -1,3 +1,4 @@
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { isObject } from '@socketsecurity/registry/lib/objects'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { indentString } from '@socketsecurity/registry/lib/strings'
@@ -39,14 +40,15 @@ export function getFlagApiRequirementsOutput(
   let result = ''
   if (data) {
     const quota: number = data?.quota
-    const perms: string[] = data?.permissions
+    const rawPerms: string[] = data?.permissions
     const padding = ''.padEnd(indent)
     const lines = []
-    if (typeof quota === 'number') {
+    if (Number.isFinite(quota) && quota > 0) {
       lines.push(`${padding}- Quota: ${quota} ${pluralize('unit', quota)}`)
     }
-    if (Array.isArray(perms) && perms.length) {
-      lines.push(`${padding}- Permissions: ${perms.join(' ')}`)
+    if (Array.isArray(rawPerms) && rawPerms.length) {
+      const perms = rawPerms.slice().sort(naturalCompare)
+      lines.push(`${padding}- Permissions: ${joinAnd(perms)}`)
     }
     result += lines.join('\n')
   }
