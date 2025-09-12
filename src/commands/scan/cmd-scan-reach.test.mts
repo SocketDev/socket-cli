@@ -726,7 +726,9 @@ describe('socket scan reach', async () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toMatch(/no eligible files|file.*dir.*must contain|not.*found/i)
+        expect(output).toMatch(
+          /no eligible files|file.*dir.*must contain|not.*found/i,
+        )
         expect(code).toBeGreaterThan(0)
       },
     )
@@ -743,7 +745,15 @@ describe('socket scan reach', async () => {
     )
 
     cmdit(
-      ['scan', 'reach', '--dry-run', '--org', '', '--config', '{"apiToken":"fake-token"}'],
+      [
+        'scan',
+        'reach',
+        '--dry-run',
+        '--org',
+        '',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
       'should show clear error when org is empty',
       async cmd => {
         const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)

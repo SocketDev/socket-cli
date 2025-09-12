@@ -14,17 +14,14 @@ async function setupFixturePackageLocks() {
     'fixtures/commands/fix/monorepo',
   ]
 
-  for (const d of fixtureDirs) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      await spawn('npm', ['install', '--silent', '--no-audit', '--no-fund'], {
+  await Promise.all(
+    fixtureDirs.map(d =>
+      spawn('npm', ['install', '--silent', '--no-audit', '--no-fund'], {
         cwd: path.join(testPath, d),
         stdio: 'ignore',
-      })
-    } catch {
-      // Installation failed, which is fine for testing.
-    }
-  }
+      }),
+    ),
+  )
 }
 
 async function cleanupPackageLockFiles() {
@@ -38,14 +35,7 @@ async function cleanupPackageLockFiles() {
     'fixtures/commands/fix/monorepo/packages/lib/package-lock.json',
     'fixtures/commands/fix/monorepo/packages/lib/node_modules',
   ]
-  for (const p of cleanupPaths) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      await trash(path.join(testPath, p))
-    } catch {
-      // File/directory doesn't exist, which is fine.
-    }
-  }
+  await trash(cleanupPaths.map(p => path.join(testPath, p)))
 }
 
 describe('socket fix', async () => {

@@ -4,7 +4,6 @@
   "description": "Lib package in monorepo",
   "main": "index.js",
   "dependencies": {
-    "moment": "2.25.0",
-    "underscore": "1.9.1"
+    "lodash": "4.17.20"
   }
 }

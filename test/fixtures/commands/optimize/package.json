@@ -3,11 +3,7 @@
   "version": "1.0.0",
   "description": "Test fixture for optimize command testing",
   "main": "index.js",
-  "dependencies": {
-    "express": "4.18.0",
-    "lodash": "4.17.20"
-  },
   "devDependencies": {
-    "jest": "29.5.0"
+    "@babel/core": "7.28.4"
   }
 }

@@ -4,8 +4,6 @@
   "description": "App package in monorepo",
   "main": "index.js",
   "dependencies": {
-    "@monorepo/lib": "1.0.0",
-    "express": "4.17.0",
-    "lodash": "4.17.19"
+    "on-headers": "1.0.2"
   }
 }
