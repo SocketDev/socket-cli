@@ -1,6 +1,6 @@
 {
   "name": "socket",
-  "version": "1.1.9",
+  "version": "1.1.10",
   "description": "CLI for Socket.dev",
   "homepage": "https://github.com/SocketDev/socket-cli",
   "license": "MIT AND OFL-1.1",
@@ -199,7 +199,7 @@
     "is-core-module": "npm:@socketregistry/is-core-module@^1",
     "isarray": "npm:@socketregistry/isarray@^1",
     "npm-package-arg": "$npm-package-arg",
-    "packageurl-js": "$@socketregistry/packageurl-js",
+    "packageurl-js": "npm:@socketregistry/packageurl-js@^1",
     "path-parse": "npm:@socketregistry/path-parse@^1",
     "safe-buffer": "npm:@socketregistry/safe-buffer@^1",
     "safer-buffer": "npm:@socketregistry/safer-buffer@^1",
