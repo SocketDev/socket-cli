@@ -6,13 +6,10 @@ import { describe, expect, it } from 'vitest'
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { spawn, spawnSync } from '@socketsecurity/registry/lib/spawn'
 
-import { npmFixturesPath } from './utils.mts'
-import constants from '../src/constants.mts'
+import { testPath } from '../../../test/utils.mts'
+import constants from '../../constants.mts'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const testPath = __dirname
+const npmFixturesPath = path.join(testPath, 'fixtures/commands/npm')
 
 // These aliases are defined in package.json.
 for (const npmDir of ['npm9', 'npm10', 'npm11']) {

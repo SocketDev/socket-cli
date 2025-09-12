@@ -108,11 +108,16 @@ describe('socket json', async () => {
   )
 
   cmdit(
-    ['json', './sjtest', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    [
+      'json',
+      './fixtures/commands/json',
+      '--dry-run',
+      '--config',
+      '{"apiToken":"fakeToken"}',
+    ],
     'should print a socket.json when found',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
-      // (Remove carriage returns on Windows)
       expect(stdout.replace(/(?:\\r|\\x0d)/g, '')).toMatchInlineSnapshot(`
         "{
           " _____         _       _     ": "Local config file for Socket CLI tool ( https://npmjs.org/socket ), to work with https://socket.dev",

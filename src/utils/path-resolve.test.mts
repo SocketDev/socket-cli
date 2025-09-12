@@ -7,17 +7,16 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
-import { getPackageFilesForScan } from '../src/utils/path-resolve.mts'
+import { NODE_MODULES } from '../constants.mjs'
+import { getPackageFilesForScan } from './path-resolve.mts'
 
 import type FileSystem from 'mock-fs/lib/filesystem'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const testPath = __dirname
-const rootNmPath = path.join(testPath, '../node_modules')
-
-const mockFixturePath = normalizePath(path.join(testPath, 'mock'))
+const rootNmPath = path.join(__dirname, '../..', NODE_MODULES)
+const mockFixturePath = normalizePath(path.join(__dirname, 'mock'))
 const mockNmPath = normalizePath(rootNmPath)
 const mockedNmCallback = mockFs.load(rootNmPath)
 

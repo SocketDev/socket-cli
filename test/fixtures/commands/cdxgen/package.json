@@ -1,0 +1,12 @@
+{
+  "name": "cdxgen-test-fixture",
+  "version": "1.0.0",
+  "description": "Test fixture for cdxgen command testing",
+  "main": "index.js",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "assert": "^1.5.0"
+  }
+}

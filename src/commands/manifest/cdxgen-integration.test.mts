@@ -7,29 +7,24 @@ import { LOG_SYMBOLS } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
-import { npmFixturesPath } from './utils.mts'
-import constants from '../src/constants.mts'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const testPath = __dirname
+import { testPath } from '../../../test/utils.mts'
+import constants from '../../constants.mts'
 
 type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
   encoding?: BufferEncoding | undefined
 }
 
-const spawnOpts: PromiseSpawnOptions = {
-  cwd: npmFixturesPath,
-  env: {
-    ...process.env,
-    ...constants.processEnv,
-    SOCKET_CLI_DEBUG: '1',
-  },
-}
-
 describe('Socket manifest cdxgen command', async () => {
   const { binCliPath } = constants
+
+  const spawnOpts: PromiseSpawnOptions = {
+    cwd: path.join(testPath, 'fixtures/commands/cdxgen'),
+    env: {
+      ...process.env,
+      ...constants.processEnv,
+      SOCKET_CLI_DEBUG: '1',
+    },
+  }
 
   it(
     'should forwards known commands to cdxgen',

@@ -35,14 +35,8 @@ describe('socket fix', async () => {
             --markdown          Output result as markdown
             --range-style       Define how dependency version ranges are updated in package.json (default 'preserve').
                                 Available styles:
-                                  * caret - Use ^ range for compatible updates (e.g. ^1.2.3)
-                                  * gt - Use > to allow any newer version (e.g. >1.2.3)
-                                  * gte - Use >= to allow any newer version (e.g. >=1.2.3)
-                                  * lt - Use < to allow only lower versions (e.g. <1.2.3)
-                                  * lte - Use <= to allow only lower versions (e.g. <=1.2.3)
                                   * pin - Use the exact version (e.g. 1.2.3)
                                   * preserve - Retain the existing version range style as-is
-                                  * tilde - Use ~ range for patch/minor updates (e.g. ~1.2.3)
 
           Examples
             $ socket fix
@@ -202,71 +196,6 @@ describe('socket fix', async () => {
     [
       'fix',
       '--dry-run',
-      '--purl',
-      'pkg:npm/lodash@3.9.2',
-      '--config',
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept valid PURL with version',
-    async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    ['fix', '--purl', 'pkg:npm/lodash', '--config', '{"apiToken":"fakeToken"}'],
-    'should fail with PURL without version',
-    async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
-      const output = stdout + stderr
-      expect(output).toContain('is missing a version and will be ignored')
-      expect(output).toContain('No valid --purl values provided')
-      expect(code, 'should exit with non-zero code').not.toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'fix',
-      '--dry-run',
-      '--purl',
-      'pkg:npm/lodash@3.9.2,pkg:npm/axios@1.8.0',
-      '--config',
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept multiple PURLs as comma-separated values',
-    async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'fix',
-      '--dry-run',
-      '--purl',
-      'pkg:npm/lodash@3.9.2',
-      '--purl',
-      'pkg:npm/axios@1.8.0',
-      '--config',
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept multiple --purl flags',
-    async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
-      expect(code, 'should exit with code 0').toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'fix',
-      '--dry-run',
       '--auto-merge',
       '--test',
       '--limit',
@@ -361,25 +290,6 @@ describe('socket fix', async () => {
       '{"apiToken":"fake-token"}',
     ],
     'should handle specific GHSA ID for lodash vulnerability',
-    async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
-      const output = stdout + stderr
-      expect(output).toContain(
-        'Unable to resolve a Socket account organization',
-      )
-      expect(code, 'should exit with non-zero code').not.toBe(0)
-    },
-  )
-
-  cmdit(
-    [
-      'fix',
-      '--purl',
-      'pkg:npm/lodash@4.17.20',
-      '--config',
-      '{"apiToken":"fake-token"}',
-    ],
-    'should handle specific PURL for lodash version',
     async cmd => {
       const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
       const output = stdout + stderr

@@ -4,17 +4,15 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
-import { isErrnoException } from '../src/utils/errors.mts'
+import { isErrnoException } from './errors.mts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const testPath = __dirname
-
 describe('Error Narrowing', () => {
   it('should properly detect node errors', () => {
     try {
-      readFileSync(path.join(testPath, 'enoent'))
+      readFileSync(path.join(__dirname, 'enoent'))
     } catch (e) {
       expect(isErrnoException(e)).toBe(true)
     }
