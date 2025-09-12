@@ -70,7 +70,7 @@ export function getMaxOldSpaceSizeFlag(): number {
       // Default value determined by available system memory.
       _maxOldSpaceSizeFlag = Math.floor(
         // Total system memory in MiB.
-        (os.totalmem() / 1024 / 1024) *
+        (os.totalmem() / 1_024 / 1_024) *
           // Set 75% of total memory (safe buffer to avoid system pressure).
           0.75,
       )
@@ -99,17 +99,17 @@ export function getMaxSemiSpaceSizeFlag(): number {
       const maxOldSpaceSize = getMaxOldSpaceSizeFlag()
       // Dynamically scale semi-space size based on max-old-space-size.
       // https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib
-      if (maxOldSpaceSize <= 8192) {
+      if (maxOldSpaceSize <= 8_192) {
         // Use tiered values for smaller heaps to avoid excessive young
         // generation size. This helps stay within safe memory limits on
         // constrained systems or CI.
         if (maxOldSpaceSize <= 512) {
           _maxSemiSpaceSizeFlag = 4
-        } else if (maxOldSpaceSize <= 1024) {
+        } else if (maxOldSpaceSize <= 1_024) {
           _maxSemiSpaceSizeFlag = 8
-        } else if (maxOldSpaceSize <= 2048) {
+        } else if (maxOldSpaceSize <= 2_048) {
           _maxSemiSpaceSizeFlag = 16
-        } else if (maxOldSpaceSize <= 4096) {
+        } else if (maxOldSpaceSize <= 4_096) {
           _maxSemiSpaceSizeFlag = 32
         } else {
           _maxSemiSpaceSizeFlag = 64
@@ -119,8 +119,8 @@ export function getMaxSemiSpaceSizeFlag(): number {
         // function.
         //
         // The idea:
-        //   - log2(16384 MiB) = 14  → semi = 14 * 8 = 112
-        //   - log2(32768 MiB) = 15  → semi = 15 * 8 = 120
+        //   - log2(16_384 MiB) = 14  → semi = 14 * 8 = 112
+        //   - log2(32_768 MiB) = 15  → semi = 15 * 8 = 120
         //   - Scales gradually as heap increases, avoiding overly large jumps
         //
         // Each 1 MiB of semi-space adds ~3 MiB to the total young generation
