@@ -33,7 +33,13 @@ function normalizeLogSymbols(str: string): string {
 }
 
 function normalizeNewlines(str: string): string {
-  return str.replaceAll('\r\n', '\n')
+  return (
+    str
+      // Replace all literal \r\n.
+      .replaceAll('\r\n', '\n')
+      // Replace all escaped \\r\\n.
+      .replaceAll('\\r\\n', '\\n')
+  )
 }
 
 function stripZeroWidthSpace(str: string): string {
