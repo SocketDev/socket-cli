@@ -24,18 +24,16 @@ const asciiUnsafeRegexp = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
 // Note: The fixture directory is in the same directory as this utils file.
 export const testPath = __dirname
 
-function cleanOutput(output: string): string {
-  return toAsciiSafeString(
-    normalizeLogSymbols(stripZeroWidthSpace(stripAnsi(output.trim()))),
-  )
-}
-
 function normalizeLogSymbols(str: string): string {
   return str
     .replaceAll('✖', '×')
     .replaceAll('ℹ', 'i')
     .replaceAll('✔', '√')
     .replaceAll('⚠', '‼')
+}
+
+function normalizeNewlines(str: string): string {
+  return str.replaceAll('\r\n', '\n')
 }
 
 function stripZeroWidthSpace(str: string): string {
@@ -49,6 +47,14 @@ function toAsciiSafeString(str: string): string {
       ? `\\x${code.toString(16).padStart(2, '0')}`
       : `\\u${code.toString(16).padStart(4, '0')}`
   })
+}
+
+export function cleanOutput(output: string): string {
+  return toAsciiSafeString(
+    normalizeLogSymbols(
+      normalizeNewlines(stripZeroWidthSpace(stripAnsi(output.trim()))),
+    ),
+  )
 }
 
 export type TestCollectorOptions = Exclude<Parameters<typeof it>[1], undefined>
