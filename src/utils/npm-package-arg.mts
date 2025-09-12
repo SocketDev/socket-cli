@@ -12,9 +12,9 @@ export type {
 
 export function npa(
   ...args: Parameters<typeof npmPackageArg>
-): ReturnType<typeof npmPackageArg> | null {
+): ReturnType<typeof npmPackageArg> | undefined {
   try {
     return Reflect.apply(npmPackageArg, undefined, args)
   } catch {}
-  return null
+  return undefined
 }

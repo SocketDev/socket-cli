@@ -28,7 +28,7 @@ async function readCache(
   key: string,
   // 5 minute in milliseconds time to live (TTL).
   ttlMs = 5 * 60 * 1000,
-): Promise<JsonContent | null> {
+): Promise<JsonContent | undefined> {
   const cacheJsonPath = path.join(constants.githubCachePath, `${key}.json`)
   const stat = safeStatsSync(cacheJsonPath)
   if (stat) {
@@ -37,7 +37,7 @@ async function readCache(
       return await readJson(cacheJsonPath)
     }
   }
-  return null
+  return undefined
 }
 
 export async function writeCache(
