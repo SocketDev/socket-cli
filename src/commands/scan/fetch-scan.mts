@@ -30,7 +30,7 @@ export async function fetchScan(
       ok = false
       debugFn('error', 'caught: JSON.parse error')
       debugDir('inspect', { error: e, line })
-      return null
+      return undefined
     }
   }) as unknown as SocketArtifact[]
 

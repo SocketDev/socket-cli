@@ -41,7 +41,7 @@ export async function openSocketFixPr(
   branch: string,
   ghsaIds: string[],
   options?: OpenSocketFixPrOptions | undefined,
-): Promise<OctokitResponse<Pr> | null> {
+): Promise<OctokitResponse<Pr> | undefined> {
   const { baseBranch = 'main', ghsaDetails } = {
     __proto__: null,
     ...options,
@@ -77,7 +77,7 @@ export async function openSocketFixPr(
     }
     debugFn('error', message)
   }
-  return null
+  return undefined
 }
 
 export type GQL_MERGE_STATE_STATUS =

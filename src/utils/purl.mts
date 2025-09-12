@@ -31,7 +31,7 @@ export function createPurlObject(
 ): PurlObject<PackageURL>
 export function createPurlObject(
   options: CreatePurlOptionsNoThrows,
-): PurlObject<PackageURL> | null
+): PurlObject<PackageURL> | undefined
 export function createPurlObject(
   type: string | CreatePurlObjectOptions,
   options?: CreatePurlOptionsWithThrows | undefined,
@@ -39,7 +39,7 @@ export function createPurlObject(
 export function createPurlObject(
   type: string | CreatePurlObjectOptions,
   options: CreatePurlOptionsNoThrows,
-): PurlObject<PackageURL> | null
+): PurlObject<PackageURL> | undefined
 export function createPurlObject(
   type: string | CreatePurlObjectOptions,
   options?: CreatePurlOptionsWithThrows | undefined,
@@ -48,7 +48,7 @@ export function createPurlObject(
   type: string,
   name: string,
   options: CreatePurlOptionsNoThrows,
-): PurlObject<PackageURL> | null
+): PurlObject<PackageURL> | undefined
 export function createPurlObject(
   type: string,
   name: string,
@@ -58,7 +58,7 @@ export function createPurlObject(
   type: string | CreatePurlObjectOptions,
   name?: string | CreatePurlObjectOptions | undefined,
   options?: CreatePurlObjectOptions | undefined,
-): PurlObject<PackageURL> | null {
+): PurlObject<PackageURL> | undefined {
   let opts: CreatePurlObjectOptions | undefined
   if (isObjectObject(type)) {
     opts = { __proto__: null, ...type } as CreatePurlObjectOptions
@@ -89,7 +89,7 @@ export function createPurlObject(
       throw e
     }
   }
-  return null
+  return undefined
 }
 
 export type PurlObjectOptions = {
@@ -109,7 +109,7 @@ export function getPurlObject(
 export function getPurlObject(
   purl: string,
   options: PurlOptionsNoThrows,
-): PurlObject<PackageURL> | null
+): PurlObject<PackageURL> | undefined
 export function getPurlObject(
   purl: PackageURL,
   options?: PurlOptionsWithThrows | undefined,
@@ -117,7 +117,7 @@ export function getPurlObject(
 export function getPurlObject(
   purl: PackageURL,
   options: PurlOptionsNoThrows,
-): PurlObject<PackageURL> | null
+): PurlObject<PackageURL> | undefined
 export function getPurlObject(
   purl: SocketArtifact,
   options?: PurlOptionsWithThrows | undefined,
@@ -125,7 +125,7 @@ export function getPurlObject(
 export function getPurlObject(
   purl: SocketArtifact,
   options: PurlOptionsNoThrows,
-): PurlObject<SocketArtifact> | null
+): PurlObject<SocketArtifact> | undefined
 export function getPurlObject(
   purl: PurlLike,
   options?: PurlOptionsWithThrows | undefined,
@@ -133,7 +133,7 @@ export function getPurlObject(
 export function getPurlObject(
   purl: PurlLike,
   options?: PurlObjectOptions | undefined,
-): PurlObject<PackageURL | SocketArtifact> | null {
+): PurlObject<PackageURL | SocketArtifact> | undefined {
   const { throws } = { __proto__: null, ...options } as PurlObjectOptions
   const shouldThrow = throws === undefined || !!throws
   try {
@@ -144,7 +144,7 @@ export function getPurlObject(
     if (shouldThrow) {
       throw e
     }
-    return null
+    return undefined
   }
 }
 

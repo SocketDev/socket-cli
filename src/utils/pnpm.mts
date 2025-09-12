@@ -70,17 +70,17 @@ export function parsePnpmLockfile(
   return isObjectObject(result) ? (result as LockfileObject) : null
 }
 
-export function parsePnpmLockfileVersion(version: unknown): SemVer | null {
+export function parsePnpmLockfileVersion(version: unknown): SemVer | undefined {
   try {
-    return semver.coerce(version as string)
+    return semver.coerce(version as string) ?? undefined
   } catch {}
-  return null
+  return undefined
 }
 
 export async function readPnpmLockfile(
   lockfilePath: string,
-): Promise<string | null> {
-  return existsSync(lockfilePath) ? await readFileUtf8(lockfilePath) : null
+): Promise<string | undefined> {
+  return existsSync(lockfilePath) ? await readFileUtf8(lockfilePath) : undefined
 }
 
 export function stripLeadingPnpmDepPathSlash(depPath: string): string {
