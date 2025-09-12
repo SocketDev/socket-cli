@@ -29,8 +29,8 @@ describe('Socket manifest cdxgen command', async () => {
   it(
     'should forwards known commands to cdxgen',
     {
-      // Takes ~10s in CI
-      timeout: 20_000,
+      // Increase timeout for CI environments where cdxgen downloads can be slow.
+      timeout: 60_000,
     },
     async () => {
       for (const command of ['-h', '--help']) {
