@@ -114,8 +114,8 @@ export async function setupSdk(
   return {
     ok: true,
     data: new SocketSdk(apiToken, {
-      agent: apiProxy ? new ProxyAgent({ proxy: apiProxy }) : undefined,
-      baseUrl: apiBaseUrl,
+      ...(apiProxy ? { agent: new ProxyAgent({ proxy: apiProxy }) } : {}),
+      ...(apiBaseUrl ? { baseUrl: apiBaseUrl } : {}),
       timeout: constants.ENV.SOCKET_CLI_API_TIMEOUT,
       userAgent: createUserAgentFromPkgJson({
         name: constants.ENV.INLINED_SOCKET_CLI_NAME,
