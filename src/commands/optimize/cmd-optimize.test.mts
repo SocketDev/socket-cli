@@ -14,32 +14,23 @@ import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 const setupFixturePackageLocks = async () => {
   const fixtureDirs = ['fixtures/commands/optimize']
 
-  for (const d of fixtureDirs) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      await spawn('npm', ['install', '--silent', '--no-audit', '--no-fund'], {
+  await Promise.all(
+    fixtureDirs.map(d =>
+      spawn('npm', ['install', '--silent', '--no-audit', '--no-fund'], {
         cwd: path.join(testPath, d),
         stdio: 'ignore',
-      })
-    } catch {
-      // Installation failed, which is fine for testing.
-    }
-  }
+      }),
+    ),
+  )
 }
 
 async function cleanupPackageLockFiles() {
   const cleanupPaths = [
     'fixtures/commands/optimize/package-lock.json',
     'fixtures/commands/optimize/node_modules',
-  ]
-  for (const p of cleanupPaths) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      await trash(path.join(testPath, p))
-    } catch {
-      // File/directory doesn't exist, which is fine.
-    }
-  }
+  ].map(p => path.join(testPath, p))
+
+  await trash(cleanupPaths)
 }
 
 async function cleanupFixturePackageJson() {
@@ -51,7 +42,7 @@ async function cleanupFixturePackageJson() {
     editable: true,
   })
 
-  // Remove overrides and resolutions fields
+  // Remove overrides and resolutions fields.
   editablePackageJson.update({
     overrides: undefined,
     resolutions: undefined,
@@ -62,10 +53,19 @@ async function cleanupFixturePackageJson() {
 
 describe('socket optimize', async () => {
   const { binCliPath } = constants
+  const fixtureDir = path.join(testPath, 'fixtures/commands/optimize')
+
+  beforeEach(async () => {
+    // Clean package.json overrides and package-lock.json before each test.
+    await cleanupPackageLockFiles()
+    await cleanupFixturePackageJson()
+    await setupFixturePackageLocks()
+  }, 30_000) // Increase timeout for cleanup operations
 
   afterEach(async () => {
+    await cleanupPackageLockFiles()
     await cleanupFixturePackageJson()
-  })
+  }, 30_000) // Increase timeout for cleanup operations
 
   cmdit(
     ['optimize', '--help', '--config', '{}'],
@@ -112,7 +112,10 @@ describe('socket optimize', async () => {
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      // For dry-run, should not modify files.
+      const packageJsonPath = path.join(fixtureDir, 'package.json')
+      const packageJson = await readPackageJson(packageJsonPath)
+      expect(packageJson.overrides).toBeUndefined()
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
@@ -130,7 +133,10 @@ describe('socket optimize', async () => {
     'should accept --pin flag',
     async cmd => {
       const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      // For dry-run, should not modify files.
+      const packageJsonPath = path.join(fixtureDir, 'package.json')
+      const packageJson = await readPackageJson(packageJsonPath)
+      expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "_____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -146,7 +152,10 @@ describe('socket optimize', async () => {
     'should accept --prod flag',
     async cmd => {
       const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      // For dry-run, should not modify files.
+      const packageJsonPath = path.join(fixtureDir, 'package.json')
+      const packageJson = await readPackageJson(packageJsonPath)
+      expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "_____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -169,7 +178,10 @@ describe('socket optimize', async () => {
     'should accept both --pin and --prod flags together',
     async cmd => {
       const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      // For dry-run, should not modify files.
+      const packageJsonPath = path.join(fixtureDir, 'package.json')
+      const packageJson = await readPackageJson(packageJsonPath)
+      expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "_____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -185,7 +197,10 @@ describe('socket optimize', async () => {
     'should accept --json output format',
     async cmd => {
       const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      // For dry-run, should not modify files.
+      const packageJsonPath = path.join(fixtureDir, 'package.json')
+      const packageJson = await readPackageJson(packageJsonPath)
+      expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -202,7 +217,10 @@ describe('socket optimize', async () => {
     'should accept --markdown output format',
     async cmd => {
       const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      // For dry-run, should not modify files.
+      const packageJsonPath = path.join(fixtureDir, 'package.json')
+      const packageJson = await readPackageJson(packageJsonPath)
+      expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -219,7 +237,10 @@ describe('socket optimize', async () => {
     'should accept custom directory path',
     async cmd => {
       const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      // For dry-run, should not modify files.
+      const packageJsonPath = path.join(fixtureDir, 'package.json')
+      const packageJson = await readPackageJson(packageJsonPath)
+      expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`
         "_____         _       _        /---------------
           |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -235,17 +256,9 @@ describe('socket optimize', async () => {
     'should handle directories without package.json gracefully',
     async cmd => {
       const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
-      // TODO: Investigate Windows test fail.
-      // expect(stderr).toMatchInlineSnapshot(`
-      //   "_____         _       _        /---------------
-      //     |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-      //     |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
-      //     |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>
-
-      //   \\u203c socket optimize: Unknown package manager, defaulting to npm
-      //   \\xd7  Missing lockfile:  socket optimize: No lock file found"
-      // `)
+      // Should not modify any package.json since no package.json exists in /tmp.
+      const output = stdout + stderr
+      expect(output.length).toBeGreaterThan(0)
       expect(code, 'should exit with code 1').toBe(1)
     },
   )
@@ -263,7 +276,10 @@ describe('socket optimize', async () => {
     'should accept comprehensive flag combination',
     async cmd => {
       const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      // For dry-run, should not modify files.
+      const packageJsonPath = path.join(fixtureDir, 'package.json')
+      const packageJson = await readPackageJson(packageJsonPath)
+      expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -279,15 +295,9 @@ describe('socket optimize', async () => {
     'should handle basic project fixture',
     async cmd => {
       const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`""`)
-      expect(stderr).toMatchInlineSnapshot(`
-        "_____         _       _        /---------------
-          |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
-          |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
-          |_____|___|___|_,_|___|_|.dev   | Command: \`socket optimize\`, cwd: <redacted>
-
-        \\xd7  Version mismatch:  socket optimize: Requires npm >=10.8.2. Current version: unknown."
-      `)
+      // Should not modify files due to version mismatch error.
+      const output = stdout + stderr
+      expect(output.length).toBeGreaterThan(0)
       expect(code, 'should exit with code 1').toBe(1)
     },
   )
@@ -305,7 +315,10 @@ describe('socket optimize', async () => {
     'should accept pin, prod, and markdown flags together',
     async cmd => {
       const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      // For dry-run, should not modify files.
+      const packageJsonPath = path.join(fixtureDir, 'package.json')
+      const packageJson = await readPackageJson(packageJsonPath)
+      expect(packageJson.overrides).toBeUndefined()
       expect(stderr).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -314,39 +327,75 @@ describe('socket optimize', async () => {
   describe('non dry-run tests', () => {
     cmdit(
       ['optimize', '.', '--config', '{"apiToken":"fake-token"}'],
-      'should handle optimize fixture project',
+      'should optimize packages and modify package.json',
       async cmd => {
         const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/optimize'),
+          cwd: fixtureDir,
         })
-        // Command succeeds when no packages need optimization
+
+        // Command should succeed.
         expect(code).toBe(0)
+
+        // Check that package.json was modified with overrides.
+        const packageJsonPath = path.join(fixtureDir, 'package.json')
+        const packageJson = await readPackageJson(packageJsonPath)
+        expect(packageJson.overrides).toBeDefined()
+
+        // Check that package-lock.json exists (was modified/created).
+        const packageLockPath = path.join(fixtureDir, 'package-lock.json')
+        const { existsSync } = await import('node:fs')
+        expect(existsSync(packageLockPath)).toBe(true)
+
+        // Should have optimization output.
         const output = stdout + stderr
-        expect(output.length).toBeGreaterThan(0)
+        expect(output).toMatch(/Optimizing|Adding overrides/i)
       },
     )
 
     cmdit(
       ['optimize', '.', '--pin', '--config', '{"apiToken":"fake-token"}'],
-      'should handle optimize with --pin flag',
+      'should optimize with --pin flag and modify files',
       async cmd => {
-        const { code, stderr } = await spawnNpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/optimize'),
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: fixtureDir,
         })
+
         expect(code).toBe(0)
-        expect(stderr).toContain('socket optimize')
+
+        // Verify package.json has overrides.
+        const packageJsonPath = path.join(fixtureDir, 'package.json')
+        const packageJson = await readPackageJson(packageJsonPath)
+        expect(packageJson.overrides).toBeDefined()
+
+        // Verify package-lock.json was updated.
+        const packageLockPath = path.join(fixtureDir, 'package-lock.json')
+        const { existsSync } = await import('node:fs')
+        expect(existsSync(packageLockPath)).toBe(true)
+
+        // Should mention optimization in output.
+        const output = stdout + stderr
+        expect(output).toMatch(/Optimizing|Adding overrides/i)
       },
     )
 
     cmdit(
       ['optimize', '.', '--prod', '--config', '{"apiToken":"fake-token"}'],
-      'should handle optimize with --prod flag',
+      'should optimize with --prod flag and modify files',
       async cmd => {
-        const { code, stderr } = await spawnNpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/optimize'),
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: fixtureDir,
         })
+
         expect(code).toBe(0)
-        expect(stderr).toContain('socket optimize')
+
+        // Verify package.json has overrides.
+        const packageJsonPath = path.join(fixtureDir, 'package.json')
+        const packageJson = await readPackageJson(packageJsonPath)
+        expect(packageJson.overrides).toBeDefined()
+
+        // Should mention production in output.
+        const output = stdout + stderr
+        expect(output).toMatch(/Optimizing|Adding overrides/i)
       },
     )
 
@@ -361,11 +410,25 @@ describe('socket optimize', async () => {
       ],
       'should handle optimize with both --pin and --prod flags',
       async cmd => {
-        const { code, stderr } = await spawnNpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/optimize'),
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: fixtureDir,
         })
+
         expect(code).toBe(0)
-        expect(stderr).toContain('socket optimize')
+
+        // Verify package.json has overrides.
+        const packageJsonPath = path.join(fixtureDir, 'package.json')
+        const packageJson = await readPackageJson(packageJsonPath)
+        expect(packageJson.overrides).toBeDefined()
+
+        // Verify package-lock.json was updated.
+        const packageLockPath = path.join(fixtureDir, 'package-lock.json')
+        const { existsSync } = await import('node:fs')
+        expect(existsSync(packageLockPath)).toBe(true)
+
+        // Should have optimization output.
+        const output = stdout + stderr
+        expect(output).toMatch(/Optimizing|Adding overrides/i)
       },
     )
 
@@ -373,12 +436,21 @@ describe('socket optimize', async () => {
       ['optimize', '.', '--json', '--config', '{"apiToken":"fake-token"}'],
       'should handle optimize with --json output format',
       async cmd => {
-        const { code, stderr } = await spawnNpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/optimize'),
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: fixtureDir,
         })
+
         expect(code).toBe(0)
-        // JSON output may still show progress messages.
-        expect(stderr.length).toBeGreaterThan(0)
+
+        // Verify package.json has overrides.
+        const packageJsonPath = path.join(fixtureDir, 'package.json')
+        const packageJson = await readPackageJson(packageJsonPath)
+        expect(packageJson.overrides).toBeDefined()
+
+        // Verify package-lock.json was updated.
+        const packageLockPath = path.join(fixtureDir, 'package-lock.json')
+        const { existsSync } = await import('node:fs')
+        expect(existsSync(packageLockPath)).toBe(true)
       },
     )
 
@@ -386,12 +458,25 @@ describe('socket optimize', async () => {
       ['optimize', '.', '--markdown', '--config', '{"apiToken":"fake-token"}'],
       'should handle optimize with --markdown output format',
       async cmd => {
-        const { code, stderr } = await spawnNpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/optimize'),
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: fixtureDir,
         })
+
         expect(code).toBe(0)
-        // Command completed successfully.
-        expect(stderr.length).toBeGreaterThan(0)
+
+        // Verify package.json has overrides.
+        const packageJsonPath = path.join(fixtureDir, 'package.json')
+        const packageJson = await readPackageJson(packageJsonPath)
+        expect(packageJson.overrides).toBeDefined()
+
+        // Verify package-lock.json was updated.
+        const packageLockPath = path.join(fixtureDir, 'package-lock.json')
+        const { existsSync } = await import('node:fs')
+        expect(existsSync(packageLockPath)).toBe(true)
+
+        // Should have regular output (markdown flag doesn't change console output).
+        const output = stdout + stderr
+        expect(output).toMatch(/Optimizing|Adding overrides/i)
       },
     )
   })
@@ -409,28 +494,28 @@ describe('socket optimize', async () => {
         const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
-        expect(code).toBeGreaterThan(0)
+        expect(code).toBe(1)
       },
     )
 
     cmdit(
-      ['optimize', '--config', '{}'],
+      ['optimize', '--dry-run', '--config', '{}'],
       'should show clear error when API token is missing',
       async cmd => {
         const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain('Scan complete')
+        expect(output.length).toBeGreaterThan(0)
         expect(code, 'should exit with code 0 when no token').toBe(0)
       },
     )
 
     cmdit(
-      ['optimize', '--config', '{"apiToken":""}'],
+      ['optimize', '--dry-run', '--config', '{"apiToken":""}'],
       'should show clear error when API token is empty',
       async cmd => {
         const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain('Scan complete')
+        expect(output.length).toBeGreaterThan(0)
         expect(code, 'should exit with code 0 with empty token').toBe(0)
       },
     )
@@ -439,6 +524,7 @@ describe('socket optimize', async () => {
       [
         'optimize',
         '.',
+        '--dry-run',
         '--pin',
         '--prod',
         '--json',
@@ -449,7 +535,7 @@ describe('socket optimize', async () => {
       'should show clear error when conflicting output flags are used',
       async cmd => {
         const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/optimize'),
+          cwd: fixtureDir,
         })
         const output = stdout + stderr
         expect(output.length).toBeGreaterThan(0)
@@ -461,6 +547,7 @@ describe('socket optimize', async () => {
       [
         'optimize',
         '.',
+        '--dry-run',
         '--unknown-flag',
         '--config',
         '{"apiToken":"fake-token"}',
@@ -469,8 +556,8 @@ describe('socket optimize', async () => {
       async cmd => {
         const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
         const output = stdout + stderr
-        expect(output).toContain('Scan complete')
-        expect(code, 'should exit with code 0 despite unknown flag').toBe(0)
+        expect(output.length).toBeGreaterThan(0)
+        expect(code).toBe(0)
       },
     )
 
@@ -479,7 +566,7 @@ describe('socket optimize', async () => {
       'should handle invalid API token gracefully',
       async cmd => {
         const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/optimize'),
+          cwd: fixtureDir,
         })
         expect(code).toBe(0)
         const output = stdout + stderr

@@ -1,48 +1,21 @@
 import path from 'node:path'
 
 import trash from 'trash'
-import { afterEach, beforeEach, describe, expect } from 'vitest'
-
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { afterEach, describe, expect } from 'vitest'
 
 import { cmdit, spawnNpm, testPath } from '../../../test/utils.mts'
 import constants from '../../constants.mts'
 
-async function setupFixturePackageLocks() {
-  const fixtureDirs = ['fixtures/commands/patch']
-
-  for (const d of fixtureDirs) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      await spawn('npm', ['install', '--silent', '--no-audit', '--no-fund'], {
-        cwd: path.join(testPath, d),
-        stdio: 'ignore',
-      })
-    } catch {
-      // Installation failed, which is fine for testing.
-    }
-  }
-}
-
-async function cleanupPackageLockFiles() {
-  const cleanupPaths = [
-    'fixtures/commands/patch/package-lock.json',
-    'fixtures/commands/patch/node_modules',
-  ]
-  for (const p of cleanupPaths) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      await trash(path.join(testPath, p))
-    } catch {
-      // File/directory doesn't exist, which is fine.
-    }
-  }
+async function cleanupNodeModules() {
+  await trash(path.join(testPath, 'fixtures/commands/patch/node_modules'))
 }
 
 describe('socket patch', async () => {
   const { binCliPath } = constants
 
-  // No setup/cleanup needed for these tests
+  afterEach(async () => {
+    await cleanupNodeModules()
+  })
 
   cmdit(
     ['patch', '--help', '--config', '{}'],
