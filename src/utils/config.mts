@@ -111,7 +111,7 @@ export type FoundSocketYml = {
 
 export function findSocketYmlSync(
   dir = process.cwd(),
-): FoundSocketYml | undefined {
+): CResult<FoundSocketYml | undefined> {
   let prevDir = null
   while (dir !== prevDir) {
     let ymlPath = path.join(dir, 'socket.yml')
@@ -123,18 +123,25 @@ export function findSocketYmlSync(
     if (typeof yml === 'string') {
       try {
         return {
-          path: ymlPath,
-          parsed: config.parseSocketConfig(yml),
+          ok: true,
+          data: {
+            path: ymlPath,
+            parsed: config.parseSocketConfig(yml),
+          },
         }
       } catch (e) {
         debugDir('inspect', { error: e })
-        throw new Error(`Found file but was unable to parse ${ymlPath}`)
+        return {
+          ok: false,
+          message: `Found file but was unable to parse ${ymlPath}`,
+          cause: e instanceof Error ? e.message : String(e),
+        }
       }
     }
     prevDir = dir
     dir = path.join(dir, '..')
   }
-  return undefined
+  return { ok: true, data: undefined }
 }
 
 export function getConfigValue<Key extends keyof LocalConfig>(

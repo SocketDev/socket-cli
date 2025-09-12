@@ -11,6 +11,7 @@ import { getPublicApiToken, setupSdk } from './sdk.mts'
 import { addArtifactToAlertsMap } from './socket-package-alert.mts'
 
 import type { CompactSocketArtifact } from './alert/artifact.mts'
+import type { FoundSocketYml } from './config.mts'
 import type { AlertFilter, AlertsByPurl } from './socket-package-alert.mts'
 import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -83,7 +84,10 @@ export async function getAlertsMapFromPurls(
     throw new Error('Auth error: Run `socket login` first')
   }
   const sockSdk = sockSdkCResult.data
-  const socketYml = findSocketYmlSync()?.parsed
+  const socketYmlResult = findSocketYmlSync()
+  const socketYml = socketYmlResult.ok
+    ? (socketYmlResult.data as FoundSocketYml).parsed
+    : undefined
 
   const alertsMapOptions = {
     consolidate: opts.consolidate,
