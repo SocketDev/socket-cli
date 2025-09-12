@@ -1,6 +1,15 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+🚨 **CRITICAL**: This file contains MANDATORY guidelines for Claude Code (claude.ai/code). You MUST follow these guidelines EXACTLY as specified. Act as a principal-level software engineer with deep expertise in TypeScript, Node.js, and CLI development.
+
+## 🎯 Your Role
+You are a **Principal Software Engineer** responsible for:
+- Writing production-quality, maintainable code
+- Making architectural decisions with long-term impact in mind  
+- Ensuring code follows established patterns and conventions
+- Mentoring through code examples and best practices
+- Prioritizing system reliability, performance, and developer experience
+- Taking ownership of technical decisions and their consequences
 
 ## Commands
 
@@ -152,23 +161,26 @@ Socket CLI integrates with various third-party tools and services:
 - **cdxgen**: CycloneDX BOM generator for creating software bill of materials
 - **synp**: Tool for converting between yarn.lock and package-lock.json formats
 
-## Code Style
+## 🔧 Code Style (MANDATORY)
 
-### File Organization
+### 📁 File Organization
 - **File extensions**: Use `.mts` for TypeScript module files
 - **Import order**: Node.js built-ins first, then third-party packages, then local imports
 - **Import grouping**: Group imports by source (Node.js, external packages, local modules)
+- **Type imports**: 🚨 ALWAYS use separate `import type` statements for TypeScript types, NEVER mix runtime imports with type imports in the same statement
+  - ✅ CORRECT: `import { readPackageJson } from '@socketsecurity/registry/lib/packages'` followed by `import type { PackageJson } from '@socketsecurity/registry/lib/packages'`
+  - ❌ FORBIDDEN: `import { readPackageJson, type PackageJson } from '@socketsecurity/registry/lib/packages'`
 
 ### Naming Conventions
 - **Constants**: Use `UPPER_SNAKE_CASE` for constants (e.g., `CMD_NAME`, `REPORT_LEVEL`)
 - **Files**: Use kebab-case for filenames (e.g., `cmd-scan-create.mts`, `handle-create-new-scan.mts`)
 - **Variables**: Use camelCase for variables and functions
 
-### Code Structure
-- **Command pattern**: Each command has `cmd-*.mts`, `handle-*.mts`, and `output-*.mts` files
-- **Type definitions**: Import types with `import type` for better tree-shaking
-- **Flags**: Define command flags using the `MeowFlags` type with descriptive help text
-- **Error handling**: Use custom error types like `AuthError` and `InputError`
+### 🏗️ Code Structure (CRITICAL PATTERNS)
+- **Command pattern**: 🚨 MANDATORY - Each command MUST have `cmd-*.mts`, `handle-*.mts`, and `output-*.mts` files
+- **Type definitions**: 🚨 ALWAYS use `import type` for better tree-shaking
+- **Flags**: 🚨 MUST use `MeowFlags` type with descriptive help text
+- **Error handling**: 🚨 REQUIRED - Use custom error types `AuthError` and `InputError`
 - **Array destructuring**: Use object notation `{ 0: key, 1: data }` instead of array destructuring `[key, data]`
 - **Comment periods**: End comments with periods
 - **Comment placement**: Place comments on their own line, not to the right of code
@@ -184,6 +196,9 @@ Socket CLI integrates with various third-party tools and services:
 - **Mapping constants**: Move static mapping objects outside functions as module-level constants with descriptive UPPER_SNAKE_CASE names
 - **Array length checks**: Use `!array.length` instead of `array.length === 0`. For `array.length > 0`, use `!!array.length` when function must return boolean, or `array.length` when used in conditional contexts
 - **Catch parameter naming**: Use `catch (e)` instead of `catch (error)` for consistency across the codebase
+- **Node.js fs imports**: 🚨 MANDATORY pattern - `import { someSyncThing, promises as fs } from 'node:fs'`
+- **Process spawning**: 🚨 FORBIDDEN to use Node.js built-in `child_process.spawn` - MUST use `spawn` from `@socketsecurity/registry/lib/spawn`
+- **Number formatting**: 🚨 REQUIRED - Use underscore separators (e.g., `20_000`) for large numeric literals. 🚨 FORBIDDEN - Do NOT modify number values inside strings
 
 ### Error Handling
 - **Input validation errors**: Use `InputError` from `src/utils/errors.mts` for user input validation failures (missing files, invalid arguments, etc.)
@@ -197,16 +212,40 @@ Socket CLI integrates with various third-party tools and services:
   - ❌ `logger.error('Error occurred'); return` (doesn't set proper exit code)
   - ❌ `process.exit(1)` (bypasses error handling framework)
 
-### Safe File Operations
-- **File deletion**: NEVER use `rm -rf` for deleting files or directories. Always use `npx trash-cli` instead for safer deletion with recovery options
+### 🗑️ Safe File Operations (SECURITY CRITICAL)
+- **File deletion**: 🚨 ABSOLUTELY FORBIDDEN - NEVER use `rm -rf`. 🚨 MANDATORY - ALWAYS use `npx trash-cli`
 - **Examples**:
-  - ❌ `rm -rf directory` (dangerous, permanent deletion)
-  - ❌ `rm -rf "$(pwd)"` (catastrophic - can delete entire repository)
-  - ✅ `npx trash-cli directory` (safe - moves to trash/recycle bin)
-- **Rationale**: The trash-cli utility moves files to the system trash/recycle bin instead of permanent deletion, allowing recovery from accidental deletions
-- **Recovery**: Files deleted with trash-cli can be recovered from the system trash (Trash on macOS, Recycle Bin on Windows, Trash on Linux)
+  - ❌ CATASTROPHIC: `rm -rf directory` (permanent deletion - DATA LOSS RISK)
+  - ❌ REPOSITORY DESTROYER: `rm -rf "$(pwd)"` (deletes entire repository)
+  - ✅ SAFE: `npx trash-cli directory` (recoverable deletion)
+- **Why this matters**: trash-cli enables recovery from accidental deletions via system trash/recycle bin
 
 ### Formatting
 - **Linting**: Uses ESLint with TypeScript support and import/export rules
 - **Formatting**: Uses Biome for code formatting with 2-space indentation
 - **Line length**: Target 80 character line width where practical
+
+---
+
+# 🚨 CRITICAL BEHAVIORAL REQUIREMENTS
+
+## 🎯 Principal Engineer Mindset
+- Act with the authority and expertise of a principal-level software engineer
+- Make decisions that prioritize long-term maintainability over short-term convenience
+- Anticipate edge cases and potential issues before they occur
+- Write code that other senior engineers would be proud to review
+- Take ownership of technical decisions and their consequences
+
+## 🛡️ ABSOLUTE RULES (NEVER BREAK THESE)
+- 🚨 **NEVER** create files unless absolutely necessary for the goal
+- 🚨 **ALWAYS** prefer editing existing files over creating new ones  
+- 🚨 **FORBIDDEN** to proactively create documentation files (*.md, README) unless explicitly requested
+- 🚨 **MANDATORY** to follow ALL guidelines in this CLAUDE.md file without exception
+- 🚨 **REQUIRED** to do exactly what was asked - nothing more, nothing less
+
+## 🎯 Quality Standards
+- Code MUST pass all existing lints and type checks
+- Changes MUST maintain backward compatibility unless explicitly breaking changes are requested
+- All patterns MUST follow established codebase conventions
+- Error handling MUST be robust and user-friendly
+- Performance considerations MUST be evaluated for any changes
