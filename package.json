@@ -222,6 +222,8 @@
     "external/**",
     "shadow-bin/**",
     "CHANGELOG.md",
+    "logo-dark.png",
+    "logo-light.png",
     "requirements.json",
     "translations.json"
   ],
