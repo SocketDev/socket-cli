@@ -1,5 +1,6 @@
 import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
+import { parseUrl } from '@socketsecurity/registry/lib/url'
 
 import constants from '../../constants.mts'
 import { DiffAction } from './arborist/types.mts'
@@ -15,13 +16,10 @@ import type {
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 function getUrlOrigin(input: string): string {
-  try {
-    // TODO: URL.parse is available in Node 22.1.0. We can use it when we drop Node 18.
-    // https://nodejs.org/docs/latest-v22.x/api/url.html#urlparseinput-base
-    // return URL.parse(input)?.origin ?? ''
-    return new URL(input).origin ?? ''
-  } catch {}
-  return ''
+  // TODO: URL.parse is available in Node 22.1.0. We can use it when we drop Node 18.
+  // https://nodejs.org/docs/latest-v22.x/api/url.html#urlparseinput-base
+  // return URL.parse(input)?.origin ?? ''
+  return parseUrl(input)?.origin ?? ''
 }
 
 export type GetAlertsMapFromArboristOptions = {
