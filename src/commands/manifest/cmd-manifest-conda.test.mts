@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, invokeNpm } from '../../../test/utils.mts'
+import { cmdit, invokeNpm, testPath } from '../../../test/utils.mts'
 
 describe('socket manifest conda', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,12 @@ describe('socket manifest conda', async () => {
     ['manifest', 'conda', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(
+        binCliPath,
+        cmd,
+        {},
+        testPath,
+      )
       expect(stdout).toMatchInlineSnapshot(
         `
         "[beta] Convert a Conda environment.yml file to a python requirements.txt
@@ -61,7 +66,12 @@ describe('socket manifest conda', async () => {
     ['manifest', 'conda', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await invokeNpm(
+        binCliPath,
+        cmd,
+        {},
+        testPath,
+      )
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -82,15 +92,25 @@ describe('socket manifest conda', async () => {
       [
         'manifest',
         'conda',
-        'two',
-        'three', // this triggers the error
+        'fixtures/commands/manifest/conda',
+        '--stdout',
         '--config',
         '{}',
       ],
       'should print raw text without flags',
       async cmd => {
-        const { stderr, stdout } = await invokeNpm(binCliPath, cmd)
-        expect(stdout).toMatchInlineSnapshot(`""`)
+        const { code, stderr, stdout } = await invokeNpm(
+          binCliPath,
+          cmd,
+          {},
+          testPath,
+        )
+        expect(stdout).toMatchInlineSnapshot(`
+          "qgrid==1.3.0
+          mplstereonet
+          pyqt5
+          gempy==2.1.0"
+        `)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
              _____         _       _        /---------------
@@ -98,9 +118,7 @@ describe('socket manifest conda', async () => {
             |__   | * |  _| '_| -_|  _|     | Node: <redacted>, API token: <redacted>, org: <redacted>
             |_____|___|___|_,_|___|_|.dev   | Command: \`socket manifest conda\`, cwd: <redacted>
 
-          \\xd7  Input error:  Please review the input requirements and try again
-
-            \\xd7 Can only accept one DIR (make sure to escape spaces!) (received 2)"
+          \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
         `)
       },
     )
@@ -109,25 +127,32 @@ describe('socket manifest conda', async () => {
       [
         'manifest',
         'conda',
-        'two',
-        'three', // this triggers the error
+        'fixtures/commands/manifest/conda',
         '--json',
+        '--stdout',
         '--config',
         '{}',
       ],
       'should print a json blurb with --json flag',
       async cmd => {
-        const { stderr, stdout } = await invokeNpm(binCliPath, cmd)
+        const { stderr, stdout } = await invokeNpm(
+          binCliPath,
+          cmd,
+          {},
+          testPath,
+        )
         expect(stdout).toMatchInlineSnapshot(`
           "{
-            "ok": false,
-            "message": "Input error",
-            "data": "Please review the input requirements and try again\\n\\n  \\xd7 Can only accept one DIR (make sure to escape spaces!) (received 2)"
+            "ok": true,
+            "data": {
+              "content": "name: my_stuff\\n\\nchannels:\\n  - conda-thing\\n  - defaults\\ndependencies:\\n  - python=3.8\\n  - pandas=1.3.4\\n  - numpy=1.19.0\\n  - scipy\\n  - mkl-service\\n  - libpython\\n  - m2w64-toolchain\\n  - pytest\\n  - requests\\n  - pip\\n  - pip:\\n      - qgrid==1.3.0\\n      - mplstereonet\\n      - pyqt5\\n      - gempy==2.1.0\\n",
+              "pip": "qgrid==1.3.0\\nmplstereonet\\npyqt5\\ngempy==2.1.0"
+            }
           }"
         `)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
-             "
+             \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
         `)
       },
     )
@@ -136,21 +161,35 @@ describe('socket manifest conda', async () => {
       [
         'manifest',
         'conda',
-        'two',
-        'three', // this triggers the error
+        'fixtures/commands/manifest/conda',
         '--markdown',
+        '--stdout',
         '--config',
         '{}',
       ],
       'should print a markdown blurb with --markdown flag',
       async cmd => {
-        const { stderr, stdout } = await invokeNpm(binCliPath, cmd)
-        expect(stdout).toMatchInlineSnapshot(`""`)
+        const { code, stderr, stdout } = await invokeNpm(
+          binCliPath,
+          cmd,
+          {},
+          testPath,
+        )
+        expect(stdout).toMatchInlineSnapshot(`
+          "# Converted Conda file
+
+          This is the Conda \`environment.yml\` file converted to python \`requirements.txt\`:
+
+          \`\`\`file=requirements.txt
+          qgrid==1.3.0
+          mplstereonet
+          pyqt5
+          gempy==2.1.0
+          \`\`\`"
+        `)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "
-             \\xd7  Input error:  Please review the input requirements and try again
-
-            \\xd7 Can only accept one DIR (make sure to escape spaces!) (received 2)"
+             \\u203c Warning: This will approximate your Conda dependencies using PyPI. We do not yet officially support Conda. Use at your own risk."
         `)
       },
     )

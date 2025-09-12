@@ -255,7 +255,7 @@ else
 fi
 
 # Backup config
-echo "Backing up default org and apitoken..."
+echo "Backing up default org and API token..."
 DEFORG_BAK=$(eval "$COMMAND_PREFIX config get defaultOrg --json" | jq -r '.data' )
 TOKEN_BAK=$(eval "$COMMAND_PREFIX config get apiToken --json" | jq -r '.data' )
 echo "Backing complete!"

@@ -22,7 +22,7 @@ const __dirname = path.dirname(__filename)
 const asciiUnsafeRegexp = /[\u0000-\u0007\u0009\u000b-\u001f\u0080-\uffff]/g
 
 // Note: The fixture directory is in the same directory as this utils file.
-export const npmFixturesPath = path.join(__dirname, 'fixtures/commands/npm')
+export const testPath = __dirname
 
 function cleanOutput(output: string): string {
   return toAsciiSafeString(
@@ -77,6 +77,7 @@ export async function invokeNpm(
   entryPath: string,
   args: string[],
   spawnEnv = {},
+  cwd = testPath,
 ): Promise<{
   code: number
   error?: {
@@ -89,7 +90,7 @@ export async function invokeNpm(
 }> {
   try {
     const output = await spawn(constants.execPath, [entryPath, ...args], {
-      cwd: npmFixturesPath,
+      cwd,
       env: {
         ...process.env,
         ...constants.processEnv,

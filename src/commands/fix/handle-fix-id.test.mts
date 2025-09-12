@@ -1,7 +1,7 @@
 import nock from 'nock'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { convertIdsToGhsas } from '../src/commands/fix/handle-fix.mts'
+import { convertIdsToGhsas } from './handle-fix.mts'
 
 describe('Socket fix --id functionality', () => {
   beforeEach(() => {
