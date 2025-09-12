@@ -4,12 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.1.9](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.9) - 2025-09-11
 
 ### Added
 - Enhanced `socket fix --id` to accept CVE IDs and PURLs in addition to GHSA IDs
 
-## [1.1.8](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.8) - 2025-09-04
+### Fixed
+- Correct SOCKET_CLI_API_TIMEOUT environment variable lookup
+
+## [1.1.8](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.8) - 2025-09-11
 
 ### Changed
 - Made insufficient permissions errors more helpful
