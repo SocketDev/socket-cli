@@ -14,6 +14,7 @@ import {
   writeJson,
 } from '@socketsecurity/registry/lib/fs'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { parseUrl } from '@socketsecurity/registry/lib/url'
 
 import constants, { UNKNOWN_ERROR } from '../constants.mts'
 
@@ -251,7 +252,14 @@ export async function setGitRemoteGithubRepoUrl(
   token: string,
   cwd = process.cwd(),
 ): Promise<boolean> {
-  const { host } = new URL(constants.ENV.GITHUB_SERVER_URL)
+  const { GITHUB_SERVER_URL } = constants.ENV
+  const urlObj = parseUrl(GITHUB_SERVER_URL)
+  const host = urlObj?.host
+  if (!host) {
+    debugFn('error', 'invalid: GITHUB_SERVER_URL env var')
+    debugDir('inspect', { GITHUB_SERVER_URL })
+    return false
+  }
   const url = `https://x-access-token:${token}@${host}/${owner}/${repo}`
   const stdioIgnoreOptions: SpawnOptions = {
     cwd,
