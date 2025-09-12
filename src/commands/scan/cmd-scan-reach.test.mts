@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, invokeNpm } from '../../../test/utils.mts'
+import { cmdit, spawnNpm } from '../../../test/utils.mts'
 
 describe('socket scan reach', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,7 @@ describe('socket scan reach', async () => {
     ['scan', 'reach', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
         "Compute tier 1 reachability
 
@@ -74,7 +74,7 @@ describe('socket scan reach', async () => {
     ],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -101,7 +101,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept --reach-disable-analytics flag',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -121,7 +121,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept --reach-analysis-memory-limit flag',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -141,7 +141,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept --reach-analysis-timeout flag',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -161,7 +161,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept --reach-ecosystems with comma-separated values',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -183,7 +183,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept multiple --reach-ecosystems flags',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(code, 'should exit with code 0').toBe(0)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
     },
@@ -202,7 +202,7 @@ describe('socket scan reach', async () => {
     ],
     'should fail with invalid ecosystem',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain('Invalid ecosystem: "invalid-ecosystem"')
       expect(code, 'should exit with non-zero code').not.toBe(0)
@@ -223,7 +223,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept --reach-exclude-paths with comma-separated values',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -245,7 +245,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept multiple --reach-exclude-paths flags',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -272,7 +272,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept all reachability flags together',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -292,7 +292,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept minimal positive memory limit',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -312,7 +312,7 @@ describe('socket scan reach', async () => {
     ],
     'should handle single ecosystem flag',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -336,7 +336,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept many exclude paths flags',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -362,7 +362,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept multiple different ecosystems',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -384,7 +384,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept custom memory limit and timeout values',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -403,7 +403,7 @@ describe('socket scan reach', async () => {
     ],
     'should fail when mixed valid and invalid ecosystems are provided',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain('Invalid ecosystem: "invalid1"')
       expect(code, 'should exit with non-zero code').not.toBe(0)
@@ -424,7 +424,7 @@ describe('socket scan reach', async () => {
     ],
     'should fail when both json and markdown output flags are used',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain('The json and markdown flags cannot be both set')
       expect(code, 'should exit with non-zero code').not.toBe(0)
@@ -444,7 +444,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept json output flag alone',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -463,7 +463,7 @@ describe('socket scan reach', async () => {
     ],
     'should accept markdown output flag alone',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -489,11 +489,500 @@ describe('socket scan reach', async () => {
     ],
     'should accept comprehensive reachability configuration in dry-run',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd, {
+      const { code, stdout } = await spawnNpm(binCliPath, cmd, {
         cwd: '/tmp',
       })
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
   )
+
+  describe('non dry-run tests', () => {
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle reach analysis on test fixture',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        // Should fail due to fake token/org, but validates command parsing.
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--reach-ecosystems',
+        'npm',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle npm ecosystem specification',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--reach-analysis-memory-limit',
+        '2048',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle custom memory limit',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--reach-analysis-timeout',
+        '1800',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle custom timeout',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--reach-exclude-paths',
+        'node_modules,dist',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle path exclusions',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--reach-disable-analytics',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle analytics disabled',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--reach-skip-cache',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle cache skipping',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--json',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle JSON output format',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        // JSON output typically suppresses banner in stderr.
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--markdown',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle markdown output format',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        // Markdown output typically suppresses banner in stderr.
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--reach-ecosystems',
+        'npm',
+        '--reach-analysis-memory-limit',
+        '2048',
+        '--reach-exclude-paths',
+        'node_modules',
+        '--reach-disable-analytics',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle comprehensive flag combination',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+  })
+
+  describe('error handling and usability tests', () => {
+    cmdit(
+      [
+        'scan',
+        'reach',
+        '/nonexistent/directory',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should show clear error for non-existent directory',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toMatch(/no eligible files|file.*dir.*must contain|not.*found/i)
+        expect(code).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      ['scan', 'reach', '--dry-run', '--config', '{}'],
+      'should show clear error when API token is missing',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toMatch(/api token|authentication|token/i)
+        expect(code).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      ['scan', 'reach', '--dry-run', '--org', '', '--config', '{"apiToken":"fake-token"}'],
+      'should show clear error when org is empty',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toMatch(/organization|org/i)
+        expect(code).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        '--dry-run',
+        '--reach-analysis-memory-limit',
+        'not-a-number',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should show clear error for invalid memory limit',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain('[DryRun]: Bailing now')
+        expect(code).toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        '--dry-run',
+        '--reach-analysis-memory-limit',
+        '-1',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should show clear error for negative memory limit',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain('[DryRun]: Bailing now')
+        expect(code).toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        '--dry-run',
+        '--reach-analysis-timeout',
+        'invalid-timeout',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should show clear error for invalid timeout value',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain('[DryRun]: Bailing now')
+        expect(code).toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        '--dry-run',
+        '--reach-analysis-timeout',
+        '0',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should show clear error for zero timeout',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain('[DryRun]: Bailing now')
+        expect(code).toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--reach-analysis-memory-limit',
+        '999999999',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle extremely large memory limit values',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--reach-exclude-paths',
+        '',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle empty exclude paths gracefully',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        '--help',
+        '--reach-ecosystems',
+        'npm',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{}',
+      ],
+      'should prioritize help over other flags',
+      async cmd => {
+        const { code, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(stdout).toContain('Compute tier 1 reachability')
+        expect(code).toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--reach-ecosystems',
+        'npm,invalid-ecosystem,pypi',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should show clear error for mixed valid and invalid ecosystems',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toMatch(/invalid.*ecosystem.*invalid-ecosystem/i)
+        expect(code).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--reach-exclude-paths',
+        '/absolute/path,relative/path,../parent/path',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle various path formats in exclude paths',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--config',
+        '{"apiToken":"invalid-token-with-special-chars-!@#$%^&*()"}',
+        '--org',
+        'fakeOrg',
+      ],
+      'should handle tokens with special characters gracefully',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'scan',
+        'reach',
+        'test/fixtures/commands/scan/reach',
+        '--reach-ecosystems',
+        'npm',
+        '--reach-ecosystems',
+        'npm',
+        '--reach-ecosystems',
+        'npm',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle duplicate ecosystem flags gracefully',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+  })
 })

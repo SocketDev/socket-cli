@@ -3,7 +3,7 @@ import path from 'node:path'
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, invokeNpm } from '../../../test/utils.mts'
+import { cmdit, spawnNpm } from '../../../test/utils.mts'
 
 describe('socket organization list', async () => {
   const { binCliPath } = constants
@@ -12,7 +12,7 @@ describe('socket organization list', async () => {
     ['organization', 'list', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "List organizations associated with the Socket API token
@@ -57,7 +57,7 @@ describe('socket organization list', async () => {
     ],
     'should be ok with org name and id',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

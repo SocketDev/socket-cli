@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, invokeNpm } from '../../../test/utils.mts'
+import { cmdit, spawnNpm } from '../../../test/utils.mts'
 
 describe('socket login', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,7 @@ describe('socket login', async () => {
     ['login', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Setup Socket CLI with an API token and defaults
@@ -49,7 +49,7 @@ describe('socket login', async () => {
     ['login', 'mootools', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

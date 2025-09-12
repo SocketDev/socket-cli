@@ -3,7 +3,7 @@ import path from 'node:path'
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, invokeNpm } from '../../../test/utils.mts'
+import { cmdit, spawnNpm } from '../../../test/utils.mts'
 
 describe('socket repository list', async () => {
   const { binCliPath } = constants
@@ -12,7 +12,7 @@ describe('socket repository list', async () => {
     ['repository', 'list', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "List repositories in an organization
@@ -59,7 +59,7 @@ describe('socket repository list', async () => {
     ['repository', 'list', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -96,7 +96,7 @@ describe('socket repository list', async () => {
     ],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -114,7 +114,7 @@ describe('socket repository list', async () => {
     ['repository', 'list', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should report missing org name',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -147,7 +147,7 @@ describe('socket repository list', async () => {
     ],
     'should accept default org',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -173,7 +173,7 @@ describe('socket repository list', async () => {
     ],
     'should accept --org flag',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

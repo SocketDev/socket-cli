@@ -1,0 +1,10 @@
+{
+  "name": "@monorepo/lib",
+  "version": "1.0.0",
+  "description": "Lib package in monorepo",
+  "main": "index.js",
+  "dependencies": {
+    "moment": "2.25.0",
+    "underscore": "1.9.1"
+  }
+}

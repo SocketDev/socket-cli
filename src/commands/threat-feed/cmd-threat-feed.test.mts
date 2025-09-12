@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, invokeNpm } from '../../../test/utils.mts'
+import { cmdit, spawnNpm } from '../../../test/utils.mts'
 
 describe('socket threat-feed', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,7 @@ describe('socket threat-feed', async () => {
     ['threat-feed', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "[Beta] View the threat-feed
@@ -102,7 +102,7 @@ describe('socket threat-feed', async () => {
     ['threat-feed', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -137,7 +137,7 @@ describe('socket threat-feed', async () => {
     ],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -155,7 +155,7 @@ describe('socket threat-feed', async () => {
     ['threat-feed', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should report missing org name',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -187,7 +187,7 @@ describe('socket threat-feed', async () => {
     ],
     'should accept default org',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -212,7 +212,7 @@ describe('socket threat-feed', async () => {
     ],
     'should accept --org flag',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

@@ -13,7 +13,7 @@ import type { SemVer } from 'semver'
 
 export type NpmConfigOptions = {
   cwd?: string | undefined
-  env?: NodeJS.ProcessEnv | undefined
+  env?: Record<string, string> | undefined
   execPath?: string | undefined
   nodeVersion?: string | undefined
   npmCommand?: string | undefined
