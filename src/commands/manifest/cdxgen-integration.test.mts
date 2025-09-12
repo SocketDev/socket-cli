@@ -56,12 +56,11 @@ describe('Socket manifest cdxgen command', async () => {
         for (const command of ['-h', '--help']) {
           // eslint-disable-next-line no-await-in-loop
           await expect(
-            () =>
-              spawn(
-                constants.execPath,
-                [binCliPath, 'manifest', 'cdxgen', command],
-                spawnOpts,
-              ),
+            spawn(
+              constants.execPath,
+              [binCliPath, 'manifest', 'cdxgen', command],
+              spawnOpts,
+            ),
             // @ts-ignore toHaveStdoutInclude is defined above.
           ).resolves.toHaveStdoutInclude('CycloneDX Generator')
         }
@@ -71,12 +70,11 @@ describe('Socket manifest cdxgen command', async () => {
     it('should not forward an unknown short flag to cdxgen', async () => {
       const command = '-u'
       await expect(
-        () =>
-          spawn(
-            constants.execPath,
-            [binCliPath, 'manifest', 'cdxgen', command],
-            spawnOpts,
-          ),
+        spawn(
+          constants.execPath,
+          [binCliPath, 'manifest', 'cdxgen', command],
+          spawnOpts,
+        ),
         // @ts-ignore toHaveStderrInclude is defined above.
       ).rejects.toHaveStderrInclude(
         `${LOG_SYMBOLS.fail} Unknown argument: ${command}`,
@@ -86,12 +84,11 @@ describe('Socket manifest cdxgen command', async () => {
     it('should not forward an unknown flag to cdxgen', async () => {
       const command = '--unknown'
       await expect(
-        () =>
-          spawn(
-            constants.execPath,
-            [binCliPath, 'manifest', 'cdxgen', command],
-            spawnOpts,
-          ),
+        spawn(
+          constants.execPath,
+          [binCliPath, 'manifest', 'cdxgen', command],
+          spawnOpts,
+        ),
         // @ts-ignore toHaveStderrInclude is defined above
       ).rejects.toHaveStderrInclude(
         `${LOG_SYMBOLS.fail} Unknown argument: ${command}`,
