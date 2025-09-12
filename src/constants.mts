@@ -488,7 +488,7 @@ const LAZY_ENV = () => {
       envAsString(env['http_proxy']),
     // Set the timeout in milliseconds for Socket API requests.
     // https://nodejs.org/api/http.html#httprequesturl-options-callback
-    SOCKET_CLI_API_TIMEOUT: envAsNumber(env['SOCKET_CLI_API_TOKEN']),
+    SOCKET_CLI_API_TIMEOUT: envAsNumber(env['SOCKET_CLI_API_TIMEOUT']),
     // Set the Socket API token.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables
     SOCKET_CLI_API_TOKEN:
