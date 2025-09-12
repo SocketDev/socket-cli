@@ -1,7 +1,7 @@
 {
-  "name": "vulnerable-deps-test",
+  "name": "patch-test-fixture",
   "version": "1.0.0",
-  "description": "Test fixture with vulnerable dependencies",
+  "description": "Test fixture for patch command",
   "main": "index.js",
   "dependencies": {
     "lodash": "4.17.20",

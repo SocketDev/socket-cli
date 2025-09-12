@@ -110,17 +110,11 @@ describe('socket json', async () => {
   )
 
   cmdit(
-    [
-      'json',
-      '.',
-      '--dry-run',
-      '--config',
-      '{"apiToken":"fakeToken"}',
-    ],
+    ['json', '.', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should print a socket.json when found',
     async cmd => {
       const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
-        cwd: path.join(testPath, 'fixtures/commands/json')
+        cwd: path.join(testPath, 'fixtures/commands/json'),
       })
       expect(stdout.replace(/(?:\\r|\\x0d)/g, '')).toMatchInlineSnapshot(`
         "{
