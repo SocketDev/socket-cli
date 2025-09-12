@@ -8,7 +8,7 @@ import { getBaseBranch, getRepoInfo } from '../../utils/git.mts'
 import type { PrMatch } from './pull-request.mts'
 import type { RepoInfo } from '../../utils/git.mts'
 
-function ciRepoInfo(): RepoInfo | null {
+function ciRepoInfo(): RepoInfo | undefined {
   const { GITHUB_REPOSITORY } = constants.ENV
   if (!GITHUB_REPOSITORY) {
     debugFn('notice', 'miss: GITHUB_REPOSITORY env var')
@@ -16,7 +16,7 @@ function ciRepoInfo(): RepoInfo | null {
   const ownerSlashRepo = GITHUB_REPOSITORY
   const slashIndex = ownerSlashRepo.indexOf('/')
   if (slashIndex === -1) {
-    return null
+    return undefined
   }
   return {
     owner: ownerSlashRepo.slice(0, slashIndex),
@@ -31,7 +31,7 @@ export interface FixEnv {
   gitUser: string
   isCi: boolean
   prs: PrMatch[]
-  repoInfo: RepoInfo | null
+  repoInfo: RepoInfo | undefined
 }
 
 export async function getFixEnv(): Promise<FixEnv> {
@@ -61,7 +61,7 @@ export async function getFixEnv(): Promise<FixEnv> {
     )
   }
 
-  let repoInfo: RepoInfo | null = null
+  let repoInfo: RepoInfo | undefined
   if (isCi) {
     repoInfo = ciRepoInfo()
   }

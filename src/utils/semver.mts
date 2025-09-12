@@ -8,17 +8,17 @@ export type RangeStyle = 'pin' | 'preserve'
 
 export type { SemVer }
 
-export function getMajor(version: unknown): number | null {
+export function getMajor(version: unknown): number | undefined {
   try {
     const coerced = semver.coerce(version as string)
-    return coerced ? semver.major(coerced) : null
+    return coerced ? semver.major(coerced) : undefined
   } catch {}
-  return null
+  return undefined
 }
 
-export function getMinVersion(range: unknown): SemVer | null {
+export function getMinVersion(range: unknown): SemVer | undefined {
   try {
-    return semver.minVersion(range as string)
+    return semver.minVersion(range as string) ?? undefined
   } catch {}
-  return null
+  return undefined
 }

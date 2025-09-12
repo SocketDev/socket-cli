@@ -8,7 +8,7 @@ const GITHUB_ADVISORIES_URL = 'https://github.com/advisories'
 
 export type SocketFixBranchParser = (
   branch: string,
-) => SocketFixBranchParseResult | null
+) => SocketFixBranchParseResult | undefined
 
 export type SocketFixBranchParseResult = {
   ghsaId: string
@@ -18,10 +18,12 @@ export function createSocketFixBranchParser(
   ghsaId?: string | undefined,
 ): SocketFixBranchParser {
   const pattern = getSocketFixBranchPattern(ghsaId)
-  return function parse(branch: string): SocketFixBranchParseResult | null {
+  return function parse(
+    branch: string,
+  ): SocketFixBranchParseResult | undefined {
     const match = pattern.exec(branch) as [string, string] | null
     if (!match) {
-      return null
+      return undefined
     }
     const { 1: ghsaId } = match
     return { ghsaId } as SocketFixBranchParseResult

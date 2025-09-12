@@ -55,8 +55,8 @@ export type RepoInfo = {
 
 export async function getRepoInfo(
   cwd = process.cwd(),
-): Promise<RepoInfo | null> {
-  let info = null
+): Promise<RepoInfo | undefined> {
+  let info
   const quotedCmd = '`git remote get-url origin`'
   debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
@@ -82,12 +82,14 @@ export async function getRepoName(cwd = process.cwd()): Promise<string> {
 
 export async function getRepoOwner(
   cwd = process.cwd(),
-): Promise<string | null> {
+): Promise<string | undefined> {
   const repoInfo = await getRepoInfo(cwd)
-  return repoInfo?.owner ?? null
+  return repoInfo?.owner
 }
 
-export async function gitBranch(cwd = process.cwd()): Promise<string | null> {
+export async function gitBranch(
+  cwd = process.cwd(),
+): Promise<string | undefined> {
   const stdioPipeOptions: SpawnOptions = { cwd }
   let quotedCmd = '`git symbolic-ref --short HEAD`'
   debugFn('stdio', `spawn: ${quotedCmd}`)
@@ -125,7 +127,7 @@ export async function gitBranch(cwd = process.cwd()): Promise<string | null> {
       debugDir('inspect', { error: e })
     }
   }
-  return null
+  return undefined
 }
 
 /**
@@ -503,10 +505,10 @@ export async function gitUnstagedModifiedFiles(
   }
 }
 
-const parsedGitRemoteUrlCache = new Map<string, RepoInfo | null>()
+const parsedGitRemoteUrlCache = new Map<string, RepoInfo | undefined>()
 
-export function parseGitRemoteUrl(remoteUrl: string): RepoInfo | null {
-  let result = parsedGitRemoteUrlCache.get(remoteUrl) ?? null
+export function parseGitRemoteUrl(remoteUrl: string): RepoInfo | undefined {
+  let result = parsedGitRemoteUrlCache.get(remoteUrl)
   if (result) {
     return { ...result }
   }
