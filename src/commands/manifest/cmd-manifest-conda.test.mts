@@ -1,7 +1,12 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, invokeNpm, testPath } from '../../../test/utils.mts'
+import {
+  cleanOutput,
+  cmdit,
+  invokeNpm,
+  testPath,
+} from '../../../test/utils.mts'
 
 describe('socket manifest conda', async () => {
   const { binCliPath } = constants
@@ -141,7 +146,7 @@ describe('socket manifest conda', async () => {
           {},
           testPath,
         )
-        expect(stdout).toMatchInlineSnapshot(`
+        expect(cleanOutput(stdout)).toMatchInlineSnapshot(`
           "{
             "ok": true,
             "data": {
@@ -175,7 +180,7 @@ describe('socket manifest conda', async () => {
           {},
           testPath,
         )
-        expect(stdout).toMatchInlineSnapshot(`
+        expect(cleanOutput(stdout)).toMatchInlineSnapshot(`
           "# Converted Conda file
 
           This is the Conda \`environment.yml\` file converted to python \`requirements.txt\`:
