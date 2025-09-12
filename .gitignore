@@ -9,6 +9,8 @@ Thumbs.db
 /coverage
 /external
 /npm-debug.log
+/test/fixtures/commands/fix
+/test/fixtures/commands/patch
 **/.cache
 **/dist
 **/node_modules

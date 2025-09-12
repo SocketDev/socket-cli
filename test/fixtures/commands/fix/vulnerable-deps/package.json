@@ -1,0 +1,14 @@
+{
+  "name": "vulnerable-deps-test",
+  "version": "1.0.0",
+  "description": "Test fixture with vulnerable dependencies",
+  "main": "index.js",
+  "dependencies": {
+    "lodash": "4.17.20",
+    "express": "4.16.0",
+    "moment": "2.24.0"
+  },
+  "devDependencies": {
+    "mocha": "8.0.0"
+  }
+}

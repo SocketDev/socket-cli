@@ -1,0 +1,11 @@
+{
+  "name": "@monorepo/app",
+  "version": "1.0.0",
+  "description": "App package in monorepo",
+  "main": "index.js",
+  "dependencies": {
+    "@monorepo/lib": "1.0.0",
+    "express": "4.17.0",
+    "lodash": "4.17.19"
+  }
+}

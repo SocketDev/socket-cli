@@ -1,0 +1,12 @@
+{
+  "name": "monorepo-test",
+  "version": "1.0.0",
+  "description": "Test monorepo fixture",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "lerna": "6.0.0"
+  }
+}

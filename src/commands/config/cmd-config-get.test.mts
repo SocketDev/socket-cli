@@ -2,7 +2,7 @@ import semver from 'semver'
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, invokeNpm } from '../../../test/utils.mts'
+import { cmdit, spawnNpm } from '../../../test/utils.mts'
 
 describe('socket config get', async () => {
   const { binCliPath } = constants
@@ -11,7 +11,7 @@ describe('socket config get', async () => {
     ['config', 'get', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Get the value of a local CLI config item
@@ -65,7 +65,7 @@ describe('socket config get', async () => {
     ['config', 'get', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -94,7 +94,7 @@ describe('socket config get', async () => {
     ],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `"[DryRun]: No-op, call a sub-command; ok"`,
       )
@@ -116,7 +116,7 @@ describe('socket config get', async () => {
         ['config', 'get', 'apiToken', '--config', '{"apiToken":null}'],
         'should return undefined when token not set in config',
         async cmd => {
-          const { stderr, stdout } = await invokeNpm(binCliPath, cmd, {})
+          const { stderr, stdout } = await spawnNpm(binCliPath, cmd)
           expect(stdout).toMatchInlineSnapshot(
             `
             "apiToken: null
@@ -140,8 +140,8 @@ describe('socket config get', async () => {
         ['config', 'get', 'apiToken', '--config', '{"apiToken":null}'],
         'should return the env var token when set',
         async cmd => {
-          const { stderr, stdout } = await invokeNpm(binCliPath, cmd, {
-            SOCKET_CLI_API_TOKEN: 'abc',
+          const { stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+            env: { SOCKET_CLI_API_TOKEN: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(
             `
@@ -167,8 +167,8 @@ describe('socket config get', async () => {
         ['config', 'get', 'apiToken', '--config', '{"apiToken":null}'],
         'should back compat support for API token as well env var',
         async cmd => {
-          const { stderr, stdout } = await invokeNpm(binCliPath, cmd, {
-            SOCKET_SECURITY_API_KEY: 'abc',
+          const { stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+            env: { SOCKET_SECURITY_API_KEY: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(
             `
@@ -193,8 +193,8 @@ describe('socket config get', async () => {
         ['config', 'get', 'apiToken', '--config', '{"apiToken":null}'],
         'should be nice and support cli prefixed env var for token as well',
         async cmd => {
-          const { stderr, stdout } = await invokeNpm(binCliPath, cmd, {
-            SOCKET_CLI_API_TOKEN: 'abc',
+          const { stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+            env: { SOCKET_CLI_API_TOKEN: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(
             `
@@ -220,8 +220,8 @@ describe('socket config get', async () => {
         ['config', 'get', 'apiToken', '--config', '{"apiToken":null}'],
         'should be very nice and support cli prefixed env var for key as well since it is an easy mistake to make',
         async cmd => {
-          const { stderr, stdout } = await invokeNpm(binCliPath, cmd, {
-            SOCKET_CLI_API_KEY: 'abc',
+          const { stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+            env: { SOCKET_CLI_API_KEY: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(
             `
@@ -252,8 +252,8 @@ describe('socket config get', async () => {
         ],
         'should use the env var token when the config override also has a token set',
         async cmd => {
-          const { stderr, stdout } = await invokeNpm(binCliPath, cmd, {
-            SOCKET_CLI_API_KEY: 'abc',
+          const { stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+            env: { SOCKET_CLI_API_KEY: 'abc' },
           })
           expect(stdout).toMatchInlineSnapshot(
             `
@@ -284,7 +284,7 @@ describe('socket config get', async () => {
         ],
         'should use the config override when there is no env var',
         async cmd => {
-          const { stderr, stdout } = await invokeNpm(binCliPath, cmd, {})
+          const { stderr, stdout } = await spawnNpm(binCliPath, cmd)
           expect(stdout).toMatchInlineSnapshot(
             `
             "apiToken: pickmepickme
@@ -308,7 +308,7 @@ describe('socket config get', async () => {
         ['config', 'get', 'apiToken', '--config', '{}'],
         'should yield no token when override has none',
         async cmd => {
-          const { stderr, stdout } = await invokeNpm(binCliPath, cmd, {})
+          const { stderr, stdout } = await spawnNpm(binCliPath, cmd)
           expect(stdout).toMatchInlineSnapshot(
             `
             "apiToken: undefined
