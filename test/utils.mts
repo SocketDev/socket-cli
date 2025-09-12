@@ -85,11 +85,15 @@ export function cmdit(
   )
 }
 
-export async function invokeNpm(
+export type SpawnNpmOptions = {
+  env?: Record<string, string> | undefined
+  cwd?: string | undefined
+}
+
+export async function spawnNpm(
   entryPath: string,
   args: string[],
-  spawnEnv = {},
-  cwd = testPath,
+  options?: SpawnNpmOptions | undefined,
 ): Promise<{
   code: number
   error?: {
@@ -100,6 +104,10 @@ export async function invokeNpm(
   stdout: string
   stderr: string
 }> {
+  const { cwd = process.cwd(), env: spawnEnv } = {
+    __proto__: null,
+    ...options,
+  } as SpawnNpmOptions
   try {
     const output = await spawn(constants.execPath, [entryPath, ...args], {
       cwd,

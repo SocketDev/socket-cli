@@ -3,7 +3,7 @@ import path from 'node:path'
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, invokeNpm } from '../../../test/utils.mts'
+import { cmdit, spawnNpm } from '../../../test/utils.mts'
 
 describe('socket organization policy security', async () => {
   const { binCliPath } = constants
@@ -12,7 +12,7 @@ describe('socket organization policy security', async () => {
     ['organization', 'policy', 'security', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Retrieve the security policy of an organization
@@ -57,7 +57,7 @@ describe('socket organization policy security', async () => {
     ['organization', 'policy', 'security', '--dry-run', '--config', '{}'],
     'should reject dry run without proper args',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       // expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       //   "
@@ -91,7 +91,7 @@ describe('socket organization policy security', async () => {
     ],
     'should accept default org in v1',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -118,7 +118,7 @@ describe('socket organization policy security', async () => {
     ],
     'should accept --org flag in v1',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

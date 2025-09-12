@@ -1,7 +1,9 @@
+import path from 'node:path'
+
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, invokeNpm } from '../../../test/utils.mts'
+import { cmdit, spawnNpm, testPath } from '../../../test/utils.mts'
 
 describe('socket json', async () => {
   const { binCliPath } = constants
@@ -10,7 +12,7 @@ describe('socket json', async () => {
     ['json', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Display the \`socket.json\` that would be applied for target folder
@@ -42,7 +44,7 @@ describe('socket json', async () => {
     ['json', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -63,7 +65,7 @@ describe('socket json', async () => {
     ['json', '.', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should print error when file does not exist in folder',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -90,7 +92,7 @@ describe('socket json', async () => {
     ],
     'should print an error when the path to file does not exist',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -110,14 +112,16 @@ describe('socket json', async () => {
   cmdit(
     [
       'json',
-      './fixtures/commands/json',
+      '.',
       '--dry-run',
       '--config',
       '{"apiToken":"fakeToken"}',
     ],
     'should print a socket.json when found',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+        cwd: path.join(testPath, 'fixtures/commands/json')
+      })
       expect(stdout.replace(/(?:\\r|\\x0d)/g, '')).toMatchInlineSnapshot(`
         "{
           " _____         _       _     ": "Local config file for Socket CLI tool ( https://npmjs.org/socket ), to work with https://socket.dev",

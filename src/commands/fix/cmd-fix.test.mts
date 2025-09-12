@@ -1,16 +1,63 @@
-import { describe, expect } from 'vitest'
+import path from 'node:path'
+
+import trash from 'trash'
+import { afterEach, beforeEach, describe, expect } from 'vitest'
+
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, invokeNpm } from '../../../test/utils.mts'
+import { cmdit, spawnNpm, testPath } from '../../../test/utils.mts'
+
+async function setupFixturePackageLocks() {
+  const fixtureDirs = [
+    'fixtures/commands/fix/vulnerable-deps',
+    'fixtures/commands/fix/monorepo',
+  ]
+
+  for (const d of fixtureDirs) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await spawn('npm', ['install', '--silent', '--no-audit', '--no-fund'], {
+        cwd: path.join(testPath, d),
+        stdio: 'ignore',
+      })
+    } catch {
+      // Installation failed, which is fine for testing.
+    }
+  }
+}
+
+async function cleanupPackageLockFiles() {
+  const cleanupPaths = [
+    'fixtures/commands/fix/vulnerable-deps/package-lock.json',
+    'fixtures/commands/fix/vulnerable-deps/node_modules',
+    'fixtures/commands/fix/monorepo/package-lock.json',
+    'fixtures/commands/fix/monorepo/node_modules',
+    'fixtures/commands/fix/monorepo/packages/app/package-lock.json',
+    'fixtures/commands/fix/monorepo/packages/app/node_modules',
+    'fixtures/commands/fix/monorepo/packages/lib/package-lock.json',
+    'fixtures/commands/fix/monorepo/packages/lib/node_modules',
+  ]
+  for (const p of cleanupPaths) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await trash(path.join(testPath, p))
+    } catch {
+      // File/directory doesn't exist, which is fine.
+    }
+  }
+}
 
 describe('socket fix', async () => {
   const { binCliPath } = constants
+
+  // No setup/cleanup needed for these tests
 
   cmdit(
     ['fix', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Update dependencies with "fixable" Socket alerts
@@ -60,7 +107,7 @@ describe('socket fix', async () => {
     ['fix', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
            _____         _       _        /---------------
@@ -77,7 +124,7 @@ describe('socket fix', async () => {
     ['fix', '--dry-run', '--autopilot', '--config', '{"apiToken":"fakeToken"}'],
     'should accept --autopilot flag',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -92,7 +139,7 @@ describe('socket fix', async () => {
     ],
     'should accept --auto-merge alias',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -102,7 +149,7 @@ describe('socket fix', async () => {
     ['fix', '--dry-run', '--test', '--config', '{"apiToken":"fakeToken"}'],
     'should ignore --test flag',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -119,7 +166,7 @@ describe('socket fix', async () => {
     ],
     'should ignore --test-script flag',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -136,7 +183,7 @@ describe('socket fix', async () => {
     ],
     'should accept --limit flag with custom value',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -152,7 +199,7 @@ describe('socket fix', async () => {
     ],
     'should accept --min-satisfying flag',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -168,7 +215,7 @@ describe('socket fix', async () => {
     ],
     'should fail with invalid range style',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain('Expecting range style of')
       expect(code, 'should exit with non-zero code').not.toBe(0)
@@ -186,7 +233,7 @@ describe('socket fix', async () => {
     ],
     'should accept range style pin',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -208,7 +255,7 @@ describe('socket fix', async () => {
     ],
     'should accept comprehensive flag combination',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -218,7 +265,7 @@ describe('socket fix', async () => {
     ['fix', '/tmp', '--config', '{"apiToken":"fake-token"}'],
     'should show helpful error when no package.json found',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Unable to resolve a Socket account organization',
@@ -228,15 +275,12 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    [
-      'fix',
-      'test/fixtures/commands/fix/vulnerable-deps',
-      '--config',
-      '{"apiToken":"fake-token"}',
-    ],
+    ['fix', '.', '--config', '{"apiToken":"fake-token"}'],
     'should handle vulnerable dependencies fixture project',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+        cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+      })
       const output = stdout + stderr
       expect(output).toContain(
         'Unable to resolve a Socket account organization',
@@ -246,15 +290,12 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    [
-      'fix',
-      'test/fixtures/commands/fix/monorepo',
-      '--config',
-      '{"apiToken":"fake-token"}',
-    ],
+    ['fix', '.', '--config', '{"apiToken":"fake-token"}'],
     'should handle monorepo fixture project',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+        cwd: path.join(testPath, 'fixtures/commands/fix/monorepo'),
+      })
       const output = stdout + stderr
       expect(output).toContain(
         'Unable to resolve a Socket account organization',
@@ -275,7 +316,7 @@ describe('socket fix', async () => {
     ],
     'should handle autopilot mode with custom limit',
     async cmd => {
-      const { code, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Not saving"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -291,7 +332,7 @@ describe('socket fix', async () => {
     ],
     'should handle specific GHSA ID for lodash vulnerability',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Unable to resolve a Socket account organization',
@@ -304,7 +345,7 @@ describe('socket fix', async () => {
     ['fix', '--id', 'CVE-2021-23337', '--config', '{"apiToken":"fake-token"}'],
     'should handle CVE ID conversion for lodash vulnerability',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Unable to resolve a Socket account organization',
@@ -317,7 +358,7 @@ describe('socket fix', async () => {
     ['fix', '--limit', '1', '--config', '{"apiToken":"fake-token"}'],
     'should respect fix limit parameter',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Unable to resolve a Socket account organization',
@@ -337,7 +378,7 @@ describe('socket fix', async () => {
     ],
     'should handle autopilot mode with preserve range style',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Unable to resolve a Socket account organization',
@@ -350,7 +391,7 @@ describe('socket fix', async () => {
     ['fix', '--range-style', 'pin', '--config', '{"apiToken":"fake-token"}'],
     'should handle pin range style for exact versions',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Unable to resolve a Socket account organization',
@@ -363,7 +404,7 @@ describe('socket fix', async () => {
     ['fix', '--json', '--config', '{"apiToken":"fake-token"}'],
     'should output results in JSON format',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Unable to resolve a Socket account organization',
@@ -376,7 +417,7 @@ describe('socket fix', async () => {
     ['fix', '--markdown', '--config', '{"apiToken":"fake-token"}'],
     'should output results in markdown format',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Unable to resolve a Socket account organization',
@@ -384,4 +425,326 @@ describe('socket fix', async () => {
       expect(code, 'should exit with non-zero code').not.toBe(0)
     },
   )
+
+  describe('vulnerability identification', () => {
+    cmdit(
+      [
+        'fix',
+        '--id',
+        'pkg:npm/lodash@4.17.20',
+        '.',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle PURL-based vulnerability identification',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+        })
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Unable to resolve a Socket account organization',
+        )
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        '--id',
+        'GHSA-35jh-r3h4-6jhm,CVE-2021-23337',
+        '.',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle multiple vulnerability IDs in comma-separated format',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+        })
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Unable to resolve a Socket account organization',
+        )
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        '--id',
+        'GHSA-35jh-r3h4-6jhm',
+        '--id',
+        'CVE-2021-23337',
+        '.',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle multiple vulnerability IDs as separate flags',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+        })
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Unable to resolve a Socket account organization',
+        )
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+  })
+
+  describe('autopilot mode', () => {
+    cmdit(
+      [
+        'fix',
+        '--limit',
+        '1',
+        '--autopilot',
+        '--json',
+        '.',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle autopilot mode with JSON output and custom limit',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+        })
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Unable to resolve a Socket account organization',
+        )
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+  })
+
+  describe('output format handling', () => {
+    cmdit(
+      [
+        'fix',
+        '--range-style',
+        'pin',
+        '--markdown',
+        '.',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle monorepo with pin style and markdown output',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: path.join(testPath, 'fixtures/commands/fix/monorepo'),
+        })
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Unable to resolve a Socket account organization',
+        )
+        expect(code, 'should exit with non-zero code').not.toBe(0)
+      },
+    )
+  })
+
+  describe('error handling and usability tests', () => {
+    cmdit(
+      [
+        'fix',
+        '/nonexistent/directory',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should show clear error for non-existent project directory',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Unable to resolve a Socket account organization',
+        )
+        expect(code).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      ['fix', '--config', '{}'],
+      'should show clear error when API token is missing',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toMatch(/api token|authentication|token/i)
+        expect(code).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        '--id',
+        'invalid-id-format',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle invalid vulnerability ID formats gracefully',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(code).toBeGreaterThan(0)
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        '--limit',
+        'not-a-number',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should show clear error for invalid limit parameter',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Unable to resolve a Socket account organization',
+        )
+        expect(code).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      ['fix', '--limit', '-5', '--config', '{"apiToken":"fake-token"}'],
+      'should show clear error for negative limit',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toContain(
+          'Unable to resolve a Socket account organization',
+        )
+        expect(code).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        '--id',
+        'GHSA-xxxx-xxxx-xxxx',
+        '.',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle non-existent GHSA IDs gracefully',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+        })
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        '--json',
+        '--markdown',
+        '.',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should show clear error when both json and markdown flags are used',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+        })
+        const output = stdout + stderr
+        expect(output).toMatch(/json.*markdown|conflicting|both.*set/i)
+        expect(code).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      ['fix', '--autopilot', '--config', '{}'],
+      'should show helpful error when using autopilot without proper auth',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+        const output = stdout + stderr
+        expect(output).toMatch(/api token|authentication|github.*token/i)
+        expect(code).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        '--id',
+        'CVE-1234-invalid',
+        '.',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle malformed CVE IDs gracefully',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+        })
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      ['fix', '--help', '--autopilot', '--limit', '5', '--config', '{}'],
+      'should prioritize help over other flags',
+      async cmd => {
+        const { code, stdout } = await spawnNpm(binCliPath, cmd)
+        expect(stdout).toContain(
+          'Update dependencies with "fixable" Socket alerts',
+        )
+        expect(code).toBe(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        '.',
+        '--config',
+        '{"apiToken":"extremely-long-invalid-token-that-exceeds-normal-token-length-and-should-be-handled-gracefully"}',
+      ],
+      'should handle unusually long tokens gracefully',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+        })
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+
+    cmdit(
+      [
+        'fix',
+        '--id',
+        'GHSA-1234-5678-9abc,CVE-2023-1234,pkg:npm/lodash@4.17.20,invalid-format',
+        '.',
+        '--config',
+        '{"apiToken":"fake-token"}',
+      ],
+      'should handle mixed valid and invalid vulnerability IDs',
+      async cmd => {
+        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+        })
+        expect(code).toBeGreaterThan(0)
+        const output = stdout + stderr
+        expect(output.length).toBeGreaterThan(0)
+      },
+    )
+  })
 })

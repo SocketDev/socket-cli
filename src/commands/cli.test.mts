@@ -1,13 +1,13 @@
 import { describe, expect } from 'vitest'
 
-import { cmdit, invokeNpm } from '../../test/utils.mts'
+import { cmdit, spawnNpm } from '../../test/utils.mts'
 import constants from '../constants.mts'
 
 describe('socket root command', async () => {
   const { binCliPath } = constants
 
   cmdit(['--help', '--config', '{}'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+    const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`
       "CLI for Socket.dev
 
@@ -105,7 +105,7 @@ describe('socket root command', async () => {
     ['mootools', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await invokeNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `"[DryRun]: No-op, call a sub-command; ok"`,
       )
