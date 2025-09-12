@@ -26,7 +26,7 @@ describe('Socket manifest cdxgen command', async () => {
     },
   }
 
-  it(
+  it.skipIf(constants.WIN32 && constants.ENV.CI)(
     'should forwards known commands to cdxgen',
     {
       // Increase timeout for CI environments where cdxgen downloads can be slow.
