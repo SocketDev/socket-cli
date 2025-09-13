@@ -4,7 +4,11 @@ import colors from 'yoctocolors-cjs'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
-import { hasOwn, toSortedObject } from '@socketsecurity/registry/lib/objects'
+import {
+  getOwn,
+  hasOwn,
+  toSortedObject,
+} from '@socketsecurity/registry/lib/objects'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { getCliSpinners } from '@socketsecurity/registry/lib/spinner'
@@ -21,7 +25,11 @@ import {
 } from './config.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
 import constants, { NPM, NPX } from '../constants.mts'
-import { commonFlags } from '../flags.mts'
+import {
+  commonFlags,
+  commonFlagsToFilter,
+  flagsThatTakeValues,
+} from '../flags.mts'
 import { getVisibleTokenPrefix } from './sdk.mts'
 import { tildify } from './tildify.mts'
 
@@ -71,11 +79,41 @@ const HELP_INDENT = 2
 
 const HELP_PAD_NAME = 28
 
+/**
+ * Format a command description for help output.
+ */
 function description(command: CliSubcommand | undefined): string {
   const description = command?.description
   const str =
     typeof description === 'string' ? description : String(description)
   return indentString(str, HELP_PAD_NAME).trimStart()
+}
+
+/**
+ * Filter out common flags from argv before passing to subcommands.
+ */
+function filterCommonFlagsFromArgv(argv: readonly string[]): string[] {
+  const filtered: string[] = []
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]!
+    if (commonFlagsToFilter.has(arg)) {
+      // Skip flags that take values.
+      if (flagsThatTakeValues.has(arg)) {
+        // Skip the next argument (the flag value).
+        i += 1
+      }
+      // Skip boolean flags (no additional argument to skip).
+    } else if (
+      arg &&
+      Array.from(flagsThatTakeValues).some(flag => arg.startsWith(`${flag}=`))
+    ) {
+      // Skip --flag=value format.
+      continue
+    } else {
+      filtered.push(arg!)
+    }
+  }
+  return filtered
 }
 
 /**
@@ -104,6 +142,9 @@ function findBestCommandMatch(
   return bestMatch
 }
 
+/**
+ * Generate the ASCII banner header for Socket CLI commands.
+ */
 function getAsciiHeader(command: string, orgFlag: string | undefined) {
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
   const { REDACTED } = constants
@@ -156,19 +197,28 @@ function levenshteinDistance(a: string, b: string): number {
     for (let j = 1; j <= b.length; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1
       matrix[i]![j] = Math.min(
-        matrix[i - 1]![j]! + 1, // Deletion.
-        matrix[i]![j - 1]! + 1, // Insertion.
-        matrix[i - 1]![j - 1]! + cost, // Substitution.
+        // Deletion.
+        matrix[i - 1]![j]! + 1,
+        // Insertion.
+        matrix[i]![j - 1]! + 1,
+        // Substitution.
+        matrix[i - 1]![j - 1]! + cost,
       )
     }
   }
   return matrix[a.length]![b.length]!
 }
 
+/**
+ * Determine if the banner should be suppressed based on output flags.
+ */
 function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
   return Boolean(flags['json'] || flags['markdown'] || flags['nobanner'])
 }
 
+/**
+ * Emit the Socket CLI banner to stderr for branding and debugging.
+ */
 export function emitBanner(name: string, orgFlag: string | undefined) {
   // Print a banner at the top of each command.
   // This helps with brand recognition and marketing.
@@ -185,10 +235,16 @@ export function emitBanner(name: string, orgFlag: string | undefined) {
 // This module exports a getter that returns the current value.
 let lastSeenCommand = ''
 
+/**
+ * Get the last command that was processed by meowOrExit (for debugging).
+ */
 export function getLastSeenCommand(): string {
   return lastSeenCommand
 }
 
+/**
+ * Main function for handling CLI with subcommands using meow.
+ */
 export async function meowWithSubcommands(
   subcommands: Record<string, CliSubcommand>,
   options: MeowOptions,
@@ -201,12 +257,6 @@ export async function meowWithSubcommands(
     name,
     ...additionalOptions
   } = { __proto__: null, ...options }
-  const [commandOrAliasName_, ...rawCommandArgv] = argv
-  let commandOrAliasName = commandOrAliasName_
-  if (!commandOrAliasName && defaultSub) {
-    commandOrAliasName = defaultSub
-  }
-
   const flags: MeowFlags = {
     ...commonFlags,
     version: {
@@ -214,15 +264,22 @@ export async function meowWithSubcommands(
       hidden: true,
       description: 'Print the app version',
     },
-    ...additionalOptions.flags,
+    ...getOwn(additionalOptions, 'flags'),
   }
 
-  // No further args or first arg is a flag (shrug)
+  const filteredArgv = filterCommonFlagsFromArgv(argv)
+  const [commandOrAliasName_, ...rawCommandArgv] = filteredArgv
+  let commandOrAliasName = commandOrAliasName_
+  if (!commandOrAliasName && defaultSub) {
+    commandOrAliasName = defaultSub
+  }
+
+  // No further args or first arg is a flag (shrug).
   const isRootCommand =
     name === 'socket' &&
     (!commandOrAliasName || commandOrAliasName?.startsWith('-'))
 
-  // Try to support `socket <purl>` as a shorthand for `socket package score <purl>`
+  // Try to support `socket <purl>` as a shorthand for `socket package score <purl>`.
   if (!isRootCommand) {
     if (commandOrAliasName?.startsWith('pkg:')) {
       logger.info('Invoking `socket package score`.')
@@ -251,32 +308,32 @@ export async function meowWithSubcommands(
     flags['help'] = {
       ...flags['help'],
       hidden: false,
-    } as (typeof flags)['help']
+    } as MeowFlag
 
     flags['config'] = {
       ...flags['config'],
       hidden: false,
-    } as (typeof flags)['config']
+    } as MeowFlag
 
     flags['dryRun'] = {
       ...flags['dryRun'],
       hidden: false,
-    } as (typeof flags)['dryRun']
+    } as MeowFlag
 
     flags['maxOldSpaceSize'] = {
       ...flags['maxOldSpaceSize'],
       hidden: false,
-    } as (typeof flags)['maxOldSpaceSize']
+    } as MeowFlag
 
     flags['maxSemiSpaceSize'] = {
       ...flags['maxSemiSpaceSize'],
       hidden: false,
-    } as (typeof flags)['maxSemiSpaceSize']
+    } as MeowFlag
 
     flags['version'] = {
       ...flags['version'],
       hidden: false,
-    } as (typeof flags)['version']
+    } as MeowFlag
 
     delete flags['json']
     delete flags['markdown']
@@ -308,7 +365,6 @@ export async function meowWithSubcommands(
   if (noSpinner) {
     constants.spinner.spinner = getCliSpinners('ci')!
   }
-
   // Hard override the config if instructed to do so.
   // The env var overrides the --flag, which overrides the persisted config
   // Also, when either of these are used, config updates won't persist.
@@ -356,7 +412,9 @@ export async function meowWithSubcommands(
     const commandDefinition = commandName ? subcommands[commandName] : undefined
     // Third: If a valid command has been found, then we run it...
     if (commandDefinition) {
-      return await commandDefinition.run(commandArgv, importMeta, {
+      // Filter common flags from commandArgv as well.
+      const filteredCommandArgv = filterCommonFlagsFromArgv(commandArgv)
+      return await commandDefinition.run(filteredCommandArgv, importMeta, {
         parentName: name,
       })
     }
@@ -555,7 +613,7 @@ export async function meowWithSubcommands(
 
   // Parse it again. Config overrides should now be applied (may affect help).
   // Note: this is displayed as help screen if the command does not override it
-  //       (which is the case for most sub-commands with sub-commands)
+  //       (which is the case for most sub-commands with sub-commands).
   const cli2 = meow({
     argv,
     importMeta,
@@ -575,7 +633,7 @@ export async function meowWithSubcommands(
   // ...else we provide basic instructions and help.
   if (!shouldSuppressBanner(cli2.flags)) {
     emitBanner(name, orgFlag)
-    // meow will add newline so don't add stderr spacing here
+    // Meow will add newline so don't add stderr spacing here.
   }
   if (!cli2.flags['help'] && cli2.flags['dryRun']) {
     process.exitCode = 0
@@ -588,7 +646,8 @@ export async function meowWithSubcommands(
 }
 
 /**
- * Note: meow will exit immediately if it calls its .showHelp()
+ * Create meow CLI instance or exit with help/error (meow will exit immediately
+ * if it calls .showHelp()).
  */
 export function meowOrExit({
   allowUnknownFlags = true,
@@ -669,7 +728,6 @@ export function meowOrExit({
   // Now test for help state. Run Meow again. If it exits now, it must be due
   // to wanting to print the help screen. But it would exit(0) and we want a
   // consistent exit(2) for that case (missing input).
-  // TODO: Move away from meow.
   process.exitCode = 2
   meow({
     argv,

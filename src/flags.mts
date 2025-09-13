@@ -5,6 +5,11 @@ import terminalLink from 'terminal-link'
 
 import constants from './constants.mts'
 
+// Simple camelCase to kebab-case converter to avoid circular dependency
+function camelToKebab(str: string): string {
+  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
+}
+
 import type { Flag } from 'meow'
 
 // Meow doesn't expose this.
@@ -228,3 +233,43 @@ export const validationFlags: MeowFlags = {
     description: 'Exits with an error code if any matching issues are found',
   },
 }
+
+// Flags that are handled globally and should be filtered out before passing to subcommands.
+export const globalFlagsToFilter = new Set([
+  'config',
+  'maxOldSpaceSize',
+  'maxSemiSpaceSize',
+  'nobanner',
+  'spinner',
+])
+
+// Convert flag names to actual flag strings (--flag-name, -f, --no-spinner)
+export const commonFlagsToFilter = new Set(
+  Array.from(globalFlagsToFilter).flatMap(flagName => {
+    const flag = commonFlags[flagName]
+    if (!flag) {
+      return []
+    }
+    // Convert camelCase to kebab-case (maxOldSpaceSize -> max-old-space-size).
+    const longFlag = `--${camelToKebab(flagName)}`
+    const flags = [longFlag]
+    if (flag?.shortFlag) {
+      flags.push(`-${flag.shortFlag}`)
+    }
+    // Special case for --no-spinner (negated boolean).
+    if (flagName === 'spinner') {
+      flags.push('--no-spinner')
+    }
+    return flags
+  }),
+)
+
+// Flags that take values (not boolean flags) among the ones we're filtering.
+export const flagsThatTakeValues = new Set(
+  Object.entries(commonFlags)
+    .filter(
+      ([flagName, flag]) =>
+        globalFlagsToFilter.has(flagName) && flag.type !== 'boolean',
+    )
+    .map(([flagName]) => `--${camelToKebab(flagName)}`),
+)

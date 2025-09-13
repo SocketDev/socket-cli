@@ -5,6 +5,7 @@ import { indentString } from '@socketsecurity/registry/lib/strings'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { getRequirements, getRequirementsKey } from './requirements.mts'
+import { camelToKebab } from './strings.mts'
 
 import type { MeowFlags } from '../flags.mts'
 
@@ -21,10 +22,6 @@ type HelpListOptions = {
 type ListDescription =
   | { description: string }
   | { description: string; hidden: boolean }
-
-function camelToKebab(string: string): string {
-  return string.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
-}
 
 export function getFlagApiRequirementsOutput(
   cmdPath: string,
