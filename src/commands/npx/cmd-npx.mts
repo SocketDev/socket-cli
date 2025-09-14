@@ -7,7 +7,10 @@ import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagApiRequirementsOutput } from '../../utils/output-formatting.mts'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 
 const require = createRequire(import.meta.url)
 
@@ -26,7 +29,7 @@ export const cmdNpx = {
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  { parentName }: CliCommandContext,
 ): Promise<void> {
   const config: CliCommandConfig = {
     commandName: CMD_NAME,

@@ -13,7 +13,10 @@ import { getOutputKind } from '../../utils/get-output-kind.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 
 const config: CliCommandConfig = {
   commandName: 'wrapper',
@@ -48,7 +51,7 @@ export const cmdWrapper = {
 async function run(
   argv: readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  { parentName }: CliCommandContext,
 ): Promise<void> {
   // I don't think meow would mess with this but ...
   if (argv[0] === '--postinstall') {

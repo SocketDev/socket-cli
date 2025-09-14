@@ -22,7 +22,10 @@ import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
 import type { MeowFlags } from '../../flags.mts'
 import type { PURL_Type } from '../../utils/ecosystem.mts'
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 
 export const CMD_NAME = 'reach'
 
@@ -55,7 +58,7 @@ export const cmdScanReach = {
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  { parentName }: CliCommandContext,
 ): Promise<void> {
   const config: CliCommandConfig = {
     commandName: CMD_NAME,

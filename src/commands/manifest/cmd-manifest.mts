@@ -9,7 +9,10 @@ import { commonFlags } from '../../flags.mts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 
 const config: CliCommandConfig = {
   commandName: 'manifest',
@@ -55,7 +58,7 @@ export const cmdManifest = {
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  { parentName }: CliCommandContext,
 ): Promise<void> {
   await meowWithSubcommands(
     {

@@ -20,7 +20,10 @@ import { RangeStyles } from '../../utils/semver.mts'
 import { getDefaultOrgSlug } from '../ci/fetch-default-org-slug.mts'
 
 import type { MeowFlag, MeowFlags } from '../../flags.mts'
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 import type { RangeStyle } from '../../utils/semver.mts'
 
 export const CMD_NAME = 'fix'
@@ -138,7 +141,7 @@ const hiddenFlags: MeowFlags = {
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  { parentName }: CliCommandContext,
 ): Promise<void> {
   const config: CliCommandConfig = {
     commandName: CMD_NAME,

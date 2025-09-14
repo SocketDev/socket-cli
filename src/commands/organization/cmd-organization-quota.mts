@@ -9,7 +9,10 @@ import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 
 const config: CliCommandConfig = {
   commandName: 'quota',
@@ -41,7 +44,7 @@ export const cmdOrganizationQuota = {
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  { parentName }: CliCommandContext,
 ): Promise<void> {
   const cli = meowOrExit({
     argv,

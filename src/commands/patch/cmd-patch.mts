@@ -17,7 +17,10 @@ import {
 } from '../../utils/output-formatting.mts'
 import { getPurlObject } from '../../utils/purl.mts'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 import type { PurlObject } from '../../utils/purl.mts'
 import type { PackageURL } from '@socketregistry/packageurl-js'
 
@@ -36,7 +39,7 @@ export const cmdPatch = {
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  { parentName }: CliCommandContext,
 ): Promise<void> {
   const config: CliCommandConfig = {
     commandName: CMD_NAME,

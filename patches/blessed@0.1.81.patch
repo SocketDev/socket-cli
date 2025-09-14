@@ -51,3 +51,61 @@ index 0b1e56fadcf60719ca2e5231447ad2f8ace44bda..1494b715fb8f2143505bb2b5cea053d8
  };
  
  Program.prototype.bel =
+diff --git a/lib/tput.js b/lib/tput.js
+index 2a57f58b08e797e9751983eef917c127481770d5..aec81d28014cd7b9527d114dd0e9530acf1535ab 100644
+--- a/lib/tput.js
++++ b/lib/tput.js
+@@ -366,7 +366,7 @@ Tput.prototype.parseTerminfo = function(data, file) {
+   o = 0;
+   for (; i < l; i += 2) {
+     v = Tput.numbers[o++];
+-    if (data[i + 1] === 0377 && data[i] === 0377) {
++    if (data[i + 1] === 0o377 && data[i] === 0o377) {
+       info.numbers[v] = -1;
+     } else {
+       info.numbers[v] = (data[i + 1] << 8) | data[i];
+@@ -379,7 +379,7 @@ Tput.prototype.parseTerminfo = function(data, file) {
+   o = 0;
+   for (; i < l; i += 2) {
+     v = Tput.strings[o++];
+-    if (data[i + 1] === 0377 && data[i] === 0377) {
++    if (data[i + 1] === 0o377 && data[i] === 0o377) {
+       info.strings[v] = -1;
+     } else {
+       info.strings[v] = (data[i + 1] << 8) | data[i];
+@@ -533,7 +533,7 @@ Tput.prototype.parseExtended = function(data) {
+   var _numbers = [];
+   l = i + h.numCount * 2;
+   for (; i < l; i += 2) {
+-    if (data[i + 1] === 0377 && data[i] === 0377) {
++    if (data[i + 1] === 0o377 && data[i] === 0o377) {
+       _numbers.push(-1);
+     } else {
+       _numbers.push((data[i + 1] << 8) | data[i]);
+@@ -544,7 +544,7 @@ Tput.prototype.parseExtended = function(data) {
+   var _strings = [];
+   l = i + h.strCount * 2;
+   for (; i < l; i += 2) {
+-    if (data[i + 1] === 0377 && data[i] === 0377) {
++    if (data[i + 1] === 0o377 && data[i] === 0o377) {
+       _strings.push(-1);
+     } else {
+       _strings.push((data[i + 1] << 8) | data[i]);
+@@ -926,7 +926,7 @@ Tput.prototype._compile = function(info, key, str) {
+         echo('sprintf("'+ cap[0].replace(':-', '-') + '", stack.pop())');
+       } else if (cap[3] === 'c') {
+         echo('(v = stack.pop(), isFinite(v) '
+-          + '? String.fromCharCode(v || 0200) : "")');
++          + '? String.fromCharCode(v || 0o200) : "")');
+       } else {
+         echo('stack.pop()');
+       }
+@@ -2276,7 +2276,7 @@ function sprintf(src) {
+         break;
+       case 'c': // char
+         param = isFinite(param)
+-          ? String.fromCharCode(param || 0200)
++          ? String.fromCharCode(param || 0o200)
+           : '';
+         break;
+     }
