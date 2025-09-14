@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Setup pnpm
-        uses: ./.github/actions/setup-pnpm
+        uses: SocketDev/socket-cli/.github/actions/setup-pnpm@6e88e402e06dcb99ea2dcff676110c4d8fe4b025
         with:
           node-version: '22'
           pnpm-version: '^10.16.0'
