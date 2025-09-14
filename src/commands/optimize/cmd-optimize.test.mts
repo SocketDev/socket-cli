@@ -1,67 +1,27 @@
 import path from 'node:path'
 
-import trash from 'trash'
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
-import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../../src/constants.mts'
 import { cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 
-import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
-const setupFixturePackageLocks = async () => {
-  const fixtures = [
-    { dir: 'fixtures/commands/optimize/pnpm', pm: 'pnpm', args: ['install', '--silent'] },
-    { dir: 'fixtures/commands/optimize/npm', pm: 'npm', args: ['install', '--silent', '--no-audit', '--no-fund'] },
-    { dir: 'fixtures/commands/optimize/yarn', pm: 'yarn', args: ['install', '--silent'] },
-  ]
+async function revertFixtureChanges() {
+  // Use git to revert all changes in the fixture directories
+  const fixtureBasePath = path.join(testPath, 'fixtures/commands/optimize')
 
-  await Promise.all(
-    fixtures.map(({ dir, pm, args }) =>
-      spawn(pm, args, {
-        cwd: path.join(testPath, dir),
-        stdio: 'ignore',
-      }),
-    ),
-  )
-}
+  await spawn('git', ['checkout', 'HEAD', '--', '.'], {
+    cwd: fixtureBasePath,
+    stdio: 'ignore',
+  })
 
-async function cleanupPackageLockFiles() {
-  const packageManagers = ['npm', 'pnpm', 'yarn']
-  const lockFiles = ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'node_modules']
-
-  const cleanupPaths = packageManagers.flatMap(pm =>
-    lockFiles.map(lockFile => path.join(testPath, 'fixtures/commands/optimize', pm, lockFile))
-  )
-
-  await trash(cleanupPaths)
-}
-
-async function cleanupFixturePackageJson() {
-  const packageManagers = ['npm', 'pnpm', 'yarn']
-
-  await Promise.all(
-    packageManagers.map(async (pm) => {
-      const fixturePath = path.join(testPath, 'fixtures/commands/optimize', pm, 'package.json')
-      const editablePackageJson = await readPackageJson(fixturePath, {
-        editable: true,
-      })
-
-      // Remove package manager specific override fields.
-      editablePackageJson.update({
-        // npm fields
-        overrides: undefined,
-        // yarn fields
-        resolutions: undefined,
-        // pnpm fields
-        pnpm: undefined,
-      } as Partial<PackageJson>)
-
-      await editablePackageJson.save()
-    })
-  )
+  // Clean up any untracked files (node_modules, etc.)
+  await spawn('git', ['clean', '-fd', '.'], {
+    cwd: fixtureBasePath,
+    stdio: 'ignore',
+  })
 }
 
 describe('socket optimize', async () => {
@@ -69,20 +29,19 @@ describe('socket optimize', async () => {
   const fixtureDir = path.join(testPath, 'fixtures/commands/optimize')
 
   beforeAll(async () => {
-    // Set up fixtures once for all tests.
-    await Promise.all([cleanupPackageLockFiles(), cleanupFixturePackageJson()])
-    await setupFixturePackageLocks()
-  }, 60_000) // Longer timeout for initial setup
+    // Ensure fixtures are in clean state before tests.
+    await revertFixtureChanges()
+  })
 
   afterEach(async () => {
-    // Reset package.json after tests that might modify it.
-    await cleanupFixturePackageJson()
-  }, 30_000) // Timeout for package.json cleanup
+    // Revert all changes after each test using git.
+    await revertFixtureChanges()
+  })
 
   afterAll(async () => {
     // Clean up once after all tests.
-    await Promise.all([cleanupPackageLockFiles(), cleanupFixturePackageJson()])
-  }, 60_000) // Longer timeout for final cleanup
+    await revertFixtureChanges()
+  })
 
   cmdit(
     ['optimize', '--help', '--config', '{}'],
