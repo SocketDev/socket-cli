@@ -21,9 +21,18 @@ concurrency:
 jobs:
   test:
     name: 'Tests'
-    uses: SocketDev/workflows/.github/workflows/reusable-base.yml@master
-    with:
-      no-lockfile: true
-      npm-test-script: 'test-ci'
-      node-versions: '20,22,24'
-      os: 'ubuntu-latest,windows-latest'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        node-version: [20, 22, 24]
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Setup PNPM
+        uses: ./.github/actions/setup-pnpm
+        with:
+          node-version: ${{ matrix.node-version }}
+          pnpm-version: '^10.16.0'
+
+      - name: Run tests
+        run: pnpm run test-ci

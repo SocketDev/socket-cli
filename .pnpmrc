@@ -1,0 +1,14 @@
+# Delayed dependency updates - wait 7 days (10080 minutes) before allowing new packages.
+minimumReleaseAge=10080
+
+# Auto-install peers.
+auto-install-peers=true
+
+# Strict peer dependencies.
+strict-peer-dependencies=false
+
+# Use node-linker to ensure better compatibility.
+node-linker=isolated
+
+# Save exact versions (like npm --save-exact).
+save-exact=true
