@@ -1,9 +1,8 @@
-Index: /string_decoder/index.js
-===================================================================
---- /string_decoder/index.js
-+++ /string_decoder/index.js
-@@ -138,9 +138,9 @@
-   }
+diff --git a/index.js b/index.js
+index b00e54fb7909827a02b6fa96ef55bd4dd85a3fe7..36571dbb3d6d603e961921cc401f05449818e486 100644
+--- a/index.js
++++ b/index.js
+@@ -139,7 +139,7 @@ StringDecoder.prototype.write = function(buffer) {
  
    charStr += buffer.toString(this.encoding, 0, end);
  
@@ -12,4 +11,3 @@ Index: /string_decoder/index.js
    var charCode = charStr.charCodeAt(end);
    // CESU-8: lead surrogate (D800-DBFF) is also the incomplete character
    if (charCode >= 0xD800 && charCode <= 0xDBFF) {
-     var size = this.surrogateSize;

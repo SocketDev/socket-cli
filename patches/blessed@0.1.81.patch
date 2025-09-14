@@ -1,0 +1,53 @@
+diff --git a/lib/gpmclient.js b/lib/gpmclient.js
+index 348bb45e753047371a916190a88cf9553b8b638e..cab2ba454bed24af336014a0304e4374cf161794 100644
+--- a/lib/gpmclient.js
++++ b/lib/gpmclient.js
+@@ -190,7 +190,7 @@ function GpmClient(options) {
+   }
+ }
+ 
+-GpmClient.prototype.__proto__ = EventEmitter.prototype;
++Object.setPrototypeOf(GpmClient.prototype, EventEmitter.prototype);
+ 
+ GpmClient.prototype.stop = function() {
+   if (this.gpm) {
+diff --git a/lib/program.js b/lib/program.js
+index 0b1e56fadcf60719ca2e5231447ad2f8ace44bda..1494b715fb8f2143505bb2b5cea053d8e2453b3e 100644
+--- a/lib/program.js
++++ b/lib/program.js
+@@ -35,7 +35,7 @@ function Program(options) {
+ 
+   EventEmitter.call(this);
+ 
+-  if (!options || options.__proto__ !== Object.prototype) {
++  if (!options || Object.getPrototypeOf(options) !== Object.prototype) {
+     options = {
+       input: arguments[0],
+       output: arguments[1]
+@@ -151,7 +151,7 @@ Program.bind = function(program) {
+   });
+ };
+ 
+-Program.prototype.__proto__ = EventEmitter.prototype;
++Object.setPrototypeOf(Program.prototype, EventEmitter.prototype);
+ 
+ Program.prototype.type = 'program';
+ 
+@@ -195,7 +195,7 @@ Program.prototype.setupDump = function() {
+     return data.replace(/[\0\x80\x1b-\x1f\x7f\x01-\x1a]/g, function(ch) {
+       switch (ch) {
+         case '\0':
+-        case '\200':
++        case '\x80':
+           ch = '@';
+           break;
+         case '\x1b':
+@@ -1911,7 +1911,7 @@ Program.prototype.getCursorColor = function(callback) {
+ //Program.prototype.pad =
+ Program.prototype.nul = function() {
+   //if (this.has('pad')) return this.put.pad();
+-  return this._write('\200');
++  return this._write('\x80');
+ };
+ 
+ Program.prototype.bel =

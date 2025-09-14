@@ -11,12 +11,8 @@ import { nodeResolve } from '@rollup/plugin-node-resolve'
 import fastGlob from 'fast-glob'
 import trash from 'trash'
 
-import {
-  isDirEmptySync,
-  readJson,
-  writeJson,
-} from '@socketsecurity/registry/lib/fs'
-import { hasKeys, toSortedObject } from '@socketsecurity/registry/lib/objects'
+import { isDirEmptySync } from '@socketsecurity/registry/lib/fs'
+import { hasKeys } from '@socketsecurity/registry/lib/objects'
 import {
   fetchPackageManifest,
   readPackageJson,
@@ -108,6 +104,7 @@ async function copyExternalPackages() {
     await fs.cp(
       `${blessedContribNmPath}/${LICENSE_MD}`,
       `${blessedContribPath}/${LICENSE_MD}`,
+      { dereference: true },
     ),
   ])
 
@@ -160,8 +157,8 @@ async function copyPackage(pkgName, options) {
   const nmPath = path.join(constants.rootPath, NODE_MODULES)
   const pkgDestPath = path.join(constants.externalPath, pkgName)
   const pkgNmPath = path.join(nmPath, pkgName)
-  // Copy entire package folder over to dist.
-  await fs.cp(pkgNmPath, pkgDestPath, { recursive: true })
+  // Copy entire package folder over to dist with dereference to follow symlinks.
+  await fs.cp(pkgNmPath, pkgDestPath, { recursive: true, dereference: true })
   if (strict) {
     // Add 'use strict' directive to js files.
     const jsFiles = await fastGlob.glob(['**/*.js'], {
@@ -240,41 +237,23 @@ async function updatePackageLockFile() {
   if (!existsSync(rootPackageLockPath)) {
     return
   }
-  const lockJson = await readJson(rootPackageLockPath)
-  const rootPkg = lockJson.packages['']
-  const bin = resetBin(rootPkg.bin)
-  const dependencies = resetDependencies(rootPkg.dependencies)
-
-  lockJson.name = SOCKET_CLI_PACKAGE_NAME
-  rootPkg.name = SOCKET_CLI_PACKAGE_NAME
-  rootPkg.bin = bin
-  if (hasKeys(dependencies)) {
-    rootPkg.dependencies = dependencies
-  } else {
-    delete rootPkg.dependencies
+  const { spawn } = await import('@socketsecurity/registry/lib/spawn')
+  try {
+    await spawn(
+      'pnpm',
+      [
+        'install',
+        '--frozen-lockfile=false',
+        '--config.confirmModulesPurge=false',
+      ],
+      {
+        cwd: constants.rootPath,
+        stdio: 'inherit',
+      },
+    )
+  } catch (e) {
+    console.warn('Failed to update pnpm lock file:', e?.message)
   }
-  if (constants.ENV[INLINED_SOCKET_CLI_LEGACY_BUILD]) {
-    lockJson.name = SOCKET_CLI_LEGACY_PACKAGE_NAME
-    rootPkg.name = SOCKET_CLI_LEGACY_PACKAGE_NAME
-    rootPkg.bin = toSortedObject({
-      [SOCKET_CLI_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
-      ...bin,
-    })
-  } else if (constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]) {
-    lockJson.name = SOCKET_CLI_SENTRY_PACKAGE_NAME
-    rootPkg.name = SOCKET_CLI_SENTRY_PACKAGE_NAME
-    rootPkg.bin = {
-      [SOCKET_CLI_SENTRY_BIN_NAME_ALIAS]: bin[SOCKET_CLI_BIN_NAME],
-      [SOCKET_CLI_SENTRY_BIN_NAME]: bin[SOCKET_CLI_BIN_NAME],
-      [SOCKET_CLI_SENTRY_NPM_BIN_NAME]: bin[SOCKET_CLI_NPM_BIN_NAME],
-      [SOCKET_CLI_SENTRY_NPX_BIN_NAME]: bin[SOCKET_CLI_NPX_BIN_NAME],
-    }
-    rootPkg.dependencies = toSortedObject({
-      ...dependencies,
-      [SENTRY_NODE]: (await getSentryManifest()).version,
-    })
-  }
-  await writeJson(rootPackageLockPath, lockJson, { spaces: 2 })
 }
 
 async function removeEmptyDirs(thePath) {
@@ -440,8 +419,9 @@ export default async () => {
               updatePackageJson(),
               // Remove dist/vendor.js.map file.
               trash([path.join(distPath, `${VENDOR}.js.map`)]),
-              copyExternalPackages(),
             ])
+            // Copy external packages AFTER other operations to avoid conflicts.
+            await copyExternalPackages()
             // Update package-lock.json AFTER package.json.
             await updatePackageLockFile()
           },

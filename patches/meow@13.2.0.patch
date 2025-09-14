@@ -1,25 +1,22 @@
-Index: /meow/build/index.d.ts
-===================================================================
---- /meow/build/index.d.ts
-+++ /meow/build/index.d.ts
-@@ -1313,8 +1313,15 @@
+diff --git a/build/index.d.ts b/build/index.d.ts
+index 52de42fa99014c66f1379474a2a7da18dba25e0c..f16421c32db9ff75b9a29e6b2967e2834f776ae9 100644
+--- a/build/index.d.ts
++++ b/build/index.d.ts
+@@ -1313,6 +1313,13 @@ type Options<Flags extends AnyFlags> = {
  	*/
  	readonly allowUnknownFlags?: boolean;
  
- 	/**
++	/**
 +	Whether to collect unknown flags or not.
 +
 +	@default false
 +	*/
 +  readonly collectUnknownFlags?: boolean;
 +
-+	/**
+ 	/**
  	The number of spaces to use for indenting the help text.
  
- 	@default 2
- 	*/
-@@ -1353,8 +1360,13 @@
- 	Flags converted to camelCase excluding aliases.
+@@ -1354,6 +1361,11 @@ type Result<Flags extends AnyFlags> = {
  	*/
  	flags: CamelCasedProperties<TypedFlags<Flags>> & Record<string, unknown>;
  
@@ -31,13 +28,11 @@ Index: /meow/build/index.d.ts
  	/**
  	Flags converted camelCase including aliases.
  	*/
- 	unnormalizedFlags: TypedFlags<Flags> & Record<string, unknown>;
-Index: /meow/build/index.js
-===================================================================
---- /meow/build/index.js
-+++ /meow/build/index.js
-@@ -1,9 +1,9 @@
- import process from 'node:process';
+diff --git a/build/index.js b/build/index.js
+index f9f2afafcf263ca7785f4f733b04f06f35ab65ec..f3221c0b0c0ed71020db92baef4b605f18a4257f 100644
+--- a/build/index.js
++++ b/build/index.js
+@@ -2,7 +2,7 @@ import process from 'node:process';
  import { y as yargsParser, t as trimNewlines, r as redent, n as normalizePackageData, c as camelcaseKeys } from './dependencies.js';
  import { buildOptions } from './options.js';
  import { buildParserOptions } from './parser.js';
@@ -46,9 +41,7 @@ Index: /meow/build/index.js
  
  const buildResult = (options, parserOptions) => {
  	const {pkg: package_} = options;
- 	const argv = yargsParser(options.argv, parserOptions);
-@@ -54,8 +54,23 @@
- 		checkUnknownFlags(input);
+@@ -55,6 +55,21 @@ const buildResult = (options, parserOptions) => {
  	}
  
  	const flags = camelcaseKeys(argv, {exclude: ['--', /^\w$/]});
@@ -70,9 +63,7 @@ Index: /meow/build/index.js
  	const unnormalizedFlags = {...flags};
  
  	validate(flags, options);
- 
-@@ -73,8 +88,9 @@
- 
+@@ -74,6 +89,7 @@ const buildResult = (options, parserOptions) => {
  	return {
  		input,
  		flags,
@@ -80,13 +71,11 @@ Index: /meow/build/index.js
  		unnormalizedFlags,
  		pkg: package_,
  		help,
- 		showHelp,
-Index: /meow/build/validate.js
-===================================================================
---- /meow/build/validate.js
-+++ /meow/build/validate.js
-@@ -67,10 +67,12 @@
- 		...unknownFlags,
+diff --git a/build/validate.js b/build/validate.js
+index a42fabdc4d258013941ef8a51f742e15b77ae02d..d9fdaf39c9e912fa5cc572a96acff8be35872b5a 100644
+--- a/build/validate.js
++++ b/build/validate.js
+@@ -68,8 +68,10 @@ const reportUnknownFlags = unknownFlags => {
  	].join('\n'));
  };
  
@@ -98,9 +87,7 @@ Index: /meow/build/validate.js
  	if (unknownFlags.length > 0) {
  		reportUnknownFlags(unknownFlags);
  		process.exit(2);
- 	}
-@@ -118,5 +120,5 @@
- 		process.exit(2);
+@@ -119,4 +121,4 @@ const checkMissingRequiredFlags = (flags, receivedFlags, input) => {
  	}
  };
  

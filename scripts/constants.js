@@ -1,5 +1,6 @@
 'use strict'
 
+const { existsSync } = require('node:fs')
 const path = require('node:path')
 
 const registryConstants = require('@socketsecurity/registry/lib/constants')
@@ -78,7 +79,7 @@ const lazyRootPackageJsonPath = () =>
   path.join(constants.rootPath, 'package.json')
 
 const lazyRootPackageLockPath = () =>
-  path.join(constants.rootPath, 'package-lock.json')
+  path.join(constants.rootPath, 'pnpm-lock.yaml')
 
 const lazyRootPath = () => path.resolve(__dirname, '..')
 

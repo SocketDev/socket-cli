@@ -1,9 +1,8 @@
-Index: /@rollup/plugin-commonjs/dist/cjs/index.js
-===================================================================
---- /@rollup/plugin-commonjs/dist/cjs/index.js
-+++ /@rollup/plugin-commonjs/dist/cjs/index.js
-@@ -377,10 +377,11 @@
- 
+diff --git a/dist/cjs/index.js b/dist/cjs/index.js
+index c63c794d7ad1cc10f4b6c69c969cb70bac4ae38e..b1d0c214957b1a5da2fb5e805f39261a1df7bce0 100644
+--- a/dist/cjs/index.js
++++ b/dist/cjs/index.js
+@@ -378,8 +378,9 @@ export function getDefaultExportFromNamespaceIfNotNamed (n) {
  export function getAugmentedNamespace(n) {
    if (Object.prototype.hasOwnProperty.call(n, '__esModule')) return n;
    var f = n.default;
@@ -14,13 +13,11 @@ Index: /@rollup/plugin-commonjs/dist/cjs/index.js
  			var isInstance = false;
        try {
          isInstance = this instanceof a;
-       } catch {}
-Index: /@rollup/plugin-commonjs/dist/es/index.js
-===================================================================
---- /@rollup/plugin-commonjs/dist/es/index.js
-+++ /@rollup/plugin-commonjs/dist/es/index.js
-@@ -373,10 +373,11 @@
- 
+diff --git a/dist/es/index.js b/dist/es/index.js
+index d69dcad313aac4be0e1d03794c79908d47c08860..8f109fce0991e0927eb423a572bed2402dea5033 100644
+--- a/dist/es/index.js
++++ b/dist/es/index.js
+@@ -374,8 +374,9 @@ export function getDefaultExportFromNamespaceIfNotNamed (n) {
  export function getAugmentedNamespace(n) {
    if (Object.prototype.hasOwnProperty.call(n, '__esModule')) return n;
    var f = n.default;
@@ -31,4 +28,3 @@ Index: /@rollup/plugin-commonjs/dist/es/index.js
  			var isInstance = false;
        try {
          isInstance = this instanceof a;
-       } catch {}

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { LOG_SYMBOLS } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { cleanOutput, cmdit, spawnNpm, testPath } from '../../../test/utils.mts'
+import { cleanOutput, cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 import constants from '../../constants.mts'
 
 type PromiseSpawnOptions = Exclude<Parameters<typeof spawn>[2], undefined> & {
@@ -48,7 +48,7 @@ describe('socket manifest cdxgen', async () => {
       ['manifest', 'cdxgen', '--help'],
       'should support --help',
       async cmd => {
-        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+        const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
           // Need to pass it on as env because --config will break cdxgen
           env: { SOCKET_CLI_CONFIG: '{}' },
         })

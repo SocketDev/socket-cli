@@ -1,0 +1,24 @@
+diff --git a/index.js b/index.js
+index b29a35901014cda45e8b5e2572ad80f553895edf..c2a1bd9f3625c8ccbcff5981235394e1c1218d5f 100644
+--- a/index.js
++++ b/index.js
+@@ -92,8 +92,8 @@ Canvas.prototype.writeText = function(str, x, y) {
+   var bg = exports.colors[this.fontBg]
+   var fg = exports.colors[this.fontFg]
+   
+-  this.chars[coord] = '\033[3' + fg + 'm' + '\033[4' + bg + 'm' +  this.chars[coord]
+-  this.chars[coord+str.length-1] += '\033[39m\033[49m'
++  this.chars[coord] = '\x1B[3' + fg + 'm' + '\x1B[4' + bg + 'm' +  this.chars[coord]
++  this.chars[coord+str.length-1] += '\x1B[39m\x1B[49m'
+ }
+ 
+ Canvas.prototype.frame = function frame(delimiter) {
+@@ -111,7 +111,7 @@ Canvas.prototype.frame = function frame(delimiter) {
+     else if(this.content[i] == 0) {
+       result.push(' ');
+     } else {   
+-      result.push('\033[3' + this.colors[i] + 'm'+String.fromCharCode(0x2800 + this.content[i]) + '\033[39m')      
++      result.push('\x1B[3' + this.colors[i] + 'm'+String.fromCharCode(0x2800 + this.content[i]) + '\x1B[39m')      
+       //result.push(String.fromCharCode(0x2800 + this.content[i]))      
+     }
+   }
