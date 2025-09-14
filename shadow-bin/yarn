@@ -7,11 +7,11 @@ void (async () => {
   const rootPath = path.join(__dirname, '..')
   Module.enableCompileCache?.(path.join(rootPath, '.cache'))
 
-  const shadowBin = require(path.join(rootPath, 'dist/shadow-npm-bin.js'))
+  const shadowBin = require(path.join(rootPath, 'dist/shadow-yarn-bin.js'))
 
   process.exitCode = 1
 
-  const { spawnPromise } = await shadowBin('npm', process.argv.slice(2), { stdio: 'inherit' })
+  const { spawnPromise } = await shadowBin('yarn', process.argv.slice(2), { stdio: 'inherit' })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on('exit', (code, signalName) => {

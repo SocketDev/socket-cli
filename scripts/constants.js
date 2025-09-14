@@ -29,6 +29,8 @@ const INSTRUMENT_WITH_SENTRY = 'instrument-with-sentry'
 const ROLLUP_EXTERNAL_SUFFIX = '?commonjs-external'
 const SHADOW_NPM_BIN = 'shadow-npm-bin'
 const SHADOW_NPM_INJECT = 'shadow-npm-inject'
+const SHADOW_PNPM_BIN = 'shadow-pnpm-bin'
+const SHADOW_YARN_BIN = 'shadow-yarn-bin'
 const SLASH_NODE_MODULES_SLASH = '/node_modules/'
 const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_BIN_NAME_ALIAS = 'cli'
@@ -36,10 +38,14 @@ const SOCKET_CLI_SENTRY_BIN_NAME_ALIAS = 'cli-with-sentry'
 const SOCKET_CLI_LEGACY_PACKAGE_NAME = '@socketsecurity/cli'
 const SOCKET_CLI_NPM_BIN_NAME = 'socket-npm'
 const SOCKET_CLI_NPX_BIN_NAME = 'socket-npx'
+const SOCKET_CLI_PNPM_BIN_NAME = 'socket-pnpm'
+const SOCKET_CLI_YARN_BIN_NAME = 'socket-yarn'
 const SOCKET_CLI_PACKAGE_NAME = 'socket'
 const SOCKET_CLI_SENTRY_BIN_NAME = 'socket-with-sentry'
 const SOCKET_CLI_SENTRY_NPM_BIN_NAME = 'socket-npm-with-sentry'
 const SOCKET_CLI_SENTRY_NPX_BIN_NAME = 'socket-npx-with-sentry'
+const SOCKET_CLI_SENTRY_PNPM_BIN_NAME = 'socket-pnpm-with-sentry'
+const SOCKET_CLI_SENTRY_YARN_BIN_NAME = 'socket-yarn-with-sentry'
 const SOCKET_CLI_SENTRY_PACKAGE_NAME = '@socketsecurity/cli-with-sentry'
 
 const LAZY_ENV = () => {
@@ -106,17 +112,23 @@ const constants = createConstantsObject(
     ROLLUP_EXTERNAL_SUFFIX,
     SHADOW_NPM_BIN,
     SHADOW_NPM_INJECT,
+    SHADOW_PNPM_BIN,
+    SHADOW_YARN_BIN,
     SLASH_NODE_MODULES_SLASH,
     SOCKET_CLI_BIN_NAME,
     SOCKET_CLI_BIN_NAME_ALIAS,
     SOCKET_CLI_LEGACY_PACKAGE_NAME,
     SOCKET_CLI_NPM_BIN_NAME,
     SOCKET_CLI_NPX_BIN_NAME,
+    SOCKET_CLI_PNPM_BIN_NAME,
+    SOCKET_CLI_YARN_BIN_NAME,
     SOCKET_CLI_PACKAGE_NAME,
     SOCKET_CLI_SENTRY_BIN_NAME,
     SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
     SOCKET_CLI_SENTRY_NPM_BIN_NAME,
     SOCKET_CLI_SENTRY_NPX_BIN_NAME,
+    SOCKET_CLI_SENTRY_PNPM_BIN_NAME,
+    SOCKET_CLI_SENTRY_YARN_BIN_NAME,
     SOCKET_CLI_SENTRY_PACKAGE_NAME,
     blessedContribPath: undefined,
     blessedOptions: undefined,

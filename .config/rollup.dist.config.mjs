@@ -40,6 +40,8 @@ const {
   ROLLUP_EXTERNAL_SUFFIX,
   SHADOW_NPM_BIN,
   SHADOW_NPM_INJECT,
+  SHADOW_PNPM_BIN,
+  SHADOW_YARN_BIN,
   SLASH_NODE_MODULES_SLASH,
   SOCKET_CLI_BIN_NAME,
   SOCKET_CLI_BIN_NAME_ALIAS,
@@ -47,11 +49,15 @@ const {
   SOCKET_CLI_NPM_BIN_NAME,
   SOCKET_CLI_NPX_BIN_NAME,
   SOCKET_CLI_PACKAGE_NAME,
+  SOCKET_CLI_PNPM_BIN_NAME,
   SOCKET_CLI_SENTRY_BIN_NAME,
   SOCKET_CLI_SENTRY_BIN_NAME_ALIAS,
   SOCKET_CLI_SENTRY_NPM_BIN_NAME,
   SOCKET_CLI_SENTRY_NPX_BIN_NAME,
   SOCKET_CLI_SENTRY_PACKAGE_NAME,
+  SOCKET_CLI_SENTRY_PNPM_BIN_NAME,
+  SOCKET_CLI_SENTRY_YARN_BIN_NAME,
+  SOCKET_CLI_YARN_BIN_NAME,
 } = constants
 
 const BLESSED = 'blessed'
@@ -222,6 +228,8 @@ async function updatePackageJson() {
         [SOCKET_CLI_SENTRY_BIN_NAME]: bin[SOCKET_CLI_BIN_NAME],
         [SOCKET_CLI_SENTRY_NPM_BIN_NAME]: bin[SOCKET_CLI_NPM_BIN_NAME],
         [SOCKET_CLI_SENTRY_NPX_BIN_NAME]: bin[SOCKET_CLI_NPX_BIN_NAME],
+        [SOCKET_CLI_SENTRY_PNPM_BIN_NAME]: bin[SOCKET_CLI_PNPM_BIN_NAME],
+        [SOCKET_CLI_SENTRY_YARN_BIN_NAME]: bin[SOCKET_CLI_YARN_BIN_NAME],
       },
       dependencies: {
         ...dependencies,
@@ -294,6 +302,10 @@ function resetBin(bin) {
       bin?.[SOCKET_CLI_NPM_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPM_BIN_NAME],
     [SOCKET_CLI_NPX_BIN_NAME]:
       bin?.[SOCKET_CLI_NPX_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_NPX_BIN_NAME],
+    [SOCKET_CLI_PNPM_BIN_NAME]:
+      bin?.[SOCKET_CLI_PNPM_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_PNPM_BIN_NAME],
+    [SOCKET_CLI_YARN_BIN_NAME]:
+      bin?.[SOCKET_CLI_YARN_BIN_NAME] ?? bin?.[SOCKET_CLI_SENTRY_YARN_BIN_NAME],
   }
   const newBin = {
     ...(tmpBin[SOCKET_CLI_BIN_NAME]
@@ -305,12 +317,20 @@ function resetBin(bin) {
     ...(tmpBin[SOCKET_CLI_NPX_BIN_NAME]
       ? { [SOCKET_CLI_NPX_BIN_NAME]: tmpBin[SOCKET_CLI_NPX_BIN_NAME] }
       : {}),
+    ...(tmpBin[SOCKET_CLI_PNPM_BIN_NAME]
+      ? { [SOCKET_CLI_PNPM_BIN_NAME]: tmpBin[SOCKET_CLI_PNPM_BIN_NAME] }
+      : {}),
+    ...(tmpBin[SOCKET_CLI_YARN_BIN_NAME]
+      ? { [SOCKET_CLI_YARN_BIN_NAME]: tmpBin[SOCKET_CLI_YARN_BIN_NAME] }
+      : {}),
   }
   assert(
     util.isDeepStrictEqual(Object.keys(newBin).sort(naturalCompare), [
       SOCKET_CLI_BIN_NAME,
       SOCKET_CLI_NPM_BIN_NAME,
       SOCKET_CLI_NPX_BIN_NAME,
+      SOCKET_CLI_PNPM_BIN_NAME,
+      SOCKET_CLI_YARN_BIN_NAME,
     ]),
     "Update the rollup Legacy and Sentry build's .bin to match the default build.",
   )
@@ -337,6 +357,12 @@ export default async () => {
   const shadowNpmInjectSrcPath = normalizePath(
     path.join(srcPath, 'shadow/npm/inject.mts'),
   )
+  const shadowPnpmBinSrcPath = normalizePath(
+    path.join(srcPath, 'shadow/pnpm/bin.mts'),
+  )
+  const shadowYarnBinSrcPath = normalizePath(
+    path.join(srcPath, 'shadow/yarn/bin.mts'),
+  )
   const utilsSrcPath = normalizePath(path.join(srcPath, UTILS))
 
   return [
@@ -344,9 +370,15 @@ export default async () => {
     baseConfig({
       input: {
         cli: `${srcPath}/cli.mts`,
+        'npm-cli': `${srcPath}/npm-cli.mts`,
+        'npx-cli': `${srcPath}/npx-cli.mts`,
+        'pnpm-cli': `${srcPath}/pnpm-cli.mts`,
+        'yarn-cli': `${srcPath}/yarn-cli.mts`,
         [CONSTANTS]: `${srcPath}/constants.mts`,
         [SHADOW_NPM_BIN]: `${srcPath}/shadow/npm/bin.mts`,
         [SHADOW_NPM_INJECT]: `${srcPath}/shadow/npm/inject.mts`,
+        [SHADOW_PNPM_BIN]: `${srcPath}/shadow/pnpm/bin.mts`,
+        [SHADOW_YARN_BIN]: `${srcPath}/shadow/yarn/bin.mts`,
         ...(constants.ENV[INLINED_SOCKET_CLI_SENTRY_BUILD]
           ? {
               [INSTRUMENT_WITH_SENTRY]: `${srcPath}/${INSTRUMENT_WITH_SENTRY}.mts`,
@@ -372,6 +404,10 @@ export default async () => {
                 return SHADOW_NPM_BIN
               case shadowNpmInjectSrcPath:
                 return SHADOW_NPM_INJECT
+              case shadowPnpmBinSrcPath:
+                return SHADOW_PNPM_BIN
+              case shadowYarnBinSrcPath:
+                return SHADOW_YARN_BIN
               default:
                 if (id.startsWith(`${utilsSrcPath}/`)) {
                   return UTILS

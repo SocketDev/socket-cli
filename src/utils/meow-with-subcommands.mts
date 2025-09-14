@@ -654,10 +654,10 @@ export function meowOrExit({
   })
 
   const {
-    help,
+    help: helpFlag,
     org: orgFlag,
     spinner: spinnerFlag,
-    version,
+    version: versionFlag,
   } = cli.flags as {
     help: boolean
     org: string
@@ -697,12 +697,12 @@ export function meowOrExit({
   //   })
   // }
 
-  if (help) {
+  if (helpFlag) {
     cli.showHelp(0)
   }
 
   // Meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
-  if (version && !hasOwn(config.flags, 'version')) {
+  if (versionFlag && !hasOwn(config.flags, 'version')) {
     // Use `console.error` here instead of `logger.error` to match Meow behavior.
     console.error('Unknown flag\n--version')
     // eslint-disable-next-line n/no-process-exit

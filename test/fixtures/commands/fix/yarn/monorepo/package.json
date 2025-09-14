@@ -1,0 +1,12 @@
+{
+  "name": "monorepo-test-yarn",
+  "version": "1.0.0",
+  "description": "Test monorepo fixture (yarn)",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "axios": "1.3.2"
+  }
+}

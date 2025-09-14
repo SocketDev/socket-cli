@@ -1,4 +1,5 @@
 import { existsSync, rmSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 
 import colors from 'yoctocolors-cjs'
@@ -7,13 +8,17 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants, { NPM, PNPM } from '../../constants.mts'
 import shadowBin from '../../shadow/npm/bin.mts'
+import { findUp } from '../../utils/fs.mts'
+import { isYarnBerry } from '../../utils/yarn-version.mts'
+
+const require = createRequire(import.meta.url)
 
 import type {
   ShadowBinOptions,
   ShadowBinResult,
 } from '../../shadow/npm/bin.mts'
 
-const { PACKAGE_LOCK_JSON, YARN, YARN_LOCK } = constants
+const { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN, YARN_LOCK } = constants
 
 const nodejsPlatformTypes = new Set([
   'javascript',
@@ -75,28 +80,65 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     stdio: 'inherit',
   }
 
+  // Detect package manager based on lockfiles
+  const pnpmLockPath = await findUp(PNPM_LOCK_YAML, { onlyFiles: true })
+  const npmLockPath = pnpmLockPath
+    ? undefined
+    : await findUp(PACKAGE_LOCK_JSON, { onlyFiles: true })
+  const yarnLockPath =
+    pnpmLockPath || npmLockPath
+      ? undefined
+      : await findUp(YARN_LOCK, { onlyFiles: true })
+
   let cleanupPackageLock = false
   if (
     argvMutable['type'] !== YARN &&
     nodejsPlatformTypes.has(argvMutable['type'] as string) &&
-    existsSync(`./${YARN_LOCK}`)
+    yarnLockPath
   ) {
-    if (existsSync(`./${PACKAGE_LOCK_JSON}`)) {
+    if (npmLockPath) {
       argvMutable['type'] = NPM
     } else {
       // Use synp to create a package-lock.json from the yarn.lock,
       // based on the node_modules folder, for a more accurate SBOM.
       try {
-        const { spawnPromise: synpPromise } = await shadowBin(
-          'npx',
-          [
+        const useYarnBerry = isYarnBerry()
+        let args: string[]
+        let synpPromise
+
+        if (pnpmLockPath) {
+          args = [
+            'dlx',
+            `synp@${constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
+            '--source-file',
+            `./${YARN_LOCK}`,
+          ]
+          const shadowPnpmBin = /*@__PURE__*/ require(
+            constants.shadowPnpmBinPath,
+          )
+          synpPromise = (await shadowPnpmBin(args, shadowOpts)).spawnPromise
+        } else if (useYarnBerry) {
+          args = [
+            'dlx',
+            `synp@${constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
+            '--source-file',
+            `./${YARN_LOCK}`,
+          ]
+          const shadowYarnBin = /*@__PURE__*/ require(
+            constants.shadowYarnBinPath,
+          )
+          synpPromise = (await shadowYarnBin(args, shadowOpts)).spawnPromise
+        } else {
+          args = [
+            'exec',
             '--yes',
             `synp@${constants.ENV.INLINED_SOCKET_CLI_SYNP_VERSION}`,
             '--source-file',
             `./${YARN_LOCK}`,
-          ],
-          shadowOpts,
-        )
+          ]
+          synpPromise = (await shadowBin('npm', args, shadowOpts)).spawnPromise
+        }
+
         await synpPromise
         argvMutable['type'] = NPM
         cleanupPackageLock = true
@@ -104,15 +146,41 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     }
   }
 
-  const shadowResult = await shadowBin(
-    'npx',
-    [
-      '--yes',
-      `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
-      ...argvToArray(argvMutable),
-    ],
-    shadowOpts,
-  )
+  // Use appropriate package manager for cdxgen
+  let shadowResult
+  if (pnpmLockPath) {
+    const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
+    shadowResult = await shadowPnpmBin(
+      [
+        'dlx',
+        `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
+        ...argvToArray(argvMutable),
+      ],
+      shadowOpts,
+    )
+  } else if (yarnLockPath && isYarnBerry()) {
+    const shadowYarnBin = /*@__PURE__*/ require(constants.shadowYarnBinPath)
+    shadowResult = await shadowYarnBin(
+      [
+        'dlx',
+        `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
+        ...argvToArray(argvMutable),
+      ],
+      shadowOpts,
+    )
+  } else {
+    shadowResult = await shadowBin(
+      'npm',
+      [
+        'exec',
+        '--yes',
+        `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
+        '--',
+        ...argvToArray(argvMutable),
+      ],
+      shadowOpts,
+    )
+  }
 
   shadowResult.spawnPromise.process.on('exit', () => {
     if (cleanupPackageLock) {
