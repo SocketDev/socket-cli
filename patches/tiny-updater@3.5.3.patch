@@ -1,12 +1,13 @@
 diff --git a/dist/index.d.ts b/dist/index.d.ts
-index fcfeeb080e5a685e87e492e07c80f83ce87b33d5..0be113a3972d1cdaf5bf6091f9a7c44eb5eb5265 100644
+index fcfeeb080e5a685e87e492e07c80f83ce87b33d5..045047e8c253c74004f01f928d161d3ffe163afc 100644
 --- a/dist/index.d.ts
 +++ b/dist/index.d.ts
-@@ -1,4 +1,10 @@
+@@ -1,4 +1,11 @@
  import type { Options } from './types.js';
 -declare const updater: ({ name, version, ttl }: Options) => Promise<boolean>;
 +declare const updater: ({
 +    authInfo,
++    logCallback,
 +    name,
 +    registryUrl,
 +    version,
@@ -15,10 +16,10 @@ index fcfeeb080e5a685e87e492e07c80f83ce87b33d5..0be113a3972d1cdaf5bf6091f9a7c44e
  export default updater;
  export type { Options };
 diff --git a/dist/index.js b/dist/index.js
-index ac3994c9526fa2c751f3bfe7c05006bfe77c50b3..57346ff9e5e0f01871b623f9fa987ede76fb5163 100644
+index ac3994c9526fa2c751f3bfe7c05006bfe77c50b3..19a43bd23a6b78c81b6dbf87afc150323a954493 100644
 --- a/dist/index.js
 +++ b/dist/index.js
-@@ -3,11 +3,20 @@ import Store from './store.js';
+@@ -3,11 +3,21 @@ import Store from './store.js';
  import Utils from './utils.js';
  /* MAIN */
  //TODO: Account for non-latest releases
@@ -26,6 +27,7 @@ index ac3994c9526fa2c751f3bfe7c05006bfe77c50b3..57346ff9e5e0f01871b623f9fa987ede
 +const updater = async (options) => {
 +    const {
 +      authInfo,
++      logCallback,
 +      name,
 +      registryUrl,
 +      version,
@@ -41,17 +43,30 @@ index ac3994c9526fa2c751f3bfe7c05006bfe77c50b3..57346ff9e5e0f01871b623f9fa987ede
      if (!latest)
          return false;
      if (isFresh) {
+@@ -18,7 +28,10 @@ const updater = async ({ name, version, ttl = 0 }) => {
+         return false;
+     }
+     if (isFresh) {
+-        Utils.notify(name, version, latest);
++        const logger = logCallback
++          ? () => logCallback(name, version, latest)
++          : () => console.log(`\n\n📦 Update available for ${name}: ${version} → ${latest}`);
++        Utils.notify(logger);
+     }
+     return true;
+ };
 diff --git a/dist/types.d.ts b/dist/types.d.ts
-index 984202ceb64c20d0f4d9c463d32310755b83959c..443085786b937d740d342f348cad51df0b08678a 100644
+index 984202ceb64c20d0f4d9c463d32310755b83959c..1a5bd0366130a1d9ba3bf360632132905b725698 100644
 --- a/dist/types.d.ts
 +++ b/dist/types.d.ts
-@@ -1,11 +1,30 @@
+@@ -1,11 +1,31 @@
 +type AuthInfo = {
 +    type: string;
 +    token: string;
 +};
  type Options = {
 +    authInfo?: AuthInfo | undefined;
++    logCallback?: ((name: string, version: string, latest: string) => void) | undefined;
      name: string;
 +    registryUrl?: string | undefined;
      version: string;
@@ -79,10 +94,10 @@ index 984202ceb64c20d0f4d9c463d32310755b83959c..443085786b937d740d342f348cad51df
 +  UtilsGetLatestVersionOptions
 +};
 diff --git a/dist/utils.d.ts b/dist/utils.d.ts
-index 05ec4d0d4fc6a17f6c80b36cc03cbfe8008585cb..915d7afa05cc6055dc2c91c427fc2923eb6a6abc 100644
+index 05ec4d0d4fc6a17f6c80b36cc03cbfe8008585cb..ce9fd88382078dc9c8dc7547a455dddc5057fbe6 100644
 --- a/dist/utils.d.ts
 +++ b/dist/utils.d.ts
-@@ -1,9 +1,13 @@
+@@ -1,13 +1,17 @@
 +import { UtilsFetchOptions, UtilsGetLatestVersionOptions } from './types';
  declare const Utils: {
 -    fetch: (url: string) => Promise<{
@@ -98,8 +113,13 @@ index 05ec4d0d4fc6a17f6c80b36cc03cbfe8008585cb..915d7afa05cc6055dc2c91c427fc2923
      isNumber: (value: unknown) => value is number;
      isString: (value: unknown) => value is string;
      isUpdateAvailable: (current: string, latest: string) => boolean;
+     noop: () => undefined;
+-    notify: (name: string, version: string, latest: string) => void;
++    notify: (logger: () => void) => void;
+ };
+ export default Utils;
 diff --git a/dist/utils.js b/dist/utils.js
-index d16d8622706ac21b91879479100e164ddaa47201..93b8a2bbd175cfc09c0a9de7bb6473ca2fce374e 100644
+index d16d8622706ac21b91879479100e164ddaa47201..7df5618c1718f4bb10de9f8942c5a198d4e84853 100644
 --- a/dist/utils.js
 +++ b/dist/utils.js
 @@ -1,25 +1,37 @@
@@ -148,12 +168,17 @@ index d16d8622706ac21b91879479100e164ddaa47201..93b8a2bbd175cfc09c0a9de7bb6473ca
      },
      isNumber: (value) => {
          return typeof value === 'number';
-@@ -37,7 +49,7 @@ const Utils = {
+@@ -33,11 +45,10 @@ const Utils = {
+     noop: () => {
+         return;
+     },
+-    notify: (name, version, latest) => {
++    notify: (logger) => {
          if (!globalThis.process?.stdout?.isTTY)
              return; // Probably piping stdout
-         const log = () => console.log(`\n\n📦 Update available for ${colors.cyan(name)}: ${colors.gray(version)} → ${colors.green(latest)}`);
+-        const log = () => console.log(`\n\n📦 Update available for ${colors.cyan(name)}: ${colors.gray(version)} → ${colors.green(latest)}`);
 -        whenExit(log);
-+        signalExit.onExit(log);
++        signalExit.onExit(logger);
      }
  };
  /* EXPORT */
