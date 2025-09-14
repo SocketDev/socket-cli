@@ -242,9 +242,8 @@ async function run(
     parentName,
   })
 
-  const dryRun = !!cli.flags['dryRun']
+  const { dryRun } = cli.flags as { dryRun: boolean }
 
-  // TODO: Convert yargs to meow.
   const yargv = {
     ...yargsParse(argv as string[], yargsConfig),
   } as any
