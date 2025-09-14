@@ -26,19 +26,14 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+      - name: Setup pnpm
+        uses: ./.github/actions/setup-pnpm
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
-          cache: npm
-          scope: '@socketsecurity'
-
-      - name: Install dependencies
-        run: npm ci
+          pnpm-version: '^10.16.0'
+          install-deps: 'true'
+          socket-scan: 'false'
 
       - name: Run Socket Fix CLI
         env:
@@ -46,4 +41,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-        run: npx -y -p @socketsecurity/cli -c "socket fix --autopilot"
+        run: pnpm dlx @socketsecurity/cli fix --autopilot
