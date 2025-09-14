@@ -15,8 +15,12 @@ permissions:
 
 jobs:
   type-check:
-    uses: SocketDev/workflows/.github/workflows/type-check.yml@master
-    with:
-      no-lockfile: true
-      ts-versions: '5.9'
-      ts-libs: 'esnext'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: SocketDev/socket-cli/.github/actions/setup@35c25823d5247a8cd15628ef2d2062cd1c199544
+        with:
+          node-version: '22'
+
+      - name: Run type check
+        run: pnpm run check:tsc
