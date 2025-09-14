@@ -3,11 +3,15 @@ import { createRequire } from 'node:module'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants, { NPM } from '../../constants.mts'
-import { commonFlags } from '../../flags.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
+import { filterFlags } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagApiRequirementsOutput } from '../../utils/output-formatting.mts'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 
 const require = createRequire(import.meta.url)
 
@@ -26,8 +30,9 @@ export const cmdNpm = {
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  context: CliCommandContext,
 ): Promise<void> {
+  const { parentName } = { __proto__: null, ...context } as CliCommandContext
   const config: CliCommandConfig = {
     commandName: CMD_NAME,
     description,
@@ -71,7 +76,13 @@ async function run(
 
   process.exitCode = 1
 
-  const { spawnPromise } = await shadowBin(NPM, argv, { stdio: 'inherit' })
+  // Filter Socket flags from argv but keep --json for npm
+  const argsToForward = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
+    '--json'
+  ])
+  const { spawnPromise } = await shadowBin(NPM, argsToForward, {
+    stdio: 'inherit',
+  })
 
   // See https://nodejs.org/api/child_process.html#event-exit.
   spawnPromise.process.on(
