@@ -238,7 +238,7 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
 export async function queryApi(path: string, apiToken: string) {
   const baseUrl = getDefaultApiBaseUrl()
   if (!baseUrl) {
-    throw new Error('Socket API endpoint is not configured')
+    throw new Error('Socket API base URL is not configured.')
   }
 
   return await fetch(`${baseUrl}${baseUrl.endsWith('/') ? '' : '/'}${path}`, {

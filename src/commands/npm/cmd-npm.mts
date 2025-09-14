@@ -76,7 +76,7 @@ async function run(
 
   process.exitCode = 1
 
-  // Filter Socket flags from argv but keep --json for npm
+  // Filter Socket flags from argv but keep --json for npm.
   const argsToForward = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
     '--json',
   ])

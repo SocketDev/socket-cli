@@ -18,7 +18,7 @@ describe('Socket fix --id functionality', () => {
     nock.disableNetConnect()
     vi.clearAllMocks()
 
-    // Set up environment for GitHub API
+    // Set up environment for GitHub API.
     process.env.DISABLE_GITHUB_CACHE = 'true'
     process.env.SOCKET_CLI_GITHUB_TOKEN = 'test-token'
     process.env.GITHUB_API_URL = 'https://api.github.com'
@@ -72,7 +72,7 @@ describe('Socket fix --id functionality', () => {
       const lodashCve = 'CVE-2021-23337'
       const expectedGhsa = 'GHSA-35jh-r3h4-6jhm'
 
-      // Mock the GitHub API call for CVE to GHSA conversion
+      // Mock the GitHub API call for CVE to GHSA conversion.
       nock('https://api.github.com')
         .get('/advisories')
         .query({ cve_id: lodashCve, per_page: 1 })
@@ -103,7 +103,7 @@ describe('Socket fix --id functionality', () => {
     it('should handle CVE not found scenarios', async () => {
       const nonExistentCve = 'CVE-2025-9999'
 
-      // Mock the GitHub API to return empty results
+      // Mock the GitHub API to return empty results.
       nock('https://api.github.com')
         .get('/advisories')
         .query({ cve_id: nonExistentCve, per_page: 1 })
@@ -119,7 +119,7 @@ describe('Socket fix --id functionality', () => {
       const lodashPurl = 'pkg:npm/lodash@4.17.20'
       const expectedGhsas = ['GHSA-35jh-r3h4-6jhm', 'GHSA-4xc9-xhrj-v574']
 
-      // Mock the GitHub API call for PURL to GHSA conversion
+      // Mock the GitHub API call for PURL to GHSA conversion.
       nock('https://api.github.com')
         .get('/advisories')
         .query({ ecosystem: 'npm', affects: 'lodash@4.17.20' })
@@ -143,8 +143,8 @@ describe('Socket fix --id functionality', () => {
     it('should handle scoped packages with pkg: prefix', async () => {
       const scopedPurl = 'pkg:npm/@types/lodash@4.14.165'
 
-      // Mock the GitHub API call - note: current implementation only uses name part
-      // This is likely a bug that should be fixed to use full scoped package name
+      // Mock the GitHub API call - note: current implementation only uses name part.
+      // This is likely a bug that should be fixed to use full scoped package name.
       nock('https://api.github.com')
         .get('/advisories')
         .query({ ecosystem: 'npm', affects: 'lodash@4.14.165' })
@@ -172,7 +172,7 @@ describe('Socket fix --id functionality', () => {
         'pkg:npm/lodash@4.17.20',
       ]
 
-      // Mock GitHub API calls
+      // Mock GitHub API calls.
       nock('https://api.github.com')
         .get('/advisories')
         .query({ cve_id: 'CVE-2021-23337', per_page: 1 })
@@ -205,7 +205,7 @@ describe('Socket fix --id functionality', () => {
         'pkg:npm/lodash@4.17.20', // valid
       ]
 
-      // Mock GitHub API call for the valid PURL
+      // Mock GitHub API call for the valid PURL.
       nock('https://api.github.com')
         .get('/advisories')
         .query({ ecosystem: 'npm', affects: 'lodash@4.17.20' })
@@ -233,7 +233,7 @@ describe('Socket fix --id functionality', () => {
         '   ',
       ]
 
-      // Mock GitHub API call for the Maven PURL (which will return no results)
+      // Mock GitHub API call for the Maven PURL (which will return no results).
       nock('https://api.github.com')
         .get('/advisories')
         .query({ ecosystem: 'maven', affects: 'jackson-databind' })
@@ -253,7 +253,7 @@ describe('Socket fix --id functionality', () => {
     it('should handle GitHub API errors gracefully', async () => {
       const cveId = 'CVE-2021-23337'
 
-      // Mock GitHub API to return error
+      // Mock GitHub API to return error.
       nock('https://api.github.com')
         .get('/advisories')
         .query({ cve_id: cveId, per_page: 1 })
@@ -266,7 +266,7 @@ describe('Socket fix --id functionality', () => {
     it('should handle network timeouts', async () => {
       const purlId = 'pkg:npm/lodash@4.17.20'
 
-      // Mock GitHub API to timeout
+      // Mock GitHub API to timeout.
       nock('https://api.github.com')
         .get('/advisories')
         .query({ ecosystem: 'npm', affects: 'lodash@4.17.20' })
