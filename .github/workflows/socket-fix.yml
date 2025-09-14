@@ -27,13 +27,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Setup pnpm
-        uses: SocketDev/socket-cli/.github/actions/setup-pnpm@6e88e402e06dcb99ea2dcff676110c4d8fe4b025
+      - uses: SocketDev/socket-cli/.github/actions/setup@35c25823d5247a8cd15628ef2d2062cd1c199544
         with:
           node-version: '22'
-          pnpm-version: '^10.16.0'
-          install-deps: 'true'
-          socket-scan: 'false'
 
       - name: Run Socket Fix CLI
         env:
