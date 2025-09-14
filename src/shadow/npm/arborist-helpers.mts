@@ -103,7 +103,7 @@ export function getDetailsFromDiff(
   let { length: queueLength } = queue
   while (pos < queueLength) {
     if (pos === constants.LOOP_SENTINEL) {
-      throw new Error('Detected infinite loop while walking Arborist diff')
+      throw new Error('Detected infinite loop while walking Arborist diff.')
     }
     const currDiff = queue[pos++]!
     const { action } = currDiff

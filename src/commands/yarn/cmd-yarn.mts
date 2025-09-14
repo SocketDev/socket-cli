@@ -78,7 +78,7 @@ async function run(
 
   process.exitCode = 1
 
-  // Filter Socket flags from argv
+  // Filter Socket flags from argv.
   const filteredArgv = filterFlags(argv, config.flags)
 
   const { spawnPromise } = await shadowBin(filteredArgv)

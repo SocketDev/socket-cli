@@ -8,7 +8,7 @@ import constants from '../../../src/constants.mts'
 import { cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 
 async function revertFixtureChanges() {
-  // Use git to revert all changes in the fixture directories
+  // Use git to revert all changes in the fixture directories.
   const fixtureBasePath = path.join(testPath, 'fixtures/commands/fix')
 
   await spawn('git', ['checkout', 'HEAD', '--', '.'], {
@@ -16,7 +16,7 @@ async function revertFixtureChanges() {
     stdio: 'ignore',
   })
 
-  // Clean up any untracked files (node_modules, etc.)
+  // Clean up any untracked files (node_modules, etc.).
   await spawn('git', ['clean', '-fd', '.'], {
     cwd: fixtureBasePath,
     stdio: 'ignore',

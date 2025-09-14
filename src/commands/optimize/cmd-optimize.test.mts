@@ -9,7 +9,7 @@ import constants from '../../../src/constants.mts'
 import { cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 
 async function revertFixtureChanges() {
-  // Use git to revert all changes in the fixture directories
+  // Use git to revert all changes in the fixture directories.
   const fixtureBasePath = path.join(testPath, 'fixtures/commands/optimize')
 
   await spawn('git', ['checkout', 'HEAD', '--', '.'], {
@@ -17,7 +17,7 @@ async function revertFixtureChanges() {
     stdio: 'ignore',
   })
 
-  // Clean up any untracked files (node_modules, etc.)
+  // Clean up any untracked files (node_modules, etc.).
   await spawn('git', ['clean', '-fd', '.'], {
     cwd: fixtureBasePath,
     stdio: 'ignore',
@@ -367,7 +367,7 @@ describe('socket optimize', async () => {
         // Check that command completed successfully (may or may not add overrides depending on available optimizations).
         const packageJsonPath = path.join(fixtureDir, 'package.json')
         const packageJson = await readPackageJson(packageJsonPath)
-        // Note: overrides may be undefined if no production dependencies have available optimizations
+        // Note: overrides may be undefined if no production dependencies have available optimizations.
         expect(packageJson).toBeDefined()
 
         // Should have optimization output.
@@ -396,7 +396,7 @@ describe('socket optimize', async () => {
         // Check that command completed successfully (may or may not add overrides depending on available optimizations).
         const packageJsonPath = path.join(fixtureDir, 'package.json')
         const packageJson = await readPackageJson(packageJsonPath)
-        // Note: overrides may be undefined if no production dependencies have available optimizations.
+        // Note: overrides may be undefined if no production dependencies have available optimizations..
         expect(packageJson).toBeDefined()
 
         // Verify package-lock.json was updated.
