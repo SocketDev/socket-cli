@@ -213,11 +213,11 @@ Socket CLI integrates with various third-party tools and services:
   - ❌ `process.exit(1)` (bypasses error handling framework)
 
 ### 🗑️ Safe File Operations (SECURITY CRITICAL)
-- **File deletion**: 🚨 ABSOLUTELY FORBIDDEN - NEVER use `rm -rf`. 🚨 MANDATORY - ALWAYS use `npx trash-cli`
+- **File deletion**: 🚨 ABSOLUTELY FORBIDDEN - NEVER use `rm -rf`. 🚨 MANDATORY - ALWAYS use `pnpm dlx trash-cli`
 - **Examples**:
   - ❌ CATASTROPHIC: `rm -rf directory` (permanent deletion - DATA LOSS RISK)
   - ❌ REPOSITORY DESTROYER: `rm -rf "$(pwd)"` (deletes entire repository)
-  - ✅ SAFE: `npx trash-cli directory` (recoverable deletion)
+  - ✅ SAFE: `pnpm dlx trash-cli directory` (recoverable deletion)
 - **Why this matters**: trash-cli enables recovery from accidental deletions via system trash/recycle bin
 
 ### Formatting
