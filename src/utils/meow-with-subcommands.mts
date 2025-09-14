@@ -213,7 +213,9 @@ function levenshteinDistance(a: string, b: string): number {
  * Determine if the banner should be suppressed based on output flags.
  */
 function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
-  return Boolean(flags['json'] || flags['markdown'] || flags['nobanner'])
+  return Boolean(
+    flags['json'] || flags['markdown'] || flags['banner'] === false,
+  )
 }
 
 /**

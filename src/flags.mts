@@ -4,11 +4,7 @@ import meow from 'meow'
 import terminalLink from 'terminal-link'
 
 import constants from './constants.mts'
-
-// Simple camelCase to kebab-case converter to avoid circular dependency
-function camelToKebab(str: string): string {
-  return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
-}
+import { camelToKebab } from './utils/strings.mts'
 
 import type { Flag } from 'meow'
 
@@ -151,6 +147,13 @@ if (typeof exports === 'object' && exports !== null) {
 }
 
 export const commonFlags: MeowFlags = {
+  // Hidden to allow custom documenting of the negated `--no-banner` variant.
+  banner: {
+    type: 'boolean',
+    default: true,
+    description: 'Hide the Socket banner',
+    hidden: true,
+  },
   config: {
     type: 'string',
     default: '',
@@ -186,15 +189,6 @@ export const commonFlags: MeowFlags = {
       return getMaxSemiSpaceSizeFlag()
     },
     description: `Set Node's V8 ${terminalLink('--max-semi-space-size', 'https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib')} option`,
-    hidden: true,
-  },
-
-  // I know this would be `--no-banner` but that doesn't work with cdxgen.
-  // Mostly for internal usage anyways.
-  nobanner: {
-    type: 'boolean',
-    default: false,
-    description: 'Hide the Socket banner',
     hidden: true,
   },
   // Hidden to allow custom documenting of the negated `--no-spinner` variant.
@@ -237,34 +231,38 @@ export const validationFlags: MeowFlags = {
 // Flags that are handled globally and should be filtered out before passing to subcommands.
 export const globalFlagsToFilter = new Set([
   'config',
+  'banner',
   'maxOldSpaceSize',
   'maxSemiSpaceSize',
-  'nobanner',
   'spinner',
 ])
 
-// Convert flag names to actual flag strings (--flag-name, -f, --no-spinner)
+// Convert flag names to actual flag strings.
+// (e.g. --flag-name, -f, --no-banner, --no-spinner)
 export const commonFlagsToFilter = new Set(
   Array.from(globalFlagsToFilter).flatMap(flagName => {
     const flag = commonFlags[flagName]
     if (!flag) {
       return []
     }
-    // Convert camelCase to kebab-case (maxOldSpaceSize -> max-old-space-size).
+    // Convert camelCase to kebab-case.
+    // (e.g. maxOldSpaceSize -> max-old-space-size)
     const longFlag = `--${camelToKebab(flagName)}`
-    const flags = [longFlag]
+    const flags = []
+    // Special case for --no-banner and --no-spinner (negated booleans).
+    if (flagName === 'spinner' || flagName === 'spinner') {
+      flags.push(`--no-${flagName}`)
+    } else {
+      flags.push(longFlag)
+    }
     if (flag?.shortFlag) {
       flags.push(`-${flag.shortFlag}`)
-    }
-    // Special case for --no-spinner (negated boolean).
-    if (flagName === 'spinner') {
-      flags.push('--no-spinner')
     }
     return flags
   }),
 )
 
-// Flags that take values (not boolean flags) among the ones we're filtering.
+// Flags that take values, not boolean flags.
 export const flagsThatTakeValues = new Set(
   Object.entries(commonFlags)
     .filter(

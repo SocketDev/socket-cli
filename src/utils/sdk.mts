@@ -12,9 +12,7 @@ import constants from '../constants.mts'
 import type { CResult } from '../types.mts'
 
 const TOKEN_PREFIX = 'sktsec_'
-
 const TOKEN_PREFIX_LENGTH = TOKEN_PREFIX.length
-
 const TOKEN_VISIBLE_LENGTH = 5
 
 // The Socket API server that should be used for operations.

@@ -63,8 +63,8 @@ function argvToArray(argvObj: ArgvObject): string[] {
 }
 
 export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
-  let cleanupPackageLock = false
   const argvMutable = { __proto__: null, ...argvObj } as ArgvObject
+
   const shadowOpts: ShadowBinOptions = {
     ipc: {
       [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
@@ -74,6 +74,8 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     },
     stdio: 'inherit',
   }
+
+  let cleanupPackageLock = false
   if (
     argvMutable['type'] !== YARN &&
     nodejsPlatformTypes.has(argvMutable['type'] as string) &&
