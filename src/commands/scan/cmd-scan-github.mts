@@ -143,7 +143,7 @@ async function run(
   const dryRun = !!cli.flags['dryRun']
 
   let { all, githubApiUrl, orgGithub, repos } = cli.flags as {
-    all: boolean
+    all: boolean | undefined
     githubApiUrl: string
     orgGithub: string
     repos: string

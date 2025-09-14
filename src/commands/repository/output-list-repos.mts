@@ -7,6 +7,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
+import type { Direction } from './types.mts'
 import type { CResult, OutputKind } from '../../types.mts'
 import type { SocketSdkSuccessResult } from '@socketsecurity/sdk'
 
@@ -17,7 +18,7 @@ export async function outputListRepos(
   nextPage: number | null,
   sort: string,
   perPage: number,
-  direction: 'asc' | 'desc',
+  direction: Direction,
 ): Promise<void> {
   if (!result.ok) {
     process.exitCode = result.code ?? 1
