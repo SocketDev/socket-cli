@@ -1,6 +1,5 @@
 'use strict'
 
-const { existsSync } = require('node:fs')
 const path = require('node:path')
 
 const registryConstants = require('@socketsecurity/registry/lib/constants')

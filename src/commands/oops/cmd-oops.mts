@@ -6,7 +6,10 @@ import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 
 const config: CliCommandConfig = {
   commandName: 'oops',
@@ -39,7 +42,7 @@ export const cmdOops = {
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  { parentName }: CliCommandContext,
 ): Promise<void> {
   const cli = meowOrExit({
     argv,

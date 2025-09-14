@@ -51,7 +51,7 @@ patchedDependencies:
     hash: 2c9f0a87aa8ce9ed95ce201819ef3fcdb9a00f1cabe12815f586d2a3c0bff69e
     path: patches/blessed-contrib@4.11.0.patch
   blessed@0.1.81:
-    hash: c08f4a75d6e582b71d5a260aae3dca04b8d6a6bfbe899de5d2f848ca07443a66
+    hash: cae83aa371bddce36c7a03bac146da97b1da2ce16059ce29e25c3af0182331a3
     path: patches/blessed@0.1.81.patch
   brace-expansion@2.0.2:
     hash: eac47f4a81cd7be766bd391c6bf91ac462816eb2f3c5f99270419ac752d6f02d
@@ -246,7 +246,7 @@ importers:
         version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@24.3.1)(jiti@2.5.1)(yaml@2.8.1))
       blessed:
         specifier: 0.1.81
-        version: 0.1.81(patch_hash=c08f4a75d6e582b71d5a260aae3dca04b8d6a6bfbe899de5d2f848ca07443a66)
+        version: 0.1.81(patch_hash=cae83aa371bddce36c7a03bac146da97b1da2ce16059ce29e25c3af0182331a3)
       blessed-contrib:
         specifier: 4.11.0
         version: 4.11.0(patch_hash=2c9f0a87aa8ce9ed95ce201819ef3fcdb9a00f1cabe12815f586d2a3c0bff69e)
@@ -6734,7 +6734,7 @@ snapshots:
       term-canvas: 0.0.5
       x256: 0.0.2
 
-  blessed@0.1.81(patch_hash=c08f4a75d6e582b71d5a260aae3dca04b8d6a6bfbe899de5d2f848ca07443a66): {}
+  blessed@0.1.81(patch_hash=cae83aa371bddce36c7a03bac146da97b1da2ce16059ce29e25c3af0182331a3): {}
 
   body-parser@2.2.0:
     dependencies:
