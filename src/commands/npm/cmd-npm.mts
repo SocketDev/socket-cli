@@ -78,7 +78,7 @@ async function run(
 
   // Filter Socket flags from argv but keep --json for npm
   const argsToForward = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
-    '--json'
+    '--json',
   ])
   const { spawnPromise } = await shadowBin(NPM, argsToForward, {
     stdio: 'inherit',
