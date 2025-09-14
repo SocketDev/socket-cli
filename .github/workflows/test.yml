@@ -28,11 +28,46 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Setup PNPM
-        uses: ./.github/actions/setup-pnpm
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: ${{ matrix.node-version }}
-          pnpm-version: '^10.16.0'
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+        with:
+          version: '^10.16.0'
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "store-path=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Generate cache prefix
+        id: pnpm-timed-expiration
+        shell: bash
+        # Change cache prefix every 120 days.
+        run: echo "prefix=$(( $(date +%s) / 60 / 60 / 24 / 120 ))" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.store-path }}
+          # Cache key based on pnpm-lock.yaml hash and timed prefix.
+          key: ${{ runner.os }}-pnpm-store-${{ steps.pnpm-timed-expiration.outputs.prefix }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-${{ steps.pnpm-timed-expiration.outputs.prefix }}-
+
+      - name: Socket security scan
+        shell: bash
+        run: pnpm dlx @socketsecurity/cli --config '{"settings":{"reportLevel":"error"}}' npm install --no-audit --no-fund --package-lock-only
+
+      - name: Install dependencies with pnpm
+        shell: bash
+        run: |
+          rm -f package-lock.json
+          pnpm install
 
       - name: Run tests
         run: pnpm run test-ci
