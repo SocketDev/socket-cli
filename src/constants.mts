@@ -731,7 +731,7 @@ const lazySocketAppDataPath = (): string | undefined => {
   if (!dataHome) {
     if (WIN32) {
       const logger = /*@__PURE__*/ require('@socketsecurity/registry/lib/logger')
-      logger.warn(`Missing %${LOCALAPPDATA}%`)
+      logger.warn(`Missing %${LOCALAPPDATA}%.`)
     } else {
       dataHome = path.join(
         constants.homePath,

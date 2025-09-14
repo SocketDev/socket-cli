@@ -79,5 +79,5 @@ async function run(
     return
   }
 
-  throw new Error('This error was intentionally left blank')
+  throw new Error('This error was intentionally left blank.')
 }

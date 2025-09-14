@@ -81,7 +81,7 @@ export async function getAlertsMapFromPurls(
   const sockSdkCResult = await setupSdk({ apiToken })
   if (!sockSdkCResult.ok) {
     spinner?.stop()
-    throw new Error('Auth error: Run `socket login` first')
+    throw new Error('Auth error: Run `socket login` first.')
   }
   const sockSdk = sockSdkCResult.data
   const socketYmlResult = findSocketYmlSync()
