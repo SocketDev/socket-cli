@@ -99,12 +99,23 @@ async function run(
   })
 
   const SOCKET_SBOM_URL_PREFIX = `${constants.SOCKET_WEBSITE_URL}/dashboard/org/SocketDev/sbom/`
-
   const SOCKET_SBOM_URL_PREFIX_LENGTH = SOCKET_SBOM_URL_PREFIX.length
 
-  const { depth, file, json, markdown, org: orgFlag } = cli.flags
-
-  const dryRun = !!cli.flags['dryRun']
+  const {
+    depth,
+    dryRun,
+    file,
+    json,
+    markdown,
+    org: orgFlag,
+  } = cli.flags as {
+    depth: number
+    dryRun: boolean
+    file: string
+    json: boolean
+    markdown: boolean
+    org: string
+  }
 
   const interactive = !!cli.flags['interactive']
 
@@ -170,11 +181,11 @@ async function run(
   }
 
   await handleDiffScan({
-    id1: String(id1 || ''),
-    id2: String(id2 || ''),
-    depth: Number(depth),
+    id1,
+    id2,
+    depth,
     orgSlug,
     outputKind,
-    file: String(file || ''),
+    file,
   })
 }

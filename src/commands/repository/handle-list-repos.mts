@@ -2,6 +2,7 @@ import { fetchListAllRepos } from './fetch-list-all-repos.mts'
 import { fetchListRepos } from './fetch-list-repos.mts'
 import { outputListRepos } from './output-list-repos.mts'
 
+import type { Direction } from './types.mts'
 import type { OutputKind } from '../../types.mts'
 
 export async function handleListRepos({
@@ -14,7 +15,7 @@ export async function handleListRepos({
   sort,
 }: {
   all: boolean
-  direction: 'asc' | 'desc'
+  direction: Direction
   orgSlug: string
   outputKind: OutputKind
   page: number
