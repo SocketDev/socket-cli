@@ -6,7 +6,9 @@ import meow from 'meow'
 import { messageWithCauses, stackWithCauses } from 'pony-cause'
 import lookupRegistryAuthToken from 'registry-auth-token'
 import lookupRegistryUrl from 'registry-url'
+import terminalLink from 'terminal-link'
 import updateNotifier from 'tiny-updater'
+import colors from 'yoctocolors-cjs'
 
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
@@ -28,6 +30,17 @@ void (async () => {
     registryUrl,
     ttl: 86_400_000 /* 24 hours in milliseconds */,
     version: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+    logCallback: (name: string, version: string, latest: string) => {
+      logger.log(
+        `\n\n📦 Update available for ${colors.cyan(name)}: ${colors.gray(version)} → ${colors.green(latest)}`,
+      )
+      logger.log(
+        `📝 ${terminalLink(
+          'View changelog',
+          `https://socket.dev/npm/package/${name}/files/${latest}/CHANGELOG.md`,
+        )}`,
+      )
+    },
   })
 
   try {

@@ -233,9 +233,9 @@
       "blessed-contrib@4.11.0": "patches/blessed-contrib@4.11.0.patch",
       "brace-expansion@2.0.2": "patches/brace-expansion@2.0.2.patch",
       "bresenham@0.0.3": "patches/bresenham@0.0.3.patch",
-      "tiny-updater@3.5.3": "patches/tiny-updater@3.5.3.patch",
       "lodash@4.17.21": "patches/lodash@4.17.21.patch",
-      "rollup@4.50.1": "patches/rollup@4.50.1.patch"
+      "rollup@4.50.1": "patches/rollup@4.50.1.patch",
+      "tiny-updater@3.5.3": "patches/tiny-updater@3.5.3.patch"
     }
   },
   "engines": {
