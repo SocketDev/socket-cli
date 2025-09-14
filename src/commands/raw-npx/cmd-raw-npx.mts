@@ -5,7 +5,10 @@ import constants from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 
 const config: CliCommandConfig = {
   commandName: 'raw-npx',
@@ -39,7 +42,7 @@ export const cmdRawNpx = {
 async function run(
   argv: readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  { parentName }: CliCommandContext,
 ): Promise<void> {
   const cli = meowOrExit({
     argv,

@@ -12,7 +12,10 @@ import {
 } from '../../utils/output-formatting.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 
 export const CMD_NAME = 'dependencies'
 
@@ -30,7 +33,7 @@ export const cmdOrganizationDependencies = {
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  { parentName }: CliCommandContext,
 ): Promise<void> {
   const config: CliCommandConfig = {
     commandName: CMD_NAME,

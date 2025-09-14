@@ -17,6 +17,7 @@ import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
 import type {
   CliCommandConfig,
+  CliCommandContext,
   CliSubcommand,
 } from '../../utils/meow-with-subcommands.mts'
 
@@ -35,7 +36,7 @@ export const cmdScanList: CliSubcommand = {
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  { parentName }: CliCommandContext,
 ): Promise<void> {
   const config: CliCommandConfig = {
     commandName: CMD_NAME,
