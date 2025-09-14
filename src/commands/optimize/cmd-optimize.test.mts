@@ -11,12 +11,6 @@ import { cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 async function revertFixtureChanges() {
   // Use git to revert all changes in the fixture directories.
   const fixtureBasePath = path.join(testPath, 'fixtures/commands/optimize')
-
-  await spawn('git', ['checkout', 'HEAD', '--', '.'], {
-    cwd: fixtureBasePath,
-    stdio: 'ignore',
-  })
-
   // Clean up any untracked files (node_modules, etc.).
   await spawn('git', ['clean', '-fd', '.'], {
     cwd: fixtureBasePath,
