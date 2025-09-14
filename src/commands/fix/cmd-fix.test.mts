@@ -1,72 +1,46 @@
 import path from 'node:path'
 
-import trash from 'trash'
-import { afterEach, beforeEach, describe, expect } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../../src/constants.mts'
 import { cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 
-async function setupFixturePackageLocks() {
-  const packageManagers = ['npm', 'pnpm', 'yarn']
-  const scenarios = ['vulnerable-deps', 'monorepo']
 
-  const fixtures = packageManagers.flatMap(pm =>
-    scenarios.map(scenario => ({
-      dir: `fixtures/commands/fix/${pm}/${scenario}`,
-      pm,
-      args: pm === 'npm'
-        ? ['install', '--silent', '--no-audit', '--no-fund']
-        : ['install', '--silent']
-    }))
-  )
+async function revertFixtureChanges() {
+  // Use git to revert all changes in the fixture directories
+  const fixtureBasePath = path.join(testPath, 'fixtures/commands/fix')
 
-  await Promise.all(
-    fixtures.map(({ dir, pm, args }) =>
-      spawn(pm, args, {
-        cwd: path.join(testPath, dir),
-        stdio: 'ignore',
-      }),
-    ),
-  )
-}
+  await spawn('git', ['checkout', 'HEAD', '--', '.'], {
+    cwd: fixtureBasePath,
+    stdio: 'ignore',
+  })
 
-async function cleanupPackageLockFiles() {
-  const packageManagers = ['npm', 'pnpm', 'yarn']
-  const scenarios = ['vulnerable-deps', 'monorepo']
-  const lockFiles = ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'node_modules']
-  const monorepoSubPaths = ['packages/app', 'packages/lib']
-
-  const cleanupPaths: string[] = []
-
-  for (const pm of packageManagers) {
-    for (const scenario of scenarios) {
-      const baseDir = path.join(testPath, 'fixtures/commands/fix', pm, scenario)
-
-      // Add base directory lock files
-      for (const lockFile of lockFiles) {
-        cleanupPaths.push(path.join(baseDir, lockFile))
-      }
-
-      // Add monorepo subdirectory lock files
-      if (scenario === 'monorepo') {
-        for (const subPath of monorepoSubPaths) {
-          for (const lockFile of lockFiles) {
-            cleanupPaths.push(path.join(baseDir, subPath, lockFile))
-          }
-        }
-      }
-    }
-  }
-
-  await trash(cleanupPaths)
+  // Clean up any untracked files (node_modules, etc.)
+  await spawn('git', ['clean', '-fd', '.'], {
+    cwd: fixtureBasePath,
+    stdio: 'ignore',
+  })
 }
 
 describe('socket fix', async () => {
   const { binCliPath } = constants
 
-  // No setup/cleanup needed for these tests
+  beforeAll(async () => {
+    // Ensure fixtures are in clean state before tests.
+    await revertFixtureChanges()
+  })
+
+  afterEach(async () => {
+    // Revert all changes after each test using git.
+    await revertFixtureChanges()
+  })
+
+  afterAll(async () => {
+    // Clean up once after all tests.
+    await revertFixtureChanges()
+  })
 
   cmdit(
     ['fix', '--help', '--config', '{}'],
