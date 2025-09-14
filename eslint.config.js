@@ -214,12 +214,13 @@ module.exports = [
           ...importFlatConfigsForModule.typescript.languageOptions
             ?.parserOptions?.projectService,
           allowDefaultProject: [
+            // Allow configs.
+            '*.config.mts',
             // Allow paths like src/utils/*.test.mts.
             'src/*/*.test.mts',
             // Allow paths like src/commands/optimize/*.test.mts.
             'src/*/*/*.test.mts',
             'test/*.mts',
-            'vitest.config.mts',
           ],
           defaultProject: 'tsconfig.json',
           tsconfigRootDir: rootPath,

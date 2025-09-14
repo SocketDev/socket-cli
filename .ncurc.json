@@ -1,5 +1,0 @@
-{
-  "loglevel": "minimal",
-  "reject": ["eslint-plugin-unicorn", "terminal-link"],
-  "upgrade": true
-}
