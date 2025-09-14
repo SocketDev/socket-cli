@@ -1,0 +1,13 @@
+{
+  "name": "vulnerable-deps-test-npm",
+  "version": "1.0.0",
+  "description": "Test fixture with vulnerable dependencies (npm)",
+  "main": "index.js",
+  "dependencies": {
+    "lodash": "4.17.20",
+    "on-headers": "1.0.2"
+  },
+  "devDependencies": {
+    "axios": "1.3.2"
+  }
+}

@@ -3,21 +3,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { convertIdsToGhsas } from './handle-fix.mts'
 
+const mockLogger = vi.hoisted(() => ({
+  info: vi.fn(),
+  warn: vi.fn(),
+}))
+
+vi.mock('@socketsecurity/registry/lib/logger', () => ({
+  logger: mockLogger,
+}))
+
 describe('Socket fix --id functionality', () => {
   beforeEach(() => {
     nock.cleanAll()
     nock.disableNetConnect()
+    vi.clearAllMocks()
+
     // Set up environment for GitHub API
     process.env.DISABLE_GITHUB_CACHE = 'true'
     process.env.SOCKET_CLI_GITHUB_TOKEN = 'test-token'
     process.env.GITHUB_API_URL = 'https://api.github.com'
-    // Mock the logger to avoid console output during tests
-    vi.mock('@socketsecurity/registry/lib/logger', () => ({
-      logger: {
-        info: vi.fn(),
-        warn: vi.fn(),
-      },
-    }))
   })
 
   afterEach(() => {

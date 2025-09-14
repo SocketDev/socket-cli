@@ -196,6 +196,7 @@ const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
 const OUTPUT_JSON = 'json'
 const OUTPUT_MARKDOWN = 'markdown'
 const OUTPUT_TEXT = 'text'
+const PNPM_LOCK_YAML = 'pnpm-lock.yaml'
 const REDACTED = '<redacted>'
 const REPORT_LEVEL_DEFER = 'defer'
 const REPORT_LEVEL_ERROR = 'error'
@@ -258,6 +259,9 @@ export type Constants = Remap<
     readonly OUTPUT_MARKDOWN: typeof OUTPUT_MARKDOWN
     readonly OUTPUT_TEXT: typeof OUTPUT_TEXT
     readonly PACKAGE_JSON: typeof PACKAGE_JSON
+    readonly PACKAGE_LOCK_JSON: typeof PACKAGE_LOCK_JSON
+    readonly PNPM: typeof PNPM
+    readonly PNPM_LOCK_YAML: typeof PNPM_LOCK_YAML
     readonly REDACTED: typeof REDACTED
     readonly REPORT_LEVEL_DEFER: typeof REPORT_LEVEL_DEFER
     readonly REPORT_LEVEL_ERROR: typeof REPORT_LEVEL_ERROR
@@ -313,6 +317,8 @@ export type Constants = Remap<
     readonly shadowBinPath: string
     readonly shadowNpmBinPath: string
     readonly shadowNpmInjectPath: string
+    readonly shadowPnpmBinPath: string
+    readonly shadowYarnBinPath: string
     readonly socketAppDataPath: string
     readonly socketCachePath: string
     readonly socketRegistryPath: string
@@ -700,6 +706,12 @@ const lazyShadowNpmBinPath = () =>
 const lazyShadowNpmInjectPath = () =>
   path.join(constants.distPath, 'shadow-npm-inject.js')
 
+const lazyShadowPnpmBinPath = () =>
+  path.join(constants.distPath, 'shadow-pnpm-bin.js')
+
+const lazyShadowYarnBinPath = () =>
+  path.join(constants.distPath, 'shadow-yarn-bin.js')
+
 const lazySocketAppDataPath = (): string | undefined => {
   // Get the OS app data directory:
   // - Win: %LOCALAPPDATA% or fail?
@@ -769,7 +781,9 @@ const constants: Constants = createConstantsObject(
     OUTPUT_MARKDOWN,
     OUTPUT_TEXT,
     PACKAGE_JSON,
+    PACKAGE_LOCK_JSON,
     PNPM,
+    PNPM_LOCK_YAML,
     REDACTED,
     REPORT_LEVEL_DEFER,
     REPORT_LEVEL_ERROR,
@@ -820,6 +834,8 @@ const constants: Constants = createConstantsObject(
     shadowBinPath: undefined,
     shadowNpmInjectPath: undefined,
     shadowNpmBinPath: undefined,
+    shadowPnpmBinPath: undefined,
+    shadowYarnBinPath: undefined,
     socketAppDataPath: undefined,
     socketCachePath: undefined,
     socketRegistryPath: undefined,
@@ -854,6 +870,8 @@ const constants: Constants = createConstantsObject(
       shadowBinPath: lazyShadowBinPath,
       shadowNpmBinPath: lazyShadowNpmBinPath,
       shadowNpmInjectPath: lazyShadowNpmInjectPath,
+      shadowPnpmBinPath: lazyShadowPnpmBinPath,
+      shadowYarnBinPath: lazyShadowYarnBinPath,
       socketAppDataPath: lazySocketAppDataPath,
       socketCachePath: lazySocketCachePath,
       socketRegistryPath: lazySocketRegistryPath,

@@ -21,6 +21,7 @@ import { cmdOrganizationPolicySecurity } from './commands/organization/cmd-organ
 import { cmdOrganization } from './commands/organization/cmd-organization.mts'
 import { cmdPackage } from './commands/package/cmd-package.mts'
 import { cmdPatch } from './commands/patch/cmd-patch.mts'
+import { cmdPnpm } from './commands/pnpm/cmd-pnpm.mts'
 import { cmdRawNpm } from './commands/raw-npm/cmd-raw-npm.mts'
 import { cmdRawNpx } from './commands/raw-npx/cmd-raw-npx.mts'
 import { cmdRepository } from './commands/repository/cmd-repository.mts'
@@ -28,6 +29,7 @@ import { cmdScan } from './commands/scan/cmd-scan.mts'
 import { cmdThreatFeed } from './commands/threat-feed/cmd-threat-feed.mts'
 import { cmdUninstall } from './commands/uninstall/cmd-uninstall.mts'
 import { cmdWrapper } from './commands/wrapper/cmd-wrapper.mts'
+import { cmdYarn } from './commands/yarn/cmd-yarn.mts'
 
 export const rootCommands = {
   analytics: cmdAnalytics,
@@ -45,6 +47,7 @@ export const rootCommands = {
   manifest: cmdManifest,
   npm: cmdNpm,
   npx: cmdNpx,
+  pnpm: cmdPnpm,
   oops: cmdOops,
   optimize: cmdOptimize,
   organization: cmdOrganization,
@@ -58,6 +61,7 @@ export const rootCommands = {
   'threat-feed': cmdThreatFeed,
   uninstall: cmdUninstall,
   wrapper: cmdWrapper,
+  yarn: cmdYarn,
 }
 
 export const rootAliases = {
