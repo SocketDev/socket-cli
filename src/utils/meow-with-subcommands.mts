@@ -25,11 +25,7 @@ import {
 } from './config.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
 import constants, { NPM, NPX } from '../constants.mts'
-import {
-  commonFlags,
-  commonFlagsToFilter,
-  flagsThatTakeValues,
-} from '../flags.mts'
+import { commonFlags } from '../flags.mts'
 import { getVisibleTokenPrefix } from './sdk.mts'
 import { tildify } from './tildify.mts'
 
@@ -47,7 +43,7 @@ export type CliAliases = Record<string, CliAlias>
 export type CliSubcommandRun = (
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  context: { parentName: string },
+  context: { parentName: string; rawArgv?: readonly string[] },
 ) => Promise<void> | void
 
 export interface CliSubcommand {
@@ -65,6 +61,11 @@ export interface CliCommandConfig {
   hidden: boolean
   flags: MeowFlags
   help: (command: string, config: CliCommandConfig) => string
+}
+
+export interface CliCommandContext {
+  parentName: string
+  rawArgv?: string[] | readonly string[]
 }
 
 export interface MeowOptions extends Options<any> {
@@ -87,33 +88,6 @@ function description(command: CliSubcommand | undefined): string {
   const str =
     typeof description === 'string' ? description : String(description)
   return indentString(str, HELP_PAD_NAME).trimStart()
-}
-
-/**
- * Filter out common flags from argv before passing to subcommands.
- */
-function filterCommonFlagsFromArgv(argv: readonly string[]): string[] {
-  const filtered: string[] = []
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i]!
-    if (commonFlagsToFilter.has(arg)) {
-      // Skip flags that take values.
-      if (flagsThatTakeValues.has(arg)) {
-        // Skip the next argument (the flag value).
-        i += 1
-      }
-      // Skip boolean flags (no additional argument to skip).
-    } else if (
-      arg &&
-      Array.from(flagsThatTakeValues).some(flag => arg.startsWith(`${flag}=`))
-    ) {
-      // Skip --flag=value format.
-      continue
-    } else {
-      filtered.push(arg!)
-    }
-  }
-  return filtered
 }
 
 /**
@@ -269,8 +243,7 @@ export async function meowWithSubcommands(
     ...getOwn(additionalOptions, 'flags'),
   }
 
-  const filteredArgv = filterCommonFlagsFromArgv(argv)
-  const [commandOrAliasName_, ...rawCommandArgv] = filteredArgv
+  const [commandOrAliasName_, ...rawCommandArgv] = argv
   let commandOrAliasName = commandOrAliasName_
   if (!commandOrAliasName && defaultSub) {
     commandOrAliasName = defaultSub
@@ -374,9 +347,7 @@ export async function meowWithSubcommands(
   if (constants.ENV.SOCKET_CLI_CONFIG) {
     configOverrideResult = overrideCachedConfig(constants.ENV.SOCKET_CLI_CONFIG)
   } else if (cli1.flags['config']) {
-    configOverrideResult = overrideCachedConfig(
-      String(cli1.flags['config'] || ''),
-    )
+    configOverrideResult = overrideCachedConfig(cli1.flags['config'])
   }
 
   if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
@@ -414,9 +385,9 @@ export async function meowWithSubcommands(
     const commandDefinition = commandName ? subcommands[commandName] : undefined
     // Third: If a valid command has been found, then we run it...
     if (commandDefinition) {
-      // Filter common flags from commandArgv as well.
-      const filteredCommandArgv = filterCommonFlagsFromArgv(commandArgv)
-      return await commandDefinition.run(filteredCommandArgv, importMeta, {
+      // Extract the original command arguments from the full argv
+      // by skipping the command name
+      return await commandDefinition.run(commandArgv, importMeta, {
         parentName: name,
       })
     }
@@ -682,7 +653,19 @@ export function meowOrExit({
     importMeta,
   })
 
-  const noSpinner = cli.flags['spinner'] === false
+  const {
+    help,
+    org: orgFlag,
+    spinner: spinnerFlag,
+    version,
+  } = cli.flags as {
+    help: boolean
+    org: string
+    spinner: boolean
+    version: boolean | undefined
+  }
+
+  const noSpinner = spinnerFlag === false
 
   // Use CI spinner style when --no-spinner is passed.
   if (noSpinner) {
@@ -690,7 +673,6 @@ export function meowOrExit({
   }
 
   if (!shouldSuppressBanner(cli.flags)) {
-    const orgFlag = String(cli.flags['org'] || '').trim() || undefined
     emitBanner(command, orgFlag)
     // Add newline in stderr.
     // Meow help adds a newline too so we do it here.
@@ -715,12 +697,12 @@ export function meowOrExit({
   //   })
   // }
 
-  if (cli.flags['help']) {
+  if (help) {
     cli.showHelp(0)
   }
 
   // Meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
-  if (!hasOwn(config.flags, 'version') && cli.flags['version']) {
+  if (version && !hasOwn(config.flags, 'version')) {
     // Use `console.error` here instead of `logger.error` to match Meow behavior.
     console.error('Unknown flag\n--version')
     // eslint-disable-next-line n/no-process-exit
