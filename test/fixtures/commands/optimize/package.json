@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "Test fixture for optimize command testing",
   "main": "index.js",
+  "dependencies": {
+    "gopd": "npm:@socketregistry/gopd@^1"
+  },
   "devDependencies": {
-    "@babel/core": "7.28.4"
+    "axios": "1.3.2"
   }
 }

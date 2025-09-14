@@ -1,0 +1,22 @@
+diff --git a/dist/es/shared/node-entry.js b/dist/es/shared/node-entry.js
+index 12a83ecc22f06892f2a5ace2e1549ada9d0de9c6..c8bcb2254490e05d3df7f896a1d69d1b69f4661d 100644
+--- a/dist/es/shared/node-entry.js
++++ b/dist/es/shared/node-entry.js
+@@ -5008,7 +5008,7 @@ const limitConcatenatedPathDepth = (path1, path2) => {
+ };
+ 
+ class LocalVariable extends Variable {
+-    constructor(name, declarator, init, 
++    constructor(name, declarator, init,
+     /** if this is non-empty, the actual init is this path of this.init */
+     initPath, context, kind) {
+         super(name);
+@@ -6459,7 +6459,7 @@ class ExpressionStatement extends NodeBase {
+         if (this.directive &&
+             this.directive !== 'use strict' &&
+             this.parent.type === Program$1) {
+-            this.scope.context.log(LOGLEVEL_WARN, 
++            this.scope.context.log(LOGLEVEL_WARN,
+             // This is necessary, because either way (deleting or not) can lead to errors.
+             logModuleLevelDirective(this.directive, this.scope.context.module.id), this.start);
+         }

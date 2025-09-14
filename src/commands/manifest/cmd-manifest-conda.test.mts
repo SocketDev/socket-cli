@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cleanOutput, cmdit, spawnNpm, testPath } from '../../../test/utils.mts'
+import { cleanOutput, cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 
 describe('socket manifest conda', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,7 @@ describe('socket manifest conda', async () => {
     ['manifest', 'conda', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
         cwd: testPath,
       })
       expect(stdout).toMatchInlineSnapshot(
@@ -63,7 +63,7 @@ describe('socket manifest conda', async () => {
     ['manifest', 'conda', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
         cwd: testPath,
       })
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
@@ -93,7 +93,7 @@ describe('socket manifest conda', async () => {
       ],
       'should print raw text without flags',
       async cmd => {
-        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+        const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
           cwd: testPath,
         })
         expect(stdout).toMatchInlineSnapshot(`
@@ -126,7 +126,7 @@ describe('socket manifest conda', async () => {
       ],
       'should print a json blurb with --json flag',
       async cmd => {
-        const { stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+        const { stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
           cwd: testPath,
         })
         expect(cleanOutput(stdout)).toMatchInlineSnapshot(`
@@ -157,7 +157,7 @@ describe('socket manifest conda', async () => {
       ],
       'should print a markdown blurb with --markdown flag',
       async cmd => {
-        const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd, {
+        const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
           cwd: testPath,
         })
         expect(cleanOutput(stdout)).toMatchInlineSnapshot(`

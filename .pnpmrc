@@ -8,7 +8,7 @@ auto-install-peers=true
 strict-peer-dependencies=false
 
 # Use node-linker to ensure better compatibility.
-node-linker=isolated
+node-linker=hoisted
 
 # Save exact versions (like npm --save-exact).
 save-exact=true

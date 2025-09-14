@@ -1,9 +1,8 @@
-Index: /lodash/_baseExtremum.js
-===================================================================
---- /lodash/_baseExtremum.js
-+++ /lodash/_baseExtremum.js
-@@ -12,19 +12,20 @@
-  */
+diff --git a/_baseExtremum.js b/_baseExtremum.js
+index 9d6aa77edba62c323f18bc1cb3b52a941d84a72e..d65e725ca757deb50e4b23b829f0b8ac1968c6f4 100644
+--- a/_baseExtremum.js
++++ b/_baseExtremum.js
+@@ -13,7 +13,8 @@ var isSymbol = require('./isSymbol');
  function baseExtremum(array, iteratee, comparator) {
    var index = -1,
        length = array.length;
@@ -13,8 +12,7 @@ Index: /lodash/_baseExtremum.js
    while (++index < length) {
      var value = array[index],
          current = iteratee(value);
- 
-     if (current != null && (computed === undefined
+@@ -22,8 +23,8 @@ function baseExtremum(array, iteratee, comparator) {
            ? (current === current && !isSymbol(current))
            : comparator(current, computed)
          )) {
@@ -25,13 +23,11 @@ Index: /lodash/_baseExtremum.js
      }
    }
    return result;
- }
-Index: /lodash/_getRawTag.js
-===================================================================
---- /lodash/_getRawTag.js
-+++ /lodash/_getRawTag.js
-@@ -26,11 +26,12 @@
- function getRawTag(value) {
+diff --git a/_getRawTag.js b/_getRawTag.js
+index 49a95c9c65a17148911124bf9e51ac8982769a45..430baa4f7e28a0d76cc72169885354fa845e0a1b 100644
+--- a/_getRawTag.js
++++ b/_getRawTag.js
+@@ -27,9 +27,10 @@ function getRawTag(value) {
    var isOwn = hasOwnProperty.call(value, symToStringTag),
        tag = value[symToStringTag];
  
@@ -43,13 +39,11 @@ Index: /lodash/_getRawTag.js
    } catch (e) {}
  
    var result = nativeObjectToString.call(value);
-   if (unmasked) {
-Index: /lodash/lodash.js
-===================================================================
---- /lodash/lodash.js
-+++ /lodash/lodash.js
-@@ -8,9 +8,8 @@
-  */
+diff --git a/lodash.js b/lodash.js
+index 4131e936cd1e0521ac7be3a9d4bfb9f1fdb35462..d7661e20678da8217482a7396d4f0c646de7f2e1 100644
+--- a/lodash.js
++++ b/lodash.js
+@@ -9,7 +9,6 @@
  ;(function() {
  
    /** Used as a safe reference for `undefined` in pre-ES5 environments. */
@@ -57,9 +51,7 @@ Index: /lodash/lodash.js
  
    /** Used as the semantic version number. */
    var VERSION = '4.17.21';
- 
-@@ -2898,19 +2897,20 @@
-      */
+@@ -2899,7 +2898,8 @@
      function baseExtremum(array, iteratee, comparator) {
        var index = -1,
            length = array.length;
@@ -69,8 +61,7 @@ Index: /lodash/lodash.js
        while (++index < length) {
          var value = array[index],
              current = iteratee(value);
- 
-         if (current != null && (computed === undefined
+@@ -2908,8 +2908,8 @@
                ? (current === current && !isSymbol(current))
                : comparator(current, computed)
              )) {
@@ -81,9 +72,7 @@ Index: /lodash/lodash.js
          }
        }
        return result;
-     }
-@@ -6048,11 +6048,12 @@
-     function getRawTag(value) {
+@@ -6049,9 +6049,10 @@
        var isOwn = hasOwnProperty.call(value, symToStringTag),
            tag = value[symToStringTag];
  
@@ -95,4 +84,3 @@ Index: /lodash/lodash.js
        } catch (e) {}
  
        var result = nativeObjectToString.call(value);
-       if (unmasked) {
