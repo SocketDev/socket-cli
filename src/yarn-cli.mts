@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import shadowYarnBin from './shadow/yarn/bin.mts'
 
 const shadowBin = shadowYarnBin

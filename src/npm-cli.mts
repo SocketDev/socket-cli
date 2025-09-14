@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
-
 import shadowNpmBin from './shadow/npm/bin.mts'
 
 const shadowBin = shadowNpmBin
