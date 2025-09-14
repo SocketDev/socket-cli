@@ -1,9 +1,8 @@
-Index: /ansi-term/index.js
-===================================================================
---- /ansi-term/index.js
-+++ /ansi-term/index.js
-@@ -23,75 +23,75 @@
- 
+diff --git a/index.js b/index.js
+index ef426720f340c981e2bb116d80070624698f0d15..305426e165371737cd7763cb2fe1faa691319750 100644
+--- a/index.js
++++ b/index.js
+@@ -24,51 +24,51 @@ exports.colors = {
  function getFgCode(color) {
      // String Value
      if(typeof color == 'string' && color != 'normal') {
@@ -61,64 +60,16 @@ Index: /ansi-term/index.js
 +  set: function(coord) {
      var color = getBgCode(this.color);
 -    this.content[coord] = color + ' \033[49m';    
-+    this.content[coord] = color + ' \x1B[49m';
++    this.content[coord] = color + ' \x1B[49m';    
    },
--  unset: function(coord) {    
-+  unset: function(coord) {
+   unset: function(coord) {    
      this.content[coord] = null;
-   },
--  toggle: function(coord) {    
-+  toggle: function(coord) {
-     this.content[coord] == this.content[coord]==null?'p':null;
-   }
- };
- 
- Object.keys(methods).forEach(function(method) {
-   AnsiTerminal.prototype[method] = function(x, y) {
-     if(!(x >= 0 && x < this.width && y >= 0 && y < this.height)) {
-       return;
--    }    
-+    }
-     var coord = this.getCoord(x, y)
-     methods[method].call(this, coord);
-   }
- });
- 
- AnsiTerminal.prototype.getCoord = function(x, y) {
-     x = Math.floor(x);
--    y = Math.floor(y);    
-+    y = Math.floor(y);
-     return x + this.width*y;
- }
- 
- AnsiTerminal.prototype.clear = function() {
-@@ -101,24 +101,24 @@
- AnsiTerminal.prototype.measureText = function(str) {
-   return {width: str.length * 1}
- };
- 
--AnsiTerminal.prototype.writeText = function(str, x, y) {  
-+AnsiTerminal.prototype.writeText = function(str, x, y) {
-   //console.log(str + ": " + x + "," + y)
-   var coord = this.getCoord(x, y)
--  for (var i=0; i<str.length; i++) {    
-+  for (var i=0; i<str.length; i++) {
-     this.content[coord+i]=str[i]
-   }
- 
-   var bg = getBgCode(this.color);
+@@ -113,7 +113,7 @@ AnsiTerminal.prototype.writeText = function(str, x, y) {
    var fg = getFgCode(this.fontFg);
--  
-+
+   
    this.content[coord] = fg + bg +  this.content[coord]
 -  this.content[coord+str.length-1] += '\033[39m\033[49m'
 +  this.content[coord+str.length-1] += '\x1B[39m\x1B[49m'
  
  }
  
--AnsiTerminal.prototype.frame = function frame(delimiter) {  
-+AnsiTerminal.prototype.frame = function frame(delimiter) {
-   delimiter = delimiter || '\n';
-   var result = [];
-   for(var i = 0, j = 0; i < this.content.length; i++, j++) {
-     if(j == this.width) {

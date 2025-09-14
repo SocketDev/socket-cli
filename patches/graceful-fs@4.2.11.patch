@@ -1,9 +1,8 @@
-Index: /graceful-fs/clone.js
-===================================================================
---- /graceful-fs/clone.js
-+++ /graceful-fs/clone.js
-@@ -9,12 +9,11 @@
- function clone (obj) {
+diff --git a/clone.js b/clone.js
+index dff3cc8c504b4cf14054b5d7bbc64b1696bc9fec..8b55fbe40411a4b7f504f06978e36fbb871d3196 100644
+--- a/clone.js
++++ b/clone.js
+@@ -10,10 +10,9 @@ function clone (obj) {
    if (obj === null || typeof obj !== 'object')
      return obj
  
@@ -17,4 +16,3 @@ Index: /graceful-fs/clone.js
  
    Object.getOwnPropertyNames(obj).forEach(function (key) {
      Object.defineProperty(copy, key, Object.getOwnPropertyDescriptor(obj, key))
-   })

@@ -63,7 +63,7 @@
     "lint:fix:eslint": "dotenvx -q run -f .env.local -- eslint --report-unused-disable-directives --fix . | dev-null",
     "lint-staged": "dotenvx -q run -f .env.local -- lint-staged",
     "precommit": "dotenvx -q run -f .env.local -- lint-staged",
-    "prepare": "dotenvx -q run -f .env.local -- husky && custompatch",
+    "prepare": "dotenvx -q run -f .env.local -- husky",
     "bs": "dotenvx -q run -f .env.local -- pnpm build:dist:src; pnpm exec socket --",
     "s": "dotenvx -q run -f .env.local -- pnpm exec socket --",
     "test": "run-s check test:*",
@@ -135,7 +135,6 @@
     "browserslist": "4.25.4",
     "chalk-table": "1.0.2",
     "cmd-shim": "7.0.0",
-    "custompatch": "1.1.8",
     "del-cli": "6.0.0",
     "dev-null-cli": "2.0.0",
     "eslint": "9.35.0",
@@ -217,6 +216,16 @@
       "xml2js": "0.6.2",
       "yaml": "2.8.1",
       "yargs-parser": "$yargs-parser"
+    },
+    "patchedDependencies": {
+      "graceful-fs@4.2.11": "patches/graceful-fs@4.2.11.patch",
+      "string_decoder@0.10.31": "patches/string_decoder@0.10.31.patch",
+      "meow@13.2.0": "patches/meow@13.2.0.patch",
+      "@rollup/plugin-commonjs@28.0.6": "patches/@rollup__plugin-commonjs@28.0.6.patch",
+      "ansi-term@0.0.2": "patches/ansi-term@0.0.2.patch",
+      "drawille-blessed-contrib@1.0.0": "patches/drawille-blessed-contrib@1.0.0.patch",
+      "drawille-canvas-blessed-contrib@0.1.3": "patches/drawille-canvas-blessed-contrib@0.1.3.patch",
+      "blessed@0.1.81": "patches/blessed@0.1.81.patch"
     }
   },
   "engines": {

@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, spawnNpm } from '../../../test/utils.mts'
+import { cmdit, spawnPnpm } from '../../../test/utils.mts'
 
 describe('socket audit-log', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,7 @@ describe('socket audit-log', async () => {
     ['audit-log', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Look up the audit log for an organization
@@ -70,7 +70,7 @@ describe('socket audit-log', async () => {
     ['audit-log', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should report missing org name',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -104,7 +104,7 @@ describe('socket audit-log', async () => {
     ],
     'should report legacy flag',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -131,7 +131,7 @@ describe('socket audit-log', async () => {
     ],
     'should accept default org',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -156,7 +156,7 @@ describe('socket audit-log', async () => {
     ],
     'should accept --org flag in v1',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

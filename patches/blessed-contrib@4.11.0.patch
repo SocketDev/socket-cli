@@ -1,8 +1,8 @@
-Index: /blessed-contrib/lib/server-utils.js
-===================================================================
---- /blessed-contrib/lib/server-utils.js
-+++ /blessed-contrib/lib/server-utils.js
-@@ -1,8 +1,5 @@
+diff --git a/lib/server-utils.js b/lib/server-utils.js
+index a9174052e33039d24b3d153b3850da41a1453255..b07fe0debec568920e3d3d793b3e05e8b5f2c72b 100644
+--- a/lib/server-utils.js
++++ b/lib/server-utils.js
+@@ -1,7 +1,4 @@
  'use strict';
 -var url = require('url')
 -  , contrib = require('../index')
@@ -10,9 +10,7 @@ Index: /blessed-contrib/lib/server-utils.js
  
  function OutputBuffer(options) {
    this.isTTY = true;
-   this.columns = options.cols;
-@@ -40,8 +37,9 @@
- }
+@@ -41,6 +38,7 @@ function serverError(req, res, err) {
  
  
  function createScreen(req, res) {
@@ -20,9 +18,7 @@ Index: /blessed-contrib/lib/server-utils.js
    var query = url.parse(req.url, true).query;
  
    var cols = query.cols || 250;
-   var rows = query.rows || 50;
-@@ -52,17 +50,20 @@
-   }
+@@ -53,15 +51,18 @@ function createScreen(req, res) {
  
    res.writeHead(200, {'Content-Type': 'text/plain'});
  
@@ -43,12 +39,11 @@ Index: /blessed-contrib/lib/server-utils.js
    return screen;
  }
  
- 
-Index: /blessed-contrib/lib/widget/canvas.js
-===================================================================
---- /blessed-contrib/lib/widget/canvas.js
-+++ /blessed-contrib/lib/widget/canvas.js
-@@ -1,9 +1,8 @@
+diff --git a/lib/widget/canvas.js b/lib/widget/canvas.js
+index efd10bf4658588afed3580e9fbc897e5a3c69605..17372d84d9817ec8bd528a26cdf2c0d80da4f37b 100644
+--- a/lib/widget/canvas.js
++++ b/lib/widget/canvas.js
+@@ -1,8 +1,7 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -60,12 +55,11 @@ Index: /blessed-contrib/lib/widget/canvas.js
  
  function Canvas(options, canvasType) {
  
-   var self = this;
-Index: /blessed-contrib/lib/widget/charts/bar.js
-===================================================================
---- /blessed-contrib/lib/widget/charts/bar.js
-+++ /blessed-contrib/lib/widget/charts/bar.js
-@@ -1,7 +1,6 @@
+diff --git a/lib/widget/charts/bar.js b/lib/widget/charts/bar.js
+index 4d85d902442e01fbd2177f690e61580a31d57ec8..0af052e0b3224e5a7178529e03c948ceb88a3fa5 100755
+--- a/lib/widget/charts/bar.js
++++ b/lib/widget/charts/bar.js
+@@ -1,6 +1,5 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -73,12 +67,11 @@ Index: /blessed-contrib/lib/widget/charts/bar.js
    , Canvas = require('../canvas');
  
  function Bar(options) {
-   if (!(this instanceof Node)) {
-Index: /blessed-contrib/lib/widget/charts/line.js
-===================================================================
---- /blessed-contrib/lib/widget/charts/line.js
-+++ /blessed-contrib/lib/widget/charts/line.js
-@@ -1,7 +1,7 @@
+diff --git a/lib/widget/charts/line.js b/lib/widget/charts/line.js
+index bd1366eac9f84f2ef4988498deadb324f79e57a5..5f7bba3a4a1b9623735869056e9639c20d0e64f6 100644
+--- a/lib/widget/charts/line.js
++++ b/lib/widget/charts/line.js
+@@ -1,6 +1,6 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -87,9 +80,7 @@ Index: /blessed-contrib/lib/widget/charts/line.js
    , Canvas = require('../canvas')
    , utils = require('../../utils.js')
    , _ = require('lodash');
- 
-@@ -53,9 +53,9 @@
-   function addLegend() {
+@@ -54,7 +54,7 @@ Line.prototype.setData = function(data) {
      if (!self.options.showLegend) return;
      if (self.legend) self.remove(self.legend);
      var legendWidth = self.options.legend.width || 15;
@@ -98,12 +89,11 @@ Index: /blessed-contrib/lib/widget/charts/line.js
        height: data.length+2,
        top: 1,
        width: legendWidth,
-       left: self.width-legendWidth-3,
-Index: /blessed-contrib/lib/widget/charts/stacked-bar.js
-===================================================================
---- /blessed-contrib/lib/widget/charts/stacked-bar.js
-+++ /blessed-contrib/lib/widget/charts/stacked-bar.js
-@@ -1,7 +1,7 @@
+diff --git a/lib/widget/charts/stacked-bar.js b/lib/widget/charts/stacked-bar.js
+index ab5917bfe110892b723c3239dcce15bb8c13e2ef..5e9067f2f461042ba6da421fbab1e1ff400596cc 100755
+--- a/lib/widget/charts/stacked-bar.js
++++ b/lib/widget/charts/stacked-bar.js
+@@ -1,6 +1,6 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -112,9 +102,7 @@ Index: /blessed-contrib/lib/widget/charts/stacked-bar.js
    , Canvas = require('../canvas')
    , utils = require('../../utils.js');
  
- function StackedBar(options) {
-@@ -183,9 +183,9 @@
-   var self = this;
+@@ -184,7 +184,7 @@ StackedBar.prototype.addLegend = function(bars, x) {
    if (!self.options.showLegend) return;
    if (self.legend) self.remove(self.legend);
    var legendWidth = self.options.legend.width || 15;
@@ -123,12 +111,11 @@ Index: /blessed-contrib/lib/widget/charts/stacked-bar.js
      height: bars.stackedCategory.length+2,
      top: 1,
      width: legendWidth,
-     left: x,
-Index: /blessed-contrib/lib/widget/donut.js
-===================================================================
---- /blessed-contrib/lib/widget/donut.js
-+++ /blessed-contrib/lib/widget/donut.js
-@@ -1,7 +1,6 @@
+diff --git a/lib/widget/donut.js b/lib/widget/donut.js
+index ef2dd7fd26b93a1c38e6a74f5d4ced8093793f4c..5ef4fc8c08e9bc8efe0b2197cc9dad28b6ed6b22 100644
+--- a/lib/widget/donut.js
++++ b/lib/widget/donut.js
+@@ -1,6 +1,5 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -136,12 +123,11 @@ Index: /blessed-contrib/lib/widget/donut.js
    , Canvas = require('./canvas');
  
  function Donut(options) {
-   if (!(this instanceof Node)) {
-Index: /blessed-contrib/lib/widget/gauge-list.js
-===================================================================
---- /blessed-contrib/lib/widget/gauge-list.js
-+++ /blessed-contrib/lib/widget/gauge-list.js
-@@ -1,7 +1,6 @@
+diff --git a/lib/widget/gauge-list.js b/lib/widget/gauge-list.js
+index 05502f0d9897f17ea984b7d12230b8ecad9f7379..281c92b49645074c376a662222f9a5f4af4fbcb4 100644
+--- a/lib/widget/gauge-list.js
++++ b/lib/widget/gauge-list.js
+@@ -1,6 +1,5 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -149,12 +135,11 @@ Index: /blessed-contrib/lib/widget/gauge-list.js
    , Canvas = require('./canvas');
  
  function GaugeList(options) {
-   if (!(this instanceof Node)) {
-Index: /blessed-contrib/lib/widget/gauge.js
-===================================================================
---- /blessed-contrib/lib/widget/gauge.js
-+++ /blessed-contrib/lib/widget/gauge.js
-@@ -1,7 +1,6 @@
+diff --git a/lib/widget/gauge.js b/lib/widget/gauge.js
+index 228cb85acb06f5fd09856ebfd558414d5fb12844..9a6b37f20e6be919e0c77ab76aa7f6c5bb8e4cf6 100644
+--- a/lib/widget/gauge.js
++++ b/lib/widget/gauge.js
+@@ -1,6 +1,5 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -162,12 +147,11 @@ Index: /blessed-contrib/lib/widget/gauge.js
    , Canvas = require('./canvas');
  
  function Gauge(options) {
-   if (!(this instanceof Node)) {
-Index: /blessed-contrib/lib/widget/lcd.js
-===================================================================
---- /blessed-contrib/lib/widget/lcd.js
-+++ /blessed-contrib/lib/widget/lcd.js
-@@ -1,7 +1,6 @@
+diff --git a/lib/widget/lcd.js b/lib/widget/lcd.js
+index de96d5fa2013d933d7600a6f217196b5e2de33e1..fb302e91bbfc42de31e6064199326c3abecc74cd 100644
+--- a/lib/widget/lcd.js
++++ b/lib/widget/lcd.js
+@@ -1,6 +1,5 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -175,12 +159,11 @@ Index: /blessed-contrib/lib/widget/lcd.js
    , Canvas = require('./canvas');
  
  function LCD(options) {
-   if (!(this instanceof Node)) {
-Index: /blessed-contrib/lib/widget/log.js
-===================================================================
---- /blessed-contrib/lib/widget/log.js
-+++ /blessed-contrib/lib/widget/log.js
-@@ -1,8 +1,7 @@
+diff --git a/lib/widget/log.js b/lib/widget/log.js
+index 86b19d9df717a86d4cc7073cf3d5841aa369e5da..bdb639d7851da58a5660575a05560c5cbd0c56d3 100644
+--- a/lib/widget/log.js
++++ b/lib/widget/log.js
+@@ -1,7 +1,6 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -190,12 +173,11 @@ Index: /blessed-contrib/lib/widget/log.js
  
  function Log(options) {
    if (!(this instanceof Node)) {
-     return new Log(options);
-Index: /blessed-contrib/lib/widget/map.js
-===================================================================
---- /blessed-contrib/lib/widget/map.js
-+++ /blessed-contrib/lib/widget/map.js
-@@ -1,9 +1,8 @@
+diff --git a/lib/widget/map.js b/lib/widget/map.js
+index b14fb755985ceff29179135fb88601de6ecd675d..e1b0116efd2cd7e7566a6a6735c0306db786ac30 100644
+--- a/lib/widget/map.js
++++ b/lib/widget/map.js
+@@ -1,8 +1,7 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -207,12 +189,11 @@ Index: /blessed-contrib/lib/widget/map.js
  
  function Map(options) {
    var self = this;
- 
-Index: /blessed-contrib/lib/widget/markdown.js
-===================================================================
---- /blessed-contrib/lib/widget/markdown.js
-+++ /blessed-contrib/lib/widget/markdown.js
-@@ -1,7 +1,6 @@
+diff --git a/lib/widget/markdown.js b/lib/widget/markdown.js
+index d7f0871423e36fc8dd3a0436c8f3c69f1b3bc299..28ec0e38ac85900abb4503ed80342d30e36cfb47 100644
+--- a/lib/widget/markdown.js
++++ b/lib/widget/markdown.js
+@@ -1,6 +1,5 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Box = blessed.Box
@@ -220,12 +201,11 @@ Index: /blessed-contrib/lib/widget/markdown.js
    , marked = require('marked')
    , TerminalRenderer = require('marked-terminal')
    , chalk = require('chalk');
- 
-Index: /blessed-contrib/lib/widget/picture.js
-===================================================================
---- /blessed-contrib/lib/widget/picture.js
-+++ /blessed-contrib/lib/widget/picture.js
-@@ -1,8 +1,7 @@
+diff --git a/lib/widget/picture.js b/lib/widget/picture.js
+index c954212f98bce5778bd1c909db9259d5764ef610..9682e039edb9fad33984af430b3d26396b3c4523 100644
+--- a/lib/widget/picture.js
++++ b/lib/widget/picture.js
+@@ -1,7 +1,6 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -235,12 +215,11 @@ Index: /blessed-contrib/lib/widget/picture.js
    , pictureTube = require('picture-tuber')
    , fs = require('fs')
    , streams = require('memory-streams')
-   , MemoryStream = require('memorystream');
-Index: /blessed-contrib/lib/widget/sparkline.js
-===================================================================
---- /blessed-contrib/lib/widget/sparkline.js
-+++ /blessed-contrib/lib/widget/sparkline.js
-@@ -1,8 +1,7 @@
+diff --git a/lib/widget/sparkline.js b/lib/widget/sparkline.js
+index 9c0c037934ebc22d8774adaa448e9f37b9e890a4..f7449683f6a19963f8397a3a614be731616c1f0c 100644
+--- a/lib/widget/sparkline.js
++++ b/lib/widget/sparkline.js
+@@ -1,7 +1,6 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -250,12 +229,11 @@ Index: /blessed-contrib/lib/widget/sparkline.js
    , sparkline = require('sparkline');
  
  function Sparkline(options) {
- 
-Index: /blessed-contrib/lib/widget/table.js
-===================================================================
---- /blessed-contrib/lib/widget/table.js
-+++ /blessed-contrib/lib/widget/table.js
-@@ -1,8 +1,8 @@
+diff --git a/lib/widget/table.js b/lib/widget/table.js
+index af253aee50c914f7e66306168fb374106a262feb..a1267e769d669179ac1ab99ddb3560739632a4f2 100644
+--- a/lib/widget/table.js
++++ b/lib/widget/table.js
+@@ -1,7 +1,7 @@
  'use strict';
 -var blessed = require('blessed')
 -  , Node = blessed.Node
@@ -266,9 +244,7 @@ Index: /blessed-contrib/lib/widget/table.js
    , stripAnsi = require('strip-ansi');
  
  function Table(options) {
- 
-@@ -32,9 +32,9 @@
-   options.interactive = (typeof options.interactive === 'undefined') ? true : options.interactive;
+@@ -33,7 +33,7 @@ function Table(options) {
    this.options = options;
    Box.call(this, options);
  
@@ -277,12 +253,11 @@ Index: /blessed-contrib/lib/widget/table.js
      //height: 0,
      top: 2,
      width: 0,
-     left: 1,
-Index: /blessed-contrib/lib/widget/tree.js
-===================================================================
---- /blessed-contrib/lib/widget/tree.js
-+++ /blessed-contrib/lib/widget/tree.js
-@@ -1,8 +1,8 @@
+diff --git a/lib/widget/tree.js b/lib/widget/tree.js
+index c97feb305445a95895fe4a5415a5b55c639432c5..635aa6747e83c8fefe4fdb89b3e79a7d8d17423d 100644
+--- a/lib/widget/tree.js
++++ b/lib/widget/tree.js
+@@ -1,7 +1,7 @@
  'use strict';
 -var blessed = require('blessed'),
 -  Node = blessed.Node,
@@ -293,9 +268,7 @@ Index: /blessed-contrib/lib/widget/tree.js
  
  function Tree(options) {
    if (!(this instanceof Node)) {
-     return new Tree(options);
-@@ -25,9 +25,9 @@
-   options.template.retract = options.template.retract || ' [-]';
+@@ -26,7 +26,7 @@ function Tree(options) {
    options.template.lines = options.template.lines || false;
  
    // Do not set height, since this create a bug where the first line is not always displayed
@@ -304,4 +277,3 @@ Index: /blessed-contrib/lib/widget/tree.js
      top: 1,
      width: 0,
      left: 1,
-     style: options.style,

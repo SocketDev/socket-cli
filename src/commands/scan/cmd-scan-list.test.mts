@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, spawnNpm } from '../../../test/utils.mts'
+import { cmdit, spawnPnpm } from '../../../test/utils.mts'
 
 describe('socket scan list', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,7 @@ describe('socket scan list', async () => {
     ['scan', 'list', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "List the scans for an organization
@@ -63,7 +63,7 @@ describe('socket scan list', async () => {
     ['scan', 'list', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`""`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -99,7 +99,7 @@ describe('socket scan list', async () => {
     ],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

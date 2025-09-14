@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, spawnNpm } from '../../../test/utils.mts'
+import { cmdit, spawnPnpm } from '../../../test/utils.mts'
 
 describe('socket repository', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,7 @@ describe('socket repository', async () => {
     ['repository', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Manage registered repositories
@@ -49,7 +49,7 @@ describe('socket repository', async () => {
     ['repository', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `"[DryRun]: No-op, call a sub-command; ok"`,
       )

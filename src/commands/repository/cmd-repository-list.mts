@@ -13,6 +13,7 @@ import {
 } from '../../utils/output-formatting.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
 
+import type { Direction } from './types.mts'
 import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
 
 export const CMD_NAME = 'list'
@@ -58,26 +59,27 @@ async function run(
       },
       org: {
         type: 'string',
+        default: '',
         description:
           'Force override the organization slug, overrides the default org from config',
       },
       perPage: {
         type: 'number',
-        shortFlag: 'pp',
         default: 30,
         description: 'Number of results per page',
+        shortFlag: 'pp',
       },
       page: {
         type: 'number',
-        shortFlag: 'p',
         default: 1,
         description: 'Page number',
+        shortFlag: 'p',
       },
       sort: {
         type: 'string',
-        shortFlag: 's',
         default: 'created_at',
         description: 'Sorting option',
+        shortFlag: 's',
       },
     },
     help: (command, config) => `
@@ -103,19 +105,33 @@ async function run(
     parentName,
   })
 
-  const { all, direction = 'desc', json, markdown, org: orgFlag } = cli.flags
-
-  const dryRun = !!cli.flags['dryRun']
-
-  const interactive = !!cli.flags['interactive']
+  const {
+    all,
+    direction = 'desc',
+    dryRun,
+    interactive,
+    json,
+    markdown,
+    org: orgFlag,
+    page,
+    perPage,
+    sort,
+  } = cli.flags as {
+    all: boolean
+    direction: Direction
+    dryRun: boolean
+    interactive: boolean
+    json: boolean
+    markdown: boolean
+    org: string
+    page: number
+    perPage: number
+    sort: string
+  }
 
   const hasApiToken = hasDefaultApiToken()
 
-  const { 0: orgSlug } = await determineOrgSlug(
-    String(orgFlag || ''),
-    interactive,
-    dryRun,
-  )
+  const { 0: orgSlug } = await determineOrgSlug(orgFlag, interactive, dryRun)
 
   const outputKind = getOutputKind(json, markdown)
 
@@ -157,12 +173,12 @@ async function run(
   }
 
   await handleListRepos({
-    all: Boolean(all),
-    direction: direction === 'asc' ? 'asc' : 'desc',
+    all,
+    direction,
     orgSlug,
     outputKind,
-    page: Number(cli.flags['page']) || 1,
-    perPage: Number(cli.flags['perPage']) || 30,
-    sort: String(cli.flags['sort'] || 'created_at'),
+    page,
+    perPage,
+    sort,
   })
 }

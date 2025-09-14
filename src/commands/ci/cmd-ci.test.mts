@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, spawnNpm } from '../../../test/utils.mts'
+import { cmdit, spawnPnpm } from '../../../test/utils.mts'
 
 describe('socket ci', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,7 @@ describe('socket ci', async () => {
     ['ci', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Shorthand for \`socket scan create --report --no-interactive\`
@@ -53,7 +53,7 @@ describe('socket ci', async () => {
     ['ci', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnNpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

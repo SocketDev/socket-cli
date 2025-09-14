@@ -1,0 +1,15 @@
+diff --git a/.npmignore b/.npmignore
+deleted file mode 100644
+index da23d0d4bab05054b5ff73fe4d5910e17a6b278b..0000000000000000000000000000000000000000
+diff --git a/index.js b/index.js
+index 36896299cc085af2e855ccd48d6ad5813d6ce537..63af9e7acf3588a46adfb4a868139a243a484110 100644
+--- a/index.js
++++ b/index.js
+@@ -1,6 +1,6 @@
+ module.exports = function(x0, y0, x1, y1, fn) {
++  var arr = [];
+   if(!fn) {
+-    var arr = [];
+     fn = function(x, y) { arr.push({ x: x, y: y }); };
+   }
+   var dx = x1 - x0;

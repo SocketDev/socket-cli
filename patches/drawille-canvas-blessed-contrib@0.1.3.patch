@@ -1,0 +1,75 @@
+diff --git a/index.js b/index.js
+index 66aa7be94487ba5f3bb4d01e2b46b94a579b93f3..b40058f6765219f465e60575bb62fdcda6a7a281 100644
+--- a/index.js
++++ b/index.js
+@@ -35,44 +35,44 @@ methods.forEach(function(name) {
+ function getFgCode(color) {
+     // String Value
+     if(typeof color == 'string' && color != 'normal') {
+-        return '\033[3' + exports.colors[color] + 'm';
++        return '\x1B[3' + exports.colors[color] + 'm';
+     }
+     // RGB Value
+     else if (Array.isArray(color) && color.length == 3)
+     {
+-        return '\033[38;5;' + x256(color[0],color[1],color[2]) + 'm';
++        return '\x1B[38;5;' + x256(color[0],color[1],color[2]) + 'm';
+     }
+     // Number
+     else if (typeof color == 'number')
+     {
+-        return '\033[38;5;' + color + 'm';
++        return '\x1B[38;5;' + color + 'm';
+     }
+     // Default
+     else
+     {
+-        return '\033[39m'
++        return '\x1B[39m'
+     }
+ }
+ 
+ function getBgCode(color) {
+     // String Value
+     if(typeof color == 'string' && color != 'normal') {
+-        return '\033[4' + exports.colors[color] + 'm';
++        return '\x1B[4' + exports.colors[color] + 'm';
+     }
+     // RGB Value
+     else if (Array.isArray(color) && color.length == 3)
+     {
+-        return '\033[48;5;' + x256(color[0],color[1],color[2]) + 'm';
++        return '\x1B[48;5;' + x256(color[0],color[1],color[2]) + 'm';
+     }
+     // Number
+     else if (typeof color == 'number')
+     {
+-        return '\033[48;5;' + color + 'm';
++        return '\x1B[48;5;' + color + 'm';
+     }
+     // Default
+     else
+     {
+-        return '\033[49m'
++        return '\x1B[49m'
+     }
+ }
+ 
+@@ -217,7 +217,7 @@ Canvas.prototype.writeText = function(str, x, y) {
+   var fg = getFgCode(this.fontFg);
+ 
+   this.chars[coord] = fg + bg + this.chars[coord]
+-  this.chars[coord+str.length-1] += '\033[39m\033[49m'
++  this.chars[coord+str.length-1] += '\x1B[39m\x1B[49m'
+ }
+ 
+ var map = [
+@@ -257,7 +257,7 @@ Canvas.prototype.frame = function frame(delimiter) {
+       result.push(' ');
+     } else {   
+         var colorCode = this.colors[i];
+-        result.push(colorCode+String.fromCharCode(0x2800 + this.content[i]) + '\033[39m')      
++        result.push(colorCode+String.fromCharCode(0x2800 + this.content[i]) + '\x1B[39m')      
+       //result.push(String.fromCharCode(0x2800 + this.content[i]))      
+     }
+   }

@@ -1,7 +1,7 @@
-Index: /tiny-updater/dist/index.d.ts
-===================================================================
---- /tiny-updater/dist/index.d.ts
-+++ /tiny-updater/dist/index.d.ts
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index fcfeeb080e5a685e87e492e07c80f83ce87b33d5..0be113a3972d1cdaf5bf6091f9a7c44eb5eb5265 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
 @@ -1,4 +1,10 @@
  import type { Options } from './types.js';
 -declare const updater: ({ name, version, ttl }: Options) => Promise<boolean>;
@@ -14,12 +14,11 @@ Index: /tiny-updater/dist/index.d.ts
 +}: Options) => Promise<boolean>;
  export default updater;
  export type { Options };
-Index: /tiny-updater/dist/index.js
-===================================================================
---- /tiny-updater/dist/index.js
-+++ /tiny-updater/dist/index.js
-@@ -2,13 +2,22 @@
- import Store from './store.js';
+diff --git a/dist/index.js b/dist/index.js
+index ac3994c9526fa2c751f3bfe7c05006bfe77c50b3..57346ff9e5e0f01871b623f9fa987ede76fb5163 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -3,11 +3,20 @@ import Store from './store.js';
  import Utils from './utils.js';
  /* MAIN */
  //TODO: Account for non-latest releases
@@ -42,13 +41,11 @@ Index: /tiny-updater/dist/index.js
      if (!latest)
          return false;
      if (isFresh) {
-         const record = { timestampFetch: timestamp, timestampNotification: timestamp, version: latest };
-Index: /tiny-updater/dist/types.d.ts
-===================================================================
---- /tiny-updater/dist/types.d.ts
-+++ /tiny-updater/dist/types.d.ts
-@@ -1,11 +1,31 @@
-+
+diff --git a/dist/types.d.ts b/dist/types.d.ts
+index 984202ceb64c20d0f4d9c463d32310755b83959c..443085786b937d740d342f348cad51df0b08678a 100644
+--- a/dist/types.d.ts
++++ b/dist/types.d.ts
+@@ -1,11 +1,30 @@
 +type AuthInfo = {
 +    type: string;
 +    token: string;
@@ -81,11 +78,11 @@ Index: /tiny-updater/dist/types.d.ts
 +  UtilsFetchOptions,
 +  UtilsGetLatestVersionOptions
 +};
-Index: /tiny-updater/dist/utils.d.ts
-===================================================================
---- /tiny-updater/dist/utils.d.ts
-+++ /tiny-updater/dist/utils.d.ts
-@@ -1,10 +1,14 @@
+diff --git a/dist/utils.d.ts b/dist/utils.d.ts
+index 05ec4d0d4fc6a17f6c80b36cc03cbfe8008585cb..915d7afa05cc6055dc2c91c427fc2923eb6a6abc 100644
+--- a/dist/utils.d.ts
++++ b/dist/utils.d.ts
+@@ -1,9 +1,13 @@
 +import { UtilsFetchOptions, UtilsGetLatestVersionOptions } from './types';
  declare const Utils: {
 -    fetch: (url: string) => Promise<{
@@ -101,12 +98,11 @@ Index: /tiny-updater/dist/utils.d.ts
      isNumber: (value: unknown) => value is number;
      isString: (value: unknown) => value is string;
      isUpdateAvailable: (current: string, latest: string) => boolean;
-     noop: () => undefined;
-Index: /tiny-updater/dist/utils.js
-===================================================================
---- /tiny-updater/dist/utils.js
-+++ /tiny-updater/dist/utils.js
-@@ -1,26 +1,38 @@
+diff --git a/dist/utils.js b/dist/utils.js
+index d16d8622706ac21b91879479100e164ddaa47201..93b8a2bbd175cfc09c0a9de7bb6473ca2fce374e 100644
+--- a/dist/utils.js
++++ b/dist/utils.js
+@@ -1,25 +1,37 @@
  /* IMPORT */
  import colors from 'tiny-colors';
 -import whenExit from 'when-exit';
@@ -152,9 +148,7 @@ Index: /tiny-updater/dist/utils.js
      },
      isNumber: (value) => {
          return typeof value === 'number';
-     },
-@@ -36,9 +48,9 @@
-     notify: (name, version, latest) => {
+@@ -37,7 +49,7 @@ const Utils = {
          if (!globalThis.process?.stdout?.isTTY)
              return; // Probably piping stdout
          const log = () => console.log(`\n\n📦 Update available for ${colors.cyan(name)}: ${colors.gray(version)} → ${colors.green(latest)}`);
@@ -163,13 +157,11 @@ Index: /tiny-updater/dist/utils.js
      }
  };
  /* EXPORT */
- export default Utils;
-Index: /tiny-updater/package.json
-===================================================================
---- /tiny-updater/package.json
-+++ /tiny-updater/package.json
-@@ -27,9 +27,9 @@
-   ],
+diff --git a/package.json b/package.json
+index 7ea4a2f03b0b479dc76b8b9f65d7573e2b6753b6..c9313e05868bfca8204d5221c24384733655fcad 100755
+--- a/package.json
++++ b/package.json
+@@ -28,7 +28,7 @@
    "dependencies": {
      "ionstore": "^1.0.1",
      "tiny-colors": "^2.2.2",
@@ -178,4 +170,3 @@ Index: /tiny-updater/package.json
    },
    "devDependencies": {
      "fava": "^0.3.4",
-     "tsex": "^4.0.2",
