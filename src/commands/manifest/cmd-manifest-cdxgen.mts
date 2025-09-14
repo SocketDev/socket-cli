@@ -7,10 +7,14 @@ import { pluralize } from '@socketsecurity/registry/lib/words'
 
 import { runCdxgen } from './run-cdxgen.mts'
 import constants from '../../constants.mts'
-import { isHelpFlag } from '../../utils/cmd.mts'
+import { commonFlags, outputFlags } from '../../flags.mts'
+import { filterFlags, isHelpFlag } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
-import type { CliCommandConfig } from '../../utils/meow-with-subcommands.mts'
+import type {
+  CliCommandConfig,
+  CliCommandContext,
+} from '../../utils/meow-with-subcommands.mts'
 
 // TODO: Convert yargs to meow.
 const toLower = (arg: string) => arg.toLowerCase()
@@ -232,8 +236,12 @@ export const cmdManifestCdxgen = {
 async function run(
   argv: string[] | readonly string[],
   importMeta: ImportMeta,
-  { parentName }: { parentName: string },
+  context: CliCommandContext,
 ): Promise<void> {
+  const { parentName } = {
+    __proto__: null,
+    ...context,
+  } as CliCommandContext
   const cli = meowOrExit({
     // Don't let meow take over --help.
     argv: argv.filter(a => !isHelpFlag(a)),
@@ -244,8 +252,14 @@ async function run(
 
   const { dryRun } = cli.flags as { dryRun: boolean }
 
+  // Filter Socket flags from argv but keep --no-banner and --help for cdxgen
+  const argsToProcess = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
+    '--no-banner',
+    '--help',
+    '-h',
+  ])
   const yargv = {
-    ...yargsParse(argv as string[], yargsConfig),
+    ...yargsParse(argsToProcess as string[], yargsConfig),
   } as any
 
   const pathArgs: string[] = []
