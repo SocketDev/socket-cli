@@ -12,12 +12,16 @@ import { cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 import type { PackageJson } from '@socketsecurity/registry/lib/packages'
 
 const setupFixturePackageLocks = async () => {
-  const fixtureDirs = ['fixtures/commands/optimize']
+  const fixtures = [
+    { dir: 'fixtures/commands/optimize/pnpm', pm: 'pnpm', args: ['install', '--silent'] },
+    { dir: 'fixtures/commands/optimize/npm', pm: 'npm', args: ['install', '--silent', '--no-audit', '--no-fund'] },
+    { dir: 'fixtures/commands/optimize/yarn', pm: 'yarn', args: ['install', '--silent'] },
+  ]
 
   await Promise.all(
-    fixtureDirs.map(d =>
-      spawn('npm', ['install', '--silent', '--no-audit', '--no-fund'], {
-        cwd: path.join(testPath, d),
+    fixtures.map(({ dir, pm, args }) =>
+      spawn(pm, args, {
+        cwd: path.join(testPath, dir),
         stdio: 'ignore',
       }),
     ),
@@ -25,30 +29,39 @@ const setupFixturePackageLocks = async () => {
 }
 
 async function cleanupPackageLockFiles() {
-  const cleanupPaths = [
-    'fixtures/commands/optimize/package-lock.json',
-    'fixtures/commands/optimize/node_modules',
-  ].map(p => path.join(testPath, p))
+  const packageManagers = ['npm', 'pnpm', 'yarn']
+  const lockFiles = ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'node_modules']
+
+  const cleanupPaths = packageManagers.flatMap(pm =>
+    lockFiles.map(lockFile => path.join(testPath, 'fixtures/commands/optimize', pm, lockFile))
+  )
 
   await trash(cleanupPaths)
 }
 
 async function cleanupFixturePackageJson() {
-  const fixturePath = path.join(
-    testPath,
-    'fixtures/commands/optimize/package.json',
+  const packageManagers = ['npm', 'pnpm', 'yarn']
+
+  await Promise.all(
+    packageManagers.map(async (pm) => {
+      const fixturePath = path.join(testPath, 'fixtures/commands/optimize', pm, 'package.json')
+      const editablePackageJson = await readPackageJson(fixturePath, {
+        editable: true,
+      })
+
+      // Remove package manager specific override fields.
+      editablePackageJson.update({
+        // npm fields
+        overrides: undefined,
+        // yarn fields
+        resolutions: undefined,
+        // pnpm fields
+        pnpm: undefined,
+      } as Partial<PackageJson>)
+
+      await editablePackageJson.save()
+    })
   )
-  const editablePackageJson = await readPackageJson(fixturePath, {
-    editable: true,
-  })
-
-  // Remove overrides and resolutions fields.
-  editablePackageJson.update({
-    overrides: undefined,
-    resolutions: undefined,
-  } as Partial<PackageJson>)
-
-  await editablePackageJson.save()
 }
 
 describe('socket optimize', async () => {

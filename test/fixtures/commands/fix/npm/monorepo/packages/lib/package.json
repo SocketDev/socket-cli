@@ -1,0 +1,9 @@
+{
+  "name": "@monorepo-npm/lib",
+  "version": "1.0.0",
+  "description": "Lib package in monorepo (npm)",
+  "main": "index.js",
+  "dependencies": {
+    "lodash": "4.17.20"
+  }
+}

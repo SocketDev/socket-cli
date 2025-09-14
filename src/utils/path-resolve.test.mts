@@ -2,8 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import mockFs from 'mock-fs'
-import nock from 'nock'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
@@ -87,16 +86,8 @@ const sortedPromise =
 const sortedGetPackageFilesFullScans = sortedPromise(getPackageFilesForScan)
 
 describe('Path Resolve', () => {
-  beforeEach(() => {
-    nock.cleanAll()
-    nock.disableNetConnect()
-  })
-
   afterEach(() => {
     mockFs.restore()
-    if (!nock.isDone()) {
-      throw new Error(`pending nock mocks: ${nock.pendingMocks()}`)
-    }
   })
 
   describe('getPackageFilesForScan()', () => {

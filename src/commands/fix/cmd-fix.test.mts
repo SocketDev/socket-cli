@@ -9,15 +9,23 @@ import constants from '../../../src/constants.mts'
 import { cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 
 async function setupFixturePackageLocks() {
-  const fixtureDirs = [
-    'fixtures/commands/fix/vulnerable-deps',
-    'fixtures/commands/fix/monorepo',
-  ]
+  const packageManagers = ['npm', 'pnpm', 'yarn']
+  const scenarios = ['vulnerable-deps', 'monorepo']
+
+  const fixtures = packageManagers.flatMap(pm =>
+    scenarios.map(scenario => ({
+      dir: `fixtures/commands/fix/${pm}/${scenario}`,
+      pm,
+      args: pm === 'npm'
+        ? ['install', '--silent', '--no-audit', '--no-fund']
+        : ['install', '--silent']
+    }))
+  )
 
   await Promise.all(
-    fixtureDirs.map(d =>
-      spawn('npm', ['install', '--silent', '--no-audit', '--no-fund'], {
-        cwd: path.join(testPath, d),
+    fixtures.map(({ dir, pm, args }) =>
+      spawn(pm, args, {
+        cwd: path.join(testPath, dir),
         stdio: 'ignore',
       }),
     ),
@@ -25,17 +33,34 @@ async function setupFixturePackageLocks() {
 }
 
 async function cleanupPackageLockFiles() {
-  const cleanupPaths = [
-    'fixtures/commands/fix/vulnerable-deps/package-lock.json',
-    'fixtures/commands/fix/vulnerable-deps/node_modules',
-    'fixtures/commands/fix/monorepo/package-lock.json',
-    'fixtures/commands/fix/monorepo/node_modules',
-    'fixtures/commands/fix/monorepo/packages/app/package-lock.json',
-    'fixtures/commands/fix/monorepo/packages/app/node_modules',
-    'fixtures/commands/fix/monorepo/packages/lib/package-lock.json',
-    'fixtures/commands/fix/monorepo/packages/lib/node_modules',
-  ]
-  await trash(cleanupPaths.map(p => path.join(testPath, p)))
+  const packageManagers = ['npm', 'pnpm', 'yarn']
+  const scenarios = ['vulnerable-deps', 'monorepo']
+  const lockFiles = ['package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'node_modules']
+  const monorepoSubPaths = ['packages/app', 'packages/lib']
+
+  const cleanupPaths: string[] = []
+
+  for (const pm of packageManagers) {
+    for (const scenario of scenarios) {
+      const baseDir = path.join(testPath, 'fixtures/commands/fix', pm, scenario)
+
+      // Add base directory lock files
+      for (const lockFile of lockFiles) {
+        cleanupPaths.push(path.join(baseDir, lockFile))
+      }
+
+      // Add monorepo subdirectory lock files
+      if (scenario === 'monorepo') {
+        for (const subPath of monorepoSubPaths) {
+          for (const lockFile of lockFiles) {
+            cleanupPaths.push(path.join(baseDir, subPath, lockFile))
+          }
+        }
+      }
+    }
+  }
+
+  await trash(cleanupPaths)
 }
 
 describe('socket fix', async () => {
