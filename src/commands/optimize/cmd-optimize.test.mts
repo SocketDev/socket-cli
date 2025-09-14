@@ -8,19 +8,18 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import constants from '../../../src/constants.mts'
 import { cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 
+const fixtureDir = path.join(testPath, 'fixtures/commands/optimize')
+
 async function revertFixtureChanges() {
-  // Use git to revert all changes in the fixture directories.
-  const fixtureBasePath = path.join(testPath, 'fixtures/commands/optimize')
   // Clean up any untracked files (node_modules, etc.).
   await spawn('git', ['clean', '-fd', '.'], {
-    cwd: fixtureBasePath,
+    cwd: fixtureDir,
     stdio: 'ignore',
   })
 }
 
 describe('socket optimize', async () => {
   const { binCliPath } = constants
-  const fixtureDir = path.join(testPath, 'fixtures/commands/optimize')
 
   beforeAll(async () => {
     // Ensure fixtures are in clean state before tests.
@@ -102,7 +101,7 @@ describe('socket optimize', async () => {
     ['optimize', '--dry-run', '--pin', '--config', '{"apiToken":"fakeToken"}'],
     'should accept --pin flag',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr } = await spawnPnpm(binCliPath, cmd)
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(fixtureDir, 'package.json')
       const packageJson = await readPackageJson(packageJsonPath)
@@ -206,7 +205,7 @@ describe('socket optimize', async () => {
     ],
     'should accept custom directory path',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr } = await spawnPnpm(binCliPath, cmd)
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(fixtureDir, 'package.json')
       const packageJson = await readPackageJson(packageJsonPath)
@@ -245,7 +244,7 @@ describe('socket optimize', async () => {
     ],
     'should accept comprehensive flag combination',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr } = await spawnPnpm(binCliPath, cmd)
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(fixtureDir, 'package.json')
       const packageJson = await readPackageJson(packageJsonPath)
@@ -284,7 +283,7 @@ describe('socket optimize', async () => {
     ],
     'should accept pin, prod, and markdown flags together',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr } = await spawnPnpm(binCliPath, cmd)
       // For dry-run, should not modify files.
       const packageJsonPath = path.join(fixtureDir, 'package.json')
       const packageJson = await readPackageJson(packageJsonPath)
