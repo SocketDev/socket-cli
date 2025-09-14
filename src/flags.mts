@@ -4,7 +4,6 @@ import meow from 'meow'
 import terminalLink from 'terminal-link'
 
 import constants from './constants.mts'
-import { camelToKebab } from './utils/strings.mts'
 
 import type { Flag } from 'meow'
 
@@ -227,47 +226,3 @@ export const validationFlags: MeowFlags = {
     description: 'Exits with an error code if any matching issues are found',
   },
 }
-
-// Flags that are handled globally and should be filtered out before passing to subcommands.
-export const globalFlagsToFilter = new Set([
-  'config',
-  'banner',
-  'maxOldSpaceSize',
-  'maxSemiSpaceSize',
-  'spinner',
-])
-
-// Convert flag names to actual flag strings.
-// (e.g. --flag-name, -f, --no-banner, --no-spinner)
-export const commonFlagsToFilter = new Set(
-  Array.from(globalFlagsToFilter).flatMap(flagName => {
-    const flag = commonFlags[flagName]
-    if (!flag) {
-      return []
-    }
-    // Convert camelCase to kebab-case.
-    // (e.g. maxOldSpaceSize -> max-old-space-size)
-    const longFlag = `--${camelToKebab(flagName)}`
-    const flags = []
-    // Special case for --no-banner and --no-spinner (negated booleans).
-    if (flagName === 'spinner' || flagName === 'spinner') {
-      flags.push(`--no-${flagName}`)
-    } else {
-      flags.push(longFlag)
-    }
-    if (flag?.shortFlag) {
-      flags.push(`-${flag.shortFlag}`)
-    }
-    return flags
-  }),
-)
-
-// Flags that take values, not boolean flags.
-export const flagsThatTakeValues = new Set(
-  Object.entries(commonFlags)
-    .filter(
-      ([flagName, flag]) =>
-        globalFlagsToFilter.has(flagName) && flag.type !== 'boolean',
-    )
-    .map(([flagName]) => `--${camelToKebab(flagName)}`),
-)
