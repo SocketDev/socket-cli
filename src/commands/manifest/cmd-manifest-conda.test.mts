@@ -1,7 +1,12 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cleanOutput, cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
+import {
+  cleanOutput,
+  cmdit,
+  spawnPnpm,
+  testPath,
+} from '../../../test/utils.mts'
 
 describe('socket manifest conda', async () => {
   const { binCliPath } = constants
