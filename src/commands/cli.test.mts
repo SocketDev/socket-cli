@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import { cmdit, spawnPnpm } from '../../test/utils.mts'
-import constants from '../constants.mts'
+import constants, { API_V0_URL } from '../constants.mts'
 
 describe('socket root command', async () => {
   const { binCliPath } = constants
@@ -81,7 +81,7 @@ describe('socket root command', async () => {
         Environment variables for development
           SOCKET_CLI_API_BASE_URL     Change the base URL for Socket API calls
                                       Defaults: The "apiBaseUrl" value of socket/settings local app data
-                                      if present, else https://api.socket.dev/v0/
+                                      if present, else ${API_V0_URL}
           SOCKET_CLI_API_PROXY        Set the proxy Socket API requests are routed through, e.g. if set to
                                       http://127.0.0.1:9090 (https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries) then all request are passed through that proxy
                                       Aliases: HTTPS_PROXY, https_proxy, HTTP_PROXY, and http_proxy

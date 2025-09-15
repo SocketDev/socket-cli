@@ -479,7 +479,7 @@ const LAZY_ENV = () => {
       // TODO: Remove legacy environment variable name.
       envAsString(env['SOCKET_SECURITY_API_BASE_URL']) ||
       getConfigValueOrUndef('apiBaseUrl') ||
-      'https://api.socket.dev/v0/',
+      API_V0_URL,
     // Set the proxy that all requests are routed through.
     // https://github.com/SocketDev/socket-cli?tab=readme-ov-file#environment-variables-for-development
     SOCKET_CLI_API_PROXY:
