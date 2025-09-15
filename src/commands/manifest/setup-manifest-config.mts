@@ -6,6 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { input, select } from '@socketsecurity/registry/lib/prompts'
 
 import { detectManifestActions } from './detect-manifest-actions.mts'
+import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import {
   readSocketJsonSync,
   writeSocketJson,
@@ -27,11 +28,11 @@ export async function setupManifestConfig(
   //   - each target will have its own specific options
   //   - record them to the socket.yml (or socket-cli.yml ? or just socket.json ?)
 
-  const jsonPath = path.join(cwd, `socket.json`)
+  const jsonPath = path.join(cwd, SOCKET_JSON)
   if (fs.existsSync(jsonPath)) {
-    logger.info(`Found socket.json at ${jsonPath}`)
+    logger.info(`Found ${SOCKET_JSON} at ${jsonPath}`)
   } else {
-    logger.info(`No socket.json found at ${cwd}, will generate a new one`)
+    logger.info(`No ${SOCKET_JSON} found at ${cwd}, will generate a new one`)
   }
 
   logger.log('')
@@ -41,7 +42,9 @@ export async function setupManifestConfig(
   logger.log('      CLI commands. You can still override them by explicitly')
   logger.log('      setting the flag. It is meant to be a convenience tool.')
   logger.log('')
-  logger.log('This command will generate a socket.json file in the target cwd.')
+  logger.log(
+    `This command will generate a ${SOCKET_JSON} file in the target cwd.`,
+  )
   logger.log(
     'You can choose to add this file to your repo (handy for collaboration)',
   )
@@ -53,7 +56,7 @@ export async function setupManifestConfig(
     {
       name: 'Conda'.padEnd(30, ' '),
       value: 'conda',
-      description: 'Generate requirements.txt from a Conda environment.yml',
+      description: `Generate ${REQUIREMENTS_TXT} from a Conda environment.yml`,
     },
     {
       name: 'Gradle'.padEnd(30, ' '),
@@ -159,7 +162,7 @@ export async function setupManifestConfig(
   }
 
   logger.log('')
-  logger.log('Setup complete. Writing socket.json')
+  logger.log(`Setup complete. Writing ${SOCKET_JSON}`)
   logger.log('')
 
   if (
@@ -225,7 +228,7 @@ async function setupConda(
   }
 
   if (!config.stdout) {
-    const out = await askForOutputFile(config.outfile || 'requirements.txt')
+    const out = await askForOutputFile(config.outfile || REQUIREMENTS_TXT)
     if (out === undefined) {
       return canceledByUser()
     } else if (out === '-') {

@@ -1,6 +1,7 @@
 import path from 'node:path'
 
 import { handleCmdJson } from './handle-cmd-json.mts'
+import { SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 
@@ -11,8 +12,7 @@ import type {
 
 const config: CliCommandConfig = {
   commandName: 'json',
-  description:
-    'Display the `socket.json` that would be applied for target folder',
+  description: `Display the \`${SOCKET_JSON}\` that would be applied for target folder`,
   hidden: true,
   flags: {
     ...commonFlags,
@@ -21,7 +21,7 @@ const config: CliCommandConfig = {
     Usage
       $ ${command} [options] [CWD=.]
 
-    Display the \`socket.json\` file that would apply when running relevant commands
+    Display the \`${SOCKET_JSON}\` file that would apply when running relevant commands
     in the target directory.
 
     Examples

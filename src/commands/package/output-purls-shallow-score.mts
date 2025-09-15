@@ -178,7 +178,7 @@ export function preProcess(
   artifacts: SocketArtifact[],
   requestedPurls: string[],
 ): { rows: Map<string, DedupedArtifact>; missing: string[] } {
-  // Dedupe results (for example, pypi will emit one package for each system release (win/mac/cpu) even if it's
+  // Dedupe results (for example, PyPI will emit one package for each system release (win/mac/cpu) even if it's
   // the same package version with same results. The duplication is irrelevant and annoying to the user.
 
   // Make some effort to match the requested data with the response

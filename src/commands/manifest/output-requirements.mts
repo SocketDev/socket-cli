@@ -2,6 +2,7 @@ import fs from 'node:fs'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { REQUIREMENTS_TXT } from '../../constants.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
 
@@ -42,10 +43,10 @@ export async function outputRequirements(
     arr.push('# Converted Conda file')
     arr.push('')
     arr.push(
-      'This is the Conda `environment.yml` file converted to python `requirements.txt`:',
+      `This is the Conda \`environment.yml\` file converted to python \`${REQUIREMENTS_TXT}\`:`,
     )
     arr.push('')
-    arr.push('```file=requirements.txt')
+    arr.push(`\`\`\`file=${REQUIREMENTS_TXT}`)
     arr.push(result.data.pip)
     arr.push('```')
     arr.push('')

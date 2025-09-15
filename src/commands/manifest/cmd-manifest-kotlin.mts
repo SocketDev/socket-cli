@@ -4,7 +4,7 @@ import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
-import constants from '../../constants.mts'
+import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
@@ -55,7 +55,7 @@ const config: CliCommandConfig = {
     global \`gradle\` binary but that may not work (hard to predict).
 
     The \`pom.xml\` is a manifest file similar to \`package.json\` for npm or
-    or requirements.txt for PyPi), but specifically for Maven, which is Java's
+    or ${REQUIREMENTS_TXT} for PyPi), but specifically for Maven, which is Java's
     dependency repository. Languages like Kotlin and Scala piggy back on it too.
 
     There are some caveats with the gradle to \`pom.xml\` conversion:
@@ -111,7 +111,7 @@ async function run(
 
   debugFn(
     'inspect',
-    'override: socket.json gradle',
+    `override: ${SOCKET_JSON} gradle`,
     sockJson?.defaults?.manifest?.gradle,
   )
 
@@ -121,7 +121,7 @@ async function run(
   if (!bin) {
     if (sockJson.defaults?.manifest?.gradle?.bin) {
       bin = sockJson.defaults?.manifest?.gradle?.bin
-      logger.info('Using default --bin from socket.json:', bin)
+      logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
     } else {
       bin = path.join(cwd, 'gradlew')
     }
@@ -129,7 +129,10 @@ async function run(
   if (!gradleOpts) {
     if (sockJson.defaults?.manifest?.gradle?.gradleOpts) {
       gradleOpts = sockJson.defaults?.manifest?.gradle?.gradleOpts
-      logger.info('Using default --gradle-opts from socket.json:', gradleOpts)
+      logger.info(
+        `Using default --gradle-opts from ${SOCKET_JSON}:`,
+        gradleOpts,
+      )
     } else {
       gradleOpts = ''
     }
@@ -137,7 +140,7 @@ async function run(
   if (verbose === undefined) {
     if (sockJson.defaults?.manifest?.gradle?.verbose !== undefined) {
       verbose = sockJson.defaults?.manifest?.gradle?.verbose
-      logger.info('Using default --verbose from socket.json:', verbose)
+      logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
     } else {
       verbose = false
     }
