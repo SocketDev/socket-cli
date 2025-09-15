@@ -1,7 +1,7 @@
 import { readJsonSync } from '@socketsecurity/registry/lib/fs'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
-import constants from '../constants.mts'
+import constants, { UNKNOWN_ERROR } from '../constants.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
 import shadowBin from '../shadow/npm/bin.mts'
 
@@ -87,7 +87,12 @@ export async function spawnCoana(
     return { ok: true, data: output.stdout }
   } catch (e) {
     const stderr = (e as any)?.stderr
-    const message = stderr ? stderr : (e as Error)?.message
-    return { ok: false, data: e, message }
+    const cause = (e as Error)?.message || UNKNOWN_ERROR
+    const message = stderr ? stderr : cause
+    return {
+      ok: false,
+      data: e,
+      message,
+    }
   }
 }
