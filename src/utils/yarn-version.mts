@@ -7,7 +7,7 @@ export function isYarnBerry(): boolean {
   if (_isYarnBerry === undefined) {
     try {
       const yarnBinPath = getYarnBinPath()
-      const result = spawnSync(yarnBinPath, ['--version'])
+      const result = spawnSync(yarnBinPath, ['--version'], { encoding: 'utf8' })
 
       if (result.status === 0 && result.stdout) {
         const version = result.stdout
