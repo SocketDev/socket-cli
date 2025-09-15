@@ -126,10 +126,10 @@ describe('shadowYarn', () => {
   })
 
   it('should handle yarn dlx command', async () => {
-    await shadowYarn(['dlx', 'cowsay@1.5.0'])
+    await shadowYarn(['dlx', 'cowsay@1.6.0'])
 
     expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
-      ['pkg:npm/cowsay@1.5.0'],
+      ['pkg:npm/cowsay@1.6.0'],
       expect.objectContaining({
         nothrow: true,
       }),

@@ -28,7 +28,8 @@ describe('socket npx', async () => {
           Use \`socket wrapper on\` to alias this command as \`npx\`.
 
           Examples
-            $ socket npx cowsay"
+            $ socket npx cowsay
+            $ socket npx cowsay@1.6.0 hello"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -59,6 +60,23 @@ describe('socket npx', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'npx',
+      '--silent',
+      'cowsay@^1.6.0',
+      'hello',
+      '--dry-run',
+      '--config',
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle npx with version',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      expect(code, 'dry-run npx should exit with code 0').toBe(0)
     },
   )
 })
