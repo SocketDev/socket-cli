@@ -27,6 +27,7 @@ describe('socket config', async () => {
 
           Options
 
+            --no-banner                 Hide the Socket banner
             --no-spinner                Hide the console spinner"
       `,
       )
