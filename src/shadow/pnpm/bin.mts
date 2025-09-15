@@ -2,7 +2,8 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { installLinks } from './link.mts'
@@ -131,8 +132,9 @@ export default async function shadowPnpm(
             if (lockfile) {
               // Use existing function to scan the entire lockfile
               if (isDebug()) {
-                console.debug(
-                  '[Socket] Scanning all dependencies from pnpm-lock.yaml',
+                debugFn(
+                  'notice',
+                  `scanning: all dependencies from ${PNPM_LOCK_YAML}`,
                 )
               }
 
@@ -150,8 +152,7 @@ export default async function shadowPnpm(
                   output: process.stderr,
                 })
 
-                const errorMessage = `
-Socket pnpm exiting due to risks.${
+                const errorMessage = `Socket pnpm exiting due to risks.${
                   viewAllRisks
                     ? ''
                     : `\nView all risks - Rerun with environment variable ${constants.SOCKET_CLI_VIEW_ALL_RISKS}=1.`
@@ -161,7 +162,7 @@ Socket pnpm exiting due to risks.${
                     : `\nAccept risks - Rerun with environment variable ${constants.SOCKET_CLI_ACCEPT_RISKS}=1.`
                 }`.trim()
 
-                console.error(errorMessage)
+                logger.error(errorMessage)
                 // eslint-disable-next-line n/no-process-exit
                 process.exit(1)
                 // This line is never reached in production, but helps tests.
@@ -170,30 +171,31 @@ Socket pnpm exiting due to risks.${
 
               // Return early since we've already done the scanning
               if (isDebug()) {
-                console.debug(
-                  '[Socket] Lockfile scanning complete, proceeding with install',
+                debugFn(
+                  'notice',
+                  'complete: lockfile scanning, proceeding with install',
                 )
               }
             }
           }
         } catch (e) {
           if (isDebug()) {
-            console.debug('[Socket] Error scanning pnpm lockfile:', e)
+            debugFn('error', 'caught: pnpm lockfile scanning error')
+            debugDir('inspect', { error: e })
           }
         }
       } else if (isDebug()) {
-        console.debug(
-          '[Socket] No pnpm-lock.yaml found, skipping bulk install scanning',
+        debugFn(
+          'notice',
+          'skip: no pnpm-lock.yaml found, skipping bulk install scanning',
         )
       }
     }
 
     if (packagePurls.length > 0) {
       if (isDebug()) {
-        console.debug(
-          '[Socket] Scanning packages before download:',
-          packagePurls,
-        )
+        debugFn('notice', 'scanning: packages before download')
+        debugDir('inspect', { packagePurls })
       }
 
       try {
@@ -222,7 +224,7 @@ Socket pnpm exiting due to risks.${
               : `\nAccept risks - Rerun with environment variable ${constants.SOCKET_CLI_ACCEPT_RISKS}=1.`
           }`.trim()
 
-          console.error(errorMessage)
+          logger.error(errorMessage)
           // eslint-disable-next-line n/no-process-exit
           process.exit(1)
           // This line is never reached in production, but helps tests.
@@ -234,17 +236,16 @@ Socket pnpm exiting due to risks.${
           throw e
         }
         if (isDebug()) {
-          console.debug('[Socket] Error during package scanning:', e)
+          debugFn('error', 'caught: package scanning error')
+          debugDir('inspect', { error: e })
         }
         // Continue with installation if scanning fails
       }
     }
 
     if (isDebug()) {
-      console.debug(
-        '[Socket] Scanning complete, proceeding with install:',
-        rawPnpmArgs.slice(1),
-      )
+      debugFn('notice', 'complete: scanning, proceeding with install')
+      debugDir('inspect', { args: rawPnpmArgs.slice(1) })
     }
   }
 
@@ -255,9 +256,7 @@ Socket pnpm exiting due to risks.${
   } as Record<string, string>
 
   if (isDebug()) {
-    console.debug(
-      `[Socket] pnpm shadow bin spawn: ${realPnpmPath} ${argsToString}`,
-    )
+    debugFn('notice', `spawn: pnpm shadow bin ${realPnpmPath} ${argsToString}`)
   }
 
   const spawnPromise = spawn(realPnpmPath, [...prefixArgs, ...suffixArgs], {

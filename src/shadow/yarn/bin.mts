@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs'
 
-import { isDebug } from '@socketsecurity/registry/lib/debug'
+import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { installLinks } from './link.mts'
@@ -134,29 +135,30 @@ export default async function shadowYarn(
         }
 
         if (isDebug()) {
-          console.debug(
-            `[Socket] Scanning ${packagePurls.length} direct dependencies from package.json`,
+          debugFn(
+            'notice',
+            `scanning: ${packagePurls.length} direct dependencies from package.json`,
           )
-          console.debug(
-            '[Socket] Note: Transitive dependencies not scanned (yarn.lock parsing not implemented)',
+          debugFn(
+            'notice',
+            'note: transitive dependencies not scanned (yarn.lock parsing not implemented)',
           )
         }
       } catch (e) {
         if (isDebug()) {
-          console.debug(
-            '[Socket] Could not read package.json for dependency scanning:',
-            e,
+          debugFn(
+            'error',
+            'caught: package.json read error during dependency scanning',
           )
+          debugDir('inspect', { error: e })
         }
       }
     }
 
     if (packagePurls.length > 0) {
       if (isDebug()) {
-        console.debug(
-          '[Socket] Scanning packages before download:',
-          packagePurls,
-        )
+        debugFn('notice', 'scanning: packages before download')
+        debugDir('inspect', { packagePurls })
       }
 
       try {
@@ -185,7 +187,7 @@ Socket yarn exiting due to risks.${
               : `\nAccept risks - Rerun with environment variable ${constants.SOCKET_CLI_ACCEPT_RISKS}=1.`
           }`.trim()
 
-          console.error(errorMessage)
+          logger.error(errorMessage)
           // eslint-disable-next-line n/no-process-exit
           process.exit(1)
           // This line is never reached in production, but helps tests.
@@ -197,17 +199,16 @@ Socket yarn exiting due to risks.${
           throw e
         }
         if (isDebug()) {
-          console.debug('[Socket] Error during package scanning:', e)
+          debugFn('error', 'caught: package scanning error')
+          debugDir('inspect', { error: e })
         }
         // Continue with installation if scanning fails
       }
     }
 
     if (isDebug()) {
-      console.debug(
-        '[Socket] Scanning complete, proceeding with install:',
-        rawYarnArgs.slice(1),
-      )
+      debugFn('notice', 'complete: scanning, proceeding with install')
+      debugDir('inspect', { args: rawYarnArgs.slice(1) })
     }
   }
 
@@ -218,9 +219,7 @@ Socket yarn exiting due to risks.${
   } as Record<string, string>
 
   if (isDebug()) {
-    console.debug(
-      `[Socket] yarn shadow bin spawn: ${realYarnPath} ${argsToString}`,
-    )
+    debugFn('notice', `spawn: yarn shadow bin ${realYarnPath} ${argsToString}`)
   }
 
   const spawnPromise = spawn(realYarnPath, [...prefixArgs, ...suffixArgs], {

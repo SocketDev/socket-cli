@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 import { isDebug } from '@socketsecurity/registry/lib/debug'
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn, spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 import { testPath } from '../../../test/utils.mts'
@@ -57,10 +58,10 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
           // Test passes if Socket npm wrapper shows help without errors.
           expect(result.stderr).toContain('socket npm')
           expect(result.code).toBe(0)
-        } catch (error) {
+        } catch (e) {
           // If there's an error, log it for debugging but don't fail.
           if (useDebug) {
-            console.error('Socket npm test error:', error)
+            logger.error('Socket npm test error:', e)
           }
           // For now, we'll make this test pass to avoid flakiness.
           expect(true).toBe(true)
@@ -102,8 +103,8 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
           throw new Error(
             'Expected Socket to detect typosquat, but command succeeded',
           )
-        } catch (error) {
-          const errorMessage = error?.['stderr'] || error?.message || ''
+        } catch (e) {
+          const errorMessage = e?.['stderr'] || e?.message || ''
 
           // Success cases: Socket detected an issue.
           if (
@@ -112,13 +113,15 @@ for (const npmDir of ['npm9', 'npm10', 'npm11']) {
             errorMessage.includes('Unauthorized') ||
             errorMessage.includes('Looking up data')
           ) {
-            expect(true).toBe(true) // Test passed - Socket intercepted the command.
+            // Test passed - Socket intercepted the command.
+            expect(true).toBe(true)
           } else {
             // For reliability, log the error but don't fail the test.
             if (useDebug) {
-              console.error('Unexpected error in typosquat test:', errorMessage)
+              logger.error('Unexpected error in typosquat test:', errorMessage)
             }
-            expect(true).toBe(true) // Pass for now to avoid flakiness.
+            // Pass for now to avoid flakiness.
+            expect(true).toBe(true)
           }
         }
       },
