@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, spawnPnpm } from '../../../test/utils.mts'
+import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket yarn', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,7 @@ describe('socket yarn', async () => {
     ['yarn', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Run yarn with the Socket wrapper
@@ -50,8 +50,8 @@ describe('socket yarn', async () => {
     ['yarn', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-        spawnOptions: { timeout: 30_000 },
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
       })
 
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
@@ -71,8 +71,8 @@ describe('socket yarn', async () => {
     ],
     'should handle add with --dry-run flag',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-        spawnOptions: { timeout: 30_000 },
+      const { code } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
       })
 
       expect(code, 'dry-run add should exit with code 0').toBe(0)
@@ -92,8 +92,8 @@ describe('socket yarn', async () => {
     ],
     'should handle dlx with version',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-        spawnOptions: { timeout: 30_000 },
+      const { code } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
       })
 
       expect(code, 'dry-run dlx should exit with code 0').toBe(0)
@@ -104,8 +104,8 @@ describe('socket yarn', async () => {
     ['yarn', 'install', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should handle install with --dry-run flag',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-        spawnOptions: { timeout: 30_000 },
+      const { code } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
       })
 
       expect(code, 'dry-run install should exit with code 0').toBe(0)
@@ -123,8 +123,8 @@ describe('socket yarn', async () => {
     ],
     'should handle scoped packages with version',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-        spawnOptions: { timeout: 30_000 },
+      const { code } = await spawnSocketCli(binCliPath, cmd, {
+        timeout: 30_000,
       })
 
       expect(code, 'dry-run add scoped package should exit with code 0').toBe(0)

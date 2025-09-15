@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 
 import { it } from 'vitest'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
+import { SpawnOptions, spawn } from '@socketsecurity/registry/lib/spawn'
 import { stripAnsi } from '@socketsecurity/registry/lib/strings'
 
 import constants from '../src/constants.mts'
@@ -85,15 +85,10 @@ export function cmdit(
   )
 }
 
-export type SpawnPnpmOptions = {
-  env?: Record<string, string> | undefined
-  cwd?: string | undefined
-}
-
-export async function spawnPnpm(
+export async function spawnSocketCli(
   entryPath: string,
   args: string[],
-  options?: SpawnPnpmOptions | undefined,
+  options?: SpawnOptions | undefined,
 ): Promise<{
   code: number
   error?: {
@@ -107,7 +102,7 @@ export async function spawnPnpm(
   const { cwd = process.cwd(), env: spawnEnv } = {
     __proto__: null,
     ...options,
-  } as SpawnPnpmOptions
+  } as SpawnOptions
   try {
     const output = await spawn(constants.execPath, [entryPath, ...args], {
       cwd,
