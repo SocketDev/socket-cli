@@ -31,7 +31,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: pnpm
           scope: '@socketsecurity'
-      - run: pnpm install --ci
+      - run: pnpm install --frozen-lockfile
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
       - run: pnpm publish --provenance --access public
         env:
