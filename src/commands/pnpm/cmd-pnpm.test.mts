@@ -29,7 +29,8 @@ describe('socket pnpm', async () => {
           Examples
             $ socket pnpm
             $ socket pnpm install
-            $ socket pnpm add package-name"
+            $ socket pnpm add package-name
+            $ socket pnpm dlx package-name"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -108,6 +109,27 @@ describe('socket pnpm', async () => {
 
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
       expect(code, 'dry-run add scoped package should exit with code 0').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'pnpm',
+      'dlx',
+      '--silent',
+      'cowsay@^1.6.0',
+      'hello',
+      '--dry-run',
+      '--config',
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle dlx with version',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
+        spawnOptions: { timeout: 30_000 },
+      })
+
+      expect(code, 'dry-run dlx should exit with code 0').toBe(0)
     },
   )
 })

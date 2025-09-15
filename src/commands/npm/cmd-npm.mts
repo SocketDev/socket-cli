@@ -55,6 +55,7 @@ async function run(
     Examples
       $ ${command}
       $ ${command} install -g cowsay
+      $ ${command} exec cowsay
     `,
   }
 

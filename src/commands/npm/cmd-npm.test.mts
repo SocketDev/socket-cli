@@ -29,7 +29,8 @@ describe('socket npm', async () => {
 
           Examples
             $ socket npm
-            $ socket npm install -g cowsay"
+            $ socket npm install -g cowsay
+            $ socket npm exec cowsay"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
@@ -60,6 +61,24 @@ describe('socket npm', async () => {
       `)
 
       expect(code, 'dry-run should exit with code 0 if input ok').toBe(0)
+    },
+  )
+
+  cmdit(
+    [
+      'npm',
+      'exec',
+      '--silent',
+      'cowsay@^1.6.0',
+      'hello',
+      '--dry-run',
+      '--config',
+      '{"apiToken":"fakeToken"}',
+    ],
+    'should handle exec with version',
+    async cmd => {
+      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      expect(code, 'dry-run exec should exit with code 0').toBe(0)
     },
   )
 })

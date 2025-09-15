@@ -52,6 +52,7 @@ async function run(
 
     Examples
       $ ${command} cowsay
+      $ ${command} cowsay@1.6.0 hello
   `,
   }
 

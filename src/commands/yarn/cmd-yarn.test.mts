@@ -83,7 +83,8 @@ describe('socket yarn', async () => {
     [
       'yarn',
       'dlx',
-      'cowsay@^1.0.0',
+      '--quiet',
+      'cowsay@^1.6.0',
       'hello',
       '--dry-run',
       '--config',

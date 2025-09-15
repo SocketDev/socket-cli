@@ -56,6 +56,7 @@ async function run(
       $ ${command}
       $ ${command} install
       $ ${command} add package-name
+      $ ${command} dlx package-name
     `,
   }
 
