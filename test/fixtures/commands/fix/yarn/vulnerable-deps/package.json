@@ -1,0 +1,13 @@
+{
+  "name": "vulnerable-deps-test-yarn",
+  "version": "1.0.0",
+  "description": "Test fixture with vulnerable dependencies (yarn)",
+  "main": "index.js",
+  "dependencies": {
+    "lodash": "4.17.20",
+    "on-headers": "1.0.2"
+  },
+  "devDependencies": {
+    "axios": "1.3.2"
+  }
+}

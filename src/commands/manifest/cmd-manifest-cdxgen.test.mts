@@ -54,7 +54,7 @@ describe('socket manifest cdxgen', async () => {
       'should support --help',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          // Need to pass it on as env because --config will break cdxgen
+          // Need to pass it on as env because --config will break cdxgen.
           env: { SOCKET_CLI_CONFIG: '{}' },
         })
 
@@ -133,8 +133,7 @@ describe('socket manifest cdxgen', async () => {
           for documentation, visit https://cyclonedx.github.io/cdxgen"
         `)
 
-        // expect(code, 'explicit help should exit with code 0').toBe(0)
-        expect(code, 'help should exit with code 2').toBe(0) // cdxgen special case
+        expect(code, 'help should exit with code 0').toBe(0)
         expect(stderr, 'banner includes base command').toContain(
           '`socket manifest cdxgen`',
         )

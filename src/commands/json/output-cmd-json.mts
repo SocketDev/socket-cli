@@ -7,13 +7,13 @@ import {
 } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants from '../../constants.mts'
+import constants, { SOCKET_JSON } from '../../constants.mts'
 import { tildify } from '../../utils/tildify.mts'
 
 export async function outputCmdJson(cwd: string) {
   logger.info('Target cwd:', constants.ENV.VITEST ? '<redacted>' : tildify(cwd))
 
-  const sockJsonPath = path.join(cwd, 'socket.json')
+  const sockJsonPath = path.join(cwd, SOCKET_JSON)
   const tildeSockJsonPath = constants.ENV.VITEST
     ? '<redacted>'
     : tildify(sockJsonPath)

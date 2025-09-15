@@ -24,7 +24,14 @@ import {
   overrideConfigApiToken,
 } from './config.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
-import constants, { NPM, NPX } from '../constants.mts'
+import constants, {
+  API_V0_URL,
+  NPM,
+  NPX,
+  // PNPM,
+  SOCKET_WEBSITE_URL,
+  // YARN,
+} from '../constants.mts'
 import { commonFlags } from '../flags.mts'
 import { getVisibleTokenPrefix } from './sdk.mts'
 import { tildify } from './tildify.mts'
@@ -435,6 +442,7 @@ export async function meowWithSubcommands(
       'organization',
       'package',
       //'patch',
+      // PNPM,
       'raw-npm',
       'raw-npx',
       'repository',
@@ -443,6 +451,7 @@ export async function meowWithSubcommands(
       'threat-feed',
       'uninstall',
       'wrapper',
+      // YARN,
     ])
     Object.entries(subcommands)
       .filter(([_name, subcommand]) => !subcommand.hidden)
@@ -542,6 +551,11 @@ export async function meowWithSubcommands(
     `  ${getFlagListOutput(
       {
         ...flags,
+        // Explicitly document the negated --no-banner variant.
+        noBanner: {
+          ...flags['banner'],
+          hidden: false,
+        } as MeowFlag,
         // Explicitly document the negated --no-spinner variant.
         noSpinner: {
           ...flags['spinner'],
@@ -574,13 +588,13 @@ export async function meowWithSubcommands(
       'Environment variables for development',
       '  SOCKET_CLI_API_BASE_URL     Change the base URL for Socket API calls',
       `                              ${colors.italic('Defaults:')} The "apiBaseUrl" value of socket/settings local app data`,
-      '                              if present, else https://api.socket.dev/v0/',
+      `                              if present, else ${API_V0_URL}`,
       '  SOCKET_CLI_API_PROXY        Set the proxy Socket API requests are routed through, e.g. if set to',
       `                              ${terminalLink('http://127.0.0.1:9090', 'https://docs.proxyman.io/troubleshooting/couldnt-see-any-requests-from-3rd-party-network-libraries')} then all request are passed through that proxy`,
       `                              ${colors.italic('Aliases:')} HTTPS_PROXY, https_proxy, HTTP_PROXY, and http_proxy`,
       '  SOCKET_CLI_API_TIMEOUT      Set the timeout in milliseconds for Socket API requests',
       '  SOCKET_CLI_DEBUG            Enable debug logging in Socket CLI',
-      `  DEBUG                       Enable debug logging based on the ${terminalLink('debug', 'https://socket.dev/npm/package/debug')} package`,
+      `  DEBUG                       Enable debug logging based on the ${terminalLink('debug', `${SOCKET_WEBSITE_URL}/npm/package/debug`)} package`,
     )
   }
 
@@ -654,10 +668,10 @@ export function meowOrExit({
   })
 
   const {
-    help,
+    help: helpFlag,
     org: orgFlag,
     spinner: spinnerFlag,
-    version,
+    version: versionFlag,
   } = cli.flags as {
     help: boolean
     org: string
@@ -697,12 +711,12 @@ export function meowOrExit({
   //   })
   // }
 
-  if (help) {
+  if (helpFlag) {
     cli.showHelp(0)
   }
 
   // Meow doesn't detect 'version' as an unknown flag, so we do the leg work here.
-  if (version && !hasOwn(config.flags, 'version')) {
+  if (versionFlag && !hasOwn(config.flags, 'version')) {
     // Use `console.error` here instead of `logger.error` to match Meow behavior.
     console.error('Unknown flag\n--version')
     // eslint-disable-next-line n/no-process-exit

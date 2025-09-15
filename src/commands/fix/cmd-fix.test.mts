@@ -1,47 +1,49 @@
 import path from 'node:path'
 
-import trash from 'trash'
-import { afterEach, beforeEach, describe, expect } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../../src/constants.mts'
 import { cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 
-async function setupFixturePackageLocks() {
-  const fixtureDirs = [
-    'fixtures/commands/fix/vulnerable-deps',
-    'fixtures/commands/fix/monorepo',
-  ]
+const fixtureBaseDir = path.join(testPath, 'fixtures/commands/fix')
+const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
-  await Promise.all(
-    fixtureDirs.map(d =>
-      spawn('npm', ['install', '--silent', '--no-audit', '--no-fund'], {
-        cwd: path.join(testPath, d),
-        stdio: 'ignore',
-      }),
-    ),
-  )
-}
-
-async function cleanupPackageLockFiles() {
-  const cleanupPaths = [
-    'fixtures/commands/fix/vulnerable-deps/package-lock.json',
-    'fixtures/commands/fix/vulnerable-deps/node_modules',
-    'fixtures/commands/fix/monorepo/package-lock.json',
-    'fixtures/commands/fix/monorepo/node_modules',
-    'fixtures/commands/fix/monorepo/packages/app/package-lock.json',
-    'fixtures/commands/fix/monorepo/packages/app/node_modules',
-    'fixtures/commands/fix/monorepo/packages/lib/package-lock.json',
-    'fixtures/commands/fix/monorepo/packages/lib/node_modules',
-  ]
-  await trash(cleanupPaths.map(p => path.join(testPath, p)))
+async function revertFixtureChanges() {
+  // Reset only the lock files that fix command might modify.
+  try {
+    await spawn('git', ['checkout', 'HEAD', '--', 'monorepo/pnpm-lock.yaml'], {
+      cwd: pnpmFixtureDir,
+      stdio: 'ignore',
+    })
+  } catch {
+    // Ignore errors if lock file doesn't exist or has no changes.
+  }
+  // Clean up any untracked files (node_modules, etc.).
+  await spawn('git', ['clean', '-fd', '.'], {
+    cwd: pnpmFixtureDir,
+    stdio: 'ignore',
+  })
 }
 
 describe('socket fix', async () => {
   const { binCliPath } = constants
 
-  // No setup/cleanup needed for these tests
+  beforeAll(async () => {
+    // Ensure fixtures are in clean state before tests.
+    await revertFixtureChanges()
+  })
+
+  afterEach(async () => {
+    // Revert all changes after each test using git.
+    await revertFixtureChanges()
+  })
+
+  afterAll(async () => {
+    // Clean up once after all tests.
+    await revertFixtureChanges()
+  })
 
   cmdit(
     ['fix', '--help', '--config', '{}'],
@@ -269,7 +271,7 @@ describe('socket fix', async () => {
     'should handle vulnerable dependencies fixture project',
     async cmd => {
       const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-        cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+        cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
       })
       const output = stdout + stderr
       expect(output).toContain(
@@ -284,7 +286,7 @@ describe('socket fix', async () => {
     'should handle monorepo fixture project',
     async cmd => {
       const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-        cwd: path.join(testPath, 'fixtures/commands/fix/monorepo'),
+        cwd: path.join(fixtureBaseDir, 'pnpm/monorepo'),
       })
       const output = stdout + stderr
       expect(output).toContain(
@@ -429,7 +431,7 @@ describe('socket fix', async () => {
       'should handle PURL-based vulnerability identification',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         const output = stdout + stderr
         expect(output).toContain(
@@ -451,7 +453,7 @@ describe('socket fix', async () => {
       'should handle multiple vulnerability IDs in comma-separated format',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         const output = stdout + stderr
         expect(output).toContain(
@@ -475,7 +477,7 @@ describe('socket fix', async () => {
       'should handle multiple vulnerability IDs as separate flags',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         const output = stdout + stderr
         expect(output).toContain(
@@ -501,7 +503,7 @@ describe('socket fix', async () => {
       'should handle autopilot mode with JSON output and custom limit',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         const output = stdout + stderr
         expect(output).toContain(
@@ -526,7 +528,7 @@ describe('socket fix', async () => {
       'should handle monorepo with pin style and markdown output',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/fix/monorepo'),
+          cwd: path.join(fixtureBaseDir, 'pnpm/monorepo'),
         })
         const output = stdout + stderr
         expect(output).toContain(
@@ -628,7 +630,7 @@ describe('socket fix', async () => {
       'should handle non-existent GHSA IDs gracefully',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
@@ -648,7 +650,7 @@ describe('socket fix', async () => {
       'should show clear error when both json and markdown flags are used',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         const output = stdout + stderr
         expect(output).toMatch(/json.*markdown|conflicting|both.*set/i)
@@ -679,7 +681,7 @@ describe('socket fix', async () => {
       'should handle malformed CVE IDs gracefully',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
@@ -709,7 +711,7 @@ describe('socket fix', async () => {
       'should handle unusually long tokens gracefully',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr
@@ -729,7 +731,7 @@ describe('socket fix', async () => {
       'should handle mixed valid and invalid vulnerability IDs',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/fix/vulnerable-deps'),
+          cwd: path.join(fixtureBaseDir, 'pnpm/vulnerable-deps'),
         })
         expect(code).toBeGreaterThan(0)
         const output = stdout + stderr

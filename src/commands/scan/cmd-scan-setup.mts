@@ -3,7 +3,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleScanConfig } from './handle-scan-config.mts'
-import constants from '../../constants.mts'
+import constants, { SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -22,8 +22,7 @@ const config: CliCommandConfig = {
     ...commonFlags,
     defaultOnReadError: {
       type: 'boolean',
-      description:
-        'If reading the socket.json fails, just use a default config? Warning: This might override the existing json file!',
+      description: `If reading the ${SOCKET_JSON} fails, just use a default config? Warning: This might override the existing json file!`,
     },
   },
   help: (command, config) => `

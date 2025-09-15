@@ -2,12 +2,17 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import mockFs from 'mock-fs'
-import nock from 'nock'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
-import { NODE_MODULES } from '../constants.mjs'
+import {
+  NODE_MODULES,
+  PACKAGE_JSON,
+  PACKAGE_LOCK_JSON,
+  PNPM_LOCK_YAML,
+  YARN_LOCK,
+} from '../constants.mjs'
 import { getPackageFilesForScan } from './path-resolve.mts'
 
 import type FileSystem from 'mock-fs/lib/filesystem'
@@ -41,19 +46,19 @@ const globPatterns = {
   },
   npm: {
     packagejson: {
-      pattern: 'package.json',
+      pattern: PACKAGE_JSON,
     },
     packagelockjson: {
-      pattern: 'package-lock.json',
+      pattern: PACKAGE_LOCK_JSON,
     },
     npmshrinkwrap: {
       pattern: 'npm-shrinkwrap.json',
     },
     yarnlock: {
-      pattern: 'yarn.lock',
+      pattern: YARN_LOCK,
     },
     pnpmlock: {
-      pattern: 'pnpm-lock.yaml',
+      pattern: PNPM_LOCK_YAML,
     },
     pnpmworkspace: {
       pattern: 'pnpm-workspace.yaml',
@@ -87,16 +92,8 @@ const sortedPromise =
 const sortedGetPackageFilesFullScans = sortedPromise(getPackageFilesForScan)
 
 describe('Path Resolve', () => {
-  beforeEach(() => {
-    nock.cleanAll()
-    nock.disableNetConnect()
-  })
-
   afterEach(() => {
     mockFs.restore()
-    if (!nock.isDone()) {
-      throw new Error(`pending nock mocks: ${nock.pendingMocks()}`)
-    }
   })
 
   describe('getPackageFilesForScan()', () => {

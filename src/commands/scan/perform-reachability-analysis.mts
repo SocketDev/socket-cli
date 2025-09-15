@@ -2,7 +2,7 @@ import path from 'node:path'
 
 import terminalLink from 'terminal-link'
 
-import constants from '../../constants.mts'
+import constants, { SOCKET_WEBSITE_URL } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import {
   extractTier1ReachabilityScanId,
@@ -72,7 +72,7 @@ export async function performReachabilityAnalysis(
     return {
       ok: false,
       message: 'Tier 1 Reachability analysis requires an enterprise plan',
-      cause: `Please ${terminalLink('upgrade your plan', 'https://socket.dev/pricing')}. This feature is only available for organizations with an enterprise plan.`,
+      cause: `Please ${terminalLink('upgrade your plan', `${SOCKET_WEBSITE_URL}/pricing`)}. This feature is only available for organizations with an enterprise plan.`,
     }
   }
 

@@ -81,7 +81,7 @@ patchedDependencies:
     hash: 4f6ae5ec65b5537e81cd3ee7e83ae65bcc843a93cff14f147d8053e1c385ae1d
     path: patches/string_decoder@0.10.31.patch
   tiny-updater@3.5.3:
-    hash: 6ee974cc0046cbc41200929c3669bee2296473fccba8a650f4047f962c0ce129
+    hash: b3f4afb74b370538fe45248cba31833aee4553f83f15a6a07da47f85afae2f24
     path: patches/tiny-updater@3.5.3.patch
 
 importers:
@@ -360,7 +360,7 @@ importers:
         version: 2.1.1
       tiny-updater:
         specifier: 3.5.3
-        version: 3.5.3(patch_hash=6ee974cc0046cbc41200929c3669bee2296473fccba8a650f4047f962c0ce129)
+        version: 3.5.3(patch_hash=b3f4afb74b370538fe45248cba31833aee4553f83f15a6a07da47f85afae2f24)
       trash:
         specifier: 10.0.0
         version: 10.0.0
@@ -9246,7 +9246,7 @@ snapshots:
 
   tiny-colors@2.1.3: {}
 
-  tiny-updater@3.5.3(patch_hash=6ee974cc0046cbc41200929c3669bee2296473fccba8a650f4047f962c0ce129):
+  tiny-updater@3.5.3(patch_hash=b3f4afb74b370538fe45248cba31833aee4553f83f15a6a07da47f85afae2f24):
     dependencies:
       ionstore: 1.0.1
       tiny-colors: 2.1.3

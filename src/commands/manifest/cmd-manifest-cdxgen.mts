@@ -252,7 +252,7 @@ async function run(
 
   const { dryRun } = cli.flags as { dryRun: boolean }
 
-  // Filter Socket flags from argv but keep --no-banner and --help for cdxgen
+  // Filter Socket flags from argv but keep --no-banner and --help for cdxgen.
   const argsToProcess = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
     '--no-banner',
     '--help',

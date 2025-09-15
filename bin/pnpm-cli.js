@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+'use strict'
+
+void (async () => {
+  const Module = require('node:module')
+  const path = require('node:path')
+  const rootPath = path.join(__dirname, '..')
+  Module.enableCompileCache?.(path.join(rootPath, '.cache'))
+
+  const shadowBin = require(path.join(rootPath, 'dist/shadow-pnpm-bin.js'))
+
+  process.exitCode = 1
+
+  const { spawnPromise } = await shadowBin('pnpm', process.argv.slice(2), {
+    stdio: 'inherit',
+  })
+
+  // See https://nodejs.org/api/child_process.html#event-exit.
+  spawnPromise.process.on('exit', (code, signalName) => {
+    if (signalName) {
+      process.kill(process.pid, signalName)
+    } else if (typeof code === 'number') {
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(code)
+    }
+  })
+
+  await spawnPromise
+})()

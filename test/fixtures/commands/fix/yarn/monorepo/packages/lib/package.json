@@ -1,0 +1,9 @@
+{
+  "name": "@monorepo-yarn/lib",
+  "version": "1.0.0",
+  "description": "Lib package in monorepo (yarn)",
+  "main": "index.js",
+  "dependencies": {
+    "lodash": "4.17.20"
+  }
+}

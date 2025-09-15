@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import { cmdit, spawnPnpm } from '../../test/utils.mts'
-import constants from '../constants.mts'
+import constants, { API_V0_URL } from '../constants.mts'
 
 describe('socket root command', async () => {
   const { binCliPath } = constants
@@ -58,6 +58,7 @@ describe('socket root command', async () => {
           --help                      Print this help
           --max-old-space-size        Set Node's V8 --max-old-space-size (https://nodejs.org/api/cli.html#--max-old-space-sizesize-in-mib) option
           --max-semi-space-size       Set Node's V8 --max-semi-space-size (https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib) option
+          --no-banner                 Hide the Socket banner
           --no-spinner                Hide the console spinner
           --version                   Print the app version
 

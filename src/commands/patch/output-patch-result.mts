@@ -38,7 +38,7 @@ export async function outputPatchResult(
     }
     logger.groupEnd()
   } else {
-    logger.warn('No packages found requiring patches')
+    logger.warn('No packages found requiring patches.')
   }
 
   logger.log('')
