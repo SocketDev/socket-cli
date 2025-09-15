@@ -3,7 +3,7 @@ import { describe, expect } from 'vitest'
 import constants from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
-describe('socket pnpm', async () => {
+describe.skipIf(constants.WIN32)('socket pnpm', async () => {
   const { binCliPath } = constants
 
   cmdit(

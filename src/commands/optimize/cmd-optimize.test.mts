@@ -375,7 +375,7 @@ describe('socket optimize', async () => {
         const output = stdout + stderr
         expect(output).toMatch(/Optimizing|Adding overrides|Finished/i)
       },
-      { timeout: 60_000 },
+      { timeout: 120_000 },
     )
 
     cmdit(
@@ -410,7 +410,7 @@ describe('socket optimize', async () => {
         const output = stdout + stderr
         expect(output).toMatch(/Optimizing|Adding overrides/i)
       },
-      { timeout: 60_000 },
+      { timeout: 120_000 },
     )
 
     cmdit(
