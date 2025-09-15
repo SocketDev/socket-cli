@@ -6,7 +6,13 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 
-import { NODE_MODULES, PACKAGE_JSON, PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } from '../constants.mjs'
+import {
+  NODE_MODULES,
+  PACKAGE_JSON,
+  PACKAGE_LOCK_JSON,
+  PNPM_LOCK_YAML,
+  YARN_LOCK,
+} from '../constants.mjs'
 import { getPackageFilesForScan } from './path-resolve.mts'
 
 import type FileSystem from 'mock-fs/lib/filesystem'

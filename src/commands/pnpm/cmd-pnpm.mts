@@ -19,7 +19,7 @@ export const CMD_NAME = PNPM
 
 const description = 'Run pnpm with the Socket wrapper'
 
-const hidden = false
+const hidden = true
 
 export const cmdPnpm = {
   description,
