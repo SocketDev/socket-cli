@@ -3,7 +3,7 @@ import path from 'node:path'
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, spawnPnpm } from '../../../test/utils.mts'
+import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket organization list', async () => {
   const { binCliPath } = constants
@@ -12,7 +12,7 @@ describe('socket organization list', async () => {
     ['organization', 'policy', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Organization policy details
@@ -54,7 +54,7 @@ describe('socket organization list', async () => {
     ],
     'should support --dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `"[DryRun]: No-op, call a sub-command; ok"`,
       )

@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, spawnPnpm } from '../../../test/utils.mts'
+import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket manifest kotlin', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,7 @@ describe('socket manifest kotlin', async () => {
     ['manifest', 'kotlin', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "[beta] Use Gradle to generate a manifest file (\`pom.xml\`) for a Kotlin project
@@ -68,7 +68,7 @@ describe('socket manifest kotlin', async () => {
     ['manifest', 'kotlin', '--dry-run', '--config', '{}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "

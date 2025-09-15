@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, spawnPnpm } from '../../../test/utils.mts'
+import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket scan create', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,7 @@ describe('socket scan create', async () => {
     ['scan', 'create', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`
         "Create a new Socket scan and report
 
@@ -117,7 +117,7 @@ describe('socket scan create', async () => {
     ],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
         "
@@ -149,7 +149,7 @@ describe('socket scan create', async () => {
     ],
     'should fail when --reach-disable-analytics is used without --reach',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Reachability analysis flags require --reach to be enabled',
@@ -181,7 +181,7 @@ describe('socket scan create', async () => {
     ],
     'should succeed when --reach-analysis-memory-limit is used with default value without --reach',
     async cmd => {
-      const { code, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when using default value').toBe(0)
     },
@@ -206,7 +206,7 @@ describe('socket scan create', async () => {
     ],
     'should fail when --reach-analysis-memory-limit is used with non-default value without --reach',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Reachability analysis flags require --reach to be enabled',
@@ -238,7 +238,7 @@ describe('socket scan create', async () => {
     ],
     'should fail when --reach-analysis-timeout is used without --reach',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Reachability analysis flags require --reach to be enabled',
@@ -272,7 +272,7 @@ describe('socket scan create', async () => {
     ],
     'should fail when --reach-ecosystems is used without --reach',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Reachability analysis flags require --reach to be enabled',
@@ -310,7 +310,7 @@ describe('socket scan create', async () => {
     ],
     'should succeed when reachability options are used with --reach',
     async cmd => {
-      const { code, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
@@ -337,7 +337,7 @@ describe('socket scan create', async () => {
     ],
     'should fail when --reach-exclude-paths is used without --reach',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Reachability analysis flags require --reach to be enabled',
@@ -379,7 +379,7 @@ describe('socket scan create', async () => {
     ],
     'should succeed when all reachability options including reachExcludePaths are used with --reach',
     async cmd => {
-      const { code, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
@@ -405,7 +405,7 @@ describe('socket scan create', async () => {
     ],
     'should succeed when --reach-ecosystems is used with comma-separated values',
     async cmd => {
-      const { code, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
@@ -434,7 +434,7 @@ describe('socket scan create', async () => {
     ],
     'should succeed when --reach-exclude-paths is used with comma-separated values',
     async cmd => {
-      const { code, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(
         code,
@@ -462,7 +462,7 @@ describe('socket scan create', async () => {
     ],
     'should fail when --reach-ecosystems with comma-separated values is used without --reach',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Reachability analysis flags require --reach to be enabled',
@@ -494,7 +494,7 @@ describe('socket scan create', async () => {
     ],
     'should fail when --reach-exclude-paths with comma-separated values is used without --reach',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain(
         'Reachability analysis flags require --reach to be enabled',
@@ -527,7 +527,7 @@ describe('socket scan create', async () => {
     ],
     'should fail when --reach-ecosystems contains invalid values',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain('Invalid ecosystem: "invalid-ecosystem"')
       expect(
@@ -541,7 +541,7 @@ describe('socket scan create', async () => {
     ['scann', 'create', '--help'],
     'should suggest similar command for typos',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain('Unknown command "scann". Did you mean "scan"?')
       expect(
@@ -563,7 +563,7 @@ describe('socket scan create', async () => {
     ],
     'should show helpful error message for directories with no manifest files',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain('found no eligible files to scan')
       expect(output).toContain('docs.socket.dev')
@@ -595,7 +595,7 @@ describe('socket scan create', async () => {
     ],
     'should succeed with minimal positive reachability memory limit',
     async cmd => {
-      const { code, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -621,7 +621,7 @@ describe('socket scan create', async () => {
     ],
     'should succeed with zero timeout (unlimited)',
     async cmd => {
-      const { code, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -647,7 +647,7 @@ describe('socket scan create', async () => {
     ],
     'should fail when invalid ecosystem mixed with valid ones in --reach mode',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain('Invalid ecosystem: "invalid"')
       expect(
@@ -684,7 +684,7 @@ describe('socket scan create', async () => {
     ],
     'should succeed with comprehensive reachability configuration',
     async cmd => {
-      const { code, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0 when all flags are valid').toBe(0)
     },
@@ -709,7 +709,7 @@ describe('socket scan create', async () => {
     ],
     'should succeed with --reach and --json output format',
     async cmd => {
-      const { code, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -734,7 +734,7 @@ describe('socket scan create', async () => {
     ],
     'should succeed with --reach and --markdown output format',
     async cmd => {
-      const { code, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -760,7 +760,7 @@ describe('socket scan create', async () => {
     ],
     'should fail when both --json and --markdown are used with --reach',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       const output = stdout + stderr
       expect(output).toContain('The json and markdown flags cannot be both set')
       expect(
@@ -789,7 +789,7 @@ describe('socket scan create', async () => {
     ],
     'should succeed when combining --reach with --read-only',
     async cmd => {
-      const { code, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },

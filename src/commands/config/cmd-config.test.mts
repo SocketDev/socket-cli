@@ -1,7 +1,7 @@
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, spawnPnpm } from '../../../test/utils.mts'
+import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket config', async () => {
   const { binCliPath } = constants
@@ -10,7 +10,7 @@ describe('socket config', async () => {
     ['config', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Manage Socket CLI configuration
@@ -50,7 +50,7 @@ describe('socket config', async () => {
     ['config', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `"[DryRun]: No-op, call a sub-command; ok"`,
       )
@@ -71,7 +71,7 @@ describe('socket config', async () => {
       ['config', 'get', 'apiToken'],
       'should print nice error when env config override cannot be parsed',
       async cmd => {
-        const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
           // This will be parsed first. If it fails it should fallback to flag or empty.
           env: { SOCKET_CLI_CONFIG: '{apiToken:invalidjson}' },
         })
@@ -95,7 +95,7 @@ describe('socket config', async () => {
       ['config', 'get', 'apiToken', '--config', '{apiToken:invalidjson}'],
       'should print nice error when flag config override cannot be parsed',
       async cmd => {
-        const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
         expect(stdout).toMatchInlineSnapshot(`""`)
         expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
           "

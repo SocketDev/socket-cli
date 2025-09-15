@@ -3,7 +3,7 @@ import path from 'node:path'
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, spawnPnpm } from '../../../test/utils.mts'
+import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket scan', async () => {
   const { binCliPath } = constants
@@ -12,7 +12,7 @@ describe('socket scan', async () => {
     ['scan', '--help', '--config', '{}'],
     'should support --help',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `
         "Manage Socket scans
@@ -53,7 +53,7 @@ describe('socket scan', async () => {
     ['scan', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
-      const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd)
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
         `"[DryRun]: No-op, call a sub-command; ok"`,
       )
