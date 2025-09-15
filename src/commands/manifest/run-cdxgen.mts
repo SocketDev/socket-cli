@@ -153,6 +153,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     shadowResult = await shadowPnpmBin(
       [
         'dlx',
+        '--silent',
         `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
         ...argvToArray(argvMutable),
       ],
@@ -163,6 +164,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     shadowResult = await shadowYarnBin(
       [
         'dlx',
+        '--quiet',
         `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
         ...argvToArray(argvMutable),
       ],
@@ -173,6 +175,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
       'npm',
       [
         'exec',
+        '--silent',
         '--yes',
         `@cyclonedx/cdxgen@${constants.ENV.INLINED_SOCKET_CLI_CYCLONEDX_CDXGEN_VERSION}`,
         '--',
