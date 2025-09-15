@@ -16,7 +16,7 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { cmdPrefixMessage } from './cmd.mts'
 import { findUp } from './fs.mts'
-import constants from '../constants.mts'
+import constants, { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } from '../constants.mts'
 
 import type { CResult } from '../types.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'
@@ -189,10 +189,10 @@ const LOCKS: Record<string, Agent> = {
   // will be ignored.
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#package-lockjson-vs-npm-shrinkwrapjson
   'npm-shrinkwrap.json': NPM,
-  'package-lock.json': NPM,
-  'pnpm-lock.yaml': PNPM,
-  'pnpm-lock.yml': PNPM,
-  [`yarn${EXT_LOCK}`]: YARN_CLASSIC,
+  [PACKAGE_LOCK_JSON]: NPM,
+  [PNPM_LOCK_YAML]: PNPM,
+  ['pnpm-lock.yml']: PNPM,
+  [YARN_LOCK]: YARN_CLASSIC,
   'vlt-lock.json': VLT,
   // Lastly, look for a hidden lock file which is present if .npmrc has package-lock=false:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
