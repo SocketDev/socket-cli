@@ -8,7 +8,7 @@ import { spawn } from '@socketsecurity/registry/lib/spawn'
 import {
   cleanOutput,
   cmdit,
-  spawnPnpm,
+  spawnSocketCli,
   testPath,
 } from '../../../test/utils.mts'
 import constants from '../../constants.mts'
@@ -53,7 +53,7 @@ describe('socket manifest cdxgen', async () => {
       ['manifest', 'cdxgen', '--help'],
       'should support --help',
       async cmd => {
-        const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
           // Need to pass it on as env because --config will break cdxgen.
           env: { SOCKET_CLI_CONFIG: '{}' },
         })
