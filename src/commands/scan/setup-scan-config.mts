@@ -4,7 +4,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { input, select } from '@socketsecurity/registry/lib/prompts'
 
-import constants from '../../constants.mts'
+import constants, { SOCKET_JSON } from '../../constants.mts'
 import {
   detectDefaultBranch,
   getRepoName,
@@ -22,11 +22,11 @@ export async function setupScanConfig(
   cwd: string,
   defaultOnReadError = false,
 ): Promise<CResult<unknown>> {
-  const jsonPath = path.join(cwd, `socket.json`)
+  const jsonPath = path.join(cwd, SOCKET_JSON)
   if (fs.existsSync(jsonPath)) {
-    logger.info(`Found socket.json at ${jsonPath}`)
+    logger.info(`Found ${SOCKET_JSON} at ${jsonPath}`)
   } else {
-    logger.info(`No socket.json found at ${cwd}, will generate a new one`)
+    logger.info(`No ${SOCKET_JSON} found at ${cwd}, will generate a new one`)
   }
 
   logger.log('')
@@ -37,7 +37,7 @@ export async function setupScanConfig(
   logger.log('      setting the flag. It is meant to be a convenience tool.')
   logger.log('')
   logger.log(
-    'This command will generate a `socket.json` file in the target cwd.',
+    `This command will generate a \`${SOCKET_JSON}\` file in the target cwd.`,
   )
   logger.log('You can choose to add this file to your repo (handy for collab)')
   logger.log('or to add it to the ignored files, or neither. This file is only')
@@ -104,7 +104,7 @@ export async function setupScanConfig(
   }
 
   logger.log('')
-  logger.log('Setup complete. Writing socket.json')
+  logger.log(`Setup complete. Writing ${SOCKET_JSON}`)
   logger.log('')
 
   if (

@@ -4,6 +4,8 @@ import path from 'node:path'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../constants.mts'
+
 import type { CResult } from '../types.mts'
 
 export interface SocketJson {
@@ -66,16 +68,32 @@ export function readOrDefaultSocketJson(cwd: string): SocketJson {
       getDefaultSocketJson()
 }
 
+export async function findSocketJsonUp(
+  cwd: string,
+): Promise<string | undefined> {
+  return await findUp(SOCKET_JSON, { onlyFiles: true, cwd })
+}
+
+export async function readOrDefaultSocketJsonUp(
+  cwd: string,
+): Promise<SocketJson> {
+  const socketJsonPath = await findSocketJsonUp(cwd)
+  if (socketJsonPath) {
+    const socketJsonDir = path.dirname(socketJsonPath)
+    const jsonCResult = readSocketJsonSync(socketJsonDir, true)
+    return jsonCResult.ok ? jsonCResult.data : getDefaultSocketJson()
+  }
+  return getDefaultSocketJson()
+}
+
 export function getDefaultSocketJson(): SocketJson {
   return {
-    ' _____         _       _     ':
-      'Local config file for Socket CLI tool ( https://npmjs.org/socket ), to work with https://socket.dev',
+    ' _____         _       _     ': `Local config file for Socket CLI tool ( ${SOCKET_WEBSITE_URL}/npm/package/${SOCKET_JSON.replace('.json', '')} ), to work with ${SOCKET_WEBSITE_URL}`,
     '|   __|___ ___| |_ ___| |_   ':
       '     The config in this file is used to set as defaults for flags or command args when using the CLI',
     "|__   | . |  _| '_| -_|  _|  ":
       '     in this dir, often a repo root. You can choose commit or .ignore this file, both works.',
-    '|_____|___|___|_,_|___|_|.dev':
-      'Warning: This file may be overwritten without warning by `socket manifest setup` or other commands',
+    '|_____|___|___|_,_|___|_|.dev': `Warning: This file may be overwritten without warning by \`${SOCKET_JSON.replace('.json', '')} manifest setup\` or other commands`,
     version: 1,
   }
 }
@@ -84,9 +102,9 @@ export function readSocketJsonSync(
   cwd: string,
   defaultOnError = false,
 ): CResult<SocketJson> {
-  const sockJsonPath = path.join(cwd, 'socket.json')
-  if (!fs.existsSync(sockJsonPath)) {
-    debugFn('notice', `miss: socket.json not found at ${cwd}`)
+  const sockJsonPath = path.join(cwd, SOCKET_JSON)
+  if (!existsSync(sockJsonPath)) {
+    debugFn('notice', `miss: ${SOCKET_JSON} not found at ${cwd}`)
     return { ok: true, data: getDefaultSocketJson() }
   }
   let json = null
@@ -94,7 +112,7 @@ export function readSocketJsonSync(
     json = fs.readFileSync(sockJsonPath, 'utf8')
   } catch (e) {
     if (defaultOnError) {
-      logger.warn('Failed to read socket.json, using default')
+      logger.warn(`Failed to read ${SOCKET_JSON}, using default`)
       debugDir('inspect', { error: e })
       return { ok: true, data: getDefaultSocketJson() }
     }
@@ -102,8 +120,8 @@ export function readSocketJsonSync(
     debugDir('inspect', { error: e })
     return {
       ok: false,
-      message: 'Failed to read socket.json',
-      cause: `An error occurred while trying to read socket.json${msg ? `: ${msg}` : ''}`,
+      message: `Failed to read ${SOCKET_JSON}`,
+      cause: `An error occurred while trying to read ${SOCKET_JSON}${msg ? `: ${msg}` : ''}`,
     }
   }
 
@@ -114,13 +132,13 @@ export function readSocketJsonSync(
     debugFn('error', 'caught: JSON.parse error')
     debugDir('inspect', { error: e, json })
     if (defaultOnError) {
-      logger.warn('Failed to parse socket.json, using default')
+      logger.warn(`Failed to parse ${SOCKET_JSON}, using default`)
       return { ok: true, data: getDefaultSocketJson() }
     }
     return {
       ok: false,
-      message: 'Failed to parse socket.json',
-      cause: 'socket.json does not contain valid JSON, please verify',
+      message: `Failed to parse ${SOCKET_JSON}`,
+      cause: `${SOCKET_JSON} does not contain valid JSON, please verify`,
     }
   }
 
@@ -147,13 +165,12 @@ export async function writeSocketJson(
     return {
       ok: false,
       message: 'Failed to serialize to JSON',
-      cause:
-        'There was an unexpected problem converting the socket json object to a JSON string. Unable to store it.',
+      cause: `There was an unexpected problem converting the ${SOCKET_JSON} object to a JSON string. Unable to store it.`,
     }
   }
 
-  const filepath = path.join(cwd, 'socket.json')
-  await fs.promises.writeFile(filepath, json + '\n', 'utf8')
+  const filepath = path.join(cwd, SOCKET_JSON)
+  await fs.writeFile(filepath, json + '\n', 'utf8')
 
   return { ok: true, data: undefined }
 }

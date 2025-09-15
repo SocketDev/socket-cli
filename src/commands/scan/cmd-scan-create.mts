@@ -8,7 +8,7 @@ import { outputCreateNewScan } from './output-create-new-scan.mts'
 import { reachabilityFlags } from './reachability-flags.mts'
 import { suggestOrgSlug } from './suggest-org-slug.mts'
 import { suggestTarget } from './suggest_target.mts'
-import constants from '../../constants.mts'
+import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
@@ -26,7 +26,7 @@ import {
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
-import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
+import { readOrDefaultSocketJsonUp } from '../../utils/socket-json.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { REPORT_LEVEL } from './types.mts'
@@ -180,7 +180,7 @@ async function run(
       ${getFlagListOutput(reachabilityFlags)}
 
     Uploads the specified dependency manifest files for Go, Gradle, JavaScript,
-    Kotlin, Python, and Scala. Files like "package.json" and "requirements.txt".
+    Kotlin, Python, and Scala. Files like "package.json" and "${REQUIREMENTS_TXT}".
     If any folder is specified, the ones found in there recursively are uploaded.
 
     Details on TARGET:
@@ -190,7 +190,7 @@ async function run(
     - If a target is a file, only that file is checked
     - If it is a dir, the dir is scanned for any supported manifest files
     - Dirs MUST be within the current dir (cwd), you can use --cwd to change it
-    - Supports globbing such as "**/package.json", "**/requirements.txt", etc.
+    - Supports globbing such as "**/package.json", "**/${REQUIREMENTS_TXT}", etc.
     - Ignores any file specified in your project's ".gitignore"
     - Also a sensible set of default ignores from the "ignore-by-default" module
 
@@ -305,14 +305,14 @@ async function run(
       ? path.resolve(processCwd, cwdOverride)
       : processCwd
 
-  const sockJson = readOrDefaultSocketJson(cwd)
+  const sockJson = await readOrDefaultSocketJsonUp(cwd)
 
   // Note: This needs meow booleanDefault=undefined.
   if (typeof autoManifest !== 'boolean') {
     if (sockJson.defaults?.scan?.create?.autoManifest !== undefined) {
       autoManifest = sockJson.defaults.scan.create.autoManifest
       logger.info(
-        'Using default --auto-manifest from socket.json:',
+        `Using default --auto-manifest from ${SOCKET_JSON}:`,
         autoManifest,
       )
     } else {
@@ -322,7 +322,7 @@ async function run(
   if (!branchName) {
     if (sockJson.defaults?.scan?.create?.branch) {
       branchName = sockJson.defaults.scan.create.branch
-      logger.info('Using default --branch from socket.json:', branchName)
+      logger.info(`Using default --branch from ${SOCKET_JSON}:`, branchName)
     } else {
       branchName = (await gitBranch(cwd)) || (await detectDefaultBranch(cwd))
     }
@@ -330,7 +330,7 @@ async function run(
   if (!repoName) {
     if (sockJson.defaults?.scan?.create?.repo) {
       repoName = sockJson.defaults.scan.create.repo
-      logger.info('Using default --repo from socket.json:', repoName)
+      logger.info(`Using default --repo from ${SOCKET_JSON}:`, repoName)
     } else {
       repoName = await getRepoName(cwd)
     }
@@ -338,7 +338,7 @@ async function run(
   if (typeof report !== 'boolean') {
     if (sockJson.defaults?.scan?.create?.report !== undefined) {
       report = sockJson.defaults.scan.create.report
-      logger.info('Using default --report from socket.json:', report)
+      logger.info(`Using default --report from ${SOCKET_JSON}:`, report)
     } else {
       report = false
     }
@@ -410,7 +410,7 @@ async function run(
     logger.error('```')
     logger.error('')
     logger.info(
-      'You can also run `socket scan setup` to persist these flag defaults to a socket.json file.',
+      `You can also run \`socket scan setup\` to persist these flag defaults to a ${SOCKET_JSON} file.`,
     )
     logger.error('')
   }

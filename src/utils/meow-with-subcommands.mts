@@ -24,7 +24,12 @@ import {
   overrideConfigApiToken,
 } from './config.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
-import constants, { API_V0_URL, NPM, NPX, SOCKET_WEBSITE_URL } from '../constants.mts'
+import constants, {
+  API_V0_URL,
+  NPM,
+  NPX,
+  SOCKET_WEBSITE_URL,
+} from '../constants.mts'
 import { commonFlags } from '../flags.mts'
 import { getVisibleTokenPrefix } from './sdk.mts'
 import { tildify } from './tildify.mts'

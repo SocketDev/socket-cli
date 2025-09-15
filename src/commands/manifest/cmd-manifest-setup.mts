@@ -3,7 +3,7 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleManifestSetup } from './handle-manifest-setup.mts'
-import constants from '../../constants.mts'
+import constants, { SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -22,8 +22,7 @@ const config: CliCommandConfig = {
     ...commonFlags,
     defaultOnReadError: {
       type: 'boolean',
-      description:
-        'If reading the socket.json fails, just use a default config? Warning: This might override the existing json file!',
+      description: `If reading the ${SOCKET_JSON} fails, just use a default config? Warning: This might override the existing json file!`,
     },
   },
   help: (command, config) => `
@@ -36,7 +35,7 @@ const config: CliCommandConfig = {
     This command will try to detect all supported ecosystems in given CWD. Then
     it starts a configurator where you can setup default values for certain flags
     when creating manifest files in that dir. These configuration details are
-    then stored in a local \`socket.json\` file (which you may or may not commit
+    then stored in a local \`${SOCKET_JSON}\` file (which you may or may not commit
     to the repo). Next time you run \`socket manifest ...\` it will load this
     json file and any flags which are not explicitly set in the command but which
     have been registered in the json file will get the default value set to that

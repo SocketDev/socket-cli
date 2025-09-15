@@ -5,6 +5,7 @@ import { cmdManifestGradle } from './cmd-manifest-gradle.mts'
 import { cmdManifestKotlin } from './cmd-manifest-kotlin.mts'
 import { cmdManifestScala } from './cmd-manifest-scala.mts'
 import { cmdManifestSetup } from './cmd-manifest-setup.mts'
+import { REQUIREMENTS_TXT } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { meowWithSubcommands } from '../../utils/meow-with-subcommands.mts'
 import { getFlagListOutput } from '../../utils/output-formatting.mts'
@@ -29,7 +30,7 @@ const config: CliCommandConfig = {
       ${getFlagListOutput(config.flags)}
 
     Generates a declarative dependency manifest (like a package.json for Node.JS
-    or requirements.txt for PyPi), but for certain supported ecosystems
+    or ${REQUIREMENTS_TXT} for PyPi), but for certain supported ecosystems
     where it's common to use a dynamic manifest, like Scala's sbt.
 
     Only certain languages are supported and there may be language specific
