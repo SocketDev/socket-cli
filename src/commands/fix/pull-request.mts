@@ -13,7 +13,6 @@ import {
   GQL_PR_STATE_CLOSED,
   GQL_PR_STATE_MERGED,
   GQL_PR_STATE_OPEN,
-  UNKNOWN_ERROR,
   UNKNOWN_VALUE,
 } from '../../constants.mts'
 import { gitDeleteRemoteBranch } from '../../utils/git.mts'
@@ -141,8 +140,12 @@ export async function cleanupSocketFixPrs(
           // Mark cache to be saved.
           cachesToSave.set(context.cacheKey, context.data)
         } catch (e) {
-          const message = (e as Error)?.message || UNKNOWN_ERROR
-          debugFn('error', `pr: failed to update ${prRef} - ${message}`)
+          const cause = (e as Error)?.message
+          debugFn(
+            'error',
+            `pr: failed to update ${prRef}${cause ? ` - ${cause}` : ''}`,
+          )
+          debugDir('inspect', { error: e })
         }
       }
 
@@ -164,12 +167,13 @@ export async function cleanupSocketFixPrs(
             )
           }
         } catch (e) {
-          const message = (e as Error)?.message || UNKNOWN_ERROR
+          const cause = (e as Error)?.message
           // Don't treat this as a hard error - branch might already be deleted.
           debugFn(
             'warn',
-            `pr: failed to delete branch ${match.headRefName} for ${prRef} - ${message}`,
+            `pr: failed to delete branch ${match.headRefName} for ${prRef}${cause ? ` - ${cause}` : ''}`,
           )
+          debugDir('inspect', { error: e })
         }
       }
 
