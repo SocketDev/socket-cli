@@ -3,7 +3,6 @@ import terminalLink from 'terminal-link'
 import colors from 'yoctocolors-cjs'
 
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
-import { PNPM } from '@socketsecurity/registry/lib/constants'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import {
   getOwn,
@@ -29,8 +28,9 @@ import constants, {
   API_V0_URL,
   NPM,
   NPX,
+  // PNPM,
   SOCKET_WEBSITE_URL,
-  YARN,
+  // YARN,
 } from '../constants.mts'
 import { commonFlags } from '../flags.mts'
 import { getVisibleTokenPrefix } from './sdk.mts'
@@ -442,7 +442,7 @@ export async function meowWithSubcommands(
       'organization',
       'package',
       //'patch',
-      PNPM,
+      // PNPM,
       'raw-npm',
       'raw-npx',
       'repository',
@@ -451,7 +451,7 @@ export async function meowWithSubcommands(
       'threat-feed',
       'uninstall',
       'wrapper',
-      YARN,
+      // YARN,
     ])
     Object.entries(subcommands)
       .filter(([_name, subcommand]) => !subcommand.hidden)
