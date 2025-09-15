@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { SOCKET_WEBSITE_URL } from '../../constants.mjs'
 import { toJsonReport, toMarkdownReport } from './output-scan-report.mts'
 
 import type { ScanReport } from './generate-report.mts'
@@ -170,7 +171,7 @@ function getUnhealthyReport(): ScanReport {
                           manifest: ['package-lock.json'],
                           policy: 'error' as const,
                           type: 'envVars',
-                          url: 'https://socket.dev/npm/package/tslib/1.14.1',
+                          url: `${SOCKET_WEBSITE_URL}/npm/package/tslib/1.14.1`,
                         },
                       ],
                       [
@@ -179,7 +180,7 @@ function getUnhealthyReport(): ScanReport {
                           manifest: ['package-lock.json'],
                           policy: 'error' as const,
                           type: 'envVars',
-                          url: 'https://socket.dev/npm/package/tslib/1.14.1',
+                          url: `${SOCKET_WEBSITE_URL}/npm/package/tslib/1.14.1`,
                         },
                       ],
                     ]),
