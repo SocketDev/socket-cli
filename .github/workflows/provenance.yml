@@ -28,7 +28,7 @@ jobs:
           cache: pnpm
           scope: '@socketsecurity'
       - run: npm install -g pnpm@latest
-      - run: pnpm install
+      - run: pnpm install --ci
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
       - run: pnpm publish --provenance --access public
         env:
