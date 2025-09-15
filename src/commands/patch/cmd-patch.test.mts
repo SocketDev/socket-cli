@@ -6,8 +6,14 @@ import { afterEach, describe, expect } from 'vitest'
 import { cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 import constants from '../../constants.mts'
 
+const fixtureBaseDir = path.join(testPath, 'fixtures/commands/patch')
+const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
+
 async function cleanupNodeModules() {
-  await trash(path.join(testPath, 'fixtures/commands/patch/node_modules'))
+  // Clean up node_modules from all package manager directories.
+  await trash(path.join(pnpmFixtureDir, 'node_modules'))
+  await trash(path.join(fixtureBaseDir, 'npm/node_modules'))
+  await trash(path.join(fixtureBaseDir, 'yarn/node_modules'))
 }
 
 describe('socket patch', async () => {
@@ -44,7 +50,7 @@ describe('socket patch', async () => {
     'should scan for available patches when no node_modules found',
     async cmd => {
       const { code } = await spawnPnpm(binCliPath, cmd, {
-        cwd: path.join(testPath, 'fixtures/commands/patch'),
+        cwd: pnpmFixtureDir,
       })
       expect(code, 'should exit with code 0 when no packages to patch').toBe(0)
     },
@@ -55,7 +61,7 @@ describe('socket patch', async () => {
     'should output results in JSON format',
     async cmd => {
       const { code } = await spawnPnpm(binCliPath, cmd, {
-        cwd: path.join(testPath, 'fixtures/commands/patch'),
+        cwd: pnpmFixtureDir,
       })
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -66,7 +72,7 @@ describe('socket patch', async () => {
     'should output results in markdown format',
     async cmd => {
       const { code } = await spawnPnpm(binCliPath, cmd, {
-        cwd: path.join(testPath, 'fixtures/commands/patch'),
+        cwd: pnpmFixtureDir,
       })
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -84,7 +90,7 @@ describe('socket patch', async () => {
     'should fail when both json and markdown flags are used',
     async cmd => {
       const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-        cwd: path.join(testPath, 'fixtures/commands/patch'),
+        cwd: pnpmFixtureDir,
       })
       const output = stdout + stderr
       expect(output).toContain('json and markdown flags cannot be both set')
@@ -104,7 +110,7 @@ describe('socket patch', async () => {
     'should accept short flag -p for purl',
     async cmd => {
       const { code } = await spawnPnpm(binCliPath, cmd, {
-        cwd: path.join(testPath, 'fixtures/commands/patch'),
+        cwd: pnpmFixtureDir,
       })
       expect(code, 'should exit with code 0').toBe(0)
     },
@@ -124,7 +130,7 @@ describe('socket patch', async () => {
       'should handle specific PURL with JSON output',
       async cmd => {
         const { code, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/patch'),
+          cwd: pnpmFixtureDir,
         })
         expect(stdout).toBeDefined()
         expect(code, 'should exit with code 0').toBe(0)
@@ -144,7 +150,7 @@ describe('socket patch', async () => {
       'should handle specific PURL with markdown output',
       async cmd => {
         const { code, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/patch'),
+          cwd: pnpmFixtureDir,
         })
         expect(stdout).toBeDefined()
         expect(code, 'should exit with code 0').toBe(0)
@@ -156,7 +162,7 @@ describe('socket patch', async () => {
       'should scan all packages in manifest when no specific PURL given',
       async cmd => {
         const { code, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/patch'),
+          cwd: pnpmFixtureDir,
         })
         expect(stdout).toBeDefined()
         expect(code, 'should exit with code 0').toBe(0)
@@ -175,7 +181,7 @@ describe('socket patch', async () => {
       'should handle non-existent packages gracefully',
       async cmd => {
         const { code } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/patch'),
+          cwd: pnpmFixtureDir,
         })
         expect(code, 'should exit with code 0 for non-existent packages').toBe(
           0,
@@ -219,7 +225,7 @@ describe('socket patch', async () => {
       'should handle invalid PURL formats gracefully',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/patch'),
+          cwd: pnpmFixtureDir,
         })
         const output = stdout + stderr
         expect(code, 'should exit with code 0 for invalid PURL').toBe(0)
@@ -239,7 +245,7 @@ describe('socket patch', async () => {
       'should handle PURLs for packages not in manifest',
       async cmd => {
         const { code } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/patch'),
+          cwd: pnpmFixtureDir,
         })
         expect(
           code,
@@ -260,7 +266,7 @@ describe('socket patch', async () => {
       'should handle scoped package PURLs correctly',
       async cmd => {
         const { code } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/patch'),
+          cwd: pnpmFixtureDir,
         })
         expect(code, 'should exit with code 0').toBe(0)
       },
@@ -290,7 +296,7 @@ describe('socket patch', async () => {
       'should handle multiple PURL flags',
       async cmd => {
         const { code } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/patch'),
+          cwd: pnpmFixtureDir,
         })
         expect(code, 'should exit with code 0').toBe(0)
       },
@@ -301,7 +307,7 @@ describe('socket patch', async () => {
       'should handle invalid API tokens gracefully',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/patch'),
+          cwd: pnpmFixtureDir,
         })
         expect(code, 'should exit with code 0 with invalid token').toBe(0)
         const output = stdout + stderr
@@ -321,7 +327,7 @@ describe('socket patch', async () => {
       'should handle non-npm ecosystem PURLs appropriately',
       async cmd => {
         const { code } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/patch'),
+          cwd: pnpmFixtureDir,
         })
         expect(code, 'should exit with code 0').toBe(0)
       },
@@ -339,7 +345,7 @@ describe('socket patch', async () => {
       'should handle PURLs with missing versions',
       async cmd => {
         const { code, stderr, stdout } = await spawnPnpm(binCliPath, cmd, {
-          cwd: path.join(testPath, 'fixtures/commands/patch'),
+          cwd: pnpmFixtureDir,
         })
         const output = stdout + stderr
         expect(code, 'should exit with code 0 for malformed PURL').toBe(0)

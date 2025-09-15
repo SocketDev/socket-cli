@@ -10,7 +10,7 @@ vi.mock('node:fs', async importOriginal => {
   return {
     ...actual,
     promises: {
-      readFile: vi.fn(),
+      readFile: mockFsReadFile,
     },
   }
 })

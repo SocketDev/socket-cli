@@ -1,0 +1,13 @@
+{
+  "name": "patch-test-fixture",
+  "version": "1.0.0",
+  "description": "Test fixture for patch command",
+  "main": "index.js",
+  "dependencies": {
+    "lodash": "4.17.20",
+    "on-headers": "1.0.2"
+  },
+  "devDependencies": {
+    "axios": "1.3.2"
+  }
+}
