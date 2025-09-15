@@ -58,6 +58,7 @@ describe('socket root command', async () => {
           --help                      Print this help
           --max-old-space-size        Set Node's V8 --max-old-space-size (https://nodejs.org/api/cli.html#--max-old-space-sizesize-in-mib) option
           --max-semi-space-size       Set Node's V8 --max-semi-space-size (https://nodejs.org/api/cli.html#--max-semi-space-sizesize-in-mib) option
+          --no-banner                 Hide the Socket banner
           --no-spinner                Hide the console spinner
           --version                   Print the app version
 
