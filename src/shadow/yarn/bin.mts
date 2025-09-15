@@ -63,8 +63,8 @@ export default async function shadowYarn(
   const suffixArgs = [...rawYarnArgs, ...permArgs, ...otherArgs]
 
   if (needsScanning && !rawYarnArgs.includes('--dry-run')) {
-    const acceptRisks = constants.ENV.SOCKET_CLI_ACCEPT_RISKS
-    const viewAllRisks = constants.ENV.SOCKET_CLI_VIEW_ALL_RISKS
+    const acceptRisks = Boolean(process.env['SOCKET_CLI_ACCEPT_RISKS'])
+    const viewAllRisks = Boolean(process.env['SOCKET_CLI_VIEW_ALL_RISKS'])
 
     // Extract package names from command arguments before any downloads
     const packagePurls: string[] = []
@@ -188,8 +188,14 @@ Socket yarn exiting due to risks.${
           console.error(errorMessage)
           // eslint-disable-next-line n/no-process-exit
           process.exit(1)
+          // This line is never reached in production, but helps tests.
+          throw new Error('process.exit called')
         }
       } catch (e) {
+        // Re-throw process.exit errors from tests.
+        if (e instanceof Error && e.message === 'process.exit called') {
+          throw e
+        }
         if (isDebug()) {
           console.debug('[Socket] Error during package scanning:', e)
         }
