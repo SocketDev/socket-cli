@@ -25,10 +25,10 @@ jobs:
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
-          cache: npm
+          cache: pnpm
           scope: '@socketsecurity'
-      - run: pnpm install -g pnpm@latest
-      - run: pnpm ci
+      - run: npm install -g pnpm@latest
+      - run: pnpm install
       - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
       - run: pnpm publish --provenance --access public
         env:
