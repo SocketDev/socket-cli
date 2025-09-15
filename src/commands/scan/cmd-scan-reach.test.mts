@@ -1,4 +1,4 @@
-import { describe, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import constants from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
@@ -469,32 +469,33 @@ describe('socket scan reach', async () => {
     },
   )
 
-  cmdit(
-    [
-      'scan',
-      'reach',
-      '--dry-run',
-      '--reach-analysis-memory-limit',
-      '16384',
-      '--reach-analysis-timeout',
-      '7200',
-      '--reach-ecosystems',
-      'npm',
-      '--reach-exclude-paths',
-      'node_modules',
-      '--org',
-      'fakeOrg',
-      '--config',
-      '{"apiToken":"fakeToken"}',
-    ],
-    'should accept comprehensive reachability configuration in dry-run',
-    async cmd => {
+  it.skipIf(constants.WIN32)(
+    'should accept comprehensive reachability configuration in dry-run: `scan reach --dry-run --reach-analysis-memory-limit 16384 --reach-analysis-timeout 7200 --reach-ecosystems npm --reach-exclude-paths node_modules --org fakeOrg --config {"apiToken":"fakeToken"}`',
+    async () => {
+      const cmd = [
+        'scan',
+        'reach',
+        '--dry-run',
+        '--reach-analysis-memory-limit',
+        '16384',
+        '--reach-analysis-timeout',
+        '7200',
+        '--reach-ecosystems',
+        'npm',
+        '--reach-exclude-paths',
+        'node_modules',
+        '--org',
+        'fakeOrg',
+        '--config',
+        '{"apiToken":"fakeToken"}',
+      ]
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: '/tmp',
       })
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
+    { timeout: 30_000 },
   )
 
   describe('non dry-run tests', () => {

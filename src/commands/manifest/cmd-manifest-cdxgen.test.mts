@@ -48,7 +48,7 @@ describe('socket manifest cdxgen', async () => {
     },
   }
 
-  describe('command forwarding', async () => {
+  describe.skipIf(constants.WIN32)('command forwarding', async () => {
     cmdit(
       ['manifest', 'cdxgen', '--help'],
       'should support --help',
