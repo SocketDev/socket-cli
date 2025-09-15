@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { convertGradleToMaven } from './convert_gradle_to_maven.mts'
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
 import { handleManifestConda } from './handle-manifest-conda.mts'
+import { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { readOrDefaultSocketJson } from '../../utils/socket-json.mts'
 
 import type { GeneratableManifests } from './detect-manifest-actions.mts'
@@ -24,7 +25,7 @@ export async function generateAutoManifest({
   const sockJson = readOrDefaultSocketJson(cwd)
 
   if (verbose) {
-    logger.info('Using this socket.json for defaults:', sockJson)
+    logger.info(`Using this ${SOCKET_JSON} for defaults:`, sockJson)
   }
 
   if (!sockJson?.defaults?.manifest?.sbt?.disabled && detected.sbt) {
@@ -72,7 +73,7 @@ export async function generateAutoManifest({
       cwd,
       filename: sockJson.defaults?.manifest?.conda?.infile ?? 'environment.yml',
       outputKind,
-      out: sockJson.defaults?.manifest?.conda?.outfile ?? 'requirements.txt',
+      out: sockJson.defaults?.manifest?.conda?.outfile ?? REQUIREMENTS_TXT,
       verbose: Boolean(sockJson.defaults?.manifest?.conda?.verbose),
     })
   }

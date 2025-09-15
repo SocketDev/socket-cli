@@ -3,7 +3,12 @@ import path from 'node:path'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleManifestConda } from './handle-manifest-conda.mts'
-import constants from '../../constants.mts'
+import constants, {
+  ENVIRONMENT_YAML,
+  ENVIRONMENT_YML,
+  REQUIREMENTS_TXT,
+  SOCKET_JSON,
+} from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
@@ -18,16 +23,15 @@ import type {
 
 const config: CliCommandConfig = {
   commandName: 'conda',
-  description:
-    '[beta] Convert a Conda environment.yml file to a python requirements.txt',
+  description: `[beta] Convert a Conda ${ENVIRONMENT_YML} file to a python ${REQUIREMENTS_TXT}`,
   hidden: false,
   flags: {
     ...commonFlags,
     ...outputFlags,
     file: {
       type: 'string',
-      description:
-        'Input file name (by default for Conda this is "environment.yml"), relative to cwd',
+      default: '',
+      description: `Input file name (by default for Conda this is "${ENVIRONMENT_YML}"), relative to cwd`,
     },
     stdin: {
       type: 'boolean',
@@ -35,12 +39,12 @@ const config: CliCommandConfig = {
     },
     out: {
       type: 'string',
+      default: '',
       description: 'Output path (relative to cwd)',
     },
     stdout: {
       type: 'boolean',
-      description:
-        'Print resulting requirements.txt to stdout (supersedes --out)',
+      description: `Print resulting ${REQUIREMENTS_TXT} to stdout (supersedes --out)`,
     },
     verbose: {
       type: 'boolean',
@@ -52,8 +56,8 @@ const config: CliCommandConfig = {
       $ ${command} [options] [CWD=.]
 
     Warning: While we don't support Conda necessarily, this tool extracts the pip
-             block from an environment.yml and outputs it as a requirements.txt
-             which you can scan as if it were a pypi package.
+             block from an ${ENVIRONMENT_YML} and outputs it as a ${REQUIREMENTS_TXT}
+             which you can scan as if it were a PyPI package.
 
     USE AT YOUR OWN RISK
 
@@ -66,7 +70,7 @@ const config: CliCommandConfig = {
     Examples
 
       $ ${command}
-      $ ${command} ./project/foo --file environment.yaml
+      $ ${command} ./project/foo --file ${ENVIRONMENT_YAML}
   `,
 }
 
@@ -88,9 +92,11 @@ async function run(
     parentName,
   })
 
-  const { json = false, markdown = false } = cli.flags
-
-  const dryRun = !!cli.flags['dryRun']
+  const { dryRun, json, markdown } = cli.flags as {
+    dryRun: boolean
+    json: boolean
+    markdown: boolean
+  }
 
   let [cwd = '.'] = cli.input
   // Note: path.resolve vs .join:
@@ -99,7 +105,19 @@ async function run(
 
   const sockJson = readOrDefaultSocketJson(cwd)
 
-  let { file: filename, out, stdin, stdout, verbose } = cli.flags
+  let {
+    file: filename,
+    out,
+    stdin,
+    stdout,
+    verbose,
+  } = cli.flags as {
+    file: string
+    out: string
+    stdin: boolean | undefined
+    stdout: boolean | undefined
+    verbose: boolean | undefined
+  }
 
   // Set defaults for any flag/arg that is not given. Check socket.json first.
   if (
@@ -107,16 +125,16 @@ async function run(
     sockJson.defaults?.manifest?.conda?.stdin !== undefined
   ) {
     stdin = sockJson.defaults?.manifest?.conda?.stdin
-    logger.info('Using default --stdin from socket.json:', stdin)
+    logger.info(`Using default --stdin from ${SOCKET_JSON}:`, stdin)
   }
   if (stdin) {
     filename = '-'
   } else if (!filename) {
     if (sockJson.defaults?.manifest?.conda?.infile) {
       filename = sockJson.defaults?.manifest?.conda?.infile
-      logger.info('Using default --file from socket.json:', filename)
+      logger.info(`Using default --file from ${SOCKET_JSON}:`, filename)
     } else {
-      filename = 'environment.yml'
+      filename = ENVIRONMENT_YML
     }
   }
   if (
@@ -124,16 +142,16 @@ async function run(
     sockJson.defaults?.manifest?.conda?.stdout !== undefined
   ) {
     stdout = sockJson.defaults?.manifest?.conda?.stdout
-    logger.info('Using default --stdout from socket.json:', stdout)
+    logger.info(`Using default --stdout from ${SOCKET_JSON}:`, stdout)
   }
   if (stdout) {
     out = '-'
   } else if (!out) {
     if (sockJson.defaults?.manifest?.conda?.outfile) {
       out = sockJson.defaults?.manifest?.conda?.outfile
-      logger.info('Using default --out from socket.json:', out)
+      logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
     } else {
-      out = 'requirements.txt'
+      out = REQUIREMENTS_TXT
     }
   }
   if (
@@ -141,7 +159,7 @@ async function run(
     sockJson.defaults?.manifest?.conda?.verbose !== undefined
   ) {
     verbose = sockJson.defaults?.manifest?.conda?.verbose
-    logger.info('Using default --verbose from socket.json:', verbose)
+    logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
   } else if (verbose === undefined) {
     verbose = false
   }
@@ -188,9 +206,9 @@ async function run(
 
   await handleManifestConda({
     cwd,
-    filename: String(filename),
-    out: String(out || ''),
+    filename,
+    out,
     outputKind,
-    verbose: Boolean(verbose),
+    verbose,
   })
 }

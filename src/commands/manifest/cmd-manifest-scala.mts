@@ -4,7 +4,7 @@ import { debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { convertSbtToMaven } from './convert_sbt_to_maven.mts'
-import constants from '../../constants.mts'
+import constants, { REQUIREMENTS_TXT, SOCKET_JSON } from '../../constants.mts'
 import { commonFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
@@ -55,7 +55,7 @@ const config: CliCommandConfig = {
 
     Uses \`sbt makePom\` to generate a \`pom.xml\` from your \`build.sbt\` file.
     This xml file is the dependency manifest (like a package.json
-    for Node.js or requirements.txt for PyPi), but specifically for Scala.
+    for Node.js or ${REQUIREMENTS_TXT} for PyPi), but specifically for Scala.
 
     There are some caveats with \`build.sbt\` to \`pom.xml\` conversion:
 
@@ -119,7 +119,7 @@ async function run(
 
   debugFn(
     'inspect',
-    'override: socket.json sbt',
+    `override: ${SOCKET_JSON} sbt`,
     sockJson?.defaults?.manifest?.sbt,
   )
 
@@ -129,7 +129,7 @@ async function run(
   if (!bin) {
     if (sockJson.defaults?.manifest?.sbt?.bin) {
       bin = sockJson.defaults?.manifest?.sbt?.bin
-      logger.info('Using default --bin from socket.json:', bin)
+      logger.info(`Using default --bin from ${SOCKET_JSON}:`, bin)
     } else {
       bin = 'sbt'
     }
@@ -139,14 +139,14 @@ async function run(
     sockJson.defaults?.manifest?.sbt?.stdout !== undefined
   ) {
     stdout = sockJson.defaults?.manifest?.sbt?.stdout
-    logger.info('Using default --stdout from socket.json:', stdout)
+    logger.info(`Using default --stdout from ${SOCKET_JSON}:`, stdout)
   }
   if (stdout) {
     out = '-'
   } else if (!out) {
     if (sockJson.defaults?.manifest?.sbt?.outfile) {
       out = sockJson.defaults?.manifest?.sbt?.outfile
-      logger.info('Using default --out from socket.json:', out)
+      logger.info(`Using default --out from ${SOCKET_JSON}:`, out)
     } else {
       out = './socket.pom.xml'
     }
@@ -154,7 +154,7 @@ async function run(
   if (!sbtOpts) {
     if (sockJson.defaults?.manifest?.sbt?.sbtOpts) {
       sbtOpts = sockJson.defaults?.manifest?.sbt?.sbtOpts
-      logger.info('Using default --sbt-opts from socket.json:', sbtOpts)
+      logger.info(`Using default --sbt-opts from ${SOCKET_JSON}:`, sbtOpts)
     } else {
       sbtOpts = ''
     }
@@ -164,7 +164,7 @@ async function run(
     sockJson.defaults?.manifest?.sbt?.verbose !== undefined
   ) {
     verbose = sockJson.defaults?.manifest?.sbt?.verbose
-    logger.info('Using default --verbose from socket.json:', verbose)
+    logger.info(`Using default --verbose from ${SOCKET_JSON}:`, verbose)
   } else if (verbose === undefined) {
     verbose = false
   }

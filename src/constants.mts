@@ -182,6 +182,8 @@ const DRY_RUN_LABEL = '[DryRun]'
 const DRY_RUN_BAILING_NOW = `${DRY_RUN_LABEL}: Bailing now`
 const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
 const EMPTY_VALUE = '<empty>'
+const ENVIRONMENT_YAML = 'environment.yaml'
+const ENVIRONMENT_YML = 'environment.yml'
 const FOLD_SETTING_FILE = 'file'
 const FOLD_SETTING_NONE = 'none'
 const FOLD_SETTING_PKG = 'pkg'
@@ -203,6 +205,7 @@ const REPORT_LEVEL_ERROR = 'error'
 const REPORT_LEVEL_IGNORE = 'ignore'
 const REPORT_LEVEL_MONITOR = 'monitor'
 const REPORT_LEVEL_WARN = 'warn'
+const REQUIREMENTS_TXT = 'requirements.txt'
 const SOCKET_CLI_ACCEPT_RISKS = 'SOCKET_CLI_ACCEPT_RISKS'
 const SOCKET_CLI_BIN_NAME = 'socket'
 const SOCKET_CLI_ISSUES_URL = 'https://github.com/SocketDev/socket-cli/issues'
@@ -214,6 +217,7 @@ const SOCKET_CLI_SHADOW_SILENT = 'SOCKET_CLI_SHADOW_SILENT'
 const SOCKET_CLI_VIEW_ALL_RISKS = 'SOCKET_CLI_VIEW_ALL_RISKS'
 const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
 const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
+const SOCKET_JSON = 'socket.json'
 const SOCKET_WEBSITE_URL = 'https://socket.dev'
 const UNKNOWN_ERROR = 'Unknown error'
 const UNKNOWN_VALUE = '<unknown>'
@@ -242,6 +246,8 @@ export type Constants = Remap<
     readonly DRY_RUN_LABEL: typeof DRY_RUN_LABEL
     readonly DRY_RUN_BAILING_NOW: typeof DRY_RUN_BAILING_NOW
     readonly DRY_RUN_NOT_SAVING: typeof DRY_RUN_NOT_SAVING
+    readonly ENVIRONMENT_YAML: typeof ENVIRONMENT_YAML
+    readonly ENVIRONMENT_YML: typeof ENVIRONMENT_YML
     readonly FOLD_SETTING_FILE: typeof FOLD_SETTING_FILE
     readonly FOLD_SETTING_NONE: typeof FOLD_SETTING_NONE
     readonly FOLD_SETTING_PKG: typeof FOLD_SETTING_PKG
@@ -268,6 +274,7 @@ export type Constants = Remap<
     readonly REPORT_LEVEL_IGNORE: typeof REPORT_LEVEL_IGNORE
     readonly REPORT_LEVEL_MONITOR: typeof REPORT_LEVEL_MONITOR
     readonly REPORT_LEVEL_WARN: typeof REPORT_LEVEL_WARN
+    readonly REQUIREMENTS_TXT: typeof REQUIREMENTS_TXT
     readonly SOCKET_CLI_ACCEPT_RISKS: typeof SOCKET_CLI_ACCEPT_RISKS
     readonly SOCKET_CLI_BIN_NAME: typeof SOCKET_CLI_BIN_NAME
     readonly SOCKET_CLI_ISSUES_URL: typeof SOCKET_CLI_ISSUES_URL
@@ -279,6 +286,7 @@ export type Constants = Remap<
     readonly SOCKET_CLI_VIEW_ALL_RISKS: typeof SOCKET_CLI_VIEW_ALL_RISKS
     readonly SOCKET_DEFAULT_BRANCH: typeof SOCKET_DEFAULT_BRANCH
     readonly SOCKET_DEFAULT_REPOSITORY: typeof SOCKET_DEFAULT_REPOSITORY
+    readonly SOCKET_JSON: typeof SOCKET_JSON
     readonly SOCKET_WEBSITE_URL: typeof SOCKET_WEBSITE_URL
     readonly UNKNOWN_ERROR: typeof UNKNOWN_ERROR
     readonly UNKNOWN_VALUE: typeof UNKNOWN_VALUE
@@ -764,6 +772,8 @@ const constants: Constants = createConstantsObject(
     DRY_RUN_BAILING_NOW,
     DRY_RUN_NOT_SAVING,
     EMPTY_VALUE,
+    ENVIRONMENT_YAML,
+    ENVIRONMENT_YML,
     ENV: undefined,
     FOLD_SETTING_FILE,
     FOLD_SETTING_NONE,
@@ -790,6 +800,7 @@ const constants: Constants = createConstantsObject(
     REPORT_LEVEL_IGNORE,
     REPORT_LEVEL_MONITOR,
     REPORT_LEVEL_WARN,
+    REQUIREMENTS_TXT,
     SOCKET_CLI_ACCEPT_RISKS,
     SOCKET_CLI_BIN_NAME,
     SOCKET_CLI_ISSUES_URL,
@@ -801,6 +812,7 @@ const constants: Constants = createConstantsObject(
     SOCKET_CLI_VIEW_ALL_RISKS,
     SOCKET_DEFAULT_BRANCH,
     SOCKET_DEFAULT_REPOSITORY,
+    SOCKET_JSON,
     SOCKET_WEBSITE_URL,
     UNKNOWN_ERROR,
     UNKNOWN_VALUE,
@@ -912,6 +924,8 @@ export {
   DRY_RUN_NOT_SAVING,
   EMPTY_FILE,
   EMPTY_VALUE,
+  ENVIRONMENT_YAML,
+  ENVIRONMENT_YML,
   ESLINT_CONFIG_JS,
   ESNEXT,
   EXTENSIONS,
@@ -978,6 +992,7 @@ export {
   REPORT_LEVEL_IGNORE,
   REPORT_LEVEL_MONITOR,
   REPORT_LEVEL_WARN,
+  REQUIREMENTS_TXT,
   RESOLUTIONS,
   SOCKET_CLI_ACCEPT_RISKS,
   SOCKET_CLI_BIN_NAME,
@@ -991,6 +1006,7 @@ export {
   SOCKET_DEFAULT_BRANCH,
   SOCKET_DEFAULT_REPOSITORY,
   SOCKET_GITHUB_ORG,
+  SOCKET_JSON,
   SOCKET_IPC_HANDSHAKE,
   SOCKET_OVERRIDE_SCOPE,
   SOCKET_PUBLIC_API_TOKEN,
