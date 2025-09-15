@@ -27,24 +27,24 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: npm
           scope: '@socketsecurity'
-      - run: npm install -g npm@latest
-      - run: npm ci
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 npm run build:dist
-      - run: npm publish --provenance --access public
+      - run: pnpm install -g pnpm@latest
+      - run: pnpm ci
+      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 pnpm run build:dist
+      - run: pnpm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 npm run build:dist
+      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_LEGACY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: npm publish --provenance --access public
+      - run: pnpm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 npm run build:dist
+      - run: INLINED_SOCKET_CLI_PUBLISHED_BUILD=1 INLINED_SOCKET_CLI_SENTRY_BUILD=1 pnpm run build:dist
         env:
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-      - run: npm publish --provenance --access public
+      - run: pnpm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
