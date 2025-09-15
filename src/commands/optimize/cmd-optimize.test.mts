@@ -5,7 +5,7 @@ import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../../../src/constants.mts'
+import constants, { PNPM_LOCK_YAML } from '../../../src/constants.mts'
 import { cmdit, spawnPnpm, testPath } from '../../../test/utils.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
@@ -13,10 +13,14 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 async function revertFixtureChanges() {
   // Reset only the package.json and pnpm-lock.yaml files that tests modify.
-  await spawn('git', ['checkout', 'HEAD', '--', 'package.json', 'pnpm-lock.yaml'], {
-    cwd: pnpmFixtureDir,
-    stdio: 'ignore',
-  })
+  await spawn(
+    'git',
+    ['checkout', 'HEAD', '--', 'package.json', PNPM_LOCK_YAML],
+    {
+      cwd: pnpmFixtureDir,
+      stdio: 'ignore',
+    },
+  )
 }
 
 describe('socket optimize', async () => {
@@ -313,7 +317,7 @@ describe('socket optimize', async () => {
         expect(packageJson.overrides).toBeDefined()
 
         // Check that pnpm-lock.yaml exists (was modified/created).
-        const packageLockPath = path.join(pnpmFixtureDir, 'pnpm-lock.yaml')
+        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
         const { existsSync } = await import('node:fs')
         expect(existsSync(packageLockPath)).toBe(true)
 
@@ -341,7 +345,7 @@ describe('socket optimize', async () => {
         expect(packageJson.overrides).toBeDefined()
 
         // Verify pnpm-lock.yaml was updated.
-        const packageLockPath = path.join(pnpmFixtureDir, 'pnpm-lock.yaml')
+        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
         const { existsSync } = await import('node:fs')
         expect(existsSync(packageLockPath)).toBe(true)
 
@@ -397,7 +401,7 @@ describe('socket optimize', async () => {
         expect(packageJson).toBeDefined()
 
         // Verify pnpm-lock.yaml exists (since we're using pnpm, not npm).
-        const packageLockPath = path.join(pnpmFixtureDir, 'pnpm-lock.yaml')
+        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
         const { existsSync } = await import('node:fs')
         expect(existsSync(packageLockPath)).toBe(true)
 
@@ -425,7 +429,7 @@ describe('socket optimize', async () => {
         expect(packageJson.overrides).toBeDefined()
 
         // Verify pnpm-lock.yaml was updated.
-        const packageLockPath = path.join(pnpmFixtureDir, 'pnpm-lock.yaml')
+        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
         const { existsSync } = await import('node:fs')
         expect(existsSync(packageLockPath)).toBe(true)
       },
@@ -449,7 +453,7 @@ describe('socket optimize', async () => {
         expect(packageJson.overrides).toBeDefined()
 
         // Verify pnpm-lock.yaml was updated.
-        const packageLockPath = path.join(pnpmFixtureDir, 'pnpm-lock.yaml')
+        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
         const { existsSync } = await import('node:fs')
         expect(existsSync(packageLockPath)).toBe(true)
 

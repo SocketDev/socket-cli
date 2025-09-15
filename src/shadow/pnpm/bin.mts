@@ -1,10 +1,12 @@
 import { existsSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { installLinks } from './link.mts'
-import constants from '../../constants.mts'
+import constants, { PNPM_LOCK_YAML } from '../../constants.mts'
 import {
   getAlertsMapFromPnpmLockfile,
   getAlertsMapFromPurls,
@@ -44,11 +46,18 @@ export default async function shadowPnpm(
   options?: ShadowPnpmOptions | undefined,
   extra?: SpawnExtra | undefined,
 ): Promise<ShadowPnpmResult> {
+  const opts = { __proto__: null, ...options } as ShadowPnpmOptions
   const {
     env: spawnEnv,
     ipc,
     ...spawnOpts
-  } = { __proto__: null, ...options } as ShadowPnpmOptions
+  } = opts
+
+  let { cwd = process.cwd() } = opts
+  if (cwd instanceof URL) {
+    cwd = fileURLToPath(cwd)
+  }
+
   const terminatorPos = args.indexOf('--')
   const rawPnpmArgs = terminatorPos === -1 ? args : args.slice(0, terminatorPos)
   const otherArgs = terminatorPos === -1 ? [] : args.slice(terminatorPos)
@@ -117,7 +126,7 @@ export default async function shadowPnpm(
       }
     } else if (['install', 'i', 'update', 'up'].includes(command)) {
       // For install/update, scan all dependencies from pnpm-lock.yaml
-      const pnpmLockPath = 'pnpm-lock.yaml'
+      const pnpmLockPath = path.join(cwd, PNPM_LOCK_YAML)
       if (existsSync(pnpmLockPath)) {
         try {
           const lockfileContent = await readPnpmLockfile(pnpmLockPath)
