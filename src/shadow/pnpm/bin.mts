@@ -47,11 +47,7 @@ export default async function shadowPnpm(
   extra?: SpawnExtra | undefined,
 ): Promise<ShadowPnpmResult> {
   const opts = { __proto__: null, ...options } as ShadowPnpmOptions
-  const {
-    env: spawnEnv,
-    ipc,
-    ...spawnOpts
-  } = opts
+  const { env: spawnEnv, ipc, ...spawnOpts } = opts
 
   let { cwd = process.cwd() } = opts
   if (cwd instanceof URL) {

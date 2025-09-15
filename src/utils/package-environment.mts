@@ -16,7 +16,11 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { cmdPrefixMessage } from './cmd.mts'
 import { findUp } from './fs.mts'
-import constants, { PACKAGE_LOCK_JSON, PNPM_LOCK_YAML, YARN_LOCK } from '../constants.mts'
+import constants, {
+  PACKAGE_LOCK_JSON,
+  PNPM_LOCK_YAML,
+  YARN_LOCK,
+} from '../constants.mts'
 
 import type { CResult } from '../types.mts'
 import type { Remap } from '@socketsecurity/registry/lib/objects'

@@ -19,7 +19,7 @@ export const CMD_NAME = YARN
 
 const description = 'Run yarn with the Socket wrapper'
 
-const hidden = false
+const hidden = true
 
 export const cmdYarn = {
   description,
