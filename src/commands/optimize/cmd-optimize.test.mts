@@ -1,6 +1,8 @@
-import { existsSync } from 'node:fs'
+import { existsSync, promises } from 'node:fs'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import trash from 'trash'
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
@@ -10,6 +12,7 @@ import constants, { PNPM_LOCK_YAML } from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
 
 const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
+const npmFixtureDir = path.join(fixtureBaseDir, 'npm')
 const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 async function revertFixtureChanges() {
@@ -313,9 +316,7 @@ describe('socket optimize', async () => {
           cwd: pnpmFixtureDir,
         })
 
-        // TODO: Command currently fails due to pnpm invocation issue (node: --disable-warning requires an argument)
-        // This should be expect(code).toBe(0) once the underlying bug is fixed.
-        expect(code).toBe(1)
+        expect(code).toBe(0)
 
         // Check that package.json was modified with overrides.
         const packageJsonPath = path.join(pnpmFixtureDir, 'package.json')
@@ -340,9 +341,7 @@ describe('socket optimize', async () => {
           cwd: pnpmFixtureDir,
         })
 
-        // TODO: Command currently fails due to pnpm invocation issue (node: --disable-warning requires an argument)
-        // This should be expect(code).toBe(0) once the underlying bug is fixed.
-        expect(code).toBe(1)
+        expect(code).toBe(0)
 
         // Verify package.json has overrides.
         const packageJsonPath = path.join(pnpmFixtureDir, 'package.json')
@@ -424,9 +423,7 @@ describe('socket optimize', async () => {
           cwd: pnpmFixtureDir,
         })
 
-        // TODO: Command currently fails due to pnpm invocation issue (node: --disable-warning requires an argument)
-        // This should be expect(code).toBe(0) once the underlying bug is fixed.
-        expect(code).toBe(1)
+        expect(code).toBe(0)
 
         // Verify package.json has overrides.
         const packageJsonPath = path.join(pnpmFixtureDir, 'package.json')
@@ -447,9 +444,7 @@ describe('socket optimize', async () => {
           cwd: pnpmFixtureDir,
         })
 
-        // TODO: Command currently fails due to pnpm invocation issue (node: --disable-warning requires an argument)
-        // This should be expect(code).toBe(0) once the underlying bug is fixed.
-        expect(code).toBe(1)
+        expect(code).toBe(0)
 
         // Verify package.json has overrides.
         const packageJsonPath = path.join(pnpmFixtureDir, 'package.json')
@@ -463,6 +458,56 @@ describe('socket optimize', async () => {
         // Should have regular output (markdown flag doesn't change console output).
         const output = stdout + stderr
         expect(output).toMatch(/Optimizing|Adding overrides/i)
+      },
+    )
+
+    cmdit(
+      ['optimize', '.', '--config', '{"apiToken":"fake-token"}'],
+      'should handle npm projects with cwd correctly',
+      async cmd => {
+        // Create a temporary directory to test npm specifically.
+        const tempDir = path.join(tmpdir(), 'socket-npm-test')
+        await promises.mkdir(tempDir, { recursive: true })
+
+        // Copy the npm fixture to the temp directory.
+        const sourcePackageJson = path.join(npmFixtureDir, 'package.json')
+        const destPackageJson = path.join(tempDir, 'package.json')
+        await promises.copyFile(sourcePackageJson, destPackageJson)
+
+        // Copy the npm lock file.
+        const sourceLock = path.join(npmFixtureDir, 'package-lock.json')
+        const destLock = path.join(tempDir, 'package-lock.json')
+        await promises.copyFile(sourceLock, destLock)
+
+        try {
+          // Run optimize from a different directory to ensure cwd is properly passed to npm install.
+          const { code, stderr, stdout } = await spawnSocketCli(
+            binCliPath,
+            ['optimize', tempDir, '--config', '{"apiToken":"fake-token"}'],
+            {
+              // Run from a different directory to test that npm install gets the correct cwd.
+              cwd: tmpdir(),
+            },
+          )
+
+          expect(code).toBe(0)
+
+          // Check that package.json was modified with overrides.
+          const packageJsonPath = path.join(tempDir, 'package.json')
+          const packageJson = await readPackageJson(packageJsonPath)
+          expect(packageJson.overrides).toBeDefined()
+
+          // Check that package-lock.json exists and was updated.
+          const packageLockPath = path.join(tempDir, 'package-lock.json')
+          expect(existsSync(packageLockPath)).toBe(true)
+
+          // Should have optimization output.
+          const output = stdout + stderr
+          expect(output).toMatch(/Optimizing|Adding overrides/i)
+        } finally {
+          // Clean up the temp directory safely.
+          await trash(tempDir)
+        }
       },
     )
   })
@@ -554,9 +599,7 @@ describe('socket optimize', async () => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
           cwd: pnpmFixtureDir,
         })
-        // TODO: Command currently fails due to pnpm invocation issue (node: --disable-warning requires an argument)
-        // This should be expect(code).toBe(0) once the underlying bug is fixed.
-        expect(code).toBe(1)
+        expect(code).toBe(0)
         const output = stdout + stderr
         // Should show authentication or token-related error.
         expect(output.length).toBeGreaterThan(0)
