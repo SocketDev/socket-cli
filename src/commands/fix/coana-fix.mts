@@ -39,10 +39,10 @@ export async function coanaFix(
 ): Promise<CResult<{ fixed: boolean }>> {
   const {
     autopilot,
-    computeFixesOnly,
     cwd,
     ghsas,
     limit,
+    onlyCompute,
     orgSlug,
     outputFile,
     spinner,
@@ -117,7 +117,7 @@ export async function coanaFix(
           ? ['--range-style', fixConfig.rangeStyle]
           : []),
         ...fixConfig.unknownFlags,
-        ...(computeFixesOnly ? ['--dry-run'] : []),
+        ...(onlyCompute ? ['--dry-run'] : []),
         ...(outputFile ? ['--output-file', outputFile] : []),
       ],
       fixConfig.orgSlug,
