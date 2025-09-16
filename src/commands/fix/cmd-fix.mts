@@ -6,7 +6,7 @@ import { arrayUnique, joinOr } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleFix } from './handle-fix.mts'
-import constants from '../../constants.mts'
+import constants, { ERROR_UNABLE_RESOLVE_ORG } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
@@ -257,7 +257,7 @@ async function run(
   if (!orgSlugCResult.ok) {
     process.exitCode = orgSlugCResult.code ?? 1
     logger.fail(
-      'Unable to resolve a Socket account organization.\nEnsure a Socket API token is specified for the organization using the SOCKET_CLI_API_TOKEN environment variable.',
+      `${ERROR_UNABLE_RESOLVE_ORG}.\nEnsure a Socket API token is specified for the organization using the SOCKET_CLI_API_TOKEN environment variable.`,
     )
     return
   }

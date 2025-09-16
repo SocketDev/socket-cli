@@ -5,7 +5,12 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
 
 import { applyLogin } from './apply-login.mts'
-import constants from '../../constants.mts'
+import constants, {
+  CONFIG_KEY_API_BASE_URL,
+  CONFIG_KEY_API_PROXY,
+  CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_DEFAULT_ORG,
+} from '../../constants.mts'
 import {
   getConfigValueOrUndef,
   isReadOnlyConfig,
@@ -26,8 +31,8 @@ export async function attemptLogin(
   apiBaseUrl: string | undefined,
   apiProxy: string | undefined,
 ) {
-  apiBaseUrl ??= getConfigValueOrUndef('apiBaseUrl') ?? undefined
-  apiProxy ??= getConfigValueOrUndef('apiProxy') ?? undefined
+  apiBaseUrl ??= getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL) ?? undefined
+  apiProxy ??= getConfigValueOrUndef(CONFIG_KEY_API_PROXY) ?? undefined
   const apiTokenInput = await password({
     message: `Enter your ${terminalLink(
       'Socket.dev API token',
@@ -148,9 +153,9 @@ export async function attemptLogin(
     }
   }
 
-  updateConfigValue('defaultOrg', orgSlugs[0])
+  updateConfigValue(CONFIG_KEY_DEFAULT_ORG, orgSlugs[0])
 
-  const previousPersistedToken = getConfigValueOrUndef('apiToken')
+  const previousPersistedToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
   try {
     applyLogin(apiToken, enforcedOrgs, apiBaseUrl, apiProxy)
     logger.success(

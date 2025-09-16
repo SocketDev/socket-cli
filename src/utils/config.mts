@@ -7,7 +7,14 @@ import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
-import constants from '../constants.mts'
+import constants, {
+  CONFIG_KEY_API_BASE_URL,
+  CONFIG_KEY_API_PROXY,
+  CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_DEFAULT_ORG,
+  CONFIG_KEY_ENFORCED_ORGS,
+  CONFIG_KEY_ORG,
+} from '../constants.mts'
 
 import type { CResult } from '../types.mts'
 import type { SocketYml } from '@socketsecurity/config'
@@ -27,28 +34,28 @@ export interface LocalConfig {
   org?: string | undefined
 }
 
-const sensitiveConfigKeyLookup: Set<keyof LocalConfig> = new Set(['apiToken'])
+const sensitiveConfigKeyLookup: Set<keyof LocalConfig> = new Set([CONFIG_KEY_API_TOKEN])
 
 const supportedConfig: Map<keyof LocalConfig, string> = new Map([
-  ['apiBaseUrl', 'Base URL of the Socket API endpoint'],
-  ['apiProxy', 'A proxy through which to access the Socket API'],
+  [CONFIG_KEY_API_BASE_URL, 'Base URL of the Socket API endpoint'],
+  [CONFIG_KEY_API_PROXY, 'A proxy through which to access the Socket API'],
   [
-    'apiToken',
+    CONFIG_KEY_API_TOKEN,
     'The Socket API token required to access most Socket API endpoints',
   ],
   [
-    'defaultOrg',
+    CONFIG_KEY_DEFAULT_ORG,
     'The default org slug to use; usually the org your Socket API token has access to. When set, all orgSlug arguments are implied to be this value.',
   ],
   [
-    'enforcedOrgs',
+    CONFIG_KEY_ENFORCED_ORGS,
     'Orgs in this list have their security policies enforced on this machine',
   ],
   [
     'skipAskToPersistDefaultOrg',
     'This flag prevents the Socket CLI from asking you to persist the org slug when you selected one interactively',
   ],
-  ['org', 'Alias for defaultOrg'],
+  [CONFIG_KEY_ORG, 'Alias for defaultOrg'],
 ])
 
 const supportedConfigEntries = [...supportedConfig.entries()].sort((a, b) =>
@@ -77,7 +84,7 @@ function getConfigValues(): LocalConfig {
         if (_cachedConfig['apiKey']) {
           const token = _cachedConfig['apiKey']
           delete _cachedConfig['apiKey']
-          updateConfigValue('apiToken', token)
+          updateConfigValue(CONFIG_KEY_API_TOKEN, token)
         }
       } else {
         mkdirSync(path.dirname(socketAppDataPath), { recursive: true })
@@ -94,7 +101,7 @@ function normalizeConfigKey(
   //       property apiKey, we'll copy that to apiToken and delete the old property.
   // We added `org` as a convenience alias for `defaultOrg`
   const normalizedKey =
-    key === 'apiKey' ? 'apiToken' : key === 'org' ? 'defaultOrg' : key
+    key === 'apiKey' ? CONFIG_KEY_API_TOKEN : key === CONFIG_KEY_ORG ? CONFIG_KEY_DEFAULT_ORG : key
   if (!isSupportedConfigKey(normalizedKey)) {
     return {
       ok: false,

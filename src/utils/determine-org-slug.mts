@@ -1,5 +1,6 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { CONFIG_KEY_DEFAULT_ORG } from '../constants.mts'
 import { getConfigValueOrUndef } from './config.mts'
 import { suggestOrgSlug } from '../commands/scan/suggest-org-slug.mts'
 import { suggestToPersistOrgSlug } from '../commands/scan/suggest-to-persist-orgslug.mts'
@@ -9,7 +10,7 @@ export async function determineOrgSlug(
   interactive: boolean,
   dryRun: boolean,
 ): Promise<[string, string | undefined]> {
-  const defaultOrgSlug = getConfigValueOrUndef('defaultOrg')
+  const defaultOrgSlug = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
   let orgSlug = String(orgFlag || defaultOrgSlug || '')
   if (!orgSlug) {
     if (!interactive) {
