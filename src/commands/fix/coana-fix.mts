@@ -41,6 +41,7 @@ export async function coanaFix(
     autopilot,
     cwd,
     ghsas,
+    glob,
     limit,
     onlyCompute,
     orgSlug,
@@ -116,9 +117,10 @@ export async function coanaFix(
         ...(fixConfig.rangeStyle
           ? ['--range-style', fixConfig.rangeStyle]
           : []),
-        ...fixConfig.unknownFlags,
+        ...(glob ? ['--glob', glob] : []),
         ...(onlyCompute ? ['--dry-run'] : []),
         ...(outputFile ? ['--output-file', outputFile] : []),
+        ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
       { cwd, spinner, stdio: 'inherit' },
@@ -167,6 +169,7 @@ export async function coanaFix(
         ...(fixConfig.rangeStyle
           ? ['--range-style', fixConfig.rangeStyle]
           : []),
+        ...(glob ? ['--glob', glob] : []),
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
@@ -223,6 +226,7 @@ export async function coanaFix(
         ...(fixConfig.rangeStyle
           ? ['--range-style', fixConfig.rangeStyle]
           : []),
+        ...(glob ? ['--glob', glob] : []),
         ...fixConfig.unknownFlags,
       ],
       fixConfig.orgSlug,
