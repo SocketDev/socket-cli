@@ -20,6 +20,7 @@ import {
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { escapeRegExp } from '@socketsecurity/registry/lib/regexps'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import baseConfig, { EXTERNAL_PACKAGES } from './rollup.base.config.mjs'
 import constants from '../scripts/constants.js'
@@ -245,7 +246,6 @@ async function updatePackageLockFile() {
   if (!existsSync(rootPackageLockPath)) {
     return
   }
-  const { spawn } = await import('@socketsecurity/registry/lib/spawn')
   try {
     await spawn(
       'pnpm',
