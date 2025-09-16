@@ -18,7 +18,7 @@ export function cmdFlagsToString(args: string[] | readonly string[]): string {
     if (arg.startsWith('--')) {
       const nextArg = i + 1 < length ? args[i + 1]!.trim() : undefined
       // Check if the next item exists and is NOT another flag.
-      if (nextArg?.startsWith('--')) {
+      if (nextArg && !nextArg.startsWith('--')) {
         result.push(`${arg}=${nextArg}`)
         i += 1
       } else {
