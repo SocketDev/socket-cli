@@ -21,13 +21,14 @@ export function runAgentInstall(
   pkgEnvDetails: EnvDetails,
   options?: AgentInstallOptions | undefined,
 ): AgentSpawnResult {
-  const { agent, agentExecPath } = pkgEnvDetails
+  const { agent, agentExecPath, pkgPath } = pkgEnvDetails
   const isNpm = agent === NPM
   const isPnpm = agent === PNPM
   // All package managers support the "install" command.
   if (isNpm) {
     return shadowNpmInstall({
       agentExecPath,
+      cwd: pkgPath,
       ...options,
     })
   }
@@ -38,6 +39,7 @@ export function runAgentInstall(
   } = { __proto__: null, ...options } as AgentInstallOptions
   const skipNodeHardenFlags = isPnpm && pkgEnvDetails.agentVersion.major < 11
   return spawn(agentExecPath, ['install', ...args], {
+    cwd: pkgPath,
     shell: constants.WIN32,
     spinner,
     stdio: 'inherit',
