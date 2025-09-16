@@ -1,7 +1,11 @@
+import path from 'node:path'
+
 import { describe, expect } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
+import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
+
+const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/create')
 
 describe('socket scan create', async () => {
   const { binCliPath } = constants
@@ -555,7 +559,7 @@ describe('socket scan create', async () => {
     [
       'scan',
       'create',
-      '/tmp',
+      path.join(fixtureBaseDir, 'nonexistent'),
       '--org',
       'test-org',
       '--config',
