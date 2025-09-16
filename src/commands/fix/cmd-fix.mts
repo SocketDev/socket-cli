@@ -83,16 +83,16 @@ Available styles:
   * preserve - Retain the existing version range style as-is
       `.trim(),
   },
-  outputFile: {
-    type: 'string',
-    default: '',
-    description: 'Path to store upgrades as a JSON file at this path.',
-  },
-  computeFixesOnly: {
+  onlyCompute: {
     type: 'boolean',
     default: false,
     description:
       'Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.',
+  },
+  outputFile: {
+    type: 'string',
+    default: '',
+    description: 'Path to store upgrades as a JSON file at this path.',
   },
 }
 
@@ -190,11 +190,11 @@ async function run(
 
   const {
     autopilot,
-    computeFixesOnly,
     json,
     limit,
     markdown,
     maxSatisfying,
+    onlyCompute,
     outputFile,
     prCheck,
     rangeStyle,
@@ -212,7 +212,7 @@ async function run(
     rangeStyle: RangeStyle
     unknownFlags?: string[]
     outputFile: string
-    computeFixesOnly: boolean
+    onlyCompute: boolean
   }
 
   const dryRun = !!cli.flags['dryRun']
@@ -281,7 +281,7 @@ async function run(
     rangeStyle,
     spinner,
     unknownFlags,
-    computeFixesOnly,
+    onlyCompute,
     outputFile,
   })
 }
