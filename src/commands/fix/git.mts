@@ -50,7 +50,7 @@ export function getSocketFixCommitMessage(
 
 export function getSocketFixPullRequestBody(
   ghsaIds: string[],
-  ghsaDetails?: Map<string, GhsaDetails>,
+  ghsaDetails?: Map<string, GhsaDetails> | undefined,
 ): string {
   const vulnCount = ghsaIds.length
   if (vulnCount === 1) {

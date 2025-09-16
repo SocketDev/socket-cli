@@ -80,7 +80,7 @@ export interface MeowOptions extends Options<any> {
   argv: readonly string[]
   name: string
   // When no sub-command is given, default to this sub-command.
-  defaultSub?: string
+  defaultSub?: string | undefined
 }
 
 const HELP_INDENT = 2

@@ -21,15 +21,15 @@ import type {
 const NO_ERROR_MESSAGE = 'No error message returned'
 
 export type CommandRequirements = {
-  permissions?: string[]
-  quota?: number
+  permissions?: string[] | undefined
+  quota?: number | undefined
 }
 
 /**
  * Get command requirements from requirements.json based on command path.
  */
 function getCommandRequirements(
-  cmdPath?: string,
+  cmdPath?: string | undefined,
 ): CommandRequirements | undefined {
   if (!cmdPath) {
     return undefined
@@ -43,7 +43,7 @@ function getCommandRequirements(
 /**
  * Log required permissions for a command when encountering 403 errors.
  */
-function logPermissionsFor403(cmdPath?: string): void {
+function logPermissionsFor403(cmdPath?: string | undefined): void {
   const requirements = getCommandRequirements(cmdPath)
   if (!requirements?.permissions?.length) {
     return

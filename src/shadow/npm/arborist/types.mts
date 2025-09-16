@@ -14,8 +14,8 @@ import type {
 } from '@npmcli/arborist'
 
 export type ArboristOptions = BaseArboristOptions & {
-  npmCommand?: string
-  npmVersion?: string
+  npmCommand?: string | undefined
+  npmVersion?: string | undefined
 }
 
 export type ArboristClass = ArboristInstance & {
@@ -37,10 +37,10 @@ export type ArboristInstance = Omit<
   actualTree?: NodeClass | null | undefined
   diff: Diff | null
   idealTree?: NodeClass | null | undefined
-  buildIdealTree(options?: BuildIdealTreeOptions): Promise<NodeClass>
-  loadActual(options?: ArboristOptions): Promise<NodeClass>
-  loadVirtual(options?: ArboristOptions): Promise<NodeClass>
-  reify(options?: ArboristReifyOptions): Promise<NodeClass>
+  buildIdealTree(options?: BuildIdealTreeOptions | undefined): Promise<NodeClass>
+  loadActual(options?: ArboristOptions | undefined): Promise<NodeClass>
+  loadVirtual(options?: ArboristOptions | undefined): Promise<NodeClass>
+  reify(options?: ArboristReifyOptions | undefined): Promise<NodeClass>
 }
 
 export type ArboristReifyOptions = ReifyOptions & ArboristOptions
@@ -111,7 +111,7 @@ export type EdgeClass = Omit<
   get to(): NodeClass | null
   new (...args: any): EdgeClass
   detach(): void
-  reload(hard?: boolean): void
+  reload(hard?: boolean | undefined): void
   satisfiedBy(node: NodeClass): boolean
 }
 
@@ -178,9 +178,9 @@ export type NodeClass = Omit<
   new (...args: any): NodeClass
   addEdgeIn(edge: EdgeClass): void
   addEdgeOut(edge: EdgeClass): void
-  canDedupe(preferDedupe?: boolean): boolean
-  canReplace(node: NodeClass, ignorePeers?: string[]): boolean
-  canReplaceWith(node: NodeClass, ignorePeers?: string[]): boolean
+  canDedupe(preferDedupe?: boolean | undefined): boolean
+  canReplace(node: NodeClass, ignorePeers?: string[] | undefined): boolean
+  canReplaceWith(node: NodeClass, ignorePeers?: string[] | undefined): boolean
   deleteEdgeIn(edge: EdgeClass): void
   matches(node: NodeClass): boolean
   recalculateOutEdgesOverrides(): void
