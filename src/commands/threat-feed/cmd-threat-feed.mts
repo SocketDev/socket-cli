@@ -1,3 +1,4 @@
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleThreatFeed } from './handle-threat-feed.mts'
@@ -227,7 +228,7 @@ async function run(
 
   if (argSet.size) {
     logger.info(
-      `Warning: ignoring these excessive args: ${Array.from(argSet).join(', ')}`,
+      `Warning: ignoring these excessive args: ${joinAnd(Array.from(argSet))}`,
     )
   }
 
