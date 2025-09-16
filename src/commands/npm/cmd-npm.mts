@@ -2,7 +2,7 @@ import { createRequire } from 'node:module'
 
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { NPM } from '../../constants.mts'
+import constants, { FLAG_JSON, NPM } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { filterFlags } from '../../utils/cmd.mts'
 import { meowOrExit } from '../../utils/meow-with-subcommands.mts'
@@ -79,7 +79,7 @@ async function run(
 
   // Filter Socket flags from argv but keep --json for npm.
   const argsToForward = filterFlags(argv, { ...commonFlags, ...outputFlags }, [
-    '--json',
+    FLAG_JSON,
   ])
   const { spawnPromise } = await shadowBin(NPM, argsToForward, {
     stdio: 'inherit',

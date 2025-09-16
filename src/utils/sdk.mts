@@ -7,7 +7,11 @@ import { isUrl } from '@socketsecurity/registry/lib/url'
 import { SocketSdk, createUserAgentFromPkgJson } from '@socketsecurity/sdk'
 
 import { getConfigValueOrUndef } from './config.mts'
-import constants from '../constants.mts'
+import constants, {
+  CONFIG_KEY_API_BASE_URL,
+  CONFIG_KEY_API_PROXY,
+  CONFIG_KEY_API_TOKEN,
+} from '../constants.mts'
 
 import type { CResult } from '../types.mts'
 
@@ -18,14 +22,14 @@ const TOKEN_VISIBLE_LENGTH = 5
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
+    constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
   return isUrl(baseUrl) ? baseUrl : undefined
 }
 
 // The Socket API server that should be used for operations.
 export function getDefaultProxyUrl(): string | undefined {
   const apiProxy =
-    constants.ENV.SOCKET_CLI_API_PROXY || getConfigValueOrUndef('apiProxy')
+    constants.ENV.SOCKET_CLI_API_PROXY || getConfigValueOrUndef(CONFIG_KEY_API_PROXY)
   return isUrl(apiProxy) ? apiProxy : undefined
 }
 
@@ -39,7 +43,7 @@ export function getDefaultApiToken(): string | undefined {
 
   const key =
     constants.ENV.SOCKET_CLI_API_TOKEN ||
-    getConfigValueOrUndef('apiToken') ||
+    getConfigValueOrUndef(CONFIG_KEY_API_TOKEN) ||
     _defaultToken
 
   _defaultToken = isNonEmptyString(key) ? key : undefined

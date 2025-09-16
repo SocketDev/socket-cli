@@ -176,6 +176,13 @@ const ALERT_TYPE_MEDIUM_CVE = 'mediumCVE'
 const ALERT_TYPE_MILD_CVE = 'mildCVE'
 const API_V0_URL = 'https://api.socket.dev/v0/'
 const BUN = 'bun'
+const CONFIG_KEY_API_BASE_URL = 'apiBaseUrl'
+const CONFIG_KEY_API_PROXY = 'apiProxy'
+const CONFIG_KEY_API_TOKEN = 'apiToken'
+const CONFIG_KEY_DEFAULT_ORG = 'defaultOrg'
+const CONFIG_KEY_ENFORCED_ORGS = 'enforcedOrgs'
+const CONFIG_KEY_ORG = 'org'
+const DOT_GIT = '.git'
 const DOT_SOCKET = '.socket'
 const DOT_SOCKET_DOT_FACTS_JSON = `${DOT_SOCKET}.facts.json`
 const DRY_RUN_LABEL = '[DryRun]'
@@ -184,6 +191,25 @@ const DRY_RUN_NOT_SAVING = `${DRY_RUN_LABEL}: Not saving`
 const EMPTY_VALUE = '<empty>'
 const ENVIRONMENT_YAML = 'environment.yaml'
 const ENVIRONMENT_YML = 'environment.yml'
+const ERROR_NO_MANIFEST_FILES = 'No manifest files found'
+const ERROR_NO_PACKAGE_JSON = 'No package.json found'
+const ERROR_NO_REPO_FOUND = 'No repo found'
+const ERROR_NO_SOCKET_DIR = 'No .socket directory found'
+const ERROR_UNABLE_RESOLVE_ORG = 'Unable to resolve a Socket account organization'
+const EXT_YAML = '.yaml'
+const EXT_YML = '.yml'
+const FLAG_CONFIG = '--config'
+const FLAG_DRY_RUN = '--dry-run'
+const FLAG_HELP = '--help'
+const FLAG_JSON = '--json'
+const FLAG_MARKDOWN = '--markdown'
+const FLAG_ORG = '--org'
+const FLAG_PIN = '--pin'
+const FLAG_PROD = '--prod'
+const FLAG_QUIET = '--quiet'
+const FLAG_SILENT = '--silent'
+const FLAG_TEXT = '--text'
+const FLAG_VERBOSE = '--verbose'
 const FOLD_SETTING_FILE = 'file'
 const FOLD_SETTING_NONE = 'none'
 const FOLD_SETTING_PKG = 'pkg'
@@ -239,15 +265,41 @@ export type Constants = Remap<
     readonly ALERT_TYPE_MILD_CVE: typeof ALERT_TYPE_MILD_CVE
     readonly API_V0_URL: typeof API_V0_URL
     readonly BUN: typeof BUN
-    readonly EMPTY_VALUE: typeof EMPTY_VALUE
-    readonly ENV: ENV
+    readonly CONFIG_KEY_API_BASE_URL: typeof CONFIG_KEY_API_BASE_URL
+    readonly CONFIG_KEY_API_PROXY: typeof CONFIG_KEY_API_PROXY
+    readonly CONFIG_KEY_API_TOKEN: typeof CONFIG_KEY_API_TOKEN
+    readonly CONFIG_KEY_DEFAULT_ORG: typeof CONFIG_KEY_DEFAULT_ORG
+    readonly CONFIG_KEY_ENFORCED_ORGS: typeof CONFIG_KEY_ENFORCED_ORGS
+    readonly CONFIG_KEY_ORG: typeof CONFIG_KEY_ORG
+    readonly DOT_GIT: typeof DOT_GIT
     readonly DOT_SOCKET: typeof DOT_SOCKET
     readonly DOT_SOCKET_DOT_FACTS_JSON: typeof DOT_SOCKET_DOT_FACTS_JSON
     readonly DRY_RUN_LABEL: typeof DRY_RUN_LABEL
     readonly DRY_RUN_BAILING_NOW: typeof DRY_RUN_BAILING_NOW
     readonly DRY_RUN_NOT_SAVING: typeof DRY_RUN_NOT_SAVING
+    readonly EMPTY_VALUE: typeof EMPTY_VALUE
+    readonly ENV: ENV
     readonly ENVIRONMENT_YAML: typeof ENVIRONMENT_YAML
     readonly ENVIRONMENT_YML: typeof ENVIRONMENT_YML
+    readonly ERROR_NO_MANIFEST_FILES: typeof ERROR_NO_MANIFEST_FILES
+    readonly ERROR_NO_PACKAGE_JSON: typeof ERROR_NO_PACKAGE_JSON
+    readonly ERROR_NO_REPO_FOUND: typeof ERROR_NO_REPO_FOUND
+    readonly ERROR_NO_SOCKET_DIR: typeof ERROR_NO_SOCKET_DIR
+    readonly ERROR_UNABLE_RESOLVE_ORG: typeof ERROR_UNABLE_RESOLVE_ORG
+    readonly EXT_YAML: typeof EXT_YAML
+    readonly EXT_YML: typeof EXT_YML
+    readonly FLAG_CONFIG: typeof FLAG_CONFIG
+    readonly FLAG_DRY_RUN: typeof FLAG_DRY_RUN
+    readonly FLAG_HELP: typeof FLAG_HELP
+    readonly FLAG_JSON: typeof FLAG_JSON
+    readonly FLAG_MARKDOWN: typeof FLAG_MARKDOWN
+    readonly FLAG_ORG: typeof FLAG_ORG
+    readonly FLAG_PIN: typeof FLAG_PIN
+    readonly FLAG_PROD: typeof FLAG_PROD
+    readonly FLAG_QUIET: typeof FLAG_QUIET
+    readonly FLAG_SILENT: typeof FLAG_SILENT
+    readonly FLAG_TEXT: typeof FLAG_TEXT
+    readonly FLAG_VERBOSE: typeof FLAG_VERBOSE
     readonly FOLD_SETTING_FILE: typeof FOLD_SETTING_FILE
     readonly FOLD_SETTING_NONE: typeof FOLD_SETTING_NONE
     readonly FOLD_SETTING_PKG: typeof FOLD_SETTING_PKG
@@ -766,15 +818,41 @@ const constants: Constants = createConstantsObject(
     ALERT_TYPE_MILD_CVE,
     API_V0_URL,
     BUN,
+    CONFIG_KEY_API_BASE_URL,
+    CONFIG_KEY_API_PROXY,
+    CONFIG_KEY_API_TOKEN,
+    CONFIG_KEY_DEFAULT_ORG,
+    CONFIG_KEY_ENFORCED_ORGS,
+    CONFIG_KEY_ORG,
+    DOT_GIT,
     DOT_SOCKET,
     DOT_SOCKET_DOT_FACTS_JSON,
     DRY_RUN_LABEL,
     DRY_RUN_BAILING_NOW,
     DRY_RUN_NOT_SAVING,
     EMPTY_VALUE,
+    ENV: undefined,
     ENVIRONMENT_YAML,
     ENVIRONMENT_YML,
-    ENV: undefined,
+    ERROR_NO_MANIFEST_FILES,
+    ERROR_NO_PACKAGE_JSON,
+    ERROR_NO_REPO_FOUND,
+    ERROR_NO_SOCKET_DIR,
+    ERROR_UNABLE_RESOLVE_ORG,
+    EXT_YAML,
+    EXT_YML,
+    FLAG_CONFIG,
+    FLAG_DRY_RUN,
+    FLAG_HELP,
+    FLAG_JSON,
+    FLAG_MARKDOWN,
+    FLAG_ORG,
+    FLAG_PIN,
+    FLAG_PROD,
+    FLAG_QUIET,
+    FLAG_SILENT,
+    FLAG_TEXT,
+    FLAG_VERBOSE,
     FOLD_SETTING_FILE,
     FOLD_SETTING_NONE,
     FOLD_SETTING_PKG,
@@ -917,6 +995,13 @@ export {
   BUN,
   CI,
   COLUMN_LIMIT,
+  CONFIG_KEY_API_BASE_URL,
+  CONFIG_KEY_API_PROXY,
+  CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_DEFAULT_ORG,
+  CONFIG_KEY_ENFORCED_ORGS,
+  CONFIG_KEY_ORG,
+  DOT_GIT,
   DOT_SOCKET,
   DOT_SOCKET_DOT_FACTS_JSON,
   DRY_RUN_BAILING_NOW,
@@ -926,6 +1011,11 @@ export {
   EMPTY_VALUE,
   ENVIRONMENT_YAML,
   ENVIRONMENT_YML,
+  ERROR_NO_MANIFEST_FILES,
+  ERROR_NO_PACKAGE_JSON,
+  ERROR_NO_REPO_FOUND,
+  ERROR_NO_SOCKET_DIR,
+  ERROR_UNABLE_RESOLVE_ORG,
   ESLINT_CONFIG_JS,
   ESNEXT,
   EXTENSIONS,
@@ -942,6 +1032,20 @@ export {
   EXT_MJS,
   EXT_MTS,
   EXT_PS1,
+  EXT_YAML,
+  EXT_YML,
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_JSON,
+  FLAG_MARKDOWN,
+  FLAG_ORG,
+  FLAG_PIN,
+  FLAG_PROD,
+  FLAG_QUIET,
+  FLAG_SILENT,
+  FLAG_TEXT,
+  FLAG_VERBOSE,
   FOLD_SETTING_FILE,
   FOLD_SETTING_NONE,
   FOLD_SETTING_PKG,
