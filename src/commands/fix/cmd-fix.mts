@@ -176,7 +176,7 @@ async function run(
 
     Examples
       $ ${command}
-      $ ${command} ./proj/tree --auto-merge
+      $ ${command} ./path/to/project --range-style pin
     `,
   }
 

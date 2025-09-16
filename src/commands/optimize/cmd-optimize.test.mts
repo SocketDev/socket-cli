@@ -63,7 +63,7 @@ describe('socket optimize', async () => {
 
           Examples
             $ socket optimize
-            $ socket optimize ./proj/tree --pin"
+            $ socket optimize ./path/to/project --pin"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
