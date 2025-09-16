@@ -58,7 +58,12 @@ export function getCiEnvInstructions(): string {
  * Returns lists of missing and present variables.
  */
 export function checkCiEnvVars(): MissingEnvVars {
-  const { CI, SOCKET_CLI_GIT_USER_EMAIL, SOCKET_CLI_GIT_USER_NAME, SOCKET_CLI_GITHUB_TOKEN } = constants.ENV
+  const {
+    CI,
+    SOCKET_CLI_GIT_USER_EMAIL,
+    SOCKET_CLI_GIT_USER_NAME,
+    SOCKET_CLI_GITHUB_TOKEN,
+  } = constants.ENV
 
   const missing: string[] = []
   const present: string[] = []
@@ -106,8 +111,8 @@ export async function getFixEnv(): Promise<FixEnv> {
     if (missingExceptCi.length) {
       logger.warn(
         `CI mode detected, but pull request creation is disabled due to missing environment variables:\n` +
-        `  Missing: ${joinAnd(missingExceptCi)}\n` +
-        `  Set these variables to enable automatic pull request creation.`
+          `  Missing: ${joinAnd(missingExceptCi)}\n` +
+          `  Set these variables to enable automatic pull request creation.`,
       )
     }
   } else if (
