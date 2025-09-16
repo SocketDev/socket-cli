@@ -180,8 +180,15 @@ async function run(
     Options
       ${getFlagListOutput(config.flags)}
 
+    Environment Variables (for CI/PR mode)
+      CI                          Set to enable CI mode
+      SOCKET_CLI_GITHUB_TOKEN     GitHub token for PR creation (or GITHUB_TOKEN)
+      SOCKET_CLI_GIT_USER_NAME    Git username for commits
+      SOCKET_CLI_GIT_USER_EMAIL   Git email for commits
+
     Examples
       $ ${command}
+      $ ${command} --id CVE-2021-23337
       $ ${command} ./path/to/project --range-style pin
     `,
   }
