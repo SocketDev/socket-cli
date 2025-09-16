@@ -34,7 +34,9 @@ export interface LocalConfig {
   org?: string | undefined
 }
 
-const sensitiveConfigKeyLookup: Set<keyof LocalConfig> = new Set([CONFIG_KEY_API_TOKEN])
+const sensitiveConfigKeyLookup: Set<keyof LocalConfig> = new Set([
+  CONFIG_KEY_API_TOKEN,
+])
 
 const supportedConfig: Map<keyof LocalConfig, string> = new Map([
   [CONFIG_KEY_API_BASE_URL, 'Base URL of the Socket API endpoint'],
@@ -101,7 +103,11 @@ function normalizeConfigKey(
   //       property apiKey, we'll copy that to apiToken and delete the old property.
   // We added `org` as a convenience alias for `defaultOrg`
   const normalizedKey =
-    key === 'apiKey' ? CONFIG_KEY_API_TOKEN : key === CONFIG_KEY_ORG ? CONFIG_KEY_DEFAULT_ORG : key
+    key === 'apiKey'
+      ? CONFIG_KEY_API_TOKEN
+      : key === CONFIG_KEY_ORG
+        ? CONFIG_KEY_DEFAULT_ORG
+        : key
   if (!isSupportedConfigKey(normalizedKey)) {
     return {
       ok: false,
