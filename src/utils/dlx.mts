@@ -2,12 +2,15 @@ import { createRequire } from 'node:module'
 
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 
-import constants, { NPM, PNPM, YARN } from '../constants.mts'
+import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
+import constants, { NPM, PNPM, UNKNOWN_ERROR, YARN } from '../constants.mts'
 import { findUp } from './fs.mts'
+import { getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
 import { isYarnBerry } from './yarn-version.mts'
 import shadowBin from '../shadow/npm/bin.mts'
 
 import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm/bin.mts'
+import type { CResult } from '../types.mts'
 import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
 const require = createRequire(import.meta.url)
@@ -150,21 +153,84 @@ export async function spawnDlx(
 /**
  * Helper to spawn coana with dlx.
  * Automatically uses force and silent when version is not pinned exactly.
+ * Returns a CResult with stdout extraction for backward compatibility.
  */
 export async function spawnCoanaDlx(
   args: string[] | readonly string[],
+  orgSlug?: string,
   options?: DlxOptions | undefined,
   spawnExtra?: SpawnExtra | undefined,
-): Promise<ShadowBinResult> {
-  return await spawnDlx(
-    {
-      name: '@coana-tech/cli',
-      version: `~${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}`,
-    },
-    args,
-    { force: true, silent: true, ...options },
-    spawnExtra,
-  )
+): Promise<CResult<string>> {
+  const {
+    env: spawnEnv,
+    ipc,
+    ...dlxOptions
+  } = {
+    __proto__: null,
+    ...options,
+  } as DlxOptions
+
+  const mixinsEnv: Record<string, string> = {
+    SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
+  }
+  const defaultApiToken = getDefaultApiToken()
+  if (defaultApiToken) {
+    mixinsEnv['SOCKET_CLI_API_TOKEN'] = defaultApiToken
+  }
+
+  if (orgSlug) {
+    mixinsEnv['SOCKET_ORG_SLUG'] = orgSlug
+  } else {
+    const orgSlugCResult = await getDefaultOrgSlug()
+    if (orgSlugCResult.ok) {
+      mixinsEnv['SOCKET_ORG_SLUG'] = orgSlugCResult.data
+    }
+  }
+
+  const proxyUrl = getDefaultProxyUrl()
+  if (proxyUrl) {
+    mixinsEnv['SOCKET_CLI_API_PROXY'] = proxyUrl
+  }
+
+  try {
+    const result = await spawnDlx(
+      {
+        name: '@coana-tech/cli',
+        version: `~${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}`,
+      },
+      args,
+      {
+        force: true,
+        silent: true,
+        ...dlxOptions,
+        env: {
+          ...process.env,
+          ...constants.processEnv,
+          ...mixinsEnv,
+          ...spawnEnv,
+        },
+        ipc: {
+          [constants.SOCKET_CLI_SHADOW_ACCEPT_RISKS]: true,
+          [constants.SOCKET_CLI_SHADOW_API_TOKEN]:
+            constants.SOCKET_PUBLIC_API_TOKEN,
+          [constants.SOCKET_CLI_SHADOW_SILENT]: true,
+          ...ipc,
+        },
+      },
+      spawnExtra,
+    )
+    const output = await result.spawnPromise
+    return { ok: true, data: output.stdout }
+  } catch (e) {
+    const stderr = (e as any)?.stderr
+    const cause = (e as Error)?.message || UNKNOWN_ERROR
+    const message = stderr ? stderr : cause
+    return {
+      ok: false,
+      data: e,
+      message,
+    }
+  }
 }
 
 /**

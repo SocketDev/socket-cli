@@ -4,10 +4,8 @@ import terminalLink from 'terminal-link'
 
 import constants, { SOCKET_WEBSITE_URL } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
-import {
-  extractTier1ReachabilityScanId,
-  spawnCoana,
-} from '../../utils/coana.mts'
+import { extractTier1ReachabilityScanId } from '../../utils/coana.mts'
+import { spawnCoanaDlx } from '../../utils/dlx.mts'
 import { hasEnterpriseOrgPlan } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
@@ -177,7 +175,7 @@ export async function performReachabilityAnalysis(
   }
 
   // Run Coana with the manifests tar hash.
-  const coanaResult = await spawnCoana(coanaArgs, orgSlug, {
+  const coanaResult = await spawnCoanaDlx(coanaArgs, orgSlug, {
     cwd,
     env: coanaEnv,
     spinner,
