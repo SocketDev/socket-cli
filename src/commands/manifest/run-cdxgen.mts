@@ -77,13 +77,17 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
 
   // Detect package manager based on lockfiles
   const pnpmLockPath = await findUp(PNPM_LOCK_YAML, { onlyFiles: true })
+
   const npmLockPath = pnpmLockPath
     ? undefined
     : await findUp(PACKAGE_LOCK_JSON, { onlyFiles: true })
+
   const yarnLockPath =
     pnpmLockPath || npmLockPath
       ? undefined
       : await findUp(YARN_LOCK, { onlyFiles: true })
+
+  const agent = pnpmLockPath ? PNPM : yarnLockPath && isYarnBerry() ? YARN : NPM
 
   let cleanupPackageLock = false
   if (
@@ -101,7 +105,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
           ['--source-file', `./${YARN_LOCK}`],
           {
             ...shadowOpts,
-            agent: pnpmLockPath ? PNPM : isYarnBerry() ? YARN : NPM,
+            agent,
           },
         )
         await synpResult.spawnPromise
@@ -114,11 +118,7 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   // Use appropriate package manager for cdxgen
   const shadowResult = await spawnCdxgenDlx(argvToArray(argvMutable), {
     ...shadowOpts,
-    agent: pnpmLockPath
-      ? PNPM
-      : yarnLockPath && isYarnBerry()
-        ? YARN
-        : NPM,
+    agent,
   })
 
   shadowResult.spawnPromise.process.on('exit', () => {
