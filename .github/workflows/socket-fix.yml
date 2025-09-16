@@ -39,4 +39,4 @@ jobs:
           SOCKET_CLI_GIT_USER_NAME: socket-fix[bot]
           SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
-        run: pnpm dlx @socketsecurity/cli fix --autopilot
+        run: pnpm dlx @socketsecurity/cli fix --autopilot --glob '!test/fixtures/**'
