@@ -2,8 +2,8 @@ import { readJsonSync } from '@socketsecurity/registry/lib/fs'
 
 import { getDefaultOrgSlug } from '../commands/ci/fetch-default-org-slug.mts'
 import constants, { UNKNOWN_ERROR } from '../constants.mts'
+import { spawnCoanaDlx } from './dlx.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
-import shadowBin from '../shadow/npm/bin.mts'
 
 import type { ShadowBinOptions } from '../shadow/npm/bin.mts'
 import type { CResult } from '../types.mts'
@@ -35,6 +35,7 @@ export async function spawnCoana(
     __proto__: null,
     ...options,
   } as ShadowBinOptions
+
   const mixinsEnv: Record<string, string> = {
     SOCKET_CLI_VERSION: constants.ENV.INLINED_SOCKET_CLI_VERSION,
   }
@@ -58,13 +59,8 @@ export async function spawnCoana(
   }
 
   try {
-    const { spawnPromise } = await shadowBin(
-      'npx',
-      [
-        '--yes',
-        `@coana-tech/cli@~${constants.ENV.INLINED_SOCKET_CLI_COANA_TECH_CLI_VERSION}`,
-        ...args,
-      ],
+    const { spawnPromise } = await spawnCoanaDlx(
+      args,
       {
         ...spawnOpts,
         env: {
