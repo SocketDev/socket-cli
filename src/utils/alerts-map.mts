@@ -11,7 +11,6 @@ import { getPublicApiToken, setupSdk } from './sdk.mts'
 import { addArtifactToAlertsMap } from './socket-package-alert.mts'
 
 import type { CompactSocketArtifact } from './alert/artifact.mts'
-import type { FoundSocketYml } from './config.mts'
 import type { AlertFilter, AlertsByPurl } from './socket-package-alert.mts'
 import type { LockfileObject } from '@pnpm/lockfile.fs'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -85,8 +84,8 @@ export async function getAlertsMapFromPurls(
   }
   const sockSdk = sockSdkCResult.data
   const socketYmlResult = findSocketYmlSync()
-  const socketYml = socketYmlResult.ok
-    ? (socketYmlResult.data as FoundSocketYml).parsed
+  const socketYml = socketYmlResult.ok && socketYmlResult.data
+    ? socketYmlResult.data.parsed
     : undefined
 
   const alertsMapOptions = {
