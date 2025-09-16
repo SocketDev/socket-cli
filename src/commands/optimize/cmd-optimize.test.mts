@@ -2,6 +2,7 @@ import path from 'node:path'
 
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
+import { existsSync } from 'node:fs'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -323,7 +324,6 @@ describe('socket optimize', async () => {
 
         // Check that pnpm-lock.yaml exists (was modified/created).
         const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
-        const { existsSync } = await import('node:fs')
         expect(existsSync(packageLockPath)).toBe(true)
 
         // Should have optimization output.
@@ -351,7 +351,6 @@ describe('socket optimize', async () => {
 
         // Verify pnpm-lock.yaml was updated.
         const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
-        const { existsSync } = await import('node:fs')
         expect(existsSync(packageLockPath)).toBe(true)
 
         // Should mention optimization in output.
@@ -408,7 +407,6 @@ describe('socket optimize', async () => {
 
         // Verify pnpm-lock.yaml exists (since we're using pnpm, not npm).
         const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
-        const { existsSync } = await import('node:fs')
         expect(existsSync(packageLockPath)).toBe(true)
 
         // Should have optimization output.
@@ -437,7 +435,6 @@ describe('socket optimize', async () => {
 
         // Verify pnpm-lock.yaml was updated.
         const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
-        const { existsSync } = await import('node:fs')
         expect(existsSync(packageLockPath)).toBe(true)
       },
     )
@@ -461,7 +458,6 @@ describe('socket optimize', async () => {
 
         // Verify pnpm-lock.yaml was updated.
         const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
-        const { existsSync } = await import('node:fs')
         expect(existsSync(packageLockPath)).toBe(true)
 
         // Should have regular output (markdown flag doesn't change console output).

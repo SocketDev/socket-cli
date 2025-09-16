@@ -1,0 +1,52 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      axios:
+        specifier: 1.3.2
+        version: 1.3.2
+      lodash:
+        specifier: 4.17.20
+        version: 4.17.20
+      pnpm:
+        specifier: ^9.14.4
+        version: 9.14.4
+
+packages:
+
+  axios@1.3.2:
+    resolution: {integrity: sha512-1M3O703bYqYuPhbHeya5bnhpYVsDDRyQSabNja04mZtboLNSuZ4YrltestrLXfHgmzua4TpUqRiVKbiQuo2epw==}
+    dependencies:
+      follow-redirects: 1.15.6
+      form-data: 4.0.0
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+
+  lodash@4.17.20:
+    resolution: {integrity: sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==}
+
+  pnpm@9.14.4:
+    resolution: {integrity: sha512-o6hW2zDx9kGjXL3+sHvJCm0nzKYcHFXXrQN4jKlp/DOB5XmyMpCBa2pju4UjkkcqVKIXCxr3Dwh1RMGvJBGwjw==}
+    engines: {node: '>=18.12'}
+    hasBin: true
+
+snapshots:
+
+  axios@1.3.2:
+    dependencies:
+      follow-redirects: 1.15.6
+      form-data: 4.0.0
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+
+  lodash@4.17.20: {}
+
+  pnpm@9.14.4: {}
