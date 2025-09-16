@@ -63,7 +63,7 @@ async function run(
 
     Examples
       $ ${command}
-      $ ${command} ./proj/tree --pin
+      $ ${command} ./path/to/project --pin
   `,
   }
 

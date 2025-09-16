@@ -70,7 +70,7 @@ async function run(
     Examples
       $ ${command}
       $ ${command} --package lodash
-      $ ${command} ./proj/tree --package lodash,react
+      $ ${command} ./path/to/project --package lodash,react
     `,
   }
 

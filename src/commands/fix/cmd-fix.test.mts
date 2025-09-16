@@ -81,7 +81,7 @@ describe('socket fix', async () => {
 
           Examples
             $ socket fix
-            $ socket fix ./proj/tree --auto-merge"
+            $ socket fix ./path/to/project --range-style pin"
       `,
       )
       expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
