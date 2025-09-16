@@ -46,8 +46,8 @@ export async function spawnDlx(
   const isNotPinned = rangeOperatorsRegExp.test(packageSpec.version)
 
   const {
-    force = false,
     agent,
+    force = false,
     silent = isNotPinned,
     ...shadowOptions
   } = options ?? {}
