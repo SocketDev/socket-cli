@@ -1,3 +1,4 @@
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { coanaFix } from './coana-fix.mts'
@@ -64,7 +65,7 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
       if (conversionResult.ok && conversionResult.data.length) {
         validGhsas.push(...conversionResult.data)
         logger.info(
-          `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${conversionResult.data.join(', ')}`,
+          `Converted ${trimmedId} to ${conversionResult.data.length} GHSA(s): ${joinAnd(conversionResult.data)}`,
         )
       } else {
         errors.push(
