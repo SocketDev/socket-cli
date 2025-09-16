@@ -21,6 +21,10 @@ runs:
         node-version: ${{ inputs.node-version }}
         cache: 'pnpm'
 
-    - name: Install dependencies
+    - name: Install Socket CLI
       shell: bash
-      run: pnpm install
+      run: pnpm add -g @socketsecurity/cli
+
+    - name: Install dependencies with `socket pnpm`
+      shell: bash
+      run: socket pnpm install --config '{"issueRules":{"malware":true}}'
