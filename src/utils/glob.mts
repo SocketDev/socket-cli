@@ -46,20 +46,12 @@ async function getWorkspaceGlobs(
 ): Promise<string[]> {
   let workspacePatterns
   if (agent === PNPM) {
-    for (const workspacePath of [
-      path.join(cwd, 'pnpm-workspace.yaml'),
-      path.join(cwd, 'pnpm-workspace.yml'),
-    ]) {
-      // eslint-disable-next-line no-await-in-loop
-      const yml = await safeReadFile(workspacePath)
-      if (yml) {
-        try {
-          workspacePatterns = yamlParse(yml)?.packages
-        } catch {}
-        if (workspacePatterns) {
-          break
-        }
-      }
+    const workspacePath = path.join(cwd, 'pnpm-workspace.yaml')
+    const yml = await safeReadFile(workspacePath)
+    if (yml) {
+      try {
+        workspacePatterns = yamlParse(yml)?.packages
+      } catch {}
     }
   } else {
     workspacePatterns = (await readPackageJson(cwd, { throws: false }))?.[
