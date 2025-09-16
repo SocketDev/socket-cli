@@ -26,6 +26,7 @@ import {
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
 import constants, {
   API_V0_URL,
+  CONFIG_KEY_DEFAULT_ORG,
   NPM,
   NPX,
   // PNPM,
@@ -134,7 +135,7 @@ function getAsciiHeader(command: string, orgFlag: string | undefined) {
     ? REDACTED
     : constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
   const nodeVersion = redacting ? REDACTED : process.version
-  const defaultOrg = getConfigValueOrUndef('defaultOrg')
+  const defaultOrg = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
   const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
   const shownToken = redacting
     ? REDACTED

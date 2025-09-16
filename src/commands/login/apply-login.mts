@@ -1,3 +1,9 @@
+import {
+  CONFIG_KEY_API_BASE_URL,
+  CONFIG_KEY_API_PROXY,
+  CONFIG_KEY_API_TOKEN,
+  CONFIG_KEY_ENFORCED_ORGS,
+} from '../../constants.mts'
 import { updateConfigValue } from '../../utils/config.mts'
 
 export function applyLogin(
@@ -6,8 +12,8 @@ export function applyLogin(
   apiBaseUrl: string | undefined,
   apiProxy: string | undefined,
 ) {
-  updateConfigValue('enforcedOrgs', enforcedOrgs)
-  updateConfigValue('apiToken', apiToken)
-  updateConfigValue('apiBaseUrl', apiBaseUrl)
-  updateConfigValue('apiProxy', apiProxy)
+  updateConfigValue(CONFIG_KEY_ENFORCED_ORGS, enforcedOrgs)
+  updateConfigValue(CONFIG_KEY_API_TOKEN, apiToken)
+  updateConfigValue(CONFIG_KEY_API_BASE_URL, apiBaseUrl)
+  updateConfigValue(CONFIG_KEY_API_PROXY, apiProxy)
 }
