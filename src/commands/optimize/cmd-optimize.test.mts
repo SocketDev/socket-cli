@@ -1,8 +1,8 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
-import { existsSync } from 'node:fs'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 

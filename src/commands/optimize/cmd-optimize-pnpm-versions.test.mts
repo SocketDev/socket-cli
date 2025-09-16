@@ -1,8 +1,16 @@
+import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from 'vitest'
 
-import { existsSync, promises as fs } from 'node:fs'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawnSync } from '@socketsecurity/registry/lib/spawn'
 
@@ -13,7 +21,10 @@ const fixtureBaseDir = path.join(testPath, 'fixtures/commands/optimize')
 const pnpm8FixtureDir = path.join(fixtureBaseDir, 'pnpm8')
 const pnpm9FixtureDir = path.join(fixtureBaseDir, 'pnpm9')
 
-async function revertFixtureChanges(fixtureDir: string, packageJsonContent: string) {
+async function revertFixtureChanges(
+  fixtureDir: string,
+  packageJsonContent: string,
+) {
   // Reset the package.json to original state.
   const packageJsonPath = path.join(fixtureDir, 'package.json')
   await fs.writeFile(packageJsonPath, packageJsonContent)
@@ -86,76 +97,84 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
       await revertFixtureChanges(pnpm8FixtureDir, pnpm8PackageJson)
     })
 
-    it('should optimize packages with pnpm v8', { timeout: 30_000 }, async () => {
-      // Ensure npm install completed for pnpm v8
-      const pnpmBin = path.join(pnpm8BinPath, 'pnpm')
-      const pnpmVersion = spawnSync(pnpmBin, ['--version'], {
-        encoding: 'utf8',
-      })
-      expect(pnpmVersion.stdout?.trim()).toMatch(/^8\.\d+\.\d+$/)
+    it(
+      'should optimize packages with pnpm v8',
+      { timeout: 30_000 },
+      async () => {
+        // Ensure npm install completed for pnpm v8
+        const pnpmBin = path.join(pnpm8BinPath, 'pnpm')
+        const pnpmVersion = spawnSync(pnpmBin, ['--version'], {
+          encoding: 'utf8',
+        })
+        expect(pnpmVersion.stdout?.trim()).toMatch(/^8\.\d+\.\d+$/)
 
-      const packageJsonPath = path.join(pnpm8FixtureDir, 'package.json')
-      const pkgJsonBefore = await readPackageJson(packageJsonPath)
+        const packageJsonPath = path.join(pnpm8FixtureDir, 'package.json')
+        const pkgJsonBefore = await readPackageJson(packageJsonPath)
 
-      // Check lodash is vulnerable version (easter egg!)
-      expect(pkgJsonBefore.dependencies?.lodash).toBe('4.17.20')
+        // Check lodash is vulnerable version (easter egg!)
+        expect(pkgJsonBefore.dependencies?.lodash).toBe('4.17.20')
 
-      const { code, stderr, stdout } = await spawnSocketCli(
-        binCliPath,
-        ['optimize', pnpm8FixtureDir, '--config', '{}'],
-        {
-          cwd: pnpm8FixtureDir,
-          env: {
-            ...process.env,
-            PATH: `${pnpm8BinPath}:${process.env.PATH}`,
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          ['optimize', pnpm8FixtureDir, '--config', '{}'],
+          {
+            cwd: pnpm8FixtureDir,
+            env: {
+              ...process.env,
+              PATH: `${pnpm8BinPath}:${process.env.PATH}`,
+            },
           },
-        },
-      )
+        )
 
-      // stderr contains the Socket banner and info messages
-      expect(stderr, 'should show optimization message').toContain(
-        'Optimizing packages for pnpm',
-      )
-      expect(stdout, 'should show success message').toMatch(
-        /Socket\.dev optimized overrides/,
-      )
-      expect(code, 'exit code should be 0').toBe(0)
+        // stderr contains the Socket banner and info messages
+        expect(stderr, 'should show optimization message').toContain(
+          'Optimizing packages for pnpm',
+        )
+        expect(stdout, 'should show success message').toMatch(
+          /Socket\.dev optimized overrides/,
+        )
+        expect(code, 'exit code should be 0').toBe(0)
 
-      const pkgJsonAfter = await readPackageJson(packageJsonPath)
-      // Should have overrides added
-      expect(pkgJsonAfter.overrides).toBeDefined()
-      expect(pkgJsonAfter.resolutions).toBeDefined()
+        const pkgJsonAfter = await readPackageJson(packageJsonPath)
+        // Should have overrides added
+        expect(pkgJsonAfter.overrides).toBeDefined()
+        expect(pkgJsonAfter.resolutions).toBeDefined()
 
-      // Check that pnpm-lock.yaml exists and was modified
-      const lockPath = path.join(pnpm8FixtureDir, PNPM_LOCK_YAML)
-      expect(existsSync(lockPath)).toBe(true)
-    })
+        // Check that pnpm-lock.yaml exists and was modified
+        const lockPath = path.join(pnpm8FixtureDir, PNPM_LOCK_YAML)
+        expect(existsSync(lockPath)).toBe(true)
+      },
+    )
 
-    it('should handle --prod flag with pnpm v8', { timeout: 30_000 }, async () => {
-      const packageJsonPath = path.join(pnpm8FixtureDir, 'package.json')
+    it(
+      'should handle --prod flag with pnpm v8',
+      { timeout: 30_000 },
+      async () => {
+        const packageJsonPath = path.join(pnpm8FixtureDir, 'package.json')
 
-      const { code, stderr, stdout } = await spawnSocketCli(
-        binCliPath,
-        ['optimize', pnpm8FixtureDir, '--prod', '--config', '{}'],
-        {
-          cwd: pnpm8FixtureDir,
-          env: {
-            ...process.env,
-            PATH: `${pnpm8BinPath}:${process.env.PATH}`,
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          ['optimize', pnpm8FixtureDir, '--prod', '--config', '{}'],
+          {
+            cwd: pnpm8FixtureDir,
+            env: {
+              ...process.env,
+              PATH: `${pnpm8BinPath}:${process.env.PATH}`,
+            },
           },
-        },
-      )
+        )
 
-      // stderr contains the Socket banner and info messages
-      expect(stderr, 'should show optimization message').toContain(
-        'Optimizing packages for pnpm',
-      )
-      expect(code, 'exit code should be 0').toBe(0)
+        // stderr contains the Socket banner and info messages
+        expect(stderr, 'should show optimization message').toContain(
+          'Optimizing packages for pnpm',
+        )
+        expect(code, 'exit code should be 0').toBe(0)
 
-      const pkgJsonAfter = await readPackageJson(packageJsonPath)
-      // Should have overrides for production deps only
-      expect(pkgJsonAfter.overrides).toBeDefined()
-    })
+        const pkgJsonAfter = await readPackageJson(packageJsonPath)
+        // Should have overrides for production deps only
+        expect(pkgJsonAfter.overrides).toBeDefined()
+      },
+    )
   })
 
   describe('pnpm v9', () => {
@@ -194,84 +213,92 @@ describe('socket optimize - pnpm versions', { timeout: 60_000 }, async () => {
       await revertFixtureChanges(pnpm9FixtureDir, pnpm9PackageJson)
     })
 
-    it('should optimize packages with pnpm v9', { timeout: 30_000 }, async () => {
-      // Ensure npm install completed for pnpm v9
-      const pnpmBin = path.join(pnpm9BinPath, 'pnpm')
-      const pnpmVersion = spawnSync(pnpmBin, ['--version'], {
-        encoding: 'utf8',
-      })
-      expect(pnpmVersion.stdout?.trim()).toMatch(/^9\.\d+\.\d+$/)
+    it(
+      'should optimize packages with pnpm v9',
+      { timeout: 30_000 },
+      async () => {
+        // Ensure npm install completed for pnpm v9
+        const pnpmBin = path.join(pnpm9BinPath, 'pnpm')
+        const pnpmVersion = spawnSync(pnpmBin, ['--version'], {
+          encoding: 'utf8',
+        })
+        expect(pnpmVersion.stdout?.trim()).toMatch(/^9\.\d+\.\d+$/)
 
-      const packageJsonPath = path.join(pnpm9FixtureDir, 'package.json')
-      const pkgJsonBefore = await readPackageJson(packageJsonPath)
+        const packageJsonPath = path.join(pnpm9FixtureDir, 'package.json')
+        const pkgJsonBefore = await readPackageJson(packageJsonPath)
 
-      // Check lodash is vulnerable version (easter egg!)
-      expect(pkgJsonBefore.dependencies?.lodash).toBe('4.17.20')
+        // Check lodash is vulnerable version (easter egg!)
+        expect(pkgJsonBefore.dependencies?.lodash).toBe('4.17.20')
 
-      const { code, stderr, stdout } = await spawnSocketCli(
-        binCliPath,
-        ['optimize', pnpm9FixtureDir, '--config', '{}'],
-        {
-          cwd: pnpm9FixtureDir,
-          env: {
-            ...process.env,
-            PATH: `${pnpm9BinPath}:${process.env.PATH}`,
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          ['optimize', pnpm9FixtureDir, '--config', '{}'],
+          {
+            cwd: pnpm9FixtureDir,
+            env: {
+              ...process.env,
+              PATH: `${pnpm9BinPath}:${process.env.PATH}`,
+            },
           },
-        },
-      )
+        )
 
-      // stderr contains the Socket banner and info messages
-      expect(stderr, 'should show optimization message').toContain(
-        'Optimizing packages for pnpm',
-      )
-      expect(stdout, 'should show success message').toMatch(
-        /Socket\.dev optimized overrides/,
-      )
-      expect(code, 'exit code should be 0').toBe(0)
+        // stderr contains the Socket banner and info messages
+        expect(stderr, 'should show optimization message').toContain(
+          'Optimizing packages for pnpm',
+        )
+        expect(stdout, 'should show success message').toMatch(
+          /Socket\.dev optimized overrides/,
+        )
+        expect(code, 'exit code should be 0').toBe(0)
 
-      const pkgJsonAfter = await readPackageJson(packageJsonPath)
-      // Should have overrides added
-      expect(pkgJsonAfter.overrides).toBeDefined()
-      expect(pkgJsonAfter.resolutions).toBeDefined()
+        const pkgJsonAfter = await readPackageJson(packageJsonPath)
+        // Should have overrides added
+        expect(pkgJsonAfter.overrides).toBeDefined()
+        expect(pkgJsonAfter.resolutions).toBeDefined()
 
-      // Check that pnpm-lock.yaml exists and was modified
-      const lockPath = path.join(pnpm9FixtureDir, PNPM_LOCK_YAML)
-      expect(existsSync(lockPath)).toBe(true)
-    })
+        // Check that pnpm-lock.yaml exists and was modified
+        const lockPath = path.join(pnpm9FixtureDir, PNPM_LOCK_YAML)
+        expect(existsSync(lockPath)).toBe(true)
+      },
+    )
 
-    it('should handle --pin flag with pnpm v9', { timeout: 30_000 }, async () => {
-      const packageJsonPath = path.join(pnpm9FixtureDir, 'package.json')
+    it(
+      'should handle --pin flag with pnpm v9',
+      { timeout: 30_000 },
+      async () => {
+        const packageJsonPath = path.join(pnpm9FixtureDir, 'package.json')
 
-      const { code, stderr, stdout } = await spawnSocketCli(
-        binCliPath,
-        ['optimize', pnpm9FixtureDir, '--pin', '--config', '{}'],
-        {
-          cwd: pnpm9FixtureDir,
-          env: {
-            ...process.env,
-            PATH: `${pnpm9BinPath}:${process.env.PATH}`,
+        const { code, stderr, stdout } = await spawnSocketCli(
+          binCliPath,
+          ['optimize', pnpm9FixtureDir, '--pin', '--config', '{}'],
+          {
+            cwd: pnpm9FixtureDir,
+            env: {
+              ...process.env,
+              PATH: `${pnpm9BinPath}:${process.env.PATH}`,
+            },
           },
-        },
-      )
+        )
 
-      // stderr contains the Socket banner and info messages
-      expect(stderr, 'should show optimization message').toContain(
-        'Optimizing packages for pnpm',
-      )
-      expect(code, 'exit code should be 0').toBe(0)
+        // stderr contains the Socket banner and info messages
+        expect(stderr, 'should show optimization message').toContain(
+          'Optimizing packages for pnpm',
+        )
+        expect(code, 'exit code should be 0').toBe(0)
 
-      const pkgJsonAfter = await readPackageJson(packageJsonPath)
-      // Should have overrides with pinned versions
-      expect(pkgJsonAfter.overrides).toBeDefined()
+        const pkgJsonAfter = await readPackageJson(packageJsonPath)
+        // Should have overrides with pinned versions
+        expect(pkgJsonAfter.overrides).toBeDefined()
 
-      // Check that overrides use exact versions when pinned
-      const overrideValues = Object.values(pkgJsonAfter.overrides || {})
-      overrideValues.forEach(value => {
-        if (typeof value === 'string' && !value.startsWith('$')) {
-          // Should not have ^ or ~ when pinned
-          expect(value).not.toMatch(/[\^~]/)
-        }
-      })
-    })
+        // Check that overrides use exact versions when pinned
+        const overrideValues = Object.values(pkgJsonAfter.overrides || {})
+        overrideValues.forEach(value => {
+          if (typeof value === 'string' && !value.startsWith('$')) {
+            // Should not have ^ or ~ when pinned
+            expect(value).not.toMatch(/[\^~]/)
+          }
+        })
+      },
+    )
   })
 })
