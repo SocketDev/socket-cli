@@ -34,7 +34,9 @@ jobs:
       - name: Run Socket Fix CLI
         env:
           DEBUG: ${{ inputs.debug == '1' && 'notice,error,inspect' || '' }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOCKET_CLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOCKET_CLI_GIT_USER_EMAIL: socket-fix[bot]@users.noreply.github.com
+          SOCKET_CLI_GIT_USER_NAME: socket-fix[bot]
           SOCKET_CLI_API_TOKEN: ${{ secrets.SOCKET_CLI_API_TOKEN }}
           SOCKET_CLI_DEBUG: ${{ inputs.debug }}
         run: pnpm dlx @socketsecurity/cli fix --autopilot
