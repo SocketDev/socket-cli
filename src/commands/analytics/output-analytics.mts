@@ -341,10 +341,10 @@ export function formatDataOrg(
     const topFiveAlertTypes = entry['top_five_alert_types']
     for (const type of Object.keys(topFiveAlertTypes)) {
       const count = topFiveAlertTypes[type] ?? 0
-      if (!totalTopAlerts[type]) {
-        totalTopAlerts[type] = count
-      } else {
+      if (totalTopAlerts[type]) {
         totalTopAlerts[type] += count
+      } else {
+        totalTopAlerts[type] = count
       }
     }
   }
@@ -353,10 +353,10 @@ export function formatDataOrg(
     const formatted = formattedData[metric]
     for (const entry of data) {
       const date = formatDate(entry['created_at'])
-      if (!formatted[date]) {
-        formatted[date] = entry[metric]!
-      } else {
+      if (formatted[date]) {
         formatted[date] += entry[metric]!
+      } else {
+        formatted[date] = entry[metric]!
       }
     }
   }
