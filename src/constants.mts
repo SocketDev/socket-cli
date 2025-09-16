@@ -219,6 +219,11 @@ const GQL_PAGE_SENTINEL = 100
 const GQL_PR_STATE_CLOSED = 'CLOSED'
 const GQL_PR_STATE_MERGED = 'MERGED'
 const GQL_PR_STATE_OPEN = 'OPEN'
+const HTTP_STATUS_BAD_REQUEST = 400
+const HTTP_STATUS_FORBIDDEN = 403
+const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500
+const HTTP_STATUS_NOT_FOUND = 404
+const HTTP_STATUS_UNAUTHORIZED = 401
 const LOCALAPPDATA = 'LOCALAPPDATA'
 const NPM_BUGGY_OVERRIDES_PATCHED_VERSION = '11.2.0'
 const NPM_REGISTRY_URL = 'https://registry.npmjs.org'
@@ -226,6 +231,7 @@ const OUTPUT_JSON = 'json'
 const OUTPUT_MARKDOWN = 'markdown'
 const OUTPUT_TEXT = 'text'
 const PNPM_LOCK_YAML = 'pnpm-lock.yaml'
+const PNPM_WORKSPACE_YAML = 'pnpm-workspace.yaml'
 const REDACTED = '<redacted>'
 const REPORT_LEVEL_DEFER = 'defer'
 const REPORT_LEVEL_ERROR = 'error'
@@ -246,6 +252,8 @@ const SOCKET_DEFAULT_BRANCH = 'socket-default-branch'
 const SOCKET_DEFAULT_REPOSITORY = 'socket-default-repository'
 const SOCKET_JSON = 'socket.json'
 const SOCKET_WEBSITE_URL = 'https://socket.dev'
+const SOCKET_YAML = 'socket.yaml'
+const SOCKET_YML = 'socket.yml'
 const UNKNOWN_ERROR = 'Unknown error'
 const UNKNOWN_VALUE = '<unknown>'
 const V1_MIGRATION_GUIDE_URL = 'https://docs.socket.dev/docs/v1-migration-guide'
@@ -275,8 +283,8 @@ export type Constants = Remap<
     readonly DOT_GIT: typeof DOT_GIT
     readonly DOT_SOCKET: typeof DOT_SOCKET
     readonly DOT_SOCKET_DOT_FACTS_JSON: typeof DOT_SOCKET_DOT_FACTS_JSON
-    readonly DRY_RUN_LABEL: typeof DRY_RUN_LABEL
     readonly DRY_RUN_BAILING_NOW: typeof DRY_RUN_BAILING_NOW
+    readonly DRY_RUN_LABEL: typeof DRY_RUN_LABEL
     readonly DRY_RUN_NOT_SAVING: typeof DRY_RUN_NOT_SAVING
     readonly EMPTY_VALUE: typeof EMPTY_VALUE
     readonly ENV: ENV
@@ -309,10 +317,15 @@ export type Constants = Remap<
     readonly GQL_PR_STATE_CLOSED: typeof GQL_PR_STATE_CLOSED
     readonly GQL_PR_STATE_MERGED: typeof GQL_PR_STATE_MERGED
     readonly GQL_PR_STATE_OPEN: typeof GQL_PR_STATE_OPEN
+    readonly HTTP_STATUS_BAD_REQUEST: typeof HTTP_STATUS_BAD_REQUEST
+    readonly HTTP_STATUS_FORBIDDEN: typeof HTTP_STATUS_FORBIDDEN
+    readonly HTTP_STATUS_INTERNAL_SERVER_ERROR: typeof HTTP_STATUS_INTERNAL_SERVER_ERROR
+    readonly HTTP_STATUS_NOT_FOUND: typeof HTTP_STATUS_NOT_FOUND
+    readonly HTTP_STATUS_UNAUTHORIZED: typeof HTTP_STATUS_UNAUTHORIZED
     readonly NODE_MODULES: typeof NODE_MODULES
+    readonly NPM: typeof NPM
     readonly NPM_BUGGY_OVERRIDES_PATCHED_VERSION: typeof NPM_BUGGY_OVERRIDES_PATCHED_VERSION
     readonly NPM_REGISTRY_URL: typeof NPM_REGISTRY_URL
-    readonly NPM: typeof NPM
     readonly NPX: typeof NPX
     readonly OUTPUT_JSON: typeof OUTPUT_JSON
     readonly OUTPUT_MARKDOWN: typeof OUTPUT_MARKDOWN
@@ -321,6 +334,7 @@ export type Constants = Remap<
     readonly PACKAGE_LOCK_JSON: typeof PACKAGE_LOCK_JSON
     readonly PNPM: typeof PNPM
     readonly PNPM_LOCK_YAML: typeof PNPM_LOCK_YAML
+    readonly PNPM_WORKSPACE_YAML: typeof PNPM_WORKSPACE_YAML
     readonly REDACTED: typeof REDACTED
     readonly REPORT_LEVEL_DEFER: typeof REPORT_LEVEL_DEFER
     readonly REPORT_LEVEL_ERROR: typeof REPORT_LEVEL_ERROR
@@ -341,6 +355,8 @@ export type Constants = Remap<
     readonly SOCKET_DEFAULT_REPOSITORY: typeof SOCKET_DEFAULT_REPOSITORY
     readonly SOCKET_JSON: typeof SOCKET_JSON
     readonly SOCKET_WEBSITE_URL: typeof SOCKET_WEBSITE_URL
+    readonly SOCKET_YAML: typeof SOCKET_YAML
+    readonly SOCKET_YML: typeof SOCKET_YML
     readonly UNKNOWN_ERROR: typeof UNKNOWN_ERROR
     readonly UNKNOWN_VALUE: typeof UNKNOWN_VALUE
     readonly V1_MIGRATION_GUIDE_URL: typeof V1_MIGRATION_GUIDE_URL
@@ -828,8 +844,8 @@ const constants: Constants = createConstantsObject(
     DOT_GIT,
     DOT_SOCKET,
     DOT_SOCKET_DOT_FACTS_JSON,
-    DRY_RUN_LABEL,
     DRY_RUN_BAILING_NOW,
+    DRY_RUN_LABEL,
     DRY_RUN_NOT_SAVING,
     EMPTY_VALUE,
     ENV: undefined,
@@ -862,6 +878,11 @@ const constants: Constants = createConstantsObject(
     GQL_PR_STATE_CLOSED,
     GQL_PR_STATE_MERGED,
     GQL_PR_STATE_OPEN,
+    HTTP_STATUS_BAD_REQUEST,
+    HTTP_STATUS_FORBIDDEN,
+    HTTP_STATUS_INTERNAL_SERVER_ERROR,
+    HTTP_STATUS_NOT_FOUND,
+    HTTP_STATUS_UNAUTHORIZED,
     NODE_MODULES,
     NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
     NPM_REGISTRY_URL,
@@ -873,6 +894,7 @@ const constants: Constants = createConstantsObject(
     PACKAGE_LOCK_JSON,
     PNPM,
     PNPM_LOCK_YAML,
+    PNPM_WORKSPACE_YAML,
     REDACTED,
     REPORT_LEVEL_DEFER,
     REPORT_LEVEL_ERROR,
@@ -893,6 +915,8 @@ const constants: Constants = createConstantsObject(
     SOCKET_DEFAULT_REPOSITORY,
     SOCKET_JSON,
     SOCKET_WEBSITE_URL,
+    SOCKET_YAML,
+    SOCKET_YML,
     UNKNOWN_ERROR,
     UNKNOWN_VALUE,
     V1_MIGRATION_GUIDE_URL,
@@ -1057,6 +1081,11 @@ export {
   GQL_PR_STATE_MERGED,
   GQL_PR_STATE_OPEN,
   HIDDEN_PACKAGE_LOCK_JSON,
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_FORBIDDEN,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR,
+  HTTP_STATUS_NOT_FOUND,
+  HTTP_STATUS_UNAUTHORIZED,
   LATEST,
   LICENSE,
   LICENSE_GLOB,
@@ -1086,6 +1115,7 @@ export {
   PACKAGE_LOCK_JSON,
   PNPM,
   PNPM_LOCK_YAML,
+  PNPM_WORKSPACE_YAML,
   PRE_COMMIT,
   README_GLOB,
   README_GLOB_RECURSIVE,
@@ -1122,6 +1152,8 @@ export {
   SOCKET_REGISTRY_SCOPE,
   SOCKET_SECURITY_SCOPE,
   SOCKET_WEBSITE_URL,
+  SOCKET_YAML,
+  SOCKET_YML,
   UNKNOWN_ERROR,
   UNKNOWN_VALUE,
   UNLICENCED,
