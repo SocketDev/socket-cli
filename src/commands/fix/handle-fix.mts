@@ -18,7 +18,7 @@ export type HandleFixConfig = Remap<
     orgSlug: string
     outputKind: OutputKind
     unknownFlags: string[]
-    computeFixesOnly: boolean
+    onlyCompute: boolean
     outputFile: string
   }
 >
@@ -89,11 +89,11 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
 
 export async function handleFix({
   autopilot,
-  computeFixesOnly,
   cwd,
   ghsas,
   limit,
   minSatisfying,
+  onlyCompute,
   orgSlug,
   outputFile,
   outputKind,
@@ -115,7 +115,7 @@ export async function handleFix({
       rangeStyle,
       spinner,
       unknownFlags,
-      computeFixesOnly,
+      onlyCompute,
       outputFile,
     }),
     outputKind,
