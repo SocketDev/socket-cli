@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.15](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.15) - 2025-09-16
+
+### Changed
+- Improved `socket fix` environment variable detection with clearer error messages when required variables are missing
+
+### Fixed
+- Resolved path handling issue in `socket optimize` command
+- Command flag parsing now correctly detects subsequent arguments
+
 ## [1.1.14](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.14) - 2025-09-17
 
 ### Changed
