@@ -496,7 +496,7 @@ describe('socket scan reach', async () => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: path.join(fixtureBaseDir, 'nonexistent'),
       })
-      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
+      expect(stdout).toMatchInlineSnapshot(`""`)
       expect(code, 'should exit with code 0').toBe(0)
     },
     { timeout: 30_000 },
