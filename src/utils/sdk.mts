@@ -22,14 +22,16 @@ const TOKEN_VISIBLE_LENGTH = 5
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
+    constants.ENV.SOCKET_CLI_API_BASE_URL ||
+    getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
   return isUrl(baseUrl) ? baseUrl : undefined
 }
 
 // The Socket API server that should be used for operations.
 export function getDefaultProxyUrl(): string | undefined {
   const apiProxy =
-    constants.ENV.SOCKET_CLI_API_PROXY || getConfigValueOrUndef(CONFIG_KEY_API_PROXY)
+    constants.ENV.SOCKET_CLI_API_PROXY ||
+    getConfigValueOrUndef(CONFIG_KEY_API_PROXY)
   return isUrl(apiProxy) ? apiProxy : undefined
 }
 
