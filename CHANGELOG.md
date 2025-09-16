@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.12](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.12) - 2025-09-15
+
+### Fixed
+- Resolved runtime error when processing security alerts
+
+## [1.1.11](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.11) - 2025-09-12
+
+### Fixed
+- Updated Socket SDK to resolve issues with multipart uploads
+
+## [1.1.10](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.10) - 2025-09-11
+
+### Changed
+- Enhanced command argument filtering for improved compatibility with npm and cdxgen integrations
+
 ## [1.1.9](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.9) - 2025-09-11
 
 ### Added
