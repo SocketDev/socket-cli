@@ -18,7 +18,7 @@ export type NumberFlag = Flag<'number', number> | Flag<'number', number[], true>
 
 export type StringFlag = Flag<'string', string> | Flag<'string', string[], true>
 
-export type MeowFlag = AnyFlag & { description: string; hidden?: boolean }
+export type MeowFlag = AnyFlag & { description: string; hidden?: boolean | undefined }
 
 // We use this description in getFlagListOutput, meow doesn't care.
 export type MeowFlags = Record<string, MeowFlag>

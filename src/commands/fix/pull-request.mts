@@ -198,7 +198,7 @@ export async function cleanupSocketFixPrs(
 
 export type PrAutoMergeState = {
   enabled: boolean
-  details?: string[]
+  details?: string[] | undefined
 }
 
 export type SocketPrsOptions = {

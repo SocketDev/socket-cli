@@ -71,11 +71,11 @@ export async function cacheFetch<T>(
 
 export type GhsaDetails = {
   ghsaId: string
-  cveId?: string
+  cveId?: string | undefined
   summary: string
   severity: string
   publishedAt: string
-  withdrawnAt?: string
+  withdrawnAt?: string | undefined
   references: Array<{
     url: string
   }>
@@ -186,7 +186,7 @@ export function getOctokitGraphql(): typeof OctokitGraphql {
 
 export type PrAutoMergeState = {
   enabled: boolean
-  details?: string[]
+  details?: string[] | undefined
 }
 
 export async function enablePrAutoMerge({

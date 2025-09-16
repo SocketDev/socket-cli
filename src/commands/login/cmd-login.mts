@@ -89,8 +89,8 @@ async function run(
   }
 
   const { apiBaseUrl, apiProxy } = cli.flags as {
-    apiBaseUrl?: string
-    apiProxy?: string
+    apiBaseUrl?: string | undefined
+    apiProxy?: string | undefined
   }
 
   await attemptLogin(apiBaseUrl, apiProxy)
