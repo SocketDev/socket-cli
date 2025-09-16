@@ -226,11 +226,16 @@ describe('socket optimize', async () => {
   )
 
   cmdit(
-    ['optimize', '/tmp', '--config', '{"apiToken":"fake-token"}'],
+    [
+      'optimize',
+      path.join(fixtureBaseDir, 'nonexistent'),
+      '--config',
+      '{"apiToken":"fake-token"}',
+    ],
     'should handle directories without package.json gracefully',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-      // Should not modify any package.json since no package.json exists in /tmp.
+      // Should not modify any package.json since no package.json exists in the fixture path.
       const output = stdout + stderr
       expect(output.length).toBeGreaterThan(0)
       expect(code, 'should exit with code 1').toBe(1)
