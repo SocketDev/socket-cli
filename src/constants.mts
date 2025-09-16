@@ -167,7 +167,7 @@ export type IpcObject = Readonly<{
 }>
 
 export type ProcessEnv = {
-  [K in keyof ENV]?: string
+  [K in keyof ENV]?: string | undefined
 }
 
 const ALERT_TYPE_CRITICAL_CVE = 'criticalCVE'

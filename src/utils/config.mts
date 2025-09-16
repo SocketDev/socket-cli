@@ -20,10 +20,11 @@ export interface LocalConfig {
   apiKey?: string | null | undefined
   apiProxy?: string | null | undefined
   apiToken?: string | null | undefined
-  defaultOrg?: string
+  defaultOrg?: string | undefined
   enforcedOrgs?: string[] | readonly string[] | null | undefined
-  skipAskToPersistDefaultOrg?: boolean
-  org?: string // convenience alias for defaultOrg
+  skipAskToPersistDefaultOrg?: boolean | undefined
+  // Convenience alias for defaultOrg.
+  org?: string | undefined
 }
 
 const sensitiveConfigKeyLookup: Set<keyof LocalConfig> = new Set(['apiToken'])

@@ -19,43 +19,43 @@ export interface SocketJson {
   defaults?: {
     manifest?: {
       conda?: {
-        disabled?: boolean
-        infile?: string
-        outfile?: string
-        stdin?: boolean
-        stdout?: boolean
-        target?: string
-        verbose?: boolean
+        disabled?: boolean | undefined
+        infile?: string | undefined
+        outfile?: string | undefined
+        stdin?: boolean | undefined
+        stdout?: boolean | undefined
+        target?: string | undefined
+        verbose?: boolean | undefined
       }
       gradle?: {
-        disabled?: boolean
-        bin?: string
-        gradleOpts?: string
-        verbose?: boolean
+        disabled?: boolean | undefined
+        bin?: string | undefined
+        gradleOpts?: string | undefined
+        verbose?: boolean | undefined
       }
       sbt?: {
-        disabled?: boolean
-        infile?: string
-        stdin?: boolean
-        bin?: string
-        outfile?: string
-        sbtOpts?: string
-        stdout?: boolean
-        verbose?: boolean
+        disabled?: boolean | undefined
+        infile?: string | undefined
+        stdin?: boolean | undefined
+        bin?: string | undefined
+        outfile?: string | undefined
+        sbtOpts?: string | undefined
+        stdout?: boolean | undefined
+        verbose?: boolean | undefined
       }
     }
     scan?: {
       create?: {
-        autoManifest?: boolean
-        repo?: string
-        report?: boolean
-        branch?: string
+        autoManifest?: boolean | undefined
+        repo?: string | undefined
+        report?: boolean | undefined
+        branch?: string | undefined
       }
       github?: {
-        all?: boolean
-        githubApiUrl?: string
-        orgGithub?: string
-        repos?: string
+        all?: boolean | undefined
+        githubApiUrl?: string | undefined
+        orgGithub?: string | undefined
+        repos?: string | undefined
       }
     }
   }
