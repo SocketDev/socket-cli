@@ -39,13 +39,13 @@ export async function coanaFix(
 ): Promise<CResult<{ fixed: boolean }>> {
   const {
     autopilot,
+    computeFixesOnly,
     cwd,
     ghsas,
     limit,
     orgSlug,
-    spinner,
-    computeFixesOnly,
     outputFile,
+    spinner,
   } = fixConfig
 
   const fixEnv = await getFixEnv()
