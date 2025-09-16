@@ -18,6 +18,8 @@ export type HandleFixConfig = Remap<
     orgSlug: string
     outputKind: OutputKind
     unknownFlags: string[]
+    computeFixesOnly: boolean
+    outputFile: string
   }
 >
 
@@ -97,6 +99,8 @@ export async function handleFix({
   rangeStyle,
   spinner,
   unknownFlags,
+  computeFixesOnly,
+  outputFile,
 }: HandleFixConfig) {
   await outputFixResult(
     await coanaFix({
@@ -111,6 +115,8 @@ export async function handleFix({
       rangeStyle,
       spinner,
       unknownFlags,
+      computeFixesOnly,
+      outputFile,
     }),
     outputKind,
   )

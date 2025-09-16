@@ -83,6 +83,17 @@ Available styles:
   * preserve - Retain the existing version range style as-is
       `.trim(),
   },
+  outputFile: {
+    type: 'string',
+    default: '',
+    description: 'Path to store result as json.',
+  },
+  computeFixesOnly: {
+    type: 'boolean',
+    default: false,
+    description:
+      'Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.',
+  },
 }
 
 const hiddenFlags: MeowFlags = {
@@ -188,6 +199,8 @@ async function run(
     // We patched in this feature with `npx custompatch meow` at
     // socket-cli/patches/meow#13.2.0.patch.
     unknownFlags = [],
+    outputFile,
+    computeFixesOnly,
   } = cli.flags as {
     autopilot: boolean
     limit: number
@@ -198,6 +211,8 @@ async function run(
     prCheck: boolean
     rangeStyle: RangeStyle
     unknownFlags?: string[]
+    outputFile: string
+    computeFixesOnly: boolean
   }
 
   const dryRun = !!cli.flags['dryRun']
@@ -266,5 +281,7 @@ async function run(
     rangeStyle,
     spinner,
     unknownFlags,
+    computeFixesOnly,
+    outputFile,
   })
 }
