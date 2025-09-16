@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.13](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.13) - 2025-09-16
+
+### Added
+- New `--output-file` flag for `socket fix` to save computed fixes to a JSON file
+- New `--only-compute` flag for `socket fix` to compute fixes without applying them
+
 ## [1.1.12](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.12) - 2025-09-15
 
 ### Fixed
