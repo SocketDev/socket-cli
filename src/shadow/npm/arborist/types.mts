@@ -37,7 +37,9 @@ export type ArboristInstance = Omit<
   actualTree?: NodeClass | null | undefined
   diff: Diff | null
   idealTree?: NodeClass | null | undefined
-  buildIdealTree(options?: BuildIdealTreeOptions | undefined): Promise<NodeClass>
+  buildIdealTree(
+    options?: BuildIdealTreeOptions | undefined,
+  ): Promise<NodeClass>
   loadActual(options?: ArboristOptions | undefined): Promise<NodeClass>
   loadVirtual(options?: ArboristOptions | undefined): Promise<NodeClass>
   reify(options?: ArboristReifyOptions | undefined): Promise<NodeClass>
