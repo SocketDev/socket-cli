@@ -86,7 +86,7 @@ export async function getAlertsMapFromPurls(
   const sockSdk = sockSdkCResult.data
   const socketYmlResult = findSocketYmlSync()
   const socketYml = socketYmlResult.ok
-    ? (socketYmlResult.data as FoundSocketYml).parsed
+    ? socketYmlResult.data?.parsed
     : undefined
 
   const alertsMapOptions = {
