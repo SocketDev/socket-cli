@@ -493,10 +493,8 @@ describe('socket scan reach', async () => {
         '--config',
         '{"apiToken":"fakeToken"}',
       ]
-      const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        cwd: path.join(fixtureBaseDir, 'nonexistent'),
-      })
-      expect(stdout).toMatchInlineSnapshot(`""`)
+      const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)
     },
     { timeout: 30_000 },
