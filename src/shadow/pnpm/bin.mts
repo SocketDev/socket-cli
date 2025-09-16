@@ -68,8 +68,6 @@ export default async function shadowPnpm(
 
   const permArgs = [
     '--reporter=silent',
-    // Disable update checks during security scanning
-    '--no-update-notifier',
   ]
 
   const prefixArgs: string[] = []
