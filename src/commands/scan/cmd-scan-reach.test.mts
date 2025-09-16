@@ -1,7 +1,11 @@
+import path from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import constants from '../../../src/constants.mts'
-import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
+import { cmdit, spawnSocketCli, testPath } from '../../../test/utils.mts'
+
+const fixtureBaseDir = path.join(testPath, 'fixtures/commands/scan/reach')
 
 describe('socket scan reach', async () => {
   const { binCliPath } = constants
@@ -490,7 +494,7 @@ describe('socket scan reach', async () => {
         '{"apiToken":"fakeToken"}',
       ]
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd, {
-        cwd: '/tmp',
+        cwd: path.join(fixtureBaseDir, 'nonexistent'),
       })
       expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(code, 'should exit with code 0').toBe(0)

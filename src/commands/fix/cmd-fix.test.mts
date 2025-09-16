@@ -254,7 +254,12 @@ describe('socket fix', async () => {
   )
 
   cmdit(
-    ['fix', '/tmp', '--config', '{"apiToken":"fake-token"}'],
+    [
+      'fix',
+      path.join(fixtureBaseDir, 'nonexistent'),
+      '--config',
+      '{"apiToken":"fake-token"}',
+    ],
     'should show helpful error when no package.json found',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
