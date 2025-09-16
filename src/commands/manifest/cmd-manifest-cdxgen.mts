@@ -1,6 +1,7 @@
 import terminalLink from 'terminal-link'
 import yargsParse from 'yargs-parser'
 
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { isPath } from '@socketsecurity/registry/lib/path'
 import { pluralize } from '@socketsecurity/registry/lib/words'
@@ -281,7 +282,7 @@ async function run(
     // https://www.gnu.org/software/bash/manual/html_node/Exit-Status.html
     process.exitCode = 2
     logger.fail(
-      `Unknown ${pluralize('argument', unknownsCount)}: ${unknowns.join(', ')}`,
+      `Unknown ${pluralize('argument', unknownsCount)}: ${joinAnd(unknowns)}`,
     )
     return
   }

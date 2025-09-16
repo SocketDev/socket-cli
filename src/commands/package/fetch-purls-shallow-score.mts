@@ -1,3 +1,4 @@
+import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleApiCall } from '../../utils/api.mts'
@@ -27,7 +28,7 @@ export async function fetchPurlsShallowScore(
   const sockSdk = sockSdkCResult.data
 
   logger.info(
-    `Requesting shallow score data for ${purls.length} package urls (purl): ${purls.join(', ')}`,
+    `Requesting shallow score data for ${purls.length} package urls (purl): ${joinAnd(purls)}`,
   )
 
   const batchPackageCResult = await handleApiCall(
