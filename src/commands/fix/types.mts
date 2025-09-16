@@ -12,4 +12,6 @@ export type FixConfig = {
   rangeStyle: RangeStyle
   spinner: Spinner | undefined
   unknownFlags: string[]
+  computeFixesOnly: boolean
+  outputFile: string
 }

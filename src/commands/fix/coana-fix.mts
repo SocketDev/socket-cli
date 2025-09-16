@@ -37,7 +37,16 @@ import type { CResult } from '../../types.mts'
 export async function coanaFix(
   fixConfig: FixConfig,
 ): Promise<CResult<{ fixed: boolean }>> {
-  const { autopilot, cwd, ghsas, limit, orgSlug, spinner } = fixConfig
+  const {
+    autopilot,
+    cwd,
+    ghsas,
+    limit,
+    orgSlug,
+    spinner,
+    computeFixesOnly,
+    outputFile,
+  } = fixConfig
 
   const fixEnv = await getFixEnv()
   debugDir('inspect', { fixEnv })
@@ -108,6 +117,8 @@ export async function coanaFix(
           ? ['--range-style', fixConfig.rangeStyle]
           : []),
         ...fixConfig.unknownFlags,
+        ...(computeFixesOnly ? ['--dry-run'] : []),
+        ...(outputFile ? ['--output-file', outputFile] : []),
       ],
       fixConfig.orgSlug,
       { cwd, spinner, stdio: 'inherit' },
