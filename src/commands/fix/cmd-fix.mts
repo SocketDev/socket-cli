@@ -190,17 +190,17 @@ async function run(
 
   const {
     autopilot,
+    computeFixesOnly,
     json,
     limit,
     markdown,
     maxSatisfying,
+    outputFile,
     prCheck,
     rangeStyle,
     // We patched in this feature with `npx custompatch meow` at
     // socket-cli/patches/meow#13.2.0.patch.
     unknownFlags = [],
-    outputFile,
-    computeFixesOnly,
   } = cli.flags as {
     autopilot: boolean
     limit: number
