@@ -6,6 +6,6 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "npm": "^10.9.2"
+    "npm": "10.9.2"
   }
 }

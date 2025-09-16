@@ -2,14 +2,15 @@ import { existsSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { describe, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
-describe.skipIf(constants.WIN32)('socket pnpm', async () => {
+// TODO: Revisit after socket-registry dep is updated.
+describe.skip('socket pnpm', async () => {
   const { binCliPath } = constants
 
   cmdit(
@@ -139,7 +140,7 @@ describe.skipIf(constants.WIN32)('socket pnpm', async () => {
     },
   )
 
-  cmdit([], 'should work when invoked via pnpm dlx', async () => {
+  it.skip('should work when invoked via pnpm dlx', { timeout: 90_000 }, async () => {
     // Create a temporary directory for testing.
     const tmpDir = path.join(tmpdir(), `pnpm-dlx-test-${Date.now()}`)
     await fs.mkdir(tmpDir, { recursive: true })
