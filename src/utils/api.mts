@@ -67,7 +67,8 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
+    constants.ENV.SOCKET_CLI_API_BASE_URL ||
+    getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
   if (isNonEmptyString(baseUrl)) {
     return baseUrl
   }

@@ -5,7 +5,11 @@ import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { pluralize } from '@socketsecurity/registry/lib/words'
 
-import { checkCiEnvVars, getCiEnvInstructions, getFixEnv } from './env-helpers.mts'
+import {
+  checkCiEnvVars,
+  getCiEnvInstructions,
+  getFixEnv,
+} from './env-helpers.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
 import { GQL_PR_STATE_OPEN, UNKNOWN_ERROR } from '../../constants.mts'
@@ -108,14 +112,14 @@ export async function coanaFix(
         if (envCheck.missing.length) {
           logger.info(
             'Running in local mode - fixes will be applied directly to your working directory.\n' +
-            `Missing environment variables for PR creation: ${joinAnd(envCheck.missing)}`
+              `Missing environment variables for PR creation: ${joinAnd(envCheck.missing)}`,
           )
         }
       } else {
         // No CI vars are present - show general local mode message.
         logger.info(
           'Running in local mode - fixes will be applied directly to your working directory.\n' +
-          getCiEnvInstructions()
+            getCiEnvInstructions(),
         )
       }
     }
@@ -327,7 +331,7 @@ export async function coanaFix(
       if (!fixEnv.githubToken) {
         logger.error(
           'Cannot create pull request: SOCKET_CLI_GITHUB_TOKEN environment variable is not set.\n' +
-          'Set SOCKET_CLI_GITHUB_TOKEN or GITHUB_TOKEN to enable PR creation.'
+            'Set SOCKET_CLI_GITHUB_TOKEN or GITHUB_TOKEN to enable PR creation.',
         )
         // eslint-disable-next-line no-await-in-loop
         await gitResetAndClean(fixEnv.baseBranch, cwd)
