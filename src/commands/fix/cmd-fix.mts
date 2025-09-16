@@ -105,6 +105,12 @@ const hiddenFlags: MeowFlags = {
     ...generalFlags['id'],
     hidden: true,
   } as MeowFlag,
+  glob: {
+    type: 'string',
+    default: '',
+    description: 'Glob pattern to pass to coana for filtering files',
+    hidden: true,
+  },
   maxSatisfying: {
     type: 'boolean',
     default: true,
@@ -190,6 +196,7 @@ async function run(
 
   const {
     autopilot,
+    glob,
     json,
     limit,
     markdown,
@@ -203,6 +210,7 @@ async function run(
     unknownFlags = [],
   } = cli.flags as {
     autopilot: boolean
+    glob: string
     limit: number
     json: boolean
     markdown: boolean
@@ -273,6 +281,7 @@ async function run(
     autopilot,
     cwd,
     ghsas,
+    glob,
     limit,
     minSatisfying,
     prCheck,
