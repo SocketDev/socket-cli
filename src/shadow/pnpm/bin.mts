@@ -66,9 +66,7 @@ export default async function shadowPnpm(
   // Get pnpm path
   const realPnpmPath = await installLinks(constants.shadowBinPath, 'pnpm')
 
-  const permArgs = [
-    '--reporter=silent',
-  ]
+  const permArgs = ['--reporter=silent']
 
   const prefixArgs: string[] = []
   const suffixArgs = [...rawPnpmArgs, ...permArgs, ...otherArgs]
