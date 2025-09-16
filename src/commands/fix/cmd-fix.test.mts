@@ -56,20 +56,16 @@ describe('socket fix', async () => {
       ['fix', '--dry-run', '--config', '{"apiToken":"fake-token"}'],
       'should not show env var names when all CI env vars are present',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(
-          binCliPath,
-          cmd,
-          {
-            // Don't use fixture dir, use current dir which has git repo.
-            env: {
-              ...process.env,
-              CI: '1',
-              SOCKET_CLI_GITHUB_TOKEN: 'fake-github-token',
-              SOCKET_CLI_GIT_USER_NAME: 'test-user',
-              SOCKET_CLI_GIT_USER_EMAIL: 'test@example.com',
-            },
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          // Don't use fixture dir, use current dir which has git repo.
+          env: {
+            ...process.env,
+            CI: '1',
+            SOCKET_CLI_GITHUB_TOKEN: 'fake-github-token',
+            SOCKET_CLI_GIT_USER_NAME: 'test-user',
+            SOCKET_CLI_GIT_USER_EMAIL: 'test@example.com',
           },
-        )
+        })
 
         const output = stdout + stderr
         // When all vars are present, none should be mentioned.
@@ -84,20 +80,16 @@ describe('socket fix', async () => {
       ['fix', '--dry-run', '--config', '{"apiToken":"fake-token"}'],
       'should not show env var names when CI is not set',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(
-          binCliPath,
-          cmd,
-          {
-            // Don't use fixture dir, use current dir which has git repo.
-            env: {
-              ...process.env,
-              CI: '',
-              SOCKET_CLI_GITHUB_TOKEN: '',
-              SOCKET_CLI_GIT_USER_NAME: '',
-              SOCKET_CLI_GIT_USER_EMAIL: '',
-            },
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          // Don't use fixture dir, use current dir which has git repo.
+          env: {
+            ...process.env,
+            CI: '',
+            SOCKET_CLI_GITHUB_TOKEN: '',
+            SOCKET_CLI_GIT_USER_NAME: '',
+            SOCKET_CLI_GIT_USER_EMAIL: '',
           },
-        )
+        })
 
         const output = stdout + stderr
         // When CI is not set, env vars should not be mentioned.
@@ -112,21 +104,17 @@ describe('socket fix', async () => {
       ['fix', '--dry-run', '--config', '{"apiToken":"fake-token"}'],
       'should not show env var names when CI is not set but some vars are present',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(
-          binCliPath,
-          cmd,
-          {
-            // Don't use fixture dir, use current dir which has git repo.
-            env: {
-              ...process.env,
-              CI: '',
-              // Some CI vars present but CI not set.
-              SOCKET_CLI_GITHUB_TOKEN: 'fake-token',
-              SOCKET_CLI_GIT_USER_NAME: 'test-user',
-              SOCKET_CLI_GIT_USER_EMAIL: '',
-            },
+        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+          // Don't use fixture dir, use current dir which has git repo.
+          env: {
+            ...process.env,
+            CI: '',
+            // Some CI vars present but CI not set.
+            SOCKET_CLI_GITHUB_TOKEN: 'fake-token',
+            SOCKET_CLI_GIT_USER_NAME: 'test-user',
+            SOCKET_CLI_GIT_USER_EMAIL: '',
           },
-        )
+        })
 
         const output = stdout + stderr
         // When CI is not set, env vars should not be mentioned regardless of their values.

@@ -2,8 +2,9 @@ import { existsSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { describe, expect } from 'vitest'
+
+import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
@@ -138,55 +139,50 @@ describe.skipIf(constants.WIN32)('socket pnpm', async () => {
     },
   )
 
-  cmdit(
-    [],
-    'should work when invoked via pnpm dlx',
-    async () => {
-      // Create a temporary directory for testing.
-      const tmpDir = path.join(tmpdir(), `pnpm-dlx-test-${Date.now()}`)
-      await fs.mkdir(tmpDir, { recursive: true })
+  cmdit([], 'should work when invoked via pnpm dlx', async () => {
+    // Create a temporary directory for testing.
+    const tmpDir = path.join(tmpdir(), `pnpm-dlx-test-${Date.now()}`)
+    await fs.mkdir(tmpDir, { recursive: true })
 
-      try {
-        // Create a minimal package.json.
-        await fs.writeFile(
-          path.join(tmpDir, 'package.json'),
-          JSON.stringify({ name: 'test-pnpm-dlx', version: '1.0.0' }),
-        )
+    try {
+      // Create a minimal package.json.
+      await fs.writeFile(
+        path.join(tmpDir, 'package.json'),
+        JSON.stringify({ name: 'test-pnpm-dlx', version: '1.0.0' }),
+      )
 
-        // Run socket pnpm via pnpm dlx.
-        const { code, stderr, stdout } = await spawn(
+      // Run socket pnpm via pnpm dlx.
+      const { code, stderr, stdout } = await spawn(
+        'pnpm',
+        [
+          'dlx',
+          '@socketsecurity/cli@latest',
           'pnpm',
-          [
-            'dlx',
-            '@socketsecurity/cli@latest',
-            'pnpm',
-            'install',
-            '--config',
-            '{"apiToken":"fakeToken"}',
-          ],
-          {
-            cwd: tmpDir,
-            env: {
-              ...process.env,
-              SOCKET_CLI_ACCEPT_RISKS: '1',
-            },
-            timeout: 60_000,
+          'install',
+          '--config',
+          '{"apiToken":"fakeToken"}',
+        ],
+        {
+          cwd: tmpDir,
+          env: {
+            ...process.env,
+            SOCKET_CLI_ACCEPT_RISKS: '1',
           },
-        )
+          timeout: 60_000,
+        },
+      )
 
-        // Check that the command succeeded.
-        expect(code, 'pnpm dlx socket pnpm should exit with code 0').toBe(0)
+      // Check that the command succeeded.
+      expect(code, 'pnpm dlx socket pnpm should exit with code 0').toBe(0)
 
-        // Verify pnpm-lock.yaml was created.
-        const lockfilePath = path.join(tmpDir, 'pnpm-lock.yaml')
-        expect(
-          existsSync(lockfilePath),
-          'pnpm-lock.yaml should be created',
-        ).toBe(true)
-      } finally {
-        // Clean up the temporary directory.
-        await fs.rm(tmpDir, { recursive: true, force: true })
-      }
-    },
-  )
+      // Verify pnpm-lock.yaml was created.
+      const lockfilePath = path.join(tmpDir, 'pnpm-lock.yaml')
+      expect(existsSync(lockfilePath), 'pnpm-lock.yaml should be created').toBe(
+        true,
+      )
+    } finally {
+      // Clean up the temporary directory.
+      await fs.rm(tmpDir, { recursive: true, force: true })
+    }
+  })
 })
