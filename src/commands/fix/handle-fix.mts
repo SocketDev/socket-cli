@@ -89,18 +89,18 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
 
 export async function handleFix({
   autopilot,
+  computeFixesOnly,
   cwd,
   ghsas,
   limit,
   minSatisfying,
   orgSlug,
+  outputFile,
   outputKind,
   prCheck,
   rangeStyle,
   spinner,
   unknownFlags,
-  computeFixesOnly,
-  outputFile,
 }: HandleFixConfig) {
   await outputFixResult(
     await coanaFix({
