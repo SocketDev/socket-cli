@@ -25,7 +25,7 @@ export type ShadowNpmInstallOptions = SpawnOption & {
 }
 
 export function shadowNpmInstall(
-  options?: ShadowNpmInstallOptions,
+  options?: ShadowNpmInstallOptions | undefined,
 ): SpawnResult<string, Record<any, any> | undefined> {
   const {
     agentExecPath = getNpmBinPath(),
