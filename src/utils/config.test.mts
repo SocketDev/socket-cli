@@ -1,6 +1,15 @@
+import path from 'node:path'
+
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { overrideCachedConfig, updateConfigValue } from './config.mts'
+import { testPath } from '../../test/utils.mts'
+import {
+  findSocketYmlSync,
+  overrideCachedConfig,
+  updateConfigValue,
+} from './config.mts'
+
+const fixtureBaseDir = path.join(testPath, 'fixtures/utils/config')
 
 describe('utils/config', () => {
   describe('updateConfigValue', () => {
@@ -34,6 +43,19 @@ describe('utils/config', () => {
           "ok": false,
         }
       `)
+    })
+  })
+
+  describe('findSocketYmlSync', () => {
+    it('should handle when no socket.yml exists (regression test for .parsed access)', () => {
+      // This test ensures we don't regress on the error:
+      // "Cannot read properties of undefined (reading 'parsed')"
+      // when socketYmlResult.data is undefined.
+      const result = findSocketYmlSync(path.join(fixtureBaseDir, 'nonexistent'))
+
+      // The result should be ok but with undefined data.
+      expect(result.ok).toBe(true)
+      expect(result.data).toBe(undefined)
     })
   })
 })
