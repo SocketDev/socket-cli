@@ -14,6 +14,8 @@ import constants, {
   CONFIG_KEY_DEFAULT_ORG,
   CONFIG_KEY_ENFORCED_ORGS,
   CONFIG_KEY_ORG,
+  SOCKET_YAML,
+  SOCKET_YML,
 } from '../constants.mts'
 
 import type { CResult } from '../types.mts'
@@ -128,10 +130,10 @@ export function findSocketYmlSync(
 ): CResult<FoundSocketYml | undefined> {
   let prevDir = null
   while (dir !== prevDir) {
-    let ymlPath = path.join(dir, 'socket.yml')
+    let ymlPath = path.join(dir, SOCKET_YML)
     let yml = safeReadFileSync(ymlPath)
     if (yml === undefined) {
-      ymlPath = path.join(dir, 'socket.yaml')
+      ymlPath = path.join(dir, SOCKET_YAML)
       yml = safeReadFileSync(ymlPath)
     }
     if (typeof yml === 'string') {

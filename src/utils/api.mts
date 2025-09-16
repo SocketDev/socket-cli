@@ -5,7 +5,15 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { getConfigValueOrUndef } from './config.mts'
-import constants, { EMPTY_VALUE } from '../constants.mts'
+import constants, {
+  CONFIG_KEY_API_BASE_URL,
+  EMPTY_VALUE,
+  HTTP_STATUS_BAD_REQUEST,
+  HTTP_STATUS_FORBIDDEN,
+  HTTP_STATUS_INTERNAL_SERVER_ERROR,
+  HTTP_STATUS_NOT_FOUND,
+  HTTP_STATUS_UNAUTHORIZED,
+} from '../constants.mts'
 import { getRequirements, getRequirementsKey } from './requirements.mts'
 import { getDefaultApiToken } from './sdk.mts'
 
@@ -59,7 +67,7 @@ function logPermissionsFor403(cmdPath?: string | undefined): void {
 // The Socket API server that should be used for operations.
 export function getDefaultApiBaseUrl(): string | undefined {
   const baseUrl =
-    constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef('apiBaseUrl')
+    constants.ENV.SOCKET_CLI_API_BASE_URL || getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL)
   if (isNonEmptyString(baseUrl)) {
     return baseUrl
   }
@@ -71,16 +79,16 @@ export function getDefaultApiBaseUrl(): string | undefined {
  * Get user-friendly error message for HTTP status codes.
  */
 export async function getErrorMessageForHttpStatusCode(code: number) {
-  if (code === 400) {
+  if (code === HTTP_STATUS_BAD_REQUEST) {
     return 'One of the options passed might be incorrect'
   }
-  if (code === 403 || code === 401) {
+  if (code === HTTP_STATUS_FORBIDDEN || code === HTTP_STATUS_UNAUTHORIZED) {
     return 'Your Socket API token may not have the required permissions for this command or you might be trying to access (data from) an organization that is not linked to the API token you are logged in with'
   }
-  if (code === 404) {
+  if (code === HTTP_STATUS_NOT_FOUND) {
     return 'The requested Socket API endpoint was not found (404) or there was no result for the requested parameters. If unexpected, this could be a temporary problem caused by an incident or a bug in the CLI. If the problem persists please let us know.'
   }
-  if (code === 500) {
+  if (code === HTTP_STATUS_INTERNAL_SERVER_ERROR) {
     return 'There was an unknown server side problem with your request. This ought to be temporary. Please let us know if this problem persists.'
   }
   return `Server responded with status code ${code}`
