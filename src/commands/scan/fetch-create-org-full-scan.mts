@@ -26,7 +26,7 @@ export async function fetchCreateOrgFullScan(
   packagePaths: string[],
   orgSlug: string,
   config: FetchCreateOrgFullScanConfigs,
-  options?: FetchCreateOrgFullScanOptions,
+  options?: FetchCreateOrgFullScanOptions | undefined,
 ): Promise<CResult<SocketSdkSuccessResult<'CreateOrgFullScan'>['data']>> {
   const {
     branchName,
