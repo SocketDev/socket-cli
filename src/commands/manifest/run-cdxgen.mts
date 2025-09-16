@@ -124,6 +124,8 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
   shadowResult.spawnPromise.process.on('exit', () => {
     if (cleanupPackageLock) {
       try {
+        // TODO: Consider using trash instead of rmSync for safer deletion.
+        // This removes the temporary package-lock.json we created for cdxgen.
         rmSync(`./${PACKAGE_LOCK_JSON}`)
       } catch {}
     }
