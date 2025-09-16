@@ -5,6 +5,7 @@ export type FixConfig = {
   autopilot: boolean
   cwd: string
   ghsas: string[]
+  glob: string
   limit: number
   minSatisfying: boolean
   orgSlug: string
