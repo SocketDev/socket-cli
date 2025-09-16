@@ -195,7 +195,6 @@ const LOCKS: Record<string, Agent> = {
   'npm-shrinkwrap.json': NPM,
   [PACKAGE_LOCK_JSON]: NPM,
   [PNPM_LOCK_YAML]: PNPM,
-  ['pnpm-lock.yml']: PNPM,
   [YARN_LOCK]: YARN_CLASSIC,
   'vlt-lock.json': VLT,
   // Lastly, look for a hidden lock file which is present if .npmrc has package-lock=false:
