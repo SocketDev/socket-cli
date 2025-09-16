@@ -86,7 +86,7 @@ Available styles:
   outputFile: {
     type: 'string',
     default: '',
-    description: 'Path to store result as json.',
+    description: 'Path to store upgrades as a JSON file at this path.',
   },
   computeFixesOnly: {
     type: 'boolean',
