@@ -4,7 +4,7 @@
   "description": "Test fixture with vulnerable dependencies (npm)",
   "main": "index.js",
   "dependencies": {
-    "lodash": "4.17.20",
+    "lodash": "4.17.21",
     "on-headers": "1.0.2"
   },
   "devDependencies": {
