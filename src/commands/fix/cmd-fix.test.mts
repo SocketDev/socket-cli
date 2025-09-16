@@ -172,8 +172,15 @@ describe('socket fix', async () => {
                                   * pin - Use the exact version (e.g. 1.2.3)
                                   * preserve - Retain the existing version range style as-is
 
+          Environment Variables (for CI/PR mode)
+            CI                          Set to enable CI mode
+            SOCKET_CLI_GITHUB_TOKEN     GitHub token for PR creation (or GITHUB_TOKEN)
+            SOCKET_CLI_GIT_USER_NAME    Git username for commits
+            SOCKET_CLI_GIT_USER_EMAIL   Git email for commits
+
           Examples
             $ socket fix
+            $ socket fix --id CVE-2021-23337
             $ socket fix ./path/to/project --range-style pin"
       `,
       )
