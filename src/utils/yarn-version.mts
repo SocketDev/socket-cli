@@ -10,7 +10,7 @@ export function isYarnBerry(): boolean {
       const yarnBinPath = getYarnBinPath()
       const result = spawnSync(yarnBinPath, ['--version'], {
         encoding: 'utf8',
-        shell: constants.WIN32
+        shell: constants.WIN32,
       })
 
       if (result.status === 0 && result.stdout) {
