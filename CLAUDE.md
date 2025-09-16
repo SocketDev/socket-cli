@@ -182,6 +182,7 @@ Socket CLI integrates with various third-party tools and services:
 - **Flags**: 🚨 MUST use `MeowFlags` type with descriptive help text
 - **Error handling**: 🚨 REQUIRED - Use custom error types `AuthError` and `InputError`
 - **Array destructuring**: Use object notation `{ 0: key, 1: data }` instead of array destructuring `[key, data]`
+- **Dynamic imports**: 🚨 FORBIDDEN - Never use dynamic imports (`await import()`). Always use static imports at the top of the file
 - **Comment periods**: 🚨 MANDATORY - ALL comments MUST end with periods. This includes single-line comments, multi-line comments, and inline comments. No exceptions
 - **Comment placement**: Place comments on their own line, not to the right of code
 - **Comment formatting**: Use fewer hyphens/dashes and prefer commas, colons, or semicolons for better readability
