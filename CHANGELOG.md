@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.16](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.16) - 2025-09-16
+
+### Fixed
+- Enhanced pnpm wrapper compatibility with dlx commands for better package execution support
+
 ## [1.1.15](https://github.com/SocketDev/socket-cli/releases/tag/v1.1.15) - 2025-09-16
 
 ### Changed
