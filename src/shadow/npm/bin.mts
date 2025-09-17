@@ -4,7 +4,7 @@ import {
   isNpmLoglevelFlag,
   isNpmNodeOptionsFlag,
   isNpmProgressFlag,
-} from '@socketsecurity/registry/lib/agent'
+} from '@socketsecurity/registry/lib/npm'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
