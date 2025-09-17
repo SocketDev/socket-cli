@@ -3,8 +3,8 @@ import path from 'node:path'
 
 import which from 'which'
 
-import { resolveBinPathSync, whichBinSync } from '@socketsecurity/registry/lib/agent'
 import { isDirSync } from '@socketsecurity/registry/lib/fs'
+import { resolveBinPathSync } from '@socketsecurity/registry/lib/npm'
 
 import constants, { NODE_MODULES, NPM } from '../constants.mts'
 import {
