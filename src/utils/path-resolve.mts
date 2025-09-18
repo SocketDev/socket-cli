@@ -1,9 +1,7 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 
-import which from 'which'
-
-import { resolveBinPathSync } from '@socketsecurity/registry/lib/agent'
+import { resolveBinPathSync, whichBinSync } from '@socketsecurity/registry/lib/bin'
 import { isDirSync } from '@socketsecurity/registry/lib/fs'
 
 import constants, { NODE_MODULES, NPM } from '../constants.mts'
@@ -22,7 +20,7 @@ export function findBinPathDetailsSync(binName: string): {
   shadowed: boolean
 } {
   const binPaths =
-    which.sync(binName, {
+    whichBinSync(binName, {
       all: true,
       nothrow: true,
     }) ?? []
