@@ -140,50 +140,55 @@ describe.skip('socket pnpm', async () => {
     },
   )
 
-  it.skip('should work when invoked via pnpm dlx', { timeout: 90_000 }, async () => {
-    // Create a temporary directory for testing.
-    const tmpDir = path.join(tmpdir(), `pnpm-dlx-test-${Date.now()}`)
-    await fs.mkdir(tmpDir, { recursive: true })
+  it.skip(
+    'should work when invoked via pnpm dlx',
+    { timeout: 90_000 },
+    async () => {
+      // Create a temporary directory for testing.
+      const tmpDir = path.join(tmpdir(), `pnpm-dlx-test-${Date.now()}`)
+      await fs.mkdir(tmpDir, { recursive: true })
 
-    try {
-      // Create a minimal package.json.
-      await fs.writeFile(
-        path.join(tmpDir, 'package.json'),
-        JSON.stringify({ name: 'test-pnpm-dlx', version: '1.0.0' }),
-      )
+      try {
+        // Create a minimal package.json.
+        await fs.writeFile(
+          path.join(tmpDir, 'package.json'),
+          JSON.stringify({ name: 'test-pnpm-dlx', version: '1.0.0' }),
+        )
 
-      // Run socket pnpm via pnpm dlx.
-      const { code, stderr, stdout } = await spawn(
-        'pnpm',
-        [
-          'dlx',
-          '@socketsecurity/cli@latest',
+        // Run socket pnpm via pnpm dlx.
+        const { code, stderr, stdout } = await spawn(
           'pnpm',
-          'install',
-          '--config',
-          '{"apiToken":"fakeToken"}',
-        ],
-        {
-          cwd: tmpDir,
-          env: {
-            ...process.env,
-            SOCKET_CLI_ACCEPT_RISKS: '1',
+          [
+            'dlx',
+            '@socketsecurity/cli@latest',
+            'pnpm',
+            'install',
+            '--config',
+            '{"apiToken":"fakeToken"}',
+          ],
+          {
+            cwd: tmpDir,
+            env: {
+              ...process.env,
+              SOCKET_CLI_ACCEPT_RISKS: '1',
+            },
+            timeout: 60_000,
           },
-          timeout: 60_000,
-        },
-      )
+        )
 
-      // Check that the command succeeded.
-      expect(code, 'pnpm dlx socket pnpm should exit with code 0').toBe(0)
+        // Check that the command succeeded.
+        expect(code, 'pnpm dlx socket pnpm should exit with code 0').toBe(0)
 
-      // Verify pnpm-lock.yaml was created.
-      const lockfilePath = path.join(tmpDir, 'pnpm-lock.yaml')
-      expect(existsSync(lockfilePath), 'pnpm-lock.yaml should be created').toBe(
-        true,
-      )
-    } finally {
-      // Clean up the temporary directory.
-      await fs.rm(tmpDir, { recursive: true, force: true })
-    }
-  })
+        // Verify pnpm-lock.yaml was created.
+        const lockfilePath = path.join(tmpDir, 'pnpm-lock.yaml')
+        expect(
+          existsSync(lockfilePath),
+          'pnpm-lock.yaml should be created',
+        ).toBe(true)
+      } finally {
+        // Clean up the temporary directory.
+        await fs.rm(tmpDir, { recursive: true, force: true })
+      }
+    },
+  )
 })

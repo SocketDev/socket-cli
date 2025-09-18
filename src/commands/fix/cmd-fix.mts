@@ -83,7 +83,8 @@ Available styles:
   * preserve - Retain the existing version range style as-is
       `.trim(),
   },
-  onlyCompute: {
+  dontApplyFixes: {
+    aliases: ['onlyCompute'],
     type: 'boolean',
     default: false,
     description:
