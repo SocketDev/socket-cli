@@ -8,7 +8,7 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@rollup/plugin-commonjs': 28.0.6
-  '@socketsecurity/registry': 1.1.10
+  '@socketsecurity/registry': 1.1.11
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.14
   ansi-regex: 6.1.0
   ansi-term: 0.0.2
@@ -205,8 +205,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/registry':
-        specifier: 1.1.10
-        version: 1.1.10
+        specifier: 1.1.11
+        version: 1.1.11
       '@socketsecurity/sdk':
         specifier: 1.4.93
         version: 1.4.93
@@ -1668,8 +1668,8 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/registry@1.1.10':
-    resolution: {integrity: sha512-u2MY5AV+/39qzCujIowfZZd5rfGuGkZMtx7c8zPF3phUe6a5+5gOSP6MGhOmb9jSx9KC+0HtVIsLOR67EJli0g==}
+  '@socketsecurity/registry@1.1.11':
+    resolution: {integrity: sha512-Co5hv2KKcjo1y5V2gjRA801phFtyOma5u+Vbr2G6KdgpInovsW0mKVHQOfiGYxTC5HBVJd1MA6GdJLGdges6AA==}
     engines: {node: '>=18'}
 
   '@socketsecurity/sdk@1.4.93':
@@ -2504,8 +2504,8 @@ packages:
   destr@2.0.5:
     resolution: {integrity: sha512-ugFTXCtDZunbzasqBxrK93Ik/DRYsO6S/fedkWEMKqt04xZ4csmnmwGDBAb07QWNaGMAmnTIemsYZCksjATwsA==}
 
-  detect-libc@2.0.4:
-    resolution: {integrity: sha512-3UDv+G9CsCKO1WKMGw9fwq/SWJYbI0c5Y7LU1AXYoDdbhE2AHQ6N6Nb34sG8Fj7T5APy8qXDCKuuIHd1BR0tVA==}
+  detect-libc@2.1.0:
+    resolution: {integrity: sha512-vEtk+OcP7VBRtQZ1EJ3bdgzSfBjgnEalLTp5zjJrS+2Z1w2KZly4SBdac/WDU3hhsNAZ9E8SC96ME4Ey8MZ7cg==}
     engines: {node: '>=8'}
 
   detect-node@2.1.0:
@@ -4349,8 +4349,8 @@ packages:
     resolution: {integrity: sha512-ZL6DDuAlRlLGghwcfmSn9sK3Hr6ArtyudlSAiCqQ6IfE+b+HHbydbYDIG15IfS5do+7XQQBdBiubF/cV2dnDzg==}
     engines: {node: '>=6'}
 
-  tar-fs@2.1.3:
-    resolution: {integrity: sha512-090nwYJDmlhwFwEW3QQl+vaNnxsO2yVsd45eTKRBzSzu+hlb1w2K9inVq5b0ngXuLVqQ4ApvsUHHnu/zQNkWAg==}
+  tar-fs@2.1.4:
+    resolution: {integrity: sha512-mDAjwmZdh7LTT6pNleZ05Yt65HC3E+NiQzl672vQG38jIrehtJk/J3mNwIg+vShQPcLF/LV7CMnDW6vjj6sfYQ==}
 
   tar-stream@2.2.0:
     resolution: {integrity: sha512-ujeqbceABgwMZxEJnk2HDY2DlnUZ+9oEcb1KzTVfYHio0UE6dG71n60d8D2I4qNvleWrrXpmjpt7vZeF1LnMZQ==}
@@ -6104,11 +6104,11 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/registry@1.1.10': {}
+  '@socketsecurity/registry@1.1.11': {}
 
   '@socketsecurity/sdk@1.4.93':
     dependencies:
-      '@socketsecurity/registry': 1.1.10
+      '@socketsecurity/registry': 1.1.11
 
   '@stroncium/procfs@1.2.1': {}
 
@@ -7003,7 +7003,7 @@ snapshots:
 
   destr@2.0.5: {}
 
-  detect-libc@2.0.4:
+  detect-libc@2.1.0:
     optional: true
 
   detect-node@2.1.0: {}
@@ -8525,7 +8525,7 @@ snapshots:
 
   prebuild-install@7.1.3:
     dependencies:
-      detect-libc: 2.0.4
+      detect-libc: 2.1.0
       expand-template: 2.0.3
       github-from-package: 0.0.0
       minimist: 1.2.8
@@ -8535,7 +8535,7 @@ snapshots:
       pump: 3.0.3
       rc: 1.2.8
       simple-get: 4.0.1
-      tar-fs: 2.1.3
+      tar-fs: 2.1.4
       tunnel-agent: 0.6.0
     optional: true
 
@@ -8993,7 +8993,7 @@ snapshots:
 
   tapable@2.2.3: {}
 
-  tar-fs@2.1.3:
+  tar-fs@2.1.4:
     dependencies:
       chownr: 1.1.4
       mkdirp-classic: 0.5.3
