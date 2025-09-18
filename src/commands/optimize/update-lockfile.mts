@@ -44,7 +44,18 @@ export async function updateLockfile(
   }
 
   try {
-    await runAgentInstall(pkgEnvDetails, { spinner })
+    const installResult = await runAgentInstall(pkgEnvDetails, { spinner })
+
+    // Debug CI issues on Windows.
+    if (process.env['CI']) {
+      console.error(`[DEBUG] runAgentInstall completed:`)
+      console.error(`  installResult type: ${typeof installResult}`)
+      if (installResult) {
+        console.error(`  stdout length: ${installResult.stdout?.length || 0}`)
+        console.error(`  stderr length: ${installResult.stderr?.length || 0}`)
+      }
+    }
+
     if (pkgEnvDetails.features.npmBuggyOverrides) {
       spinner?.stop()
       logger?.log(
