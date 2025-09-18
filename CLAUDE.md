@@ -27,6 +27,12 @@ You are a **Principal Software Engineer** responsible for:
 - **Fix linting**: `npm run lint:fix`
 - **Commit without tests**: `git commit --no-verify` (skips pre-commit hooks including tests)
 
+### Git Commit Guidelines
+- **🚨 FORBIDDEN**: NEVER add Claude co-authorship or Claude signatures to commits
+- **🚨 FORBIDDEN**: Do NOT include "Generated with Claude Code" or similar AI attribution in commit messages
+- **Commit messages**: Should be written as if by a human developer, focusing on the what and why of changes
+- **Professional commits**: Write clear, concise commit messages that describe the actual changes made
+
 ### Running the CLI locally
 - **Build and run**: `npm run build && npm exec socket` or `pnpm build && pnpm exec socket`
 - **Quick build + run**: `npm run bs` or `pnpm bs` (builds source only, then runs socket)
