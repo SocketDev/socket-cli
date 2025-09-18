@@ -3,9 +3,9 @@ import path from 'node:path'
 
 import browserslist from 'browserslist'
 import semver from 'semver'
-import which from 'which'
 
 import { parse as parseBunLockb } from '@socketregistry/hyrious__bun.lockb/index.cjs'
+import { whichBin } from '@socketsecurity/registry/lib/bin'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { readFileBinary, readFileUtf8 } from '@socketsecurity/registry/lib/fs'
 import { Logger } from '@socketsecurity/registry/lib/logger'
@@ -210,7 +210,7 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
   if (binName === NPM) {
     return constants.npmExecPath
   }
-  return (await which(binName, { nothrow: true })) ?? binName
+  return (await whichBin(binName, { nothrow: true })) ?? binName
 }
 
 async function getAgentVersion(
