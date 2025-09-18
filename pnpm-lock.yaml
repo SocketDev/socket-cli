@@ -8,7 +8,7 @@ overrides:
   '@octokit/graphql': 9.0.1
   '@octokit/request-error': 7.0.0
   '@rollup/plugin-commonjs': 28.0.6
-  '@socketsecurity/registry': 1.1.11
+  '@socketsecurity/registry': 1.1.12
   aggregate-error: npm:@socketregistry/aggregate-error@^1.0.14
   ansi-regex: 6.1.0
   ansi-term: 0.0.2
@@ -205,8 +205,8 @@ importers:
         specifier: 3.0.1
         version: 3.0.1
       '@socketsecurity/registry':
-        specifier: 1.1.11
-        version: 1.1.11
+        specifier: 1.1.12
+        version: 1.1.12
       '@socketsecurity/sdk':
         specifier: 1.4.93
         version: 1.4.93
@@ -1668,8 +1668,8 @@ packages:
     resolution: {integrity: sha512-kLKdSqi4W7SDSm5z+wYnfVRnZCVhxzbzuKcdOZSrcHoEGOT4Gl844uzoaML+f5eiQMxY+nISiETwRph/aXrIaQ==}
     engines: {node: 18.20.7 || ^20.18.3 || >=22.14.0}
 
-  '@socketsecurity/registry@1.1.11':
-    resolution: {integrity: sha512-Co5hv2KKcjo1y5V2gjRA801phFtyOma5u+Vbr2G6KdgpInovsW0mKVHQOfiGYxTC5HBVJd1MA6GdJLGdges6AA==}
+  '@socketsecurity/registry@1.1.12':
+    resolution: {integrity: sha512-aaJsP6iYoS2ExoY7i6qMCWDov3hsYofdvlGQ9je4ujdVjnpoSwsR9nYaJc7sDzI7+FIvO/aYxHy7RUlBERac5w==}
     engines: {node: '>=18'}
 
   '@socketsecurity/sdk@1.4.93':
@@ -6104,11 +6104,11 @@ snapshots:
       pony-cause: 2.1.11
       yaml: 2.8.1
 
-  '@socketsecurity/registry@1.1.11': {}
+  '@socketsecurity/registry@1.1.12': {}
 
   '@socketsecurity/sdk@1.4.93':
     dependencies:
-      '@socketsecurity/registry': 1.1.11
+      '@socketsecurity/registry': 1.1.12
 
   '@stroncium/procfs@1.2.1': {}
 
