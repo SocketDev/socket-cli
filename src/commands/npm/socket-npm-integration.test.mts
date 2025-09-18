@@ -106,7 +106,8 @@ for (const npmDir of [] as string[]) {
             'Expected Socket to detect typosquat, but command succeeded',
           )
         } catch (e) {
-          const errorMessage = (e as SpawnError)?.['stderr'] || (e as Error)?.['message'] || ''
+          const errorMessage =
+            (e as SpawnError)?.['stderr'] || (e as Error)?.['message'] || ''
 
           // Success cases: Socket detected an issue.
           if (

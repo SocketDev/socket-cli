@@ -15,12 +15,12 @@ const CVE_FORMAT_REGEXP = /^CVE-\d{4}-\d{4,}$/
 
 export type HandleFixConfig = Remap<
   FixConfig & {
+    dontApplyFixes: boolean
     ghsas: string[]
     glob: string
     orgSlug: string
     outputKind: OutputKind
     unknownFlags: string[]
-    onlyCompute: boolean
     outputFile: string
   }
 >
@@ -91,12 +91,12 @@ export async function convertIdsToGhsas(ids: string[]): Promise<string[]> {
 
 export async function handleFix({
   autopilot,
+  dontApplyFixes,
   cwd,
   ghsas,
   glob,
   limit,
   minSatisfying,
-  onlyCompute,
   orgSlug,
   outputFile,
   outputKind,
@@ -108,6 +108,7 @@ export async function handleFix({
   await outputFixResult(
     await coanaFix({
       autopilot,
+      dontApplyFixes,
       cwd,
       // Convert mixed CVE/GHSA/PURL inputs to GHSA IDs only
       ghsas: await convertIdsToGhsas(ghsas),
@@ -119,7 +120,6 @@ export async function handleFix({
       rangeStyle,
       spinner,
       unknownFlags,
-      onlyCompute,
       outputFile,
     }),
     outputKind,
