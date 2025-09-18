@@ -352,9 +352,13 @@ describe('socket optimize', async () => {
       async cmd => {
         const tempDir = await createTempFixture(pnpmFixtureDir)
         try {
-          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-            cwd: tempDir,
-          })
+          const { code, stderr, stdout } = await spawnSocketCli(
+            binCliPath,
+            cmd,
+            {
+              cwd: tempDir,
+            },
+          )
 
           expect(code).toBe(0)
 
@@ -383,9 +387,13 @@ describe('socket optimize', async () => {
       async cmd => {
         const tempDir = await createTempFixture(pnpmFixtureDir)
         try {
-          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-            cwd: tempDir,
-          })
+          const { code, stderr, stdout } = await spawnSocketCli(
+            binCliPath,
+            cmd,
+            {
+              cwd: tempDir,
+            },
+          )
 
           expect(code).toBe(0)
 
@@ -414,9 +422,13 @@ describe('socket optimize', async () => {
       async cmd => {
         const tempDir = await createTempFixture(pnpmFixtureDir)
         try {
-          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-            cwd: tempDir,
-          })
+          const { code, stderr, stdout } = await spawnSocketCli(
+            binCliPath,
+            cmd,
+            {
+              cwd: tempDir,
+            },
+          )
 
           expect(code).toBe(0)
 
