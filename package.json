@@ -80,7 +80,8 @@
     "testu": "dotenvx -q run -f .env.testu -- run-s test:prepare; pnpm test:unit:update --",
     "testuf": "dotenvx -q run -f .env.testu -- pnpm test:unit:update --",
     "update": "run-p --aggregate-output update:**",
-    "update:deps": "taze"
+    "update:deps": "taze",
+    "update:socket": "pnpm update '@socketsecurity/*' '@socketregistry/*' --latest"
   },
   "devDependencies": {
     "@babel/core": "7.28.4",
@@ -117,7 +118,7 @@
     "@socketregistry/is-interactive": "1.0.6",
     "@socketregistry/packageurl-js": "1.0.9",
     "@socketsecurity/config": "3.0.1",
-    "@socketsecurity/registry": "1.1.10",
+    "@socketsecurity/registry": "1.1.11",
     "@socketsecurity/sdk": "1.4.93",
     "@types/blessed": "0.1.25",
     "@types/cmd-shim": "5.0.2",
