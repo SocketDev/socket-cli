@@ -1,3 +1,4 @@
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
@@ -40,9 +41,22 @@ export function runAgentInstall(
   const skipNodeHardenFlags = isPnpm && pkgEnvDetails.agentVersion.major < 11
   // In CI mode, pnpm uses --frozen-lockfile by default, which prevents lockfile updates.
   // We need to explicitly disable it when updating the lockfile with overrides.
-  const installArgs = isPnpm && constants.ENV.CI
-    ? ['install', '--no-frozen-lockfile', ...args]
-    : ['install', ...args]
+  const isCi = constants.ENV['CI']
+  const installArgs =
+    isPnpm && isCi
+      ? ['install', '--no-frozen-lockfile', ...args]
+      : ['install', ...args]
+
+  // Debug logging for Windows CI issues.
+  if (constants.WIN32 && (isCi || process.env['SOCKET_CLI_DEBUG'])) {
+    logger.error(`[DEBUG] Windows runAgentInstall:`)
+    logger.error(`  agent: ${agent}`)
+    logger.error(`  isPnpm: ${isPnpm}`)
+    logger.error(`  isCi: ${isCi}`)
+    logger.error(`  constants.ENV['CI']: ${constants.ENV['CI']}`)
+    logger.error(`  process.env.CI: ${process.env['CI']}`)
+    logger.error(`  installArgs: ${JSON.stringify(installArgs)}`)
+  }
 
   return spawn(agentExecPath, installArgs, {
     cwd: pkgPath,
