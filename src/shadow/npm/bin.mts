@@ -1,10 +1,10 @@
-import { isDebug } from '@socketsecurity/registry/lib/debug'
 import {
   isNpmAuditFlag,
   isNpmLoglevelFlag,
   isNpmNodeOptionsFlag,
   isNpmProgressFlag,
-} from '@socketsecurity/registry/lib/npm'
+} from '@socketsecurity/registry/lib/agent'
+import { isDebug } from '@socketsecurity/registry/lib/debug'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
