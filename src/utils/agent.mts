@@ -38,7 +38,13 @@ export function runAgentInstall(
     ...spawnOpts
   } = { __proto__: null, ...options } as AgentInstallOptions
   const skipNodeHardenFlags = isPnpm && pkgEnvDetails.agentVersion.major < 11
-  return spawn(agentExecPath, ['install', ...args], {
+  // In CI mode, pnpm uses --frozen-lockfile by default, which prevents lockfile updates.
+  // We need to explicitly disable it when updating the lockfile with overrides.
+  const installArgs = isPnpm && constants.ENV.CI
+    ? ['install', '--no-frozen-lockfile', ...args]
+    : ['install', ...args]
+
+  return spawn(agentExecPath, installArgs, {
     cwd: pkgPath,
     shell: constants.WIN32,
     spinner,

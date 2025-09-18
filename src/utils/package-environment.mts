@@ -213,7 +213,14 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
     if (existsSync(npmPath)) {
       return npmPath
     }
-    // If npmExecPath doesn't exist, fall back to whichBin.
+    // If npmExecPath doesn't exist, try common locations.
+    // Check npm in the same directory as node.
+    const nodeDir = path.dirname(process.execPath)
+    const npmInNodeDir = path.join(nodeDir, 'npm')
+    if (existsSync(npmInNodeDir)) {
+      return npmInNodeDir
+    }
+    // Fall back to whichBin.
     return (await whichBin(binName, { nothrow: true })) ?? binName
   }
   return (await whichBin(binName, { nothrow: true })) ?? binName
