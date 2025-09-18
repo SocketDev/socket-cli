@@ -3,6 +3,7 @@ import type { Spinner } from '@socketsecurity/registry/lib/spinner'
 
 export type FixConfig = {
   autopilot: boolean
+  dontApplyFixes: boolean
   cwd: string
   ghsas: string[]
   glob: string
@@ -13,6 +14,5 @@ export type FixConfig = {
   rangeStyle: RangeStyle
   spinner: Spinner | undefined
   unknownFlags: string[]
-  onlyCompute: boolean
   outputFile: string
 }

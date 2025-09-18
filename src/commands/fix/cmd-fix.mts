@@ -49,6 +49,13 @@ const generalFlags: MeowFlags = {
       'https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-auto-merge-for-pull-requests-in-your-repository',
     )} for managing auto-merge for pull requests in your repository.`,
   },
+  dontApplyFixes: {
+    aliases: ['onlyCompute'],
+    type: 'boolean',
+    default: false,
+    description:
+      'Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.',
+  },
   id: {
     type: 'string',
     default: [],
@@ -82,13 +89,6 @@ Available styles:
   * pin - Use the exact version (e.g. 1.2.3)
   * preserve - Retain the existing version range style as-is
       `.trim(),
-  },
-  dontApplyFixes: {
-    aliases: ['onlyCompute'],
-    type: 'boolean',
-    default: false,
-    description:
-      'Compute fixes only, do not apply them. Logs what upgrades would be applied. If combined with --output-file, the output file will contain the upgrades that would be applied.',
   },
   outputFile: {
     type: 'string',
@@ -204,12 +204,12 @@ async function run(
 
   const {
     autopilot,
+    dontApplyFixes,
     glob,
     json,
     limit,
     markdown,
     maxSatisfying,
-    onlyCompute,
     outputFile,
     prCheck,
     rangeStyle,
@@ -218,6 +218,7 @@ async function run(
     unknownFlags = [],
   } = cli.flags as {
     autopilot: boolean
+    dontApplyFixes: boolean
     glob: string
     limit: number
     json: boolean
@@ -228,7 +229,6 @@ async function run(
     rangeStyle: RangeStyle
     unknownFlags?: string[]
     outputFile: string
-    onlyCompute: boolean
   }
 
   const dryRun = !!cli.flags['dryRun']
@@ -287,6 +287,7 @@ async function run(
 
   await handleFix({
     autopilot,
+    dontApplyFixes,
     cwd,
     ghsas,
     glob,
@@ -298,7 +299,6 @@ async function run(
     rangeStyle,
     spinner,
     unknownFlags,
-    onlyCompute,
     outputFile,
   })
 }
