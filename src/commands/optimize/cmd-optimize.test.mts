@@ -5,6 +5,7 @@ import path from 'node:path'
 import trash from 'trash'
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { readPackageJson } from '@socketsecurity/registry/lib/packages'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
@@ -17,14 +18,51 @@ const pnpmFixtureDir = path.join(fixtureBaseDir, 'pnpm')
 
 async function revertFixtureChanges() {
   // Reset only the package.json and pnpm-lock.yaml files that tests modify.
-  await spawn(
-    'git',
-    ['checkout', 'HEAD', '--', 'package.json', PNPM_LOCK_YAML],
-    {
-      cwd: pnpmFixtureDir,
-      stdio: 'ignore',
-    },
+  try {
+    await spawn(
+      'git',
+      ['checkout', 'HEAD', '--', 'package.json', PNPM_LOCK_YAML],
+      {
+        cwd: pnpmFixtureDir,
+        stdio: 'ignore',
+      },
+    )
+  } catch (e) {
+    // Log warning but continue - files may already be reverted or not modified.
+    logger.warn('Failed to revert fixture changes:', e)
+  }
+}
+
+async function createTempFixture(sourceDir: string): Promise<string> {
+  // Create a temporary directory with a unique name.
+  const tempDir = path.join(
+    tmpdir(),
+    `socket-optimize-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
   )
+
+  // Copy the fixture files to the temp directory.
+  await promises.mkdir(tempDir, { recursive: true })
+
+  // Copy package.json.
+  const sourcePackageJson = path.join(sourceDir, 'package.json')
+  const destPackageJson = path.join(tempDir, 'package.json')
+  await promises.copyFile(sourcePackageJson, destPackageJson)
+
+  // Copy lock file if it exists.
+  const sourceLockFile = path.join(sourceDir, PNPM_LOCK_YAML)
+  if (existsSync(sourceLockFile)) {
+    const destLockFile = path.join(tempDir, PNPM_LOCK_YAML)
+    await promises.copyFile(sourceLockFile, destLockFile)
+  }
+
+  // Copy package-lock.json for npm fixtures.
+  const sourcePackageLock = path.join(sourceDir, 'package-lock.json')
+  if (existsSync(sourcePackageLock)) {
+    const destPackageLock = path.join(tempDir, 'package-lock.json')
+    await promises.copyFile(sourcePackageLock, destPackageLock)
+  }
+
+  return tempDir
 }
 
 describe('socket optimize', async () => {
@@ -312,24 +350,30 @@ describe('socket optimize', async () => {
       ['optimize', '.', '--config', '{"apiToken":"fake-token"}'],
       'should optimize packages and modify package.json',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
+        const tempDir = await createTempFixture(pnpmFixtureDir)
+        try {
+          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempDir,
+          })
 
-        expect(code).toBe(0)
+          expect(code).toBe(0)
 
-        // Check that package.json was modified with overrides.
-        const packageJsonPath = path.join(pnpmFixtureDir, 'package.json')
-        const packageJson = await readPackageJson(packageJsonPath)
-        expect(packageJson.overrides).toBeDefined()
+          // Check that package.json was modified with overrides.
+          const packageJsonPath = path.join(tempDir, 'package.json')
+          const packageJson = await readPackageJson(packageJsonPath)
+          expect(packageJson.overrides).toBeDefined()
 
-        // Check that pnpm-lock.yaml exists (was modified/created).
-        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
-        expect(existsSync(packageLockPath)).toBe(true)
+          // Check that pnpm-lock.yaml exists (was modified/created).
+          const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
+          expect(existsSync(packageLockPath)).toBe(true)
 
-        // Should have optimization output.
-        const output = stdout + stderr
-        expect(output).toMatch(/Optimizing|Adding overrides/i)
+          // Should have optimization output.
+          const output = stdout + stderr
+          expect(output).toMatch(/Optimizing|Adding overrides/i)
+        } finally {
+          // Clean up the temp directory safely.
+          await trash(tempDir)
+        }
       },
     )
 
@@ -337,24 +381,30 @@ describe('socket optimize', async () => {
       ['optimize', '.', '--pin', '--config', '{"apiToken":"fake-token"}'],
       'should optimize with --pin flag and modify files',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
+        const tempDir = await createTempFixture(pnpmFixtureDir)
+        try {
+          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempDir,
+          })
 
-        expect(code).toBe(0)
+          expect(code).toBe(0)
 
-        // Verify package.json has overrides.
-        const packageJsonPath = path.join(pnpmFixtureDir, 'package.json')
-        const packageJson = await readPackageJson(packageJsonPath)
-        expect(packageJson.overrides).toBeDefined()
+          // Verify package.json has overrides.
+          const packageJsonPath = path.join(tempDir, 'package.json')
+          const packageJson = await readPackageJson(packageJsonPath)
+          expect(packageJson.overrides).toBeDefined()
 
-        // Verify pnpm-lock.yaml was updated.
-        const packageLockPath = path.join(pnpmFixtureDir, PNPM_LOCK_YAML)
-        expect(existsSync(packageLockPath)).toBe(true)
+          // Verify pnpm-lock.yaml was updated.
+          const packageLockPath = path.join(tempDir, PNPM_LOCK_YAML)
+          expect(existsSync(packageLockPath)).toBe(true)
 
-        // Should mention optimization in output.
-        const output = stdout + stderr
-        expect(output).toMatch(/Optimizing|Adding overrides/i)
+          // Should mention optimization in output.
+          const output = stdout + stderr
+          expect(output).toMatch(/Optimizing|Adding overrides/i)
+        } finally {
+          // Clean up the temp directory safely.
+          await trash(tempDir)
+        }
       },
     )
 
@@ -362,21 +412,27 @@ describe('socket optimize', async () => {
       ['optimize', '.', '--prod', '--config', '{"apiToken":"fake-token"}'],
       'should optimize with --prod flag and modify files',
       async cmd => {
-        const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
-          cwd: pnpmFixtureDir,
-        })
+        const tempDir = await createTempFixture(pnpmFixtureDir)
+        try {
+          const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
+            cwd: tempDir,
+          })
 
-        expect(code).toBe(0)
+          expect(code).toBe(0)
 
-        // Check that command completed successfully (may or may not add overrides depending on available optimizations).
-        const packageJsonPath = path.join(pnpmFixtureDir, 'package.json')
-        const packageJson = await readPackageJson(packageJsonPath)
-        // Note: overrides may be undefined if no production dependencies have available optimizations.
-        expect(packageJson).toBeDefined()
+          // Check that command completed successfully (may or may not add overrides depending on available optimizations).
+          const packageJsonPath = path.join(tempDir, 'package.json')
+          const packageJson = await readPackageJson(packageJsonPath)
+          // Note: overrides may be undefined if no production dependencies have available optimizations.
+          expect(packageJson).toBeDefined()
 
-        // Should have optimization output.
-        const output = stdout + stderr
-        expect(output).toMatch(/Optimizing|Adding overrides|Finished/i)
+          // Should have optimization output.
+          const output = stdout + stderr
+          expect(output).toMatch(/Optimizing|Adding overrides|Finished/i)
+        } finally {
+          // Clean up the temp directory safely.
+          await trash(tempDir)
+        }
       },
       { timeout: 120_000 },
     )
