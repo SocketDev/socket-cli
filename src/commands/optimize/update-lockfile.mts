@@ -34,6 +34,15 @@ export async function updateLockfile(
 
   spinner?.start(`Updating ${pkgEnvDetails.lockName}...`)
 
+  // Debug CI issues on Windows.
+  if (process.env['CI']) {
+    console.error(`[DEBUG] updateLockfile about to call runAgentInstall:`)
+    console.error(`  platform: ${process.platform}`)
+    console.error(`  agent: ${pkgEnvDetails.agent}`)
+    console.error(`  pkgPath: ${pkgEnvDetails.pkgPath}`)
+    console.error(`  process.env.CI: ${process.env['CI']}`)
+  }
+
   try {
     await runAgentInstall(pkgEnvDetails, { spinner })
     if (pkgEnvDetails.features.npmBuggyOverrides) {
