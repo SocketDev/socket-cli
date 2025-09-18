@@ -223,6 +223,15 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
     // Fall back to whichBin.
     return (await whichBin(binName, { nothrow: true })) ?? binName
   }
+  if (binName === PNPM) {
+    // Try to use constants.pnpmExecPath first, but verify it exists.
+    const pnpmPath = constants.pnpmExecPath
+    if (existsSync(pnpmPath)) {
+      return pnpmPath
+    }
+    // Fall back to whichBin.
+    return (await whichBin(binName, { nothrow: true })) ?? binName
+  }
   return (await whichBin(binName, { nothrow: true })) ?? binName
 }
 
