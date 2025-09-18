@@ -27,16 +27,6 @@ export async function applyOptimization(
 > {
   const { spinner } = constants
 
-  // Debug CI issues on Windows.
-  if (process.env['CI']) {
-    console.error(`[DEBUG] applyOptimization called:`)
-    console.error(`  platform: ${process.platform}`)
-    console.error(`  agent: ${pkgEnvDetails.agent}`)
-    console.error(`  pkgPath: ${pkgEnvDetails.pkgPath}`)
-    console.error(`  pin: ${pin}`)
-    console.error(`  prod: ${prod}`)
-  }
-
   spinner.start()
 
   const state = await addOverrides(pkgEnvDetails, pkgEnvDetails.pkgPath, {
@@ -56,13 +46,6 @@ export async function applyOptimization(
       logger,
       spinner,
     })
-
-    // Debug CI issues on Windows.
-    if (process.env['CI']) {
-      console.error(`[DEBUG] updateLockfile returned:`)
-      console.error(`  result.ok: ${result.ok}`)
-      console.error(`  result.message: ${(result as any).message || 'none'}`)
-    }
 
     if (!result.ok) {
       spinner.stop()
