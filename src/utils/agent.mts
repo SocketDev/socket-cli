@@ -47,15 +47,18 @@ export function runAgentInstall(
       ? ['install', '--no-frozen-lockfile', ...args]
       : ['install', ...args]
 
-  // Debug logging for Windows CI issues.
-  if (constants.WIN32 && (isCi || process.env['SOCKET_CLI_DEBUG'])) {
-    logger.error(`[DEBUG] Windows runAgentInstall:`)
+  // Debug logging for CI issues - always log in CI to diagnose Windows failures.
+  if (isCi || process.env['CI']) {
+    logger.error(`[DEBUG] runAgentInstall in CI mode:`)
+    logger.error(`  platform: ${process.platform}`)
     logger.error(`  agent: ${agent}`)
     logger.error(`  isPnpm: ${isPnpm}`)
     logger.error(`  isCi: ${isCi}`)
+    logger.error(`  constants.WIN32: ${constants.WIN32}`)
     logger.error(`  constants.ENV['CI']: ${constants.ENV['CI']}`)
     logger.error(`  process.env.CI: ${process.env['CI']}`)
     logger.error(`  installArgs: ${JSON.stringify(installArgs)}`)
+    logger.error(`  agentExecPath: ${agentExecPath}`)
   }
 
   return spawn(agentExecPath, installArgs, {
