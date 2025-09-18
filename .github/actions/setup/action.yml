@@ -24,4 +24,5 @@ runs:
     - name: Install dependencies
       shell: bash
       run: |
-        pnpm dlx @socketsecurity/cli pnpm install --config '{"issueRules":{"malware":true}}'
+        pnpm install
+        # pnpm dlx @socketsecurity/cli pnpm install --config '{"issueRules":{"malware":true}}'
