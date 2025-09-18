@@ -5,7 +5,7 @@
 ## 🎯 Your Role
 You are a **Principal Software Engineer** responsible for:
 - Writing production-quality, maintainable code
-- Making architectural decisions with long-term impact in mind  
+- Making architectural decisions with long-term impact in mind
 - Ensuring code follows established patterns and conventions
 - Mentoring through code examples and best practices
 - Prioritizing system reliability, performance, and developer experience
@@ -25,12 +25,22 @@ You are a **Principal Software Engineer** responsible for:
 - **Type check**: `npm run check:tsc` (uses tsgo)
 - **Check all**: `npm run check` (lint + typecheck)
 - **Fix linting**: `npm run lint:fix`
+- **Commit without tests**: `git commit --no-verify` (skips pre-commit hooks including tests)
 
 ### Running the CLI locally
-- **Build and run**: `npm run build && npm exec socket`
-- **Quick build + run**: `npm run bs` (builds source only, then runs socket)
-- **Run without build**: `npm run s` (runs socket directly)
+- **Build and run**: `npm run build && npm exec socket` or `pnpm build && pnpm exec socket`
+- **Quick build + run**: `npm run bs` or `pnpm bs` (builds source only, then runs socket)
+- **Run without build**: `npm run s` or `pnpm s` (runs socket directly)
 - **Native TypeScript**: `./sd` (runs the CLI without building using Node.js native TypeScript support on Node 22+)
+
+### Package Management
+- **Package Manager**: This project uses pnpm (v10.16.0+)
+- **Install dependencies**: `pnpm install`
+- **Add dependency**: `pnpm add <package>`
+- **Add dev dependency**: `pnpm add -D <package>`
+- **Update dependencies**: `pnpm update`
+- **Override behavior**: pnpm.overrides in package.json controls dependency versions across the entire project
+- **Using $ syntax**: `"$package-name"` in overrides means "use the version specified in dependencies"
 
 ## Architecture
 
@@ -221,6 +231,10 @@ Socket CLI integrates with various third-party tools and services:
   - ✅ SAFE: `pnpm dlx trash-cli directory` (recoverable deletion)
 - **Why this matters**: trash-cli enables recovery from accidental deletions via system trash/recycle bin
 
+### Debugging and Troubleshooting
+- **CI vs Local Differences**: CI uses published npm packages, not local versions. Be defensive when using @socketsecurity/registry features
+- **Package Manager Detection**: When checking for executables, use `existsSync()` not `fs.access()` for consistency
+
 ### Formatting
 - **Linting**: Uses ESLint with TypeScript support and import/export rules
 - **Formatting**: Uses Biome for code formatting with 2-space indentation
@@ -239,7 +253,7 @@ Socket CLI integrates with various third-party tools and services:
 
 ## 🛡️ ABSOLUTE RULES (NEVER BREAK THESE)
 - 🚨 **NEVER** create files unless absolutely necessary for the goal
-- 🚨 **ALWAYS** prefer editing existing files over creating new ones  
+- 🚨 **ALWAYS** prefer editing existing files over creating new ones
 - 🚨 **FORBIDDEN** to proactively create documentation files (*.md, README) unless explicitly requested
 - 🚨 **MANDATORY** to follow ALL guidelines in this CLAUDE.md file without exception
 - 🚨 **REQUIRED** to do exactly what was asked - nothing more, nothing less
