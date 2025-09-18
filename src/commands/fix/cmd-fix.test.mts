@@ -2,6 +2,7 @@ import path from 'node:path'
 
 import { afterAll, afterEach, beforeAll, describe, expect } from 'vitest'
 
+import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../../../src/constants.mts'
@@ -17,14 +18,19 @@ async function revertFixtureChanges() {
       cwd: pnpmFixtureDir,
       stdio: 'ignore',
     })
-  } catch {
-    // Ignore errors if lock file doesn't exist or has no changes.
+  } catch (e) {
+    // Log warning but continue - lock file might not exist or have no changes.
+    logger.warn('Failed to revert lock file:', e)
   }
   // Clean up any untracked files (node_modules, etc.).
-  await spawn('git', ['clean', '-fd', '.'], {
-    cwd: pnpmFixtureDir,
-    stdio: 'ignore',
-  })
+  try {
+    await spawn('git', ['clean', '-fd', '.'], {
+      cwd: pnpmFixtureDir,
+      stdio: 'ignore',
+    })
+  } catch (e) {
+    logger.warn('Failed to clean untracked files:', e)
+  }
 }
 
 describe('socket fix', async () => {
