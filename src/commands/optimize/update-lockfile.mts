@@ -34,27 +34,8 @@ export async function updateLockfile(
 
   spinner?.start(`Updating ${pkgEnvDetails.lockName}...`)
 
-  // Debug CI issues on Windows.
-  if (process.env['CI']) {
-    console.error(`[DEBUG] updateLockfile about to call runAgentInstall:`)
-    console.error(`  platform: ${process.platform}`)
-    console.error(`  agent: ${pkgEnvDetails.agent}`)
-    console.error(`  pkgPath: ${pkgEnvDetails.pkgPath}`)
-    console.error(`  process.env.CI: ${process.env['CI']}`)
-  }
-
   try {
-    const installResult = await runAgentInstall(pkgEnvDetails, { spinner })
-
-    // Debug CI issues on Windows.
-    if (process.env['CI']) {
-      console.error(`[DEBUG] runAgentInstall completed:`)
-      console.error(`  installResult type: ${typeof installResult}`)
-      if (installResult) {
-        console.error(`  stdout length: ${installResult.stdout?.length || 0}`)
-        console.error(`  stderr length: ${installResult.stderr?.length || 0}`)
-      }
-    }
+    await runAgentInstall(pkgEnvDetails, { spinner })
 
     if (pkgEnvDetails.features.npmBuggyOverrides) {
       spinner?.stop()

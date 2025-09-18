@@ -22,17 +22,6 @@ export async function handleOptimize({
   pin: boolean
   prod: boolean
 }) {
-  // Debug CI issues on Windows.
-  if (process.env['CI']) {
-    console.error(`[DEBUG] handleOptimize called:`)
-    console.error(`  platform: ${process.platform}`)
-    console.error(`  cwd: ${cwd}`)
-    console.error(`  outputKind: ${outputKind}`)
-    console.error(`  pin: ${pin}`)
-    console.error(`  prod: ${prod}`)
-    console.error(`  process.env.CI: ${process.env['CI']}`)
-  }
-
   const pkgEnvCResult = await detectAndValidatePackageEnvironment(cwd, {
     cmdName: CMD_NAME,
     logger,
