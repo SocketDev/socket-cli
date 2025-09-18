@@ -77,7 +77,7 @@ describe('socket npm', async () => {
     ],
     'should handle exec with version',
     async cmd => {
-      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      const { code } = await spawnSocketCli(binCliPath, cmd)
       expect(code, 'dry-run exec should exit with code 0').toBe(0)
     },
   )
