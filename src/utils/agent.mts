@@ -1,9 +1,16 @@
+import path from 'node:path'
+
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
 
-import constants, { NPM, PNPM } from '../constants.mts'
+import constants, {
+  NPM,
+  PNPM,
+  YARN_BERRY,
+  YARN_CLASSIC,
+} from '../constants.mts'
 import { cmdFlagsToString } from './cmd.mts'
 import { shadowNpmInstall } from '../shadow/npm/install.mts'
 
@@ -61,7 +68,19 @@ export function runAgentInstall(
     logger.error(`  agentExecPath: ${agentExecPath}`)
   }
 
-  return spawn(agentExecPath, installArgs, {
+  // On Windows with shell: true, if we get just the command name (not a full path),
+  // we need to append .cmd for package managers to work correctly.
+  let command = agentExecPath
+  if (
+    constants.WIN32 &&
+    !agentExecPath.includes(path.sep) &&
+    (agent === PNPM || agent === YARN_CLASSIC || agent === YARN_BERRY)
+  ) {
+    // If it's just a command name like 'pnpm' (no path separator), add .cmd for Windows.
+    command = `${agentExecPath}.cmd`
+  }
+
+  return spawn(command, installArgs, {
     cwd: pkgPath,
     shell: constants.WIN32,
     spinner,
