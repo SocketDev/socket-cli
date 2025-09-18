@@ -3,6 +3,7 @@ import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { isSpawnError, spawn } from '@socketsecurity/registry/lib/spawn'
 
 import constants from '../constants.mts'
+import { extractName, extractOwner } from './extract-names.mts'
 
 import type { CResult } from '../types.mts'
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
@@ -77,14 +78,16 @@ export async function getRepoInfo(
 
 export async function getRepoName(cwd = process.cwd()): Promise<string> {
   const repoInfo = await getRepoInfo(cwd)
-  return repoInfo?.repo ?? constants.SOCKET_DEFAULT_REPOSITORY
+  return repoInfo?.repo
+    ? extractName(repoInfo.repo)
+    : constants.SOCKET_DEFAULT_REPOSITORY
 }
 
 export async function getRepoOwner(
   cwd = process.cwd(),
 ): Promise<string | undefined> {
   const repoInfo = await getRepoInfo(cwd)
-  return repoInfo?.owner
+  return repoInfo?.owner ? extractOwner(repoInfo.owner) : undefined
 }
 
 export async function gitBranch(
