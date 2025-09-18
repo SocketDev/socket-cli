@@ -208,7 +208,13 @@ const LOCKS: Record<string, Agent> = {
 async function getAgentExecPath(agent: Agent): Promise<string> {
   const binName = binByAgent.get(agent)!
   if (binName === NPM) {
-    return constants.npmExecPath
+    // Try to use constants.npmExecPath first, but verify it exists.
+    const npmPath = constants.npmExecPath
+    if (existsSync(npmPath)) {
+      return npmPath
+    }
+    // If npmExecPath doesn't exist, fall back to whichBin.
+    return (await whichBin(binName, { nothrow: true })) ?? binName
   }
   return (await whichBin(binName, { nothrow: true })) ?? binName
 }
