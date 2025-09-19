@@ -16,6 +16,7 @@ import {
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { parseUrl } from '@socketsecurity/registry/lib/url'
 
+import { formatErrorWithDetail } from './errors.mts'
 import constants from '../constants.mts'
 
 import type { components } from '@octokit/openapi-types'
@@ -143,8 +144,7 @@ export async function fetchGhsaDetails(
       }
     }
   } catch (e) {
-    const cause = (e as Error)?.message
-    debugFn('error', `Failed to fetch GHSA details${cause ? `: ${cause}` : ''}`)
+    debugFn('error', formatErrorWithDetail('Failed to fetch GHSA details', e))
     debugDir('inspect', { error: e })
   }
 

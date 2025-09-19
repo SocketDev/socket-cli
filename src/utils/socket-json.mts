@@ -4,6 +4,7 @@ import path from 'node:path'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
+import { formatErrorWithDetail } from './errors.mts'
 import { findUp } from './fs.mts'
 import { SOCKET_JSON, SOCKET_WEBSITE_URL } from '../constants.mts'
 
@@ -118,12 +119,15 @@ export async function readSocketJson(
       debugDir('inspect', { error: e })
       return { ok: true, data: getDefaultSocketJson() }
     }
-    const cause = (e as Error)?.message
+    const cause = formatErrorWithDetail(
+      `An error occurred while trying to read ${SOCKET_JSON}`,
+      e,
+    )
     debugDir('inspect', { error: e })
     return {
       ok: false,
       message: `Failed to read ${SOCKET_JSON}`,
-      cause: `An error occurred while trying to read ${SOCKET_JSON}${cause ? `: ${cause}` : ''}`,
+      cause,
     }
   }
 
@@ -172,12 +176,15 @@ export function readSocketJsonSync(
       debugDir('inspect', { error: e })
       return { ok: true, data: getDefaultSocketJson() }
     }
-    const cause = (e as Error)?.message
+    const cause = formatErrorWithDetail(
+      `An error occurred while trying to read ${SOCKET_JSON}`,
+      e,
+    )
     debugDir('inspect', { error: e })
     return {
       ok: false,
       message: `Failed to read ${SOCKET_JSON}`,
-      cause: `An error occurred while trying to read ${SOCKET_JSON}${cause ? `: ${cause}` : ''}`,
+      cause,
     }
   }
 

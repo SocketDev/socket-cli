@@ -189,7 +189,10 @@ export default async function shadowPnpmBin(
   const suffixArgs = [...rawPnpmArgs, ...otherArgs]
 
   if (isDebug()) {
-    debugFn('notice', `spawn: ${PNPM} shadow bin ${realPnpmPath} ${cmdFlagsToString(suffixArgs)}`)
+    debugFn(
+      'notice',
+      `spawn: ${PNPM} shadow bin ${realPnpmPath} ${cmdFlagsToString(suffixArgs)}`,
+    )
   }
 
   if (wasSpinning) {

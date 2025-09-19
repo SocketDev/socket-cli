@@ -8,6 +8,7 @@ import { addSocketWrapper } from './add-socket-wrapper.mts'
 import { checkSocketWrapperSetup } from './check-socket-wrapper-setup.mts'
 import constants from '../../constants.mts'
 import { getBashrcDetails } from '../../utils/completion.mts'
+import { getErrorCause } from '../../utils/errors.mts'
 import { updateInstalledTabCompletionScript } from '../install/setup-tab-completion.mts'
 
 export async function postinstallWrapper() {
@@ -82,7 +83,7 @@ async function setupShadowNpm(query: string): Promise<void> {
       }
     } catch (e) {
       throw new Error(
-        `There was an issue setting up the alias: ${(e as any)?.['message']}`,
+        `There was an issue setting up the alias: ${getErrorCause(e)}`,
       )
     }
   }

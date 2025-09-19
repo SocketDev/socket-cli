@@ -17,6 +17,7 @@ import constants, {
   SOCKET_YAML,
   SOCKET_YML,
 } from '../constants.mts'
+import { getErrorCause } from './errors.mts'
 
 import type { CResult } from '../types.mts'
 import type { SocketYml } from '@socketsecurity/config'
@@ -150,7 +151,7 @@ export function findSocketYmlSync(
         return {
           ok: false,
           message: `Found file but was unable to parse ${ymlPath}`,
-          cause: e instanceof Error ? e.message : String(e),
+          cause: getErrorCause(e),
         }
       }
     }

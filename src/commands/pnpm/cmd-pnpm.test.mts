@@ -2,10 +2,10 @@ import { existsSync, promises as fs } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
+import trash from 'trash'
 import { describe, expect, it } from 'vitest'
 
 import { spawn } from '@socketsecurity/registry/lib/spawn'
-import trash from 'trash'
 
 import constants, {
   FLAG_CONFIG,

@@ -1,6 +1,7 @@
 import { cacheFetch, getOctokit } from './github.mts'
 import { getPurlObject } from './purl.mts'
-import { LATEST, UNKNOWN_ERROR } from '../constants.mts'
+import { LATEST } from '../constants.mts'
+import { getErrorCause } from './errors.mts'
 
 import type { CResult } from '../types.mts'
 
@@ -64,7 +65,7 @@ export async function convertPurlToGhsas(
   } catch (e) {
     return {
       ok: false,
-      message: `Failed to convert PURL to GHSA: ${e instanceof Error ? e.message : UNKNOWN_ERROR}`,
+      message: `Failed to convert PURL to GHSA: ${getErrorCause(e)}`,
     }
   }
 }

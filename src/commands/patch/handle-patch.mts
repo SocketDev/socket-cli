@@ -19,9 +19,9 @@ import {
   MANIFEST_JSON,
   NODE_MODULES,
   NPM,
-  UNKNOWN_ERROR,
   UTF8,
 } from '../../constants.mts'
+import { getErrorCause } from '../../utils/errors.mts'
 import { findUp } from '../../utils/fs.mts'
 import { getPurlObject, normalizePurl } from '../../utils/purl.mts'
 
@@ -207,7 +207,7 @@ async function computeSHA256(filepath: string): Promise<CResult<string>> {
     return {
       ok: false,
       message: 'Failed to compute file hash',
-      cause: `Unable to read file ${filepath}: ${e instanceof Error ? e.message : UNKNOWN_ERROR}`,
+      cause: `Unable to read file ${filepath}: ${getErrorCause(e)}`,
     }
   }
 }
@@ -425,7 +425,7 @@ export async function handlePatch({
     spinner.stop()
 
     let message = 'Failed to apply patches'
-    let cause = (e as Error)?.message || UNKNOWN_ERROR
+    let cause = getErrorCause(e)
 
     if (e instanceof SyntaxError) {
       message = `Invalid JSON in ${MANIFEST_JSON}`
