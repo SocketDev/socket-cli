@@ -81,7 +81,7 @@ describe('socket npm', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should handle exec with version',
+    'should handle npm exec with version',
     async cmd => {
       const { code } = await spawnSocketCli(binCliPath, cmd)
       expect(code, 'dry-run exec should exit with code 0').toBe(0)
@@ -100,7 +100,7 @@ describe('socket npm', async () => {
       FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
-    'should handle exec with -c flag and issueRules for malware',
+    'should handle npm exec with -c flag and issueRules for malware',
     async cmd => {
       const { code, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
