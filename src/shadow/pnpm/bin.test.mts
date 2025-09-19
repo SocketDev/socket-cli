@@ -80,11 +80,17 @@ describe('shadowPnpm', () => {
 
     // Default mock implementations
     mockInstallLinks.mockResolvedValue('/usr/bin/pnpm')
-    mockSpawn.mockResolvedValue({
-      success: true,
-      code: 0,
-      stdout: '',
-      stderr: '',
+    mockSpawn.mockReturnValue({
+      process: {
+        send: vi.fn(),
+        on: vi.fn(),
+      },
+      then: vi.fn().mockImplementation(cb => cb({
+        success: true,
+        code: 0,
+        stdout: '',
+        stderr: '',
+      })),
     })
     mockGetAlertsMapFromPurls.mockResolvedValue(new Map())
     mockExistsSync.mockReturnValue(false)
