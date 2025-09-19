@@ -47,10 +47,10 @@ async function run(
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    Note: Everything after "yarn" is passed to the yarn command.
+    Note: Everything after "${YARN}" is passed to the ${YARN} command.
           Only the \`--dry-run\` and \`--help\` flags are caught here.
 
-    Use \`socket wrapper on\` to alias this command as \`yarn\`.
+    Use \`socket wrapper on\` to alias this command as \`${YARN}\`.
 
     Examples
       $ ${command}

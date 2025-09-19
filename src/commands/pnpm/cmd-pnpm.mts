@@ -47,10 +47,10 @@ async function run(
     API Token Requirements
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
-    Note: Everything after "pnpm" is passed to the pnpm command.
+    Note: Everything after "${PNPM}" is passed to the ${PNPM} command.
           Only the \`--dry-run\` and \`--help\` flags are caught here.
 
-    Use \`socket wrapper on\` to alias this command as \`pnpm\`.
+    Use \`socket wrapper on\` to alias this command as \`${PNPM}\`.
 
     Examples
       $ ${command}
