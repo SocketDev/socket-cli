@@ -20,7 +20,7 @@ describe('socket manifest conda', async () => {
 
   cmdit(
     ['manifest', 'conda', FLAG_HELP, FLAG_CONFIG, '{}'],
-    'should support --help',
+    `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
         cwd: testPath,

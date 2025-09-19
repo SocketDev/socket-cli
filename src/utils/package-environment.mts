@@ -221,7 +221,7 @@ async function getAgentExecPath(agent: Agent): Promise<string> {
     // If npmExecPath doesn't exist, try common locations.
     // Check npm in the same directory as node.
     const nodeDir = path.dirname(process.execPath)
-    const npmInNodeDir = path.join(nodeDir, 'npm')
+    const npmInNodeDir = path.join(nodeDir, NPM)
     if (existsSync(npmInNodeDir)) {
       return npmInNodeDir
     }
@@ -448,7 +448,7 @@ export async function detectAndValidatePackageEnvironment(
       logger?.warn(
         cmdPrefixMessage(
           cmdName,
-          `Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}, defaulting to npm`,
+          `Unknown package manager${pkgManager ? ` ${pkgManager}` : ''}, defaulting to ${NPM}`,
         ),
       )
     },
