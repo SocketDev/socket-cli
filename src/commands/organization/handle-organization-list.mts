@@ -13,7 +13,10 @@ export async function handleOrganizationList(
 
   const data = await fetchOrganization()
 
-  debugFn('notice', `Organization list ${data.ok ? 'fetched successfully' : 'fetch failed'}`)
+  debugFn(
+    'notice',
+    `Organization list ${data.ok ? 'fetched successfully' : 'fetch failed'}`,
+  )
   debugDir('inspect', { data })
 
   await outputOrganizationList(data, outputKind)

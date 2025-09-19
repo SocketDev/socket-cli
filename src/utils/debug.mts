@@ -152,7 +152,10 @@ export function debugScan(
       }
       break
     case 'complete':
-      debugFn('notice', `Scan complete${packageCount ? `: ${packageCount} packages` : ''}`)
+      debugFn(
+        'notice',
+        `Scan complete${packageCount ? `: ${packageCount} packages` : ''}`,
+      )
       break
     case 'error':
       debugDir('error', {
@@ -197,7 +200,10 @@ export function debugGit(
       git_op: operation,
       ...details,
     })
-  } else if (isDebug('notice') && operation.includes('push') || operation.includes('commit')) {
+  } else if (
+    (isDebug('notice') && operation.includes('push')) ||
+    operation.includes('commit')
+  ) {
     // Only log important operations like push and commit.
     debugFn('notice', `Git ${operation} succeeded`)
   } else if (isDebug('silly')) {

@@ -221,7 +221,10 @@ export async function gitPushBranch(
     return true
   } catch (e) {
     if (isSpawnError(e) && e.code === 128) {
-      debugFn('error', "Push denied: token requires write permissions for 'contents' and 'pull-requests'")
+      debugFn(
+        'error',
+        "Push denied: token requires write permissions for 'contents' and 'pull-requests'",
+      )
       debugDir('error', e)
       debugDir('inspect', { branch })
     } else {
@@ -286,7 +289,10 @@ export async function gitDeleteBranch(
     return true
   } catch (e) {
     // Expected failure when branch doesn't exist.
-    debugDir('inspect', { message: `Branch deletion failed (may not exist): ${branch}`, error: e })
+    debugDir('inspect', {
+      message: `Branch deletion failed (may not exist): ${branch}`,
+      error: e,
+    })
   }
   return false
 }
@@ -309,7 +315,10 @@ export async function gitDeleteRemoteBranch(
     return true
   } catch (e) {
     // Expected failure when remote branch doesn't exist.
-    debugDir('inspect', { message: `Remote branch deletion failed (may not exist): ${branch}`, error: e })
+    debugDir('inspect', {
+      message: `Remote branch deletion failed (may not exist): ${branch}`,
+      error: e,
+    })
   }
   return false
 }
@@ -337,7 +346,10 @@ export async function gitEnsureIdentity(
         configValue = gitConfigResult.stdout
       } catch (e) {
         // Expected when config property is not set.
-        debugDir('inspect', { message: `Git config property not set: ${prop}`, error: e })
+        debugDir('inspect', {
+          message: `Git config property not set: ${prop}`,
+          error: e,
+        })
       }
       if (configValue !== value) {
         const stdioIgnoreOptions: SpawnOptions = {
@@ -392,7 +404,10 @@ export async function gitRemoteBranchExists(
     return lsRemoteResult.stdout.length > 0
   } catch (e) {
     // Expected when remote is not accessible or branch doesn't exist.
-    debugDir('inspect', { message: `Remote branch check failed: ${branch}`, error: e })
+    debugDir('inspect', {
+      message: `Remote branch check failed: ${branch}`,
+      error: e,
+    })
   }
   return false
 }
