@@ -1,3 +1,29 @@
+/**
+ * GitHub utilities for Socket CLI.
+ * Provides GitHub API integration for repository operations and GHSA vulnerability data.
+ *
+ * Authentication:
+ * - getGitHubToken: Retrieve GitHub token from env/git config
+ * - getOctokit: Get authenticated Octokit instance
+ * - getOctokitGraphql: Get authenticated GraphQL client
+ *
+ * Caching:
+ * - 5-minute TTL for API responses
+ * - Automatic cache invalidation
+ * - Persistent cache in node_modules/.cache
+ *
+ * GHSA Operations:
+ * - cacheFetch: Cache API responses with TTL
+ * - fetchGhsaDetails: Fetch GitHub Security Advisory details
+ * - getGhsaUrl: Generate GHSA advisory URL
+ * - readCache/writeCache: Persistent cache operations
+ *
+ * Repository Operations:
+ * - GraphQL queries for complex operations
+ * - Integration with Octokit REST API
+ * - Support for GitHub Actions environment variables
+ */
+
 import { existsSync, promises as fs } from 'node:fs'
 import path from 'node:path'
 

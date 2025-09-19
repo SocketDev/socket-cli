@@ -1,3 +1,17 @@
+/**
+ * Requirements configuration utilities for Socket CLI.
+ * Manages API permissions and quota requirements for commands.
+ *
+ * Key Functions:
+ * - getRequirements: Load requirements configuration
+ * - getRequirementsKey: Convert command path to requirements key
+ *
+ * Configuration:
+ * - Loads from requirements.json
+ * - Maps command paths to permission requirements
+ * - Used for permission validation and help text
+ */
+
 import { createRequire } from 'node:module'
 import path from 'node:path'
 

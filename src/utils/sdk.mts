@@ -1,3 +1,29 @@
+/**
+ * Socket SDK utilities for Socket CLI.
+ * Manages SDK initialization and configuration for API communication.
+ *
+ * Authentication:
+ * - Interactive password prompt for missing tokens
+ * - Supports environment variable (SOCKET_CLI_API_TOKEN)
+ * - Validates token format and presence
+ *
+ * Proxy Support:
+ * - Automatic proxy agent selection
+ * - HTTP/HTTPS proxy configuration
+ * - Respects SOCKET_CLI_API_PROXY environment variable
+ *
+ * SDK Setup:
+ * - createSocketSdk: Create configured SDK instance
+ * - getDefaultApiToken: Retrieve API token from config/env
+ * - getDefaultProxyUrl: Retrieve proxy URL from config/env
+ * - getPublicApiToken: Get public API token constant
+ * - setupSdk: Initialize Socket SDK with authentication
+ *
+ * User Agent:
+ * - Automatic user agent generation from package.json
+ * - Includes CLI version and platform information
+ */
+
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent'
 
 import isInteractive from '@socketregistry/is-interactive/index.cjs'

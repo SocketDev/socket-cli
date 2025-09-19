@@ -1,3 +1,22 @@
+/**
+ * File system utilities for Socket CLI.
+ * Provides file and directory search functionality.
+ *
+ * Key Functions:
+ * - findUp: Search for files/directories up the directory tree
+ *
+ * Features:
+ * - Upward directory traversal
+ * - Supports file and directory searching
+ * - Abort signal support for cancellation
+ * - Multiple name search support
+ *
+ * Usage:
+ * - Finding configuration files (package.json, lockfiles)
+ * - Locating project root directories
+ * - Searching for specific files in parent directories
+ */
+
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 

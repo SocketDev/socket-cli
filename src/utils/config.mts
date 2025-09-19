@@ -1,3 +1,26 @@
+/**
+ * Configuration utilities for Socket CLI.
+ * Manages CLI configuration including API tokens, org settings, and preferences.
+ *
+ * Configuration Hierarchy (highest priority first):
+ * 1. Environment variables (SOCKET_CLI_*)
+ * 2. Command-line --config flag
+ * 3. Persisted config file (base64 encoded JSON)
+ *
+ * Supported Config Keys:
+ * - apiBaseUrl: Socket API endpoint URL
+ * - apiProxy: Proxy for API requests
+ * - apiToken: Authentication token for Socket API
+ * - defaultOrg/org: Default organization slug
+ * - enforcedOrgs: Organizations with enforced security policies
+ *
+ * Key Functions:
+ * - findSocketYmlSync: Locate socket.yml configuration file
+ * - getConfigValue: Retrieve configuration value by key
+ * - overrideCachedConfig: Apply temporary config overrides
+ * - updateConfigValue: Persist configuration changes
+ */
+
 import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 

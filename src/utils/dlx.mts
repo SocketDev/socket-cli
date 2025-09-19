@@ -1,3 +1,23 @@
+/**
+ * DLX execution utilities for Socket CLI.
+ * Manages package execution via npx/pnpm dlx/yarn dlx commands.
+ *
+ * Key Functions:
+ * - spawnCdxgenDlx: Execute CycloneDX generator via dlx
+ * - spawnCoanaDlx: Execute Coana CLI tool via dlx
+ * - spawnDlx: Execute packages using dlx-style commands
+ * - spawnSynpDlx: Execute Synp converter via dlx
+ *
+ * Package Manager Detection:
+ * - Auto-detects npm, pnpm, or yarn based on lockfiles
+ * - Supports force-refresh and silent execution modes
+ *
+ * Integration:
+ * - Works with shadow binaries for security scanning
+ * - Handles version pinning and cache management
+ * - Configures environment for third-party tools
+ */
+
 import { createRequire } from 'node:module'
 
 import { getOwn } from '@socketsecurity/registry/lib/objects'

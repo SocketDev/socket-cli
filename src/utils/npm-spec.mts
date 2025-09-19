@@ -1,3 +1,26 @@
+/**
+ * NPM package specification utilities for Socket CLI.
+ * Parses and handles various NPM package specification formats.
+ *
+ * Supported Formats:
+ * - Regular packages: lodash, lodash@4.17.21
+ * - Scoped packages: @types/node, @types/node@20.0.0
+ * - Version ranges: lodash@^4.0.0, lodash@~4.17.0
+ * - Git URLs: git+https://github.com/user/repo.git
+ * - File paths: file:../local-package
+ * - Aliases: my-alias@npm:real-package@1.0.0
+ *
+ * Key Functions:
+ * - safeNpa: Safe wrapper for npm-package-arg
+ * - safeNpmSpecToPurl: Convert NPM spec to PURL
+ * - safeParseNpmSpec: Parse NPM spec to name/version
+ *
+ * Error Handling:
+ * - Returns undefined for invalid specs
+ * - Fallback parsing for edge cases
+ * - Safe against malformed input
+ */
+
 import npmPackageArg from 'npm-package-arg'
 
 import { NPM } from '../constants.mts'

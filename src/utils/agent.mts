@@ -1,3 +1,21 @@
+/**
+ * Package manager agent utilities for Socket CLI.
+ * Manages package installation via different package managers.
+ *
+ * Key Functions:
+ * - runAgentInstall: Execute package installation with detected agent
+ *
+ * Supported Agents:
+ * - npm: Node Package Manager
+ * - pnpm: Fast, disk space efficient package manager
+ * - yarn: Alternative package manager
+ *
+ * Features:
+ * - Automatic agent detection
+ * - Shadow installation for security scanning
+ * - Spinner support for progress indication
+ */
+
 import { getOwn } from '@socketsecurity/registry/lib/objects'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 import { Spinner } from '@socketsecurity/registry/lib/spinner'
