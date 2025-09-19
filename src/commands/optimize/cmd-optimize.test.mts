@@ -17,6 +17,7 @@ import constants, {
   FLAG_MARKDOWN,
   FLAG_PIN,
   FLAG_PROD,
+  FLAG_VERSION,
   NPM,
   PACKAGE_JSON,
   PACKAGE_LOCK_JSON,
@@ -724,7 +725,7 @@ describe('socket optimize', async () => {
     )
 
     cmdit(
-      ['optimize', '--version', FLAG_CONFIG, '{}'],
+      ['optimize', FLAG_VERSION, FLAG_CONFIG, '{}'],
       'should show version information',
       async cmd => {
         const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
