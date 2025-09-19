@@ -12,14 +12,11 @@ import {
 } from './env-helpers.mts'
 import { getSocketFixBranchName, getSocketFixCommitMessage } from './git.mts'
 import { getSocketFixPrs, openSocketFixPr } from './pull-request.mts'
-import {
-  FLAG_DRY_RUN,
-  GQL_PR_STATE_OPEN,
-  UNKNOWN_ERROR,
-} from '../../constants.mts'
+import { FLAG_DRY_RUN, GQL_PR_STATE_OPEN } from '../../constants.mts'
 import { handleApiCall } from '../../utils/api.mts'
 import { cmdFlagValueToArray } from '../../utils/cmd.mts'
 import { spawnCoanaDlx } from '../../utils/dlx.mts'
+import { getErrorCause } from '../../utils/errors.mts'
 import {
   gitCheckoutBranch,
   gitCommit,
@@ -262,9 +259,7 @@ export async function coanaFix(
     )
 
     if (!fixCResult.ok) {
-      logger.error(
-        `Update failed for ${ghsaId}: ${fixCResult.message || UNKNOWN_ERROR}`,
-      )
+      logger.error(`Update failed for ${ghsaId}: ${getErrorCause(fixCResult)}`)
       continue ghsaLoop
     }
 

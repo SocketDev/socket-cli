@@ -3,6 +3,7 @@ import { RequestError } from '@octokit/request-error'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
+
 import {
   getSocketFixBranchPattern,
   getSocketFixPullRequestBody,
@@ -15,6 +16,7 @@ import {
   GQL_PR_STATE_OPEN,
   UNKNOWN_VALUE,
 } from '../../constants.mts'
+import { formatErrorWithDetail } from '../../utils/errors.mts'
 import { gitDeleteRemoteBranch } from '../../utils/git.mts'
 import {
   type GhsaDetails,
@@ -140,10 +142,9 @@ export async function cleanupSocketFixPrs(
           // Mark cache to be saved.
           cachesToSave.set(context.cacheKey, context.data)
         } catch (e) {
-          const cause = (e as Error)?.message
           debugFn(
             'error',
-            `pr: failed to update ${prRef}${cause ? ` - ${cause}` : ''}`,
+            formatErrorWithDetail(`pr: failed to update ${prRef}`, e),
           )
           debugDir('inspect', { error: e })
         }
@@ -167,11 +168,13 @@ export async function cleanupSocketFixPrs(
             )
           }
         } catch (e) {
-          const cause = (e as Error)?.message
           // Don't treat this as a hard error - branch might already be deleted.
           debugFn(
             'warn',
-            `pr: failed to delete branch ${match.headRefName} for ${prRef}${cause ? ` - ${cause}` : ''}`,
+            formatErrorWithDetail(
+              `pr: failed to delete branch ${match.headRefName} for ${prRef}`,
+              e,
+            ),
           )
           debugDir('inspect', { error: e })
         }
