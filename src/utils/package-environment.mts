@@ -199,6 +199,9 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
             return (
               await spawn(agentExecPath, [lockPath], {
                 cwd,
+                // On Windows, bun is often a .cmd file that requires shell execution.
+                // The spawn function from @socketsecurity/registry will handle this properly
+                // when shell is true.
                 shell: constants.WIN32,
               })
             ).stdout
@@ -284,6 +287,9 @@ async function getAgentVersion(
         (
           await spawn(agentExecPath, [FLAG_VERSION], {
             cwd,
+            // On Windows, package managers are often .cmd files that require shell execution.
+            // The spawn function from @socketsecurity/registry will handle this properly
+            // when shell is true.
             shell: constants.WIN32,
           })
         ).stdout,

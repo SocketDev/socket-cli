@@ -66,6 +66,9 @@ export function runAgentInstall(
 
   return spawn(agentExecPath, installArgs, {
     cwd: pkgPath,
+    // On Windows, package managers are often .cmd files that require shell execution.
+    // The spawn function from @socketsecurity/registry will handle this properly
+    // when shell is true.
     shell: constants.WIN32,
     spinner,
     stdio: 'inherit',
