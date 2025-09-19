@@ -3,7 +3,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
 import { handleApiCallNoSpinner, queryApiSafeText } from '../../utils/api.mts'
-import { formatErrorWithDetail, getErrorMessage } from '../../utils/errors.mts'
+import { formatErrorWithDetail } from '../../utils/errors.mts'
 import { setupSdk } from '../../utils/sdk.mts'
 
 import type { CResult } from '../../types.mts'

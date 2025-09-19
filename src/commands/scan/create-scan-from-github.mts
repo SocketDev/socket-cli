@@ -3,6 +3,7 @@ import {
   existsSync,
   promises as fs,
   mkdirSync,
+  mkdtempSync,
 } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -201,7 +202,7 @@ async function scanOneRepo(
     return { ok: true, data: { scanCreated: false } }
   }
 
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), repoSlug))
+  const tmpDir = mkdtempSync(path.join(os.tmpdir(), repoSlug))
   debugFn('notice', 'init: temp dir for scan root', tmpDir)
 
   const downloadResult = await testAndDownloadManifestFiles({
