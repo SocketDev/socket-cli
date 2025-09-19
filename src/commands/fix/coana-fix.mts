@@ -176,7 +176,7 @@ export async function coanaFix(
       }
     } catch (e) {
       debugFn('warn', 'Failed to count open PRs, using original limit')
-      debugDir('inspect', { error: e })
+      debugDir('error', e)
     }
   }
 
@@ -395,7 +395,7 @@ export async function coanaFix(
       logger.warn(
         `Unexpected condition: Push failed for ${ghsaId}, skipping PR creation.`,
       )
-      debugDir('inspect', { error: e })
+      debugDir('error', e)
       // eslint-disable-next-line no-await-in-loop
       await gitResetAndClean(fixEnv.baseBranch, cwd)
       // eslint-disable-next-line no-await-in-loop

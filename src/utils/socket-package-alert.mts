@@ -407,7 +407,8 @@ export function getCveInfoFromAlertsMap(
           }
         }
         debugFn('error', 'fail: invalid SocketPackageAlert')
-        debugDir('inspect', { alert, error })
+        debugDir('inspect', { alert })
+        debugDir('error', error)
       }
     }
   }

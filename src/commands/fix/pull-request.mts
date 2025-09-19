@@ -3,7 +3,6 @@ import { RequestError } from '@octokit/request-error'
 import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
-
 import {
   getSocketFixBranchPattern,
   getSocketFixPullRequestBody,
@@ -146,7 +145,7 @@ export async function cleanupSocketFixPrs(
             'error',
             formatErrorWithDetail(`pr: failed to update ${prRef}`, e),
           )
-          debugDir('inspect', { error: e })
+          debugDir('error', e)
         }
       }
 
@@ -176,7 +175,7 @@ export async function cleanupSocketFixPrs(
               e,
             ),
           )
-          debugDir('inspect', { error: e })
+          debugDir('error', e)
         }
       }
 
@@ -374,7 +373,7 @@ async function getSocketFixPrsWithContext(
     }
   } catch (e) {
     debugFn('error', `GraphQL pagination failed for ${owner}/${repo}`)
-    debugDir('inspect', { error: e })
+    debugDir('error', e)
   }
 
   return contextualMatches

@@ -326,7 +326,7 @@ async function processFilePatch(
     logger.success(`Patch applied successfully`)
   } catch (e) {
     logger.error('Error applying patch')
-    debugDir('inspect', { error: e })
+    debugDir('error', e)
     result = false
   }
   logger.groupEnd()

@@ -7,6 +7,7 @@ import { safeReadFileSync } from '@socketsecurity/registry/lib/fs'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 
+import { debugConfig } from './debug.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   CONFIG_KEY_API_PROXY,
@@ -81,8 +82,10 @@ function getConfigValues(): LocalConfig {
             _cachedConfig,
             JSON.parse(Buffer.from(raw, 'base64').toString()),
           )
-        } catch {
+          debugConfig(socketAppDataPath, true)
+        } catch (e) {
           logger.warn(`Failed to parse config at ${socketAppDataPath}`)
+          debugConfig(socketAppDataPath, false, e)
         }
         // Normalize apiKey to apiToken and persist it.
         // This is a one time migration per user.
@@ -147,7 +150,8 @@ export function findSocketYmlSync(
           },
         }
       } catch (e) {
-        debugDir('inspect', { error: e })
+        debugFn('error', `Failed to parse config file: ${ymlPath}`)
+        debugDir('error', e)
         return {
           ok: false,
           message: `Found file but was unable to parse ${ymlPath}`,
