@@ -3,7 +3,11 @@ import terminalLink from 'terminal-link'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleAnalytics } from './handle-analytics.mts'
-import constants, { FLAG_JSON, FLAG_MARKDOWN, V1_MIGRATION_GUIDE_URL } from '../../constants.mts'
+import constants, {
+  FLAG_JSON,
+  FLAG_MARKDOWN,
+  V1_MIGRATION_GUIDE_URL,
+} from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { getOutputKind } from '../../utils/get-output-kind.mts'
@@ -153,15 +157,13 @@ async function run(
     {
       nook: true,
       test: !filepath || !!json || !!markdown,
-      message:
-        `The \`--file\` flag is only valid when using \`${FLAG_JSON}\` or \`${FLAG_MARKDOWN}\``,
+      message: `The \`--file\` flag is only valid when using \`${FLAG_JSON}\` or \`${FLAG_MARKDOWN}\``,
       fail: 'bad',
     },
     {
       nook: true,
       test: !json || !markdown,
-      message:
-        `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
+      message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
       fail: 'bad',
     },
     {
