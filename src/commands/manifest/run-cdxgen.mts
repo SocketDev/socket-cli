@@ -30,7 +30,7 @@ export type ArgvObject = {
   [key: string]: boolean | null | number | string | Array<string | number>
 }
 
-function argvToArray(argvObj: ArgvObject): string[] {
+function argvObjectToArray(argvObj: ArgvObject): string[] {
   if (argvObj['help']) {
     return [FLAG_HELP]
   }
@@ -91,9 +91,9 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
 
   let cleanupPackageLock = false
   if (
+    yarnLockPath &&
     argvMutable['type'] !== YARN &&
-    nodejsPlatformTypes.has(argvMutable['type'] as string) &&
-    yarnLockPath
+    nodejsPlatformTypes.has(argvMutable['type'] as string)
   ) {
     if (npmLockPath) {
       argvMutable['type'] = NPM
@@ -115,8 +115,8 @@ export async function runCdxgen(argvObj: ArgvObject): Promise<ShadowBinResult> {
     }
   }
 
-  // Use appropriate package manager for cdxgen
-  const shadowResult = await spawnCdxgenDlx(argvToArray(argvMutable), {
+  // Use appropriate package manager for cdxgen.
+  const shadowResult = await spawnCdxgenDlx(argvObjectToArray(argvMutable), {
     ...shadowOpts,
     agent,
   })
