@@ -34,9 +34,8 @@ import { getErrorCause } from './errors.mts'
 import { findUp } from './fs.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
 import { isYarnBerry } from './yarn-version.mts'
-import shadowNpmBin from '../shadow/npm/bin.mts'
 
-import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm/bin.mts'
+import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm-base.mts'
 import type { CResult } from '../types.mts'
 import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
@@ -112,11 +111,9 @@ export async function spawnDlx(
   const packageString = `${packageSpec.name}@${packageSpec.version}`
 
   // Build command args based on package manager.
-  let binName: string
   let spawnArgs: string[]
 
   if (pm === PNPM) {
-    binName = PNPM
     spawnArgs = ['dlx']
     if (force) {
       // For pnpm, set dlx-cache-max-age to 0 via env to force fresh download.
@@ -144,7 +141,6 @@ export async function spawnDlx(
     const shadowPnpmBin = /*@__PURE__*/ require(constants.shadowPnpmBinPath)
     return await shadowPnpmBin(spawnArgs, finalShadowOptions, spawnExtra)
   } else if (pm === YARN && isYarnBerry()) {
-    binName = YARN
     spawnArgs = ['dlx']
     // Yarn dlx runs in a temporary environment by design and should always fetch fresh.
     if (silent) {
@@ -157,7 +153,6 @@ export async function spawnDlx(
   } else {
     // Use npm exec/npx.
     // For consistency, we'll use npx which is more commonly used for one-off execution.
-    binName = 'npx'
     spawnArgs = ['--yes']
     if (force) {
       // Use --force to bypass cache and get latest within range.
@@ -168,12 +163,8 @@ export async function spawnDlx(
     }
     spawnArgs.push(packageString, ...args)
 
-    return await shadowNpmBin(
-      binName as 'npm' | 'npx',
-      spawnArgs,
-      finalShadowOptions,
-      spawnExtra,
-    )
+    const shadowNpxBin = /*@__PURE__*/ require(constants.shadowNpxBinPath)
+    return await shadowNpxBin(spawnArgs, finalShadowOptions, spawnExtra)
   }
 }
 
