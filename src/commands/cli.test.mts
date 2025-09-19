@@ -11,9 +11,12 @@ import constants, {
 describe('socket root command', async () => {
   const { binCliPath } = constants
 
-  cmdit([FLAG_HELP, FLAG_CONFIG, '{}'], 'should support --help', async cmd => {
-    const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
-    expect(stdout).toMatchInlineSnapshot(`
+  cmdit(
+    [FLAG_HELP, FLAG_CONFIG, '{}'],
+    `should support ${FLAG_HELP}`,
+    async cmd => {
+      const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
+      expect(stdout).toMatchInlineSnapshot(`
       "CLI for Socket.dev
 
         Usage
@@ -95,7 +98,7 @@ describe('socket root command', async () => {
           SOCKET_CLI_DEBUG            Enable debug logging in Socket CLI
           DEBUG                       Enable debug logging based on the debug (https://socket.dev/npm/package/debug) package"
     `)
-    expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
+      expect(`\n   ${stderr}`).toMatchInlineSnapshot(`
       "
          _____         _       _        /---------------
         |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver <redacted>
@@ -103,9 +106,10 @@ describe('socket root command', async () => {
         |_____|___|___|_,_|___|_|.dev   | Command: \`socket\`, cwd: <redacted>"
     `)
 
-    expect(code, 'explicit help should exit with code 0').toBe(0)
-    expect(stderr, 'banner includes base command').toContain('`socket`')
-  })
+      expect(code, 'explicit help should exit with code 0').toBe(0)
+      expect(stderr, 'banner includes base command').toContain('`socket`')
+    },
+  )
 
   cmdit(
     ['mootools', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],

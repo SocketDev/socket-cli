@@ -12,7 +12,7 @@ describe('socket raw-npm', async () => {
 
   cmdit(
     ['raw-npm', FLAG_HELP, FLAG_CONFIG, '{}'],
-    'should support --help',
+    `should support ${FLAG_HELP}`,
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
       expect(stdout).toMatchInlineSnapshot(
