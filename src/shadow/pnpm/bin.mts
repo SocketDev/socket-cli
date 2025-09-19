@@ -107,14 +107,10 @@ export default async function shadowPnpmBin(
             const lockfile = parsePnpmLockfile(lockfileContent)
             if (lockfile) {
               // Use existing function to scan the entire lockfile
-              if (isDebug()) {
-                spinner?.stop()
-                debugFn(
-                  'notice',
-                  `scanning: all dependencies from ${PNPM_LOCK_YAML}`,
-                )
-                spinner?.start()
-              }
+              debugFn(
+                'notice',
+                `scanning: all dependencies from ${PNPM_LOCK_YAML}`,
+              )
 
               const alertsMap = await getAlertsMapFromPnpmLockfile(lockfile, {
                 nothrow: true,
@@ -150,36 +146,25 @@ export default async function shadowPnpmBin(
               }
 
               // Return early since we've already done the scanning
-              if (isDebug()) {
-                debugFn(
-                  'notice',
-                  'complete: lockfile scanning, proceeding with install',
-                )
-              }
+              debugFn(
+                'notice',
+                'complete: lockfile scanning, proceeding with install',
+              )
             }
           }
         } catch (e) {
-          if (isDebug()) {
-            spinner?.stop()
-            debugFn('error', 'caught: pnpm lockfile scanning error')
-            debugDir('inspect', { error: e })
-            spinner?.start()
-          }
+          debugFn('error', 'PNPM lockfile scanning failed')
+          debugDir('error', e)
         }
-      } else if (isDebug()) {
-        spinner?.stop()
+      } else {
         debugFn(
           'notice',
           'skip: no pnpm-lock.yaml found, skipping bulk install scanning',
         )
-        spinner?.start()
       }
     }
 
-    if (isDebug()) {
-      spinner?.stop()
-      debugFn('notice', 'complete: scanning, proceeding with install')
-    }
+    debugFn('notice', 'complete: scanning, proceeding with install')
   }
 
   const realPnpmPath = await installLinks(constants.shadowBinPath, PNPM)
@@ -188,12 +173,10 @@ export default async function shadowPnpmBin(
 
   const suffixArgs = [...rawPnpmArgs, ...otherArgs]
 
-  if (isDebug()) {
-    debugFn(
-      'notice',
-      `spawn: ${PNPM} shadow bin ${realPnpmPath} ${cmdFlagsToString(suffixArgs)}`,
-    )
-  }
+  debugFn(
+    'notice',
+    `spawn: ${PNPM} shadow bin ${realPnpmPath} ${cmdFlagsToString(suffixArgs)}`,
+  )
 
   if (wasSpinning) {
     spinner?.start()

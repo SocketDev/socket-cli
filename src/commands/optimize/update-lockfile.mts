@@ -46,8 +46,8 @@ export async function updateLockfile(
   } catch (e) {
     spinner?.stop()
 
-    debugFn('error', 'fail: update')
-    debugDir('inspect', { error: e })
+    debugFn('error', 'Lockfile update failed')
+    debugDir('error', e)
 
     if (wasSpinning) {
       spinner.start()

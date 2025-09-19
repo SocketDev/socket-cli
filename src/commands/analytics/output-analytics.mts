@@ -4,6 +4,7 @@ import { createRequire } from 'node:module'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants from '../../constants.mts'
+import { debugFileOp } from '../../utils/debug.mts'
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { mdTableStringNumber } from '../../utils/markdown.mts'
 import { serializeResultJson } from '../../utils/serialize-result-json.mts'
@@ -80,8 +81,10 @@ export async function outputAnalytics(
     if (filepath) {
       try {
         await fs.writeFile(filepath, serialized, 'utf8')
+        debugFileOp('write', filepath)
         logger.success(`Data successfully written to ${filepath}`)
       } catch (e) {
+        debugFileOp('write', filepath, e)
         process.exitCode = 1
         logger.log(
           serializeResultJson({
@@ -108,8 +111,10 @@ export async function outputAnalytics(
     if (filepath) {
       try {
         await fs.writeFile(filepath, serialized, 'utf8')
+        debugFileOp('write', filepath)
         logger.success(`Data successfully written to ${filepath}`)
       } catch (e) {
+        debugFileOp('write', filepath, e)
         logger.error(e)
       }
     } else {

@@ -486,7 +486,7 @@ async function streamDownloadWithFetch(
       'An error was thrown while trying to download a manifest file... url:',
       downloadUrl,
     )
-    debugDir('inspect', { error: e })
+    debugDir('error', e)
 
     // If an error occurs and fileStream was created, attempt to clean up.
     if (existsSync(localPath)) {

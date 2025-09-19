@@ -12,6 +12,8 @@ import {
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { naturalCompare } from '@socketsecurity/registry/lib/sorts'
 import { getCliSpinners } from '@socketsecurity/registry/lib/spinner'
+
+import { isDebug } from './debug.mts'
 import {
   indentString,
   trimNewlines,
@@ -341,10 +343,20 @@ export async function meowWithSubcommands(
     booleanDefault: undefined,
   })
 
-  const noSpinner = cli1.flags['spinner'] === false
-  const orgFlag = String(cli1.flags['org'] || '') || undefined
+  const {
+    config: configFlag,
+    org: orgFlag,
+    spinner: spinnerFlag,
+  } = cli1.flags as {
+    config: string
+    org: string
+    spinner: boolean
+  }
 
-  // Use CI spinner style when --no-spinner is passed.
+  const noSpinner = spinnerFlag === false || isDebug()
+
+  // Use CI spinner style when --no-spinner is passed or debug mode is enabled.
+  // This prevents the spinner from interfering with debug output.
   if (noSpinner) {
     constants.spinner.spinner = getCliSpinners('ci')!
   }
@@ -354,8 +366,8 @@ export async function meowWithSubcommands(
   let configOverrideResult
   if (constants.ENV.SOCKET_CLI_CONFIG) {
     configOverrideResult = overrideCachedConfig(constants.ENV.SOCKET_CLI_CONFIG)
-  } else if (cli1.flags['config']) {
-    configOverrideResult = overrideCachedConfig(cli1.flags['config'])
+  } else if (configFlag) {
+    configOverrideResult = overrideCachedConfig(configFlag)
   }
 
   if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
@@ -680,9 +692,10 @@ export function meowOrExit({
     version: boolean | undefined
   }
 
-  const noSpinner = spinnerFlag === false
+  const noSpinner = spinnerFlag === false || isDebug()
 
   // Use CI spinner style when --no-spinner is passed.
+  // This prevents the spinner from interfering with debug output.
   if (noSpinner) {
     constants.spinner.spinner = getCliSpinners('ci')!
   }

@@ -5,6 +5,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 
 import { getConfigValueOrUndef } from './config.mts'
+import { debugApiResponse } from './debug.mts'
 import constants, {
   CONFIG_KEY_API_BASE_URL,
   EMPTY_VALUE,
@@ -144,21 +145,18 @@ export async function handleApiCall<T extends SocketSdkOperations>(
     }
     if (description) {
       logger.fail(`An error was thrown while requesting ${description}`)
-      debugFn('error', `caught: ${description} error`)
+      debugApiResponse(description, undefined, e)
     } else {
-      debugFn('error', `caught: Socket API request error`)
+      debugApiResponse('Socket API', undefined, e)
     }
-    debugDir('inspect', { error: e })
     debugDir('inspect', { socketSdkErrorResult })
     return socketSdkErrorResult
   }
 
   // Note: TS can't narrow down the type of result due to generics.
   if (sdkResult.success === false) {
-    debugFn(
-      'error',
-      `fail:${description ? ` ${description}` : ''} bad response`,
-    )
+    const endpoint = description || 'Socket API'
+    debugApiResponse(endpoint, sdkResult.status)
     debugDir('inspect', { sdkResult })
 
     const errCResult = sdkResult as SocketSdkErrorResult<T>
@@ -198,8 +196,8 @@ export async function handleApiCallNoSpinner<T extends SocketSdkOperations>(
   try {
     sdkResult = await value
   } catch (e) {
-    debugFn('error', `caught: ${description} error`)
-    debugDir('inspect', { error: e })
+    debugFn('error', `API request failed: ${description}`)
+    debugDir('error', e)
 
     const errStr = e ? String(e).trim() : ''
     const message = 'Socket API error'
@@ -297,8 +295,8 @@ export async function queryApiSafeText(
       )
     }
 
-    debugFn('error', 'caught: await queryApi() error')
-    debugDir('inspect', { error: e })
+    debugFn('error', 'Query API request failed')
+    debugDir('error', e)
 
     const errStr = e ? String(e).trim() : ''
     const message = 'API request failed'
@@ -335,8 +333,8 @@ export async function queryApiSafeText(
       data,
     }
   } catch (e) {
-    debugFn('error', 'caught: await result.text() error')
-    debugDir('inspect', { error: e })
+    debugFn('error', 'Failed to read API response text')
+    debugDir('error', e)
 
     return {
       ok: false,
@@ -444,8 +442,8 @@ export async function sendApiRequest<T>(
       )
     }
 
-    debugFn('error', `caught: await fetch() ${method} error`)
-    debugDir('inspect', { error: e })
+    debugFn('error', `API ${method} request failed`)
+    debugDir('error', e)
 
     const errStr = e ? String(e).trim() : ''
     const message = 'API request failed'
@@ -482,8 +480,8 @@ export async function sendApiRequest<T>(
       data: data as T,
     }
   } catch (e) {
-    debugFn('error', 'caught: await result.json() error')
-    debugDir('inspect', { error: e })
+    debugFn('error', 'Failed to parse API response JSON')
+    debugDir('error', e)
     return {
       ok: false,
       message: 'API request failed',
