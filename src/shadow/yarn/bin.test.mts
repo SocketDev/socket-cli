@@ -75,12 +75,14 @@ describe('shadowYarn', () => {
         send: vi.fn(),
         on: vi.fn(),
       },
-      then: vi.fn().mockImplementation(cb => cb({
-        success: true,
-        code: 0,
-        stdout: '',
-        stderr: '',
-      })),
+      then: vi.fn().mockImplementation(cb =>
+        cb({
+          success: true,
+          code: 0,
+          stdout: '',
+          stderr: '',
+        }),
+      ),
     })
     mockGetAlertsMapFromPurls.mockResolvedValue(new Map())
     mockFsReadFile.mockResolvedValue('{"dependencies": {}}')
