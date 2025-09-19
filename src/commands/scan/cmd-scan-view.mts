@@ -121,8 +121,7 @@ async function run(
     {
       nook: true,
       test: !json || !markdown,
-      message:
-        `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
+      message: `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
       fail: 'bad',
     },
     {

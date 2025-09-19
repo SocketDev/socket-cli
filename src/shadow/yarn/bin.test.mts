@@ -70,11 +70,17 @@ describe('shadowYarn', () => {
 
     // Default mock implementations
     mockInstallLinks.mockResolvedValue('/usr/bin/yarn')
-    mockSpawn.mockResolvedValue({
-      success: true,
-      code: 0,
-      stdout: '',
-      stderr: '',
+    mockSpawn.mockReturnValue({
+      process: {
+        send: vi.fn(),
+        on: vi.fn(),
+      },
+      then: vi.fn().mockImplementation(cb => cb({
+        success: true,
+        code: 0,
+        stdout: '',
+        stderr: '',
+      })),
     })
     mockGetAlertsMapFromPurls.mockResolvedValue(new Map())
     mockFsReadFile.mockResolvedValue('{"dependencies": {}}')
@@ -175,7 +181,7 @@ describe('shadowYarn', () => {
 
     expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
       [
-        'pkg:npm/lodash@^4.17.21',
+        'pkg:npm/lodash@%5E4.17.21',
         'pkg:npm/axios@~1.0.0',
         'pkg:npm/@types/node@^20.0.0',
       ],
@@ -255,7 +261,7 @@ describe('shadowYarn', () => {
     await shadowYarn(['upgrade'])
 
     expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
-      ['pkg:npm/react@^18.0.0'],
+      ['pkg:npm/react@%5E18.0.0'],
       expect.objectContaining({
         nothrow: true,
       }),
