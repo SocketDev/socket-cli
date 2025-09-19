@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { runWithConfig } from '../../test/run-with-config.mts'
 import { validateSocketJson } from '../../test/json-output-validation.mts'
+import { runWithConfig } from '../../test/run-with-config.mts'
 
 describe('socket repos - smoke test scenarios', () => {
   describe('no-interactive mode', () => {
