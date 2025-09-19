@@ -18,7 +18,7 @@ vi.mock('node:fs', async importOriginal => {
 })
 
 // Mock all dependencies with vi.hoisted for better type safety
-const mockInstallLinks = vi.hoisted(() => vi.fn())
+const mockInstallPnpmLinks = vi.hoisted(() => vi.fn())
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockGetAlertsMapFromPurls = vi.hoisted(() => vi.fn())
 const mockGetAlertsMapFromPnpmLockfile = vi.hoisted(() => vi.fn())
@@ -41,8 +41,8 @@ vi.mock('../../utils/socket-package-alert.mts', () => ({
   logAlertsMap: mockLogAlertsMap,
 }))
 
-vi.mock('./link.mts', () => ({
-  installLinks: mockInstallLinks,
+vi.mock('../../utils/shadow-links.mts', () => ({
+  installPnpmLinks: mockInstallPnpmLinks,
 }))
 
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
@@ -79,7 +79,7 @@ describe('shadowPnpm', () => {
     vi.clearAllMocks()
 
     // Default mock implementations
-    mockInstallLinks.mockResolvedValue('/usr/bin/pnpm')
+    mockInstallPnpmLinks.mockResolvedValue('/usr/bin/pnpm')
     mockSpawn.mockReturnValue({
       process: {
         send: vi.fn(),
@@ -110,7 +110,7 @@ describe('shadowPnpm', () => {
   it('should handle pnpm add with single package', async () => {
     const result = await shadowPnpm(['add', 'lodash'])
 
-    expect(mockInstallLinks).toHaveBeenCalledWith(expect.any(String), 'pnpm')
+    expect(mockInstallPnpmLinks).toHaveBeenCalledWith(expect.any(String))
     expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
       ['pkg:npm/lodash'],
       expect.objectContaining({

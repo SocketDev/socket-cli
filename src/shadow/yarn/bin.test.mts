@@ -17,7 +17,7 @@ vi.mock('node:fs', async importOriginal => {
 })
 
 // Mock all dependencies with vi.hoisted for better type safety
-const mockInstallLinks = vi.hoisted(() => vi.fn())
+const mockInstallYarnLinks = vi.hoisted(() => vi.fn())
 const mockSpawn = vi.hoisted(() => vi.fn())
 const mockGetAlertsMapFromPurls = vi.hoisted(() => vi.fn())
 const mockLogAlertsMap = vi.hoisted(() => vi.fn())
@@ -31,8 +31,8 @@ vi.mock('../../utils/socket-package-alert.mts', () => ({
   logAlertsMap: mockLogAlertsMap,
 }))
 
-vi.mock('./link.mts', () => ({
-  installLinks: mockInstallLinks,
+vi.mock('../../utils/shadow-links.mts', () => ({
+  installYarnLinks: mockInstallYarnLinks,
 }))
 
 vi.mock('@socketsecurity/registry/lib/spawn', () => ({
@@ -69,7 +69,7 @@ describe('shadowYarn', () => {
     vi.clearAllMocks()
 
     // Default mock implementations
-    mockInstallLinks.mockResolvedValue('/usr/bin/yarn')
+    mockInstallYarnLinks.mockResolvedValue('/usr/bin/yarn')
     mockSpawn.mockReturnValue({
       process: {
         send: vi.fn(),
@@ -100,7 +100,7 @@ describe('shadowYarn', () => {
   it('should handle yarn add with single package', async () => {
     const result = await shadowYarn(['add', 'lodash'])
 
-    expect(mockInstallLinks).toHaveBeenCalledWith(expect.any(String), 'yarn')
+    expect(mockInstallYarnLinks).toHaveBeenCalledWith(expect.any(String))
     expect(mockGetAlertsMapFromPurls).toHaveBeenCalledWith(
       ['pkg:npm/lodash'],
       expect.objectContaining({
