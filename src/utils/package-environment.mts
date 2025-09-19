@@ -17,6 +17,7 @@ import { isNonEmptyString } from '@socketsecurity/registry/lib/strings'
 import { cmdPrefixMessage } from './cmd.mts'
 import { findUp } from './fs.mts'
 import constants, {
+  FLAG_VERSION,
   PACKAGE_LOCK_JSON,
   PNPM_LOCK_YAML,
   YARN_LOCK,
@@ -29,15 +30,19 @@ import type { SemVer } from 'semver'
 
 const {
   BUN,
+  BUN_LOCK,
+  BUN_LOCKB,
+  DOT_PACKAGE_LOCK_JSON,
   EXT_LOCK,
   EXT_LOCKB,
-  HIDDEN_PACKAGE_LOCK_JSON,
   NODE_MODULES,
   NPM,
   NPM_BUGGY_OVERRIDES_PATCHED_VERSION,
+  NPM_SHRINKWRAP_JSON,
   PACKAGE_JSON,
   PNPM,
   VLT,
+  VLT_LOCK_JSON,
   YARN,
   YARN_BERRY,
   YARN_CLASSIC,
@@ -186,52 +191,27 @@ const readLockFileByAgent: Map<Agent, ReadLockFile> = (() => {
 
 // The order of LOCKS properties IS significant as it affects iteration order.
 const LOCKS: Record<string, Agent> = {
-  [`bun${EXT_LOCK}`]: BUN,
-  [`bun${EXT_LOCKB}`]: BUN,
+  [BUN_LOCK]: BUN,
+  [BUN_LOCKB]: BUN,
   // If both package-lock.json and npm-shrinkwrap.json are present in the root
   // of a project, npm-shrinkwrap.json will take precedence and package-lock.json
   // will be ignored.
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#package-lockjson-vs-npm-shrinkwrapjson
-  'npm-shrinkwrap.json': NPM,
+  [NPM_SHRINKWRAP_JSON]: NPM,
   [PACKAGE_LOCK_JSON]: NPM,
   [PNPM_LOCK_YAML]: PNPM,
   [YARN_LOCK]: YARN_CLASSIC,
-  'vlt-lock.json': VLT,
+  [VLT_LOCK_JSON]: VLT,
   // Lastly, look for a hidden lock file which is present if .npmrc has package-lock=false:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
   //
   // Unlike the other LOCKS keys this key contains a directory AND filename so
   // it has to be handled differently.
-  [`${NODE_MODULES}/.package-lock.json`]: NPM,
+  [`${NODE_MODULES}/${DOT_PACKAGE_LOCK_JSON}`]: NPM,
 }
 
 async function getAgentExecPath(agent: Agent): Promise<string> {
   const binName = binByAgent.get(agent)!
-  if (binName === NPM) {
-    // Try to use constants.npmExecPath first, but verify it exists.
-    const npmPath = constants.npmExecPath
-    if (existsSync(npmPath)) {
-      return npmPath
-    }
-    // If npmExecPath doesn't exist, try common locations.
-    // Check npm in the same directory as node.
-    const nodeDir = path.dirname(process.execPath)
-    const npmInNodeDir = path.join(nodeDir, 'npm')
-    if (existsSync(npmInNodeDir)) {
-      return npmInNodeDir
-    }
-    // Fall back to whichBin.
-    return (await whichBin(binName, { nothrow: true })) ?? binName
-  }
-  if (binName === PNPM) {
-    // Try to use constants.pnpmExecPath first, but verify it exists.
-    const pnpmPath = constants.pnpmExecPath
-    if (existsSync(pnpmPath)) {
-      return pnpmPath
-    }
-    // Fall back to whichBin.
-    return (await whichBin(binName, { nothrow: true })) ?? binName
-  }
   return (await whichBin(binName, { nothrow: true })) ?? binName
 }
 
@@ -241,7 +221,7 @@ async function getAgentVersion(
   cwd: string,
 ): Promise<SemVer | undefined> {
   let result
-  const quotedCmd = `\`${agent} --version\``
+  const quotedCmd = `\`${agent} ${FLAG_VERSION}\``
   debugFn('stdio', `spawn: ${quotedCmd}`)
   try {
     result =
@@ -251,7 +231,7 @@ async function getAgentVersion(
       semver.coerce(
         // All package managers support the "--version" flag.
         (
-          await spawn(agentExecPath, ['--version'], {
+          await spawn(agentExecPath, [FLAG_VERSION], {
             cwd,
             shell: constants.WIN32,
           })
@@ -270,7 +250,7 @@ export async function detectPackageEnvironment({
 }: DetectOptions = {}): Promise<EnvDetails | PartialEnvDetails> {
   let lockPath = await findUp(Object.keys(LOCKS), { cwd })
   let lockName = lockPath ? path.basename(lockPath) : undefined
-  const isHiddenLockFile = lockName === HIDDEN_PACKAGE_LOCK_JSON
+  const isHiddenLockFile = lockName === DOT_PACKAGE_LOCK_JSON
   const pkgJsonPath = lockPath
     ? path.resolve(
         lockPath,

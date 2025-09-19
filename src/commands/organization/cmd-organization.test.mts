@@ -2,14 +2,18 @@ import path from 'node:path'
 
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket organization', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['organization', '--help', '--config', '{}'],
+    ['organization', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -47,7 +51,7 @@ describe('socket organization', async () => {
   )
 
   cmdit(
-    ['organization', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['organization', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should be ok with org name and id',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)

@@ -2,7 +2,7 @@ import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { normalizePath } from '@socketsecurity/registry/lib/path'
 import { isSpawnError, spawn } from '@socketsecurity/registry/lib/spawn'
 
-import constants from '../constants.mts'
+import constants, { FLAG_QUIET } from '../constants.mts'
 
 import type { CResult } from '../types.mts'
 import type { SpawnOptions } from '@socketsecurity/registry/lib/spawn'
@@ -408,7 +408,7 @@ export async function gitLocalBranchExists(
     // Will throw with exit code 1 if the branch does not exist.
     await spawn(
       'git',
-      ['show-ref', '--quiet', `refs/heads/${branch}`],
+      ['show-ref', FLAG_QUIET, `refs/heads/${branch}`],
       stdioIgnoreOptions,
     )
     return true

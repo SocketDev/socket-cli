@@ -1,13 +1,20 @@
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_JSON,
+  FLAG_MARKDOWN,
+  FLAG_ORG,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket scan report', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['scan', 'report', '--help', '--config', '{}'],
+    ['scan', 'report', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -78,7 +85,7 @@ describe('socket scan report', async () => {
   )
 
   cmdit(
-    ['scan', 'report', '--dry-run', '--config', '{}'],
+    ['scan', 'report', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -112,10 +119,10 @@ describe('socket scan report', async () => {
       'report',
       'org',
       'report-id',
-      '--dry-run',
-      '--org',
+      FLAG_DRY_RUN,
+      FLAG_ORG,
       'fakeOrg',
-      '--config',
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should be ok with org name and id',

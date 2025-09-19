@@ -1,13 +1,18 @@
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_ORG,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket repository view', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['repository', 'view', '--help', '--config', '{}'],
+    ['repository', 'view', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -49,7 +54,7 @@ describe('socket repository view', async () => {
   )
 
   cmdit(
-    ['repository', 'view', '--dry-run', '--config', '{}'],
+    ['repository', 'view', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -83,10 +88,10 @@ describe('socket repository view', async () => {
       'view',
       'a',
       'b',
-      '--org',
+      FLAG_ORG,
       'fakeOrg',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should require args with just dry-run',
@@ -110,8 +115,8 @@ describe('socket repository view', async () => {
       'repository',
       'view',
       'reponame',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should report missing org name',
@@ -144,8 +149,8 @@ describe('socket repository view', async () => {
     [
       'repository',
       'view',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should only report missing repo name with default org',
@@ -172,10 +177,10 @@ describe('socket repository view', async () => {
     [
       'repository',
       'view',
-      '--org',
+      FLAG_ORG,
       'forcedorg',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should only report missing repo name with --org flag',
@@ -203,8 +208,8 @@ describe('socket repository view', async () => {
       'repository',
       'view',
       'fakerepo',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken", "defaultOrg": "fakeOrg"}',
     ],
     'should run to dryrun',

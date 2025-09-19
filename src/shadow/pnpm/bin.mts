@@ -7,7 +7,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
 import { installLinks } from './link.mts'
-import constants, { PNPM_LOCK_YAML } from '../../constants.mts'
+import constants, { FLAG_DRY_RUN, PNPM_LOCK_YAML } from '../../constants.mts'
 import {
   getAlertsMapFromPnpmLockfile,
   getAlertsMapFromPurls,
@@ -71,7 +71,7 @@ export default async function shadowPnpm(
   const prefixArgs: string[] = []
   const suffixArgs = [...rawPnpmArgs, ...permArgs, ...otherArgs]
 
-  if (needsScanning && !rawPnpmArgs.includes('--dry-run')) {
+  if (needsScanning && !rawPnpmArgs.includes(FLAG_DRY_RUN)) {
     const acceptRisks = Boolean(process.env['SOCKET_CLI_ACCEPT_RISKS'])
     const viewAllRisks = Boolean(process.env['SOCKET_CLI_VIEW_ALL_RISKS'])
 

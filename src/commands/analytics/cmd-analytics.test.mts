@@ -1,14 +1,18 @@
 import semver from 'semver'
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket analytics', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['analytics', '--help', '--config', '{}'],
+    ['analytics', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -62,7 +66,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '--dry-run', '--config', '{}'],
+    ['analytics', FLAG_DRY_RUN, FLAG_CONFIG, '{}'],
     'should report missing token with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -91,8 +95,8 @@ describe('socket analytics', async () => {
       'org',
       '--repo',
       'bar',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should reject legacy flags',
@@ -117,7 +121,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['analytics', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should run to dryrun without args',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -135,7 +139,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', 'org', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['analytics', 'org', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should accept org arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -153,7 +157,13 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', 'repo', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    [
+      'analytics',
+      'repo',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
+      '{"apiToken":"fakeToken"}',
+    ],
     'should ask for repo name with repo arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -180,8 +190,8 @@ describe('socket analytics', async () => {
       'analytics',
       'repo',
       'daname',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept repo with arg',
@@ -201,7 +211,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '7', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['analytics', '7', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should accept time 7 arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -219,7 +229,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '30', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['analytics', '30', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should accept time 30 arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -237,7 +247,7 @@ describe('socket analytics', async () => {
   )
 
   cmdit(
-    ['analytics', '90', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['analytics', '90', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should accept time 90 arg',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -260,8 +270,8 @@ describe('socket analytics', async () => {
       'org',
       '--time',
       '7',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should report legacy flag',
@@ -290,8 +300,8 @@ describe('socket analytics', async () => {
       'analytics',
       'org',
       '7',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept org and time arg',
@@ -316,8 +326,8 @@ describe('socket analytics', async () => {
       'repo',
       'slowpo',
       '30',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should accept repo and time arg',

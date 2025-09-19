@@ -1,12 +1,17 @@
 import { describe, expect } from 'vitest'
 
 import { cmdit, spawnSocketCli } from '../../test/utils.mts'
-import constants, { API_V0_URL } from '../constants.mts'
+import constants, {
+  API_V0_URL,
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+} from '../constants.mts'
 
 describe('socket root command', async () => {
   const { binCliPath } = constants
 
-  cmdit(['--help', '--config', '{}'], 'should support --help', async cmd => {
+  cmdit([FLAG_HELP, FLAG_CONFIG, '{}'], 'should support --help', async cmd => {
     const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
     expect(stdout).toMatchInlineSnapshot(`
       "CLI for Socket.dev
@@ -103,7 +108,7 @@ describe('socket root command', async () => {
   })
 
   cmdit(
-    ['mootools', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['mootools', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)

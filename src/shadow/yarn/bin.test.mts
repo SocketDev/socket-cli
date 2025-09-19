@@ -3,6 +3,7 @@ import { promises as fs } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import shadowYarn from './bin.mts'
+import { FLAG_DRY_RUN } from '../../constants.mts'
 
 // Mock fs module
 vi.mock('node:fs', async importOriginal => {
@@ -210,7 +211,7 @@ describe('shadowYarn', () => {
   })
 
   it('should handle dry-run flag by skipping scanning', async () => {
-    await shadowYarn(['add', 'lodash', '--dry-run'])
+    await shadowYarn(['add', 'lodash', FLAG_DRY_RUN])
 
     expect(mockGetAlertsMapFromPurls).not.toHaveBeenCalled()
   })

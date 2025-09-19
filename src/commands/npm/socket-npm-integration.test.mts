@@ -7,7 +7,11 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn, spawnSync } from '@socketsecurity/registry/lib/spawn'
 
 import { testPath } from '../../../test/utils.mts'
-import constants from '../../constants.mts'
+import constants, {
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_SILENT,
+} from '../../constants.mts'
 
 import type { SpawnError } from '@socketsecurity/registry/lib/spawn'
 
@@ -46,7 +50,7 @@ if (!npmDirs.length) {
         },
         async () => {
           // Ensure npm is installed in the fixture.
-          spawnSync('npm', ['install', ...(useDebug ? [] : ['--silent'])], {
+          spawnSync('npm', ['install', ...(useDebug ? [] : [FLAG_SILENT])], {
             cwd: npmPath,
             stdio: useDebug ? 'inherit' : 'ignore',
           })
@@ -56,7 +60,7 @@ if (!npmDirs.length) {
           try {
             const result = await spawn(
               constants.execPath,
-              [entryPath, 'npm', '--help'],
+              [entryPath, 'npm', FLAG_HELP],
               {
                 cwd: npmPath,
                 env: {
@@ -96,7 +100,7 @@ if (!npmDirs.length) {
                 entryPath,
                 'npm',
                 'install',
-                '--dry-run',
+                FLAG_DRY_RUN,
                 '--no-audit',
                 '--no-fund',
                 'bowserify',

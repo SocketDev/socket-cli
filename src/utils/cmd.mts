@@ -1,12 +1,12 @@
+import { FLAG_CONFIG, FLAG_HELP } from '../constants.mts'
 import { camelToKebab } from './strings.mts'
 
-const CONFIG_FLAG_NAME = 'config'
-const CONFIG_FLAG_LONG_NAME = `--${CONFIG_FLAG_NAME}`
+const CONFIG_FLAG_LONG_NAME = FLAG_CONFIG
 const CONFIG_FLAG_ASSIGNMENT = `${CONFIG_FLAG_LONG_NAME}=`
 const CONFIG_FLAG_ASSIGNMENT_LENGTH = CONFIG_FLAG_ASSIGNMENT.length
 
-const configFlags = new Set(['--config'])
-const helpFlags = new Set(['--help', '-h'])
+const configFlags = new Set([FLAG_CONFIG])
+const helpFlags = new Set([FLAG_HELP, '-h'])
 
 /**
  * Convert command arguments to a properly formatted string representation.

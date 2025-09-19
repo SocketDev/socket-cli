@@ -1,13 +1,18 @@
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_QUIET,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe.skipIf(constants.WIN32)('socket yarn', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['yarn', '--help', '--config', '{}'],
+    ['yarn', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -47,7 +52,7 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
   )
 
   cmdit(
-    ['yarn', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['yarn', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd, {
@@ -65,8 +70,8 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
       'yarn',
       'add',
       'lodash',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should handle add with --dry-run flag',
@@ -83,11 +88,11 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
     [
       'yarn',
       'dlx',
-      '--quiet',
+      FLAG_QUIET,
       'cowsay@^1.6.0',
       'hello',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should handle dlx with version',
@@ -101,7 +106,7 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
   )
 
   cmdit(
-    ['yarn', 'install', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['yarn', 'install', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should handle install with --dry-run flag',
     async cmd => {
       const { code } = await spawnSocketCli(binCliPath, cmd, {
@@ -117,8 +122,8 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
       'yarn',
       'add',
       '@types/node@^20.0.0',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should handle scoped packages with version',

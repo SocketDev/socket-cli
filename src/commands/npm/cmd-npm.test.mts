@@ -1,13 +1,18 @@
 import { describe, expect } from 'vitest'
 
-import constants from '../../../src/constants.mts'
+import constants, {
+  FLAG_CONFIG,
+  FLAG_DRY_RUN,
+  FLAG_HELP,
+  FLAG_SILENT,
+} from '../../../src/constants.mts'
 import { cmdit, spawnSocketCli } from '../../../test/utils.mts'
 
 describe('socket npm', async () => {
   const { binCliPath } = constants
 
   cmdit(
-    ['npm', '--help', '--config', '{}'],
+    ['npm', FLAG_HELP, FLAG_CONFIG, '{}'],
     'should support --help',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -47,7 +52,7 @@ describe('socket npm', async () => {
   )
 
   cmdit(
-    ['npm', '--dry-run', '--config', '{"apiToken":"fakeToken"}'],
+    ['npm', FLAG_DRY_RUN, FLAG_CONFIG, '{"apiToken":"fakeToken"}'],
     'should require args with just dry-run',
     async cmd => {
       const { code, stderr, stdout } = await spawnSocketCli(binCliPath, cmd)
@@ -68,11 +73,11 @@ describe('socket npm', async () => {
     [
       'npm',
       'exec',
-      '--silent',
+      FLAG_SILENT,
       'cowsay@^1.6.0',
       'hello',
-      '--dry-run',
-      '--config',
+      FLAG_DRY_RUN,
+      FLAG_CONFIG,
       '{"apiToken":"fakeToken"}',
     ],
     'should handle exec with version',
