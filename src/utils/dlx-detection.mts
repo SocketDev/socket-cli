@@ -64,7 +64,9 @@ export function isRunningInTemporaryExecutor(): boolean {
     '.pnpm-store', // pnpm dlx temporary store
     'dlx-', // Common dlx directory prefix
     '.yarn/$$', // Yarn Berry PnP virtual packages
-    path.sep === '\\' ? 'AppData\\Local\\Temp\\xfs-' : 'AppData/Local/Temp/xfs-', // Yarn on Windows
+    path.sep === '\\'
+      ? 'AppData\\Local\\Temp\\xfs-'
+      : 'AppData/Local/Temp/xfs-', // Yarn on Windows
   ]
 
   return tempPatterns.some(pattern => normalizedDirname.includes(pattern))
@@ -138,7 +140,9 @@ export function shouldSkipShadow(
     '.pnpm-store', // pnpm dlx temporary store
     'dlx-', // Common dlx directory prefix
     '.yarn/$$', // Yarn Berry PnP virtual packages
-    path.sep === '\\' ? 'AppData\\Local\\Temp\\xfs-' : 'AppData/Local/Temp/xfs-', // Yarn on Windows
+    path.sep === '\\'
+      ? 'AppData\\Local\\Temp\\xfs-'
+      : 'AppData/Local/Temp/xfs-', // Yarn on Windows
   ]
 
   return tempPatterns.some(pattern => normalizedCwd.includes(pattern))
