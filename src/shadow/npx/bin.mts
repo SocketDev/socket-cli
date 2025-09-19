@@ -1,7 +1,7 @@
 import { NPX } from '../../constants.mts'
-import shadowNpmBin from '../npm/bin.mts'
+import shadowNpmBase from '../npm-base.mts'
 
-import type { ShadowBinOptions, ShadowBinResult } from '../npm/bin.mts'
+import type { ShadowBinOptions, ShadowBinResult } from '../npm-base.mts'
 import type { SpawnExtra } from '@socketsecurity/registry/lib/spawn'
 
 export type { ShadowBinOptions, ShadowBinResult }
@@ -11,5 +11,5 @@ export default async function shadowNpxBin(
   options?: ShadowBinOptions | undefined,
   extra?: SpawnExtra | undefined,
 ): Promise<ShadowBinResult> {
-  return shadowNpmBin(NPX, args, options, extra)
+  return await shadowNpmBase(NPX, args, options, extra)
 }
