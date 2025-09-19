@@ -1,5 +1,3 @@
-import terminalLink from 'terminal-link'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleAuditLog } from './handle-audit-log.mts'
@@ -18,6 +16,7 @@ import {
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
+import { webLink } from '../../utils/terminal-link.mts'
 
 import type {
   CliCommandConfig,
@@ -77,7 +76,7 @@ async function run(
       ${getFlagApiRequirementsOutput(`${parentName}:${CMD_NAME}`)}
 
     This feature requires an Enterprise Plan. To learn more about getting access
-    to this feature and many more, please visit ${constants.SOCKET_WEBSITE_URL}/pricing
+    to this feature and many more, please visit the ${webLink(`${constants.SOCKET_WEBSITE_URL}/pricing`, 'Socket pricing page')}.
 
     The type FILTER arg is an enum. Defaults to any. It should be one of these:
       associateLabel, cancelInvitation, changeMemberRole, changePlanSubscriptionSeats,
@@ -146,7 +145,7 @@ async function run(
     {
       nook: true,
       test: noLegacy,
-      message: `Legacy flags are no longer supported. See ${terminalLink('v1 migration guide', V1_MIGRATION_GUIDE_URL)}.`,
+      message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
       fail: `received legacy flags`,
     },
     {

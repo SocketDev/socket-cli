@@ -13,6 +13,7 @@ import {
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
+import { mailtoLink } from '../../utils/terminal-link.mts'
 
 import type {
   CliCommandConfig,
@@ -116,7 +117,7 @@ async function run(
       - Special access
 
     This feature requires a Threat Feed license. Please contact
-    sales@socket.dev if you are interested in purchasing this access.
+    ${mailtoLink('sales@socket.dev')} if you are interested in purchasing this access.
 
     Options
       ${getFlagListOutput(config.flags)}

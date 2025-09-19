@@ -27,6 +27,7 @@ import {
 } from '../../utils/output-formatting.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
 import { readOrDefaultSocketJsonUp } from '../../utils/socket-json.mts'
+import { socketDashboardLink } from '../../utils/terminal-link.mts'
 import { detectManifestActions } from '../manifest/detect-manifest-actions.mts'
 
 import type { REPORT_LEVEL } from './types.mts'
@@ -200,7 +201,7 @@ async function run(
     Note: for a first run you probably want to set --default-branch to indicate
           the default branch name, like "main" or "master".
 
-    The "alerts page" (https://socket.dev/dashboard/org/YOURORG/alerts) will show
+    The ${socketDashboardLink('/org/YOURORG/alerts', '"alerts page"')} will show
     the results from the last scan designated as the "pending head" on the branch
     configured on Socket to be the "default branch". When creating a scan the
     --set-as-alerts-page flag will default to true to update this. You can prevent

@@ -1,5 +1,3 @@
-import terminalLink from 'terminal-link'
-
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleListScans } from './handle-list-scans.mts'
@@ -14,6 +12,7 @@ import {
   getFlagListOutput,
 } from '../../utils/output-formatting.mts'
 import { hasDefaultApiToken } from '../../utils/sdk.mts'
+import { webLink } from '../../utils/terminal-link.mts'
 
 import type {
   CliCommandConfig,
@@ -152,7 +151,7 @@ async function run(
     {
       nook: true,
       test: noLegacy,
-      message: `Legacy flags are no longer supported. See ${terminalLink('v1 migration guide', V1_MIGRATION_GUIDE_URL)}.`,
+      message: `Legacy flags are no longer supported. See the ${webLink(V1_MIGRATION_GUIDE_URL, 'v1 migration guide')}.`,
       fail: `received legacy flags`,
     },
     {

@@ -1,5 +1,3 @@
-import terminalLink from 'terminal-link'
-
 import { joinAnd } from '@socketsecurity/registry/lib/arrays'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { confirm, password, select } from '@socketsecurity/registry/lib/prompts'
@@ -19,6 +17,7 @@ import {
 import { failMsgWithBadge } from '../../utils/fail-msg-with-badge.mts'
 import { getEnterpriseOrgs, getOrgSlugs } from '../../utils/organization.mts'
 import { setupSdk } from '../../utils/sdk.mts'
+import { socketDocsLink } from '../../utils/terminal-link.mts'
 import { setupTabCompletion } from '../install/setup-tab-completion.mts'
 import { fetchOrganization } from '../organization/fetch-organization-list.mts'
 
@@ -34,10 +33,7 @@ export async function attemptLogin(
   apiBaseUrl ??= getConfigValueOrUndef(CONFIG_KEY_API_BASE_URL) ?? undefined
   apiProxy ??= getConfigValueOrUndef(CONFIG_KEY_API_PROXY) ?? undefined
   const apiTokenInput = await password({
-    message: `Enter your ${terminalLink(
-      'Socket.dev API token',
-      'https://docs.socket.dev/docs/api-keys',
-    )} (leave blank to use a limited public token)`,
+    message: `Enter your ${socketDocsLink('/docs/api-keys', 'Socket.dev API token')} (leave blank to use a limited public token)`,
   })
 
   if (apiTokenInput === undefined) {
