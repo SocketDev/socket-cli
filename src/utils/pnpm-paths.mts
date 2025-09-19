@@ -10,6 +10,8 @@ function exitWithBinPathError(binName: string): never {
   // could not be found.
   // eslint-disable-next-line n/no-process-exit
   process.exit(127)
+  // This line is never reached in production, but helps tests.
+  throw new Error('process.exit called')
 }
 
 let _pnpmBinPath: string | undefined

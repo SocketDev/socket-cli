@@ -14,7 +14,7 @@ import constants, {
 import { findUp } from './fs.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
 import { isYarnBerry } from './yarn-version.mts'
-import shadowBin from '../shadow/npm/bin.mts'
+import shadowNpmBin from '../shadow/npm/bin.mts'
 
 import type { ShadowBinOptions, ShadowBinResult } from '../shadow/npm/bin.mts'
 import type { CResult } from '../types.mts'
@@ -148,7 +148,7 @@ export async function spawnDlx(
     }
     spawnArgs.push(packageString, ...args)
 
-    return await shadowBin(
+    return await shadowNpmBin(
       binName as 'npm' | 'npx',
       spawnArgs,
       finalShadowOptions,
