@@ -19,7 +19,7 @@ import {
 
 import {
   getConfigValueOrUndef,
-  isReadOnlyConfig,
+  isConfigFromFlag,
   overrideCachedConfig,
   overrideConfigApiToken,
 } from './config.mts'
@@ -27,6 +27,7 @@ import { isDebug } from './debug.mts'
 import { getFlagListOutput, getHelpListOutput } from './output-formatting.mts'
 import constants, {
   API_V0_URL,
+  CONFIG_KEY_API_TOKEN,
   CONFIG_KEY_DEFAULT_ORG,
   NPM,
   NPX,
@@ -126,37 +127,83 @@ function findBestCommandMatch(
 }
 
 /**
+ * Determine the origin of the API token.
+ */
+function getTokenOrigin(): string {
+  if (constants.ENV.SOCKET_CLI_NO_API_TOKEN) {
+    return ''
+  }
+  if (constants.ENV.SOCKET_CLI_API_TOKEN) {
+    return '(env)'
+  }
+  const configToken = getConfigValueOrUndef(CONFIG_KEY_API_TOKEN)
+  if (configToken) {
+    return isConfigFromFlag() ? '(--config flag)' : '(config)'
+  }
+  return ''
+}
+
+/**
  * Generate the ASCII banner header for Socket CLI commands.
  */
-function getAsciiHeader(command: string, orgFlag: string | undefined) {
+function getAsciiHeader(command: string, orgFlag: string | undefined, compactMode: boolean = false) {
   // Note: In tests we return <redacted> because otherwise snapshots will fail.
   const { REDACTED } = constants
   const redacting = constants.ENV.VITEST
+
+  // Version display: show hash in debug mode, otherwise show semantic version.
+  const fullVersion = constants.ENV.INLINED_SOCKET_CLI_VERSION
+  const versionHash = constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
   const cliVersion = redacting
     ? REDACTED
-    : constants.ENV.INLINED_SOCKET_CLI_VERSION_HASH
+    : isDebug()
+      ? versionHash
+      : fullVersion
+
   const nodeVersion = redacting ? REDACTED : process.version
   const defaultOrg = getConfigValueOrUndef(CONFIG_KEY_DEFAULT_ORG)
-  const readOnlyConfig = isReadOnlyConfig() ? '*' : '.'
+  const readOnlyConfig = isConfigFromFlag() ? '*' : '.'
+
+  // Token display with origin indicator.
+  const tokenPrefix = getVisibleTokenPrefix()
+  const tokenOrigin = redacting ? '' : getTokenOrigin()
+  const noApiToken = constants.ENV.SOCKET_CLI_NO_API_TOKEN
   const shownToken = redacting
     ? REDACTED
-    : getVisibleTokenPrefix() || '(not set)'
+    : noApiToken
+      ? colors.red('(disabled)')
+      : tokenPrefix
+        ? `${colors.green(tokenPrefix)}***${tokenOrigin ? ` ${tokenOrigin}` : ''}`
+        : colors.yellow('(not set)')
+
   const relCwd = redacting ? REDACTED : normalizePath(tildify(process.cwd()))
-  // Note: we must redact org when creating snapshots because dev machine probably
-  //       has a default org set but CI won't. Showing --org is fine either way.
-  const orgPart = orgFlag
-    ? `--org: ${orgFlag}`
-    : redacting
-      ? 'org: <redacted>'
-      : defaultOrg
-        ? `default org: ${defaultOrg}`
-        : '(org not set)'
+
+  // Consolidated org display format.
+  const orgPart = redacting
+    ? 'org: <redacted>'
+    : orgFlag
+      ? `org: ${colors.cyan(orgFlag)} (--org flag)`
+      : defaultOrg && defaultOrg !== 'null'
+        ? `org: ${colors.cyan(defaultOrg)} (config)`
+        : colors.yellow('org: (not set)')
+
+  // Compact mode for CI/automation.
+  if (compactMode) {
+    const compactToken = noApiToken
+      ? '(disabled)'
+      : tokenPrefix
+        ? `${tokenPrefix}***${tokenOrigin ? ` ${tokenOrigin}` : ''}`
+        : '(not set)'
+    const compactOrg = orgFlag || (defaultOrg && defaultOrg !== 'null' ? defaultOrg : '(not set)')
+    return `Socket CLI v${cliVersion} | cmd: ${command} | org: ${compactOrg} | token: ${compactToken}`
+  }
+
   // Note: We could draw these with ascii box art instead but I worry about
   //       portability and paste-ability. "simple" ascii chars just work.
   const body = `
    _____         _       _        /---------------
-  |   __|___ ___| |_ ___| |_      | Socket.dev CLI ver ${cliVersion}
-  |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, API token: ${shownToken}, ${orgPart}
+  |   __|___ ___| |_ ___| |_      | Socket.dev CLI v${cliVersion}
+  |__   | ${readOnlyConfig} |  _| '_| -_|  _|     | Node: ${nodeVersion}, token: ${shownToken}, ${orgPart}
   |_____|___|___|_,_|___|_|.dev   | Command: \`${command}\`, cwd: ${relCwd}
   `.trim()
   // Note: logger will auto-append a newline.
@@ -204,7 +251,7 @@ function shouldSuppressBanner(flags: Record<string, unknown>): boolean {
 /**
  * Emit the Socket CLI banner to stderr for branding and debugging.
  */
-export function emitBanner(name: string, orgFlag: string | undefined) {
+export function emitBanner(name: string, orgFlag: string | undefined, compactMode: boolean = false) {
   // Print a banner at the top of each command.
   // This helps with brand recognition and marketing.
   // It also helps with debugging since it contains version and command details.
@@ -213,7 +260,7 @@ export function emitBanner(name: string, orgFlag: string | undefined) {
   //       and pipe the result to other tools. By emitting the banner over stderr
   //       you can do something like `socket scan view xyz | jq | process`.
   //       The spinner also emits over stderr for example.
-  logger.error(getAsciiHeader(name, orgFlag))
+  logger.error(getAsciiHeader(name, orgFlag, compactMode))
 }
 
 // For debugging. Whenever you call meowOrExit it will store the command here
@@ -343,10 +390,12 @@ export async function meowWithSubcommands(
   })
 
   const {
+    compactHeader: compactHeaderFlag,
     config: configFlag,
     org: orgFlag,
     spinner: spinnerFlag,
   } = cli1.flags as {
+    compactHeader: boolean
     config: string
     org: string
     spinner: boolean
@@ -384,7 +433,8 @@ export async function meowWithSubcommands(
 
   if (configOverrideResult?.ok === false) {
     if (!shouldSuppressBanner(cli1.flags)) {
-      emitBanner(name, orgFlag)
+      const compactMode = Boolean(compactHeaderFlag || constants.ENV.CI)
+      emitBanner(name, orgFlag, compactMode)
       // Add newline in stderr.
       logger.error('')
     }
@@ -631,7 +681,8 @@ export async function meowWithSubcommands(
 
   // ...else we provide basic instructions and help.
   if (!shouldSuppressBanner(cli2.flags)) {
-    emitBanner(name, orgFlag)
+    const compactMode = Boolean(cli2.flags['compactHeader'] || constants.ENV.CI)
+    emitBanner(name, orgFlag, compactMode)
     // Meow will add newline so don't add stderr spacing here.
   }
   if (!cli2.flags['help'] && cli2.flags['dryRun']) {
@@ -680,11 +731,13 @@ export function meowOrExit({
   })
 
   const {
+    compactHeader: compactHeaderFlag,
     help: helpFlag,
     org: orgFlag,
     spinner: spinnerFlag,
     version: versionFlag,
   } = cli.flags as {
+    compactHeader: boolean
     help: boolean
     org: string
     spinner: boolean
@@ -700,7 +753,8 @@ export function meowOrExit({
   }
 
   if (!shouldSuppressBanner(cli.flags)) {
-    emitBanner(command, orgFlag)
+    const compactMode = Boolean(compactHeaderFlag || constants.ENV.CI)
+    emitBanner(command, orgFlag, compactMode)
     // Add newline in stderr.
     // Meow help adds a newline too so we do it here.
     logger.error('')
