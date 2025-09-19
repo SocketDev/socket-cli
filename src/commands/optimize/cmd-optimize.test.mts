@@ -62,7 +62,7 @@ async function createTempFixture(sourceDir: string): Promise<string> {
   const destPackageJson = path.join(tempDir, PACKAGE_JSON)
   await promises.copyFile(sourcePackageJson, destPackageJson)
 
-  // Copy lock file if it exists.
+  // Copy lockfile if it exists.
   const sourceLockFile = path.join(sourceDir, PNPM_LOCK_YAML)
   if (existsSync(sourceLockFile)) {
     const destLockFile = path.join(tempDir, PNPM_LOCK_YAML)
@@ -580,7 +580,7 @@ describe('socket optimize', async () => {
         const destPackageJson = path.join(tempDir, PACKAGE_JSON)
         await promises.copyFile(sourcePackageJson, destPackageJson)
 
-        // Copy the npm lock file.
+        // Copy the npm lockfile.
         const sourceLock = path.join(npmFixtureDir, 'package-lock.json')
         const destLock = path.join(tempDir, 'package-lock.json')
         await promises.copyFile(sourceLock, destLock)

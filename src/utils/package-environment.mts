@@ -228,7 +228,7 @@ const LOCKS: Record<string, Agent> = {
   [PNPM_LOCK_YAML]: PNPM,
   [YARN_LOCK]: YARN_CLASSIC,
   [VLT_LOCK_JSON]: VLT,
-  // Lastly, look for a hidden lock file which is present if .npmrc has package-lock=false:
+  // Lastly, look for a hidden lockfile which is present if .npmrc has package-lock=false:
   // https://docs.npmjs.com/cli/v10/configuring-npm/package-lock-json#hidden-lockfiles
   //
   // Unlike the other LOCKS keys this key contains a directory AND filename so
@@ -524,7 +524,7 @@ export async function detectAndValidatePackageEnvironment(
       ),
     }
   }
-  const lockName = details.lockName ?? 'lock file'
+  const lockName = details.lockName ?? 'lockfile'
   if (details.lockName === undefined || details.lockSrc === undefined) {
     return {
       ok: false,
