@@ -3,7 +3,7 @@ import terminalLink from 'terminal-link'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { handleViewRepo } from './handle-view-repo.mts'
-import constants, { V1_MIGRATION_GUIDE_URL } from '../../constants.mts'
+import constants, { FLAG_JSON, FLAG_MARKDOWN, V1_MIGRATION_GUIDE_URL } from '../../constants.mts'
 import { commonFlags, outputFlags } from '../../flags.mts'
 import { checkCommandInput } from '../../utils/check-input.mts'
 import { determineOrgSlug } from '../../utils/determine-org-slug.mts'
@@ -122,7 +122,7 @@ async function run(
       nook: true,
       test: !json || !markdown,
       message:
-        'The `--json` and `--markdown` flags can not be used at the same time',
+        `The \`${FLAG_JSON}\` and \`${FLAG_MARKDOWN}\` flags can not be used at the same time`,
       fail: 'bad',
     },
     {
