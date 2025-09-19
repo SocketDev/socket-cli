@@ -1,3 +1,23 @@
+/**
+ * Alerts map utilities for Socket CLI.
+ * Manages security alerts and vulnerability mappings for packages.
+ *
+ * Key Functions:
+ * - getAlertsMapFromPnpmLockfile: Extract alerts from pnpm lockfile
+ * - getAlertsMapFromPurls: Get alerts for specific package URLs
+ * - processAlertsApiResponse: Process API response into alerts map
+ *
+ * Alert Processing:
+ * - Filters alerts based on socket.yml configuration
+ * - Maps package URLs to security vulnerabilities
+ * - Supports batch processing for performance
+ *
+ * Integration:
+ * - Works with pnpm lockfiles for dependency scanning
+ * - Uses Socket API for vulnerability data
+ * - Respects filter configurations from socket.yml
+ */
+
 import { arrayUnique } from '@socketsecurity/registry/lib/arrays'
 import { debugDir } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'

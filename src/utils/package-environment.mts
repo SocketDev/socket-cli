@@ -1,3 +1,29 @@
+/**
+ * Package environment detection utilities for Socket CLI.
+ * Analyzes project environment and package manager configuration.
+ *
+ * Key Functions:
+ * - getPackageEnvironment: Detect package manager and project details
+ * - makeConcurrentExecLimit: Calculate concurrent execution limits
+ *
+ * Environment Detection:
+ * - Detects npm, pnpm, yarn, bun package managers
+ * - Analyzes lockfiles for version information
+ * - Determines Node.js and engine requirements
+ * - Identifies workspace configurations
+ *
+ * Features:
+ * - Browser target detection via browserslist
+ * - Engine compatibility checking
+ * - Package manager version detection
+ * - Workspace and monorepo support
+ *
+ * Usage:
+ * - Auto-detecting appropriate package manager
+ * - Validating environment compatibility
+ * - Configuring concurrent execution limits
+ */
+
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 

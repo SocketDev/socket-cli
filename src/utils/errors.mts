@@ -1,3 +1,23 @@
+/**
+ * Error utilities for Socket CLI.
+ * Provides consistent error handling, formatting, and message extraction.
+ *
+ * Key Classes:
+ * - AuthError: Authentication failures (401/403 responses)
+ * - InputError: User input validation failures
+ *
+ * Key Functions:
+ * - captureException: Send errors to Sentry for monitoring
+ * - formatErrorWithDetail: Format errors with detailed context
+ * - getErrorCause: Get error cause with fallback to UNKNOWN_ERROR
+ * - getErrorMessage: Extract error message from any thrown value
+ *
+ * Error Handling Strategy:
+ * - Always prefer specific error types over generic errors
+ * - Use formatErrorWithDetail for user-facing error messages
+ * - Log errors to Sentry in production for monitoring
+ */
+
 import { setTimeout as wait } from 'node:timers/promises'
 
 import { debugFn } from '@socketsecurity/registry/lib/debug'

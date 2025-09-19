@@ -1,3 +1,26 @@
+/**
+ * Ecosystem type utilities for Socket CLI.
+ * Manages package ecosystem identifiers and mappings.
+ *
+ * Constants:
+ * - ALL_ECOSYSTEMS: Complete list of supported ecosystems
+ * - ECOSYSTEM_MAP: Map ecosystem strings to PURL types
+ *
+ * Type Definitions:
+ * - PURL_Type: Package URL type from Socket SDK
+ *
+ * Supported Ecosystems:
+ * - apk, bitbucket, cargo, chrome, cocoapods, composer
+ * - conan, conda, cran, deb, docker, gem, generic
+ * - github, gitlab, go, hackage, hex, huggingface
+ * - maven, mlflow, npm, nuget, oci, pub, pypi, rpm, swift
+ *
+ * Usage:
+ * - Validates ecosystem types
+ * - Maps between different ecosystem representations
+ * - Ensures type safety for ecosystem operations
+ */
+
 import { NPM } from '../constants.mts'
 
 import type { EcosystemString } from '@socketsecurity/registry'
