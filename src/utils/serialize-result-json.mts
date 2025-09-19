@@ -31,7 +31,8 @@ export function serializeResultJson(data: CResult<unknown>): string {
       'There was a problem converting the data set to JSON. Please try again without --json'
 
     logger.fail(message)
-    debugDir('inspect', { error: e })
+    debugFn('error', 'JSON serialization failed')
+    debugDir('error', e)
 
     // This could be caused by circular references, which is an "us" problem.
     return `${JSON.stringify({

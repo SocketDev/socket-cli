@@ -145,7 +145,7 @@ export async function fetchGhsaDetails(
     }
   } catch (e) {
     debugFn('error', formatErrorWithDetail('Failed to fetch GHSA details', e))
-    debugDir('inspect', { error: e })
+    debugDir('error', e)
   }
 
   return results
@@ -270,8 +270,9 @@ export async function setGitRemoteGithubRepoUrl(
     await spawn('git', ['remote', 'set-url', 'origin', url], stdioIgnoreOptions)
     return true
   } catch (e) {
-    debugFn('error', `caught: ${quotedCmd} failed`)
-    debugDir('inspect', { error: e })
+    debugFn('error', `Git command failed: ${quotedCmd}`)
+    debugDir('inspect', { cmd: quotedCmd })
+    debugDir('error', e)
   }
   return false
 }

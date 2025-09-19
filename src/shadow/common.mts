@@ -6,6 +6,7 @@ import { logger } from '@socketsecurity/registry/lib/logger'
 
 import constants, { FLAG_DRY_RUN } from '../constants.mts'
 import { getAlertsMapFromPurls } from '../utils/alerts-map.mts'
+import { debugScan } from '../utils/debug.mts'
 import { safeNpmSpecToPurl } from '../utils/npm-spec.mts'
 import { logAlertsMap } from '../utils/socket-package-alert.mts'
 
@@ -69,24 +70,13 @@ export async function extractPackagePurlsFromPackageJson(
       }
     }
 
-    if (isDebug()) {
-      spinner?.stop()
-      debugFn(
-        'notice',
-        `scanning: ${packagePurls.length} direct dependencies from package.json`,
-      )
-      spinner?.start()
-    }
+    debugScan('start', packagePurls.length)
   } catch (e) {
-    if (isDebug()) {
-      spinner?.stop()
-      debugFn(
-        'error',
-        'caught: package.json read error during dependency scanning',
-      )
-      debugDir('inspect', { error: e })
-      spinner?.start()
-    }
+    debugFn(
+      'warn',
+      'Package.json not found or invalid during dependency scanning',
+    )
+    debugDir('error', e)
   }
 
   return packagePurls
@@ -157,12 +147,8 @@ export async function scanPackagesAndLogAlerts(
     return { shouldExit: false }
   }
 
-  if (isDebug()) {
-    spinner?.stop()
-    debugFn('notice', 'scanning: packages before operation')
-    debugDir('inspect', { packagePurls })
-    spinner?.start()
-  }
+  debugScan('start', packagePurls.length)
+  debugDir('inspect', { packagePurls })
 
   try {
     const alertsMap = await getAlertsMapFromPurls(packagePurls, {
@@ -200,18 +186,12 @@ export async function scanPackagesAndLogAlerts(
     if (e instanceof Error && e.message === 'process.exit called') {
       throw e
     }
-    if (isDebug()) {
-      debugFn('error', 'caught: package scanning error')
-      debugDir('inspect', { error: e })
-    }
+    debugScan('error', undefined, e)
     // Continue with installation if scanning fails.
   }
 
-  if (isDebug()) {
-    spinner?.stop()
-    debugFn('notice', 'complete: scanning, proceeding with operation')
-    debugDir('inspect', { args: rawArgs.slice(1) })
-  }
+  debugScan('complete', packagePurls.length)
+  debugDir('inspect', { args: rawArgs.slice(1) })
 
   return { shouldExit: false }
 }

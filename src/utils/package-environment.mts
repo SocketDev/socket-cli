@@ -263,8 +263,9 @@ async function getAgentVersion(
         ).stdout,
       ) ?? undefined
   } catch (e) {
-    debugFn('error', `caught: ${quotedCmd} failed`)
-    debugDir('inspect', { error: e })
+    debugFn('error', `Package manager command failed: ${quotedCmd}`)
+    debugDir('inspect', { cmd: quotedCmd })
+    debugDir('error', e)
   }
   return result
 }

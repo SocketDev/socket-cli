@@ -181,8 +181,8 @@ ${table}
     logger.fail(
       'There was a problem converting the logs to Markdown, please try the `--json` flag',
     )
-    debugFn('error', 'caught: markdown conversion error')
-    debugDir('inspect', { error: e })
+    debugFn('error', 'Markdown conversion failed')
+    debugDir('error', e)
     return 'Failed to generate the markdown report'
   }
 }
