@@ -227,8 +227,8 @@ export function getSupportedConfigKeys() {
   return [...supportedConfigKeys]
 }
 
-export function isReadOnlyConfig() {
-  return _readOnlyConfig
+export function isConfigFromFlag() {
+  return _configFromFlag
 }
 
 export function isSensitiveConfigKey(key: string): key is keyof LocalConfig {
@@ -241,7 +241,7 @@ export function isSupportedConfigKey(key: string): key is keyof LocalConfig {
 
 let _cachedConfig: LocalConfig | undefined
 // When using --config or SOCKET_CLI_CONFIG, do not persist the config.
-let _readOnlyConfig = false
+let _configFromFlag = false
 
 export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   debugFn('notice', 'override: full config (not stored)')
@@ -262,7 +262,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
   } catch {
     // Force set an empty config to prevent accidentally using system settings.
     _cachedConfig = {} as LocalConfig
-    _readOnlyConfig = true
+    _configFromFlag = true
 
     return {
       ok: false,
@@ -274,7 +274,7 @@ export function overrideCachedConfig(jsonConfig: unknown): CResult<undefined> {
 
   // @ts-ignore Override an illegal object.
   _cachedConfig = config as LocalConfig
-  _readOnlyConfig = true
+  _configFromFlag = true
 
   // Normalize apiKey to apiToken.
   if (_cachedConfig['apiKey']) {
@@ -297,7 +297,7 @@ export function overrideConfigApiToken(apiToken: unknown) {
     ...config,
     ...(apiToken === undefined ? {} : { apiToken: String(apiToken) }),
   } as LocalConfig
-  _readOnlyConfig = true
+  _configFromFlag = true
 }
 
 let _pendingSave = false
@@ -328,7 +328,7 @@ export function updateConfigValue<Key extends keyof LocalConfig>(
     }
     localConfig[key] = value
   }
-  if (_readOnlyConfig) {
+  if (_configFromFlag) {
     return {
       ok: true,
       message: `Config key '${key}' was ${wasDeleted ? 'deleted' : `updated`}`,

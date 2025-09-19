@@ -156,6 +156,12 @@ export const commonFlags: MeowFlags = {
     description: 'Hide the Socket banner',
     hidden: true,
   },
+  compactHeader: {
+    type: 'boolean',
+    default: false,
+    description: 'Use compact single-line header format (auto-enabled in CI)',
+    hidden: true,
+  },
   config: {
     type: 'string',
     default: '',

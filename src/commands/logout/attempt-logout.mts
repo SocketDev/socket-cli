@@ -1,13 +1,13 @@
 import { logger } from '@socketsecurity/registry/lib/logger'
 
 import { applyLogout } from './apply-logout.mts'
-import { isReadOnlyConfig } from '../../utils/config.mts'
+import { isConfigFromFlag } from '../../utils/config.mts'
 
 export function attemptLogout() {
   try {
     applyLogout()
     logger.success('Successfully logged out')
-    if (isReadOnlyConfig()) {
+    if (isConfigFromFlag()) {
       logger.log('')
       logger.warn(
         'Note: config is in read-only mode, at least one key was overridden through flag/env, so the logout was not persisted!',
