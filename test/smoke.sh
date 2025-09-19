@@ -297,10 +297,10 @@ if should_run_section "audit-log"; then
 fi
 
 ### cdxgen
+# NOTE: Basic tests migrated to src/commands/cdxgen/cmd-cdxgen.test.mts
 
 if should_run_section "cdxgen"; then
-    run_socket 0 cdxgen --help
-    run_socket 2 cdxgen --dry-run
+    # Keep only integration tests that need real cdxgen
     run_socket 1 cdxgen
 fi
 
@@ -336,6 +336,7 @@ if should_run_section "config"; then
 fi
 
 ### dependencies
+# NOTE: Pagination tests migrated to src/commands/organization/handle-dependencies.test.mts
 
 if should_run_section "dependencies"; then
     run_socket 0 organization dependencies
@@ -344,14 +345,10 @@ if should_run_section "dependencies"; then
     run_json   0 organization dependencies --json
     run_socket 0 organization dependencies --markdown
 
+    # Keep basic integration tests
     run_socket 0 organization dependencies --limit 1
     run_socket 0 organization dependencies --offset 5
     run_socket 0 organization dependencies --limit 1 --offset 10
-
-    #run_json   2 organization dependencies --json --wat foo
-    run_json   0 organization dependencies --json --limit -200
-    run_json   0 organization dependencies --json --limit NaN
-    run_json   0 organization dependencies --json --limit foo
 fi
 
 ### fix
@@ -363,15 +360,11 @@ if should_run_section "fix"; then
 fi
 
 ### login
+# NOTE: Basic tests migrated to src/commands/login/cmd-login-smoke.test.mts
 
 if should_run_section "login"; then
+    # Keep only tests that need actual auth flow
     run_socket 0 login
-    run_socket 0 login --help
-    run_socket 0 login --dry-run
-
-    #run_socket 1 login --wat
-    run_socket 1 login --api-base-url fail
-    run_socket 1 login --api-proxy fail
 
     echo "Restoring Socket API token"
     eval "${COMMAND_PREFIX} config set apiToken $TOKEN_BAK"
@@ -563,6 +556,7 @@ if should_run_section "raw-npx"; then
 fi
 
 ### repos
+# NOTE: Error handling tests migrated to src/commands/repository/cmd-repository-smoke.test.mts
 
 if should_run_section "repos"; then
     eval "${COMMAND_PREFIX} config set apiToken ${TOKEN_BAK}"
@@ -572,9 +566,8 @@ if should_run_section "repos"; then
     run_socket 0 repos --dry-run
     run_socket 0 repos create --help
     run_socket 2 repos create --dry-run
+    # Keep real repo creation/deletion tests in smoke
     run_socket 0 repos create cli-smoke-test
-    run_socket 1 repos create '%$#'
-    run_socket 1 repos create '%$#' --json
     run_socket 0 repos update --help
     run_socket 2 repos update --dry-run
     run_socket 0 repos update cli-smoke-test --homepage "socket.dev"
@@ -585,24 +578,6 @@ if should_run_section "repos"; then
     run_socket 2 repos del --dry-run
     run_socket 0 repos del cli-smoke-test
 
-    echo ""
-    echo ""
-    echo "Clearing defaultOrg for next tests"
-    eval "$COMMAND_PREFIX config unset defaultOrg"
-    run_json   2 repos create 'cli_donotcreate' --json --no-interactive
-    run_json   2 repos del 'cli_donotcreate' --json --no-interactive
-    run_json   2 repos view 'cli_donotcreate' --json --no-interactive
-    run_json   2 repos list --json --no-interactive
-    run_json   2 repos update 'cli_donotcreate' --homepage evil --json --no-interactive
-    echo ""
-    echo ""
-    echo "Setting defaultOrg to an invalid org for the next tests"
-    eval "$COMMAND_PREFIX config set defaultOrg fake_org"
-    run_json   1 repos create 'cli_donotcreate' --json
-    run_json   1 repos del 'cli_donotcreate' --json
-    run_json   1 repos view 'cli_donotcreate' --json
-    run_json   1 repos list --json
-    run_json   1 repos update 'cli_donotcreate' --homepage evil --json
     echo ""
     echo ""
     echo "Restoring default org to $DEFORG_BAK"
