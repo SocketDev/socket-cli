@@ -60,7 +60,7 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
         timeout: 30_000,
       })
 
-      expect(stdout).toMatchInlineSnapshot('"[DryRun]: Bailing now"')
+      expect(stdout).toMatchInlineSnapshot(`"[DryRun]: Bailing now"`)
       expect(stderr).toContain('Socket.dev CLI')
       expect(code, 'dry-run without args should exit with code 0').toBe(0)
     },
@@ -141,13 +141,11 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
     [
       'yarn',
       'exec',
-      '-c',
-      '{"issueRules":{"malware":true}}',
       'cowsay@^1.6.0',
       'hello',
       FLAG_DRY_RUN,
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '-c',
+      '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
     ],
     'should handle exec with -c flag and issueRules for malware',
     async cmd => {
@@ -164,13 +162,11 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
     [
       'yarn',
       'exec',
-      FLAG_CONFIG,
-      '{"issueRules":{"malware":true}}',
       'cowsay@^1.6.0',
       'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
     ],
     'should handle exec with --config flag and issueRules for malware',
     async cmd => {
@@ -187,13 +183,11 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
     [
       'yarn',
       'exec',
-      '-c',
-      '{"issueRules":{"malware":true,"gptMalware":true}}',
       'cowsay@^1.6.0',
       'hello',
       FLAG_DRY_RUN,
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '-c',
+      '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
     ],
     'should handle exec with -c flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
@@ -213,13 +207,11 @@ describe.skipIf(constants.WIN32)('socket yarn', async () => {
     [
       'yarn',
       'exec',
-      FLAG_CONFIG,
-      '{"issueRules":{"malware":true,"gptMalware":true}}',
       'cowsay@^1.6.0',
       'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
     ],
     'should handle exec with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {

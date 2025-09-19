@@ -92,13 +92,11 @@ describe('socket npm', async () => {
     [
       'npm',
       'exec',
-      '-c',
-      '{"issueRules":{"malware":true}}',
       'cowsay@^1.6.0',
       'hello',
       FLAG_DRY_RUN,
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '-c',
+      '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
     ],
     'should handle npm exec with -c flag and issueRules for malware',
     async cmd => {
@@ -112,13 +110,11 @@ describe('socket npm', async () => {
     [
       'npm',
       'exec',
-      FLAG_CONFIG,
-      '{"issueRules":{"malware":true}}',
       'cowsay@^1.6.0',
       'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","issueRules":{"malware":true}}',
     ],
     'should handle npm exec with --config flag and issueRules for malware',
     async cmd => {
@@ -132,13 +128,11 @@ describe('socket npm', async () => {
     [
       'npm',
       'exec',
-      '-c',
-      '{"issueRules":{"malware":true,"gptMalware":true}}',
       'cowsay@^1.6.0',
       'hello',
       FLAG_DRY_RUN,
-      FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '-c',
+      '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
     ],
     'should handle npm exec with -c flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
@@ -155,13 +149,11 @@ describe('socket npm', async () => {
     [
       'npm',
       'exec',
-      FLAG_CONFIG,
-      '{"issueRules":{"malware":true,"gptMalware":true}}',
       'cowsay@^1.6.0',
       'hello',
       FLAG_DRY_RUN,
       FLAG_CONFIG,
-      '{"apiToken":"fakeToken"}',
+      '{"apiToken":"fakeToken","issueRules":{"malware":true,"gptMalware":true}}',
     ],
     'should handle npm exec with --config flag and multiple issueRules (malware and gptMalware)',
     async cmd => {
