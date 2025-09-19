@@ -9,6 +9,9 @@ export async function runRawNpm(
   process.exitCode = 1
 
   const spawnPromise = spawn(getNpmBinPath(), argv as string[], {
+    // On Windows, npm is often a .cmd file that requires shell execution.
+    // The spawn function from @socketsecurity/registry will handle this properly
+    // when shell is true.
     shell: constants.WIN32,
     stdio: 'inherit',
   })

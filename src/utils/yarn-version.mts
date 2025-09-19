@@ -10,6 +10,9 @@ export function isYarnBerry(): boolean {
       const yarnBinPath = getYarnBinPath()
       const result = spawnSync(yarnBinPath, ['--version'], {
         encoding: 'utf8',
+        // On Windows, yarn is often a .cmd file that requires shell execution.
+        // The spawn function from @socketsecurity/registry will handle this properly
+        // when shell is true.
         shell: constants.WIN32,
       })
 

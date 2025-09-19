@@ -9,6 +9,9 @@ export async function runRawNpx(
   process.exitCode = 1
 
   const spawnPromise = spawn(getNpxBinPath(), argv as string[], {
+    // On Windows, npx is often a .cmd file that requires shell execution.
+    // The spawn function from @socketsecurity/registry will handle this properly
+    // when shell is true.
     shell: constants.WIN32,
     stdio: 'inherit',
   })
