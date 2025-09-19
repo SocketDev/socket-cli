@@ -353,7 +353,7 @@ export default async () => {
   )
   const flagsSrcPath = normalizePath(path.join(srcPath, 'flags.mts'))
   const shadowNpmBinSrcPath = normalizePath(
-    path.join(srcPath, 'shadow/npm/wrapper.mts'),
+    path.join(srcPath, 'shadow/npm/bin.mts'),
   )
   const shadowNpmInjectSrcPath = normalizePath(
     path.join(srcPath, 'shadow/npm/inject.mts'),
@@ -379,7 +379,7 @@ export default async () => {
         'pnpm-cli': `${srcPath}/pnpm-cli.mts`,
         'yarn-cli': `${srcPath}/yarn-cli.mts`,
         [CONSTANTS]: `${srcPath}/constants.mts`,
-        [SHADOW_NPM_BIN]: `${srcPath}/shadow/npm/wrapper.mts`,
+        [SHADOW_NPM_BIN]: `${srcPath}/shadow/npm/bin.mts`,
         [SHADOW_NPM_INJECT]: `${srcPath}/shadow/npm/inject.mts`,
         [SHADOW_NPX_BIN]: `${srcPath}/shadow/npx/bin.mts`,
         [SHADOW_PNPM_BIN]: `${srcPath}/shadow/pnpm/bin.mts`,
