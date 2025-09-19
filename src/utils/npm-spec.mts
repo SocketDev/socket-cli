@@ -1,6 +1,6 @@
 /**
- * NPM package specification utilities for Socket CLI.
- * Parses and handles various NPM package specification formats.
+ * npm package specification utilities for Socket CLI.
+ * Parses and handles various npm package specification formats.
  *
  * Supported Formats:
  * - Regular packages: lodash, lodash@4.17.21
@@ -12,8 +12,8 @@
  *
  * Key Functions:
  * - safeNpa: Safe wrapper for npm-package-arg
- * - safeNpmSpecToPurl: Convert NPM spec to PURL
- * - safeParseNpmSpec: Parse NPM spec to name/version
+ * - safeNpmSpecToPurl: Convert npm spec to PURL
+ * - safeParseNpmSpec: Parse npm spec to name/version
  *
  * Error Handling:
  * - Returns undefined for invalid specs
@@ -170,7 +170,7 @@ export function safeNpmSpecToPurl(pkgSpec: string): string | undefined {
 export function npmSpecToPurl(pkgSpec: string): string {
   const purl = safeNpmSpecToPurl(pkgSpec)
   if (!purl) {
-    throw new Error(`Failed to convert npm spec to PURL: ${pkgSpec}`)
+    throw new Error(`Failed to convert ${NPM} spec to PURL: ${pkgSpec}`)
   }
   return purl
 }
