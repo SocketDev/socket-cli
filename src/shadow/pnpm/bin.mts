@@ -6,9 +6,6 @@ import { debugDir, debugFn } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 import { spawn } from '@socketsecurity/registry/lib/spawn'
 
-import { scanPackagesAndLogAlerts } from '../common.mts'
-import { ensureIpcInStdio } from '../stdio-ipc.mts'
-import { installPnpmLinks } from '../../utils/shadow-links.mts'
 import constants, {
   FLAG_DRY_RUN,
   PNPM,
@@ -18,7 +15,10 @@ import { getAlertsMapFromPnpmLockfile } from '../../utils/alerts-map.mts'
 import { cmdFlagsToString } from '../../utils/cmd.mts'
 import { parsePnpmLockfile, readPnpmLockfile } from '../../utils/pnpm.mts'
 import { getPublicApiToken } from '../../utils/sdk.mts'
+import { installPnpmLinks } from '../../utils/shadow-links.mts'
 import { logAlertsMap } from '../../utils/socket-package-alert.mts'
+import { scanPackagesAndLogAlerts } from '../common.mts'
+import { ensureIpcInStdio } from '../stdio-ipc.mts'
 
 import type { IpcObject } from '../../constants.mts'
 import type {
