@@ -4,61 +4,13 @@ import { fileURLToPath } from 'node:url'
 import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 import { logger } from '@socketsecurity/registry/lib/logger'
 
-import constants, { FLAG_DRY_RUN, NPM } from '../constants.mts'
+import constants, { FLAG_DRY_RUN } from '../constants.mts'
 import { getAlertsMapFromPurls } from '../utils/alerts-map.mts'
-import { createPurlObject, getPurlObject } from '../utils/purl.mts'
+import { safeNpmSpecToPurl } from '../utils/npm-spec.mts'
 import { logAlertsMap } from '../utils/socket-package-alert.mts'
 
 import type { AlertsByPurl } from '../utils/socket-package-alert.mts'
 import type { Spinner } from '@socketsecurity/registry/lib/spinner'
-
-export type ParsedPackageSpec = {
-  name: string
-  version: string | undefined
-}
-
-/**
- * Parse npm package specification into name and version.
- * Handles both regular packages (lodash@4.17.21) and scoped packages (@types/node@20.0.0).
- */
-export function parseNpmPackageSpec(pkgSpec: string): ParsedPackageSpec {
-  // Handle scoped packages first to avoid confusion with version delimiter.
-  if (pkgSpec.startsWith('@')) {
-    const scopedMatch = pkgSpec.match(/^(@[^/@]+\/[^/@]+)(?:@(.+))?$/)
-    if (scopedMatch) {
-      return {
-        name: scopedMatch[1],
-        version: scopedMatch[2],
-      }
-    }
-  }
-
-  // Handle regular packages.
-  const atIndex = pkgSpec.indexOf('@')
-  if (atIndex === -1) {
-    return { name: pkgSpec, version: undefined }
-  }
-
-  return {
-    name: pkgSpec.slice(0, atIndex),
-    version: pkgSpec.slice(atIndex + 1),
-  }
-}
-
-/**
- * Convert npm package spec to PURL string.
- */
-export function npmSpecToPurl(pkgSpec: string): string {
-  const { name, version } = parseNpmPackageSpec(pkgSpec)
-  // Create PURL object to ensure proper formatting.
-  const purlObj = createPurlObject({
-    type: NPM,
-    name,
-    version,
-    throws: false,
-  })
-  return purlObj?.toString() ?? `pkg:${NPM}/${name}${version ? `@${version}` : ''}`
-}
 
 /**
  * Extract package PURLs from add/dlx command arguments.
@@ -78,7 +30,7 @@ export function extractPackagePurlsFromArgs(
       .filter(arg => !arg.startsWith('-') && arg !== '--')
 
     for (const pkgSpec of packageArgs) {
-      const purl = npmSpecToPurl(pkgSpec)
+      const purl = safeNpmSpecToPurl(pkgSpec)
       if (purl) {
         packagePurls.push(purl)
       }
@@ -109,7 +61,7 @@ export async function extractPackagePurlsFromPackageJson(
     }
 
     for (const [name, version] of Object.entries(allDeps)) {
-      const purl = npmSpecToPurl(
+      const purl = safeNpmSpecToPurl(
         typeof version === 'string' ? `${name}@${version}` : name,
       )
       if (purl) {
