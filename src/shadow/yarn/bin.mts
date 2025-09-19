@@ -76,7 +76,10 @@ export default async function shadowYarnBin(
   const suffixArgs = [...rawYarnArgs, ...otherArgs]
 
   if (isDebug()) {
-    debugFn('notice', `spawn: ${YARN} shadow bin ${realYarnPath} ${cmdFlagsToString(suffixArgs)}`)
+    debugFn(
+      'notice',
+      `spawn: ${YARN} shadow bin ${realYarnPath} ${cmdFlagsToString(suffixArgs)}`,
+    )
   }
 
   if (wasSpinning) {

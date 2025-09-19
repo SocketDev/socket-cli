@@ -8,9 +8,9 @@ import constants, {
   FLAG_SILENT,
   NPM,
   PNPM,
-  UNKNOWN_ERROR,
   YARN,
 } from '../constants.mts'
+import { getErrorCause } from './errors.mts'
 import { findUp } from './fs.mts'
 import { getDefaultApiToken, getDefaultProxyUrl } from './sdk.mts'
 import { isYarnBerry } from './yarn-version.mts'
@@ -230,8 +230,8 @@ export async function spawnCoanaDlx(
     return { ok: true, data: output.stdout }
   } catch (e) {
     const stderr = (e as any)?.stderr
-    const cause = (e as Error)?.message || UNKNOWN_ERROR
-    const message = stderr ? stderr : cause
+    const cause = getErrorCause(e)
+    const message = stderr || cause
     return {
       ok: false,
       data: e,
