@@ -156,7 +156,7 @@ export async function handleApiCall<T extends SocketSdkOperations>(
   // Note: TS can't narrow down the type of result due to generics.
   if (sdkResult.success === false) {
     const endpoint = description || 'Socket API'
-    debugApiResponse(endpoint, sdkResult.status)
+    debugApiResponse(endpoint, sdkResult.status as number)
     debugDir('inspect', { sdkResult })
 
     const errCResult = sdkResult as SocketSdkErrorResult<T>

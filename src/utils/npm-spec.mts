@@ -3,6 +3,7 @@ import npmPackageArg from 'npm-package-arg'
 import { NPM } from '../constants.mts'
 import { createPurlObject } from './purl.mts'
 
+// @ts-expect-error - Result is re-exported below.
 import type { Result } from 'npm-package-arg'
 
 export type {
@@ -56,7 +57,7 @@ export function safeParseNpmSpec(
       const scopedMatch = pkgSpec.match(/^(@[^/@]+\/[^/@]+)(?:@(.+))?$/)
       if (scopedMatch) {
         return {
-          name: scopedMatch[1],
+          name: scopedMatch[1]!,
           version: scopedMatch[2],
         }
       }

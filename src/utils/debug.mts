@@ -19,64 +19,14 @@
 
 import { debugDir, debugFn, isDebug } from '@socketsecurity/registry/lib/debug'
 
-import type { SpawnResult } from '@socketsecurity/registry/lib/spawn'
-
-/**
- * Debug result of a spawn command.
- * Only logs if stdio debugging is explicitly enabled.
- */
-export function debugSpawnResult(
-  command: string,
-  args: string[],
-  result?: SpawnResult | Error,
-): void {
-  if (!isDebug('stdio')) {
-    return
-  }
-
-  const cmd = `${command} ${args.join(' ')}`
-  if (result instanceof Error) {
-    debugDir('stdio', {
-      cmd,
-      error: result.message,
-      code: (result as any).code,
-    })
-  } else if (result) {
-    debugDir('stdio', {
-      cmd,
-      stdout: result.stdout?.slice(0, 200),
-      stderr: result.stderr?.slice(0, 200),
-      exitCode: result.exitCode,
-    })
-  }
-}
-
-/**
- * Debug an operation with timing information.
- * Useful for performance debugging.
- */
-export function debugTiming(
-  operation: string,
-  startTime: number,
-  success = true,
-): void {
-  const duration = Date.now() - startTime
-  if (duration > 1000) {
-    // Log slow operations as warnings.
-    debugFn('warn', `Slow operation: ${operation} took ${duration}ms`)
-  } else if (isDebug('notice')) {
-    debugFn('notice', `${operation}: ${duration}ms ${success ? '✓' : '✗'}`)
-  }
-}
-
 /**
  * Debug an API response.
  * Logs essential info without exposing sensitive data.
  */
 export function debugApiResponse(
   endpoint: string,
-  status?: number,
-  error?: unknown,
+  status?: number | undefined,
+  error?: unknown | undefined,
 ): void {
   if (error) {
     debugDir('error', {
@@ -97,7 +47,7 @@ export function debugApiResponse(
 export function debugFileOp(
   operation: 'read' | 'write' | 'delete' | 'create',
   filepath: string,
-  error?: unknown,
+  error?: unknown | undefined,
 ): void {
   if (error) {
     debugDir('warn', {
@@ -111,34 +61,13 @@ export function debugFileOp(
 }
 
 /**
- * Debug a cache hit/miss.
- * Useful for understanding cache behavior.
- */
-export function debugCache(
-  key: string,
-  hit: boolean,
-  details?: Record<string, unknown>,
-): void {
-  if (isDebug('notice')) {
-    if (hit) {
-      debugFn('notice', `Cache hit: ${key}`)
-    } else {
-      debugFn('notice', `Cache miss: ${key}`)
-      if (details && isDebug('inspect')) {
-        debugDir('inspect', details)
-      }
-    }
-  }
-}
-
-/**
  * Debug package scanning.
  * Provides insight into security scanning.
  */
 export function debugScan(
   phase: 'start' | 'progress' | 'complete' | 'error',
-  packageCount?: number,
-  details?: unknown,
+  packageCount?: number | undefined,
+  details?: unknown | undefined,
 ): void {
   switch (phase) {
     case 'start':
@@ -172,7 +101,7 @@ export function debugScan(
 export function debugConfig(
   source: string,
   found: boolean,
-  error?: unknown,
+  error?: unknown | undefined,
 ): void {
   if (error) {
     debugDir('warn', {
@@ -193,7 +122,7 @@ export function debugConfig(
 export function debugGit(
   operation: string,
   success: boolean,
-  details?: Record<string, unknown>,
+  details?: Record<string, unknown> | undefined,
 ): void {
   if (!success) {
     debugDir('warn', {
@@ -208,64 +137,6 @@ export function debugGit(
     debugFn('notice', `Git ${operation} succeeded`)
   } else if (isDebug('silly')) {
     debugFn('silly', `Git ${operation}`)
-  }
-}
-
-/**
- * Create a debug context for complex operations.
- * Tracks operation lifecycle with consistent logging.
- */
-export class DebugContext {
-  private startTime: number
-  private phase = 'init'
-
-  constructor(private operation: string) {
-    this.startTime = Date.now()
-    if (isDebug('notice')) {
-      debugFn('notice', `${operation}: starting`)
-    }
-  }
-
-  progress(message: string, details?: unknown): void {
-    this.phase = 'progress'
-    if (isDebug('silly')) {
-      debugFn('silly', `${this.operation}: ${message}`)
-      if (details && isDebug('inspect')) {
-        debugDir('inspect', details)
-      }
-    }
-  }
-
-  warn(message: string, error?: unknown): void {
-    debugFn('warn', `${this.operation}: ${message}`)
-    if (error) {
-      debugDir('warn', error)
-    }
-  }
-
-  error(message: string, error: unknown): void {
-    this.phase = 'error'
-    debugFn('error', `${this.operation}: ${message}`)
-    debugDir('error', {
-      operation: this.operation,
-      phase: this.phase,
-      error,
-    })
-  }
-
-  complete(success = true, summary?: string): void {
-    this.phase = 'complete'
-    const duration = Date.now() - this.startTime
-
-    if (duration > 5000) {
-      debugFn('warn', `${this.operation}: slow (${duration}ms)`)
-    } else if (isDebug('notice')) {
-      const status = success ? 'completed' : 'failed'
-      const message = summary
-        ? `${this.operation}: ${status} - ${summary} (${duration}ms)`
-        : `${this.operation}: ${status} (${duration}ms)`
-      debugFn('notice', message)
-    }
   }
 }
 
