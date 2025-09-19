@@ -80,12 +80,12 @@ export async function mockInteractiveLogin(
   options?: MockLoginOptions,
 ): Promise<CResult<{ apiToken: string; orgSlug: string }>> {
   const {
-    shouldSucceed = true,
+    apiToken = 'test-token-123',
     delay = 100,
     errorMessage = 'Login failed',
     orgSlug = 'test-org',
-    apiToken = 'test-token-123',
     requireMfa = false,
+    shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
@@ -122,12 +122,12 @@ export async function mockApiTokenAuth(
   options?: MockTokenOptions,
 ): Promise<CResult<{ valid: boolean; user?: any }>> {
   const {
-    shouldSucceed = true,
     delay = 50,
     errorMessage = 'Invalid token',
-    token = 'test-token',
-    scopes = ['read', 'write'],
     expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days.
+    scopes = ['read', 'write'],
+    shouldSucceed = true,
+    token = 'test-token',
   } = {
     __proto__: null,
     ...options,
@@ -165,10 +165,10 @@ export async function mockGitHubAuth(
   options?: MockAuthOptions & { code?: string },
 ): Promise<CResult<{ accessToken: string; user: any }>> {
   const {
-    shouldSucceed = true,
+    code = 'github-auth-code-123',
     delay = 200,
     errorMessage = 'GitHub authentication failed',
-    code = 'github-auth-code-123',
+    shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
@@ -205,7 +205,6 @@ export async function mockOrgSelection(
   options?: MockOrgOptions,
 ): Promise<CResult<{ orgSlug: string; orgId: string }>> {
   const {
-    shouldSucceed = true,
     delay = 50,
     errorMessage = 'Organization selection failed',
     organizations = [
@@ -213,6 +212,7 @@ export async function mockOrgSelection(
       { id: 'org-2', slug: 'test-org-2', name: 'Test Org 2', role: 'member' },
     ],
     selectedIndex = 0,
+    shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
@@ -262,9 +262,9 @@ export async function mockTokenValidation(
   options?: MockAuthOptions,
 ): Promise<CResult<boolean>> {
   const {
-    shouldSucceed = true,
     delay = 30,
     errorMessage = 'Token validation failed',
+    shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
@@ -296,11 +296,11 @@ export async function mockSsoAuth(
   options?: MockAuthOptions & { ssoProvider?: string; ssoOrgSlug?: string },
 ): Promise<CResult<{ apiToken: string; user: any }>> {
   const {
-    shouldSucceed = true,
     delay = 300,
     errorMessage = 'SSO authentication failed',
-    ssoProvider = 'okta',
+    shouldSucceed = true,
     ssoOrgSlug = 'sso-org',
+    ssoProvider = 'okta',
   } = {
     __proto__: null,
     ...options,
@@ -339,9 +339,9 @@ export async function mockRefreshToken(
   options?: MockAuthOptions,
 ): Promise<CResult<{ accessToken: string; expiresIn: number }>> {
   const {
-    shouldSucceed = true,
     delay = 100,
     errorMessage = 'Token refresh failed',
+    shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
@@ -373,9 +373,9 @@ export async function mockLogout(
   options?: MockAuthOptions,
 ): Promise<CResult<void>> {
   const {
-    shouldSucceed = true,
     delay = 50,
     errorMessage = 'Logout failed',
+    shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
@@ -404,10 +404,10 @@ export async function mockGenerateApiKey(
   options?: MockAuthOptions & { keyName?: string; scopes?: string[] },
 ): Promise<CResult<{ apiKey: string; keyId: string }>> {
   const {
-    shouldSucceed = true,
     delay = 150,
     errorMessage = 'API key generation failed',
     keyName = 'test-key',
+    shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
@@ -440,9 +440,9 @@ export async function mockValidateSession(
   options?: MockAuthOptions,
 ): Promise<CResult<{ valid: boolean; expiresAt?: Date | undefined }>> {
   const {
-    shouldSucceed = true,
     delay = 50,
     errorMessage = 'Session validation failed',
+    shouldSucceed = true,
   } = {
     __proto__: null,
     ...options,
